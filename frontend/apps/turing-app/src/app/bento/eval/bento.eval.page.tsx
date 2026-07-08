@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
+  IconActivityHeartbeat,
   IconDatabase,
   IconFilterSearch,
   IconFlask2,
@@ -15,10 +16,11 @@ import { useEvalDatasets, useEvalGraderStacks } from "@/api/queries/eval-studio.
 import { BentoHero } from "@/components/bento";
 import { BentoEvalGeneratePanel } from "./bento.eval.generate-panel";
 import { BentoEvalNLFacetPanel } from "./bento.eval.nl-facet-panel";
+import { BentoEvalOnlinePanel } from "./bento.eval.online-panel";
 import { BentoEvalReviewInbox } from "./bento.eval.review-inbox";
 import { BentoEvalRunHistory } from "./bento.eval.run-history";
 
-type EvalTab = "datasets" | "generate" | "stacks" | "nlfacet" | "runs" | "review";
+type EvalTab = "datasets" | "generate" | "stacks" | "nlfacet" | "runs" | "online" | "review";
 
 /**
  * T599 / §XXXIII.14 — Eval Studio. The bento home for the evaluation platform:
@@ -61,6 +63,11 @@ export default function BentoEvalPage() {
       id: "runs",
       label: t("evalStudio.tabs.runs", { defaultValue: "Runs" }),
       icon: IconHistory,
+    },
+    {
+      id: "online",
+      label: t("evalStudio.tabs.online", { defaultValue: "Online" }),
+      icon: IconActivityHeartbeat,
     },
     {
       id: "review",
@@ -154,6 +161,8 @@ export default function BentoEvalPage() {
       {tab === "nlfacet" && <BentoEvalNLFacetPanel />}
 
       {tab === "runs" && <BentoEvalRunHistory />}
+
+      {tab === "online" && <BentoEvalOnlinePanel />}
 
       {tab === "review" && <BentoEvalReviewInbox />}
     </div>

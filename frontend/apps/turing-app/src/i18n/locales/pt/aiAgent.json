@@ -4,6 +4,7 @@
     "blankTitle": "Você ainda não possui nenhum agente de IA.",
     "blankDescription": "Crie um novo agente de IA para orquestrar instâncias de LLM e servidores MCP.",
     "newInstance": "Novo Agente de IA",
+    "newSubtitle": "Orquestre LLMs, ferramentas e servidores MCP.",
     "launch": {
       "title": "Abrir",
       "openChat": "Abrir chat"
@@ -20,11 +21,11 @@
       "requestOptions": "Opções de Requisição",
       "mcpServers": "Servidores MCP",
       "customTools": "Ferramentas Customizadas",
-      "intents": "Intents",
+      "intents": "Intenções",
       "slots": "Slots",
       "chat": "Chat",
       "chatFlow": "Chat Flow",
-      "analyticsIntent": "Intent de Analytics",
+      "analyticsIntent": "Intenção de Analytics",
       "history": "Histórico",
       "livePreview": "Prévia ao vivo",
       "analysis": "Análise",
@@ -86,6 +87,7 @@
     },
     "history": {
       "title": "Histórico",
+      "description": "Conversas anteriores agrupadas por execuções de fluxo concluídas.",
       "flowLabel": "Fluxo",
       "flowPlaceholder": "Selecione um fluxo",
       "totalSubmissions": "{{count}} submissões",
@@ -104,6 +106,28 @@
     "settings": {
       "title": "Configurações",
       "description": "Informações gerais e status."
+    },
+    "dashboard": {
+      "statusActive": "Ativo",
+      "statusIdle": "Inativo",
+      "statusActiveTitle": "Ativo — clique para desativar",
+      "statusIdleTitle": "Inativo — clique para ativar",
+      "systemPromptSet": "Prompt do sistema",
+      "systemPromptEmpty": "Configure seu prompt do sistema",
+      "ragEnabledTitle": "Recuperação aumentada",
+      "ragDisabledTitle": "RAG desativado",
+      "ragEnabledDesc": "Enriquece as respostas com contexto recuperado.",
+      "ragDisabledDesc": "Ative para embasar as respostas nos seus dados.",
+      "intentsDesc": "Intenções predefinidas que o agente pode reconhecer e rotear.",
+      "chatFlowDesc": "Fluxos visuais que orquestram conversas de múltiplas etapas.",
+      "historyDesc": "Conversas anteriores agrupadas por execuções de fluxo concluídas.",
+      "livePreviewDesc": "A mensagem de sistema montada para um turno previsto, detalhada por origem.",
+      "triggerConflictsDesc": "Chat flows cujas descrições de gatilho se sobrepõem a ponto de o roteador oscilar entre eles.",
+      "analyticsIntentDesc": "O catálogo de intenções de analytics por agente usado pelo classificador de intenções MLT.",
+      "newBasicsTitle": "Comece pelo básico"
+    },
+    "triggerConflicts": {
+      "description": "Chat flows cujas descrições de gatilho se sobrepõem a ponto de o roteador oscilar entre eles."
     },
     "systemPrompt": {
       "title": "Prompt do Sistema",
@@ -147,9 +171,37 @@
         "roleSystem": "sistema",
         "systemMessageRef": "A mensagem de sistema montada exibida acima.",
         "recentWindowRef": "…então a janela de conversa recente do cliente (os últimos turnos de usuário/assistente).",
+        "replayLabel": "Reproduzir uma conversa real",
+        "replayPlaceholder": "id da conversa",
+        "replayApply": "Reproduzir",
+        "replayTurnLabel": "Turno",
+        "replayTurnCurrent": "Estado atual (reconstruído)",
+        "replayTurnOption": "Turno {{n}}{{when}} (literal)",
+        "replayClear": "Sair da reprodução",
+        "replayVerbatim": "Turno {{n}} carregado literalmente — o prompt exato enviado naquele turno",
+        "replayResolved": "Reproduzido a partir de uma conversa real",
+        "replayUnresolved": "Sem estado persistido para esta conversa — exibindo um turno simples",
+        "replayConversation": "Conversa",
+        "toolTraceHeading": "Chamadas de ferramenta nesta conversa",
+        "toolTraceNote": "O que o modelo realmente chamou durante esta conversa (recentes, limitado) — leia em conjunto com o prompt acima.",
         "messageOrigin": {
           "MEMORY_SUMMARY": "Resumo da memória",
-          "MEMORY_RELEVANCE": "Turnos anteriores relevantes"
+          "MEMORY_RELEVANCE": "Turnos anteriores relevantes",
+          "CAPTURED": "Turno capturado"
+        },
+        "note": {
+          "personaReplay": "A persona que o runtime resolveu para a conversa reproduzida (respeitando qualquer troca de persona por flow).",
+          "personaSwitched": "Trocada pelo node de persona do flow selecionado — esta é a voz do turno previsto, não a persona padrão do agente.",
+          "personaOverrideMissing": "O flow selecionado tem um node de persona apontando para uma persona fora do catálogo deste agente — o runtime recai silenciosamente na padrão (exibida aqui). Corrija a persona do node ou adicione-a ao agente.",
+          "personaDefault": "Persona padrão — aplicada em todos os turnos, a menos que um chat flow a troque.",
+          "agentFallbackDefault": "Padrão de fallback — este agente não tem prompt do sistema próprio.",
+          "mcp": "Injetado a partir das instruções de LLM de cada servidor MCP habilitado.",
+          "capability": "Orientação opcional de capacidade anexada ao prompt do agente.",
+          "skill": "Catálogo de skills (divulgação progressiva) — a superfície de delegação run_skill.",
+          "flowReplay": "Do chat flow, reconstruído no node-cursor real da conversa e nos slots coletados.",
+          "flow": "Do chat flow selecionado. O runtime escolhe o node ativo pelo estado da conversa — isto mostra o node de entrada.",
+          "memorySummary": "Quando a conversa ultrapassa o limite de compressão, os turnos mais antigos são resumidos (T115) em um único bloco aqui — antes da janela recente.",
+          "memoryRelevance": "Em runtime, os turnos antigos mais relevantes para a mensagem do usuário são recuperados (T30) e reproduzidos aqui, após o resumo."
         }
       },
       "warnings": {

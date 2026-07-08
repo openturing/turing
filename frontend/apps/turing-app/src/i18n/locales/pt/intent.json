@@ -4,6 +4,7 @@
     "blankTitle": "Você ainda não possui nenhuma intenção.",
     "blankDescription": "Crie uma intenção para agrupar prompts sugeridos para o chat.",
     "newInstance": "Nova Intenção",
+    "description": "Intenções predefinidas que o agente pode reconhecer e rotear.",
     "deleted": "A intenção \"{{name}}\" foi excluída",
     "notDeleted": "A intenção \"{{name}}\" não foi excluída",
     "nav": {

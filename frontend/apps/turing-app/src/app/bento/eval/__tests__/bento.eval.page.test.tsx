@@ -17,6 +17,9 @@ const useAugmentDataset = vi.fn();
 const useSaveReviewedRows = vi.fn();
 const useEvalRunHistory = vi.fn();
 const useRunEval = vi.fn();
+const useOnlineEvalHistory = vi.fn();
+const useRunOnlineEval = vi.fn();
+const usePromoteOnlineBaseline = vi.fn();
 const useNLFacetEvalAvailable = vi.fn();
 const useNLFacetDatasets = vi.fn();
 const useImportNLFacetDataset = vi.fn();
@@ -45,6 +48,9 @@ vi.mock("@/api/queries/eval-studio.queries", () => ({
   useSaveReviewedRows: () => useSaveReviewedRows(),
   useEvalRunHistory: (agentId?: string) => useEvalRunHistory(agentId),
   useRunEval: (agentId?: string) => useRunEval(agentId),
+  useOnlineEvalHistory: (agentId?: string) => useOnlineEvalHistory(agentId),
+  useRunOnlineEval: (agentId?: string) => useRunOnlineEval(agentId),
+  usePromoteOnlineBaseline: (agentId?: string) => usePromoteOnlineBaseline(agentId),
 }));
 
 vi.mock("@/api/queries/ai-agent.queries", () => ({
@@ -120,6 +126,14 @@ describe("BentoEvalPage", () => {
     });
     useEvalRunHistory.mockReturnValue({ data: [], isError: false });
     useRunEval.mockReturnValue({ mutate: vi.fn(), isPending: false, isError: false });
+    useOnlineEvalHistory.mockReturnValue({ data: [], isError: false });
+    useRunOnlineEval.mockReturnValue({
+      mutate: vi.fn(),
+      isPending: false,
+      isError: false,
+      data: undefined,
+    });
+    usePromoteOnlineBaseline.mockReturnValue({ mutate: vi.fn(), isPending: false });
     useNLFacetEvalAvailable.mockReturnValue({ data: true });
     useNLFacetDatasets.mockReturnValue({ data: [], isError: false });
     useImportNLFacetDataset.mockReturnValue({ mutate: vi.fn(), isPending: false });
@@ -296,6 +310,46 @@ describe("BentoEvalPage", () => {
     expect(screen.getByText("regressed")).toBeInTheDocument();
     expect(screen.getByText("greeting")).toBeInTheDocument();
     expect(screen.getByText("email")).toBeInTheDocument();
+  });
+
+  it("switches to the online tab and shows the online-eval empty state", () => {
+    renderPage();
+    fireEvent.click(screen.getByText("Online"));
+    fireEvent.change(screen.getByLabelText("Agent"), { target: { value: "a1" } });
+    expect(screen.getByText("No online-eval snapshots yet")).toBeInTheDocument();
+  });
+
+  it("renders an online-eval snapshot with a drift badge + reason", () => {
+    useOnlineEvalHistory.mockReturnValue({
+      data: [
+        {
+          id: "snap-1",
+          agentId: "a1",
+          createdAt: "2026-07-08T10:00:00",
+          windowStart: "2026-07-07T10:00:00",
+          windowEnd: "2026-07-08T10:00:00",
+          sampledSessions: 40,
+          gradedSessions: 30,
+          graderStackId: "s1",
+          meanScore: 0.6,
+          passRate: 0.7,
+          negativeSentimentRate: 0.5,
+          staleCitationRate: -1,
+          failingSessionRate: 0.45,
+          baseline: false,
+          driftDetected: true,
+          driftReason: "failing sessions 0.45 ≥ 0.40; negative sentiment 0.50 ≥ 0.40",
+          note: null,
+        },
+      ],
+      isError: false,
+    });
+    renderPage();
+    fireEvent.click(screen.getByText("Online"));
+    fireEvent.change(screen.getByLabelText("Agent"), { target: { value: "a1" } });
+    expect(screen.getByText("drift")).toBeInTheDocument();
+    expect(screen.getByText(/failing sessions 0.45/)).toBeInTheDocument();
+    expect(screen.getByText("Set baseline")).toBeInTheDocument();
   });
 
   it("shows the calibration panel with kappa metrics once an agent is selected", () => {

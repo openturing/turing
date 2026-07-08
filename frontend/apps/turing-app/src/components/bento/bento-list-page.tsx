@@ -587,6 +587,7 @@ export function BentoEntityTile({
   hasStatus = false,
   viewTransitionName,
 }: Readonly<BentoEntityTileProps>) {
+  const { t } = useTranslation();
   const gradient = BENTO_TONE_GRADIENTS[tone];
   const resolvedEmphasis: BentoEmphasis = emphasis ?? (featured ? "LARGE" : "MEDIUM");
   const isLarge = resolvedEmphasis === "LARGE";
@@ -624,7 +625,7 @@ export function BentoEntityTile({
               : "border-border bg-muted text-muted-foreground"
           }`}>
             <span className={`h-1.5 w-1.5 rounded-full ${isEnabled ? "bg-emerald-500 bento-pulse" : "bg-muted-foreground/60"}`} />
-            {isEnabled ? "Active" : "Idle"}
+            {isEnabled ? t("common.active", { defaultValue: "Active" }) : t("common.idle", { defaultValue: "Idle" })}
           </span>
         )}
       </div>

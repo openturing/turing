@@ -4,7 +4,7 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { SmartDescription } from "@/components/ui/smart-description";
-import { BentoSaveBar } from "@/components/bento";
+import { BentoStickySaveBar } from "@/components/bento";
 import { StickyPageHeader } from "@/components/sticky-page-header";
 import { GradientSwitch } from "@/components/ui/gradient-switch";
 import { SectionCard } from "@/components/ui/section-card";
@@ -151,23 +151,21 @@ export const AdminRoleForm: React.FC<Props> = ({ value, isNew, listRoute = ROUTE
                 {isBento ? (
                     <>
                         {header}
-                        <div className="sticky top-20 z-20">
-                            <BentoSaveBar
-                                title={isNew ? t("admin.roles.newRole") : (value?.name ?? "")}
-                                actions={
-                                    <>
-                                        <GradientButton type="submit" size="sm">
-                                            <IconDeviceFloppy className="size-4" />
-                                            {t("forms.formActions.saveChanges")}
-                                        </GradientButton>
-                                        <GradientButton type="button" variant="outline" size="sm" onClick={() => navigate(listRoute)}>
-                                            <IconX className="size-4" />
-                                            {t("forms.formActions.cancel")}
-                                        </GradientButton>
-                                    </>
-                                }
-                            />
-                        </div>
+                        <BentoStickySaveBar
+                            title={isNew ? t("admin.roles.newRole") : (value?.name ?? "")}
+                            actions={
+                                <>
+                                    <GradientButton type="submit" size="sm">
+                                        <IconDeviceFloppy className="size-4" />
+                                        {t("forms.formActions.saveChanges")}
+                                    </GradientButton>
+                                    <GradientButton type="button" variant="outline" size="sm" onClick={() => navigate(listRoute)}>
+                                        <IconX className="size-4" />
+                                        {t("forms.formActions.cancel")}
+                                    </GradientButton>
+                                </>
+                            }
+                        />
                     </>
                 ) : (
                     <StickyPageHeader>

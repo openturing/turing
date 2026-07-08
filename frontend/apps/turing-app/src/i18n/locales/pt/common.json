@@ -16,6 +16,11 @@
     "openNavigation": "Abrir navegação",
     "connectionError": "Erro de conexão ou tempo esgotado ao buscar {{resource}}.",
     "yes": "Sim",
-    "no": "Não"
+    "no": "Não",
+    "active": "Ativo",
+    "idle": "Inativo",
+    "activeToggleHint": "Ativo — clique para desativar",
+    "idleToggleHint": "Inativo — clique para ativar",
+    "remove": "Remover"
   }
 }

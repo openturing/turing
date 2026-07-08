@@ -363,7 +363,7 @@ export const BentoLLMInstanceForm: React.FC<Props> = ({ value, isNew, staged, on
                         value={field.value}
                       >
                         <SelectTrigger className="w-full">
-                          <SelectValue placeholder="Choose..." />
+                          <SelectValue placeholder={t("forms.common.choose")} />
                         </SelectTrigger>
                         <SelectContent>
                           {vendors.map((vendor) => (

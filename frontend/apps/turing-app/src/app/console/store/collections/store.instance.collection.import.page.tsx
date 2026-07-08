@@ -15,7 +15,7 @@ import {
   IconPackageImport,
   IconX,
 } from "@tabler/icons-react"
-import { useCallback, useRef, useState } from "react"
+import { type ReactNode, useCallback, useRef, useState } from "react"
 import { useTranslation } from "react-i18next"
 import { useNavigate, useParams } from "react-router-dom"
 import { toast } from "@viglet/viglet-design-system"
@@ -35,7 +35,20 @@ function formatFileSize(bytes: number): string {
   return `${(bytes / 1048576).toFixed(1)} MB`
 }
 
-export default function StoreInstanceCollectionImportPage() {
+interface StoreInstanceCollectionImportPageProps {
+  /** Override the console `SubPageHeader` (e.g. a `BentoHero` in the bento shell). */
+  header?: ReactNode
+  /**
+   * "Back to collections" target. Defaults to the console collections sub-page;
+   * the bento shell passes its detail route (where collections render inline).
+   */
+  backHref?: string
+}
+
+export default function StoreInstanceCollectionImportPage({
+  header,
+  backHref,
+}: Readonly<StoreInstanceCollectionImportPageProps>) {
   const { t } = useTranslation()
   const navigate = useNavigate()
   const { id, collectionName } = useParams() as { id: string; collectionName: string }
@@ -51,7 +64,15 @@ export default function StoreInstanceCollectionImportPage() {
 
   useSubPageBreadcrumb(t("store.collections.importTitle", { name: collectionName }))
 
-  const collectionsHref = `${ROUTES.STORE_INSTANCE}/${id}/collections`
+  const collectionsHref = backHref ?? `${ROUTES.STORE_INSTANCE}/${id}/collections`
+  const headerNode = header !== undefined ? header : (
+    <SubPageHeader
+      icon={IconPackageImport}
+      feature={t("store.title")}
+      name={t("store.collections.importTitle", { name: collectionName })}
+      description={t("store.collections.importDescription")}
+    />
+  )
 
   const doImport = useCallback(
     async (selected: File) => {
@@ -148,12 +169,7 @@ export default function StoreInstanceCollectionImportPage() {
 
   return (
     <>
-      <SubPageHeader
-        icon={IconPackageImport}
-        feature={t("store.title")}
-        name={t("store.collections.importTitle", { name: collectionName })}
-        description={t("store.collections.importDescription")}
-      />
+      {headerNode}
 
       <div className="flex flex-col items-center px-4 md:px-6 lg:px-8 py-2">
         <div className="w-full max-w-2xl space-y-6">

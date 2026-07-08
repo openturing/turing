@@ -5,6 +5,7 @@
     "blankTitle": "Você ainda não possui nenhuma instância de mecanismo de busca.",
     "blankDescription": "Crie uma nova instância para usar em navegação semântica e chatbot.",
     "newInstance": "Nova instância de mecanismo de busca",
+    "readOnlyNotice": "O Solr é configurado via turing.solr.endpoint. O catálogo de mecanismos de busca é somente leitura.",
     "deleted": "O Mecanismo de Busca {{name}} foi excluído",
     "notDeleted": "O Mecanismo de Busca {{name}} não foi excluído",
     "nav": {

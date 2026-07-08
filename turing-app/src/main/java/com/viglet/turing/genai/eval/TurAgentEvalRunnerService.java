@@ -408,6 +408,21 @@ public class TurAgentEvalRunnerService {
         return hasSet && resolveLlm(agent) != null;
     }
 
+    /**
+     * T603 — resolve a judge {@link ChatModel} for {@code agent} (its first
+     * enabled LLM, else the default LLM), or {@code null} when none is usable.
+     * Exposed so the continuous / online eval service can score sampled live
+     * traffic with MODEL graders through the exact same model resolution as a
+     * pre-publish run, rather than duplicating the decrypt + factory dance.
+     */
+    public ChatModel resolveJudgeModel(TurAIAgent agent) {
+        if (agent == null) {
+            return null;
+        }
+        TurLLMInstance llmInstance = resolveLlm(agent);
+        return llmInstance == null ? null : createChatModel(llmInstance);
+    }
+
     // ─────────────────────────── Per-case replay ───────────────────────────
 
     private TurAgentEvalCaseResultDto runCase(TurAIAgent agent, TurLLMInstance llmInstance,

@@ -4,7 +4,7 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { SmartDescription } from "@/components/ui/smart-description";
-import { BentoSaveBar } from "@/components/bento";
+import { BentoStickySaveBar } from "@/components/bento";
 import { StickyPageHeader } from "@/components/sticky-page-header";
 import { SectionCard } from "@/components/ui/section-card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -146,24 +146,22 @@ export const AdminGroupForm: React.FC<Props> = ({ value, isNew, onDelete, open, 
                 {isBento ? (
                     <>
                         {header}
-                        <div className="sticky top-20 z-20">
-                            <BentoSaveBar
-                                title={isNew ? t("admin.groups.newGroup") : (value?.name ?? "")}
-                                actions={
-                                    <>
-                                        <GradientButton type="submit" size="sm">
-                                            <IconDeviceFloppy className="size-4" />
-                                            {t("forms.formActions.saveChanges")}
-                                        </GradientButton>
-                                        <GradientButton type="button" variant="outline" size="sm" onClick={() => navigate(listRoute)}>
-                                            <IconX className="size-4" />
-                                            {t("forms.formActions.cancel")}
-                                        </GradientButton>
-                                        {onDelete && open !== undefined && setOpen && <DialogDelete feature="Group" name={isNew ? t("admin.groups.newGroup") : (value?.name ?? "")} onDelete={onDelete} open={open} setOpen={setOpen} />}
-                                    </>
-                                }
-                            />
-                        </div>
+                        <BentoStickySaveBar
+                            title={isNew ? t("admin.groups.newGroup") : (value?.name ?? "")}
+                            actions={
+                                <>
+                                    <GradientButton type="submit" size="sm">
+                                        <IconDeviceFloppy className="size-4" />
+                                        {t("forms.formActions.saveChanges")}
+                                    </GradientButton>
+                                    <GradientButton type="button" variant="outline" size="sm" onClick={() => navigate(listRoute)}>
+                                        <IconX className="size-4" />
+                                        {t("forms.formActions.cancel")}
+                                    </GradientButton>
+                                    {onDelete && open !== undefined && setOpen && <DialogDelete feature="Group" name={isNew ? t("admin.groups.newGroup") : (value?.name ?? "")} onDelete={onDelete} open={open} setOpen={setOpen} />}
+                                </>
+                            }
+                        />
                     </>
                 ) : (
                     <StickyPageHeader>

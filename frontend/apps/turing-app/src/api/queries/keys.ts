@@ -136,6 +136,9 @@ export const queryKeys = {
     // T599 — per-agent eval run history (timeline + drill-down).
     runHistory: (agentId: string) =>
       [...queryKeys.evalStudio.all(), 'run-history', agentId] as const,
+    // T603 — per-agent continuous / online-eval snapshots (drift timeline).
+    onlineHistory: (agentId: string) =>
+      [...queryKeys.evalStudio.all(), 'online-history', agentId] as const,
   },
   chatFlowRecipes: {
     all: () => ['chat-flow-recipes'] as const,

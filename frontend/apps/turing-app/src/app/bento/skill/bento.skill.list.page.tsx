@@ -40,12 +40,12 @@ export default function BentoSkillListPage() {
     if (!name) return;
     try {
       const created = await createSkill.mutateAsync(name);
-      toast.success(`Skill "${created.name}" created.`);
+      toast.success(t("skill.created", { name: created.name }));
       setCreateOpen(false);
       setNewName("");
       navigate(`${ROUTES.BENTO_SKILL}/${created.id}`);
     } catch {
-      toast.error("Failed to create skill.");
+      toast.error(t("skill.createFailed"));
     }
   };
 
@@ -53,7 +53,7 @@ export default function BentoSkillListPage() {
     try {
       await service.download(id, name);
     } catch {
-      toast.error("Export failed.");
+      toast.error(t("skill.exportFailed"));
     }
   };
 
@@ -62,9 +62,9 @@ export default function BentoSkillListPage() {
     if (!file) return;
     try {
       const imported = await importZip.mutateAsync(file);
-      toast.success(`Imported ${imported.length} skill${imported.length === 1 ? "" : "s"}: ${imported.join(", ")}`);
+      toast.success(t("skill.imported", { count: imported.length, names: imported.join(", ") }));
     } catch {
-      toast.error("Import failed. Make sure the ZIP contains a SKILL.md.");
+      toast.error(t("skill.importFailed"));
     } finally {
       if (fileInputRef.current) fileInputRef.current.value = "";
     }
@@ -77,7 +77,7 @@ export default function BentoSkillListPage() {
         type="file"
         accept=".zip,application/zip"
         className="hidden"
-        title="Import skill ZIP"
+        title={t("skill.importZipTitle")}
         onChange={(e) => handleImport(e.target.files)}
       />
       <BentoHero
@@ -93,11 +93,11 @@ export default function BentoSkillListPage() {
           <>
             <GradientButton size="sm" onClick={() => { setNewName(""); setCreateOpen(true); }}>
               <IconPlus className="size-4" />
-              New Skill
+              {t("skill.newSkill")}
             </GradientButton>
             <Button variant="outline" size="sm" disabled={importZip.isPending} onClick={() => fileInputRef.current?.click()}>
               <IconFileImport className="size-4 mr-1.5" />
-              {importZip.isPending ? "Importing…" : "Import ZIP"}
+              {importZip.isPending ? t("skill.importing") : t("skill.importZip")}
             </Button>
           </>
         }
@@ -106,7 +106,7 @@ export default function BentoSkillListPage() {
       {skills && skills.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
           <IconSparkles className="size-12 mb-3 opacity-40" />
-          <p className="text-sm">No skills yet. Create your first skill or import a ZIP.</p>
+          <p className="text-sm">{t("skill.emptyHint")}</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
@@ -126,10 +126,10 @@ export default function BentoSkillListPage() {
                 <span className="block truncate font-medium">{skill.name}</span>
                 {skill.version && <span className="block truncate text-xs text-muted-foreground">v{skill.version}</span>}
               </span>
-              {!skill.enabled && <Badge variant="outline" className="shrink-0">Disabled</Badge>}
+              {!skill.enabled && <Badge variant="outline" className="shrink-0">{t("skill.disabled")}</Badge>}
               <button
                 type="button"
-                title="Export as ZIP"
+                title={t("skill.exportZip")}
                 className="shrink-0 rounded-md p-1.5 text-muted-foreground opacity-0 transition-opacity hover:bg-accent hover:text-foreground group-hover:opacity-100"
                 onClick={(e) => { e.stopPropagation(); handleExport(skill.id, skill.name); }}
               >
@@ -142,17 +142,17 @@ export default function BentoSkillListPage() {
 
       <Dialog open={createOpen} onOpenChange={setCreateOpen}>
         <DialogContent>
-          <DialogHeader><DialogTitle>New Skill</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle>{t("skill.newSkill")}</DialogTitle></DialogHeader>
           <Input
-            placeholder="Skill name (e.g. brand-content-studio)"
+            placeholder={t("skill.namePlaceholder")}
             value={newName}
             onChange={(e) => setNewName(e.target.value)}
             onKeyDown={(e) => { if (e.key === "Enter") handleCreate(); }}
             autoFocus
           />
           <DialogFooter>
-            <Button variant="outline" onClick={() => setCreateOpen(false)}>Cancel</Button>
-            <GradientButton onClick={handleCreate} disabled={!newName.trim() || createSkill.isPending}>Create</GradientButton>
+            <Button variant="outline" onClick={() => setCreateOpen(false)}>{t("common.cancel")}</Button>
+            <GradientButton onClick={handleCreate} disabled={!newName.trim() || createSkill.isPending}>{t("skill.create")}</GradientButton>
           </DialogFooter>
         </DialogContent>
       </Dialog>

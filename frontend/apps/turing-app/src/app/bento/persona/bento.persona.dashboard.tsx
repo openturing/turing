@@ -137,7 +137,7 @@ export default function BentoPersonaDashboard() {
               }`}
             >
               <span className={`h-1.5 w-1.5 rounded-full ${enabled ? "bg-emerald-500 bento-pulse" : "bg-muted-foreground/60"}`} />
-              {enabled ? t("forms.common.active", { defaultValue: "Active" }) : t("forms.common.idle", { defaultValue: "Idle" })}
+              {enabled ? t("common.active", { defaultValue: "Active" }) : t("common.idle", { defaultValue: "Idle" })}
             </button>
             <BentoActionsMenu
               actions={[

@@ -352,14 +352,14 @@ export function BentoEntityShell<TEntity extends BentoEntityLike>({
                 }`}
               >
                 <span className={`h-1.5 w-1.5 rounded-full ${enabled ? "bg-emerald-500 bento-pulse" : "bg-muted-foreground/60"}`} />
-                {enabled ? "Active" : "Idle"}
+                {enabled ? t("common.active", { defaultValue: "Active" }) : t("common.idle", { defaultValue: "Idle" })}
               </span>
             ) : (
               <button
                 type="button"
                 onClick={() => persistField({ enabled: enabled ? 0 : 1 })}
                 aria-label={t("forms.common.enabled")}
-                title={enabled ? "Active — click to disable" : "Idle — click to enable"}
+                title={enabled ? t("common.activeToggleHint") : t("common.idleToggleHint")}
                 className={`bento-tile-clickable flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[10px] uppercase tracking-wider transition-colors duration-200 ${
                   enabled
                     ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-600 hover:bg-emerald-500/20 dark:text-emerald-400"
@@ -367,7 +367,7 @@ export function BentoEntityShell<TEntity extends BentoEntityLike>({
                 }`}
               >
                 <span className={`h-1.5 w-1.5 rounded-full ${enabled ? "bg-emerald-500 bento-pulse" : "bg-muted-foreground/60"}`} />
-                {enabled ? "Active" : "Idle"}
+                {enabled ? t("common.active", { defaultValue: "Active" }) : t("common.idle", { defaultValue: "Idle" })}
               </button>
             ))}
             {!isNew && actions.length > 0 && <BentoActionsMenu actions={actions} />}

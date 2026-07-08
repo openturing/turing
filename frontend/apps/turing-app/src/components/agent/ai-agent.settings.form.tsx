@@ -41,7 +41,7 @@ import { GradientSwitch } from "../ui/gradient-switch"
 import { IconPicker } from "../ui/icon-picker"
 import { SectionCard } from "../ui/section-card"
 import { SmartDescription } from "../ui/smart-description"
-import { BentoFormSection, BentoSaveBar, type BentoTone } from "../bento"
+import { BentoFormSection, BentoStickySaveBar, type BentoTone } from "../bento"
 import type { ComponentType, ReactNode } from "react"
 
 const turEmbeddingModelService = new TurEmbeddingModelService();
@@ -163,6 +163,8 @@ export const AIAgentSettingsForm: React.FC<Props> = ({ value, isNew, chrome = "c
       toolCallEventsEnabled: value.toolCallEventsEnabled ?? false,
       promptCaptureEnabled: value.promptCaptureEnabled ?? false,
       skillsEnabled: value.skillsEnabled ?? false,
+      onlineEvalEnabled: value.onlineEvalEnabled ?? false,
+      onlineEvalGraderStackId: value.onlineEvalGraderStackId ?? "",
       chatMemoryEnabled: value.chatMemoryEnabled ?? false,
       chatMemoryFlushIntervalMinutes: value.chatMemoryFlushIntervalMinutes ?? 5,
       chatMemoryMaxMessages: value.chatMemoryMaxMessages ?? 100,
@@ -297,9 +299,13 @@ export const AIAgentSettingsForm: React.FC<Props> = ({ value, isNew, chrome = "c
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className={chrome === "bento" ? "space-y-4 md:space-y-5 pb-8" : "space-y-4 px-4 lg:px-6 pb-8"}>
         {chrome === "bento" ? (
-          <div className="sticky top-0 z-20 mb-1 py-1">
-            <BentoSaveBar title={t("aiAgent.settings.title")} onCancel={() => navigate(urlBase)} />
-          </div>
+          <BentoStickySaveBar
+            title={t("aiAgent.settings.title")}
+            onCancel={() => navigate(urlBase)}
+            loading={createMutation.isPending || updateMutation.isPending}
+            titleMissing={!form.watch("title")?.trim()}
+            dirty={isNew || form.formState.isDirty}
+          />
         ) : (
           <StickyPageHeader>
             <StickyPageHeader.Title
@@ -711,6 +717,54 @@ export const AIAgentSettingsForm: React.FC<Props> = ({ value, isNew, chrome = "c
                         <GradientSwitch
                           checked={!!field.value}
                           onCheckedChange={(checked) => field.onChange(checked)}
+                        />
+                      </FormControl>
+                    </FormItemTwoColumns.Right>
+                  </FormItemTwoColumns>
+                )}
+              />
+        </Section>
+
+          <Section variant="blue" tone="blue" icon={IconActivity} title={t("forms.agentSettings.onlineEval", { defaultValue: "Continuous / online eval" })} description={t("forms.agentSettings.onlineEvalDesc", { defaultValue: "Sample this agent's live traffic and grade it in the background to catch quality drift after publish (requires the global online-eval switch)." })}>
+              <FormField
+                control={form.control}
+                name="onlineEvalEnabled"
+                render={({ field }) => (
+                  <FormItemTwoColumns>
+                    <FormItemTwoColumns.Left>
+                      <FormItemTwoColumns.Label>{t("forms.agentSettings.enableOnlineEval", { defaultValue: "Enable online eval" })}</FormItemTwoColumns.Label>
+                      <FormItemTwoColumns.Description>
+                        {t("forms.agentSettings.enableOnlineEvalDesc", { defaultValue: "When on, the nightly sweep samples recent live sessions and records a drift snapshot in the Eval Studio's Online tab." })}
+                      </FormItemTwoColumns.Description>
+                    </FormItemTwoColumns.Left>
+                    <FormItemTwoColumns.Right>
+                      <FormControl>
+                        <GradientSwitch
+                          checked={!!field.value}
+                          onCheckedChange={(checked) => field.onChange(checked)}
+                        />
+                      </FormControl>
+                    </FormItemTwoColumns.Right>
+                  </FormItemTwoColumns>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="onlineEvalGraderStackId"
+                render={({ field }) => (
+                  <FormItemTwoColumns>
+                    <FormItemTwoColumns.Left>
+                      <FormItemTwoColumns.Label>{t("forms.agentSettings.onlineEvalStack", { defaultValue: "Grader stack id" })}</FormItemTwoColumns.Label>
+                      <FormItemTwoColumns.Description>
+                        {t("forms.agentSettings.onlineEvalStackDesc", { defaultValue: "Optional reusable grader stack to score sampled traffic with. Leave blank for signal-only snapshots (sentiment / citation / failing rates)." })}
+                      </FormItemTwoColumns.Description>
+                    </FormItemTwoColumns.Left>
+                    <FormItemTwoColumns.Right>
+                      <FormControl>
+                        <Input
+                          value={field.value ?? ""}
+                          onChange={(event) => field.onChange(event.target.value)}
+                          placeholder={t("forms.agentSettings.onlineEvalStackPlaceholder", { defaultValue: "grader stack id (optional)" })}
                         />
                       </FormControl>
                     </FormItemTwoColumns.Right>

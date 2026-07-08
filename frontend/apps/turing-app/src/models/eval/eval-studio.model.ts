@@ -133,3 +133,29 @@ export interface TurEvalCalibration {
   modelFailHumanFail: number;
   suggestion: string;
 }
+
+/**
+ * T603 — one rolling continuous / online-eval snapshot: the quality of a window
+ * of an agent's live production traffic, graded in the background. {@code -1}
+ * rates mean "not measured" (no grader stack bound, or citation-drift off).
+ * {@code note} is set only on a non-persisted "unavailable" result.
+ */
+export interface TurOnlineEvalSnapshot {
+  id?: string | null;
+  agentId: string;
+  createdAt: string;
+  windowStart: string;
+  windowEnd: string;
+  sampledSessions: number;
+  gradedSessions: number;
+  graderStackId?: string | null;
+  meanScore: number;
+  passRate: number;
+  negativeSentimentRate: number;
+  staleCitationRate: number;
+  failingSessionRate: number;
+  baseline: boolean;
+  driftDetected: boolean;
+  driftReason?: string | null;
+  note?: string | null;
+}

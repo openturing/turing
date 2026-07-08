@@ -27,6 +27,7 @@
       "deleted": "{{name}} {{feature}} foi excluído",
       "notDeleted": "{{name}} {{feature}} não foi excluído",
       "invalidJson": "Provider Options deve ser um JSON válido.",
+      "choose": "Escolha...",
       "selectVendor": "Selecione o fornecedor...",
       "endpointUrl": "URL do Endpoint",
       "apiKey": "Chave de API",
@@ -322,7 +323,9 @@
       "cancel": "Cancelar",
       "saveChanges": "Salvar Alterações",
       "delete": "Excluir",
-      "back": "Voltar"
+      "back": "Voltar",
+      "new": "Novo",
+      "moreActions": "Mais ações"
     },
     "duration": {
       "milliseconds": "Milissegundos",
@@ -511,7 +514,7 @@
       "embeddingStoreDesc": "Selecione o armazenamento vetorial para busca semântica e RAG.",
       "noEmbeddingStore": "-- Nenhum Banco Vetorial --",
       "analyticsSeInstance": "Search Engine para Analytics",
-      "analyticsSeInstanceDesc": "Search engine que hospeda o índice de intents de analytics deste agente (Solr/ES). Deixe em branco para usar o default global (propriedade ou primeira instância SE registrada).",
+      "analyticsSeInstanceDesc": "Search engine que hospeda o índice de intenções de analytics deste agente (Solr/ES). Deixe em branco para usar o default global (propriedade ou primeira instância SE registrada).",
       "analyticsSeInstanceNone": "-- Usar Default Global --",
       "embeddingModel": "Modelo Vetorial",
       "embeddingModelDesc": "Selecione a instância de LLM usada para gerar embeddings.",
@@ -909,6 +912,11 @@
       "updateFailed": "Falha ao atualizar ferramentas customizadas"
     },
     "customTool": {
+      "draftPushHint": "Publique este script como seu rascunho ativo — suas sessões de chat vão executá-lo em vez da versão salva.",
+      "draftPushButton": "Publicar rascunho ativo",
+      "draftClearButton": "Limpar rascunho",
+      "draftPushError": "O rascunho não compilou",
+      "draftActiveBanner": "Rascunho ativo — suas sessões de chat executam esta versão.",
       "settings": "Informações gerais, parâmetros, tipo de retorno e script Groovy.",
       "generalDesc": "Identidade e propósito desta ferramenta customizada.",
       "titleDesc": "Um nome único e descritivo para esta ferramenta. O nome exposto à LLM é derivado dele.",
@@ -971,6 +979,13 @@
       "deleteAction": "Apagar este custom tool"
     },
     "agentSettings": {
+      "onlineEval": "Avaliação contínua / online",
+      "onlineEvalDesc": "Amostre o tráfego ao vivo deste agente e avalie-o em segundo plano para detectar desvios de qualidade após a publicação (requer a chave global de avaliação online).",
+      "enableOnlineEval": "Ativar avaliação online",
+      "enableOnlineEvalDesc": "Quando ativado, a varredura noturna amostra sessões ao vivo recentes e registra um snapshot de desvio na aba Online do Eval Studio.",
+      "onlineEvalStack": "ID do grader stack",
+      "onlineEvalStackDesc": "Grader stack reutilizável opcional para pontuar o tráfego amostrado. Deixe em branco para snapshots apenas de sinais (sentimento / citação / taxas de falha).",
+      "onlineEvalStackPlaceholder": "id do grader stack (opcional)",
       "generalDesc": "Identidade e propósito deste agente de IA.",
       "titleDesc": "Um nome único e descritivo para este agente de IA.",
       "titlePlaceholder": "ex.: Agente de Suporte ao Cliente",
@@ -1131,7 +1146,15 @@
       "off": "Desligado",
       "vendorMismatch": "Requer um modelo {{provider}} vinculado a este agente",
       "updated": "Opções de requisição atualizadas",
-      "updateFailed": "Falha ao atualizar opções de requisição"
+      "updateFailed": "Falha ao atualizar opções de requisição",
+      "categories": {
+        "Reasoning": "Raciocínio",
+        "Output": "Saída",
+        "Cost & Tier": "Custo e Camada",
+        "Provenance": "Proveniência",
+        "Context": "Contexto",
+        "Safety": "Segurança"
+      }
     },
     "intentSettings": {
       "generalDesc": "Nome e descrição para esta categoria de intenção.",

@@ -4,6 +4,7 @@
     "blankTitle": "You don't have any intents yet.",
     "blankDescription": "Create an intent to group suggested prompts for the chat.",
     "newInstance": "New Intent",
+    "description": "Predefined intents the agent can recognise and route.",
     "deleted": "The \"{{name}}\" intent was deleted",
     "notDeleted": "The \"{{name}}\" intent was not deleted",
     "nav": {

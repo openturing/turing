@@ -69,6 +69,10 @@ export interface TurAIAgent {
   promptCaptureEnabled?: boolean;
   /** T323: opt-in to Anthropic-compatible skills. When enabled (and the skill sandbox + a Default LLM are available), every enabled skill is offered to the agent's chat turns via the `run_skill` tool; the skill always runs on the Global Settings Default LLM. Default false. */
   skillsEnabled?: boolean;
+  /** T603: opt-in to continuous / online eval. When enabled (and the global online-eval switch is on), a nightly sweep samples the agent's recent live traffic, grades it, and records a quality snapshot that flags drift vs the baseline. Default false. */
+  onlineEvalEnabled?: boolean;
+  /** T603: the reusable grader stack (T600) online eval scores sampled live traffic with. Blank = signal-only snapshot (sentiment / citation / failing rates, no grader scoring). */
+  onlineEvalGraderStackId?: string | null;
   /** T145: opt-in to cross-vendor MCP federation. On a native OpenAI/Anthropic turn the agent's selected HTTP MCP servers are called directly by the provider (OpenAI remote mcp tool / Anthropic MCP Connector) instead of Turing's MCP client. Default false. */
   mcpNativeFederation?: boolean;
   /** Persists every chat turn to the configured logging engine (mongodb/redis), keyed by conversationId. No-op when turing.logging.engine == none. */

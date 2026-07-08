@@ -1,17 +1,17 @@
 {
   "analyticsIntent": {
-    "title": "Intent de Analytics",
-    "description": "Catálogo de intents por agente usado pelo classificador de analytics (Lucene MLT embarcado + Solr/ES via search engine).",
-    "blankTitle": "Nenhum intent de analytics ainda.",
+    "title": "Intenção de Analytics",
+    "description": "Catálogo de intenções por agente usado pelo classificador de analytics (Lucene MLT embarcado + Solr/ES via search engine).",
+    "blankTitle": "Nenhuma intenção de analytics ainda.",
     "blankDescription": "Crie rótulos com frases representativas para o classificador categorizar conversas finalizadas.",
-    "newInstance": "Novo Intent",
-    "editTitle": "Editar Intent de Analytics",
+    "newInstance": "Nova Intenção",
+    "editTitle": "Editar Intenção de Analytics",
     "dialogDescription": "O rótulo aparece nos dashboards; as frases são comparadas com transcrições de sessões. Rótulos desabilitados são ignorados.",
     "labelRequired": "O rótulo é obrigatório.",
-    "created": "Intent de analytics \"{{name}}\" foi criado.",
-    "saved": "Intent de analytics \"{{name}}\" foi salvo.",
+    "created": "Intenção de analytics \"{{name}}\" foi criada.",
+    "saved": "Intenção de analytics \"{{name}}\" foi salva.",
     "notSaved": "Não foi possível salvar \"{{name}}\".",
-    "deleted": "Intent de analytics \"{{name}}\" foi excluído.",
+    "deleted": "Intenção de analytics \"{{name}}\" foi excluída.",
     "notDeleted": "Não foi possível excluir \"{{name}}\".",
     "reindex": "Reindexar no SE",
     "reindexed": "Reindexação concluída — {{count}} linha(s) enviada(s) para {{indexName}}.",
@@ -27,7 +27,7 @@
     "placeholders": {
       "label": "ex.: Pedido de reembolso",
       "samples": "Quero meu dinheiro de volta\nme reembolsa por favor\nposso fazer um chargeback",
-      "description": "O que esse intent captura e por que ele é rastreado."
+      "description": "O que essa intenção captura e por que ela é rastreada."
     }
   }
 }

@@ -175,6 +175,34 @@ public class TurAIAgent implements Serializable {
     private boolean selfTuningEnabled = false;
 
     /**
+     * T603 / §XXXIII.18 — per-agent opt-in for continuous / online eval. When
+     * {@code true} (and the global {@code turing.genai.online-eval.enabled}
+     * switch is on), a scheduled job samples this agent's recent live sessions,
+     * grades them in the background, and records a quality snapshot that flags
+     * drift versus the agent's healthy baseline. Grader scoring only runs when
+     * {@link #onlineEvalGraderStackId} is also set; otherwise the snapshot
+     * carries only the signal-based rates (sentiment / citation / failing).
+     * Default {@code false} keeps existing agents unchanged (no sampling).
+     *
+     * @since 2026.3.4
+     */
+    @Column(name = "online_eval_enabled", nullable = false)
+    private boolean onlineEvalEnabled = false;
+
+    /**
+     * T603 / §XXXIII.18 — the reusable grader stack (T600) online eval scores
+     * sampled live traffic with. Blank/null → no grader scoring (the snapshot
+     * still records sentiment / citation / failing-session rates). Expectation-
+     * based graders (slot / outcome / node) naturally skip live traffic that
+     * carries no golden expectation, so a content/quality stack (rubric,
+     * model-judge, contains/regex, tool-called) is the useful choice here.
+     *
+     * @since 2026.3.4
+     */
+    @Column(name = "online_eval_grader_stack_id", length = 36)
+    private String onlineEvalGraderStackId;
+
+    /**
      * T448 / §XXIII.7 — per-agent opt-in for agent-to-agent handoff. When
      * {@code true} (and {@link #specialistAgentIds} lists at least one agent), this
      * agent becomes a router: it gets a {@code delegate_to_agent} tool that runs a

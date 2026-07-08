@@ -163,7 +163,7 @@ export const AIAgentRequestOptionsForm: React.FC<Props> = ({ value, chrome = "co
             </Section>
           ) : (
             categories.map(({ category, list }) => (
-              <Section key={category} title={category}
+              <Section key={category} title={t(`forms.agentRequestOptions.categories.${category}`, { defaultValue: category })}
                 description={t("forms.agentRequestOptions.description")}>
                   <div className="space-y-1.5">
                     {list.map((d) => {

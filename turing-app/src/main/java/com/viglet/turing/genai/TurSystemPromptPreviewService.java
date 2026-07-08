@@ -96,6 +96,15 @@ public class TurSystemPromptPreviewService {
     /** Sentinel flowId meaning "preview a turn with no chat flow governing". */
     public static final String FLOW_NONE = "__none__";
 
+    /**
+     * Prefix for the i18n keys the preview emits in each segment/message
+     * {@code note}. The note is a localization KEY, not prose: the frontend
+     * renders it with {@code t(note)} against {@code aiAgent.systemPrompt.preview.note.*}
+     * in its locale bundles. The backend keeps deciding WHICH note applies (only
+     * it knows the resolution context); the frontend owns the wording per locale.
+     */
+    private static final String NOTE_PREFIX = "aiAgent.systemPrompt.preview.note.";
+
     private final TurPromptAssemblyPipeline promptAssemblyPipeline;
     private final TurMessageAssemblyPipeline messageAssemblyPipeline;
     private final TurChatFlowEngineService chatFlowEngineService;
@@ -451,14 +460,12 @@ public class TurSystemPromptPreviewService {
         if (!concreteOrigins.contains(TurPromptMessage.ORIGIN_MEMORY_SUMMARY)) {
             messages.add(new TurSystemPromptMessageDto("user",
                     TurPromptMessage.ORIGIN_MEMORY_SUMMARY, "Memory summary", "", 0, true,
-                    "When the conversation grows past the compression threshold, older turns are "
-                            + "summarized (T115) into a single block here — ahead of the recent window."));
+                    NOTE_PREFIX + "memorySummary"));
         }
         if (!concreteOrigins.contains(TurPromptMessage.ORIGIN_MEMORY_RELEVANCE)) {
             messages.add(new TurSystemPromptMessageDto("user",
                     TurPromptMessage.ORIGIN_MEMORY_RELEVANCE, "Relevant earlier turns", "", 0, true,
-                    "At runtime the older turns most relevant to the user's message are retrieved "
-                            + "(T30) and replayed here, after the summary."));
+                    NOTE_PREFIX + "memoryRelevance"));
         }
         return messages;
     }
@@ -496,23 +503,24 @@ public class TurSystemPromptPreviewService {
             FlowPreview flowPreview, boolean replaying) {
         String title = seg.title();
         FlowPersonaResolution personaRes = flowPreview == null ? null : flowPreview.personaResolution();
+        // The note is an i18n KEY (not prose): the frontend renders it with
+        // t(note). The backend still decides WHICH note applies, since only it
+        // knows the resolution context (usesDefault / replaying / persona
+        // resolution). Keys live under aiAgent.systemPrompt.preview.note.* in the
+        // frontend locale bundles; the locale-parity test keeps en/pt in sync.
         String note = switch (seg.origin()) {
             case TurPromptSegment.ORIGIN_PERSONA -> replaying
-                    ? "The persona the runtime resolved for the replayed conversation "
-                            + "(honouring any flow persona switch)."
+                    ? NOTE_PREFIX + "personaReplay"
                     : personaNote(personaRes);
             case TurPromptSegment.ORIGIN_AGENT -> usesDefault
-                    ? "Fallback default — this agent has no system prompt of its own."
+                    ? NOTE_PREFIX + "agentFallbackDefault"
                     : null;
-            case TurPromptSegment.ORIGIN_MCP ->
-                "Injected from each enabled MCP server's LLM instructions.";
-            case TurPromptSegment.ORIGIN_CAPABILITY ->
-                "Opt-in capability guidance appended to the agent prompt.";
-            case TurPromptSegment.ORIGIN_SKILL ->
-                "Skill catalog (progressive disclosure) — the run_skill delegation surface.";
+            case TurPromptSegment.ORIGIN_MCP -> NOTE_PREFIX + "mcp";
+            case TurPromptSegment.ORIGIN_CAPABILITY -> NOTE_PREFIX + "capability";
+            case TurPromptSegment.ORIGIN_SKILL -> NOTE_PREFIX + "skill";
             case TurPromptSegment.ORIGIN_FLOW -> replaying
-                    ? "From the chat flow, rebuilt at the conversation's real cursor node and collected slots."
-                    : "From the selected chat flow. The runtime picks the active node by conversation state — this shows the entry node.";
+                    ? NOTE_PREFIX + "flowReplay"
+                    : NOTE_PREFIX + "flow";
             default -> null;
         };
         if (TurPromptSegment.ORIGIN_FLOW.equals(seg.origin())
@@ -786,15 +794,12 @@ public class TurSystemPromptPreviewService {
     /** Origin-note for the PERSONA segment, aware of a flow persona switch. */
     private static String personaNote(FlowPersonaResolution res) {
         if (res != null && res.switchedByFlow()) {
-            return "Switched by the selected flow's persona node — this is the voice for the "
-                    + "previewed turn, not the agent's default persona.";
+            return NOTE_PREFIX + "personaSwitched";
         }
         if (res != null && res.overrideMissing()) {
-            return "The selected flow has a persona node pointing at a persona not in this "
-                    + "agent's catalog — the runtime silently falls back to the default (shown "
-                    + "here). Fix the node's persona or add it to the agent.";
+            return NOTE_PREFIX + "personaOverrideMissing";
         }
-        return "Default persona — applies on every turn unless a chat flow switches it.";
+        return NOTE_PREFIX + "personaDefault";
     }
 
     /**

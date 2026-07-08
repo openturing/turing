@@ -1,4 +1,4 @@
-import { BentoHero, BentoSaveBar } from "@/components/bento";
+import { BentoHero, BentoStickySaveBar } from "@/components/bento";
 import { Form } from "@/components/ui/form";
 import { SectionCardChromeProvider } from "@/components/ui/section-card";
 import { EmailSettingsSection } from "@/app/console/system/sections/email-settings.section";
@@ -43,16 +43,12 @@ export default function BentoGlobalSettingsPage() {
           subtitle={t("globalSettings.description")}
         />
 
-        {/* Sticky save bar — stays pinned below the shell header (top-20) while
-            scrolling, so Save is always reachable. */}
-        <div className="sticky top-20 z-20">
-          <BentoSaveBar
-            title={t("globalSettings.breadcrumb")}
-            loading={isSaving}
-            disabled={isLoading}
-            dirty={form.formState.isDirty}
-          />
-        </div>
+        <BentoStickySaveBar
+          title={t("globalSettings.breadcrumb")}
+          loading={isSaving}
+          disabled={isLoading}
+          dirty={form.formState.isDirty}
+        />
 
         <SectionCardChromeProvider chrome="bento">
           <GeneralSettingsSection state={state} />

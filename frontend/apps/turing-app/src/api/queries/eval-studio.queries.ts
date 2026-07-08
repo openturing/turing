@@ -190,3 +190,47 @@ export function useSetRequiredReviewers(agentId: string | undefined) {
     },
   });
 }
+
+// ─────────────────────────── T603 continuous / online eval ───────────────────────────
+
+/** T603 — the agent's online-eval snapshots (disabled until an agent is picked). */
+export function useOnlineEvalHistory(agentId: string | undefined) {
+  return useQuery({
+    queryKey: agentId
+      ? queryKeys.evalStudio.onlineHistory(agentId)
+      : ["eval-studio", "online-history", "pending"],
+    queryFn: () => service.listOnlineHistory(agentId as string),
+    enabled: Boolean(agentId),
+  });
+}
+
+/** T603 — sample + grade live traffic now; refreshes the drift timeline. */
+export function useRunOnlineEval(agentId: string | undefined) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: () => service.runOnlineEval(agentId as string),
+    onSuccess: () => {
+      if (agentId) {
+        queryClient.invalidateQueries({
+          queryKey: queryKeys.evalStudio.onlineHistory(agentId),
+        });
+      }
+    },
+  });
+}
+
+/** T603 — promote a snapshot to the healthy baseline; refreshes the timeline. */
+export function usePromoteOnlineBaseline(agentId: string | undefined) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (snapshotId: string) =>
+      service.promoteOnlineBaseline(agentId as string, snapshotId),
+    onSuccess: () => {
+      if (agentId) {
+        queryClient.invalidateQueries({
+          queryKey: queryKeys.evalStudio.onlineHistory(agentId),
+        });
+      }
+    },
+  });
+}

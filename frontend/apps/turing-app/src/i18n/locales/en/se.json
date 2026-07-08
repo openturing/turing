@@ -5,6 +5,7 @@
     "blankTitle": "You don't seem to have any search engine instance.",
     "blankDescription": "Create a new instance to use in semantic navigation and chatbot.",
     "newInstance": "New search engine instance",
+    "readOnlyNotice": "Solr is configured via turing.solr.endpoint. The search engine catalog is read-only.",
     "deleted": "The {{name}} Search Engine was deleted",
     "notDeleted": "The {{name}} Search Engine was not deleted",
     "nav": {

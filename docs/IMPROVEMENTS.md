@@ -2092,9 +2092,51 @@ version they ran against so regression comparisons are honest.
 
 T600 makes grader **stacks**
 reusable named templates with weighted aggregation and per-grader thresholds
-(retiring the hardcoded all-must-pass). T603 (💭)
+(retiring the hardcoded all-must-pass). T603 (§XXXIII.18)
 extends grading from pre-publish to **online/continuous** — sampling live traffic
 and alerting on drift (composing T87 sentiment, T155 citation-drift, T447 miner).
+
+### XXXIII.18 Continuous / online eval (T603)
+
+The whole block so far grades **golden** cases **before** publish. T603 closes
+the loop on the other side: grade **real production traffic** **after** publish,
+so quality regressions that a fixed golden set never anticipated (a drifted
+knowledge base, a provider model swap, a new customer intent) surface on their
+own. The key realisation is that the answer already happened — there is nothing
+to replay. `TurOnlineEvalService` samples an agent's recent live sessions from
+the T87 chat-analytics store (the same index `TurSelfTuningMiner` and the T596
+transcript importer already read), reconstructs a `TurEvalGradingContext` from
+each conversation's persisted turns (T61 chat memory), captured slots + final
+node (T66 submission), session outcome, and T427 tool trace, and runs the same
+pluggable grader stack the pre-publish runner uses — no new grader kinds, no
+replay harness. Expectation-based CODE graders (slot / outcome / node) naturally
+`appliesTo == false` on un-annotated live traffic, so the useful online stack is
+content/quality graders (rubric, model-judge, contains/regex, tool-called) — a
+choice the operator makes by binding an `onlineEvalGraderStackId` (blank ⇒
+signal-only, no LLM cost).
+
+Each sweep writes one `TurOnlineEvalSnapshot`: the sampled/graded counts, the
+grader-stack mean score + pass-rate, and three **composed** post-hoc signals —
+the negative-sentiment rate (T87), the stale-citation rate (T155, only when
+citation-drift detection is itself on), and the failing-session rate (T447, the
+miner's exact heuristic reused verbatim so the two subsystems can't disagree).
+The first snapshot per agent is the healthy **baseline**; later windows are
+compared to it and flagged `driftDetected` with a human-readable reason when the
+mean score / pass-rate fall a configurable margin below baseline **or** any
+absolute signal (sentiment / citation / failing) crosses its alarm threshold.
+Drift below a minimum sample size is never flagged (too small to trust), and
+"re-baseline after a fix" is an explicit operator action rather than an
+auto-reset. Consistent with the block invariants it is opt-in twice (a global
+`turing.genai.online-eval.enabled` switch **and** a per-agent `onlineEvalEnabled`
+flag) and fail-open everywhere — a disabled analytics store, a missing LLM, or
+any error yields a non-persisted "unavailable" snapshot, never an exception on
+the nightly `@SchedulerLock` sweep. Alerting today is the persisted drift flag +
+a `log.warn` line + the Eval Studio **Online** tab's drift timeline; wiring drift
+into an email / webhook channel stays out of scope (no chat-analytics-native
+notification seam exists yet — see the review-task / suggestion pattern for the
+eventual home). This is deliberately **detection**, complementary to (not a
+duplicate of) the T447 self-tuning loop that turns failing sessions into
+suggested prompt changes.
 
 **Design invariants for the whole block:** every layer is opt-in and fail-open —
 empty/legacy config runs the exact current path; CODE graders stay LLM-free so PR

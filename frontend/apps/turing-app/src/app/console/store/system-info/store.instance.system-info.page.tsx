@@ -1,9 +1,10 @@
+import { BentoFormSection } from "@/components/bento";
 import { SubPageHeader } from "@/components/sub.page.header";
 import { SectionCard } from "@/components/ui/section-card";
 import { useSubPageBreadcrumb } from "@/hooks/use-sub-page-breadcrumb";
 import { TurStoreInstanceService } from "@/services/store/store.service";
 import { IconDatabase, IconInfoCircle, IconLoader2 } from "@tabler/icons-react";
-import { useEffect, useState } from "react";
+import { type ReactNode, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useParams } from "react-router-dom";
 import { toast } from "@viglet/viglet-design-system";
@@ -34,13 +35,26 @@ function StatusBadge({ status }: Readonly<{ status: string }>) {
     );
 }
 
-export default function StoreInstanceSystemInfoPage() {
+interface StoreInstanceSystemInfoPageProps {
+    /** Override the console `SubPageHeader` (e.g. a `BentoHero` in the bento shell). */
+    header?: ReactNode;
+}
+
+export default function StoreInstanceSystemInfoPage({ header }: Readonly<StoreInstanceSystemInfoPageProps>) {
     const { t } = useTranslation();
     const { id } = useParams() as { id: string };
     useSubPageBreadcrumb(t("store.systemInfo.title"));
 
     const [info, setInfo] = useState<Record<string, string>>({});
     const [isLoading, setIsLoading] = useState(true);
+    const headerNode = header !== undefined ? header : (
+        <SubPageHeader
+            icon={IconInfoCircle}
+            feature={t("store.systemInfo.title")}
+            name={t("store.systemInfo.title")}
+            description={t("store.systemInfo.description")}
+        />
+    );
 
     useEffect(() => {
         if (id && id !== "new") {
@@ -57,12 +71,7 @@ export default function StoreInstanceSystemInfoPage() {
     if (isLoading) {
         return (
             <>
-                <SubPageHeader
-                    icon={IconInfoCircle}
-                    feature={t("store.systemInfo.title")}
-                    name={t("store.systemInfo.title")}
-                    description={t("store.systemInfo.description")}
-                />
+                {headerNode}
                 <div className="flex items-center justify-center py-20">
                     <IconLoader2 className="size-6 animate-spin text-muted-foreground" />
                 </div>
@@ -77,43 +86,56 @@ export default function StoreInstanceSystemInfoPage() {
     };
 
     const entries = Object.entries(info).filter(([key]) => key !== "status");
+    const isBento = header !== undefined;
+
+    const details = (
+        <>
+            {info.status && (
+                <div className="flex items-center justify-between py-2 border-b">
+                    <span className="text-sm text-muted-foreground">{t("store.systemInfo.status")}</span>
+                    <StatusBadge status={info.status} />
+                </div>
+            )}
+            {entries.length === 0 ? (
+                <p className="text-sm text-muted-foreground">{t("store.systemInfo.noInfo")}</p>
+            ) : (
+                entries.map(([key, value]) => (
+                    <InfoRow
+                        key={key}
+                        label={displayLabels[key] ?? key}
+                        value={value || t("store.systemInfo.na")}
+                    />
+                ))
+            )}
+        </>
+    );
 
     return (
         <>
-            <SubPageHeader
-                icon={IconInfoCircle}
-                feature={t("store.systemInfo.title")}
-                name={t("store.systemInfo.title")}
-                description={t("store.systemInfo.description")}
-            />
-            <div className="py-6 px-6 space-y-4">
-                <SectionCard variant="violet">
-                    <SectionCard.StaticHeader
+            {headerNode}
+            {isBento ? (
+                <div className="space-y-4">
+                    <BentoFormSection
                         icon={IconDatabase}
+                        tone="violet"
                         title={t("store.systemInfo.details")}
                         description={t("store.systemInfo.detailsDesc")}
-                    />
-                    <SectionCard.Content>
-                        {info.status && (
-                            <div className="flex items-center justify-between py-2 border-b">
-                                <span className="text-sm text-muted-foreground">{t("store.systemInfo.status")}</span>
-                                <StatusBadge status={info.status} />
-                            </div>
-                        )}
-                        {entries.length === 0 ? (
-                            <p className="text-sm text-muted-foreground">{t("store.systemInfo.noInfo")}</p>
-                        ) : (
-                            entries.map(([key, value]) => (
-                                <InfoRow
-                                    key={key}
-                                    label={displayLabels[key] ?? key}
-                                    value={value || t("store.systemInfo.na")}
-                                />
-                            ))
-                        )}
-                    </SectionCard.Content>
-                </SectionCard>
-            </div>
+                    >
+                        {details}
+                    </BentoFormSection>
+                </div>
+            ) : (
+                <div className="py-6 px-6 space-y-4">
+                    <SectionCard variant="violet">
+                        <SectionCard.StaticHeader
+                            icon={IconDatabase}
+                            title={t("store.systemInfo.details")}
+                            description={t("store.systemInfo.detailsDesc")}
+                        />
+                        <SectionCard.Content>{details}</SectionCard.Content>
+                    </SectionCard>
+                </div>
+            )}
         </>
     );
 }

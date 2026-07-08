@@ -20,8 +20,8 @@ export default function BentoAIAgentListPage() {
       title={t("aiAgent.title")}
       subtitle={t("aiAgent.blankDescription")}
       newRoute={`${ROUTES.BENTO_AI_AGENT_INSTANCE}/new`}
-      newLabel="+ AI Agent"
-      newSubtitle="Orchestrate LLMs, tools and MCP servers."
+      newLabel={t("aiAgent.newInstance")}
+      newSubtitle={t("aiAgent.newSubtitle")}
       itemKey={(agent) => agent.id}
       emptyTitle={t("aiAgent.blankTitle")}
       emptyDescription={t("aiAgent.blankDescription")}

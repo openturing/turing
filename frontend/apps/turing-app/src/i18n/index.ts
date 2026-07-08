@@ -18,6 +18,7 @@ import enCustomTool from "./locales/en/customTool.json";
 import enDashboard from "./locales/en/dashboard.json";
 import enDialog from "./locales/en/dialog.json";
 import enEmbeddingModel from "./locales/en/embeddingModel.json";
+import enEvalStudio from "./locales/en/evalStudio.json";
 import enExchange from "./locales/en/exchange.json";
 import enForms from "./locales/en/forms.json";
 import enGit from "./locales/en/git.json";
@@ -28,6 +29,7 @@ import enVoiceKiosk from "./locales/en/voiceKiosk.json";
 import enIntegration from "./locales/en/integration.json";
 import enLogin from "./locales/en/login.json";
 import enSetup from "./locales/en/setup.json";
+import enSkill from "./locales/en/skill.json";
 import enIntent from "./locales/en/intent.json";
 import enAnalyticsIntent from "./locales/en/analyticsIntent.json";
 import enLlm from "./locales/en/llm.json";
@@ -66,6 +68,7 @@ import ptCustomTool from "./locales/pt/customTool.json";
 import ptDashboard from "./locales/pt/dashboard.json";
 import ptDialog from "./locales/pt/dialog.json";
 import ptEmbeddingModel from "./locales/pt/embeddingModel.json";
+import ptEvalStudio from "./locales/pt/evalStudio.json";
 import ptExchange from "./locales/pt/exchange.json";
 import ptForms from "./locales/pt/forms.json";
 import ptGit from "./locales/pt/git.json";
@@ -76,6 +79,7 @@ import ptVoiceKiosk from "./locales/pt/voiceKiosk.json";
 import ptIntegration from "./locales/pt/integration.json";
 import ptLogin from "./locales/pt/login.json";
 import ptSetup from "./locales/pt/setup.json";
+import ptSkill from "./locales/pt/skill.json";
 import ptIntent from "./locales/pt/intent.json";
 import ptAnalyticsIntent from "./locales/pt/analyticsIntent.json";
 import ptLlm from "./locales/pt/llm.json";
@@ -107,7 +111,7 @@ const en = {
   ...enExchange, ...enGraphql, ...enLogging, ...enTokenUsage, ...enParkedConversations, ...enCostGovernance,
   ...enSystemInfo, ...enGlobalSettings, ...enForms, ...enSearch, ...enAnn, ...enCapabilityMatrix,
   ...enPage, ...enGit, ...enMarketplace, ...enPersona, ...enRoutine, ...enWebhook,
-  ...enVoiceKiosk, ...enBento,
+  ...enVoiceKiosk, ...enBento, ...enEvalStudio, ...enSkill,
 };
 
 const pt = {
@@ -118,7 +122,7 @@ const pt = {
   ...ptExchange, ...ptGraphql, ...ptLogging, ...ptTokenUsage, ...ptParkedConversations, ...ptCostGovernance,
   ...ptSystemInfo, ...ptGlobalSettings, ...ptForms, ...ptSearch, ...ptAnn, ...ptCapabilityMatrix,
   ...ptPage, ...ptGit, ...ptMarketplace, ...ptPersona, ...ptRoutine, ...ptWebhook,
-  ...ptVoiceKiosk, ...ptBento,
+  ...ptVoiceKiosk, ...ptBento, ...ptEvalStudio, ...ptSkill,
 };
 
 /**

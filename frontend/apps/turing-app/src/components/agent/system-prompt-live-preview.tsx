@@ -808,7 +808,7 @@ function MessageRow({ message }: Readonly<{ message: TurSystemPromptMessage }>) 
       ) : (
         message.note && (
           <p className="text-xs italic leading-relaxed text-muted-foreground/80">
-            {message.note}
+            {t(message.note, { defaultValue: message.note })}
           </p>
         )
       )}
@@ -870,7 +870,7 @@ function SimulatedVariablesEditor({
               type="button"
               onClick={() => push(rows.filter((_, i) => i !== idx))}
               className="rounded-md p-1 text-muted-foreground hover:bg-accent/50 hover:text-foreground"
-              aria-label={t("common.remove", { defaultValue: "Remove" })}
+              aria-label={t("forms.common.remove")}
             >
               <IconX className="size-4" />
             </button>
@@ -1017,6 +1017,7 @@ function SegmentPassage({
   emptyLabel: string;
   tokLabel: string;
 }>) {
+  const { t } = useTranslation();
   const style = ORIGIN_STYLE[segment.origin];
   // Per-segment token accounting (T608): count + share-of-total, shown in the
   // provenance label. Skipped for informational/runtime-only segments (0 tokens).
@@ -1072,7 +1073,7 @@ function SegmentPassage({
         <p className="text-sm italic text-muted-foreground/70">{emptyLabel}</p>
       )}
 
-      {segment.note && <p className="mt-2 text-xs text-muted-foreground">{segment.note}</p>}
+      {segment.note && <p className="mt-2 text-xs text-muted-foreground">{t(segment.note, { defaultValue: segment.note })}</p>}
     </section>
   );
 }

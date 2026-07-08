@@ -1,0 +1,168 @@
+databaseChangeLog:
+  # T603 / §XXXIII.18 (Block AJ) — continuous / online eval.
+  #
+  #   ai_agent.online_eval_enabled          — per-agent opt-in for the sampling
+  #                                            sweep (default 0 = unchanged).
+  #   ai_agent.online_eval_grader_stack_id  — reusable grader stack (T600) used
+  #                                            to score sampled live traffic;
+  #                                            blank = signal-only snapshot.
+  #   tur_online_eval_snapshot              — one rolling quality snapshot per
+  #                                            window (sampled/graded counts,
+  #                                            grader score/pass-rate, the three
+  #                                            composed signal rates, baseline +
+  #                                            drift flags).
+  #
+  # Column names match the JPA field names (camelCase); longtext for big text;
+  # portable lowercase types. Idempotent (MARK_RAN when already present).
+
+  - changeSet:
+      id: v2026.3.1.94-add-ai_agent-online_eval_enabled
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - columnExists:
+                tableName: ai_agent
+                columnName: online_eval_enabled
+      changes:
+        - addColumn:
+            tableName: ai_agent
+            columns:
+              - column:
+                  name: online_eval_enabled
+                  type: boolean
+                  defaultValueBoolean: false
+                  constraints:
+                    nullable: false
+        - update:
+            tableName: ai_agent
+            columns:
+              - column:
+                  name: online_eval_enabled
+                  valueBoolean: false
+            where: online_eval_enabled IS NULL
+
+  - changeSet:
+      id: v2026.3.1.94-add-ai_agent-online_eval_grader_stack_id
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - columnExists:
+                tableName: ai_agent
+                columnName: online_eval_grader_stack_id
+      changes:
+        - addColumn:
+            tableName: ai_agent
+            columns:
+              - column:
+                  name: online_eval_grader_stack_id
+                  type: varchar(36)
+
+  - changeSet:
+      id: v2026.3.1.94-create-tur_online_eval_snapshot
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - tableExists:
+                tableName: tur_online_eval_snapshot
+      changes:
+        - createTable:
+            tableName: tur_online_eval_snapshot
+            columns:
+              - column:
+                  name: id
+                  type: varchar(36)
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: tenantId
+                  type: varchar(40)
+              - column:
+                  name: agentId
+                  type: varchar(36)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: createdAt
+                  type: timestamp
+                  constraints:
+                    nullable: false
+              - column:
+                  name: windowStart
+                  type: timestamp
+                  constraints:
+                    nullable: false
+              - column:
+                  name: windowEnd
+                  type: timestamp
+                  constraints:
+                    nullable: false
+              - column:
+                  name: sampledSessions
+                  type: int
+                  defaultValueNumeric: 0
+                  constraints:
+                    nullable: false
+              - column:
+                  name: gradedSessions
+                  type: int
+                  defaultValueNumeric: 0
+                  constraints:
+                    nullable: false
+              - column:
+                  name: graderStackId
+                  type: varchar(36)
+              - column:
+                  name: meanScore
+                  type: double
+                  defaultValueNumeric: -1
+                  constraints:
+                    nullable: false
+              - column:
+                  name: passRate
+                  type: double
+                  defaultValueNumeric: -1
+                  constraints:
+                    nullable: false
+              - column:
+                  name: negativeSentimentRate
+                  type: double
+                  defaultValueNumeric: 0
+                  constraints:
+                    nullable: false
+              - column:
+                  name: staleCitationRate
+                  type: double
+                  defaultValueNumeric: -1
+                  constraints:
+                    nullable: false
+              - column:
+                  name: failingSessionRate
+                  type: double
+                  defaultValueNumeric: 0
+                  constraints:
+                    nullable: false
+              - column:
+                  name: baseline
+                  type: boolean
+                  defaultValueBoolean: false
+                  constraints:
+                    nullable: false
+              - column:
+                  name: driftDetected
+                  type: boolean
+                  defaultValueBoolean: false
+                  constraints:
+                    nullable: false
+              - column:
+                  name: driftReason
+                  type: longtext
+        - createIndex:
+            tableName: tur_online_eval_snapshot
+            indexName: idx_online_eval_agent
+            columns:
+              - column:
+                  name: agentId

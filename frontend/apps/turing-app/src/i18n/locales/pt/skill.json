@@ -1,0 +1,18 @@
+{
+  "skill": {
+    "newSkill": "Nova Skill",
+    "importZip": "Importar ZIP",
+    "importing": "Importando…",
+    "importZipTitle": "Importar ZIP de skill",
+    "exportZip": "Exportar como ZIP",
+    "disabled": "Desabilitada",
+    "emptyHint": "Nenhuma skill ainda. Crie sua primeira skill ou importe um ZIP.",
+    "namePlaceholder": "Nome da skill (ex.: brand-content-studio)",
+    "create": "Criar",
+    "created": "Skill \"{{name}}\" criada.",
+    "createFailed": "Falha ao criar a skill.",
+    "exportFailed": "Falha na exportação.",
+    "imported": "{{count}} skill(s) importada(s): {{names}}",
+    "importFailed": "Falha na importação. Verifique se o ZIP contém um SKILL.md."
+  }
+}

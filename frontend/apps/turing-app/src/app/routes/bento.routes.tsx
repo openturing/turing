@@ -39,6 +39,8 @@ const BentoSECoreNewPage = lazy(() => import("../bento/se/bento.se.core.new.page
 const BentoSESystemInfoPage = lazy(() => import("../bento/se/bento.se.system-info.page"));
 const BentoStoreInstanceListPage = lazy(() => import("../bento/store/bento.store.instance.list.page"));
 const BentoStoreInstancePage = lazy(() => import("../bento/store/bento.store.instance.page"));
+const BentoStoreSystemInfoPage = lazy(() => import("../bento/store/bento.store.system-info.page"));
+const BentoStoreCollectionImportPage = lazy(() => import("../bento/store/bento.store.instance.collection.import.page"));
 const BentoEmbeddingModelListPage = lazy(() => import("../bento/embedding/bento.embedding.list.page"));
 const BentoEmbeddingModelPage = lazy(() => import("../bento/embedding/bento.embedding.page"));
 const BentoTokenInstanceListPage = lazy(() => import("../bento/token/bento.token.instance.list.page"));
@@ -200,6 +202,8 @@ export const BentoRoutes = (
     <Route path="store" element={<Navigate to={ROUTES.BENTO_STORE_INSTANCE} replace />} />
     <Route path="store/instance" element={<BentoStoreInstanceListPage />} />
     <Route path="store/instance/:id" element={<BentoStoreInstancePage />} />
+    <Route path="store/instance/:id/system-info" element={<BentoStoreSystemInfoPage />} />
+    <Route path="store/instance/:id/collections/:collectionName/import" element={<BentoStoreCollectionImportPage />} />
     <Route path="embedding" element={<Navigate to={ROUTES.BENTO_EMBEDDING_MODEL_INSTANCE} replace />} />
     <Route path="embedding/instance" element={<BentoEmbeddingModelListPage />} />
     <Route path="embedding/instance/:id" element={<BentoEmbeddingModelPage />} />

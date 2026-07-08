@@ -8,6 +8,7 @@ import type {
   TurEvalGraderStack,
   TurEvalReviewRequest,
   TurEvalReviewTask,
+  TurOnlineEvalSnapshot,
 } from "@/models/eval/eval-studio.model";
 
 /**
@@ -177,6 +178,39 @@ export class TurEvalStudioService {
       `/ai-agent/${agentId}/eval/review/${taskId}/reviewers`,
       null,
       { params: { count } },
+    );
+    return response.data;
+  }
+
+  // ─────────────────────────── T603 continuous / online eval ───────────────────────────
+
+  /** The agent's online-eval snapshots (newest first) — the drift timeline. */
+  async listOnlineHistory(
+    agentId: string,
+    limit = 50,
+  ): Promise<TurOnlineEvalSnapshot[]> {
+    const response = await axios.get<TurOnlineEvalSnapshot[]>(
+      `/ai-agent/${agentId}/eval/online/history`,
+      { params: { limit } },
+    );
+    return response.data;
+  }
+
+  /** Sample live traffic and grade it now; records (or returns "unavailable"). */
+  async runOnlineEval(agentId: string): Promise<TurOnlineEvalSnapshot> {
+    const response = await axios.post<TurOnlineEvalSnapshot>(
+      `/ai-agent/${agentId}/eval/online/run`,
+    );
+    return response.data;
+  }
+
+  /** Promote a snapshot to the agent's healthy drift baseline. */
+  async promoteOnlineBaseline(
+    agentId: string,
+    snapshotId: string,
+  ): Promise<TurOnlineEvalSnapshot> {
+    const response = await axios.post<TurOnlineEvalSnapshot>(
+      `/ai-agent/${agentId}/eval/online/baseline/${snapshotId}`,
     );
     return response.data;
   }

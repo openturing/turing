@@ -16,6 +16,15 @@ The shared scaffold (`BentoEntityShell`, `BentoListPage`, `BentoEntityTile`,
   only hand-roll a tile when the entity genuinely needs a different layout.
 - Identity fields (title / description / icon / enabled) live in the **hero**,
   never as form `FormField`s — the shell owns them.
+- A **settings / non-`BentoEntityShell` form** (agent settings, intent settings,
+  admin user/role/group, global settings) gets its save bar from
+  **`BentoStickySaveBar`**, never a hand-rolled `<div className="sticky …">`
+  wrapper. Rendered inside the `<form>`, it pins the `BentoSaveBar` at `top-20`
+  — **below** the `sticky top-0 z-30` shell header. A `top-0` bar slides
+  *behind* that header on scroll and its Save/Cancel become invisible and
+  un-clickable, which is the exact bug this component exists to prevent. Only
+  `BentoEntityShell` uses a different save bar (its scroll-linked `bento-fade-in
+  fixed` morph), because it also owns the hero the bar morphs out of.
 
 ## 2. i18n — reuse keys, object-form defaults
 

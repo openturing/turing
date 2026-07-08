@@ -16,6 +16,11 @@
     "openNavigation": "Open navigation",
     "connectionError": "Connection error or timeout while fetching {{resource}}.",
     "yes": "Yes",
-    "no": "No"
+    "no": "No",
+    "active": "Active",
+    "idle": "Idle",
+    "activeToggleHint": "Active — click to disable",
+    "idleToggleHint": "Idle — click to enable",
+    "remove": "Remove"
   }
 }

@@ -10,7 +10,7 @@ import {
   parseIsoDateValue,
   parseRangeValue,
 } from "@/components/sn/facet/sn.site.custom.facet.form.utils";
-import { BentoSaveBar } from "@/components/bento";
+import { BentoStickySaveBar } from "@/components/bento";
 import { StickyPageHeader } from "@/components/sticky-page-header";
 import { SectionCard } from "@/components/ui/section-card";
 import { GradientButton } from "@/components/ui/gradient-button";
@@ -218,27 +218,24 @@ export default function SNSiteCustomFacetItemPage({ baseRoute = ROUTES.SN_INSTAN
           {isBento ? (
             <>
               {header}
-              {/* Sticky save bar — stays pinned below the shell header while
-                  scrolling. Save/Cancel are onClick handlers (this page saves
+              {/* Save/Cancel are onClick handlers (this page saves
                   imperatively, not via a form submit), so override the bar's
                   default submit buttons via `actions`. */}
-              <div className="sticky top-20 z-20">
-                <BentoSaveBar
-                  title={isNewItem ? t("forms.snCustomFacet.addItemTitle") : t("forms.snCustomFacet.editItem")}
-                  actions={
-                    <>
-                      <GradientButton type="button" size="sm" onClick={onSave}>
-                        <IconDeviceFloppy className="size-4" />
-                        {t("forms.formActions.saveChanges")}
-                      </GradientButton>
-                      <GradientButton type="button" variant="outline" size="sm" onClick={backToFacet}>
-                        <IconX className="size-4" />
-                        {t("forms.formActions.cancel")}
-                      </GradientButton>
-                    </>
-                  }
-                />
-              </div>
+              <BentoStickySaveBar
+                title={isNewItem ? t("forms.snCustomFacet.addItemTitle") : t("forms.snCustomFacet.editItem")}
+                actions={
+                  <>
+                    <GradientButton type="button" size="sm" onClick={onSave}>
+                      <IconDeviceFloppy className="size-4" />
+                      {t("forms.formActions.saveChanges")}
+                    </GradientButton>
+                    <GradientButton type="button" variant="outline" size="sm" onClick={backToFacet}>
+                      <IconX className="size-4" />
+                      {t("forms.formActions.cancel")}
+                    </GradientButton>
+                  </>
+                }
+              />
             </>
           ) : (
             <StickyPageHeader>

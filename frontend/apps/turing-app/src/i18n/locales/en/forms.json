@@ -27,6 +27,7 @@
       "deleted": "The {{name}} {{feature}} was deleted",
       "notDeleted": "The {{name}} {{feature}} was not deleted",
       "invalidJson": "Provider Options must be valid JSON.",
+      "choose": "Choose...",
       "selectVendor": "Select vendor...",
       "endpointUrl": "Endpoint URL",
       "apiKey": "API Key",
@@ -322,7 +323,9 @@
       "cancel": "Cancel",
       "saveChanges": "Save Changes",
       "delete": "Delete",
-      "back": "Back"
+      "back": "Back",
+      "new": "New",
+      "moreActions": "More actions"
     },
     "duration": {
       "milliseconds": "Milliseconds",
@@ -909,6 +912,11 @@
       "updateFailed": "Failed to update custom tools"
     },
     "customTool": {
+      "draftPushHint": "Push this script as your live draft — your chat sessions will run it instead of the saved version.",
+      "draftPushButton": "Push live draft",
+      "draftClearButton": "Clear draft",
+      "draftPushError": "Draft failed to compile",
+      "draftActiveBanner": "Live draft active — your chat sessions run this version.",
       "settings": "General information, parameters, return type and Groovy script.",
       "generalDesc": "Identity and purpose of this custom tool.",
       "titleDesc": "A unique, descriptive name for this tool. The LLM-facing name is derived from it.",
@@ -971,6 +979,13 @@
       "deleteAction": "Delete this custom tool"
     },
     "agentSettings": {
+      "onlineEval": "Continuous / online eval",
+      "onlineEvalDesc": "Sample this agent's live traffic and grade it in the background to catch quality drift after publish (requires the global online-eval switch).",
+      "enableOnlineEval": "Enable online eval",
+      "enableOnlineEvalDesc": "When on, the nightly sweep samples recent live sessions and records a drift snapshot in the Eval Studio's Online tab.",
+      "onlineEvalStack": "Grader stack id",
+      "onlineEvalStackDesc": "Optional reusable grader stack to score sampled traffic with. Leave blank for signal-only snapshots (sentiment / citation / failing rates).",
+      "onlineEvalStackPlaceholder": "grader stack id (optional)",
       "generalDesc": "Identity and purpose of this AI agent.",
       "titleDesc": "A unique, descriptive name for this AI agent.",
       "titlePlaceholder": "e.g., Customer Support Agent",
@@ -1131,7 +1146,15 @@
       "off": "Off",
       "vendorMismatch": "Needs a {{provider}} model bound to this agent",
       "updated": "Request options updated",
-      "updateFailed": "Failed to update request options"
+      "updateFailed": "Failed to update request options",
+      "categories": {
+        "Reasoning": "Reasoning",
+        "Output": "Output",
+        "Cost & Tier": "Cost & Tier",
+        "Provenance": "Provenance",
+        "Context": "Context",
+        "Safety": "Safety"
+      }
     },
     "intentSettings": {
       "generalDesc": "Name and description for this intent category.",

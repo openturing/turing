@@ -151,7 +151,7 @@ function AgentBento({ agent }: Readonly<{ agent: TurAIAgent }>) {
               type="button"
               onClick={() => persistField({ enabled: enabled ? 0 : 1 })}
               aria-label={t("forms.common.enabled")}
-              title={enabled ? "Active — click to disable" : "Idle — click to enable"}
+              title={enabled ? t("aiAgent.dashboard.statusActiveTitle") : t("aiAgent.dashboard.statusIdleTitle")}
               className={`bento-tile-clickable flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[10px] uppercase tracking-wider transition-colors duration-200 ${
                 enabled
                   ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-600 hover:bg-emerald-500/20 dark:text-emerald-400"
@@ -159,7 +159,7 @@ function AgentBento({ agent }: Readonly<{ agent: TurAIAgent }>) {
               }`}
             >
               <span className={`h-1.5 w-1.5 rounded-full ${enabled ? "bg-emerald-500 bento-pulse" : "bg-muted-foreground/60"}`} />
-              {enabled ? "Active" : "Idle"}
+              {enabled ? t("aiAgent.dashboard.statusActive") : t("aiAgent.dashboard.statusIdle")}
             </button>
             <BentoActionsMenu
               actions={[
@@ -199,7 +199,7 @@ function AgentBento({ agent }: Readonly<{ agent: TurAIAgent }>) {
           tone="blue"
           span="col-span-2 row-span-2 md:col-span-2 md:row-span-2 lg:col-span-3 lg:row-span-2"
           eyebrow={t("aiAgent.nav.systemPrompt")}
-          title={agent.systemPrompt ? "System prompt" : "Set up your system prompt"}
+          title={agent.systemPrompt ? t("aiAgent.dashboard.systemPromptSet") : t("aiAgent.dashboard.systemPromptEmpty")}
         >
           <p className="line-clamp-5 text-sm text-muted-foreground">
             {agent.systemPrompt?.trim() || t("aiAgent.settings.description")}
@@ -213,12 +213,12 @@ function AgentBento({ agent }: Readonly<{ agent: TurAIAgent }>) {
           tone="indigo"
           span="col-span-2 row-span-1 md:col-span-2 md:row-span-1 lg:col-span-3 lg:row-span-1"
           eyebrow={t("aiAgent.settings.title")}
-          title={agent.ragEnabled ? "Retrieval augmented" : "RAG disabled"}
+          title={agent.ragEnabled ? t("aiAgent.dashboard.ragEnabledTitle") : t("aiAgent.dashboard.ragDisabledTitle")}
         >
           <p className="text-sm text-muted-foreground">
             {agent.ragEnabled
-              ? "Augments answers with retrieved context."
-              : "Toggle on to ground answers in your data."}
+              ? t("aiAgent.dashboard.ragEnabledDesc")
+              : t("aiAgent.dashboard.ragDisabledDesc")}
           </p>
         </BentoTile>
 
@@ -296,7 +296,7 @@ function AgentBento({ agent }: Readonly<{ agent: TurAIAgent }>) {
           title={t("aiAgent.nav.intents")}
         >
           <p className="text-sm text-muted-foreground">
-            Predefined intents the agent can recognise and route.
+            {t("aiAgent.dashboard.intentsDesc")}
           </p>
         </BentoTile>
 
@@ -309,7 +309,7 @@ function AgentBento({ agent }: Readonly<{ agent: TurAIAgent }>) {
           title={t("aiAgent.nav.chatFlow")}
         >
           <p className="text-sm text-muted-foreground">
-            Visual flows that orchestrate multi-step conversations.
+            {t("aiAgent.dashboard.chatFlowDesc")}
           </p>
         </BentoTile>
 
@@ -322,7 +322,7 @@ function AgentBento({ agent }: Readonly<{ agent: TurAIAgent }>) {
           title={t("aiAgent.nav.history")}
         >
           <p className="text-sm text-muted-foreground">
-            Past conversations grouped by completed flow runs.
+            {t("aiAgent.dashboard.historyDesc")}
           </p>
         </BentoTile>
 
@@ -335,7 +335,7 @@ function AgentBento({ agent }: Readonly<{ agent: TurAIAgent }>) {
           title={t("aiAgent.nav.livePreview")}
         >
           <p className="text-sm text-muted-foreground">
-            The assembled system message for a previewed turn, broken down by origin.
+            {t("aiAgent.dashboard.livePreviewDesc")}
           </p>
         </BentoTile>
 
@@ -348,7 +348,7 @@ function AgentBento({ agent }: Readonly<{ agent: TurAIAgent }>) {
           title={t("aiAgent.nav.triggerConflicts")}
         >
           <p className="text-sm text-muted-foreground">
-            Chat flows whose trigger descriptions overlap enough that the router may swing between them.
+            {t("aiAgent.dashboard.triggerConflictsDesc")}
           </p>
         </BentoTile>
 
@@ -361,7 +361,7 @@ function AgentBento({ agent }: Readonly<{ agent: TurAIAgent }>) {
           title={t("aiAgent.nav.analyticsIntent")}
         >
           <p className="text-sm text-muted-foreground">
-            The per-agent analytics intent catalog used by the MLT intent classifier.
+            {t("aiAgent.dashboard.analyticsIntentDesc")}
           </p>
         </BentoTile>
       </div>
@@ -384,7 +384,7 @@ function NewAgentBento() {
           tone="blue"
           span="col-span-2 row-span-2 md:col-span-4 md:row-span-2"
           eyebrow={t("aiAgent.settings.title")}
-          title="Start with the basics"
+          title={t("aiAgent.dashboard.newBasicsTitle")}
         >
           <p className="text-sm text-muted-foreground">
             {t("aiAgent.settings.description")}

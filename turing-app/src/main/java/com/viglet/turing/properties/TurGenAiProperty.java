@@ -27,6 +27,9 @@ public class TurGenAiProperty {
     /** Citation drift detection knobs (§X.7.d / T155). */
     private TurGenAiCitationDriftProperty citationDrift = new TurGenAiCitationDriftProperty();
 
+    /** Continuous / online eval knobs (§XXXIII.18 / T603). */
+    private TurGenAiOnlineEvalProperty onlineEval = new TurGenAiOnlineEvalProperty();
+
     /**
      * F.7 / §X.8.e — global default {@code service_tier} for live chat requests
      * ({@code auto} / {@code default} / {@code flex} / {@code priority}). Blank
@@ -225,5 +228,92 @@ public class TurGenAiProperty {
          * {@code 500}.
          */
         private int maxPerRun = 500;
+    }
+
+    /**
+     * §XXXIII.18 / T603 — continuous / online eval. Where the Agent-CI eval
+     * (Block AJ) scores <b>golden</b> cases <b>before</b> publish, this samples
+     * <b>live production traffic</b> after publish, grades it in the background
+     * with the same pluggable CODE + MODEL grader stack (no replay — the answer
+     * already happened), and flags quality <b>drift</b> versus a healthy baseline
+     * snapshot. It composes the T87 session sentiment, the T155 citation-drift
+     * record, and the T447 failing-session miner into one rolling quality signal.
+     *
+     * <p><b>Opt-in, default off — twice.</b> The whole sweep is a no-op unless
+     * {@link #enabled} is {@code true} <em>and</em> an agent flips
+     * {@code onlineEvalEnabled}; grader scoring only runs when that agent also
+     * binds an {@code onlineEvalGraderStackId} (otherwise only the signal-based
+     * rates are computed). Everything is fail-open: a disabled analytics store,
+     * a missing LLM, or any error yields an "unavailable" snapshot, never an
+     * exception on the schedule.
+     *
+     * @author Alexandre Oliveira
+     * @since 2026.3.4
+     */
+    @Getter
+    @Setter
+    public static class TurGenAiOnlineEvalProperty {
+        /**
+         * Master switch for the scheduled sweep. {@code false} (default) → the
+         * job is a no-op scan regardless of any per-agent flag. The on-demand
+         * "run now" API is independent of this and only needs the per-agent flag.
+         */
+        private boolean enabled = false;
+
+        /**
+         * Cron for the background sweep (cluster-once via ShedLock). Default
+         * {@code 0 30 3 * * *} — nightly, staggered after the citation-drift and
+         * prompt-capture jobs.
+         */
+        private String cron = "0 30 3 * * *";
+
+        /** How many recent sessions to sample per agent per run. Default {@code 50}. */
+        private int sampleSize = 50;
+
+        /** Sampling window in days (sessions completed within the last N days). Default {@code 1}. */
+        private int windowDays = 1;
+
+        /**
+         * Minimum sampled sessions before drift is evaluated at all — below this
+         * the sample is too small to trust, so the snapshot is recorded but never
+         * flags drift. Default {@code 5}.
+         */
+        private int minSamplesForDrift = 5;
+
+        /**
+         * Flag drift when the window mean grader score falls at least this far
+         * below the baseline snapshot's mean score. Default {@code 0.15}.
+         */
+        private double scoreDropThreshold = 0.15;
+
+        /**
+         * Flag drift when the window pass-rate falls at least this far below the
+         * baseline snapshot's pass-rate. Default {@code 0.15}.
+         */
+        private double passRateDropThreshold = 0.15;
+
+        /**
+         * Absolute alarm: flag drift when the fraction of sampled sessions with
+         * NEGATIVE / FRUSTRATED sentiment (T87) meets or exceeds this. Default
+         * {@code 0.4}.
+         */
+        private double negativeSentimentThreshold = 0.4;
+
+        /**
+         * Absolute alarm: flag drift when the fraction of sampled sessions with at
+         * least one stale citation (T155) meets or exceeds this. Only evaluated
+         * when citation-drift detection is itself enabled. Default {@code 0.25}.
+         */
+        private double staleCitationThreshold = 0.25;
+
+        /**
+         * Absolute alarm: flag drift when the fraction of sampled sessions the
+         * T447 miner classes as failing (abandoned / error / handoff / negative /
+         * tool-error) meets or exceeds this. Default {@code 0.4}.
+         */
+        private double failingSessionThreshold = 0.4;
+
+        /** Cap on how many messages per conversation are read to build a grading context. */
+        private int maxTurnsPerSession = 40;
     }
 }

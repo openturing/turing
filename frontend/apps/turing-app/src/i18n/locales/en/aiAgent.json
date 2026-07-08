@@ -4,6 +4,7 @@
     "blankTitle": "You don't seem to have any AI agent.",
     "blankDescription": "Create a new AI agent to orchestrate LLM instances and MCP servers.",
     "newInstance": "New AI Agent",
+    "newSubtitle": "Orchestrate LLMs, tools and MCP servers.",
     "launch": {
       "title": "Launch",
       "openChat": "Open chat"
@@ -86,6 +87,7 @@
     },
     "history": {
       "title": "History",
+      "description": "Past conversations grouped by completed flow runs.",
       "flowLabel": "Flow",
       "flowPlaceholder": "Select a flow",
       "totalSubmissions": "{{count}} submissions",
@@ -104,6 +106,28 @@
     "settings": {
       "title": "Settings",
       "description": "General information and status."
+    },
+    "dashboard": {
+      "statusActive": "Active",
+      "statusIdle": "Idle",
+      "statusActiveTitle": "Active — click to disable",
+      "statusIdleTitle": "Idle — click to enable",
+      "systemPromptSet": "System prompt",
+      "systemPromptEmpty": "Set up your system prompt",
+      "ragEnabledTitle": "Retrieval augmented",
+      "ragDisabledTitle": "RAG disabled",
+      "ragEnabledDesc": "Augments answers with retrieved context.",
+      "ragDisabledDesc": "Toggle on to ground answers in your data.",
+      "intentsDesc": "Predefined intents the agent can recognise and route.",
+      "chatFlowDesc": "Visual flows that orchestrate multi-step conversations.",
+      "historyDesc": "Past conversations grouped by completed flow runs.",
+      "livePreviewDesc": "The assembled system message for a previewed turn, broken down by origin.",
+      "triggerConflictsDesc": "Chat flows whose trigger descriptions overlap enough that the router may swing between them.",
+      "analyticsIntentDesc": "The per-agent analytics intent catalog used by the MLT intent classifier.",
+      "newBasicsTitle": "Start with the basics"
+    },
+    "triggerConflicts": {
+      "description": "Chat flows whose trigger descriptions overlap enough that the router may swing between them."
     },
     "systemPrompt": {
       "title": "System Prompt",
@@ -147,9 +171,37 @@
         "roleSystem": "system",
         "systemMessageRef": "The assembled system message shown above.",
         "recentWindowRef": "…then the client's recent conversation window (the latest user/assistant turns).",
+        "replayLabel": "Replay a real conversation",
+        "replayPlaceholder": "conversation id",
+        "replayApply": "Replay",
+        "replayTurnLabel": "Turn",
+        "replayTurnCurrent": "Current state (reconstructed)",
+        "replayTurnOption": "Turn {{n}}{{when}} (verbatim)",
+        "replayClear": "Exit replay",
+        "replayVerbatim": "Turn {{n}} loaded verbatim — the exact prompt sent at that turn",
+        "replayResolved": "Replayed from a real conversation",
+        "replayUnresolved": "No persisted state for this conversation — showing a plain turn",
+        "replayConversation": "Conversation",
+        "toolTraceHeading": "Tool calls on this conversation",
+        "toolTraceNote": "What the model actually called during this conversation (recent, capped) — read against the prompt above.",
         "messageOrigin": {
           "MEMORY_SUMMARY": "Memory summary",
-          "MEMORY_RELEVANCE": "Relevant earlier turns"
+          "MEMORY_RELEVANCE": "Relevant earlier turns",
+          "CAPTURED": "Captured turn"
+        },
+        "note": {
+          "personaReplay": "The persona the runtime resolved for the replayed conversation (honouring any flow persona switch).",
+          "personaSwitched": "Switched by the selected flow's persona node — this is the voice for the previewed turn, not the agent's default persona.",
+          "personaOverrideMissing": "The selected flow has a persona node pointing at a persona not in this agent's catalog — the runtime silently falls back to the default (shown here). Fix the node's persona or add it to the agent.",
+          "personaDefault": "Default persona — applies on every turn unless a chat flow switches it.",
+          "agentFallbackDefault": "Fallback default — this agent has no system prompt of its own.",
+          "mcp": "Injected from each enabled MCP server's LLM instructions.",
+          "capability": "Opt-in capability guidance appended to the agent prompt.",
+          "skill": "Skill catalog (progressive disclosure) — the run_skill delegation surface.",
+          "flowReplay": "From the chat flow, rebuilt at the conversation's real cursor node and collected slots.",
+          "flow": "From the selected chat flow. The runtime picks the active node by conversation state — this shows the entry node.",
+          "memorySummary": "When the conversation grows past the compression threshold, older turns are summarized (T115) into a single block here — ahead of the recent window.",
+          "memoryRelevance": "At runtime the older turns most relevant to the user's message are retrieved (T30) and replayed here, after the summary."
         }
       },
       "warnings": {
