@@ -86,8 +86,7 @@
 > the cutover & retirement phase:
 
 **Phase 5 — cutover & retirement:**
-- 📋 **T570** (deps: T569) **Retire the legacy console** — delete migrated `console/*` pages + dead routes/components; no orphaned imports. → §XXXI.10
-- 📋 **T571** (deps: T569) **Full a11y + responsive + performance + e2e pass** across the whole bento surface (keyboard, reduced-motion, mobile, bundle/lazy-load, smoke IT). → §XXXI.10
+- 📋 **T571** (deps: T569) **Full a11y + responsive + performance + e2e pass** across the whole bento surface (keyboard, reduced-motion, mobile, bundle/lazy-load, smoke IT). Includes verifying migration completeness — e.g. persona from-audio authoring (T470) + persona-suggest (T471) were console-only and not carried into bento. → §XXXI.10
 - 💭 **T572** (deps: T571) **Onboarding & delight polish** — consistent empty-states, keyboard-shortcut guide, motion-reduce audit, first-run tour. → §XXXI.10
 
 ## Non-goals (do NOT add as tasks)
