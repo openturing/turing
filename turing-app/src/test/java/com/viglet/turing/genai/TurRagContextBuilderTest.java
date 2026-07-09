@@ -50,6 +50,8 @@ class TurRagContextBuilderTest {
     @Mock
     private com.viglet.turing.genai.provider.llm.TurLocalEmbeddingModelFactory localEmbeddingModelFactory;
     @Mock
+    private com.viglet.turing.genai.provider.llm.TurHuggingFaceEmbeddingModelFactory huggingFaceEmbeddingModelFactory;
+    @Mock
     private TurGenAiStoreProviderFactory storeProviderFactory;
     @Mock
     private TurSecretCryptoService secretCryptoService;

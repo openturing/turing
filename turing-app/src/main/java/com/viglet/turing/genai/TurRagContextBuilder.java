@@ -18,6 +18,7 @@
 package com.viglet.turing.genai;
 
 import com.viglet.turing.resilience.llm.TurLlmModelFactory;
+import com.viglet.turing.genai.provider.llm.TurHuggingFaceEmbeddingModelFactory;
 import com.viglet.turing.genai.provider.llm.TurLocalEmbeddingModelFactory;
 import com.viglet.turing.genai.provider.store.TurGenAiStoreProvider;
 import com.viglet.turing.genai.provider.store.TurGenAiStoreProviderFactory;
@@ -52,6 +53,7 @@ public class TurRagContextBuilder {
 
     private final TurLlmModelFactory llmModelFactory;
     private final TurLocalEmbeddingModelFactory localEmbeddingModelFactory;
+    private final TurHuggingFaceEmbeddingModelFactory huggingFaceEmbeddingModelFactory;
     private final TurGenAiStoreProviderFactory storeProviderFactory;
     private final TurSecretCryptoService secretCryptoService;
     private final TurGlobalSettingsService globalSettingsService;
@@ -60,6 +62,7 @@ public class TurRagContextBuilder {
 
     public TurRagContextBuilder(TurLlmModelFactory llmModelFactory,
             TurLocalEmbeddingModelFactory localEmbeddingModelFactory,
+            TurHuggingFaceEmbeddingModelFactory huggingFaceEmbeddingModelFactory,
             TurGenAiStoreProviderFactory storeProviderFactory,
             TurSecretCryptoService secretCryptoService,
             TurGlobalSettingsService globalSettingsService,
@@ -67,6 +70,7 @@ public class TurRagContextBuilder {
             TurStoreInstanceRepository storeInstanceRepository) {
         this.llmModelFactory = llmModelFactory;
         this.localEmbeddingModelFactory = localEmbeddingModelFactory;
+        this.huggingFaceEmbeddingModelFactory = huggingFaceEmbeddingModelFactory;
         this.storeProviderFactory = storeProviderFactory;
         this.secretCryptoService = secretCryptoService;
         this.globalSettingsService = globalSettingsService;
@@ -97,6 +101,13 @@ public class TurRagContextBuilder {
         // in-process (no external embedding API).
         if (localEmbeddingModelFactory.supports(embModel.getProviderType())) {
             return localEmbeddingModelFactory.resolve(embModel);
+        }
+
+        // T623 — the HuggingFace provider is the same in-process ONNX runtime;
+        // its modelReference holds a HF repo id (resolved to the same ONNX +
+        // tokenizer URLs) instead of hand-typed paths.
+        if (huggingFaceEmbeddingModelFactory.supports(embModel.getProviderType())) {
+            return huggingFaceEmbeddingModelFactory.resolve(embModel);
         }
 
         TurLLMInstance llmInstance = embModel.getTurLLMInstance();

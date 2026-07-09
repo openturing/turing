@@ -20,12 +20,8 @@
  */
 package com.viglet.turing.genai.provider.llm;
 
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-
 import org.springframework.ai.embedding.EmbeddingModel;
 import org.springframework.ai.transformers.TransformersEmbeddingModel;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 
@@ -64,20 +60,10 @@ public class TurLocalEmbeddingModelFactory {
     /** {@code providerType} sentinel identifying a local ONNX embedding model. */
     public static final String PROVIDER_TYPE = "TRANSFORMERS_LOCAL";
 
-    private final Map<String, EmbeddingModel> cache = new ConcurrentHashMap<>();
+    private final TurTransformersEmbeddingModelBuilder builder;
 
-    /**
-     * Directory where remote (HTTP) ONNX/tokenizer resources are cached. Blank
-     * falls back to {@link TransformersEmbeddingModel}'s default
-     * ({@code ${java.io.tmpdir}/spring-ai-onnx-model}). On the ephemeral demo
-     * the tmpfs default is wiped on reset, so the model re-downloads on each
-     * boot — set this to a persistent volume to keep it across restarts.
-     */
-    private final String cacheDirectory;
-
-    public TurLocalEmbeddingModelFactory(
-            @Value("${turing.genai.embedding.local.cache-dir:}") String cacheDirectory) {
-        this.cacheDirectory = cacheDirectory;
+    public TurLocalEmbeddingModelFactory(TurTransformersEmbeddingModelBuilder builder) {
+        this.builder = builder;
     }
 
     /** @return {@code true} when {@code providerType} is the local-ONNX sentinel. */
@@ -88,6 +74,8 @@ public class TurLocalEmbeddingModelFactory {
     /**
      * Resolves (building + caching on first use) the local ONNX embedding model
      * for the given entity. Callers must have checked {@link #supports(String)}.
+     * The {@code modelPath} ({@code .onnx}) and {@code tokenizerPath}
+     * ({@code tokenizer.json}) are typed by the admin.
      *
      * @throws IllegalStateException when {@code modelPath}/{@code tokenizerPath}
      *                               are missing or the model fails to initialize
@@ -100,30 +88,6 @@ public class TurLocalEmbeddingModelFactory {
                     "Local embedding model '%s' (%s) requires both modelPath (.onnx) and tokenizerPath (.json)."
                             .formatted(embModel.getModelName(), PROVIDER_TYPE));
         }
-        return cache.computeIfAbsent(modelPath + "|" + tokenizerPath,
-                k -> build(modelPath, tokenizerPath));
-    }
-
-    private EmbeddingModel build(String modelPath, String tokenizerPath) {
-        try {
-            TransformersEmbeddingModel model = new TransformersEmbeddingModel();
-            model.setModelResource(modelPath);
-            model.setTokenizerResource(tokenizerPath);
-            if (StringUtils.hasText(cacheDirectory)) {
-                model.setResourceCacheDirectory(cacheDirectory);
-            }
-            // sentence-transformers models are trained with padding on.
-            model.setTokenizerOptions(Map.of("padding", "true"));
-            // Downloads (once) + loads the ONNX session; may take seconds on a
-            // cold cache. Done here so the cost is paid at warm-up, not per turn.
-            model.afterPropertiesSet();
-            log.info("Initialized local ONNX embedding model (model='{}', tokenizer='{}').",
-                    modelPath, tokenizerPath);
-            return model;
-        } catch (Exception e) {
-            throw new IllegalStateException(
-                    "Failed to initialize local ONNX embedding model '%s': %s"
-                            .formatted(modelPath, e.getMessage()), e);
-        }
+        return builder.resolve(modelPath, tokenizerPath);
     }
 }
