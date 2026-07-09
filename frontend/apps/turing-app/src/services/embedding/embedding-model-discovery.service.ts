@@ -37,4 +37,11 @@ export class TurEmbeddingModelDiscoveryService {
     );
     return response.data;
   }
+
+  async listHuggingFaceVariants(repoId: string): Promise<string[]> {
+    const response = await axios.get<string[]>("/embedding-model/hf-variants", {
+      params: { repoId },
+    });
+    return response.data;
+  }
 }

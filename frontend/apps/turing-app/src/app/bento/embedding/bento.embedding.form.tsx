@@ -1,6 +1,6 @@
 "use client"
 import { useCreateEmbeddingModel, useUpdateEmbeddingModel } from "@/api/queries/embedding-model.queries"
-import { useHuggingFaceDimensionCheck, useHuggingFaceModels, useLlmEmbeddingModels } from "@/api/queries/embedding-model-discovery.queries"
+import { useHuggingFaceDimensionCheck, useHuggingFaceModels, useHuggingFaceVariants, useLlmEmbeddingModels } from "@/api/queries/embedding-model-discovery.queries"
 import { useLlmInstances } from "@/api/queries/llm-instance.queries"
 import { ROUTES } from "@/app/routes.const"
 import { BentoFormSection, BentoSaveBar, type BentoIdentity, type BentoShellFormState } from "@/components/bento"
@@ -19,7 +19,16 @@ import { useNavigate } from "react-router-dom"
 
 const TRANSFORMERS_LOCAL = "TRANSFORMERS_LOCAL"
 const HUGGINGFACE = "HUGGINGFACE"
+/** Must match {@code TurHuggingFaceRepoResolver.VARIANT_SEPARATOR} (T628). */
+const HF_VARIANT_SEPARATOR = "::"
 const urlBase = ROUTES.BENTO_EMBEDDING_MODEL_INSTANCE
+
+/** Splits a stored `modelReference` into `[repoId, variantPath]` (T628). */
+function splitHfRef(reference: string): [string, string] {
+  const sep = reference.indexOf(HF_VARIANT_SEPARATOR)
+  if (sep < 0) return [reference, ""]
+  return [reference.slice(0, sep), reference.slice(sep + HF_VARIANT_SEPARATOR.length)]
+}
 
 interface Props {
   value: TurEmbeddingModel
@@ -56,11 +65,21 @@ export const BentoEmbeddingModelForm: React.FC<Props> = ({ value, isNew, readOnl
   const [hfQuery, setHfQuery] = useState("")
   const { data: hfList, isFetching: hfLoading } = useHuggingFaceModels(hfQuery, isHuggingFace)
 
+  // The stored modelReference may carry a "::variant" suffix (T628); split it
+  // so discovery/dimension use the bare repo id and the variant Select the tail.
+  const selectedModelReference = form.watch("modelReference") ?? ""
+  const [hfRepoId, hfVariant] = splitHfRef(selectedModelReference)
+
   // Dimension detection + reindex-awareness on the picked HF model (T627).
-  const selectedModelReference = form.watch("modelReference")
   const { data: hfDimCheck } = useHuggingFaceDimensionCheck(
-    selectedModelReference,
-    isHuggingFace && Boolean(selectedModelReference),
+    hfRepoId,
+    isHuggingFace && Boolean(hfRepoId),
+  )
+
+  // ONNX artifact variants the picked repo ships (T628).
+  const { data: hfVariants } = useHuggingFaceVariants(
+    hfRepoId,
+    isHuggingFace && Boolean(hfRepoId),
   )
 
   // LLM embedding-model picker for the selected instance's vendor (T625).
@@ -241,7 +260,7 @@ export const BentoEmbeddingModelForm: React.FC<Props> = ({ value, isNew, readOnl
                   <p className="text-sm text-muted-foreground">{t("forms.embedding.hfModelDesc")}</p>
                   <FormControl>
                     <HuggingFaceModelCombobox
-                      value={field.value ?? ""}
+                      value={hfRepoId}
                       onChange={(v) => field.onChange(v)}
                       options={hfList?.models ?? []}
                       isLoading={hfLoading}
@@ -250,6 +269,30 @@ export const BentoEmbeddingModelForm: React.FC<Props> = ({ value, isNew, readOnl
                       disabled={readOnly}
                     />
                   </FormControl>
+                  {/* ONNX variant / quantization picker (T628) */}
+                  {hfRepoId && hfVariants && hfVariants.length > 1 && (
+                    <div className="mt-2 w-full">
+                      <FormLabel className="text-sm">{t("forms.embedding.hfVariant")}</FormLabel>
+                      <p className="text-sm text-muted-foreground">{t("forms.embedding.hfVariantDesc")}</p>
+                      <Select
+                        value={hfVariant || "__default__"}
+                        onValueChange={(val) =>
+                          field.onChange(val === "__default__" ? hfRepoId : `${hfRepoId}${HF_VARIANT_SEPARATOR}${val}`)
+                        }
+                        disabled={readOnly}
+                      >
+                        <SelectTrigger className="w-full">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="__default__">{t("forms.embedding.hfVariantDefault")}</SelectItem>
+                          {hfVariants.map((path) => (
+                            <SelectItem key={path} value={path}>{path}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
                   {/* Dimension detection + reindex-awareness (T627) */}
                   {hfDimCheck?.dimensions != null && (
                     <p className="text-sm text-muted-foreground">

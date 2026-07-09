@@ -24,6 +24,9 @@ export const queryKeys = {
     // T627 — embedding-dimension check for a picked repo vs. the default.
     dimensionCheck: (repoId: string) =>
       [...queryKeys.huggingFaceModels.all(), 'dimension-check', repoId] as const,
+    // T628 — ONNX artifact variants a repo ships.
+    variants: (repoId: string) =>
+      [...queryKeys.huggingFaceModels.all(), 'variants', repoId] as const,
   },
   // T625 — embedding-capable models per LLM vendor for the embedding form picker.
   // Same key discipline as llmModels: the key never stores the secret.

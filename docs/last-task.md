@@ -3,8 +3,7 @@
 > **Single source of truth for the next free task number.** The next new task is
 > `T630`; after assigning it, bump the number above and the log line below.
 >
-> (T629 is the highest assigned number. The highest *shipped* number is **T629**
-> — with T627 also shipped; only T628 of Block AM remains — a 💭 exploit-tail idea.)
+> (T629 is the highest assigned number. **Block AM (T623–T629) is fully shipped.**)
 >
 > **Note (2026-06-16):** `T380` is an intentional **free gap** — Block R was
 > created as `T381–T385` without bumping this counter (the exact hazard this file
@@ -30,6 +29,7 @@ number" looked free but wasn't. Grepping three files (`ROADMAP.md`,
 
 ## Log (most recent first)
 
+- **T628 SHIPPED** (Block AM — ONNX variant/quantization picker; closes Block AM) — 2026-07-09. `TurHuggingFaceRepoResolver.listOnnxVariants` lists a repo's `.onnx` artifacts (default-first); a chosen variant rides in `modelReference` after a `::` `VARIANT_SEPARATOR` (no new columns); `resolve` uses it verbatim, `cleanRepoId` strips it so T624/T627 probes stay repo-id-based. `GET /api/embedding-model/hf-variants?repoId=`; picker shows a variant Select when a repo ships >1 artifact (`useHuggingFaceVariants`, en/pt). Resolver variant test + frontend tsc green. Ties into T514. No Liquibase. Next stays T630. → CHANGELOG Block AM / IMPROVEMENTS §XXXVI.
 - **T627 SHIPPED** (Block AM — dimension detection + reindex-awareness, HF path) — 2026-07-09. `TurHuggingFaceRepoResolver.probeDimensions` reads `config.json` `hidden_size` (free/no-key/no-download); `TurEmbeddingDimensionService.checkHuggingFace` compares vs the current default embedding model's dimension (probed when default is HUGGINGFACE). `GET /api/embedding-model/hf-dimension-check?repoId=`; picker shows detected dimension + amber reindex warning on mismatch (`useHuggingFaceDimensionCheck`, en/pt). Remote-LLM one-shot-embed dimension deferred (billed). `TurEmbeddingDimensionServiceTest` + resolver probe test + frontend tsc green. No Liquibase. Next stays T630. → CHANGELOG Block AM / IMPROVEMENTS §XXXVI.
 - **T629 SHIPPED** (Block AM — default-RAG startup → HUGGINGFACE) — 2026-07-09. `TurDefaultRagInfraOnStartup` now seeds the default embedding model as a `HUGGINGFACE` model storing the repo id `sentence-transformers/all-MiniLM-L6-v2` (new `turing.startup.default-rag.model-repo-id`), so the seeded default and a user-picked HF model are byte-shape identical; blanking the repo id falls back to the raw-URL `TRANSFORMERS_LOCAL` path. Warm-up resolves via the matching factory. Backend compile green; startup runner disabled in tests by design (HF resolution covered by T623 tests). No Liquibase. Next stays T630. → CHANGELOG Block AM / IMPROVEMENTS §XXXVI.
 - **T626 SHIPPED** (Block AM — provider-aware embedding-model picker; completes the committed T623–T626 scope) — 2026-07-09. `bento.embedding.form.tsx` reworked into three provider modes: LLM instance (T577 `ModelCombobox` via new `useLlmEmbeddingModels` → T625), HuggingFace.co (new `HuggingFaceModelCombobox` with debounced server-side search + ONNX-verified/dims/downloads metadata + live/catalog badge, via `useHuggingFaceModels` → T624), and manual local ONNX paths. New models/service/query-hooks/keys + en/pt i18n; frontend `tsc -b --noEmit` green. Frontend-only (T623–T625 endpoints already shipped). No Liquibase. Next stays T630. → CHANGELOG Block AM / IMPROVEMENTS §XXXVI.

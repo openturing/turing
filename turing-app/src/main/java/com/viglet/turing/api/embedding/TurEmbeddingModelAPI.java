@@ -18,6 +18,7 @@ import org.springframework.data.domain.Sort;
 
 import com.viglet.turing.genai.provider.llm.TurEmbeddingDimensionService;
 import com.viglet.turing.genai.provider.llm.TurHuggingFaceModelDiscoveryService;
+import com.viglet.turing.genai.provider.llm.TurHuggingFaceRepoResolver;
 import com.viglet.turing.genai.provider.llm.TurLlmModelDiscoveryService;
 import com.viglet.turing.persistence.dto.embedding.TurEmbeddingModelDto;
 import com.viglet.turing.persistence.mapper.embedding.TurEmbeddingModelMapper;
@@ -44,19 +45,36 @@ public class TurEmbeddingModelAPI {
     private final TurHuggingFaceModelDiscoveryService huggingFaceModelDiscoveryService;
     private final TurLlmModelDiscoveryService llmModelDiscoveryService;
     private final TurEmbeddingDimensionService embeddingDimensionService;
+    private final TurHuggingFaceRepoResolver huggingFaceRepoResolver;
 
     public TurEmbeddingModelAPI(TurEmbeddingModelRepository turEmbeddingModelRepository,
             TurEmbeddingModelMapper turEmbeddingModelMapper,
             TurInfraTenantScope tenantScope,
             TurHuggingFaceModelDiscoveryService huggingFaceModelDiscoveryService,
             TurLlmModelDiscoveryService llmModelDiscoveryService,
-            TurEmbeddingDimensionService embeddingDimensionService) {
+            TurEmbeddingDimensionService embeddingDimensionService,
+            TurHuggingFaceRepoResolver huggingFaceRepoResolver) {
         this.turEmbeddingModelRepository = turEmbeddingModelRepository;
         this.turEmbeddingModelMapper = turEmbeddingModelMapper;
         this.tenantScope = tenantScope;
         this.huggingFaceModelDiscoveryService = huggingFaceModelDiscoveryService;
         this.llmModelDiscoveryService = llmModelDiscoveryService;
         this.embeddingDimensionService = embeddingDimensionService;
+        this.huggingFaceRepoResolver = huggingFaceRepoResolver;
+    }
+
+    /**
+     * T628 — lists the ONNX artifact variants a HuggingFace repo ships (e.g.
+     * {@code onnx/model.onnx}, {@code onnx/model_quantized.onnx}) so the picker
+     * can offer a size/latency-vs-accuracy choice. The chosen variant is stored
+     * appended to the repo id in {@code modelReference} (see
+     * {@link TurHuggingFaceRepoResolver#VARIANT_SEPARATOR}).
+     */
+    @Operation(summary = "List a HuggingFace model's ONNX artifact variants")
+    @GetMapping("/hf-variants")
+    @Secured({"ROLE_ADMIN", "EMBEDDING_VIEW", "EMBEDDING_CREATE", "EMBEDDING_EDIT"})
+    public List<String> turEmbeddingHuggingFaceVariants(@RequestParam String repoId) {
+        return huggingFaceRepoResolver.listOnnxVariants(repoId);
     }
 
     /**

@@ -36,6 +36,20 @@ export function useHuggingFaceDimensionCheck(repoId: string | undefined, enabled
   });
 }
 
+/**
+ * Lists the ONNX artifact variants a picked HuggingFace repo ships (T628), so
+ * the picker can offer a size/latency-vs-accuracy choice. Enabled only once a
+ * repo id is chosen.
+ */
+export function useHuggingFaceVariants(repoId: string | undefined, enabled = true) {
+  return useQuery<string[]>({
+    queryKey: queryKeys.huggingFaceModels.variants(repoId ?? ""),
+    queryFn: () => service.listHuggingFaceVariants(repoId as string),
+    enabled: enabled && Boolean(repoId?.trim()),
+    staleTime: 5 * 60 * 1000,
+  });
+}
+
 export interface UseLlmEmbeddingModelsParams {
   vendorId?: string;
   instanceId?: string;

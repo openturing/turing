@@ -68,6 +68,14 @@ public class TurHuggingFaceRepoResolver {
     public record HfArtifacts(String onnxUrl, String tokenizerUrl) {
     }
 
+    /**
+     * Separator embedding a chosen ONNX artifact variant into {@code modelReference}
+     * (T628) — e.g. {@code sentence-transformers/all-MiniLM-L6-v2::onnx/model_quantized.onnx}.
+     * Keeps the "no new entity columns" design: the variant rides in the same
+     * column as the repo id.
+     */
+    public static final String VARIANT_SEPARATOR = "::";
+
     private final String baseUrl;
 
     public TurHuggingFaceRepoResolver(
@@ -76,20 +84,69 @@ public class TurHuggingFaceRepoResolver {
     }
 
     /**
-     * Resolves the repo id into ({@code .onnx}, {@code tokenizer.json})
-     * {@code resolve/main/…} URLs, probing the repo tree to pick the real ONNX
-     * path (preferring {@code onnx/model.onnx}), falling back to the
-     * conventional layout when the tree is unavailable.
+     * Resolves a {@code modelReference} into ({@code .onnx}, {@code tokenizer.json})
+     * {@code resolve/main/…} URLs. The reference is either a bare repo id or a
+     * repo id with a chosen artifact variant appended
+     * ({@code repoId::onnx/model_quantized.onnx}, T628). When a variant is given
+     * it is used verbatim; otherwise the repo tree is probed to pick the real
+     * ONNX path (preferring {@code onnx/model.onnx}), falling back to the
+     * conventional layout when the tree is unavailable. The tokenizer is always
+     * auto-resolved.
      */
-    public HfArtifacts resolve(String repoId) {
-        String repo = cleanRepoId(repoId);
+    public HfArtifacts resolve(String modelReference) {
+        String repo = cleanRepoId(modelReference);
         if (!StringUtils.hasText(repo)) {
             throw new IllegalStateException("HuggingFace embedding model requires a repo id in modelReference.");
         }
+        String explicitVariant = variantOf(modelReference);
         List<String> tree = listTree(repo);
-        String onnxPath = pickOnnxPath(tree).orElse("onnx/model.onnx");
+        String onnxPath = StringUtils.hasText(explicitVariant)
+                ? explicitVariant
+                : pickOnnxPath(tree).orElse("onnx/model.onnx");
         String tokenizerPath = pickTokenizerPath(tree).orElse("tokenizer.json");
         return new HfArtifacts(resolveUrl(repo, onnxPath), resolveUrl(repo, tokenizerPath));
+    }
+
+    /**
+     * Lists the ONNX artifacts a repo ships (T628), ordered so the conventional
+     * default comes first (canonical {@code onnx/model.onnx}, then a root
+     * {@code model.onnx}, then non-quantized, then quantized/other), letting the
+     * picker offer a size/latency-vs-accuracy choice. Empty when the tree is
+     * unreachable or ships no {@code .onnx}.
+     */
+    public List<String> listOnnxVariants(String repoId) {
+        return listTree(cleanRepoId(repoId)).stream()
+                .filter(p -> p.toLowerCase().endsWith(".onnx"))
+                .sorted(java.util.Comparator.comparingInt(TurHuggingFaceRepoResolver::variantRank)
+                        .thenComparing(java.util.Comparator.naturalOrder()))
+                .toList();
+    }
+
+    /** Lower rank sorts first: the auto-picked default, then plain, then quantized. */
+    private static int variantRank(String path) {
+        String p = path.toLowerCase();
+        if (p.equals("onnx/model.onnx")) {
+            return 0;
+        }
+        if (p.equals("model.onnx")) {
+            return 1;
+        }
+        boolean quantized = p.contains("quant") || p.contains("int8") || p.contains("uint8")
+                || p.contains("q4") || p.contains("bnb") || p.contains("fp16");
+        return quantized ? 3 : 2;
+    }
+
+    /** The chosen ONNX artifact appended to a reference, or {@code null} when none. */
+    private String variantOf(String modelReference) {
+        if (modelReference == null) {
+            return null;
+        }
+        int sep = modelReference.indexOf(VARIANT_SEPARATOR);
+        if (sep < 0) {
+            return null;
+        }
+        String variant = modelReference.substring(sep + VARIANT_SEPARATOR.length()).trim();
+        return StringUtils.hasText(variant) ? variant : null;
     }
 
     /**
@@ -190,12 +247,19 @@ public class TurHuggingFaceRepoResolver {
         return "%s/%s/resolve/main/%s".formatted(baseUrl, repo, path);
     }
 
-    /** Strips a leading {@code huggingface.co/} host or surrounding slashes. */
+    /**
+     * Extracts the bare repo id: drops any {@code ::variant} suffix (T628), a
+     * leading {@code huggingface.co/} host, and surrounding slashes.
+     */
     private String cleanRepoId(String repoId) {
         if (!StringUtils.hasText(repoId)) {
             return null;
         }
         String repo = repoId.trim();
+        int sep = repo.indexOf(VARIANT_SEPARATOR);
+        if (sep >= 0) {
+            repo = repo.substring(0, sep);
+        }
         int host = repo.indexOf("huggingface.co/");
         if (host >= 0) {
             repo = repo.substring(host + "huggingface.co/".length());

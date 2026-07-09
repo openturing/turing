@@ -73,6 +73,20 @@ class TurHuggingFaceRepoResolverTest {
     }
 
     @Test
+    void resolveHonorsExplicitVariantSuffix() {
+        TurHuggingFaceRepoResolver offline =
+                new TurHuggingFaceRepoResolver("http://127.0.0.1:9");
+        TurHuggingFaceRepoResolver.HfArtifacts artifacts = offline.resolve(
+                "Xenova/all-MiniLM-L6-v2" + TurHuggingFaceRepoResolver.VARIANT_SEPARATOR
+                        + "onnx/model_quantized.onnx");
+        assertTrue(artifacts.onnxUrl().endsWith(
+                "/Xenova/all-MiniLM-L6-v2/resolve/main/onnx/model_quantized.onnx"));
+        // tokenizer still auto-resolves to the conventional path
+        assertTrue(artifacts.tokenizerUrl().endsWith(
+                "/Xenova/all-MiniLM-L6-v2/resolve/main/tokenizer.json"));
+    }
+
+    @Test
     void probeDimensionsReturnsNullWhenConfigUnreachable() {
         TurHuggingFaceRepoResolver offline =
                 new TurHuggingFaceRepoResolver("http://127.0.0.1:9");
