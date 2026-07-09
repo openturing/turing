@@ -2,6 +2,7 @@ package com.viglet.turing.genai.provider.llm;
 
 import java.util.List;
 import java.util.Locale;
+import java.util.function.Predicate;
 
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
@@ -69,6 +70,25 @@ public class TurLlmModelDiscoveryService {
      */
     public Result listModels(String vendorId, String instanceId, String apiKey, String url,
             String providerOptionsJson) {
+        return listFiltered(vendorId, instanceId, apiKey, url, providerOptionsJson, m -> true);
+    }
+
+    /**
+     * T625 — like {@link #listModels}, but filtered to <b>embedding-capable</b>
+     * models so the embedding form gets the same picker the chat LLM form has
+     * (retiring free-text {@code modelReference}). The live list and the static
+     * catalog are each filtered; when the live list yields no embedding models
+     * (a vendor whose {@code /v1/models} omits them, or an all-chat list) it
+     * falls back to the curated catalog, so the source badge stays honest.
+     */
+    public Result listEmbeddingModels(String vendorId, String instanceId, String apiKey, String url,
+            String providerOptionsJson) {
+        return listFiltered(vendorId, instanceId, apiKey, url, providerOptionsJson,
+                TurLlmModelDiscoveryService::isEmbeddingModel);
+    }
+
+    private Result listFiltered(String vendorId, String instanceId, String apiKey, String url,
+            String providerOptionsJson, Predicate<TurLlmModelOption> filter) {
         TurLLMVendor vendor = StringUtils.hasText(vendorId)
                 ? vendorRepository.findById(vendorId).orElse(null)
                 : null;
@@ -91,11 +111,33 @@ public class TurLlmModelDiscoveryService {
             log.debug("Live model listing unavailable for vendor '{}': {}", vendorId, e.getMessage());
         }
         if (live != null && !live.isEmpty()) {
-            return Result.of(Source.LIVE, live);
+            List<TurLlmModelOption> liveFiltered = live.stream().filter(filter).toList();
+            if (!liveFiltered.isEmpty()) {
+                return Result.of(Source.LIVE, liveFiltered);
+            }
         }
 
-        List<TurLlmModelOption> staticModels = catalog.staticModels(resolvePluginType(vendor));
+        List<TurLlmModelOption> staticModels = catalog.staticModels(resolvePluginType(vendor))
+                .stream().filter(filter).toList();
         return Result.of(staticModels.isEmpty() ? Source.NONE : Source.CATALOG, staticModels);
+    }
+
+    /**
+     * Recognizes an embedding-capable model from its id/label. The catalog tags
+     * embedding entries with an {@code (embedding)} label marker; more robustly,
+     * any id/label containing {@code embed} is an embedding model, and every
+     * non-rerank Voyage model is an embedding model. Rerank models are excluded.
+     */
+    static boolean isEmbeddingModel(TurLlmModelOption option) {
+        if (option == null || !StringUtils.hasText(option.id())) {
+            return false;
+        }
+        String id = option.id().toLowerCase(Locale.ROOT);
+        String hay = (id + " " + (option.label() == null ? "" : option.label())).toLowerCase(Locale.ROOT);
+        if (hay.contains("rerank")) {
+            return false;
+        }
+        return hay.contains("embed") || id.startsWith("voyage-");
     }
 
     private String resolveKey(String typedApiKey, String instanceId) {

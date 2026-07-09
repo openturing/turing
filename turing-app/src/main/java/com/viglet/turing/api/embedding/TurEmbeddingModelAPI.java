@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.data.domain.Sort;
 
 import com.viglet.turing.genai.provider.llm.TurHuggingFaceModelDiscoveryService;
+import com.viglet.turing.genai.provider.llm.TurLlmModelDiscoveryService;
 import com.viglet.turing.persistence.dto.embedding.TurEmbeddingModelDto;
 import com.viglet.turing.persistence.mapper.embedding.TurEmbeddingModelMapper;
 import com.viglet.turing.persistence.model.embedding.TurEmbeddingModel;
@@ -40,15 +41,41 @@ public class TurEmbeddingModelAPI {
     private final TurEmbeddingModelMapper turEmbeddingModelMapper;
     private final TurInfraTenantScope tenantScope;
     private final TurHuggingFaceModelDiscoveryService huggingFaceModelDiscoveryService;
+    private final TurLlmModelDiscoveryService llmModelDiscoveryService;
 
     public TurEmbeddingModelAPI(TurEmbeddingModelRepository turEmbeddingModelRepository,
             TurEmbeddingModelMapper turEmbeddingModelMapper,
             TurInfraTenantScope tenantScope,
-            TurHuggingFaceModelDiscoveryService huggingFaceModelDiscoveryService) {
+            TurHuggingFaceModelDiscoveryService huggingFaceModelDiscoveryService,
+            TurLlmModelDiscoveryService llmModelDiscoveryService) {
         this.turEmbeddingModelRepository = turEmbeddingModelRepository;
         this.turEmbeddingModelMapper = turEmbeddingModelMapper;
         this.tenantScope = tenantScope;
         this.huggingFaceModelDiscoveryService = huggingFaceModelDiscoveryService;
+        this.llmModelDiscoveryService = llmModelDiscoveryService;
+    }
+
+    /**
+     * T625 — lists <b>embedding-capable</b> models for an LLM vendor so the
+     * embedding form's model field can be a picker instead of free text (the
+     * same combobox the chat LLM form got in T577, filtered to embeddings).
+     * Serves a live, filtered list from the vendor API when a key is available
+     * (typed-but-unsaved {@code apiKey}, or reused from {@code instanceId});
+     * otherwise the bundled catalog filtered to embedding models. The picker
+     * stays editable, so any unlisted id can still be typed.
+     */
+    @Operation(summary = "List embedding-capable models for an LLM vendor")
+    @PostMapping("/llm-models")
+    @Secured({"ROLE_ADMIN", "EMBEDDING_VIEW", "EMBEDDING_CREATE", "EMBEDDING_EDIT"})
+    public TurLlmModelDiscoveryService.Result turEmbeddingLlmModels(
+            @RequestBody TurEmbeddingLlmModelListRequest request) {
+        return llmModelDiscoveryService.listEmbeddingModels(request.vendorId(), request.instanceId(),
+                request.apiKey(), request.url(), request.providerOptionsJson());
+    }
+
+    /** Request body for {@link #turEmbeddingLlmModels(TurEmbeddingLlmModelListRequest)}. */
+    public record TurEmbeddingLlmModelListRequest(String vendorId, String instanceId, String apiKey,
+            String url, String providerOptionsJson) {
     }
 
     /**
