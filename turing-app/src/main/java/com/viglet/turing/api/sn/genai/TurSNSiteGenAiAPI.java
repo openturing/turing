@@ -109,6 +109,7 @@ public class TurSNSiteGenAiAPI {
 	private final TurAgentWorkspace agentWorkspace;
 	private final TurWorkspaceEventBus workspaceEventBus;
 	private final com.viglet.turing.genai.flow.TurConversationLock conversationLock;
+	private final com.viglet.turing.genai.TurDefaultAgentResolver turDefaultAgentResolver;
 
 	public TurSNSiteGenAiAPI(TurSNSearchProcess turSNSearchProcess,
 			TurSNGenAi turGenAi,
@@ -129,10 +130,12 @@ public class TurSNSiteGenAiAPI {
 			TurChatShareOgService shareOgService,
 			TurAgentWorkspace agentWorkspace,
 			TurWorkspaceEventBus workspaceEventBus,
-			com.viglet.turing.genai.flow.TurConversationLock conversationLock) {
+			com.viglet.turing.genai.flow.TurConversationLock conversationLock,
+			com.viglet.turing.genai.TurDefaultAgentResolver turDefaultAgentResolver) {
 		this.turSNSearchProcess = turSNSearchProcess;
 		this.turGenAi = turGenAi;
 		this.turGenAiContextFactory = turGenAiContextFactory;
+		this.turDefaultAgentResolver = turDefaultAgentResolver;
 		this.turSNSiteLocaleRepository = turSNSiteLocaleRepository;
 		this.turSNSiteSearchService = turSNSiteSearchService;
 		this.turIntentRepository = turIntentRepository;
@@ -185,9 +188,10 @@ public class TurSNSiteGenAiAPI {
 	 * so broken credentials do not hide the AI Mode button.
 	 */
 	private ChatDisabledReason diagnoseAgentReadiness(TurSNSiteGenAi genAi) {
-		if (genAi == null) return ChatDisabledReason.NO_GENAI;
-		TurAIAgent agent = genAi.getTurAIAgent();
-		if (agent == null) return ChatDisabledReason.NO_AGENT;
+		// T622 — a site with no agent of its own resolves to the global Default
+		// AI Agent when one is set (fail-open); otherwise the classic reasons.
+		TurAIAgent agent = turDefaultAgentResolver.resolveEffectiveAgent(genAi);
+		if (agent == null) return genAi == null ? ChatDisabledReason.NO_GENAI : ChatDisabledReason.NO_AGENT;
 		if (agent.getEnabled() != 1) return ChatDisabledReason.AGENT_DISABLED;
 		if (!agent.isRagEnabled()) return ChatDisabledReason.RAG_DISABLED;
 		boolean hasLlm = agent.getLlmInstances() != null && !agent.getLlmInstances().isEmpty();
@@ -298,7 +302,7 @@ public class TurSNSiteGenAiAPI {
 				log.debug("RAG chat skipped for SN Site '{}': agent not ready", siteName);
 				return Flux.just(new TurAgentChatExecutor.ChatResponse(ASSISTANT_ROLE, NOT_ENABLED_MESSAGE));
 			}
-			TurAIAgent agent = turSNSiteGenAI.getTurAIAgent();
+			TurAIAgent agent = turDefaultAgentResolver.resolveEffectiveAgent(turSNSiteGenAI);
 			TurLLMInstance llmInstance = agent.getLlmInstances().stream()
 					.filter(llm -> llm.getEnabled() == 1)
 					.findFirst()

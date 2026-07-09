@@ -606,6 +606,21 @@
             <groupId>org.springframework.ai</groupId>
             <artifactId>spring-ai-pgvector-store</artifactId>
         </dependency>
+        <!--
+            T622 — local (in-process) ONNX embeddings. Provides
+            org.springframework.ai.embedding.TransformersEmbeddingModel, which
+            runs a sentence-transformers model (default all-MiniLM-L6-v2, 384-dim)
+            via Microsoft ONNX Runtime + DJL HuggingFace tokenizers — no external
+            embedding API/key. Used by the "TRANSFORMERS_LOCAL" embedding-model
+            provider type (TurLocalEmbeddingModelFactory) so the public demo can
+            ground chat with a zero-cost, offline-after-download embedding model.
+            The .onnx/tokenizer.json are fetched from HTTPS on first init and
+            cached; the demo warms this at startup. Version managed by spring-ai-bom.
+        -->
+        <dependency>
+            <groupId>org.springframework.ai</groupId>
+            <artifactId>spring-ai-transformers</artifactId>
+        </dependency>
         <dependency>
             <groupId>org.springframework.ai</groupId>
             <artifactId>spring-ai-mcp</artifactId>

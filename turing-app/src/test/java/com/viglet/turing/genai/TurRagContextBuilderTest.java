@@ -6,6 +6,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import java.util.Optional;
@@ -46,6 +47,8 @@ class TurRagContextBuilderTest {
 
     @Mock
     private TurLlmModelFactory llmModelFactory;
+    @Mock
+    private com.viglet.turing.genai.provider.llm.TurLocalEmbeddingModelFactory localEmbeddingModelFactory;
     @Mock
     private TurGenAiStoreProviderFactory storeProviderFactory;
     @Mock
@@ -104,6 +107,25 @@ class TurRagContextBuilderTest {
 
         EmbeddingModel result = builder.resolveEmbeddingModel(embModel);
         assertThat(result).isSameAs(springEmb);
+    }
+
+    @Test
+    void resolveEmbeddingModelShouldDelegateToLocalFactoryForTransformersLocal() {
+        TurEmbeddingModel local = new TurEmbeddingModel();
+        local.setModelName("all-MiniLM-L6-v2");
+        local.setProviderType("TRANSFORMERS_LOCAL");
+        local.setModelPath("https://example.test/model.onnx");
+        local.setTokenizerPath("https://example.test/tokenizer.json");
+
+        EmbeddingModel onnx = mock(EmbeddingModel.class);
+        when(localEmbeddingModelFactory.supports("TRANSFORMERS_LOCAL")).thenReturn(true);
+        when(localEmbeddingModelFactory.resolve(local)).thenReturn(onnx);
+
+        EmbeddingModel result = builder.resolveEmbeddingModel(local);
+
+        // Local ONNX path is used — the cloud LLM factory is never consulted.
+        assertThat(result).isSameAs(onnx);
+        verifyNoInteractions(llmModelFactory);
     }
 
     @ParameterizedTest

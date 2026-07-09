@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -41,6 +42,9 @@ class TurGenAiContextFactoryTest {
     @Mock
     private TurRagContextBuilder turRagContextBuilder;
 
+    @Mock
+    private TurDefaultAgentResolver turDefaultAgentResolver;
+
     @InjectMocks
     private TurGenAiContextFactory factory;
 
@@ -49,6 +53,13 @@ class TurGenAiContextFactoryTest {
     @BeforeEach
     void setUp() {
         turSNSiteGenAi = new TurSNSiteGenAi();
+        // Mirror the real resolver with no global default agent set: the effective
+        // agent is simply the binding's own agent (T622 fallback is inert here).
+        lenient().when(turDefaultAgentResolver.resolveEffectiveAgent(org.mockito.ArgumentMatchers.any()))
+                .thenAnswer(inv -> {
+                    TurSNSiteGenAi g = inv.getArgument(0);
+                    return g == null ? null : g.getTurAIAgent();
+                });
     }
 
     @Test

@@ -57,11 +57,20 @@ class TurSNSiteGenAiAPITest {
     @Mock
     private TurGlobalSettingsService turGlobalSettingsService;
 
+    @Mock
+    private com.viglet.turing.genai.TurDefaultAgentResolver turDefaultAgentResolver;
+
     @InjectMocks
     private TurSNSiteGenAiAPI api;
 
     @BeforeEach
     void setUp() {
+        // Mirror the real resolver with no global default agent: the effective
+        // agent is the binding's own agent (T622 fallback inert in these tests).
+        when(turDefaultAgentResolver.resolveEffectiveAgent(any())).thenAnswer(inv -> {
+            TurSNSiteGenAi g = inv.getArgument(0);
+            return g == null ? null : g.getTurAIAgent();
+        });
         mockMvc = MockMvcBuilders.standaloneSetup(api).build();
     }
 

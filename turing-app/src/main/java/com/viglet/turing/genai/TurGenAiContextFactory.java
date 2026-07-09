@@ -29,13 +29,16 @@ public class TurGenAiContextFactory {
     private final TurLlmModelFactory llmModelFactory;
     private final TurSecretCryptoService turSecretCryptoService;
     private final TurRagContextBuilder turRagContextBuilder;
+    private final TurDefaultAgentResolver turDefaultAgentResolver;
 
     public TurGenAiContextFactory(TurLlmModelFactory llmModelFactory,
             TurSecretCryptoService turSecretCryptoService,
-            TurRagContextBuilder turRagContextBuilder) {
+            TurRagContextBuilder turRagContextBuilder,
+            TurDefaultAgentResolver turDefaultAgentResolver) {
         this.llmModelFactory = llmModelFactory;
         this.turSecretCryptoService = turSecretCryptoService;
         this.turRagContextBuilder = turRagContextBuilder;
+        this.turDefaultAgentResolver = turDefaultAgentResolver;
     }
 
     public TurGenAiContext build(TurSNSiteGenAi turSNSiteGenAi) {
@@ -43,10 +46,11 @@ public class TurGenAiContextFactory {
     }
 
     public TurGenAiContext build(TurSNSiteGenAi turSNSiteGenAi, String collectionNameOverride) {
-        if (turSNSiteGenAi == null) {
-            return TurGenAiContext.disabled();
-        }
-        TurAIAgent agent = turSNSiteGenAi.getTurAIAgent();
+        // T622 — fall back to the global Default AI Agent when the site declares
+        // none (fail-open, gated on a default being set). Note turSNSiteGenAi may
+        // be null here (a site with no GenAI binding at all): the resolver still
+        // returns the default agent, so the demo's search-only seed can chat.
+        TurAIAgent agent = turDefaultAgentResolver.resolveEffectiveAgent(turSNSiteGenAi);
         if (agent == null || agent.getEnabled() != 1 || !agent.isRagEnabled()) {
             return TurGenAiContext.disabled();
         }
@@ -88,9 +92,11 @@ public class TurGenAiContextFactory {
                 .ragInfrastructure(infra)
                 // T500 — thread the per-site full-context opt-in + budget through
                 // so TurSNGenAi.retrieveDocuments can bypass top-K when the corpus
-                // fits. Default off → unchanged top-K path.
-                .fullContextEnabled(turSNSiteGenAi.isFullContextAnsweringEnabled())
-                .fullContextTokenBudget(turSNSiteGenAi.getFullContextTokenBudget())
+                // fits. Default off → unchanged top-K path. When the site has no
+                // GenAI binding (T622 default-agent fallback) there are no per-site
+                // overrides, so full-context stays off.
+                .fullContextEnabled(turSNSiteGenAi != null && turSNSiteGenAi.isFullContextAnsweringEnabled())
+                .fullContextTokenBudget(turSNSiteGenAi == null ? 0 : turSNSiteGenAi.getFullContextTokenBudget())
                 .build();
     }
 

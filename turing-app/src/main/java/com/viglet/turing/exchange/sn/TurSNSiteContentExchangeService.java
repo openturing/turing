@@ -78,6 +78,7 @@ public class TurSNSiteContentExchangeService {
     private final TurSNSiteFieldService turSNSiteFieldService;
     private final TurSNGenAi turSNGenAi;
     private final TurGenAiContextFactory turGenAiContextFactory;
+    private final com.viglet.turing.genai.TurDefaultAgentResolver turDefaultAgentResolver;
     private final TurConfigProperties turConfigProperties;
 
     private final ConcurrentHashMap<String, ContentExchangeProgress> progressMap = new ConcurrentHashMap<>();
@@ -113,6 +114,7 @@ public class TurSNSiteContentExchangeService {
             TurSNSiteFieldService turSNSiteFieldService,
             TurSNGenAi turSNGenAi,
             TurGenAiContextFactory turGenAiContextFactory,
+            com.viglet.turing.genai.TurDefaultAgentResolver turDefaultAgentResolver,
             TurConfigProperties turConfigProperties) {
         this.turSNSiteRepository = turSNSiteRepository;
         this.turSNSiteLocaleRepository = turSNSiteLocaleRepository;
@@ -120,6 +122,7 @@ public class TurSNSiteContentExchangeService {
         this.turSNSiteFieldService = turSNSiteFieldService;
         this.turSNGenAi = turSNGenAi;
         this.turGenAiContextFactory = turGenAiContextFactory;
+        this.turDefaultAgentResolver = turDefaultAgentResolver;
         this.turConfigProperties = turConfigProperties;
     }
 
@@ -360,7 +363,9 @@ public class TurSNSiteContentExchangeService {
             return 0;
         }
         var genAi = turSNSite.getTurSNSiteGenAi();
-        var agent = genAi == null ? null : genAi.getTurAIAgent();
+        // T622 — honour the global default-agent fallback so a search-only seed
+        // site (no per-site agent) still reindexes into the default agent's store.
+        var agent = turDefaultAgentResolver.resolveEffectiveAgent(genAi);
         if (agent == null || agent.getEnabled() != 1 || !agent.isRagEnabled()) {
             log.warn("RAG reindex skipped for site '{}': agent not configured for RAG", turSNSite.getName());
             progressMap.put(taskId, new ContentExchangeProgress(

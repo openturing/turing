@@ -18,6 +18,7 @@
 package com.viglet.turing.genai;
 
 import com.viglet.turing.resilience.llm.TurLlmModelFactory;
+import com.viglet.turing.genai.provider.llm.TurLocalEmbeddingModelFactory;
 import com.viglet.turing.genai.provider.store.TurGenAiStoreProvider;
 import com.viglet.turing.genai.provider.store.TurGenAiStoreProviderFactory;
 import com.viglet.turing.persistence.model.embedding.TurEmbeddingModel;
@@ -50,6 +51,7 @@ import java.util.Optional;
 public class TurRagContextBuilder {
 
     private final TurLlmModelFactory llmModelFactory;
+    private final TurLocalEmbeddingModelFactory localEmbeddingModelFactory;
     private final TurGenAiStoreProviderFactory storeProviderFactory;
     private final TurSecretCryptoService secretCryptoService;
     private final TurGlobalSettingsService globalSettingsService;
@@ -57,12 +59,14 @@ public class TurRagContextBuilder {
     private final TurStoreInstanceRepository storeInstanceRepository;
 
     public TurRagContextBuilder(TurLlmModelFactory llmModelFactory,
+            TurLocalEmbeddingModelFactory localEmbeddingModelFactory,
             TurGenAiStoreProviderFactory storeProviderFactory,
             TurSecretCryptoService secretCryptoService,
             TurGlobalSettingsService globalSettingsService,
             TurEmbeddingModelRepository embeddingModelRepository,
             TurStoreInstanceRepository storeInstanceRepository) {
         this.llmModelFactory = llmModelFactory;
+        this.localEmbeddingModelFactory = localEmbeddingModelFactory;
         this.storeProviderFactory = storeProviderFactory;
         this.secretCryptoService = secretCryptoService;
         this.globalSettingsService = globalSettingsService;
@@ -88,6 +92,13 @@ public class TurRagContextBuilder {
      * Creates a detached LLM instance with the embedding model's reference overriding the modelName.
      */
     public EmbeddingModel resolveEmbeddingModel(TurEmbeddingModel embModel) {
+        // T622 — a local ONNX embedding model has no LLM instance; its ONNX +
+        // tokenizer resources come from modelPath/tokenizerPath and run
+        // in-process (no external embedding API).
+        if (localEmbeddingModelFactory.supports(embModel.getProviderType())) {
+            return localEmbeddingModelFactory.resolve(embModel);
+        }
+
         TurLLMInstance llmInstance = embModel.getTurLLMInstance();
         if (llmInstance == null) {
             throw new IllegalStateException(
