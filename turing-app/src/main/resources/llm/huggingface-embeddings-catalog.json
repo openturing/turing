@@ -1,0 +1,20 @@
+{
+  "_comment": "Curated fallback list of known-good ONNX sentence-transformers / feature-extraction repos for the HUGGINGFACE embedding provider (T624). Served when the live huggingface.co /api/models query is unavailable. Every repo here is expected to expose an .onnx artifact + tokenizer.json in-process. 'dimensions' is the model's embedding size (for the T627 dimension-awareness hint). Refreshed on redeploy.",
+  "models": [
+    { "repoId": "sentence-transformers/all-MiniLM-L6-v2", "dimensions": 384 },
+    { "repoId": "sentence-transformers/all-MiniLM-L12-v2", "dimensions": 384 },
+    { "repoId": "sentence-transformers/all-mpnet-base-v2", "dimensions": 768 },
+    { "repoId": "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2", "dimensions": 384 },
+    { "repoId": "sentence-transformers/multi-qa-MiniLM-L6-cos-v1", "dimensions": 384 },
+    { "repoId": "Xenova/all-MiniLM-L6-v2", "dimensions": 384 },
+    { "repoId": "Xenova/all-mpnet-base-v2", "dimensions": 768 },
+    { "repoId": "Xenova/bge-small-en-v1.5", "dimensions": 384 },
+    { "repoId": "Xenova/bge-base-en-v1.5", "dimensions": 768 },
+    { "repoId": "Xenova/multilingual-e5-small", "dimensions": 384 },
+    { "repoId": "BAAI/bge-small-en-v1.5", "dimensions": 384 },
+    { "repoId": "BAAI/bge-base-en-v1.5", "dimensions": 768 },
+    { "repoId": "intfloat/e5-small-v2", "dimensions": 384 },
+    { "repoId": "intfloat/multilingual-e5-small", "dimensions": 384 },
+    { "repoId": "mixedbread-ai/mxbai-embed-large-v1", "dimensions": 1024 }
+  ]
+}

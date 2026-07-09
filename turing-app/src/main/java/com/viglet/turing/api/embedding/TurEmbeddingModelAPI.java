@@ -11,10 +11,12 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import org.springframework.data.domain.Sort;
 
+import com.viglet.turing.genai.provider.llm.TurHuggingFaceModelDiscoveryService;
 import com.viglet.turing.persistence.dto.embedding.TurEmbeddingModelDto;
 import com.viglet.turing.persistence.mapper.embedding.TurEmbeddingModelMapper;
 import com.viglet.turing.persistence.model.embedding.TurEmbeddingModel;
@@ -37,13 +39,31 @@ public class TurEmbeddingModelAPI {
     private final TurEmbeddingModelRepository turEmbeddingModelRepository;
     private final TurEmbeddingModelMapper turEmbeddingModelMapper;
     private final TurInfraTenantScope tenantScope;
+    private final TurHuggingFaceModelDiscoveryService huggingFaceModelDiscoveryService;
 
     public TurEmbeddingModelAPI(TurEmbeddingModelRepository turEmbeddingModelRepository,
             TurEmbeddingModelMapper turEmbeddingModelMapper,
-            TurInfraTenantScope tenantScope) {
+            TurInfraTenantScope tenantScope,
+            TurHuggingFaceModelDiscoveryService huggingFaceModelDiscoveryService) {
         this.turEmbeddingModelRepository = turEmbeddingModelRepository;
         this.turEmbeddingModelMapper = turEmbeddingModelMapper;
         this.tenantScope = tenantScope;
+        this.huggingFaceModelDiscoveryService = huggingFaceModelDiscoveryService;
+    }
+
+    /**
+     * T624 — lists ONNX-verified HuggingFace embedding models for the
+     * {@code HUGGINGFACE} provider picker. Serves a live, ONNX-probed list from
+     * {@code huggingface.co/api/models} when reachable; otherwise the bundled
+     * curated catalog. The result records its source ({@code LIVE}/
+     * {@code CATALOG}/{@code NONE}) so the UI can badge it.
+     */
+    @Operation(summary = "List selectable HuggingFace embedding models")
+    @GetMapping("/hf-models")
+    @Secured({"ROLE_ADMIN", "EMBEDDING_VIEW", "EMBEDDING_CREATE", "EMBEDDING_EDIT"})
+    public TurHuggingFaceModelDiscoveryService.Result turEmbeddingHuggingFaceModels(
+            @RequestParam(required = false) String query) {
+        return huggingFaceModelDiscoveryService.listModels(query);
     }
 
     @Operation(summary = "Embedding Model List")
