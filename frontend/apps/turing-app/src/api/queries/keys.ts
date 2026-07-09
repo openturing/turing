@@ -17,6 +17,18 @@ export const queryKeys = {
     list: () => [...queryKeys.embeddingModels.all(), 'list'] as const,
     detail: (id: string) => [...queryKeys.embeddingModels.all(), 'detail', id] as const,
   },
+  // T624 — ONNX-verified HuggingFace embedding models, keyed by the search query.
+  huggingFaceModels: {
+    all: () => ['huggingface-models'] as const,
+    list: (query: string) => [...queryKeys.huggingFaceModels.all(), 'list', query] as const,
+  },
+  // T625 — embedding-capable models per LLM vendor for the embedding form picker.
+  // Same key discipline as llmModels: the key never stores the secret.
+  llmEmbeddingModels: {
+    all: () => ['llm-embedding-models'] as const,
+    list: (params: { vendorId: string; instanceId?: string; url?: string; hasKey: boolean }) =>
+      [...queryKeys.llmEmbeddingModels.all(), params] as const,
+  },
   skills: {
     all: () => ['skills'] as const,
     list: () => [...queryKeys.skills.all(), 'list'] as const,

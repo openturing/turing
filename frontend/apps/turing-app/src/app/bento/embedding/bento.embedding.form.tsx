@@ -1,20 +1,24 @@
 "use client"
 import { useCreateEmbeddingModel, useUpdateEmbeddingModel } from "@/api/queries/embedding-model.queries"
+import { useHuggingFaceModels, useLlmEmbeddingModels } from "@/api/queries/embedding-model-discovery.queries"
 import { useLlmInstances } from "@/api/queries/llm-instance.queries"
 import { ROUTES } from "@/app/routes.const"
 import { BentoFormSection, BentoSaveBar, type BentoIdentity, type BentoShellFormState } from "@/components/bento"
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
+import { HuggingFaceModelCombobox } from "@/components/ui/huggingface-model-combobox"
 import { Input } from "@/components/ui/input"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { ModelCombobox } from "@/components/ui/model-combobox"
+import { Select, SelectContent, SelectItem, SelectSeparator, SelectTrigger, SelectValue } from "@/components/ui/select"
 import type { TurEmbeddingModel } from "@/models/embedding/embedding-model.model.ts"
 import { IconAdjustments, IconCube, IconPlug } from "@tabler/icons-react"
 import { toast } from "@viglet/viglet-design-system"
-import { useEffect } from "react"
+import { useEffect, useState } from "react"
 import { useForm } from "react-hook-form"
 import { useTranslation } from "react-i18next"
 import { useNavigate } from "react-router-dom"
 
 const TRANSFORMERS_LOCAL = "TRANSFORMERS_LOCAL"
+const HUGGINGFACE = "HUGGINGFACE"
 const urlBase = ROUTES.BENTO_EMBEDDING_MODEL_INSTANCE
 
 interface Props {
@@ -38,6 +42,30 @@ export const BentoEmbeddingModelForm: React.FC<Props> = ({ value, isNew, readOnl
 
   const createMutation = useCreateEmbeddingModel()
   const updateMutation = useUpdateEmbeddingModel()
+
+  // Provider mode derived from providerType: TRANSFORMERS_LOCAL / HUGGINGFACE
+  // sentinels, else an LLM-instance id (T626, §XXXVI).
+  const isLocal = selectedProviderType === TRANSFORMERS_LOCAL
+  const isHuggingFace = selectedProviderType === HUGGINGFACE
+  const isLlmInstance = Boolean(selectedProviderType) && !isLocal && !isHuggingFace
+  const selectedInstance = isLlmInstance
+    ? llmInstances.find((i) => i.id === selectedProviderType)
+    : undefined
+
+  // HuggingFace picker: server-side search (T624).
+  const [hfQuery, setHfQuery] = useState("")
+  const { data: hfList, isFetching: hfLoading } = useHuggingFaceModels(hfQuery, isHuggingFace)
+
+  // LLM embedding-model picker for the selected instance's vendor (T625).
+  const {
+    data: llmEmbeddingList,
+    isFetching: llmEmbeddingLoading,
+    refetch: refetchLlmEmbedding,
+  } = useLlmEmbeddingModels({
+    vendorId: selectedInstance?.turLLMVendor?.id,
+    instanceId: selectedInstance?.id,
+    enabled: isLlmInstance && Boolean(selectedInstance?.turLLMVendor?.id),
+  })
 
   const isDirty = form.formState.isDirty
   const isSubmitting = form.formState.isSubmitting
@@ -66,15 +94,20 @@ export const BentoEmbeddingModelForm: React.FC<Props> = ({ value, isNew, readOnl
       toast.error(t("forms.embedding.nameRequired"))
       return
     }
+    const submittingLocal = model.providerType === TRANSFORMERS_LOCAL
+    const submittingHf = model.providerType === HUGGINGFACE
     const payload: TurEmbeddingModel = {
       ...model,
       modelName,
       description: staged?.description ?? model.description,
       icon: staged?.icon ?? model.icon,
       enabled: staged?.enabled ?? model.enabled,
-      turLLMInstance: model.providerType === TRANSFORMERS_LOCAL ? undefined : model.turLLMInstance,
-      modelPath: model.providerType === TRANSFORMERS_LOCAL ? model.modelPath : undefined,
-      tokenizerPath: model.providerType === TRANSFORMERS_LOCAL ? model.tokenizerPath : undefined,
+      // Only an LLM-instance provider carries an instance; the local + HF ONNX
+      // paths run in-process with no instance.
+      turLLMInstance: (submittingLocal || submittingHf) ? undefined : model.turLLMInstance,
+      // Local uses hand-typed paths; HF + LLM use modelReference (repo id / model id).
+      modelPath: submittingLocal ? model.modelPath : undefined,
+      tokenizerPath: submittingLocal ? model.tokenizerPath : undefined,
     }
 
     try {
@@ -102,9 +135,10 @@ export const BentoEmbeddingModelForm: React.FC<Props> = ({ value, isNew, readOnl
 
   const stagedName = staged?.title?.trim() ?? ""
   const nameMissing = !stagedName
-  const providerLabel = selectedProviderType === TRANSFORMERS_LOCAL
-    ? t("forms.embedding.transformersLocal")
-    : llmInstances.find((i) => i.id === selectedProviderType)?.title
+  let providerLabel: string | undefined
+  if (isLocal) providerLabel = t("forms.embedding.transformersLocal")
+  else if (isHuggingFace) providerLabel = t("forms.embedding.huggingFace")
+  else providerLabel = selectedInstance?.title
   // Save bar is present on any editable detail page so it stays suspended on
   // scroll; Save is disabled until there is something to persist.
   const showSaveBar = !readOnly
@@ -147,7 +181,7 @@ export const BentoEmbeddingModelForm: React.FC<Props> = ({ value, isNew, readOnl
                 <Select
                   onValueChange={(val) => {
                     field.onChange(val)
-                    if (val !== TRANSFORMERS_LOCAL) {
+                    if (val !== TRANSFORMERS_LOCAL && val !== HUGGINGFACE) {
                       const llm = llmInstances.find((i) => i.id === val)
                       if (llm) form.setValue("turLLMInstance", llm, { shouldDirty: true })
                     } else {
@@ -166,6 +200,8 @@ export const BentoEmbeddingModelForm: React.FC<Props> = ({ value, isNew, readOnl
                     {llmInstances.map((instance) => (
                       <SelectItem key={instance.id} value={instance.id}>{instance.title}</SelectItem>
                     ))}
+                    <SelectSeparator />
+                    <SelectItem value={HUGGINGFACE}>{t("forms.embedding.huggingFace")}</SelectItem>
                     <SelectItem value={TRANSFORMERS_LOCAL}>{t("forms.embedding.transformersLocal")}</SelectItem>
                   </SelectContent>
                 </Select>
@@ -180,30 +216,76 @@ export const BentoEmbeddingModelForm: React.FC<Props> = ({ value, isNew, readOnl
           icon={IconCube}
           tone="violet"
           title={t("forms.embedding.modelConfig")}
-          description={t("forms.embedding.modelConfigDesc")}
+          description={
+            isHuggingFace
+              ? t("forms.embedding.hfModelConfigDesc")
+              : isLocal
+                ? t("forms.embedding.localModelConfigDesc")
+                : t("forms.embedding.modelConfigDesc")
+          }
         >
-          <FormField
-            control={form.control}
-            name="modelReference"
-            render={({ field }) => (
-              <FormItem className="w-full">
-                <FormLabel>{t("forms.embedding.modelId")}</FormLabel>
-                <p className="text-sm text-muted-foreground">{t("forms.embedding.modelIdDesc")}</p>
-                <FormControl>
-                  <Input {...field} placeholder={t("forms.embedding.modelIdPlaceholder")} type="text" className="w-full" readOnly={readOnly} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+          {/* HuggingFace repo picker (T626) */}
+          {isHuggingFace && (
+            <FormField
+              control={form.control}
+              name="modelReference"
+              rules={{ required: t("forms.embedding.hfModelRequired") }}
+              render={({ field }) => (
+                <FormItem className="w-full">
+                  <FormLabel>{t("forms.embedding.hfModel")}</FormLabel>
+                  <p className="text-sm text-muted-foreground">{t("forms.embedding.hfModelDesc")}</p>
+                  <FormControl>
+                    <HuggingFaceModelCombobox
+                      value={field.value ?? ""}
+                      onChange={(v) => field.onChange(v)}
+                      options={hfList?.models ?? []}
+                      isLoading={hfLoading}
+                      source={hfList?.source}
+                      onQueryChange={setHfQuery}
+                      disabled={readOnly}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          )}
 
-          {selectedProviderType === TRANSFORMERS_LOCAL && (
+          {/* LLM-instance embedding-model picker (T625/T626) */}
+          {isLlmInstance && (
+            <FormField
+              control={form.control}
+              name="modelReference"
+              render={({ field }) => (
+                <FormItem className="w-full">
+                  <FormLabel>{t("forms.embedding.modelId")}</FormLabel>
+                  <p className="text-sm text-muted-foreground">{t("forms.embedding.modelIdDesc")}</p>
+                  <FormControl>
+                    <ModelCombobox
+                      value={field.value ?? ""}
+                      onChange={(v) => field.onChange(v)}
+                      options={llmEmbeddingList?.models ?? []}
+                      isLoading={llmEmbeddingLoading}
+                      source={llmEmbeddingList?.source}
+                      onOpen={() => refetchLlmEmbedding()}
+                      placeholder={t("forms.embedding.modelIdPlaceholder")}
+                      disabled={readOnly}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          )}
+
+          {/* Manual local ONNX paths (air-gapped / private / fine-tuned) */}
+          {isLocal && (
             <>
               <FormField
                 control={form.control}
                 name="modelPath"
                 rules={{
-                  required: selectedProviderType === TRANSFORMERS_LOCAL ? t("forms.embedding.modelPathRequired") : false,
+                  required: t("forms.embedding.modelPathRequired"),
                   pattern: { value: /\.onnx$/i, message: t("forms.embedding.onlyOnnx") },
                 }}
                 render={({ field }) => (
@@ -221,7 +303,7 @@ export const BentoEmbeddingModelForm: React.FC<Props> = ({ value, isNew, readOnl
                 control={form.control}
                 name="tokenizerPath"
                 rules={{
-                  required: selectedProviderType === TRANSFORMERS_LOCAL ? t("forms.embedding.tokenizerRequired") : false,
+                  required: t("forms.embedding.tokenizerRequired"),
                   pattern: { value: /\.json$/i, message: t("forms.embedding.onlyJsonTokenizer") },
                 }}
                 render={({ field }) => (
@@ -236,6 +318,11 @@ export const BentoEmbeddingModelForm: React.FC<Props> = ({ value, isNew, readOnl
                 )}
               />
             </>
+          )}
+
+          {/* No provider chosen yet */}
+          {!selectedProviderType && (
+            <p className="text-sm text-muted-foreground">{t("forms.embedding.selectProviderFirst")}</p>
           )}
         </BentoFormSection>
 
