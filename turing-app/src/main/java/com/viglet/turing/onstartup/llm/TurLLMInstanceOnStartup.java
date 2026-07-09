@@ -91,6 +91,13 @@ import lombok.extern.slf4j.Slf4j;
  * agent out of the box (and SN sites that defer to the default resolve to it).
  * Both steps are idempotent and never override an existing instance/agent.
  *
+ * <p>
+ * Optional soft spend caps (T289–T291) can be pre-set on the provisioned agent via
+ * {@code turing.startup.default-agent.monthly-budget-usd} and
+ * {@code turing.startup.default-agent.per-turn-soft-cap-usd} (both in USD; unset,
+ * blank or {@code <= 0} leaves the field null / gate disabled). Useful on shared
+ * deployments — notably Viglet Cloud — that want a cost ceiling out of the box.
+ *
  * @author Alexandre Oliveira
  * @since 2026.3.4
  */
@@ -102,6 +109,8 @@ public class TurLLMInstanceOnStartup implements ApplicationRunner {
 
     private static final String ENABLED_PROPERTY = "turing.startup.default-llm.enabled";
     private static final String MODEL_PROPERTY = "turing.startup.default-llm.model";
+    private static final String MONTHLY_BUDGET_PROPERTY = "turing.startup.default-agent.monthly-budget-usd";
+    private static final String PER_TURN_SOFT_CAP_PROPERTY = "turing.startup.default-agent.per-turn-soft-cap-usd";
     private static final String OPENAI_API_KEY_ENV = "OPENAI_API_KEY";
     private static final String OPENAI_VENDOR_ID = "OPENAI";
     private static final String OPENAI_BASE_URL = "https://api.openai.com/v1";
@@ -200,11 +209,38 @@ public class TurLLMInstanceOnStartup implements ApplicationRunner {
         agent.setEnabled(1);
         agent.setRagEnabled(true);
         agent.getLlmInstances().add(llm);
+
+        // Optional soft spend caps (T289–T291). Left null when unset/blank/<= 0,
+        // which disables the corresponding gate.
+        Double monthlyBudgetUsd = positiveOrNull(environment.getProperty(MONTHLY_BUDGET_PROPERTY));
+        Double perTurnSoftCapUsd = positiveOrNull(environment.getProperty(PER_TURN_SOFT_CAP_PROPERTY));
+        agent.setMonthlyBudgetUsd(monthlyBudgetUsd);
+        agent.setPerTurnSoftCapUsd(perTurnSoftCapUsd);
+
         turAIAgentRepository.save(agent);
 
         turGlobalSettingsService.updateDefaultAiAgentId(agent.getId());
 
-        log.info("Bootstrapped default AI agent '{}' (LLM '{}') and set it as the global default AI agent.",
-                agent.getId(), llm.getId());
+        log.info("Bootstrapped default AI agent '{}' (LLM '{}', monthlyBudgetUsd={}, perTurnSoftCapUsd={}) "
+                + "and set it as the global default AI agent.",
+                agent.getId(), llm.getId(), monthlyBudgetUsd, perTurnSoftCapUsd);
+    }
+
+    /**
+     * Parses a configured budget value: unset, blank, non-numeric or non-positive
+     * (<= 0, the "gate disabled" sentinel) all collapse to {@code null} so the
+     * agent field stays null and the corresponding soft-budget gate is off.
+     */
+    private static Double positiveOrNull(String value) {
+        if (!StringUtils.hasText(value)) {
+            return null;
+        }
+        try {
+            double parsed = Double.parseDouble(value.trim());
+            return parsed > 0 ? parsed : null;
+        } catch (NumberFormatException e) {
+            log.warn("Ignoring non-numeric default-agent budget value '{}'.", value);
+            return null;
+        }
     }
 }
