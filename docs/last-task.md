@@ -3,8 +3,8 @@
 > **Single source of truth for the next free task number.** The next new task is
 > `T630`; after assigning it, bump the number above and the log line below.
 >
-> (T629 is the highest assigned number. The highest *shipped* number is **T626**;
-> T627–T629 are the remaining Block AM tasks — all 💭 exploit-tail ideas.)
+> (T629 is the highest assigned number. The highest *shipped* number is **T629**;
+> only T627 + T628 of Block AM remain — both 💭 exploit-tail ideas.)
 >
 > **Note (2026-06-16):** `T380` is an intentional **free gap** — Block R was
 > created as `T381–T385` without bumping this counter (the exact hazard this file
@@ -30,6 +30,7 @@ number" looked free but wasn't. Grepping three files (`ROADMAP.md`,
 
 ## Log (most recent first)
 
+- **T629 SHIPPED** (Block AM — default-RAG startup → HUGGINGFACE) — 2026-07-09. `TurDefaultRagInfraOnStartup` now seeds the default embedding model as a `HUGGINGFACE` model storing the repo id `sentence-transformers/all-MiniLM-L6-v2` (new `turing.startup.default-rag.model-repo-id`), so the seeded default and a user-picked HF model are byte-shape identical; blanking the repo id falls back to the raw-URL `TRANSFORMERS_LOCAL` path. Warm-up resolves via the matching factory. Backend compile green; startup runner disabled in tests by design (HF resolution covered by T623 tests). No Liquibase. Next stays T630. → CHANGELOG Block AM / IMPROVEMENTS §XXXVI.
 - **T626 SHIPPED** (Block AM — provider-aware embedding-model picker; completes the committed T623–T626 scope) — 2026-07-09. `bento.embedding.form.tsx` reworked into three provider modes: LLM instance (T577 `ModelCombobox` via new `useLlmEmbeddingModels` → T625), HuggingFace.co (new `HuggingFaceModelCombobox` with debounced server-side search + ONNX-verified/dims/downloads metadata + live/catalog badge, via `useHuggingFaceModels` → T624), and manual local ONNX paths. New models/service/query-hooks/keys + en/pt i18n; frontend `tsc -b --noEmit` green. Frontend-only (T623–T625 endpoints already shipped). No Liquibase. Next stays T630. → CHANGELOG Block AM / IMPROVEMENTS §XXXVI.
 - **T625 SHIPPED** (Block AM — LLM embedding-model discovery) — 2026-07-09. Extended T577's `TurLlmModelDiscoveryService` with `listEmbeddingModels(...)` (both it and `listModels` now share a `listFiltered(..., Predicate)` — live listing byte-identical for the chat path). Filters live + catalog to embedding-capable models via the `isEmbeddingModel` heuristic (`embed` in id/label or non-rerank Voyage id; rerank/chat excluded); a live list with no embeddings falls back to the catalog so the `LIVE/CATALOG/NONE` source stays honest. Endpoint `POST /api/embedding-model/llm-models` (same request shape as `/api/llm/models`). `TurLlmModelDiscoveryServiceTest` (3) green. No Liquibase. Next stays T630. → CHANGELOG Block AM / IMPROVEMENTS §XXXVI.
 - **T624 SHIPPED** (Block AM — HuggingFace model discovery service) — 2026-07-09. `TurHuggingFaceModelDiscoveryService` queries HF `/api/models` (sentence-transformers filter, downloads-sorted, optional search), ONNX-verifies each candidate via `TurHuggingFaceRepoResolver.hasOnnxAndTokenizer` (bounded by `candidate-limit`/`result-limit` `@Value`s), and falls back to the bundled `TurHuggingFaceModelCatalog` (`resources/llm/huggingface-embeddings-catalog.json`, 15 known-good ONNX repos) with a `Source {LIVE, CATALOG, NONE}` result mirroring T577. New `TurHuggingFaceModelOption` record. Endpoint `GET /api/embedding-model/hf-models?query=`. `TurHuggingFaceModelDiscoveryServiceTest` (3, offline→catalog) green. No Liquibase. Next stays T630. → CHANGELOG Block AM / IMPROVEMENTS §XXXVI.

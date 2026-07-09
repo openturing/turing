@@ -31,6 +31,7 @@ import org.springframework.transaction.support.TransactionSynchronizationManager
 import org.springframework.util.StringUtils;
 
 import com.viglet.turing.exchange.sn.TurSNSiteContentExchangeService;
+import com.viglet.turing.genai.provider.llm.TurHuggingFaceEmbeddingModelFactory;
 import com.viglet.turing.genai.provider.llm.TurLocalEmbeddingModelFactory;
 import com.viglet.turing.persistence.model.agent.TurAIAgent;
 import com.viglet.turing.persistence.model.embedding.TurEmbeddingModel;
@@ -58,10 +59,15 @@ import lombok.extern.slf4j.Slf4j;
  * provisioned by {@link TurLLMInstanceOnStartup} (T621) likewise has an LLM but
  * no RAG infrastructure. This runner closes that gap by creating:
  * <ul>
- * <li>a {@code TRANSFORMERS_LOCAL} {@link TurEmbeddingModel} — an in-process
- * ONNX sentence-transformers model (default {@code all-MiniLM-L6-v2}, 384-dim)
- * whose {@code .onnx}/{@code tokenizer.json} are fetched from HTTPS and cached;
- * no LLM instance, no key, no per-token cost;</li>
+ * <li>a {@code HUGGINGFACE} {@link TurEmbeddingModel} (T629) — an in-process
+ * ONNX sentence-transformers model picked by <b>repo id</b> (default
+ * {@code sentence-transformers/all-MiniLM-L6-v2}, 384-dim), resolved to its
+ * {@code .onnx}/{@code tokenizer.json} and cached; no LLM instance, no key, no
+ * per-token cost. So the seeded default is byte-shape identical to a
+ * user-picked HuggingFace model. Blanking
+ * {@code turing.startup.default-rag.model-repo-id} falls back to a
+ * {@code TRANSFORMERS_LOCAL} model built from raw {@code model-path}/
+ * {@code tokenizer-path} URLs (offline mirror / custom artifact);</li>
  * <li>a {@code LUCENE} {@link TurStoreInstance} — the embedded Lucene vector
  * store;</li>
  * </ul>
@@ -103,13 +109,19 @@ public class TurDefaultRagInfraOnStartup implements ApplicationRunner {
     private static final String ENABLED_PROPERTY = "turing.startup.default-rag.enabled";
     private static final String REINDEX_PROPERTY = "turing.startup.default-rag.reindex";
     private static final String MODEL_NAME_PROPERTY = "turing.startup.default-rag.model-name";
+    private static final String MODEL_REPO_ID_PROPERTY = "turing.startup.default-rag.model-repo-id";
     private static final String MODEL_PATH_PROPERTY = "turing.startup.default-rag.model-path";
     private static final String TOKENIZER_PATH_PROPERTY = "turing.startup.default-rag.tokenizer-path";
     private static final String STORE_PATH_PROPERTY = "turing.startup.default-rag.store-path";
 
     private static final String LUCENE_VENDOR_ID = "LUCENE";
     private static final String DEFAULT_MODEL_NAME = "all-MiniLM-L6-v2";
-    // Smallest widely-used sentence-transformers ONNX export (~80 MB, 384-dim).
+    // T629 — the default is now a HuggingFace repo id (same in-process ONNX
+    // runtime as the raw-URL local path, but stored as a picked model so the
+    // seeded default and a user-picked HuggingFace model are byte-shape identical).
+    private static final String DEFAULT_MODEL_REPO_ID = "sentence-transformers/all-MiniLM-L6-v2";
+    // Fallback raw URLs (used only when model-repo-id is explicitly blanked):
+    // smallest widely-used sentence-transformers ONNX export (~80 MB, 384-dim).
     private static final String DEFAULT_MODEL_PATH =
             "https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/onnx/model.onnx";
     private static final String DEFAULT_TOKENIZER_PATH =
@@ -124,6 +136,7 @@ public class TurDefaultRagInfraOnStartup implements ApplicationRunner {
     private final TurSNSiteRepository turSNSiteRepository;
     private final TurGlobalSettingsService turGlobalSettingsService;
     private final TurLocalEmbeddingModelFactory localEmbeddingModelFactory;
+    private final TurHuggingFaceEmbeddingModelFactory huggingFaceEmbeddingModelFactory;
     private final TurSNSiteContentExchangeService contentExchangeService;
 
     public TurDefaultRagInfraOnStartup(Environment environment,
@@ -134,6 +147,7 @@ public class TurDefaultRagInfraOnStartup implements ApplicationRunner {
             TurSNSiteRepository turSNSiteRepository,
             TurGlobalSettingsService turGlobalSettingsService,
             TurLocalEmbeddingModelFactory localEmbeddingModelFactory,
+            TurHuggingFaceEmbeddingModelFactory huggingFaceEmbeddingModelFactory,
             TurSNSiteContentExchangeService contentExchangeService) {
         this.environment = environment;
         this.turEmbeddingModelRepository = turEmbeddingModelRepository;
@@ -143,6 +157,7 @@ public class TurDefaultRagInfraOnStartup implements ApplicationRunner {
         this.turSNSiteRepository = turSNSiteRepository;
         this.turGlobalSettingsService = turGlobalSettingsService;
         this.localEmbeddingModelFactory = localEmbeddingModelFactory;
+        this.huggingFaceEmbeddingModelFactory = huggingFaceEmbeddingModelFactory;
         this.contentExchangeService = contentExchangeService;
     }
 
@@ -179,17 +194,29 @@ public class TurDefaultRagInfraOnStartup implements ApplicationRunner {
         }
 
         String modelName = environment.getProperty(MODEL_NAME_PROPERTY, DEFAULT_MODEL_NAME);
+        String modelRepoId = environment.getProperty(MODEL_REPO_ID_PROPERTY, DEFAULT_MODEL_REPO_ID);
         String modelPath = environment.getProperty(MODEL_PATH_PROPERTY, DEFAULT_MODEL_PATH);
         String tokenizerPath = environment.getProperty(TOKENIZER_PATH_PROPERTY, DEFAULT_TOKENIZER_PATH);
         String storePath = environment.getProperty(STORE_PATH_PROPERTY, DEFAULT_STORE_PATH);
 
         TurEmbeddingModel embeddingModel = new TurEmbeddingModel();
         embeddingModel.setModelName(modelName);
-        embeddingModel.setDescription("Auto-provisioned local ONNX embedding model on startup.");
-        embeddingModel.setProviderType(TurLocalEmbeddingModelFactory.PROVIDER_TYPE);
-        embeddingModel.setModelPath(modelPath);
-        embeddingModel.setTokenizerPath(tokenizerPath);
         embeddingModel.setEnabled(1);
+        if (StringUtils.hasText(modelRepoId)) {
+            // T629 — default path: a HUGGINGFACE model storing just the repo id,
+            // so the seeded default and a user-picked HuggingFace model are the
+            // same shape. Same in-process ONNX runtime as the raw-URL path.
+            embeddingModel.setDescription("Auto-provisioned HuggingFace ONNX embedding model on startup.");
+            embeddingModel.setProviderType(TurHuggingFaceEmbeddingModelFactory.PROVIDER_TYPE);
+            embeddingModel.setModelReference(modelRepoId);
+        } else {
+            // Fallback: raw ONNX/tokenizer URLs (offline mirror, custom artifact)
+            // — kept for installs that blank model-repo-id and point at their own.
+            embeddingModel.setDescription("Auto-provisioned local ONNX embedding model on startup.");
+            embeddingModel.setProviderType(TurLocalEmbeddingModelFactory.PROVIDER_TYPE);
+            embeddingModel.setModelPath(modelPath);
+            embeddingModel.setTokenizerPath(tokenizerPath);
+        }
         // GLOBAL instance (tenantId left null) — usable by every tenant.
         turEmbeddingModelRepository.save(embeddingModel);
 
@@ -251,7 +278,11 @@ public class TurDefaultRagInfraOnStartup implements ApplicationRunner {
         try {
             log.info("Warming up local ONNX embedding model (downloading '{}' if not cached)…",
                     embeddingModel.getModelName());
-            localEmbeddingModelFactory.resolve(embeddingModel);
+            if (huggingFaceEmbeddingModelFactory.supports(embeddingModel.getProviderType())) {
+                huggingFaceEmbeddingModelFactory.resolve(embeddingModel);
+            } else {
+                localEmbeddingModelFactory.resolve(embeddingModel);
+            }
             log.info("Local ONNX embedding model ready.");
         } catch (RuntimeException e) {
             log.warn("Local ONNX embedding model warm-up failed: {} — grounded chat will retry on first use.",
