@@ -73,6 +73,14 @@ class TurHuggingFaceRepoResolverTest {
     }
 
     @Test
+    void probeDimensionsReturnsNullWhenConfigUnreachable() {
+        TurHuggingFaceRepoResolver offline =
+                new TurHuggingFaceRepoResolver("http://127.0.0.1:9");
+        assertEquals(null, offline.probeDimensions("sentence-transformers/all-MiniLM-L6-v2"));
+        assertEquals(null, offline.probeDimensions(null));
+    }
+
+    @Test
     void stripsHostPrefixFromRepoId() {
         TurHuggingFaceRepoResolver offline =
                 new TurHuggingFaceRepoResolver("http://127.0.0.1:9");

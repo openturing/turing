@@ -294,6 +294,8 @@
       "hfOnnxVerified": "ONNX verificado",
       "hfSourceLive": "Ao vivo do huggingface.co",
       "hfSourceCatalog": "Do catálogo curado",
+      "dimensionsDetected": "Dimensão do embedding: {{dimensions}}",
+      "dimensionMismatch": "Este modelo gera vetores de {{dimensions}} dimensões, mas o padrão atual usa {{defaultDimensions}}. Trocar exige um vector store compatível e a reindexação completa do conteúdo já vetorizado.",
       "modelPath": "Caminho do Modelo",
       "modelPathDesc": "Caminho para o arquivo do modelo ONNX no sistema de arquivos.",
       "modelPathPlaceholder": "/caminho/para/modelo.onnx",

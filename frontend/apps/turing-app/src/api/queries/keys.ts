@@ -21,6 +21,9 @@ export const queryKeys = {
   huggingFaceModels: {
     all: () => ['huggingface-models'] as const,
     list: (query: string) => [...queryKeys.huggingFaceModels.all(), 'list', query] as const,
+    // T627 — embedding-dimension check for a picked repo vs. the default.
+    dimensionCheck: (repoId: string) =>
+      [...queryKeys.huggingFaceModels.all(), 'dimension-check', repoId] as const,
   },
   // T625 — embedding-capable models per LLM vendor for the embedding form picker.
   // Same key discipline as llmModels: the key never stores the secret.

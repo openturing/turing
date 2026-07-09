@@ -103,6 +103,38 @@ public class TurHuggingFaceRepoResolver {
         return pickOnnxPath(tree).isPresent() && pickTokenizerPath(tree).isPresent();
     }
 
+    /**
+     * Probes the model's embedding dimension from its {@code config.json}
+     * ({@code hidden_size}, with common aliases) — free, no key, no download
+     * (T627). Returns {@code null} when the config is unreachable or declares no
+     * recognizable dimension (the caller then treats dimension as unknown).
+     */
+    public Integer probeDimensions(String repoId) {
+        String repo = cleanRepoId(repoId);
+        if (!StringUtils.hasText(repo)) {
+            return null;
+        }
+        try {
+            Map<?, ?> config = RestClient.create(baseUrl).get()
+                    .uri("/{repo}/resolve/main/config.json", repo)
+                    .retrieve()
+                    .body(Map.class);
+            if (config == null) {
+                return null;
+            }
+            for (String key : new String[] {"hidden_size", "hidden_dim", "d_model", "dim", "n_embd"}) {
+                Object value = config.get(key);
+                if (value instanceof Number number) {
+                    return number.intValue();
+                }
+            }
+            return null;
+        } catch (Exception e) {
+            log.debug("HuggingFace dimension probe failed for repo '{}': {}", repo, e.getMessage());
+            return null;
+        }
+    }
+
     /** The public repo tree paths, or an empty list when the probe fails. */
     public List<String> listTree(String repoId) {
         String repo = cleanRepoId(repoId);

@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import org.springframework.data.domain.Sort;
 
+import com.viglet.turing.genai.provider.llm.TurEmbeddingDimensionService;
 import com.viglet.turing.genai.provider.llm.TurHuggingFaceModelDiscoveryService;
 import com.viglet.turing.genai.provider.llm.TurLlmModelDiscoveryService;
 import com.viglet.turing.persistence.dto.embedding.TurEmbeddingModelDto;
@@ -42,17 +43,33 @@ public class TurEmbeddingModelAPI {
     private final TurInfraTenantScope tenantScope;
     private final TurHuggingFaceModelDiscoveryService huggingFaceModelDiscoveryService;
     private final TurLlmModelDiscoveryService llmModelDiscoveryService;
+    private final TurEmbeddingDimensionService embeddingDimensionService;
 
     public TurEmbeddingModelAPI(TurEmbeddingModelRepository turEmbeddingModelRepository,
             TurEmbeddingModelMapper turEmbeddingModelMapper,
             TurInfraTenantScope tenantScope,
             TurHuggingFaceModelDiscoveryService huggingFaceModelDiscoveryService,
-            TurLlmModelDiscoveryService llmModelDiscoveryService) {
+            TurLlmModelDiscoveryService llmModelDiscoveryService,
+            TurEmbeddingDimensionService embeddingDimensionService) {
         this.turEmbeddingModelRepository = turEmbeddingModelRepository;
         this.turEmbeddingModelMapper = turEmbeddingModelMapper;
         this.tenantScope = tenantScope;
         this.huggingFaceModelDiscoveryService = huggingFaceModelDiscoveryService;
         this.llmModelDiscoveryService = llmModelDiscoveryService;
+        this.embeddingDimensionService = embeddingDimensionService;
+    }
+
+    /**
+     * T627 — probes a HuggingFace model's embedding dimension and compares it
+     * with the current default embedding model's, so the picker can warn that
+     * changing the dimension means a reindex + a matching vector store.
+     */
+    @Operation(summary = "Check a HuggingFace model's embedding dimension vs. the default")
+    @GetMapping("/hf-dimension-check")
+    @Secured({"ROLE_ADMIN", "EMBEDDING_VIEW", "EMBEDDING_CREATE", "EMBEDDING_EDIT"})
+    public TurEmbeddingDimensionService.DimensionCheck turEmbeddingHuggingFaceDimensionCheck(
+            @RequestParam String repoId) {
+        return embeddingDimensionService.checkHuggingFace(repoId);
     }
 
     /**

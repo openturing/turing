@@ -1,6 +1,6 @@
 "use client"
 import { useCreateEmbeddingModel, useUpdateEmbeddingModel } from "@/api/queries/embedding-model.queries"
-import { useHuggingFaceModels, useLlmEmbeddingModels } from "@/api/queries/embedding-model-discovery.queries"
+import { useHuggingFaceDimensionCheck, useHuggingFaceModels, useLlmEmbeddingModels } from "@/api/queries/embedding-model-discovery.queries"
 import { useLlmInstances } from "@/api/queries/llm-instance.queries"
 import { ROUTES } from "@/app/routes.const"
 import { BentoFormSection, BentoSaveBar, type BentoIdentity, type BentoShellFormState } from "@/components/bento"
@@ -10,7 +10,7 @@ import { Input } from "@/components/ui/input"
 import { ModelCombobox } from "@/components/ui/model-combobox"
 import { Select, SelectContent, SelectItem, SelectSeparator, SelectTrigger, SelectValue } from "@/components/ui/select"
 import type { TurEmbeddingModel } from "@/models/embedding/embedding-model.model.ts"
-import { IconAdjustments, IconCube, IconPlug } from "@tabler/icons-react"
+import { IconAdjustments, IconAlertTriangle, IconCube, IconPlug } from "@tabler/icons-react"
 import { toast } from "@viglet/viglet-design-system"
 import { useEffect, useState } from "react"
 import { useForm } from "react-hook-form"
@@ -55,6 +55,13 @@ export const BentoEmbeddingModelForm: React.FC<Props> = ({ value, isNew, readOnl
   // HuggingFace picker: server-side search (T624).
   const [hfQuery, setHfQuery] = useState("")
   const { data: hfList, isFetching: hfLoading } = useHuggingFaceModels(hfQuery, isHuggingFace)
+
+  // Dimension detection + reindex-awareness on the picked HF model (T627).
+  const selectedModelReference = form.watch("modelReference")
+  const { data: hfDimCheck } = useHuggingFaceDimensionCheck(
+    selectedModelReference,
+    isHuggingFace && Boolean(selectedModelReference),
+  )
 
   // LLM embedding-model picker for the selected instance's vendor (T625).
   const {
@@ -139,6 +146,10 @@ export const BentoEmbeddingModelForm: React.FC<Props> = ({ value, isNew, readOnl
   if (isLocal) providerLabel = t("forms.embedding.transformersLocal")
   else if (isHuggingFace) providerLabel = t("forms.embedding.huggingFace")
   else providerLabel = selectedInstance?.title
+
+  let modelConfigDesc = t("forms.embedding.modelConfigDesc")
+  if (isHuggingFace) modelConfigDesc = t("forms.embedding.hfModelConfigDesc")
+  else if (isLocal) modelConfigDesc = t("forms.embedding.localModelConfigDesc")
   // Save bar is present on any editable detail page so it stays suspended on
   // scroll; Save is disabled until there is something to persist.
   const showSaveBar = !readOnly
@@ -216,13 +227,7 @@ export const BentoEmbeddingModelForm: React.FC<Props> = ({ value, isNew, readOnl
           icon={IconCube}
           tone="violet"
           title={t("forms.embedding.modelConfig")}
-          description={
-            isHuggingFace
-              ? t("forms.embedding.hfModelConfigDesc")
-              : isLocal
-                ? t("forms.embedding.localModelConfigDesc")
-                : t("forms.embedding.modelConfigDesc")
-          }
+          description={modelConfigDesc}
         >
           {/* HuggingFace repo picker (T626) */}
           {isHuggingFace && (
@@ -245,6 +250,23 @@ export const BentoEmbeddingModelForm: React.FC<Props> = ({ value, isNew, readOnl
                       disabled={readOnly}
                     />
                   </FormControl>
+                  {/* Dimension detection + reindex-awareness (T627) */}
+                  {hfDimCheck?.dimensions != null && (
+                    <p className="text-sm text-muted-foreground">
+                      {t("forms.embedding.dimensionsDetected", { dimensions: hfDimCheck.dimensions })}
+                    </p>
+                  )}
+                  {hfDimCheck?.differs && (
+                    <div className="mt-1 flex items-start gap-2 rounded-md border border-amber-300/60 bg-amber-50 px-3 py-2 text-sm text-amber-800 dark:border-amber-500/30 dark:bg-amber-950/40 dark:text-amber-200">
+                      <IconAlertTriangle className="mt-0.5 size-4 shrink-0" />
+                      <span>
+                        {t("forms.embedding.dimensionMismatch", {
+                          dimensions: hfDimCheck.dimensions,
+                          defaultDimensions: hfDimCheck.defaultDimensions,
+                        })}
+                      </span>
+                    </div>
+                  )}
                   <FormMessage />
                 </FormItem>
               )}

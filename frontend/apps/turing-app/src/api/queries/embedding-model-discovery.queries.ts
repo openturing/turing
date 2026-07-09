@@ -1,5 +1,8 @@
 import { useQuery } from "@tanstack/react-query";
-import type { TurHuggingFaceModelList } from "@/models/embedding/huggingface-model.model.ts";
+import type {
+  TurEmbeddingDimensionCheck,
+  TurHuggingFaceModelList,
+} from "@/models/embedding/huggingface-model.model.ts";
 import type { TurLlmModelList } from "@/models/llm/llm-model-option.model.ts";
 import { TurEmbeddingModelDiscoveryService } from "@/services/embedding/embedding-model-discovery.service";
 import { queryKeys } from "./keys";
@@ -16,6 +19,19 @@ export function useHuggingFaceModels(query: string, enabled = true) {
     queryKey: queryKeys.huggingFaceModels.list(query ?? ""),
     queryFn: () => service.listHuggingFaceModels(query?.trim() || undefined),
     enabled,
+    staleTime: 5 * 60 * 1000,
+  });
+}
+
+/**
+ * Probes a picked HuggingFace model's embedding dimension and compares it with
+ * the current default (T627). Enabled only once a repo id is chosen.
+ */
+export function useHuggingFaceDimensionCheck(repoId: string | undefined, enabled = true) {
+  return useQuery<TurEmbeddingDimensionCheck>({
+    queryKey: queryKeys.huggingFaceModels.dimensionCheck(repoId ?? ""),
+    queryFn: () => service.checkHuggingFaceDimension(repoId as string),
+    enabled: enabled && Boolean(repoId?.trim()),
     staleTime: 5 * 60 * 1000,
   });
 }

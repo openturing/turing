@@ -19,3 +19,14 @@ export interface TurHuggingFaceModelList {
   source: TurHuggingFaceModelSource;
   models: TurHuggingFaceModelOption[];
 }
+
+/**
+ * Dimension check for a picked model vs. the current default (T627). `differs`
+ * is true only when both dimensions are known and unequal — a save then means a
+ * reindex + a matching vector store.
+ */
+export interface TurEmbeddingDimensionCheck {
+  dimensions?: number | null;
+  defaultDimensions?: number | null;
+  differs: boolean;
+}

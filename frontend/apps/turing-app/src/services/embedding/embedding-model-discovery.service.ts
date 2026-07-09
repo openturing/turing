@@ -1,5 +1,8 @@
 import axios from "axios";
-import type { TurHuggingFaceModelList } from "@/models/embedding/huggingface-model.model.ts";
+import type {
+  TurEmbeddingDimensionCheck,
+  TurHuggingFaceModelList,
+} from "@/models/embedding/huggingface-model.model.ts";
 import type {
   TurLlmModelList,
   TurLlmModelListRequest,
@@ -24,6 +27,14 @@ export class TurEmbeddingModelDiscoveryService {
 
   async listLlmEmbeddingModels(request: TurLlmModelListRequest): Promise<TurLlmModelList> {
     const response = await axios.post<TurLlmModelList>("/embedding-model/llm-models", request);
+    return response.data;
+  }
+
+  async checkHuggingFaceDimension(repoId: string): Promise<TurEmbeddingDimensionCheck> {
+    const response = await axios.get<TurEmbeddingDimensionCheck>(
+      "/embedding-model/hf-dimension-check",
+      { params: { repoId } },
+    );
     return response.data;
   }
 }
