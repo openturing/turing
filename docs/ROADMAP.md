@@ -91,30 +91,6 @@ T572 delight-polish follow-up, and the T619 persona-parity follow-up are all
 passed, onboarding polish shipped, and the two console-only persona tools
 (from-audio authoring + persona-suggest) re-added to bento. Block AG is closed.
 
-## Block AM — HuggingFace embedding provider + provider-aware model discovery
-
-> Today an embedding model is created two ways: pick an **LLM instance** (remote
-> embeddings API, model typed free-text into `modelReference`) or the
-> **`TRANSFORMERS_LOCAL`** sentinel (in-process ONNX via Spring AI
-> `TransformersEmbeddingModel`, with `.onnx` + `tokenizer.json` **paths typed by
-> hand**). The local path already downloads from `huggingface.co` URLs — the
-> default startup model is literally `.../sentence-transformers/all-MiniLM-L6-v2/resolve/main/onnx/model.onnx`.
-> This block adds a third provider, **huggingface.co**, that does the same job as
-> the local transformers path but lets you **pick the model from a list** instead
-> of typing URLs, and unifies the frontend model field into one **provider-aware
-> picker** (list-from-LLM · list-from-HuggingFace · manual local path). Design in
-> [IMPROVEMENTS.md](IMPROVEMENTS.md) §XXXVI. Sequence: backend provider (T623) →
-> the two discovery seams (T624 HF, T625 LLM-embeddings) → unified frontend picker
-> (T626) → the exploit tail (T627–T629).
-
-- ✅ **T623** (deps: —) **HuggingFace embedding provider (backend)** — SHIPPED. `HUGGINGFACE` sentinel + `TurHuggingFaceEmbeddingModelFactory` reading the repo id from `modelReference` (no new columns), a shared `TurTransformersEmbeddingModelBuilder` both local + HF factories reuse, and `TurHuggingFaceRepoResolver` (tree-probed ONNX path + fail-open layout fallback + `hasOnnxAndTokenizer` for T624). Wired into `TurRagContextBuilder`. → CHANGELOG Block AM.
-- ✅ **T624** (deps: T623) **HuggingFace model discovery service** — SHIPPED. `TurHuggingFaceModelDiscoveryService` queries HF `/api/models` (sentence-transformers filter, downloads-ranked), ONNX-probes each candidate via `TurHuggingFaceRepoResolver.hasOnnxAndTokenizer` so only loadable models are offered, and falls back to the bundled `TurHuggingFaceModelCatalog` with a `Source {LIVE, CATALOG, NONE}` result (mirrors T577). Endpoint `GET /api/embedding-model/hf-models?query=`. → CHANGELOG Block AM.
-- ✅ **T625** (deps: —) **LLM embedding-model discovery** — SHIPPED. `TurLlmModelDiscoveryService.listEmbeddingModels(...)` filters the T577 live+catalog listing to embedding-capable models (`isEmbeddingModel` heuristic: `embed` in id/label or a non-rerank Voyage id; rerank/chat excluded), each stage filtered so a live list with no embeddings falls back to the catalog. Exposed at `POST /api/embedding-model/llm-models`. → CHANGELOG Block AM.
-- ✅ **T626** (deps: T624, T625) **Provider-aware model picker (frontend)** — SHIPPED. `bento.embedding.form.tsx` reworked into three provider modes: **LLM instance** (embedding `ModelCombobox` via T625 `useLlmEmbeddingModels`), **HuggingFace.co** (new `HuggingFaceModelCombobox` with server-side search + live/catalog badges + downloads/dims + ONNX-verified check, via `useHuggingFaceModels`), **Local transformers (manual)** (the existing `.onnx`/`.json` inputs). en/pt i18n; frontend `tsc -b --noEmit` green. **Completes the committed Block AM scope (T623–T626).** → CHANGELOG Block AM.
-- ✅ **T627** (deps: T623) **Dimension detection + reindex-awareness on select** — SHIPPED (HF path). `TurHuggingFaceRepoResolver.probeDimensions` reads `config.json` `hidden_size` (free, no key); `TurEmbeddingDimensionService` compares it against the current default embedding model's dimension (probed the same way when the default is HUGGINGFACE). `GET /api/embedding-model/hf-dimension-check?repoId=`; the picker shows the detected dimension + an amber reindex warning when it differs. LLM one-shot-embed dimension detection deferred (billed). → CHANGELOG Block AM.
-- ✅ **T628** (deps: T623) **ONNX variant / quantization picker** — SHIPPED. `TurHuggingFaceRepoResolver.listOnnxVariants` lists a repo's `.onnx` artifacts (default-first ordering); `resolve` honors a chosen variant appended to `modelReference` via the `::` `VARIANT_SEPARATOR` (no new columns). `GET /api/embedding-model/hf-variants?repoId=`; the picker shows a variant Select when a repo ships more than one artifact (default vs quantized). **Closes Block AM.** → CHANGELOG Block AM.
-- ✅ **T629** (deps: T623) **Migrate default-RAG startup provisioning to `HUGGINGFACE`** — SHIPPED. `TurDefaultRagInfraOnStartup` now provisions the default embedding model as a `HUGGINGFACE` model storing the repo id `sentence-transformers/all-MiniLM-L6-v2` (new `turing.startup.default-rag.model-repo-id`) instead of hardcoded `resolve/main/…` URLs, so the seeded default and a user-picked HF model are byte-shape identical; blanking the repo id falls back to the raw-URL `TRANSFORMERS_LOCAL` path. Warm-up resolves via the matching factory. → CHANGELOG Block AM.
-
 ## Non-goals (do NOT add as tasks)
 
 Binding constraints — see [IMPROVEMENTS.md](IMPROVEMENTS.md) §I.6 (What NOT to
