@@ -26,7 +26,7 @@ function SdkCode() {
           <span className={kw}>from</span> <span className={str}>"@viglet/turing-sdk"</span>;{"\n\n"}
           <span className={kw}>const</span> client = <span className={fn}>createTuringClient</span>({"{"}
           {"\n  "}
-          <span className={fn}>baseURL</span>: <span className={str}>"https://demo.turing.viglet.org/api"</span>,
+          <span className={fn}>baseURL</span>: <span className={str}>"https://turing-demo.viglet.org/api"</span>,
           {"\n"}
           {"});"}
           {"\n\n"}

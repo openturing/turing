@@ -1,23 +1,13 @@
 import { useEffect, useRef, useState } from "react";
 import { ArrowUp, Sparkles } from "lucide-react";
-import {
-  createChatController,
-  createTuringClient,
-  type ChatController,
-  type TuringClient,
-} from "@viglet/turing-sdk";
+import { createChatController, type ChatController } from "@viglet/turing-sdk";
+import { useTuringDemo } from "@/lib/turing-demo";
 import { cn } from "@/lib/utils";
 
-// Same env contract as the search demo. When a live instance is configured the
-// chat streams REAL grounded answers via @viglet/turing-sdk; otherwise it plays
-// a short scripted exchange so the widget never looks broken offline.
-const DEMO_URL = (import.meta.env.VITE_TURING_DEMO_URL as string | undefined)?.replace(/\/+$/, "");
-const DEMO_SITE = import.meta.env.VITE_TURING_DEMO_SITE as string | undefined;
-const LIVE = Boolean(DEMO_URL && DEMO_SITE);
-
-const client: TuringClient | null = LIVE
-  ? createTuringClient({ baseURL: `${DEMO_URL}/api` })
-  : null;
+// Same wiring as the search demo (see @/lib/turing-demo). When a live instance is
+// configured the chat streams REAL grounded answers via @viglet/turing-sdk;
+// otherwise it plays a short scripted exchange so the widget never looks broken
+// offline. The SN site is pinned via VITE_TURING_DEMO_SITE or auto-discovered.
 
 interface DemoMsg {
   role: "user" | "assistant";
@@ -60,16 +50,18 @@ const FALLBACK = {
 };
 
 export function ChatDemo() {
+  const { client, site, live } = useTuringDemo();
   const [convo, setConvo] = useState<DemoMsg[]>([]);
   const [input, setInput] = useState("");
   const [busy, setBusy] = useState(false);
   const controllerRef = useRef<ChatController | null>(null);
   const scrollRef = useRef<HTMLDivElement | null>(null);
 
-  // Live mode: drive the widget from the SDK chat controller.
+  // Live mode: drive the widget from the SDK chat controller. Re-runs once the
+  // site resolves (pinned or auto-discovered) so the controller binds to it.
   useEffect(() => {
-    if (!client || !DEMO_SITE) return;
-    const c = createChatController(client, { site: DEMO_SITE });
+    if (!client || !site) return;
+    const c = createChatController(client, { site });
     controllerRef.current = c;
     const unsub = c.subscribe((s) => {
       setConvo(
@@ -82,9 +74,10 @@ export function ChatDemo() {
       setBusy(s.status === "loading");
     });
     return () => {
+      controllerRef.current = null;
       if (typeof unsub === "function") unsub();
     };
-  }, []);
+  }, [client, site]);
 
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight });
@@ -138,7 +131,7 @@ export function ChatDemo() {
         </span>
         <span className="text-sm font-semibold">Turing assistant</span>
         <span className="ml-auto rounded border border-border px-1.5 py-0.5 font-mono text-[0.65rem] text-muted-foreground">
-          {LIVE ? "live" : "demo"}
+          {live ? "live" : "demo"}
         </span>
       </div>
 

@@ -1,31 +1,22 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Search, Sparkles } from "lucide-react";
-import {
-  createTuringClient,
-  fetchSearch,
-  resolveDocuments,
-  type TuringClient,
-} from "@viglet/turing-sdk";
+import { fetchSearch, resolveDocuments, type TuringClient } from "@viglet/turing-sdk";
 import { SEARCH_DOCS, type SearchDoc } from "@/lib/site-content";
+import { useTuringDemo } from "@/lib/turing-demo";
 import { cn } from "@/lib/utils";
 
-// T478 — dogfooding: this very demo runs on the product's own zero-dependency
+// T478/T620 — dogfooding: this very demo runs on the product's own zero-dependency
 // `@viglet/turing-sdk`. When a public demo instance is configured it does REAL
-// semantic search against it; otherwise it filters the bundled sample corpus.
-// Set BOTH at build time to go live (see .env.example):
-//   VITE_TURING_DEMO_URL=https://demo.turing.viglet.org
-//   VITE_TURING_DEMO_SITE=<seeded SN site name, e.g. mythical-creatures>
-const DEMO_URL = (import.meta.env.VITE_TURING_DEMO_URL as string | undefined)?.replace(/\/+$/, "");
-const DEMO_SITE = import.meta.env.VITE_TURING_DEMO_SITE as string | undefined;
-const LIVE = Boolean(DEMO_URL && DEMO_SITE);
+// semantic search against it; otherwise it filters the bundled sample corpus. Set
+// VITE_TURING_DEMO_URL at build time to go live; the SN site is pinned via
+// VITE_TURING_DEMO_SITE or auto-discovered at runtime (see @/lib/turing-demo).
 
-// One shared client (the SDK is the same one customers embed on their sites).
-const client: TuringClient | null = LIVE
-  ? createTuringClient({ baseURL: `${DEMO_URL}/api` })
-  : null;
-
-async function liveSearch(q: string): Promise<SearchDoc[]> {
-  const resp = await fetchSearch(client as TuringClient, DEMO_SITE as string, {
+async function liveSearch(
+  client: TuringClient,
+  site: string,
+  q: string
+): Promise<SearchDoc[]> {
+  const resp = await fetchSearch(client, site, {
     q: q || "*",
     rows: "8",
     _setlocale: "en_US",
@@ -42,6 +33,7 @@ async function liveSearch(q: string): Promise<SearchDoc[]> {
 }
 
 export function SearchDemo() {
+  const { client, site, live } = useTuringDemo();
   const [query, setQuery] = useState("");
   const [type, setType] = useState("All");
   const [liveDocs, setLiveDocs] = useState<SearchDoc[] | null>(null);
@@ -50,10 +42,10 @@ export function SearchDemo() {
   // Live mode: debounced search via the SDK; latest-query-wins; null on any
   // failure so the render falls back to the sample corpus (never looks broken).
   useEffect(() => {
-    if (!client) return;
+    if (!client || !site) return;
     const mine = ++seq.current;
     const t = window.setTimeout(() => {
-      liveSearch(query)
+      liveSearch(client, site, query)
         .then((docs) => {
           if (mine === seq.current) setLiveDocs(docs);
         })
@@ -62,9 +54,9 @@ export function SearchDemo() {
         });
     }, 250);
     return () => window.clearTimeout(t);
-  }, [query]);
+  }, [query, client, site]);
 
-  const usingLive = LIVE && liveDocs !== null;
+  const usingLive = live && liveDocs !== null;
   const sourceDocs = usingLive ? (liveDocs as SearchDoc[]) : SEARCH_DOCS;
   const types = useMemo(
     () => ["All", ...Array.from(new Set(sourceDocs.map((d) => d.type)))],
