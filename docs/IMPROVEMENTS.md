@@ -2229,3 +2229,105 @@ not a second call site.
 > `buildMemoryPrefixLegacy` path were deleted (single history-prefix assembly path),
 > and the Live Preview now mirrors the whole message list, not just the system
 > message. Block AL (§XXXV) is now fully shipped and closed; see CHANGELOG Block AL.
+
+## XXXVI. HuggingFace embedding provider + provider-aware model discovery (Block AM)
+
+### The gap
+
+Creating an embedding model in Turing forces a false choice between two very
+different UX surfaces:
+
+- **LLM instance** → the embedding call is delegated to a remote vendor
+  (OpenAI/Voyage/Gemini/Cohere/Mistral/Bedrock/…). The *model* is typed as
+  free-text into `modelReference` — no discovery, no validation, easy to fat-finger
+  `text-embedding-3-smal`.
+- **`TRANSFORMERS_LOCAL`** → the embedding runs **in-process** through Spring AI's
+  `TransformersEmbeddingModel` (ONNX Runtime + DJL tokenizers, no API key). But the
+  admin must paste two raw URLs/paths by hand — the `.onnx` model artifact and the
+  `tokenizer.json` — with only a client-side `/\.onnx$/`/`/\.json$/` regex to catch
+  mistakes.
+
+`providerType` is not an enum: it is a String discriminator holding *either* the
+literal sentinel `TRANSFORMERS_LOCAL` (see `TurLocalEmbeddingModelFactory.PROVIDER_TYPE`)
+*or* an `llm_instance` UUID. The dispatch lives in one place —
+`TurRagContextBuilder.resolveEmbeddingModel`: `localEmbeddingModelFactory.supports(providerType)`
+→ local ONNX, else build a detached `TurLLMInstance` → `TurLlmModelFactory.createEmbeddingModel`.
+
+The key observation that motivates this block: **the local path already speaks
+HuggingFace.** `TurDefaultRagInfraOnStartup` hardcodes
+`https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/onnx/model.onnx`
+and `.../resolve/main/tokenizer.json`. So a "huggingface.co provider" is not a new
+runtime — it is the *same* `TransformersEmbeddingModel` runtime with the URL typing
+replaced by **picking a repo id from a list**. The user's framing is exactly right:
+"it does the same thing as transformers with Spring AI, the difference is you can
+choose the model from a list."
+
+### The design
+
+**Treat `providerType` as a discriminator with a third reserved sentinel.** Add
+`HUGGINGFACE` next to `TRANSFORMERS_LOCAL` (any other value = an LLM-instance id, as
+today — the new sentinel must not collide with that convention). A new
+`TurHuggingFaceEmbeddingModelFactory` `supports("HUGGINGFACE")`, takes the HF **repo
+id** from the existing `modelReference` column (so **no new entity columns**),
+resolves it to the canonical artifact URLs, and delegates to the *same* cached
+`TransformersEmbeddingModel` build the local factory already owns (refactor the
+build/cache into a shared helper so both factories reuse it). Repo-id → URL
+resolution must handle the two layouts HF sentence-transformers repos use: ONNX at
+the repo root vs under an `onnx/` subfolder (probe the tree; prefer `onnx/model.onnx`,
+fall back to root). Fail-open, exactly like the local path.
+
+**Two discovery seams, one UX.** The user wants the model field to *fetch the list
+from the provider*. There are genuinely two list sources plus a manual escape:
+
+1. **HuggingFace list** (T624) — query the public `https://huggingface.co/api/models`
+   with the feature-extraction / `sentence-transformers` filter, rank by
+   downloads/likes, and — crucially — **verify ONNX availability** by checking the
+   repo `tree/main` exposes both an `.onnx` artifact and `tokenizer.json`, so the
+   picker never offers a model that will fail to load in-process. When the HF API is
+   unreachable, fall back to a small **curated bundled catalog** of known-good ONNX
+   sentence-transformers models. This deliberately mirrors the T577 shape:
+   `TurLlmModelDiscoveryService` → `Result(Source {LIVE, CATALOG, NONE}, List<…>)`
+   with a bundled `TurLlmModelCatalog` fallback.
+2. **LLM embedding list** (T625) — T577 already ships live model discovery, but for
+   *chat* models on `TurLLMInstance`. Extend that seam to surface *embedding-capable*
+   models per vendor and expose it for the embedding form, so the LLM path gets the
+   same combobox the chat LLM form has (retiring free-text `modelReference`).
+3. **Manual local path** — the existing `.onnx`/`.json` inputs stay for air-gapped
+   deploys, private artifacts, or a fine-tuned model not on the Hub.
+
+**The frontend collapses to one provider-aware picker** (T626). `bento.embedding.form.tsx`
+selects a provider *mode* and renders the matching model control: an LLM-instance
+combobox (T625), an HF searchable picker with live/catalog badges + downloads/dims +
+"ONNX verified" check (T624), or the manual path inputs. Reuse the existing
+`ModelCombobox`/`useLlmModels` React pattern; add a sibling `useHuggingFaceModels`.
+
+### The exploit tail (💭)
+
+- **Dimension awareness (T627).** Embedding dimension is load-bearing: change it and
+  every indexed vector is invalid until reindex, and the Lucene/Solr vector field
+  must match. On select, probe the model's dimension (HF `config.json` `hidden_size`,
+  or a one-shot embed) and warn when it differs from the current default store's
+  dimension. Composes with T386 (manifest reindex) and T388 (field coverage).
+- **Variant/quantization (T628).** HF repos routinely ship `model.onnx`,
+  `model_quantized.onnx`, `model_O4.onnx`, etc. Let the picker choose the artifact
+  (size/latency vs accuracy). Feeds T514 (quantized/Matryoshka embeddings).
+- **Close the loop (T629).** Once `HUGGINGFACE` exists, `TurDefaultRagInfraOnStartup`
+  (T622) should provision the default model as a `HUGGINGFACE` model storing the repo
+  id `sentence-transformers/all-MiniLM-L6-v2`, not the hardcoded `resolve/main` URLs
+  — so the seeded default and a user-picked HF model are byte-shape identical.
+  Idempotent; keep the raw-URL local path as the fallback.
+
+### Why this shape
+
+- **No new persistence.** The repo id rides in `modelReference` (already the
+  vendor-model-id column for the LLM path). No Liquibase for T623–T626.
+- **One runtime, three doors.** HF and local are the *same* `TransformersEmbeddingModel`;
+  only the model-selection UX differs. That keeps the RAG runtime and the vector
+  store untouched.
+- **Reuses a proven pattern.** The LIVE/CATALOG/NONE discovery + editable combobox
+  already shipped for LLMs (T577); this block generalizes it rather than inventing a
+  parallel mechanism.
+- **Non-goal:** the HF *Inference API* (hosted, key-gated embeddings) is **not** this
+  block — that fits the LLM-instance/vendor path better (it needs an API key and a
+  remote call). This block is specifically the "pick a local ONNX model from a list"
+  ergonomic win.
