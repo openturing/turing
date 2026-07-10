@@ -2258,3 +2258,209 @@ not a second call site.
 > provider-aware picker (LLM combobox / HF searchable picker / manual local path)
 > with on-select dimension + reindex warnings and an ONNX variant/quantization
 > choice, and the default-RAG startup provisioning now seeds an HF repo id.
+
+## XXXVII. Security hardening — post-audit (Block AN)
+
+> A full-surface security review (2026-07-10) assuming a client exercises 100% of
+> the product: the anonymous SN chat/search path, admin config, connectors, MCP
+> (inbound server + agent-as-client), pluggable storage, export/import ZIPs, and
+> custom Groovy/HTTP/code-interpreter tools. Findings below carry a
+> **CONFIRMED** (read the code, clearly reachable) vs **POTENTIAL** (real gap,
+> reachability hinges on an un-inspected external jar or a config toggle) marker.
+> Each task is *analyse-then-fix*. Two structural multipliers make several
+> findings worse than they read in isolation: (a) `turing.permissions=false` is
+> the shipped default, which turns any authenticated principal into a super-admin
+> (§XXXVII.4) — so "admin-gated" ≈ "any authenticated user"; and (b) the
+> anonymous public chat/search path is `permitAll` by design and leans entirely
+> on a reverse proxy for abuse control that the shipped nginx config does not
+> provide (§XXXVII.3). Nothing here is a false alarm about the good controls that
+> *do* exist — BCrypt, write-only encrypted provider secrets, the LLM-HTML
+> iframe sandbox (`allow-scripts` without `allow-same-origin`), HttpOnly +
+> double-submit CSRF, react-markdown without `rehype-raw`, static-JPQL queries,
+> no XXE / native-deserialization / TLS-bypass, and the `TurFileUtils` egress
+> guard — were all verified present and are called out so they are not "fixed"
+> away.
+
+**XXXVII.1 — AI crypto master key (CRITICAL, CONFIRMED).** `turing.ai.crypto.key:
+sample-key-for-crypto` ships in `application.yaml:9` and `spring.profiles.active:
+production` is set (`:292`). `TurCryptoKeyMaterial.get()` only fails fast when the
+key is *blank*, so the committed sample value is used verbatim to AES/GCM-encrypt
+every `TurLLMInstance.apiKeyEncrypted` and store credential. Anyone with repo
+access + a DB copy (or ciphertext, e.g. via the `/actuator/env` of §XXXVII.11)
+decrypts all provider keys — the whole `@Transient` write-only design is nullified.
+Fix: require the key from env only, reject known sample/dev sentinels in prod (not
+just blank), re-encrypt existing rows on rotation, document the procedure. Note the
+existing cross-container caveat in T373. The underlying AES/GCM+PBKDF2 primitive
+lives in the external `viglet-core-crypto` jar (not in-repo), and the salt prefix
+`"turing-tenant-secret:"` is static — minor, secondary to the key exposure.
+
+**XXXVII.2 — Anonymous chat-analytics (CRITICAL, CONFIRMED).**
+`/api/system/chat-analytics/**` is `permitAll` in both auth branches
+(`TurSecurityConfigProduction.java:191,253`). `TurChatAnalyticsAPI` then lets an
+unauthenticated caller enumerate sessions (`GET .../sessions`) and pull the full
+chat-memory transcript of any conversation (`.../sessions/{id}/transcript` →
+`chatMemoryStore.findMessages`), plus router-decisions and tool-calls. That is
+end-user-typed content / PII with no auth; the only "control" is a code comment
+saying to restrict it at the network layer. Fix: require authentication + a role.
+
+**XXXVII.3 — Anonymous chat abuse / cost (CRITICAL, CONFIRMED).** No `@RateLimiter`
+/ bucket4j / per-IP / per-session / per-minute throttle exists in the app, and
+`containers/nginx/conf.d/app.conf` is a bare proxy with no `limit_req`/`limit_conn`
+— so the roadmap's assumption that rate-limiting lives in nginx is not true even in
+the shipped config. The only budget mechanism, `TurChatCostBudgetGate`, is
+per-agent, monthly, opt-in and by explicit design *soft* (downgrades the model or
+logs, never aborts). A loop of `POST /api/sn/{site}/chat/conversation` drives
+unbounded LLM spend (each turn = embedding + retrieval + completion, plus optional
+groundedness re-check and follow-up generation = several calls). Fix: per-IP/session
+rate limiting + a hard aborting cost/turn kill-switch at the app layer, and real
+nginx limits. Pairs with the T634 guest-endpoint abuse note.
+
+**XXXVII.4 — `permissions=false` blanket admin (HIGH, CONFIRMED).** With the shipped
+default `turing.permissions: false` (`application.yaml:11`),
+`TurCustomUserDetailsService.loadUserByUsername` and
+`TurAuthTokenHeaderFilter.resolveAuthorities` grant `ROLE_ADMIN` + every DB
+privilege to any principal that authenticates by any means, regardless of their
+groups. All ~240 `@PreAuthorize`/`@Secured` checks across 48 controllers become
+dead, and controllers with no annotation are equally open. This is the multiplier
+that turns the dev-token leak (§XXXVII.8) and self-registration into privilege
+escalation and makes "admin-gated" findings reachable by any authenticated user.
+Fix: stop blanket-granting when permissions are off (grant only the user's real
+authorities), or reconsider the default.
+
+**XXXVII.5 — Egress / SSRF (HIGH, CONFIRMED + POTENTIAL).** One good centralised
+guard (`TurFileUtils.isSafe` + redirect re-validation, used by the persona URL
+import) blocks loopback/link-local/private IPv4 incl. `169.254.169.254`, but every
+other outbound feature bypasses it: the connector **test-connection** endpoint
+(`TurConnectorSelfInstallService.testConnection:202`, authenticated, returns
+status/message) is a response-observable SSRF oracle for internal port-scanning +
+cloud metadata and forwards a caller-supplied bearer token to the chosen host;
+LLM/rerank/webhook base URLs and the integration federation proxy are unvalidated
+(the proxy checks host on the initial URL but not on redirect hops — a trusted
+endpoint that 302s to an internal address is proxied back). The guard itself has an
+IPv6 ULA (`fc00::/7`) gap (`isSiteLocalAddress()` only matches deprecated
+`fec0::/10`) and a TOCTOU/DNS-rebinding window (host resolved 3×). Fix: extract one
+hardened validator (add IPv6 ULA, pin the resolved IP, drop/re-validate redirects)
+and route all of the above through it. The HuggingFace resolver was checked and is
+*not* user-driven SSRF (repoId is URI-encoded into the path; base-url is deploy
+config).
+
+**XXXVII.6 — SpEL RCE in chat-flow conditions (HIGH, CONFIRMED sink).**
+`ChatFlowOps.trySpel:1738` evaluates a node's `conditionExpression` with a
+`StandardEvaluationContext`, which permits `T(java.lang.Runtime).getRuntime().exec(...)`.
+The expression is not end-user chat input, but it *is* attacker-influenceable:
+chat-flow definitions arrive via ZIP import (`TurAIAgentImportService`) and are
+produced by the LLM authoring skill, so any flow author / bundle import / prompt-
+steered authoring yields RCE. Fix: `SimpleEvaluationContext.forPropertyAccessors(...)`
+(blocks type refs + method invocation) — the runtime only needs property access on
+the variables map.
+
+**XXXVII.7 — Storage path-traversal / Zip-Slip (HIGH, CONFIRMED gap + POTENTIAL
+sink).** `TurTenantScopedStorageService.scopeKey:64` rejects `key.contains("..")`
+only when a tenant prefix is active; when tenancy is off or tenant == DEFAULT
+(`currentPrefix()==""`) it returns the key unmodified — so the most common
+deployment has no traversal guard (CONFIRMED logic gap). Reachable via `TurAssetAPI`
+(`download`/`preview`/`metadata`/`delete` take an unnormalised `?objectName=` with
+**no** `@Secured`, unlike `TurStoreInstanceAPI`) and via ZIP import in `TurPageAPI`
++ `TurSkillFileService`, which concatenate entry names into the storage key without
+stripping `..`. Whether this escapes on the FILESYSTEM backend hinges on the
+external `viglet-core-storage` jar resolving keys within base (POTENTIAL); the app
+layer does zero normalisation regardless. Fix: unconditional `..`/absolute-key
+rejection in `scopeKey`, authz on `TurAssetAPI`, entry-name sanitisation, and
+confirm base-dir containment in the backend.
+
+**XXXVII.8 — Credential material over the API (HIGH, CONFIRMED).**
+`TurUser.password` has no `@JsonIgnore`; `TurUserDto extends TurUser` inherits it,
+so the admin user-list (`TurUserAPI.turUserList`) returns every user's BCrypt hash
+(enabling offline cracking; and in multi-tenant a tenant admin gets all hashes).
+Separately `TurDevTokenAPI` has zero authorization on any method, `TurDevTokenDto`
+inherits the `token` getter so GET returns cleartext token values, POST mints
+tokens for anyone, tokens have no expiry / enabled / revoked flag (revocation =
+row delete), and `TurSNSiteApiKeyGateFilter` accepts the token as an `?apiKey=`
+query param (lands in access logs / Referer). Combined with §XXXVII.4 this is
+straight privilege escalation. Fix: `@JsonIgnore` (or DTO scrub) on `password`,
+authorization + no-cleartext + expiry/revocation on dev tokens, drop query-param
+token acceptance. (Setup API self-closes correctly; token entropy is fine; token
+validation is an indexed lookup, not timing-vulnerable — all verified.)
+
+**XXXVII.9 — RAG / tool trust boundary (HIGH, CONFIRMED).**
+`TurSNGenAi.buildSystemPrompt:660` appends retrieved document text to the *system*
+prompt as `behavior + "---\nContext from the website:\n" + information + "---"`,
+with no escaping, no untrusted-data framing, no injection scan (the index-time
+`moderationService` is content moderation, not injection defense; the roadmap's
+"anti-injection normalization" is the unrelated CPF/CNPJ + yes/no slot parser in
+`ChatFlowOps`). Any content that reaches the index (crawled page, uploaded asset,
+UGC) can carry "ignore previous instructions / call tool X" that then executes with
+system authority on the next anonymous query. And the anonymous `/conversation`
+endpoint exposes the agent's native + MCP-client + custom + skill tools to the LLM
+with **no** authorization boundary distinguishing an anonymous visitor from an
+admin — `TurMcpToolScopePolicy` guards only the inbound `/mcp` server, not the
+agent-as-client tools. Blast radius is config-dependent (which tools the deployed
+agent has) but the missing boundary is structural. Fix: frame retrieved content as
+untrusted (delimit/escape, not verbatim in system role) + gate tool invocation by
+caller trust, especially write / MCP-client / custom tools.
+
+**XXXVII.10 — Input / DoS caps (HIGH, CONFIRMED).**
+`spring.servlet.multipart.max-file-size`/`max-request-size` = 1024MB
+(`application.yaml:360`) applies to the anonymous `/slot-extract(-multi)` /
+`/slot-upload`; a ~1 GB (or many-file) upload is fully read + Tika-parsed before the
+24k-char trim, and each fires a vision/LLM call. Conversation message count and
+per-message length are unbounded (only the 1 GB body bounds them); the
+`TurTokenBudgetService` cap is opt-in/off and its over-budget default may proceed
+(or COMPACT, an extra LLM call). ZIP import buffers entries via `readAllBytes()`
+with no per-entry / total / count cap (zip-bomb OOM). Fix: pre-parse multipart
+size+type gate, default-on hard message-count/length + token caps, zip entry
+size/count limits.
+
+**XXXVII.11 — Actuator over-exposure (MEDIUM, CONFIRMED).**
+`management.endpoints.web.exposure.include: "*"` (`application.yaml:464`) exposes
+all actuator endpoints; the security config only `permitAll`s `health*` +
+`prometheus`, the rest fall under `authenticated()` = admin by default (§XXXVII.4).
+`/actuator/env` + `/heapdump` then leak `ai.crypto.key` (§XXXVII.1), datasource
+creds, and provider keys. Fix: `exposure.include: health,info,prometheus` and
+role-gate anything else.
+
+**XXXVII.12 — MCP hardening (MEDIUM, CONFIRMED).** Inbound `/mcp` fails open —
+`turing.mcp-server.require-auth` defaults false, so it is `permitAll` behind only a
+`TurMcpLoopbackFilter` (breaks if a proxy forwards to the app / `X-Forwarded-For` is
+trusted); fail-closed logic only runs when `require-auth=true`. The agent-as-MCP-
+client path (`TurMcpToolCallbackService.createTransport:139`) uses `server.url()`
+verbatim (SSRF) and `server.command()` + args for stdio transport (arbitrary local
+process on the host) with no allowlist. Admin-gated (so MEDIUM), but stdio is
+effectively RCE-by-config and the client path has no scope policy. Fix: default
+fail-closed, validate/allowlist client URL + command, extend `TurMcpToolScopePolicy`
+to client tools.
+
+**XXXVII.13 — IDOR in user-memory (MEDIUM, CONFIRMED gap).** `TurUserMemoryAPI`
+(`/api/sn/{site}/user-memory`) keys `list`/`remember`/`clear` on a client-supplied
+`userId` with no binding to the caller, and `delete(@PathVariable id)` deletes any
+memory row by id with no userId/agent/tenant scoping. `@TenantId` isolates tenants
+but never isolates visitors within a site. (Reachability caveat: the path is not in
+`permitAll`, so anonymous widget calls 401 unless authenticated — but the missing
+per-visitor authorization is genuine, and `delete(id)` is unscoped.) Fix: scope
+every op to the resolved caller/session.
+
+**XXXVII.14 — Config & logging hygiene (MEDIUM/LOW, mixed).** Committed MinIO creds
+`admin` / `minha_senha_forte` (`application.yaml:116`, exploitable only when
+`storage.type=MINIO` but in git history regardless — rotate + purge). H2 console is
+off by default but `web-allow-others: true` and `TurSecurityConfigProduction`
+`web.ignoring("/h2/**")` mean that if enabled it is an unauthenticated remote DB
+console with passwordless `sa` — drop the ignore + web-allow-others. Secret-preview
+logging (`TurGlobalSettingsAPI:202`, first 8 chars of the rotated URL secret) and
+the human-approval capability-token INFO log (`TurHumanApprovalAPI:104`) should be
+redacted. The anonymous self-registration (`/api/v2/user/register`, gated by
+`authentication.newUser`, default off) + `/api/signup` arbitrary-username paths
+should be constrained (low impact today, meaningful once permissions/tenancy are on).
+
+**XXXVII.15 — Frontend XSS surface (MEDIUM/LOW, POTENTIAL).** There is no client-side
+HTML sanitiser (no DOMPurify) anywhere, so every `dangerouslySetInnerHTML` relies on
+the backend. Search result `title`/`description` are injected raw in
+`result-card.tsx:99,109,122` (inside the authenticated admin console, sharing the
+session cookie) for `<mark>` highlighting — if the search-engine highlighter does
+not HTML-escape field content before wrapping matches, a poisoned indexed document
+is stored XSS into the admin session (POTENTIAL, hinges on backend highlighter). The
+Gemini `renderedContent` fragment is injected raw + un-sandboxed into the console
+(`chat-message-list.tsx:219`), and LLM-driven D2 SVG is injected post-compile with no
+sanitisation (`TuringD2Diagram.tsx:181`, low). Fix: confirm/enforce backend escaping
++ a client sanitiser allowing only `<mark>`-style markup, sanitise/sandbox the Gemini
+fragment, optionally post-sanitise the D2 SVG. (The LLM ```html sandbox, markdown
+prose, vanilla SDK, and CSRF handling were all verified safe — do not regress them.)

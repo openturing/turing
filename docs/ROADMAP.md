@@ -105,6 +105,37 @@ T572 delight-polish follow-up, and the T619 persona-parity follow-up are all
 passed, onboarding polish shipped, and the two console-only persona tools
 (from-audio authoring + persona-suggest) re-added to bento. Block AG is closed.
 
+## Block AN — Security hardening (post-audit, 2026-07-10)
+
+> From a full-surface security review assuming a client exercises 100% of the
+> product (all anonymous SN chat/search, admin config, connectors, MCP, storage,
+> imports, custom tools). Findings + CONFIRMED/POTENTIAL status and evidence in
+> [IMPROVEMENTS.md](IMPROVEMENTS.md) §XXXVII. Each task is *analyse-then-fix*:
+> confirm the reachability caveat noted, then remediate. Ordered by severity;
+> the three 🔴 items are live-secret / anonymous-data / anonymous-cost exposures
+> that warrant immediate attention regardless of task sequencing.
+
+**🔴 Critical:**
+- 📋 **T639** (deps: —) 🔴 **Externalise & rotate the AI crypto master key** — `turing.ai.crypto.key: sample-key-for-crypto` is committed in `application.yaml:9` with `spring.profiles.active: production` (`:292`); the prod fail-fast in `TurCryptoKeyMaterial` only fires on a *blank* key, so this repo-committed key currently encrypts every stored provider API key / store credential. Require the key via env only, reject known sample/dev values in prod, re-encrypt existing secrets, document rotation. → §XXXVII.1
+- 📋 **T640** (deps: —) 🔴 **Authenticate `/api/system/chat-analytics/**`** — `permitAll` in both auth branches (`TurSecurityConfigProduction.java:191,253`) exposes session enumeration + full chat transcripts (`.../sessions/{id}/transcript`) anonymously — end-user content / PII with no auth. Require auth + role; a code comment is not a control. → §XXXVII.2
+- 📋 **T641** (deps: —) 🔴 **App-layer abuse controls on the anonymous chat path** — no rate-limit / per-IP / per-session cap anywhere in the app, and the shipped `containers/nginx/conf.d/app.conf` has no `limit_req`/`limit_conn`; the only budget gate (`TurChatCostBudgetGate`) is per-agent, monthly, opt-in and *soft* (never aborts). Add per-IP/session throttling + a hard aborting cost/turn kill-switch + nginx limits. → §XXXVII.3
+
+**🟠 High:**
+- 📋 **T642** (deps: —) **Fix the `permissions=false` blanket-admin grant** — default `turing.permissions: false` (`application.yaml:11`) makes `TurCustomUserDetailsService`/`TurAuthTokenHeaderFilter` grant every authenticated principal `ROLE_ADMIN` + all privileges, nullifying all 240 method-level checks. Stop blanket-granting when permissions are off (or flip the default) so authn ≠ super-admin. → §XXXVII.4
+- 📋 **T643** (deps: —) **Central egress guard for all outbound fetches (SSRF)** — one hardened validator (extend `TurFileUtils.isSafe`: add IPv6 ULA `fc00::/7`, pin the resolved IP to defeat DNS-rebinding) routed through the connector test-connection oracle (`TurConnectorSelfInstallService`, authenticated, response-observable), LLM/rerank/webhook base URLs, and the federation proxy (re-validate every redirect hop). → §XXXVII.5
+- 📋 **T644** (deps: —) **Kill the SpEL RCE sink in chat-flow conditions** — `ChatFlowOps.trySpel` (`:1738`) evaluates `conditionExpression` with a `StandardEvaluationContext` (full `T(...)`/method calls → RCE) reachable via flow-bundle import + LLM authoring; swap to `SimpleEvaluationContext.forPropertyAccessors(...)`. → §XXXVII.6
+- 📋 **T645** (deps: —) **Storage path-traversal / Zip-Slip containment** — `TurTenantScopedStorageService.scopeKey` only rejects `..` when a tenant prefix is active, so the default single-tenant path is unguarded; `TurAssetAPI` fetches/deletes a user-supplied `objectName` with no authz; page/skill ZIP import concatenates entry names without `..` stripping. Add unconditional key containment + authz + entry-name sanitisation; verify the filesystem backend resolves within base. → §XXXVII.7
+- 📋 **T646** (deps: —) **Stop leaking credential material over the API** — `TurUser.password` has no `@JsonIgnore` so the admin user-list returns BCrypt hashes; `TurDevTokenAPI` has zero authz, returns cleartext tokens, and tokens have no expiry/revocation and are accepted as a `?apiKey=` query param. Add `@JsonIgnore`/DTO scrub, authz, expiry+revocation, drop query-param tokens. → §XXXVII.8
+- 📋 **T647** (deps: —) **RAG / tool-call trust boundary for anonymous chat** — retrieved chunks are concatenated verbatim into the *system* prompt (`TurSNGenAi.buildSystemPrompt:660`) with no untrusted-data framing (the roadmap's "anti-injection" is unrelated CPF/CNPJ parsing), and there is no authorization boundary between an anonymous visitor and LLM-invoked native/MCP-client/custom tools. Frame retrieved content as untrusted + gate tool invocation by caller trust. → §XXXVII.9
+- 📋 **T648** (deps: —) **Input / DoS caps on anonymous endpoints** — `spring.servlet.multipart.max-*-size: 1024MB` (`application.yaml:360`) lets anonymous slot-upload feed ~1 GB into Tika + a vision call; chat message count/length is unbounded (token budget is opt-in/off); ZIP import buffers entries via `readAllBytes()` with no size/count cap (zip-bomb OOM). Add pre-parse size/type gates, default-on hard message/token caps, and zip entry limits. → §XXXVII.10
+
+**🟡 Medium / Low:**
+- 📋 **T649** (deps: —) **Actuator hardening** — `management.endpoints.web.exposure.include: "*"` (`application.yaml:464`) exposes `/actuator/env` + `/heapdump` (leaking the crypto key, DB creds, provider keys) to any authenticated principal (= admin by default, cf. T642). Restrict to `health,info,prometheus` and role-gate the rest. → §XXXVII.11
+- 📋 **T650** (deps: —) **MCP hardening** — inbound `/mcp` fails open (`require-auth` defaults false, relies on a loopback filter); the agent-as-MCP-*client* path (`TurMcpToolCallbackService.createTransport:139`) takes a verbatim URL (SSRF) and a stdio `command` (arbitrary local process) with no allowlist, and `TurMcpToolScopePolicy` guards only the inbound server surface. Fail closed by default + validate client URL/command + extend the scope policy to client tools. → §XXXVII.12
+- 📋 **T651** (deps: —) **Fix IDOR in `TurUserMemoryAPI`** — list/remember/clear key on a client-supplied `userId` with no binding to the caller, and `delete(id)` has no ownership/tenant/agent check. Scope every op to the resolved caller/session. → §XXXVII.13
+- 💭 **T652** (deps: —) **Config & logging hygiene** — remove committed MinIO creds (`application.yaml:116` `admin`/`minha_senha_forte`, purge from history); keep the H2 console off and drop `web.ignoring("/h2/**")` + `web-allow-others: true`; redact the secret-preview + human-approval capability-token INFO logs; constrain the anonymous self-registration / signup arbitrary-username paths. → §XXXVII.14
+- 💭 **T653** (deps: —) **Frontend XSS surface** — confirm & enforce that the search-engine highlighter HTML-escapes field content before it reaches the `dangerouslySetInnerHTML` result-card (rendered inside the authenticated admin console); add a client sanitiser allowing only `<mark>`-style markup; sanitise/sandbox the Gemini `renderedContent` fragment injected raw into the console; optionally post-sanitise the LLM-driven D2 SVG. → §XXXVII.15
+
 ## Non-goals (do NOT add as tasks)
 
 Binding constraints — see [IMPROVEMENTS.md](IMPROVEMENTS.md) §I.6 (What NOT to
