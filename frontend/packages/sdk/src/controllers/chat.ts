@@ -194,6 +194,14 @@ export interface ChatControllerOptions {
   /** Force a specific chat flow for every turn. */
   readonly flowId?: string;
   /**
+   * T635 / §XXVII.4 — site-mode RAG persona ("same question, different eyes").
+   * Forwarded as `personaId` on every `/chat/conversation` turn and validated
+   * against the site agent's catalog server-side (unknown → default). Distinct
+   * from {@link persona} (the stateless persona-mode transport, T579). Ignored
+   * in agent/persona mode.
+   */
+  readonly personaId?: string;
+  /**
    * Force a specific A/B experiment arm by `variantLabel` for every turn
    * (T73) — bypasses the engine's deterministic hash / bandit / schedule
    * window. Useful for QA + sales demos. When omitted, the controller falls
@@ -407,6 +415,7 @@ export function createChatController(
     persist = false,
     maxMessages = DEFAULT_MAX_MESSAGES,
     flowId,
+    personaId: ragPersonaId,
     agent,
     persona,
     conversationId: controlledConversationId,
@@ -778,6 +787,7 @@ export function createChatController(
           conversationId: activeConversationId,
           flowId,
           forcedVariant,
+          personaId: ragPersonaId,
           onToken,
           onToolCall,
           signal: controller.signal,

@@ -7,10 +7,12 @@ import {
 } from "@viglet/turing-sdk";
 import {
   TuringCopyButton,
+  TuringPersonaPicker,
   TuringSourceChips,
   TuringThinkingDots,
 } from "@viglet/turing-react-ui";
 import { RichAnswer } from "@/components/rich-answer";
+import { PLAYGROUND_PERSONAS } from "@/lib/site-content";
 import { useTuringDemo } from "@/lib/turing-demo";
 import { cn } from "@/lib/utils";
 
@@ -77,6 +79,10 @@ export function ChatDemo({ bare = false, seed }: Readonly<ChatDemoProps>) {
   const [convo, setConvo] = useState<DemoMsg[]>([]);
   const [input, setInput] = useState("");
   const [busy, setBusy] = useState(false);
+  // T638 — per-request persona ("same question, different eyes"). null = the
+  // agent's default voice. Changing it starts a fresh conversation so the
+  // contrast is clean.
+  const [personaId, setPersonaId] = useState<string | null>(null);
   const controllerRef = useRef<ChatController | null>(null);
   const scrollRef = useRef<HTMLDivElement | null>(null);
   const busyRef = useRef(false);
@@ -86,7 +92,7 @@ export function ChatDemo({ bare = false, seed }: Readonly<ChatDemoProps>) {
   // site resolves (pinned or auto-discovered) so the controller binds to it.
   useEffect(() => {
     if (!client || !site) return;
-    const c = createChatController(client, { site });
+    const c = createChatController(client, { site, personaId: personaId ?? undefined });
     controllerRef.current = c;
     const unsub = c.subscribe((s) => {
       setConvo(
@@ -102,7 +108,7 @@ export function ChatDemo({ bare = false, seed }: Readonly<ChatDemoProps>) {
       controllerRef.current = null;
       if (typeof unsub === "function") unsub();
     };
-  }, [client, site]);
+  }, [client, site, personaId]);
 
   useEffect(() => {
     busyRef.current = busy;
@@ -179,6 +185,22 @@ export function ChatDemo({ bare = false, seed }: Readonly<ChatDemoProps>) {
           </span>
         </div>
       )}
+
+      <TuringPersonaPicker
+        options={PLAYGROUND_PERSONAS}
+        value={personaId}
+        onChange={setPersonaId}
+        includeDefault
+        labels={{ heading: "Answer as", defaultOption: "Default" }}
+        classNames={{
+          container: "flex flex-wrap items-center gap-1.5 border-b border-border px-4 py-2",
+          label: "text-[0.65rem] font-bold uppercase tracking-wide text-muted-foreground/70",
+          list: "flex flex-wrap gap-1",
+          option:
+            "rounded-full border border-border bg-muted px-2.5 py-0.5 text-xs font-medium text-muted-foreground transition-colors hover:border-primary/50 hover:text-foreground data-[active]:border-primary data-[active]:bg-primary/10 data-[active]:text-foreground",
+          optionActive: "border-primary bg-primary/10 text-foreground",
+        }}
+      />
 
       <div ref={scrollRef} className="flex-1 space-y-3 overflow-y-auto px-4 py-4">
         <Bubble role="assistant" content={GREETING} />

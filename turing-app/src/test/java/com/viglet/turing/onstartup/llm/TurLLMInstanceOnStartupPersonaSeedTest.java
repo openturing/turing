@@ -100,6 +100,11 @@ class TurLLMInstanceOnStartupPersonaSeedTest {
         List<String> names = saved.getPersonas().stream().map(TurPersona::getName).sorted().toList();
         assertThat(names).containsExactly("Enterprise Buyer", "First-time User", "Skeptical Developer");
 
+        // Stable ids the T638 demo playground hardcodes — must not drift.
+        List<String> ids = saved.getPersonas().stream().map(TurPersona::getId).sorted().toList();
+        assertThat(ids).containsExactly(
+                "persona-enterprise-buyer", "persona-first-time-user", "persona-skeptical-developer");
+
         // Mix of speaker + audience: at least one speaker-usable and all audience-usable.
         assertThat(saved.getPersonas()).anyMatch(TurPersona::isUsableAsSpeaker);
         assertThat(saved.getPersonas()).allMatch(TurPersona::isUsableAsAudience);

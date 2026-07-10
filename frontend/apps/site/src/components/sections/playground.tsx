@@ -1,12 +1,13 @@
 import { useEffect, useState } from "react";
-import { Maximize2, MessageSquare, Minimize2, Search, X } from "lucide-react";
+import { Maximize2, MessageSquare, Minimize2, Search, ShieldCheck, X } from "lucide-react";
 import { Container, SectionHeader } from "@/components/brand";
 import { SearchDemo } from "@/components/sections/search-demo";
 import { ChatDemo } from "@/components/sections/chat-demo";
+import { ContentFitDemo } from "@/components/sections/content-fit-demo";
 import { useTuringDemo } from "@/lib/turing-demo";
 import { cn } from "@/lib/utils";
 
-type Tab = "search" | "ask";
+type Tab = "search" | "ask" | "validate";
 
 /**
  * The "Try it live" playground — the site's centerpiece proof.
@@ -58,6 +59,9 @@ export function Playground() {
           <TabButton active={tab === "ask"} onClick={() => setTab("ask")} icon={<MessageSquare className="size-3.5" />}>
             Ask it
           </TabButton>
+          <TabButton active={tab === "validate"} onClick={() => setTab("validate")} icon={<ShieldCheck className="size-3.5" />}>
+            Validate it
+          </TabButton>
         </div>
 
         <span className="ml-auto hidden items-center gap-1.5 rounded-full border border-border px-2.5 py-1 text-xs font-medium text-muted-foreground sm:inline-flex">
@@ -99,6 +103,9 @@ export function Playground() {
         <div className={cn("absolute inset-0", tab === "ask" ? "block" : "hidden")}>
           <ChatDemo bare seed={seed} />
         </div>
+        <div className={cn("absolute inset-0", tab === "validate" ? "block" : "hidden")}>
+          <ContentFitDemo bare />
+        </div>
       </div>
     </div>
   );
@@ -108,8 +115,8 @@ export function Playground() {
       <Container>
         <SectionHeader
           eyebrow="Try it live"
-          title="Search it, or ask it — same content"
-          description="Both run on Turing's own zero-dependency SDK, over the exact same corpus (Turing's documentation). Search finds the page; the assistant answers with a cited RAG response that traces back to the very same page. Try a result's “Ask about this”."
+          title="Search it, ask it, validate it — same content"
+          description="All three run on Turing's own zero-dependency SDK, over the exact same corpus (Turing's documentation). Search finds the page; the assistant answers with a cited RAG response — and you can switch personas to hear the same answer through different eyes, or validate whether your own copy lands for a given reader. Try a result's “Ask about this”."
         />
         {expanded && (
           <div

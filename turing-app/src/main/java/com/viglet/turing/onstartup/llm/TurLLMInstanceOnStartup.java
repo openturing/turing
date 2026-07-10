@@ -296,6 +296,13 @@ public class TurLLMInstanceOnStartup implements ApplicationRunner {
                         "Everyday words only; expand every acronym on first use.",
                         "New to the domain; needs concrete examples and short paragraphs."));
 
+        // Stable, well-known ids (the id column is assignable) so the T638 public
+        // demo playground can reference these personas without a discovery
+        // endpoint — the site hardcodes the same ids.
+        skepticalDeveloper.setId("persona-skeptical-developer");
+        enterpriseBuyer.setId("persona-enterprise-buyer");
+        firstTimeUser.setId("persona-first-time-user");
+
         for (TurPersona persona : new TurPersona[] { skepticalDeveloper, enterpriseBuyer, firstTimeUser }) {
             turPersonaRepository.save(persona);
             agent.getPersonas().add(persona);
