@@ -12,6 +12,7 @@ const NAV_ITEMS = [
   { label: "Try it live", href: "/#playground" },
   { label: "Capabilities", href: "/#features" },
   { label: "Why Turing", href: "/#why" },
+  { label: "Migrate", href: "/migrate" },
   { label: "Developers", href: "/#developers" },
   { label: "Marketplace", href: "/#marketplace" },
   { label: "Docs", href: LINKS.docs },

@@ -1,4 +1,4 @@
-import { Check, Minus } from "lucide-react";
+import { ArrowRight, Check, Minus } from "lucide-react";
 import { Container, SectionHeader } from "@/components/brand";
 import { COMPARISON, COMPARISON_COLUMNS } from "@/lib/site-content";
 import { cn } from "@/lib/utils";
@@ -71,6 +71,15 @@ export function Comparison() {
         <p className="mt-4 text-center text-xs text-muted-foreground">
           High-level comparison as of 2026 — verify current vendor capabilities. “DIY” = assembling LangChain/LlamaIndex with a vector database yourself.
         </p>
+        <div className="mt-8 text-center">
+          <a
+            href="/migrate"
+            className="inline-flex items-center gap-1.5 text-sm font-semibold text-primary transition-colors hover:text-primary/80"
+          >
+            Switching from Algolia or Elasticsearch?
+            <ArrowRight className="size-4" />
+          </a>
+        </div>
       </Container>
     </section>
   );

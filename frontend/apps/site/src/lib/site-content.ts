@@ -533,3 +533,151 @@ npx @viglet/turing-cli deploy   # push agents, flows, tools & skills`,
 
 /** Ordered slugs for navigation / prerender. */
 export const FEATURE_SLUGS = ["search", "ask", "automate", "run"] as const;
+
+/* -------------------------------------------------------------------------- */
+/* Migration landing (/migrate) — "Switching from Algolia / Elasticsearch?"   */
+/* §XXVII.3 / T479. Meilisearch/Supabase pattern: a concept-mapping table,     */
+/* a concrete import path, and the "your data stays in your infra" angle.     */
+/* -------------------------------------------------------------------------- */
+
+export interface MigrationRow {
+  /** The capability, phrased engine-neutrally. */
+  concept: string;
+  /** Algolia's name / mechanism for it. */
+  algolia: string;
+  /** Elasticsearch's name / mechanism for it. */
+  elastic: string;
+  /** The Viglet Turing ES equivalent. */
+  turing: string;
+}
+
+/**
+ * Honest concept mapping from the two engines teams most often switch from.
+ * Verify current vendor capabilities — as of 2026. Kept defensible: where a
+ * vendor's feature is paid/beta/hosted we say so rather than implying parity.
+ */
+export const MIGRATION_MAP: MigrationRow[] = [
+  {
+    concept: "Where documents live",
+    algolia: "Index",
+    elastic: "Index",
+    turing: "Semantic Navigation (SN) site",
+  },
+  {
+    concept: "A single record",
+    algolia: "Record (JSON object)",
+    elastic: "Document (_source)",
+    turing: "Document — indexed via REST or a connector",
+  },
+  {
+    concept: "Schema & field config",
+    algolia: "Index settings (searchableAttributes…)",
+    elastic: "Mappings",
+    turing: "Field manifest as code — POST /api/sn/manifest",
+  },
+  {
+    concept: "Faceting",
+    algolia: "attributesForFaceting",
+    elastic: "Aggregations",
+    turing: "Native facet fields, no extra query DSL",
+  },
+  {
+    concept: "Typo tolerance",
+    algolia: "typoTolerance",
+    elastic: "Fuzzy queries",
+    turing: "Typo-tolerant + spell-check in the box",
+  },
+  {
+    concept: "Synonyms",
+    algolia: "Synonyms API",
+    elastic: "Synonym token filter",
+    turing: "Engine synonyms (Solr / Elasticsearch)",
+  },
+  {
+    concept: "Semantic / vector search",
+    algolia: "NeuralSearch (paid add-on)",
+    elastic: "kNN over dense_vector",
+    turing: "Embedded Lucene KNN or your engine's vectors, fused via hybrid RRF",
+  },
+  {
+    concept: "Relevance tuning",
+    algolia: "Custom ranking + tie-breaking",
+    elastic: "BM25 + function_score",
+    turing: "BM25 + opt-in hybrid RRF (keyword + vector)",
+  },
+  {
+    concept: "AI answers over your content",
+    algolia: "Ask AI (hosted beta)",
+    elastic: "ELSER + your own LLM glue",
+    turing: "RAG, cited chat & agents built in",
+  },
+  {
+    concept: "Front-end UI",
+    algolia: "InstantSearch.js / React",
+    elastic: "Build it (elasticsearch-js)",
+    turing: "React SDK + zero-dep vanilla-JS SDK (headless)",
+  },
+  {
+    concept: "Query API",
+    algolia: "Hosted search API",
+    elastic: "_search DSL",
+    turing: "POST /api/sn/{site}/search — on your host",
+  },
+  {
+    concept: "Hosting & data residency",
+    algolia: "Fully hosted SaaS",
+    elastic: "Elastic Cloud or self-managed",
+    turing: "Self-hosted — content & embeddings never leave your infra",
+  },
+];
+
+export const MIGRATION_COLUMNS = {
+  concept: "Concept",
+  algolia: "Algolia",
+  elastic: "Elasticsearch",
+  turing: "Viglet Turing ES",
+} as const;
+
+export interface MigrationStep {
+  step: string;
+  title: string;
+  body: string;
+}
+
+/** The import path — three concrete moves, not a rip-and-replace weekend. */
+export const MIGRATION_STEPS: MigrationStep[] = [
+  {
+    step: "1",
+    title: "Describe the schema as code",
+    body: "Turn your Algolia index settings or Elasticsearch mappings into a versioned field manifest and POST it. Turing converges the live schema and flags breaking changes before they run. No schema handy? Derive a draft from sample documents.",
+  },
+  {
+    step: "2",
+    title: "Bring your records over",
+    body: "Bulk-index from your source of truth (or a records/_source export) through the REST index API, or point a connector at AEM, WordPress, a database or files. Your data flows straight into your own Solr, Elasticsearch or embedded Lucene index.",
+  },
+  {
+    step: "3",
+    title: "Swap the front-end client",
+    body: "Replace InstantSearch or the elasticsearch-js client with the Turing React SDK or the zero-dependency vanilla-JS SDK — headless hooks and components for search, facets, autocomplete and cited chat, so the same UI now runs on your infrastructure.",
+  },
+];
+
+export const MIGRATION_CODE = {
+  caption: "Converge the schema, then bulk-index your records",
+  lang: "bash",
+  code: String.raw`# 1. Provision fields from a manifest (replaces index settings / mappings)
+curl -X POST https://your-host/api/sn/manifest \
+  -H "Content-Type: application/json" \
+  -d @products.manifest.json
+
+# 2. Bulk-index the records you exported from Algolia / Elasticsearch
+curl -X POST https://your-host/api/sn/products/index \
+  -H "Content-Type: application/json" \
+  -d @products.json
+
+# 3. Query it — on your own host, data never left your network
+curl -X POST https://your-host/api/sn/products/search \
+  -H "Content-Type: application/json" \
+  -d '{ "q": "wireless headphones", "fq": ["brand:Acme"] }'`,
+} as const;

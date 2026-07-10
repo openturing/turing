@@ -26,6 +26,12 @@ export const routes: PrerenderRoute[] = [
       description: d.metaDescription,
     };
   }),
+  {
+    path: "/migrate",
+    title: "Switching from Algolia or Elasticsearch? | Viglet Turing ES",
+    description:
+      "Migrate from Algolia or Elasticsearch to Viglet Turing ES: a concept-mapping table, a three-step import path (schema as code, bulk index, swap the SDK), and self-hosted search where your data and embeddings stay in your own infrastructure.",
+  },
 ];
 
 /** Render a route's app shell to an HTML string for the prerender step. */

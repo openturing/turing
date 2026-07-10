@@ -7,6 +7,7 @@ const COLUMNS: { heading: string; links: { label: string; href: string }[] }[] =
       // Root-anchored so they also work from the /features/* pages (match SiteNav).
       { label: "Capabilities", href: "/#features" },
       { label: "How it works", href: "/#how" },
+      { label: "Migrate", href: "/migrate" },
       { label: "Self-host", href: "/#self-host" },
       { label: "Marketplace", href: "/#marketplace" },
       { label: "React SDK", href: LINKS.storybook },

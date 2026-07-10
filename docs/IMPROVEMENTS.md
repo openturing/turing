@@ -1834,9 +1834,6 @@ the host bring-up and pointing the marketplace SPAs at the instance.
 
 ### XXVII.3 Proof & deeper funnel (T479–T482)
 
-- **T479** — "Switching from Algolia / Elasticsearch?" migration landing
-  (Meilisearch/Supabase pattern): mapping table + import path + "your data stays
-  in your infra" angle.
 - **T480** — hosted **"try it free"** path via Viglet Cloud (the dual-path CTA
   Meilisearch/Supabase use: self-host docs **and** a hosted sandbox), so visitors
   who won't install can still reach first value.

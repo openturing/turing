@@ -1,6 +1,10 @@
 import { LandingPage } from "@/pages/landing";
 import { FeaturePage } from "@/pages/feature-page";
+import { MigratePage } from "@/pages/migrate";
 import { FEATURE_DETAILS } from "@/lib/site-content";
+
+/** Standalone (non-feature) routes with their own page component. */
+export const MIGRATE_PATH = "/migrate";
 
 /**
  * Resolve a pathname to a feature slug, or null for the landing page.
@@ -14,6 +18,7 @@ export function matchRoute(path: string): string | null {
 }
 
 export default function App({ path = "/" }: Readonly<{ path?: string }>) {
+  if (/^\/migrate\/?$/.test(path)) return <MigratePage />;
   const slug = matchRoute(path);
   if (slug) return <FeaturePage detail={FEATURE_DETAILS[slug]} />;
   return <LandingPage />;
