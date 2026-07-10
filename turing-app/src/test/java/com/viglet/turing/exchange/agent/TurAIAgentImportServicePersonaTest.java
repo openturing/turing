@@ -129,6 +129,32 @@ class TurAIAgentImportServicePersonaTest {
                 .anyMatch(p -> "persona-first-time-user".equals(p.getId()));
     }
 
+    /**
+     * T632 — {@code richContentEnabled} must survive the import so the public
+     * demo can ship its agent with rich-content rendering on (```html/```d2)
+     * via the seed bundle rather than a manual admin toggle.
+     */
+    @Test
+    void importCarriesRichContentEnabled() {
+        TurAIAgentExchange agentExchange = new TurAIAgentExchange();
+        agentExchange.setId("agent-turing-demo");
+        agentExchange.setTitle("Turing Demo Assistant");
+        agentExchange.setEnabled(1);
+        agentExchange.setRagEnabled(true);
+        agentExchange.setRichContentEnabled(true);
+
+        TurExchange exchange = new TurExchange();
+        exchange.setAgents(List.of(agentExchange));
+
+        var result = service.importAgents(exchange, null, true);
+        assertThat(result.error()).isNull();
+
+        ArgumentCaptor<TurAIAgent> agentCaptor = ArgumentCaptor.forClass(TurAIAgent.class);
+        org.mockito.Mockito.verify(agentRepository, org.mockito.Mockito.atLeastOnce())
+                .save(agentCaptor.capture());
+        assertThat(agentCaptor.getValue().isRichContentEnabled()).isTrue();
+    }
+
     private void verifySaved(ArgumentCaptor<TurPersona> captor) {
         org.mockito.Mockito.verify(personaRepository).save(captor.capture());
     }

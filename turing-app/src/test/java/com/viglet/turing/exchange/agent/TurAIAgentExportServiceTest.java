@@ -113,6 +113,7 @@ class TurAIAgentExportServiceTest {
         agent.setId(UUID.randomUUID().toString());
         agent.setTitle("Marina Agent");
         agent.setEnabled(1);
+        agent.setRichContentEnabled(true); // T632 — must survive the export envelope
         agent.setPersonas(new HashSet<>(List.of(persona)));
         agent.setDefaultPersona(persona);
         agent.setLlmInstances(new HashSet<>(List.of(llm)));
@@ -184,6 +185,7 @@ class TurAIAgentExportServiceTest {
         assertThat(parsed.getAgents()).hasSize(1);
         TurAIAgentExchange agentExchange = parsed.getAgents().get(0);
         assertThat(agentExchange.getTitle()).isEqualTo("Marina Agent");
+        assertThat(agentExchange.isRichContentEnabled()).isTrue();
         assertThat(agentExchange.getPersonaIds()).containsExactly(persona.getId());
         assertThat(agentExchange.getDefaultPersonaId()).isEqualTo(persona.getId());
         assertThat(agentExchange.getLlmInstanceIds()).containsExactly(llm.getId());

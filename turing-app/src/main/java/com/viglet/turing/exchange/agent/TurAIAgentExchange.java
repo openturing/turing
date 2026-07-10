@@ -46,6 +46,11 @@ public class TurAIAgentExchange {
     private String systemPromptMetaPrompt;
     private int enabled;
     private boolean ragEnabled;
+    // T295 / render.md — per-agent rich-content rendering (```html/```d2/charts).
+    // Carried so the capability survives an export/import round-trip (e.g. the
+    // public demo ships its agent with this on). Primitive default (false)
+    // matches the entity default for pre-T632 exports that omit the field.
+    private boolean richContentEnabled;
     private boolean chatMemoryEnabled;
     private int chatMemoryFlushIntervalMinutes;
     private int chatMemoryMaxMessages;
@@ -104,6 +109,7 @@ public class TurAIAgentExchange {
         e.systemPromptMetaPrompt = agent.getSystemPromptMetaPrompt();
         e.enabled = agent.getEnabled();
         e.ragEnabled = agent.isRagEnabled();
+        e.richContentEnabled = agent.isRichContentEnabled();
         e.chatMemoryEnabled = agent.isChatMemoryEnabled();
         e.chatMemoryFlushIntervalMinutes = agent.getChatMemoryFlushIntervalMinutes();
         e.chatMemoryMaxMessages = agent.getChatMemoryMaxMessages();

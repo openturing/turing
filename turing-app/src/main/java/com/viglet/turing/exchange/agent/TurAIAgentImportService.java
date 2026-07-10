@@ -404,6 +404,10 @@ public class TurAIAgentImportService {
         agent.setSystemPromptMetaPrompt(a.getSystemPromptMetaPrompt());
         agent.setEnabled(a.getEnabled());
         agent.setRagEnabled(a.isRagEnabled());
+        // T632 / T295 — rich-content rendering travels with the agent. Primitive
+        // boolean: a pre-T632 export that omits it deserializes to false, which
+        // matches the entity default, so old bundles are unaffected.
+        agent.setRichContentEnabled(a.isRichContentEnabled());
         agent.setChatMemoryEnabled(a.isChatMemoryEnabled());
         agent.setChatMemoryFlushIntervalMinutes(a.getChatMemoryFlushIntervalMinutes());
         agent.setChatMemoryMaxMessages(a.getChatMemoryMaxMessages());
