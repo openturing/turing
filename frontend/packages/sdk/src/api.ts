@@ -12,6 +12,7 @@ import type {
   TurChatStreamEvent,
   TurChatToolCall,
   TurClientToolCall,
+  TurContentFit,
   TurIntent,
   TurLlmContextInfo,
   TurLlmInstance,
@@ -216,6 +217,12 @@ export interface PostChatConversationOptions {
    * QA + sales demos. Blank/undefined → normal sticky assignment.
    */
   readonly forcedVariant?: string;
+  /**
+   * T635 — per-request persona ("same question, different eyes"). Validated
+   * against the site agent's catalog server-side (unknown → default), so any
+   * value here is safe. Blank/undefined → the agent's default voice.
+   */
+  readonly personaId?: string;
 }
 
 /** Parses an `"options"` SSE event payload into chip labels, or `null`. */
@@ -559,6 +566,7 @@ export async function postChatConversation(
       conversationId: options?.conversationId,
       flowId: options?.flowId,
       forcedVariant: options?.forcedVariant,
+      personaId: options?.personaId,
     }),
     signal: options?.signal,
   });
@@ -1404,10 +1412,13 @@ export async function postSiteFlowSelect(
   site: string,
   conversationId: string,
   flow: string,
+  personaId?: string,
 ): Promise<TurChatFlowSelectResponse> {
   const data = await client.post<TurChatFlowSelectResponse>(
     `/sn/${site}/chat/flow-select`,
-    { conversationId, flow },
+    // T635 — an optional persona is seeded into the pinned flow (validated
+    // against the site agent's catalog server-side).
+    { conversationId, flow, personaId },
   );
   return (
     data ?? {
@@ -1417,6 +1428,35 @@ export async function postSiteFlowSelect(
       reason: "empty response",
     }
   );
+}
+
+/**
+ * T635 / §XXVII.4 — "validate this content as persona X". Evaluates arbitrary
+ * text against a persona from the site agent's catalog and returns a structured
+ * content-fit verdict (fit %, what does/doesn't fit, flagged spans + rewrites).
+ *
+ * The persona must be an <em>audience</em>-usable member of the site's effective
+ * agent catalog; anything else is a 404 server-side. The text is hard-capped
+ * (12 000 chars → 413) — it's an LLM-cost surface — and rate-limited on the demo
+ * host, so keep submissions short.
+ *
+ * Server endpoint: {@code POST /api/sn/{site}/persona/{personaId}/content-fit}.
+ */
+export async function fetchPersonaContentFit(
+  client: TuringClient,
+  site: string,
+  personaId: string,
+  content: string,
+  sourceName?: string,
+): Promise<TurContentFit> {
+  const data = await client.post<TurContentFit>(
+    `/sn/${site}/persona/${personaId}/content-fit`,
+    { content, sourceName },
+  );
+  if (!data) {
+    throw new Error("Empty content-fit response");
+  }
+  return data;
 }
 
 /**
@@ -1912,8 +1952,14 @@ export function createTuringApi(client: TuringClient) {
       site: string,
       params: Parameters<typeof postSiteHandoff>[2],
     ) => postSiteHandoff(client, site, params),
-    postSiteFlowSelect: (site: string, conversationId: string, flow: string) =>
-      postSiteFlowSelect(client, site, conversationId, flow),
+    postSiteFlowSelect: (site: string, conversationId: string, flow: string, personaId?: string) =>
+      postSiteFlowSelect(client, site, conversationId, flow, personaId),
+    fetchPersonaContentFit: (
+      site: string,
+      personaId: string,
+      content: string,
+      sourceName?: string,
+    ) => fetchPersonaContentFit(client, site, personaId, content, sourceName),
     fetchLlmInstances: () => fetchLlmInstances(client),
     fetchLlmContextInfo: (llmInstanceId: string) => fetchLlmContextInfo(client, llmInstanceId),
     fetchAgentContextInfo: (agentId: string, llmInstanceId: string) =>

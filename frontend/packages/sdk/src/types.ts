@@ -377,6 +377,43 @@ export interface TurChatSource {
 }
 
 /**
+ * T634/T635 — a persona the anonymous demo may select ("same question,
+ * different eyes"). Mirrors an entry of the site agent's persona catalog.
+ */
+export interface TurPersonaOption {
+  readonly id: string;
+  readonly name: string;
+}
+
+/**
+ * T634/T635 — one flagged span from the content-fit verdict (<em>não condiz</em>):
+ * the offending `span`, why it doesn't fit the audience (`reason`), and a
+ * suggested rewrite. Mirrors the backend `TurContentFitMisfit`.
+ */
+export interface TurContentFitMisfit {
+  readonly span: string;
+  readonly reason: string;
+  readonly suggestion: string;
+}
+
+/**
+ * T634/T635 — the "validate this content as persona X" verdict returned by
+ * `fetchPersonaContentFit`. Mirrors the backend public response: overall fit %
+ * (`fitScore`), a `summary`, what does fit (`fits` / <em>condiz</em>), the
+ * flagged `misfits` (<em>não condiz</em>), and whether the LLM contributed
+ * (`llmUsed` false = deterministic readability-only fallback).
+ */
+export interface TurContentFit {
+  readonly personaId: string;
+  readonly personaName: string;
+  readonly fitScore: number;
+  readonly summary: string;
+  readonly fits: string[];
+  readonly misfits: TurContentFitMisfit[];
+  readonly llmUsed: boolean;
+}
+
+/**
  * T152 / §X.7.a — one per-sentence citation returned by Anthropic Citations,
  * carried by the `"citations"` SSE event. Mirrors the backend `TurChatCitation`
  * record. The citation-aware chat UI (T154) underlines `citedText` in the

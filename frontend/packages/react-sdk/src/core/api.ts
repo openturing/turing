@@ -63,6 +63,9 @@ export type {
   TurChatHandoffChannel,
   TurChatHandoffResponse,
   TurChatFlowSelectResponse,
+  TurPersonaOption,
+  TurContentFit,
+  TurContentFitMisfit,
   TurSimilarMode,
   TurSimilarResult,
   FetchSimilarParams,
@@ -97,6 +100,7 @@ import type {
   TurChatHandoffChannel,
   TurChatHandoffResponse,
   TurChatFlowSelectResponse,
+  TurContentFit,
   FetchSimilarParams,
   TurSimilarResult,
   TurChatSlotUploadResponse,
@@ -572,6 +576,7 @@ export async function postChatConversation(
       conversationId: options?.conversationId,
       flowId: options?.flowId,
       forcedVariant: options?.forcedVariant,
+      personaId: options?.personaId,
     }),
     signal: options?.signal,
   });
@@ -1215,10 +1220,13 @@ export async function postSiteFlowSelect(
   site: string,
   conversationId: string,
   flow: string,
+  personaId?: string,
 ): Promise<TurChatFlowSelectResponse> {
   const { data } = await axios.post<TurChatFlowSelectResponse>(
     `/sn/${site}/chat/flow-select`,
-    { conversationId, flow },
+    // T635 — an optional persona is seeded into the pinned flow (validated
+    // against the site agent's catalog server-side).
+    { conversationId, flow, personaId },
   );
   return (
     data ?? {
@@ -1228,6 +1236,33 @@ export async function postSiteFlowSelect(
       reason: "empty response",
     }
   );
+}
+
+/**
+ * T635 / §XXVII.4 — "validate this content as persona X". Evaluates arbitrary
+ * text against an audience persona from the site agent's catalog and returns a
+ * structured content-fit verdict (fit %, what does/doesn't fit, flagged spans +
+ * rewrites). The text is hard-capped (12 000 chars → 413) and rate-limited on
+ * the demo host — it's an LLM-cost surface.
+ *
+ * Server endpoint: {@code POST /api/sn/{site}/persona/{personaId}/content-fit}.
+ *
+ * @since 2026.3.4
+ */
+export async function fetchPersonaContentFit(
+  site: string,
+  personaId: string,
+  content: string,
+  sourceName?: string,
+): Promise<TurContentFit> {
+  const { data } = await axios.post<TurContentFit>(
+    `/sn/${site}/persona/${personaId}/content-fit`,
+    { content, sourceName },
+  );
+  if (!data) {
+    throw new Error("Empty content-fit response");
+  }
+  return data;
 }
 
 /**
