@@ -177,8 +177,11 @@ class TurAgentChatExecutorStructuralIT extends AbstractAgentExecutorIT {
 
         // 1. EXACTLY ONE resolve(...) call per turn — patches #1+#2 of the
         //    §I.3 inventory collapse to this single contract post-T10.
+        // T633 — the executor resolves the persona via the 3-arg overload
+        // (agent, conversationId, per-request personaId); the request persona is
+        // null on this flow-driven path.
         Mockito.verify(personaResolverSpy, Mockito.times(1))
-                .resolve(Mockito.any(), Mockito.eq(conv));
+                .resolve(Mockito.any(), Mockito.eq(conv), Mockito.isNull());
 
         // 2. Cursor walked through persona-lucas and landed on ai-objetivo
         com.viglet.turing.persistence.model.agent.TurChatFlowState finalState =
