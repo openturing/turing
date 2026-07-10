@@ -98,6 +98,27 @@ export type {
   TuringGenerativeRegistry,
 } from "./TuringGenerativeContent";
 
+// T636 / §XXVII.4 — persona-adaptive & content-validation primitives
+// ("same question, different eyes" + "validate content as persona X").
+export { TuringPersonaPicker } from "./TuringPersonaPicker";
+export type {
+  TuringPersonaPickerProps,
+  TuringPersonaPickerClassNames,
+  TuringPersonaPickerLabels,
+  TuringPersonaPickerIcons,
+  TuringPersonaOption,
+} from "./TuringPersonaPicker";
+
+export { TuringContentFit } from "./TuringContentFit";
+export type {
+  TuringContentFitProps,
+  TuringContentFitClassNames,
+  TuringContentFitLabels,
+  TuringContentFitIcons,
+  TuringContentFitResult,
+  TuringContentFitMisfit,
+} from "./TuringContentFit";
+
 // T442 / §XXIII.1 — answer-as-an-app generative components (comparison table,
 // spec card, configurator) keyed by the built-in client-tool names. Headless,
 // zero-dep; register against `useGenerativeUI` + `TuringGenerativeContent`.

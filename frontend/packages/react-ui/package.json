@@ -61,6 +61,16 @@
       "import": "./dist/TuringSourceChips.js",
       "default": "./dist/TuringSourceChips.js"
     },
+    "./TuringPersonaPicker": {
+      "types": "./dist/TuringPersonaPicker.d.ts",
+      "import": "./dist/TuringPersonaPicker.js",
+      "default": "./dist/TuringPersonaPicker.js"
+    },
+    "./TuringContentFit": {
+      "types": "./dist/TuringContentFit.d.ts",
+      "import": "./dist/TuringContentFit.js",
+      "default": "./dist/TuringContentFit.js"
+    },
     "./TuringSearchBar": {
       "types": "./dist/TuringSearchBar.d.ts",
       "import": "./dist/TuringSearchBar.js",
@@ -148,9 +158,11 @@
   },
   "sizeBudget": {
     "strict": true,
-    "total": 23000,
+    "total": 34000,
     "entries": {
-      "index.js": 1450,
+      "index.js": 1650,
+      "TuringPersonaPicker.js": 1300,
+      "TuringContentFit.js": 1900,
       "tokens.js": 1100,
       "TuringHtmlSandbox.js": 3200,
       "TuringD2Diagram.js": 2400,
@@ -165,7 +177,11 @@
       "TuringResultList.js": 700,
       "TuringPagination.js": 900,
       "TuringSearchFieldView.js": 1850,
-      "TuringWorkspacePanelView.js": 1400
+      "TuringWorkspacePanelView.js": 1400,
+      "TuringToolActivity.js": 1600,
+      "TuringGenerativeContent.js": 1050,
+      "TuringAnswerAsApp.js": 2500,
+      "TuringCitedAnswer.js": 1700
     }
   },
   "keywords": [
