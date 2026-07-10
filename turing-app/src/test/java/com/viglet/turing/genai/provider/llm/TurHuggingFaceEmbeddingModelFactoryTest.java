@@ -38,7 +38,7 @@ class TurHuggingFaceEmbeddingModelFactoryTest {
     private final TurHuggingFaceEmbeddingModelFactory factory =
             new TurHuggingFaceEmbeddingModelFactory(
                     new TurHuggingFaceRepoResolver("https://huggingface.co"),
-                    new TurTransformersEmbeddingModelBuilder(""));
+                    new TurTransformersEmbeddingModelBuilder(new TurOnnxModelDownloader("")));
 
     @Test
     void supportsOnlyTheHuggingFaceSentinelCaseInsensitively() {

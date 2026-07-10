@@ -167,6 +167,25 @@ turing:
       # the embedding API without saturating typical rate limits. Set to 1 to
       # force sequential indexing (useful for debugging or rate-limited APIs).
       parallel: 4
+    embedding:
+      # In-process ONNX embedding runtime (TRANSFORMERS_LOCAL + HUGGINGFACE
+      # providers). T656 owns remote artifact acquisition (TurOnnxModelDownloader)
+      # instead of delegating to Spring AI's ResourceCacheService, which fails on
+      # HuggingFace Git-LFS files (the large .onnx 302-redirects to
+      # cdn-lfs.huggingface.co).
+      local:
+        # Persistent cache directory for downloaded .onnx/tokenizer.json files.
+        # Point at a mounted volume so a wiped/ephemeral environment (demo reset)
+        # reuses the warm cache instead of re-downloading ~90 MB on every boot.
+        # Blank falls back to ${java.io.tmpdir}/turing-onnx-cache.
+        cache-dir:
+      download:
+        # Bounded retry with exponential backoff on transient network failures.
+        max-attempts: 4
+        # Per-request timeout for the (potentially large) model download.
+        timeout-seconds: 180
+        # Base backoff between attempts; doubles each retry.
+        initial-backoff-millis: 750
   chat:
     session:
       # Cookie name minted by the React SDK to identify a returning visitor.

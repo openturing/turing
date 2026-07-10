@@ -37,7 +37,8 @@ import com.viglet.turing.persistence.model.embedding.TurEmbeddingModel;
 class TurLocalEmbeddingModelFactoryTest {
 
     private final TurLocalEmbeddingModelFactory factory =
-            new TurLocalEmbeddingModelFactory(new TurTransformersEmbeddingModelBuilder(""));
+            new TurLocalEmbeddingModelFactory(
+                    new TurTransformersEmbeddingModelBuilder(new TurOnnxModelDownloader("")));
 
     @Test
     void supportsOnlyTheLocalSentinelCaseInsensitively() {

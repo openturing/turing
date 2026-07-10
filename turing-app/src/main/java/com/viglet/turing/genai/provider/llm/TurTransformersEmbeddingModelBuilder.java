@@ -25,7 +25,6 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import org.springframework.ai.embedding.EmbeddingModel;
 import org.springframework.ai.transformers.TransformersEmbeddingModel;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 
@@ -64,17 +63,16 @@ public class TurTransformersEmbeddingModelBuilder {
     private final Map<String, EmbeddingModel> cache = new ConcurrentHashMap<>();
 
     /**
-     * Directory where remote (HTTP) ONNX/tokenizer resources are cached. Blank
-     * falls back to {@link TransformersEmbeddingModel}'s default
-     * ({@code ${java.io.tmpdir}/spring-ai-onnx-model}). On the ephemeral demo
-     * the tmpfs default is wiped on reset, so the model re-downloads on each
-     * boot — set this to a persistent volume to keep it across restarts.
+     * Owns resilient remote artifact acquisition (T656): follows HuggingFace
+     * Git-LFS redirects, retries with backoff, and caches into a persistent
+     * directory. Remote model/tokenizer URLs are resolved to local {@code file:}
+     * URIs <i>before</i> they reach {@link TransformersEmbeddingModel}, so the
+     * ONNX runtime never performs its own (LFS-broken) fetch.
      */
-    private final String cacheDirectory;
+    private final TurOnnxModelDownloader downloader;
 
-    public TurTransformersEmbeddingModelBuilder(
-            @Value("${turing.genai.embedding.local.cache-dir:}") String cacheDirectory) {
-        this.cacheDirectory = cacheDirectory;
+    public TurTransformersEmbeddingModelBuilder(TurOnnxModelDownloader downloader) {
+        this.downloader = downloader;
     }
 
     /**
@@ -90,22 +88,28 @@ public class TurTransformersEmbeddingModelBuilder {
             throw new IllegalStateException(
                     "A local ONNX embedding model requires both a model (.onnx) and a tokenizer (.json) resource.");
         }
+        // Keyed by the ORIGINAL (URL) paths so two callers that resolve to the
+        // same artifacts share one cached model, regardless of the local file.
         return cache.computeIfAbsent(modelPath + "|" + tokenizerPath,
                 k -> build(modelPath, tokenizerPath));
     }
 
     private EmbeddingModel build(String modelPath, String tokenizerPath) {
+        // Acquire remote artifacts ourselves (LFS-safe) and hand the ONNX
+        // runtime local file: URIs; classpath:/file: paths pass through.
+        String localModel = downloader.ensureLocal(modelPath);
+        String localTokenizer = downloader.ensureLocal(tokenizerPath);
         try {
             TransformersEmbeddingModel model = new TransformersEmbeddingModel();
-            model.setModelResource(modelPath);
-            model.setTokenizerResource(tokenizerPath);
-            if (StringUtils.hasText(cacheDirectory)) {
-                model.setResourceCacheDirectory(cacheDirectory);
-            }
+            model.setModelResource(localModel);
+            model.setTokenizerResource(localTokenizer);
+            // Point Spring AI's own cache (used only when it must stage a
+            // classpath: resource to disk) at the same persistent directory.
+            model.setResourceCacheDirectory(downloader.cacheDirectory());
             // sentence-transformers models are trained with padding on.
             model.setTokenizerOptions(Map.of("padding", "true"));
-            // Downloads (once) + loads the ONNX session; may take seconds on a
-            // cold cache. Done here so the cost is paid at warm-up, not per turn.
+            // Loads the ONNX session; may take seconds. Done here so the cost is
+            // paid at warm-up, not per turn. The download already happened above.
             model.afterPropertiesSet();
             log.info("Initialized ONNX embedding model (model='{}', tokenizer='{}').",
                     modelPath, tokenizerPath);

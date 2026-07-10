@@ -91,10 +91,6 @@
 - ✅ **T637** (deps: T633) **Seed demo personas** — provision a small persona set (e.g. Skeptical Developer · Enterprise Buyer · First-time User; mix of SPEAKER + AUDIENCE) into the `turing-docs` demo bound to the demo agent's catalog (`viglet/cloud` seed / startup provisioning). → CHANGELOG Block AB — 2026-07-10
 - ✅ **T638** (deps: T635, T636, T637) **Persona in the playground** — a Persona selector on the Ask tab ("same question, different eyes") + a "Validate this content for persona X" mode, dogfooding the T636 components. → CHANGELOG Block AB — 2026-07-10
 
-## Block AM follow-up — resilient ONNX model acquisition (§XXXVI)
-
-- 📋 **T656** (deps: T623, T629) **Resilient ONNX embedding model acquisition (product-wide capability)** — the in-process ONNX runtime shared by the `TRANSFORMERS_LOCAL` (T622) and `HUGGINGFACE` (T623/T629) embedding providers fetches model artifacts through Spring AI's `ResourceCacheService`, which **fails on HuggingFace Git-LFS files**: `resolve/main/onnx/model.onnx` (~90 MB) 302-redirects to `cdn-lfs.huggingface.co` and the cache download fails immediately, while a small direct file (`tokenizer.json`) succeeds. Make artifact acquisition a **robust product feature, not a per-deployment workaround**: follow LFS redirects + bounded retry/backoff, a configurable **persistent cache dir** (a wiped/ephemeral env reuses a warm cache instead of re-downloading), integrity/size verification, and actionable diagnostics on failure — likely by owning the download in `TurTransformersEmbeddingModelBuilder`/`TurHuggingFaceEmbeddingModelFactory` rather than delegating the fetch. Every ONNX-using deployment benefits; the public demo's grounded-chat-after-reset is just the first beneficiary. Any pre-seeded cache volume stays an optional `viglet/cloud` belt, not the fix. → §XXXVI
-
 ## Block AG — Bento UI: complete the interface migration (100%)
 
 > A Bento (iOS-flavored frosted-glass mosaic) redesign of the admin. Phases 0–4
