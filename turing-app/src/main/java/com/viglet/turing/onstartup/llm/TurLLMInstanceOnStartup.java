@@ -28,20 +28,14 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
+import java.util.List;
+
 import com.viglet.turing.persistence.model.agent.TurAIAgent;
 import com.viglet.turing.persistence.model.llm.TurLLMInstance;
 import com.viglet.turing.persistence.model.llm.TurLLMVendor;
-import com.viglet.turing.persistence.model.persona.TurPersona;
-import com.viglet.turing.persistence.model.persona.TurPersonaAudience;
-import com.viglet.turing.persistence.model.persona.TurPersonaDomainExpertise;
-import com.viglet.turing.persistence.model.persona.TurPersonaKind;
-import com.viglet.turing.persistence.model.persona.TurPersonaLanguageStyle;
-import com.viglet.turing.persistence.model.persona.TurPersonaReadingLevel;
-import com.viglet.turing.persistence.model.persona.TurPersonaTone;
 import com.viglet.turing.persistence.repository.agent.TurAIAgentRepository;
 import com.viglet.turing.persistence.repository.llm.TurLLMInstanceRepository;
 import com.viglet.turing.persistence.repository.llm.TurLLMVendorRepository;
-import com.viglet.turing.persistence.repository.persona.TurPersonaRepository;
 import com.viglet.turing.system.TurGlobalSettingsService;
 import com.viglet.turing.system.security.TurSecretCryptoService;
 
@@ -119,7 +113,6 @@ public class TurLLMInstanceOnStartup implements ApplicationRunner {
     private static final String MODEL_PROPERTY = "turing.startup.default-llm.model";
     private static final String MONTHLY_BUDGET_PROPERTY = "turing.startup.default-agent.monthly-budget-usd";
     private static final String PER_TURN_SOFT_CAP_PROPERTY = "turing.startup.default-agent.per-turn-soft-cap-usd";
-    private static final String SEED_PERSONAS_PROPERTY = "turing.startup.default-agent.seed-personas.enabled";
     private static final String OPENAI_API_KEY_ENV = "OPENAI_API_KEY";
     private static final String OPENAI_VENDOR_ID = "OPENAI";
     private static final String OPENAI_BASE_URL = "https://api.openai.com/v1";
@@ -134,7 +127,6 @@ public class TurLLMInstanceOnStartup implements ApplicationRunner {
     private final TurLLMInstanceRepository turLLMInstanceRepository;
     private final TurLLMVendorRepository turLLMVendorRepository;
     private final TurAIAgentRepository turAIAgentRepository;
-    private final TurPersonaRepository turPersonaRepository;
     private final TurSecretCryptoService turSecretCryptoService;
     private final TurGlobalSettingsService turGlobalSettingsService;
 
@@ -142,14 +134,12 @@ public class TurLLMInstanceOnStartup implements ApplicationRunner {
             TurLLMInstanceRepository turLLMInstanceRepository,
             TurLLMVendorRepository turLLMVendorRepository,
             TurAIAgentRepository turAIAgentRepository,
-            TurPersonaRepository turPersonaRepository,
             TurSecretCryptoService turSecretCryptoService,
             TurGlobalSettingsService turGlobalSettingsService) {
         this.environment = environment;
         this.turLLMInstanceRepository = turLLMInstanceRepository;
         this.turLLMVendorRepository = turLLMVendorRepository;
         this.turAIAgentRepository = turAIAgentRepository;
-        this.turPersonaRepository = turPersonaRepository;
         this.turSecretCryptoService = turSecretCryptoService;
         this.turGlobalSettingsService = turGlobalSettingsService;
     }
@@ -202,18 +192,57 @@ public class TurLLMInstanceOnStartup implements ApplicationRunner {
     }
 
     /**
-     * Creates a generic default {@link TurAIAgent} using the just-provisioned LLM
-     * and registers it as the global Default AI Agent, so a fresh install has a
-     * working agent (and SN sites that defer to the default resolve to it) without
-     * a manual admin step. Skipped when a default agent is already set or any agent
-     * already exists — never overrides an existing setup.
+     * Ensures a global Default AI Agent exists and has the just-provisioned LLM
+     * wired, so a fresh install has a working agent (and SN sites that defer to
+     * the default resolve to it) without a manual admin step.
+     *
+     * <p>T655 — this is <em>import-aware</em>. Because this runner is {@code @Order(3)},
+     * an imported seed bundle ({@code TurExportImportOnStartup}, {@code @Order(2)})
+     * has already run: it may have brought its own agent (e.g. the public demo's
+     * agent + persona catalog) — but never the OpenAI API key, which lives only in
+     * the environment here. So rather than only creating a generic agent, we:
+     * <ol>
+     *   <li>keep an already-set default agent untouched (just wire the LLM if it
+     *       has none);</li>
+     *   <li>otherwise <b>adopt an imported agent</b> as the global default (and wire
+     *       the env-key LLM onto it) — this is what lets the demo ship its agent +
+     *       personas as importable content instead of product startup code;</li>
+     *   <li>otherwise create the generic default agent (the fresh-install path).</li>
+     * </ol>
+     * The whole method only runs on a fresh/wiped install (its caller gates on an
+     * empty LLM table), so it never disturbs an established deployment.
      */
     private void provisionDefaultAgent(TurLLMInstance llm) {
-        if (StringUtils.hasText(turGlobalSettingsService.getDefaultAiAgentId())
-                || !turAIAgentRepository.findAll().isEmpty()) {
-            return;
+        TurAIAgent defaultAgent = resolveOrCreateDefaultAgent(llm);
+        if (defaultAgent != null) {
+            ensureLlmWired(defaultAgent, llm);
         }
+    }
 
+    /**
+     * Returns the agent that should be the global default, creating the generic
+     * one only when nothing else is available. Adopts an imported agent (setting
+     * it as the global default) when one exists and no default is set yet.
+     */
+    private TurAIAgent resolveOrCreateDefaultAgent(TurLLMInstance llm) {
+        String defaultAgentId = turGlobalSettingsService.getDefaultAiAgentId();
+        if (StringUtils.hasText(defaultAgentId)) {
+            return turAIAgentRepository.findById(defaultAgentId).orElse(null);
+        }
+        List<TurAIAgent> agents = turAIAgentRepository.findAll();
+        if (!agents.isEmpty()) {
+            TurAIAgent adopted = agents.get(0);
+            turGlobalSettingsService.updateDefaultAiAgentId(adopted.getId());
+            log.info("Adopted imported agent '{}' ('{}') as the global default AI agent{}.",
+                    adopted.getId(), adopted.getTitle(),
+                    agents.size() > 1 ? " (first of " + agents.size() + " imported agents)" : "");
+            return adopted;
+        }
+        return createGenericDefaultAgent(llm);
+    }
+
+    /** Creates the generic helpful-assistant agent for a truly fresh install. */
+    private TurAIAgent createGenericDefaultAgent(TurLLMInstance llm) {
         TurAIAgent agent = new TurAIAgent();
         agent.setTitle(DEFAULT_AGENT_TITLE);
         agent.setDescription("Auto-provisioned default AI agent on startup.");
@@ -230,120 +259,26 @@ public class TurLLMInstanceOnStartup implements ApplicationRunner {
         agent.setPerTurnSoftCapUsd(perTurnSoftCapUsd);
 
         turAIAgentRepository.save(agent);
-
         turGlobalSettingsService.updateDefaultAiAgentId(agent.getId());
 
-        log.info("Bootstrapped default AI agent '{}' (LLM '{}', monthlyBudgetUsd={}, perTurnSoftCapUsd={}) "
-                + "and set it as the global default AI agent.",
+        log.info("Bootstrapped generic default AI agent '{}' (LLM '{}', monthlyBudgetUsd={}, "
+                + "perTurnSoftCapUsd={}) and set it as the global default AI agent.",
                 agent.getId(), llm.getId(), monthlyBudgetUsd, perTurnSoftCapUsd);
-
-        seedDemoPersonas(agent);
+        return agent;
     }
 
     /**
-     * T637 / §XXVII.4 — seeds a small persona catalog onto the freshly-provisioned
-     * default agent so the public demo can show "same question, different eyes"
-     * (T633) and "validate content as persona X" (T634) out of the box, without a
-     * manual admin step. A deliberate mix of speaker + audience personas:
-     *
-     * <ul>
-     *   <li><b>Skeptical Developer</b> ({@code BOTH}) — a terse, technical voice
-     *       AND an advanced reader who distrusts marketing fluff;</li>
-     *   <li><b>Enterprise Buyer</b> ({@code BOTH}) — an executive voice AND a
-     *       business reader scanning for ROI / security / compliance;</li>
-     *   <li><b>First-time User</b> ({@code AUDIENCE}) — a novice reader who needs
-     *       plain language, expanded acronyms and concrete examples.</li>
-     * </ul>
-     *
-     * <p>No default persona is set — the agent keeps its neutral baseline voice so
-     * the picker's "default" option is a real baseline to contrast against. Gated
-     * by {@code turing.startup.default-agent.seed-personas.enabled} (default on)
-     * and only ever runs on the fresh-agent path (its caller already guards on "no
-     * default agent + no agents"), with a persona-table-empty belt so it can never
-     * duplicate.
+     * Wires {@code llm} onto {@code agent} when the agent has no LLM yet (e.g. an
+     * imported agent, whose bundle never carries the API key). A no-op when the
+     * agent already has one, so a self-created agent is not double-wired.
      */
-    private void seedDemoPersonas(TurAIAgent agent) {
-        if (!environment.getProperty(SEED_PERSONAS_PROPERTY, Boolean.class, Boolean.TRUE)) {
+    private void ensureLlmWired(TurAIAgent agent, TurLLMInstance llm) {
+        if (agent.getLlmInstances() != null && !agent.getLlmInstances().isEmpty()) {
             return;
         }
-        if (turPersonaRepository.count() > 0) {
-            return;
-        }
-
-        TurPersona skepticalDeveloper = buildPersona("Skeptical Developer",
-                "A senior engineer who wants precise, verifiable answers and distrusts hype.",
-                TurPersonaKind.BOTH, TurPersonaTone.TECHNICAL, TurPersonaLanguageStyle.DIRECT,
-                "Answer like a senior engineer: be precise and concrete, cite specifics, and "
-                        + "skip marketing language. Say plainly when something is unknown.",
-                audience(TurPersonaReadingLevel.GRADUATE, TurPersonaDomainExpertise.ADVANCED,
-                        "Comfortable with technical jargon and acronyms.",
-                        "Distrusts unbacked claims; wants evidence and edge cases."));
-        skepticalDeveloper.setVerbosity(2); // terse voice
-
-        TurPersona enterpriseBuyer = buildPersona("Enterprise Buyer",
-                "A decision-maker scanning for business value, security and compliance.",
-                TurPersonaKind.BOTH, TurPersonaTone.EXECUTIVE, TurPersonaLanguageStyle.PERSUASIVE,
-                "Answer for a busy executive: lead with the outcome and business value, keep it "
-                        + "brief, and surface security / compliance / cost implications.",
-                audience(TurPersonaReadingLevel.UNDERGRADUATE, TurPersonaDomainExpertise.INTERMEDIATE,
-                        "Business vocabulary; limited patience for deep technical detail.",
-                        "Skims for ROI, risk and total cost; wary of vague or unbacked claims."));
-
-        TurPersona firstTimeUser = buildPersona("First-time User",
-                "Someone new to the product who needs plain, jargon-free explanations.",
-                TurPersonaKind.AUDIENCE, null, null, null,
-                audience(TurPersonaReadingLevel.MIDDLE, TurPersonaDomainExpertise.NOVICE,
-                        "Everyday words only; expand every acronym on first use.",
-                        "New to the domain; needs concrete examples and short paragraphs."));
-
-        // Stable, well-known ids (the id column is assignable) so the T638 public
-        // demo playground can reference these personas without a discovery
-        // endpoint — the site hardcodes the same ids.
-        skepticalDeveloper.setId("persona-skeptical-developer");
-        enterpriseBuyer.setId("persona-enterprise-buyer");
-        firstTimeUser.setId("persona-first-time-user");
-
-        for (TurPersona persona : new TurPersona[] { skepticalDeveloper, enterpriseBuyer, firstTimeUser }) {
-            turPersonaRepository.save(persona);
-            agent.getPersonas().add(persona);
-        }
+        agent.getLlmInstances().add(llm);
         turAIAgentRepository.save(agent);
-
-        log.info("Seeded {} demo personas onto default agent '{}' (catalog: {}).",
-                agent.getPersonas().size(), agent.getId(),
-                agent.getPersonas().stream().map(TurPersona::getName).toList());
-    }
-
-    /** Builds one persona; {@code tone}/{@code languageStyle}/{@code systemInstruction} may be null for pure readers. */
-    private static TurPersona buildPersona(String name, String description, TurPersonaKind kind,
-            TurPersonaTone tone, TurPersonaLanguageStyle languageStyle,
-            String systemInstruction, TurPersonaAudience audience) {
-        TurPersona persona = new TurPersona();
-        persona.setName(name);
-        persona.setDescription(description);
-        persona.setPersonaKind(kind);
-        persona.setTone(tone);
-        persona.setLanguageStyle(languageStyle);
-        persona.setSystemInstruction(systemInstruction);
-        persona.setEnabled(1);
-        // The audience facet is read only for AUDIENCE/BOTH personas (content-fit).
-        if (kind == TurPersonaKind.AUDIENCE || kind == TurPersonaKind.BOTH) {
-            persona.setAudience(audience);
-        }
-        return persona;
-    }
-
-    /** Builds an audience facet (English reading profile) for a reader persona. */
-    private static TurPersonaAudience audience(TurPersonaReadingLevel readingLevel,
-            TurPersonaDomainExpertise domainExpertise, String vocabularyCeiling,
-            String comprehensionNotes) {
-        TurPersonaAudience audience = new TurPersonaAudience();
-        audience.setReadingLevel(readingLevel);
-        audience.setDomainExpertise(domainExpertise);
-        audience.setVocabularyCeiling(vocabularyCeiling);
-        audience.setComprehensionNotes(comprehensionNotes);
-        audience.setPrimaryLanguage("en");
-        return audience;
+        log.info("Wired default LLM '{}' onto default agent '{}'.", llm.getId(), agent.getId());
     }
 
     /**

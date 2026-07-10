@@ -207,9 +207,17 @@ public class TurAIAgentImportService {
     }
 
     private TurPersona upsertPersona(TurPersona p) {
-        TurPersona target = personaRepository.findById(p.getId())
-                .or(() -> personaRepository.findByNameIgnoreCase(p.getName()))
-                .orElseGet(TurPersona::new);
+        java.util.Optional<TurPersona> existing = personaRepository.findById(p.getId())
+                .or(() -> personaRepository.findByNameIgnoreCase(p.getName()));
+        TurPersona target = existing.orElseGet(TurPersona::new);
+        // T655 — preserve the incoming id for a brand-new persona so an explicit,
+        // human-readable seed id (e.g. the demo's `persona-skeptical-developer`)
+        // survives import and stays referenceable by external clients (the public
+        // site's persona picker / content-fit). A persona matched by name keeps
+        // its own id (the flow-graph persona-id remap handles that case).
+        if (existing.isEmpty() && p.getId() != null) {
+            target.setId(p.getId());
+        }
         target.setName(p.getName());
         target.setDescription(p.getDescription());
         target.setSystemInstruction(p.getSystemInstruction());
@@ -219,6 +227,12 @@ public class TurAIAgentImportService {
         target.setMandatoryTerms(p.getMandatoryTerms());
         target.setForbiddenTerms(p.getForbiddenTerms());
         target.setEnabled(p.getEnabled());
+        // Block AA fields — dropped before T655, which broke content-fit for an
+        // imported audience persona (it came back as a default SPEAKER with no
+        // audience facet). Carry the kind + audience facet + style calibration.
+        target.setPersonaKind(p.getPersonaKind());
+        target.setAudience(p.getAudience());
+        target.setCalibrateModelParams(p.getCalibrateModelParams());
         return personaRepository.save(target);
     }
 

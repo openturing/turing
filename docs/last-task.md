@@ -1,11 +1,13 @@
-# Last task number — `T654`
+# Last task number — `T655`
 
 > **Single source of truth for the next free task number.** The next new task is
-> `T655`; after assigning it, bump the number above and the log line below.
+> `T656`; after assigning it, bump the number above and the log line below.
 >
-> (T654 is the highest assigned number. **T639–T654 (📋/💭) are Block AN — the
-> post-audit security-hardening backlog, §XXXVII; T633–T638 (📋) are the
-> persona-adaptive & content-validation demo initiative — §XXVII.4.**)
+> (T655 is the highest assigned number. **T639–T654 (📋/💭) are Block AN — the
+> post-audit security-hardening backlog, §XXXVII; T633–T638 (✅) are the
+> persona-adaptive & content-validation demo initiative — §XXVII.4; T655 (✅)
+> relocated the demo personas out of product startup into a viglet/cloud import
+> bundle — §XXVII.4.**)
 >
 > **Note (2026-06-16):** `T380` is an intentional **free gap** — Block R was
 > created as `T381–T385` without bumping this counter (the exact hazard this file
@@ -31,6 +33,7 @@ number" looked free but wasn't. Grepping three files (`ROADMAP.md`,
 
 ## Log (most recent first)
 
+- **T655 SHIPPED** (Block AB §XXVII.4 follow-up — demo personas out of product startup) — 2026-07-10. `turing-app`: removed `seedDemoPersonas`; `TurLLMInstanceOnStartup.provisionDefaultAgent` is now import-aware (`resolveOrCreateDefaultAgent`/`ensureLlmWired` — adopts an imported agent as `GLOBAL_DEFAULT_AI_AGENT` + wires the env-key LLM; T622 RAG-infra wiring already targets the resolved default agent), scoped to fresh/wiped installs by the empty-LLM gate. Fixed `TurAIAgentImportService.upsertPersona` to carry `personaKind`+audience+`calibrateModelParams` and preserve an explicit incoming id for a new persona (so seed stable ids survive). `viglet/cloud`: `demo-seed-src/turing-docs/export.json` now ships the demo agent + 3 personas (stable ids), imported on reset. New `TurLLMInstanceOnStartupAgentProvisionTest` (3) + `TurAIAgentImportServicePersonaTest` (1); compile + tests green. Internal/demo — no end-user docs page. No Liquibase. Next stays T656. → CHANGELOG Block AB.
 - **T638 SHIPPED** (Block AB §XXVII.4 — persona in the playground; CLOSES the initiative T633–T638) — 2026-07-10. Site "Try it live" playground: Ask tab gained a `TuringPersonaPicker` threading per-request `personaId` into the RAG chat (fresh convo on change); new "Validate it" tab (`content-fit-demo.tsx`) → `fetchPersonaContentFit` → `TuringContentFit` verdict (scripted offline fallback). Closed a gap: SDK `ChatControllerOptions` gained a `personaId` field forwarded to the site-RAG transport (distinct from T579 persona-mode). Personas pinned in `site-content.ts` `PLAYGROUND_PERSONAS` against T637's now-STABLE ids (persona-skeptical-developer/-enterprise-buyer/-first-time-user; set in seedDemoPersonas). Site tsc -b clean; SDK controller tests 116 green; T637 test extended to lock the stable ids. Frontend + 1 additive SDK controller option; no backend/Liquibase. Existing task shipped — next stays T655. → CHANGELOG Block AB / IMPROVEMENTS §XXVII.4.
 - **T637 SHIPPED** (Block AB §XXVII.4 — seed demo personas) — 2026-07-10. `TurLLMInstanceOnStartup.provisionDefaultAgent` (T621 fresh-install path) seeds a persona catalog onto the new default agent: Skeptical Developer (BOTH), Enterprise Buyer (BOTH), First-time User (AUDIENCE) — mix of speaker+audience, each with an audience facet for content-fit. No default persona set (neutral baseline preserved). Gated `turing.startup.default-agent.seed-personas.enabled` (default on) + persona-table-empty belt; fresh-agent path only. New `TurLLMInstanceOnStartupPersonaSeedTest` (3); compile + tests green. No Liquibase. Existing task shipped — next stays T655. → CHANGELOG Block AB / IMPROVEMENTS §XXVII.4.
 - **T636 SHIPPED** (Block AB §XXVII.4 — headless persona UI in react-ui) — 2026-07-10. `@viglet/turing-react-ui` gained `TuringPersonaPicker` (radiogroup persona selector + optional default-voice option, onChange→id) and `TuringContentFit` (verdict: persona name, fit % as role=progressbar with data-fit + --turing-ui-fit var, summary, fits/condiz, misfits/não-condiz span+reason+rewrite, readability-only note). Zero-runtime-dep: local structural types mirror SDK, data via props only, skin via classNames/labels/icons. Barrel + exports subpaths + sizeBudget entries; backfilled 4 pre-existing components missing from sizeBudget so check-size is green (total 34kB, actual 31.37kB). New tests (5+4); full suite 68 green; tsc clean. Frontend-only. Existing task shipped — next stays T655. → CHANGELOG Block AB / IMPROVEMENTS §XXVII.4.

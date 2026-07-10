@@ -90,7 +90,6 @@
 - ✅ **T636** (deps: T635) **Headless persona UI in react-ui** — design-agnostic `TuringPersonaPicker` + `TuringContentFit` (verdict/fit-bar/flagged-spans) in `@viglet/turing-react-ui`, skinnable, reused by admin + site. → CHANGELOG Block AB — 2026-07-10
 - ✅ **T637** (deps: T633) **Seed demo personas** — provision a small persona set (e.g. Skeptical Developer · Enterprise Buyer · First-time User; mix of SPEAKER + AUDIENCE) into the `turing-docs` demo bound to the demo agent's catalog (`viglet/cloud` seed / startup provisioning). → CHANGELOG Block AB — 2026-07-10
 - ✅ **T638** (deps: T635, T636, T637) **Persona in the playground** — a Persona selector on the Ask tab ("same question, different eyes") + a "Validate this content for persona X" mode, dogfooding the T636 components. → CHANGELOG Block AB — 2026-07-10
-
 ## Block AG — Bento UI: complete the interface migration (100%)
 
 > A Bento (iOS-flavored frosted-glass mosaic) redesign of the admin. Phases 0–4
