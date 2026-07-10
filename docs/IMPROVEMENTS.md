@@ -1825,7 +1825,7 @@ the host bring-up and pointing the marketplace SPAs at the instance.
   index (wiped on recreate), `cap_drop: ALL`/`no-new-privileges`/mem-cpu-pids
   caps, **no `docker.sock`** (Code Interpreter DOCKER + skills off by
   construction), behind an nginx **deny-by-default allowlist** vhost
-  (`demo.turing.viglet.org` → only `/api/sn/*`, `/csrf`, `…/semantic-chat`;
+  (`turing-demo.viglet.org` → only `/api/sn/*`, `/csrf`, `…/semantic-chat`;
   admin/login/oauth/actuator/write → 404) with per-IP rate limits, plus a
   **systemd timer that recreates + re-seeds** periodically (the self-heal). Seed
   sources are committed (`demo-seed-src/mythical-creatures` + `turing-docs`);
@@ -1845,9 +1845,6 @@ the host bring-up and pointing the marketplace SPAs at the instance.
   real design partners — never fabricated.
 - **T482** — deep **comparison/FAQ** pages (vs Algolia, Elastic, DIY-RAG,
   LangChain) that proactively answer objections, as Deep Agents/AG-UI do.
-- **T484** — upgrade the hero search to **real facets + autocomplete +
-  spell-check** via the SDK (`createAutoComplete`, `fetchSpellCheck`, live facet
-  groups), showing production search depth instead of the sample facet chips.
 - **T485** — **"similar documents"** ("related by AI") on a result click via
   `createSimilarController`, surfacing semantic relatedness in the demo.
 

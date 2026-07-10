@@ -78,6 +78,15 @@ export interface SearchControllerOptions {
   readonly analytics?: TuringAnalytics;
   /** Cookie used for cross-surface session stitching. Defaults to `TUR_SESSION`. */
   readonly sessionCookieName?: string;
+  /**
+   * T484 — whether a non-wildcard query should also fetch the AI chat answer
+   * (`GET /sn/{site}/chat`) alongside the search results. Defaults to `true`
+   * (the historic behaviour: search + chat in one round-trip). Set `false` for a
+   * **search-only** surface — e.g. a faceted search box that must not incur an
+   * LLM call (and its cost/rate-limit) on every query. When disabled,
+   * {@link SearchControllerState.chat} stays `null`.
+   */
+  readonly chat?: boolean;
 }
 
 export function createSearchController(
@@ -86,7 +95,7 @@ export function createSearchController(
   initialParams?: Partial<SearchParams>,
   options: SearchControllerOptions = {},
 ): SearchController {
-  const { analytics, sessionCookieName = TUR_SESSION_DEFAULT_COOKIE_NAME } = options;
+  const { analytics, sessionCookieName = TUR_SESSION_DEFAULT_COOKIE_NAME, chat: chatEnabled = true } = options;
   const defaultParams: SearchParams = {
     q: "*",
     p: "1",
@@ -141,7 +150,7 @@ export function createSearchController(
 
     try {
       const q = searchParams.q || "*";
-      const shouldChat = q !== "*";
+      const shouldChat = chatEnabled && q !== "*";
 
       const [searchResult, chatResult] = await Promise.all([
         fetchSearch(client, config.site, searchParams),
