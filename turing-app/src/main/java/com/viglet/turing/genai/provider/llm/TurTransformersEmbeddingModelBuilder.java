@@ -63,11 +63,11 @@ public class TurTransformersEmbeddingModelBuilder {
     private final Map<String, EmbeddingModel> cache = new ConcurrentHashMap<>();
 
     /**
-     * Owns resilient remote artifact acquisition (T656): follows HuggingFace
-     * Git-LFS redirects, retries with backoff, and caches into a persistent
-     * directory. Remote model/tokenizer URLs are resolved to local {@code file:}
-     * URIs <i>before</i> they reach {@link TransformersEmbeddingModel}, so the
-     * ONNX runtime never performs its own (LFS-broken) fetch.
+     * Owns resilient remote artifact acquisition (T656): bounded retry/backoff,
+     * integrity check, actionable diagnostics, and a persistent cache directory.
+     * Remote model/tokenizer URLs are resolved to local {@code file:} URIs
+     * <i>before</i> they reach {@link TransformersEmbeddingModel}, so the ONNX
+     * runtime never performs its own (unhardened) fetch.
      */
     private final TurOnnxModelDownloader downloader;
 
@@ -95,8 +95,9 @@ public class TurTransformersEmbeddingModelBuilder {
     }
 
     private EmbeddingModel build(String modelPath, String tokenizerPath) {
-        // Acquire remote artifacts ourselves (LFS-safe) and hand the ONNX
-        // runtime local file: URIs; classpath:/file: paths pass through.
+        // Acquire remote artifacts ourselves (retry + integrity + persistent
+        // cache) and hand the ONNX runtime local file: URIs; classpath:/file:
+        // paths pass through.
         String localModel = downloader.ensureLocal(modelPath);
         String localTokenizer = downloader.ensureLocal(tokenizerPath);
         try {

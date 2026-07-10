@@ -170,9 +170,12 @@ turing:
     embedding:
       # In-process ONNX embedding runtime (TRANSFORMERS_LOCAL + HUGGINGFACE
       # providers). T656 owns remote artifact acquisition (TurOnnxModelDownloader)
-      # instead of delegating to Spring AI's ResourceCacheService, which fails on
-      # HuggingFace Git-LFS files (the large .onnx 302-redirects to
-      # cdn-lfs.huggingface.co).
+      # instead of delegating to Spring AI's ResourceCacheService: adds retry/
+      # backoff, an integrity check, a persistent cache, and an actionable error.
+      # The large ONNX file (~90 MB) is a HuggingFace Git-LFS artifact that
+      # 302-redirects to a separate CDN host; a cold cache + a network blip (or an
+      # egress policy that reaches huggingface.co but not the CDN host) is what
+      # left RAG without its embedding model.
       local:
         # Persistent cache directory for downloaded .onnx/tokenizer.json files.
         # Point at a mounted volume so a wiped/ephemeral environment (demo reset)

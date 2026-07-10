@@ -2251,7 +2251,11 @@ not a second call site.
 
 > **Block AM (T623–T629) is fully shipped and closed** — see CHANGELOG Block AM.
 > **Follow-up T656 (resilient ONNX acquisition) is shipped** — see CHANGELOG
-> Block AM (`TurOnnxModelDownloader` owns the LFS-safe download).
+> Block AM (`TurOnnxModelDownloader` owns the download: retry/backoff, persistent
+> cache, integrity check, diagnostics). Note: verified the stock Spring AI path
+> already follows the Git-LFS 302 — the win is operational hardening, not
+> redirect-following; a hard egress block to the CDN host still needs an infra
+> allowlist or a pre-seeded cache volume.
 > A third embedding `providerType` sentinel `HUGGINGFACE` reuses the in-process
 > ONNX `TransformersEmbeddingModel` runtime but selects the model by picking an
 > HF repo id from a list (stored in `modelReference`, no new columns) instead of

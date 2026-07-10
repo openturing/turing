@@ -49,22 +49,31 @@ import lombok.extern.slf4j.Slf4j;
  *
  * <p>
  * The in-process ONNX runtime shared by the {@code TRANSFORMERS_LOCAL} (T622)
- * and {@code HUGGINGFACE} (T623/T629) embedding providers used to hand its
+ * and {@code HUGGINGFACE} (T623/T629) embedding providers handed its
  * {@code https:} model/tokenizer URLs straight to Spring AI's
  * {@code TransformersEmbeddingModel}, which fetches them through
- * {@code ResourceCacheService}. That fetch <b>fails on HuggingFace Git-LFS
- * files</b>: the large {@code resolve/main/onnx/model.onnx} (~90&nbsp;MB)
- * 302-redirects to {@code cdn-lfs.huggingface.co} and the download aborts, while
- * a small direct file ({@code tokenizer.json}) succeeds — so RAG silently loses
- * its embedding model on any deployment with a cold cache.
+ * {@code ResourceCacheService} into an <b>ephemeral</b> tmpdir with <b>no</b>
+ * retry, integrity check, or actionable error. That was fragile for the large
+ * ONNX artifact: {@code resolve/main/onnx/model.onnx} (~90&nbsp;MB) is a
+ * Git-LFS file that 302-redirects to a separate CDN host (e.g.
+ * {@code us.aws.cdn.hf.co} / {@code cdn-lfs.huggingface.co}), so on a cold cache
+ * a network blip, an egress policy that reaches {@code huggingface.co} but not
+ * the CDN host, or a wiped tmpfs on every boot left RAG silently without its
+ * embedding model — while the small same-host {@code tokenizer.json} kept
+ * working, making the failure look mysterious.
+ *
+ * <p>
+ * <b>Note:</b> redirect-following itself was <i>not</i> the gap —
+ * {@code UrlResource} (hence {@code ResourceCacheService}) already follows the
+ * same-scheme LFS 302. What was missing is the operational hardening below.
  *
  * <p>
  * This component makes acquisition a robust <b>product capability</b> rather than
  * a per-deployment workaround: given a remote ({@code http:}/{@code https:})
- * resource it downloads it here — following LFS redirects, with bounded
- * retry/backoff, into a configurable <b>persistent</b> cache directory — verifies
- * the result (non-empty, size matches {@code Content-Length}, not a stray
- * Git-LFS pointer stub), and returns a {@code file:} URI. The
+ * resource it downloads it here — with bounded retry/backoff, into a configurable
+ * <b>persistent</b> cache directory — verifies the result (non-empty, size
+ * matches {@code Content-Length}, not a stray Git-LFS pointer stub), surfaces an
+ * actionable diagnostic on failure, and returns a {@code file:} URI. The
  * {@link TurTransformersEmbeddingModelBuilder} then feeds that local file to the
  * ONNX runtime, which no longer performs any remote fetch of its own.
  * {@code classpath:}/{@code file:} resources are returned unchanged — only the
@@ -112,9 +121,10 @@ public class TurOnnxModelDownloader {
         this.maxAttempts = Math.max(1, maxAttempts);
         this.requestTimeout = Duration.ofSeconds(Math.max(1, timeoutSeconds));
         this.initialBackoffMillis = Math.max(0, initialBackoffMillis);
-        // NORMAL follows all redirects except an HTTPS→HTTP downgrade — exactly
-        // what the HuggingFace LFS 302 to cdn-lfs.huggingface.co (HTTPS→HTTPS)
-        // needs. This is the single behaviour ResourceCacheService lacked.
+        // NORMAL follows all redirects except an HTTPS→HTTP downgrade — enough
+        // for the HuggingFace LFS 302 to the CDN host (HTTPS→HTTPS). (The stock
+        // UrlResource path follows it too; the win here is retry + integrity +
+        // diagnostics + a guaranteed persistent cache, not the redirect.)
         this.httpClient = HttpClient.newBuilder()
                 .followRedirects(HttpClient.Redirect.NORMAL)
                 .connectTimeout(Duration.ofSeconds(30))
