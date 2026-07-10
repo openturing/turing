@@ -204,16 +204,29 @@ public class TurOnnxModelDownloader {
                 Thread.currentThread().interrupt();
                 throw new IllegalStateException(
                         "Interrupted while downloading ONNX artifact '%s'.".formatted(url), e);
+            } catch (java.nio.file.FileSystemException e) {
+                // A cache-dir permission/filesystem problem won't fix itself by
+                // retrying — fail fast with an actionable (non-network) message.
+                throw new IllegalStateException(diagnostic(url, target, e), e);
             } catch (Exception e) {
                 last = e;
                 log.warn("ONNX artifact download attempt {}/{} for '{}' failed: {}",
-                        attempt, maxAttempts, url, e.getMessage());
+                        attempt, maxAttempts, url, describe(e));
                 if (attempt < maxAttempts) {
                     sleepBackoff(attempt);
                 }
             }
         }
         throw new IllegalStateException(diagnostic(url, target, last), last);
+    }
+
+    /**
+     * Exception class + message. The class matters: several {@code java.nio.file}
+     * exceptions (e.g. {@link java.nio.file.AccessDeniedException}) use the bare
+     * path as their message, which reads like a network error without the type.
+     */
+    private static String describe(Throwable e) {
+        return e == null ? "unknown" : e.getClass().getSimpleName() + ": " + e.getMessage();
     }
 
     private Path download(String url, Path target) throws IOException, InterruptedException {
@@ -349,11 +362,20 @@ public class TurOnnxModelDownloader {
     }
 
     private String diagnostic(String url, Path target, Exception cause) {
+        // Distinguish the two real failure modes so the message doesn't send the
+        // reader down the wrong path: a filesystem/permission error on the cache
+        // dir (e.g. a root-owned mounted volume the app user can't write) vs a
+        // network error reaching HuggingFace / its CDN.
+        boolean fsError = cause instanceof java.nio.file.FileSystemException;
+        String hint = fsError
+                ? "The cache directory is not writable — check the ownership/permissions of '%s' "
+                        .formatted(target.getParent())
+                        + "(a mounted volume must be writable by the app user)."
+                : "Check network egress to huggingface.co and its download CDN (*.hf.co), "
+                        + "or pre-seed the cache volume; the cache dir is set via "
+                        + "'turing.genai.embedding.local.cache-dir'.";
         return ("Failed to acquire ONNX embedding artifact '%s' after %d attempt(s). "
-                + "Cache dir: '%s'. Last error: %s. "
-                + "Check network egress to huggingface.co / cdn-lfs.huggingface.co, or pre-seed the "
-                + "cache volume and set 'turing.genai.embedding.local.cache-dir'.")
-                .formatted(url, maxAttempts, target.getParent(),
-                        cause == null ? "unknown" : cause.getMessage());
+                + "Cache dir: '%s'. Last error: %s. %s")
+                .formatted(url, maxAttempts, target.getParent(), describe(cause), hint);
     }
 }

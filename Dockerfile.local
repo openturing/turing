@@ -16,7 +16,12 @@ LABEL org.opencontainers.image.revision=$CACHE_BUST
 RUN groupadd -r java && useradd -r -g java -u 1001 java
 WORKDIR /app
 COPY turing-app/target/viglet-turing.jar app.jar
-RUN mkdir -p /app/store && chown -R java:java /app
+# Pre-create the store subdirs the demo mounts as their OWN named volumes
+# (onnx-cache, djl-cache — see viglet/cloud docker-compose, T656). A named volume
+# mounted onto a path that EXISTS in the image inherits that dir's ownership; if
+# the path is absent, Docker creates it root-owned and the non-root app user
+# (uid 1001, cap_drop ALL) cannot write it. So they must exist + be chowned here.
+RUN mkdir -p /app/store/onnx-cache /app/store/djl-cache && chown -R java:java /app
 USER java
 VOLUME ["/app/store"]
 EXPOSE 2700
