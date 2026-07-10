@@ -1,0 +1,53 @@
+<svg width="1200" height="630" viewBox="0 0 1200 630" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1200" y2="630" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#080b18"/>
+      <stop offset="1" stop-color="#0a0d1c"/>
+    </linearGradient>
+    <linearGradient id="brand" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#4169E1"/>
+      <stop offset="1" stop-color="#818cf8"/>
+    </linearGradient>
+    <radialGradient id="orbA" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#4169E1" stop-opacity="0.55"/>
+      <stop offset="1" stop-color="#4169E1" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="orbB" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#6366f1" stop-opacity="0.5"/>
+      <stop offset="1" stop-color="#6366f1" stop-opacity="0"/>
+    </radialGradient>
+    <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+      <path d="M40 0H0V40" fill="none" stroke="#ffffff" stroke-opacity="0.04" stroke-width="1"/>
+    </pattern>
+  </defs>
+
+  <rect width="1200" height="630" fill="url(#bg)"/>
+  <rect width="1200" height="630" fill="url(#grid)"/>
+  <circle cx="120" cy="80" r="360" fill="url(#orbA)"/>
+  <circle cx="1120" cy="120" r="320" fill="url(#orbB)"/>
+
+  <!-- logo mark + wordmark -->
+  <g transform="translate(80, 82)">
+    <rect width="64" height="64" rx="16" fill="url(#brand)"/>
+    <text x="32" y="44" font-family="'Plus Jakarta Sans', Arial, sans-serif" font-size="30" font-weight="800" fill="#FFDEAD" text-anchor="middle">Tu</text>
+    <text x="84" y="42" font-family="'Plus Jakarta Sans', Arial, sans-serif" font-size="30" font-weight="800" fill="#f2f4fb">Viglet Turing ES</text>
+  </g>
+
+  <!-- pill -->
+  <g transform="translate(80, 200)">
+    <rect width="360" height="42" rx="21" fill="#ffffff" fill-opacity="0.06" stroke="#ffffff" stroke-opacity="0.14"/>
+    <circle cx="26" cy="21" r="5" fill="#34d399"/>
+    <text x="44" y="28" font-family="'Plus Jakarta Sans', Arial, sans-serif" font-size="17" font-weight="700" fill="#c7d0ee">Open source · Apache 2.0 · Self-hosted</text>
+  </g>
+
+  <!-- headline -->
+  <text x="80" y="330" font-family="'Plus Jakarta Sans', Arial, sans-serif" font-size="62" font-weight="800" fill="#f2f4fb">Enterprise search,</text>
+  <text x="80" y="404" font-family="'Plus Jakarta Sans', Arial, sans-serif" font-size="62" font-weight="800" fill="url(#brand)">cited RAG and AI agents</text>
+  <text x="80" y="478" font-family="'Plus Jakarta Sans', Arial, sans-serif" font-size="62" font-weight="800" fill="#f2f4fb">— over your own content.</text>
+
+  <!-- subline -->
+  <text x="80" y="548" font-family="'Plus Jakarta Sans', Arial, sans-serif" font-size="26" font-weight="500" fill="#aeb7d4">Any LLM · your infrastructure · your data. The open alternative to Algolia.</text>
+
+  <!-- url -->
+  <text x="80" y="596" font-family="'JetBrains Mono', monospace" font-size="20" font-weight="500" fill="#6b7394">turing.viglet.org</text>
+</svg>

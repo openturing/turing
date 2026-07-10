@@ -42,6 +42,13 @@ jobs:
       - name: Build marketing site (root)
         working-directory: frontend
         run: pnpm run build:site
+        env:
+          # Wire the hero search + cited-chat demos to the public read-only demo
+          # instance so they are genuinely LIVE in production (Block AB T478),
+          # grounded in Turing's own docs seed (T483 dogfood). Without these the
+          # deployed widgets silently fall back to scripted/sample data.
+          VITE_TURING_DEMO_URL: https://turing-demo.viglet.org
+          VITE_TURING_DEMO_SITE: turing-docs
 
       - name: Package Marketplace examples
         working-directory: frontend

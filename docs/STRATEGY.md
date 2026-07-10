@@ -649,19 +649,29 @@ harness; a protocol) and are easy to make instantly desirable. Turing is a
 **broad platform**, so the site must work *harder* on focus and proof — breadth
 alone reads as "heavy and complex."
 
-### XIV.2 The wedge — positioning by analogy
+### XIV.2 The wedge — platform-first, analogy as support (revised, T630)
 
-The single highest-leverage move (validated by Supabase's "open source Firebase
-alternative" and Meilisearch's stance) is **positioning by analogy**, which
-answers *category* and *differentiation* in one line. The chosen hero:
+Positioning by analogy (validated by Supabase's "open source Firebase
+alternative" and Meilisearch's stance) answers *category* and *differentiation*
+in one line, and the site launched with an analogy-first hero:
 
-> **The open-source, self-hosted alternative to Algolia — with AI agents built in.**
+> ~~The open-source, self-hosted alternative to Algolia — with AI agents built in.~~ *(original T474 lead)*
 
-This is consistent with the existing §VIII.1 *Turing Search* SKU and the §X GEO
-"alternative to Algolia/Coveo" line — now made the front-door message rather than
-a buried SEO phrase. The platform breadth becomes depth ("and it also does
-RAG / agents / skills / MCP"), structured as four outcomes: **Search it → Ask it
-→ Automate it → Run it.**
+**Revised (T630):** a conversion audit found the analogy-first lead *undersold*
+the product — it read as "a cheaper Algolia" and buried the actual
+differentiator (auditable cited RAG + agents + MCP, self-hosted), especially now
+that Algolia itself ships AI. The hero now **leads with the platform** and keeps
+the analogy as a support sub-line:
+
+> **Enterprise search, cited RAG and AI agents — over your own content.**
+> *(sub-line: "The open, self-hosted alternative to Algolia, with AI built in.")*
+> *(plus an explicit who-it's-for line: engineering teams who need production
+> search and RAG without shipping data to someone else's cloud.)*
+
+This still ladders up to the §VIII.1 *Turing Search* SKU and the §X GEO
+"alternative to Algolia/Coveo" line (now a sub-line + SEO phrase, not the
+headline). The platform breadth stays structured as four outcomes:
+**Search it → Ask it → Automate it → Run it.**
 
 **ICP:** developers and platform teams who would otherwise (a) pay a hosted
 search SaaS but can't send data to someone else's cloud, or (b) hand-assemble a
@@ -675,8 +685,10 @@ its live search demo** (it has 18,000 customers as proof); **the OSS challenger
 keeps one** (it doesn't). Demo and proof are substitutes for trust. Turing has
 *neither* social proof nor a live demo today — so the live, in-page demo is not
 optional, it is the cheapest trust we can manufacture. Shipped first as a
-client-side sample-data search in the hero; it becomes *truly* live once pointed
-at a public read-only instance (Block AB T477/T478).
+client-side sample-data search in the hero; **now genuinely live** (T478/T630)
+against the public read-only instance, grounded in a **dogfood `turing-docs`
+seed** (T483) so the hero assistant answers real questions *about Turing itself*
+with citations — the strongest proof we can show without design partners.
 
 **Linchpin dependency:** the marketplace example sites at
 `turing.viglet.org/marketplace/*` are currently **static SPA shells with no

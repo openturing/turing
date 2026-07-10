@@ -1792,8 +1792,10 @@ to the Pages root by `publish-github-pages.yml`.
 
 ### XXVII.1 Repositioning & structure (shipped, T473–T476)
 
-- **Analogy hero** — *"the open-source, self-hosted alternative to Algolia — with
-  AI agents built in"* (§XIV.2). One line answers category + differentiation.
+- **Hero** — launched analogy-first (*"the open-source alternative to Algolia"*);
+  **revised platform-first by T630** to *"Enterprise search, cited RAG and AI
+  agents — over your own content"* with the Algolia analogy demoted to a
+  sub-line (§XIV.2). Leads with the differentiator, not the category anchor.
 - **Search it → Ask it → Automate it → Run it** — four outcome pillars replace a
   flat feature grid, selling breadth as depth without diluting the message.
 - **"Why Turing" comparison** — defensible, high-level table (Turing vs hosted
@@ -1809,12 +1811,11 @@ to the Pages root by `publish-github-pages.yml`.
   duplicated into the site — founding anti-duplication rule), and the CLI
   showcase section + the published `@viglet/turing-cli` README.
 
-### XXVII.2 The live-demo linchpin (T477–T478)
+### XXVII.2 The live-demo linchpin (T477)
 
-The defining bet (§XIV.3): a *truly* live demo. Today the marketplace example
-sites at `/marketplace/*` are static SPA shells (`VITE_API_URL=/api` against
-GitHub Pages → no backend), so they return nothing — our biggest latent proof
-asset is dead.
+The defining bet (§XIV.3): a *truly* live demo. The hero search + cited-chat are
+now live (T478, shipped — see CHANGELOG). Remaining under this section is only
+the host bring-up and pointing the marketplace SPAs at the instance.
 
 - **T477** — stand up a **public read-only Turing instance** with CORS + rate
   limiting, seeded with demo content; read-only/anonymous scope only, no write
@@ -1827,18 +1828,9 @@ asset is dead.
   (`demo.turing.viglet.org` → only `/api/sn/*`, `/csrf`, `…/semantic-chat`;
   admin/login/oauth/actuator/write → 404) with per-IP rate limits, plus a
   **systemd timer that recreates + re-seeds** periodically (the self-heal). Seed
-  imports an export ZIP; `docker/DEMO.md` documents the model + host go-live steps
-  (DNS, real TLS, seed bundle + import-endpoint/auth confirmation, demo-agent
-  budget cap). The **Block Y "Atlas Store" showcase (T451–T457)** remains the
-  richest seed source. Pending = those host steps, not platform code.
-- **T478** — ⏳ the hero `SearchDemo` (real search) **and** a live cited-chat
-  assistant run on **`@viglet/turing-sdk`** (dogfooding — `createTuringClient` +
-  `fetchSearch`/`resolveDocuments` and `createChatController`), with a "built
-  with the SDK" code reveal showing the exact driving code next to the working
-  widget. Both gated on `VITE_TURING_DEMO_URL` + `VITE_TURING_DEMO_SITE` with
-  scripted/sample fallback so the page never looks broken offline; they activate
-  when pointed at the live T477 instance. Remaining: point the marketplace SPAs
-  at the instance.
+  sources are committed (`demo-seed-src/mythical-creatures` + `turing-docs`);
+  `docker/DEMO.md` documents the host go-live steps (DNS, real TLS, demo-agent
+  budget cap). Pending = those host steps, not platform code.
 
 ### XXVII.3 Proof & deeper funnel (T479–T482)
 
@@ -1853,10 +1845,6 @@ asset is dead.
   real design partners — never fabricated.
 - **T482** — deep **comparison/FAQ** pages (vs Algolia, Elastic, DIY-RAG,
   LangChain) that proactively answer objections, as Deep Agents/AG-UI do.
-- **T483** — seed the demo with **Turing's own documentation** so the live search
-  and assistant answer real questions about Turing itself — self-referential
-  proof ("the site is Turing answering about Turing"). A content/seed decision
-  (export the docs site → a `demo-seed` ZIP), not platform code.
 - **T484** — upgrade the hero search to **real facets + autocomplete +
   spell-check** via the SDK (`createAutoComplete`, `fetchSpellCheck`, live facet
   groups), showing production search depth instead of the sample facet chips.

@@ -22,13 +22,18 @@ export function Hero() {
             Open source · Apache 2.0 · Self-hosted
           </span>
           <h1 className="text-4xl font-extrabold leading-[1.08] tracking-tight sm:text-5xl lg:text-[3.4rem]">
-            The open-source, self-hosted{" "}
-            <span className="text-gradient">alternative to Algolia</span> — with AI
-            agents built in.
+            Enterprise search,{" "}
+            <span className="text-gradient">cited RAG and AI agents</span> — over
+            your own content.
           </h1>
           <p className="mt-5 max-w-xl text-lg leading-relaxed text-[#aeb7d4]">
-            Add AI search, RAG and agents to your own content. Any LLM, your
-            infrastructure, your data — never locked in someone else's cloud.
+            Give your content AI search and grounded answers you can trace back to
+            the source — on any LLM, in your own infrastructure. The open,
+            self-hosted alternative to Algolia, with AI built in.
+          </p>
+          <p className="mt-3 max-w-xl text-sm leading-relaxed text-[#8b94b3]">
+            For engineering teams who need production search and RAG without
+            shipping their data to someone else's cloud.
           </p>
 
           <div className="mt-7">
@@ -47,19 +52,21 @@ export function Hero() {
               variant="outline"
               className="border-white/20 bg-white/10 text-white hover:bg-white/20 hover:text-white dark:bg-white/10"
             >
-              <a href="#why">Why Turing</a>
+              <a href="#playground">See it answer, live</a>
             </Button>
           </div>
 
           <div className="mt-7 flex flex-wrap gap-x-6 gap-y-2 text-sm text-[#8b94b3]">
-            {["Your data stays in your infra", "Any LLM provider", "MCP-native"].map(
-              (item) => (
-                <span key={item} className="inline-flex items-center gap-1.5">
-                  <Check className="size-4 text-emerald-400" />
-                  {item}
-                </span>
-              )
-            )}
+            {[
+              "Your data stays in your infra",
+              "Any LLM provider",
+              "Cited answers you can audit",
+            ].map((item) => (
+              <span key={item} className="inline-flex items-center gap-1.5">
+                <Check className="size-4 text-emerald-400" />
+                {item}
+              </span>
+            ))}
           </div>
         </div>
 

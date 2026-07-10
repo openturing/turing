@@ -1,21 +1,33 @@
 import { useEffect, useRef, useState } from "react";
-import { ArrowUp, Sparkles } from "lucide-react";
-import { createChatController, type ChatController } from "@viglet/turing-sdk";
+import { ArrowUp, Check, Copy, FileText, Sparkles } from "lucide-react";
+import {
+  createChatController,
+  type ChatController,
+  type TurChatSource,
+} from "@viglet/turing-sdk";
+import {
+  TuringCopyButton,
+  TuringSourceChips,
+  TuringThinkingDots,
+} from "@viglet/turing-react-ui";
+import { RichAnswer } from "@/components/rich-answer";
 import { useTuringDemo } from "@/lib/turing-demo";
 import { cn } from "@/lib/utils";
 
-// Same wiring as the search demo (see @/lib/turing-demo). When a live instance is
-// configured the chat streams REAL grounded answers via @viglet/turing-sdk;
-// otherwise it plays a short scripted exchange so the widget never looks broken
-// offline. The SN site is pinned via VITE_TURING_DEMO_SITE or auto-discovered.
+// Dogfooding: the assistant streams REAL grounded answers via @viglet/turing-sdk
+// and renders them with the product's own @viglet/turing-react-ui components —
+// RichAnswer (markdown / ```html / ```d2), TuringSourceChips (auditable RAG
+// citations with a "why did you say this?" trace), TuringThinkingDots and
+// TuringCopyButton. Offline it plays a short scripted exchange so the widget
+// never looks broken. The SN site is pinned to `turing-docs` (T483 dogfood seed).
 
 interface DemoMsg {
   role: "user" | "assistant";
   content: string;
-  sources?: { title: string }[];
+  sources?: TurChatSource[];
 }
 
-const GREETING = "Hi! I'm the Turing assistant — ask me about the platform.";
+const GREETING = "Hi! I'm the Turing assistant — ask me anything about the platform.";
 const SUGGESTIONS = [
   "Does Turing support self-hosting?",
   "Which LLM providers work?",
@@ -27,13 +39,13 @@ const SCRIPT: { match: RegExp; answer: string; sources: string[] }[] = [
   {
     match: /self.?host|host|infra|data/i,
     answer:
-      "Yes — Turing is open source (Apache 2.0) and runs entirely on your own infrastructure. Your content and embeddings never leave your network.",
+      "Yes — Turing is open source (Apache 2.0) and runs entirely on your own infrastructure. Your content and embeddings never leave your network.\n\n```bash\ndocker compose up -d --wait\n```",
     sources: ["Self-hosting guide", "Security & data residency"],
   },
   {
     match: /llm|model|openai|anthropic|gemini|ollama|provider/i,
     answer:
-      "Turing is provider-agnostic: OpenAI, Anthropic Claude, Google Gemini, Azure OpenAI and local Ollama models all plug in — pick one per agent.",
+      "Turing is provider-agnostic: **OpenAI**, **Anthropic Claude**, **Google Gemini**, Azure OpenAI and local **Ollama** models all plug in — pick one per agent.",
     sources: ["LLM providers"],
   },
   {
@@ -49,13 +61,26 @@ const FALLBACK = {
   sources: ["Platform overview"],
 };
 
-export function ChatDemo() {
+function scriptedSources(titles: string[]): TurChatSource[] {
+  return titles.map((title, i) => ({ sourceId: `s${i}`, title }));
+}
+
+export interface ChatDemoProps {
+  /** Drop the standalone card chrome + header so a parent (the playground) frames it. */
+  bare?: boolean;
+  /** When `nonce` changes, the given text is sent as a user message (search→ask bridge). */
+  seed?: { text: string; nonce: number };
+}
+
+export function ChatDemo({ bare = false, seed }: Readonly<ChatDemoProps>) {
   const { client, site, live } = useTuringDemo();
   const [convo, setConvo] = useState<DemoMsg[]>([]);
   const [input, setInput] = useState("");
   const [busy, setBusy] = useState(false);
   const controllerRef = useRef<ChatController | null>(null);
   const scrollRef = useRef<HTMLDivElement | null>(null);
+  const busyRef = useRef(false);
+  const seedNonce = useRef<number | null>(null);
 
   // Live mode: drive the widget from the SDK chat controller. Re-runs once the
   // site resolves (pinned or auto-discovered) so the controller binds to it.
@@ -68,7 +93,7 @@ export function ChatDemo() {
         s.messages.map((m) => ({
           role: m.role === "user" ? "user" : "assistant",
           content: m.content,
-          sources: m.sources?.map((src) => ({ title: src.title })),
+          sources: m.sources,
         }))
       );
       setBusy(s.status === "loading");
@@ -80,6 +105,10 @@ export function ChatDemo() {
   }, [client, site]);
 
   useEffect(() => {
+    busyRef.current = busy;
+  }, [busy]);
+
+  useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight });
   }, [convo, busy]);
 
@@ -87,7 +116,6 @@ export function ChatDemo() {
     setConvo((c) => [...c, { role: "user", content: text }]);
     const hit = SCRIPT.find((s) => s.match.test(text)) ?? FALLBACK;
     setBusy(true);
-    // Reveal the answer progressively for a streaming feel.
     setConvo((c) => [...c, { role: "assistant", content: "" }]);
     const words = hit.answer.split(" ");
     let i = 0;
@@ -99,7 +127,7 @@ export function ChatDemo() {
         next[next.length - 1] = {
           role: "assistant",
           content: partial,
-          sources: i >= words.length ? hit.sources.map((title) => ({ title })) : undefined,
+          sources: i >= words.length ? scriptedSources(hit.sources) : undefined,
         };
         return next;
       });
@@ -112,7 +140,7 @@ export function ChatDemo() {
 
   function send(text: string) {
     const t = text.trim();
-    if (!t || busy) return;
+    if (!t || busyRef.current) return;
     setInput("");
     if (controllerRef.current) {
       void controllerRef.current.send(t);
@@ -121,19 +149,36 @@ export function ChatDemo() {
     }
   }
 
+  // Search → Ask bridge: when the parent bumps `seed.nonce`, send that prompt.
+  useEffect(() => {
+    if (!seed || seed.nonce === seedNonce.current) return;
+    seedNonce.current = seed.nonce;
+    send(seed.text);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [seed?.nonce]);
+
   const showSuggestions = convo.length === 0;
 
   return (
-    <div className="flex h-[420px] flex-col overflow-hidden rounded-2xl border border-border bg-card text-card-foreground shadow-xl">
-      <div className="flex items-center gap-2 border-b border-border px-4 py-3">
-        <span className="flex size-6 items-center justify-center rounded-md bg-gradient-to-br from-[#1a3a9e] to-[#4f46e5] text-[#FFDEAD]">
-          <Sparkles className="size-3.5" />
-        </span>
-        <span className="text-sm font-semibold">Turing assistant</span>
-        <span className="ml-auto rounded border border-border px-1.5 py-0.5 font-mono text-[0.65rem] text-muted-foreground">
-          {live ? "live" : "demo"}
-        </span>
-      </div>
+    <div
+      className={cn(
+        "flex flex-col overflow-hidden bg-card text-card-foreground",
+        bare
+          ? "h-full"
+          : "h-[420px] rounded-2xl border border-border shadow-xl"
+      )}
+    >
+      {!bare && (
+        <div className="flex items-center gap-2 border-b border-border px-4 py-3">
+          <span className="flex size-6 items-center justify-center rounded-md bg-gradient-to-br from-[#1a3a9e] to-[#4f46e5] text-[#FFDEAD]">
+            <Sparkles className="size-3.5" />
+          </span>
+          <span className="text-sm font-semibold">Turing assistant</span>
+          <span className="ml-auto rounded border border-border px-1.5 py-0.5 font-mono text-[0.65rem] text-muted-foreground">
+            {live ? "live" : "demo"}
+          </span>
+        </div>
+      )}
 
       <div ref={scrollRef} className="flex-1 space-y-3 overflow-y-auto px-4 py-4">
         <Bubble role="assistant" content={GREETING} />
@@ -141,7 +186,14 @@ export function ChatDemo() {
           <Bubble key={i} role={m.role} content={m.content} sources={m.sources} />
         ))}
         {busy && convo[convo.length - 1]?.role !== "assistant" && (
-          <Bubble role="assistant" content="…" />
+          <div className="flex justify-start">
+            <div className="rounded-2xl bg-muted px-3.5 py-2.5">
+              <TuringThinkingDots
+                className="inline-flex items-center gap-1 text-muted-foreground"
+                classNames={{ dot: "inline-block size-1.5 animate-bounce rounded-full bg-current" }}
+              />
+            </div>
+          </div>
         )}
         {showSuggestions && (
           <div className="flex flex-wrap gap-1.5 pt-1">
@@ -190,34 +242,53 @@ function Bubble({
   role,
   content,
   sources,
-}: {
+}: Readonly<{
   role: "user" | "assistant";
   content: string;
-  sources?: { title: string }[];
-}) {
+  sources?: TurChatSource[];
+}>) {
   const isUser = role === "user";
   return (
-    <div className={cn("flex", isUser ? "justify-end" : "justify-start")}>
+    <div className={cn("group flex", isUser ? "justify-end" : "justify-start")}>
       <div
         className={cn(
           "max-w-[85%] rounded-2xl px-3.5 py-2 text-sm leading-relaxed",
-          isUser
-            ? "bg-primary text-primary-foreground"
-            : "bg-muted text-foreground"
+          isUser ? "bg-primary text-primary-foreground" : "bg-muted text-foreground"
         )}
       >
-        {content}
-        {sources && sources.length > 0 && (
-          <div className="mt-2 flex flex-wrap gap-1">
-            {sources.map((s) => (
-              <span
-                key={s.title}
-                className="rounded bg-background/60 px-1.5 py-0.5 text-[0.65rem] font-medium text-muted-foreground"
-              >
-                {s.title}
-              </span>
-            ))}
+        {isUser ? content : <RichAnswer content={content} />}
+
+        {!isUser && content && (
+          <div className="mt-1 flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+            <TuringCopyButton
+              value={content}
+              className="rounded p-1 text-muted-foreground/60 transition-colors hover:text-foreground"
+              icons={{ copy: <Copy className="size-3.5" />, copied: <Check className="size-3.5 text-emerald-500" /> }}
+            />
           </div>
+        )}
+
+        {sources && sources.length > 0 && (
+          <TuringSourceChips
+            sources={sources}
+            labels={{ heading: "Sources", why: "Why this answer?", open: "Open" }}
+            icons={{ source: <FileText className="size-3 shrink-0" /> }}
+            classNames={{
+              container: "mt-2 border-t border-border/60 pt-2",
+              heading:
+                "mb-1 text-[0.6rem] font-bold uppercase tracking-wide text-muted-foreground/70",
+              list: "flex flex-wrap gap-1",
+              chip: "inline-flex items-center gap-1 rounded bg-background/60 px-1.5 py-0.5 text-[0.65rem] font-medium text-muted-foreground transition-colors hover:text-foreground",
+              chipExpanded: "ring-1 ring-primary/40",
+              confidence:
+                "ml-0.5 inline-block size-1.5 rounded-full data-[confidence=high]:bg-emerald-500 data-[confidence=medium]:bg-amber-500 data-[confidence=low]:bg-slate-400",
+              panel: "mt-1 w-full space-y-1 rounded bg-background/50 p-2 text-[0.65rem]",
+              panelCaption: "font-semibold text-muted-foreground",
+              chunk: "flex items-center justify-between gap-2",
+              chunkMeta: "font-mono text-muted-foreground/70",
+              link: "text-primary underline",
+            }}
+          />
         )}
       </div>
     </div>

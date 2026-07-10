@@ -208,18 +208,6 @@ export const PROVIDERS: Provider[] = [
   { name: "MCP Server", color: "#4169E1" },
 ];
 
-export interface Stat {
-  value: string;
-  label: string;
-}
-
-export const STATS: Stat[] = [
-  { value: "6+", label: "LLM providers" },
-  { value: "3", label: "Search engines" },
-  { value: "4", label: "Official SDKs" },
-  { value: "Apache 2.0", label: "Open source" },
-];
-
 export interface LinkCard {
   title: string;
   description: string;

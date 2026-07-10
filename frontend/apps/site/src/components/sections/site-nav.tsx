@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Star } from "lucide-react";
+import { ArrowRight, Star } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ModeToggle } from "@/components/mode-toggle";
 import { Container, GitHubIcon, Logo, LINKS } from "@/components/brand";
@@ -9,8 +9,8 @@ import { cn } from "@/lib/utils";
 // Hrefs are root-anchored ("/#…") so they also work from the feature pages —
 // the browser navigates home and scrolls to the section.
 const NAV_ITEMS = [
+  { label: "Try it live", href: "/#playground" },
   { label: "Capabilities", href: "/#features" },
-  { label: "Native tools", href: "/#native-tools" },
   { label: "Why Turing", href: "/#why" },
   { label: "Developers", href: "/#developers" },
   { label: "Marketplace", href: "/#marketplace" },
@@ -67,8 +67,8 @@ export function SiteNav() {
           </Button>
           <Button asChild size="sm">
             <a href={LINKS.docs}>
-              <Star className="size-4" />
               Get started
+              <ArrowRight className="size-4" />
             </a>
           </Button>
           <ModeToggle />

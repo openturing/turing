@@ -41,6 +41,7 @@ import com.viglet.turing.api.sn.search.TurSNSiteSearchService;
 import com.viglet.turing.commons.sn.search.TurSNParamType;
 import com.viglet.turing.genai.TurAgentChatExecutor;
 import com.viglet.turing.genai.TurChatMessage;
+import com.viglet.turing.genai.TurChatProviderErrorMapper;
 import com.viglet.turing.genai.TurSNGenAi;
 import com.viglet.turing.genai.TurSNGenAiChatRequest;
 import com.viglet.turing.genai.TurSNGenAi.ConversationMessage;
@@ -292,6 +293,24 @@ public class TurSNSiteGenAiAPI {
 		log.debug("RAG chat conversation received for SN Site '{}': locale='{}', historySize={}",
 				siteName, request.locale(), historySize);
 		Locale locale = resolveLocale(request.locale(), siteName);
+		// Defer all heavy work (RAG retrieval + prompt build + provider calls) to
+		// subscription time so the SSE handshake (200 text/event-stream) is
+		// committed before any upstream call fires. onErrorResume then turns an
+		// upstream failure (unreachable embedding model / LLM) into a readable
+		// in-stream assistant message instead of a 503 with a JSON ProblemDetail
+		// body the SSE client can't consume — mirroring TurAIAgentChatAPI /
+		// TurPersonaChatAPI, which already map streaming failures this way.
+		return Flux.defer(() -> buildConversationStream(siteName, request, locale))
+				.onErrorResume(err -> {
+					log.error("[SNChat] Conversation stream for SN Site '{}' failed: {}",
+							siteName, err.getMessage(), err);
+					return Flux.just(new TurAgentChatExecutor.ChatResponse(ASSISTANT_ROLE,
+							TurChatProviderErrorMapper.toUserMessage(err, locale), "token"));
+				});
+	}
+
+	private Flux<TurAgentChatExecutor.ChatResponse> buildConversationStream(String siteName,
+			ConversationRequest request, Locale locale) {
 		if (!turSNSearchProcess.existsByTurSNSiteAndLanguage(siteName, locale)) {
 			log.debug("RAG chat skipped for SN Site '{}': locale '{}' not available", siteName, locale);
 			return Flux.just(new TurAgentChatExecutor.ChatResponse(ASSISTANT_ROLE, NOT_ENABLED_MESSAGE));

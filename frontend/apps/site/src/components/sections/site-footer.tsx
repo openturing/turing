@@ -4,9 +4,11 @@ const COLUMNS: { heading: string; links: { label: string; href: string }[] }[] =
   {
     heading: "Product",
     links: [
-      { label: "Capabilities", href: "#features" },
-      { label: "How it works", href: "#how" },
-      { label: "Marketplace", href: "#marketplace" },
+      // Root-anchored so they also work from the /features/* pages (match SiteNav).
+      { label: "Capabilities", href: "/#features" },
+      { label: "How it works", href: "/#how" },
+      { label: "Self-host", href: "/#self-host" },
+      { label: "Marketplace", href: "/#marketplace" },
       { label: "React SDK", href: LINKS.storybook },
     ],
   },

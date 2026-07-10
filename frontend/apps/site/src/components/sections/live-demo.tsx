@@ -1,5 +1,6 @@
+import { ArrowRight, Check } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { Container, SectionHeader } from "@/components/brand";
-import { ChatDemo } from "@/components/sections/chat-demo";
 
 const kw = "text-[#8b5cf6] dark:text-[#c792ea]";
 const str = "text-[#16a34a] dark:text-[#c3e88d]";
@@ -47,18 +48,40 @@ function SdkCode() {
   );
 }
 
+const DOGFOOD_POINTS = [
+  "The live search + assistant above call this exact SDK — no bespoke demo backend",
+  "Zero runtime dependencies: a native fetch client + observable controllers",
+  "The same SDK you embed on your own site (React SDK & vanilla JS)",
+];
+
 export function LiveDemo() {
   return (
     <section id="developers" className="py-20">
       <Container>
         <SectionHeader
           eyebrow="Built with the SDK"
-          title="A working assistant — not a mockup"
-          description="This page runs on the product's own zero-dependency @viglet/turing-sdk. The assistant below is driven by the exact code beside it."
+          title="The playground isn't a mockup — it's this code"
+          description="The live search and cited-chat playground above run on the product's own zero-dependency @viglet/turing-sdk, grounded in Turing's own documentation. Here's the exact code that drives them."
         />
-        <div className="grid items-stretch gap-5 lg:grid-cols-2">
+        <div className="grid items-center gap-8 lg:grid-cols-2">
           <SdkCode />
-          <ChatDemo />
+          <div>
+            <ul className="space-y-3">
+              {DOGFOOD_POINTS.map((p) => (
+                <li key={p} className="flex items-start gap-2.5 text-sm">
+                  <Check className="mt-0.5 size-4 shrink-0 text-primary" />
+                  <span className="text-muted-foreground">{p}</span>
+                </li>
+              ))}
+            </ul>
+            <div className="mt-7">
+              <Button asChild size="lg">
+                <a href="#playground">
+                  Try the live playground <ArrowRight className="size-4" />
+                </a>
+              </Button>
+            </div>
+          </div>
         </div>
       </Container>
     </section>

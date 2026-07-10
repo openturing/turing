@@ -10,11 +10,12 @@ export function CallToAction() {
           <div className="grid-bg pointer-events-none absolute inset-0 -z-10" />
           <div className="pointer-events-none absolute -top-24 left-1/2 -z-10 h-80 w-80 -translate-x-1/2 rounded-full bg-[radial-gradient(circle,#4f46e5,transparent_70%)] opacity-50 blur-[70px]" />
           <h2 className="text-3xl font-extrabold tracking-tight sm:text-4xl">
-            Bring agentic search to your content
+            Own your AI search stack
           </h2>
           <p className="mx-auto mt-3 max-w-lg text-base text-[#aeb7d4] sm:text-lg">
-            Self-hosted, open source, and ready for any LLM. Get the platform running
-            and ship your first AI search experience today.
+            Open source, self-hosted, and ready for any LLM. Stand up the full
+            platform in one command and ship cited AI answers over your own content —
+            without your data ever leaving your infrastructure.
           </p>
           <div className="mt-8 flex flex-wrap justify-center gap-3">
             <Button asChild size="lg">

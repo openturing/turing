@@ -15,6 +15,9 @@ const SITE_OVERRIDE =
 /** True when a demo instance URL is configured (regardless of site resolution). */
 export const demoConfigured = Boolean(DEMO_URL);
 
+/** Demo instance origin (for resolving `sandbox:`/`/api` artifact URLs), or "". */
+export const DEMO_ORIGIN = DEMO_URL ?? "";
+
 /**
  * One shared client — the same SDK client customers embed on their sites. Created
  * whenever a demo URL is configured; `null` otherwise (in-page sample-data mode).
