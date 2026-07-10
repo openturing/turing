@@ -31,9 +31,17 @@ import org.springframework.util.StringUtils;
 import com.viglet.turing.persistence.model.agent.TurAIAgent;
 import com.viglet.turing.persistence.model.llm.TurLLMInstance;
 import com.viglet.turing.persistence.model.llm.TurLLMVendor;
+import com.viglet.turing.persistence.model.persona.TurPersona;
+import com.viglet.turing.persistence.model.persona.TurPersonaAudience;
+import com.viglet.turing.persistence.model.persona.TurPersonaDomainExpertise;
+import com.viglet.turing.persistence.model.persona.TurPersonaKind;
+import com.viglet.turing.persistence.model.persona.TurPersonaLanguageStyle;
+import com.viglet.turing.persistence.model.persona.TurPersonaReadingLevel;
+import com.viglet.turing.persistence.model.persona.TurPersonaTone;
 import com.viglet.turing.persistence.repository.agent.TurAIAgentRepository;
 import com.viglet.turing.persistence.repository.llm.TurLLMInstanceRepository;
 import com.viglet.turing.persistence.repository.llm.TurLLMVendorRepository;
+import com.viglet.turing.persistence.repository.persona.TurPersonaRepository;
 import com.viglet.turing.system.TurGlobalSettingsService;
 import com.viglet.turing.system.security.TurSecretCryptoService;
 
@@ -111,6 +119,7 @@ public class TurLLMInstanceOnStartup implements ApplicationRunner {
     private static final String MODEL_PROPERTY = "turing.startup.default-llm.model";
     private static final String MONTHLY_BUDGET_PROPERTY = "turing.startup.default-agent.monthly-budget-usd";
     private static final String PER_TURN_SOFT_CAP_PROPERTY = "turing.startup.default-agent.per-turn-soft-cap-usd";
+    private static final String SEED_PERSONAS_PROPERTY = "turing.startup.default-agent.seed-personas.enabled";
     private static final String OPENAI_API_KEY_ENV = "OPENAI_API_KEY";
     private static final String OPENAI_VENDOR_ID = "OPENAI";
     private static final String OPENAI_BASE_URL = "https://api.openai.com/v1";
@@ -125,6 +134,7 @@ public class TurLLMInstanceOnStartup implements ApplicationRunner {
     private final TurLLMInstanceRepository turLLMInstanceRepository;
     private final TurLLMVendorRepository turLLMVendorRepository;
     private final TurAIAgentRepository turAIAgentRepository;
+    private final TurPersonaRepository turPersonaRepository;
     private final TurSecretCryptoService turSecretCryptoService;
     private final TurGlobalSettingsService turGlobalSettingsService;
 
@@ -132,12 +142,14 @@ public class TurLLMInstanceOnStartup implements ApplicationRunner {
             TurLLMInstanceRepository turLLMInstanceRepository,
             TurLLMVendorRepository turLLMVendorRepository,
             TurAIAgentRepository turAIAgentRepository,
+            TurPersonaRepository turPersonaRepository,
             TurSecretCryptoService turSecretCryptoService,
             TurGlobalSettingsService turGlobalSettingsService) {
         this.environment = environment;
         this.turLLMInstanceRepository = turLLMInstanceRepository;
         this.turLLMVendorRepository = turLLMVendorRepository;
         this.turAIAgentRepository = turAIAgentRepository;
+        this.turPersonaRepository = turPersonaRepository;
         this.turSecretCryptoService = turSecretCryptoService;
         this.turGlobalSettingsService = turGlobalSettingsService;
     }
@@ -224,6 +236,107 @@ public class TurLLMInstanceOnStartup implements ApplicationRunner {
         log.info("Bootstrapped default AI agent '{}' (LLM '{}', monthlyBudgetUsd={}, perTurnSoftCapUsd={}) "
                 + "and set it as the global default AI agent.",
                 agent.getId(), llm.getId(), monthlyBudgetUsd, perTurnSoftCapUsd);
+
+        seedDemoPersonas(agent);
+    }
+
+    /**
+     * T637 / §XXVII.4 — seeds a small persona catalog onto the freshly-provisioned
+     * default agent so the public demo can show "same question, different eyes"
+     * (T633) and "validate content as persona X" (T634) out of the box, without a
+     * manual admin step. A deliberate mix of speaker + audience personas:
+     *
+     * <ul>
+     *   <li><b>Skeptical Developer</b> ({@code BOTH}) — a terse, technical voice
+     *       AND an advanced reader who distrusts marketing fluff;</li>
+     *   <li><b>Enterprise Buyer</b> ({@code BOTH}) — an executive voice AND a
+     *       business reader scanning for ROI / security / compliance;</li>
+     *   <li><b>First-time User</b> ({@code AUDIENCE}) — a novice reader who needs
+     *       plain language, expanded acronyms and concrete examples.</li>
+     * </ul>
+     *
+     * <p>No default persona is set — the agent keeps its neutral baseline voice so
+     * the picker's "default" option is a real baseline to contrast against. Gated
+     * by {@code turing.startup.default-agent.seed-personas.enabled} (default on)
+     * and only ever runs on the fresh-agent path (its caller already guards on "no
+     * default agent + no agents"), with a persona-table-empty belt so it can never
+     * duplicate.
+     */
+    private void seedDemoPersonas(TurAIAgent agent) {
+        if (!environment.getProperty(SEED_PERSONAS_PROPERTY, Boolean.class, Boolean.TRUE)) {
+            return;
+        }
+        if (turPersonaRepository.count() > 0) {
+            return;
+        }
+
+        TurPersona skepticalDeveloper = buildPersona("Skeptical Developer",
+                "A senior engineer who wants precise, verifiable answers and distrusts hype.",
+                TurPersonaKind.BOTH, TurPersonaTone.TECHNICAL, TurPersonaLanguageStyle.DIRECT,
+                "Answer like a senior engineer: be precise and concrete, cite specifics, and "
+                        + "skip marketing language. Say plainly when something is unknown.",
+                audience(TurPersonaReadingLevel.GRADUATE, TurPersonaDomainExpertise.ADVANCED,
+                        "Comfortable with technical jargon and acronyms.",
+                        "Distrusts unbacked claims; wants evidence and edge cases."));
+        skepticalDeveloper.setVerbosity(2); // terse voice
+
+        TurPersona enterpriseBuyer = buildPersona("Enterprise Buyer",
+                "A decision-maker scanning for business value, security and compliance.",
+                TurPersonaKind.BOTH, TurPersonaTone.EXECUTIVE, TurPersonaLanguageStyle.PERSUASIVE,
+                "Answer for a busy executive: lead with the outcome and business value, keep it "
+                        + "brief, and surface security / compliance / cost implications.",
+                audience(TurPersonaReadingLevel.UNDERGRADUATE, TurPersonaDomainExpertise.INTERMEDIATE,
+                        "Business vocabulary; limited patience for deep technical detail.",
+                        "Skims for ROI, risk and total cost; wary of vague or unbacked claims."));
+
+        TurPersona firstTimeUser = buildPersona("First-time User",
+                "Someone new to the product who needs plain, jargon-free explanations.",
+                TurPersonaKind.AUDIENCE, null, null, null,
+                audience(TurPersonaReadingLevel.MIDDLE, TurPersonaDomainExpertise.NOVICE,
+                        "Everyday words only; expand every acronym on first use.",
+                        "New to the domain; needs concrete examples and short paragraphs."));
+
+        for (TurPersona persona : new TurPersona[] { skepticalDeveloper, enterpriseBuyer, firstTimeUser }) {
+            turPersonaRepository.save(persona);
+            agent.getPersonas().add(persona);
+        }
+        turAIAgentRepository.save(agent);
+
+        log.info("Seeded {} demo personas onto default agent '{}' (catalog: {}).",
+                agent.getPersonas().size(), agent.getId(),
+                agent.getPersonas().stream().map(TurPersona::getName).toList());
+    }
+
+    /** Builds one persona; {@code tone}/{@code languageStyle}/{@code systemInstruction} may be null for pure readers. */
+    private static TurPersona buildPersona(String name, String description, TurPersonaKind kind,
+            TurPersonaTone tone, TurPersonaLanguageStyle languageStyle,
+            String systemInstruction, TurPersonaAudience audience) {
+        TurPersona persona = new TurPersona();
+        persona.setName(name);
+        persona.setDescription(description);
+        persona.setPersonaKind(kind);
+        persona.setTone(tone);
+        persona.setLanguageStyle(languageStyle);
+        persona.setSystemInstruction(systemInstruction);
+        persona.setEnabled(1);
+        // The audience facet is read only for AUDIENCE/BOTH personas (content-fit).
+        if (kind == TurPersonaKind.AUDIENCE || kind == TurPersonaKind.BOTH) {
+            persona.setAudience(audience);
+        }
+        return persona;
+    }
+
+    /** Builds an audience facet (English reading profile) for a reader persona. */
+    private static TurPersonaAudience audience(TurPersonaReadingLevel readingLevel,
+            TurPersonaDomainExpertise domainExpertise, String vocabularyCeiling,
+            String comprehensionNotes) {
+        TurPersonaAudience audience = new TurPersonaAudience();
+        audience.setReadingLevel(readingLevel);
+        audience.setDomainExpertise(domainExpertise);
+        audience.setVocabularyCeiling(vocabularyCeiling);
+        audience.setComprehensionNotes(comprehensionNotes);
+        audience.setPrimaryLanguage("en");
+        return audience;
     }
 
     /**
