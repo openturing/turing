@@ -205,6 +205,9 @@ public class TurSecurityConfigProduction {
                                                 mvc.matcher("/api/sn/*/query/**"),
                                                 mvc.matcher("/api/sn/*/chat"),
                                                 mvc.matcher("/api/sn/*/chat/**"),
+                                                // T634 — anonymous persona content-fit (LLM-cost
+                                                // surface; nginx-rate-limited on the demo host).
+                                                mvc.matcher("/api/sn/*/persona/*/content-fit"),
                                                 mvc.matcher("/api/sn/*/*/spell-check"),
                                                 mvc.matcher("/api/ann/*/search"),
                                                 // T119 — token-gated human-approval resolve endpoints
@@ -273,6 +276,9 @@ public class TurSecurityConfigProduction {
                                                                 mvc.matcher("/api/sn/*/query/**"),
                                                                 mvc.matcher("/api/sn/*/chat"),
                                                                 mvc.matcher("/api/sn/*/chat/**"),
+                                                                // T634 — anonymous persona content-fit
+                                                                // (LLM-cost surface; nginx-rate-limited).
+                                                                mvc.matcher("/api/sn/*/persona/*/content-fit"),
                                                                 mvc.matcher("/api/sn/*/*/spell-check"),
                                                                 mvc.matcher("/api/ann/*/search"),
                                                                 // T119 — token-gated human-approval resolve

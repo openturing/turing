@@ -76,6 +76,14 @@ public class TurSNSiteApiKeyGateFilter extends OncePerRequestFilter {
     private static final Pattern SPELL_CHECK_PATH = Pattern.compile(
             "^/api/sn/([^/]+)/[^/]+/spell-check$");
 
+    /**
+     * T634 — the anonymous persona content-fit endpoint
+     * {@code /api/sn/{site}/persona/{personaId}/content-fit}. Gated exactly like
+     * chat because it is an LLM-cost surface: an API_KEY-mode site requires a key.
+     */
+    private static final Pattern CONTENT_FIT_PATH = Pattern.compile(
+            "^/api/sn/([^/]+)/persona/[^/]+/content-fit$");
+
     private final TurSNSiteRepository turSNSiteRepository;
     private final TurDevTokenRepository turDevTokenRepository;
 
@@ -130,6 +138,10 @@ public class TurSNSiteApiKeyGateFilter extends OncePerRequestFilter {
             return matcher.group(1);
         }
         matcher = SPELL_CHECK_PATH.matcher(uri);
+        if (matcher.matches()) {
+            return matcher.group(1);
+        }
+        matcher = CONTENT_FIT_PATH.matcher(uri);
         if (matcher.matches()) {
             return matcher.group(1);
         }
