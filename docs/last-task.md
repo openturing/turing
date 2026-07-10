@@ -1,11 +1,11 @@
-# Last task number — `T638`
+# Last task number — `T654`
 
 > **Single source of truth for the next free task number.** The next new task is
-> `T639`; after assigning it, bump the number above and the log line below.
+> `T655`; after assigning it, bump the number above and the log line below.
 >
-> (T638 is the highest assigned number. **T630/T631 shipped the Block AB redesign +
-> live playground; T632 is a 💭 D2 follow-up; T633–T638 (📋) are the persona-adaptive
-> & content-validation demo initiative — §XXVII.4.**)
+> (T654 is the highest assigned number. **T639–T654 (📋/💭) are Block AN — the
+> post-audit security-hardening backlog, §XXXVII; T633–T638 (📋) are the
+> persona-adaptive & content-validation demo initiative — §XXVII.4.**)
 >
 > **Note (2026-06-16):** `T380` is an intentional **free gap** — Block R was
 > created as `T381–T385` without bumping this counter (the exact hazard this file
@@ -31,6 +31,7 @@ number" looked free but wasn't. Grepping three files (`ROADMAP.md`,
 
 ## Log (most recent first)
 
+- **T639–T653 CREATED** (📋/💭, Block AN — post-audit security hardening) — 2026-07-10. From a full-surface security review assuming a client uses 100% of the product (anonymous SN chat/search, admin config, connectors, MCP, storage, imports, custom tools). 🔴 **T639** externalise/rotate the committed AI crypto master key (`sample-key-for-crypto` live in prod, blank-only fail-fast); 🔴 **T640** authenticate `/api/system/chat-analytics/**` (anonymous transcript/PII read); 🔴 **T641** app-layer rate-limit + hard cost kill-switch on anonymous chat (no app or nginx limits exist). 🟠 **T642** fix `permissions=false` blanket-admin grant; **T643** central egress/SSRF guard (connector test-connection oracle, LLM/rerank/webhook URLs, federation redirect, IPv6-ULA/rebinding); **T644** SpEL RCE (`ChatFlowOps.trySpel` → `SimpleEvaluationContext`); **T645** storage path-traversal/Zip-Slip containment; **T646** stop leaking BCrypt hashes + cleartext dev tokens over the API; **T647** RAG/tool trust boundary for anonymous chat; **T648** input/DoS caps (1024MB multipart, unbounded messages, zip-bomb). 🟡 **T649** actuator `*`-exposure; **T650** MCP fail-open + client URL/stdio SSRF; **T651** IDOR in `TurUserMemoryAPI`; **T652** config/logging hygiene (committed MinIO creds, H2 console, secret logs, signup username); **T653** frontend XSS surface (search-highlight raw HTML, Gemini renderedContent); **T654** triage/patch the 13 Dependabot dependency CVEs + CI gate. Not started. Next stays T655. → ROADMAP Block AN / IMPROVEMENTS §XXXVII.
 - **T633–T638 CREATED** (📋, Block AB §XXVII.4 — persona-adaptive & content-validation demo) — 2026-07-09. Site-driven product evolution to surface the PoC-validated Persona + ChatFlow story live. Personas + `TurPersonaContentFitEvaluator` (persona-as-spectator content validation: fit % + condiz/não condiz + flagged spans) are fully built but only admin-secured; persona binds per-agent/per-flow (no per-request persona on the anonymous path). **T633** anonymous per-request persona on `/api/sn/*/chat` (catalog-restricted); **T634** guest content-fit endpoint (rate-limited/input-capped); **T635** SDK persona surface + `fetchPersonaContentFit`; **T636** headless `TuringPersonaPicker` + `TuringContentFit` in react-ui; **T637** seed demo personas into the turing-docs demo; **T638** persona selector + "validate content" mode in the playground. Not started. Next stays T639. → ROADMAP Block AB / IMPROVEMENTS §XXVII.4.
 - **T632 CREATED** (💭, Block AB — D2 diagrams in the playground chat) — 2026-07-09. Wire `TuringD2Diagram` (lazy `@terrastruct/d2`, code-split) into the demo's `TuringRichContent` + enable `richContentEnabled` on the demo agent so ```d2 answers render as diagrams. Heavy optional dep, load only when a d2 block appears. Not started. Next stays T633. → ROADMAP Block AB / IMPROVEMENTS §XXVII.3.
 - **T631 SHIPPED** (Block AB — live playground dogfooding react-ui) — 2026-07-09. Rebuilt the hero demos around a centerpiece **"Try it live"** playground: a tabbed **Search ⇄ Ask** panel over the SAME live `turing-docs` corpus, running the product's OWN `@viglet/turing-react-ui` components (`TuringResultList` for search; `TuringRichContent`+`TuringMarkdown`+`TuringHtmlSandbox` for rich answers; `TuringSourceChips` for auditable citations with confidence + chunk/score/deep-link trace; `TuringThinkingDots`; `TuringCopyButton`). Added `react-markdown` + `remark-gfm` + `@viglet/turing-react-ui` site deps; new `rich-answer.tsx`, `playground.tsx`; `SearchDemo`/`ChatDemo` gained `bare` + bridge props. A result's **"Ask about this"** bridges into the chat; panel is **fullscreen-capable** (Esc/backdrop, scroll-lock). `LiveDemo` repurposed to the "code behind the playground" reveal; landing reordered so the playground leads. `tsc` + `build:site` (SSR+prerender+og) green. No backend/Liquibase. → CHANGELOG Block AB / STRATEGY §XIV.
