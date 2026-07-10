@@ -137,6 +137,20 @@ passed, onboarding polish shipped, and the two console-only persona tools
 - 📋 **T654** (deps: —) **Triage & patch dependency CVEs (Dependabot)** — GitHub Dependabot reports 13 open advisories on the default branch (7 high · 3 moderate · 3 low) across the backend + frontend dependency trees. Triage each against actual usage (reachable vs transitive-only), bump/override the affected coordinates, and wire a CI gate (`mvn` + `pnpm audit` / Dependabot auto-merge policy) so new highs fail the build. Separate from the code-level findings above but part of the same full-product exposure. → §XXXVII.16
 - 💭 **T653** (deps: —) **Frontend XSS surface** — confirm & enforce that the search-engine highlighter HTML-escapes field content before it reaches the `dangerouslySetInnerHTML` result-card (rendered inside the authenticated admin console); add a client sanitiser allowing only `<mark>`-style markup; sanitise/sandbox the Gemini `renderedContent` fragment injected raw into the console; optionally post-sanitise the LLM-driven D2 SVG. → §XXXVII.15
 
+## Block AO — Migration tooling (Algolia / Elasticsearch → Turing)
+
+> Turns the "Switching from Algolia / Elasticsearch?" funnel (T479 ✅, §XXVII.3)
+> from a documented *manual* path into real product tooling. Today the hard part
+> is step 2 — hand-translating index settings/mappings into a field manifest and
+> reshaping every record into an SN job item. These tasks automate that on top of
+> the existing manifest provisioner (T382/T386) + import API. Design → §XXXVIII.
+
+- 📋 **T657** (deps: T382 ✅, T386 ✅) **Elasticsearch index importer** — a backend seam that reads a source ES index's `_mapping` and deterministically converts it to a Turing field manifest (ES types → `TurSEFieldType`; `keyword`/aggregatable → `facet:true`), then scrolls `_search` and maps each `_source` → SN job item → batched `POST /api/sn/import` + `COMMIT`. Input is just URL + credentials + index name (no proprietary SDK). → §XXXVIII.1
+- 📋 **T658** (deps: T657, T387 ✅) **Algolia index importer** — reads Algolia index settings (`searchableAttributes`, `attributesForFaceting`, `customRanking`) → manifest, and Browse-API/export-JSON records → job items; falls back to LLM-assisted manifest derivation (T387) from sample records where no strict mapping exists. Brings synonyms across where the target engine supports them. → §XXXVIII.2
+- 📋 **T659** (deps: T657, T658, T125 ✅) **CLI `turing migrate` command** — wraps both importers in the zero-dependency `@viglet/turing-cli` (`turing migrate elasticsearch|algolia …`), reusing the existing `TuringClient`. Becomes the real "step 2" in the migration guide and the primary DX surface for a switch. → §XXXVIII.3
+- 💭 **T660** (deps: T657) **Field-mapping override layer** — a small declarative spec (rename / retype / drop / default fields) applied during import, since a source schema is rarely 1:1 with the desired Turing schema. → §XXXVIII.4
+- 💭 **T661** (deps: T657) **Shadow / dual-run comparison** — query the source engine and Turing side-by-side over the same query set and diff the result sets, so a team can measure relevance parity before cutover. → §XXXVIII.5
+
 ## Non-goals (do NOT add as tasks)
 
 Binding constraints — see [IMPROVEMENTS.md](IMPROVEMENTS.md) §I.6 (What NOT to

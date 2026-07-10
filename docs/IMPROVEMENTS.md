@@ -2475,3 +2475,50 @@ vulnerable code path used, or is it a transitive dev-only dep?), bump or overrid
 the coordinates, and add a CI gate (`mvn` dependency check + `pnpm audit`, or a
 Dependabot policy) so a new high-severity advisory fails the build rather than
 sitting open. Track the live list at the repo's Dependabot alerts page.
+
+## XXXVIII. Migration tooling — Algolia / Elasticsearch → Turing (Block AO)
+
+**The gap.** T479 (§XXVII.3) shipped the "Switching from Algolia / Elasticsearch?"
+funnel page and a matching end-user guide, but the guide's *step 2* is manual:
+the operator hand-translates the source's index settings (Algolia) or `_mapping`
+(Elasticsearch) into a Turing field manifest, and reshapes every record/document
+into an SN job item. Steps 1 and 3 are already frictionless (manifest-as-code
+T382/T386, the `/api/sn/import` API, the React + vanilla SDKs); step 2 is the only
+thing that makes a team hesitate to switch. Block AO closes that gap by building
+the importer, not by writing more prose around a manual process.
+
+**XXXVIII.1 — Elasticsearch importer (T657).** The strongest, most defensible
+piece because the transform is deterministic: an ES `_mapping` maps cleanly onto a
+Turing manifest (`text`→`TEXT`, `keyword`→`STRING`, numeric/date/boolean → the
+matching `TurSEFieldType`; a `keyword`/aggregatable field becomes `facet:true`),
+and documents come out of a `_search` scroll (or PIT + `search_after`) one page at
+a time → mapped to SN job items → pushed through the existing batched import +
+`COMMIT`. It needs only a URL, credentials, and an index name — no vendor SDK — so
+it works against Elastic Cloud or a self-managed cluster identically. Reuses the
+shared manifest provisioner (T382) so a manifested and an importer-created field
+are byte-identical.
+
+**XXXVIII.2 — Algolia importer (T658).** Algolia has no strict mapping, so the
+schema is inferred from index *settings* (`searchableAttributes` → searchable
+fields, `attributesForFaceting` → facets, `customRanking` → ranking hints) and,
+where that's thin, from **LLM-assisted manifest derivation (T387)** over a sample
+of records. Records arrive via the Browse API or an uploaded export JSON. Synonyms
+carry across where the target engine (Solr/Elasticsearch) supports them; Lucene's
+limits are surfaced rather than silently dropped.
+
+**XXXVIII.3 — CLI `turing migrate` (T659).** Both importers are wrapped in the
+zero-dependency `@viglet/turing-cli` (`turing migrate elasticsearch|algolia …`),
+reusing the CLI's existing `TuringClient`. This is the real "step 2" the migration
+guide will point at, and the primary DX surface — a switching team runs one
+command instead of writing an ETL script.
+
+**XXXVIII.4 — Field-mapping override (T660, idea).** A migration is rarely 1:1, so
+a small declarative override (rename / retype / drop / default a field) applied
+during import lets the operator reshape the schema on the way in without editing
+every record. Kept an idea until T657 lands and the real 1:1 pain is measured.
+
+**XXXVIII.5 — Shadow / dual-run comparison (T661, idea).** To de-risk the cutover,
+run the same query set against the source engine and Turing and diff the result
+sets, giving a team an evidence-based relevance-parity check before they flip
+traffic. Higher-effort and only meaningful once the importers exist, so it's an
+idea, not a first build.
