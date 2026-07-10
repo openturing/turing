@@ -668,13 +668,13 @@ export const MIGRATION_CODE = {
   lang: "bash",
   code: String.raw`# 1. Provision fields from a manifest (replaces index settings / mappings)
 curl -X POST https://your-host/api/sn/manifest \
-  -H "Content-Type: application/json" \
+  -H "Key: <API_TOKEN>" -H "Content-Type: application/json" \
   -d @products.manifest.json
 
 # 2. Bulk-index the records you exported from Algolia / Elasticsearch
-curl -X POST https://your-host/api/sn/products/index \
-  -H "Content-Type: application/json" \
-  -d @products.json
+curl -X POST https://your-host/api/sn/import \
+  -H "Key: <API_TOKEN>" -H "Content-Type: application/json" \
+  -d @products-jobitems.json
 
 # 3. Query it — on your own host, data never left your network
 curl -X POST https://your-host/api/sn/products/search \

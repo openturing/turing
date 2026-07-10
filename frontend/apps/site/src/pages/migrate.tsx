@@ -49,7 +49,7 @@ export function MigratePage() {
             </p>
             <div className="mt-7 flex flex-wrap gap-3">
               <Button asChild size="lg">
-                <a href={LINKS.docs} target="_blank" rel="noreferrer">
+                <a href={`${LINKS.docs}migration`} target="_blank" rel="noreferrer">
                   Read the migration docs <ArrowRight className="size-4" />
                 </a>
               </Button>
