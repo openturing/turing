@@ -1840,8 +1840,6 @@ the host bring-up and pointing the marketplace SPAs at the instance.
 - **T481** — real **social proof** surface: adopters/logos, testimonials, and
   quantified case studies (the Dify model: "18,000 hours saved"). Gated on having
   real design partners — never fabricated.
-- **T485** — **"similar documents"** ("related by AI") on a result click via
-  `createSimilarController`, surfacing semantic relatedness in the demo.
 
 **Non-goals:** do not duplicate ROADMAP/CHANGELOG content into the site (link to
 GitHub); do not fabricate proof (logos/metrics) before real adopters exist; do

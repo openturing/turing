@@ -3,10 +3,14 @@ import { MessageSquare, Search, Sparkles, X } from "lucide-react";
 import {
   createAutoComplete,
   createSearchController,
+  createSimilarController,
   type AutoCompleteController,
   type ResolvedDocument,
   type SearchController,
+  type SimilarController,
+  type SimilarStatus,
   type TurFacetGroup,
+  type TurSimilarResult,
   type TurSpellCheck,
 } from "@viglet/turing-sdk";
 import {
@@ -24,6 +28,8 @@ import { cn } from "@/lib/utils";
 // full production search surface (T484): live **facet groups**, keystroke
 // **autocomplete** (`createAutoComplete`) and "did you mean" **spell-check** —
 // all via the SDK, search-only (no per-keystroke LLM chat call, `chat:false`).
+// Each result also offers **"Related by AI"** (T485) — `createSimilarController`
+// surfaces semantically similar documents for a clicked result.
 // Otherwise it filters a bundled sample corpus so the widget never looks broken.
 
 const LOCALE = "en_US";
@@ -121,8 +127,14 @@ function LiveSearchDemo({
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [acOpen, setAcOpen] = useState(false);
 
+  // "Related by AI" (T485): similar documents for a clicked result.
+  const [similar, setSimilar] = useState<TurSimilarResult[]>([]);
+  const [similarStatus, setSimilarStatus] = useState<SimilarStatus>("idle");
+  const [similarSeed, setSimilarSeed] = useState<string | null>(null);
+
   const controllerRef = useRef<SearchController | null>(null);
   const acRef = useRef<AutoCompleteController | null>(null);
+  const similarRef = useRef<SimilarController | null>(null);
   const searchTimer = useRef<number | undefined>(undefined);
 
   // Build the controllers once per (client, site). `chat:false` keeps this a
@@ -149,14 +161,35 @@ function LiveSearchDemo({
     acRef.current = ac;
     const unsubAc = ac.subscribe((s) => setSuggestions(s.suggestions));
 
+    const similarController = createSimilarController(client, site, {
+      rows: 5,
+      locale: LOCALE,
+    });
+    similarRef.current = similarController;
+    const unsubSimilar = similarController.subscribe((s) => {
+      setSimilar(s.results);
+      setSimilarStatus(s.status);
+    });
+
     void controller.search({ q: "*", rows: "8", _setlocale: LOCALE, sort: "relevance" });
 
     return () => {
       unsub();
       unsubAc();
+      unsubSimilar();
       if (searchTimer.current) window.clearTimeout(searchTimer.current);
     };
   }, [client, site]);
+
+  function loadSimilar(id: string, title: string) {
+    setSimilarSeed(title);
+    void similarRef.current?.load(id);
+  }
+
+  function clearSimilar() {
+    setSimilarSeed(null);
+    similarRef.current?.clear();
+  }
 
   // Debounced text query (facet state is preserved on the controller between
   // queries; a new text term resets to page 1 via searchQuery).
@@ -170,6 +203,7 @@ function LiveSearchDemo({
   function onInput(value: string) {
     setQuery(value);
     setAcOpen(true);
+    clearSimilar();
     acRef.current?.fetch(value);
     runQuery(value);
   }
@@ -177,6 +211,7 @@ function LiveSearchDemo({
   function pickSuggestion(s: string) {
     setQuery(s);
     setAcOpen(false);
+    clearSimilar();
     acRef.current?.clear();
     if (searchTimer.current) window.clearTimeout(searchTimer.current);
     void controllerRef.current?.searchQuery(s);
@@ -302,6 +337,64 @@ function LiveSearchDemo({
         </div>
       )}
 
+      {/* "Related by AI" — semantic neighbours for a clicked result (T485) */}
+      {similarStatus !== "idle" && (
+        <div className="border-b border-border bg-primary/5 px-4 py-2.5">
+          <div className="mb-1.5 flex items-center justify-between gap-2">
+            <span className="inline-flex min-w-0 items-center gap-1.5 text-xs font-semibold text-primary">
+              <Sparkles className="size-3.5 shrink-0" />
+              Related by AI
+              {similarSeed && (
+                <span className="truncate font-normal text-muted-foreground">
+                  · {similarSeed}
+                </span>
+              )}
+            </span>
+            <button
+              type="button"
+              onClick={clearSimilar}
+              className="inline-flex shrink-0 items-center gap-1 text-[0.7rem] font-semibold text-muted-foreground hover:text-foreground"
+              aria-label="Close related documents"
+            >
+              <X className="size-3" />
+            </button>
+          </div>
+          {similarStatus === "loading" && (
+            <p className="text-xs text-muted-foreground">Finding related documents…</p>
+          )}
+          {similarStatus === "error" && (
+            <p className="text-xs text-muted-foreground">
+              Couldn’t load related documents.
+            </p>
+          )}
+          {similarStatus === "success" && similar.length === 0 && (
+            <p className="text-xs text-muted-foreground">No related documents found.</p>
+          )}
+          {similar.length > 0 && (
+            <ul className="flex flex-col gap-1">
+              {similar.map((r) => (
+                <li key={r.id}>
+                  <a
+                    href={r.url || undefined}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="flex items-center gap-2 rounded px-1.5 py-1 text-sm text-foreground hover:bg-muted"
+                  >
+                    <Sparkles className="size-3 shrink-0 text-primary/60" />
+                    <span className="truncate">{r.title}</span>
+                    {r.type && (
+                      <span className="ml-auto shrink-0 rounded bg-primary/10 px-1.5 py-0.5 text-[0.65rem] font-semibold text-primary">
+                        {r.type}
+                      </span>
+                    )}
+                  </a>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      )}
+
       {/* results — rendered via the product's TuringResultList */}
       <TuringResultList
         className={cn(
@@ -329,16 +422,34 @@ function LiveSearchDemo({
                 <Highlighted text={document.description} />
               </p>
             )}
-            {onAskAbout && (
-              <button
-                type="button"
-                onClick={() => onAskAbout(stripMarks(document.title))}
-                className="mt-1.5 inline-flex items-center gap-1 text-[0.7rem] font-semibold text-primary hover:underline"
-              >
-                <MessageSquare className="size-3" />
-                Ask about this
-              </button>
-            )}
+            <div className="mt-1.5 flex flex-wrap items-center gap-3">
+              {onAskAbout && (
+                <button
+                  type="button"
+                  onClick={() => onAskAbout(stripMarks(document.title))}
+                  className="inline-flex items-center gap-1 text-[0.7rem] font-semibold text-primary hover:underline"
+                >
+                  <MessageSquare className="size-3" />
+                  Ask about this
+                </button>
+              )}
+              {(() => {
+                const docId = String(
+                  (document.raw.fields as Record<string, unknown>).id ?? ""
+                );
+                if (!docId) return null;
+                return (
+                  <button
+                    type="button"
+                    onClick={() => loadSimilar(docId, stripMarks(document.title))}
+                    className="inline-flex items-center gap-1 text-[0.7rem] font-semibold text-primary hover:underline"
+                  >
+                    <Sparkles className="size-3" />
+                    Related
+                  </button>
+                );
+              })()}
+            </div>
           </div>
         )}
       />

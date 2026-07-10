@@ -73,7 +73,6 @@
 - 💭 **T481** (deps: real design partners) **Social-proof surface** — adopters/logos, testimonials, quantified case studies (Dify model). Never fabricated. → §XXVII.3
 - ✅ **T482** (deps: T474 ✅) **Deep comparison / FAQ pages** — prerendered `/compare` page: 4-way capability matrix (Turing vs Algolia vs Elasticsearch vs DIY LangChain), honest "where each wins / where Turing fits" cards, and an objection-answering FAQ with FAQPage JSON-LD. → CHANGELOG Block AB — 2026-07-10
 - ✅ **T484** (deps: T477, T478 ✅) **Real facets + autocomplete + spell-check in the hero search** — swapped the sample facet chips for live `widget.facet` groups, keystroke `createAutoComplete`, and "did you mean" spell-check, all via the SDK; the demo now dogfoods `createSearchController` in a new search-only mode (`chat:false`) so it shows production search depth without an LLM call per keystroke. → CHANGELOG Block AB — 2026-07-10
-- 💭 **T485** (deps: T477) **"Similar documents" in the demo** — `createSimilarController` "related by AI" on a result click. → §XXVII.3
 - 💭 **T632** (deps: T631 ✅) **D2 diagrams in the playground chat** — wire `TuringD2Diagram` (lazy `@terrastruct/d2`, code-split) into the demo's `TuringRichContent` and enable `richContentEnabled` on the demo agent so ```d2 answers render as diagrams instead of a code fence. Heavy optional dep — only load it when a d2 block appears. → §XXVII.3
 
 ### Persona-adaptive & content-validation demo (site-driven product evolution) → §XXVII.4
