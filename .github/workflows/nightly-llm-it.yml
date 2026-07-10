@@ -1,21 +1,19 @@
-# Nightly real-LLM integration tests (T242).
+# Manual real-LLM integration tests (T242).
 #
 # The default PR/validate pipeline excludes the real-LLM ITs (*BehavioralIT,
 # *AgentEvalIT, *NLFacetEvalIT) so every-PR CI doesn't burn API credits. This
-# workflow runs them on a nightly schedule by activating their Maven profiles
-# (-Pllm-it / -Pagent-eval / -Pnl-facet-eval) with the OPENAI_API_KEY secret
-# injected, so LLM-path regressions surface without gating every PR.
+# workflow runs them on-demand (workflow_dispatch only) by activating their
+# Maven profiles (-Pllm-it / -Pagent-eval / -Pnl-facet-eval) with the
+# OPENAI_API_KEY secret injected, so LLM-path regressions can be surfaced
+# without gating every PR.
 #
 # Each IT class gates on @EnabledIfEnvironmentVariable("OPENAI_API_KEY"); if the
 # secret is missing the classes short-circuit to "skipped" (no API calls, no
 # cost), so the job stays green but does no useful work — keep the secret set.
 
-name: Nightly real-LLM ITs
+name: Real-LLM ITs (manual)
 
 on:
-  schedule:
-    # 03:17 UTC daily — off the top of the hour to dodge cron congestion.
-    - cron: "17 3 * * *"
   workflow_dispatch:
     inputs:
       profile:
