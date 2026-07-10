@@ -1840,8 +1840,6 @@ the host bring-up and pointing the marketplace SPAs at the instance.
 - **T481** — real **social proof** surface: adopters/logos, testimonials, and
   quantified case studies (the Dify model: "18,000 hours saved"). Gated on having
   real design partners — never fabricated.
-- **T482** — deep **comparison/FAQ** pages (vs Algolia, Elastic, DIY-RAG,
-  LangChain) that proactively answer objections, as Deep Agents/AG-UI do.
 - **T485** — **"similar documents"** ("related by AI") on a result click via
   `createSimilarController`, surfacing semantic relatedness in the demo.
 

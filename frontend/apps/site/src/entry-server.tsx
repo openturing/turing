@@ -32,6 +32,12 @@ export const routes: PrerenderRoute[] = [
     description:
       "Migrate from Algolia or Elasticsearch to Viglet Turing ES: a concept-mapping table, a three-step import path (schema as code, bulk index, swap the SDK), and self-hosted search where your data and embeddings stay in your own infrastructure.",
   },
+  {
+    path: "/compare",
+    title: "Turing vs Algolia, Elasticsearch & DIY RAG | Viglet Turing ES",
+    description:
+      "An honest comparison of Viglet Turing ES against Algolia, Elasticsearch and a DIY LangChain RAG stack: a deep capability matrix, where each alternative wins, and an objection-answering FAQ. Self-hosted, open source, any LLM.",
+  },
 ];
 
 /** Render a route's app shell to an HTML string for the prerender step. */

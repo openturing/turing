@@ -25,6 +25,10 @@
     <priority>0.8</priority>
   </url>
   <url>
+    <loc>https://turing.viglet.org/compare</loc>
+    <priority>0.8</priority>
+  </url>
+  <url>
     <loc>https://turing.viglet.org/react-sdk/</loc>
     <priority>0.8</priority>
   </url>

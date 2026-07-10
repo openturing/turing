@@ -681,3 +681,137 @@ curl -X POST https://your-host/api/sn/products/search \
   -H "Content-Type: application/json" \
   -d '{ "q": "wireless headphones", "fq": ["brand:Acme"] }'`,
 } as const;
+
+/* -------------------------------------------------------------------------- */
+/* Comparison / FAQ page (/compare) — §XXVII.3 / T482.                        */
+/* Deep, honest comparison vs Algolia, Elasticsearch and a DIY RAG stack      */
+/* (LangChain + vector DB), plus an objection-answering FAQ. The Deep Agents  */
+/* / AG-UI pattern: name the objection before the reader does, answer it      */
+/* fairly, and say where each alternative genuinely wins.                     */
+/* -------------------------------------------------------------------------- */
+
+export interface CompareRow {
+  /** The capability, phrased engine-neutrally. */
+  capability: string;
+  /** "yes" | "partial" | "no" | freeform short text (per Cell in comparison.tsx). */
+  turing: string;
+  algolia: string;
+  elastic: string;
+  /** DIY = LangChain / LlamaIndex + a vector database, assembled yourself. */
+  diy: string;
+}
+
+export const COMPARE_COLUMNS = {
+  turing: "Viglet Turing ES",
+  algolia: "Algolia",
+  elastic: "Elasticsearch",
+  diy: "DIY (LangChain + vector DB)",
+} as const;
+
+/**
+ * Deep capability matrix. Honest and defensible — where an alternative ships
+ * something equivalent we say "yes"; where it's paid/beta/self-built we say so.
+ * Verify current vendor capabilities — high-level, as of 2026.
+ */
+export const COMPARE_MATRIX: CompareRow[] = [
+  { capability: "Open source (Apache 2.0)", turing: "yes", algolia: "no", elastic: "partial", diy: "partial" },
+  { capability: "Self-host — data stays in your infra", turing: "yes", algolia: "no", elastic: "yes", diy: "yes" },
+  { capability: "Faceted, typo-tolerant search", turing: "yes", algolia: "yes", elastic: "yes", diy: "build it" },
+  { capability: "Multilingual analyzers in the box", turing: "yes", algolia: "yes", elastic: "yes", diy: "build it" },
+  { capability: "Vector / semantic search", turing: "yes", algolia: "paid add-on", elastic: "yes", diy: "yes" },
+  { capability: "Hybrid keyword + vector (RRF)", turing: "yes", algolia: "partial", elastic: "yes", diy: "build it" },
+  { capability: "RAG with cited answers", turing: "yes", algolia: "hosted beta", elastic: "build it", diy: "build it" },
+  { capability: "Pluggable reranker (LLM / cross-encoder / Cohere)", turing: "yes", algolia: "no", elastic: "partial", diy: "build it" },
+  { capability: "AI agents, tools & skills built in", turing: "yes", algolia: "no", elastic: "no", diy: "you wire it" },
+  { capability: "MCP server & client", turing: "yes", algolia: "no", elastic: "no", diy: "build it" },
+  { capability: "Native provider tools (web search, code, computer use)", turing: "yes", algolia: "no", elastic: "no", diy: "build it" },
+  { capability: "Bring your own LLM", turing: "yes", algolia: "no", elastic: "partial", diy: "yes" },
+  { capability: "Bring your own search engine", turing: "yes", algolia: "no", elastic: "n/a", diy: "partial" },
+  { capability: "Pricing model", turing: "free / self-host", algolia: "per-record + per-search", elastic: "infra / Elastic Cloud", diy: "infra + build time" },
+  { capability: "Time to first result", turing: "minutes", algolia: "minutes", elastic: "days", diy: "weeks" },
+];
+
+export interface CompareVendor {
+  name: string;
+  /** One-line honest framing of what they are. */
+  tagline: string;
+  /** Where this alternative genuinely wins — stated plainly. */
+  shines: string;
+  /** Where Turing fits instead — the switching reason. */
+  turingFit: string;
+}
+
+/**
+ * Per-competitor honest cards. Lead with where the alternative wins so the
+ * comparison reads as fair, then say where Turing fits.
+ */
+export const COMPARE_VENDORS: CompareVendor[] = [
+  {
+    name: "vs Algolia",
+    tagline: "A fully hosted search SaaS with a great DX and instant relevance.",
+    shines:
+      "Algolia is hard to beat for a purely hosted, low-ops keyword search with best-in-class InstantSearch widgets — if sending your index to a vendor's cloud and per-record/per-search pricing are acceptable.",
+    turingFit:
+      "Switch when data residency, per-record cost at scale, or wanting RAG, cited chat and agents in the same platform matter. Turing runs faceted, typo-tolerant search plus AI on your own infrastructure, under Apache 2.0.",
+  },
+  {
+    name: "vs Elasticsearch",
+    tagline: "The de-facto self-hosted search engine — powerful and low-level.",
+    shines:
+      "Elasticsearch (and OpenSearch) is a superb, battle-tested engine with deep aggregation, kNN and cluster tooling. If you have the team to operate it and build the application layer, it will take you far.",
+    turingFit:
+      "Turing runs on Elasticsearch — it's one of the three supported engines. It adds the application layer you'd otherwise build: schema-as-code, hybrid RRF, RAG, cited chat, agents, connectors and an SDK, so you ship features instead of glue.",
+  },
+  {
+    name: "vs DIY RAG (LangChain + vector DB)",
+    tagline: "Assemble the stack yourself from framework primitives.",
+    shines:
+      "A hand-built LangChain/LlamaIndex stack gives you total control and no product opinions — ideal for a bespoke research pipeline or when you want to own every layer.",
+    turingFit:
+      "Turing is the batteries-included alternative: retrieval, reranking, citations, agents, tools, skills, MCP, streaming, analytics and admin UI are already wired and tested. You keep the pluggability (any LLM, any engine) without maintaining the plumbing.",
+  },
+];
+
+export interface FaqItem {
+  q: string;
+  a: string;
+}
+
+/**
+ * Objection-answering FAQ — name the concern before the reader does. Rendered
+ * on the page and emitted as FAQPage JSON-LD for rich results.
+ */
+export const FAQ: FaqItem[] = [
+  {
+    q: "Is Viglet Turing ES really free and open source?",
+    a: "Yes. The platform is open source under the Apache 2.0 license — the backend, the frontend and the SDKs. There is no per-record or per-search billing; you run it on your own infrastructure and pay only for that infrastructure and any LLM provider you choose.",
+  },
+  {
+    q: "Does my content or my users' queries leave my network?",
+    a: "No. Turing is self-hosted: your documents, embeddings and query logs stay in your own infrastructure. The only data that leaves is what you explicitly send to an external LLM provider — and you can run fully local models (Ollama) to keep even that in-house.",
+  },
+  {
+    q: "Do I have to replace my search engine?",
+    a: "No. Turing runs on Apache Solr, Elasticsearch or an embedded Lucene index behind one query API. If you already operate Elasticsearch or Solr, Turing sits on top of it and adds the AI and application layer — you don't rip out what works.",
+  },
+  {
+    q: "Am I locked into one LLM vendor?",
+    a: "No. Any LLM provider (OpenAI, Anthropic, Google Gemini, Azure OpenAI, local Ollama and OpenAI-compatible endpoints) plugs in behind one interface, switchable per agent. API keys are stored encrypted, and reranking and embeddings are pluggable too.",
+  },
+  {
+    q: "Isn't this just LangChain with a UI?",
+    a: "No. Turing is a deployable product, not a framework you assemble. Retrieval, hybrid ranking, reranking, citations, groundedness checks, agents, tools, skills, MCP, streaming, connectors, analytics and an admin UI are already built, tested and wired together — with the same pluggability you'd get from a DIY stack, minus the maintenance.",
+  },
+  {
+    q: "How long until I get a real result?",
+    a: "Minutes for a first search. The CLI scaffolds a project and runs a local stack in one command, you provision fields from a manifest (or derive one from sample documents), bulk-index your records, and query through the REST API or the SDK.",
+  },
+  {
+    q: "Can I trust the AI answers?",
+    a: "Answers are grounded in your content and stream back with inline citations you can trace to the exact source passage. A configurable relevance gate drops weak matches, an optional groundedness check flags unsupported answers, and when nothing clears the bar the chat gives a deterministic “not covered here” reply instead of hallucinating.",
+  },
+  {
+    q: "Is it production-ready and observable?",
+    a: "Yes. Micrometer metrics, chat and conversion analytics, cache-hit gauges and per-tool latency percentiles are built in, multi-tenancy is available behind a feature flag, and YAML eval suites let you gate agent and prompt changes in CI.",
+  },
+];

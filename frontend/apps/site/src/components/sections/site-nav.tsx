@@ -12,6 +12,7 @@ const NAV_ITEMS = [
   { label: "Try it live", href: "/#playground" },
   { label: "Capabilities", href: "/#features" },
   { label: "Why Turing", href: "/#why" },
+  { label: "Compare", href: "/compare" },
   { label: "Migrate", href: "/migrate" },
   { label: "Developers", href: "/#developers" },
   { label: "Marketplace", href: "/#marketplace" },
@@ -39,15 +40,15 @@ export function SiteNav() {
       )}
     >
       <Container className="flex h-16 items-center gap-4">
-        <a href="/" className="text-base" aria-label="Viglet Turing ES — home">
+        <a href="/" className="shrink-0 text-base" aria-label="Viglet Turing ES — home">
           <Logo />
         </a>
-        <nav className="ml-6 hidden items-center gap-6 md:flex">
+        <nav className="ml-4 hidden items-center gap-5 lg:flex xl:ml-6 xl:gap-6">
           {NAV_ITEMS.map((item) => (
             <a
               key={item.label}
               href={item.href}
-              className="text-sm font-semibold text-muted-foreground transition-colors hover:text-foreground"
+              className="text-sm font-semibold whitespace-nowrap text-muted-foreground transition-colors hover:text-foreground"
             >
               {item.label}
             </a>
