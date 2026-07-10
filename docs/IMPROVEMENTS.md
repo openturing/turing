@@ -2250,6 +2250,17 @@ not a second call site.
 ## XXXVI. HuggingFace embedding provider + provider-aware model discovery (Block AM)
 
 > **Block AM (T623–T629) is fully shipped and closed** — see CHANGELOG Block AM.
+> **Open follow-up — T656 (resilient ONNX acquisition):** the in-process ONNX
+> runtime shared by the `TRANSFORMERS_LOCAL` and `HUGGINGFACE` providers fetches
+> model artifacts via Spring AI's `ResourceCacheService`, which fails on HF
+> Git-LFS files (the `resolve/main/onnx/model.onnx` 302→`cdn-lfs.huggingface.co`
+> download fails while the small direct `tokenizer.json` succeeds). T656 makes
+> acquisition a robust product capability — follow LFS redirects, bounded
+> retry/backoff, a configurable persistent cache dir (warm cache survives a wiped
+> env), integrity check + diagnostics — owned in
+> `TurTransformersEmbeddingModelBuilder`/`TurHuggingFaceEmbeddingModelFactory` so
+> every ONNX-using deployment benefits (the demo's grounded-chat-after-reset is
+> the first beneficiary; a pre-seeded cache volume is an optional infra belt).
 > A third embedding `providerType` sentinel `HUGGINGFACE` reuses the in-process
 > ONNX `TransformersEmbeddingModel` runtime but selects the model by picking an
 > HF repo id from a list (stored in `modelReference`, no new columns) instead of
