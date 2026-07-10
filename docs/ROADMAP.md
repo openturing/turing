@@ -76,6 +76,21 @@
 - 💭 **T485** (deps: T477) **"Similar documents" in the demo** — `createSimilarController` "related by AI" on a result click. → §XXVII.3
 - 💭 **T632** (deps: T631 ✅) **D2 diagrams in the playground chat** — wire `TuringD2Diagram` (lazy `@terrastruct/d2`, code-split) into the demo's `TuringRichContent` and enable `richContentEnabled` on the demo agent so ```d2 answers render as diagrams instead of a code fence. Heavy optional dep — only load it when a d2 block appears. → §XXVII.3
 
+### Persona-adaptive & content-validation demo (site-driven product evolution) → §XXVII.4
+
+> Surfaced by the marketing playground: the PoC-validated Persona + ChatFlow
+> story. Personas + content-fit are fully built (`TurPersona`,
+> `TurPersonaContentFitEvaluator`) but only reachable admin-secured; these tasks
+> expose the minimum anonymously (catalog-restricted, rate-limited) so the public
+> demo can show "same question, different eyes" + "validate content as persona X".
+
+- 📋 **T633** (deps: —) **Anonymous persona selection on the public SN chat** — optional `personaId` on `/api/sn/{site}/chat/conversation` (+ `flow-select`), **validated against the effective agent's persona catalog** (unknown → default, never an arbitrary persona); sets `__activePersonaId` so the existing resolver speaks as it. Enables per-request persona switching on the read-only path without flow authoring. → §XXVII.4
+- 📋 **T634** (deps: —) **Guest persona content-fit endpoint** — public `POST /api/sn/{site}/persona/{personaId}/content-fit` fronting `TurPersonaContentFitEvaluator`, persona restricted to the site agent's catalog, **input-size-capped + nginx rate-limited** (it's an LLM-cost/abuse surface — mirror the chat guard in `docker/DEMO.md`). Returns fit % + condiz/não condiz + flagged spans. Powers the "validate content as persona X" demo. → §XXVII.4
+- 📋 **T635** (deps: T633, T634) **SDK persona surface** — expose persona selection in site-mode chat (pass `personaId`) + a `fetchPersonaContentFit(...)` call in `@viglet/turing-sdk` (and re-export via react-sdk); add `TurPersonaOption` / `TurContentFit` types. → §XXVII.4
+- 📋 **T636** (deps: T635) **Headless persona UI in react-ui** — design-agnostic `TuringPersonaPicker` + `TuringContentFit` (verdict/fit-bar/flagged-spans) in `@viglet/turing-react-ui`, skinnable, reused by admin + site. → §XXVII.4
+- 📋 **T637** (deps: T633) **Seed demo personas** — provision a small persona set (e.g. Skeptical Developer · Enterprise Buyer · First-time User; mix of SPEAKER + AUDIENCE) into the `turing-docs` demo bound to the demo agent's catalog (`viglet/cloud` seed / startup provisioning). → §XXVII.4
+- 📋 **T638** (deps: T635, T636, T637) **Persona in the playground** — a Persona selector on the Ask tab ("same question, different eyes") + a "Validate this content for persona X" mode, dogfooding the T636 components. → §XXVII.4
+
 ## Block AG — Bento UI: complete the interface migration (100%)
 
 > A Bento (iOS-flavored frosted-glass mosaic) redesign of the admin. Phases 0–4

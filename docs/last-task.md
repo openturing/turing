@@ -1,11 +1,11 @@
-# Last task number — `T632`
+# Last task number — `T638`
 
 > **Single source of truth for the next free task number.** The next new task is
-> `T633`; after assigning it, bump the number above and the log line below.
+> `T639`; after assigning it, bump the number above and the log line below.
 >
-> (T632 is the highest assigned number. **T630 shipped the Block AB top-of-funnel
-> conversion redesign; T631 shipped the live "Try it live" playground dogfooding
-> `@viglet/turing-react-ui`; T632 is a 💭 D2-diagram follow-up.**)
+> (T638 is the highest assigned number. **T630/T631 shipped the Block AB redesign +
+> live playground; T632 is a 💭 D2 follow-up; T633–T638 (📋) are the persona-adaptive
+> & content-validation demo initiative — §XXVII.4.**)
 >
 > **Note (2026-06-16):** `T380` is an intentional **free gap** — Block R was
 > created as `T381–T385` without bumping this counter (the exact hazard this file
@@ -31,6 +31,7 @@ number" looked free but wasn't. Grepping three files (`ROADMAP.md`,
 
 ## Log (most recent first)
 
+- **T633–T638 CREATED** (📋, Block AB §XXVII.4 — persona-adaptive & content-validation demo) — 2026-07-09. Site-driven product evolution to surface the PoC-validated Persona + ChatFlow story live. Personas + `TurPersonaContentFitEvaluator` (persona-as-spectator content validation: fit % + condiz/não condiz + flagged spans) are fully built but only admin-secured; persona binds per-agent/per-flow (no per-request persona on the anonymous path). **T633** anonymous per-request persona on `/api/sn/*/chat` (catalog-restricted); **T634** guest content-fit endpoint (rate-limited/input-capped); **T635** SDK persona surface + `fetchPersonaContentFit`; **T636** headless `TuringPersonaPicker` + `TuringContentFit` in react-ui; **T637** seed demo personas into the turing-docs demo; **T638** persona selector + "validate content" mode in the playground. Not started. Next stays T639. → ROADMAP Block AB / IMPROVEMENTS §XXVII.4.
 - **T632 CREATED** (💭, Block AB — D2 diagrams in the playground chat) — 2026-07-09. Wire `TuringD2Diagram` (lazy `@terrastruct/d2`, code-split) into the demo's `TuringRichContent` + enable `richContentEnabled` on the demo agent so ```d2 answers render as diagrams. Heavy optional dep, load only when a d2 block appears. Not started. Next stays T633. → ROADMAP Block AB / IMPROVEMENTS §XXVII.3.
 - **T631 SHIPPED** (Block AB — live playground dogfooding react-ui) — 2026-07-09. Rebuilt the hero demos around a centerpiece **"Try it live"** playground: a tabbed **Search ⇄ Ask** panel over the SAME live `turing-docs` corpus, running the product's OWN `@viglet/turing-react-ui` components (`TuringResultList` for search; `TuringRichContent`+`TuringMarkdown`+`TuringHtmlSandbox` for rich answers; `TuringSourceChips` for auditable citations with confidence + chunk/score/deep-link trace; `TuringThinkingDots`; `TuringCopyButton`). Added `react-markdown` + `remark-gfm` + `@viglet/turing-react-ui` site deps; new `rich-answer.tsx`, `playground.tsx`; `SearchDemo`/`ChatDemo` gained `bare` + bridge props. A result's **"Ask about this"** bridges into the chat; panel is **fullscreen-capable** (Esc/backdrop, scroll-lock). `LiveDemo` repurposed to the "code behind the playground" reveal; landing reordered so the playground leads. `tsc` + `build:site` (SSR+prerender+og) green. No backend/Liquibase. → CHANGELOG Block AB / STRATEGY §XIV.
 - **T630 SHIPPED** (Block AB — top-of-funnel conversion redesign, platform-first) — 2026-07-09. Audit-driven rework of `turing.viglet.org` from brochure to conversion surface. **Positioning:** hero leads with the platform ("Enterprise search, cited RAG and AI agents — over your own content" + who-it's-for line); "open alternative to Algolia" demoted to a sub-line (revises T474; STRATEGY §XIV.2). **Live demo shipped (T478/T483):** `publish-github-pages.yml` build step now sets `VITE_TURING_DEMO_URL` + `VITE_TURING_DEMO_SITE=turing-docs` so the deployed hero search + chat are genuinely live against the public demo, grounded in a new 27-doc `turing-docs` dogfood seed (`viglet/cloud` `demo-seed-src/turing-docs/`). **Bug fixes:** SN `<mark>` highlight now renders as a real highlight (safe parse, no `dangerouslySetInnerHTML`); RAG source chips deduped/capped/labeled "Sources". **Proof:** vanity stats (incl. unbacked "4 SDKs") replaced with live GitHub stars + Apache 2.0 + engines. **Structure:** sections reordered into a conversion narrative; new "Self-host in one command" section; native-tools grid demoted below the comparison. **Share:** `public/og.svg` + defensive `@resvg/resvg-js` build step emit a real `og.png`, wired via `og:image`/`twitter:image`. **Polish:** footer links root-anchored; stray Star icon on "Get started" fixed. Frontend `tsc` + backend compile unaffected. No Liquibase. → CHANGELOG Block AB / STRATEGY §XIV.

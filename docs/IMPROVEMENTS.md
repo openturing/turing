@@ -1855,6 +1855,35 @@ the host bring-up and pointing the marketplace SPAs at the instance.
 GitHub); do not fabricate proof (logos/metrics) before real adopters exist; do
 not over-claim in the comparison table (keep it defensible + dated).
 
+### XXVII.4 Persona-adaptive & content-validation demo (T633–T638)
+
+The PoC that won early interest highlighted two capabilities that are now deep in
+Turing but invisible on the site: **ChatFlow** (declarative, deterministic
+multi-step conversations) and **Personas**. A persona is a wildcard: as a SPEAKER
+it fuses tone/verbosity/vocabulary/brand into the assistant's voice; as an
+AUDIENCE it becomes a **spectator that validates content** — `TurPersonaContentFitEvaluator`
+role-plays the persona as a reader and returns a structured verdict (fit %, what
+does/doesn't fit, flagged spans + rewrites). "Cited RAG chat" is now commodity;
+persona-as-content-validator is a genuinely uncommon, memorable differentiator.
+
+**Positioning discipline:** these reinforce *Ask it / Automate it* — they are NOT
+new top-level pillars (that would dilute the platform-first message and read as
+complexity, per §XIV). The site sells the *outcome* ("same content, different
+eyes"; "validate before you publish"), shown live in the playground, not the
+machinery.
+
+**Why these tasks exist (the API gap):** personas + content-fit are fully built
+but only reachable **admin-secured**, and persona is bound per-agent / per-flow —
+there is no per-request persona on the anonymous read-only path the demo uses, and
+no anonymous content-fit endpoint. Rather than fake it with per-persona flows, we
+evolve the product: a **catalog-restricted** per-request persona on `/api/sn/*/chat`
+(T633) and a **rate-limited, input-capped** guest content-fit endpoint (T634) —
+both safe because the persona must belong to the site agent's own catalog, and the
+content-fit path is an LLM-cost surface that inherits the demo's nginx guard
+(`docker/DEMO.md`). SDK (T635) + headless react-ui (T636) + demo seed (T637) then
+let the playground (T638) dogfood it. The site becomes the forcing function that
+turns two admin-only capabilities into public, embeddable product primitives.
+
 ## XXVIII. Provider coverage + cross-vendor capability exploitation (Block AD)
 
 Turing already wires 6 chat provider types (`openai`, `anthropic`, `gemini`,
