@@ -236,7 +236,7 @@ public class TurAIAgentChatAPI {
         if (stream == null) {
             stream = agentChatExecutor.execute(
                             new TurAgentChatRequest(agent, turLLMInstance, mapped, null,
-                                    request.conversationId(), request.flowId(), files),
+                                    request.conversationId(), request.flowId(), files, null),
                             request.forcedVariant(), request.selectedSkillId())
                     .map(r -> new ChatResponse(r.role(), r.content(), r.type()));
         }

@@ -220,6 +220,7 @@ public class TurSNGenAi {
         String flowId = request.flowId();
         String forcedVariant = request.forcedVariant();
         Locale locale = request.locale();
+        String requestPersonaId = request.personaId();
         if (!context.isEnabled()) {
             log.warn("RAG chat streaming context disabled — check agent RAG configuration");
             return reactor.core.publisher.Flux.just(
@@ -278,7 +279,7 @@ public class TurSNGenAi {
         reactor.core.publisher.Flux<TurAgentChatExecutor.ChatResponse> answer =
                 agentChatExecutor.execute(
                         new TurAgentChatRequest(agent, llmInstance, mapped, augmentedSystemPrompt,
-                                conversationId, flowId, null),
+                                conversationId, flowId, null, requestPersonaId),
                         forcedVariant);
         reactor.core.publisher.Flux<TurAgentChatExecutor.ChatResponse> grounded =
                 appendGroundednessCaveat(answer, context, latestUserQuery, relevantDocuments, locale);

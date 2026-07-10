@@ -130,7 +130,7 @@ public class TurMcpAgentToolService {
             List<ChatMessageItem> history = List.of(new ChatMessageItem("user", message));
             String answer = agentChatExecutor
                     .execute(new TurAgentChatRequest(agent, llmInstance, history, null,
-                            conversation, null, null), (String) null, (String) null)
+                            conversation, null, null, null), (String) null, (String) null)
                     .filter(r -> r.content() != null && !r.content().isBlank())
                     .filter(r -> !"options".equals(r.type()))
                     .map(TurAgentChatExecutor.ChatResponse::content)

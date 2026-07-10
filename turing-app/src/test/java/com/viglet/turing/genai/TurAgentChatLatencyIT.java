@@ -154,7 +154,7 @@ class TurAgentChatLatencyIT extends AbstractTuringSpringIT {
 
         long tWallStart = System.currentTimeMillis();
         List<ChatResponse> responses = executor
-                .execute(new TurAgentChatRequest(agent, llm, history, null, null, null, null))
+                .execute(new TurAgentChatRequest(agent, llm, history, null, null, null, null, null))
                 .collectList()
                 .block(Duration.ofSeconds(30));
         long wallMs = System.currentTimeMillis() - tWallStart;

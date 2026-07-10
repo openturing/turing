@@ -31,6 +31,11 @@ import com.viglet.turing.genai.TurSNGenAi.ConversationMessage;
  * configuration) so the streaming entry point stays below the parameter
  * threshold.
  *
+ * <p>T633 / §XXVII.4 added the optional {@code personaId} — a per-request
+ * persona override for the anonymous public SN chat ("same question, different
+ * eyes"). It is validated against the effective agent's catalog downstream
+ * (unknown → default); null on every non-demo turn.
+ *
  * @author Alexandre Oliveira
  * @since 2026.3.1
  */
@@ -40,5 +45,6 @@ public record TurSNGenAiChatRequest(
         String conversationId,
         String flowId,
         String forcedVariant,
-        Locale locale) {
+        Locale locale,
+        String personaId) {
 }

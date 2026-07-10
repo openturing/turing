@@ -214,7 +214,7 @@ public abstract class AbstractAgentExecutorIT extends AbstractTuringSpringIT {
             String conversationId,
             String flowId) {
         return executor.execute(new TurAgentChatRequest(agent, llmInstance, history,
-                        systemPromptOverride, conversationId, flowId, null))
+                        systemPromptOverride, conversationId, flowId, null, null))
                 .collectList()
                 .block(Duration.ofSeconds(5));
     }

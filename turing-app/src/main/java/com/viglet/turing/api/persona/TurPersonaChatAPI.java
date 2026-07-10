@@ -176,7 +176,7 @@ public class TurPersonaChatAPI {
         // Stateless turn: conversationId + flowId null so no flow-state /
         // analytics / chat-memory rows are written (see class Javadoc).
         Flux<ChatResponse> stream = agentChatExecutor.execute(
-                        new TurAgentChatRequest(agent, turLLMInstance, mapped, null, null, null, files))
+                        new TurAgentChatRequest(agent, turLLMInstance, mapped, null, null, null, files, null))
                 .map(r -> new ChatResponse(r.role(), r.content(), r.type()));
 
         String personaName = persona.getName();

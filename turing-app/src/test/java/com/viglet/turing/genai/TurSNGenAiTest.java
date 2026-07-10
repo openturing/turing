@@ -629,7 +629,7 @@ class TurSNGenAiTest {
         List<TurAgentChatExecutor.ChatResponse> events = turSNGenAi.assistantConversationStreaming(
                 context, agent, llm,
                 new TurSNGenAiChatRequest(history, null, "conv-1", null, null,
-                        Locale.forLanguageTag("pt-BR")))
+                        Locale.forLanguageTag("pt-BR"), null))
                 .collectList().block();
 
         assertNotNull(events);

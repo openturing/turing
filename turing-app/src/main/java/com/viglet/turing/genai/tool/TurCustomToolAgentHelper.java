@@ -201,7 +201,8 @@ public class TurCustomToolAgentHelper {
         try {
             List<TurAgentChatExecutor.ChatResponse> all = executor.execute(
                             new TurAgentChatRequest(target, llm, history, null,
-                                    childConversationId, /* flowId= */ null, /* files= */ null),
+                                    childConversationId, /* flowId= */ null, /* files= */ null,
+                                    /* requestPersonaId= */ null),
                             /* agentInvokeDepth= */ currentDepth)
                     .collectList()
                     .block(Duration.ofMillis(timeoutMs));

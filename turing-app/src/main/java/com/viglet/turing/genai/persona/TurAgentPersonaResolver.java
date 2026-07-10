@@ -75,10 +75,55 @@ public class TurAgentPersonaResolver {
      * flow — falls through to the agent's default.
      */
     public TurPersona resolve(TurAIAgent agent, String conversationId) {
+        return resolve(agent, conversationId, null);
+    }
+
+    /**
+     * T633 / §XXVII.4 — resolution with an optional per-request persona
+     * override, used by the anonymous public SN chat path (the demo's "same
+     * question, different eyes"). Because the read-only RAG turn has no flow
+     * state, {@link #readOverride} finds nothing there; this overload lets the
+     * caller pass a {@code requestPersonaId} chosen for this turn.
+     *
+     * <p>Precedence (most to least authoritative):
+     * <ol>
+     *   <li>A flow-state {@code __activePersonaId} override — a flow that
+     *       explicitly switched persona mid-conversation stays authoritative,
+     *       so flow-driven conversations are unaffected by a stray request
+     *       persona.</li>
+     *   <li>The per-request {@code requestPersonaId} — validated against the
+     *       agent's catalog exactly like the flow override; an unknown id is
+     *       ignored (never an arbitrary persona), never honoured.</li>
+     *   <li>The agent's default persona.</li>
+     * </ol>
+     *
+     * @param requestPersonaId nullable per-turn persona selection; blank/unknown
+     *                         falls back to the default (never fails the turn)
+     * @since 2026.3.4
+     */
+    public TurPersona resolve(TurAIAgent agent, String conversationId, String requestPersonaId) {
         if (agent == null) return null;
         TurPersona override = readOverride(agent, conversationId);
         if (override != null) return asSpeaker(agent, override);
+        TurPersona requested = findInCatalog(agent, requestPersonaId);
+        if (requested != null) return asSpeaker(agent, requested);
         return asSpeaker(agent, agent.getDefaultPersona());
+    }
+
+    /**
+     * T633 — catalog-membership check for callers that seed
+     * {@code __activePersonaId} themselves (the anonymous {@code flow-select}
+     * path, which persists the persona into the freshly-pinned flow state so it
+     * survives across the flow's turns). Returns the persona's id when it is a
+     * member of {@code agent}'s catalog, else {@code null} — so the caller can
+     * decide to seed or ignore without knowing the catalog rules.
+     *
+     * @since 2026.3.4
+     */
+    public String validateCatalogPersonaId(TurAIAgent agent, String personaId) {
+        if (agent == null) return null;
+        TurPersona persona = findInCatalog(agent, personaId);
+        return persona == null ? null : persona.getId();
     }
 
     /**
@@ -108,14 +153,24 @@ public class TurAgentPersonaResolver {
         if (mostRecent.isEmpty()) return null;
         String overrideId = readActivePersonaId(mostRecent.get());
         if (StringUtils.isBlank(overrideId)) return null;
+        return findInCatalog(agent, overrideId);
+    }
 
-        if (agent.getPersonas() == null) return null;
+    /**
+     * Returns the persona with {@code personaId} when it belongs to
+     * {@code agent}'s catalog, else {@code null} (logging a warning). Shared by
+     * the flow-override read, the T633 per-request override and the public
+     * {@link #validateCatalogPersonaId} check so a persona id is validated the
+     * same way everywhere: an id not in the catalog is never honoured.
+     */
+    private TurPersona findInCatalog(TurAIAgent agent, String personaId) {
+        if (StringUtils.isBlank(personaId) || agent.getPersonas() == null) return null;
         return agent.getPersonas().stream()
-                .filter(p -> overrideId.equals(p.getId()))
+                .filter(p -> personaId.equals(p.getId()))
                 .findFirst()
                 .orElseGet(() -> {
-                    log.warn("[PersonaResolver] flow override {} is not in agent {} catalog; "
-                                    + "falling back to default", overrideId, agent.getId());
+                    log.warn("[PersonaResolver] persona {} is not in agent {} catalog; "
+                                    + "falling back to default", personaId, agent.getId());
                     return null;
                 });
     }

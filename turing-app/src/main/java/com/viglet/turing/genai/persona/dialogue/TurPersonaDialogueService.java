@@ -175,7 +175,7 @@ public class TurPersonaDialogueService {
         // event (side events like sources/options are filtered out); collect +
         // join into one utterance. Stateless: conversationId + flowId null.
         List<String> parts = agentChatExecutor.execute(
-                        new TurAgentChatRequest(agent, llm, history, null, null, null, null))
+                        new TurAgentChatRequest(agent, llm, history, null, null, null, null, null))
                 .filter(r -> "token".equals(r.type()))
                 .map(TurAgentChatExecutor.ChatResponse::content)
                 .collectList()

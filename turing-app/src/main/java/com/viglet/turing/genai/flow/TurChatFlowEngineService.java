@@ -1325,6 +1325,24 @@ public class TurChatFlowEngineService {
     @Transactional
     public PinResult pinFlowForConversation(TurAIAgent agent, String conversationId,
             String flowSelector) {
+        return pinFlowForConversation(agent, conversationId, flowSelector, null);
+    }
+
+    /**
+     * T633 / §XXVII.4 overload — additionally seeds a per-request persona
+     * ({@code activePersonaId}) into the freshly-pinned flow state so the
+     * {@code TurAgentPersonaResolver} speaks as it across every turn of the
+     * flow, without needing a persona node in the flow graph. Used by the
+     * anonymous public {@code flow-select} path so the demo's chosen persona
+     * survives the pin. The id must already be validated against the agent's
+     * catalog by the caller; a blank id leaves the seed untouched (legacy
+     * behaviour, byte-identical to the 3-arg overload).
+     *
+     * @param activePersonaId nullable/blank → no persona seeded (legacy)
+     * @since 2026.3.4
+     */
+    public PinResult pinFlowForConversation(TurAIAgent agent, String conversationId,
+            String flowSelector, String activePersonaId) {
         if (agent == null) {
             return PinResult.error("agent is required");
         }
@@ -1365,6 +1383,15 @@ public class TurChatFlowEngineService {
         // along the full session context is the least-surprising default.
         Map<String, String> mappedSlots = applySlotInheritance(flow, currentSlots);
         Map<String, String> seedSlots = mappedSlots != null ? mappedSlots : currentSlots;
+
+        // T633 — seed the anonymous per-request persona into the receiving
+        // flow's variables so the resolver speaks as it from the first turn.
+        // Literal key (not the resolver constant) mirrors setActivePersonaVariable,
+        // keeping this file free of a dependency on the persona package.
+        if (activePersonaId != null && !activePersonaId.isBlank()) {
+            seedSlots = new LinkedHashMap<>(seedSlots);
+            seedSlots.put("__activePersonaId", activePersonaId);
+        }
 
         // Reset every other in-progress state on this agent so the engine's
         // continuation rule cannot keep the next turn on a stale flow. We

@@ -42,6 +42,11 @@ import com.viglet.turing.persistence.model.llm.TurLLMInstance;
  * @param flowId               nullable — when set with {@code conversationId}, the
  *                             chat-flow engine governs this turn
  * @param files                nullable — visitor attachments for the current turn
+ * @param requestPersonaId     nullable — T633 per-request persona override for
+ *                             the anonymous public SN chat ("same question,
+ *                             different eyes"); validated against the agent's
+ *                             catalog by {@code TurAgentPersonaResolver} (unknown
+ *                             → default). null on every non-demo turn.
  * @author Alexandre Oliveira
  * @since 2026.3.1
  */
@@ -52,5 +57,6 @@ public record TurAgentChatRequest(
         String systemPromptOverride,
         String conversationId,
         String flowId,
-        List<MultipartFile> files) {
+        List<MultipartFile> files,
+        String requestPersonaId) {
 }

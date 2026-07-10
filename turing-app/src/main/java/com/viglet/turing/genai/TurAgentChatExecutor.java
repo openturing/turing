@@ -383,7 +383,11 @@ public class TurAgentChatExecutor {
         // §I.5 step 2 / T10: SINGLE persona resolution per turn — runs
         // AFTER flow context resolution (and after early advance on the
         // inverted path). By the time this fires the cursor is FINAL pre-LLM.
-        final TurPersona activePersona = personaResolver.resolve(agent, conversationId);
+        // T633 — the per-request persona override (public SN demo path) is
+        // honoured here, validated against the catalog inside resolve(...); a
+        // flow-state override still wins, so flow-driven turns are unaffected.
+        final TurPersona activePersona = personaResolver.resolve(agent, conversationId,
+                request.requestPersonaId());
         final long tAfterPersona = System.currentTimeMillis();
 
         // Resolve the active node up-front so the §IV.2 / T29 tool

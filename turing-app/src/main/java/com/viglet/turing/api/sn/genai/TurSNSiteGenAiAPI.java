@@ -111,6 +111,7 @@ public class TurSNSiteGenAiAPI {
 	private final TurWorkspaceEventBus workspaceEventBus;
 	private final com.viglet.turing.genai.flow.TurConversationLock conversationLock;
 	private final com.viglet.turing.genai.TurDefaultAgentResolver turDefaultAgentResolver;
+	private final com.viglet.turing.genai.persona.TurAgentPersonaResolver turAgentPersonaResolver;
 
 	public TurSNSiteGenAiAPI(TurSNSearchProcess turSNSearchProcess,
 			TurSNGenAi turGenAi,
@@ -132,11 +133,13 @@ public class TurSNSiteGenAiAPI {
 			TurAgentWorkspace agentWorkspace,
 			TurWorkspaceEventBus workspaceEventBus,
 			com.viglet.turing.genai.flow.TurConversationLock conversationLock,
-			com.viglet.turing.genai.TurDefaultAgentResolver turDefaultAgentResolver) {
+			com.viglet.turing.genai.TurDefaultAgentResolver turDefaultAgentResolver,
+			com.viglet.turing.genai.persona.TurAgentPersonaResolver turAgentPersonaResolver) {
 		this.turSNSearchProcess = turSNSearchProcess;
 		this.turGenAi = turGenAi;
 		this.turGenAiContextFactory = turGenAiContextFactory;
 		this.turDefaultAgentResolver = turDefaultAgentResolver;
+		this.turAgentPersonaResolver = turAgentPersonaResolver;
 		this.turSNSiteLocaleRepository = turSNSiteLocaleRepository;
 		this.turSNSiteSearchService = turSNSiteSearchService;
 		this.turIntentRepository = turIntentRepository;
@@ -337,7 +340,8 @@ public class TurSNSiteGenAiAPI {
 			Flux<TurAgentChatExecutor.ChatResponse> stream = turGenAi.assistantConversationStreaming(
 					context, agent, llmInstance,
 					new TurSNGenAiChatRequest(request.messages(), request.filters(),
-							request.conversationId(), request.flowId(), request.forcedVariant(), locale));
+							request.conversationId(), request.flowId(), request.forcedVariant(), locale,
+							request.personaId()));
 			// Capture the turn for chat memory: accumulate the streamed assistant
 			// chunks and enqueue once the stream finishes. The service is a no-op
 			// when the agent has chatMemoryEnabled=false or the logging engine is
@@ -566,15 +570,20 @@ public class TurSNSiteGenAiAPI {
 						return new ChatFlowSelectResponse(false, null, null,
 								SITE + siteName + "' has no GenAI agent configured");
 					}
-					TurAIAgent agent = genAi.getTurAIAgent();
+					TurAIAgent agent = turDefaultAgentResolver.resolveEffectiveAgent(genAi);
 					if (agent == null) {
 						return new ChatFlowSelectResponse(false, null, null,
 								SITE + siteName + "' has no GenAI agent configured");
 					}
+					// T633 — carry an anonymous per-request persona into the
+					// pinned flow, validated against the effective agent's
+					// catalog (unknown → null, i.e. no persona seeded).
+					String personaId = turAgentPersonaResolver.validateCatalogPersonaId(
+							agent, body.personaId());
 					TurChatFlowEngineService.PinResult pin = conversationLock.runExclusive(
 							body.conversationId(),
 							() -> chatFlowEngineService.pinFlowForConversation(
-									agent, body.conversationId(), body.flow()));
+									agent, body.conversationId(), body.flow(), personaId));
 					return new ChatFlowSelectResponse(pin.success(), pin.pinnedFlowId(),
 							pin.pinnedFlowName(), pin.reason());
 				})
@@ -588,7 +597,13 @@ public class TurSNSiteGenAiAPI {
 	 * insensitive). Either id or name resolves — the deep-link convenience
 	 * path uses the name.
 	 */
-	public record ChatFlowSelectRequest(String conversationId, String flow) {
+	/**
+	 * Pin request. T633 adds the optional {@code personaId} — a per-request
+	 * persona seeded into the freshly-pinned flow (validated against the
+	 * effective agent's catalog; unknown/blank → none), so the anonymous
+	 * demo's chosen persona survives the flow selection.
+	 */
+	public record ChatFlowSelectRequest(String conversationId, String flow, String personaId) {
 	}
 
 	public record ChatFlowSelectResponse(boolean success, String pinnedFlowId,
@@ -1077,8 +1092,15 @@ public class TurSNSiteGenAiAPI {
 			String sessionCookieName, long sessionTtlSeconds) {
 	}
 
+	/**
+	 * T633 / §XXVII.4 — {@code personaId} is an optional per-request persona
+	 * override for the anonymous public SN chat ("same question, different
+	 * eyes"). It is validated downstream against the effective agent's persona
+	 * catalog (unknown → the agent's default persona, never an arbitrary one);
+	 * null keeps the pre-T633 behaviour.
+	 */
 	public record ConversationRequest(List<ConversationMessage> messages, String locale,
 			java.util.Map<String, List<String>> filters,
-			String conversationId, String flowId, String forcedVariant) {
+			String conversationId, String flowId, String forcedVariant, String personaId) {
 	}
 }

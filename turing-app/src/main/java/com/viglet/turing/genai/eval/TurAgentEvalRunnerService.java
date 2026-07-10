@@ -472,7 +472,7 @@ public class TurAgentEvalRunnerService {
             List<ChatMessageItem> history, String conversationId) {
         List<ChatResponse> emissions = agentChatExecutor
                 .execute(new TurAgentChatRequest(agent, llmInstance, history, null,
-                        conversationId, null, null))
+                        conversationId, null, null, null))
                 .collectList()
                 .block();
         if (emissions == null || emissions.isEmpty()) {
