@@ -2483,17 +2483,6 @@ T382/T386, the `/api/sn/import` API, the React + vanilla SDKs); step 2 is the on
 thing that makes a team hesitate to switch. Block AO closes that gap by building
 the importer, not by writing more prose around a manual process.
 
-**XXXVIII.1 — Elasticsearch importer (T657).** The strongest, most defensible
-piece because the transform is deterministic: an ES `_mapping` maps cleanly onto a
-Turing manifest (`text`→`TEXT`, `keyword`→`STRING`, numeric/date/boolean → the
-matching `TurSEFieldType`; a `keyword`/aggregatable field becomes `facet:true`),
-and documents come out of a `_search` scroll (or PIT + `search_after`) one page at
-a time → mapped to SN job items → pushed through the existing batched import +
-`COMMIT`. It needs only a URL, credentials, and an index name — no vendor SDK — so
-it works against Elastic Cloud or a self-managed cluster identically. Reuses the
-shared manifest provisioner (T382) so a manifested and an importer-created field
-are byte-identical.
-
 **XXXVIII.2 — Algolia importer (T658).** Algolia has no strict mapping, so the
 schema is inferred from index *settings* (`searchableAttributes` → searchable
 fields, `attributesForFaceting` → facets, `customRanking` → ranking hints) and,
