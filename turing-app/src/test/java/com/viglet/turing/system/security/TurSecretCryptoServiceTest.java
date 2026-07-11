@@ -73,6 +73,40 @@ class TurSecretCryptoServiceTest {
                 .isInstanceOf(IllegalStateException.class);
     }
 
+    @ParameterizedTest
+    @ValueSource(strings = {"sample-key-for-crypto", "SAMPLE-KEY-FOR-CRYPTO",
+            "  sample-key-for-crypto  ", "turing-dev-insecure-default-key",
+            "changeme", "change-me", "your-key-here", "secret", "password"})
+    void shouldRejectKnownSampleOrDevSentinelInProduction(String sentinel) {
+        MockEnvironment environment = new MockEnvironment();
+        environment.setActiveProfiles("production");
+        var service = new TurSecretCryptoService(environment, sentinel);
+
+        assertThatThrownBy(() -> service.encrypt("secret"))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("known sample/dev value");
+    }
+
+    @Test
+    void shouldAcceptStrongKeyInProduction() {
+        MockEnvironment environment = new MockEnvironment();
+        environment.setActiveProfiles("production");
+        var service = new TurSecretCryptoService(environment, "a-strong-secret-master-key-9f3c");
+
+        String encrypted = service.encrypt("prod-secret");
+        assertThat(service.decrypt(encrypted)).isEqualTo("prod-secret");
+    }
+
+    @Test
+    void shouldAllowSampleSentinelOutsideProduction() {
+        MockEnvironment environment = new MockEnvironment();
+        environment.setActiveProfiles("development");
+        var service = new TurSecretCryptoService(environment, "sample-key-for-crypto");
+
+        String encrypted = service.encrypt("dev-secret");
+        assertThat(service.decrypt(encrypted)).isEqualTo("dev-secret");
+    }
+
     @Test
     void shouldAllowFallbackKeyWhenProfileIsNotProduction() {
         MockEnvironment environment = new MockEnvironment();

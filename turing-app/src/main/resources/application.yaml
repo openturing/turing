@@ -6,7 +6,12 @@
 # Turing
 # ---------------------------------------------------------------------------
 turing:
-  ai.crypto.key: sample-key-for-crypto
+  # Master key for AES/GCM encryption of all stored provider API keys and store
+  # credentials. MUST be supplied via the environment in production; the blank
+  # default makes the production profile fail fast (T639 / §XXXVII.1). Outside
+  # production an insecure dev fallback is used (warned once). Never commit a
+  # real value here. Rotation: docs/operations/crypto-key-rotation.md
+  ai.crypto.key: ${TURING_AI_CRYPTO_KEY:}
   allowedOrigins: http://localhost:4200,http://localhost:5173
   permissions: false
   tenancy:

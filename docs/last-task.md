@@ -46,6 +46,7 @@ number" looked free but wasn't. Grepping three files (`ROADMAP.md`,
 
 ## Log (most recent first)
 
+- **T639 SHIPPED** (Block AN §XXXVII.1 — externalise + reject sample AI crypto master key in prod) — 2026-07-11.
 - **T686 SHIPPED** (Block AR §XLI — Lucene spell-check via DirectSpellChecker + spellCheck plugin seam; endpoint re-pointed at plugin factory; CLOSES Block AR) — 2026-07-11.
 - **T685 SHIPPED** (Block AR §XLI — Lucene similar documents: getDocumentsByIds + getSimilarDocuments via MoreLikeThis) — 2026-07-11.
 - **T685–T686 CREATED** (📋, Block AR §XLI — Lucene parity gaps: similar/MLT + spell-check seam) — 2026-07-11.

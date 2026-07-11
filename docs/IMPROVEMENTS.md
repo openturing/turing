@@ -2277,19 +2277,6 @@ not a second call site.
 > guard — were all verified present and are called out so they are not "fixed"
 > away.
 
-**XXXVII.1 — AI crypto master key (CRITICAL, CONFIRMED).** `turing.ai.crypto.key:
-sample-key-for-crypto` ships in `application.yaml:9` and `spring.profiles.active:
-production` is set (`:292`). `TurCryptoKeyMaterial.get()` only fails fast when the
-key is *blank*, so the committed sample value is used verbatim to AES/GCM-encrypt
-every `TurLLMInstance.apiKeyEncrypted` and store credential. Anyone with repo
-access + a DB copy (or ciphertext, e.g. via the `/actuator/env` of §XXXVII.11)
-decrypts all provider keys — the whole `@Transient` write-only design is nullified.
-Fix: require the key from env only, reject known sample/dev sentinels in prod (not
-just blank), re-encrypt existing rows on rotation, document the procedure. Note the
-existing cross-container caveat in T373. The underlying AES/GCM+PBKDF2 primitive
-lives in the external `viglet-core-crypto` jar (not in-repo), and the salt prefix
-`"turing-tenant-secret:"` is static — minor, secondary to the key exposure.
-
 **XXXVII.2 — Anonymous chat-analytics (CRITICAL, CONFIRMED).**
 `/api/system/chat-analytics/**` is `permitAll` in both auth branches
 (`TurSecurityConfigProduction.java:191,253`). `TurChatAnalyticsAPI` then lets an
