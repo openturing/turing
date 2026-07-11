@@ -16,6 +16,15 @@ set STORAGE_TYPE=FILESYSTEM
 set LOGGING_ENGINE=none
 set LOG_LEVEL=INFO
 
+rem Master key used by TurSecretCryptoService to encrypt/decrypt provider API keys.
+rem The default active profile is "production", which fails fast when this is blank
+rem (TurCryptoKeyMaterial / T639). Respect an existing TURING_AI_CRYPTO_KEY from the
+rem environment; otherwise fall back to a stable LOCAL DEV key. Do NOT reuse this
+rem value in a real production deployment -- set a strong secret via the environment
+rem there and rotate any secrets encrypted with this local key (see
+rem docs/operations/crypto-key-rotation.md). Must not be a rejected sentinel.
+if not defined TURING_AI_CRYPTO_KEY set TURING_AI_CRYPTO_KEY=turing-local-dev-2026-crypto-master-key
+
 for %%A in (%*) do (
     if /i "%%A"=="mongo" (
         set MONGO_ENABLED=true
@@ -33,6 +42,7 @@ echo   MongoDB: %MONGO_ENABLED%
 echo   Log level ^(com.viglet^): %LOG_LEVEL%
 echo   Storage: %STORAGE_TYPE%
 echo   Logging Engine: %LOGGING_ENGINE%
+echo   Crypto key: configured ^(TURING_AI_CRYPTO_KEY^)
 echo.
 
 call mvn spring-boot:run -pl turing-app -Dskip.npm -DskipTests -Dmaven.test.skip=true ^

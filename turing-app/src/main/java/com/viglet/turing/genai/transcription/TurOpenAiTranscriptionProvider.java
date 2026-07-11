@@ -44,6 +44,16 @@ public class TurOpenAiTranscriptionProvider implements TurTranscriptionProvider 
     private static final String TRANSCRIPTIONS_PATH = "/audio/transcriptions";
     private static final String DEFAULT_BASE_URL = "https://api.openai.com/v1";
 
+    /**
+     * Hard upload limit of the OpenAI transcription endpoint: 25 MiB
+     * (26,214,400 bytes). Sending more returns a raw {@code 413 Payload Too
+     * Large}, so we fail fast with an actionable message instead of shipping the
+     * whole blob over the wire. A local/air-gapped STT bean overriding this
+     * provider ({@code @Primary}) has its own limits and is unaffected.
+     */
+    private static final long MAX_AUDIO_BYTES = 26_214_400L;
+    private static final double BYTES_PER_MB = 1024.0 * 1024.0;
+
     private final TurGlobalSettingsService globalSettingsService;
     private final TurLLMInstanceRepository llmInstanceRepository;
     private final TurSecretCryptoService secretCryptoService;
@@ -65,6 +75,12 @@ public class TurOpenAiTranscriptionProvider implements TurTranscriptionProvider 
     public TurTranscriptionResult transcribe(byte[] audio, String mimeType, String languageHint) {
         if (audio == null || audio.length == 0) {
             return TurTranscriptionResult.fail("Empty audio.");
+        }
+        if (audio.length > MAX_AUDIO_BYTES) {
+            return TurTranscriptionResult.fail(
+                    "Audio is %.1f MB, above the %.0f MB limit of the OpenAI transcription API. "
+                            .formatted(audio.length / BYTES_PER_MB, MAX_AUDIO_BYTES / BYTES_PER_MB)
+                            + "Shorten it or re-encode at a lower bitrate / mono (e.g. 64 kbps MP3) and retry.");
         }
         TurLLMInstance instance = resolveInstance();
         if (instance == null) {
