@@ -343,6 +343,46 @@ public interface TurSearchEnginePlugin {
         return List.of();
     }
 
+    // ---- Synonyms (T663 / §XXXIX, Block AP) ------------------------------
+
+    /**
+     * T663 — whether this engine can apply <em>query-time</em> synonyms without
+     * a reindex (Algolia's model). Solr (managed synonyms + reload) and
+     * Elasticsearch (Synonyms API) return {@code true}; the default is
+     * {@code false} so an engine that hasn't wired synonyms degrades honestly.
+     */
+    default boolean supportsSynonyms() {
+        return false;
+    }
+
+    /**
+     * T663 — pushes the (site, locale) synonym rules into the engine's
+     * query-time analysis so a search for any term in a rule matches records
+     * containing the equivalents, <em>without</em> reindexing. The rules are the
+     * engine-neutral projection built by the synonym service from the
+     * Turing-owned source of truth ({@code TurSNSynonym}).
+     *
+     * <p>Implementations MUST NOT silently drop a rule they can't represent —
+     * they report it in {@link TurSESynonymApplyResult#unsupportedTypes()} (e.g.
+     * {@code PLACEHOLDER} on Lucene) so the admin UI can show an honest
+     * capability banner. Corrections degrade to one-way synonyms with a warning
+     * on engines without a per-synonym typo budget.
+     *
+     * <p>The default returns {@link TurSESynonymApplyResult#unsupported} — an
+     * engine that doesn't override advertises no synonym support rather than
+     * throwing.
+     *
+     * @param seInstance the SE instance hosting the index/core
+     * @param indexName  the target index/core name
+     * @param locale     the locale the rules apply to
+     * @param rules      the synonym rules to apply (replacing any prior set)
+     * @return what was applied and what could not be represented
+     */
+    default TurSESynonymApplyResult applySynonyms(TurSEInstance seInstance, String indexName,
+            Locale locale, List<TurSESynonymRule> rules) {
+        return TurSESynonymApplyResult.unsupported(getPluginType());
+    }
+
     // ---- Copy field (Solr-specific; no-op for schema-less engines) -------
 
     /**

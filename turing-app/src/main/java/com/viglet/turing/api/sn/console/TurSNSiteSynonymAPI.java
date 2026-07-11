@@ -18,6 +18,7 @@ package com.viglet.turing.api.sn.console;
 
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -31,8 +32,11 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.viglet.turing.api.exception.TurNotFoundException;
 import com.viglet.turing.persistence.dto.sn.synonym.TurSNSynonymDto;
+import com.viglet.turing.persistence.dto.sn.synonym.TurSNSynonymSupportDto;
 import com.viglet.turing.persistence.model.sn.TurSNSite;
 import com.viglet.turing.persistence.repository.sn.TurSNSiteRepository;
+import com.viglet.turing.plugins.se.TurSESynonymApplyResult;
+import com.viglet.turing.sn.synonym.TurSNSynonymApplyService;
 import com.viglet.turing.sn.synonym.TurSNSynonymService;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -54,11 +58,14 @@ public class TurSNSiteSynonymAPI {
 
     private final TurSNSiteRepository turSNSiteRepository;
     private final TurSNSynonymService turSNSynonymService;
+    private final TurSNSynonymApplyService turSNSynonymApplyService;
 
     public TurSNSiteSynonymAPI(TurSNSiteRepository turSNSiteRepository,
-            TurSNSynonymService turSNSynonymService) {
+            TurSNSynonymService turSNSynonymService,
+            TurSNSynonymApplyService turSNSynonymApplyService) {
         this.turSNSiteRepository = turSNSiteRepository;
         this.turSNSynonymService = turSNSynonymService;
+        this.turSNSynonymApplyService = turSNSynonymApplyService;
     }
 
     private TurSNSite site(String snSiteId) {
@@ -110,5 +117,23 @@ public class TurSNSiteSynonymAPI {
     public List<TurSNSynonymDto> batch(@PathVariable String snSiteId,
             @RequestBody List<TurSNSynonymDto> dtos) {
         return turSNSynonymService.batch(site(snSiteId), dtos);
+    }
+
+    @Operation(summary = "Whether the site's engine supports query-time synonyms")
+    @GetMapping("/support")
+    public TurSNSynonymSupportDto support(@PathVariable String snSiteId) {
+        site(snSiteId);
+        return turSNSynonymApplyService.support(snSiteId);
+    }
+
+    @Operation(summary = "Push synonyms into the search engine (all locales, or one via ?locale=)")
+    @PostMapping("/apply")
+    public Map<String, TurSESynonymApplyResult> apply(@PathVariable String snSiteId,
+            @RequestParam(required = false) Locale locale) {
+        site(snSiteId);
+        if (locale == null) {
+            return turSNSynonymApplyService.applyAll(snSiteId);
+        }
+        return Map.of(locale.toLanguageTag(), turSNSynonymApplyService.apply(snSiteId, locale));
     }
 }

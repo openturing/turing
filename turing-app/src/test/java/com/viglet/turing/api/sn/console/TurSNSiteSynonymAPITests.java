@@ -29,10 +29,12 @@ import com.viglet.turing.commons.utils.TurCommonsUtils;
 import com.viglet.turing.persistence.dto.sn.synonym.TurSNSynonymDto;
 import com.viglet.turing.persistence.model.se.TurSEInstance;
 import com.viglet.turing.persistence.model.sn.TurSNSite;
+import com.viglet.turing.persistence.model.sn.locale.TurSNSiteLocale;
 import com.viglet.turing.persistence.model.sn.synonym.TurSNSynonymType;
 import com.viglet.turing.persistence.repository.se.TurSEInstanceRepository;
 import com.viglet.turing.persistence.repository.se.TurSEVendorRepository;
 import com.viglet.turing.persistence.repository.sn.TurSNSiteRepository;
+import com.viglet.turing.persistence.repository.sn.locale.TurSNSiteLocaleRepository;
 import com.viglet.turing.persistence.repository.sn.synonym.TurSNSynonymRepository;
 
 import lombok.extern.slf4j.Slf4j;
@@ -60,6 +62,8 @@ class TurSNSiteSynonymAPITests {
     private TurSEInstanceRepository turSEInstanceRepository;
     @Autowired
     private TurSEVendorRepository turSEVendorRepository;
+    @Autowired
+    private TurSNSiteLocaleRepository turSNSiteLocaleRepository;
 
     private MockMvc mockMvc;
     private Principal mockPrincipal;
@@ -73,9 +77,13 @@ class TurSNSiteSynonymAPITests {
         serviceUrl = String.format("/api/sn/%s/synonym", ensureSite().getId());
     }
 
-    /** No SN site is seeded on startup, so create a minimal one over a Lucene SE instance. */
+    /**
+     * No SN site is seeded on startup, so create a minimal one over a Lucene SE
+     * instance. Idempotent — the H2 test DB is file-based and reused across runs,
+     * so both the site and its locale are ensured independently.
+     */
     private TurSNSite ensureSite() {
-        return turSNSiteRepository.findByName("SynonymTest").orElseGet(() -> {
+        TurSNSite site = turSNSiteRepository.findByName("SynonymTest").orElseGet(() -> {
             TurSEInstance instance = new TurSEInstance();
             instance.setTitle("Synonym Test Lucene");
             instance.setDescription("Synonym Test Lucene");
@@ -84,12 +92,21 @@ class TurSNSiteSynonymAPITests {
             instance.setTurSEVendor(turSEVendorRepository.findById("LUCENE").orElseThrow());
             TurSEInstance savedInstance = turSEInstanceRepository.save(instance);
 
-            TurSNSite site = new TurSNSite();
-            site.setName("SynonymTest");
-            site.setDescription("Synonym Test Site");
-            site.setTurSEInstance(savedInstance);
-            return turSNSiteRepository.save(site);
+            TurSNSite newSite = new TurSNSite();
+            newSite.setName("SynonymTest");
+            newSite.setDescription("Synonym Test Site");
+            newSite.setTurSEInstance(savedInstance);
+            return turSNSiteRepository.save(newSite);
         });
+        if (turSNSiteLocaleRepository.findByTurSNSite(site).isEmpty()) {
+            TurSNSiteLocale locale = new TurSNSiteLocale();
+            locale.setLanguage(Locale.ENGLISH);
+            locale.setCore("synonymtest_en");
+            locale.setPosition(0);
+            locale.setTurSNSite(site);
+            turSNSiteLocaleRepository.save(locale);
+        }
+        return site;
     }
 
     @Test
@@ -178,5 +195,26 @@ class TurSNSiteSynonymAPITests {
                 .principal(mockPrincipal).accept(MediaType.APPLICATION_JSON)
                 .contentType(MediaType.APPLICATION_JSON);
         mockMvc.perform(rb).andExpect(status().isOk());
+    }
+
+    @Test
+    @Order(8)
+    void supportReportsEngineCapability() throws Exception {
+        // The test site runs on the Lucene plugin, which does not override
+        // supportsSynonyms() yet (that's T665) -> reports unsupported honestly.
+        mockMvc.perform(get(serviceUrl + "/support").principal(mockPrincipal))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.engine").value("lucene"))
+                .andExpect(jsonPath("$.supported").value(false));
+    }
+
+    @Test
+    @Order(9)
+    void applyReturnsPerLocaleResult() throws Exception {
+        RequestBuilder rb = MockMvcRequestBuilders.post(serviceUrl + "/apply").principal(mockPrincipal)
+                .accept(MediaType.APPLICATION_JSON).contentType(MediaType.APPLICATION_JSON);
+        // One locale (en) on the site; Lucene reports unsupported rather than throwing.
+        mockMvc.perform(rb).andExpect(status().isOk())
+                .andExpect(jsonPath("$.en.supported").value(false));
     }
 }

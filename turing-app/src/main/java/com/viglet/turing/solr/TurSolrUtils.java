@@ -454,6 +454,46 @@ public class TurSolrUtils {
         executeRequest(request, "Failed to execute schema action: " + action);
     }
 
+    /**
+     * T663 / §XXXIX — PUT the site's synonym mappings into a Solr Managed
+     * Synonyms resource (the query analyzer's
+     * {@code ManagedSynonymGraphFilterFactory managed="<resource>"} reads it),
+     * so a search matches equivalents <em>without reindexing</em> (Algolia's
+     * model). The core must be reloaded afterwards ({@link #reloadCore}).
+     * Fail-open: a transport/HTTP error is logged and reported as {@code false}.
+     *
+     * @return {@code true} when the PUT returned a 2xx status
+     */
+    public static boolean putManagedSynonyms(TurSEInstance turSEInstance, String coreName,
+            String managedResource, Map<String, List<String>> mappings) {
+        String json = new ObjectMapper().writeValueAsString(mappings);
+        URI uri = URI.create(String.format("%s/solr/%s/schema/analysis/synonyms/%s",
+                getSolrUrl(turSEInstance), coreName, managedResource));
+        HttpRequest request = getHttpRequestBuilderJson()
+                .uri(uri)
+                .PUT(BodyPublishers.ofString(json))
+                .build();
+        return executeRequest(request, "Failed to put managed synonyms to core: " + coreName)
+                .map(r -> r.statusCode() >= 200 && r.statusCode() < 300)
+                .orElse(false);
+    }
+
+    /**
+     * T663 / §XXXIX — reloads a Solr core via the Core Admin RELOAD action so
+     * managed-resource changes (e.g. synonyms just pushed via
+     * {@link #putManagedSynonyms}) take effect. Fail-open.
+     *
+     * @return {@code true} when the reload returned a 2xx status
+     */
+    public static boolean reloadCore(TurSEInstance turSEInstance, String coreName) {
+        URI uri = URI.create(String.format("%s/solr/admin/cores?action=RELOAD&core=%s",
+                getSolrUrl(turSEInstance), coreName));
+        HttpRequest request = HttpRequest.newBuilder().uri(uri).GET().build();
+        return executeRequest(request, "Failed to reload core: " + coreName)
+                .map(r -> r.statusCode() >= 200 && r.statusCode() < 300)
+                .orElse(false);
+    }
+
     private static Optional<HttpResponse<String>> executeRequest(HttpRequest request, String errorMessage) {
         try (HttpClient client = getHttpClient()) {
             HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());

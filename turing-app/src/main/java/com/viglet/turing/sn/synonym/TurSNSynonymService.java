@@ -29,6 +29,7 @@ import com.viglet.turing.persistence.dto.sn.synonym.TurSNSynonymDto;
 import com.viglet.turing.persistence.model.sn.TurSNSite;
 import com.viglet.turing.persistence.model.sn.synonym.TurSNSynonym;
 import com.viglet.turing.persistence.repository.sn.synonym.TurSNSynonymRepository;
+import com.viglet.turing.plugins.se.TurSESynonymRule;
 
 /**
  * T662 / §XXXIX (Block AP) — CRUD + batch + search over the engine-agnostic
@@ -76,6 +77,19 @@ public class TurSNSynonymService {
     @Transactional(readOnly = true)
     public List<TurSNSynonym> synonymsForApply(TurSNSite site, Locale language) {
         return repository.findEnabledForApply(site, language);
+    }
+
+    /**
+     * The enabled rules for a (site, locale) as the engine-neutral
+     * {@link TurSESynonymRule} projection the plugin seam (T663) consumes. The
+     * entity → rule mapping (including the lazy {@code terms}) runs inside this
+     * transaction so the caller can do engine I/O without a persistence context.
+     */
+    @Transactional(readOnly = true)
+    public List<TurSESynonymRule> rulesForApply(TurSNSite site, Locale language) {
+        return repository.findEnabledForApply(site, language).stream()
+                .map(s -> new TurSESynonymRule(s.getType(), s.getInput(), List.copyOf(s.getTerms())))
+                .toList();
     }
 
     // ---- Writes ----------------------------------------------------------

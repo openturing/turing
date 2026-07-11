@@ -24,6 +24,8 @@ import com.viglet.turing.persistence.model.se.TurSEInstance;
 import com.viglet.turing.persistence.model.sn.TurSNSite;
 import com.viglet.turing.persistence.model.sn.locale.TurSNSiteLocale;
 import com.viglet.turing.plugins.se.TurSearchEnginePlugin;
+import com.viglet.turing.plugins.se.TurSESynonymApplyResult;
+import com.viglet.turing.plugins.se.TurSESynonymRule;
 import com.viglet.turing.properties.TurConfigProperties;
 import com.viglet.turing.se.result.TurSEResults;
 import com.viglet.turing.solr.TurSolr;
@@ -211,6 +213,48 @@ public class TurSolrSearchEnginePlugin implements TurSearchEnginePlugin {
     @Override
     public boolean fieldExists(TurSEInstance seInstance, String indexName, String fieldName) {
         return TurSolrUtils.existsField(effective(seInstance), indexName, fieldName);
+    }
+
+    // ---- Synonyms (T663 / §XXXIX, Block AP) ------------------------------
+
+    /**
+     * Base name for the per-locale Solr Managed Synonyms resource. The query
+     * analyzer in the configset must reference it via
+     * {@code ManagedSynonymGraphFilterFactory managed="turing_<locale>"} for the
+     * push to take effect at query time.
+     */
+    private static final String SYNONYM_RESOURCE_BASE = "turing";
+
+    @Override
+    public boolean supportsSynonyms() {
+        return true;
+    }
+
+    @Override
+    public TurSESynonymApplyResult applySynonyms(TurSEInstance seInstance, String indexName,
+            Locale locale, List<TurSESynonymRule> rules) {
+        TurSolrSynonymPayload payload = TurSolrManagedSynonymPayloadBuilder.build(rules);
+        List<String> warnings = new ArrayList<>(payload.warnings());
+        int applied = payload.appliedRules();
+
+        if (!payload.mappings().isEmpty()) {
+            String resource = TurSolrManagedSynonymPayloadBuilder.resourceForLocale(
+                    SYNONYM_RESOURCE_BASE, locale);
+            TurSEInstance effective = effective(seInstance);
+            boolean pushed = TurSolrUtils.putManagedSynonyms(effective, indexName, resource,
+                    payload.mappings());
+            if (pushed) {
+                // Managed-resource edits need a core reload to take effect.
+                TurSolrUtils.reloadCore(effective, indexName);
+            } else {
+                warnings.add("Solr rejected the managed-synonyms update for core '" + indexName
+                        + "' (resource '" + resource + "'); rules were not applied. Ensure the "
+                        + "query analyzer uses ManagedSynonymGraphFilterFactory managed=\"" + resource
+                        + "\".");
+                applied = 0;
+            }
+        }
+        return new TurSESynonymApplyResult(true, applied, payload.unsupportedTypes(), warnings);
     }
 
     // ---- Document operations ---------------------------------------------
