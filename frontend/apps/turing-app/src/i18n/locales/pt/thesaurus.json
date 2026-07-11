@@ -1,0 +1,43 @@
+{
+  "thesaurus": {
+    "title": "Tesauro",
+    "description": "Bibliotecas de vocabulário controlado (microtesauros) que expandem seus documentos com termos hierárquicos no momento da indexação.",
+    "knowledgeBase": "Biblioteca de tesauro",
+    "newKnowledgeBase": "Nova biblioteca de tesauro",
+    "blankTitle": "Você ainda não tem nenhuma biblioteca de tesauro.",
+    "blankDescription": "Crie uma biblioteca para organizar vocabulários controlados por idioma e domínio.",
+    "nameRequired": "O nome é obrigatório",
+    "microthesauri": "Microtesauros",
+    "microthesauriDesc": "Cada microtesauro é uma árvore de termos para um único idioma e domínio.",
+    "microthesaurus": "Microtesauro",
+    "microthesaurusName": "Nome",
+    "microthesaurusAdded": "Microtesauro adicionado",
+    "addMicrothesaurus": "Adicionar microtesauro",
+    "noMicrothesauri": "Nenhum microtesauro ainda. Adicione um abaixo.",
+    "termCount": "{{count}} termo",
+    "termCount_other": "{{count}} termos",
+    "language": "Idioma",
+    "domain": "Domínio",
+    "languageAndDomain": "Idioma e domínio",
+    "languageAndDomainDesc": "O idioma único (código ISO) e o domínio de conhecimento desta árvore.",
+    "termTree": "Árvore de termos",
+    "termTreeDesc": "Navegue e cure a hierarquia mais amplo/mais específico. Clique numa linha para expandir; passe o mouse para adicionar um filho ou excluir.",
+    "noTerms": "Nenhum termo ainda. Adicione um termo raiz para iniciar a árvore.",
+    "addRootTerm": "Adicionar termo raiz",
+    "addChild": "Adicionar termo filho",
+    "newTermPlaceholder": "Rótulo do novo termo",
+    "termLabelRequired": "O rótulo do termo é obrigatório",
+    "deleteTermConfirm": "Excluir \"{{name}}\" e todos os seus termos filhos?",
+    "expand": "Expandir",
+    "collapse": "Recolher",
+    "leaf": "Sem termos filhos",
+    "relation": {
+      "RELATED": "Relacionado",
+      "NARROWER": "Mais específico",
+      "BROADER": "Mais amplo",
+      "USE": "Use",
+      "USED_FOR": "Usado por",
+      "CUSTOM": "Personalizado"
+    }
+  }
+}

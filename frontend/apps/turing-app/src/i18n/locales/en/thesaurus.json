@@ -1,0 +1,43 @@
+{
+  "thesaurus": {
+    "title": "Thesaurus",
+    "description": "Controlled-vocabulary libraries (microthesauri) that expand your documents with hierarchical terms at index time.",
+    "knowledgeBase": "Thesaurus library",
+    "newKnowledgeBase": "New thesaurus library",
+    "blankTitle": "You don't have any thesaurus library yet.",
+    "blankDescription": "Create a library to organize controlled vocabularies by language and domain.",
+    "nameRequired": "A name is required",
+    "microthesauri": "Microthesauri",
+    "microthesauriDesc": "Each microthesaurus is one term tree for a single language and domain.",
+    "microthesaurus": "Microthesaurus",
+    "microthesaurusName": "Name",
+    "microthesaurusAdded": "Microthesaurus added",
+    "addMicrothesaurus": "Add microthesaurus",
+    "noMicrothesauri": "No microthesauri yet. Add one below.",
+    "termCount": "{{count}} term",
+    "termCount_other": "{{count}} terms",
+    "language": "Language",
+    "domain": "Domain",
+    "languageAndDomain": "Language & domain",
+    "languageAndDomainDesc": "The single language (ISO code) and knowledge domain of this tree.",
+    "termTree": "Term tree",
+    "termTreeDesc": "Browse and curate the broader/narrower hierarchy. Click a row to expand; hover to add a child or delete.",
+    "noTerms": "No terms yet. Add a root term to start the tree.",
+    "addRootTerm": "Add root term",
+    "addChild": "Add child term",
+    "newTermPlaceholder": "New term label",
+    "termLabelRequired": "A term label is required",
+    "deleteTermConfirm": "Delete \"{{name}}\" and all of its child terms?",
+    "expand": "Expand",
+    "collapse": "Collapse",
+    "leaf": "No child terms",
+    "relation": {
+      "RELATED": "Related",
+      "NARROWER": "Narrower",
+      "BROADER": "Broader",
+      "USE": "Use",
+      "USED_FOR": "Used for",
+      "CUSTOM": "Custom"
+    }
+  }
+}

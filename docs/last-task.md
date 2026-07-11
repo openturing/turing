@@ -1,10 +1,11 @@
-# Last task number — `T678` · next block letter — `AR`
+# Last task number — `T681` · next block letter — `AR`
 
 > **Single source of truth for the next free task number.** The next new task is
-> `T679`; after assigning it, bump the number above and the log line below.
+> `T682`; after assigning it, bump the number above and the log line below.
 >
 > **Next block letter — `AR`** (Block **AQ** = Knowledge Base / microthesauri,
-> T668–T678, created 2026-07-11; highest block shipped is **AP**, native
+> T668–T681, created 2026-07-11; T679–T681 added when the T676 frontend was split
+> into subtasks; highest block shipped is **AP**, native
 > synonyms). The block letter has the *same* non-contiguity hazard as the
 > T-number, and since the 2026-07-10 roadmap cleanup pruned fully-shipped blocks
 > (AG/AO/AP) out of `ROADMAP.md`, that file no longer shows the true maximum —
@@ -45,6 +46,8 @@ number" looked free but wasn't. Grepping three files (`ROADMAP.md`,
 
 ## Log (most recent first)
 
+- **T676 SHIPPED** (Block AQ §XL — bento Thesaurus surface at /bento/thesaurus + friendly expandable term tree with add/delete + variation/relation chips) — 2026-07-11.
+- **T679–T681 CREATED** (📋, Block AQ §XL — T676 frontend split into subtasks: term-tree full editing, seed-library/import UI, per-site selection UI) — 2026-07-11.
 - **T674 SHIPPED** (Block AQ §XL — pre-populated EDUCATION seed library pt/en/it + browse/import API; block rebranded "Thesaurus", vendor names removed) — 2026-07-11.
 - **T673 SHIPPED** (Block AQ §XL — Turing Thesaurus Exchange authority-file XML importer + reconstructed XSD contract) — 2026-07-11.
 - **T672 SHIPPED** (Block AQ §XL — index-time expansion enricher wired into TurSNProcessQueue) — 2026-07-11.

@@ -29,6 +29,7 @@ import {
   IconServer2,
   IconSettings,
   IconShieldCog,
+  IconSitemap,
   IconSparkles,
   IconUserCircle,
   IconWebhook,
@@ -155,6 +156,7 @@ export const BENTO_NAV_ITEMS: readonly BentoNavItem[] = [
   { id: "searchEngine", titleKey: "home.features.searchEngine.title", descriptionKey: "home.features.searchEngine.description", icon: IconZoomCode, section: "enterpriseSearch", tone: "emerald", span: BENTO_SPAN_WIDE, bentoRoute: ROUTES.BENTO_SE_INSTANCE, consoleRoute: "/admin/se/instance", privilege: "SE_VIEW" },
   { id: "integration", titleKey: "home.features.integration.title", descriptionKey: "home.features.integration.description", icon: IconPlugConnectedX, section: "enterpriseSearch", tone: "amber", bentoRoute: ROUTES.BENTO_INTEGRATION_INSTANCE, consoleRoute: "/admin/integration/instance" },
   { id: "graphqlExplorer", titleKey: "home.features.graphqlExplorer.title", descriptionKey: "home.features.graphqlExplorer.description", icon: IconBrandGraphql, section: "enterpriseSearch", tone: "rose", bentoRoute: ROUTES.BENTO_GRAPHQL, consoleRoute: ROUTES.GRAPHQL_ROOT },
+  { id: "thesaurus", titleKey: "thesaurus.title", descriptionKey: "thesaurus.description", icon: IconSitemap, section: "enterpriseSearch", tone: "violet", bentoRoute: ROUTES.BENTO_THESAURUS, consoleRoute: ROUTES.BENTO_THESAURUS, privilege: "SN_VIEW" },
 
   // --- management ---
   { id: "administration", titleKey: "home.features.administration.title", descriptionKey: "home.features.administration.description", icon: IconShieldCog, section: "management", tone: "slate", span: BENTO_SPAN_WIDE, bentoRoute: ROUTES.BENTO_ADMIN, consoleRoute: ROUTES.ADMIN_ROOT, privilege: "__admin__" },

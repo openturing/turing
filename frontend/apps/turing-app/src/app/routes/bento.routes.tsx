@@ -113,6 +113,12 @@ const BentoSNOnboardingPage = lazy(() => import("../bento/sn/bento.sn.onboarding
 // Phase 2 (T560) — skill folder editor (mini VS Code) in the bento shell.
 const BentoSkillListPage = lazy(() => import("../bento/skill/bento.skill.list.page"));
 const BentoSkillEditorPage = lazy(() => import("../bento/skill/bento.skill.editor.page"));
+// Block AQ (§XL) — Thesaurus (controlled vocabulary) library.
+const BentoThesaurusListPage = lazy(() => import("../bento/thesaurus/bento.thesaurus.list.page"));
+const BentoThesaurusKbPage = lazy(() => import("../bento/thesaurus/bento.thesaurus.kb.page"));
+const BentoThesaurusMicrothesaurusPage = lazy(
+  () => import("../bento/thesaurus/bento.thesaurus.microthesaurus.page"),
+);
 // Phase 2 (T561) — asset browser/manager in the bento shell.
 const BentoAssetPage = lazy(() => import("../bento/asset/bento.asset.page"));
 // Phase 2 (T562) — Page CRUD (ZIP-deployed SPAs) in the bento shell.
@@ -286,6 +292,13 @@ export const BentoRoutes = (
     <Route path="sn/instance/:id/top-terms/:period?" element={<BentoSNTopTermsPage />} />
     <Route path="skill" element={<BentoSkillListPage />} />
     <Route path="skill/:id" element={<BentoSkillEditorPage />} />
+    {/* Block AQ (§XL) — Thesaurus library */}
+    <Route path="thesaurus" element={<BentoThesaurusListPage />} />
+    <Route path="thesaurus/:kbId" element={<BentoThesaurusKbPage />} />
+    <Route
+      path="thesaurus/:kbId/m/:microId"
+      element={<BentoThesaurusMicrothesaurusPage />}
+    />
     <Route path="asset" element={<BentoAssetPage />} />
     <Route path="page" element={<BentoPagePage />} />
     {/* Phase 3 (T563) — chat + conversation. */}

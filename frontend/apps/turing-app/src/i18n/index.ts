@@ -30,6 +30,7 @@ import enIntegration from "./locales/en/integration.json";
 import enLogin from "./locales/en/login.json";
 import enSetup from "./locales/en/setup.json";
 import enSkill from "./locales/en/skill.json";
+import enThesaurus from "./locales/en/thesaurus.json";
 import enIntent from "./locales/en/intent.json";
 import enAnalyticsIntent from "./locales/en/analyticsIntent.json";
 import enLlm from "./locales/en/llm.json";
@@ -80,6 +81,7 @@ import ptIntegration from "./locales/pt/integration.json";
 import ptLogin from "./locales/pt/login.json";
 import ptSetup from "./locales/pt/setup.json";
 import ptSkill from "./locales/pt/skill.json";
+import ptThesaurus from "./locales/pt/thesaurus.json";
 import ptIntent from "./locales/pt/intent.json";
 import ptAnalyticsIntent from "./locales/pt/analyticsIntent.json";
 import ptLlm from "./locales/pt/llm.json";
@@ -111,7 +113,7 @@ const en = {
   ...enExchange, ...enGraphql, ...enLogging, ...enTokenUsage, ...enParkedConversations, ...enCostGovernance,
   ...enSystemInfo, ...enGlobalSettings, ...enForms, ...enSearch, ...enAnn, ...enCapabilityMatrix,
   ...enPage, ...enGit, ...enMarketplace, ...enPersona, ...enRoutine, ...enWebhook,
-  ...enVoiceKiosk, ...enBento, ...enEvalStudio, ...enSkill,
+  ...enVoiceKiosk, ...enBento, ...enEvalStudio, ...enSkill, ...enThesaurus,
 };
 
 const pt = {
@@ -122,7 +124,7 @@ const pt = {
   ...ptExchange, ...ptGraphql, ...ptLogging, ...ptTokenUsage, ...ptParkedConversations, ...ptCostGovernance,
   ...ptSystemInfo, ...ptGlobalSettings, ...ptForms, ...ptSearch, ...ptAnn, ...ptCapabilityMatrix,
   ...ptPage, ...ptGit, ...ptMarketplace, ...ptPersona, ...ptRoutine, ...ptWebhook,
-  ...ptVoiceKiosk, ...ptBento, ...ptEvalStudio, ...ptSkill,
+  ...ptVoiceKiosk, ...ptBento, ...ptEvalStudio, ...ptSkill, ...ptThesaurus,
 };
 
 /**

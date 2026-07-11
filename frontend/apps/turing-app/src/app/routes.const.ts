@@ -107,6 +107,8 @@ export const ROUTES = {
   BENTO_SN_INSTANCE: "/bento/sn/instance",
   BENTO_SN_ONBOARDING: "/bento/sn/onboarding",
   BENTO_SKILL: "/bento/skill",
+  /** Block AQ (§XL) — Thesaurus (controlled vocabulary) library. */
+  BENTO_THESAURUS: "/bento/thesaurus",
   BENTO_ASSET: "/bento/asset",
   BENTO_PAGE: "/bento/page",
 

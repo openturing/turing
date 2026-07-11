@@ -221,6 +221,19 @@ export const queryKeys = {
     list: () => [...queryKeys.tokenInstances.all(), 'list'] as const,
     detail: (id: string) => [...queryKeys.tokenInstances.all(), 'detail', id] as const,
   },
+  // Block AQ (§XL) — Thesaurus (Knowledge Base / microthesauri / terms) admin.
+  thesaurus: {
+    all: () => ['thesaurus'] as const,
+    kbList: () => [...queryKeys.thesaurus.all(), 'kb', 'list'] as const,
+    kbDetail: (id: string) => [...queryKeys.thesaurus.all(), 'kb', 'detail', id] as const,
+    microList: (kbId: string) =>
+      [...queryKeys.thesaurus.all(), 'micro', 'list', kbId] as const,
+    microDetail: (kbId: string, id: string) =>
+      [...queryKeys.thesaurus.all(), 'micro', 'detail', kbId, id] as const,
+    termList: (microId: string) =>
+      [...queryKeys.thesaurus.all(), 'term', 'list', microId] as const,
+    seeds: () => [...queryKeys.thesaurus.all(), 'seeds'] as const,
+  },
   marketplaceItems: {
     all: () => ['marketplace-items'] as const,
     list: () => [...queryKeys.marketplaceItems.all(), 'list'] as const,
