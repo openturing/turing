@@ -105,6 +105,8 @@ const BentoSNMergeProvidersListPage = lazy(() => import("../bento/sn/bento.sn.me
 const BentoSNMergeProvidersPage = lazy(() => import("../bento/sn/bento.sn.merge-providers.page"));
 const BentoSNSpotlightListPage = lazy(() => import("../bento/sn/bento.sn.spotlight.list.page"));
 const BentoSNSpotlightPage = lazy(() => import("../bento/sn/bento.sn.spotlight.page"));
+const BentoSNSynonymListPage = lazy(() => import("../bento/sn/bento.sn.synonym.list.page"));
+const BentoSNSynonymPage = lazy(() => import("../bento/sn/bento.sn.synonym.page"));
 const BentoSNTopTermsPage = lazy(() => import("../bento/sn/bento.sn.top-terms.page"));
 // Phase 2 (T559) — SN onboarding wizard in the bento shell.
 const BentoSNOnboardingPage = lazy(() => import("../bento/sn/bento.sn.onboarding.page"));
@@ -279,6 +281,8 @@ export const BentoRoutes = (
     <Route path="sn/instance/:id/merge-providers/:mergeProviderId" element={<BentoSNMergeProvidersPage />} />
     <Route path="sn/instance/:id/spotlight" element={<BentoSNSpotlightListPage />} />
     <Route path="sn/instance/:id/spotlight/:spotlightId" element={<BentoSNSpotlightPage />} />
+    <Route path="sn/instance/:id/synonym" element={<BentoSNSynonymListPage />} />
+    <Route path="sn/instance/:id/synonym/:synonymId" element={<BentoSNSynonymPage />} />
     <Route path="sn/instance/:id/top-terms/:period?" element={<BentoSNTopTermsPage />} />
     <Route path="skill" element={<BentoSkillListPage />} />
     <Route path="skill/:id" element={<BentoSkillEditorPage />} />

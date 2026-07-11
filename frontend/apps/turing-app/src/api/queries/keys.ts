@@ -274,4 +274,12 @@ export const queryKeys = {
     all: () => ['bento-layout'] as const,
     byList: (listId: string) => [...queryKeys.bentoLayout.all(), listId] as const,
   },
+  // T662–T666 (Block AP) — engine-agnostic synonyms per SN site.
+  synonyms: {
+    all: () => ['synonyms'] as const,
+    list: (siteId: string) => [...queryKeys.synonyms.all(), 'list', siteId] as const,
+    detail: (siteId: string, id: string) =>
+      [...queryKeys.synonyms.all(), 'detail', siteId, id] as const,
+    support: (siteId: string) => [...queryKeys.synonyms.all(), 'support', siteId] as const,
+  },
 } as const;

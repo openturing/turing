@@ -4,6 +4,7 @@ import { BentoEntityShell } from "@/components/bento";
 import { LoadProvider } from "@/components/loading-provider";
 import type { TurSNSite } from "@/models/sn/sn-site.model.ts";
 import {
+  IconArrowsShuffle,
   IconArrowsSort,
   IconAlignBoxCenterStretch,
   IconChartHistogram,
@@ -64,6 +65,7 @@ const SN_SECTIONS: readonly SectionLink[] = [
   { labelKey: "sn.resultRanking.title", icon: IconNumber123, path: "result-ranking" },
   { labelKey: "sn.mergeProviders.title", icon: IconGitMerge, path: "merge-providers" },
   { labelKey: "sn.spotlight.title", icon: IconSpeakerphone, path: "spotlight" },
+  { labelKey: "sn.synonym.title", icon: IconArrowsShuffle, path: "synonym" },
   { labelKey: "sn.topSearchTerms.title", icon: IconDashboard, path: "top-terms" },
 ];
 

@@ -31,12 +31,14 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.viglet.turing.api.exception.TurNotFoundException;
+import com.viglet.turing.persistence.dto.sn.synonym.TurSNSynonymAlgoliaImportRequest;
 import com.viglet.turing.persistence.dto.sn.synonym.TurSNSynonymDto;
 import com.viglet.turing.persistence.dto.sn.synonym.TurSNSynonymSupportDto;
 import com.viglet.turing.persistence.model.sn.TurSNSite;
 import com.viglet.turing.persistence.repository.sn.TurSNSiteRepository;
 import com.viglet.turing.plugins.se.TurSESynonymApplyResult;
 import com.viglet.turing.sn.synonym.TurSNSynonymApplyService;
+import com.viglet.turing.sn.synonym.TurSNSynonymImportService;
 import com.viglet.turing.sn.synonym.TurSNSynonymService;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -59,13 +61,16 @@ public class TurSNSiteSynonymAPI {
     private final TurSNSiteRepository turSNSiteRepository;
     private final TurSNSynonymService turSNSynonymService;
     private final TurSNSynonymApplyService turSNSynonymApplyService;
+    private final TurSNSynonymImportService turSNSynonymImportService;
 
     public TurSNSiteSynonymAPI(TurSNSiteRepository turSNSiteRepository,
             TurSNSynonymService turSNSynonymService,
-            TurSNSynonymApplyService turSNSynonymApplyService) {
+            TurSNSynonymApplyService turSNSynonymApplyService,
+            TurSNSynonymImportService turSNSynonymImportService) {
         this.turSNSiteRepository = turSNSiteRepository;
         this.turSNSynonymService = turSNSynonymService;
         this.turSNSynonymApplyService = turSNSynonymApplyService;
+        this.turSNSynonymImportService = turSNSynonymImportService;
     }
 
     private TurSNSite site(String snSiteId) {
@@ -135,5 +140,13 @@ public class TurSNSiteSynonymAPI {
             return turSNSynonymApplyService.applyAll(snSiteId);
         }
         return Map.of(locale.toLanguageTag(), turSNSynonymApplyService.apply(snSiteId, locale));
+    }
+
+    @Operation(summary = "Import an Algolia index's synonyms into this site (closes the migration loop)")
+    @PostMapping("/import/algolia")
+    public List<TurSNSynonymDto> importFromAlgolia(@PathVariable String snSiteId,
+            @RequestBody TurSNSynonymAlgoliaImportRequest request) {
+        return turSNSynonymImportService.importFromAlgolia(site(snSiteId), request.appId(),
+                request.apiKey(), request.host(), request.index(), request.locale());
     }
 }
