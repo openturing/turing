@@ -113,6 +113,7 @@ public class TurSNSiteGenAiAPI {
 	private final com.viglet.turing.genai.TurDefaultAgentResolver turDefaultAgentResolver;
 	private final com.viglet.turing.genai.persona.TurAgentPersonaResolver turAgentPersonaResolver;
 	private final com.viglet.turing.service.llm.budget.TurChatCostBudgetGate costBudgetGate;
+	private final com.viglet.turing.properties.TurAbuseControlProperty abuseControlProperty;
 
 	public TurSNSiteGenAiAPI(TurSNSearchProcess turSNSearchProcess,
 			TurSNGenAi turGenAi,
@@ -136,7 +137,8 @@ public class TurSNSiteGenAiAPI {
 			com.viglet.turing.genai.flow.TurConversationLock conversationLock,
 			com.viglet.turing.genai.TurDefaultAgentResolver turDefaultAgentResolver,
 			com.viglet.turing.genai.persona.TurAgentPersonaResolver turAgentPersonaResolver,
-			com.viglet.turing.service.llm.budget.TurChatCostBudgetGate costBudgetGate) {
+			com.viglet.turing.service.llm.budget.TurChatCostBudgetGate costBudgetGate,
+			com.viglet.turing.properties.TurAbuseControlProperty abuseControlProperty) {
 		this.turSNSearchProcess = turSNSearchProcess;
 		this.turGenAi = turGenAi;
 		this.turGenAiContextFactory = turGenAiContextFactory;
@@ -160,6 +162,37 @@ public class TurSNSiteGenAiAPI {
 		this.workspaceEventBus = workspaceEventBus;
 		this.conversationLock = conversationLock;
 		this.costBudgetGate = costBudgetGate;
+		this.abuseControlProperty = abuseControlProperty;
+	}
+
+	// T648 / §XXXVII.10 — reject an over-cap anonymous upload BEFORE Tika/vision.
+	private void assertUploadWithinCap(org.springframework.web.multipart.MultipartFile file) {
+		long cap = abuseControlProperty.getChat().getMaxUploadBytes();
+		if (cap > 0 && file != null && file.getSize() > cap) {
+			throw new IllegalArgumentException(
+					"Uploaded file exceeds the maximum allowed size of " + cap + " bytes.");
+		}
+	}
+
+	// T648 / §XXXVII.10 — bound anonymous conversation message count + length.
+	private void assertMessagesWithinCaps(List<ConversationMessage> messages) {
+		if (messages == null) {
+			return;
+		}
+		var chat = abuseControlProperty.getChat();
+		if (chat.getMaxMessagesPerTurn() > 0 && messages.size() > chat.getMaxMessagesPerTurn()) {
+			throw new IllegalArgumentException(
+					"Too many messages in one turn (max " + chat.getMaxMessagesPerTurn() + ").");
+		}
+		if (chat.getMaxMessageChars() > 0) {
+			for (ConversationMessage m : messages) {
+				if (m != null && m.content() != null && m.content().length() > chat.getMaxMessageChars()) {
+					throw new IllegalArgumentException(
+							"A chat message exceeds the maximum length of " + chat.getMaxMessageChars()
+									+ " characters.");
+				}
+			}
+		}
 	}
 
 	/**
@@ -298,6 +331,8 @@ public class TurSNSiteGenAiAPI {
 		int historySize = request.messages() == null ? 0 : request.messages().size();
 		log.debug("RAG chat conversation received for SN Site '{}': locale='{}', historySize={}",
 				siteName, request.locale(), historySize);
+		// T648 / §XXXVII.10 — bound anonymous message count + length before any work.
+		assertMessagesWithinCaps(request.messages());
 		Locale locale = resolveLocale(request.locale(), siteName);
 		// Defer all heavy work (RAG retrieval + prompt build + provider calls) to
 		// subscription time so the SSE handshake (200 text/event-stream) is
@@ -845,6 +880,7 @@ public class TurSNSiteGenAiAPI {
 			@RequestParam(value = "slotNames", required = false) String slotNames,
 			@RequestParam(value = "confidence", required = false, defaultValue = "false") boolean confidence,
 			@RequestParam(value = "nativeBinary", required = false, defaultValue = "false") boolean nativeBinary) {
+		assertUploadWithinCap(file);
 		return turSNSearchProcess.getSNSite(siteName)
 				.map(site -> {
 					TurSNSiteGenAi genAi = site.getTurSNSiteGenAi();
@@ -906,6 +942,9 @@ public class TurSNSiteGenAiAPI {
 			@RequestParam(value = "slotNames", required = false) String slotNames,
 			@RequestParam(value = "confidence", required = false, defaultValue = "false") boolean confidence,
 			@RequestParam(value = "nativeBinary", required = false, defaultValue = "false") boolean nativeBinary) {
+		if (files != null) {
+			files.forEach(this::assertUploadWithinCap);
+		}
 		return turSNSearchProcess.getSNSite(siteName)
 				.map(site -> {
 					TurSNSiteGenAi genAi = site.getTurSNSiteGenAi();
@@ -946,6 +985,7 @@ public class TurSNSiteGenAiAPI {
 			@RequestParam("slotName") String slotName,
 			@RequestParam(value = "vision", required = false, defaultValue = "false") boolean vision,
 			@RequestParam(value = "visionSlotNames", required = false) String visionSlotNames) {
+		assertUploadWithinCap(file);
 		return turSNSearchProcess.getSNSite(siteName)
 				.map(site -> {
 					TurSNSiteGenAi genAi = site.getTurSNSiteGenAi();

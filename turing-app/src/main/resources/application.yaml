@@ -391,8 +391,13 @@ spring:
       default-destination: indexing.queue
   servlet:
     multipart:
-      max-file-size: 1024MB
-      max-request-size: 1024MB
+      # T648 / §XXXVII.10 — was 1024MB, which let an anonymous slot-upload feed
+      # ~1 GB into Tika + a vision call. Capped to a sane default; the anonymous
+      # slot endpoints additionally enforce turing.abuse.chat.max-upload-bytes
+      # (10 MB) BEFORE parsing. Raise this for a deployment that imports large
+      # page/skill ZIPs, but keep it bounded.
+      max-file-size: 64MB
+      max-request-size: 64MB
       # Skip eager parsing so the integration proxy ({id}/** catch-all)
       # can forward multipart bodies via getInputStream() to Dumont without
       # the parts having been consumed. Endpoints that use @RequestPart still

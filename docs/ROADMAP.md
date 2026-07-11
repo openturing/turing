@@ -79,10 +79,8 @@
 > [IMPROVEMENTS.md](IMPROVEMENTS.md) §XXXVII. Each task is *analyse-then-fix*:
 > confirm the reachability caveat noted, then remediate. Ordered by severity.
 > The three 🔴 critical items (live-secret / anonymous-data / anonymous-cost
-> exposures — T639/T640/T641) have all shipped; the 🟠/🟡 items remain.
-
-**🟠 High:**
-- 📋 **T648** (deps: —) **Input / DoS caps on anonymous endpoints** — `spring.servlet.multipart.max-*-size: 1024MB` (`application.yaml:360`) lets anonymous slot-upload feed ~1 GB into Tika + a vision call; chat message count/length is unbounded (token budget is opt-in/off); ZIP import buffers entries via `readAllBytes()` with no size/count cap (zip-bomb OOM). Add pre-parse size/type gates, default-on hard message/token caps, and zip entry limits. → §XXXVII.10
+> exposures — T639/T640/T641) have all shipped; all 🟠 High items have shipped
+> too — the 🟡 Medium/Low items remain.
 
 **🟡 Medium / Low:**
 - 📋 **T649** (deps: —) **Actuator hardening** — `management.endpoints.web.exposure.include: "*"` (`application.yaml:464`) exposes `/actuator/env` + `/heapdump` (leaking the crypto key, DB creds, provider keys) to any authenticated principal (= admin by default, cf. T642). Restrict to `health,info,prometheus` and role-gate the rest. → §XXXVII.11

@@ -56,9 +56,12 @@ public class TurPageAPI {
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
     private final TurStorageService storageService;
+    private final com.viglet.turing.properties.TurAbuseControlProperty abuseControlProperty;
 
-    public TurPageAPI(TurStorageService storageService) {
+    public TurPageAPI(TurStorageService storageService,
+            com.viglet.turing.properties.TurAbuseControlProperty abuseControlProperty) {
         this.storageService = storageService;
+        this.abuseControlProperty = abuseControlProperty;
     }
 
     public record TurPageManifest(
@@ -113,6 +116,9 @@ public class TurPageAPI {
         // Delete existing site contents before uploading
         storageService.deleteObjectsWithPrefix(prefix);
         TurPageManifest manifest = null;
+        var caps = abuseControlProperty.getChat();
+        int count = 0;
+        long total = 0L;
         try (ZipInputStream zis = new ZipInputStream(file.getInputStream())) {
             ZipEntry entry;
             while ((entry = zis.getNextEntry()) != null) {
@@ -131,7 +137,18 @@ public class TurPageAPI {
                     throw new IllegalArgumentException(
                             "ZIP entry escapes the destination (path traversal): " + entryName);
                 }
-                byte[] data = zis.readAllBytes();
+                // T648 / §XXXVII.10 — zip-bomb guard: cap entry count, per-entry
+                // (bounded read) and total uncompressed size.
+                if (caps.getMaxZipEntries() > 0 && ++count > caps.getMaxZipEntries()) {
+                    throw new IllegalArgumentException(
+                            "ZIP has too many entries (max " + caps.getMaxZipEntries() + ").");
+                }
+                byte[] data = readEntryBounded(zis, caps.getMaxZipEntryBytes(), entryName);
+                total += data.length;
+                if (caps.getMaxZipTotalBytes() > 0 && total > caps.getMaxZipTotalBytes()) {
+                    throw new IllegalArgumentException(
+                            "ZIP total uncompressed size exceeds " + caps.getMaxZipTotalBytes() + " bytes.");
+                }
                 // Parse manifest if found
                 if (entryName.equals(MANIFEST_FILE) || entryName.endsWith("/" + MANIFEST_FILE)) {
                     manifest = parseManifest(data);
@@ -162,6 +179,26 @@ public class TurPageAPI {
             }
         }
         return false;
+    }
+
+    /**
+     * T648 / §XXXVII.10 — read one ZIP entry, aborting if it exceeds {@code maxBytes}
+     * uncompressed (defeats a zip bomb that would OOM a plain {@code readAllBytes}).
+     */
+    static byte[] readEntryBounded(InputStream in, long maxBytes, String name) throws IOException {
+        java.io.ByteArrayOutputStream out = new java.io.ByteArrayOutputStream();
+        byte[] buffer = new byte[8192];
+        long readTotal = 0;
+        int n;
+        while ((n = in.read(buffer)) != -1) {
+            readTotal += n;
+            if (maxBytes > 0 && readTotal > maxBytes) {
+                throw new IllegalArgumentException(
+                        "ZIP entry '" + name + "' exceeds the maximum size of " + maxBytes + " bytes.");
+            }
+            out.write(buffer, 0, n);
+        }
+        return out.toByteArray();
     }
 
     @DeleteMapping("/{siteName}")

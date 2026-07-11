@@ -78,7 +78,8 @@ class TurSkillFileServiceTest {
         TurSkillRepository repository = inMemoryRepository(store);
         TurSkillFrontmatterParser parser = new TurSkillFrontmatterParser();
         catalog = new TurSkillCatalogService(storage, repository, parser, configProperties);
-        fileService = new TurSkillFileService(storage, repository, catalog, parser, configProperties);
+        fileService = new TurSkillFileService(storage, repository, catalog, parser, configProperties,
+                new com.viglet.turing.properties.TurAbuseControlProperty());
     }
 
     @Test
@@ -247,7 +248,8 @@ class TurSkillFileServiceTest {
         TurSkillFrontmatterParser parser = new TurSkillFrontmatterParser();
         TurConfigProperties props = new TurConfigProperties();
         TurSkillCatalogService inertCatalog = new TurSkillCatalogService(disabled, repository, parser, props);
-        TurSkillFileService inert = new TurSkillFileService(disabled, repository, inertCatalog, parser, props);
+        TurSkillFileService inert = new TurSkillFileService(disabled, repository, inertCatalog, parser, props,
+                new com.viglet.turing.properties.TurAbuseControlProperty());
 
         assertThat(inert.isEnabled()).isFalse();
         assertThat(inert.listFiles("anything")).isEmpty();

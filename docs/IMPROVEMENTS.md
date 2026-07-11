@@ -2277,18 +2277,6 @@ not a second call site.
 > guard — were all verified present and are called out so they are not "fixed"
 > away.
 
-**XXXVII.10 — Input / DoS caps (HIGH, CONFIRMED).**
-`spring.servlet.multipart.max-file-size`/`max-request-size` = 1024MB
-(`application.yaml:360`) applies to the anonymous `/slot-extract(-multi)` /
-`/slot-upload`; a ~1 GB (or many-file) upload is fully read + Tika-parsed before the
-24k-char trim, and each fires a vision/LLM call. Conversation message count and
-per-message length are unbounded (only the 1 GB body bounds them); the
-`TurTokenBudgetService` cap is opt-in/off and its over-budget default may proceed
-(or COMPACT, an extra LLM call). ZIP import buffers entries via `readAllBytes()`
-with no per-entry / total / count cap (zip-bomb OOM). Fix: pre-parse multipart
-size+type gate, default-on hard message-count/length + token caps, zip entry
-size/count limits.
-
 **XXXVII.11 — Actuator over-exposure (MEDIUM, CONFIRMED).**
 `management.endpoints.web.exposure.include: "*"` (`application.yaml:464`) exposes
 all actuator endpoints; the security config only `permitAll`s `health*` +

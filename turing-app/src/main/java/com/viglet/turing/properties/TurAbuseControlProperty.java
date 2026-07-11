@@ -71,5 +71,29 @@ public class TurAbuseControlProperty {
          * authority. Authenticated agent/persona chat is unaffected.
          */
         private boolean anonymousToolsEnabled = true;
+
+        // ---- T648 / §XXXVII.10 — input / DoS caps (default-on) ----------------
+
+        /**
+         * Max size (bytes) of a single anonymous slot-upload / slot-extract file,
+         * enforced BEFORE Tika parsing + any vision call. Default 10 MB.
+         * {@code <= 0} disables the per-file gate.
+         */
+        private long maxUploadBytes = 10L * 1024 * 1024;
+
+        /** Max messages accepted in one anonymous conversation turn. Default 100. {@code <= 0} = unbounded. */
+        private int maxMessagesPerTurn = 100;
+
+        /** Max characters in a single anonymous chat message. Default 24000. {@code <= 0} = unbounded. */
+        private int maxMessageChars = 24_000;
+
+        /** Max entries in an imported ZIP (page / skill). Default 5000. {@code <= 0} = unbounded. */
+        private int maxZipEntries = 5_000;
+
+        /** Max uncompressed bytes of a single ZIP entry (zip-bomb guard). Default 50 MB. {@code <= 0} = unbounded. */
+        private long maxZipEntryBytes = 50L * 1024 * 1024;
+
+        /** Max total uncompressed bytes across an imported ZIP. Default 250 MB. {@code <= 0} = unbounded. */
+        private long maxZipTotalBytes = 250L * 1024 * 1024;
     }
 }
