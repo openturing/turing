@@ -30,6 +30,9 @@ interface DemoMsg {
 }
 
 const GREETING = "Hi! I'm the Turing assistant — ask me anything about the platform.";
+// T638 — the "default voice" option has no entry in PLAYGROUND_PERSONAS, so give
+// it its own one-line hint for the active-persona caption below the picker.
+const DEFAULT_PERSONA_HINT = "The agent's own voice — no persona applied.";
 const SUGGESTIONS = [
   "Does Turing support self-hosting?",
   "Which LLM providers work?",
@@ -164,6 +167,12 @@ export function ChatDemo({ bare = false, seed }: Readonly<ChatDemoProps>) {
   }, [seed?.nonce]);
 
   const showSuggestions = convo.length === 0;
+  // T638 — one-line hint for the persona currently answering, shown under the
+  // picker so visitors know what each "eye" means without hunting for a tooltip.
+  const activePersonaHint =
+    personaId == null
+      ? DEFAULT_PERSONA_HINT
+      : PLAYGROUND_PERSONAS.find((p) => p.id === personaId)?.description ?? DEFAULT_PERSONA_HINT;
 
   return (
     <div
@@ -186,21 +195,32 @@ export function ChatDemo({ bare = false, seed }: Readonly<ChatDemoProps>) {
         </div>
       )}
 
-      <TuringPersonaPicker
-        options={PLAYGROUND_PERSONAS}
-        value={personaId}
-        onChange={setPersonaId}
-        includeDefault
-        labels={{ heading: "Answer as", defaultOption: "Default" }}
-        classNames={{
-          container: "flex flex-wrap items-center gap-1.5 border-b border-border px-4 py-2",
-          label: "text-[0.65rem] font-bold uppercase tracking-wide text-muted-foreground/70",
-          list: "flex flex-wrap gap-1",
-          option:
-            "rounded-full border border-border bg-muted px-2.5 py-0.5 text-xs font-medium text-muted-foreground transition-colors hover:border-primary/50 hover:text-foreground data-[active]:border-primary data-[active]:bg-primary/10 data-[active]:text-foreground",
-          optionActive: "border-primary bg-primary/10 text-foreground",
-        }}
-      />
+      {/* T638 — persona intro + picker + active-persona caption. The one-line
+          concept sits above the pills; the selected persona's description sits
+          below so its meaning is always visible (no tooltip hunt, mobile-safe). */}
+      <div className="border-b border-border px-4 py-2">
+        <p className="mb-1.5 text-[0.7rem] leading-snug text-muted-foreground/80">
+          Hear the same answer through different eyes — pick a persona to answer as.
+        </p>
+        <TuringPersonaPicker
+          options={PLAYGROUND_PERSONAS}
+          value={personaId}
+          onChange={setPersonaId}
+          includeDefault
+          labels={{ heading: "Answer as", defaultOption: "Default" }}
+          classNames={{
+            container: "flex flex-wrap items-center gap-1.5",
+            label: "text-[0.65rem] font-bold uppercase tracking-wide text-muted-foreground/70",
+            list: "flex flex-wrap gap-1",
+            option:
+              "rounded-full border border-border bg-muted px-2.5 py-0.5 text-xs font-medium text-muted-foreground transition-colors hover:border-primary/50 hover:text-foreground data-[active]:border-primary data-[active]:bg-primary/10 data-[active]:text-foreground",
+            optionActive: "border-primary bg-primary/10 text-foreground",
+          }}
+        />
+        <p className="mt-1.5 text-xs leading-snug text-muted-foreground">
+          {activePersonaHint}
+        </p>
+      </div>
 
       <div ref={scrollRef} className="flex-1 space-y-3 overflow-y-auto px-4 py-4">
         <Bubble role="assistant" content={GREETING} />
