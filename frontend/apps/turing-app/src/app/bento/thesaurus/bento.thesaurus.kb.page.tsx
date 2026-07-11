@@ -3,9 +3,12 @@ import {
   useCreateMicrothesaurus,
   useDeleteKnowledgeBase,
   useDeleteMicrothesaurus,
+  useImportSeed,
   useKnowledgeBase,
   useMicrothesauri,
+  useThesaurusSeeds,
   useUpdateKnowledgeBase,
+  useUploadAuthorityFile,
 } from "@/api/queries/thesaurus.queries";
 import { ROUTES } from "@/app/routes.const";
 import {
@@ -19,9 +22,17 @@ import { LoadProvider } from "@/components/loading-provider";
 import { Input } from "@/components/ui/input";
 import { GradientButton } from "@/components/ui/gradient-button";
 import type { TurKnowledgeBase, TurMicrothesaurus } from "@/models/kb/thesaurus.model";
-import { IconLanguage, IconPlus, IconSitemap, IconTrash } from "@tabler/icons-react";
+import {
+  IconDownload,
+  IconLanguage,
+  IconLibrary,
+  IconPlus,
+  IconSitemap,
+  IconTrash,
+  IconUpload,
+} from "@tabler/icons-react";
 import { toast } from "@viglet/viglet-design-system";
-import { useEffect, useState } from "react";
+import { useRef, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link, useNavigate, useParams } from "react-router-dom";
 
@@ -69,6 +80,7 @@ export default function BentoThesaurusKbPage() {
           <>
             <KbForm isNew={isNew} value={entity} staged={staged} onStateChange={onStateChange} />
             {!isNew && <MicrothesauriSection kbId={kbId} />}
+            {!isNew && <SeedImportSection kbId={kbId} />}
           </>
         )}
       </BentoEntityShell>
@@ -239,6 +251,96 @@ function MicrothesauriSection({ kbId }: { kbId: string }) {
           <IconPlus size={16} />
           {t("thesaurus.addMicrothesaurus")}
         </GradientButton>
+      </div>
+    </BentoFormSection>
+  );
+}
+
+/** Browse the bundled seed library + import, or upload a Turing Thesaurus XML. */
+function SeedImportSection({ kbId }: { kbId: string }) {
+  const { t } = useTranslation();
+  const { data: seeds } = useThesaurusSeeds();
+  const importSeed = useImportSeed(kbId);
+  const upload = useUploadAuthorityFile(kbId);
+  const fileRef = useRef<HTMLInputElement>(null);
+
+  async function doImportSeed(seedId: string, name: string) {
+    try {
+      await importSeed.mutateAsync(seedId);
+      toast.success(t("thesaurus.seedImported", { name }));
+    } catch (err) {
+      console.error(err);
+      toast.error(t("forms.common.formSubmitFailed"));
+    }
+  }
+
+  async function onFile(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    try {
+      const created = await upload.mutateAsync({ file });
+      toast.success(t("thesaurus.seedImported", { name: created.name }));
+    } catch (err) {
+      console.error(err);
+      toast.error(t("thesaurus.uploadFailed"));
+    } finally {
+      if (fileRef.current) fileRef.current.value = "";
+    }
+  }
+
+  return (
+    <BentoFormSection
+      icon={IconLibrary}
+      tone="emerald"
+      title={t("thesaurus.library")}
+      description={t("thesaurus.libraryDesc")}
+    >
+      <div className="flex flex-col gap-2">
+        {(seeds ?? []).map((seed) => (
+          <div
+            key={seed.id}
+            className="bento-tile bento-glass flex items-center justify-between gap-3 rounded-2xl border border-border/60 px-4 py-3"
+          >
+            <span className="min-w-0">
+              <span className="block truncate font-medium">{seed.name}</span>
+              <span className="block truncate text-xs text-muted-foreground">
+                {seed.language} · {seed.domain}
+              </span>
+            </span>
+            <GradientButton
+              type="button"
+              className="shrink-0 gap-1"
+              disabled={importSeed.isPending}
+              onClick={() => doImportSeed(seed.id, seed.name)}
+            >
+              <IconDownload size={16} />
+              {t("thesaurus.import")}
+            </GradientButton>
+          </div>
+        ))}
+        {(seeds ?? []).length === 0 && (
+          <p className="text-sm text-muted-foreground">{t("thesaurus.noSeeds")}</p>
+        )}
+      </div>
+
+      <div className="mt-4 flex items-center gap-3 border-t border-border/50 pt-4">
+        <input
+          ref={fileRef}
+          type="file"
+          accept=".xml,text/xml,application/xml"
+          className="hidden"
+          onChange={onFile}
+        />
+        <GradientButton
+          type="button"
+          className="gap-1"
+          disabled={upload.isPending}
+          onClick={() => fileRef.current?.click()}
+        >
+          <IconUpload size={16} />
+          {t("thesaurus.uploadXml")}
+        </GradientButton>
+        <span className="text-xs text-muted-foreground">{t("thesaurus.uploadXmlHint")}</span>
       </div>
     </BentoFormSection>
   );

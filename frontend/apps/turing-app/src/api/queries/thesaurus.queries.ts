@@ -148,3 +148,11 @@ export function useImportSeed(kbId: string) {
     onSuccess: () => qc.invalidateQueries({ queryKey: queryKeys.thesaurus.microList(kbId) }),
   });
 }
+
+export function useUploadAuthorityFile(kbId: string) {
+  const qc = useQueryClient();
+  return useMutation<TurMicrothesaurus, Error, { file: File; domain?: string }>({
+    mutationFn: ({ file, domain }) => service.uploadAuthorityFile(kbId, file, domain),
+    onSuccess: () => qc.invalidateQueries({ queryKey: queryKeys.thesaurus.microList(kbId) }),
+  });
+}

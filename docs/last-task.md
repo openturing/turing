@@ -46,6 +46,7 @@ number" looked free but wasn't. Grepping three files (`ROADMAP.md`,
 
 ## Log (most recent first)
 
+- **T680 SHIPPED** (Block AQ §XL — bento seed-library browse + import + XML upload UI; fixed /api/api double-prefix in TurThesaurusService) — 2026-07-11.
 - **T676 SHIPPED** (Block AQ §XL — bento Thesaurus surface at /bento/thesaurus + friendly expandable term tree with add/delete + variation/relation chips) — 2026-07-11.
 - **T679–T681 CREATED** (📋, Block AQ §XL — T676 frontend split into subtasks: term-tree full editing, seed-library/import UI, per-site selection UI) — 2026-07-11.
 - **T674 SHIPPED** (Block AQ §XL — pre-populated EDUCATION seed library pt/en/it + browse/import API; block rebranded "Thesaurus", vendor names removed) — 2026-07-11.

@@ -7,34 +7,34 @@ import type {
 } from "@/models/kb/thesaurus.model";
 
 // Block AQ (§XL) — Thesaurus admin REST client. Backend routes are under
-// `/api/kb` (internal package name); the user-facing surface is "Thesaurus".
+// `/kb` (internal package name); the user-facing surface is "Thesaurus".
 export class TurThesaurusService {
   // ---- Knowledge Base (library) ----
   async listKnowledgeBases(): Promise<TurKnowledgeBase[]> {
-    const { data } = await axios.get<TurKnowledgeBase[]>("/api/kb");
+    const { data } = await axios.get<TurKnowledgeBase[]>("/kb");
     return data;
   }
   async getKnowledgeBase(id: string): Promise<TurKnowledgeBase> {
-    const { data } = await axios.get<TurKnowledgeBase>(`/api/kb/${id}`);
+    const { data } = await axios.get<TurKnowledgeBase>(`/kb/${id}`);
     return data;
   }
   async createKnowledgeBase(kb: TurKnowledgeBase): Promise<TurKnowledgeBase> {
-    const { data } = await axios.post<TurKnowledgeBase>("/api/kb", kb);
+    const { data } = await axios.post<TurKnowledgeBase>("/kb", kb);
     return data;
   }
   async updateKnowledgeBase(kb: TurKnowledgeBase): Promise<TurKnowledgeBase> {
-    const { data } = await axios.put<TurKnowledgeBase>(`/api/kb/${kb.id}`, kb);
+    const { data } = await axios.put<TurKnowledgeBase>(`/kb/${kb.id}`, kb);
     return data;
   }
   async deleteKnowledgeBase(kb: TurKnowledgeBase): Promise<boolean> {
-    const res = await axios.delete(`/api/kb/${kb.id}`);
+    const res = await axios.delete(`/kb/${kb.id}`);
     return res.status === 200;
   }
 
   // ---- Microthesaurus (one tree = language + domain) ----
   async listMicrothesauri(knowledgeBaseId: string): Promise<TurMicrothesaurus[]> {
     const { data } = await axios.get<TurMicrothesaurus[]>(
-      `/api/kb/${knowledgeBaseId}/microthesaurus`,
+      `/kb/${knowledgeBaseId}/microthesaurus`,
     );
     return data;
   }
@@ -43,7 +43,7 @@ export class TurThesaurusService {
     id: string,
   ): Promise<TurMicrothesaurus> {
     const { data } = await axios.get<TurMicrothesaurus>(
-      `/api/kb/${knowledgeBaseId}/microthesaurus/${id}`,
+      `/kb/${knowledgeBaseId}/microthesaurus/${id}`,
     );
     return data;
   }
@@ -52,7 +52,7 @@ export class TurThesaurusService {
     m: TurMicrothesaurus,
   ): Promise<TurMicrothesaurus> {
     const { data } = await axios.post<TurMicrothesaurus>(
-      `/api/kb/${knowledgeBaseId}/microthesaurus`,
+      `/kb/${knowledgeBaseId}/microthesaurus`,
       m,
     );
     return data;
@@ -62,7 +62,7 @@ export class TurThesaurusService {
     m: TurMicrothesaurus,
   ): Promise<TurMicrothesaurus> {
     const { data } = await axios.put<TurMicrothesaurus>(
-      `/api/kb/${knowledgeBaseId}/microthesaurus/${m.id}`,
+      `/kb/${knowledgeBaseId}/microthesaurus/${m.id}`,
       m,
     );
     return data;
@@ -72,7 +72,7 @@ export class TurThesaurusService {
     id: string,
   ): Promise<boolean> {
     const res = await axios.delete(
-      `/api/kb/${knowledgeBaseId}/microthesaurus/${id}`,
+      `/kb/${knowledgeBaseId}/microthesaurus/${id}`,
     );
     return res.status === 200;
   }
@@ -80,7 +80,7 @@ export class TurThesaurusService {
   // ---- Terms ----
   async listTerms(microthesaurusId: string): Promise<TurThesaurusTerm[]> {
     const { data } = await axios.get<TurThesaurusTerm[]>(
-      `/api/kb/microthesaurus/${microthesaurusId}/term`,
+      `/kb/microthesaurus/${microthesaurusId}/term`,
     );
     return data;
   }
@@ -89,7 +89,7 @@ export class TurThesaurusService {
     term: TurThesaurusTerm,
   ): Promise<TurThesaurusTerm> {
     const { data } = await axios.post<TurThesaurusTerm>(
-      `/api/kb/microthesaurus/${microthesaurusId}/term`,
+      `/kb/microthesaurus/${microthesaurusId}/term`,
       term,
     );
     return data;
@@ -99,7 +99,7 @@ export class TurThesaurusService {
     term: TurThesaurusTerm,
   ): Promise<TurThesaurusTerm> {
     const { data } = await axios.put<TurThesaurusTerm>(
-      `/api/kb/microthesaurus/${microthesaurusId}/term/${term.id}`,
+      `/kb/microthesaurus/${microthesaurusId}/term/${term.id}`,
       term,
     );
     return data;
@@ -109,14 +109,14 @@ export class TurThesaurusService {
     id: string,
   ): Promise<boolean> {
     const res = await axios.delete(
-      `/api/kb/microthesaurus/${microthesaurusId}/term/${id}`,
+      `/kb/microthesaurus/${microthesaurusId}/term/${id}`,
     );
     return res.status === 200;
   }
 
   // ---- Seed library ----
   async listSeeds(): Promise<TurThesaurusSeed[]> {
-    const { data } = await axios.get<TurThesaurusSeed[]>("/api/kb/seeds");
+    const { data } = await axios.get<TurThesaurusSeed[]>("/kb/seeds");
     return data;
   }
   async importSeed(
@@ -124,8 +124,25 @@ export class TurThesaurusService {
     seedId: string,
   ): Promise<TurMicrothesaurus> {
     const { data } = await axios.post<TurMicrothesaurus>(
-      `/api/kb/${knowledgeBaseId}/seeds/${seedId}`,
+      `/kb/${knowledgeBaseId}/seeds/${seedId}`,
       {},
+    );
+    return data;
+  }
+
+  // ---- XML authority-file upload (Turing Thesaurus Exchange) ----
+  async uploadAuthorityFile(
+    knowledgeBaseId: string,
+    file: File,
+    domain?: string,
+  ): Promise<TurMicrothesaurus> {
+    const form = new FormData();
+    form.append("file", file);
+    const query = domain ? `?domain=${encodeURIComponent(domain)}` : "";
+    const { data } = await axios.post<TurMicrothesaurus>(
+      `/kb/${knowledgeBaseId}/microthesaurus/import${query}`,
+      form,
+      { headers: { "Content-Type": "multipart/form-data" } },
     );
     return data;
   }
