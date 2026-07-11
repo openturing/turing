@@ -49,10 +49,12 @@ import com.viglet.turing.persistence.repository.kb.TurMicrothesaurusRepository;
 import com.viglet.turing.sn.kb.TurMicrothesaurusDictionaryService;
 
 /**
- * T673 / §XL (Block AQ) — imports an nstein TME / OpenText Semantic Navigation
- * <em>authority file</em> (namespace {@code http://dev.nstein.com/tme-authority-file/4.10},
- * formal contract in {@code kb/tme-authority-file-4.10.xsd}) into a
- * {@link TurMicrothesaurus} under a {@link TurKnowledgeBase}.
+ * T673 / §XL (Block AQ) — imports a <em>Turing Thesaurus Exchange</em>
+ * <em>authority file</em> (namespace {@code https://turing.viglet.org/xsd/thesaurus/1.0},
+ * formal contract in {@code kb/turing-thesaurus-1.0.xsd}) into a
+ * {@link TurMicrothesaurus} under a {@link TurKnowledgeBase}. The parser reads by
+ * local element name, so it also ingests legacy controlled-vocabulary exports
+ * that share the same shape regardless of their namespace.
  *
  * <p>Mapping (ADR 0003):
  * <ul>
@@ -98,7 +100,7 @@ public class TurAuthorityFileImportService {
             String domainOverride) {
         Element root = parse(xml);
         if (!"authorityFile".equals(root.getLocalName())) {
-            throw new IllegalArgumentException("Not a TME authority file (root <authorityFile>)");
+            throw new IllegalArgumentException("Not a Turing thesaurus authority file (root <authorityFile>)");
         }
         TurMicrothesaurus microthesaurus = new TurMicrothesaurus();
         microthesaurus.setTurKnowledgeBase(kb);

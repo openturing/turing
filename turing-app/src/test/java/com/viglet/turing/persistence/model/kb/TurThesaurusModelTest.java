@@ -14,7 +14,7 @@ import org.junit.jupiter.api.Test;
  * invariants that the feature relies on: the defensive collection setters
  * (replace-not-alias, guarding against the shared-reference bug), the soft
  * {@code parentTermId} root/child semantics the index-time ancestor walk uses,
- * the variation recognition defaults mapped from the nstein format, and the
+ * the variation recognition defaults, and the
  * relation type / directionality vocabulary.
  */
 class TurThesaurusModelTest {
@@ -72,10 +72,10 @@ class TurThesaurusModelTest {
     }
 
     @Test
-    void variationDefaultsMirrorTheNsteinRecognitionFlags() {
+    void variationDefaultsMirrorTheRecognitionFlags() {
         TurThesaurusTermVariation v = new TurThesaurusTermVariation("Pólen",
                 Locale.forLanguageTag("pt"));
-        // nstein default: case-insensitive (ci) + accent-sensitive (as), weight 100.
+        // Defaults: case-insensitive (ci) + accent-sensitive (as), weight 100.
         assertThat(v.isCaseSensitive()).isFalse();
         assertThat(v.isAccentSensitive()).isTrue();
         assertThat(v.getWeight()).isEqualTo(100.0d);
@@ -87,7 +87,7 @@ class TurThesaurusModelTest {
         assertThat(new TurThesaurusTermRelation().getDirectionality())
                 .isEqualTo(TurThesaurusRelationDirectionality.UNIDIRECTIONAL);
 
-        // The full reconstructed nstein/OpenText relation vocabulary is present.
+        // The full Turing Thesaurus Exchange relation vocabulary is present.
         assertThat(TurThesaurusRelationType.values()).containsExactlyInAnyOrder(
                 TurThesaurusRelationType.BROADER, TurThesaurusRelationType.NARROWER,
                 TurThesaurusRelationType.RELATED, TurThesaurusRelationType.USE,

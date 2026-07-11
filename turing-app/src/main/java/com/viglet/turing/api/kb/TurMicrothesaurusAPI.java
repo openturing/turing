@@ -109,7 +109,7 @@ public class TurMicrothesaurusAPI {
         return turMicrothesaurusService.delete(id);
     }
 
-    @Operation(summary = "Import a microthesaurus from an nstein TME / OpenText SN authority file (XML)")
+    @Operation(summary = "Import a microthesaurus from a Turing Thesaurus Exchange authority file (XML)")
     @PostMapping(value = "/import", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public TurMicrothesaurusDto importAuthorityFile(@PathVariable String knowledgeBaseId,
             @RequestPart("file") MultipartFile file,

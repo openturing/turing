@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8" standalone="yes"?> 
-<authorityFile xmlns="http://dev.nstein.com/tme-authority-file/4.10" xmlns:c="http://dev.nstein.com/common/1.3">
+<authorityFile xmlns="https://turing.viglet.org/xsd/thesaurus/1.0">
   <name>APICULTURA</name>
   <terms>
     <term>

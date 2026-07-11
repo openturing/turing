@@ -42,7 +42,7 @@ import lombok.Setter;
 /**
  * T668 / §XL (Block AQ) — the aggregate root of the Knowledge Base: a
  * tenant-scoped <em>library</em> of hierarchical {@link TurMicrothesaurus} trees
- * (controlled vocabularies) inspired by OpenText Semantic Navigation. A knowledge
+ * (controlled vocabularies), a controlled-vocabulary / semantic-navigation model. A knowledge
  * base is authored/imported once and SN sites <em>opt into</em> its microthesauri
  * per site (T670); at index time the selected trees expand each document with the
  * root→term hierarchical path of every term it mentions (T672).

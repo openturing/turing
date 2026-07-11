@@ -44,7 +44,7 @@ import lombok.Setter;
 /**
  * T668 / §XL (Block AQ) — a single microthesaurus: a hierarchical tree of
  * {@link TurThesaurusTerm}s in <strong>one language and one domain</strong>
- * (mapping the nstein TME "authority file"). It belongs to a
+ * (the Turing Thesaurus Exchange "authority file"). It belongs to a
  * {@link TurKnowledgeBase} and is the unit an SN site selects for index-time
  * expansion (T670). Locale-filtering is automatic: only microthesauri whose
  * {@link #language} equals a document's locale participate when it is indexed.

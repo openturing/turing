@@ -18,7 +18,7 @@ package com.viglet.turing.persistence.model.kb;
 
 /**
  * T668 / §XL (Block AQ) — the thesaurus relationship vocabulary, grounded in the
- * verified nstein TME / OpenText Semantic Navigation authority-file type set
+ * Turing Thesaurus Exchange relation type set (BT/NT/RT/U/UF)
  * (see {@code docs/references/semantic-navigation-authority-file-sample.xml}).
  *
  * <p>The <strong>hierarchical spine</strong> ({@link #BROADER}/{@link #NARROWER},

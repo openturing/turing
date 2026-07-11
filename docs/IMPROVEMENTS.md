@@ -2485,7 +2485,7 @@ Embedding search finds *semantically near* text and Block-AP synonyms rewrite th
 vocabulary. Clients (education-sector first) want documents to be findable by the
 *broader concepts* they belong to — a "pneumonia" page should surface under
 "doença respiratória" and "doença" — using a thesaurus a librarian controls, not
-a statistic. OpenText Semantic Navigation did this with **microthesauri**; we
+a statistic. Controlled-vocabulary semantic-navigation systems did this with **microthesauri**; we
 rebuild it natively, keeping all cost at index time.
 
 > **XL.1 (domain model, T668) shipped** — see CHANGELOG Block AQ and
@@ -2524,9 +2524,9 @@ so a thesaurus problem never blocks a document.
 
 ### XL.6 XML importer + reconstructed contract (T673)
 
-The old OpenText/nstein importer is **unrecoverable** (shallow clone, below the
+The old legacy importer is **unrecoverable** (shallow clone, below the
 graft boundary; no `.dtd`/`.xsd` in-tree). So author the `authorityFile` XSD/DTD
-as the formal contract from a real sample (namespace `.../tme-authority-file/4.10`),
+as the formal contract from a real sample (namespace `https://turing.viglet.org/xsd/thesaurus/1.0`),
 then import: `BT/NT` → `parentTermId`, `RT/U/UF` → relations, `variations` →
 surface forms. Handle the source's reciprocal-pair storage (BT stored on both
 ends) and observed quirks (a term with both `BT` and `RT` to the same id) with
@@ -2553,7 +2553,7 @@ and curating KB → microthesaurus → term trees and relations in-project.
 ### XL.10 Hierarchical concept facet (T677, 💭)
 
 A second `microthesaurus_path` field (path-token values `0/Doença`,
-`1/Doença/Doença respiratória`, …) for Solr drill-down faceting — the OpenText
+`1/Doença/Doença respiratória`, …) for Solr drill-down faceting — the semantic-navigation
 Semantic-Navigation browse experience. MVP keeps the flat terms field only.
 
 ### XL.11 Query-time related-term suggestions (T678, 💭)

@@ -50,7 +50,7 @@ class TurAuthorityFileImportServiceTest {
     private final TurKnowledgeBase kb = new TurKnowledgeBase();
 
     private static final String XML = """
-            <authorityFile xmlns="http://dev.nstein.com/tme-authority-file/4.10">
+            <authorityFile xmlns="https://turing.viglet.org/xsd/thesaurus/1.0">
               <name>APICULTURA</name>
               <terms>
                 <term><id>1</id><name>Doença</name><enabled>true</enabled>
@@ -156,7 +156,7 @@ class TurAuthorityFileImportServiceTest {
     @Test
     void reconstructedXsdAcceptsTheRealSample() throws Exception {
         var schema = SchemaFactory.newInstance(XMLConstants.W3C_XML_SCHEMA_NS_URI)
-                .newSchema(getClass().getResource("/kb/tme-authority-file-4.10.xsd"));
+                .newSchema(getClass().getResource("/kb/turing-thesaurus-1.0.xsd"));
         try (var in = getClass().getResourceAsStream("/kb/authority-file-sample.xml")) {
             schema.newValidator().validate(new javax.xml.transform.stream.StreamSource(in));
         }

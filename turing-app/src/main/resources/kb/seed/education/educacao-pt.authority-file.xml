@@ -1,0 +1,119 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<authorityFile xmlns="https://turing.viglet.org/xsd/thesaurus/1.0">
+  <name>Educação</name>
+  <terms>
+    <term>
+      <id>1</id><name>Educação</name><enabled>true</enabled>
+      <variations>
+        <variation><name>Educação</name><weight>100.0</weight><case>ci</case><accent>as</accent>
+          <languages><language>por</language></languages></variation>
+        <variation><name>Ensino</name><weight>80.0</weight><case>ci</case><accent>as</accent>
+          <languages><language>por</language></languages></variation>
+      </variations>
+      <relations/>
+    </term>
+    <term>
+      <id>2</id><name>Educação Básica</name><enabled>true</enabled>
+      <variations>
+        <variation><name>Educação Básica</name><weight>100.0</weight><case>ci</case><accent>as</accent>
+          <languages><language>por</language></languages></variation>
+      </variations>
+      <relations><relation><id>1</id><type>BT</type></relation></relations>
+    </term>
+    <term>
+      <id>3</id><name>Educação Infantil</name><enabled>true</enabled>
+      <variations>
+        <variation><name>Educação Infantil</name><weight>100.0</weight><case>ci</case><accent>as</accent>
+          <languages><language>por</language></languages></variation>
+        <variation><name>Pré-escola</name><weight>90.0</weight><case>ci</case><accent>as</accent>
+          <languages><language>por</language></languages></variation>
+      </variations>
+      <relations><relation><id>2</id><type>BT</type></relation></relations>
+    </term>
+    <term>
+      <id>4</id><name>Ensino Fundamental</name><enabled>true</enabled>
+      <variations>
+        <variation><name>Ensino Fundamental</name><weight>100.0</weight><case>ci</case><accent>as</accent>
+          <languages><language>por</language></languages></variation>
+        <variation><name>Fundamental</name><weight>70.0</weight><case>ci</case><accent>as</accent>
+          <languages><language>por</language></languages></variation>
+      </variations>
+      <relations><relation><id>2</id><type>BT</type></relation></relations>
+    </term>
+    <term>
+      <id>5</id><name>Ensino Médio</name><enabled>true</enabled>
+      <variations>
+        <variation><name>Ensino Médio</name><weight>100.0</weight><case>ci</case><accent>as</accent>
+          <languages><language>por</language></languages></variation>
+        <variation><name>Segundo Grau</name><weight>60.0</weight><case>ci</case><accent>as</accent>
+          <languages><language>por</language></languages></variation>
+      </variations>
+      <relations><relation><id>2</id><type>BT</type></relation></relations>
+    </term>
+    <term>
+      <id>6</id><name>Educação Superior</name><enabled>true</enabled>
+      <variations>
+        <variation><name>Educação Superior</name><weight>100.0</weight><case>ci</case><accent>as</accent>
+          <languages><language>por</language></languages></variation>
+        <variation><name>Ensino Superior</name><weight>90.0</weight><case>ci</case><accent>as</accent>
+          <languages><language>por</language></languages></variation>
+      </variations>
+      <relations><relation><id>1</id><type>BT</type></relation></relations>
+    </term>
+    <term>
+      <id>7</id><name>Graduação</name><enabled>true</enabled>
+      <variations>
+        <variation><name>Graduação</name><weight>100.0</weight><case>ci</case><accent>as</accent>
+          <languages><language>por</language></languages></variation>
+      </variations>
+      <relations><relation><id>6</id><type>BT</type></relation></relations>
+    </term>
+    <term>
+      <id>8</id><name>Pós-graduação</name><enabled>true</enabled>
+      <variations>
+        <variation><name>Pós-graduação</name><weight>100.0</weight><case>ci</case><accent>as</accent>
+          <languages><language>por</language></languages></variation>
+      </variations>
+      <relations><relation><id>6</id><type>BT</type></relation></relations>
+    </term>
+    <term>
+      <id>9</id><name>Mestrado</name><enabled>true</enabled>
+      <variations>
+        <variation><name>Mestrado</name><weight>100.0</weight><case>ci</case><accent>as</accent>
+          <languages><language>por</language></languages></variation>
+      </variations>
+      <relations><relation><id>8</id><type>BT</type></relation></relations>
+    </term>
+    <term>
+      <id>10</id><name>Doutorado</name><enabled>true</enabled>
+      <variations>
+        <variation><name>Doutorado</name><weight>100.0</weight><case>ci</case><accent>as</accent>
+          <languages><language>por</language></languages></variation>
+      </variations>
+      <relations><relation><id>8</id><type>BT</type></relation></relations>
+    </term>
+    <term>
+      <id>11</id><name>Educação a Distância</name><enabled>true</enabled>
+      <variations>
+        <variation><name>Educação a Distância</name><weight>100.0</weight><case>ci</case><accent>as</accent>
+          <languages><language>por</language></languages></variation>
+        <variation><name>EAD</name><weight>95.0</weight><case>ci</case><accent>as</accent>
+          <languages><language>por</language></languages></variation>
+        <variation><name>Ensino a Distância</name><weight>85.0</weight><case>ci</case><accent>as</accent>
+          <languages><language>por</language></languages></variation>
+      </variations>
+      <relations><relation><id>1</id><type>BT</type></relation></relations>
+    </term>
+    <term>
+      <id>12</id><name>Avaliação Educacional</name><enabled>true</enabled>
+      <variations>
+        <variation><name>Avaliação Educacional</name><weight>100.0</weight><case>ci</case><accent>as</accent>
+          <languages><language>por</language></languages></variation>
+      </variations>
+      <relations>
+        <relation><id>1</id><type>BT</type></relation>
+        <relation><id>2</id><type>RT</type></relation>
+      </relations>
+    </term>
+  </terms>
+</authorityFile>

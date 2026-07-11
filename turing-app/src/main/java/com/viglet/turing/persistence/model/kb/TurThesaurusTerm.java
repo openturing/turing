@@ -89,11 +89,11 @@ public class TurThesaurusTerm implements Serializable {
     @Column
     private int termOrder = 0;
 
-    /** Optional scope note / definition (nstein has a slot for it). */
+    /** Optional scope note / definition (controlled-vocabulary scope note). */
     @Column(length = 4000)
     private String scopeNote;
 
-    /** The id this term had in its source (e.g. nstein numeric id) for round-trip. */
+    /** The id this term had in its source (e.g. the source system numeric id) for round-trip. */
     @Column(length = 255)
     private String externalId;
 

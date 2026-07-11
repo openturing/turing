@@ -29,8 +29,8 @@ import lombok.Setter;
 /**
  * T668 / §XL (Block AQ) — a single <em>surface form</em> under which a
  * {@link TurThesaurusTerm} can be recognised in document text at index time
- * (T671). It maps the nstein TME authority-file {@code <variation>} (see
- * {@code docs/references/semantic-navigation-authority-file-sample.xml}): the
+ * (T671). It maps the Turing Thesaurus Exchange authority-file {@code <variation>}
+ * (see {@code docs/references/semantic-navigation-authority-file-sample.xml}): the
  * preferred label plus any spelling variants and {@code USE}/{@code USED_FOR}
  * non-preferred forms all become variations so a document that uses a synonym is
  * still recognised and still expanded to the canonical hierarchical path.
@@ -54,15 +54,15 @@ public class TurThesaurusTermVariation implements Serializable {
     @Column(name = "surfaceForm", length = 1000)
     private String surfaceForm;
 
-    /** Relative match weight (nstein default {@code 100.0}). */
+    /** Relative match weight (default {@code 100.0}). */
     @Column
     private double weight = 100.0d;
 
-    /** Whether matching is case-sensitive (nstein {@code case="cs"}); default no. */
+    /** Whether matching is case-sensitive (source {@code case="cs"}); default no. */
     @Column
     private boolean caseSensitive = false;
 
-    /** Whether matching is accent-sensitive (nstein {@code accent="as"}); default yes. */
+    /** Whether matching is accent-sensitive (source {@code accent="as"}); default yes. */
     @Column
     private boolean accentSensitive = true;
 

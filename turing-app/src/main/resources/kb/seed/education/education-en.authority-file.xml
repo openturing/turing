@@ -1,0 +1,123 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<authorityFile xmlns="https://turing.viglet.org/xsd/thesaurus/1.0">
+  <name>Education</name>
+  <terms>
+    <term>
+      <id>1</id><name>Education</name><enabled>true</enabled>
+      <variations>
+        <variation><name>Education</name><weight>100.0</weight><case>ci</case><accent>as</accent>
+          <languages><language>eng</language></languages></variation>
+        <variation><name>Schooling</name><weight>75.0</weight><case>ci</case><accent>as</accent>
+          <languages><language>eng</language></languages></variation>
+      </variations>
+      <relations/>
+    </term>
+    <term>
+      <id>2</id><name>Basic Education</name><enabled>true</enabled>
+      <variations>
+        <variation><name>Basic Education</name><weight>100.0</weight><case>ci</case><accent>as</accent>
+          <languages><language>eng</language></languages></variation>
+      </variations>
+      <relations><relation><id>1</id><type>BT</type></relation></relations>
+    </term>
+    <term>
+      <id>3</id><name>Early Childhood Education</name><enabled>true</enabled>
+      <variations>
+        <variation><name>Early Childhood Education</name><weight>100.0</weight><case>ci</case><accent>as</accent>
+          <languages><language>eng</language></languages></variation>
+        <variation><name>Preschool</name><weight>90.0</weight><case>ci</case><accent>as</accent>
+          <languages><language>eng</language></languages></variation>
+      </variations>
+      <relations><relation><id>2</id><type>BT</type></relation></relations>
+    </term>
+    <term>
+      <id>4</id><name>Primary Education</name><enabled>true</enabled>
+      <variations>
+        <variation><name>Primary Education</name><weight>100.0</weight><case>ci</case><accent>as</accent>
+          <languages><language>eng</language></languages></variation>
+        <variation><name>Elementary School</name><weight>85.0</weight><case>ci</case><accent>as</accent>
+          <languages><language>eng</language></languages></variation>
+      </variations>
+      <relations><relation><id>2</id><type>BT</type></relation></relations>
+    </term>
+    <term>
+      <id>5</id><name>Secondary Education</name><enabled>true</enabled>
+      <variations>
+        <variation><name>Secondary Education</name><weight>100.0</weight><case>ci</case><accent>as</accent>
+          <languages><language>eng</language></languages></variation>
+        <variation><name>High School</name><weight>85.0</weight><case>ci</case><accent>as</accent>
+          <languages><language>eng</language></languages></variation>
+      </variations>
+      <relations><relation><id>2</id><type>BT</type></relation></relations>
+    </term>
+    <term>
+      <id>6</id><name>Higher Education</name><enabled>true</enabled>
+      <variations>
+        <variation><name>Higher Education</name><weight>100.0</weight><case>ci</case><accent>as</accent>
+          <languages><language>eng</language></languages></variation>
+        <variation><name>Tertiary Education</name><weight>90.0</weight><case>ci</case><accent>as</accent>
+          <languages><language>eng</language></languages></variation>
+      </variations>
+      <relations><relation><id>1</id><type>BT</type></relation></relations>
+    </term>
+    <term>
+      <id>7</id><name>Undergraduate Studies</name><enabled>true</enabled>
+      <variations>
+        <variation><name>Undergraduate Studies</name><weight>100.0</weight><case>ci</case><accent>as</accent>
+          <languages><language>eng</language></languages></variation>
+      </variations>
+      <relations><relation><id>6</id><type>BT</type></relation></relations>
+    </term>
+    <term>
+      <id>8</id><name>Graduate Studies</name><enabled>true</enabled>
+      <variations>
+        <variation><name>Graduate Studies</name><weight>100.0</weight><case>ci</case><accent>as</accent>
+          <languages><language>eng</language></languages></variation>
+        <variation><name>Postgraduate Studies</name><weight>90.0</weight><case>ci</case><accent>as</accent>
+          <languages><language>eng</language></languages></variation>
+      </variations>
+      <relations><relation><id>6</id><type>BT</type></relation></relations>
+    </term>
+    <term>
+      <id>9</id><name>Master's Degree</name><enabled>true</enabled>
+      <variations>
+        <variation><name>Master's Degree</name><weight>100.0</weight><case>ci</case><accent>as</accent>
+          <languages><language>eng</language></languages></variation>
+      </variations>
+      <relations><relation><id>8</id><type>BT</type></relation></relations>
+    </term>
+    <term>
+      <id>10</id><name>Doctorate</name><enabled>true</enabled>
+      <variations>
+        <variation><name>Doctorate</name><weight>100.0</weight><case>ci</case><accent>as</accent>
+          <languages><language>eng</language></languages></variation>
+        <variation><name>PhD</name><weight>95.0</weight><case>ci</case><accent>as</accent>
+          <languages><language>eng</language></languages></variation>
+      </variations>
+      <relations><relation><id>8</id><type>BT</type></relation></relations>
+    </term>
+    <term>
+      <id>11</id><name>Distance Learning</name><enabled>true</enabled>
+      <variations>
+        <variation><name>Distance Learning</name><weight>100.0</weight><case>ci</case><accent>as</accent>
+          <languages><language>eng</language></languages></variation>
+        <variation><name>Online Learning</name><weight>90.0</weight><case>ci</case><accent>as</accent>
+          <languages><language>eng</language></languages></variation>
+        <variation><name>E-learning</name><weight>85.0</weight><case>ci</case><accent>as</accent>
+          <languages><language>eng</language></languages></variation>
+      </variations>
+      <relations><relation><id>1</id><type>BT</type></relation></relations>
+    </term>
+    <term>
+      <id>12</id><name>Educational Assessment</name><enabled>true</enabled>
+      <variations>
+        <variation><name>Educational Assessment</name><weight>100.0</weight><case>ci</case><accent>as</accent>
+          <languages><language>eng</language></languages></variation>
+      </variations>
+      <relations>
+        <relation><id>1</id><type>BT</type></relation>
+        <relation><id>2</id><type>RT</type></relation>
+      </relations>
+    </term>
+  </terms>
+</authorityFile>

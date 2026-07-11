@@ -1,20 +1,22 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  T673 / §XL (Block AQ) — reconstructed formal contract for the nstein TME /
-  OpenText Semantic Navigation "authority file" (microthesaurus export/import
-  format), namespace http://dev.nstein.com/tme-authority-file/4.10.
+  T673 / §XL (Block AQ) — the Turing Thesaurus Exchange format: the formal
+  contract for importing/exporting a microthesaurus (controlled vocabulary) as
+  XML, namespace https://turing.viglet.org/xsd/thesaurus/1.0.
 
-  This XSD was reverse-engineered from a verified 253-term real sample
-  (docs/references/semantic-navigation-authority-file-sample.xml); the original
-  DTD/XSD is unrecoverable (shallow clone, see ADR 0003). It is the shared
-  contract for BOTH the XML importer (T673) and the format the LLM is instructed
-  to emit when generating new hierarchies (T675). It is intentionally lenient
-  (relation type is an open token, attributes is lax) so a faithful export never
-  fails to import over a cosmetic drift.
+  This is a 100% Turing format. Its shape (an "authority file" of terms with
+  broader/narrower/related/use relations + recognition variations) follows
+  standard controlled-vocabulary / semantic-navigation modelling; a verified
+  253-term sample (docs/references/semantic-navigation-authority-file-sample.xml)
+  was used to validate coverage. It is the shared contract for BOTH the XML
+  importer (T673) and the format the LLM is instructed to emit when generating
+  new hierarchies (T675). It is intentionally lenient (relation type is an open
+  token, attributes is lax) so a faithful export never fails to import over a
+  cosmetic drift.
 -->
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
-           xmlns:tns="http://dev.nstein.com/tme-authority-file/4.10"
-           targetNamespace="http://dev.nstein.com/tme-authority-file/4.10"
+           xmlns:tns="https://turing.viglet.org/xsd/thesaurus/1.0"
+           targetNamespace="https://turing.viglet.org/xsd/thesaurus/1.0"
            elementFormDefault="qualified">
 
   <xs:element name="authorityFile" type="tns:authorityFileType"/>

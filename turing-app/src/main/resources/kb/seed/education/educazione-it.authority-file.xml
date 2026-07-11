@@ -1,0 +1,119 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<authorityFile xmlns="https://turing.viglet.org/xsd/thesaurus/1.0">
+  <name>Istruzione</name>
+  <terms>
+    <term>
+      <id>1</id><name>Istruzione</name><enabled>true</enabled>
+      <variations>
+        <variation><name>Istruzione</name><weight>100.0</weight><case>ci</case><accent>as</accent>
+          <languages><language>ita</language></languages></variation>
+        <variation><name>Educazione</name><weight>85.0</weight><case>ci</case><accent>as</accent>
+          <languages><language>ita</language></languages></variation>
+      </variations>
+      <relations/>
+    </term>
+    <term>
+      <id>2</id><name>Istruzione di Base</name><enabled>true</enabled>
+      <variations>
+        <variation><name>Istruzione di Base</name><weight>100.0</weight><case>ci</case><accent>as</accent>
+          <languages><language>ita</language></languages></variation>
+      </variations>
+      <relations><relation><id>1</id><type>BT</type></relation></relations>
+    </term>
+    <term>
+      <id>3</id><name>Scuola dell'Infanzia</name><enabled>true</enabled>
+      <variations>
+        <variation><name>Scuola dell'Infanzia</name><weight>100.0</weight><case>ci</case><accent>as</accent>
+          <languages><language>ita</language></languages></variation>
+        <variation><name>Scuola Materna</name><weight>90.0</weight><case>ci</case><accent>as</accent>
+          <languages><language>ita</language></languages></variation>
+      </variations>
+      <relations><relation><id>2</id><type>BT</type></relation></relations>
+    </term>
+    <term>
+      <id>4</id><name>Scuola Primaria</name><enabled>true</enabled>
+      <variations>
+        <variation><name>Scuola Primaria</name><weight>100.0</weight><case>ci</case><accent>as</accent>
+          <languages><language>ita</language></languages></variation>
+        <variation><name>Scuola Elementare</name><weight>85.0</weight><case>ci</case><accent>as</accent>
+          <languages><language>ita</language></languages></variation>
+      </variations>
+      <relations><relation><id>2</id><type>BT</type></relation></relations>
+    </term>
+    <term>
+      <id>5</id><name>Scuola Secondaria</name><enabled>true</enabled>
+      <variations>
+        <variation><name>Scuola Secondaria</name><weight>100.0</weight><case>ci</case><accent>as</accent>
+          <languages><language>ita</language></languages></variation>
+        <variation><name>Scuola Superiore</name><weight>85.0</weight><case>ci</case><accent>as</accent>
+          <languages><language>ita</language></languages></variation>
+      </variations>
+      <relations><relation><id>2</id><type>BT</type></relation></relations>
+    </term>
+    <term>
+      <id>6</id><name>Istruzione Superiore</name><enabled>true</enabled>
+      <variations>
+        <variation><name>Istruzione Superiore</name><weight>100.0</weight><case>ci</case><accent>as</accent>
+          <languages><language>ita</language></languages></variation>
+        <variation><name>Istruzione Universitaria</name><weight>90.0</weight><case>ci</case><accent>as</accent>
+          <languages><language>ita</language></languages></variation>
+      </variations>
+      <relations><relation><id>1</id><type>BT</type></relation></relations>
+    </term>
+    <term>
+      <id>7</id><name>Laurea Triennale</name><enabled>true</enabled>
+      <variations>
+        <variation><name>Laurea Triennale</name><weight>100.0</weight><case>ci</case><accent>as</accent>
+          <languages><language>ita</language></languages></variation>
+      </variations>
+      <relations><relation><id>6</id><type>BT</type></relation></relations>
+    </term>
+    <term>
+      <id>8</id><name>Laurea Magistrale</name><enabled>true</enabled>
+      <variations>
+        <variation><name>Laurea Magistrale</name><weight>100.0</weight><case>ci</case><accent>as</accent>
+          <languages><language>ita</language></languages></variation>
+      </variations>
+      <relations><relation><id>6</id><type>BT</type></relation></relations>
+    </term>
+    <term>
+      <id>9</id><name>Master</name><enabled>true</enabled>
+      <variations>
+        <variation><name>Master</name><weight>100.0</weight><case>ci</case><accent>as</accent>
+          <languages><language>ita</language></languages></variation>
+      </variations>
+      <relations><relation><id>8</id><type>BT</type></relation></relations>
+    </term>
+    <term>
+      <id>10</id><name>Dottorato</name><enabled>true</enabled>
+      <variations>
+        <variation><name>Dottorato</name><weight>100.0</weight><case>ci</case><accent>as</accent>
+          <languages><language>ita</language></languages></variation>
+        <variation><name>Dottorato di Ricerca</name><weight>90.0</weight><case>ci</case><accent>as</accent>
+          <languages><language>ita</language></languages></variation>
+      </variations>
+      <relations><relation><id>8</id><type>BT</type></relation></relations>
+    </term>
+    <term>
+      <id>11</id><name>Formazione a Distanza</name><enabled>true</enabled>
+      <variations>
+        <variation><name>Formazione a Distanza</name><weight>100.0</weight><case>ci</case><accent>as</accent>
+          <languages><language>ita</language></languages></variation>
+        <variation><name>FAD</name><weight>95.0</weight><case>ci</case><accent>as</accent>
+          <languages><language>ita</language></languages></variation>
+      </variations>
+      <relations><relation><id>1</id><type>BT</type></relation></relations>
+    </term>
+    <term>
+      <id>12</id><name>Valutazione Educativa</name><enabled>true</enabled>
+      <variations>
+        <variation><name>Valutazione Educativa</name><weight>100.0</weight><case>ci</case><accent>as</accent>
+          <languages><language>ita</language></languages></variation>
+      </variations>
+      <relations>
+        <relation><id>1</id><type>BT</type></relation>
+        <relation><id>2</id><type>RT</type></relation>
+      </relations>
+    </term>
+  </terms>
+</authorityFile>

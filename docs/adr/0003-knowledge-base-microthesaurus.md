@@ -10,7 +10,7 @@
 
 ## Context
 
-Inspired by OpenText Semantic Navigation, we want a **Knowledge Base** of
+Inspired by classic controlled-vocabulary semantic-navigation systems, we want a **Knowledge Base** of
 **hierarchical microthesauri** (controlled vocabularies) that enrich indexing
 with *related terms* in a controlled, structured way — a complement to, not a
 replacement for, embedding-based semantic search and the just-shipped native
@@ -41,7 +41,7 @@ Three findings from the exploration constrain this ADR:
    `java.util.Locale` column, one row per locale (`TurSNSiteLocale`,
    `TurSNSynonym`) — there is no translation-join convention.
 
-3. **The old OpenText/nstein XML importer is unrecoverable here.** This clone is
+3. **The old legacy XML importer is unrecoverable here.** This clone is
    shallow (52 commits, a graft boundary); exhaustive history search
    (`--grep`, pickaxe `-S`, `--diff-filter=D` over `*thesaur*`/`*.dtd`) returns
    nothing, and no `.dtd`/`.xsd` exists in the tree. The XML contract must be
@@ -50,9 +50,9 @@ Three findings from the exploration constrain this ADR:
    flag + `TurSNFieldType.THESAURUS` enum (a query-time NER/entity toggle) — it is
    **not** reused by this feature.
 
-### The reconstructed source contract (nstein TME / OpenText SN authority file)
+### The reconstructed source contract (Turing Thesaurus Exchange authority file)
 
-A real sample (`authorityFile`, namespace `http://dev.nstein.com/tme-authority-file/4.10`)
+A real sample (`authorityFile`, namespace `https://turing.viglet.org/xsd/thesaurus/1.0`)
 was analysed in full (253 terms). Verified structure:
 
 - **`authorityFile`** → `name` (the microthesaurus name) + `terms`.

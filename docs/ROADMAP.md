@@ -106,19 +106,18 @@
 ## Block AQ — Knowledge Base: microthesauri & index-time term expansion
 
 > A tenant-scoped **library of hierarchical microthesauri** (controlled
-> vocabularies, per language + domain) inspired by OpenText Semantic Navigation.
+> vocabularies, per language + domain) inspired by classic controlled-vocabulary semantic-navigation systems.
 > At **index time** every document is expanded with the root→term hierarchical
 > path of each term it mentions, written to a dedicated Solr field — recall +
 > concept-facet browse with no query-time cost. Complements Block AP synonyms and
 > embedding search, does not replace them. Architecture fixed in
 > [ADR 0003](adr/0003-knowledge-base-microthesaurus.md); design in §XL. The
-> reconstructed nstein TME / OpenText SN authority-file format (`BT/NT/RT/U/UF`
+> reconstructed Turing Thesaurus Exchange authority-file format (`BT/NT/RT/U/UF`
 > relations + `variations`) is the import + AI-generation contract.
 
-- 📋 **T674** (deps: T668, T673) **Pre-populated EDUCATION knowledge base** — AI-generated microthesaurus hierarchies for the priority **education** domain (pt/en/it) shipped as an importable seed bundle (the T373/T655 seed-ZIP precedent, not baked into startup) + a library browse area. → §XL.7
 - 💭 **T675** (deps: T673, T674) **LLM-assisted hierarchy generation** — generate new microthesaurus trees from a domain+language prompt, emitting the T673 authority-file format; reuses the AI-authoring strict-schema + LlmJudge grounding path (T426/T385). → §XL.8
 - 📋 **T676** (deps: T669, T548) **Bento admin editor** — browse/create/edit KB → microthesaurus → term trees + relations on a `/bento/kb` surface (BentoHero + BentoEntityShell + tree editor) for in-project curation. → §XL.9
-- 💭 **T677** (deps: T672) **Hierarchical concept facet** — second `microthesaurus_path` field (path tokens `0/Doença`, `1/Doença/Doença respiratória`, …) for Solr drill-down navigation, surfacing the OpenText-style Semantic Navigation browse. → §XL.10
+- 💭 **T677** (deps: T672) **Hierarchical concept facet** — second `microthesaurus_path` field (path tokens `0/Doença`, `1/Doença/Doença respiratória`, …) for Solr drill-down navigation, surfacing the Semantic-Navigation-style browse. → §XL.10
 - 💭 **T678** (deps: T672) **Query-time related-term suggestions** — a did-you-mean-style "related concepts" surface built on the microthesaurus `RELATED` (RT) links, reusing the spell-check/suggestion UI plumbing. → §XL.11
 
 ## Non-goals (do NOT add as tasks)

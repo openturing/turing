@@ -24,7 +24,7 @@ package com.viglet.turing.persistence.model.kb;
  * <ul>
  *   <li>{@link #SYSTEM_SEED} — shipped as an importable seed bundle (T674).</li>
  *   <li>{@link #AI_GENERATED} — produced by LLM-assisted generation (T675).</li>
- *   <li>{@link #XML_IMPORT} — imported from an OpenText/nstein authority file (T673).</li>
+ *   <li>{@link #XML_IMPORT} — imported from an external thesaurus authority file (T673).</li>
  *   <li>{@link #USER} — authored in the console/bento CRUD (default).</li>
  * </ul>
  *
