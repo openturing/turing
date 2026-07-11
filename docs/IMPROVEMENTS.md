@@ -2277,18 +2277,6 @@ not a second call site.
 > guard — were all verified present and are called out so they are not "fixed"
 > away.
 
-**XXXVII.14 — Config & logging hygiene (MEDIUM/LOW, mixed).** Committed MinIO creds
-`admin` / `minha_senha_forte` (`application.yaml:116`, exploitable only when
-`storage.type=MINIO` but in git history regardless — rotate + purge). H2 console is
-off by default but `web-allow-others: true` and `TurSecurityConfigProduction`
-`web.ignoring("/h2/**")` mean that if enabled it is an unauthenticated remote DB
-console with passwordless `sa` — drop the ignore + web-allow-others. Secret-preview
-logging (`TurGlobalSettingsAPI:202`, first 8 chars of the rotated URL secret) and
-the human-approval capability-token INFO log (`TurHumanApprovalAPI:104`) should be
-redacted. The anonymous self-registration (`/api/v2/user/register`, gated by
-`authentication.newUser`, default off) + `/api/signup` arbitrary-username paths
-should be constrained (low impact today, meaningful once permissions/tenancy are on).
-
 **XXXVII.15 — Frontend XSS surface (MEDIUM/LOW, POTENTIAL).** There is no client-side
 HTML sanitiser (no DOMPurify) anywhere, so every `dangerouslySetInnerHTML` relies on
 the backend. Search result `title`/`description` are injected raw in

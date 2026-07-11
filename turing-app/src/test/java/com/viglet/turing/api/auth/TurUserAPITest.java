@@ -1,5 +1,6 @@
 package com.viglet.turing.api.auth;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
@@ -443,5 +444,18 @@ class TurUserAPITest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.username").value("testuser"))
                 .andExpect(jsonPath("$.admin").value(false));
+    }
+
+    // T652 / §XXXVII.14 — self-registration username validation.
+    @Test
+    void registrationUsernameValidationAcceptsSafeAndRejectsExotic() {
+        assertThat(TurUserAPI.isValidRegistrationUsername("alice")).isTrue();
+        assertThat(TurUserAPI.isValidRegistrationUsername("bob.smith_1@corp-x")).isTrue();
+        assertThat(TurUserAPI.isValidRegistrationUsername("ab")).isFalse();          // too short
+        assertThat(TurUserAPI.isValidRegistrationUsername("a".repeat(101))).isFalse(); // too long
+        assertThat(TurUserAPI.isValidRegistrationUsername("has space")).isFalse();
+        assertThat(TurUserAPI.isValidRegistrationUsername("evil<script>")).isFalse();
+        assertThat(TurUserAPI.isValidRegistrationUsername("../../etc")).isFalse();
+        assertThat(TurUserAPI.isValidRegistrationUsername(null)).isFalse();
     }
 }

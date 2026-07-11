@@ -199,7 +199,10 @@ public class TurGlobalSettingsAPI {
     @PostMapping("/code-interpreter/url-signing-secret/regenerate")
     public TurUrlSigningSecretRotation regenerateUrlSigningSecret() {
         String preview = turGlobalSettingsService.regenerateCodeInterpreterUrlSigningSecret();
-        log.info("[GlobalSettings] URL-signing secret rotated by admin — first 8 chars: {}…", preview);
+        // T652 / §XXXVII.14 — do NOT log any of the secret material (was logging
+        // its first 8 chars). The preview is returned in the response for the
+        // admin UI to confirm the rotation, but never written to the log.
+        log.info("[GlobalSettings] URL-signing secret rotated by admin");
         return new TurUrlSigningSecretRotation(true, preview);
     }
 

@@ -83,7 +83,6 @@
 > too — the 🟡 Medium/Low items remain.
 
 **🟡 Medium / Low:**
-- 💭 **T652** (deps: —) **Config & logging hygiene** — remove committed MinIO creds (`application.yaml:116` `admin`/`minha_senha_forte`, purge from history); keep the H2 console off and drop `web.ignoring("/h2/**")` + `web-allow-others: true`; redact the secret-preview + human-approval capability-token INFO logs; constrain the anonymous self-registration / signup arbitrary-username paths. → §XXXVII.14
 - 💭 **T653** (deps: —) **Frontend XSS surface** — confirm & enforce that the search-engine highlighter HTML-escapes field content before it reaches the `dangerouslySetInnerHTML` result-card (rendered inside the authenticated admin console); add a client sanitiser allowing only `<mark>`-style markup; sanitise/sandbox the Gemini `renderedContent` fragment injected raw into the console; optionally post-sanitise the LLM-driven D2 SVG. → §XXXVII.15
 
 ## Non-goals (do NOT add as tasks)

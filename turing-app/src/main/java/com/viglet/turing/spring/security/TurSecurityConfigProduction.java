@@ -318,8 +318,12 @@ public class TurSecurityConfigProduction {
 
         @Bean
         WebSecurityCustomizer webSecurityCustomizer() {
-                return web -> web.httpFirewall(allowUrlEncodedSlaturHttpFirewall()).ignoring()
-                                .requestMatchers(mvc.matcher("/h2/**"));
+                // T652 / §XXXVII.14 — keep the URL-encoded-slash firewall but DROP the
+                // former `.ignoring().requestMatchers("/h2/**")` bypass, which disabled
+                // the entire security filter chain for /h2/**. The H2 console is off by
+                // default (and now loopback-only); if enabled it goes through the normal
+                // security chain instead of being an unauthenticated hole.
+                return web -> web.httpFirewall(allowUrlEncodedSlaturHttpFirewall());
         }
 
         @Bean

@@ -338,6 +338,14 @@ public class TurUserAPI {
 
     public record RegisterRequest(String username, String password, String firstName, String lastName, String email) {}
 
+    /** T652 / §XXXVII.14 — safe self-registration username: 3-100 chars, letters/digits/._-@. */
+    private static final java.util.regex.Pattern REGISTRATION_USERNAME =
+            java.util.regex.Pattern.compile("^[A-Za-z0-9._@-]{3,100}$");
+
+    static boolean isValidRegistrationUsername(String username) {
+        return username != null && REGISTRATION_USERNAME.matcher(username).matches();
+    }
+
     @PostMapping("/register")
     public ResponseEntity<Object> turUserRegister(@RequestBody RegisterRequest request) {
         if (turConfigProperties.getAuthentication() == null
@@ -346,6 +354,19 @@ public class TurUserAPI {
         }
         if (!StringUtils.hasText(request.username()) || !StringUtils.hasText(request.password())) {
             return ResponseEntity.badRequest().body(java.util.Map.of(ERROR, "Username and password are required"));
+        }
+        // T652 / §XXXVII.14 — constrain the self-registration username to a safe
+        // charset + length instead of accepting an arbitrary string, and enforce
+        // a minimum password length. Self-registered users only get the User
+        // group (never admin), but a bounded, well-formed username avoids
+        // surprising log/display/lookup behaviour from exotic input.
+        if (!isValidRegistrationUsername(request.username())) {
+            return ResponseEntity.badRequest().body(java.util.Map.of(ERROR,
+                    "Username must be 3-100 characters using letters, digits, and . _ - @ only"));
+        }
+        if (request.password().length() < 8) {
+            return ResponseEntity.badRequest().body(java.util.Map.of(ERROR,
+                    "Password must be at least 8 characters"));
         }
         if (turUserRepository.findByUsername(request.username()) != null) {
             return ResponseEntity.badRequest().body(java.util.Map.of(ERROR, "Username already exists"));

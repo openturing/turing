@@ -124,10 +124,16 @@ turing:
     filesystem:
       path: ./store/assets
     minio:
-      endpoint: http://localhost:9000
-      access-key: admin
-      secret-key: minha_senha_forte
-      bucket: turing-assets
+      endpoint: ${TURING_STORAGE_MINIO_ENDPOINT:http://localhost:9000}
+      # T652 / §XXXVII.14 — externalised. The previous committed value
+      # (`admin` / `minha_senha_forte`) was a real-looking secret in source
+      # (and in git history — rotate the MinIO root credentials and purge the
+      # old value from history as a separate ops step). Only used when
+      # storage.type=MINIO (default is FILESYSTEM). Dev defaults are MinIO's own
+      # well-known placeholders; set the env vars for any real deployment.
+      access-key: ${TURING_STORAGE_MINIO_ACCESS_KEY:minioadmin}
+      secret-key: ${TURING_STORAGE_MINIO_SECRET_KEY:minioadmin}
+      bucket: ${TURING_STORAGE_MINIO_BUCKET:turing-assets}
   code-interpreter:
     # Execution mode is chosen at runtime in Console -> Global Settings ->
     # Code Interpreter (NATIVE host subprocess, the default, or DOCKER). The
@@ -346,7 +352,11 @@ spring:
       enabled: false
       path: /h2
       settings:
-        web-allow-others: true
+        # T652 / §XXXVII.14 — was true, which (if the console were ever enabled)
+        # would expose a passwordless `sa` remote DB console to other hosts. The
+        # console stays off by default; if enabled for local debugging it now
+        # answers loopback only.
+        web-allow-others: false
   datasource:
     url: jdbc:h2:file:./store/db/turingDB;DATABASE_TO_UPPER=false;CASE_INSENSITIVE_IDENTIFIERS=true
     username: sa

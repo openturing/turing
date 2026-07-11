@@ -101,8 +101,11 @@ public class TurHumanApprovalAPI {
                 approval.getConversationId(),
                 Map.of(approval.getApprovalSlot(), decision.trim()),
                 "approval=" + token);
-        log.info("[HumanApproval] decision '{}' recorded for token='{}' — resumed {} state(s)",
-                decision.trim(), token, result.resumed());
+        // T652 / §XXXVII.14 — the token IS the capability (anyone holding it can
+        // decide the approval), so do NOT log its value. Correlate on the
+        // conversation id instead.
+        log.info("[HumanApproval] decision '{}' recorded for conversation='{}' — resumed {} state(s)",
+                decision.trim(), approval.getConversationId(), result.resumed());
         return ResponseEntity.ok(new DecideResponse(true, "DECIDED", result.resumed(), null));
     }
 
