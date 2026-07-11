@@ -2281,16 +2281,6 @@ real-world audio:
 The block closes all three, keeping the seam and today's behavior intact when the
 new config is empty (legacy = byte-identical).
 
-### XLII.3 Chunk-aware orchestration (T689)
-
-Orchestration that sits **above** `TurTranscriptionProvider`: run each chunk
-through the resolved provider bounded-parallel and in order, stitch the transcripts
-(deduping the overlap window), and aggregate the detected language. Because it
-wraps the seam rather than a specific impl, **every** backend — OpenAI, local
-server, in-process ONNX — inherits large-file support for free. This replaces the
-fixed-limit guard (from the hotfix) with the configurable per-provider limit +
-chunk-or-fail decision.
-
 ### XLII.4 Local OpenAI-compatible backend (T690)
 
 The recommended local path, and the cheapest to build because the REST client

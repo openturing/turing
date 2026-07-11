@@ -22,9 +22,8 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.viglet.turing.genai.authoring.persona.TurPersonaAudioDeriveService.DraftResult;
-import com.viglet.turing.genai.transcription.TurTranscriptionProvider;
-import com.viglet.turing.genai.transcription.TurTranscriptionProviderFactory;
 import com.viglet.turing.genai.transcription.TurTranscriptionResult;
+import com.viglet.turing.genai.transcription.TurTranscriptionService;
 import com.viglet.turing.persistence.model.persona.TurPersonaKind;
 import com.viglet.turing.persistence.model.persona.TurPersonaReadingLevel;
 import com.viglet.turing.persistence.model.persona.TurPersonaTone;
@@ -44,10 +43,7 @@ import com.viglet.turing.system.TurLlmSummaryService.SummaryResult;
 class TurPersonaAudioDeriveServiceTest {
 
     @Mock
-    private TurTranscriptionProviderFactory transcriptionProviderFactory;
-
-    @Mock
-    private TurTranscriptionProvider transcriptionProvider;
+    private TurTranscriptionService transcriptionService;
 
     @Mock
     private TurLlmSummaryService llmSummaryService;
@@ -57,8 +53,7 @@ class TurPersonaAudioDeriveServiceTest {
 
     @Test
     void failsWhenTranscriptionFails() {
-        when(transcriptionProviderFactory.resolveActive()).thenReturn(transcriptionProvider);
-        when(transcriptionProvider.transcribe(any(), any(), any()))
+        when(transcriptionService.transcribe(any(), any(), any()))
                 .thenReturn(TurTranscriptionResult.fail("no STT"));
 
         DraftResult result = service.derive(new byte[] { 1, 2 }, "audio/mpeg", "en");
@@ -70,8 +65,7 @@ class TurPersonaAudioDeriveServiceTest {
 
     @Test
     void drafsPersonaFromTranscript() {
-        when(transcriptionProviderFactory.resolveActive()).thenReturn(transcriptionProvider);
-        when(transcriptionProvider.transcribe(any(), any(), any()))
+        when(transcriptionService.transcribe(any(), any(), any()))
                 .thenReturn(TurTranscriptionResult.ok("Olá, eu vendo carros há vinte anos.", "pt"));
         String draftJson = """
                 {"name": "veteran-car-salesman", "description": "Seasoned dealer.",
@@ -102,8 +96,7 @@ class TurPersonaAudioDeriveServiceTest {
 
     @Test
     void defaultsBothKindAndIgnoresBadEnums() {
-        when(transcriptionProviderFactory.resolveActive()).thenReturn(transcriptionProvider);
-        when(transcriptionProvider.transcribe(any(), any(), any()))
+        when(transcriptionService.transcribe(any(), any(), any()))
                 .thenReturn(TurTranscriptionResult.ok("Some words.", "en"));
         String draftJson = """
                 {"name": "x", "tone": "NONSENSE", "verbosity": 99,

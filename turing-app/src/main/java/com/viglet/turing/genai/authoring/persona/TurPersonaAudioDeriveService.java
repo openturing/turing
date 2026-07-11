@@ -13,8 +13,8 @@ import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import com.viglet.turing.genai.transcription.TurTranscriptionProviderFactory;
 import com.viglet.turing.genai.transcription.TurTranscriptionResult;
+import com.viglet.turing.genai.transcription.TurTranscriptionService;
 import com.viglet.turing.persistence.dto.persona.TurPersonaDto;
 import com.viglet.turing.persistence.model.persona.TurPersonaAudience;
 import com.viglet.turing.persistence.model.persona.TurPersonaDomainExpertise;
@@ -73,12 +73,12 @@ public class TurPersonaAudioDeriveService {
             level and expertise in how the person actually speaks.
             """;
 
-    private final TurTranscriptionProviderFactory transcriptionProviderFactory;
+    private final TurTranscriptionService transcriptionService;
     private final TurLlmSummaryService llmSummaryService;
 
-    public TurPersonaAudioDeriveService(TurTranscriptionProviderFactory transcriptionProviderFactory,
+    public TurPersonaAudioDeriveService(TurTranscriptionService transcriptionService,
             TurLlmSummaryService llmSummaryService) {
-        this.transcriptionProviderFactory = transcriptionProviderFactory;
+        this.transcriptionService = transcriptionService;
         this.llmSummaryService = llmSummaryService;
     }
 
@@ -89,7 +89,7 @@ public class TurPersonaAudioDeriveService {
 
     public DraftResult derive(byte[] audio, String mimeType, String languageHint) {
         TurTranscriptionResult transcription =
-                transcriptionProviderFactory.resolveActive().transcribe(audio, mimeType, languageHint);
+                transcriptionService.transcribe(audio, mimeType, languageHint);
         if (!transcription.success() || StringUtils.isBlank(transcription.text())) {
             return new DraftResult(false, StringUtils.defaultString(transcription.error(),
                     "Could not transcribe the audio."), null, null);

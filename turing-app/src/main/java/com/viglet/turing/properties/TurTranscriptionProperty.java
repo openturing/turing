@@ -73,4 +73,11 @@ public class TurTranscriptionProperty {
 
     /** T688 — timeout (seconds) for a single ffmpeg/ffprobe invocation. Default 120. */
     private int ffmpegTimeoutSeconds = 120;
+
+    /**
+     * T689 — max chunks transcribed concurrently when a large recording is split.
+     * Bounds load on the backend (and cloud spend); ordering of the stitched
+     * result is preserved regardless. Clamped ≥ 1; default 3.
+     */
+    private int chunkConcurrency = 3;
 }
