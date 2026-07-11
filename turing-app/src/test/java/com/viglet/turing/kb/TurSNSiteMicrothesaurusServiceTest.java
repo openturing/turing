@@ -29,6 +29,7 @@ import com.viglet.turing.persistence.repository.kb.TurMicrothesaurusRepository;
 import com.viglet.turing.persistence.repository.kb.TurSNSiteMicrothesaurusConfigRepository;
 import com.viglet.turing.persistence.repository.kb.TurSNSiteMicrothesaurusRepository;
 import com.viglet.turing.sn.field.TurSNFieldProvisioner;
+import com.viglet.turing.sn.kb.TurMicrothesaurusDictionaryService;
 
 /**
  * T670 / §XL (Block AQ) — unit tests for per-site microthesaurus selection +
@@ -47,6 +48,8 @@ class TurSNSiteMicrothesaurusServiceTest {
     private TurMicrothesaurusRepository microthesaurusRepository;
     @Mock
     private TurSNFieldProvisioner fieldProvisioner;
+    @Mock
+    private TurMicrothesaurusDictionaryService dictionaryService;
 
     @InjectMocks
     private TurSNSiteMicrothesaurusService service;

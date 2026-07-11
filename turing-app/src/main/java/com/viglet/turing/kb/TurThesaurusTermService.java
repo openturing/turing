@@ -36,6 +36,7 @@ import com.viglet.turing.persistence.model.kb.TurThesaurusTerm;
 import com.viglet.turing.persistence.model.kb.TurThesaurusTermRelation;
 import com.viglet.turing.persistence.model.kb.TurThesaurusTermVariation;
 import com.viglet.turing.persistence.repository.kb.TurThesaurusTermRepository;
+import com.viglet.turing.sn.kb.TurMicrothesaurusDictionaryService;
 
 /**
  * T669 / §XL (Block AQ) — CRUD over thesaurus terms, scoped to a
@@ -51,9 +52,12 @@ import com.viglet.turing.persistence.repository.kb.TurThesaurusTermRepository;
 public class TurThesaurusTermService {
 
     private final TurThesaurusTermRepository repository;
+    private final TurMicrothesaurusDictionaryService dictionaryService;
 
-    public TurThesaurusTermService(TurThesaurusTermRepository repository) {
+    public TurThesaurusTermService(TurThesaurusTermRepository repository,
+            TurMicrothesaurusDictionaryService dictionaryService) {
         this.repository = repository;
+        this.dictionaryService = dictionaryService;
     }
 
     @Transactional(readOnly = true)
@@ -86,14 +90,18 @@ public class TurThesaurusTermService {
         TurThesaurusTerm entity = new TurThesaurusTerm();
         entity.setTurMicrothesaurus(microthesaurus);
         apply(entity, dto);
-        return toDto(repository.save(entity));
+        TurThesaurusTermDto saved = toDto(repository.save(entity));
+        dictionaryService.evictAll();
+        return saved;
     }
 
     @Transactional
     public Optional<TurThesaurusTermDto> update(String id, TurThesaurusTermDto dto) {
         return repository.findById(id).map(entity -> {
             apply(entity, dto);
-            return toDto(repository.save(entity));
+            TurThesaurusTermDto saved = toDto(repository.save(entity));
+            dictionaryService.evictAll();
+            return saved;
         });
     }
 
@@ -103,6 +111,7 @@ public class TurThesaurusTermService {
             return false;
         }
         repository.deleteById(id);
+        dictionaryService.evictAll();
         return true;
     }
 

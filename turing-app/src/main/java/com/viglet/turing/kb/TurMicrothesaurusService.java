@@ -29,6 +29,7 @@ import com.viglet.turing.persistence.model.kb.TurKnowledgeBase;
 import com.viglet.turing.persistence.model.kb.TurMicrothesaurus;
 import com.viglet.turing.persistence.repository.kb.TurMicrothesaurusRepository;
 import com.viglet.turing.persistence.repository.kb.TurSNSiteMicrothesaurusRepository;
+import com.viglet.turing.sn.kb.TurMicrothesaurusDictionaryService;
 
 /**
  * T669 / §XL (Block AQ) — CRUD over microthesaurus trees, scoped to a
@@ -43,11 +44,14 @@ public class TurMicrothesaurusService {
 
     private final TurMicrothesaurusRepository repository;
     private final TurSNSiteMicrothesaurusRepository siteSelectionRepository;
+    private final TurMicrothesaurusDictionaryService dictionaryService;
 
     public TurMicrothesaurusService(TurMicrothesaurusRepository repository,
-            TurSNSiteMicrothesaurusRepository siteSelectionRepository) {
+            TurSNSiteMicrothesaurusRepository siteSelectionRepository,
+            TurMicrothesaurusDictionaryService dictionaryService) {
         this.repository = repository;
         this.siteSelectionRepository = siteSelectionRepository;
+        this.dictionaryService = dictionaryService;
     }
 
     @Transactional(readOnly = true)
@@ -73,7 +77,9 @@ public class TurMicrothesaurusService {
     public Optional<TurMicrothesaurusDto> update(String id, TurMicrothesaurusDto dto) {
         return repository.findById(id).map(entity -> {
             apply(entity, dto);
-            return toDto(repository.save(entity));
+            TurMicrothesaurusDto saved = toDto(repository.save(entity));
+            dictionaryService.evictAll();
+            return saved;
         });
     }
 
@@ -85,6 +91,7 @@ public class TurMicrothesaurusService {
         // T670: drop any per-site selections pointing at this tree (soft FK, no DB cascade).
         siteSelectionRepository.deleteByMicrothesaurusId(id);
         repository.deleteById(id);
+        dictionaryService.evictAll();
         return true;
     }
 

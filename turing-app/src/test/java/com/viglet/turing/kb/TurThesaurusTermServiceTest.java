@@ -23,6 +23,7 @@ import com.viglet.turing.persistence.model.kb.TurMicrothesaurus;
 import com.viglet.turing.persistence.model.kb.TurThesaurusRelationType;
 import com.viglet.turing.persistence.model.kb.TurThesaurusTerm;
 import com.viglet.turing.persistence.repository.kb.TurThesaurusTermRepository;
+import com.viglet.turing.sn.kb.TurMicrothesaurusDictionaryService;
 
 /**
  * T669 / §XL (Block AQ) — unit tests for the thesaurus term CRUD service: label
@@ -34,6 +35,9 @@ class TurThesaurusTermServiceTest {
 
     @Mock
     private TurThesaurusTermRepository repository;
+
+    @Mock
+    private TurMicrothesaurusDictionaryService dictionaryService;
 
     @InjectMocks
     private TurThesaurusTermService service;

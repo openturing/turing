@@ -20,6 +20,7 @@ import com.viglet.turing.persistence.model.kb.TurKnowledgeBase;
 import com.viglet.turing.persistence.model.kb.TurMicrothesaurus;
 import com.viglet.turing.persistence.repository.kb.TurMicrothesaurusRepository;
 import com.viglet.turing.persistence.repository.kb.TurSNSiteMicrothesaurusRepository;
+import com.viglet.turing.sn.kb.TurMicrothesaurusDictionaryService;
 
 /**
  * T669 / §XL (Block AQ) — unit tests for the microthesaurus CRUD service:
@@ -34,6 +35,9 @@ class TurMicrothesaurusServiceTest {
 
     @Mock
     private TurSNSiteMicrothesaurusRepository siteSelectionRepository;
+
+    @Mock
+    private TurMicrothesaurusDictionaryService dictionaryService;
 
     @InjectMocks
     private TurMicrothesaurusService service;

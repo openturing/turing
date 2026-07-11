@@ -115,7 +115,6 @@
 > reconstructed nstein TME / OpenText SN authority-file format (`BT/NT/RT/U/UF`
 > relations + `variations`) is the import + AI-generation contract.
 
-- 📋 **T671** (deps: T668, T670) **Recognition dictionary + matcher** — compile the selected microthesauri (∩ locale) into a cached, normalised (case/accent per variation) Aho-Corasick automaton resolving surface forms (label + `USE`/`USED_FOR`) → canonical term; evicted on KB/term/selection change. → §XL.4
 - 📋 **T672** (deps: T671) **Index-time expansion enricher** — `TurSNMicrothesaurusIndexer.enrich(site, locale, attributes)` wired into `TurSNProcessQueue.index` after the T472/T501 enrichers; provisions multi-valued TEXT `microthesaurus_terms` (+ `_str` concept facet), top-down ancestor expansion, low `qf` boost; defensive (never blocks indexing) + index-time IT. → §XL.5
 - 📋 **T673** (deps: T668) **XML importer + reconstructed contract** — author the nstein TME / OpenText SN authority-file XSD/DTD as the formal contract (shallow clone — the old importer is unrecoverable), then import `authorityFile` → domain (`BT/NT` → `parentTermId`, `RT/U/UF` → relations, `variations` → surface forms; reciprocal-pair + self-relation dedupe). → §XL.6
 - 📋 **T674** (deps: T668, T673) **Pre-populated EDUCATION knowledge base** — AI-generated microthesaurus hierarchies for the priority **education** domain (pt/en/it) shipped as an importable seed bundle (the T373/T655 seed-ZIP precedent, not baked into startup) + a library browse area. → §XL.7

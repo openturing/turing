@@ -37,6 +37,7 @@ import com.viglet.turing.persistence.repository.kb.TurMicrothesaurusRepository;
 import com.viglet.turing.persistence.repository.kb.TurSNSiteMicrothesaurusConfigRepository;
 import com.viglet.turing.persistence.repository.kb.TurSNSiteMicrothesaurusRepository;
 import com.viglet.turing.sn.field.TurSNFieldProvisioner;
+import com.viglet.turing.sn.kb.TurMicrothesaurusDictionaryService;
 
 /**
  * T670 / §XL (Block AQ) — per-site microthesaurus <em>selection</em> and
@@ -62,15 +63,18 @@ public class TurSNSiteMicrothesaurusService {
     private final TurSNSiteMicrothesaurusConfigRepository configRepository;
     private final TurMicrothesaurusRepository microthesaurusRepository;
     private final TurSNFieldProvisioner fieldProvisioner;
+    private final TurMicrothesaurusDictionaryService dictionaryService;
 
     public TurSNSiteMicrothesaurusService(TurSNSiteMicrothesaurusRepository selectionRepository,
             TurSNSiteMicrothesaurusConfigRepository configRepository,
             TurMicrothesaurusRepository microthesaurusRepository,
-            TurSNFieldProvisioner fieldProvisioner) {
+            TurSNFieldProvisioner fieldProvisioner,
+            TurMicrothesaurusDictionaryService dictionaryService) {
         this.selectionRepository = selectionRepository;
         this.configRepository = configRepository;
         this.microthesaurusRepository = microthesaurusRepository;
         this.fieldProvisioner = fieldProvisioner;
+        this.dictionaryService = dictionaryService;
     }
 
     // ---- selection --------------------------------------------------------
@@ -96,14 +100,18 @@ public class TurSNSiteMicrothesaurusService {
         selection.setTurSNSite(turSNSite);
         selection.setMicrothesaurusId(microthesaurus.getId());
         selection.setEnabled(dto.enabled());
-        return toDto(selectionRepository.save(selection));
+        TurSNSiteMicrothesaurusDto saved = toDto(selectionRepository.save(selection));
+        dictionaryService.evictAll();
+        return saved;
     }
 
     @Transactional
     public Optional<TurSNSiteMicrothesaurusDto> setSelectionEnabled(String id, boolean enabled) {
         return selectionRepository.findById(id).map(selection -> {
             selection.setEnabled(enabled);
-            return toDto(selectionRepository.save(selection));
+            TurSNSiteMicrothesaurusDto saved = toDto(selectionRepository.save(selection));
+            dictionaryService.evictAll();
+            return saved;
         });
     }
 
@@ -113,6 +121,7 @@ public class TurSNSiteMicrothesaurusService {
             return false;
         }
         selectionRepository.deleteById(id);
+        dictionaryService.evictAll();
         return true;
     }
 
@@ -150,6 +159,7 @@ public class TurSNSiteMicrothesaurusService {
         if (saved.isEnabled()) {
             provisionField(turSNSite, saved.getFieldName());
         }
+        dictionaryService.evictAll();
         return toConfigDto(saved);
     }
 
