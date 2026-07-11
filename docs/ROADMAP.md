@@ -115,7 +115,6 @@
 > reconstructed nstein TME / OpenText SN authority-file format (`BT/NT/RT/U/UF`
 > relations + `variations`) is the import + AI-generation contract.
 
-- 📋 **T669** (deps: T668) **Console CRUD API** — REST + DTOs + validation for KB / microthesaurus / term / relation authoring (create new terms, adjust existing ones during a project). Mockito unit tests. → §XL.2
 - 📋 **T670** (deps: T668) **Per-site selection + field config** — `TurSNSiteMicrothesaurus` join (site ↔ selected microthesaurus, `enabled`) + per-site index config (field name / boost / include-synonyms) + selection API; wires `TurSNFieldProvisioner`. Opt-in: no selection = legacy indexing. → §XL.3
 - 📋 **T671** (deps: T668, T670) **Recognition dictionary + matcher** — compile the selected microthesauri (∩ locale) into a cached, normalised (case/accent per variation) Aho-Corasick automaton resolving surface forms (label + `USE`/`USED_FOR`) → canonical term; evicted on KB/term/selection change. → §XL.4
 - 📋 **T672** (deps: T671) **Index-time expansion enricher** — `TurSNMicrothesaurusIndexer.enrich(site, locale, attributes)` wired into `TurSNProcessQueue.index` after the T472/T501 enrichers; provisions multi-valued TEXT `microthesaurus_terms` (+ `_str` concept facet), top-down ancestor expansion, low `qf` boost; defensive (never blocks indexing) + index-time IT. → §XL.5

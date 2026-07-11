@@ -2491,11 +2491,7 @@ rebuild it natively, keeping all cost at index time.
 > **XL.1 (domain model, T668) shipped** — see CHANGELOG Block AQ and
 > `docs/adr/0003-knowledge-base-microthesaurus.md`.
 
-### XL.2 CRUD (T669)
-
-Console REST + DTOs so customers create new terms and adjust existing ones during
-a project. Writes go through a plain `Tur*Repository extends JpaRepository<_,String>`
-(a `*Domain` record is added later only if a read proves hot/cached/cross-aggregate).
+> **XL.2 (console CRUD, T669) shipped** — see CHANGELOG Block AQ.
 
 ### XL.3 Per-site selection (T670)
 
