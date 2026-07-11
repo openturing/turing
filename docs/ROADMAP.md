@@ -83,7 +83,7 @@
 > OpenAI-compatible server or in-process ONNX). All opt-in; empty/legacy config =
 > today's behavior. Design in [IMPROVEMENTS.md](IMPROVEMENTS.md) §XLII.
 
-- 📋 **T691** (deps: T687) **In-process DJL/ONNX Whisper backend** — air-gapped `LOCAL_ONNX` strategy with no sidecar; mirrors the T656 local embedding-model pattern (resilient download + persistent cache + DJL runtime) with a tiny/base/small model-size picker. → §XLII.5
+- 💭 **T694** (deps: T691) **In-process Whisper ONNX inference runtime** — fill the `LOCAL_ONNX` scaffold (T691) with real in-process inference: resilient Whisper model acquisition via `TurOnnxModelDownloader` (keyed by the tiny/base/small size), an ffmpeg→16 kHz-mono-PCM front-end (reuse `TurFfmpegAudioChunker`'s shell-out), log-mel features, and the encoder/decoder decode loop — either raw `ai.onnxruntime` + `HuggingFaceTokenizer` (zero new deps, hand-rolled DSP, mirrors the T656 embedding path) or a DJL Whisper translator + `ai.djl.audio` (heavier deps). Deferred deliberately so the platform doesn't prematurely commit to a fragile Whisper dependency (the T193 Jlama discipline). → §XLII.5
 - 💭 **T692** (deps: T689) **Async transcription jobs** — take long audio off the HTTP request thread: submit → SSE/poll status → result, with a bounded worker pool + back-pressure (reuses the workspace/SSE-bus patterns). The scale lever for big recordings. → §XLII.6
 - 💭 **T693** (deps: T689) **Wire the AUDIO slot / voice + per-backend metrics** — route the T64 AUDIO slot and F.5 voice callers through the chunked path; per-backend cost/latency metrics (T88) and a confidence fallback (local → cloud on low-confidence). → §XLII.7
 

@@ -2281,14 +2281,32 @@ real-world audio:
 The block closes all three, keeping the seam and today's behavior intact when the
 new config is empty (legacy = byte-identical).
 
-### XLII.5 In-process DJL/ONNX Whisper backend (T691)
+### XLII.5 In-process Whisper ONNX inference runtime (T694, 💭)
 
-For true air-gap / no-sidecar installs: a `LOCAL_ONNX` strategy that runs Whisper
-inside the JVM via DJL/ONNX, mirroring the T656 local **embedding** model pattern
-(resilient model download with retry/backoff, persistent cache volume, integrity
-check) with a tiny/base/small size picker trading accuracy for RAM/latency. No
-external service, fully offline after the one-time model fetch — at the cost of
-JVM footprint and single-node scaling.
+The `LOCAL_ONNX` **seam** shipped in T691 (config + model-size contract +
+privacy-safe slot ownership + honest fail-soft), but the in-process inference
+runtime is deliberately deferred — the T193 Jlama discipline: don't commit the
+platform to a fragile Whisper dependency until the engine choice is settled.
+
+T694 fills the scaffold with real inference: resilient Whisper model acquisition
+via `TurOnnxModelDownloader` (keyed by the tiny/base/small size → HF repo id
+already resolved by `TurWhisperModelSize`), an ffmpeg→16 kHz-mono-PCM front-end
+(reuse `TurFfmpegAudioChunker`'s existing shell-out, emitting WAV/PCM instead of
+MP3), log-mel feature extraction, and the encoder/decoder autoregressive decode
+loop. Two implementation paths, both requiring either new deps or substantial
+new code — neither drop-in with what `spring-ai-transformers` transitively puts
+on the classpath today (DJL 0.32.0 + ONNX Runtime 1.20.0 + HF tokenizers 0.32.0,
+but **no** Whisper model, translator, audio decoder, or DJL onnxruntime engine):
+
+- **(A) raw `ai.onnxruntime` + `HuggingFaceTokenizer`** — zero new Maven deps,
+  hand-rolled mel front-end + decode loop; mirrors how the T656 embedding path
+  already uses raw ONNX Runtime + a DJL tokenizer under Spring AI's
+  `TransformersEmbeddingModel`.
+- **(B) DJL high-level (`Criteria`/`Predictor`) + a Whisper translator +
+  `ai.djl.audio`** — heavier deps (javacv/ffmpeg natives), less hand code.
+
+No external service, fully offline after the one-time model fetch — at the cost
+of JVM footprint and single-node scaling.
 
 ### XLII.6 Async transcription jobs (T692, 💭)
 
