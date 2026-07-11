@@ -51,6 +51,23 @@ number from a block's header range or a `git log` scan — that mis-numbers task
 and collides with already-shipped ones (it happened: Block N shipped T337–T341
 _inside_ the Block J band).
 
+**`docs/last-task.md` is a terse INDEX, not a memory.** It holds the counter, the
+next **block letter**, the structural notes, and a **one-line-per-task log** —
+nothing more. The header also reserves the next block letter (e.g. `AQ`): the
+block letter has the same non-contiguity hazard as the T-number, and because the
+roadmap is periodically pruned of fully-shipped blocks, **`CHANGELOG.md` (not
+`ROADMAP.md`) is authoritative for the real maximum block** — grep it to confirm,
+then bump the letter when you create a block.
+
+- **A log entry is exactly ONE line**, of the form
+  `- **T<n> SHIPPED** (Block X §Y — short title) — YYYY-MM-DD.` (truncate right at
+  the date). The full implementation story — files, gotchas, test counts — goes in
+  the **commit message** and the **`CHANGELOG.md` one-liner**, *never* here.
+- **Do not turn a log entry into an implementation report.** Multi-sentence
+  paragraphs with gotchas/decisions are the anti-pattern this file exists to avoid
+  (it ballooned to ~105 KB once before being compacted back to an index). A
+  genuinely reusable gotcha belongs in auto-memory / `agents.md`, not here.
+
 **The cross-file update rules — follow these every time:**
 
 1. **When a task ships:** move its one-liner from `ROADMAP.md` → `CHANGELOG.md`
