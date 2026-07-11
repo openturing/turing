@@ -2281,32 +2281,6 @@ real-world audio:
 The block closes all three, keeping the seam and today's behavior intact when the
 new config is empty (legacy = byte-identical).
 
-### XLII.1 Config namespace + provider factory (T687)
-
-Introduce `turing.transcription.*` (`TurTranscriptionProperties`) and a
-`TurTranscriptionProviderFactory` that resolves the active backend from a strategy
-enum — `OPENAI | OPENAI_COMPATIBLE | LOCAL_ONNX | NONE` — instead of only a
-`@Primary` override. Transcription gets its **own** model / `baseUrl` / apiKey /
-per-request limit, decoupled from the default `TurLLMInstance` but falling back to
-it when unset (back-compat). This is the backbone: every later task selects and
-sizes itself from this config. The 25 MiB constant currently in
-`TurOpenAiTranscriptionProvider` becomes a configurable per-provider
-`maxUploadBytes` (OpenAI defaults to 26,214,400; a local server can be larger).
-
-**Where it is configured (UX).** Transcription is **global**, not per-agent — it is
-transversal to persona-from-audio, the T64 AUDIO slot, and F.5 voice, so it is a
-single per-install choice like storage / email / reranker, and belongs on the
-**Global Settings** bento page (`/bento/settings`) under the **Generative AI**
-block — *not* on any AI-agent settings surface. It is a new **Transcription
-(Speech-to-Text)** section carried on `TurGlobalSettingsBean` /
-`TurGlobalSettingsAPI`, modeled almost 1:1 on `RagRerankSection`: a backend
-dropdown (`OPENAI | OPENAI_COMPATIBLE | LOCAL_ONNX | NONE`) with fields that appear
-conditionally per strategy (endpoint URL, model, a **write-only** API key with a
-`...ApiKeySet` indicator, upload/chunk limit, and a tiny/base/small size picker +
-ffmpeg/model-cache status for `LOCAL_ONNX`). As with storage (`STORAGE_TYPE`) the
-same settings are also accepted as `turing.transcription.*` env/props so headless /
-Viglet Cloud deploys can pin the backend per container without touching the UI.
-
 ### XLII.2 Chunking seam + ffmpeg impl (T688)
 
 A provider-agnostic `TurAudioChunker` seam with an ffmpeg-backed default impl:

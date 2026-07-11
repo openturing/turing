@@ -8,6 +8,7 @@ import { PiiSlotSection } from "@/app/console/system/sections/pii-slot.section";
 import { PythonSettingsSection } from "@/app/console/system/sections/python-settings.section";
 import { RagRerankSection } from "@/app/console/system/sections/rag-rerank.section";
 import { RagSettingsSection } from "@/app/console/system/sections/rag-settings.section";
+import { TranscriptionSection } from "@/app/console/system/sections/transcription.section";
 import { UrlSigningSecretSection } from "@/app/console/system/sections/url-signing-secret.section";
 import { useGlobalSettingsForm } from "@/app/console/system/use-global-settings-form";
 import { IconAdjustments, IconCode, IconSettings, IconSparkles, type Icon as TablerIcon } from "@tabler/icons-react";
@@ -150,6 +151,7 @@ export default function BentoGlobalSettingsPage() {
             <LlmSettingsSection state={state} />
             <RagSettingsSection state={state} />
             <RagRerankSection state={state} />
+            <TranscriptionSection state={state} />
           </div>
 
           <div

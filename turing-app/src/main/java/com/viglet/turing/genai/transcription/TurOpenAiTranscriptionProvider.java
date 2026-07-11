@@ -29,9 +29,16 @@ import lombok.extern.slf4j.Slf4j;
  * Default {@link TurTranscriptionProvider}: a direct multipart POST to an
  * OpenAI-compatible {@code {baseUrl}/audio/transcriptions} endpoint (Spring AI
  * 2.0.0-M2 ships no transcription model, so this is a provider-neutral REST
- * call). Credentials and base URL come from the configured default
- * {@code TurLLMInstance}; air-gapped installs override this bean with a local
- * STT ({@code @Primary}).
+ * call). Serves the {@link TurTranscriptionProviderType#OPENAI} strategy.
+ *
+ * <p>T687 / §XLII.1 — connection details now come from the resolved
+ * {@link TurTranscriptionConfig} (Global Settings / {@code turing.transcription.*}):
+ * a dedicated {@code endpoint} / {@code model} / {@code apiKey} decoupled from
+ * the default {@code TurLLMInstance}. Any of those left blank <b>falls back</b>
+ * to the default LLM instance, so a legacy install with no transcription config
+ * behaves exactly as before. The 25 MiB constant is now the configurable
+ * per-provider {@link TurTranscriptionConfig#maxUploadBytes()} (superseded by the
+ * chunking orchestrator in T689).
  *
  * @author Alexandre Oliveira
  * @since 2026.3.4
@@ -43,32 +50,31 @@ public class TurOpenAiTranscriptionProvider implements TurTranscriptionProvider 
     private static final String DEFAULT_MODEL = "whisper-1";
     private static final String TRANSCRIPTIONS_PATH = "/audio/transcriptions";
     private static final String DEFAULT_BASE_URL = "https://api.openai.com/v1";
-
-    /**
-     * Hard upload limit of the OpenAI transcription endpoint: 25 MiB
-     * (26,214,400 bytes). Sending more returns a raw {@code 413 Payload Too
-     * Large}, so we fail fast with an actionable message instead of shipping the
-     * whole blob over the wire. A local/air-gapped STT bean overriding this
-     * provider ({@code @Primary}) has its own limits and is unaffected.
-     */
-    private static final long MAX_AUDIO_BYTES = 26_214_400L;
     private static final double BYTES_PER_MB = 1024.0 * 1024.0;
 
     private final TurGlobalSettingsService globalSettingsService;
     private final TurLLMInstanceRepository llmInstanceRepository;
     private final TurSecretCryptoService secretCryptoService;
+    private final TurTranscriptionConfigResolver configResolver;
 
     public TurOpenAiTranscriptionProvider(TurGlobalSettingsService globalSettingsService,
             TurLLMInstanceRepository llmInstanceRepository,
-            TurSecretCryptoService secretCryptoService) {
+            TurSecretCryptoService secretCryptoService,
+            TurTranscriptionConfigResolver configResolver) {
         this.globalSettingsService = globalSettingsService;
         this.llmInstanceRepository = llmInstanceRepository;
         this.secretCryptoService = secretCryptoService;
+        this.configResolver = configResolver;
+    }
+
+    @Override
+    public TurTranscriptionProviderType getType() {
+        return TurTranscriptionProviderType.OPENAI;
     }
 
     @Override
     public boolean isAvailable() {
-        return resolveInstance() != null;
+        return resolveConnection() != null;
     }
 
     @Override
@@ -76,19 +82,21 @@ public class TurOpenAiTranscriptionProvider implements TurTranscriptionProvider 
         if (audio == null || audio.length == 0) {
             return TurTranscriptionResult.fail("Empty audio.");
         }
-        if (audio.length > MAX_AUDIO_BYTES) {
+        TurTranscriptionConfig config = configResolver.resolve();
+        long maxBytes = config.maxUploadBytes();
+        if (audio.length > maxBytes) {
             return TurTranscriptionResult.fail(
-                    "Audio is %.1f MB, above the %.0f MB limit of the OpenAI transcription API. "
-                            .formatted(audio.length / BYTES_PER_MB, MAX_AUDIO_BYTES / BYTES_PER_MB)
+                    "Audio is %.1f MB, above the %.0f MB per-request limit of the transcription backend. "
+                            .formatted(audio.length / BYTES_PER_MB, maxBytes / BYTES_PER_MB)
                             + "Shorten it or re-encode at a lower bitrate / mono (e.g. 64 kbps MP3) and retry.");
         }
-        TurLLMInstance instance = resolveInstance();
-        if (instance == null) {
-            return TurTranscriptionResult.fail("No default LLM configured for transcription.");
+        Connection connection = resolveConnection();
+        if (connection == null) {
+            return TurTranscriptionResult.fail(
+                    "No transcription endpoint configured (set turing.transcription.* or a default LLM).");
         }
         try {
-            String apiKey = secretCryptoService.decrypt(instance.getApiKeyEncrypted());
-            String baseUrl = StringUtils.defaultIfBlank(instance.getUrl(), DEFAULT_BASE_URL);
+            String model = StringUtils.defaultIfBlank(config.model(), DEFAULT_MODEL);
 
             MultipartBodyBuilder body = new MultipartBodyBuilder();
             String filename = "audio." + extensionFor(mimeType);
@@ -98,17 +106,17 @@ public class TurOpenAiTranscriptionProvider implements TurTranscriptionProvider 
                     return filename;
                 }
             }).contentType(resolveMediaType(mimeType));
-            body.part("model", DEFAULT_MODEL);
+            body.part("model", model);
             body.part("response_format", "json");
             if (StringUtils.isNotBlank(languageHint)) {
                 body.part("language", languageHint.trim());
             }
 
-            RestClient client = RestClient.builder().baseUrl(baseUrl).build();
+            RestClient client = RestClient.builder().baseUrl(connection.baseUrl()).build();
             @SuppressWarnings("unchecked")
             Map<String, Object> response = client.post()
                     .uri(TRANSCRIPTIONS_PATH)
-                    .header("Authorization", "Bearer " + apiKey)
+                    .header("Authorization", "Bearer " + connection.apiKey())
                     .contentType(MediaType.MULTIPART_FORM_DATA)
                     .body(body.build())
                     .retrieve()
@@ -124,6 +132,38 @@ public class TurOpenAiTranscriptionProvider implements TurTranscriptionProvider 
             log.warn("[Transcription] failed: {}", e.getMessage());
             return TurTranscriptionResult.fail("Transcription failed: " + e.getMessage());
         }
+    }
+
+    /**
+     * Resolve the effective {@code baseUrl} + {@code apiKey}. A dedicated
+     * transcription endpoint/key (from config) is used as-is; any gap is filled
+     * from the default {@code TurLLMInstance} (back-compat). Returns {@code null}
+     * when neither a full dedicated config nor a usable default LLM is available.
+     */
+    private Connection resolveConnection() {
+        TurTranscriptionConfig config = configResolver.resolve();
+        String baseUrl = config.endpoint();
+        String apiKey = config.apiKey();
+
+        if (StringUtils.isBlank(baseUrl) || StringUtils.isBlank(apiKey)) {
+            TurLLMInstance instance = resolveInstance();
+            if (instance != null) {
+                if (StringUtils.isBlank(baseUrl)) {
+                    baseUrl = StringUtils.defaultIfBlank(instance.getUrl(), DEFAULT_BASE_URL);
+                }
+                if (StringUtils.isBlank(apiKey)) {
+                    apiKey = secretCryptoService.decrypt(instance.getApiKeyEncrypted());
+                }
+            }
+        }
+        // A dedicated endpoint with its own key needs no default base URL.
+        if (StringUtils.isNotBlank(baseUrl) && StringUtils.isBlank(apiKey)) {
+            return null;
+        }
+        if (StringUtils.isBlank(baseUrl)) {
+            baseUrl = DEFAULT_BASE_URL;
+        }
+        return StringUtils.isBlank(apiKey) ? null : new Connection(baseUrl, apiKey);
     }
 
     private TurLLMInstance resolveInstance() {
@@ -158,5 +198,9 @@ public class TurOpenAiTranscriptionProvider implements TurTranscriptionProvider 
             case "audio/flac" -> "flac";
             default -> "mp3";
         };
+    }
+
+    /** Resolved endpoint + credential for a single transcription call. */
+    private record Connection(String baseUrl, String apiKey) {
     }
 }

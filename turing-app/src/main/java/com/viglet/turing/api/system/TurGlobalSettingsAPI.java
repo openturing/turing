@@ -80,6 +80,14 @@ public class TurGlobalSettingsAPI {
                 .ragSnRerankApiKey("")
                 .ragSnRerankApiKeySet(turGlobalSettingsService.isRagSnRerankApiKeySet())
                 .ragSnRerankCacheEnabled(turGlobalSettingsService.isRagSnRerankCacheEnabled())
+                .transcriptionStrategy(turGlobalSettingsService.getTranscriptionStrategy())
+                .transcriptionEndpoint(turGlobalSettingsService.getTranscriptionEndpoint())
+                .transcriptionModel(turGlobalSettingsService.getTranscriptionModel())
+                .transcriptionMaxUploadBytes(turGlobalSettingsService.getTranscriptionMaxUploadBytes())
+                .transcriptionOnnxModelSize(turGlobalSettingsService.getTranscriptionOnnxModelSize())
+                // write-only secret: never echo the key, only its set/not-set status
+                .transcriptionApiKey("")
+                .transcriptionApiKeySet(turGlobalSettingsService.isTranscriptionApiKeySet())
                 .build();
     }
 
@@ -166,6 +174,20 @@ public class TurGlobalSettingsAPI {
                 .ragSnRerankApiKeySet(updateRerankApiKeyIfPresent(globalSettings.getRagSnRerankApiKey()))
                 .ragSnRerankCacheEnabled(turGlobalSettingsService
                         .updateRagSnRerankCacheEnabled(globalSettings.isRagSnRerankCacheEnabled()))
+                .transcriptionStrategy(turGlobalSettingsService
+                        .updateTranscriptionStrategy(globalSettings.getTranscriptionStrategy()))
+                .transcriptionEndpoint(turGlobalSettingsService
+                        .updateTranscriptionEndpoint(globalSettings.getTranscriptionEndpoint()))
+                .transcriptionModel(turGlobalSettingsService
+                        .updateTranscriptionModel(globalSettings.getTranscriptionModel()))
+                .transcriptionMaxUploadBytes(turGlobalSettingsService
+                        .updateTranscriptionMaxUploadBytes(globalSettings.getTranscriptionMaxUploadBytes()))
+                .transcriptionOnnxModelSize(turGlobalSettingsService
+                        .updateTranscriptionOnnxModelSize(globalSettings.getTranscriptionOnnxModelSize()))
+                // Write-only secret — persisted only when a non-blank value
+                // arrives, blank leaves the stored key untouched, never echoed
+                .transcriptionApiKey("")
+                .transcriptionApiKeySet(updateTranscriptionApiKeyIfPresent(globalSettings.getTranscriptionApiKey()))
                 .build();
     }
 
@@ -179,6 +201,18 @@ public class TurGlobalSettingsAPI {
             return turGlobalSettingsService.isRagSnRerankApiKeySet();
         }
         return turGlobalSettingsService.updateRagSnRerankApiKey(apiKey);
+    }
+
+    /**
+     * T687 — persists the transcription API key only when the client sent a
+     * non-blank value (write-only field); a blank submit preserves the existing
+     * key. Returns the resulting configured status.
+     */
+    private boolean updateTranscriptionApiKeyIfPresent(String apiKey) {
+        if (apiKey == null || apiKey.isBlank()) {
+            return turGlobalSettingsService.isTranscriptionApiKeySet();
+        }
+        return turGlobalSettingsService.updateTranscriptionApiKey(apiKey);
     }
 
     /**

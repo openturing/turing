@@ -185,6 +185,30 @@ public class TurConfigVarOnStartup {
 	 */
 	public static final String RAG_SN_GROUNDEDNESS_CHECK_ENABLED =
 			"GLOBAL_RAG_SN_GROUNDEDNESS_CHECK_ENABLED";
+	/**
+	 * T687 / §XLII.1 — active speech-to-text backend: {@code OPENAI} (legacy
+	 * default, piggybacks the default LLM instance) | {@code OPENAI_COMPATIBLE}
+	 * (dedicated self-hosted endpoint) | {@code LOCAL_ONNX} (in-process) |
+	 * {@code NONE} (disabled). Unknown values fall back to {@code OPENAI}.
+	 */
+	public static final String TRANSCRIPTION_STRATEGY = "GLOBAL_TRANSCRIPTION_STRATEGY";
+	public static final String TRANSCRIPTION_STRATEGY_DEFAULT_VALUE = "OPENAI";
+	/** T687 — dedicated OpenAI-compatible {@code /audio/transcriptions} base URL; blank falls back to the default LLM instance URL. */
+	public static final String TRANSCRIPTION_ENDPOINT = "GLOBAL_TRANSCRIPTION_ENDPOINT";
+	/** T687 — transcription model name; blank uses the backend default (e.g. {@code whisper-1}). */
+	public static final String TRANSCRIPTION_MODEL = "GLOBAL_TRANSCRIPTION_MODEL";
+	/** T687 — transcription API key, stored encrypted; blank falls back to the default LLM instance key. */
+	public static final String TRANSCRIPTION_API_KEY = "GLOBAL_TRANSCRIPTION_API_KEY";
+	/**
+	 * T687 — per-request upload limit in bytes for the active backend. Audio
+	 * above this is chunked (T688/T689). OpenAI's endpoint hard-caps at 25 MiB
+	 * (26,214,400); a local server can be much larger.
+	 */
+	public static final String TRANSCRIPTION_MAX_UPLOAD_BYTES = "GLOBAL_TRANSCRIPTION_MAX_UPLOAD_BYTES";
+	public static final String TRANSCRIPTION_MAX_UPLOAD_BYTES_DEFAULT_VALUE = "26214400";
+	/** T687 — LOCAL_ONNX Whisper model size: {@code tiny} | {@code base} | {@code small} (consumed by T691). */
+	public static final String TRANSCRIPTION_ONNX_MODEL_SIZE = "GLOBAL_TRANSCRIPTION_ONNX_MODEL_SIZE";
+	public static final String TRANSCRIPTION_ONNX_MODEL_SIZE_DEFAULT_VALUE = "base";
 	public static final String SYSTEM_PATH = "/system";
 	public static final String GLOBAL_PATH = "/system/global";
 	public static final String DECIMAL_SEPARATOR_DEFAULT_VALUE = "DOT";
@@ -252,6 +276,14 @@ public class TurConfigVarOnStartup {
 		ensureConfigVar(RAG_SN_RERANK_CACHE_ENABLED, GLOBAL_PATH, FALSE_VALUE);
 		ensureConfigVar(RAG_SN_FOLLOWUPS_ENABLED, GLOBAL_PATH, FALSE_VALUE);
 		ensureConfigVar(RAG_SN_GROUNDEDNESS_CHECK_ENABLED, GLOBAL_PATH, FALSE_VALUE);
+		ensureConfigVar(TRANSCRIPTION_STRATEGY, GLOBAL_PATH, TRANSCRIPTION_STRATEGY_DEFAULT_VALUE);
+		ensureConfigVar(TRANSCRIPTION_ENDPOINT, GLOBAL_PATH, "");
+		ensureConfigVar(TRANSCRIPTION_MODEL, GLOBAL_PATH, "");
+		ensureConfigVar(TRANSCRIPTION_API_KEY, GLOBAL_PATH, "");
+		ensureConfigVar(TRANSCRIPTION_MAX_UPLOAD_BYTES, GLOBAL_PATH,
+				TRANSCRIPTION_MAX_UPLOAD_BYTES_DEFAULT_VALUE);
+		ensureConfigVar(TRANSCRIPTION_ONNX_MODEL_SIZE, GLOBAL_PATH,
+				TRANSCRIPTION_ONNX_MODEL_SIZE_DEFAULT_VALUE);
 	}
 
 	private void ensureConfigVar(String id, String path, String value) {

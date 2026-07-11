@@ -2,6 +2,7 @@ package com.viglet.turing.api.system;
 
 import com.viglet.turing.genai.rag.rerank.TurRagRerankStrategyType;
 import com.viglet.turing.genai.tool.TurCodeInterpreterExecutionMode;
+import com.viglet.turing.genai.transcription.TurTranscriptionProviderType;
 import com.viglet.turing.system.TurEmailProviderType;
 import com.viglet.turing.system.TurGlobalDecimalSeparator;
 
@@ -143,4 +144,29 @@ public class TurGlobalSettingsBean {
      * @since 2026.3.1
      */
     private boolean ragSnRerankCacheEnabled;
+    /**
+     * T687 — active speech-to-text backend: {@code OPENAI} (legacy default) |
+     * {@code OPENAI_COMPATIBLE} | {@code LOCAL_ONNX} | {@code NONE}.
+     *
+     * @since 2026.3.4
+     */
+    private TurTranscriptionProviderType transcriptionStrategy;
+    /** T687 — dedicated OpenAI-compatible {@code /audio/transcriptions} endpoint (OPENAI_COMPATIBLE). */
+    private String transcriptionEndpoint;
+    /** T687 — transcription model name; blank uses the backend default (e.g. {@code whisper-1}). */
+    private String transcriptionModel;
+    /** T687 — per-request upload limit in bytes; audio above this is chunked (T688/T689). */
+    private long transcriptionMaxUploadBytes;
+    /** T687 — LOCAL_ONNX Whisper size: {@code tiny}/{@code base}/{@code small} (T691). */
+    private String transcriptionOnnxModelSize;
+    /**
+     * T687 — transcription API key, <b>write-only</b>: accepted on update, never
+     * echoed back on read (always blank in GET). Blank on update leaves the
+     * stored key unchanged.
+     *
+     * @since 2026.3.4
+     */
+    private String transcriptionApiKey;
+    /** T687 — read-only status: whether a transcription API key is configured. */
+    private boolean transcriptionApiKeySet;
 }

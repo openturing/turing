@@ -86,6 +86,15 @@ export interface BentoEntityShellProps<TEntity extends BentoEntityLike> {
    * actions; identity renders as plain text. Pair with a `notice`.
    */
   readOnly?: boolean;
+  /**
+   * The page has no submittable body form — identity auto-saves on blur and
+   * every other action (sub-lists, generate, import) has its own button, so
+   * the hero "Save changes" button would be permanently inert. When true it
+   * is hidden on existing entities (Cancel/back stays); the new-entity Save
+   * still shows because it is what creates the entity. Use for pages like the
+   * Thesaurus KB whose only editable fields live in the hero.
+   */
+  autosaveOnly?: boolean;
   /** Small chip rendered in the hero trailing slot (e.g. a GLOBAL badge). */
   badge?: ReactNode;
   /** Banner rendered directly under the hero (e.g. a read-only notice). */
@@ -136,6 +145,7 @@ export function BentoEntityShell<TEntity extends BentoEntityLike>({
   hasStatus = false,
   hideIcon = false,
   readOnly = false,
+  autosaveOnly = false,
   badge,
   notice,
   onUpdate,
@@ -218,6 +228,10 @@ export function BentoEntityShell<TEntity extends BentoEntityLike>({
    * nothing pending: Save stays disabled until the form body reports dirty.
    */
   const showSaveButtons = !readOnly;
+  // On an autosave-only page the existing-entity Save button has nothing to
+  // submit (identity auto-saves, sections self-commit) — hide it so it doesn't
+  // sit there permanently disabled. New mode still needs it: it creates.
+  const showSaveSubmit = !(autosaveOnly && !isNew);
   const titleMissing = !staged.title.trim();
   const nothingToSave = !isNew && !formState.isDirty;
   const saveDisabled = titleMissing || nothingToSave;
@@ -267,6 +281,10 @@ export function BentoEntityShell<TEntity extends BentoEntityLike>({
             // Open in edit mode when creating so the user immediately sees a
             // focused input — a clear cue this is the first field to fill.
             autoFocus={isNew}
+            // In new mode identity stages locally (no mutation), so commit
+            // per keystroke — otherwise a user who types the name then clicks
+            // the still-disabled Save never commits and Save looks stuck.
+            commitOnChange={isNew}
             readOnly={readOnly}
           />
         }
@@ -278,6 +296,7 @@ export function BentoEntityShell<TEntity extends BentoEntityLike>({
             placeholder={t("forms.common.description")}
             className="max-w-2xl text-sm text-muted-foreground"
             ariaLabel={t("forms.common.description")}
+            commitOnChange={isNew}
             readOnly={readOnly}
           />
         }
@@ -292,10 +311,12 @@ export function BentoEntityShell<TEntity extends BentoEntityLike>({
                * Bind to the form via the `form="…"` attribute.
                */
               <div className="bento-fade-out flex shrink-0 items-center gap-2">
-                <GradientButton type="submit" form={formId} size="sm" loading={formState.isSubmitting} disabled={saveDisabled}>
-                  <IconDeviceFloppy className="size-4" />
-                  {t("forms.formActions.saveChanges")}
-                </GradientButton>
+                {showSaveSubmit && (
+                  <GradientButton type="submit" form={formId} size="sm" loading={formState.isSubmitting} disabled={saveDisabled}>
+                    <IconDeviceFloppy className="size-4" />
+                    {t("forms.formActions.saveChanges")}
+                  </GradientButton>
+                )}
                 <GradientButton type="button" size="sm" variant="outline" onClick={() => navigate(listRoute)}>
                   <IconX className="size-4" />
                   {t("forms.formActions.cancel")}

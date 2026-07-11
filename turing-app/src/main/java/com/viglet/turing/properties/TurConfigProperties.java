@@ -37,6 +37,7 @@ public class TurConfigProperties {
 	private TurEvalsProperty evals = new TurEvalsProperty();
 	private TurDistillationProperty distillation = new TurDistillationProperty();
 	private TurOcrProperty ocr = new TurOcrProperty();
+	private TurTranscriptionProperty transcription = new TurTranscriptionProperty();
 
 	/**
 	 * T642 / §XXXVII.4 — loudly flag the permissive mode at startup so an operator

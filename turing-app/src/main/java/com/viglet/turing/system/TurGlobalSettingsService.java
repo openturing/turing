@@ -6,6 +6,7 @@ import org.springframework.stereotype.Service;
 import com.viglet.core.settings.VigletConfigVarService;
 import com.viglet.turing.genai.rag.rerank.TurRagRerankStrategyType;
 import com.viglet.turing.genai.tool.TurCodeInterpreterExecutionMode;
+import com.viglet.turing.genai.transcription.TurTranscriptionProviderType;
 import com.viglet.turing.onstartup.system.TurConfigVarOnStartup;
 import com.viglet.turing.persistence.repository.system.TurConfigVarRepository;
 import com.viglet.turing.system.security.TurSecretCryptoService;
@@ -538,6 +539,108 @@ public class TurGlobalSettingsService {
             return false;
         }
         configVars.setRaw(TurConfigVarOnStartup.RAG_SN_RERANK_API_KEY,
+                turSecretCryptoService.encrypt(apiKey.trim()));
+        return true;
+    }
+
+    // ---------------------------------------------------------------------
+    // T687 / §XLII.1 — Transcription (speech-to-text) backend selection.
+    // Config-var backed (UI-editable); a non-blank turing.transcription.* env
+    // prop overrides these at resolution time (TurTranscriptionConfigResolver).
+    // ---------------------------------------------------------------------
+
+    /**
+     * T687 — active transcription backend. Unknown/blank values fall back to
+     * {@link TurTranscriptionProviderType#OPENAI} (the legacy default), so a
+     * corrupt row can never break transcription.
+     */
+    public TurTranscriptionProviderType getTranscriptionStrategy() {
+        return configVars.find(TurConfigVarOnStartup.TRANSCRIPTION_STRATEGY)
+                .map(TurTranscriptionProviderType::fromValue)
+                .orElse(TurTranscriptionProviderType.OPENAI);
+    }
+
+    public TurTranscriptionProviderType updateTranscriptionStrategy(TurTranscriptionProviderType strategy) {
+        TurTranscriptionProviderType value =
+                strategy == null ? TurTranscriptionProviderType.OPENAI : strategy;
+        configVars.setRaw(TurConfigVarOnStartup.TRANSCRIPTION_STRATEGY, value.name());
+        return value;
+    }
+
+    /** T687 — dedicated OpenAI-compatible endpoint; blank falls back to the default LLM instance URL. */
+    public String getTranscriptionEndpoint() {
+        return configVars.getString(TurConfigVarOnStartup.TRANSCRIPTION_ENDPOINT, "");
+    }
+
+    public String updateTranscriptionEndpoint(String endpoint) {
+        return configVars.setString(TurConfigVarOnStartup.TRANSCRIPTION_ENDPOINT, endpoint);
+    }
+
+    /** T687 — transcription model name; blank uses the backend default (e.g. {@code whisper-1}). */
+    public String getTranscriptionModel() {
+        return configVars.getString(TurConfigVarOnStartup.TRANSCRIPTION_MODEL, "");
+    }
+
+    public String updateTranscriptionModel(String model) {
+        return configVars.setString(TurConfigVarOnStartup.TRANSCRIPTION_MODEL, model);
+    }
+
+    /**
+     * T687 — per-request upload limit in bytes for the active backend. Audio
+     * above this is chunked (T688/T689). Defaults to 25 MiB (26,214,400); a
+     * non-positive/blank value falls back to the default.
+     */
+    public long getTranscriptionMaxUploadBytes() {
+        long value = configVars.getLong(TurConfigVarOnStartup.TRANSCRIPTION_MAX_UPLOAD_BYTES,
+                Long.parseLong(TurConfigVarOnStartup.TRANSCRIPTION_MAX_UPLOAD_BYTES_DEFAULT_VALUE));
+        return value > 0 ? value
+                : Long.parseLong(TurConfigVarOnStartup.TRANSCRIPTION_MAX_UPLOAD_BYTES_DEFAULT_VALUE);
+    }
+
+    public long updateTranscriptionMaxUploadBytes(long maxUploadBytes) {
+        return configVars.setLong(TurConfigVarOnStartup.TRANSCRIPTION_MAX_UPLOAD_BYTES, maxUploadBytes);
+    }
+
+    /** T687 — LOCAL_ONNX Whisper model size ({@code tiny}/{@code base}/{@code small}); consumed by T691. */
+    public String getTranscriptionOnnxModelSize() {
+        return configVars.getStringNonBlank(TurConfigVarOnStartup.TRANSCRIPTION_ONNX_MODEL_SIZE,
+                TurConfigVarOnStartup.TRANSCRIPTION_ONNX_MODEL_SIZE_DEFAULT_VALUE);
+    }
+
+    public String updateTranscriptionOnnxModelSize(String size) {
+        return configVars.setString(TurConfigVarOnStartup.TRANSCRIPTION_ONNX_MODEL_SIZE, size);
+    }
+
+    /**
+     * T687 — the decrypted transcription API key, or {@code ""} when unset.
+     * Stored encrypted at rest; never echoed back to the client.
+     */
+    public String getTranscriptionApiKey() {
+        String stored = configVars.getString(TurConfigVarOnStartup.TRANSCRIPTION_API_KEY, "");
+        if (stored.isBlank()) {
+            return "";
+        }
+        String decrypted = turSecretCryptoService.decrypt(stored);
+        return decrypted == null ? "" : decrypted;
+    }
+
+    /** T687 — whether a transcription API key is configured (write-only UI status). */
+    public boolean isTranscriptionApiKeySet() {
+        return configVars.find(TurConfigVarOnStartup.TRANSCRIPTION_API_KEY)
+                .filter(v -> !v.isBlank())
+                .isPresent();
+    }
+
+    /**
+     * T687 — sets the transcription API key (encrypted at rest). A {@code null}/
+     * blank value clears it. Returns the resulting "configured" status.
+     */
+    public boolean updateTranscriptionApiKey(String apiKey) {
+        if (apiKey == null || apiKey.isBlank()) {
+            configVars.setRaw(TurConfigVarOnStartup.TRANSCRIPTION_API_KEY, "");
+            return false;
+        }
+        configVars.setRaw(TurConfigVarOnStartup.TRANSCRIPTION_API_KEY,
                 turSecretCryptoService.encrypt(apiKey.trim()));
         return true;
     }

@@ -35,4 +35,11 @@ public interface TurTranscriptionProvider {
 
     /** True when a transcription backend is configured and usable. */
     boolean isAvailable();
+
+    /**
+     * T687 / §XLII.1 — the backend type this provider serves, used by
+     * {@link TurTranscriptionProviderFactory} to route the config-selected
+     * strategy to the right implementation.
+     */
+    TurTranscriptionProviderType getType();
 }

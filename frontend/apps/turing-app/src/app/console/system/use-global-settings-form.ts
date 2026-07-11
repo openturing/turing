@@ -56,6 +56,13 @@ const DEFAULT_SETTINGS: TurGlobalSettings = {
     ragSnRerankApiKey: "",
     ragSnRerankApiKeySet: false,
     ragSnRerankCacheEnabled: false,
+    transcriptionStrategy: "OPENAI",
+    transcriptionEndpoint: "",
+    transcriptionModel: "",
+    transcriptionMaxUploadBytes: 26214400,
+    transcriptionOnnxModelSize: "base",
+    transcriptionApiKey: "",
+    transcriptionApiKeySet: false,
 };
 
 export interface DockerStatus {
