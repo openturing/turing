@@ -16,6 +16,7 @@ function renderShell(props: {
   entity: Row;
   isNew: boolean;
   readOnly?: boolean;
+  autosaveOnly?: boolean;
   badge?: React.ReactNode;
   notice?: React.ReactNode;
   child: (args: BentoEntityShellRenderArgs) => React.ReactNode;
@@ -34,6 +35,7 @@ function renderShell(props: {
         feature="LLM"
         hasStatus
         readOnly={props.readOnly}
+        autosaveOnly={props.autosaveOnly}
         badge={props.badge}
         notice={props.notice}
         onUpdate={async () => undefined}
@@ -84,6 +86,37 @@ describe("BentoEntityShell", () => {
     // Once the form reports dirty, Save enables and the eyebrow marks it unsaved.
     expect(screen.getByRole("button", { name: "forms.formActions.saveChanges" })).toBeEnabled();
     expect(screen.getByText("bento.saveBar.unsaved")).toBeInTheDocument();
+  });
+
+  it("autosaveOnly hides the inert Save on an existing entity but keeps it in new mode", () => {
+    // Existing entity: identity auto-saves and sections self-commit, so the
+    // header Save would sit permanently disabled — it must be hidden. Cancel
+    // (back to list) stays.
+    renderShell({
+      entity: { id: "1", title: "Vocab", enabled: 1 },
+      isNew: false,
+      autosaveOnly: true,
+      child: ({ onStateChange }) => (
+        <button type="button" onClick={() => onStateChange({ isDirty: true, isSubmitting: false })}>
+          make-dirty
+        </button>
+      ),
+    });
+    expect(screen.queryByRole("button", { name: "forms.formActions.saveChanges" })).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "forms.formActions.cancel" })).toBeInTheDocument();
+    // Even reporting dirty must not resurrect it — there is nothing to submit.
+    fireEvent.click(screen.getByText("make-dirty"));
+    expect(screen.queryByRole("button", { name: "forms.formActions.saveChanges" })).not.toBeInTheDocument();
+  });
+
+  it("autosaveOnly still shows the Save in new mode — it is what creates the entity", () => {
+    renderShell({
+      entity: {},
+      isNew: true,
+      autosaveOnly: true,
+      child: () => null,
+    });
+    expect(screen.getByRole("button", { name: "forms.formActions.saveChanges" })).toBeInTheDocument();
   });
 
   it("marks the title as required in new mode until one is entered", () => {

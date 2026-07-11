@@ -15,9 +15,20 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select";
+import { Button } from "@/components/ui/button";
+import { TurGlobalSettingsService } from "@/services/system/global-settings.service";
 import { IconMicrophone } from "@tabler/icons-react";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import type { GlobalSettingsFormState } from "../use-global-settings-form";
+
+const service = new TurGlobalSettingsService();
+
+interface FfmpegStatus {
+    available: boolean;
+    version: string | null;
+    error: string | null;
+}
 
 /**
  * T687 / §XLII.1 — Transcription (Speech-to-Text) backend. Global (not
@@ -35,6 +46,19 @@ export function TranscriptionSection({ state }: { state: GlobalSettingsFormState
     const { form, isLoading, settings } = state;
     const strategy = form.watch("transcriptionStrategy") ?? "OPENAI";
     const apiKeySet = settings.transcriptionApiKeySet ?? false;
+    const [ffmpegStatus, setFfmpegStatus] = useState<FfmpegStatus | null>(null);
+    const [checkingFfmpeg, setCheckingFfmpeg] = useState(false);
+
+    const onCheckFfmpeg = async () => {
+        try {
+            setCheckingFfmpeg(true);
+            setFfmpegStatus(await service.getFfmpegStatus());
+        } catch {
+            setFfmpegStatus({ available: false, version: null, error: "request failed" });
+        } finally {
+            setCheckingFfmpeg(false);
+        }
+    };
 
     return (
         <SectionCard variant="violet">
@@ -212,6 +236,43 @@ export function TranscriptionSection({ state }: { state: GlobalSettingsFormState
                             </FormItem>
                         )}
                     />
+                )}
+                {strategy !== "NONE" && (
+                    <div className="flex flex-col gap-2">
+                        <div className="flex items-center gap-3">
+                            <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                onClick={onCheckFfmpeg}
+                                disabled={checkingFfmpeg}
+                            >
+                                {checkingFfmpeg
+                                    ? t("globalSettings.transcriptionFfmpegChecking")
+                                    : t("globalSettings.transcriptionFfmpegCheck")}
+                            </Button>
+                            {ffmpegStatus && (
+                                <span
+                                    className={
+                                        ffmpegStatus.available
+                                            ? "text-sm text-emerald-600 dark:text-emerald-400"
+                                            : "text-sm text-amber-600 dark:text-amber-400"
+                                    }
+                                >
+                                    {ffmpegStatus.available
+                                        ? t("globalSettings.transcriptionFfmpegAvailable", {
+                                              version: ffmpegStatus.version ?? "",
+                                          })
+                                        : t("globalSettings.transcriptionFfmpegUnavailable", {
+                                              error: ffmpegStatus.error ?? "",
+                                          })}
+                                </span>
+                            )}
+                        </div>
+                        <p className="text-sm text-muted-foreground">
+                            {t("globalSettings.transcriptionFfmpegDesc")}
+                        </p>
+                    </div>
                 )}
             </SectionCard.Content>
         </SectionCard>

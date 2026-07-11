@@ -53,4 +53,24 @@ public class TurTranscriptionProperty {
 
     /** LOCAL_ONNX model size: {@code tiny} | {@code base} | {@code small} (T691). */
     private String onnxModelSize;
+
+    /**
+     * T688 — {@code ffmpeg} executable used to decode/re-encode/split audio that
+     * exceeds {@link #maxUploadBytes}. Defaults to {@code ffmpeg} (on PATH). Small
+     * clips never invoke it (passthrough).
+     */
+    private String ffmpegPath = "ffmpeg";
+
+    /** T688 — {@code ffprobe} executable used to probe audio duration. Defaults to {@code ffprobe}. */
+    private String ffprobePath = "ffprobe";
+
+    /**
+     * T688 — overlap in seconds carried into each chunk after the first, so the
+     * orchestrator (T689) can stitch transcripts without dropping words at cut
+     * points. Clamped ≥ 0; default 2.0s.
+     */
+    private double chunkOverlapSeconds = 2.0;
+
+    /** T688 — timeout (seconds) for a single ffmpeg/ffprobe invocation. Default 120. */
+    private int ffmpegTimeoutSeconds = 120;
 }

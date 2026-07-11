@@ -83,7 +83,6 @@
 > OpenAI-compatible server or in-process ONNX). All opt-in; empty/legacy config =
 > today's behavior. Design in [IMPROVEMENTS.md](IMPROVEMENTS.md) §XLII.
 
-- 📋 **T688** (deps: T687) **`TurAudioChunker` seam + ffmpeg impl** — probe duration and split into ≤limit segments on silence boundaries (fixed-duration + overlap fallback), re-encoding to 16 kHz mono; passthrough (no ffmpeg call) when audio ≤ limit; an "ffmpeg available?" probe like the T80 Docker probe. Byte-cutting a compressed container is unsafe, hence a real decode/split. → §XLII.2
 - 📋 **T689** (deps: T688) **Chunk-aware transcription orchestration** — transcribe segments bounded-parallel + ordered, stitch and dedupe overlap, aggregate the detected language; sits **above** `TurTranscriptionProvider` so every backend (OpenAI + local) gets large-file support; replaces the fixed 25 MiB guard with the configurable per-provider limit. → §XLII.3
 - 📋 **T690** (deps: T687) **Local OpenAI-compatible backend (faster-whisper-server)** — config-selected `OPENAI_COMPATIBLE` strategy pointing the REST provider at a self-hosted `/audio/transcriptions` server + a `viglet/cloud` sidecar container recipe + docs. The recommended local path — reuses the existing REST client, scales horizontally, GPU-capable. → §XLII.4
 - 📋 **T691** (deps: T687) **In-process DJL/ONNX Whisper backend** — air-gapped `LOCAL_ONNX` strategy with no sidecar; mirrors the T656 local embedding-model pattern (resilient download + persistent cache + DJL runtime) with a tiny/base/small model-size picker. → §XLII.5

@@ -76,6 +76,10 @@ export default function BentoThesaurusKbPage() {
         formId={BENTO_THESAURUS_KB_FORM_ID}
         feature={t("thesaurus.knowledgeBase")}
         hideIcon
+        // Name/description auto-save on blur and each section (microthesauri,
+        // generate, import) commits via its own button — so the existing-entity
+        // "Save changes" button would sit permanently disabled. Hide it there.
+        autosaveOnly
         onUpdate={
           isNew
             ? undefined

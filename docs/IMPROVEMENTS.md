@@ -2281,18 +2281,6 @@ real-world audio:
 The block closes all three, keeping the seam and today's behavior intact when the
 new config is empty (legacy = byte-identical).
 
-### XLII.2 Chunking seam + ffmpeg impl (T688)
-
-A provider-agnostic `TurAudioChunker` seam with an ffmpeg-backed default impl:
-probe the duration, then split into segments below the active limit on **silence
-boundaries** (a fixed-duration + small-overlap fallback when silence detection
-finds nothing), re-encoding each to a compact 16 kHz mono form Whisper likes.
-Byte-slicing a compressed container (mp3/m4a) corrupts it, so a real
-decode/re-encode is required — ffmpeg-as-subprocess, the same discipline as the
-T80 code-interpreter Docker path, with an "ffmpeg available?" probe surfaced to
-admin. When the audio is already ≤ limit the chunker is a passthrough and ffmpeg
-is never invoked, so small-clip installs need no ffmpeg at all.
-
 ### XLII.3 Chunk-aware orchestration (T689)
 
 Orchestration that sits **above** `TurTranscriptionProvider`: run each chunk
