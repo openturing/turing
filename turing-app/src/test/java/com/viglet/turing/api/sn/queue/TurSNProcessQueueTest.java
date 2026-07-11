@@ -69,6 +69,8 @@ class TurSNProcessQueueTest {
     @Mock
     private com.viglet.turing.sn.media.TurSNGeminiMediaIndexer turSNGeminiMediaIndexer;
     @Mock
+    private com.viglet.turing.sn.kb.TurSNMicrothesaurusIndexer turSNMicrothesaurusIndexer;
+    @Mock
     private TurSNProcessQueue self;
     @InjectMocks
     private TurSNProcessQueue processQueue;

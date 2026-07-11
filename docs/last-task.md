@@ -45,6 +45,7 @@ number" looked free but wasn't. Grepping three files (`ROADMAP.md`,
 
 ## Log (most recent first)
 
+- **T672 SHIPPED** (Block AQ §XL — index-time expansion enricher wired into TurSNProcessQueue) — 2026-07-11.
 - **T671 SHIPPED** (Block AQ §XL — recognition dictionary + Aho-Corasick matcher, cached per site/locale) — 2026-07-11.
 - **T670 SHIPPED** (Block AQ §XL — per-site microthesaurus selection + index config; wires TurSNFieldProvisioner) — 2026-07-11.
 - **T669 SHIPPED** (Block AQ §XL — Knowledge Base console CRUD API) — 2026-07-11.

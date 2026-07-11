@@ -77,6 +77,7 @@ public class TurSNProcessQueue {
     private final TurSNHybridRankingService turSNHybridRankingService;
     private final TurSNContentFitIndexer turSNContentFitIndexer;
     private final TurSNGeminiMediaIndexer turSNGeminiMediaIndexer;
+    private final com.viglet.turing.sn.kb.TurSNMicrothesaurusIndexer turSNMicrothesaurusIndexer;
     private final TurSNProcessQueue self;
 
     public TurSNProcessQueue(TurSearchEnginePluginFactory pluginFactory,
@@ -90,6 +91,7 @@ public class TurSNProcessQueue {
             TurSNHybridRankingService turSNHybridRankingService,
             TurSNContentFitIndexer turSNContentFitIndexer,
             TurSNGeminiMediaIndexer turSNGeminiMediaIndexer,
+            com.viglet.turing.sn.kb.TurSNMicrothesaurusIndexer turSNMicrothesaurusIndexer,
             @org.springframework.context.annotation.Lazy TurSNProcessQueue self) {
         this.pluginFactory = pluginFactory;
         this.turSNSiteRepository = turSNSiteRepository;
@@ -102,6 +104,7 @@ public class TurSNProcessQueue {
         this.turSNHybridRankingService = turSNHybridRankingService;
         this.turSNContentFitIndexer = turSNContentFitIndexer;
         this.turSNGeminiMediaIndexer = turSNGeminiMediaIndexer;
+        this.turSNMicrothesaurusIndexer = turSNMicrothesaurusIndexer;
         this.self = self;
     }
 
@@ -259,6 +262,9 @@ public class TurSNProcessQueue {
         // T501 / §X.19 — append native Gemini video/audio understanding for a media
         // document's transcript/scenes (opt-in, Gemini-only; no-op otherwise). Never throws.
         turSNGeminiMediaIndexer.enrich(turSNSite, attributes);
+        // T672 / §XL — expand the document with the hierarchical path of each
+        // controlled-vocabulary term it mentions (opt-in; no-op otherwise). Never throws.
+        turSNMicrothesaurusIndexer.enrich(turSNSite, turSNJobItem.getLocale(), attributes);
         boolean indexed = pluginFactory.getPluginForSite(turSNSite)
                 .indexDocument(turSNSite, turSNJobItem.getLocale(), attributes);
         if (indexed) {
