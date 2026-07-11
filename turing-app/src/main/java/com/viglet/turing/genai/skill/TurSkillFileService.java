@@ -340,6 +340,15 @@ public class TurSkillFileService {
                     zis.closeEntry();
                     continue;
                 }
+                // T645 / §XXXVII.7 — Zip-Slip: reject an entry whose name escapes
+                // the destination (a `..` segment). Fail closed on the whole
+                // archive rather than silently dropping — a traversal entry marks
+                // a malicious ZIP. Defense-in-depth over the unconditional key
+                // containment now enforced in TurTenantScopedStorageService.
+                if (hasTraversalSegment(name)) {
+                    throw new IllegalArgumentException(
+                            "ZIP entry escapes the destination (path traversal): " + entry.getName());
+                }
                 entries.put(stripLeadingSlash(name), zis.readAllBytes());
                 zis.closeEntry();
             }
@@ -501,6 +510,19 @@ public class TurSkillFileService {
 
     private static boolean isJunk(String name) {
         return name.startsWith("__MACOSX") || name.contains("/.") || name.startsWith(".");
+    }
+
+    /** True when any {@code /}- or {@code \}-segment of the name is {@code ..}. */
+    static boolean hasTraversalSegment(String name) {
+        if (name == null) {
+            return false;
+        }
+        for (String segment : name.replace('\\', '/').split("/")) {
+            if (segment.equals("..")) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private static String stripTrailingSlash(String value) {

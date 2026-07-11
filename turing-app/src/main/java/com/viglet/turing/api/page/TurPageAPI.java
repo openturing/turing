@@ -123,6 +123,14 @@ public class TurPageAPI {
                     zis.closeEntry();
                     continue;
                 }
+                // T645 / §XXXVII.7 — Zip-Slip: reject an entry that escapes the
+                // site prefix via a `..` segment (fail closed on the archive).
+                // Belt-and-braces over the unconditional key containment in
+                // TurTenantScopedStorageService.
+                if (hasTraversalSegment(entryName)) {
+                    throw new IllegalArgumentException(
+                            "ZIP entry escapes the destination (path traversal): " + entryName);
+                }
                 byte[] data = zis.readAllBytes();
                 // Parse manifest if found
                 if (entryName.equals(MANIFEST_FILE) || entryName.endsWith("/" + MANIFEST_FILE)) {
@@ -141,6 +149,19 @@ public class TurPageAPI {
         }
         log.info("SPA site '{}' deployed successfully.", normalizedName);
         return ResponseEntity.ok(new TurPageSite(normalizedName, manifest));
+    }
+
+    /** True when any {@code /}- or {@code \}-segment of the entry name is {@code ..} (Zip-Slip). */
+    static boolean hasTraversalSegment(String name) {
+        if (name == null) {
+            return false;
+        }
+        for (String segment : name.replace('\\', '/').split("/")) {
+            if (segment.equals("..")) {
+                return true;
+            }
+        }
+        return false;
     }
 
     @DeleteMapping("/{siteName}")

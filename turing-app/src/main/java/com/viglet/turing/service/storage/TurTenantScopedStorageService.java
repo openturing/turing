@@ -62,18 +62,20 @@ public class TurTenantScopedStorageService implements TurStorageService {
     }
 
     private String scopeKey(String key) {
-        String prefix = currentPrefix();
-        if (prefix.isEmpty()) {
-            return key;
-        }
+        // T645 / §XXXVII.7 — key containment is now UNCONDITIONAL. Previously the
+        // `..` guard only ran when a tenant prefix was active, so the most common
+        // deployment (tenancy off / DEFAULT tenant → empty prefix) accepted a
+        // traversal key verbatim. Reject `..` and backslashes and strip a leading
+        // slash regardless of tenancy so no key can escape its (optional) prefix.
         String normalized = key == null ? "" : key;
-        if (normalized.contains("..")) {
+        if (normalized.contains("..") || normalized.contains("\\")) {
             throw new IllegalArgumentException("Path traversal is not allowed in object key: " + key);
         }
-        if (normalized.startsWith("/")) {
+        while (normalized.startsWith("/")) {
             normalized = normalized.substring(1);
         }
-        return prefix + normalized;
+        String prefix = currentPrefix();
+        return prefix.isEmpty() ? normalized : prefix + normalized;
     }
 
     private TurAssetItem stripPrefix(TurAssetItem item, String prefix) {

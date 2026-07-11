@@ -92,6 +92,21 @@ class TurSkillFileServiceTest {
                 .contains("# My First Skill");
     }
 
+    // T645 / §XXXVII.7 — Zip-Slip entry-name guard.
+    @org.junit.jupiter.params.ParameterizedTest
+    @org.junit.jupiter.params.provider.ValueSource(strings = {
+            "../evil.md", "a/../../evil.md", "..\\evil.md", "foo/../../bar/x" })
+    void hasTraversalSegmentDetectsEscapes(String name) {
+        assertThat(TurSkillFileService.hasTraversalSegment(name)).isTrue();
+    }
+
+    @org.junit.jupiter.params.ParameterizedTest
+    @org.junit.jupiter.params.provider.ValueSource(strings = {
+            "SKILL.md", "scripts/build.py", "a/b/c.txt", "file..name.md" })
+    void hasTraversalSegmentAllowsNormalNames(String name) {
+        assertThat(TurSkillFileService.hasTraversalSegment(name)).isFalse();
+    }
+
     @Test
     void createSkillDeduplicatesTheFolderSlug() {
         TurSkill first = fileService.createSkill("Docs");

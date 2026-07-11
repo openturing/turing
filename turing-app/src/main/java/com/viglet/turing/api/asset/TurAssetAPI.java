@@ -8,6 +8,7 @@ import org.springframework.core.io.InputStreamResource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.annotation.Secured;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -29,11 +30,19 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 /**
  * REST API for managing assets stored in MinIO.
  *
+ * <p><b>Authorization (T645 / §XXXVII.7):</b> every endpoint takes a
+ * caller-supplied {@code objectName} and reads/deletes the underlying storage
+ * object, so the whole controller requires {@code ROLE_ADMIN} — it was
+ * previously unauthenticated, unlike the sibling {@code TurStoreInstanceAPI}.
+ * Path containment for the object key is enforced by
+ * {@code TurTenantScopedStorageService}.
+ *
  * @author Alexandre Oliveira
  * @since 2026.1.14
  */
 @RestController
 @RequestMapping("/api/asset")
+@Secured("ROLE_ADMIN")
 @Tag(name = "Assets", description = "Asset Management API (MinIO)")
 public class TurAssetAPI {
 	private final TurStorageService storageService;

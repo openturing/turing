@@ -2277,20 +2277,6 @@ not a second call site.
 > guard — were all verified present and are called out so they are not "fixed"
 > away.
 
-**XXXVII.7 — Storage path-traversal / Zip-Slip (HIGH, CONFIRMED gap + POTENTIAL
-sink).** `TurTenantScopedStorageService.scopeKey:64` rejects `key.contains("..")`
-only when a tenant prefix is active; when tenancy is off or tenant == DEFAULT
-(`currentPrefix()==""`) it returns the key unmodified — so the most common
-deployment has no traversal guard (CONFIRMED logic gap). Reachable via `TurAssetAPI`
-(`download`/`preview`/`metadata`/`delete` take an unnormalised `?objectName=` with
-**no** `@Secured`, unlike `TurStoreInstanceAPI`) and via ZIP import in `TurPageAPI`
-+ `TurSkillFileService`, which concatenate entry names into the storage key without
-stripping `..`. Whether this escapes on the FILESYSTEM backend hinges on the
-external `viglet-core-storage` jar resolving keys within base (POTENTIAL); the app
-layer does zero normalisation regardless. Fix: unconditional `..`/absolute-key
-rejection in `scopeKey`, authz on `TurAssetAPI`, entry-name sanitisation, and
-confirm base-dir containment in the backend.
-
 **XXXVII.8 — Credential material over the API (HIGH, CONFIRMED).**
 `TurUser.password` has no `@JsonIgnore`; `TurUserDto extends TurUser` inherits it,
 so the admin user-list (`TurUserAPI.turUserList`) returns every user's BCrypt hash

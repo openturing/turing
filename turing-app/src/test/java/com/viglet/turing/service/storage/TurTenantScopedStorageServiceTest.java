@@ -99,4 +99,36 @@ class TurTenantScopedStorageServiceTest {
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("traversal");
     }
+
+    // ---- T645 / §XXXVII.7 — containment is now UNCONDITIONAL --------------
+
+    @Test
+    void rejectsPathTraversalWhenTenancyOff() {
+        TurTenantScopedStorageService service = scoped(false);
+        assertThatThrownBy(() -> service.downloadObject("../../etc/passwd"))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("traversal");
+    }
+
+    @Test
+    void rejectsPathTraversalForDefaultTenant() {
+        TurTenantScopedStorageService service = scoped(true); // nothing bound -> DEFAULT
+        assertThatThrownBy(() -> service.deleteObject("a/../../secret.bin"))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("traversal");
+    }
+
+    @Test
+    void rejectsBackslashTraversalWhenTenancyOff() {
+        TurTenantScopedStorageService service = scoped(false);
+        assertThatThrownBy(() -> service.statObject("..\\windows\\x"))
+                .isInstanceOf(IllegalArgumentException.class);
+    }
+
+    @Test
+    void stripsLeadingSlashWhenTenancyOff() {
+        TurTenantScopedStorageService service = scoped(false);
+        service.downloadObject("/docs/a.pdf");
+        verify(delegate).downloadObject("docs/a.pdf");
+    }
 }
