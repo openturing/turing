@@ -380,6 +380,12 @@ spring:
   jackson:
     mapper:
       "[DEFAULT_VIEW_INCLUSION]": true
+    deserialization:
+      # Jackson 3 enables FAIL_ON_NULL_FOR_PRIMITIVES by default (Jackson 2 had it
+      # off). Restore the prior behavior so a request body that omits a read-only
+      # primitive DTO component (e.g. TurKnowledgeBaseDto.microthesaurusCount)
+      # deserializes to the primitive default instead of failing with a 400.
+      "[FAIL_ON_NULL_FOR_PRIMITIVES]": false
   thymeleaf:
     mode: HTML
     check-template: true
