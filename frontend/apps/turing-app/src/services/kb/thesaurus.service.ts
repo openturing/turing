@@ -2,6 +2,8 @@ import axios from "axios";
 import type {
   TurKnowledgeBase,
   TurMicrothesaurus,
+  TurSNSiteMicrothesaurus,
+  TurSNSiteMicrothesaurusConfig,
   TurThesaurusSeed,
   TurThesaurusTerm,
 } from "@/models/kb/thesaurus.model";
@@ -143,6 +145,55 @@ export class TurThesaurusService {
       `/kb/${knowledgeBaseId}/microthesaurus/import${query}`,
       form,
       { headers: { "Content-Type": "multipart/form-data" } },
+    );
+    return data;
+  }
+
+  // ---- Per-SN-site selection + index config (T670) ----
+  async listSiteSelections(snSiteId: string): Promise<TurSNSiteMicrothesaurus[]> {
+    const { data } = await axios.get<TurSNSiteMicrothesaurus[]>(
+      `/sn/${snSiteId}/microthesaurus`,
+    );
+    return data;
+  }
+  async selectForSite(
+    snSiteId: string,
+    microthesaurusId: string,
+  ): Promise<TurSNSiteMicrothesaurus> {
+    const { data } = await axios.post<TurSNSiteMicrothesaurus>(
+      `/sn/${snSiteId}/microthesaurus`,
+      { microthesaurusId, enabled: true },
+    );
+    return data;
+  }
+  async setSiteSelectionEnabled(
+    snSiteId: string,
+    selectionId: string,
+    enabled: boolean,
+  ): Promise<TurSNSiteMicrothesaurus> {
+    const { data } = await axios.put<TurSNSiteMicrothesaurus>(
+      `/sn/${snSiteId}/microthesaurus/${selectionId}?enabled=${enabled}`,
+      {},
+    );
+    return data;
+  }
+  async deselectForSite(snSiteId: string, selectionId: string): Promise<boolean> {
+    const res = await axios.delete(`/sn/${snSiteId}/microthesaurus/${selectionId}`);
+    return res.status === 200;
+  }
+  async getSiteConfig(snSiteId: string): Promise<TurSNSiteMicrothesaurusConfig> {
+    const { data } = await axios.get<TurSNSiteMicrothesaurusConfig>(
+      `/sn/${snSiteId}/microthesaurus/config`,
+    );
+    return data;
+  }
+  async saveSiteConfig(
+    snSiteId: string,
+    config: TurSNSiteMicrothesaurusConfig,
+  ): Promise<TurSNSiteMicrothesaurusConfig> {
+    const { data } = await axios.put<TurSNSiteMicrothesaurusConfig>(
+      `/sn/${snSiteId}/microthesaurus/config`,
+      config,
     );
     return data;
   }

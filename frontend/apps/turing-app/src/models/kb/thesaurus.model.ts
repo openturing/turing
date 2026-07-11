@@ -70,3 +70,20 @@ export type TurThesaurusSeed = {
   domain: string;
   language: string;
 };
+
+// T670 / T681 — per-SN-site selection + index config.
+export type TurSNSiteMicrothesaurus = {
+  id: string;
+  microthesaurusId: string;
+  enabled: boolean;
+  name?: string | null;
+  language?: string | null;
+  domain?: string | null;
+};
+
+export type TurSNSiteMicrothesaurusConfig = {
+  enabled: boolean;
+  fieldName: string;
+  boost: number;
+  includeSynonyms: boolean;
+};

@@ -2,6 +2,8 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type {
   TurKnowledgeBase,
   TurMicrothesaurus,
+  TurSNSiteMicrothesaurus,
+  TurSNSiteMicrothesaurusConfig,
   TurThesaurusSeed,
   TurThesaurusTerm,
 } from "@/models/kb/thesaurus.model";
@@ -154,5 +156,64 @@ export function useUploadAuthorityFile(kbId: string) {
   return useMutation<TurMicrothesaurus, Error, { file: File; domain?: string }>({
     mutationFn: ({ file, domain }) => service.uploadAuthorityFile(kbId, file, domain),
     onSuccess: () => qc.invalidateQueries({ queryKey: queryKeys.thesaurus.microList(kbId) }),
+  });
+}
+
+// ---- Per-SN-site selection + config (T670 / T681) ----
+export function useSiteSelections(snSiteId: string | undefined) {
+  return useQuery<TurSNSiteMicrothesaurus[]>({
+    queryKey: snSiteId
+      ? queryKeys.thesaurus.siteSelections(snSiteId)
+      : ["thesaurus", "site", "selections", "pending"],
+    queryFn: () => service.listSiteSelections(snSiteId as string),
+    enabled: Boolean(snSiteId),
+  });
+}
+
+export function useSiteConfig(snSiteId: string | undefined) {
+  return useQuery<TurSNSiteMicrothesaurusConfig>({
+    queryKey: snSiteId
+      ? queryKeys.thesaurus.siteConfig(snSiteId)
+      : ["thesaurus", "site", "config", "pending"],
+    queryFn: () => service.getSiteConfig(snSiteId as string),
+    enabled: Boolean(snSiteId),
+  });
+}
+
+export function useSelectForSite(snSiteId: string) {
+  const qc = useQueryClient();
+  return useMutation<TurSNSiteMicrothesaurus, Error, string>({
+    mutationFn: (microthesaurusId) => service.selectForSite(snSiteId, microthesaurusId),
+    onSuccess: () =>
+      qc.invalidateQueries({ queryKey: queryKeys.thesaurus.siteSelections(snSiteId) }),
+  });
+}
+
+export function useSetSiteSelectionEnabled(snSiteId: string) {
+  const qc = useQueryClient();
+  return useMutation<TurSNSiteMicrothesaurus, Error, { selectionId: string; enabled: boolean }>({
+    mutationFn: ({ selectionId, enabled }) =>
+      service.setSiteSelectionEnabled(snSiteId, selectionId, enabled),
+    onSuccess: () =>
+      qc.invalidateQueries({ queryKey: queryKeys.thesaurus.siteSelections(snSiteId) }),
+  });
+}
+
+export function useDeselectForSite(snSiteId: string) {
+  const qc = useQueryClient();
+  return useMutation<boolean, Error, string>({
+    mutationFn: (selectionId) => service.deselectForSite(snSiteId, selectionId),
+    onSuccess: () =>
+      qc.invalidateQueries({ queryKey: queryKeys.thesaurus.siteSelections(snSiteId) }),
+  });
+}
+
+export function useSaveSiteConfig(snSiteId: string) {
+  const qc = useQueryClient();
+  return useMutation<TurSNSiteMicrothesaurusConfig, Error, TurSNSiteMicrothesaurusConfig>({
+    mutationFn: (config) => service.saveSiteConfig(snSiteId, config),
+    onSuccess: (saved) => {
+      qc.setQueryData(queryKeys.thesaurus.siteConfig(snSiteId), saved);
+    },
   });
 }

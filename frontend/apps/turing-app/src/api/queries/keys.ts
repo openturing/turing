@@ -233,6 +233,10 @@ export const queryKeys = {
     termList: (microId: string) =>
       [...queryKeys.thesaurus.all(), 'term', 'list', microId] as const,
     seeds: () => [...queryKeys.thesaurus.all(), 'seeds'] as const,
+    siteSelections: (snSiteId: string) =>
+      [...queryKeys.thesaurus.all(), 'site', 'selections', snSiteId] as const,
+    siteConfig: (snSiteId: string) =>
+      [...queryKeys.thesaurus.all(), 'site', 'config', snSiteId] as const,
   },
   marketplaceItems: {
     all: () => ['marketplace-items'] as const,

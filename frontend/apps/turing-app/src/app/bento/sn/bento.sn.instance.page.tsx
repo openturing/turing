@@ -5,6 +5,7 @@ import { LoadProvider } from "@/components/loading-provider";
 import type { TurSNSite } from "@/models/sn/sn-site.model.ts";
 import {
   IconArrowsShuffle,
+  IconSitemap,
   IconArrowsSort,
   IconAlignBoxCenterStretch,
   IconChartHistogram,
@@ -66,6 +67,7 @@ const SN_SECTIONS: readonly SectionLink[] = [
   { labelKey: "sn.mergeProviders.title", icon: IconGitMerge, path: "merge-providers" },
   { labelKey: "sn.spotlight.title", icon: IconSpeakerphone, path: "spotlight" },
   { labelKey: "sn.synonym.title", icon: IconArrowsShuffle, path: "synonym" },
+  { labelKey: "thesaurus.perSiteTitle", icon: IconSitemap, path: "microthesaurus" },
   { labelKey: "sn.topSearchTerms.title", icon: IconDashboard, path: "top-terms" },
 ];
 

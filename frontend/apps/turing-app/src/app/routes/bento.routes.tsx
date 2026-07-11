@@ -99,6 +99,7 @@ const BentoSNCustomSortPage = lazy(() => import("../bento/sn/bento.sn.custom-sor
 const BentoSNSearchRuleListPage = lazy(() => import("../bento/sn/bento.sn.search-rule.list.page"));
 const BentoSNSearchRulePage = lazy(() => import("../bento/sn/bento.sn.search-rule.page"));
 const BentoSNGenAiPage = lazy(() => import("../bento/sn/bento.sn.genai.page"));
+const BentoSNThesaurusPage = lazy(() => import("../bento/sn/bento.sn.thesaurus.page"));
 const BentoSNResultRankingListPage = lazy(() => import("../bento/sn/bento.sn.result-ranking.list.page"));
 const BentoSNResultRankingPage = lazy(() => import("../bento/sn/bento.sn.result-ranking.page"));
 const BentoSNMergeProvidersListPage = lazy(() => import("../bento/sn/bento.sn.merge-providers.list.page"));
@@ -281,6 +282,7 @@ export const BentoRoutes = (
     <Route path="sn/instance/:id/search-rule" element={<BentoSNSearchRuleListPage />} />
     <Route path="sn/instance/:id/search-rule/:searchRuleId" element={<BentoSNSearchRulePage />} />
     <Route path="sn/instance/:id/ai" element={<BentoSNGenAiPage />} />
+    <Route path="sn/instance/:id/microthesaurus" element={<BentoSNThesaurusPage />} />
     <Route path="sn/instance/:id/result-ranking" element={<BentoSNResultRankingListPage />} />
     <Route path="sn/instance/:id/result-ranking/:resultRankingId" element={<BentoSNResultRankingPage />} />
     <Route path="sn/instance/:id/merge-providers" element={<BentoSNMergeProvidersListPage />} />
