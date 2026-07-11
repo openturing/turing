@@ -20,6 +20,7 @@ import com.viglet.turing.persistence.model.agent.TurAIAgent;
 import com.viglet.turing.persistence.model.llm.TurLLMInstance;
 import com.viglet.turing.persistence.repository.llm.TurLLMInstanceRepository;
 import com.viglet.turing.persistence.repository.llm.TurLLMTokenUsageRepository;
+import com.viglet.turing.properties.TurAbuseControlProperty;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -52,11 +53,46 @@ public class TurChatCostBudgetGate {
 
     private final TurLLMTokenUsageRepository tokenUsageRepository;
     private final TurLLMInstanceRepository llmInstanceRepository;
+    private final TurAbuseControlProperty abuseControlProperty;
 
     public TurChatCostBudgetGate(TurLLMTokenUsageRepository tokenUsageRepository,
-            TurLLMInstanceRepository llmInstanceRepository) {
+            TurLLMInstanceRepository llmInstanceRepository,
+            TurAbuseControlProperty abuseControlProperty) {
         this.tokenUsageRepository = tokenUsageRepository;
         this.llmInstanceRepository = llmInstanceRepository;
+        this.abuseControlProperty = abuseControlProperty;
+    }
+
+    /**
+     * T641 / §XXXVII.3 — the <b>hard</b> anonymous-chat kill-switch (distinct
+     * from the soft monthly/per-turn gates above, which never abort). When
+     * {@code turing.abuse.chat.hard-monthly-cap-usd > 0} and total month-to-date
+     * LLM spend across all agents reaches it, this returns {@code true} and the
+     * anonymous SN chat path refuses the turn <em>before</em> any upstream call
+     * fires. Best-effort: any failure evaluates to "not exceeded" so a metering
+     * hiccup never blocks legitimate chat.
+     *
+     * @return {@code true} when the anonymous turn must be refused.
+     */
+    public boolean isAnonymousChatHardCapExceeded() {
+        try {
+            double cap = abuseControlProperty.getChat().getHardMonthlyCapUsd();
+            if (cap <= 0) {
+                return false; // kill-switch off
+            }
+            LocalDateTime monthStart = LocalDate.now(ZoneId.systemDefault())
+                    .withDayOfMonth(1).atStartOfDay();
+            double spent = tokenUsageRepository.sumCostSince(monthStart);
+            if (spent >= cap) {
+                log.warn("[BudgetGate] anonymous-chat HARD cap reached (spent ${} >= cap ${}) — "
+                        + "refusing new anonymous conversation", spent, cap);
+                return true;
+            }
+            return false;
+        } catch (RuntimeException e) {
+            log.debug("[BudgetGate] hard-cap check failed: {}", e.getMessage());
+            return false;
+        }
     }
 
     /**

@@ -2277,18 +2277,6 @@ not a second call site.
 > guard — were all verified present and are called out so they are not "fixed"
 > away.
 
-**XXXVII.3 — Anonymous chat abuse / cost (CRITICAL, CONFIRMED).** No `@RateLimiter`
-/ bucket4j / per-IP / per-session / per-minute throttle exists in the app, and
-`containers/nginx/conf.d/app.conf` is a bare proxy with no `limit_req`/`limit_conn`
-— so the roadmap's assumption that rate-limiting lives in nginx is not true even in
-the shipped config. The only budget mechanism, `TurChatCostBudgetGate`, is
-per-agent, monthly, opt-in and by explicit design *soft* (downgrades the model or
-logs, never aborts). A loop of `POST /api/sn/{site}/chat/conversation` drives
-unbounded LLM spend (each turn = embedding + retrieval + completion, plus optional
-groundedness re-check and follow-up generation = several calls). Fix: per-IP/session
-rate limiting + a hard aborting cost/turn kill-switch at the app layer, and real
-nginx limits. Pairs with the T634 guest-endpoint abuse note.
-
 **XXXVII.4 — `permissions=false` blanket admin (HIGH, CONFIRMED).** With the shipped
 default `turing.permissions: false` (`application.yaml:11`),
 `TurCustomUserDetailsService.loadUserByUsername` and

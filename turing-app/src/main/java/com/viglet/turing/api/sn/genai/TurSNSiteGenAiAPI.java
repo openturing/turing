@@ -112,6 +112,7 @@ public class TurSNSiteGenAiAPI {
 	private final com.viglet.turing.genai.flow.TurConversationLock conversationLock;
 	private final com.viglet.turing.genai.TurDefaultAgentResolver turDefaultAgentResolver;
 	private final com.viglet.turing.genai.persona.TurAgentPersonaResolver turAgentPersonaResolver;
+	private final com.viglet.turing.service.llm.budget.TurChatCostBudgetGate costBudgetGate;
 
 	public TurSNSiteGenAiAPI(TurSNSearchProcess turSNSearchProcess,
 			TurSNGenAi turGenAi,
@@ -134,7 +135,8 @@ public class TurSNSiteGenAiAPI {
 			TurWorkspaceEventBus workspaceEventBus,
 			com.viglet.turing.genai.flow.TurConversationLock conversationLock,
 			com.viglet.turing.genai.TurDefaultAgentResolver turDefaultAgentResolver,
-			com.viglet.turing.genai.persona.TurAgentPersonaResolver turAgentPersonaResolver) {
+			com.viglet.turing.genai.persona.TurAgentPersonaResolver turAgentPersonaResolver,
+			com.viglet.turing.service.llm.budget.TurChatCostBudgetGate costBudgetGate) {
 		this.turSNSearchProcess = turSNSearchProcess;
 		this.turGenAi = turGenAi;
 		this.turGenAiContextFactory = turGenAiContextFactory;
@@ -157,6 +159,7 @@ public class TurSNSiteGenAiAPI {
 		this.agentWorkspace = agentWorkspace;
 		this.workspaceEventBus = workspaceEventBus;
 		this.conversationLock = conversationLock;
+		this.costBudgetGate = costBudgetGate;
 	}
 
 	/**
@@ -314,6 +317,15 @@ public class TurSNSiteGenAiAPI {
 
 	private Flux<TurAgentChatExecutor.ChatResponse> buildConversationStream(String siteName,
 			ConversationRequest request, Locale locale) {
+		// T641 / §XXXVII.3 — hard cost kill-switch: refuse the anonymous turn
+		// before any embedding/LLM call fires once the configured month-to-date
+		// spend ceiling is reached. Off by default (cap <= 0).
+		if (costBudgetGate.isAnonymousChatHardCapExceeded()) {
+			log.warn("[SNChat] Refusing conversation for SN Site '{}' — anonymous-chat hard cost cap reached",
+					siteName);
+			return Flux.just(new TurAgentChatExecutor.ChatResponse(ASSISTANT_ROLE,
+					"The assistant is temporarily unavailable. Please try again later."));
+		}
 		if (!turSNSearchProcess.existsByTurSNSiteAndLanguage(siteName, locale)) {
 			log.debug("RAG chat skipped for SN Site '{}': locale '{}' not available", siteName, locale);
 			return Flux.just(new TurAgentChatExecutor.ChatResponse(ASSISTANT_ROLE, NOT_ENABLED_MESSAGE));

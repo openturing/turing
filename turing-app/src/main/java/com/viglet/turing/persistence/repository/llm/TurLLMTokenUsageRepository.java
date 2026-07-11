@@ -143,4 +143,15 @@ public interface TurLLMTokenUsageRepository extends JpaRepository<TurLLMTokenUsa
             WHERE u.agentId = :agentId AND u.createdAt >= :start
             """)
     double sumCostByAgentSince(@Param("agentId") String agentId, @Param("start") LocalDateTime start);
+
+    /**
+     * T641 / §XXXVII.3 — total LLM spend since {@code start} across all agents.
+     * Powers the anonymous-chat hard cost circuit-breaker.
+     */
+    @Query("""
+            SELECT COALESCE(SUM(u.costUsd), 0.0)
+            FROM TurLLMTokenUsage u
+            WHERE u.createdAt >= :start
+            """)
+    double sumCostSince(@Param("start") LocalDateTime start);
 }

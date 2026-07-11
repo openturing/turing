@@ -46,6 +46,7 @@ number" looked free but wasn't. Grepping three files (`ROADMAP.md`,
 
 ## Log (most recent first)
 
+- **T641 SHIPPED** (Block AN §XXXVII.3 — anonymous-chat abuse controls: per-IP/session rate limiter + hard cost kill-switch + nginx limits) — 2026-07-11.
 - **T640 SHIPPED** (Block AN §XXXVII.2 — authenticate /api/system/chat-analytics/**: remove permitAll + @Secured ROLE_ADMIN) — 2026-07-11.
 - **T639 SHIPPED** (Block AN §XXXVII.1 — externalise + reject sample AI crypto master key in prod) — 2026-07-11.
 - **T686 SHIPPED** (Block AR §XLI — Lucene spell-check via DirectSpellChecker + spellCheck plugin seam; endpoint re-pointed at plugin factory; CLOSES Block AR) — 2026-07-11.

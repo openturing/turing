@@ -77,12 +77,9 @@
 > product (all anonymous SN chat/search, admin config, connectors, MCP, storage,
 > imports, custom tools). Findings + CONFIRMED/POTENTIAL status and evidence in
 > [IMPROVEMENTS.md](IMPROVEMENTS.md) §XXXVII. Each task is *analyse-then-fix*:
-> confirm the reachability caveat noted, then remediate. Ordered by severity;
-> the three 🔴 items are live-secret / anonymous-data / anonymous-cost exposures
-> that warrant immediate attention regardless of task sequencing.
-
-**🔴 Critical:**
-- 📋 **T641** (deps: —) 🔴 **App-layer abuse controls on the anonymous chat path** — no rate-limit / per-IP / per-session cap anywhere in the app, and the shipped `containers/nginx/conf.d/app.conf` has no `limit_req`/`limit_conn`; the only budget gate (`TurChatCostBudgetGate`) is per-agent, monthly, opt-in and *soft* (never aborts). Add per-IP/session throttling + a hard aborting cost/turn kill-switch + nginx limits. → §XXXVII.3
+> confirm the reachability caveat noted, then remediate. Ordered by severity.
+> The three 🔴 critical items (live-secret / anonymous-data / anonymous-cost
+> exposures — T639/T640/T641) have all shipped; the 🟠/🟡 items remain.
 
 **🟠 High:**
 - 📋 **T642** (deps: —) **Fix the `permissions=false` blanket-admin grant** — default `turing.permissions: false` (`application.yaml:11`) makes `TurCustomUserDetailsService`/`TurAuthTokenHeaderFilter` grant every authenticated principal `ROLE_ADMIN` + all privileges, nullifying all 240 method-level checks. Stop blanket-granting when permissions are off (or flip the default) so authn ≠ super-admin. → §XXXVII.4

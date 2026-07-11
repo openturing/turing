@@ -31,6 +31,7 @@ import com.viglet.turing.persistence.model.agent.TurAIAgent;
 import com.viglet.turing.persistence.model.llm.TurLLMInstance;
 import com.viglet.turing.persistence.repository.llm.TurLLMInstanceRepository;
 import com.viglet.turing.persistence.repository.llm.TurLLMTokenUsageRepository;
+import com.viglet.turing.properties.TurAbuseControlProperty;
 
 /**
  * T291 / §XVI.3 — unit tests for the turn-time soft budget gate.
@@ -48,12 +49,14 @@ class TurChatCostBudgetGateTest {
     private TurLLMInstanceRepository llmInstanceRepository;
 
     private TurChatCostBudgetGate gate;
+    private TurAbuseControlProperty abuseControlProperty;
     private TurAIAgent agent;
     private TurLLMInstance primary;
 
     @BeforeEach
     void setUp() {
-        gate = new TurChatCostBudgetGate(tokenUsageRepository, llmInstanceRepository);
+        abuseControlProperty = new TurAbuseControlProperty();
+        gate = new TurChatCostBudgetGate(tokenUsageRepository, llmInstanceRepository, abuseControlProperty);
         agent = new TurAIAgent();
         agent.setId("agent-1");
         primary = instance("primary", "Primary LLM");
@@ -124,5 +127,38 @@ class TurChatCostBudgetGateTest {
         assertThatCode(() -> gate.warnIfTurnOverCap(agent, 0.05)).doesNotThrowAnyException();
         assertThatCode(() -> gate.warnIfTurnOverCap(agent, 0.001)).doesNotThrowAnyException();
         assertThatCode(() -> gate.warnIfTurnOverCap(null, 1.0)).doesNotThrowAnyException();
+    }
+
+    // ---- T641 / §XXXVII.3 hard anonymous-chat cost kill-switch --------------
+
+    @Test
+    void hardCapOffByDefault() {
+        assertThat(gate.isAnonymousChatHardCapExceeded()).isFalse();
+        verify(tokenUsageRepository, never()).sumCostSince(any());
+    }
+
+    @Test
+    void hardCapNotExceededWhenUnderCap() {
+        abuseControlProperty.getChat().setHardMonthlyCapUsd(100.0);
+        when(tokenUsageRepository.sumCostSince(any(LocalDateTime.class))).thenReturn(42.0);
+
+        assertThat(gate.isAnonymousChatHardCapExceeded()).isFalse();
+    }
+
+    @Test
+    void hardCapExceededWhenAtOrOverCap() {
+        abuseControlProperty.getChat().setHardMonthlyCapUsd(50.0);
+        when(tokenUsageRepository.sumCostSince(any(LocalDateTime.class))).thenReturn(50.0);
+
+        assertThat(gate.isAnonymousChatHardCapExceeded()).isTrue();
+    }
+
+    @Test
+    void hardCapFailsOpenOnMeteringError() {
+        abuseControlProperty.getChat().setHardMonthlyCapUsd(50.0);
+        when(tokenUsageRepository.sumCostSince(any(LocalDateTime.class)))
+                .thenThrow(new RuntimeException("db down"));
+
+        assertThat(gate.isAnonymousChatHardCapExceeded()).isFalse();
     }
 }
