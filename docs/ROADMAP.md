@@ -83,7 +83,6 @@
 > too — the 🟡 Medium/Low items remain.
 
 **🟡 Medium / Low:**
-- 📋 **T649** (deps: —) **Actuator hardening** — `management.endpoints.web.exposure.include: "*"` (`application.yaml:464`) exposes `/actuator/env` + `/heapdump` (leaking the crypto key, DB creds, provider keys) to any authenticated principal (= admin by default, cf. T642). Restrict to `health,info,prometheus` and role-gate the rest. → §XXXVII.11
 - 📋 **T650** (deps: —) **MCP hardening** — inbound `/mcp` fails open (`require-auth` defaults false, relies on a loopback filter); the agent-as-MCP-*client* path (`TurMcpToolCallbackService.createTransport:139`) takes a verbatim URL (SSRF) and a stdio `command` (arbitrary local process) with no allowlist, and `TurMcpToolScopePolicy` guards only the inbound server surface. Fail closed by default + validate client URL/command + extend the scope policy to client tools. → §XXXVII.12
 - 📋 **T651** (deps: —) **Fix IDOR in `TurUserMemoryAPI`** — list/remember/clear key on a client-supplied `userId` with no binding to the caller, and `delete(id)` has no ownership/tenant/agent check. Scope every op to the resolved caller/session. → §XXXVII.13
 - 💭 **T652** (deps: —) **Config & logging hygiene** — remove committed MinIO creds (`application.yaml:116` `admin`/`minha_senha_forte`, purge from history); keep the H2 console off and drop `web.ignoring("/h2/**")` + `web-allow-others: true`; redact the secret-preview + human-approval capability-token INFO logs; constrain the anonymous self-registration / signup arbitrary-username paths. → §XXXVII.14

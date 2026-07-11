@@ -46,6 +46,7 @@ number" looked free but wasn't. Grepping three files (`ROADMAP.md`,
 
 ## Log (most recent first)
 
+- **T649 SHIPPED** (Block AN §XXXVII.11 — actuator hardening: exposure.include "*" -> health,info,prometheus so env/heapdump no longer published) — 2026-07-11.
 - **T648 SHIPPED** (Block AN §XXXVII.10 — DoS caps: multipart 1024MB->64MB + per-file gate on slot endpoints + message caps + zip entry/total/bounded-read limits; CLOSES 🟠 High tier) — 2026-07-11.
 - **T647 SHIPPED** (Block AN §XXXVII.9 — RAG/tool trust boundary: untrusted-content framing in buildSystemPrompt + untrustedCaller flag strips tools when turing.abuse.chat.anonymous-tools-enabled=false; closes 🟠 High tier) — 2026-07-11.
 - **T646 SHIPPED** (Block AN §XXXVII.8 — credential leaks: password write-only + @Secured TurDevTokenAPI + token scrub + enabled/expiresAt (Liquibase v2026.3.1.99) + drop ?apiKey= query param) — 2026-07-11.

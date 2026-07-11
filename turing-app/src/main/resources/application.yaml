@@ -500,7 +500,14 @@ management:
   endpoints:
     web:
       exposure:
-        include: "*"
+        # T649 / §XXXVII.11 — was "*", which exposed /actuator/env + /heapdump
+        # (leaking turing.ai.crypto.key, datasource creds and provider keys) to
+        # any authenticated principal. Only the endpoints that genuinely need
+        # HTTP exposure are published now: health + info + the Prometheus scrape
+        # (all permitAll in TurSecurityConfigProduction). env/heapdump/beans/
+        # mappings/etc. are no longer reachable over HTTP at all — add one back
+        # explicitly (it will fall under authenticated()) only if you need it.
+        include: "health,info,prometheus"
   metrics:
     tags:
       application: turing-es

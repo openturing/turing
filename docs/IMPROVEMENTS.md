@@ -2277,14 +2277,6 @@ not a second call site.
 > guard — were all verified present and are called out so they are not "fixed"
 > away.
 
-**XXXVII.11 — Actuator over-exposure (MEDIUM, CONFIRMED).**
-`management.endpoints.web.exposure.include: "*"` (`application.yaml:464`) exposes
-all actuator endpoints; the security config only `permitAll`s `health*` +
-`prometheus`, the rest fall under `authenticated()` = admin by default (§XXXVII.4).
-`/actuator/env` + `/heapdump` then leak `ai.crypto.key` (§XXXVII.1), datasource
-creds, and provider keys. Fix: `exposure.include: health,info,prometheus` and
-role-gate anything else.
-
 **XXXVII.12 — MCP hardening (MEDIUM, CONFIRMED).** Inbound `/mcp` fails open —
 `turing.mcp-server.require-auth` defaults false, so it is `permitAll` behind only a
 `TurMcpLoopbackFilter` (breaks if a proxy forwards to the app / `X-Forwarded-For` is
