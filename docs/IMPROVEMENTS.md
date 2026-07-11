@@ -2255,3 +2255,96 @@ not a second call site.
 > with on-select dimension + reindex warnings and an ONNX variant/quantization
 > choice, and the default-RAG startup provisioning now seeds an HF repo id.
 
+## XLII. Scalable & pluggable audio transcription — chunking + local backends (Block AS)
+
+### XLII.0 Where we are
+
+The transcription seam (`TurTranscriptionProvider`, Block AA/T469) exists and is
+pluggable via a `@Primary` bean, but the only impl
+(`TurOpenAiTranscriptionProvider`) POSTs to an OpenAI-compatible
+`/audio/transcriptions` endpoint whose `baseUrl` + credential come from the
+default `TurLLMInstance`, with the model (`whisper-1`) hardcoded. Three gaps block
+real-world audio:
+
+1. **No config seam.** The endpoint is coupled to the default LLM instance and the
+   model is a constant; the only way to swap backends is a code-level bean
+   override. There is no `turing.transcription.*` namespace, so an operator cannot
+   point transcription at a different (e.g. local) endpoint without recompiling.
+2. **No chunking.** OpenAI's transcription endpoint hard-caps uploads at 25 MiB
+   (26,214,400 bytes); a ~25.1 MiB recording returns a raw `413`. We now fail fast
+   with a clear, actionable message, but a recording over the limit simply cannot
+   be transcribed.
+3. **No first-class local path.** Air-gapped / cost-sensitive installs must
+   hand-write a `@Primary` bean; there is no supported, documented, config-selected
+   local backend.
+
+The block closes all three, keeping the seam and today's behavior intact when the
+new config is empty (legacy = byte-identical).
+
+### XLII.1 Config namespace + provider factory (T687)
+
+Introduce `turing.transcription.*` (`TurTranscriptionProperties`) and a
+`TurTranscriptionProviderFactory` that resolves the active backend from a strategy
+enum — `OPENAI | OPENAI_COMPATIBLE | LOCAL_ONNX | NONE` — instead of only a
+`@Primary` override. Transcription gets its **own** model / `baseUrl` / apiKey /
+per-request limit, decoupled from the default `TurLLMInstance` but falling back to
+it when unset (back-compat). This is the backbone: every later task selects and
+sizes itself from this config. The 25 MiB constant currently in
+`TurOpenAiTranscriptionProvider` becomes a configurable per-provider
+`maxUploadBytes` (OpenAI defaults to 26,214,400; a local server can be larger).
+
+### XLII.2 Chunking seam + ffmpeg impl (T688)
+
+A provider-agnostic `TurAudioChunker` seam with an ffmpeg-backed default impl:
+probe the duration, then split into segments below the active limit on **silence
+boundaries** (a fixed-duration + small-overlap fallback when silence detection
+finds nothing), re-encoding each to a compact 16 kHz mono form Whisper likes.
+Byte-slicing a compressed container (mp3/m4a) corrupts it, so a real
+decode/re-encode is required — ffmpeg-as-subprocess, the same discipline as the
+T80 code-interpreter Docker path, with an "ffmpeg available?" probe surfaced to
+admin. When the audio is already ≤ limit the chunker is a passthrough and ffmpeg
+is never invoked, so small-clip installs need no ffmpeg at all.
+
+### XLII.3 Chunk-aware orchestration (T689)
+
+Orchestration that sits **above** `TurTranscriptionProvider`: run each chunk
+through the resolved provider bounded-parallel and in order, stitch the transcripts
+(deduping the overlap window), and aggregate the detected language. Because it
+wraps the seam rather than a specific impl, **every** backend — OpenAI, local
+server, in-process ONNX — inherits large-file support for free. This replaces the
+fixed-limit guard (from the hotfix) with the configurable per-provider limit +
+chunk-or-fail decision.
+
+### XLII.4 Local OpenAI-compatible backend (T690)
+
+The recommended local path, and the cheapest to build because the REST client
+already exists: an `OPENAI_COMPATIBLE` strategy that points `baseUrl` at a
+self-hosted server speaking the OpenAI `/audio/transcriptions` contract
+(`faster-whisper-server`, `whisper.cpp` server, vLLM-whisper). Ship a `viglet/cloud`
+sidecar container recipe + docs. Scales horizontally, is GPU-capable, and keeps the
+same code path as the cloud provider — only the URL changes. For most self-hosters
+this is the right "run it locally" answer.
+
+### XLII.5 In-process DJL/ONNX Whisper backend (T691)
+
+For true air-gap / no-sidecar installs: a `LOCAL_ONNX` strategy that runs Whisper
+inside the JVM via DJL/ONNX, mirroring the T656 local **embedding** model pattern
+(resilient model download with retry/backoff, persistent cache volume, integrity
+check) with a tiny/base/small size picker trading accuracy for RAM/latency. No
+external service, fully offline after the one-time model fetch — at the cost of
+JVM footprint and single-node scaling.
+
+### XLII.6 Async transcription jobs (T692, 💭)
+
+Long audio should not block an HTTP request thread. A job surface — submit →
+SSE/poll status → result — backed by a bounded worker pool with back-pressure,
+reusing the workspace / SSE-bus patterns already in the platform. This is the scale
+lever once chunking makes multi-hour recordings tractable.
+
+### XLII.7 AUDIO-slot / voice wiring + per-backend metrics (T693, 💭)
+
+Route the existing T64 AUDIO slot and the F.5 voice callers through the chunked
+path (today only persona-from-audio uses the seam), and add per-backend cost /
+latency metrics (T88) plus an optional confidence fallback (try the local backend
+first, escalate to the cloud provider on low-confidence output).
+

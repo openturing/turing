@@ -1,9 +1,11 @@
-# Last task number — `T686` · next block letter — `AS`
+# Last task number — `T693` · next block letter — `AT`
 
 > **Single source of truth for the next free task number.** The next new task is
-> `T687`; after assigning it, bump the number above and the log line below.
+> `T694`; after assigning it, bump the number above and the log line below.
 >
-> **Next block letter — `AS`** (Block **AR** = Live-demo search & chat quality /
+> **Next block letter — `AT`** (Block **AS** = Scalable & pluggable audio
+> transcription / chunking + local backends, T687–T693, created 2026-07-11.
+> Block **AR** = Live-demo search & chat quality /
 > Lucene parity gaps, T682–T686, created 2026-07-11: fully shipped (T682–T686).
 > Block **AQ** = Knowledge Base / microthesauri, T668–T681, created
 > 2026-07-11; highest block shipped is **AR**). The block letter has the *same*
@@ -46,6 +48,7 @@ number" looked free but wasn't. Grepping three files (`ROADMAP.md`,
 
 ## Log (most recent first)
 
+- **T687–T693 CREATED** (📋/💭, Block AS §XLII — scalable & pluggable audio transcription: config namespace + provider factory, ffmpeg chunking seam + orchestration, local OpenAI-compat + in-process ONNX backends, async jobs + slot/voice wiring) — 2026-07-11.
 - **T653 SHIPPED** (Block AN §XXXVII.15 — frontend XSS: sanitize-html allowlist (sanitizeHighlight for result-card, sanitizeFragment for Gemini chips); CLOSES Block AN — all T639-T654 shipped) — 2026-07-11.
 - **T652 SHIPPED** (Block AN §XXXVII.14 — config/logging hygiene: externalise MinIO creds, H2 web-allow-others=false + drop web.ignoring(/h2/**), redact secret-preview + approval-token logs, constrain register username/password) — 2026-07-11.
 - **T654 SHIPPED** (Block AN §XXXVII.16 — dependency CVEs: pnpm overrides undici/@babel/core/js-yaml + xlsx accepted-risk ignoreGhsas (export-only) + dependency-audit.yml CI gate) — 2026-07-11.

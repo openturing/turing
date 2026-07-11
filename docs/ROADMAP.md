@@ -71,6 +71,26 @@
 - 💭 **T480** (deps: T477) **Hosted "try it free" path via Viglet Cloud** — dual-path CTA (self-host docs + hosted sandbox) so visitors who won't install still reach first value. → §XXVII.3
 - 💭 **T481** (deps: real design partners) **Social-proof surface** — adopters/logos, testimonials, quantified case studies (Dify model). Never fabricated. → §XXVII.3
 
+## Block AS — Scalable & pluggable audio transcription (chunking + local backends)
+
+> The transcription seam (`TurTranscriptionProvider`, Block AA/T469) ships a
+> single OpenAI-compatible impl whose model + endpoint piggyback on the default
+> LLM instance, with no `turing.transcription.*` config and no chunking — so
+> audio over the provider's per-request limit (OpenAI Whisper = 25 MiB) fails with
+> a raw `413` (guarded now with a clear error, but still not transcribable). This
+> block makes transcription **config-selectable**, **chunk-capable** (works past
+> any single-request limit), and runnable **fully locally** (self-hosted
+> OpenAI-compatible server or in-process ONNX). All opt-in; empty/legacy config =
+> today's behavior. Design in [IMPROVEMENTS.md](IMPROVEMENTS.md) §XLII.
+
+- 📋 **T687** (deps: —) **Transcription config namespace + provider factory** — `turing.transcription.*` + `TurTranscriptionProperties` + a strategy (`OPENAI | OPENAI_COMPATIBLE | LOCAL_ONNX | NONE`) resolved by config, not only a `@Primary` bean override; dedicated transcription model/baseUrl/apiKey/limit decoupled from the default `TurLLMInstance` (fallback to it for back-compat). The parameterized backbone the rest of the block builds on. → §XLII.1
+- 📋 **T688** (deps: T687) **`TurAudioChunker` seam + ffmpeg impl** — probe duration and split into ≤limit segments on silence boundaries (fixed-duration + overlap fallback), re-encoding to 16 kHz mono; passthrough (no ffmpeg call) when audio ≤ limit; an "ffmpeg available?" probe like the T80 Docker probe. Byte-cutting a compressed container is unsafe, hence a real decode/split. → §XLII.2
+- 📋 **T689** (deps: T688) **Chunk-aware transcription orchestration** — transcribe segments bounded-parallel + ordered, stitch and dedupe overlap, aggregate the detected language; sits **above** `TurTranscriptionProvider` so every backend (OpenAI + local) gets large-file support; replaces the fixed 25 MiB guard with the configurable per-provider limit. → §XLII.3
+- 📋 **T690** (deps: T687) **Local OpenAI-compatible backend (faster-whisper-server)** — config-selected `OPENAI_COMPATIBLE` strategy pointing the REST provider at a self-hosted `/audio/transcriptions` server + a `viglet/cloud` sidecar container recipe + docs. The recommended local path — reuses the existing REST client, scales horizontally, GPU-capable. → §XLII.4
+- 📋 **T691** (deps: T687) **In-process DJL/ONNX Whisper backend** — air-gapped `LOCAL_ONNX` strategy with no sidecar; mirrors the T656 local embedding-model pattern (resilient download + persistent cache + DJL runtime) with a tiny/base/small model-size picker. → §XLII.5
+- 💭 **T692** (deps: T689) **Async transcription jobs** — take long audio off the HTTP request thread: submit → SSE/poll status → result, with a bounded worker pool + back-pressure (reuses the workspace/SSE-bus patterns). The scale lever for big recordings. → §XLII.6
+- 💭 **T693** (deps: T689) **Wire the AUDIO slot / voice + per-backend metrics** — route the T64 AUDIO slot and F.5 voice callers through the chunked path; per-backend cost/latency metrics (T88) and a confidence fallback (local → cloud on low-confidence). → §XLII.7
+
 ## Non-goals (do NOT add as tasks)
 
 Binding constraints — see [IMPROVEMENTS.md](IMPROVEMENTS.md) §I.6 (What NOT to
