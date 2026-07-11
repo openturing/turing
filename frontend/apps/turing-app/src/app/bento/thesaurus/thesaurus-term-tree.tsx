@@ -5,6 +5,7 @@ import type { TurThesaurusTerm } from "@/models/kb/thesaurus.model";
 import {
   IconChevronRight,
   IconCirclePlus,
+  IconPencil,
   IconPlus,
   IconTag,
   IconTrash,
@@ -12,6 +13,7 @@ import {
 import { toast } from "@viglet/viglet-design-system";
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { ThesaurusTermEditor } from "./thesaurus-term-editor";
 
 interface TreeNode {
   term: TurThesaurusTerm;
@@ -66,6 +68,7 @@ export function ThesaurusTermTree({ microId, terms }: TermTreeProps) {
   const forest = useMemo(() => buildForest(terms), [terms]);
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
   const [addingUnder, setAddingUnder] = useState<string | null>(null);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [newLabel, setNewLabel] = useState("");
 
   const createTerm = useCreateTerm(microId);
@@ -166,6 +169,14 @@ export function ThesaurusTermTree({ microId, terms }: TermTreeProps) {
           <div className="flex shrink-0 items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
             <button
               type="button"
+              aria-label={t("thesaurus.editTerm")}
+              className="rounded-lg p-1 text-muted-foreground hover:bg-violet-500/10 hover:text-violet-500"
+              onClick={() => setEditingId((cur) => (cur === term.id ? null : term.id))}
+            >
+              <IconPencil size={16} />
+            </button>
+            <button
+              type="button"
               aria-label={t("thesaurus.addChild")}
               className="rounded-lg p-1 text-muted-foreground hover:bg-indigo-500/10 hover:text-indigo-500"
               onClick={() => {
@@ -186,6 +197,17 @@ export function ThesaurusTermTree({ microId, terms }: TermTreeProps) {
             </button>
           </div>
         </div>
+
+        {editingId === term.id && (
+          <div style={{ marginLeft: (depth + 1) * 20 }}>
+            <ThesaurusTermEditor
+              microId={microId}
+              term={term}
+              allTerms={terms}
+              onClose={() => setEditingId(null)}
+            />
+          </div>
+        )}
 
         {addingUnder === term.id && (
           <div className="mt-1 flex items-center gap-2" style={{ marginLeft: (depth + 1) * 20 }}>

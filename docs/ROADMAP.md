@@ -116,7 +116,6 @@
 > relations + `variations`) is the import + AI-generation contract.
 
 - 💭 **T675** (deps: T673, T674) **LLM-assisted hierarchy generation** — generate new microthesaurus trees from a domain+language prompt, emitting the T673 authority-file format; reuses the AI-authoring strict-schema + LlmJudge grounding path (T426/T385). → §XL.8
-- 📋 **T679** (deps: T676) **Bento term-tree editor — full editing** — extend the T676 tree (which already does expand/add-child/add-root/delete + variation/relation chips) with in-place label rename, editing recognition `variations` (surface form + case/accent flags), managing non-hierarchical relations (`RELATED`/`USE`/`USED_FOR` + target picker), enable/disable, and drag-reorder/reparent. → §XL.9
 - 💭 **T677** (deps: T672) **Hierarchical concept facet** — second `microthesaurus_path` field (path tokens `0/Doença`, `1/Doença/Doença respiratória`, …) for Solr drill-down navigation, surfacing the Semantic-Navigation-style browse. → §XL.10
 - 💭 **T678** (deps: T672) **Query-time related-term suggestions** — a did-you-mean-style "related concepts" surface built on the microthesaurus `RELATED` (RT) links, reusing the spell-check/suggestion UI plumbing. → §XL.11
 
