@@ -21,6 +21,8 @@
 
 package com.viglet.turing.sn.migration;
 
+import java.util.List;
+
 /**
  * Request to migrate one Algolia index into an SN site (T658 / §XXXVIII.2).
  *
@@ -40,6 +42,7 @@ package com.viglet.turing.sn.migration;
  * @param maxDocuments cap on documents imported ({@code 0}/null = no cap).
  * @param useLlm       when true and a default LLM is configured, refine the derived schema with it.
  * @param dryRun       when true, only derive + return the manifest.
+ * @param overrides    declarative field-mapping overrides applied during import (T660).
  *
  * @author Alexandre Oliveira
  * @since 2026.3.4
@@ -55,5 +58,6 @@ public record TurAlgoliaMigrationRequest(
         Integer batchSize,
         Integer maxDocuments,
         boolean useLlm,
-        boolean dryRun) {
+        boolean dryRun,
+        List<TurMigrationOverride> overrides) {
 }

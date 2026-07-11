@@ -55,7 +55,11 @@ function required(value: string | undefined, flag: string): string {
 }
 
 /** Builds the `/api/sn/migrate/{engine}` request body from the parsed flags. */
-export function buildMigrateBody(engine: MigrateEngine, flags: MigrateFlags): Record<string, unknown> {
+export function buildMigrateBody(
+  engine: MigrateEngine,
+  flags: MigrateFlags,
+  overrides?: unknown[],
+): Record<string, unknown> {
   const common = {
     index: required(str(flags, "index"), "index"),
     targetSite: required(str(flags, "site"), "site"),
@@ -64,6 +68,7 @@ export function buildMigrateBody(engine: MigrateEngine, flags: MigrateFlags): Re
     batchSize: int(flags, "batch-size"),
     maxDocuments: int(flags, "max-documents"),
     dryRun: flags["dry-run"] === true,
+    overrides: overrides && overrides.length > 0 ? overrides : undefined,
   };
   if (engine === "elasticsearch") {
     return {
@@ -89,8 +94,9 @@ export async function runMigrate(
   engine: MigrateEngine,
   flags: MigrateFlags,
   log: (line: string) => void,
+  overrides?: unknown[],
 ): Promise<MigrationResult> {
-  const body = buildMigrateBody(engine, flags);
+  const body = buildMigrateBody(engine, flags, overrides);
   await client.authenticate();
   log(`Migrating ${engine} index '${body.index}' → SN site '${body.targetSite}'${body.dryRun ? " (dry run)" : ""}…`);
   const result = await client.post<MigrationResult>(`/api/sn/migrate/${engine}`, body);
@@ -100,21 +106,27 @@ export async function runMigrate(
 
 /** Human-readable summary of a migration result. */
 export function formatMigrationResult(result: MigrationResult): string[] {
-  const lines: string[] = [];
-  if (result.dryRun) {
-    lines.push(`\nDry run — ${result.fieldsDetected} field(s) detected (nothing provisioned or imported):`);
-    for (const f of result.manifest?.fields ?? []) {
-      const flags = [f.facet ? "facet" : null, f.multiValued ? "multi" : null].filter(Boolean).join(", ");
-      lines.push(`  • ${f.name}: ${f.type}${flags ? " (" + flags + ")" : ""}`);
-    }
-  } else {
-    lines.push(`\n✓ ${result.engine} → site '${result.site}'${result.siteCreated ? " (created)" : " (converged)"}`);
-    lines.push(`  fields: ${result.fieldsCreated.length} created, ${result.fieldsSkipped.length} existed`);
-    lines.push(`  documents: ${result.documentsImported} queued for indexing`);
-  }
-  if (result.warnings?.length) {
-    lines.push(`\n⚠ ${result.warnings.length} warning(s):`);
-    for (const w of result.warnings) lines.push(`  - ${w}`);
-  }
-  return lines;
+  const body = result.dryRun ? dryRunLines(result) : realRunLines(result);
+  return [...body, ...warningLines(result.warnings)];
+}
+
+function dryRunLines(result: MigrationResult): string[] {
+  const fields = (result.manifest?.fields ?? []).map((f) => {
+    const flags = [f.facet ? "facet" : null, f.multiValued ? "multi" : null].filter(Boolean).join(", ");
+    return `  • ${f.name}: ${f.type}${flags ? " (" + flags + ")" : ""}`;
+  });
+  return [`\nDry run — ${result.fieldsDetected} field(s) detected (nothing provisioned or imported):`, ...fields];
+}
+
+function realRunLines(result: MigrationResult): string[] {
+  return [
+    `\n✓ ${result.engine} → site '${result.site}'${result.siteCreated ? " (created)" : " (converged)"}`,
+    `  fields: ${result.fieldsCreated.length} created, ${result.fieldsSkipped.length} existed`,
+    `  documents: ${result.documentsImported} queued for indexing`,
+  ];
+}
+
+function warningLines(warnings: string[]): string[] {
+  if (!warnings?.length) return [];
+  return [`\n⚠ ${warnings.length} warning(s):`, ...warnings.map((w) => `  - ${w}`)];
 }

@@ -94,13 +94,14 @@ public class TurElasticsearchMigrationService {
         TurElasticsearchManifestBuilder.Result built =
                 TurElasticsearchManifestBuilder.build(mapping, sample);
         List<String> warnings = new ArrayList<>(built.warnings());
-        VigletFieldManifest manifest = manifest(request, built.fields());
+        List<VigletFieldSpec> fields = TurMigrationOverrides.applyToFields(built.fields(), request.overrides());
+        VigletFieldManifest manifest = manifest(request, fields);
 
         if (request.dryRun()) {
             client.clearScroll(conn, page.scrollId());
             log.info("[T657] Dry-run migration of ES index '{}' -> site '{}': {} field(s) detected",
-                    request.index(), request.targetSite(), built.fields().size());
-            return new TurMigrationResult(ENGINE, request.targetSite(), false, built.fields().size(),
+                    request.index(), request.targetSite(), fields.size());
+            return new TurMigrationResult(ENGINE, request.targetSite(), false, fields.size(),
                     List.of(), List.of(), page.hits().size(), 0, true, manifest, warnings);
         }
 
@@ -113,7 +114,7 @@ public class TurElasticsearchMigrationService {
                 request.index(), request.targetSite(), provisioned.fieldsCreated().size(), imported);
 
         return new TurMigrationResult(ENGINE, provisioned.siteName(), provisioned.siteCreated(),
-                built.fields().size(), provisioned.fieldsCreated(), provisioned.fieldsSkipped(),
+                fields.size(), provisioned.fieldsCreated(), provisioned.fieldsSkipped(),
                 imported, imported, false, manifest, warnings);
     }
 
@@ -129,7 +130,9 @@ public class TurElasticsearchMigrationService {
             }
             List<Map<String, Object>> batch = new ArrayList<>(hits.size());
             for (EsHit hit : hits) {
-                batch.add(TurEsDocumentMapper.toAttributes(hit.id(), hit.source(), request.index(), PROVIDER));
+                batch.add(TurMigrationOverrides.applyToAttributes(
+                        TurEsDocumentMapper.toAttributes(hit.id(), hit.source(), request.index(), PROVIDER),
+                        request.overrides()));
             }
             importService.importBatch(request.targetSite(), locale, batch);
             imported += batch.size();

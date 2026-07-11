@@ -49,6 +49,15 @@ test("buildMigrateBody requires the mandatory flags", () => {
   assert.throws(() => buildMigrateBody("algolia", { "api-key": "k", index: "i", site: "s" }), /app-id/);
 });
 
+test("buildMigrateBody includes overrides when provided, omits when empty", () => {
+  const overrides = [{ field: "cost", rename: "price", type: "CURRENCY" }];
+  const withOv = buildMigrateBody("elasticsearch", { "source-url": "u", index: "i", site: "s" }, overrides);
+  assert.deepEqual(withOv.overrides, overrides);
+
+  const withoutOv = buildMigrateBody("elasticsearch", { "source-url": "u", index: "i", site: "s" }, []);
+  assert.equal(withoutOv.overrides, undefined);
+});
+
 test("buildMigrateBody rejects a non-numeric --batch-size", () => {
   assert.throws(
     () => buildMigrateBody("algolia", { "app-id": "a", "api-key": "k", index: "i", site: "s", "batch-size": "lots" }),

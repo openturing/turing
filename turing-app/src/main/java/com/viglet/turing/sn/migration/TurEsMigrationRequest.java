@@ -21,13 +21,16 @@
 
 package com.viglet.turing.sn.migration;
 
+import java.util.List;
+
 /**
  * Request to migrate one Elasticsearch index into an SN site (T657 / §XXXVIII.1).
  *
  * <p>The whole migration is driven by just a URL, credentials, and the source
  * index name — no vendor SDK. {@code seInstanceId} is only needed when the target
  * SN site does not yet exist (it is created against that search-engine instance).
- * A {@code dryRun} returns the derived manifest without provisioning or importing.</p>
+ * A {@code dryRun} returns the derived manifest without provisioning or importing.
+ * Optional {@code overrides} reshape the schema on the way in (T660).</p>
  *
  * @param sourceUrl    the base URL of the source cluster (e.g. {@code https://host:9200}).
  * @param username     basic-auth user (optional).
@@ -40,6 +43,7 @@ package com.viglet.turing.sn.migration;
  * @param batchSize    documents per import batch (defaults to the configured value).
  * @param maxDocuments cap on documents imported ({@code 0}/null = no cap).
  * @param dryRun       when true, only derive + return the manifest.
+ * @param overrides    declarative field-mapping overrides applied during import (T660).
  *
  * @author Alexandre Oliveira
  * @since 2026.3.4
@@ -55,5 +59,6 @@ public record TurEsMigrationRequest(
         String locale,
         Integer batchSize,
         Integer maxDocuments,
-        boolean dryRun) {
+        boolean dryRun,
+        List<TurMigrationOverride> overrides) {
 }

@@ -93,15 +93,16 @@ public class TurAlgoliaMigrationService {
         List<VigletFieldSpec> baseFields = deriveBaseFields(request, sample);
         TurAlgoliaManifestBuilder.Result built = TurAlgoliaManifestBuilder.build(baseFields, settings);
         List<String> warnings = new ArrayList<>(built.warnings());
+        List<VigletFieldSpec> fields = TurMigrationOverrides.applyToFields(built.fields(), request.overrides());
 
         surfaceSynonyms(conn, request.index(), warnings);
 
-        VigletFieldManifest manifest = manifest(request, built.fields());
+        VigletFieldManifest manifest = manifest(request, fields);
 
         if (request.dryRun()) {
             log.info("[T658] Dry-run migration of Algolia index '{}' -> site '{}': {} field(s) detected",
-                    request.index(), request.targetSite(), built.fields().size());
-            return new TurMigrationResult(ENGINE, request.targetSite(), false, built.fields().size(),
+                    request.index(), request.targetSite(), fields.size());
+            return new TurMigrationResult(ENGINE, request.targetSite(), false, fields.size(),
                     List.of(), List.of(), page.hits().size(), 0, true, manifest, warnings);
         }
 
@@ -114,7 +115,7 @@ public class TurAlgoliaMigrationService {
                 request.index(), request.targetSite(), provisioned.fieldsCreated().size(), imported);
 
         return new TurMigrationResult(ENGINE, provisioned.siteName(), provisioned.siteCreated(),
-                built.fields().size(), provisioned.fieldsCreated(), provisioned.fieldsSkipped(),
+                fields.size(), provisioned.fieldsCreated(), provisioned.fieldsSkipped(),
                 imported, imported, false, manifest, warnings);
     }
 
@@ -157,8 +158,10 @@ public class TurAlgoliaMigrationService {
             List<Map<String, Object>> batch = new ArrayList<>(hits.size());
             for (Map<String, Object> record : hits) {
                 String id = record.get(OBJECT_ID) == null ? null : record.get(OBJECT_ID).toString();
-                batch.add(TurMigrationDocumentMapper.toAttributes(id, without(record, OBJECT_ID),
-                        request.index(), PROVIDER));
+                batch.add(TurMigrationOverrides.applyToAttributes(
+                        TurMigrationDocumentMapper.toAttributes(id, without(record, OBJECT_ID),
+                                request.index(), PROVIDER),
+                        request.overrides()));
             }
             importService.importBatch(request.targetSite(), locale, batch);
             imported += batch.size();

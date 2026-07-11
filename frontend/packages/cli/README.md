@@ -100,7 +100,24 @@ turing migrate algolia \
 | `--source-user` / `--source-password` / `--source-api-key` | ES | Source auth. |
 | `--app-id` / `--api-key` | Algolia | Application id + a read-capable API key (required). |
 | `--use-llm` | Algolia | Refine the inferred schema with a configured LLM. |
+| `--overrides-file <path>` | both | JSON array of field-mapping overrides (rename / retype / drop / default). |
 | `--locale` `--batch-size` `--max-documents` `--dry-run` | both | Tuning + preview. |
+
+A source schema is rarely 1:1 with what you want in Turing. `--overrides-file`
+points at a JSON array that reshapes fields on the way in:
+
+```json
+[
+  { "field": "cost", "rename": "price", "type": "CURRENCY" },
+  { "field": "internal_notes", "drop": true },
+  { "field": "source", "type": "STRING", "defaultValue": "algolia-import" }
+]
+```
+
+Each override targets one source `field` and may `rename` it, force its `type`,
+`drop` it, or set a `defaultValue` for records that omit it (a `type` with no
+matching source field materialises a constant field). Overrides apply to both the
+derived manifest and every document, so schema and data stay consistent.
 
 `--se-instance` is only required when the target site doesn't exist yet. Synonyms
 found in an Algolia index are reported for you to apply in the target engine

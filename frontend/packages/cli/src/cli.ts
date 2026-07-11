@@ -25,7 +25,7 @@
  * @since 2026.3.6
  */
 
-import { writeFileSync } from "node:fs";
+import { readFileSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 
@@ -207,8 +207,19 @@ async function migrateCommand(rest: string[]): Promise<void> {
   if (engine !== "elasticsearch" && engine !== "algolia") {
     throw new Error("Usage: turing migrate <elasticsearch|algolia> [flags]. Run `turing help`.");
   }
+  const overrides = loadOverridesFile(typeof extra["overrides-file"] === "string" ? extra["overrides-file"] : undefined);
   const connected = await connect(flags, process.cwd());
-  await runMigrate(connected.client, engine as MigrateEngine, extra, log);
+  await runMigrate(connected.client, engine as MigrateEngine, extra, log, overrides);
+}
+
+/** Reads a JSON array of field-mapping overrides (T660) from a file, if given. */
+function loadOverridesFile(path: string | undefined): unknown[] | undefined {
+  if (!path) return undefined;
+  const parsed = JSON.parse(readFileSync(resolve(process.cwd(), path), "utf8"));
+  if (!Array.isArray(parsed)) {
+    throw new TypeError(`--overrides-file must contain a JSON array of overrides (got ${typeof parsed}).`);
+  }
+  return parsed;
 }
 
 async function evalCommand(rest: string[]): Promise<void> {
@@ -297,6 +308,7 @@ function printHelp(): void {
       "                               [--locale <c>] [--batch-size <n>] [--max-documents <n>] [--dry-run]",
       "  turing migrate algolia --app-id <id> --api-key <k> --index <i> --site <s> [--se-instance <id>]",
       "                         [--use-llm] [--locale <c>] [--batch-size <n>] [--max-documents <n>] [--dry-run]",
+      "                         [--overrides-file <path>]  (rename/retype/drop/default fields — both engines)",
       "  turing eval [path] [--watch] [connection flags]",
       "  turing eval --dataset <id|name> [--stack <id|name>] [--min-score <n>] [connection flags]",
       "  turing eval record <conversationId> [--out <file>] [connection flags]",

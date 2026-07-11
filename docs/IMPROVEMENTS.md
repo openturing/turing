@@ -2483,11 +2483,6 @@ T382/T386, the `/api/sn/import` API, the React + vanilla SDKs); step 2 is the on
 thing that makes a team hesitate to switch. Block AO closes that gap by building
 the importer, not by writing more prose around a manual process.
 
-**XXXVIII.4 — Field-mapping override (T660, idea).** A migration is rarely 1:1, so
-a small declarative override (rename / retype / drop / default a field) applied
-during import lets the operator reshape the schema on the way in without editing
-every record. Kept an idea until T657 lands and the real 1:1 pain is measured.
-
 **XXXVIII.5 — Shadow / dual-run comparison (T661, idea).** To de-risk the cutover,
 run the same query set against the source engine and Turing and diff the result
 sets, giving a team an evidence-based relevance-parity check before they flip
