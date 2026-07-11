@@ -2277,17 +2277,6 @@ not a second call site.
 > guard — were all verified present and are called out so they are not "fixed"
 > away.
 
-**XXXVII.12 — MCP hardening (MEDIUM, CONFIRMED).** Inbound `/mcp` fails open —
-`turing.mcp-server.require-auth` defaults false, so it is `permitAll` behind only a
-`TurMcpLoopbackFilter` (breaks if a proxy forwards to the app / `X-Forwarded-For` is
-trusted); fail-closed logic only runs when `require-auth=true`. The agent-as-MCP-
-client path (`TurMcpToolCallbackService.createTransport:139`) uses `server.url()`
-verbatim (SSRF) and `server.command()` + args for stdio transport (arbitrary local
-process on the host) with no allowlist. Admin-gated (so MEDIUM), but stdio is
-effectively RCE-by-config and the client path has no scope policy. Fix: default
-fail-closed, validate/allowlist client URL + command, extend `TurMcpToolScopePolicy`
-to client tools.
-
 **XXXVII.13 — IDOR in user-memory (MEDIUM, CONFIRMED gap).** `TurUserMemoryAPI`
 (`/api/sn/{site}/user-memory`) keys `list`/`remember`/`clear` on a client-supplied
 `userId` with no binding to the caller, and `delete(@PathVariable id)` deletes any

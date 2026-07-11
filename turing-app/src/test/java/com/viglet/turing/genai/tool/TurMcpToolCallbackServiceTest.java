@@ -36,7 +36,26 @@ class TurMcpToolCallbackServiceTest {
 
     @BeforeEach
     void setUp() {
-        service = new TurMcpToolCallbackService(mcpServerRepositoryPort);
+        service = new TurMcpToolCallbackService(mcpServerRepositoryPort,
+                new com.viglet.turing.properties.TurMcpClientProperty(),
+                new com.viglet.turing.spring.security.ssrf.TurSsrfGuard());
+    }
+
+    // T650 / §XXXVII.12 — stdio command allowlist (RCE-by-config guard).
+    @Test
+    void emptyAllowlistPermitsAnyCommand() {
+        assertThat(TurMcpToolCallbackService.isStdioCommandAllowed("npx", List.of())).isTrue();
+        assertThat(TurMcpToolCallbackService.isStdioCommandAllowed("/usr/bin/anything", null)).isTrue();
+    }
+
+    @Test
+    void nonEmptyAllowlistMatchesBaseNameCaseInsensitively() {
+        List<String> allowed = List.of("npx", "uvx");
+        assertThat(TurMcpToolCallbackService.isStdioCommandAllowed("npx", allowed)).isTrue();
+        assertThat(TurMcpToolCallbackService.isStdioCommandAllowed("/usr/local/bin/NPX", allowed)).isTrue();
+        assertThat(TurMcpToolCallbackService.isStdioCommandAllowed("C:\\tools\\uvx.exe", allowed)).isFalse();
+        assertThat(TurMcpToolCallbackService.isStdioCommandAllowed("bash", allowed)).isFalse();
+        assertThat(TurMcpToolCallbackService.isStdioCommandAllowed("/bin/sh", allowed)).isFalse();
     }
 
     private static TurMcpServerDomain serverDomain(String id, String title) {

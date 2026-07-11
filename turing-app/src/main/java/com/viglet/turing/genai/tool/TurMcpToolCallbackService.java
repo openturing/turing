@@ -33,10 +33,16 @@ import lombok.extern.slf4j.Slf4j;
 public class TurMcpToolCallbackService {
 
     private final TurMcpServerRepositoryPort mcpServerRepositoryPort;
+    private final com.viglet.turing.properties.TurMcpClientProperty mcpClientProperty;
+    private final com.viglet.turing.spring.security.ssrf.TurSsrfGuard ssrfGuard;
     private final ConcurrentHashMap<String, McpSyncClient> clientCache = new ConcurrentHashMap<>();
 
-    public TurMcpToolCallbackService(TurMcpServerRepositoryPort mcpServerRepositoryPort) {
+    public TurMcpToolCallbackService(TurMcpServerRepositoryPort mcpServerRepositoryPort,
+            com.viglet.turing.properties.TurMcpClientProperty mcpClientProperty,
+            com.viglet.turing.spring.security.ssrf.TurSsrfGuard ssrfGuard) {
         this.mcpServerRepositoryPort = mcpServerRepositoryPort;
+        this.mcpClientProperty = mcpClientProperty;
+        this.ssrfGuard = ssrfGuard;
     }
 
     /**
@@ -138,11 +144,18 @@ public class TurMcpToolCallbackService {
     @SuppressWarnings("deprecation")
     private McpClientTransport createTransport(TurMcpServerDomain server) {
         if (server.connectionType() == TurMcpServerConnectionType.HTTP) {
+            // T650 / §XXXVII.12 — optional SSRF guard on the client URL.
+            if (mcpClientProperty.isBlockPrivateUrls() && !ssrfGuard.isAllowedUrl(server.url())) {
+                throw new IllegalArgumentException(
+                        "MCP client URL is not an allowed egress target: " + server.url());
+            }
             if (server.isStreamableHttp()) {
                 return HttpClientStreamableHttpTransport.builder(server.url()).build();
             }
             return HttpClientSseClientTransport.builder(server.url()).build();
         } else {
+            // T650 / §XXXVII.12 — optional stdio command allowlist (RCE-by-config).
+            assertStdioCommandAllowed(server.command());
             String[] args = server.args() != null && !server.args().isBlank()
                     ? server.args().split("\\s+")
                     : new String[0];
@@ -151,6 +164,37 @@ public class TurMcpToolCallbackService {
                     .build();
             return new StdioClientTransport(params, McpJsonDefaults.getMapper());
         }
+    }
+
+    /**
+     * T650 / §XXXVII.12 — when {@code turing.mcp-client.allowed-stdio-commands} is
+     * configured, refuse a stdio MCP server whose command's base name is not in
+     * the allowlist (blocks arbitrary local-process execution by configuration).
+     * Empty allowlist = legacy (any command allowed).
+     */
+    private void assertStdioCommandAllowed(String command) {
+        if (!isStdioCommandAllowed(command, mcpClientProperty.getAllowedStdioCommands())) {
+            throw new IllegalArgumentException(
+                    "MCP client stdio command '" + command + "' is not in the allowed-stdio-commands allowlist.");
+        }
+    }
+
+    /**
+     * Pure allowlist check (package-visible for tests). Empty/null allowlist =
+     * legacy (any command allowed). Otherwise the command's base name must match
+     * an allowlist entry case-insensitively.
+     */
+    static boolean isStdioCommandAllowed(String command, java.util.List<String> allowed) {
+        if (allowed == null || allowed.isEmpty()) {
+            return true;
+        }
+        String base = command == null ? "" : command.trim().replace('\\', '/');
+        int slash = base.lastIndexOf('/');
+        if (slash >= 0) {
+            base = base.substring(slash + 1);
+        }
+        final String baseName = base.toLowerCase();
+        return allowed.stream().anyMatch(a -> a != null && a.trim().equalsIgnoreCase(baseName));
     }
 
     @PreDestroy
