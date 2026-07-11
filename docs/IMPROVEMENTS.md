@@ -2281,16 +2281,6 @@ real-world audio:
 The block closes all three, keeping the seam and today's behavior intact when the
 new config is empty (legacy = byte-identical).
 
-### XLII.4 Local OpenAI-compatible backend (T690)
-
-The recommended local path, and the cheapest to build because the REST client
-already exists: an `OPENAI_COMPATIBLE` strategy that points `baseUrl` at a
-self-hosted server speaking the OpenAI `/audio/transcriptions` contract
-(`faster-whisper-server`, `whisper.cpp` server, vLLM-whisper). Ship a `viglet/cloud`
-sidecar container recipe + docs. Scales horizontally, is GPU-capable, and keeps the
-same code path as the cloud provider — only the URL changes. For most self-hosters
-this is the right "run it locally" answer.
-
 ### XLII.5 In-process DJL/ONNX Whisper backend (T691)
 
 For true air-gap / no-sidecar installs: a `LOCAL_ONNX` strategy that runs Whisper

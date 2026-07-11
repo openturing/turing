@@ -48,6 +48,7 @@ number" looked free but wasn't. Grepping three files (`ROADMAP.md`,
 
 ## Log (most recent first)
 
+- **T690 SHIPPED** (Block AS §XLII — local OPENAI_COMPATIBLE backend: shared TurOpenAiTranscriptionClient (blank-key omits auth), TurOpenAiCompatibleTranscriptionProvider requires dedicated endpoint; faster-whisper-server sidecar recipe in docs/references) — 2026-07-11.
 - **T689 SHIPPED** (Block AS §XLII — TurTranscriptionService orchestrator above the provider seam: bounded-parallel ordered chunk transcription, pure stitchTranscripts overlap-dedupe + language aggregation, chunk-or-fail; persona caller re-pointed) — 2026-07-11.
 - **T688 SHIPPED** (Block AS §XLII — TurAudioChunker seam + TurFfmpegAudioChunker: pure planSegments, silence-snap + overlap, 16kHz mono mp3 re-encode, passthrough ≤ limit, ffmpeg probe endpoint + bento Check-ffmpeg button) — 2026-07-11.
 - **T687 SHIPPED** (Block AS §XLII — transcription config namespace + provider factory: TurTranscriptionProviderType/Factory/ConfigResolver, env-over-DB precedence, bento Transcription section) — 2026-07-11.
