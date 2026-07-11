@@ -1,0 +1,270 @@
+databaseChangeLog:
+  # T668 / §XL (Block AQ) — Knowledge Base: microthesauri & hierarchical terms.
+  #
+  #   kb_knowledge_base           — aggregate root (library), carries @TenantId.
+  #   kb_microthesaurus           — one tree per language + domain, FK -> kb_knowledge_base.
+  #   kb_thesaurus_term           — a term node; parentTermId is a SOFT FK (broader/
+  #                                 narrower spine), FK -> kb_microthesaurus.
+  #   kb_thesaurus_term_variation — @ElementCollection of recognition surface forms.
+  #   kb_thesaurus_term_relation  — non-hierarchical edges (RELATED/USE/USED_FOR/
+  #                                 CUSTOM), FK -> kb_thesaurus_term (source).
+  #
+  # Column names match the JPA field names (camelCase); FK columns snake_case like
+  # the sibling sn_site children. Portable lowercase types. Idempotent (MARK_RAN).
+
+  - changeSet:
+      id: v2026.3.1.96-create-kb_knowledge_base
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - tableExists:
+                tableName: kb_knowledge_base
+      changes:
+        - createTable:
+            tableName: kb_knowledge_base
+            columns:
+              - column:
+                  name: id
+                  type: varchar(255)
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: name
+                  type: varchar(255)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: description
+                  type: varchar(2000)
+              - column:
+                  name: source
+                  type: varchar(20)
+                  defaultValue: USER
+                  constraints:
+                    nullable: false
+              - column:
+                  name: tenantId
+                  type: varchar(40)
+              - column:
+                  name: creationDate
+                  type: timestamp
+              - column:
+                  name: modificationDate
+                  type: timestamp
+
+  - changeSet:
+      id: v2026.3.1.96-create-kb_microthesaurus
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - tableExists:
+                tableName: kb_microthesaurus
+      changes:
+        - createTable:
+            tableName: kb_microthesaurus
+            columns:
+              - column:
+                  name: id
+                  type: varchar(255)
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: name
+                  type: varchar(255)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: description
+                  type: varchar(2000)
+              - column:
+                  name: language
+                  type: varchar(20)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: domain
+                  type: varchar(100)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: modificationDate
+                  type: timestamp
+              - column:
+                  name: knowledge_base_id
+                  type: varchar(255)
+                  constraints:
+                    nullable: false
+                    foreignKeyName: fk_kb_microthesaurus_kb
+                    references: kb_knowledge_base(id)
+                    deleteCascade: true
+        - createIndex:
+            tableName: kb_microthesaurus
+            indexName: idx_kb_microthesaurus_lang_domain
+            columns:
+              - column:
+                  name: language
+              - column:
+                  name: domain
+
+  - changeSet:
+      id: v2026.3.1.96-create-kb_thesaurus_term
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - tableExists:
+                tableName: kb_thesaurus_term
+      changes:
+        - createTable:
+            tableName: kb_thesaurus_term
+            columns:
+              - column:
+                  name: id
+                  type: varchar(255)
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: label
+                  type: varchar(1000)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: enabled
+                  type: boolean
+                  defaultValueBoolean: true
+                  constraints:
+                    nullable: false
+              - column:
+                  name: termOrder
+                  type: int
+                  defaultValueNumeric: 0
+                  constraints:
+                    nullable: false
+              - column:
+                  name: scopeNote
+                  type: varchar(4000)
+              - column:
+                  name: externalId
+                  type: varchar(255)
+              - column:
+                  name: parentTermId
+                  type: varchar(255)
+              - column:
+                  name: modificationDate
+                  type: timestamp
+              - column:
+                  name: microthesaurus_id
+                  type: varchar(255)
+                  constraints:
+                    nullable: false
+                    foreignKeyName: fk_kb_term_microthesaurus
+                    references: kb_microthesaurus(id)
+                    deleteCascade: true
+        - createIndex:
+            tableName: kb_thesaurus_term
+            indexName: idx_kb_term_microthesaurus
+            columns:
+              - column:
+                  name: microthesaurus_id
+        - createIndex:
+            tableName: kb_thesaurus_term
+            indexName: idx_kb_term_parent
+            columns:
+              - column:
+                  name: parentTermId
+
+  - changeSet:
+      id: v2026.3.1.96-create-kb_thesaurus_term_variation
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - tableExists:
+                tableName: kb_thesaurus_term_variation
+      changes:
+        - createTable:
+            tableName: kb_thesaurus_term_variation
+            columns:
+              - column:
+                  name: term_id
+                  type: varchar(255)
+                  constraints:
+                    nullable: false
+                    foreignKeyName: fk_kb_term_variation_term
+                    references: kb_thesaurus_term(id)
+                    deleteCascade: true
+              - column:
+                  name: surfaceForm
+                  type: varchar(1000)
+              - column:
+                  name: weight
+                  type: double
+                  defaultValueNumeric: 100.0
+              - column:
+                  name: caseSensitive
+                  type: boolean
+                  defaultValueBoolean: false
+              - column:
+                  name: accentSensitive
+                  type: boolean
+                  defaultValueBoolean: true
+              - column:
+                  name: language
+                  type: varchar(20)
+              - column:
+                  name: variationOrder
+                  type: int
+                  constraints:
+                    nullable: false
+
+  - changeSet:
+      id: v2026.3.1.96-create-kb_thesaurus_term_relation
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - tableExists:
+                tableName: kb_thesaurus_term_relation
+      changes:
+        - createTable:
+            tableName: kb_thesaurus_term_relation
+            columns:
+              - column:
+                  name: id
+                  type: varchar(255)
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: type
+                  type: varchar(20)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: directionality
+                  type: varchar(20)
+                  defaultValue: UNIDIRECTIONAL
+                  constraints:
+                    nullable: false
+              - column:
+                  name: targetTermId
+                  type: varchar(255)
+              - column:
+                  name: source_term_id
+                  type: varchar(255)
+                  constraints:
+                    nullable: false
+                    foreignKeyName: fk_kb_term_relation_source
+                    references: kb_thesaurus_term(id)
+                    deleteCascade: true
+        - createIndex:
+            tableName: kb_thesaurus_term_relation
+            indexName: idx_kb_term_relation_source
+            columns:
+              - column:
+                  name: source_term_id

@@ -2488,19 +2488,8 @@ vocabulary. Clients (education-sector first) want documents to be findable by th
 a statistic. OpenText Semantic Navigation did this with **microthesauri**; we
 rebuild it natively, keeping all cost at index time.
 
-### XL.1 Domain model (T668)
-
-`TurKnowledgeBase` (aggregate root, `@TenantId`) → `TurMicrothesaurus`
-(`language:Locale` + `domain:String`) → `TurThesaurusTerm` → `TurThesaurusTermRelation`.
-The broader/narrower spine is a **soft `parentTermId`** pointer (the
-`TurChatFlowState.parentStateId` precedent — no self-referencing JPA entity
-exists in the repo), so ancestor-walking is a plain loop on the hot index path.
-The relation table carries the rest of the ISO-style vocabulary —
-`RELATED`/`USE`/`USED_FOR`/`CUSTOM` with an explicit `directionality` — so the
-full contract round-trips through XML while expansion stays trivial. Language is a
-`Locale` column (one tree per language), `domain` a free String (not an enum) so
-new domains need no migration. Grounded in the verified nstein TME authority-file
-type set (`BT/NT/RT/U/UF`); see the ADR.
+> **XL.1 (domain model, T668) shipped** — see CHANGELOG Block AQ and
+> `docs/adr/0003-knowledge-base-microthesaurus.md`.
 
 ### XL.2 CRUD (T669)
 
