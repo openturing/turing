@@ -45,6 +45,7 @@ number" looked free but wasn't. Grepping three files (`ROADMAP.md`,
 
 ## Log (most recent first)
 
+- **T670 SHIPPED** (Block AQ §XL — per-site microthesaurus selection + index config; wires TurSNFieldProvisioner) — 2026-07-11.
 - **T669 SHIPPED** (Block AQ §XL — Knowledge Base console CRUD API) — 2026-07-11.
 - **T668 SHIPPED** (Block AQ §XL — Knowledge Base domain model + persistence) — 2026-07-11.
 - **T668–T678 CREATED** (📋/💭, Block AQ — Knowledge Base: microthesauri & index-time term expansion; ADR 0003 + §XL) — 2026-07-11.

@@ -28,6 +28,7 @@ import com.viglet.turing.persistence.dto.kb.TurMicrothesaurusDto;
 import com.viglet.turing.persistence.model.kb.TurKnowledgeBase;
 import com.viglet.turing.persistence.model.kb.TurMicrothesaurus;
 import com.viglet.turing.persistence.repository.kb.TurMicrothesaurusRepository;
+import com.viglet.turing.persistence.repository.kb.TurSNSiteMicrothesaurusRepository;
 
 /**
  * T669 / §XL (Block AQ) — CRUD over microthesaurus trees, scoped to a
@@ -41,9 +42,12 @@ import com.viglet.turing.persistence.repository.kb.TurMicrothesaurusRepository;
 public class TurMicrothesaurusService {
 
     private final TurMicrothesaurusRepository repository;
+    private final TurSNSiteMicrothesaurusRepository siteSelectionRepository;
 
-    public TurMicrothesaurusService(TurMicrothesaurusRepository repository) {
+    public TurMicrothesaurusService(TurMicrothesaurusRepository repository,
+            TurSNSiteMicrothesaurusRepository siteSelectionRepository) {
         this.repository = repository;
+        this.siteSelectionRepository = siteSelectionRepository;
     }
 
     @Transactional(readOnly = true)
@@ -78,6 +82,8 @@ public class TurMicrothesaurusService {
         if (!repository.existsById(id)) {
             return false;
         }
+        // T670: drop any per-site selections pointing at this tree (soft FK, no DB cascade).
+        siteSelectionRepository.deleteByMicrothesaurusId(id);
         repository.deleteById(id);
         return true;
     }

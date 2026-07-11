@@ -1,0 +1,112 @@
+databaseChangeLog:
+  # T670 / §XL (Block AQ) — per-SN-site microthesaurus selection + index config.
+  #
+  #   sn_site_microthesaurus        — join: site selected a microthesaurus (soft FK
+  #                                   microthesaurusId into the kb_* library) + enabled.
+  #   sn_site_microthesaurus_config — one row per site: field name / boost /
+  #                                   include-synonyms + master enable.
+  #
+  # Opt-in: no rows here => byte-identical legacy indexing. FK columns snake_case
+  # like the sibling sn_site children; portable lowercase types; idempotent
+  # (MARK_RAN).
+
+  - changeSet:
+      id: v2026.3.1.97-create-sn_site_microthesaurus
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - tableExists:
+                tableName: sn_site_microthesaurus
+      changes:
+        - createTable:
+            tableName: sn_site_microthesaurus
+            columns:
+              - column:
+                  name: id
+                  type: varchar(255)
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: microthesaurusId
+                  type: varchar(255)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: enabled
+                  type: boolean
+                  defaultValueBoolean: true
+                  constraints:
+                    nullable: false
+              - column:
+                  name: sn_site_id
+                  type: varchar(255)
+                  constraints:
+                    nullable: false
+                    foreignKeyName: fk_sn_site_microthesaurus_site
+                    references: sn_site(id)
+                    deleteCascade: true
+        - addUniqueConstraint:
+            tableName: sn_site_microthesaurus
+            constraintName: uk_sn_site_microthesaurus
+            columnNames: sn_site_id, microthesaurusId
+        - createIndex:
+            tableName: sn_site_microthesaurus
+            indexName: idx_sn_site_microthesaurus_site
+            columns:
+              - column:
+                  name: sn_site_id
+
+  - changeSet:
+      id: v2026.3.1.97-create-sn_site_microthesaurus_config
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - tableExists:
+                tableName: sn_site_microthesaurus_config
+      changes:
+        - createTable:
+            tableName: sn_site_microthesaurus_config
+            columns:
+              - column:
+                  name: id
+                  type: varchar(255)
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: enabled
+                  type: boolean
+                  defaultValueBoolean: true
+                  constraints:
+                    nullable: false
+              - column:
+                  name: fieldName
+                  type: varchar(100)
+                  defaultValue: microthesaurus_terms
+                  constraints:
+                    nullable: false
+              - column:
+                  name: boost
+                  type: double
+                  defaultValueNumeric: 0.8
+                  constraints:
+                    nullable: false
+              - column:
+                  name: includeSynonyms
+                  type: boolean
+                  defaultValueBoolean: true
+                  constraints:
+                    nullable: false
+              - column:
+                  name: sn_site_id
+                  type: varchar(255)
+                  constraints:
+                    nullable: false
+                    unique: true
+                    uniqueConstraintName: uk_sn_site_microthesaurus_config_site
+                    foreignKeyName: fk_sn_site_microthesaurus_config_site
+                    references: sn_site(id)
+                    deleteCascade: true

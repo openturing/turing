@@ -115,7 +115,6 @@
 > reconstructed nstein TME / OpenText SN authority-file format (`BT/NT/RT/U/UF`
 > relations + `variations`) is the import + AI-generation contract.
 
-- 📋 **T670** (deps: T668) **Per-site selection + field config** — `TurSNSiteMicrothesaurus` join (site ↔ selected microthesaurus, `enabled`) + per-site index config (field name / boost / include-synonyms) + selection API; wires `TurSNFieldProvisioner`. Opt-in: no selection = legacy indexing. → §XL.3
 - 📋 **T671** (deps: T668, T670) **Recognition dictionary + matcher** — compile the selected microthesauri (∩ locale) into a cached, normalised (case/accent per variation) Aho-Corasick automaton resolving surface forms (label + `USE`/`USED_FOR`) → canonical term; evicted on KB/term/selection change. → §XL.4
 - 📋 **T672** (deps: T671) **Index-time expansion enricher** — `TurSNMicrothesaurusIndexer.enrich(site, locale, attributes)` wired into `TurSNProcessQueue.index` after the T472/T501 enrichers; provisions multi-valued TEXT `microthesaurus_terms` (+ `_str` concept facet), top-down ancestor expansion, low `qf` boost; defensive (never blocks indexing) + index-time IT. → §XL.5
 - 📋 **T673** (deps: T668) **XML importer + reconstructed contract** — author the nstein TME / OpenText SN authority-file XSD/DTD as the formal contract (shallow clone — the old importer is unrecoverable), then import `authorityFile` → domain (`BT/NT` → `parentTermId`, `RT/U/UF` → relations, `variations` → surface forms; reciprocal-pair + self-relation dedupe). → §XL.6
