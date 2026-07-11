@@ -95,13 +95,16 @@ public class TurChatWebhookService {
     private final TurChatWebhookRepository repository;
     private final TurSecretCryptoService cryptoService;
     private final VigletWebhookDispatcher webhookDispatcher;
+    private final com.viglet.turing.spring.security.ssrf.TurSsrfGuard ssrfGuard;
 
     public TurChatWebhookService(TurChatWebhookRepository repository,
             TurSecretCryptoService cryptoService,
-            VigletWebhookDispatcher webhookDispatcher) {
+            VigletWebhookDispatcher webhookDispatcher,
+            com.viglet.turing.spring.security.ssrf.TurSsrfGuard ssrfGuard) {
         this.repository = repository;
         this.cryptoService = cryptoService;
         this.webhookDispatcher = webhookDispatcher;
+        this.ssrfGuard = ssrfGuard;
     }
 
     /** Outcome of a single dispatch — {@code url} is a {@code webhook://name} marker on success. */
@@ -367,6 +370,13 @@ public class TurChatWebhookService {
      * failure (handoff) or swallows it (slot-write), exactly as before.
      */
     private void post(TurChatWebhook webhook, Object body) throws IOException {
+        // T643 / §XXXVII.5 — a webhook target URL is attacker-influenceable (flow
+        // bundle import / LLM authoring), so gate it through the egress guard
+        // before sending (with the encrypted auth header attached).
+        if (!ssrfGuard.isAllowedUrl(webhook.getTargetUrl())) {
+            throw new IOException("Webhook target URL is not an allowed egress target: "
+                    + webhook.getTargetUrl());
+        }
         String method = resolveMethod(webhook.getHttpMethod());
         boolean bodyBearing = BODY_BEARING_METHODS.contains(method);
 

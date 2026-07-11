@@ -115,15 +115,23 @@ public class TurConnectorSelfInstallService {
 
     private final TurComputerUseDriver computerUseDriver;
     private final RestClient restClient;
+    private final com.viglet.turing.spring.security.ssrf.TurSsrfGuard ssrfGuard;
 
     @Autowired
-    public TurConnectorSelfInstallService(TurComputerUseDriver computerUseDriver) {
-        this(computerUseDriver, defaultClient());
+    public TurConnectorSelfInstallService(TurComputerUseDriver computerUseDriver,
+            com.viglet.turing.spring.security.ssrf.TurSsrfGuard ssrfGuard) {
+        this(computerUseDriver, ssrfGuard, defaultClient());
     }
 
     /** Test seam: lets a unit test bind a {@code MockRestServiceServer} to the client. */
     TurConnectorSelfInstallService(TurComputerUseDriver computerUseDriver, RestClient restClient) {
+        this(computerUseDriver, new com.viglet.turing.spring.security.ssrf.TurSsrfGuard(), restClient);
+    }
+
+    TurConnectorSelfInstallService(TurComputerUseDriver computerUseDriver,
+            com.viglet.turing.spring.security.ssrf.TurSsrfGuard ssrfGuard, RestClient restClient) {
         this.computerUseDriver = computerUseDriver;
+        this.ssrfGuard = ssrfGuard;
         this.restClient = restClient;
     }
 
@@ -200,6 +208,16 @@ public class TurConnectorSelfInstallService {
         Map<String, String> extra = descriptor != null && descriptor.extraHeaders() != null
                 ? descriptor.extraHeaders() : Map.of();
         String url = trimTrailingSlash(endpoint) + testPath;
+
+        // T643 / §XXXVII.5 — this authenticated probe is a response-observable
+        // SSRF oracle (status/message are returned to the caller and a bearer
+        // token is forwarded to the chosen host). Gate the caller-supplied URL
+        // through the central egress guard before connecting.
+        if (!ssrfGuard.isAllowedUrl(url)) {
+            log.warn("[Connector] connection test blocked by SSRF guard: {}", url);
+            return new ConnectionTestResult(false, 0,
+                    "The endpoint is not an allowed target (blocked by the egress guard).");
+        }
 
         try {
             var spec = restClient.get().uri(url)

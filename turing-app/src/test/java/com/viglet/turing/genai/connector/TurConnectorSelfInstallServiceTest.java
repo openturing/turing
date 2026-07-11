@@ -48,10 +48,19 @@ class TurConnectorSelfInstallServiceTest {
 
     private MockRestServiceServer server;
 
+    /** Permissive guard so the HTTP-probe tests stay hermetic (no real DNS). */
+    private static final com.viglet.turing.spring.security.ssrf.TurSsrfGuard ALLOW_ALL_GUARD =
+            new com.viglet.turing.spring.security.ssrf.TurSsrfGuard() {
+                @Override
+                public boolean isAllowedUrl(String urlString) {
+                    return true;
+                }
+            };
+
     private TurConnectorSelfInstallService newService() {
         RestClient.Builder builder = RestClient.builder();
         server = MockRestServiceServer.bindTo(builder).build();
-        return new TurConnectorSelfInstallService(computerUseDriver, builder.build());
+        return new TurConnectorSelfInstallService(computerUseDriver, ALLOW_ALL_GUARD, builder.build());
     }
 
     @Test
@@ -146,5 +155,26 @@ class TurConnectorSelfInstallServiceTest {
 
         assertThat(r.success()).isTrue();
         server.verify();
+    }
+
+    @Test
+    void testConnectionBlockedBySsrfGuard() {
+        // A guard that blocks everything → no HTTP call, failed result (T643).
+        var blockingGuard = new com.viglet.turing.spring.security.ssrf.TurSsrfGuard() {
+            @Override
+            public boolean isAllowedUrl(String urlString) {
+                return false;
+            }
+        };
+        RestClient.Builder builder = RestClient.builder();
+        MockRestServiceServer strictServer = MockRestServiceServer.bindTo(builder).build();
+        var service = new TurConnectorSelfInstallService(computerUseDriver, blockingGuard, builder.build());
+
+        ConnectionTestResult r = service.testConnection(
+                new ConnectionTestRequest("unknown", "http://169.254.169.254/latest/meta-data/", "tok"));
+
+        assertThat(r.success()).isFalse();
+        assertThat(r.message()).contains("egress guard");
+        strictServer.verify(); // no request was made
     }
 }

@@ -20,7 +20,6 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
-import java.net.Inet4Address;
 import java.net.InetAddress;
 import java.net.MalformedURLException;
 import java.net.URI;
@@ -289,41 +288,15 @@ public class TurFileUtils {
         }
     }
 
+    /**
+     * T643 / §XXXVII.5 — delegates to the single hardened validator
+     * {@link com.viglet.turing.spring.security.ssrf.TurSsrfGuard} so this
+     * long-standing download-path guard also blocks IPv6 ULA ({@code fc00::/7}),
+     * closing the gap where {@code isSiteLocalAddress()} only matched the
+     * deprecated {@code fec0::/10}.
+     */
     public static boolean isSafe(InetAddress address) {
-        if (address.isLoopbackAddress() ||
-                address.isSiteLocalAddress() ||
-                address.isLinkLocalAddress() ||
-                address.isAnyLocalAddress() ||
-                address.isMulticastAddress()) {
-            return false;
-        }
-
-        return isSafeInet4Address(address);
-    }
-
-    private static boolean isSafeInet4Address(InetAddress address) {
-        if (address instanceof Inet4Address) {
-            byte[] addr = address.getAddress();
-            int firstOctet = addr[0] & 0xFF;
-            int secondOctet = addr[1] & 0xFF;
-
-            // 10.0.0.0/8
-            if (firstOctet == 10)
-                return false;
-
-            // 172.16.0.0/12
-            if (firstOctet == 172 && (secondOctet >= 16 && secondOctet <= 31))
-                return false;
-
-            // 192.168.0.0/16
-            if (firstOctet == 192 && secondOctet == 168)
-                return false;
-
-            // 100.64.0.0/10 (CGNAT)
-            if (firstOctet == 100 && (secondOctet >= 64 && secondOctet <= 127))
-                return false;
-        }
-        return true;
+        return com.viglet.turing.spring.security.ssrf.TurSsrfGuard.isSafeAddress(address);
     }
 
     private static boolean isRedirectResponse(int responseCode) {

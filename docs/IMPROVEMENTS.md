@@ -2277,23 +2277,6 @@ not a second call site.
 > guard — were all verified present and are called out so they are not "fixed"
 > away.
 
-**XXXVII.5 — Egress / SSRF (HIGH, CONFIRMED + POTENTIAL).** One good centralised
-guard (`TurFileUtils.isSafe` + redirect re-validation, used by the persona URL
-import) blocks loopback/link-local/private IPv4 incl. `169.254.169.254`, but every
-other outbound feature bypasses it: the connector **test-connection** endpoint
-(`TurConnectorSelfInstallService.testConnection:202`, authenticated, returns
-status/message) is a response-observable SSRF oracle for internal port-scanning +
-cloud metadata and forwards a caller-supplied bearer token to the chosen host;
-LLM/rerank/webhook base URLs and the integration federation proxy are unvalidated
-(the proxy checks host on the initial URL but not on redirect hops — a trusted
-endpoint that 302s to an internal address is proxied back). The guard itself has an
-IPv6 ULA (`fc00::/7`) gap (`isSiteLocalAddress()` only matches deprecated
-`fec0::/10`) and a TOCTOU/DNS-rebinding window (host resolved 3×). Fix: extract one
-hardened validator (add IPv6 ULA, pin the resolved IP, drop/re-validate redirects)
-and route all of the above through it. The HuggingFace resolver was checked and is
-*not* user-driven SSRF (repoId is URI-encoded into the path; base-url is deploy
-config).
-
 **XXXVII.6 — SpEL RCE in chat-flow conditions (HIGH, CONFIRMED sink).**
 `ChatFlowOps.trySpel:1738` evaluates a node's `conditionExpression` with a
 `StandardEvaluationContext`, which permits `T(java.lang.Runtime).getRuntime().exec(...)`.

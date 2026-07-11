@@ -18,7 +18,9 @@ package com.viglet.turing.api.integration;
 
 import java.net.URI;
 
+import org.apache.hc.client5.http.config.RequestConfig;
 import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
+import org.apache.hc.client5.http.protocol.HttpClientContext;
 import org.apache.hc.core5.http.ClassicHttpRequest;
 import org.apache.hc.core5.http.Header;
 import org.apache.hc.core5.http.io.support.ClassicRequestBuilder;
@@ -57,11 +59,14 @@ public class TurIntegrationFederationAPI {
 
     private final TurIntegrationInstanceRepository integrationInstanceRepository;
     private final CloseableHttpClient proxyHttpClient;
+    private final com.viglet.turing.spring.security.ssrf.TurSsrfGuard ssrfGuard;
 
     TurIntegrationFederationAPI(TurIntegrationInstanceRepository integrationInstanceRepository,
-            CloseableHttpClient proxyHttpClient) {
+            CloseableHttpClient proxyHttpClient,
+            com.viglet.turing.spring.security.ssrf.TurSsrfGuard ssrfGuard) {
         this.integrationInstanceRepository = integrationInstanceRepository;
         this.proxyHttpClient = proxyHttpClient;
+        this.ssrfGuard = ssrfGuard;
     }
 
     @GetMapping("**")
@@ -116,9 +121,26 @@ public class TurIntegrationFederationAPI {
                 return;
             }
 
+            // T643 / §XXXVII.5 — the host==base string check does not stop a
+            // configured endpoint whose host resolves to an internal address
+            // (DNS rebinding / an internal-only integration host). Resolve and
+            // gate the target through the central egress guard.
+            if (!ssrfGuard.isAllowedUrl(targetUri.toString())) {
+                log.warn("Blocked federation proxy target by SSRF guard: {}", targetUri);
+                response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+                return;
+            }
+
             ClassicHttpRequest proxyRequest = ClassicRequestBuilder.get(targetUri).build();
 
-            proxyHttpClient.execute(proxyRequest, proxyResponse -> {
+            // T643 / §XXXVII.5 — do NOT follow redirects: a trusted endpoint that
+            // 302s to an internal address would otherwise be fetched server-side,
+            // bypassing the host/address checks above. Disabled per-request via the
+            // context so the shared pooled client is untouched.
+            HttpClientContext proxyContext = HttpClientContext.create();
+            proxyContext.setRequestConfig(RequestConfig.custom().setRedirectsEnabled(false).build());
+
+            proxyHttpClient.execute(proxyRequest, proxyContext, proxyResponse -> {
                 response.setStatus(proxyResponse.getCode());
 
                 for (Header header : proxyResponse.getHeaders()) {
