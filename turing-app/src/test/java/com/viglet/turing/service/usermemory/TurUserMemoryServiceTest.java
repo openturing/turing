@@ -85,4 +85,39 @@ class TurUserMemoryServiceTest {
                 .thenReturn(List.of());
         assertThat(service.recall("u1", "a1")).contains("Nothing remembered");
     }
+
+    // ---- T651 / §XXXVII.13 — scoped delete (IDOR fix) ----------------------
+
+    @Test
+    void deleteRemovesRowWhenOwnedByCaller() {
+        TurUserMemory m = mem("role", "dev");
+        when(repository.findById("m-role")).thenReturn(Optional.of(m));
+
+        assertThat(service.delete("m-role", "u1", "a1")).isTrue();
+        org.mockito.Mockito.verify(repository).delete(m);
+    }
+
+    @Test
+    void deleteRefusesWhenUserIdDoesNotMatch() {
+        TurUserMemory m = mem("role", "dev"); // userId=u1
+        when(repository.findById("m-role")).thenReturn(Optional.of(m));
+
+        assertThat(service.delete("m-role", "attacker", "a1")).isFalse();
+        org.mockito.Mockito.verify(repository, org.mockito.Mockito.never()).delete(any());
+    }
+
+    @Test
+    void deleteRefusesWhenAgentDoesNotMatch() {
+        TurUserMemory m = mem("role", "dev"); // agentId=a1
+        when(repository.findById("m-role")).thenReturn(Optional.of(m));
+
+        assertThat(service.delete("m-role", "u1", "other-agent")).isFalse();
+        org.mockito.Mockito.verify(repository, org.mockito.Mockito.never()).delete(any());
+    }
+
+    @Test
+    void deleteReturnsFalseWhenRowAbsent() {
+        when(repository.findById("missing")).thenReturn(Optional.empty());
+        assertThat(service.delete("missing", "u1", "a1")).isFalse();
+    }
 }

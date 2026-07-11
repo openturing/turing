@@ -2277,15 +2277,6 @@ not a second call site.
 > guard — were all verified present and are called out so they are not "fixed"
 > away.
 
-**XXXVII.13 — IDOR in user-memory (MEDIUM, CONFIRMED gap).** `TurUserMemoryAPI`
-(`/api/sn/{site}/user-memory`) keys `list`/`remember`/`clear` on a client-supplied
-`userId` with no binding to the caller, and `delete(@PathVariable id)` deletes any
-memory row by id with no userId/agent/tenant scoping. `@TenantId` isolates tenants
-but never isolates visitors within a site. (Reachability caveat: the path is not in
-`permitAll`, so anonymous widget calls 401 unless authenticated — but the missing
-per-visitor authorization is genuine, and `delete(id)` is unscoped.) Fix: scope
-every op to the resolved caller/session.
-
 **XXXVII.14 — Config & logging hygiene (MEDIUM/LOW, mixed).** Committed MinIO creds
 `admin` / `minha_senha_forte` (`application.yaml:116`, exploitable only when
 `storage.type=MINIO` but in git history regardless — rotate + purge). H2 console is

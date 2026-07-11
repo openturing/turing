@@ -90,9 +90,16 @@ public class TurUserMemoryAPI {
     }
 
     @DeleteMapping("/{id}")
-    public boolean delete(@PathVariable String siteName, @PathVariable String id) {
-        userMemoryService.delete(id);
-        return true;
+    public boolean delete(@PathVariable String siteName, @PathVariable String id,
+            @RequestParam String userId) {
+        // T651 / §XXXVII.13 — scope the delete to the caller's own (userId, agent)
+        // so a row cannot be deleted by guessing its id (IDOR). Returns false when
+        // the row is absent or not owned by this userId+agent.
+        String agentId = resolveAgentId(siteName);
+        if (agentId == null || isBlank(userId)) {
+            return false;
+        }
+        return userMemoryService.delete(id, userId, agentId);
     }
 
     @DeleteMapping

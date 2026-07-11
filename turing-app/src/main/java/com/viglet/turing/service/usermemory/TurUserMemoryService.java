@@ -61,9 +61,22 @@ public class TurUserMemoryService {
         return repository.findByUserIdAndAgentIdOrderByUpdatedAtDesc(userId, agentId);
     }
 
-    /** Delete one fact by id (no-op if absent / other tenant). */
-    public void delete(String id) {
-        repository.deleteById(id);
+    /**
+     * T651 / §XXXVII.13 — delete one fact by id ONLY when it belongs to the given
+     * {@code userId} + {@code agentId} (the resolved caller). Prevents the IDOR
+     * where any caller could delete any memory row by guessing its id. Returns
+     * {@code true} only when a row was actually removed. {@code @TenantId} still
+     * scopes the read to the current tenant on top of this ownership check.
+     */
+    public boolean delete(String id, String userId, String agentId) {
+        return repository.findById(id)
+                .filter(m -> userId != null && userId.equals(m.getUserId())
+                        && agentId != null && agentId.equals(m.getAgentId()))
+                .map(m -> {
+                    repository.delete(m);
+                    return true;
+                })
+                .orElse(false);
     }
 
     /** Delete every fact for a user+agent (GDPR "forget me"). */
