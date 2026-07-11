@@ -2277,20 +2277,6 @@ not a second call site.
 > guard — were all verified present and are called out so they are not "fixed"
 > away.
 
-**XXXVII.8 — Credential material over the API (HIGH, CONFIRMED).**
-`TurUser.password` has no `@JsonIgnore`; `TurUserDto extends TurUser` inherits it,
-so the admin user-list (`TurUserAPI.turUserList`) returns every user's BCrypt hash
-(enabling offline cracking; and in multi-tenant a tenant admin gets all hashes).
-Separately `TurDevTokenAPI` has zero authorization on any method, `TurDevTokenDto`
-inherits the `token` getter so GET returns cleartext token values, POST mints
-tokens for anyone, tokens have no expiry / enabled / revoked flag (revocation =
-row delete), and `TurSNSiteApiKeyGateFilter` accepts the token as an `?apiKey=`
-query param (lands in access logs / Referer). Combined with §XXXVII.4 this is
-straight privilege escalation. Fix: `@JsonIgnore` (or DTO scrub) on `password`,
-authorization + no-cleartext + expiry/revocation on dev tokens, drop query-param
-token acceptance. (Setup API self-closes correctly; token entropy is fine; token
-validation is an indexed lookup, not timing-vulnerable — all verified.)
-
 **XXXVII.9 — RAG / tool trust boundary (HIGH, CONFIRMED).**
 `TurSNGenAi.buildSystemPrompt:660` appends retrieved document text to the *system*
 prompt as `behavior + "---\nContext from the website:\n" + information + "---"`,

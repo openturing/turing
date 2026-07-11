@@ -24,6 +24,7 @@ package com.viglet.turing.api.dev.token;
 import java.util.List;
 import java.util.UUID;
 
+import org.springframework.security.access.annotation.Secured;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -45,6 +46,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 
 @RestController
 @RequestMapping("/api/dev/token")
+@Secured("ROLE_ADMIN")
 @Tag(name = "Developer Token", description = "Developer Token API")
 public class TurDevTokenAPI {
 
@@ -59,14 +61,16 @@ public class TurDevTokenAPI {
 	@Operation(summary = "Developer Token List")
 	@GetMapping
 	public List<TurDevTokenDto> turDevTokenList() {
-		return turDevTokenMapper
+		List<TurDevTokenDto> dtos = turDevTokenMapper
 				.toDtoList(this.turDevTokenRepository.findAll(TurPersistenceUtils.orderByTitleIgnoreCase()));
+		dtos.forEach(TurDevTokenAPI::scrubToken);
+		return dtos;
 	}
 
 	@Operation(summary = "Show a Developer Token")
 	@GetMapping("/{id}")
 	public TurDevTokenDto turDevTokenGet(@PathVariable String id) {
-		return turDevTokenMapper.toDto(this.turDevTokenRepository.findById(id).orElse(new TurDevToken()));
+		return scrubToken(turDevTokenMapper.toDto(this.turDevTokenRepository.findById(id).orElse(new TurDevToken())));
 	}
 
 	@Operation(summary = "Update a Developer Token")
@@ -76,7 +80,7 @@ public class TurDevTokenAPI {
 		return turDevTokenRepository.findById(id).map(existing -> {
 			turDevTokenMapper.updateEntity(source, existing);
 			turDevTokenRepository.save(existing);
-			return turDevTokenMapper.toDto(existing);
+			return scrubToken(turDevTokenMapper.toDto(existing));
 		}).orElse(new TurDevTokenDto());
 
 	}
@@ -95,7 +99,19 @@ public class TurDevTokenAPI {
 		TurDevToken turDevToken = turDevTokenMapper.toEntity(turDevTokenDto);
 		turDevToken.setToken(UUID.randomUUID().toString().replace("-", "").substring(0, 25));
 		this.turDevTokenRepository.save(turDevToken);
+		// T646 / §XXXVII.8 — the create response is the ONLY place the cleartext
+		// token value is returned (a one-time reveal); list/get/update scrub it.
 		return turDevTokenMapper.toDto(turDevToken);
+	}
 
+	/**
+	 * T646 / §XXXVII.8 — never return a stored token value on read paths (it lands
+	 * in logs / browser history / caches). The token is revealed once on create.
+	 */
+	private static TurDevTokenDto scrubToken(TurDevTokenDto dto) {
+		if (dto != null) {
+			dto.setToken(null);
+		}
+		return dto;
 	}
 }

@@ -46,6 +46,7 @@ number" looked free but wasn't. Grepping three files (`ROADMAP.md`,
 
 ## Log (most recent first)
 
+- **T646 SHIPPED** (Block AN §XXXVII.8 — credential leaks: password write-only + @Secured TurDevTokenAPI + token scrub + enabled/expiresAt (Liquibase v2026.3.1.99) + drop ?apiKey= query param) — 2026-07-11.
 - **T645 SHIPPED** (Block AN §XXXVII.7 — storage traversal/Zip-Slip: unconditional scopeKey containment + @Secured TurAssetAPI + ZIP entry-name guard in page/skill import) — 2026-07-11.
 - **T644 SHIPPED** (Block AN §XXXVII.6 — SpEL RCE sink: StandardEvaluationContext -> SimpleEvaluationContext.forPropertyAccessors in ChatFlowOps.trySpel) — 2026-07-11.
 - **T643 SHIPPED** (Block AN §XXXVII.5 — central TurSsrfGuard egress validator (+IPv6 ULA); routed persona-import/connector oracle/federation proxy+redirect-disable/webhook) — 2026-07-11.

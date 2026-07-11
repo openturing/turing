@@ -66,7 +66,6 @@ public class TurMcpApiKeyAuthenticationFilter extends OncePerRequestFilter {
 
     /** Read-only authority granted to an API-key MCP principal. */
     static final String SCOPE_MCP_READ = "SCOPE_mcp:read";
-    private static final String API_KEY_PARAM = "apiKey";
 
     private final TurDevTokenRepository turDevTokenRepository;
 
@@ -80,7 +79,9 @@ public class TurMcpApiKeyAuthenticationFilter extends OncePerRequestFilter {
         if (SecurityContextHolder.getContext().getAuthentication() == null) {
             String key = resolveKey(request);
             if (StringUtils.hasText(key)) {
+                // T646 / §XXXVII.8 — reject disabled/expired tokens.
                 turDevTokenRepository.findByToken(key.trim())
+                        .filter(TurDevToken::isUsable)
                         .ifPresent(token -> authenticate(token, request));
             }
         }
@@ -97,7 +98,8 @@ public class TurMcpApiKeyAuthenticationFilter extends OncePerRequestFilter {
     }
 
     private static String resolveKey(HttpServletRequest request) {
-        String key = request.getHeader(TurAuthTokenHeaderFilter.KEY);
-        return StringUtils.hasText(key) ? key : request.getParameter(API_KEY_PARAM);
+        // T646 / §XXXVII.8 — header only; the `?apiKey=` query param was dropped
+        // (secrets in the URL leak into logs / Referer / history).
+        return request.getHeader(TurAuthTokenHeaderFilter.KEY);
     }
 }

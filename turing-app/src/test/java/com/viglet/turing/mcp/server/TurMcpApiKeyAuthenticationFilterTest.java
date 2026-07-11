@@ -70,16 +70,29 @@ class TurMcpApiKeyAuthenticationFilterTest {
     }
 
     @Test
-    void authenticatesViaApiKeyQueryParamWhenNoHeader() throws Exception {
-        TurDevToken token = new TurDevToken();
-        token.setId("tok-2");
+    void apiKeyQueryParamIsIgnored() throws Exception {
+        // T646 / §XXXVII.8 — the `?apiKey=` query param no longer authenticates
+        // (header only); a key supplied only in the URL leaves the request anon.
         when(request.getHeader("Key")).thenReturn(null);
-        when(request.getParameter("apiKey")).thenReturn("from-param");
-        when(repository.findByToken("from-param")).thenReturn(Optional.of(token));
 
         filter().doFilterInternal(request, response, chain);
 
-        assertThat(SecurityContextHolder.getContext().getAuthentication()).isNotNull();
+        assertThat(SecurityContextHolder.getContext().getAuthentication()).isNull();
+        verify(chain).doFilter(request, response);
+    }
+
+    @Test
+    void disabledTokenLeavesRequestUnauthenticated() throws Exception {
+        // T646 / §XXXVII.8 — a found-but-unusable token does not authenticate.
+        TurDevToken disabled = new TurDevToken();
+        disabled.setId("tok-x");
+        disabled.setEnabled(false);
+        when(request.getHeader("Key")).thenReturn("stale");
+        when(repository.findByToken("stale")).thenReturn(Optional.of(disabled));
+
+        filter().doFilterInternal(request, response, chain);
+
+        assertThat(SecurityContextHolder.getContext().getAuthentication()).isNull();
         verify(chain).doFilter(request, response);
     }
 
@@ -97,7 +110,6 @@ class TurMcpApiKeyAuthenticationFilterTest {
     @Test
     void noKeyIsANoOp() throws Exception {
         when(request.getHeader("Key")).thenReturn(null);
-        when(request.getParameter("apiKey")).thenReturn(null);
 
         filter().doFilterInternal(request, response, chain);
 

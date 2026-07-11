@@ -60,9 +60,6 @@ import lombok.extern.slf4j.Slf4j;
 @Component
 public class TurSNSiteApiKeyGateFilter extends OncePerRequestFilter {
 
-    /** Query-parameter alternative to the {@code Key} header for simple GET clients. */
-    private static final String API_KEY_PARAM = "apiKey";
-
     /**
      * Public SN endpoints keyed by site NAME: {@code /api/sn/{site}/(ac|search|
      * _search|click|query|chat)...}. Mirrors the {@code permitAll} matchers in
@@ -156,11 +153,14 @@ public class TurSNSiteApiKeyGateFilter extends OncePerRequestFilter {
     }
 
     private boolean hasValidApiKey(HttpServletRequest request) {
+        // T646 / §XXXVII.8 — header only: the `?apiKey=` query-parameter path was
+        // dropped because a secret in the URL lands in access logs / Referer /
+        // browser history. Clients must send the key in the `Key` header. The
+        // token must also be enabled and unexpired.
         String key = request.getHeader(TurAuthTokenHeaderFilter.KEY);
-        if (key == null || key.isBlank()) {
-            key = request.getParameter(API_KEY_PARAM);
-        }
         return key != null && !key.isBlank()
-                && turDevTokenRepository.findByToken(key.trim()).isPresent();
+                && turDevTokenRepository.findByToken(key.trim())
+                        .filter(com.viglet.turing.persistence.model.dev.token.TurDevToken::isUsable)
+                        .isPresent();
     }
 }

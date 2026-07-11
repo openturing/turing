@@ -82,7 +82,6 @@
 > exposures — T639/T640/T641) have all shipped; the 🟠/🟡 items remain.
 
 **🟠 High:**
-- 📋 **T646** (deps: —) **Stop leaking credential material over the API** — `TurUser.password` has no `@JsonIgnore` so the admin user-list returns BCrypt hashes; `TurDevTokenAPI` has zero authz, returns cleartext tokens, and tokens have no expiry/revocation and are accepted as a `?apiKey=` query param. Add `@JsonIgnore`/DTO scrub, authz, expiry+revocation, drop query-param tokens. → §XXXVII.8
 - 📋 **T647** (deps: —) **RAG / tool-call trust boundary for anonymous chat** — retrieved chunks are concatenated verbatim into the *system* prompt (`TurSNGenAi.buildSystemPrompt:660`) with no untrusted-data framing (the roadmap's "anti-injection" is unrelated CPF/CNPJ parsing), and there is no authorization boundary between an anonymous visitor and LLM-invoked native/MCP-client/custom tools. Frame retrieved content as untrusted + gate tool invocation by caller trust. → §XXXVII.9
 - 📋 **T648** (deps: —) **Input / DoS caps on anonymous endpoints** — `spring.servlet.multipart.max-*-size: 1024MB` (`application.yaml:360`) lets anonymous slot-upload feed ~1 GB into Tika + a vision call; chat message count/length is unbounded (token budget is opt-in/off); ZIP import buffers entries via `readAllBytes()` with no size/count cap (zip-bomb OOM). Add pre-parse size/type gates, default-on hard message/token caps, and zip entry limits. → §XXXVII.10
 

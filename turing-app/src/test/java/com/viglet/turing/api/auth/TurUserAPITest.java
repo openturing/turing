@@ -218,19 +218,20 @@ class TurUserAPITest {
         TurUser userEdit = new TurUser();
         userEdit.setUsername("testuser");
 
-        TurUser updatedInfo = new TurUser();
-        updatedInfo.setFirstName("New");
-        updatedInfo.setLastName("Name");
-        updatedInfo.setPassword("newpass");
-
         when(turUserRepository.findByUsername("testuser")).thenReturn(userEdit);
         when(passwordEncoder.encode("newpass")).thenReturn("encodedpass");
 
+        // T646 / §XXXVII.8 — password is write-only, so it is NOT serialized out
+        // of a TurUser; build the request body as raw JSON (as a real client
+        // does) to verify it still binds on the way IN.
+        String body = "{\"firstName\":\"New\",\"lastName\":\"Name\",\"password\":\"newpass\"}";
         mockMvc.perform(put("/api/v2/user/testuser")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(updatedInfo)))
+                .content(body))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.firstName").value("New"));
+                .andExpect(jsonPath("$.firstName").value("New"))
+                // The stored password (hash) is never serialized back out.
+                .andExpect(jsonPath("$.password").doesNotExist());
 
         verify(turUserRepository, times(1)).save(userEdit);
         verify(passwordEncoder, times(1)).encode("newpass");
@@ -256,17 +257,16 @@ class TurUserAPITest {
 
     @Test
     void testTurUserAdd() throws Exception {
-        TurUser newUser = new TurUser();
-        newUser.setUsername("newuser");
-        newUser.setPassword("password");
-
         when(passwordEncoder.encode("password")).thenReturn("encoded");
 
+        // T646 / §XXXVII.8 — raw JSON body so the write-only password binds.
+        String body = "{\"username\":\"newuser\",\"password\":\"password\"}";
         mockMvc.perform(post("/api/v2/user")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(newUser)))
+                .content(body))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.username").value("newuser"));
+                .andExpect(jsonPath("$.username").value("newuser"))
+                .andExpect(jsonPath("$.password").doesNotExist());
 
         verify(turUserRepository, times(1)).save(any(TurUser.class));
     }

@@ -15,6 +15,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import com.viglet.turing.persistence.model.auth.TurUser;
+import com.viglet.turing.persistence.model.dev.token.TurDevToken;
 import com.viglet.turing.persistence.repository.auth.TurGroupRepository;
 import com.viglet.turing.persistence.repository.auth.TurPrivilegeRepository;
 import com.viglet.turing.persistence.repository.auth.TurRoleRepository;
@@ -59,7 +60,8 @@ public class TurAuthTokenHeaderFilter extends OncePerRequestFilter {
             throws ServletException, IOException {
         String appId = request.getHeader(KEY);
         if (appId != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-            turDevTokenRepository.findByToken(appId).ifPresent(token -> {
+            // T646 / §XXXVII.8 — reject disabled/expired tokens.
+            turDevTokenRepository.findByToken(appId).filter(TurDevToken::isUsable).ifPresent(token -> {
                 TurUser turUser = turUserRepository.findByUsername(token.getCreatedBy());
                 Collection<GrantedAuthority> authorities = resolveAuthorities(turUser);
                 UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(

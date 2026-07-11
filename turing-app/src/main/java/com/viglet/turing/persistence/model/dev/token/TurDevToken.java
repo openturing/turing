@@ -23,6 +23,7 @@ package com.viglet.turing.persistence.model.dev.token;
 
 import java.io.Serial;
 import java.io.Serializable;
+import java.time.Instant;
 
 import com.viglet.core.jpa.VigletAssignableUuidGenerator;
 import com.viglet.turing.spring.security.TurAuditable;
@@ -64,4 +65,24 @@ public class TurDevToken extends TurAuditable<String> implements Serializable {
 
 	@Column
 	private String token;
+
+	/**
+	 * T646 / §XXXVII.8 — soft revocation. {@code false} disables the token
+	 * without deleting the row. Defaults to enabled so existing rows keep working.
+	 */
+	@Column(nullable = false)
+	private boolean enabled = true;
+
+	/**
+	 * T646 / §XXXVII.8 — optional expiry. {@code null} = never expires (legacy
+	 * behaviour); otherwise the token is rejected once {@code now >= expiresAt}.
+	 */
+	@Column
+	private Instant expiresAt;
+
+	/** True when this token may still authenticate: enabled and not past expiry. */
+	@com.fasterxml.jackson.annotation.JsonIgnore
+	public boolean isUsable() {
+		return enabled && (expiresAt == null || Instant.now().isBefore(expiresAt));
+	}
 }

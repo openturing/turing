@@ -146,18 +146,39 @@ class TurSNSiteApiKeyGateFilterTest {
     }
 
     @Test
-    void apiKeySite_validQueryParamKey_passesThrough() throws Exception {
+    void apiKeySite_queryParamKey_isRejected() throws Exception {
+        // T646 / §XXXVII.8 — the `?apiKey=` query-param path was removed; a key
+        // supplied only in the URL no longer authenticates.
         siteWithMode("secure", TurSNSiteApiAuthMode.API_KEY);
         HttpServletRequest request = request("/api/sn/secure/ac");
         when(request.getHeader(TurAuthTokenHeaderFilter.KEY)).thenReturn(null);
-        when(request.getParameter("apiKey")).thenReturn("good-token");
-        when(turDevTokenRepository.findByToken("good-token")).thenReturn(Optional.of(new TurDevToken()));
         HttpServletResponse response = mock(HttpServletResponse.class);
+        when(response.getWriter()).thenReturn(new PrintWriter(new StringWriter()));
         FilterChain chain = mock(FilterChain.class);
 
         filter.doFilterInternal(request, response, chain);
 
-        verify(chain).doFilter(request, response);
+        verify(chain, never()).doFilter(request, response);
+        verify(response).setStatus(HttpStatus.UNAUTHORIZED.value());
+    }
+
+    @Test
+    void apiKeySite_disabledOrExpiredToken_rejectsWith401() throws Exception {
+        // T646 / §XXXVII.8 — a found-but-unusable token (disabled) is rejected.
+        siteWithMode("secure", TurSNSiteApiAuthMode.API_KEY);
+        HttpServletRequest request = request("/api/sn/secure/search");
+        when(request.getHeader(TurAuthTokenHeaderFilter.KEY)).thenReturn("stale");
+        TurDevToken disabled = new TurDevToken();
+        disabled.setEnabled(false);
+        when(turDevTokenRepository.findByToken("stale")).thenReturn(Optional.of(disabled));
+        HttpServletResponse response = mock(HttpServletResponse.class);
+        when(response.getWriter()).thenReturn(new PrintWriter(new StringWriter()));
+        FilterChain chain = mock(FilterChain.class);
+
+        filter.doFilterInternal(request, response, chain);
+
+        verify(chain, never()).doFilter(request, response);
+        verify(response).setStatus(HttpStatus.UNAUTHORIZED.value());
     }
 
     @Test

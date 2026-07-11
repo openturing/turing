@@ -1,0 +1,45 @@
+databaseChangeLog:
+  # T646 / §XXXVII.8 (Block AN) — developer-token expiry + revocation. Adds an
+  # `enabled` flag (soft revocation without deleting the row) and an optional
+  # `expiresAt` timestamp to dev_token. Both default to the legacy behaviour
+  # (enabled, never-expires) so existing tokens keep working.
+  #
+  # Idempotent (columnExists + MARK_RAN) because the app runs between changeset
+  # authoring; portable lowercase types; camelCase columns map literally.
+
+  - changeSet:
+      id: v2026.3.1.99-add-enabled-to-dev_token
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - columnExists:
+                tableName: dev_token
+                columnName: enabled
+      changes:
+        - addColumn:
+            tableName: dev_token
+            columns:
+              - column:
+                  name: enabled
+                  type: boolean
+                  defaultValueBoolean: true
+                  constraints:
+                    nullable: false
+
+  - changeSet:
+      id: v2026.3.1.99-add-expiresAt-to-dev_token
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - columnExists:
+                tableName: dev_token
+                columnName: expiresAt
+      changes:
+        - addColumn:
+            tableName: dev_token
+            columns:
+              - column:
+                  name: expiresAt
+                  type: timestamp

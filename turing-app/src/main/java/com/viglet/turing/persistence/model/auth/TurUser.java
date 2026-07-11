@@ -26,6 +26,8 @@ import java.time.Instant;
 import java.util.Collection;
 import java.util.HashSet;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.ManyToMany;
@@ -66,7 +68,13 @@ public class TurUser implements Serializable {
 	@Setter
 	private String lastName;
 
+	// T646 / §XXXVII.8 — write-only: the admin create/update path still binds an
+	// incoming password (BCrypt-hashed before persist), but the stored value
+	// (a BCrypt hash) is NEVER serialized back out. Previously the admin
+	// user-list returned every user's hash (offline-cracking material), since
+	// TurUserDto extends TurUser and inherited an unguarded getter.
 	@Setter
+	@JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
 	private String password;
 
 	@Setter
