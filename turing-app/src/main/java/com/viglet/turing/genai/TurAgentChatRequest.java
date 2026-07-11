@@ -47,6 +47,12 @@ import com.viglet.turing.persistence.model.llm.TurLLMInstance;
  *                             different eyes"); validated against the agent's
  *                             catalog by {@code TurAgentPersonaResolver} (unknown
  *                             → default). null on every non-demo turn.
+ * @param untrustedCaller      T647 / §XXXVII.9 — {@code true} when the turn comes
+ *                             from the anonymous public SN chat surface. When the
+ *                             {@code turing.abuse.chat.anonymous-tools-enabled}
+ *                             policy is off, the executor strips all tool
+ *                             callbacks for such a caller. {@code false} for
+ *                             authenticated agent/persona chat (default).
  * @author Alexandre Oliveira
  * @since 2026.3.1
  */
@@ -58,5 +64,14 @@ public record TurAgentChatRequest(
         String conversationId,
         String flowId,
         List<MultipartFile> files,
-        String requestPersonaId) {
+        String requestPersonaId,
+        boolean untrustedCaller) {
+
+    /** Backward-compatible constructor — a trusted (authenticated) caller. */
+    public TurAgentChatRequest(TurAIAgent agent, TurLLMInstance llmInstance, List<ChatMessageItem> history,
+            String systemPromptOverride, String conversationId, String flowId,
+            List<MultipartFile> files, String requestPersonaId) {
+        this(agent, llmInstance, history, systemPromptOverride, conversationId, flowId, files,
+                requestPersonaId, false);
+    }
 }

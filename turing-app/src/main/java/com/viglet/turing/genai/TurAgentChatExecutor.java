@@ -114,6 +114,7 @@ public class TurAgentChatExecutor {
     private final TurChatPipelineObservation chatPipelineObservation;
     private final com.viglet.turing.service.llm.budget.TurChatCostBudgetGate costBudgetGate;
     private final com.viglet.turing.resilience.llm.TurMetaChatModelResolver metaChatModelResolver;
+    private final com.viglet.turing.properties.TurAbuseControlProperty abuseControlProperty;
 
     public TurAgentChatExecutor(TurLlmModelFactory llmModelFactory,
             TurSecretCryptoService turSecretCryptoService,
@@ -130,7 +131,8 @@ public class TurAgentChatExecutor {
             TurChatCohortResolver chatCohortResolver,
             TurChatPipelineObservation chatPipelineObservation,
             com.viglet.turing.service.llm.budget.TurChatCostBudgetGate costBudgetGate,
-            com.viglet.turing.resilience.llm.TurMetaChatModelResolver metaChatModelResolver) {
+            com.viglet.turing.resilience.llm.TurMetaChatModelResolver metaChatModelResolver,
+            com.viglet.turing.properties.TurAbuseControlProperty abuseControlProperty) {
         this.llmModelFactory = llmModelFactory;
         this.turSecretCryptoService = turSecretCryptoService;
         this.toolResolver = toolResolver;
@@ -147,6 +149,7 @@ public class TurAgentChatExecutor {
         this.chatPipelineObservation = chatPipelineObservation;
         this.costBudgetGate = costBudgetGate;
         this.metaChatModelResolver = metaChatModelResolver;
+        this.abuseControlProperty = abuseControlProperty;
     }
 
     public record ChatMessageItem(String role, String content) {
@@ -402,6 +405,16 @@ public class TurAgentChatExecutor {
         final long tBeforeTools = System.currentTimeMillis();
         ToolCallback[] callbacks = toolResolver.resolve(agent, activePersona,
                 lastUserMessageEarly, activeNode, selectedSkillId);
+        // T647 / §XXXVII.9 — tool trust boundary: strip ALL tool callbacks for an
+        // untrusted (anonymous public SN chat) caller when the anonymous-tools
+        // policy is off, so an anonymous visitor / injection payload can't trigger
+        // native / MCP-client / custom / skill tool execution with system authority.
+        if (request.untrustedCaller() && !abuseControlProperty.getChat().isAnonymousToolsEnabled()
+                && callbacks != null && callbacks.length > 0) {
+            log.info("[AgentExec] Stripping {} tool callback(s) for untrusted anonymous caller "
+                    + "(turing.abuse.chat.anonymous-tools-enabled=false)", callbacks.length);
+            callbacks = new ToolCallback[0];
+        }
         final long tAfterTools = System.currentTimeMillis();
 
         // Build chat options + per-turn tool context map (drives Custom

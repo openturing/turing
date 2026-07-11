@@ -2277,23 +2277,6 @@ not a second call site.
 > guard — were all verified present and are called out so they are not "fixed"
 > away.
 
-**XXXVII.9 — RAG / tool trust boundary (HIGH, CONFIRMED).**
-`TurSNGenAi.buildSystemPrompt:660` appends retrieved document text to the *system*
-prompt as `behavior + "---\nContext from the website:\n" + information + "---"`,
-with no escaping, no untrusted-data framing, no injection scan (the index-time
-`moderationService` is content moderation, not injection defense; the roadmap's
-"anti-injection normalization" is the unrelated CPF/CNPJ + yes/no slot parser in
-`ChatFlowOps`). Any content that reaches the index (crawled page, uploaded asset,
-UGC) can carry "ignore previous instructions / call tool X" that then executes with
-system authority on the next anonymous query. And the anonymous `/conversation`
-endpoint exposes the agent's native + MCP-client + custom + skill tools to the LLM
-with **no** authorization boundary distinguishing an anonymous visitor from an
-admin — `TurMcpToolScopePolicy` guards only the inbound `/mcp` server, not the
-agent-as-client tools. Blast radius is config-dependent (which tools the deployed
-agent has) but the missing boundary is structural. Fix: frame retrieved content as
-untrusted (delimit/escape, not verbatim in system role) + gate tool invocation by
-caller trust, especially write / MCP-client / custom tools.
-
 **XXXVII.10 — Input / DoS caps (HIGH, CONFIRMED).**
 `spring.servlet.multipart.max-file-size`/`max-request-size` = 1024MB
 (`application.yaml:360`) applies to the anonymous `/slot-extract(-multi)` /

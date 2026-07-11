@@ -60,5 +60,16 @@ public class TurAbuseControlProperty {
          * per-agent {@code TurChatCostBudgetGate}). {@code 0} (default) = off.
          */
         private double hardMonthlyCapUsd = 0d;
+
+        /**
+         * T647 / §XXXVII.9 — tool trust boundary for the anonymous public SN chat.
+         * When {@code true} (default, legacy) an anonymous visitor's turn may
+         * invoke the agent's tools (native / MCP-client / custom / skill) exactly
+         * as before. Set {@code false} to strip ALL tool callbacks on the
+         * anonymous SN chat path so an untrusted visitor (or an injection payload
+         * in retrieved content) cannot trigger tool execution with system
+         * authority. Authenticated agent/persona chat is unaffected.
+         */
+        private boolean anonymousToolsEnabled = true;
     }
 }
