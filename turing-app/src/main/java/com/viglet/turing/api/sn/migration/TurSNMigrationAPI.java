@@ -35,6 +35,9 @@ import com.viglet.turing.sn.migration.TurAlgoliaMigrationRequest;
 import com.viglet.turing.sn.migration.TurAlgoliaMigrationService;
 import com.viglet.turing.sn.migration.TurElasticsearchMigrationService;
 import com.viglet.turing.sn.migration.TurEsMigrationRequest;
+import com.viglet.turing.sn.migration.TurMigrationCompareRequest;
+import com.viglet.turing.sn.migration.TurMigrationCompareResult;
+import com.viglet.turing.sn.migration.TurMigrationCompareService;
 import com.viglet.turing.sn.migration.TurMigrationException;
 import com.viglet.turing.sn.migration.TurMigrationResult;
 
@@ -69,6 +72,7 @@ public class TurSNMigrationAPI {
 
     private final TurElasticsearchMigrationService elasticsearchMigrationService;
     private final TurAlgoliaMigrationService algoliaMigrationService;
+    private final TurMigrationCompareService migrationCompareService;
 
     @Operation(summary = "Migrate one Elasticsearch index into an SN site (mapping -> manifest, docs -> import)")
     @PostMapping("/elasticsearch")
@@ -96,6 +100,21 @@ public class TurSNMigrationAPI {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of(ERROR, e.getMessage()));
         } catch (TurMigrationException e) {
             log.warn("[T658] Algolia migration failed: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_GATEWAY).body(Map.of(ERROR, e.getMessage()));
+        }
+    }
+
+    @Operation(summary = "Shadow-compare a query set against the source engine and the migrated SN site")
+    @PostMapping("/compare")
+    @Secured({"ROLE_ADMIN", "SN_CREATE"})
+    public ResponseEntity<Object> compare(@RequestBody TurMigrationCompareRequest request) {
+        try {
+            TurMigrationCompareResult result = migrationCompareService.compare(request);
+            return ResponseEntity.ok(result);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of(ERROR, e.getMessage()));
+        } catch (TurMigrationException e) {
+            log.warn("[T661] Migration comparison failed: {}", e.getMessage());
             return ResponseEntity.status(HttpStatus.BAD_GATEWAY).body(Map.of(ERROR, e.getMessage()));
         }
     }

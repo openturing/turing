@@ -1,7 +1,14 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 
-import { buildMigrateBody, formatMigrationResult, type MigrationResult } from "../src/commands/migrate.js";
+import {
+  buildCompareBody,
+  buildMigrateBody,
+  formatCompareResult,
+  formatMigrationResult,
+  type CompareResult,
+  type MigrationResult,
+} from "../src/commands/migrate.js";
 
 /* ── buildMigrateBody (T659) ── */
 
@@ -79,6 +86,39 @@ test("formatMigrationResult lists fields on a dry run", () => {
   assert.match(out, /Dry run/);
   assert.match(out, /title: TEXT/);
   assert.match(out, /brand: STRING \(facet\)/);
+});
+
+/* ── compare (T661) ── */
+
+test("buildCompareBody carries the query set and resolves the source api key", () => {
+  const body = buildCompareBody(
+    { engine: "algolia", "app-id": "A", "api-key": "K", index: "i", site: "s", rows: "20" },
+    ["tv", "laptop"],
+  );
+  assert.equal(body.engine, "algolia");
+  assert.equal(body.appId, "A");
+  assert.equal(body.apiKey, "K");
+  assert.equal(body.rows, 20);
+  assert.deepEqual(body.queries, ["tv", "laptop"]);
+});
+
+test("buildCompareBody requires at least one query", () => {
+  assert.throws(() => buildCompareBody({ engine: "algolia", index: "i", site: "s" }, []), /No queries/);
+});
+
+test("formatCompareResult renders the parity report as percentages", () => {
+  const result: CompareResult = {
+    engine: "ALGOLIA", site: "Catalog", queries: 2, rows: 10,
+    avgJaccard: 0.75, avgSourceRecall: 0.9, topRankMatches: 1, zeroOverlapQueries: 0,
+    perQuery: [
+      { query: "tv", sourceCount: 5, turingCount: 5, sharedCount: 4, jaccard: 0.8, sourceRecall: 0.8, topRankMatch: true },
+    ],
+    warnings: [],
+  };
+  const out = formatCompareResult(result).join("\n");
+  assert.match(out, /avg overlap \(Jaccard\): 75%/);
+  assert.match(out, /top-1 matches:\s+1\/2/);
+  assert.match(out, /"tv" — overlap 80%, shared 4, top-1 ✓/);
 });
 
 test("formatMigrationResult summarizes a real run with warnings", () => {

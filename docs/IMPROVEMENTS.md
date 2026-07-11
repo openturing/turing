@@ -2472,23 +2472,6 @@ the coordinates, and add a CI gate (`mvn` dependency check + `pnpm audit`, or a
 Dependabot policy) so a new high-severity advisory fails the build rather than
 sitting open. Track the live list at the repo's Dependabot alerts page.
 
-## XXXVIII. Migration tooling — Algolia / Elasticsearch → Turing (Block AO)
-
-**The gap.** T479 (§XXVII.3) shipped the "Switching from Algolia / Elasticsearch?"
-funnel page and a matching end-user guide, but the guide's *step 2* is manual:
-the operator hand-translates the source's index settings (Algolia) or `_mapping`
-(Elasticsearch) into a Turing field manifest, and reshapes every record/document
-into an SN job item. Steps 1 and 3 are already frictionless (manifest-as-code
-T382/T386, the `/api/sn/import` API, the React + vanilla SDKs); step 2 is the only
-thing that makes a team hesitate to switch. Block AO closes that gap by building
-the importer, not by writing more prose around a manual process.
-
-**XXXVIII.5 — Shadow / dual-run comparison (T661, idea).** To de-risk the cutover,
-run the same query set against the source engine and Turing and diff the result
-sets, giving a team an evidence-based relevance-parity check before they flip
-traffic. Higher-effort and only meaningful once the importers exist, so it's an
-idea, not a first build.
-
 ## XXXIX. Native synonyms & query expansion (Block AP)
 
 **The gap.** The Algolia importer (T658) fetches an index's synonyms but can only

@@ -83,6 +83,27 @@ public class TurElasticsearchClient {
         return sendJson(conn, HttpRequest.newBuilder(URI.create(url)).GET());
     }
 
+    /**
+     * Runs a keyword query and returns the ordered ids of the top {@code size}
+     * hits — the source side of the shadow comparison (T661).
+     */
+    public List<String> search(TurEsConnection conn, String index, String query, int size) {
+        String url = base(conn) + "/" + encode(index) + "/_search";
+        String q = jsonString(query);
+        String body = "{\"size\":" + size + ",\"_source\":false,"
+                + "\"query\":{\"query_string\":{\"query\":" + q + "}}}";
+        Map<String, Object> response = sendJson(conn,
+                HttpRequest.newBuilder(URI.create(url)).POST(HttpRequest.BodyPublishers.ofString(body))
+                        .header("Content-Type", "application/json"));
+        List<String> ids = new ArrayList<>();
+        for (EsHit hit : toPage(response).hits()) {
+            if (hit.id() != null) {
+                ids.add(hit.id());
+            }
+        }
+        return ids;
+    }
+
     /** Opens a scroll over the whole index ({@code match_all}) and returns the first page. */
     public EsPage openScroll(TurEsConnection conn, String index, int size, String keepAlive) {
         String url = base(conn) + "/" + encode(index) + "/_search?scroll=" + encode(keepAlive);
@@ -191,6 +212,11 @@ public class TurElasticsearchClient {
 
     private static String encode(String value) {
         return URLEncoder.encode(value, StandardCharsets.UTF_8);
+    }
+
+    /** JSON-encodes a string value (with surrounding quotes), so a query with quotes/backslashes is safe. */
+    private String jsonString(String value) {
+        return objectMapper.writeValueAsString(value == null ? "" : value);
     }
 
     private static String asString(Object value) {

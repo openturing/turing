@@ -58,6 +58,8 @@ public class TurAlgoliaClient {
     private static final TypeReference<Map<String, Object>> MAP_TYPE = new TypeReference<>() {
     };
 
+    private static final String INDEXES_PATH = "/1/indexes/";
+
     private final ObjectMapper objectMapper = JsonMapper.builder().build();
 
     /**
@@ -73,8 +75,29 @@ public class TurAlgoliaClient {
 
     /** {@code GET /1/indexes/{index}/settings}. */
     public Map<String, Object> fetchSettings(TurAlgoliaConnection conn, String index) {
-        String url = base(conn) + "/1/indexes/" + encode(index) + "/settings";
+        String url = base(conn) + INDEXES_PATH + encode(index) + "/settings";
         return sendJson(conn, HttpRequest.newBuilder(URI.create(url)).GET());
+    }
+
+    /**
+     * Runs a query and returns the ordered {@code objectID}s of the top
+     * {@code hitsPerPage} hits — the source side of the shadow comparison (T661).
+     */
+    public List<String> search(TurAlgoliaConnection conn, String index, String query, int hitsPerPage) {
+        String url = base(conn) + INDEXES_PATH + encode(index) + "/query";
+        String body = "{\"query\":" + jsonString(query) + ",\"hitsPerPage\":" + hitsPerPage
+                + ",\"attributesToRetrieve\":[\"objectID\"]}";
+        Map<String, Object> response = sendJson(conn,
+                HttpRequest.newBuilder(URI.create(url)).POST(HttpRequest.BodyPublishers.ofString(body))
+                        .header("Content-Type", "application/json"));
+        List<String> ids = new ArrayList<>();
+        for (Map<String, Object> hit : hitsOf(response)) {
+            Object objectId = hit.get("objectID");
+            if (objectId != null) {
+                ids.add(objectId.toString());
+            }
+        }
+        return ids;
     }
 
     /**
@@ -82,7 +105,7 @@ public class TurAlgoliaClient {
      * cursor returned by the previous page.
      */
     public AlgoliaBrowsePage browse(TurAlgoliaConnection conn, String index, String cursor, int hitsPerPage) {
-        String url = base(conn) + "/1/indexes/" + encode(index) + "/browse";
+        String url = base(conn) + INDEXES_PATH + encode(index) + "/browse";
         String body = cursor == null
                 ? "{\"hitsPerPage\":" + hitsPerPage + "}"
                 : "{\"cursor\":\"" + cursor + "\"}";
@@ -98,7 +121,7 @@ public class TurAlgoliaClient {
      */
     public List<Map<String, Object>> fetchSynonyms(TurAlgoliaConnection conn, String index) {
         try {
-            String url = base(conn) + "/1/indexes/" + encode(index) + "/synonyms/search";
+            String url = base(conn) + INDEXES_PATH + encode(index) + "/synonyms/search";
             Map<String, Object> response = sendJson(conn,
                     HttpRequest.newBuilder(URI.create(url))
                             .POST(HttpRequest.BodyPublishers.ofString("{\"query\":\"\",\"hitsPerPage\":1000}"))
@@ -110,7 +133,6 @@ public class TurAlgoliaClient {
         }
     }
 
-    @SuppressWarnings("unchecked")
     private AlgoliaBrowsePage toBrowsePage(Map<String, Object> response) {
         return new AlgoliaBrowsePage(hitsOf(response), asString(response.get("cursor")));
     }
@@ -175,6 +197,11 @@ public class TurAlgoliaClient {
 
     private static String encode(String value) {
         return URLEncoder.encode(value, StandardCharsets.UTF_8);
+    }
+
+    /** JSON-encodes a string value (with surrounding quotes), so a query with quotes/backslashes is safe. */
+    private String jsonString(String value) {
+        return objectMapper.writeValueAsString(value == null ? "" : value);
     }
 
     private static String asString(Object value) {

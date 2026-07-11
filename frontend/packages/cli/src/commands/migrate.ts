@@ -104,6 +104,88 @@ export async function runMigrate(
   return result;
 }
 
+/* ─────────────────────── shadow comparison (T661) ─────────────────────── */
+
+/** Mirrors the backend {@code TurMigrationCompareMetrics.QueryComparison}. */
+export interface QueryComparison {
+  query: string;
+  sourceCount: number;
+  turingCount: number;
+  sharedCount: number;
+  jaccard: number;
+  sourceRecall: number;
+  topRankMatch: boolean;
+}
+
+/** Mirrors the backend {@code TurMigrationCompareResult}. */
+export interface CompareResult {
+  engine: string;
+  site: string;
+  queries: number;
+  rows: number;
+  avgJaccard: number;
+  avgSourceRecall: number;
+  topRankMatches: number;
+  zeroOverlapQueries: number;
+  perQuery: QueryComparison[];
+  warnings: string[];
+}
+
+/** Builds the `/api/sn/migrate/compare` request body from flags + a query set. */
+export function buildCompareBody(flags: MigrateFlags, queries: string[]): Record<string, unknown> {
+  if (queries.length === 0) throw new Error("No queries to compare. Provide --queries-file <path>.");
+  return {
+    engine: required(str(flags, "engine"), "engine"),
+    sourceUrl: str(flags, "source-url"),
+    username: str(flags, "source-user"),
+    password: str(flags, "source-password"),
+    apiKey: str(flags, "source-api-key") ?? str(flags, "api-key"),
+    appId: str(flags, "app-id"),
+    host: str(flags, "host"),
+    index: required(str(flags, "index"), "index"),
+    targetSite: required(str(flags, "site"), "site"),
+    locale: str(flags, "locale"),
+    rows: int(flags, "rows"),
+    queries,
+  };
+}
+
+/** Authenticates, POSTs the comparison request, and prints the parity report. */
+export async function runCompare(
+  client: TuringClient,
+  flags: MigrateFlags,
+  queries: string[],
+  log: (line: string) => void,
+): Promise<CompareResult> {
+  const body = buildCompareBody(flags, queries);
+  await client.authenticate();
+  log(`Comparing ${queries.length} query(ies): ${body.engine} '${body.index}' vs SN site '${body.targetSite}'…`);
+  const result = await client.post<CompareResult>("/api/sn/migrate/compare", body);
+  for (const line of formatCompareResult(result)) log(line);
+  return result;
+}
+
+/** Human-readable relevance-parity report. */
+export function formatCompareResult(result: CompareResult): string[] {
+  const pct = (n: number) => `${Math.round(n * 100)}%`;
+  const lines = [
+    `\n${result.engine} vs site '${result.site}' — ${result.queries} query(ies), top ${result.rows}`,
+    `  avg overlap (Jaccard): ${pct(result.avgJaccard)}`,
+    `  avg source recall:     ${pct(result.avgSourceRecall)}`,
+    `  top-1 matches:         ${result.topRankMatches}/${result.queries}`,
+    `  zero-overlap queries:  ${result.zeroOverlapQueries}/${result.queries}`,
+    "",
+  ];
+  for (const q of result.perQuery) {
+    lines.push(`  "${q.query}" — overlap ${pct(q.jaccard)}, shared ${q.sharedCount}${q.topRankMatch ? ", top-1 ✓" : ""}`);
+  }
+  if (result.warnings?.length) {
+    lines.push(`\n⚠ ${result.warnings.length} warning(s):`);
+    for (const w of result.warnings) lines.push(`  - ${w}`);
+  }
+  return lines;
+}
+
 /** Human-readable summary of a migration result. */
 export function formatMigrationResult(result: MigrationResult): string[] {
   const body = result.dryRun ? dryRunLines(result) : realRunLines(result);

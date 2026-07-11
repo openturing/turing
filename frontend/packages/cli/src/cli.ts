@@ -11,7 +11,10 @@
  *   <li>{@code logs --conversation <id>} — tail live chat events.</li>
  *   <li>{@code migrate elasticsearch|algolia …} — import a source index into an SN
  *       site (mapping/settings → manifest, records → import); {@code --dry-run}
- *       previews the derived schema (Block AO / T659).</li>
+ *       previews the derived schema, {@code --overrides-file} reshapes fields
+ *       (Block AO / T659, T660).</li>
+ *   <li>{@code migrate compare …} — shadow-run a query set against the source
+ *       engine and the migrated SN site and report relevance parity (T661).</li>
  *   <li>{@code eval [path]} — run YAML eval suites ({@code --watch} to re-run).</li>
  *   <li>{@code eval --dataset <id|name>} — run a stored dataset × grader stack
  *       server-side as a reusable CI gate (T602).</li>
@@ -44,7 +47,7 @@ import { deployProject } from "./commands/deploy.js";
 import { discoverSuiteFiles, runEvalFiles } from "./commands/eval.js";
 import { parseInitArgs, runInit } from "./commands/init.js";
 import { runLogs } from "./commands/logs.js";
-import { runMigrate, type MigrateEngine } from "./commands/migrate.js";
+import { runCompare, runMigrate, type MigrateEngine } from "./commands/migrate.js";
 
 const log = (line: string) => console.log(line);
 
@@ -204,12 +207,27 @@ async function logsCommand(rest: string[]): Promise<void> {
 async function migrateCommand(rest: string[]): Promise<void> {
   const { flags, positionals, extra } = extractConnectionFlags(rest);
   const engine = positionals[0];
+  if (engine === "compare") {
+    await migrateCompareCommand(flags, extra);
+    return;
+  }
   if (engine !== "elasticsearch" && engine !== "algolia") {
-    throw new Error("Usage: turing migrate <elasticsearch|algolia> [flags]. Run `turing help`.");
+    throw new Error("Usage: turing migrate <elasticsearch|algolia|compare> [flags]. Run `turing help`.");
   }
   const overrides = loadOverridesFile(typeof extra["overrides-file"] === "string" ? extra["overrides-file"] : undefined);
   const connected = await connect(flags, process.cwd());
   await runMigrate(connected.client, engine as MigrateEngine, extra, log, overrides);
+}
+
+async function migrateCompareCommand(flags: ConnectionFlags, extra: Record<string, string | boolean>): Promise<void> {
+  const queriesFile = typeof extra["queries-file"] === "string" ? extra["queries-file"] : undefined;
+  if (!queriesFile) throw new Error("Usage: turing migrate compare --engine <e> --queries-file <path> [flags].");
+  const queries = readFileSync(resolve(process.cwd(), queriesFile), "utf8")
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter((line) => line.length > 0 && !line.startsWith("#"));
+  const connected = await connect(flags, process.cwd());
+  await runCompare(connected.client, extra, queries, log);
 }
 
 /** Reads a JSON array of field-mapping overrides (T660) from a file, if given. */
@@ -309,6 +327,8 @@ function printHelp(): void {
       "  turing migrate algolia --app-id <id> --api-key <k> --index <i> --site <s> [--se-instance <id>]",
       "                         [--use-llm] [--locale <c>] [--batch-size <n>] [--max-documents <n>] [--dry-run]",
       "                         [--overrides-file <path>]  (rename/retype/drop/default fields — both engines)",
+      "  turing migrate compare --engine <elasticsearch|algolia> --index <i> --site <s> --queries-file <path>",
+      "                         [source flags] [--rows <n>] [--locale <c>]  (relevance parity: source vs Turing)",
       "  turing eval [path] [--watch] [connection flags]",
       "  turing eval --dataset <id|name> [--stack <id|name>] [--min-score <n>] [connection flags]",
       "  turing eval record <conversationId> [--out <file>] [connection flags]",

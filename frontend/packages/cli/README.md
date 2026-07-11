@@ -123,6 +123,25 @@ derived manifest and every document, so schema and data stay consistent.
 found in an Algolia index are reported for you to apply in the target engine
 (native synonym management is on the roadmap).
 
+#### `turing migrate compare` — measure relevance parity before cutover
+
+Run the same query set against the **source engine** and the **migrated Turing
+site**, and diff the top-N result sets — so you can prove parity before flipping
+traffic. Read-only on both sides.
+
+```bash
+turing migrate compare \
+  --engine elasticsearch \
+  --source-url https://es.example.com:9200 --source-user elastic --source-password "$ES_PASSWORD" \
+  --index products --site Products \
+  --queries-file ./queries.txt --rows 10
+```
+
+`--queries-file` is a text file with one query per line (blank lines and `#`
+comments ignored). The report shows, per query and in aggregate, the set overlap
+(Jaccard), how much of the source's top-N Turing reproduced (source recall), and
+how often the #1 result matches. Source flags are the same as `turing migrate`.
+
 ## Eval suites
 
 Eval suites are `*.eval.yaml` files: a list of `fixtures`, each a sequence of
