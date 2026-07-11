@@ -1,0 +1,48 @@
+name: Dependency Audit
+
+# T654 / §XXXVII.16 — CI gate so a NEW high-severity advisory in the frontend
+# dependency tree fails the build rather than sitting open. Runs on PRs that
+# touch the frontend, on a weekly schedule, and on demand. The Maven side is
+# covered by the weekly Dependabot `maven` block (.github/dependabot.yml); add
+# an OWASP dependency-check step here if a hard Maven gate is later required.
+
+on:
+  pull_request:
+    branches: [ "2026.3" ]
+    paths:
+      - "frontend/**"
+      - ".github/workflows/dependency-audit.yml"
+  schedule:
+    - cron: "0 6 * * 1"
+  workflow_dispatch:
+
+jobs:
+  pnpm-audit:
+    name: pnpm audit (frontend, fail on high)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v6
+        with:
+          version: 11.8.0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 26.3.1
+          cache: 'pnpm'
+          cache-dependency-path: frontend/pnpm-lock.yaml
+
+      - name: Install workspace deps
+        working-directory: frontend
+        run: pnpm install --frozen-lockfile=false
+
+      # Fail the build on any high/critical advisory. Known transitive lows/
+      # mediums are tracked by Dependabot; a NEW high blocks the merge. The
+      # pnpm.overrides in frontend/package.json remediate the currently-open
+      # highs (undici, xlsx via the SheetJS CDN patched build).
+      - name: pnpm audit (high+)
+        working-directory: frontend
+        run: pnpm audit --audit-level high

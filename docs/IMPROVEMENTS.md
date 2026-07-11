@@ -2303,14 +2303,3 @@ sanitisation (`TuringD2Diagram.tsx:181`, low). Fix: confirm/enforce backend esca
 fragment, optionally post-sanitise the D2 SVG. (The LLM ```html sandbox, markdown
 prose, vanilla SDK, and CSRF handling were all verified safe — do not regress them.)
 
-**XXXVII.16 — Dependency CVEs (MIXED, external signal).** Independent of the
-code-level review above, GitHub Dependabot reports 13 open advisories on the
-default branch (7 high · 3 moderate · 3 low) across the Maven + pnpm trees
-(surfaced on push, 2026-07-10). These are third-party library CVEs, not Turing
-code, so they were not part of the manual audit's scope but are part of the same
-full-product exposure a client would inherit. Triage each by *reachability* (is the
-vulnerable code path used, or is it a transitive dev-only dep?), bump or override
-the coordinates, and add a CI gate (`mvn` dependency check + `pnpm audit`, or a
-Dependabot policy) so a new high-severity advisory fails the build rather than
-sitting open. Track the live list at the repo's Dependabot alerts page.
-

@@ -84,7 +84,6 @@
 
 **🟡 Medium / Low:**
 - 💭 **T652** (deps: —) **Config & logging hygiene** — remove committed MinIO creds (`application.yaml:116` `admin`/`minha_senha_forte`, purge from history); keep the H2 console off and drop `web.ignoring("/h2/**")` + `web-allow-others: true`; redact the secret-preview + human-approval capability-token INFO logs; constrain the anonymous self-registration / signup arbitrary-username paths. → §XXXVII.14
-- 📋 **T654** (deps: —) **Triage & patch dependency CVEs (Dependabot)** — GitHub Dependabot reports 13 open advisories on the default branch (7 high · 3 moderate · 3 low) across the backend + frontend dependency trees. Triage each against actual usage (reachable vs transitive-only), bump/override the affected coordinates, and wire a CI gate (`mvn` + `pnpm audit` / Dependabot auto-merge policy) so new highs fail the build. Separate from the code-level findings above but part of the same full-product exposure. → §XXXVII.16
 - 💭 **T653** (deps: —) **Frontend XSS surface** — confirm & enforce that the search-engine highlighter HTML-escapes field content before it reaches the `dangerouslySetInnerHTML` result-card (rendered inside the authenticated admin console); add a client sanitiser allowing only `<mark>`-style markup; sanitise/sandbox the Gemini `renderedContent` fragment injected raw into the console; optionally post-sanitise the LLM-driven D2 SVG. → §XXXVII.15
 
 ## Non-goals (do NOT add as tasks)

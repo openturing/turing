@@ -46,6 +46,7 @@ number" looked free but wasn't. Grepping three files (`ROADMAP.md`,
 
 ## Log (most recent first)
 
+- **T654 SHIPPED** (Block AN §XXXVII.16 — dependency CVEs: pnpm overrides undici/@babel/core/js-yaml + xlsx accepted-risk ignoreGhsas (export-only) + dependency-audit.yml CI gate) — 2026-07-11.
 - **T651 SHIPPED** (Block AN §XXXVII.13 — user-memory IDOR: delete scoped to (userId, agentId) so a row can't be deleted by guessing its id) — 2026-07-11.
 - **T650 SHIPPED** (Block AN §XXXVII.12 — MCP client hardening: turing.mcp-client stdio-command allowlist + optional blockPrivateUrls via TurSsrfGuard; inbound already loopback-safe; scope-policy-for-client-tools noted residual) — 2026-07-11.
 - **T649 SHIPPED** (Block AN §XXXVII.11 — actuator hardening: exposure.include "*" -> health,info,prometheus so env/heapdump no longer published) — 2026-07-11.
