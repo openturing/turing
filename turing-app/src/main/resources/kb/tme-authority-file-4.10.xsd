@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  T673 / §XL (Block AQ) — reconstructed formal contract for the nstein TME /
+  OpenText Semantic Navigation "authority file" (microthesaurus export/import
+  format), namespace http://dev.nstein.com/tme-authority-file/4.10.
+
+  This XSD was reverse-engineered from a verified 253-term real sample
+  (docs/references/semantic-navigation-authority-file-sample.xml); the original
+  DTD/XSD is unrecoverable (shallow clone, see ADR 0003). It is the shared
+  contract for BOTH the XML importer (T673) and the format the LLM is instructed
+  to emit when generating new hierarchies (T675). It is intentionally lenient
+  (relation type is an open token, attributes is lax) so a faithful export never
+  fails to import over a cosmetic drift.
+-->
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
+           xmlns:tns="http://dev.nstein.com/tme-authority-file/4.10"
+           targetNamespace="http://dev.nstein.com/tme-authority-file/4.10"
+           elementFormDefault="qualified">
+
+  <xs:element name="authorityFile" type="tns:authorityFileType"/>
+
+  <xs:complexType name="authorityFileType">
+    <xs:sequence>
+      <xs:element name="name" type="xs:string"/>
+      <xs:element name="terms" type="tns:termsType" minOccurs="0"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="termsType">
+    <xs:sequence>
+      <xs:element name="term" type="tns:termType" minOccurs="0" maxOccurs="unbounded"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="termType">
+    <xs:sequence>
+      <xs:element name="id" type="xs:string"/>
+      <xs:element name="name" type="xs:string"/>
+      <xs:element name="enabled" type="xs:boolean" minOccurs="0"/>
+      <xs:element name="variations" type="tns:variationsType" minOccurs="0"/>
+      <xs:element name="relations" type="tns:relationsType" minOccurs="0"/>
+      <xs:element name="attributes" type="tns:attributesType" minOccurs="0"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="variationsType">
+    <xs:sequence>
+      <xs:element name="variation" type="tns:variationType" minOccurs="0" maxOccurs="unbounded"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="variationType">
+    <xs:sequence>
+      <xs:element name="name" type="xs:string"/>
+      <xs:element name="weight" type="xs:double" minOccurs="0"/>
+      <!-- case: "ci" = case-insensitive, "cs" = case-sensitive -->
+      <xs:element name="case" type="xs:string" minOccurs="0"/>
+      <!-- accent: "as" = accent-sensitive, "ai" = accent-insensitive -->
+      <xs:element name="accent" type="xs:string" minOccurs="0"/>
+      <xs:element name="languages" type="tns:languagesType" minOccurs="0"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="languagesType">
+    <xs:sequence>
+      <!-- ISO 639-2/B code, e.g. "por", "eng", "ita" -->
+      <xs:element name="language" type="xs:string" minOccurs="0" maxOccurs="unbounded"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="relationsType">
+    <xs:sequence>
+      <xs:element name="relation" type="tns:relationType" minOccurs="0" maxOccurs="unbounded"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="relationType">
+    <xs:sequence>
+      <!-- target term id -->
+      <xs:element name="id" type="xs:string"/>
+      <!-- BT broader | NT narrower | RT related | U use | UF used-for (open token) -->
+      <xs:element name="type" type="xs:string"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <!-- Always-empty extensibility slot in the source; accept anything. -->
+  <xs:complexType name="attributesType">
+    <xs:sequence>
+      <xs:any minOccurs="0" maxOccurs="unbounded" processContents="lax"/>
+    </xs:sequence>
+  </xs:complexType>
+
+</xs:schema>

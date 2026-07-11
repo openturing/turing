@@ -18,6 +18,9 @@ package com.viglet.turing.api.kb;
 
 import java.util.List;
 
+import java.io.IOException;
+
+import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -25,9 +28,13 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 
 import com.viglet.turing.api.exception.TurNotFoundException;
+import com.viglet.turing.kb.TurAuthorityFileImportService;
 import com.viglet.turing.kb.TurMicrothesaurusService;
 import com.viglet.turing.persistence.dto.kb.TurMicrothesaurusDto;
 import com.viglet.turing.persistence.model.kb.TurKnowledgeBase;
@@ -50,11 +57,14 @@ public class TurMicrothesaurusAPI {
 
     private final TurKnowledgeBaseRepository turKnowledgeBaseRepository;
     private final TurMicrothesaurusService turMicrothesaurusService;
+    private final TurAuthorityFileImportService turAuthorityFileImportService;
 
     public TurMicrothesaurusAPI(TurKnowledgeBaseRepository turKnowledgeBaseRepository,
-            TurMicrothesaurusService turMicrothesaurusService) {
+            TurMicrothesaurusService turMicrothesaurusService,
+            TurAuthorityFileImportService turAuthorityFileImportService) {
         this.turKnowledgeBaseRepository = turKnowledgeBaseRepository;
         this.turMicrothesaurusService = turMicrothesaurusService;
+        this.turAuthorityFileImportService = turAuthorityFileImportService;
     }
 
     private TurKnowledgeBase knowledgeBase(String knowledgeBaseId) {
@@ -97,5 +107,18 @@ public class TurMicrothesaurusAPI {
     public boolean delete(@PathVariable String knowledgeBaseId, @PathVariable String id) {
         knowledgeBase(knowledgeBaseId);
         return turMicrothesaurusService.delete(id);
+    }
+
+    @Operation(summary = "Import a microthesaurus from an nstein TME / OpenText SN authority file (XML)")
+    @PostMapping(value = "/import", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public TurMicrothesaurusDto importAuthorityFile(@PathVariable String knowledgeBaseId,
+            @RequestPart("file") MultipartFile file,
+            @RequestParam(name = "domain", required = false) String domain) {
+        TurKnowledgeBase kb = knowledgeBase(knowledgeBaseId);
+        try {
+            return turAuthorityFileImportService.importAuthorityFile(kb, file.getBytes(), domain);
+        } catch (IOException e) {
+            throw new IllegalArgumentException("Could not read the uploaded file: " + e.getMessage());
+        }
     }
 }

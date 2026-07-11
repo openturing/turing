@@ -115,7 +115,6 @@
 > reconstructed nstein TME / OpenText SN authority-file format (`BT/NT/RT/U/UF`
 > relations + `variations`) is the import + AI-generation contract.
 
-- 📋 **T673** (deps: T668) **XML importer + reconstructed contract** — author the nstein TME / OpenText SN authority-file XSD/DTD as the formal contract (shallow clone — the old importer is unrecoverable), then import `authorityFile` → domain (`BT/NT` → `parentTermId`, `RT/U/UF` → relations, `variations` → surface forms; reciprocal-pair + self-relation dedupe). → §XL.6
 - 📋 **T674** (deps: T668, T673) **Pre-populated EDUCATION knowledge base** — AI-generated microthesaurus hierarchies for the priority **education** domain (pt/en/it) shipped as an importable seed bundle (the T373/T655 seed-ZIP precedent, not baked into startup) + a library browse area. → §XL.7
 - 💭 **T675** (deps: T673, T674) **LLM-assisted hierarchy generation** — generate new microthesaurus trees from a domain+language prompt, emitting the T673 authority-file format; reuses the AI-authoring strict-schema + LlmJudge grounding path (T426/T385). → §XL.8
 - 📋 **T676** (deps: T669, T548) **Bento admin editor** — browse/create/edit KB → microthesaurus → term trees + relations on a `/bento/kb` surface (BentoHero + BentoEntityShell + tree editor) for in-project curation. → §XL.9

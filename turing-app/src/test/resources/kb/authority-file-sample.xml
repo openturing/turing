@@ -1,0 +1,6973 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?> 
+<authorityFile xmlns="http://dev.nstein.com/tme-authority-file/4.10" xmlns:c="http://dev.nstein.com/common/1.3">
+  <name>APICULTURA</name>
+  <terms>
+    <term>
+      <id>39523</id>
+      <name>FIBRA ALIMENTAR (APICULTURA)</name>
+      <enabled>true</enabled>
+      <variations>
+        <variation>
+          <name>FIBRA ALIMENTAR (APICULTURA)</name>
+          <weight>100.0</weight>
+          <case>ci</case>
+          <accent>as</accent>
+          <languages>
+            <language>por</language>
+          </languages>
+        </variation>
+      </variations>
+      <relations />
+      <attributes />
+    </term>
+    <term>
+      <id>7376</id>
+      <name>PROCESSO DE FABRICAÇÃO (Mel de abelha)</name>
+      <enabled>true</enabled>
+      <variations>
+        <variation>
+          <name>PROCESSO DE FABRICAÇÃO (Mel de abelha)</name>
+          <weight>100.0</weight>
+          <case>ci</case>
+          <accent>as</accent>
+          <languages>
+            <language>por</language>
+          </languages>
+        </variation>
+      </variations>
+      <relations>
+        <relation>
+          <id>582</id>
+          <type>BT</type>
+        </relation>
+        <relation>
+          <id>7377</id>
+          <type>UF</type>
+        </relation>
+        <relation>
+          <id>7378</id>
+          <type>UF</type>
+        </relation>
+        <relation>
+          <id>7380</id>
+          <type>NT</type>
+        </relation>
+        <relation>
+          <id>7381</id>
+          <type>NT</type>
+        </relation>
+      </relations>
+      <attributes />
+    </term>
+    <term>
+      <id>7377</id>
+      <name>Boas práticas de fabricação - bpf</name>
+      <enabled>true</enabled>
+      <variations>
+        <variation>
+          <name>Boas práticas de fabricação - bpf</name>
+          <weight>100.0</weight>
+          <case>ci</case>
+          <accent>as</accent>
+          <languages>
+            <language>por</language>
+          </languages>
+        </variation>
+      </variations>
+      <relations>
+        <relation>
+          <id>7376</id>
+          <type>U</type>
+        </relation>
+      </relations>
+      <attributes />
+    </term>
+    <term>
+      <id>7378</id>
+      <name>Análise de perigos e pontos críticos de controle</name>
+      <enabled>true</enabled>
+      <variations>
+        <variation>
+          <name>Análise de perigos e pontos críticos de controle</name>
+          <weight>100.0</weight>
+          <case>ci</case>
+          <accent>as</accent>
+          <languages>
+            <language>por</language>
+          </languages>
+        </variation>
+      </variations>
+      <relations>
+        <relation>
+          <id>7376</id>
+          <type>U</type>
+        </relation>
+      </relations>
+      <attributes />
+    </term>
+    <term>
+      <id>7380</id>
+      <name>PÓLEN</name>
+      <enabled>true</enabled>
+      <variations>
+        <variation>
+          <name>PÓLEN</name>
+          <weight>100.0</weight>
+          <case>ci</case>
+          <accent>as</accent>
+          <languages>
+            <language>por</language>
+          </languages>
+        </variation>
+      </variations>
+      <relations>
+        <relation>
+          <id>522</id>
+          <type>NT</type>
+        </relation>
+        <relation>
+          <id>7376</id>
+          <type>BT</type>
+        </relation>
+      </relations>
+      <attributes />
+    </term>
+    <term>
+      <id>7381</id>
+      <name>PRÓPOLIS</name>
+      <enabled>true</enabled>
+      <variations>
+        <variation>
+          <name>PRÓPOLIS</name>
+          <weight>100.0</weight>
+          <case>ci</case>
+          <accent>as</accent>
+          <languages>
+            <language>por</language>
+          </languages>
+        </variation>
+      </variations>
+      <relations>
+        <relation>
+          <id>580</id>
+          <type>RT</type>
+        </relation>
+        <relation>
+          <id>7376</id>
+          <type>BT</type>
+        </relation>
+      </relations>
+      <attributes />
+    </term>
+    <term>
+      <id>46900</id>
+      <name>ARAME (APICULTURA)</name>
+      <enabled>true</enabled>
+      <variations>
+        <variation>
+          <name>ARAME (APICULTURA)</name>
+          <weight>100.0</weight>
+          <case>ci</case>
+          <accent>as</accent>
+          <languages>
+            <language>por</language>
+          </languages>
+        </variation>
+      </variations>
+      <relations>
+        <relation>
+          <id>38209</id>
+          <type>BT</type>
+        </relation>
+      </relations>
+      <attributes />
+    </term>
+    <term>
+      <id>46902</id>
+      <name>CAIXILHO (APICULTURA)</name>
+      <enabled>true</enabled>
+      <variations>
+        <variation>
+          <name>CAIXILHO (APICULTURA)</name>
+          <weight>100.0</weight>
+          <case>ci</case>
+          <accent>as</accent>
+          <languages>
+            <language>por</language>
+          </languages>
+        </variation>
+      </variations>
+      <relations>
+        <relation>
+          <id>38209</id>
+          <type>BT</type>
+        </relation>
+      </relations>
+      <attributes />
+    </term>
+    <term>
+      <id>46904</id>
+      <name>ENXAME NÃO NIDIFICADO (APICULTURA)</name>
+      <enabled>true</enabled>
+      <variations>
+        <variation>
+          <name>ENXAME NÃO NIDIFICADO (APICULTURA)</name>
+          <weight>100.0</weight>
+          <case>ci</case>
+          <accent>as</accent>
+          <languages>
+            <language>por</language>
+          </languages>
+        </variation>
+      </variations>
+      <relations>
+        <relation>
+          <id>38165</id>
+          <type>BT</type>
+        </relation>
+        <relation>
+          <id>46856</id>
+          <type>RT</type>
+        </relation>
+      </relations>
+      <attributes />
+    </term>
+    <term>
+      <id>46906</id>
+      <name>LANGSTROTH (APICULTURA)</name>
+      <enabled>true</enabled>
+      <variations>
+        <variation>
+          <name>LANGSTROTH (APICULTURA)</name>
+          <weight>100.0</weight>
+          <case>ci</case>
+          <accent>as</accent>
+          <languages>
+            <language>por</language>
+          </languages>
+        </variation>
+      </variations>
+      <relations>
+        <relation>
+          <id>38131</id>
+          <type>BT</type>
+        </relation>
+      </relations>
+      <attributes />
+    </term>
+    <term>
+      <id>11710</id>
+      <name>Sobrecaixa</name>
+      <enabled>true</enabled>
+      <variations>
+        <variation>
+          <name>Sobrecaixa</name>
+          <weight>100.0</weight>
+          <case>ci</case>
+          <accent>as</accent>
+          <languages>
+            <language>por</language>
+          </languages>
+        </variation>
+      </variations>
+      <relations>
+        <relation>
+          <id>38131</id>
+          <type>U</type>
+        </relation>
+      </relations>
+      <attributes />
+    </term>
+    <term>
+      <id>11711</id>
+      <name>Sobreninho</name>
+      <enabled>true</enabled>
+      <variations>
+        <variation>
+          <name>Sobreninho</name>
+          <weight>100.0</weight>
+          <case>ci</case>
+          <accent>as</accent>
+          <languages>
+            <language>por</language>
+          </languages>
+        </variation>
+      </variations>
+      <relations>
+        <relation>
+          <id>38131</id>
+          <type>U</type>
+        </relation>
+      </relations>
+      <attributes />
+    </term>
+    <term>
+      <id>38097</id>
+      <name>TELA EXCLUIDORA (APICULTURA)</name>
+      <enabled>true</enabled>
+      <variations>
+        <variation>
+          <name>TELA EXCLUIDORA (APICULTURA)</name>
+          <weight>100.0</weight>
+          <case>ci</case>
+          <accent>as</accent>
+          <languages>
+            <language>por</language>
+          </languages>
+        </variation>
+      </variations>
+      <relations>
+        <relation>
+          <id>42894</id>
+          <type>BT</type>
+        </relation>
+      </relations>
+      <attributes />
+    </term>
+    <term>
+      <id>38099</id>
+      <name>TELA SOMBRITE (APICULTURA)</name>
+      <enabled>true</enabled>
+      <variations>
+        <variation>
+          <name>TELA SOMBRITE (APICULTURA)</name>
+          <weight>100.0</weight>
+          <case>ci</case>
+          <accent>as</accent>
+          <languages>
+            <language>por</language>
+          </languages>
+        </variation>
+      </variations>
+      <relations>
+        <relation>
+          <id>42894</id>
+          <type>BT</type>
+        </relation>
+      </relations>
+      <attributes />
+    </term>
+    <term>
+      <id>38101</id>
+      <name>QUADRO DE COLMÉIA (APICULTURA)</name>
+      <enabled>true</enabled>
+      <variations>
+        <variation>
+          <name>QUADRO DE COLMÉIA (APICULTURA)</name>
+          <weight>100.0</weight>
+          <case>ci</case>
+          <accent>as</accent>
+          <languages>
+            <language>por</language>
+          </languages>
+        </variation>
+      </variations>
+      <relations>
+        <relation>
+          <id>605</id>
+          <type>UF</type>
+        </relation>
+        <relation>
+          <id>42894</id>
+          <type>BT</type>
+        </relation>
+      </relations>
+      <attributes />
+    </term>
+    <term>
+      <id>38103</id>
+      <name>CARRETILHA (APICULTURA)</name>
+      <enabled>true</enabled>
+      <variations>
+        <variation>
+          <name>CARRETILHA (APICULTURA)</name>
+          <weight>100.0</weight>
+          <case>ci</case>
+          <accent>as</accent>
+          <languages>
+            <language>por</language>
+          </languages>
+        </variation>
+      </variations>
+      <relations>
+        <relation>
+          <id>38060</id>
+          <type>BT</type>
+        </relation>
+      </relations>
+      <attributes />
+    </term>
+    <term>
+      <id>515</id>
+      <name>PRODUTO DA ABELHA</name>
+      <enabled>true</enabled>
+      <variations>
+        <variation>
+          <name>PRODUTO DA ABELHA</name>
+          <weight>100.0</weight>
+          <case>ci</case>
+          <accent>as</accent>
+          <languages>
+            <language>por</language>
+          </languages>
+        </variation>
+      </variations>
+      <relations>
+        <relation>
+          <id>538</id>
+          <type>NT</type>
+        </relation>
+        <relation>
+          <id>579</id>
+          <type>NT</type>
+        </relation>
+        <relation>
+          <id>580</id>
+          <type>NT</type>
+        </relation>
+        <relation>
+          <id>582</id>
+          <type>NT</type>
+        </relation>
+        <relation>
+          <id>583</id>
+          <type>NT</type>
+        </relation>
+        <relation>
+          <id>585</id>
+          <type>NT</type>
+        </relation>
+        <relation>
+          <id>6600</id>
+          <type>NT</type>
+        </relation>
+        <relation>
+          <id>38171</id>
+          <type>NT</type>
+        </relation>
+      </relations>
+      <attributes />
+    </term>
+    <term>
+      <id>38105</id>
+      <name>ESPANADOR (Ferramenta apícola) (APICULTURA)</name>
+      <enabled>true</enabled>
+      <variations>
+        <variation>
+          <name>ESPANADOR (Ferramenta apícola) (APICULTURA)</name>
+          <weight>100.0</weight>
+          <case>ci</case>
+          <accent>as</accent>
+          <languages>
+            <language>por</language>
+          </languages>
+        </variation>
+      </variations>
+      <relations>
+        <relation>
+          <id>38060</id>
+          <type>BT</type>
+        </relation>
+      </relations>
+      <attributes />
+    </term>
+    <term>
+      <id>38107</id>
+      <name>FACA DESOPERCULADORA (Ferramenta apícola) (APICULTURA)</name>
+      <enabled>true</enabled>
+      <variations>
+        <variation>
+          <name>FACA DESOPERCULADORA (Ferramenta apícola) (APICULTURA)</name>
+          <weight>100.0</weight>
+          <case>ci</case>
+          <accent>as</accent>
+          <languages>
+            <language>por</language>
+          </languages>
+        </variation>
+      </variations>
+      <relations>
+        <relation>
+          <id>38060</id>
+          <type>BT</type>
+        </relation>
+      </relations>
+      <attributes />
+    </term>
+    <term>
+      <id>38109</id>
+      <name>FORMÃO (Apicultura) (APICULTURA)</name>
+      <enabled>true</enabled>
+      <variations>
+        <variation>
+          <name>FORMÃO (Apicultura) (APICULTURA)</name>
+          <weight>100.0</weight>
+          <case>ci</case>
+          <accent>as</accent>
+          <languages>
+            <language>por</language>
+          </languages>
+        </variation>
+      </variations>
+      <relations>
+        <relation>
+          <id>38060</id>
+          <type>BT</type>
+        </relation>
+      </relations>
+      <attributes />
+    </term>
+    <term>
+      <id>521</id>
+      <name>Apicultura móvel</name>
+      <enabled>true</enabled>
+      <variations>
+        <variation>
+          <name>Apicultura móvel</name>
+          <weight>100.0</weight>
+          <case>ci</case>
+          <accent>as</accent>
+          <languages>
+            <language>por</language>
+          </languages>
+        </variation>
+      </variations>
+      <relations>
+        <relation>
+          <id>38056</id>
+          <type>U</type>
+        </relation>
+      </relations>
+      <attributes />
+    </term>
+    <term>
+      <id>522</id>
+      <name>POLINIZAÇÃO</name>
+      <enabled>true</enabled>
+      <variations>
+        <variation>
+          <name>POLINIZAÇÃO</name>
+          <weight>100.0</weight>
+          <case>ci</case>
+          <accent>as</accent>
+          <languages>
+            <language>por</language>
+          </languages>
+        </variation>
+      </variations>
+      <relations>
+        <relation>
+          <id>7380</id>
+          <type>BT</type>
+        </relation>
+      </relations>
+      <attributes />
+    </term>
+    <term>
+      <id>38111</id>
+      <name>FUMIGADOR (APICULTURA)</name>
+      <enabled>true</enabled>
+      <variations>
+        <variation>
+          <name>FUMIGADOR (APICULTURA)</name>
+          <weight>100.0</weight>
+          <case>ci</case>
+          <accent>as</accent>
+          <languages>
+            <language>por</language>
+          </languages>
+        </variation>
+      </variations>
+      <relations>
+        <relation>
+          <id>38060</id>
+          <type>BT</type>
+        </relation>
+      </relations>
+      <attributes />
+    </term>
+    <term>
+      <id>38113</id>
+      <name>GARFO DESOPERCULADOR (APICULTURA)</name>
+      <enabled>true</enabled>
+      <variations>
+        <variation>
+          <name>GARFO DESOPERCULADOR (APICULTURA)</name>
+          <weight>100.0</weight>
+          <case>ci</case>
+          <accent>as</accent>
+          <languages>
+            <language>por</language>
+          </languages>
+        </variation>
+      </variations>
+      <relations>
+        <relation>
+          <id>38060</id>
+          <type>BT</type>
+        </relation>
+      </relations>
+      <attributes />
+    </term>
+    <term>
+      <id>38115</id>
+      <name>INCRUSTADOR DE CERA (APICULTURA)</name>
+      <enabled>true</enabled>
+      <variations>
+        <variation>
+          <name>INCRUSTADOR DE CERA (APICULTURA)</name>
+          <weight>100.0</weight>
+          <case>ci</case>
+          <accent>as</accent>
+          <languages>
+            <language>por</language>
+          </languages>
+        </variation>
+      </variations>
+      <relations>
+        <relation>
+          <id>38060</id>
+          <type>BT</type>
+        </relation>
+      </relations>
+      <attributes />
+    </term>
+    <term>
+      <id>38117</id>
+      <name>PEGADOR DE QUADRO (APICULTURA)</name>
+      <enabled>true</enabled>
+      <variations>
+        <variation>
+          <name>PEGADOR DE QUADRO (APICULTURA)</name>
+          <weight>100.0</weight>
+          <case>ci</case>
+          <accent>as</accent>
+          <languages>
+            <language>por</language>
+          </languages>
+        </variation>
+      </variations>
+      <relations>
+        <relation>
+          <id>38060</id>
+          <type>BT</type>
+        </relation>
+      </relations>
+      <attributes />
+    </term>
+    <term>
+      <id>38119</id>
+      <name>BOTA (Vestimenta apícola) (APICULTURA)</name>
+      <enabled>true</enabled>
+      <variations>
+        <variation>
+          <name>BOTA (Vestimenta apícola) (APICULTURA)</name>
+          <weight>100.0</weight>
+          <case>ci</case>
+          <accent>as</accent>
+          <languages>
+            <language>por</language>
+          </languages>
+        </variation>
+      </variations>
+      <relations>
+        <relation>
+          <id>38062</id>
+          <type>BT</type>
+        </relation>
+      </relations>
+      <attributes />
+    </term>
+    <term>
+      <id>38121</id>
+      <name>MACACÃO (Vestimenta apícola) (APICULTURA)</name>
+      <enabled>true</enabled>
+      <variations>
+        <variation>
+          <name>MACACÃO (Vestimenta apícola) (APICULTURA)</name>
+          <weight>100.0</weight>
+          <case>ci</case>
+          <accent>as</accent>
+          <languages>
+            <language>por</language>
+          </languages>
+        </variation>
+      </variations>
+      <relations>
+        <relation>
+          <id>38062</id>
+          <type>BT</type>
+        </relation>
+      </relations>
+      <attributes />
+    </term>
+    <term>
+      <id>538</id>
+      <name>MEL (Produto da abelha)</name>
+      <enabled>true</enabled>
+      <variations>
+        <variation>
+          <name>MEL (Produto da abelha)</name>
+          <weight>100.0</weight>
+          <case>ci</case>
+          <accent>as</accent>
+          <languages>
+            <language>por</language>
+          </languages>
+        </variation>
+      </variations>
+      <relations>
+        <relation>
+          <id>515</id>
+          <type>BT</type>
+        </relation>
+        <relation>
+          <id>11671</id>
+          <type>UF</type>
+        </relation>
+      </relations>
+      <attributes />
+    </term>
+    <term>
+      <id>38123</id>
+      <name>MÁSCARA (Apicultor) (APICULTURA)</name>
+      <enabled>true</enabled>
+      <variations>
+        <variation>
+          <name>MÁSCARA (Apicultor) (APICULTURA)</name>
+          <weight>100.0</weight>
+          <case>ci</case>
+          <accent>as</accent>
+          <languages>
+            <language>por</language>
+          </languages>
+        </variation>
+      </variations>
+      <relations>
+        <relation>
+          <id>38062</id>
+          <type>BT</type>
+        </relation>
+      </relations>
+      <attributes />
+    </term>
+    <term>
+      <id>38125</id>
+      <name>LUVA (Vestimenta apícola) (APICULTURA)</name>
+      <enabled>true</enabled>
+      <variations>
+        <variation>
+          <name>LUVA (Vestimenta apícola) (APICULTURA)</name>
+          <weight>100.0</weight>
+          <case>ci</case>
+          <accent>as</accent>
+          <languages>
+            <language>por</language>
+          </languages>
+        </variation>
+      </variations>
+      <relations>
+        <relation>
+          <id>38062</id>
+          <type>BT</type>
+        </relation>
+      </relations>
+      <attributes />
+    </term>
+    <term>
+      <id>38127</id>
+      <name>APIÁRIO (APICULTURA)</name>
+      <enabled>true</enabled>
+      <variations>
+        <variation>
+          <name>APIÁRIO (APICULTURA)</name>
+          <weight>100.0</weight>
+          <case>ci</case>
+          <accent>as</accent>
+          <languages>
+            <language>por</language>
+          </languages>
+        </variation>
+      </variations>
+      <relations>
+        <relation>
+          <id>38064</id>
+          <type>BT</type>
+        </relation>
+        <relation>
+          <id>38205</id>
+          <type>NT</type>
+        </relation>
+        <relation>
+          <id>38207</id>
+          <type>NT</type>
+        </relation>
+        <relation>
+          <id>46884</id>
+          <type>NT</type>
+        </relation>
+        <relation>
+          <id>46886</id>
+          <type>NT</type>
+        </relation>
+        <relation>
+          <id>46888</id>
+          <type>NT</type>
+        </relation>
+      </relations>
+      <attributes />
+    </term>
+    <term>
+      <id>38129</id>
+      <name>CASA DE MEL (APICULTURA)</name>
+      <enabled>true</enabled>
+      <variations>
+        <variation>
+          <name>CASA DE MEL (APICULTURA)</name>
+          <weight>100.0</weight>
+          <case>ci</case>
+          <accent>as</accent>
+          <languages>
+            <language>por</language>
+          </languages>
+        </variation>
+      </variations>
+      <relations>
+        <relation>
+          <id>609</id>
+          <type>UF</type>
+        </relation>
+        <relation>
+          <id>38064</id>
+          <type>BT</type>
+        </relation>
+      </relations>
+      <attributes />
+    </term>
+    <term>
+      <id>38286</id>
+      <name>ABELHA URUÇU (APICULTURA)</name>
+      <enabled>true</enabled>
+      <variations>
+        <variation>
+          <name>ABELHA URUÇU (APICULTURA)</name>
+          <weight>100.0</weight>
+          <case>ci</case>
+          <accent>as</accent>
+          <languages>
+            <language>por</language>
+          </languages>
+        </variation>
+      </variations>
+      <relations>
+        <relation>
+          <id>38185</id>
+          <type>BT</type>
+        </relation>
+        <relation>
+          <id>46794</id>
+          <type>RT</type>
+        </relation>
+      </relations>
+      <attributes />
+    </term>
+    <term>
+      <id>553</id>
+      <name>Instalação para apicultura</name>
+      <enabled>true</enabled>
+      <variations>
+        <variation>
+          <name>Instalação para apicultura</name>
+          <weight>100.0</weight>
+          <case>ci</case>
+          <accent>as</accent>
+          <languages>
+            <language>por</language>
+          </languages>
+        </variation>
+      </variations>
+      <relations>
+        <relation>
+          <id>38064</id>
+          <type>U</type>
+        </relation>
+      </relations>
+      <attributes />
+    </term>
+    <term>
+      <id>38288</id>
+      <name>REALEIRA (APICULTURA)</name>
+      <enabled>true</enabled>
+      <variations>
+        <variation>
+          <name>REALEIRA (APICULTURA)</name>
+          <weight>100.0</weight>
+          <case>ci</case>
+          <accent>as</accent>
+          <languages>
+            <language>por</language>
+          </languages>
+        </variation>
+      </variations>
+      <relations>
+        <relation>
+          <id>38189</id>
+          <type>BT</type>
+        </relation>
+      </relations>
+      <attributes />
+    </term>
+    <term>
+      <id>38290</id>
+      <name>ABELHA ALEMÃ (APICULTURA)</name>
+      <enabled>true</enabled>
+      <variations>
+        <variation>
+          <name>ABELHA ALEMÃ (APICULTURA)</name>
+          <weight>100.0</weight>
+          <case>ci</case>
+          <accent>as</accent>
+          <languages>
+            <language>por</language>
+          </languages>
+        </variation>
+      </variations>
+      <relations>
+        <relation>
+          <id>38276</id>
+          <type>BT</type>
+        </relation>
+        <relation>
+          <id>46794</id>
+          <type>RT</type>
+        </relation>
+      </relations>
+      <attributes />
+    </term>
+    <term>
+      <id>38292</id>
+      <name>ABELHA ITALIANA (APICULTURA)</name>
+      <enabled>true</enabled>
+      <variations>
+        <variation>
+          <name>ABELHA ITALIANA (APICULTURA)</name>
+          <weight>100.0</weight>
+          <case>ci</case>
+          <accent>as</accent>
+          <languages>
+            <language>por</language>
+          </languages>
+        </variation>
+      </variations>
+      <relations>
+        <relation>
+          <id>38276</id>
+          <type>BT</type>
+        </relation>
+      </relations>
+      <attributes />
+    </term>
+    <term>
+      <id>38294</id>
+      <name>JALECO (Vestimenta apícola) (APICULTURA)</name>
+      <enabled>true</enabled>
+      <variations>
+        <variation>
+          <name>JALECO (Vestimenta apícola) (APICULTURA)</name>
+          <weight>100.0</weight>
+          <case>ci</case>
+          <accent>as</accent>
+          <languages>
+            <language>por</language>
+          </languages>
+        </variation>
+      </variations>
+      <relations>
+        <relation>
+          <id>38062</id>
+          <type>BT</type>
+        </relation>
+      </relations>
+      <attributes />
+    </term>
+    <term>
+      <id>38296</id>
+      <name>INDUMENTÁRIA APÍCOLA (APICULTURA)</name>
+      <enabled>true</enabled>
+      <variations>
+        <variation>
+          <name>INDUMENTÁRIA APÍCOLA (APICULTURA)</name>
+          <weight>100.0</weight>
+          <case>ci</case>
+          <accent>as</accent>
+          <languages>
+            <language>por</language>
+          </languages>
+        </variation>
+      </variations>
+      <relations>
+        <relation>
+          <id>38062</id>
+          <type>BT</type>
+        </relation>
+      </relations>
+      <attributes />
+    </term>
+    <term>
+      <id>644</id>
+      <name>Abelha com ferrão</name>
+      <enabled>true</enabled>
+      <variations>
+        <variation>
+          <name>Abelha com ferrão</name>
+          <weight>100.0</weight>
+          <case>ci</case>
+          <accent>as</accent>
+          <languages>
+            <language>por</language>
+          </languages>
+        </variation>
+      </variations>
+      <relations>
+        <relation>
+          <id>38183</id>
+          <type>U</type>
+        </relation>
+      </relations>
+      <attributes />
+    </term>
+    <term>
+      <id>646</id>
+      <name>Abelha africanizada</name>
+      <enabled>true</enabled>
+      <variations>
+        <variation>
+          <name>Abelha africanizada</name>
+          <weight>100.0</weight>
+          <case>ci</case>
+          <accent>as</accent>
+          <languages>
+            <language>por</language>
+          </languages>
+        </variation>
+      </variations>
+      <relations>
+        <relation>
+          <id>38264</id>
+          <type>U</type>
+        </relation>
+      </relations>
+      <attributes />
+    </term>
+    <term>
+      <id>647</id>
+      <name>Abelha sem ferrão</name>
+      <enabled>true</enabled>
+      <variations>
+        <variation>
+          <name>Abelha sem ferrão</name>
+          <weight>100.0</weight>
+          <case>ci</case>
+          <accent>as</accent>
+          <languages>
+            <language>por</language>
+          </languages>
+        </variation>
+      </variations>
+      <relations>
+        <relation>
+          <id>38185</id>
+          <type>U</type>
+        </relation>
+      </relations>
+      <attributes />
+    </term>
+    <term>
+      <id>660</id>
+      <name>Abelha poliíbrida</name>
+      <enabled>true</enabled>
+      <variations>
+        <variation>
+          <name>Abelha poliíbrida</name>
+          <weight>100.0</weight>
+          <case>ci</case>
+          <accent>as</accent>
+          <languages>
+            <language>por</language>
+          </languages>
+        </variation>
+      </variations>
+      <relations>
+        <relation>
+          <id>38264</id>
+          <type>U</type>
+        </relation>
+      </relations>
+      <attributes />
+    </term>
+    <term>
+      <id>661</id>
+      <name>Abelha comum</name>
+      <enabled>true</enabled>
+      <variations>
+        <variation>
+          <name>Abelha comum</name>
+          <weight>100.0</weight>
+          <case>ci</case>
+          <accent>as</accent>
+          <languages>
+            <language>por</language>
+          </languages>
+        </variation>
+      </variations>
+      <relations>
+        <relation>
+          <id>38264</id>
+          <type>U</type>
+        </relation>
+      </relations>
+      <attributes />
+    </term>
+    <term>
+      <id>662</id>
+      <name>Abelha negra</name>
+      <enabled>true</enabled>
+      <variations>
+        <variation>
+          <name>Abelha negra</name>
+          <weight>100.0</weight>
+          <case>ci</case>
+          <accent>as</accent>
+          <languages>
+            <language>por</language>
+          </languages>
+        </variation>
+      </variations>
+      <relations>
+        <relation>
+          <id>38264</id>
+          <type>U</type>
+        </relation>
+      </relations>
+      <attributes />
+    </term>
+    <term>
+      <id>663</id>
+      <name>Abelha real</name>
+      <enabled>true</enabled>
+      <variations>
+        <variation>
+          <name>Abelha real</name>
+          <weight>100.0</weight>
+          <case>ci</case>
+          <accent>as</accent>
+          <languages>
+            <language>por</language>
+          </languages>
+        </variation>
+      </variations>
+      <relations>
+        <relation>
+          <id>38264</id>
+          <type>U</type>
+        </relation>
+      </relations>
+      <attributes />
+    </term>
+    <term>
+      <id>664</id>
+      <name>Abelha nativa</name>
+      <enabled>true</enabled>
+      <variations>
+        <variation>
+          <name>Abelha nativa</name>
+          <weight>100.0</weight>
+          <case>ci</case>
+          <accent>as</accent>
+          <languages>
+            <language>por</language>
+          </languages>
+        </variation>
+      </variations>
+      <relations>
+        <relation>
+          <id>38270</id>
+          <type>U</type>
+        </relation>
+      </relations>
+      <attributes />
+    </term>
+    <term>
+      <id>670</id>
+      <name>Meliponicultura</name>
+      <enabled>true</enabled>
+      <variations>
+        <variation>
+          <name>Meliponicultura</name>
+          <weight>100.0</weight>
+          <case>ci</case>
+          <accent>as</accent>
+          <languages>
+            <language>por</language>
+          </languages>
+        </variation>
+      </variations>
+      <relations>
+        <relation>
+          <id>38185</id>
+          <type>U</type>
+        </relation>
+      </relations>
+      <attributes />
+    </term>
+    <term>
+      <id>577</id>
+      <name>ALUGUEL DE COLMÉIA</name>
+      <enabled>true</enabled>
+      <variations>
+        <variation>
+          <name>ALUGUEL DE COLMÉIA</name>
+          <weight>100.0</weight>
+          <case>ci</case>
+          <accent>as</accent>
+          <languages>
+            <language>por</language>
+          </languages>
+        </variation>
+      </variations>
+      <relations>
+        <relation>
+          <id>38064</id>
+          <type>RT</type>
+        </relation>
+      </relations>
+      <attributes />
+    </term>
+    <term>
+      <id>579</id>
+      <name>APITOXINA</name>
+      <enabled>true</enabled>
+      <variations>
+        <variation>
+          <name>APITOXINA</name>
+          <weight>100.0</weight>
+          <case>ci</case>
+          <accent>as</accent>
+          <languages>
+            <language>por</language>
+          </languages>
+        </variation>
+      </variations>
+      <relations>
+        <relation>
+          <id>515</id>
+          <type>BT</type>
+        </relation>
+      </relations>
+      <attributes />
+    </term>
+    <term>
+      <id>580</id>
+      <name>CERA DE ABELHA</name>
+      <enabled>true</enabled>
+      <variations>
+        <variation>
+          <name>CERA DE ABELHA</name>
+          <weight>100.0</weight>
+          <case>ci</case>
+          <accent>as</accent>
+          <languages>
+            <language>por</language>
+          </languages>
+        </variation>
+      </variations>
+      <relations>
+        <relation>
+          <id>515</id>
+          <type>BT</type>
+        </relation>
+        <relation>
+          <id>7381</id>
+          <type>RT</type>
+        </relation>
+      </relations>
+      <attributes />
+    </term>
+    <term>
+      <id>582</id>
+      <name>MEL DE ABELHA</name>
+      <enabled>true</enabled>
+      <variations>
+        <variation>
+          <name>MEL DE ABELHA</name>
+          <weight>100.0</weight>
+          <case>ci</case>
+          <accent>as</accent>
+          <languages>
+            <language>por</language>
+          </languages>
+        </variation>
+      </variations>
+      <relations>
+        <relation>
+          <id>515</id>
+          <type>BT</type>
+        </relation>
+        <relation>
+          <id>7376</id>
+          <type>NT</type>
+        </relation>
+      </relations>
+      <attributes />
+    </term>
+    <term>
+      <id>583</id>
+      <name>MEL DE ABELHA ORGÂNICO</name>
+      <enabled>true</enabled>
+      <variations>
+        <variation>
+          <name>MEL DE ABELHA ORGÂNICO</name>
+          <weight>100.0</weight>
+          <case>ci</case>
+          <accent>as</accent>
+          <languages>
+            <language>por</language>
+          </languages>
+        </variation>
+      </variations>
+      <relations>
+        <relation>
+          <id>515</id>
+          <type>BT</type>
+        </relation>
+      </relations>
+      <attributes />
+    </term>
+    <term>
+      <id>585</id>
+      <name>PRÓPOLIS VERDE</name>
+      <enabled>true</enabled>
+      <variations>
+        <variation>
+          <name>PRÓPOLIS VERDE</name>
+          <weight>100.0</weight>
+          <case>ci</case>
+          <accent>as</accent>
+          <languages>
+            <language>por</language>
+          </languages>
+        </variation>
+      </variations>
+      <relations>
+        <relation>
+          <id>515</id>
+          <type>BT</type>
+        </relation>
+      </relations>
+      <attributes />
+    </term>
+    <term>
+      <id>38179</id>
+      <name>CERTIFICAÇÃO DE ORIGEM (Processo de certificação) (APICULTURA)</name>
+      <enabled>true</enabled>
+      <variations>
+        <variation>
+          <name>CERTIFICAÇÃO DE ORIGEM (Processo de certificação) (APICULTURA)</name>
+          <weight>100.0</weight>
+          <case>ci</case>
+          <accent>as</accent>
+          <languages>
+            <language>por</language>
+          </languages>
+        </variation>
+      </variations>
+      <relations>
+        <relation>
+          <id>38068</id>
+          <type>BT</type>
+        </relation>
+      </relations>
+      <attributes />
+    </term>
+    <term>
+      <id>605</id>
+      <name>Quadro de melgueira</name>
+      <enabled>true</enabled>
+      <variations>
+        <variation>
+          <name>Quadro de melgueira</name>
+          <weight>100.0</weight>
+          <case>ci</case>
+          <accent>as</accent>
+          <languages>
+            <language>por</language>
+          </languages>
+        </variation>
+      </variations>
+      <relations>
+        <relation>
+          <id>38101</id>
+          <type>U</type>
+        </relation>
+      </relations>
+      <attributes />
+    </term>
+    <term>
+      <id>609</id>
+      <name>Unidade de extração de mel</name>
+      <enabled>true</enabled>
+      <variations>
+        <variation>
+          <name>Unidade de extração de mel</name>
+          <weight>100.0</weight>
+          <case>ci</case>
+          <accent>as</accent>
+          <languages>
+            <language>por</language>
+          </languages>
+        </variation>
+      </variations>
+      <relations>
+        <relation>
+          <id>38129</id>
+          <type>U</type>
+        </relation>
+      </relations>
+      <attributes />
+    </term>
+    <term>
+      <id>610</id>
+      <name>Melgueirão</name>
+      <enabled>true</enabled>
+      <variations>
+        <variation>
+          <name>Melgueirão</name>
+          <weight>100.0</weight>
+          <case>ci</case>
+          <accent>as</accent>
+          <languages>
+            <language>por</language>
+          </languages>
+        </variation>
+      </variations>
+      <relations>
+        <relation>
+          <id>38131</id>
+          <type>U</type>
+        </relation>
+      </relations>
+      <attributes />
+    </term>
+    <term>
+      <id>612</id>
+      <name>Caixa-ninho</name>
+      <enabled>true</enabled>
+      <variations>
+        <variation>
+          <name>Caixa-ninho</name>
+          <weight>100.0</weight>
+          <case>ci</case>
+          <accent>as</accent>
+          <languages>
+            <language>por</language>
+          </languages>
+        </variation>
+      </variations>
+      <relations>
+        <relation>
+          <id>38133</id>
+          <type>U</type>
+        </relation>
+      </relations>
+      <attributes />
+    </term>
+    <term>
+      <id>614</id>
+      <name>Cortiço de abelha</name>
+      <enabled>true</enabled>
+      <variations>
+        <variation>
+          <name>Cortiço de abelha</name>
+          <weight>100.0</weight>
+          <case>ci</case>
+          <accent>as</accent>
+          <languages>
+            <language>por</language>
+          </languages>
+        </variation>
+      </variations>
+      <relations>
+        <relation>
+          <id>38133</id>
+          <type>U</type>
+        </relation>
+      </relations>
+      <attributes />
+    </term>
+    <term>
+      <id>617</id>
+      <name>Câmara de cria de abelha</name>
+      <enabled>true</enabled>
+      <variations>
+        <variation>
+          <name>Câmara de cria de abelha</name>
+          <weight>100.0</weight>
+          <case>ci</case>
+          <accent>as</accent>
+          <languages>
+            <language>por</language>
+          </languages>
+        </variation>
+      </variations>
+      <relations>
+        <relation>
+          <id>38143</id>
+          <type>U</type>
+        </relation>
+      </relations>
+      <attributes />
+    </term>
+    <term>
+      <id>618</id>
+      <name>Doença apícola</name>
+      <enabled>true</enabled>
+      <variations>
+        <variation>
+          <name>Doença apícola</name>
+          <weight>100.0</weight>
+          <case>ci</case>
+          <accent>as</accent>
+          <languages>
+            <language>por</language>
+          </languages>
+        </variation>
+      </variations>
+      <relations>
+        <relation>
+          <id>38157</id>
+          <type>U</type>
+        </relation>
+      </relations>
+      <attributes />
+    </term>
+    <term>
+      <id>46790</id>
+      <name>APICULTURA CONVENCIONAL (APICULTURA)</name>
+      <enabled>true</enabled>
+      <variations>
+        <variation>
+          <name>APICULTURA CONVENCIONAL (APICULTURA)</name>
+          <weight>100.0</weight>
+          <case>ci</case>
+          <accent>as</accent>
+          <languages>
+            <language>por</language>
+          </languages>
+        </variation>
+      </variations>
+      <relations>
+        <relation>
+          <id>38050</id>
+          <type>BT</type>
+        </relation>
+      </relations>
+      <attributes />
+    </term>
+    <term>
+      <id>46792</id>
+      <name>RAÇA DE ABELHA (APICULTURA)</name>
+      <enabled>true</enabled>
+      <variations>
+        <variation>
+          <name>RAÇA DE ABELHA (APICULTURA)</name>
+          <weight>100.0</weight>
+          <case>ci</case>
+          <accent>as</accent>
+          <languages>
+            <language>por</language>
+          </languages>
+        </variation>
+      </variations>
+      <relations>
+        <relation>
+          <id>38070</id>
+          <type>BT</type>
+        </relation>
+      </relations>
+      <attributes />
+    </term>
+    <term>
+      <id>46794</id>
+      <name>ABELHA (APICULTURA)</name>
+      <enabled>true</enabled>
+      <variations>
+        <variation>
+          <name>ABELHA (APICULTURA)</name>
+          <weight>100.0</weight>
+          <case>ci</case>
+          <accent>as</accent>
+          <languages>
+            <language>por</language>
+          </languages>
+        </variation>
+      </variations>
+      <relations>
+        <relation>
+          <id>38050</id>
+          <type>BT</type>
+        </relation>
+        <relation>
+          <id>38070</id>
+          <type>NT</type>
+        </relation>
+        <relation>
+          <id>38141</id>
+          <type>RT</type>
+        </relation>
+        <relation>
+          <id>38169</id>
+          <type>RT</type>
+        </relation>
+        <relation>
+          <id>38183</id>
+          <type>RT</type>
+        </relation>
+        <relation>
+          <id>38187</id>
+          <type>NT</type>
+        </relation>
+        <relation>
+          <id>38189</id>
+          <type>NT</type>
+        </relation>
+        <relation>
+          <id>38197</id>
+          <type>RT</type>
+        </relation>
+        <relation>
+          <id>38264</id>
+          <type>NT</type>
+        </relation>
+        <relation>
+          <id>38266</id>
+          <type>RT</type>
+        </relation>
+        <relation>
+          <id>38268</id>
+          <type>RT</type>
+        </relation>
+        <relation>
+          <id>38270</id>
+          <type>RT</type>
+        </relation>
+        <relation>
+          <id>38272</id>
+          <type>RT</type>
+        </relation>
+        <relation>
+          <id>38274</id>
+          <type>RT</type>
+        </relation>
+        <relation>
+          <id>38286</id>
+          <type>RT</type>
+        </relation>
+        <relation>
+          <id>38290</id>
+          <type>RT</type>
+        </relation>
+        <relation>
+          <id>45087</id>
+          <type>RT</type>
+        </relation>
+        <relation>
+          <id>45091</id>
+          <type>RT</type>
+        </relation>
+        <relation>
+          <id>46798</id>
+          <type>RT</type>
+        </relation>
+        <relation>
+          <id>46890</id>
+          <type>NT</type>
+        </relation>
+        <relation>
+          <id>46892</id>
+          <type>NT</type>
+        </relation>
+      </relations>
+      <attributes />
+    </term>
+    <term>
+      <id>46796</id>
+      <name>POVOAMENTO DE COLMÉIA (APICULTURA)</name>
+      <enabled>true</enabled>
+      <variations>
+        <variation>
+          <name>POVOAMENTO DE COLMÉIA (APICULTURA)</name>
+          <weight>100.0</weight>
+          <case>ci</case>
+          <accent>as</accent>
+          <languages>
+            <language>por</language>
+          </languages>
+        </variation>
+      </variations>
+      <relations>
+        <relation>
+          <id>38066</id>
+          <type>BT</type>
+        </relation>
+      </relations>
+      <attributes />
+    </term>
+    <term>
+      <id>46818</id>
+      <name>BEBEDOURO (APICULTURA)</name>
+      <enabled>true</enabled>
+      <variations>
+        <variation>
+          <name>BEBEDOURO (APICULTURA)</name>
+          <weight>100.0</weight>
+          <case>ci</case>
+          <accent>as</accent>
+          <languages>
+            <language>por</language>
+          </languages>
+        </variation>
+      </variations>
+      <relations>
+        <relation>
+          <id>42894</id>
+          <type>BT</type>
+        </relation>
+      </relations>
+      <attributes />
+    </term>
+    <term>
+      <id>46820</id>
+      <name>ESTICADOR DE ARAME (Equipamento apícola) (APICULTURA)</name>
+      <enabled>true</enabled>
+      <variations>
+        <variation>
+          <name>ESTICADOR DE ARAME (Equipamento apícola) (APICULTURA)</name>
+          <weight>100.0</weight>
+          <case>ci</case>
+          <accent>as</accent>
+          <languages>
+            <language>por</language>
+          </languages>
+        </variation>
+      </variations>
+      <relations>
+        <relation>
+          <id>42894</id>
+          <type>BT</type>
+        </relation>
+      </relations>
+      <attributes />
+    </term>
+    <term>
+      <id>46822</id>
+      <name>MESA DESOPERCULADORA (APICULTURA)</name>
+      <enabled>true</enabled>
+      <variations>
+        <variation>
+          <name>MESA DESOPERCULADORA (APICULTURA)</name>
+          <weight>100.0</weight>
+          <case>ci</case>
+          <accent>as</accent>
+          <languages>
+            <language>por</language>
+          </languages>
+        </variation>
+      </variations>
+      <relations>
+        <relation>
+          <id>42894</id>
+          <type>BT</type>
+        </relation>
+      </relations>
+      <attributes />
+    </term>
+    <term>
+      <id>46824</id>
+      <name>REDUTOR DE ALVADO (APICULTURA)</name>
+      <enabled>true</enabled>
+      <variations>
+        <variation>
+          <name>REDUTOR DE ALVADO (APICULTURA)</name>
+          <weight>100.0</weight>
+          <case>ci</case>
+          <accent>as</accent>
+          <languages>
+            <language>por</language>
+          </languages>
+        </variation>
+      </variations>
+      <relations>
+        <relation>
+          <id>42894</id>
+          <type>BT</type>
+        </relation>
+      </relations>
+      <attributes />
+    </term>
+    <term>
+      <id>46826</id>
+      <name>TELA DE TRANSPORTE (APICULTURA)</name>
+      <enabled>true</enabled>
+      <variations>
+        <variation>
+          <name>TELA DE TRANSPORTE (APICULTURA)</name>
+          <weight>100.0</weight>
+          <case>ci</case>
+          <accent>as</accent>
+          <languages>
+            <language>por</language>
+          </languages>
+        </variation>
+      </variations>
+      <relations>
+        <relation>
+          <id>42894</id>
+          <type>BT</type>
+        </relation>
+      </relations>
+      <attributes />
+    </term>
+    <term>
+      <id>46828</id>
+      <name>REVISÃO DO APIÁRIO (APICULTURA)</name>
+      <enabled>true</enabled>
+      <variations>
+        <variation>
+          <name>REVISÃO DO APIÁRIO (APICULTURA)</name>
+          <weight>100.0</weight>
+          <case>ci</case>
+          <accent>as</accent>
+          <languages>
+            <language>por</language>
+          </languages>
+        </variation>
+      </variations>
+      <relations>
+        <relation>
+          <id>11670</id>
+          <type>UF</type>
+        </relation>
+        <relation>
+          <id>38068</id>
+          <type>BT</type>
+        </relation>
+      </relations>
+      <attributes />
+    </term>
+    <term>
+      <id>46830</id>
+      <name>FICHA INDIVIDUAL DA COLMÉIA (APICULTURA)</name>
+      <enabled>true</enabled>
+      <variations>
+        <variation>
+          <name>FICHA INDIVIDUAL DA COLMÉIA (APICULTURA)</name>
+          <weight>100.0</weight>
+          <case>ci</case>
+          <accent>as</accent>
+          <languages>
+            <language>por</language>
+          </languages>
+        </variation>
+      </variations>
+      <relations>
+        <relation>
+          <id>11669</id>
+          <type>UF</type>
+        </relation>
+        <relation>
+          <id>38068</id>
+          <type>BT</type>
+        </relation>
+      </relations>
+      <attributes />
+    </term>
+    <term>
+      <id>46832</id>
+      <name>RECOMENDAÇÃO TÉCNICA (APICULTURA)</name>
+      <enabled>true</enabled>
+      <variations>
+        <variation>
+          <name>RECOMENDAÇÃO TÉCNICA (APICULTURA)</name>
+          <weight>100.0</weight>
+          <case>ci</case>
+          <accent>as</accent>
+          <languages>
+            <language>por</language>
+          </languages>
+        </variation>
+      </variations>
+      <relations>
+        <relation>
+          <id>11668</id>
+          <type>UF</type>
+        </relation>
+        <relation>
+          <id>38068</id>
+          <type>BT</type>
+        </relation>
+      </relations>
+      <attributes />
+    </term>
+    <term>
+      <id>46834</id>
+      <name>INFORMAÇÃO MENSAL DO SUPERVISOR (APICULTURA)</name>
+      <enabled>true</enabled>
+      <variations>
+        <variation>
+          <name>INFORMAÇÃO MENSAL DO SUPERVISOR (APICULTURA)</name>
+          <weight>100.0</weight>
+          <case>ci</case>
+          <accent>as</accent>
+          <languages>
+            <language>por</language>
+          </languages>
+        </variation>
+      </variations>
+      <relations>
+        <relation>
+          <id>11667</id>
+          <type>UF</type>
+        </relation>
+        <relation>
+          <id>38068</id>
+          <type>BT</type>
+        </relation>
+      </relations>
+      <attributes />
+    </term>
+    <term>
+      <id>46838</id>
+      <name>SEGURANÇA DO APICULTOR (APICULTURA)</name>
+      <enabled>true</enabled>
+      <variations>
+        <variation>
+          <name>SEGURANÇA DO APICULTOR (APICULTURA)</name>
+          <weight>100.0</weight>
+          <case>ci</case>
+          <accent>as</accent>
+          <languages>
+            <language>por</language>
+          </languages>
+        </variation>
+      </variations>
+      <relations>
+        <relation>
+          <id>38050</id>
+          <type>RT</type>
+        </relation>
+        <relation>
+          <id>38062</id>
+          <type>BT</type>
+        </relation>
+      </relations>
+      <attributes />
+    </term>
+    <term>
+      <id>46856</id>
+      <name>ENXAME (APICULTURA)</name>
+      <enabled>true</enabled>
+      <variations>
+        <variation>
+          <name>ENXAME (APICULTURA)</name>
+          <weight>100.0</weight>
+          <case>ci</case>
+          <accent>as</accent>
+          <languages>
+            <language>por</language>
+          </languages>
+        </variation>
+      </variations>
+      <relations>
+        <relation>
+          <id>38165</id>
+          <type>BT</type>
+        </relation>
+        <relation>
+          <id>38165</id>
+          <type>RT</type>
+        </relation>
+        <relation>
+          <id>46852</id>
+          <type>RT</type>
+        </relation>
+        <relation>
+          <id>46854</id>
+          <type>RT</type>
+        </relation>
+        <relation>
+          <id>46904</id>
+          <type>RT</type>
+        </relation>
+      </relations>
+      <attributes />
+    </term>
+    <term>
+      <id>46858</id>
+      <name>DIVISÃO DE ENXAME (APICULTURA)</name>
+      <enabled>true</enabled>
+      <variations>
+        <variation>
+          <name>DIVISÃO DE ENXAME (APICULTURA)</name>
+          <weight>100.0</weight>
+          <case>ci</case>
+          <accent>as</accent>
+          <languages>
+            <language>por</language>
+          </languages>
+        </variation>
+      </variations>
+      <relations>
+        <relation>
+          <id>38165</id>
+          <type>BT</type>
+        </relation>
+      </relations>
+      <attributes />
+    </term>
+    <term>
+      <id>11666</id>
+      <name>Ff</name>
+      <enabled>true</enabled>
+      <variations>
+        <variation>
+          <name>Ff</name>
+          <weight>100.0</weight>
+          <case>ci</case>
+          <accent>as</accent>
+          <languages>
+            <language>por</language>
+          </languages>
+        </variation>
+      </variations>
+      <relations>
+        <relation>
+          <id>46836</id>
+          <type>U</type>
+        </relation>
+      </relations>
+      <attributes />
+    </term>
+    <term>
+      <id>11667</id>
+      <name>IMS</name>
+      <enabled>true</enabled>
+      <variations>
+        <variation>
+          <name>IMS</name>
+          <weight>100.0</weight>
+          <case>ci</case>
+          <accent>as</accent>
+          <languages>
+            <language>por</language>
+          </languages>
+        </variation>
+      </variations>
+      <relations>
+        <relation>
+          <id>46834</id>
+          <type>U</type>
+        </relation>
+      </relations>
+      <attributes />
+    </term>
+    <term>
+      <id>11668</id>
+      <name>Frt</name>
+      <enabled>true</enabled>
+      <variations>
+        <variation>
+          <name>Frt</name>
+          <weight>100.0</weight>
+          <case>ci</case>
+          <accent>as</accent>
+          <languages>
+            <language>por</language>
+          </languages>
+        </variation>
+      </variations>
+      <relations>
+        <relation>
+          <id>46832</id>
+          <type>U</type>
+        </relation>
+      </relations>
+      <attributes />
+    </term>
+    <term>
+      <id>11669</id>
+      <name>Fic</name>
+      <enabled>true</enabled>
+      <variations>
+        <variation>
+          <name>Fic</name>
+          <weight>100.0</weight>
+          <case>ci</case>
+          <accent>as</accent>
+          <languages>
+            <language>por</language>
+          </languages>
+        </variation>
+      </variations>
+      <relations>
+        <relation>
+          <id>46830</id>
+          <type>U</type>
+        </relation>
+      </relations>
+      <attributes />
+    </term>
+    <term>
+      <id>11670</id>
+      <name>Fra</name>
+      <enabled>true</enabled>
+      <variations>
+        <variation>
+          <name>Fra</name>
+          <weight>100.0</weight>
+          <case>ci</case>
+          <accent>as</accent>
+          <languages>
+            <language>por</language>
+          </languages>
+        </variation>
+      </variations>
+      <relations>
+        <relation>
+          <id>46828</id>
+          <type>U</type>
+        </relation>
+      </relations>
+      <attributes />
+    </term>
+    <term>
+      <id>11671</id>
+      <name>Extração do mel</name>
+      <enabled>true</enabled>
+      <variations>
+        <variation>
+          <name>Extração do mel</name>
+          <weight>100.0</weight>
+          <case>ci</case>
+          <accent>as</accent>
+          <languages>
+            <language>por</language>
+          </languages>
+        </variation>
+      </variations>
+      <relations>
+        <relation>
+          <id>538</id>
+          <type>U</type>
+        </relation>
+      </relations>
+      <attributes />
+    </term>
+    <term>
+      <id>46860</id>
+      <name>CONTROLE DE ENXAMEAÇÃO (APICULTURA)</name>
+      <enabled>true</enabled>
+      <variations>
+        <variation>
+          <name>CONTROLE DE ENXAMEAÇÃO (APICULTURA)</name>
+          <weight>100.0</weight>
+          <case>ci</case>
+          <accent>as</accent>
+          <languages>
+            <language>por</language>
+          </languages>
+        </variation>
+      </variations>
+      <relations>
+        <relation>
+          <id>38165</id>
+          <type>BT</type>
+        </relation>
+      </relations>
+      <attributes />
+    </term>
+    <term>
+      <id>11673</id>
+      <name>Pasto apícola</name>
+      <enabled>true</enabled>
+      <variations>
+        <variation>
+          <name>Pasto apícola</name>
+          <weight>100.0</weight>
+          <case>ci</case>
+          <accent>as</accent>
+          <languages>
+            <language>por</language>
+          </languages>
+        </variation>
+      </variations>
+      <relations>
+        <relation>
+          <id>38167</id>
+          <type>U</type>
+        </relation>
+      </relations>
+      <attributes />
+    </term>
+    <term>
+      <id>46862</id>
+      <name>CAPTURA DE ENXAME (APICULTURA)</name>
+      <enabled>true</enabled>
+      <variations>
+        <variation>
+          <name>CAPTURA DE ENXAME (APICULTURA)</name>
+          <weight>100.0</weight>
+          <case>ci</case>
+          <accent>as</accent>
+          <languages>
+            <language>por</language>
+          </languages>
+        </variation>
+      </variations>
+      <relations>
+        <relation>
+          <id>38165</id>
+          <type>BT</type>
+        </relation>
+      </relations>
+      <attributes />
+    </term>
+    <term>
+      <id>46864</id>
+      <name>SUPORTE (APICULTURA)</name>
+      <enabled>true</enabled>
+      <variations>
+        <variation>
+          <name>SUPORTE (APICULTURA)</name>
+          <weight>100.0</weight>
+          <case>ci</case>
+          <accent>as</accent>
+          <languages>
+            <language>por</language>
+          </languages>
+        </variation>
+      </variations>
+      <relations>
+        <relation>
+          <id>38135</id>
+          <type>BT</type>
+        </relation>
+      </relations>
+      <attributes />
+    </term>
+    <term>
+      <id>46866</id>
+      <name>PREPARAÇÃO (Colméia) (APICULTURA)</name>
+      <enabled>true</enabled>
+      <variations>
+        <variation>
+          <name>PREPARAÇÃO (Colméia) (APICULTURA)</name>
+          <weight>100.0</weight>
+          <case>ci</case>
+          <accent>as</accent>
+          <languages>
+            <language>por</language>
+          </languages>
+        </variation>
+      </variations>
+      <relations>
+        <relation>
+          <id>38135</id>
+          <type>BT</type>
+        </relation>
+      </relations>
+      <attributes />
+    </term>
+    <term>
+      <id>46868</id>
+      <name>HABITANTE DA COLMÉIA (APICULTURA)</name>
+      <enabled>true</enabled>
+      <variations>
+        <variation>
+          <name>HABITANTE DA COLMÉIA (APICULTURA)</name>
+          <weight>100.0</weight>
+          <case>ci</case>
+          <accent>as</accent>
+          <languages>
+            <language>por</language>
+          </languages>
+        </variation>
+      </variations>
+      <relations>
+        <relation>
+          <id>38135</id>
+          <type>BT</type>
+        </relation>
+      </relations>
+      <attributes />
+    </term>
+    <term>
+      <id>46870</id>
+      <name>FECHAMENTO (Colméia) (APICULTURA)</name>
+      <enabled>true</enabled>
+      <variations>
+        <variation>
+          <name>FECHAMENTO (Colméia) (APICULTURA)</name>
+          <weight>100.0</weight>
+          <case>ci</case>
+          <accent>as</accent>
+          <languages>
+            <language>por</language>
+          </languages>
+        </variation>
+      </variations>
+      <relations>
+        <relation>
+          <id>38135</id>
+          <type>BT</type>
+        </relation>
+      </relations>
+      <attributes />
+    </term>
+    <term>
+      <id>46872</id>
+      <name>COLMÉIA RÚSTICA (APICULTURA)</name>
+      <enabled>true</enabled>
+      <variations>
+        <variation>
+          <name>COLMÉIA RÚSTICA (APICULTURA)</name>
+          <weight>100.0</weight>
+          <case>ci</case>
+          <accent>as</accent>
+          <languages>
+            <language>por</language>
+          </languages>
+        </variation>
+      </variations>
+      <relations>
+        <relation>
+          <id>38135</id>
+          <type>BT</type>
+        </relation>
+      </relations>
+      <attributes />
+    </term>
+    <term>
+      <id>46874</id>
+      <name>COLMÉIA RACIONAL (APICULTURA)</name>
+      <enabled>true</enabled>
+      <variations>
+        <variation>
+          <name>COLMÉIA RACIONAL (APICULTURA)</name>
+          <weight>100.0</weight>
+          <case>ci</case>
+          <accent>as</accent>
+          <languages>
+            <language>por</language>
+          </languages>
+        </variation>
+      </variations>
+      <relations>
+        <relation>
+          <id>38135</id>
+          <type>BT</type>
+        </relation>
+      </relations>
+      <attributes />
+    </term>
+    <term>
+      <id>46876</id>
+      <name>COLMÉIA PADRÃO (APICULTURA)</name>
+      <enabled>true</enabled>
+      <variations>
+        <variation>
+          <name>COLMÉIA PADRÃO (APICULTURA)</name>
+          <weight>100.0</weight>
+          <case>ci</case>
+          <accent>as</accent>
+          <languages>
+            <language>por</language>
+          </languages>
+        </variation>
+      </variations>
+      <relations>
+        <relation>
+          <id>38135</id>
+          <type>BT</type>
+        </relation>
+      </relations>
+      <attributes />
+    </term>
+    <term>
+      <id>46878</id>
+      <name>COLMÉIA NATURAL (APICULTURA)</name>
+      <enabled>true</enabled>
+      <variations>
+        <variation>
+          <name>COLMÉIA NATURAL (APICULTURA)</name>
+          <weight>100.0</weight>
+          <case>ci</case>
+          <accent>as</accent>
+          <languages>
+            <language>por</language>
+          </languages>
+        </variation>
+      </variations>
+      <relations>
+        <relation>
+          <id>38135</id>
+          <type>BT</type>
+        </relation>
+      </relations>
+      <attributes />
+    </term>
+    <term>
+      <id>46880</id>
+      <name>COLMÉIA MOBILISTA (APICULTURA)</name>
+      <enabled>true</enabled>
+      <variations>
+        <variation>
+          <name>COLMÉIA MOBILISTA (APICULTURA)</name>
+          <weight>100.0</weight>
+          <case>ci</case>
+          <accent>as</accent>
+          <languages>
+            <language>por</language>
+          </languages>
+        </variation>
+      </variations>
+      <relations>
+        <relation>
+          <id>38135</id>
+          <type>BT</type>
+        </relation>
+      </relations>
+      <attributes />
+    </term>
+    <term>
+      <id>46882</id>
+      <name>ALOJAMENTO NATURAL (APICULTURA)</name>
+      <enabled>true</enabled>
+      <variations>
+        <variation>
+          <name>ALOJAMENTO NATURAL (APICULTURA)</name>
+          <weight>100.0</weight>
+          <case>ci</case>
+          <accent>as</accent>
+          <languages>
+            <language>por</language>
+          </languages>
+        </variation>
+      </variations>
+      <relations>
+        <relation>
+          <id>38135</id>
+          <type>BT</type>
+        </relation>
+      </relations>
+      <attributes />
+    </term>
+    <term>
+      <id>46884</id>
+      <name>MANUTENÇÃO (APICULTURA)</name>
+      <enabled>true</enabled>
+      <variations>
+        <variation>
+          <name>MANUTENÇÃO (APICULTURA)</name>
+          <weight>100.0</weight>
+          <case>ci</case>
+          <accent>as</accent>
+          <languages>
+            <language>por</language>
+          </languages>
+        </variation>
+      </variations>
+      <relations>
+        <relation>
+          <id>38127</id>
+          <type>BT</type>
+        </relation>
+      </relations>
+      <attributes />
+    </term>
+    <term>
+      <id>46886</id>
+      <name>LOCALIZAÇÃO (Apiário) (APICULTURA)</name>
+      <enabled>true</enabled>
+      <variations>
+        <variation>
+          <name>LOCALIZAÇÃO (Apiário) (APICULTURA)</name>
+          <weight>100.0</weight>
+          <case>ci</case>
+          <accent>as</accent>
+          <languages>
+            <language>por</language>
+          </languages>
+        </variation>
+      </variations>
+      <relations>
+        <relation>
+          <id>38127</id>
+          <type>BT</type>
+        </relation>
+      </relations>
+      <attributes />
+    </term>
+    <term>
+      <id>46888</id>
+      <name>APIÁRIO MIGRATÓRIO (APICULTURA)</name>
+      <enabled>true</enabled>
+      <variations>
+        <variation>
+          <name>APIÁRIO MIGRATÓRIO (APICULTURA)</name>
+          <weight>100.0</weight>
+          <case>ci</case>
+          <accent>as</accent>
+          <languages>
+            <language>por</language>
+          </languages>
+        </variation>
+      </variations>
+      <relations>
+        <relation>
+          <id>38127</id>
+          <type>BT</type>
+        </relation>
+      </relations>
+      <attributes />
+    </term>
+    <term>
+      <id>46892</id>
+      <name>BIOLOGIA DA ABELHA (APICULTURA)</name>
+      <enabled>true</enabled>
+      <variations>
+        <variation>
+          <name>BIOLOGIA DA ABELHA (APICULTURA)</name>
+          <weight>100.0</weight>
+          <case>ci</case>
+          <accent>as</accent>
+          <languages>
+            <language>por</language>
+          </languages>
+        </variation>
+      </variations>
+      <relations>
+        <relation>
+          <id>46794</id>
+          <type>BT</type>
+        </relation>
+        <relation>
+          <id>46894</id>
+          <type>NT</type>
+        </relation>
+        <relation>
+          <id>46896</id>
+          <type>NT</type>
+        </relation>
+      </relations>
+      <attributes />
+    </term>
+    <term>
+      <id>11700</id>
+      <name>Instalação de apiário</name>
+      <enabled>true</enabled>
+      <variations>
+        <variation>
+          <name>Instalação de apiário</name>
+          <weight>100.0</weight>
+          <case>ci</case>
+          <accent>as</accent>
+          <languages>
+            <language>por</language>
+          </languages>
+        </variation>
+      </variations>
+      <relations>
+        <relation>
+          <id>38064</id>
+          <type>U</type>
+        </relation>
+      </relations>
+      <attributes />
+    </term>
+    <term>
+      <id>42894</id>
+      <name>EQUIPAMENTO APÍCOLA (APICULTURA)</name>
+      <enabled>true</enabled>
+      <variations>
+        <variation>
+          <name>EQUIPAMENTO APÍCOLA (APICULTURA)</name>
+          <weight>100.0</weight>
+          <case>ci</case>
+          <accent>as</accent>
+          <languages>
+            <language>por</language>
+          </languages>
+        </variation>
+      </variations>
+      <relations>
+        <relation>
+          <id>38050</id>
+          <type>BT</type>
+        </relation>
+        <relation>
+          <id>38078</id>
+          <type>NT</type>
+        </relation>
+        <relation>
+          <id>38080</id>
+          <type>NT</type>
+        </relation>
+        <relation>
+          <id>38082</id>
+          <type>NT</type>
+        </relation>
+        <relation>
+          <id>38085</id>
+          <type>NT</type>
+        </relation>
+        <relation>
+          <id>38087</id>
+          <type>NT</type>
+        </relation>
+        <relation>
+          <id>38089</id>
+          <type>NT</type>
+        </relation>
+        <relation>
+          <id>38091</id>
+          <type>NT</type>
+        </relation>
+        <relation>
+          <id>38093</id>
+          <type>NT</type>
+        </relation>
+        <relation>
+          <id>38095</id>
+          <type>NT</type>
+        </relation>
+        <relation>
+          <id>38097</id>
+          <type>NT</type>
+        </relation>
+        <relation>
+          <id>38099</id>
+          <type>NT</type>
+        </relation>
+        <relation>
+          <id>38101</id>
+          <type>NT</type>
+        </relation>
+        <relation>
+          <id>42896</id>
+          <type>NT</type>
+        </relation>
+        <relation>
+          <id>42898</id>
+          <type>NT</type>
+        </relation>
+        <relation>
+          <id>46812</id>
+          <type>RT</type>
+        </relation>
+        <relation>
+          <id>46814</id>
+          <type>NT</type>
+        </relation>
+        <relation>
+          <id>46816</id>
+          <type>NT</type>
+        </relation>
+        <relation>
+          <id>46818</id>
+          <type>NT</type>
+        </relation>
+        <relation>
+          <id>46820</id>
+          <type>NT</type>
+        </relation>
+        <relation>
+          <id>46822</id>
+          <type>NT</type>
+        </relation>
+        <relation>
+          <id>46824</id>
+          <type>NT</type>
+        </relation>
+        <relation>
+          <id>46826</id>
+          <type>NT</type>
+        </relation>
+      </relations>
+      <attributes />
+    </term>
+    <term>
+      <id>42896</id>
+      <name>ALIMENTADOR DE COBERTURA (Equipamento apícola) (APICULTURA)</name>
+      <enabled>true</enabled>
+      <variations>
+        <variation>
+          <name>ALIMENTADOR DE COBERTURA (Equipamento apícola) (APICULTURA)</name>
+          <weight>100.0</weight>
+          <case>ci</case>
+          <accent>as</accent>
+          <languages>
+            <language>por</language>
+          </languages>
+        </variation>
+      </variations>
+      <relations>
+        <relation>
+          <id>42894</id>
+          <type>BT</type>
+        </relation>
+      </relations>
+      <attributes />
+    </term>
+    <term>
+      <id>42898</id>
+      <name>ALIMENTADOR DE BORDMANN (APICULTURA)</name>
+      <enabled>true</enabled>
+      <variations>
+        <variation>
+          <name>ALIMENTADOR DE BORDMANN (APICULTURA)</name>
+          <weight>100.0</weight>
+          <case>ci</case>
+          <accent>as</accent>
+          <languages>
+            <language>por</language>
+          </languages>
+        </variation>
+      </variations>
+      <relations>
+        <relation>
+          <id>42894</id>
+          <type>BT</type>
+        </relation>
+      </relations>
+      <attributes />
+    </term>
+    <term>
+      <id>42900</id>
+      <name>COLMÉIA LANGSTROTH (APICULTURA)</name>
+      <enabled>true</enabled>
+      <variations>
+        <variation>
+          <name>COLMÉIA LANGSTROTH (APICULTURA)</name>
+          <weight>100.0</weight>
+          <case>ci</case>
+          <accent>as</accent>
+          <languages>
+            <language>por</language>
+          </languages>
+        </variation>
+      </variations>
+      <relations>
+        <relation>
+          <id>38064</id>
+          <type>BT</type>
+        </relation>
+      </relations>
+      <attributes />
+    </term>
+    <term>
+      <id>42902</id>
+      <name>MIGRAÇÃO (APICULTURA)</name>
+      <enabled>true</enabled>
+      <variations>
+        <variation>
+          <name>MIGRAÇÃO (APICULTURA)</name>
+          <weight>100.0</weight>
+          <case>ci</case>
+          <accent>as</accent>
+          <languages>
+            <language>por</language>
+          </languages>
+        </variation>
+      </variations>
+      <relations>
+        <relation>
+          <id>38066</id>
+          <type>BT</type>
+        </relation>
+      </relations>
+      <attributes />
+    </term>
+    <term>
+      <id>42904</id>
+      <name>PROCESSAMENTO DE PRÓPOLIS (APICULTURA)</name>
+      <enabled>true</enabled>
+      <variations>
+        <variation>
+          <name>PROCESSAMENTO DE PRÓPOLIS (APICULTURA)</name>
+          <weight>100.0</weight>
+          <case>ci</case>
+          <accent>as</accent>
+          <languages>
+            <language>por</language>
+          </languages>
+        </variation>
+      </variations>
+      <relations>
+        <relation>
+          <id>38066</id>
+          <type>BT</type>
+        </relation>
+      </relations>
+      <attributes />
+    </term>
+    <term>
+      <id>42906</id>
+      <name>CAIXA ISCA (APICULTURA)</name>
+      <enabled>true</enabled>
+      <variations>
+        <variation>
+          <name>CAIXA ISCA (APICULTURA)</name>
+          <weight>100.0</weight>
+          <case>ci</case>
+          <accent>as</accent>
+          <languages>
+            <language>por</language>
+          </languages>
+        </variation>
+      </variations>
+      <relations>
+        <relation>
+          <id>38066</id>
+          <type>BT</type>
+        </relation>
+      </relations>
+      <attributes />
+    </term>
+    <term>
+      <id>42908</id>
+      <name>PUPA (APICULTURA)</name>
+      <enabled>true</enabled>
+      <variations>
+        <variation>
+          <name>PUPA (APICULTURA)</name>
+          <weight>100.0</weight>
+          <case>ci</case>
+          <accent>as</accent>
+          <languages>
+            <language>por</language>
+          </languages>
+        </variation>
+      </variations>
+      <relations>
+        <relation>
+          <id>38072</id>
+          <type>BT</type>
+        </relation>
+      </relations>
+      <attributes />
+    </term>
+    <term>
+      <id>42910</id>
+      <name>APICULTOR (APICULTURA)</name>
+      <enabled>true</enabled>
+      <variations>
+        <variation>
+          <name>APICULTOR (APICULTURA)</name>
+          <weight>100.0</weight>
+          <case>ci</case>
+          <accent>as</accent>
+          <languages>
+            <language>por</language>
+          </languages>
+        </variation>
+      </variations>
+      <relations>
+        <relation>
+          <id>38050</id>
+          <type>RT</type>
+        </relation>
+        <relation>
+          <id>48242</id>
+          <type>BT</type>
+        </relation>
+      </relations>
+      <attributes />
+    </term>
+    <term>
+      <id>6600</id>
+      <name>PRÓPOLIS VERMELHO</name>
+      <enabled>true</enabled>
+      <variations>
+        <variation>
+          <name>PRÓPOLIS VERMELHO</name>
+          <weight>100.0</weight>
+          <case>ci</case>
+          <accent>as</accent>
+          <languages>
+            <language>por</language>
+          </languages>
+        </variation>
+      </variations>
+      <relations>
+        <relation>
+          <id>515</id>
+          <type>BT</type>
+        </relation>
+      </relations>
+      <attributes />
+    </term>
+    <term>
+      <id>45091</id>
+      <name>ABELHA CAMPEIRA (APICULTURA)</name>
+      <enabled>true</enabled>
+      <variations>
+        <variation>
+          <name>ABELHA CAMPEIRA (APICULTURA)</name>
+          <weight>100.0</weight>
+          <case>ci</case>
+          <accent>as</accent>
+          <languages>
+            <language>por</language>
+          </languages>
+        </variation>
+      </variations>
+      <relations>
+        <relation>
+          <id>38187</id>
+          <type>BT</type>
+        </relation>
+        <relation>
+          <id>46794</id>
+          <type>RT</type>
+        </relation>
+      </relations>
+      <attributes />
+    </term>
+    <term>
+      <id>45093</id>
+      <name>EXPLORAÇÃO DO MEL (APICULTURA)</name>
+      <enabled>true</enabled>
+      <variations>
+        <variation>
+          <name>EXPLORAÇÃO DO MEL (APICULTURA)</name>
+          <weight>100.0</weight>
+          <case>ci</case>
+          <accent>as</accent>
+          <languages>
+            <language>por</language>
+          </languages>
+        </variation>
+      </variations>
+      <relations>
+        <relation>
+          <id>38050</id>
+          <type>BT</type>
+        </relation>
+        <relation>
+          <id>46804</id>
+          <type>NT</type>
+        </relation>
+        <relation>
+          <id>46806</id>
+          <type>NT</type>
+        </relation>
+        <relation>
+          <id>46808</id>
+          <type>NT</type>
+        </relation>
+        <relation>
+          <id>46810</id>
+          <type>NT</type>
+        </relation>
+      </relations>
+      <attributes />
+    </term>
+    <term>
+      <id>44610</id>
+      <name>DECANTAÇÃO (APICULTURA)</name>
+      <enabled>true</enabled>
+      <variations>
+        <variation>
+          <name>DECANTAÇÃO (APICULTURA)</name>
+          <weight>100.0</weight>
+          <case>ci</case>
+          <accent>as</accent>
+          <languages>
+            <language>por</language>
+          </languages>
+        </variation>
+      </variations>
+      <relations />
+      <attributes />
+    </term>
+    <term>
+      <id>48327</id>
+      <name>PRODUÇÃO DE MEL (APICULTURA)</name>
+      <enabled>true</enabled>
+      <variations>
+        <variation>
+          <name>PRODUÇÃO DE MEL (APICULTURA)</name>
+          <weight>100.0</weight>
+          <case>ci</case>
+          <accent>as</accent>
+          <languages>
+            <language>por</language>
+          </languages>
+        </variation>
+      </variations>
+      <relations>
+        <relation>
+          <id>38074</id>
+          <type>BT</type>
+        </relation>
+      </relations>
+      <attributes />
+    </term>
+    <term>
+      <id>48242</id>
+      <name>PROFISSÃO NÃO REGULAMENTADA (APICULTURA)</name>
+      <enabled>true</enabled>
+      <variations>
+        <variation>
+          <name>PROFISSÃO NÃO REGULAMENTADA (APICULTURA)</name>
+          <weight>100.0</weight>
+          <case>ci</case>
+          <accent>as</accent>
+          <languages>
+            <language>por</language>
+          </languages>
+        </variation>
+      </variations>
+      <relations>
+        <relation>
+          <id>49204</id>
+          <type>BT</type>
+        </relation>
+      </relations>
+      <attributes />
+    </term>
+    <term>
+      <id>46890</id>
+      <name>DESENVOLVIMENTO DA ABELHA (APICULTURA)</name>
+      <enabled>true</enabled>
+      <variations>
+        <variation>
+          <name>DESENVOLVIMENTO DA ABELHA (APICULTURA)</name>
+          <weight>100.0</weight>
+          <case>ci</case>
+          <accent>as</accent>
+          <languages>
+            <language>por</language>
+          </languages>
+        </variation>
+      </variations>
+      <relations>
+        <relation>
+          <id>46794</id>
+          <type>BT</type>
+        </relation>
+      </relations>
+      <attributes />
+    </term>
+    <term>
+      <id>38131</id>
+      <name>MELGUEIRA (APICULTURA)</name>
+      <enabled>true</enabled>
+      <variations>
+        <variation>
+          <name>MELGUEIRA (APICULTURA)</name>
+          <weight>100.0</weight>
+          <case>ci</case>
+          <accent>as</accent>
+          <languages>
+            <language>por</language>
+          </languages>
+        </variation>
+      </variations>
+      <relations>
+        <relation>
+          <id>610</id>
+          <type>UF</type>
+        </relation>
+        <relation>
+          <id>11710</id>
+          <type>UF</type>
+        </relation>
+        <relation>
+          <id>11711</id>
+          <type>UF</type>
+        </relation>
+        <relation>
+          <id>38209</id>
+          <type>BT</type>
+        </relation>
+        <relation>
+          <id>46906</id>
+          <type>NT</type>
+        </relation>
+      </relations>
+      <attributes />
+    </term>
+    <term>
+      <id>38133</id>
+      <name>CAIXA SOBRE O NINHO (APICULTURA)</name>
+      <enabled>true</enabled>
+      <variations>
+        <variation>
+          <name>CAIXA SOBRE O NINHO (APICULTURA)</name>
+          <weight>100.0</weight>
+          <case>ci</case>
+          <accent>as</accent>
+          <languages>
+            <language>por</language>
+          </languages>
+        </variation>
+      </variations>
+      <relations>
+        <relation>
+          <id>612</id>
+          <type>UF</type>
+        </relation>
+        <relation>
+          <id>614</id>
+          <type>UF</type>
+        </relation>
+        <relation>
+          <id>38064</id>
+          <type>BT</type>
+        </relation>
+      </relations>
+      <attributes />
+    </term>
+    <term>
+      <id>38135</id>
+      <name>COLMÉIA (APICULTURA)</name>
+      <enabled>true</enabled>
+      <variations>
+        <variation>
+          <name>COLMÉIA (APICULTURA)</name>
+          <weight>100.0</weight>
+          <case>ci</case>
+          <accent>as</accent>
+          <languages>
+            <language>por</language>
+          </languages>
+        </variation>
+      </variations>
+      <relations>
+        <relation>
+          <id>38064</id>
+          <type>BT</type>
+        </relation>
+        <relation>
+          <id>38137</id>
+          <type>NT</type>
+        </relation>
+        <relation>
+          <id>38209</id>
+          <type>NT</type>
+        </relation>
+        <relation>
+          <id>46864</id>
+          <type>NT</type>
+        </relation>
+        <relation>
+          <id>46866</id>
+          <type>NT</type>
+        </relation>
+        <relation>
+          <id>46868</id>
+          <type>NT</type>
+        </relation>
+        <relation>
+          <id>46870</id>
+          <type>NT</type>
+        </relation>
+        <relation>
+          <id>46872</id>
+          <type>NT</type>
+        </relation>
+        <relation>
+          <id>46874</id>
+          <type>NT</type>
+        </relation>
+        <relation>
+          <id>46876</id>
+          <type>NT</type>
+        </relation>
+        <relation>
+          <id>46878</id>
+          <type>NT</type>
+        </relation>
+        <relation>
+          <id>46880</id>
+          <type>NT</type>
+        </relation>
+        <relation>
+          <id>46882</id>
+          <type>NT</type>
+        </relation>
+      </relations>
+      <attributes />
+    </term>
+    <term>
+      <id>38137</id>
+      <name>ALVADO (APICULTURA)</name>
+      <enabled>true</enabled>
+      <variations>
+        <variation>
+          <name>ALVADO (APICULTURA)</name>
+          <weight>100.0</weight>
+          <case>ci</case>
+          <accent>as</accent>
+          <languages>
+            <language>por</language>
+          </languages>
+        </variation>
+      </variations>
+      <relations>
+        <relation>
+          <id>38135</id>
+          <type>BT</type>
+        </relation>
+      </relations>
+      <attributes />
+    </term>
+    <term>
+      <id>38139</id>
+      <name>COLMÉIA AMERICANA (APICULTURA)</name>
+      <enabled>true</enabled>
+      <variations>
+        <variation>
+          <name>COLMÉIA AMERICANA (APICULTURA)</name>
+          <weight>100.0</weight>
+          <case>ci</case>
+          <accent>as</accent>
+          <languages>
+            <language>por</language>
+          </languages>
+        </variation>
+      </variations>
+      <relations>
+        <relation>
+          <id>38064</id>
+          <type>BT</type>
+        </relation>
+      </relations>
+      <attributes />
+    </term>
+    <term>
+      <id>38141</id>
+      <name>FAVO (APICULTURA)</name>
+      <enabled>true</enabled>
+      <variations>
+        <variation>
+          <name>FAVO (APICULTURA)</name>
+          <weight>100.0</weight>
+          <case>ci</case>
+          <accent>as</accent>
+          <languages>
+            <language>por</language>
+          </languages>
+        </variation>
+      </variations>
+      <relations>
+        <relation>
+          <id>38064</id>
+          <type>BT</type>
+        </relation>
+        <relation>
+          <id>38211</id>
+          <type>NT</type>
+        </relation>
+        <relation>
+          <id>38213</id>
+          <type>NT</type>
+        </relation>
+        <relation>
+          <id>46794</id>
+          <type>RT</type>
+        </relation>
+      </relations>
+      <attributes />
+    </term>
+    <term>
+      <id>38143</id>
+      <name>NINHO DA COLMÉIA (APICULTURA)</name>
+      <enabled>true</enabled>
+      <variations>
+        <variation>
+          <name>NINHO DA COLMÉIA (APICULTURA)</name>
+          <weight>100.0</weight>
+          <case>ci</case>
+          <accent>as</accent>
+          <languages>
+            <language>por</language>
+          </languages>
+        </variation>
+      </variations>
+      <relations>
+        <relation>
+          <id>617</id>
+          <type>UF</type>
+        </relation>
+        <relation>
+          <id>38209</id>
+          <type>BT</type>
+        </relation>
+      </relations>
+      <attributes />
+    </term>
+    <term>
+      <id>38145</id>
+      <name>APICULTURA CONSORCIADA (APICULTURA)</name>
+      <enabled>true</enabled>
+      <variations>
+        <variation>
+          <name>APICULTURA CONSORCIADA (APICULTURA)</name>
+          <weight>100.0</weight>
+          <case>ci</case>
+          <accent>as</accent>
+          <languages>
+            <language>por</language>
+          </languages>
+        </variation>
+      </variations>
+      <relations>
+        <relation>
+          <id>38066</id>
+          <type>BT</type>
+        </relation>
+      </relations>
+      <attributes />
+    </term>
+    <term>
+      <id>38147</id>
+      <name>BARBA (Manejo de colméia) (APICULTURA)</name>
+      <enabled>true</enabled>
+      <variations>
+        <variation>
+          <name>BARBA (Manejo de colméia) (APICULTURA)</name>
+          <weight>100.0</weight>
+          <case>ci</case>
+          <accent>as</accent>
+          <languages>
+            <language>por</language>
+          </languages>
+        </variation>
+      </variations>
+      <relations>
+        <relation>
+          <id>38066</id>
+          <type>BT</type>
+        </relation>
+      </relations>
+      <attributes />
+    </term>
+    <term>
+      <id>38149</id>
+      <name>COMPORTAMENTO (Manejo de colméia) (APICULTURA)</name>
+      <enabled>true</enabled>
+      <variations>
+        <variation>
+          <name>COMPORTAMENTO (Manejo de colméia) (APICULTURA)</name>
+          <weight>100.0</weight>
+          <case>ci</case>
+          <accent>as</accent>
+          <languages>
+            <language>por</language>
+          </languages>
+        </variation>
+      </variations>
+      <relations>
+        <relation>
+          <id>38066</id>
+          <type>BT</type>
+        </relation>
+      </relations>
+      <attributes />
+    </term>
+    <term>
+      <id>38151</id>
+      <name>CERA ALVEOLADA (APICULTURA)</name>
+      <enabled>true</enabled>
+      <variations>
+        <variation>
+          <name>CERA ALVEOLADA (APICULTURA)</name>
+          <weight>100.0</weight>
+          <case>ci</case>
+          <accent>as</accent>
+          <languages>
+            <language>por</language>
+          </languages>
+        </variation>
+      </variations>
+      <relations>
+        <relation>
+          <id>38066</id>
+          <type>BT</type>
+        </relation>
+      </relations>
+      <attributes />
+    </term>
+    <term>
+      <id>38153</id>
+      <name>CERA BRUTA (APICULTURA)</name>
+      <enabled>true</enabled>
+      <variations>
+        <variation>
+          <name>CERA BRUTA (APICULTURA)</name>
+          <weight>100.0</weight>
+          <case>ci</case>
+          <accent>as</accent>
+          <languages>
+            <language>por</language>
+          </languages>
+        </variation>
+      </variations>
+      <relations>
+        <relation>
+          <id>38066</id>
+          <type>BT</type>
+        </relation>
+      </relations>
+      <attributes />
+    </term>
+    <term>
+      <id>38155</id>
+      <name>COLÔNIA DE ABELHAS (APICULTURA)</name>
+      <enabled>true</enabled>
+      <variations>
+        <variation>
+          <name>COLÔNIA DE ABELHAS (APICULTURA)</name>
+          <weight>100.0</weight>
+          <case>ci</case>
+          <accent>as</accent>
+          <languages>
+            <language>por</language>
+          </languages>
+        </variation>
+      </variations>
+      <relations>
+        <relation>
+          <id>38066</id>
+          <type>BT</type>
+        </relation>
+      </relations>
+      <attributes />
+    </term>
+    <term>
+      <id>38157</id>
+      <name>DOENÇA (Manejo de colméia) (APICULTURA)</name>
+      <enabled>true</enabled>
+      <variations>
+        <variation>
+          <name>DOENÇA (Manejo de colméia) (APICULTURA)</name>
+          <weight>100.0</weight>
+          <case>ci</case>
+          <accent>as</accent>
+          <languages>
+            <language>por</language>
+          </languages>
+        </variation>
+      </variations>
+      <relations>
+        <relation>
+          <id>618</id>
+          <type>UF</type>
+        </relation>
+        <relation>
+          <id>38066</id>
+          <type>BT</type>
+        </relation>
+      </relations>
+      <attributes />
+    </term>
+    <term>
+      <id>38159</id>
+      <name>ÁGUA (Manejo de colméia) (APICULTURA)</name>
+      <enabled>true</enabled>
+      <variations>
+        <variation>
+          <name>ÁGUA (Manejo de colméia) (APICULTURA)</name>
+          <weight>100.0</weight>
+          <case>ci</case>
+          <accent>as</accent>
+          <languages>
+            <language>por</language>
+          </languages>
+        </variation>
+      </variations>
+      <relations>
+        <relation>
+          <id>38066</id>
+          <type>BT</type>
+        </relation>
+      </relations>
+      <attributes />
+    </term>
+    <term>
+      <id>38161</id>
+      <name>ALIMENTAÇÃO (Manejo de colméia) (APICULTURA)</name>
+      <enabled>true</enabled>
+      <variations>
+        <variation>
+          <name>ALIMENTAÇÃO (Manejo de colméia) (APICULTURA)</name>
+          <weight>100.0</weight>
+          <case>ci</case>
+          <accent>as</accent>
+          <languages>
+            <language>por</language>
+          </languages>
+        </variation>
+      </variations>
+      <relations>
+        <relation>
+          <id>38066</id>
+          <type>BT</type>
+        </relation>
+        <relation>
+          <id>38215</id>
+          <type>NT</type>
+        </relation>
+        <relation>
+          <id>46842</id>
+          <type>NT</type>
+        </relation>
+        <relation>
+          <id>46844</id>
+          <type>NT</type>
+        </relation>
+        <relation>
+          <id>46846</id>
+          <type>NT</type>
+        </relation>
+        <relation>
+          <id>46848</id>
+          <type>NT</type>
+        </relation>
+        <relation>
+          <id>46850</id>
+          <type>NT</type>
+        </relation>
+      </relations>
+      <attributes />
+    </term>
+    <term>
+      <id>38163</id>
+      <name>MANEJO DO PÓLEN (APICULTURA)</name>
+      <enabled>true</enabled>
+      <variations>
+        <variation>
+          <name>MANEJO DO PÓLEN (APICULTURA)</name>
+          <weight>100.0</weight>
+          <case>ci</case>
+          <accent>as</accent>
+          <languages>
+            <language>por</language>
+          </languages>
+        </variation>
+      </variations>
+      <relations>
+        <relation>
+          <id>38066</id>
+          <type>BT</type>
+        </relation>
+      </relations>
+      <attributes />
+    </term>
+    <term>
+      <id>38165</id>
+      <name>ENXAMEAÇÃO (APICULTURA)</name>
+      <enabled>true</enabled>
+      <variations>
+        <variation>
+          <name>ENXAMEAÇÃO (APICULTURA)</name>
+          <weight>100.0</weight>
+          <case>ci</case>
+          <accent>as</accent>
+          <languages>
+            <language>por</language>
+          </languages>
+        </variation>
+      </variations>
+      <relations>
+        <relation>
+          <id>38050</id>
+          <type>RT</type>
+        </relation>
+        <relation>
+          <id>38066</id>
+          <type>BT</type>
+        </relation>
+        <relation>
+          <id>46852</id>
+          <type>NT</type>
+        </relation>
+        <relation>
+          <id>46854</id>
+          <type>NT</type>
+        </relation>
+        <relation>
+          <id>46856</id>
+          <type>NT</type>
+        </relation>
+        <relation>
+          <id>46856</id>
+          <type>RT</type>
+        </relation>
+        <relation>
+          <id>46858</id>
+          <type>NT</type>
+        </relation>
+        <relation>
+          <id>46860</id>
+          <type>NT</type>
+        </relation>
+        <relation>
+          <id>46862</id>
+          <type>NT</type>
+        </relation>
+        <relation>
+          <id>46904</id>
+          <type>NT</type>
+        </relation>
+      </relations>
+      <attributes />
+    </term>
+    <term>
+      <id>38167</id>
+      <name>FLORA APÍCOLA (APICULTURA)</name>
+      <enabled>true</enabled>
+      <variations>
+        <variation>
+          <name>FLORA APÍCOLA (APICULTURA)</name>
+          <weight>100.0</weight>
+          <case>ci</case>
+          <accent>as</accent>
+          <languages>
+            <language>por</language>
+          </languages>
+        </variation>
+      </variations>
+      <relations>
+        <relation>
+          <id>11673</id>
+          <type>UF</type>
+        </relation>
+        <relation>
+          <id>38066</id>
+          <type>BT</type>
+        </relation>
+        <relation>
+          <id>46840</id>
+          <type>NT</type>
+        </relation>
+      </relations>
+      <attributes />
+    </term>
+    <term>
+      <id>38169</id>
+      <name>UNIÃO DE ENXAME (APICULTURA)</name>
+      <enabled>true</enabled>
+      <variations>
+        <variation>
+          <name>UNIÃO DE ENXAME (APICULTURA)</name>
+          <weight>100.0</weight>
+          <case>ci</case>
+          <accent>as</accent>
+          <languages>
+            <language>por</language>
+          </languages>
+        </variation>
+      </variations>
+      <relations>
+        <relation>
+          <id>38066</id>
+          <type>BT</type>
+        </relation>
+        <relation>
+          <id>46794</id>
+          <type>RT</type>
+        </relation>
+      </relations>
+      <attributes />
+    </term>
+    <term>
+      <id>38171</id>
+      <name>GELÉIA REAL (APICULTURA)</name>
+      <enabled>true</enabled>
+      <variations>
+        <variation>
+          <name>GELÉIA REAL (APICULTURA)</name>
+          <weight>100.0</weight>
+          <case>ci</case>
+          <accent>as</accent>
+          <languages>
+            <language>por</language>
+          </languages>
+        </variation>
+      </variations>
+      <relations>
+        <relation>
+          <id>515</id>
+          <type>BT</type>
+        </relation>
+        <relation>
+          <id>43296</id>
+          <type>RT</type>
+        </relation>
+      </relations>
+      <attributes />
+    </term>
+    <term>
+      <id>38173</id>
+      <name>COMÉRCIO JUSTO (Processo de certificação) (APICULTURA)</name>
+      <enabled>true</enabled>
+      <variations>
+        <variation>
+          <name>COMÉRCIO JUSTO (Processo de certificação) (APICULTURA)</name>
+          <weight>100.0</weight>
+          <case>ci</case>
+          <accent>as</accent>
+          <languages>
+            <language>por</language>
+          </languages>
+        </variation>
+      </variations>
+      <relations>
+        <relation>
+          <id>38068</id>
+          <type>BT</type>
+        </relation>
+      </relations>
+      <attributes />
+    </term>
+    <term>
+      <id>38175</id>
+      <name>CERTIFICAÇÃO ORGÂNICA (Processo de certificação) (APICULTURA)</name>
+      <enabled>true</enabled>
+      <variations>
+        <variation>
+          <name>CERTIFICAÇÃO ORGÂNICA (Processo de certificação) (APICULTURA)</name>
+          <weight>100.0</weight>
+          <case>ci</case>
+          <accent>as</accent>
+          <languages>
+            <language>por</language>
+          </languages>
+        </variation>
+      </variations>
+      <relations>
+        <relation>
+          <id>38068</id>
+          <type>BT</type>
+        </relation>
+      </relations>
+      <attributes />
+    </term>
+    <term>
+      <id>38177</id>
+      <name>CERTIFICAÇÃO DA QUALIDADE (Processo de certificação) (APICULTURA)</name>
+      <enabled>true</enabled>
+      <variations>
+        <variation>
+          <name>CERTIFICAÇÃO DA QUALIDADE (Processo de certificação) (APICULTURA)</name>
+          <weight>100.0</weight>
+          <case>ci</case>
+          <accent>as</accent>
+          <languages>
+            <language>por</language>
+          </languages>
+        </variation>
+      </variations>
+      <relations>
+        <relation>
+          <id>38068</id>
+          <type>BT</type>
+        </relation>
+        <relation>
+          <id>38262</id>
+          <type>NT</type>
+        </relation>
+      </relations>
+      <attributes />
+    </term>
+    <term>
+      <id>38050</id>
+      <name>APICULTURA (APICULTURA)</name>
+      <enabled>true</enabled>
+      <variations>
+        <variation>
+          <name>APICULTURA (APICULTURA)</name>
+          <weight>100.0</weight>
+          <case>ci</case>
+          <accent>as</accent>
+          <languages>
+            <language>por</language>
+          </languages>
+        </variation>
+      </variations>
+      <relations>
+        <relation>
+          <id>38052</id>
+          <type>UF</type>
+        </relation>
+        <relation>
+          <id>38054</id>
+          <type>NT</type>
+        </relation>
+        <relation>
+          <id>38056</id>
+          <type>NT</type>
+        </relation>
+        <relation>
+          <id>38058</id>
+          <type>NT</type>
+        </relation>
+        <relation>
+          <id>38060</id>
+          <type>NT</type>
+        </relation>
+        <relation>
+          <id>38062</id>
+          <type>NT</type>
+        </relation>
+        <relation>
+          <id>38064</id>
+          <type>NT</type>
+        </relation>
+        <relation>
+          <id>38066</id>
+          <type>NT</type>
+        </relation>
+        <relation>
+          <id>38068</id>
+          <type>NT</type>
+        </relation>
+        <relation>
+          <id>38072</id>
+          <type>NT</type>
+        </relation>
+        <relation>
+          <id>38074</id>
+          <type>NT</type>
+        </relation>
+        <relation>
+          <id>38076</id>
+          <type>NT</type>
+        </relation>
+        <relation>
+          <id>38165</id>
+          <type>RT</type>
+        </relation>
+        <relation>
+          <id>42894</id>
+          <type>NT</type>
+        </relation>
+        <relation>
+          <id>42910</id>
+          <type>RT</type>
+        </relation>
+        <relation>
+          <id>45093</id>
+          <type>NT</type>
+        </relation>
+        <relation>
+          <id>46788</id>
+          <type>NT</type>
+        </relation>
+        <relation>
+          <id>46790</id>
+          <type>NT</type>
+        </relation>
+        <relation>
+          <id>46794</id>
+          <type>NT</type>
+        </relation>
+        <relation>
+          <id>46812</id>
+          <type>NT</type>
+        </relation>
+        <relation>
+          <id>46838</id>
+          <type>RT</type>
+        </relation>
+      </relations>
+      <attributes />
+    </term>
+    <term>
+      <id>38052</id>
+      <name>Criação de abelha (APICULTURA)</name>
+      <enabled>true</enabled>
+      <variations>
+        <variation>
+          <name>Criação de abelha (APICULTURA)</name>
+          <weight>100.0</weight>
+          <case>ci</case>
+          <accent>as</accent>
+          <languages>
+            <language>por</language>
+          </languages>
+        </variation>
+      </variations>
+      <relations>
+        <relation>
+          <id>38050</id>
+          <type>U</type>
+        </relation>
+      </relations>
+      <attributes />
+    </term>
+    <term>
+      <id>38054</id>
+      <name>APICULTURA SUSTENTÁVEL (APICULTURA)</name>
+      <enabled>true</enabled>
+      <variations>
+        <variation>
+          <name>APICULTURA SUSTENTÁVEL (APICULTURA)</name>
+          <weight>100.0</weight>
+          <case>ci</case>
+          <accent>as</accent>
+          <languages>
+            <language>por</language>
+          </languages>
+        </variation>
+      </variations>
+      <relations>
+        <relation>
+          <id>38050</id>
+          <type>BT</type>
+        </relation>
+      </relations>
+      <attributes />
+    </term>
+    <term>
+      <id>38056</id>
+      <name>APICULTURA MIGRATÓRIA (APICULTURA)</name>
+      <enabled>true</enabled>
+      <variations>
+        <variation>
+          <name>APICULTURA MIGRATÓRIA (APICULTURA)</name>
+          <weight>100.0</weight>
+          <case>ci</case>
+          <accent>as</accent>
+          <languages>
+            <language>por</language>
+          </languages>
+        </variation>
+      </variations>
+      <relations>
+        <relation>
+          <id>521</id>
+          <type>UF</type>
+        </relation>
+        <relation>
+          <id>38050</id>
+          <type>BT</type>
+        </relation>
+      </relations>
+      <attributes />
+    </term>
+    <term>
+      <id>38058</id>
+      <name>APICULTURA FIXA (APICULTURA)</name>
+      <enabled>true</enabled>
+      <variations>
+        <variation>
+          <name>APICULTURA FIXA (APICULTURA)</name>
+          <weight>100.0</weight>
+          <case>ci</case>
+          <accent>as</accent>
+          <languages>
+            <language>por</language>
+          </languages>
+        </variation>
+      </variations>
+      <relations>
+        <relation>
+          <id>38050</id>
+          <type>BT</type>
+        </relation>
+      </relations>
+      <attributes />
+    </term>
+    <term>
+      <id>38060</id>
+      <name>FERRAMENTA APÍCOLA (APICULTURA)</name>
+      <enabled>true</enabled>
+      <variations>
+        <variation>
+          <name>FERRAMENTA APÍCOLA (APICULTURA)</name>
+          <weight>100.0</weight>
+          <case>ci</case>
+          <accent>as</accent>
+          <languages>
+            <language>por</language>
+          </languages>
+        </variation>
+      </variations>
+      <relations>
+        <relation>
+          <id>38050</id>
+          <type>BT</type>
+        </relation>
+        <relation>
+          <id>38103</id>
+          <type>NT</type>
+        </relation>
+        <relation>
+          <id>38105</id>
+          <type>NT</type>
+        </relation>
+        <relation>
+          <id>38107</id>
+          <type>NT</type>
+        </relation>
+        <relation>
+          <id>38109</id>
+          <type>NT</type>
+        </relation>
+        <relation>
+          <id>38111</id>
+          <type>NT</type>
+        </relation>
+        <relation>
+          <id>38113</id>
+          <type>NT</type>
+        </relation>
+        <relation>
+          <id>38115</id>
+          <type>NT</type>
+        </relation>
+        <relation>
+          <id>38117</id>
+          <type>NT</type>
+        </relation>
+      </relations>
+      <attributes />
+    </term>
+    <term>
+      <id>38062</id>
+      <name>VESTIMENTA APÍCOLA (APICULTURA)</name>
+      <enabled>true</enabled>
+      <variations>
+        <variation>
+          <name>VESTIMENTA APÍCOLA (APICULTURA)</name>
+          <weight>100.0</weight>
+          <case>ci</case>
+          <accent>as</accent>
+          <languages>
+            <language>por</language>
+          </languages>
+        </variation>
+      </variations>
+      <relations>
+        <relation>
+          <id>38050</id>
+          <type>BT</type>
+        </relation>
+        <relation>
+          <id>38119</id>
+          <type>NT</type>
+        </relation>
+        <relation>
+          <id>38121</id>
+          <type>NT</type>
+        </relation>
+        <relation>
+          <id>38123</id>
+          <type>NT</type>
+        </relation>
+        <relation>
+          <id>38125</id>
+          <type>NT</type>
+        </relation>
+        <relation>
+          <id>38294</id>
+          <type>NT</type>
+        </relation>
+        <relation>
+          <id>38296</id>
+          <type>NT</type>
+        </relation>
+        <relation>
+          <id>46838</id>
+          <type>NT</type>
+        </relation>
+      </relations>
+      <attributes />
+    </term>
+    <term>
+      <id>38064</id>
+      <name>INSTALAÇÃO APÍCOLA (APICULTURA)</name>
+      <enabled>true</enabled>
+      <variations>
+        <variation>
+          <name>INSTALAÇÃO APÍCOLA (APICULTURA)</name>
+          <weight>100.0</weight>
+          <case>ci</case>
+          <accent>as</accent>
+          <languages>
+            <language>por</language>
+          </languages>
+        </variation>
+      </variations>
+      <relations>
+        <relation>
+          <id>553</id>
+          <type>UF</type>
+        </relation>
+        <relation>
+          <id>577</id>
+          <type>RT</type>
+        </relation>
+        <relation>
+          <id>11700</id>
+          <type>UF</type>
+        </relation>
+        <relation>
+          <id>38050</id>
+          <type>BT</type>
+        </relation>
+        <relation>
+          <id>38127</id>
+          <type>NT</type>
+        </relation>
+        <relation>
+          <id>38129</id>
+          <type>NT</type>
+        </relation>
+        <relation>
+          <id>38133</id>
+          <type>NT</type>
+        </relation>
+        <relation>
+          <id>38135</id>
+          <type>NT</type>
+        </relation>
+        <relation>
+          <id>38139</id>
+          <type>NT</type>
+        </relation>
+        <relation>
+          <id>38141</id>
+          <type>NT</type>
+        </relation>
+        <relation>
+          <id>42900</id>
+          <type>NT</type>
+        </relation>
+      </relations>
+      <attributes />
+    </term>
+    <term>
+      <id>38066</id>
+      <name>MANEJO DE COLMÉIA (APICULTURA)</name>
+      <enabled>true</enabled>
+      <variations>
+        <variation>
+          <name>MANEJO DE COLMÉIA (APICULTURA)</name>
+          <weight>100.0</weight>
+          <case>ci</case>
+          <accent>as</accent>
+          <languages>
+            <language>por</language>
+          </languages>
+        </variation>
+      </variations>
+      <relations>
+        <relation>
+          <id>38050</id>
+          <type>BT</type>
+        </relation>
+        <relation>
+          <id>38145</id>
+          <type>NT</type>
+        </relation>
+        <relation>
+          <id>38147</id>
+          <type>NT</type>
+        </relation>
+        <relation>
+          <id>38149</id>
+          <type>NT</type>
+        </relation>
+        <relation>
+          <id>38151</id>
+          <type>NT</type>
+        </relation>
+        <relation>
+          <id>38153</id>
+          <type>NT</type>
+        </relation>
+        <relation>
+          <id>38155</id>
+          <type>NT</type>
+        </relation>
+        <relation>
+          <id>38157</id>
+          <type>NT</type>
+        </relation>
+        <relation>
+          <id>38159</id>
+          <type>NT</type>
+        </relation>
+        <relation>
+          <id>38161</id>
+          <type>NT</type>
+        </relation>
+        <relation>
+          <id>38163</id>
+          <type>NT</type>
+        </relation>
+        <relation>
+          <id>38165</id>
+          <type>NT</type>
+        </relation>
+        <relation>
+          <id>38167</id>
+          <type>NT</type>
+        </relation>
+        <relation>
+          <id>38169</id>
+          <type>NT</type>
+        </relation>
+        <relation>
+          <id>38217</id>
+          <type>NT</type>
+        </relation>
+        <relation>
+          <id>42902</id>
+          <type>NT</type>
+        </relation>
+        <relation>
+          <id>42904</id>
+          <type>NT</type>
+        </relation>
+        <relation>
+          <id>42906</id>
+          <type>NT</type>
+        </relation>
+        <relation>
+          <id>46796</id>
+          <type>NT</type>
+        </relation>
+        <relation>
+          <id>46798</id>
+          <type>NT</type>
+        </relation>
+        <relation>
+          <id>46800</id>
+          <type>NT</type>
+        </relation>
+        <relation>
+          <id>46802</id>
+          <type>NT</type>
+        </relation>
+      </relations>
+      <attributes />
+    </term>
+    <term>
+      <id>38068</id>
+      <name>PROCESSO DE CERTIFICAÇÃO (Apicultura) (APICULTURA)</name>
+      <enabled>true</enabled>
+      <variations>
+        <variation>
+          <name>PROCESSO DE CERTIFICAÇÃO (Apicultura) (APICULTURA)</name>
+          <weight>100.0</weight>
+          <case>ci</case>
+          <accent>as</accent>
+          <languages>
+            <language>por</language>
+          </languages>
+        </variation>
+      </variations>
+      <relations>
+        <relation>
+          <id>38050</id>
+          <type>BT</type>
+        </relation>
+        <relation>
+          <id>38173</id>
+          <type>NT</type>
+        </relation>
+        <relation>
+          <id>38175</id>
+          <type>NT</type>
+        </relation>
+        <relation>
+          <id>38177</id>
+          <type>NT</type>
+        </relation>
+        <relation>
+          <id>38179</id>
+          <type>NT</type>
+        </relation>
+        <relation>
+          <id>38181</id>
+          <type>NT</type>
+        </relation>
+        <relation>
+          <id>46828</id>
+          <type>NT</type>
+        </relation>
+        <relation>
+          <id>46830</id>
+          <type>NT</type>
+        </relation>
+        <relation>
+          <id>46832</id>
+          <type>NT</type>
+        </relation>
+        <relation>
+          <id>46834</id>
+          <type>NT</type>
+        </relation>
+        <relation>
+          <id>46836</id>
+          <type>NT</type>
+        </relation>
+      </relations>
+      <attributes />
+    </term>
+    <term>
+      <id>38070</id>
+      <name>ESPÉCIE DE ABELHA (APICULTURA)</name>
+      <enabled>true</enabled>
+      <variations>
+        <variation>
+          <name>ESPÉCIE DE ABELHA (APICULTURA)</name>
+          <weight>100.0</weight>
+          <case>ci</case>
+          <accent>as</accent>
+          <languages>
+            <language>por</language>
+          </languages>
+        </variation>
+      </variations>
+      <relations>
+        <relation>
+          <id>38183</id>
+          <type>NT</type>
+        </relation>
+        <relation>
+          <id>38185</id>
+          <type>NT</type>
+        </relation>
+        <relation>
+          <id>46792</id>
+          <type>NT</type>
+        </relation>
+        <relation>
+          <id>46794</id>
+          <type>BT</type>
+        </relation>
+      </relations>
+      <attributes />
+    </term>
+    <term>
+      <id>38072</id>
+      <name>REPRODUÇÃO (APICULTURA)</name>
+      <enabled>true</enabled>
+      <variations>
+        <variation>
+          <name>REPRODUÇÃO (APICULTURA)</name>
+          <weight>100.0</weight>
+          <case>ci</case>
+          <accent>as</accent>
+          <languages>
+            <language>por</language>
+          </languages>
+        </variation>
+      </variations>
+      <relations>
+        <relation>
+          <id>38050</id>
+          <type>BT</type>
+        </relation>
+        <relation>
+          <id>38191</id>
+          <type>NT</type>
+        </relation>
+        <relation>
+          <id>38193</id>
+          <type>NT</type>
+        </relation>
+        <relation>
+          <id>38195</id>
+          <type>NT</type>
+        </relation>
+        <relation>
+          <id>38197</id>
+          <type>NT</type>
+        </relation>
+        <relation>
+          <id>42908</id>
+          <type>NT</type>
+        </relation>
+      </relations>
+      <attributes />
+    </term>
+    <term>
+      <id>38074</id>
+      <name>INDUSTRIALIZAÇÃO (Apicultura) (APICULTURA)</name>
+      <enabled>true</enabled>
+      <variations>
+        <variation>
+          <name>INDUSTRIALIZAÇÃO (Apicultura) (APICULTURA)</name>
+          <weight>100.0</weight>
+          <case>ci</case>
+          <accent>as</accent>
+          <languages>
+            <language>por</language>
+          </languages>
+        </variation>
+      </variations>
+      <relations>
+        <relation>
+          <id>38050</id>
+          <type>BT</type>
+        </relation>
+        <relation>
+          <id>38199</id>
+          <type>NT</type>
+        </relation>
+        <relation>
+          <id>48327</id>
+          <type>NT</type>
+        </relation>
+      </relations>
+      <attributes />
+    </term>
+    <term>
+      <id>38076</id>
+      <name>EMBALAGEM (Apicultura) (APICULTURA)</name>
+      <enabled>true</enabled>
+      <variations>
+        <variation>
+          <name>EMBALAGEM (Apicultura) (APICULTURA)</name>
+          <weight>100.0</weight>
+          <case>ci</case>
+          <accent>as</accent>
+          <languages>
+            <language>por</language>
+          </languages>
+        </variation>
+      </variations>
+      <relations>
+        <relation>
+          <id>38050</id>
+          <type>BT</type>
+        </relation>
+        <relation>
+          <id>38201</id>
+          <type>NT</type>
+        </relation>
+        <relation>
+          <id>38203</id>
+          <type>NT</type>
+        </relation>
+      </relations>
+      <attributes />
+    </term>
+    <term>
+      <id>38078</id>
+      <name>CENTRÍFUGA (Equipamento apícola) (APICULTURA)</name>
+      <enabled>true</enabled>
+      <variations>
+        <variation>
+          <name>CENTRÍFUGA (Equipamento apícola) (APICULTURA)</name>
+          <weight>100.0</weight>
+          <case>ci</case>
+          <accent>as</accent>
+          <languages>
+            <language>por</language>
+          </languages>
+        </variation>
+      </variations>
+      <relations>
+        <relation>
+          <id>42894</id>
+          <type>BT</type>
+        </relation>
+      </relations>
+      <attributes />
+    </term>
+    <term>
+      <id>38080</id>
+      <name>COLETOR (Equipamento apícola) (APICULTURA)</name>
+      <enabled>true</enabled>
+      <variations>
+        <variation>
+          <name>COLETOR (Equipamento apícola) (APICULTURA)</name>
+          <weight>100.0</weight>
+          <case>ci</case>
+          <accent>as</accent>
+          <languages>
+            <language>por</language>
+          </languages>
+        </variation>
+      </variations>
+      <relations>
+        <relation>
+          <id>42894</id>
+          <type>BT</type>
+        </relation>
+      </relations>
+      <attributes />
+    </term>
+    <term>
+      <id>38082</id>
+      <name>DECANTADOR (Equipamento apícola) (APICULTURA)</name>
+      <enabled>true</enabled>
+      <variations>
+        <variation>
+          <name>DECANTADOR (Equipamento apícola) (APICULTURA)</name>
+          <weight>100.0</weight>
+          <case>ci</case>
+          <accent>as</accent>
+          <languages>
+            <language>por</language>
+          </languages>
+        </variation>
+      </variations>
+      <relations>
+        <relation>
+          <id>42894</id>
+          <type>BT</type>
+        </relation>
+        <relation>
+          <id>44610</id>
+          <type>RT</type>
+        </relation>
+      </relations>
+      <attributes />
+    </term>
+    <term>
+      <id>38085</id>
+      <name>DERRETEDOR DE CERA (Equipamento apícola) (APICULTURA)</name>
+      <enabled>true</enabled>
+      <variations>
+        <variation>
+          <name>DERRETEDOR DE CERA (Equipamento apícola) (APICULTURA)</name>
+          <weight>100.0</weight>
+          <case>ci</case>
+          <accent>as</accent>
+          <languages>
+            <language>por</language>
+          </languages>
+        </variation>
+      </variations>
+      <relations>
+        <relation>
+          <id>42894</id>
+          <type>BT</type>
+        </relation>
+      </relations>
+      <attributes />
+    </term>
+    <term>
+      <id>38087</id>
+      <name>FILTRO (Equipamento apícola) (APICULTURA)</name>
+      <enabled>true</enabled>
+      <variations>
+        <variation>
+          <name>FILTRO (Equipamento apícola) (APICULTURA)</name>
+          <weight>100.0</weight>
+          <case>ci</case>
+          <accent>as</accent>
+          <languages>
+            <language>por</language>
+          </languages>
+        </variation>
+      </variations>
+      <relations>
+        <relation>
+          <id>42894</id>
+          <type>BT</type>
+        </relation>
+      </relations>
+      <attributes />
+    </term>
+    <term>
+      <id>38089</id>
+      <name>HOMOGENEIZADOR (Equipamento apícola) (APICULTURA)</name>
+      <enabled>true</enabled>
+      <variations>
+        <variation>
+          <name>HOMOGENEIZADOR (Equipamento apícola) (APICULTURA)</name>
+          <weight>100.0</weight>
+          <case>ci</case>
+          <accent>as</accent>
+          <languages>
+            <language>por</language>
+          </languages>
+        </variation>
+      </variations>
+      <relations>
+        <relation>
+          <id>42894</id>
+          <type>BT</type>
+        </relation>
+      </relations>
+      <attributes />
+    </term>
+    <term>
+      <id>38091</id>
+      <name>DESOPERCULADORA (Equipamento apícola) (APICULTURA)</name>
+      <enabled>true</enabled>
+      <variations>
+        <variation>
+          <name>DESOPERCULADORA (Equipamento apícola) (APICULTURA)</name>
+          <weight>100.0</weight>
+          <case>ci</case>
+          <accent>as</accent>
+          <languages>
+            <language>por</language>
+          </languages>
+        </variation>
+      </variations>
+      <relations>
+        <relation>
+          <id>42894</id>
+          <type>BT</type>
+        </relation>
+      </relations>
+      <attributes />
+    </term>
+    <term>
+      <id>38093</id>
+      <name>MESA CALHA (APICULTURA)</name>
+      <enabled>true</enabled>
+      <variations>
+        <variation>
+          <name>MESA CALHA (APICULTURA)</name>
+          <weight>100.0</weight>
+          <case>ci</case>
+          <accent>as</accent>
+          <languages>
+            <language>por</language>
+          </languages>
+        </variation>
+      </variations>
+      <relations>
+        <relation>
+          <id>42894</id>
+          <type>BT</type>
+        </relation>
+      </relations>
+      <attributes />
+    </term>
+    <term>
+      <id>38095</id>
+      <name>MESA TELHA (APICULTURA)</name>
+      <enabled>true</enabled>
+      <variations>
+        <variation>
+          <name>MESA TELHA (APICULTURA)</name>
+          <weight>100.0</weight>
+          <case>ci</case>
+          <accent>as</accent>
+          <languages>
+            <language>por</language>
+          </languages>
+        </variation>
+      </variations>
+      <relations>
+        <relation>
+          <id>42894</id>
+          <type>BT</type>
+        </relation>
+      </relations>
+      <attributes />
+    </term>
+    <term>
+      <id>46894</id>
+      <name>ANATOMIA DA ABELHA (APICULTURA)</name>
+      <enabled>true</enabled>
+      <variations>
+        <variation>
+          <name>ANATOMIA DA ABELHA (APICULTURA)</name>
+          <weight>100.0</weight>
+          <case>ci</case>
+          <accent>as</accent>
+          <languages>
+            <language>por</language>
+          </languages>
+        </variation>
+      </variations>
+      <relations>
+        <relation>
+          <id>46892</id>
+          <type>BT</type>
+        </relation>
+      </relations>
+      <attributes />
+    </term>
+    <term>
+      <id>46896</id>
+      <name>FISIOLOGIA DA ABELHA (APICULTURA)</name>
+      <enabled>true</enabled>
+      <variations>
+        <variation>
+          <name>FISIOLOGIA DA ABELHA (APICULTURA)</name>
+          <weight>100.0</weight>
+          <case>ci</case>
+          <accent>as</accent>
+          <languages>
+            <language>por</language>
+          </languages>
+        </variation>
+      </variations>
+      <relations>
+        <relation>
+          <id>46892</id>
+          <type>BT</type>
+        </relation>
+      </relations>
+      <attributes />
+    </term>
+    <term>
+      <id>38181</id>
+      <name>RESÍDUO QUÍMICO (Processo de certificação) (APICULTURA)</name>
+      <enabled>true</enabled>
+      <variations>
+        <variation>
+          <name>RESÍDUO QUÍMICO (Processo de certificação) (APICULTURA)</name>
+          <weight>100.0</weight>
+          <case>ci</case>
+          <accent>as</accent>
+          <languages>
+            <language>por</language>
+          </languages>
+        </variation>
+      </variations>
+      <relations>
+        <relation>
+          <id>38068</id>
+          <type>BT</type>
+        </relation>
+      </relations>
+      <attributes />
+    </term>
+    <term>
+      <id>38183</id>
+      <name>ABELHA APIS (APICULTURA)</name>
+      <enabled>true</enabled>
+      <variations>
+        <variation>
+          <name>ABELHA APIS (APICULTURA)</name>
+          <weight>100.0</weight>
+          <case>ci</case>
+          <accent>as</accent>
+          <languages>
+            <language>por</language>
+          </languages>
+        </variation>
+      </variations>
+      <relations>
+        <relation>
+          <id>644</id>
+          <type>UF</type>
+        </relation>
+        <relation>
+          <id>38070</id>
+          <type>BT</type>
+        </relation>
+        <relation>
+          <id>46794</id>
+          <type>RT</type>
+        </relation>
+      </relations>
+      <attributes />
+    </term>
+    <term>
+      <id>38185</id>
+      <name>MELIPONÍDEAS (APICULTURA)</name>
+      <enabled>true</enabled>
+      <variations>
+        <variation>
+          <name>MELIPONÍDEAS (APICULTURA)</name>
+          <weight>100.0</weight>
+          <case>ci</case>
+          <accent>as</accent>
+          <languages>
+            <language>por</language>
+          </languages>
+        </variation>
+      </variations>
+      <relations>
+        <relation>
+          <id>647</id>
+          <type>UF</type>
+        </relation>
+        <relation>
+          <id>670</id>
+          <type>UF</type>
+        </relation>
+        <relation>
+          <id>38070</id>
+          <type>BT</type>
+        </relation>
+        <relation>
+          <id>38266</id>
+          <type>NT</type>
+        </relation>
+        <relation>
+          <id>38268</id>
+          <type>NT</type>
+        </relation>
+        <relation>
+          <id>38270</id>
+          <type>NT</type>
+        </relation>
+        <relation>
+          <id>38272</id>
+          <type>NT</type>
+        </relation>
+        <relation>
+          <id>38274</id>
+          <type>NT</type>
+        </relation>
+        <relation>
+          <id>38276</id>
+          <type>NT</type>
+        </relation>
+        <relation>
+          <id>38278</id>
+          <type>NT</type>
+        </relation>
+        <relation>
+          <id>38280</id>
+          <type>NT</type>
+        </relation>
+        <relation>
+          <id>38282</id>
+          <type>NT</type>
+        </relation>
+        <relation>
+          <id>38284</id>
+          <type>NT</type>
+        </relation>
+        <relation>
+          <id>38286</id>
+          <type>NT</type>
+        </relation>
+      </relations>
+      <attributes />
+    </term>
+    <term>
+      <id>38187</id>
+      <name>ABELHA OPERÁRIA (APICULTURA)</name>
+      <enabled>true</enabled>
+      <variations>
+        <variation>
+          <name>ABELHA OPERÁRIA (APICULTURA)</name>
+          <weight>100.0</weight>
+          <case>ci</case>
+          <accent>as</accent>
+          <languages>
+            <language>por</language>
+          </languages>
+        </variation>
+      </variations>
+      <relations>
+        <relation>
+          <id>45081</id>
+          <type>NT</type>
+        </relation>
+        <relation>
+          <id>45083</id>
+          <type>NT</type>
+        </relation>
+        <relation>
+          <id>45085</id>
+          <type>NT</type>
+        </relation>
+        <relation>
+          <id>45087</id>
+          <type>NT</type>
+        </relation>
+        <relation>
+          <id>45089</id>
+          <type>NT</type>
+        </relation>
+        <relation>
+          <id>45091</id>
+          <type>NT</type>
+        </relation>
+        <relation>
+          <id>46794</id>
+          <type>BT</type>
+        </relation>
+      </relations>
+      <attributes />
+    </term>
+    <term>
+      <id>38189</id>
+      <name>ABELHA RAINHA (APICULTURA)</name>
+      <enabled>true</enabled>
+      <variations>
+        <variation>
+          <name>ABELHA RAINHA (APICULTURA)</name>
+          <weight>100.0</weight>
+          <case>ci</case>
+          <accent>as</accent>
+          <languages>
+            <language>por</language>
+          </languages>
+        </variation>
+      </variations>
+      <relations>
+        <relation>
+          <id>38288</id>
+          <type>NT</type>
+        </relation>
+        <relation>
+          <id>46794</id>
+          <type>BT</type>
+        </relation>
+      </relations>
+      <attributes />
+    </term>
+    <term>
+      <id>38191</id>
+      <name>LARVA (Reprodução da abelha) (APICULTURA)</name>
+      <enabled>true</enabled>
+      <variations>
+        <variation>
+          <name>LARVA (Reprodução da abelha) (APICULTURA)</name>
+          <weight>100.0</weight>
+          <case>ci</case>
+          <accent>as</accent>
+          <languages>
+            <language>por</language>
+          </languages>
+        </variation>
+      </variations>
+      <relations>
+        <relation>
+          <id>38072</id>
+          <type>BT</type>
+        </relation>
+      </relations>
+      <attributes />
+    </term>
+    <term>
+      <id>38193</id>
+      <name>NINFA (Abelha) (APICULTURA)</name>
+      <enabled>true</enabled>
+      <variations>
+        <variation>
+          <name>NINFA (Abelha) (APICULTURA)</name>
+          <weight>100.0</weight>
+          <case>ci</case>
+          <accent>as</accent>
+          <languages>
+            <language>por</language>
+          </languages>
+        </variation>
+      </variations>
+      <relations>
+        <relation>
+          <id>38072</id>
+          <type>BT</type>
+        </relation>
+      </relations>
+      <attributes />
+    </term>
+    <term>
+      <id>38195</id>
+      <name>OVO (Reprodução da abelha) (APICULTURA)</name>
+      <enabled>true</enabled>
+      <variations>
+        <variation>
+          <name>OVO (Reprodução da abelha) (APICULTURA)</name>
+          <weight>100.0</weight>
+          <case>ci</case>
+          <accent>as</accent>
+          <languages>
+            <language>por</language>
+          </languages>
+        </variation>
+      </variations>
+      <relations>
+        <relation>
+          <id>38072</id>
+          <type>BT</type>
+        </relation>
+      </relations>
+      <attributes />
+    </term>
+    <term>
+      <id>38197</id>
+      <name>ZANGÃO (APICULTURA)</name>
+      <enabled>true</enabled>
+      <variations>
+        <variation>
+          <name>ZANGÃO (APICULTURA)</name>
+          <weight>100.0</weight>
+          <case>ci</case>
+          <accent>as</accent>
+          <languages>
+            <language>por</language>
+          </languages>
+        </variation>
+      </variations>
+      <relations>
+        <relation>
+          <id>38072</id>
+          <type>BT</type>
+        </relation>
+        <relation>
+          <id>46794</id>
+          <type>RT</type>
+        </relation>
+      </relations>
+      <attributes />
+    </term>
+    <term>
+      <id>38199</id>
+      <name>ENTREPOSTO (Industrialização) (APICULTURA)</name>
+      <enabled>true</enabled>
+      <variations>
+        <variation>
+          <name>ENTREPOSTO (Industrialização) (APICULTURA)</name>
+          <weight>100.0</weight>
+          <case>ci</case>
+          <accent>as</accent>
+          <languages>
+            <language>por</language>
+          </languages>
+        </variation>
+      </variations>
+      <relations>
+        <relation>
+          <id>38074</id>
+          <type>BT</type>
+        </relation>
+      </relations>
+      <attributes />
+    </term>
+    <term>
+      <id>38201</id>
+      <name>GALÃO METÁLICO (Embalagem) (APICULTURA)</name>
+      <enabled>true</enabled>
+      <variations>
+        <variation>
+          <name>GALÃO METÁLICO (Embalagem) (APICULTURA)</name>
+          <weight>100.0</weight>
+          <case>ci</case>
+          <accent>as</accent>
+          <languages>
+            <language>por</language>
+          </languages>
+        </variation>
+      </variations>
+      <relations>
+        <relation>
+          <id>38076</id>
+          <type>BT</type>
+        </relation>
+      </relations>
+      <attributes />
+    </term>
+    <term>
+      <id>38203</id>
+      <name>ENGARRAFAMENTO (APICULTURA)</name>
+      <enabled>true</enabled>
+      <variations>
+        <variation>
+          <name>ENGARRAFAMENTO (APICULTURA)</name>
+          <weight>100.0</weight>
+          <case>ci</case>
+          <accent>as</accent>
+          <languages>
+            <language>por</language>
+          </languages>
+        </variation>
+      </variations>
+      <relations>
+        <relation>
+          <id>38076</id>
+          <type>BT</type>
+        </relation>
+      </relations>
+      <attributes />
+    </term>
+    <term>
+      <id>38205</id>
+      <name>APIÁRIO FIXO (APICULTURA)</name>
+      <enabled>true</enabled>
+      <variations>
+        <variation>
+          <name>APIÁRIO FIXO (APICULTURA)</name>
+          <weight>100.0</weight>
+          <case>ci</case>
+          <accent>as</accent>
+          <languages>
+            <language>por</language>
+          </languages>
+        </variation>
+      </variations>
+      <relations>
+        <relation>
+          <id>38127</id>
+          <type>BT</type>
+        </relation>
+      </relations>
+      <attributes />
+    </term>
+    <term>
+      <id>38207</id>
+      <name>APIÁRIO MÓVEL (APICULTURA)</name>
+      <enabled>true</enabled>
+      <variations>
+        <variation>
+          <name>APIÁRIO MÓVEL (APICULTURA)</name>
+          <weight>100.0</weight>
+          <case>ci</case>
+          <accent>as</accent>
+          <languages>
+            <language>por</language>
+          </languages>
+        </variation>
+      </variations>
+      <relations>
+        <relation>
+          <id>38127</id>
+          <type>BT</type>
+        </relation>
+      </relations>
+      <attributes />
+    </term>
+    <term>
+      <id>38209</id>
+      <name>CAIXA DE ABELHA (APICULTURA)</name>
+      <enabled>true</enabled>
+      <variations>
+        <variation>
+          <name>CAIXA DE ABELHA (APICULTURA)</name>
+          <weight>100.0</weight>
+          <case>ci</case>
+          <accent>as</accent>
+          <languages>
+            <language>por</language>
+          </languages>
+        </variation>
+      </variations>
+      <relations>
+        <relation>
+          <id>38131</id>
+          <type>NT</type>
+        </relation>
+        <relation>
+          <id>38135</id>
+          <type>BT</type>
+        </relation>
+        <relation>
+          <id>38143</id>
+          <type>NT</type>
+        </relation>
+        <relation>
+          <id>46898</id>
+          <type>NT</type>
+        </relation>
+        <relation>
+          <id>46900</id>
+          <type>NT</type>
+        </relation>
+        <relation>
+          <id>46902</id>
+          <type>NT</type>
+        </relation>
+      </relations>
+      <attributes />
+    </term>
+    <term>
+      <id>38211</id>
+      <name>CRIA (Favo) (APICULTURA)</name>
+      <enabled>true</enabled>
+      <variations>
+        <variation>
+          <name>CRIA (Favo) (APICULTURA)</name>
+          <weight>100.0</weight>
+          <case>ci</case>
+          <accent>as</accent>
+          <languages>
+            <language>por</language>
+          </languages>
+        </variation>
+      </variations>
+      <relations>
+        <relation>
+          <id>38141</id>
+          <type>BT</type>
+        </relation>
+      </relations>
+      <attributes />
+    </term>
+    <term>
+      <id>38213</id>
+      <name>MEL (Favo) (APICULTURA)</name>
+      <enabled>true</enabled>
+      <variations>
+        <variation>
+          <name>MEL (Favo) (APICULTURA)</name>
+          <weight>100.0</weight>
+          <case>ci</case>
+          <accent>as</accent>
+          <languages>
+            <language>por</language>
+          </languages>
+        </variation>
+      </variations>
+      <relations>
+        <relation>
+          <id>38141</id>
+          <type>BT</type>
+        </relation>
+      </relations>
+      <attributes />
+    </term>
+    <term>
+      <id>38215</id>
+      <name>CÂNDI (APICULTURA)</name>
+      <enabled>true</enabled>
+      <variations>
+        <variation>
+          <name>CÂNDI (APICULTURA)</name>
+          <weight>100.0</weight>
+          <case>ci</case>
+          <accent>as</accent>
+          <languages>
+            <language>por</language>
+          </languages>
+        </variation>
+      </variations>
+      <relations>
+        <relation>
+          <id>38161</id>
+          <type>BT</type>
+        </relation>
+      </relations>
+      <attributes />
+    </term>
+    <term>
+      <id>38217</id>
+      <name>NÉCTAR (APICULTURA)</name>
+      <enabled>true</enabled>
+      <variations>
+        <variation>
+          <name>NÉCTAR (APICULTURA)</name>
+          <weight>100.0</weight>
+          <case>ci</case>
+          <accent>as</accent>
+          <languages>
+            <language>por</language>
+          </languages>
+        </variation>
+      </variations>
+      <relations>
+        <relation>
+          <id>38066</id>
+          <type>BT</type>
+        </relation>
+        <relation>
+          <id>38219</id>
+          <type>NT</type>
+        </relation>
+        <relation>
+          <id>38221</id>
+          <type>NT</type>
+        </relation>
+        <relation>
+          <id>38223</id>
+          <type>NT</type>
+        </relation>
+        <relation>
+          <id>38225</id>
+          <type>NT</type>
+        </relation>
+        <relation>
+          <id>38227</id>
+          <type>NT</type>
+        </relation>
+        <relation>
+          <id>38229</id>
+          <type>NT</type>
+        </relation>
+        <relation>
+          <id>38231</id>
+          <type>NT</type>
+        </relation>
+        <relation>
+          <id>38233</id>
+          <type>NT</type>
+        </relation>
+        <relation>
+          <id>38235</id>
+          <type>NT</type>
+        </relation>
+        <relation>
+          <id>38237</id>
+          <type>NT</type>
+        </relation>
+        <relation>
+          <id>38239</id>
+          <type>NT</type>
+        </relation>
+        <relation>
+          <id>38241</id>
+          <type>NT</type>
+        </relation>
+        <relation>
+          <id>38243</id>
+          <type>NT</type>
+        </relation>
+        <relation>
+          <id>38245</id>
+          <type>NT</type>
+        </relation>
+        <relation>
+          <id>38247</id>
+          <type>NT</type>
+        </relation>
+        <relation>
+          <id>38249</id>
+          <type>NT</type>
+        </relation>
+        <relation>
+          <id>38252</id>
+          <type>NT</type>
+        </relation>
+        <relation>
+          <id>38254</id>
+          <type>NT</type>
+        </relation>
+        <relation>
+          <id>38256</id>
+          <type>NT</type>
+        </relation>
+        <relation>
+          <id>38260</id>
+          <type>NT</type>
+        </relation>
+        <relation>
+          <id>42912</id>
+          <type>NT</type>
+        </relation>
+        <relation>
+          <id>42914</id>
+          <type>NT</type>
+        </relation>
+        <relation>
+          <id>42916</id>
+          <type>NT</type>
+        </relation>
+        <relation>
+          <id>42918</id>
+          <type>NT</type>
+        </relation>
+        <relation>
+          <id>42920</id>
+          <type>NT</type>
+        </relation>
+        <relation>
+          <id>42922</id>
+          <type>NT</type>
+        </relation>
+      </relations>
+      <attributes />
+    </term>
+    <term>
+      <id>38219</id>
+      <name>ABÓBORA (Néctar) (APICULTURA)</name>
+      <enabled>true</enabled>
+      <variations>
+        <variation>
+          <name>ABÓBORA (Néctar) (APICULTURA)</name>
+          <weight>100.0</weight>
+          <case>ci</case>
+          <accent>as</accent>
+          <languages>
+            <language>por</language>
+          </languages>
+        </variation>
+      </variations>
+      <relations>
+        <relation>
+          <id>38217</id>
+          <type>BT</type>
+        </relation>
+      </relations>
+      <attributes />
+    </term>
+    <term>
+      <id>38221</id>
+      <name>ALECRIM-DO-CAMPO (Néctar) (APICULTURA)</name>
+      <enabled>true</enabled>
+      <variations>
+        <variation>
+          <name>ALECRIM-DO-CAMPO (Néctar) (APICULTURA)</name>
+          <weight>100.0</weight>
+          <case>ci</case>
+          <accent>as</accent>
+          <languages>
+            <language>por</language>
+          </languages>
+        </variation>
+      </variations>
+      <relations>
+        <relation>
+          <id>38217</id>
+          <type>BT</type>
+        </relation>
+      </relations>
+      <attributes />
+    </term>
+    <term>
+      <id>38223</id>
+      <name>ANGICO (Néctar) (APICULTURA)</name>
+      <enabled>true</enabled>
+      <variations>
+        <variation>
+          <name>ANGICO (Néctar) (APICULTURA)</name>
+          <weight>100.0</weight>
+          <case>ci</case>
+          <accent>as</accent>
+          <languages>
+            <language>por</language>
+          </languages>
+        </variation>
+      </variations>
+      <relations>
+        <relation>
+          <id>38217</id>
+          <type>BT</type>
+        </relation>
+      </relations>
+      <attributes />
+    </term>
+    <term>
+      <id>38225</id>
+      <name>AROEIRA (Néctar) (APICULTURA)</name>
+      <enabled>true</enabled>
+      <variations>
+        <variation>
+          <name>AROEIRA (Néctar) (APICULTURA)</name>
+          <weight>100.0</weight>
+          <case>ci</case>
+          <accent>as</accent>
+          <languages>
+            <language>por</language>
+          </languages>
+        </variation>
+      </variations>
+      <relations>
+        <relation>
+          <id>38217</id>
+          <type>BT</type>
+        </relation>
+      </relations>
+      <attributes />
+    </term>
+    <term>
+      <id>38227</id>
+      <name>ASSA PEIXE (Néctar) (APICULTURA)</name>
+      <enabled>true</enabled>
+      <variations>
+        <variation>
+          <name>ASSA PEIXE (Néctar) (APICULTURA)</name>
+          <weight>100.0</weight>
+          <case>ci</case>
+          <accent>as</accent>
+          <languages>
+            <language>por</language>
+          </languages>
+        </variation>
+      </variations>
+      <relations>
+        <relation>
+          <id>38217</id>
+          <type>BT</type>
+        </relation>
+      </relations>
+      <attributes />
+    </term>
+    <term>
+      <id>38229</id>
+      <name>BRACATINGA (Néctar) (APICULTURA)</name>
+      <enabled>true</enabled>
+      <variations>
+        <variation>
+          <name>BRACATINGA (Néctar) (APICULTURA)</name>
+          <weight>100.0</weight>
+          <case>ci</case>
+          <accent>as</accent>
+          <languages>
+            <language>por</language>
+          </languages>
+        </variation>
+      </variations>
+      <relations>
+        <relation>
+          <id>38217</id>
+          <type>BT</type>
+        </relation>
+      </relations>
+      <attributes />
+    </term>
+    <term>
+      <id>38231</id>
+      <name>CAFÉ (Néctar) (APICULTURA)</name>
+      <enabled>true</enabled>
+      <variations>
+        <variation>
+          <name>CAFÉ (Néctar) (APICULTURA)</name>
+          <weight>100.0</weight>
+          <case>ci</case>
+          <accent>as</accent>
+          <languages>
+            <language>por</language>
+          </languages>
+        </variation>
+      </variations>
+      <relations>
+        <relation>
+          <id>38217</id>
+          <type>BT</type>
+        </relation>
+      </relations>
+      <attributes />
+    </term>
+    <term>
+      <id>46836</id>
+      <name>FLORADAS (APICULTURA)</name>
+      <enabled>true</enabled>
+      <variations>
+        <variation>
+          <name>FLORADAS (APICULTURA)</name>
+          <weight>100.0</weight>
+          <case>ci</case>
+          <accent>as</accent>
+          <languages>
+            <language>por</language>
+          </languages>
+        </variation>
+      </variations>
+      <relations>
+        <relation>
+          <id>11666</id>
+          <type>UF</type>
+        </relation>
+        <relation>
+          <id>38068</id>
+          <type>BT</type>
+        </relation>
+      </relations>
+      <attributes />
+    </term>
+    <term>
+      <id>46840</id>
+      <name>PERÍODO DE FLORAÇÃO (APICULTURA)</name>
+      <enabled>true</enabled>
+      <variations>
+        <variation>
+          <name>PERÍODO DE FLORAÇÃO (APICULTURA)</name>
+          <weight>100.0</weight>
+          <case>ci</case>
+          <accent>as</accent>
+          <languages>
+            <language>por</language>
+          </languages>
+        </variation>
+      </variations>
+      <relations>
+        <relation>
+          <id>38167</id>
+          <type>BT</type>
+        </relation>
+      </relations>
+      <attributes />
+    </term>
+    <term>
+      <id>46842</id>
+      <name>ALIMENTAÇÃO PROTÉICA (APICULTURA)</name>
+      <enabled>true</enabled>
+      <variations>
+        <variation>
+          <name>ALIMENTAÇÃO PROTÉICA (APICULTURA)</name>
+          <weight>100.0</weight>
+          <case>ci</case>
+          <accent>as</accent>
+          <languages>
+            <language>por</language>
+          </languages>
+        </variation>
+      </variations>
+      <relations>
+        <relation>
+          <id>38161</id>
+          <type>BT</type>
+        </relation>
+      </relations>
+      <attributes />
+    </term>
+    <term>
+      <id>46844</id>
+      <name>ALIMENTAÇÃO ESTIMULANTE (APICULTURA)</name>
+      <enabled>true</enabled>
+      <variations>
+        <variation>
+          <name>ALIMENTAÇÃO ESTIMULANTE (APICULTURA)</name>
+          <weight>100.0</weight>
+          <case>ci</case>
+          <accent>as</accent>
+          <languages>
+            <language>por</language>
+          </languages>
+        </variation>
+      </variations>
+      <relations>
+        <relation>
+          <id>38161</id>
+          <type>BT</type>
+        </relation>
+      </relations>
+      <attributes />
+    </term>
+    <term>
+      <id>46846</id>
+      <name>ALIMENTAÇÃO ENERGÉTICA (APICULTURA)</name>
+      <enabled>true</enabled>
+      <variations>
+        <variation>
+          <name>ALIMENTAÇÃO ENERGÉTICA (APICULTURA)</name>
+          <weight>100.0</weight>
+          <case>ci</case>
+          <accent>as</accent>
+          <languages>
+            <language>por</language>
+          </languages>
+        </variation>
+      </variations>
+      <relations>
+        <relation>
+          <id>38161</id>
+          <type>BT</type>
+        </relation>
+      </relations>
+      <attributes />
+    </term>
+    <term>
+      <id>46848</id>
+      <name>ALIMENTAÇÃO DE SUBSISTÊNCIA (APICULTURA)</name>
+      <enabled>true</enabled>
+      <variations>
+        <variation>
+          <name>ALIMENTAÇÃO DE SUBSISTÊNCIA (APICULTURA)</name>
+          <weight>100.0</weight>
+          <case>ci</case>
+          <accent>as</accent>
+          <languages>
+            <language>por</language>
+          </languages>
+        </variation>
+      </variations>
+      <relations>
+        <relation>
+          <id>38161</id>
+          <type>BT</type>
+        </relation>
+      </relations>
+      <attributes />
+    </term>
+    <term>
+      <id>46850</id>
+      <name>ALIMENTAÇÃO ARTIFICIAL (Alimentação) (APICULTURA)</name>
+      <enabled>true</enabled>
+      <variations>
+        <variation>
+          <name>ALIMENTAÇÃO ARTIFICIAL (Alimentação) (APICULTURA)</name>
+          <weight>100.0</weight>
+          <case>ci</case>
+          <accent>as</accent>
+          <languages>
+            <language>por</language>
+          </languages>
+        </variation>
+      </variations>
+      <relations>
+        <relation>
+          <id>38161</id>
+          <type>BT</type>
+        </relation>
+      </relations>
+      <attributes />
+    </term>
+    <term>
+      <id>46798</id>
+      <name>TRANSPORTE DE COLMÉIA (APICULTURA)</name>
+      <enabled>true</enabled>
+      <variations>
+        <variation>
+          <name>TRANSPORTE DE COLMÉIA (APICULTURA)</name>
+          <weight>100.0</weight>
+          <case>ci</case>
+          <accent>as</accent>
+          <languages>
+            <language>por</language>
+          </languages>
+        </variation>
+      </variations>
+      <relations>
+        <relation>
+          <id>38066</id>
+          <type>BT</type>
+        </relation>
+        <relation>
+          <id>46794</id>
+          <type>RT</type>
+        </relation>
+      </relations>
+      <attributes />
+    </term>
+    <term>
+      <id>46800</id>
+      <name>REDUÇÃO DE ALVADO (APICULTURA)</name>
+      <enabled>true</enabled>
+      <variations>
+        <variation>
+          <name>REDUÇÃO DE ALVADO (APICULTURA)</name>
+          <weight>100.0</weight>
+          <case>ci</case>
+          <accent>as</accent>
+          <languages>
+            <language>por</language>
+          </languages>
+        </variation>
+      </variations>
+      <relations>
+        <relation>
+          <id>38066</id>
+          <type>BT</type>
+        </relation>
+      </relations>
+      <attributes />
+    </term>
+    <term>
+      <id>46802</id>
+      <name>MANEJO DA RAINHA (APICULTURA)</name>
+      <enabled>true</enabled>
+      <variations>
+        <variation>
+          <name>MANEJO DA RAINHA (APICULTURA)</name>
+          <weight>100.0</weight>
+          <case>ci</case>
+          <accent>as</accent>
+          <languages>
+            <language>por</language>
+          </languages>
+        </variation>
+      </variations>
+      <relations>
+        <relation>
+          <id>38066</id>
+          <type>BT</type>
+        </relation>
+      </relations>
+      <attributes />
+    </term>
+    <term>
+      <id>46804</id>
+      <name>CASA DO MEL (APICULTURA)</name>
+      <enabled>true</enabled>
+      <variations>
+        <variation>
+          <name>CASA DO MEL (APICULTURA)</name>
+          <weight>100.0</weight>
+          <case>ci</case>
+          <accent>as</accent>
+          <languages>
+            <language>por</language>
+          </languages>
+        </variation>
+      </variations>
+      <relations>
+        <relation>
+          <id>45093</id>
+          <type>BT</type>
+        </relation>
+      </relations>
+      <attributes />
+    </term>
+    <term>
+      <id>46806</id>
+      <name>ESTOCAGEM (APICULTURA)</name>
+      <enabled>true</enabled>
+      <variations>
+        <variation>
+          <name>ESTOCAGEM (APICULTURA)</name>
+          <weight>100.0</weight>
+          <case>ci</case>
+          <accent>as</accent>
+          <languages>
+            <language>por</language>
+          </languages>
+        </variation>
+      </variations>
+      <relations>
+        <relation>
+          <id>45093</id>
+          <type>BT</type>
+        </relation>
+      </relations>
+      <attributes />
+    </term>
+    <term>
+      <id>46808</id>
+      <name>HONEYDEW (APICULTURA)</name>
+      <enabled>true</enabled>
+      <variations>
+        <variation>
+          <name>HONEYDEW (APICULTURA)</name>
+          <weight>100.0</weight>
+          <case>ci</case>
+          <accent>as</accent>
+          <languages>
+            <language>por</language>
+          </languages>
+        </variation>
+      </variations>
+      <relations>
+        <relation>
+          <id>45093</id>
+          <type>BT</type>
+        </relation>
+      </relations>
+      <attributes />
+    </term>
+    <term>
+      <id>46810</id>
+      <name>QUALIDADE DO MEL (APICULTURA)</name>
+      <enabled>true</enabled>
+      <variations>
+        <variation>
+          <name>QUALIDADE DO MEL (APICULTURA)</name>
+          <weight>100.0</weight>
+          <case>ci</case>
+          <accent>as</accent>
+          <languages>
+            <language>por</language>
+          </languages>
+        </variation>
+      </variations>
+      <relations>
+        <relation>
+          <id>45093</id>
+          <type>BT</type>
+        </relation>
+      </relations>
+      <attributes />
+    </term>
+    <term>
+      <id>46812</id>
+      <name>MATERIAL APÍCOLA (APICULTURA)</name>
+      <enabled>true</enabled>
+      <variations>
+        <variation>
+          <name>MATERIAL APÍCOLA (APICULTURA)</name>
+          <weight>100.0</weight>
+          <case>ci</case>
+          <accent>as</accent>
+          <languages>
+            <language>por</language>
+          </languages>
+        </variation>
+      </variations>
+      <relations>
+        <relation>
+          <id>38050</id>
+          <type>BT</type>
+        </relation>
+        <relation>
+          <id>42894</id>
+          <type>RT</type>
+        </relation>
+      </relations>
+      <attributes />
+    </term>
+    <term>
+      <id>46814</id>
+      <name>ALIMENTADOR COLETIVO (APICULTURA)</name>
+      <enabled>true</enabled>
+      <variations>
+        <variation>
+          <name>ALIMENTADOR COLETIVO (APICULTURA)</name>
+          <weight>100.0</weight>
+          <case>ci</case>
+          <accent>as</accent>
+          <languages>
+            <language>por</language>
+          </languages>
+        </variation>
+      </variations>
+      <relations>
+        <relation>
+          <id>42894</id>
+          <type>BT</type>
+        </relation>
+      </relations>
+      <attributes />
+    </term>
+    <term>
+      <id>46816</id>
+      <name>ALIMENTADOR DOOLITE (APICULTURA)</name>
+      <enabled>true</enabled>
+      <variations>
+        <variation>
+          <name>ALIMENTADOR DOOLITE (APICULTURA)</name>
+          <weight>100.0</weight>
+          <case>ci</case>
+          <accent>as</accent>
+          <languages>
+            <language>por</language>
+          </languages>
+        </variation>
+      </variations>
+      <relations>
+        <relation>
+          <id>42894</id>
+          <type>BT</type>
+        </relation>
+      </relations>
+      <attributes />
+    </term>
+    <term>
+      <id>46898</id>
+      <name>PLACA DE CERA ALVEOLADA (APICULTURA)</name>
+      <enabled>true</enabled>
+      <variations>
+        <variation>
+          <name>PLACA DE CERA ALVEOLADA (APICULTURA)</name>
+          <weight>100.0</weight>
+          <case>ci</case>
+          <accent>as</accent>
+          <languages>
+            <language>por</language>
+          </languages>
+        </variation>
+      </variations>
+      <relations>
+        <relation>
+          <id>38209</id>
+          <type>BT</type>
+        </relation>
+      </relations>
+      <attributes />
+    </term>
+    <term>
+      <id>45081</id>
+      <name>ABELHA FAXINEIRA (APICULTURA)</name>
+      <enabled>true</enabled>
+      <variations>
+        <variation>
+          <name>ABELHA FAXINEIRA (APICULTURA)</name>
+          <weight>100.0</weight>
+          <case>ci</case>
+          <accent>as</accent>
+          <languages>
+            <language>por</language>
+          </languages>
+        </variation>
+      </variations>
+      <relations>
+        <relation>
+          <id>38187</id>
+          <type>BT</type>
+        </relation>
+      </relations>
+      <attributes />
+    </term>
+    <term>
+      <id>45083</id>
+      <name>ABELHA NUTRIZ (APICULTURA)</name>
+      <enabled>true</enabled>
+      <variations>
+        <variation>
+          <name>ABELHA NUTRIZ (APICULTURA)</name>
+          <weight>100.0</weight>
+          <case>ci</case>
+          <accent>as</accent>
+          <languages>
+            <language>por</language>
+          </languages>
+        </variation>
+      </variations>
+      <relations>
+        <relation>
+          <id>38187</id>
+          <type>BT</type>
+        </relation>
+      </relations>
+      <attributes />
+    </term>
+    <term>
+      <id>45085</id>
+      <name>ABELHA DA CORTE REAL (APICULTURA)</name>
+      <enabled>true</enabled>
+      <variations>
+        <variation>
+          <name>ABELHA DA CORTE REAL (APICULTURA)</name>
+          <weight>100.0</weight>
+          <case>ci</case>
+          <accent>as</accent>
+          <languages>
+            <language>por</language>
+          </languages>
+        </variation>
+      </variations>
+      <relations>
+        <relation>
+          <id>38187</id>
+          <type>BT</type>
+        </relation>
+      </relations>
+      <attributes />
+    </term>
+    <term>
+      <id>45087</id>
+      <name>ABELHA ENGENHEIRA (APICULTURA)</name>
+      <enabled>true</enabled>
+      <variations>
+        <variation>
+          <name>ABELHA ENGENHEIRA (APICULTURA)</name>
+          <weight>100.0</weight>
+          <case>ci</case>
+          <accent>as</accent>
+          <languages>
+            <language>por</language>
+          </languages>
+        </variation>
+      </variations>
+      <relations>
+        <relation>
+          <id>38187</id>
+          <type>BT</type>
+        </relation>
+        <relation>
+          <id>46794</id>
+          <type>RT</type>
+        </relation>
+      </relations>
+      <attributes />
+    </term>
+    <term>
+      <id>45089</id>
+      <name>ABELHA GUARDA (APICULTURA)</name>
+      <enabled>true</enabled>
+      <variations>
+        <variation>
+          <name>ABELHA GUARDA (APICULTURA)</name>
+          <weight>100.0</weight>
+          <case>ci</case>
+          <accent>as</accent>
+          <languages>
+            <language>por</language>
+          </languages>
+        </variation>
+      </variations>
+      <relations>
+        <relation>
+          <id>38187</id>
+          <type>BT</type>
+        </relation>
+      </relations>
+      <attributes />
+    </term>
+    <term>
+      <id>46852</id>
+      <name>ENXAME SILVESTRE (APICULTURA)</name>
+      <enabled>true</enabled>
+      <variations>
+        <variation>
+          <name>ENXAME SILVESTRE (APICULTURA)</name>
+          <weight>100.0</weight>
+          <case>ci</case>
+          <accent>as</accent>
+          <languages>
+            <language>por</language>
+          </languages>
+        </variation>
+      </variations>
+      <relations>
+        <relation>
+          <id>38165</id>
+          <type>BT</type>
+        </relation>
+        <relation>
+          <id>46856</id>
+          <type>RT</type>
+        </relation>
+      </relations>
+      <attributes />
+    </term>
+    <term>
+      <id>46854</id>
+      <name>ENXAME NIDIFICADO (APICULTURA)</name>
+      <enabled>true</enabled>
+      <variations>
+        <variation>
+          <name>ENXAME NIDIFICADO (APICULTURA)</name>
+          <weight>100.0</weight>
+          <case>ci</case>
+          <accent>as</accent>
+          <languages>
+            <language>por</language>
+          </languages>
+        </variation>
+      </variations>
+      <relations>
+        <relation>
+          <id>38165</id>
+          <type>BT</type>
+        </relation>
+        <relation>
+          <id>46856</id>
+          <type>RT</type>
+        </relation>
+      </relations>
+      <attributes />
+    </term>
+    <term>
+      <id>46788</id>
+      <name>APICULTURA INTEGRADA (APICULTURA)</name>
+      <enabled>true</enabled>
+      <variations>
+        <variation>
+          <name>APICULTURA INTEGRADA (APICULTURA)</name>
+          <weight>100.0</weight>
+          <case>ci</case>
+          <accent>as</accent>
+          <languages>
+            <language>por</language>
+          </languages>
+        </variation>
+      </variations>
+      <relations>
+        <relation>
+          <id>38050</id>
+          <type>BT</type>
+        </relation>
+      </relations>
+      <attributes />
+    </term>
+    <term>
+      <id>43296</id>
+      <name>PROTEÍNA (APICULTURA)</name>
+      <enabled>true</enabled>
+      <variations>
+        <variation>
+          <name>PROTEÍNA (APICULTURA)</name>
+          <weight>100.0</weight>
+          <case>ci</case>
+          <accent>as</accent>
+          <languages>
+            <language>por</language>
+          </languages>
+        </variation>
+      </variations>
+      <relations />
+      <attributes />
+    </term>
+    <term>
+      <id>42912</id>
+      <name>CAJU (Néctar) (APICULTURA)</name>
+      <enabled>true</enabled>
+      <variations>
+        <variation>
+          <name>CAJU (Néctar) (APICULTURA)</name>
+          <weight>100.0</weight>
+          <case>ci</case>
+          <accent>as</accent>
+          <languages>
+            <language>por</language>
+          </languages>
+        </variation>
+      </variations>
+      <relations>
+        <relation>
+          <id>38217</id>
+          <type>BT</type>
+        </relation>
+      </relations>
+      <attributes />
+    </term>
+    <term>
+      <id>42914</id>
+      <name>MOFUMBO (Néctar) (APICULTURA)</name>
+      <enabled>true</enabled>
+      <variations>
+        <variation>
+          <name>MOFUMBO (Néctar) (APICULTURA)</name>
+          <weight>100.0</weight>
+          <case>ci</case>
+          <accent>as</accent>
+          <languages>
+            <language>por</language>
+          </languages>
+        </variation>
+      </variations>
+      <relations>
+        <relation>
+          <id>38217</id>
+          <type>BT</type>
+        </relation>
+      </relations>
+      <attributes />
+    </term>
+    <term>
+      <id>42916</id>
+      <name>JITIRANA (Néctar) (APICULTURA)</name>
+      <enabled>true</enabled>
+      <variations>
+        <variation>
+          <name>JITIRANA (Néctar) (APICULTURA)</name>
+          <weight>100.0</weight>
+          <case>ci</case>
+          <accent>as</accent>
+          <languages>
+            <language>por</language>
+          </languages>
+        </variation>
+      </variations>
+      <relations>
+        <relation>
+          <id>38217</id>
+          <type>BT</type>
+        </relation>
+      </relations>
+      <attributes />
+    </term>
+    <term>
+      <id>42918</id>
+      <name>BAMBURAL (Néctar) (APICULTURA)</name>
+      <enabled>true</enabled>
+      <variations>
+        <variation>
+          <name>BAMBURAL (Néctar) (APICULTURA)</name>
+          <weight>100.0</weight>
+          <case>ci</case>
+          <accent>as</accent>
+          <languages>
+            <language>por</language>
+          </languages>
+        </variation>
+      </variations>
+      <relations>
+        <relation>
+          <id>38217</id>
+          <type>BT</type>
+        </relation>
+      </relations>
+      <attributes />
+    </term>
+    <term>
+      <id>42920</id>
+      <name>JUREMA (Néctar) (APICULTURA)</name>
+      <enabled>true</enabled>
+      <variations>
+        <variation>
+          <name>JUREMA (Néctar) (APICULTURA)</name>
+          <weight>100.0</weight>
+          <case>ci</case>
+          <accent>as</accent>
+          <languages>
+            <language>por</language>
+          </languages>
+        </variation>
+      </variations>
+      <relations>
+        <relation>
+          <id>38217</id>
+          <type>BT</type>
+        </relation>
+      </relations>
+      <attributes />
+    </term>
+    <term>
+      <id>42922</id>
+      <name>CAMARATUBA (Néctar) (APICULTURA)</name>
+      <enabled>true</enabled>
+      <variations>
+        <variation>
+          <name>CAMARATUBA (Néctar) (APICULTURA)</name>
+          <weight>100.0</weight>
+          <case>ci</case>
+          <accent>as</accent>
+          <languages>
+            <language>por</language>
+          </languages>
+        </variation>
+      </variations>
+      <relations>
+        <relation>
+          <id>38217</id>
+          <type>BT</type>
+        </relation>
+      </relations>
+      <attributes />
+    </term>
+    <term>
+      <id>38233</id>
+      <name>CARQUEJA (Néctar) (APICULTURA)</name>
+      <enabled>true</enabled>
+      <variations>
+        <variation>
+          <name>CARQUEJA (Néctar) (APICULTURA)</name>
+          <weight>100.0</weight>
+          <case>ci</case>
+          <accent>as</accent>
+          <languages>
+            <language>por</language>
+          </languages>
+        </variation>
+      </variations>
+      <relations>
+        <relation>
+          <id>38217</id>
+          <type>BT</type>
+        </relation>
+      </relations>
+      <attributes />
+    </term>
+    <term>
+      <id>38235</id>
+      <name>CATANDUVA (Néctar) (APICULTURA)</name>
+      <enabled>true</enabled>
+      <variations>
+        <variation>
+          <name>CATANDUVA (Néctar) (APICULTURA)</name>
+          <weight>100.0</weight>
+          <case>ci</case>
+          <accent>as</accent>
+          <languages>
+            <language>por</language>
+          </languages>
+        </variation>
+      </variations>
+      <relations>
+        <relation>
+          <id>38217</id>
+          <type>BT</type>
+        </relation>
+      </relations>
+      <attributes />
+    </term>
+    <term>
+      <id>38237</id>
+      <name>CEBOLA (Néctar) (APICULTURA)</name>
+      <enabled>true</enabled>
+      <variations>
+        <variation>
+          <name>CEBOLA (Néctar) (APICULTURA)</name>
+          <weight>100.0</weight>
+          <case>ci</case>
+          <accent>as</accent>
+          <languages>
+            <language>por</language>
+          </languages>
+        </variation>
+      </variations>
+      <relations>
+        <relation>
+          <id>38217</id>
+          <type>BT</type>
+        </relation>
+      </relations>
+      <attributes />
+    </term>
+    <term>
+      <id>38239</id>
+      <name>CIPÓ UVA (Néctar) (APICULTURA)</name>
+      <enabled>true</enabled>
+      <variations>
+        <variation>
+          <name>CIPÓ UVA (Néctar) (APICULTURA)</name>
+          <weight>100.0</weight>
+          <case>ci</case>
+          <accent>as</accent>
+          <languages>
+            <language>por</language>
+          </languages>
+        </variation>
+      </variations>
+      <relations>
+        <relation>
+          <id>38217</id>
+          <type>BT</type>
+        </relation>
+      </relations>
+      <attributes />
+    </term>
+    <term>
+      <id>38241</id>
+      <name>EUCALIPTO (Néctar) (APICULTURA)</name>
+      <enabled>true</enabled>
+      <variations>
+        <variation>
+          <name>EUCALIPTO (Néctar) (APICULTURA)</name>
+          <weight>100.0</weight>
+          <case>ci</case>
+          <accent>as</accent>
+          <languages>
+            <language>por</language>
+          </languages>
+        </variation>
+      </variations>
+      <relations>
+        <relation>
+          <id>38217</id>
+          <type>BT</type>
+        </relation>
+      </relations>
+      <attributes />
+    </term>
+    <term>
+      <id>38243</id>
+      <name>LARANJEIRA (Néctar) (APICULTURA)</name>
+      <enabled>true</enabled>
+      <variations>
+        <variation>
+          <name>LARANJEIRA (Néctar) (APICULTURA)</name>
+          <weight>100.0</weight>
+          <case>ci</case>
+          <accent>as</accent>
+          <languages>
+            <language>por</language>
+          </languages>
+        </variation>
+      </variations>
+      <relations>
+        <relation>
+          <id>38217</id>
+          <type>BT</type>
+        </relation>
+      </relations>
+      <attributes />
+    </term>
+    <term>
+      <id>38245</id>
+      <name>MAÇÃ (Néctar) (APICULTURA)</name>
+      <enabled>true</enabled>
+      <variations>
+        <variation>
+          <name>MAÇÃ (Néctar) (APICULTURA)</name>
+          <weight>100.0</weight>
+          <case>ci</case>
+          <accent>as</accent>
+          <languages>
+            <language>por</language>
+          </languages>
+        </variation>
+      </variations>
+      <relations>
+        <relation>
+          <id>38217</id>
+          <type>BT</type>
+        </relation>
+      </relations>
+      <attributes />
+    </term>
+    <term>
+      <id>38247</id>
+      <name>MARMELEIRO (Néctar) (APICULTURA)</name>
+      <enabled>true</enabled>
+      <variations>
+        <variation>
+          <name>MARMELEIRO (Néctar) (APICULTURA)</name>
+          <weight>100.0</weight>
+          <case>ci</case>
+          <accent>as</accent>
+          <languages>
+            <language>por</language>
+          </languages>
+        </variation>
+      </variations>
+      <relations>
+        <relation>
+          <id>38217</id>
+          <type>BT</type>
+        </relation>
+      </relations>
+      <attributes />
+    </term>
+    <term>
+      <id>38249</id>
+      <name>MELÃO (Néctar) (APICULTURA)</name>
+      <enabled>true</enabled>
+      <variations>
+        <variation>
+          <name>MELÃO (Néctar) (APICULTURA)</name>
+          <weight>100.0</weight>
+          <case>ci</case>
+          <accent>as</accent>
+          <languages>
+            <language>por</language>
+          </languages>
+        </variation>
+      </variations>
+      <relations>
+        <relation>
+          <id>38217</id>
+          <type>BT</type>
+        </relation>
+        <relation>
+          <id>39523</id>
+          <type>RT</type>
+        </relation>
+      </relations>
+      <attributes />
+    </term>
+    <term>
+      <id>38252</id>
+      <name>MORANGO (Néctar) (APICULTURA)</name>
+      <enabled>true</enabled>
+      <variations>
+        <variation>
+          <name>MORANGO (Néctar) (APICULTURA)</name>
+          <weight>100.0</weight>
+          <case>ci</case>
+          <accent>as</accent>
+          <languages>
+            <language>por</language>
+          </languages>
+        </variation>
+      </variations>
+      <relations>
+        <relation>
+          <id>38217</id>
+          <type>BT</type>
+        </relation>
+      </relations>
+      <attributes />
+    </term>
+    <term>
+      <id>38254</id>
+      <name>PÊSSEGO (Néctar) (APICULTURA)</name>
+      <enabled>true</enabled>
+      <variations>
+        <variation>
+          <name>PÊSSEGO (Néctar) (APICULTURA)</name>
+          <weight>100.0</weight>
+          <case>ci</case>
+          <accent>as</accent>
+          <languages>
+            <language>por</language>
+          </languages>
+        </variation>
+      </variations>
+      <relations>
+        <relation>
+          <id>38217</id>
+          <type>BT</type>
+        </relation>
+      </relations>
+      <attributes />
+    </term>
+    <term>
+      <id>38256</id>
+      <name>VASSOURINHA-DE-BOTÃO (Néctar) (APICULTURA)</name>
+      <enabled>true</enabled>
+      <variations>
+        <variation>
+          <name>VASSOURINHA-DE-BOTÃO (Néctar) (APICULTURA)</name>
+          <weight>100.0</weight>
+          <case>ci</case>
+          <accent>as</accent>
+          <languages>
+            <language>por</language>
+          </languages>
+        </variation>
+      </variations>
+      <relations>
+        <relation>
+          <id>38217</id>
+          <type>BT</type>
+        </relation>
+      </relations>
+      <attributes />
+    </term>
+    <term>
+      <id>38260</id>
+      <name>HORTELÃZINHO (Néctar) (APICULTURA)</name>
+      <enabled>true</enabled>
+      <variations>
+        <variation>
+          <name>HORTELÃZINHO (Néctar) (APICULTURA)</name>
+          <weight>100.0</weight>
+          <case>ci</case>
+          <accent>as</accent>
+          <languages>
+            <language>por</language>
+          </languages>
+        </variation>
+      </variations>
+      <relations>
+        <relation>
+          <id>38217</id>
+          <type>BT</type>
+        </relation>
+      </relations>
+      <attributes />
+    </term>
+    <term>
+      <id>38262</id>
+      <name>CONTROLE DA QUALIDADE (Certificação da qualidade) (APICULTURA)</name>
+      <enabled>true</enabled>
+      <variations>
+        <variation>
+          <name>CONTROLE DA QUALIDADE (Certificação da qualidade) (APICULTURA)</name>
+          <weight>100.0</weight>
+          <case>ci</case>
+          <accent>as</accent>
+          <languages>
+            <language>por</language>
+          </languages>
+        </variation>
+      </variations>
+      <relations>
+        <relation>
+          <id>38177</id>
+          <type>BT</type>
+        </relation>
+      </relations>
+      <attributes />
+    </term>
+    <term>
+      <id>38264</id>
+      <name>ABELHA AFRICANA (APICULTURA)</name>
+      <enabled>true</enabled>
+      <variations>
+        <variation>
+          <name>ABELHA AFRICANA (APICULTURA)</name>
+          <weight>100.0</weight>
+          <case>ci</case>
+          <accent>as</accent>
+          <languages>
+            <language>por</language>
+          </languages>
+        </variation>
+      </variations>
+      <relations>
+        <relation>
+          <id>646</id>
+          <type>UF</type>
+        </relation>
+        <relation>
+          <id>660</id>
+          <type>UF</type>
+        </relation>
+        <relation>
+          <id>661</id>
+          <type>UF</type>
+        </relation>
+        <relation>
+          <id>662</id>
+          <type>UF</type>
+        </relation>
+        <relation>
+          <id>663</id>
+          <type>UF</type>
+        </relation>
+        <relation>
+          <id>46794</id>
+          <type>BT</type>
+        </relation>
+      </relations>
+      <attributes />
+    </term>
+    <term>
+      <id>38266</id>
+      <name>ABELHA ARAPUÁ (APICULTURA)</name>
+      <enabled>true</enabled>
+      <variations>
+        <variation>
+          <name>ABELHA ARAPUÁ (APICULTURA)</name>
+          <weight>100.0</weight>
+          <case>ci</case>
+          <accent>as</accent>
+          <languages>
+            <language>por</language>
+          </languages>
+        </variation>
+      </variations>
+      <relations>
+        <relation>
+          <id>38185</id>
+          <type>BT</type>
+        </relation>
+        <relation>
+          <id>46794</id>
+          <type>RT</type>
+        </relation>
+      </relations>
+      <attributes />
+    </term>
+    <term>
+      <id>38268</id>
+      <name>ABELHA BORÁ (APICULTURA)</name>
+      <enabled>true</enabled>
+      <variations>
+        <variation>
+          <name>ABELHA BORÁ (APICULTURA)</name>
+          <weight>100.0</weight>
+          <case>ci</case>
+          <accent>as</accent>
+          <languages>
+            <language>por</language>
+          </languages>
+        </variation>
+      </variations>
+      <relations>
+        <relation>
+          <id>38185</id>
+          <type>BT</type>
+        </relation>
+        <relation>
+          <id>46794</id>
+          <type>RT</type>
+        </relation>
+      </relations>
+      <attributes />
+    </term>
+    <term>
+      <id>38270</id>
+      <name>ABELHA BRASILEIRA (APICULTURA)</name>
+      <enabled>true</enabled>
+      <variations>
+        <variation>
+          <name>ABELHA BRASILEIRA (APICULTURA)</name>
+          <weight>100.0</weight>
+          <case>ci</case>
+          <accent>as</accent>
+          <languages>
+            <language>por</language>
+          </languages>
+        </variation>
+      </variations>
+      <relations>
+        <relation>
+          <id>664</id>
+          <type>UF</type>
+        </relation>
+        <relation>
+          <id>38185</id>
+          <type>BT</type>
+        </relation>
+        <relation>
+          <id>46794</id>
+          <type>RT</type>
+        </relation>
+      </relations>
+      <attributes />
+    </term>
+    <term>
+      <id>38272</id>
+      <name>ABELHA CARNICA (APICULTURA)</name>
+      <enabled>true</enabled>
+      <variations>
+        <variation>
+          <name>ABELHA CARNICA (APICULTURA)</name>
+          <weight>100.0</weight>
+          <case>ci</case>
+          <accent>as</accent>
+          <languages>
+            <language>por</language>
+          </languages>
+        </variation>
+      </variations>
+      <relations>
+        <relation>
+          <id>38185</id>
+          <type>BT</type>
+        </relation>
+        <relation>
+          <id>46794</id>
+          <type>RT</type>
+        </relation>
+      </relations>
+      <attributes />
+    </term>
+    <term>
+      <id>38274</id>
+      <name>ABELHA CAUCASIANA (APICULTURA)</name>
+      <enabled>true</enabled>
+      <variations>
+        <variation>
+          <name>ABELHA CAUCASIANA (APICULTURA)</name>
+          <weight>100.0</weight>
+          <case>ci</case>
+          <accent>as</accent>
+          <languages>
+            <language>por</language>
+          </languages>
+        </variation>
+      </variations>
+      <relations>
+        <relation>
+          <id>38185</id>
+          <type>BT</type>
+        </relation>
+        <relation>
+          <id>46794</id>
+          <type>RT</type>
+        </relation>
+      </relations>
+      <attributes />
+    </term>
+    <term>
+      <id>38276</id>
+      <name>ABELHA EUROPÉIA (APICULTURA)</name>
+      <enabled>true</enabled>
+      <variations>
+        <variation>
+          <name>ABELHA EUROPÉIA (APICULTURA)</name>
+          <weight>100.0</weight>
+          <case>ci</case>
+          <accent>as</accent>
+          <languages>
+            <language>por</language>
+          </languages>
+        </variation>
+      </variations>
+      <relations>
+        <relation>
+          <id>38185</id>
+          <type>BT</type>
+        </relation>
+        <relation>
+          <id>38290</id>
+          <type>NT</type>
+        </relation>
+        <relation>
+          <id>38292</id>
+          <type>NT</type>
+        </relation>
+      </relations>
+      <attributes />
+    </term>
+    <term>
+      <id>38278</id>
+      <name>ABELHA INDÍGENA (APICULTURA)</name>
+      <enabled>true</enabled>
+      <variations>
+        <variation>
+          <name>ABELHA INDÍGENA (APICULTURA)</name>
+          <weight>100.0</weight>
+          <case>ci</case>
+          <accent>as</accent>
+          <languages>
+            <language>por</language>
+          </languages>
+        </variation>
+      </variations>
+      <relations>
+        <relation>
+          <id>38185</id>
+          <type>BT</type>
+        </relation>
+      </relations>
+      <attributes />
+    </term>
+    <term>
+      <id>38280</id>
+      <name>ABELHA JANDAÍRA (APICULTURA)</name>
+      <enabled>true</enabled>
+      <variations>
+        <variation>
+          <name>ABELHA JANDAÍRA (APICULTURA)</name>
+          <weight>100.0</weight>
+          <case>ci</case>
+          <accent>as</accent>
+          <languages>
+            <language>por</language>
+          </languages>
+        </variation>
+      </variations>
+      <relations>
+        <relation>
+          <id>38185</id>
+          <type>BT</type>
+        </relation>
+      </relations>
+      <attributes />
+    </term>
+    <term>
+      <id>38282</id>
+      <name>ABELHA JATAÍ (APICULTURA)</name>
+      <enabled>true</enabled>
+      <variations>
+        <variation>
+          <name>ABELHA JATAÍ (APICULTURA)</name>
+          <weight>100.0</weight>
+          <case>ci</case>
+          <accent>as</accent>
+          <languages>
+            <language>por</language>
+          </languages>
+        </variation>
+      </variations>
+      <relations>
+        <relation>
+          <id>38185</id>
+          <type>BT</type>
+        </relation>
+      </relations>
+      <attributes />
+    </term>
+    <term>
+      <id>38284</id>
+      <name>ABELHA MANDAÇAIA (APICULTURA)</name>
+      <enabled>true</enabled>
+      <variations>
+        <variation>
+          <name>ABELHA MANDAÇAIA (APICULTURA)</name>
+          <weight>100.0</weight>
+          <case>ci</case>
+          <accent>as</accent>
+          <languages>
+            <language>por</language>
+          </languages>
+        </variation>
+      </variations>
+      <relations>
+        <relation>
+          <id>38185</id>
+          <type>BT</type>
+        </relation>
+      </relations>
+      <attributes />
+    </term>
+    <term>
+      <id>49204</id>
+      <name>TABELAS AUXILIARES (APICULTURA)</name>
+      <enabled>true</enabled>
+      <variations>
+        <variation>
+          <name>TABELAS AUXILIARES (APICULTURA)</name>
+          <weight>100.0</weight>
+          <case>ci</case>
+          <accent>as</accent>
+          <languages>
+            <language>por</language>
+          </languages>
+        </variation>
+      </variations>
+      <relations />
+      <attributes />
+    </term>
+  </terms>
+</authorityFile>
