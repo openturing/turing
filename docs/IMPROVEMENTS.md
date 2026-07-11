@@ -2255,39 +2255,3 @@ not a second call site.
 > with on-select dimension + reindex warnings and an ONNX variant/quantization
 > choice, and the default-RAG startup provisioning now seeds an HF repo id.
 
-## XXXVII. Security hardening — post-audit (Block AN)
-
-> A full-surface security review (2026-07-10) assuming a client exercises 100% of
-> the product: the anonymous SN chat/search path, admin config, connectors, MCP
-> (inbound server + agent-as-client), pluggable storage, export/import ZIPs, and
-> custom Groovy/HTTP/code-interpreter tools. Findings below carry a
-> **CONFIRMED** (read the code, clearly reachable) vs **POTENTIAL** (real gap,
-> reachability hinges on an un-inspected external jar or a config toggle) marker.
-> Each task is *analyse-then-fix*. Two structural multipliers make several
-> findings worse than they read in isolation: (a) `turing.permissions=false` is
-> the shipped default, which turns any authenticated principal into a super-admin
-> (§XXXVII.4) — so "admin-gated" ≈ "any authenticated user"; and (b) the
-> anonymous public chat/search path is `permitAll` by design and leans entirely
-> on a reverse proxy for abuse control that the shipped nginx config does not
-> provide (§XXXVII.3). Nothing here is a false alarm about the good controls that
-> *do* exist — BCrypt, write-only encrypted provider secrets, the LLM-HTML
-> iframe sandbox (`allow-scripts` without `allow-same-origin`), HttpOnly +
-> double-submit CSRF, react-markdown without `rehype-raw`, static-JPQL queries,
-> no XXE / native-deserialization / TLS-bypass, and the `TurFileUtils` egress
-> guard — were all verified present and are called out so they are not "fixed"
-> away.
-
-**XXXVII.15 — Frontend XSS surface (MEDIUM/LOW, POTENTIAL).** There is no client-side
-HTML sanitiser (no DOMPurify) anywhere, so every `dangerouslySetInnerHTML` relies on
-the backend. Search result `title`/`description` are injected raw in
-`result-card.tsx:99,109,122` (inside the authenticated admin console, sharing the
-session cookie) for `<mark>` highlighting — if the search-engine highlighter does
-not HTML-escape field content before wrapping matches, a poisoned indexed document
-is stored XSS into the admin session (POTENTIAL, hinges on backend highlighter). The
-Gemini `renderedContent` fragment is injected raw + un-sandboxed into the console
-(`chat-message-list.tsx:219`), and LLM-driven D2 SVG is injected post-compile with no
-sanitisation (`TuringD2Diagram.tsx:181`, low). Fix: confirm/enforce backend escaping
-+ a client sanitiser allowing only `<mark>`-style markup, sanitise/sandbox the Gemini
-fragment, optionally post-sanitise the D2 SVG. (The LLM ```html sandbox, markdown
-prose, vanilla SDK, and CSRF handling were all verified safe — do not regress them.)
-

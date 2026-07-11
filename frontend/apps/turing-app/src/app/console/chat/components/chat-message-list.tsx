@@ -2,6 +2,7 @@ import { useState } from "react"
 import { Icon } from "@iconify/react"
 import { GradientAvatar, GradientAvatarFallback, GradientAvatarImage } from "@/components/ui/gradient-avatar"
 import { useCurrentUser } from "@/contexts/user.context"
+import { sanitizeFragment } from "@/lib/sanitize-html"
 import { IconAlertTriangle, IconArrowsMinimize, IconBulb, IconCheck, IconChevronDown, IconCopy, IconCpu2, IconFile, IconFileText, IconLoader2, IconThumbDown, IconThumbUp, IconTool, IconUser } from "@tabler/icons-react"
 import { TuringChatMessage, TuringCitedAnswer, TuringCopyButton, TuringD2Diagram, TuringMarkdown, TuringRichContent, TuringSourceChips, TuringToolActivity, type TuringCitedMark } from "@viglet/turing-react-sdk"
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card"
@@ -212,11 +213,13 @@ function SearchSuggestions({ message }: Readonly<{ message: ChatMessage }>) {
         {t("chat.searchSuggestions.heading")}
       </div>
       {rendered ? (
-        // Google-mandated chips: a self-contained HTML/CSS fragment rendered as-is.
+        // Google-mandated chips: a self-contained HTML/CSS fragment. Sanitised
+        // (T653 / §XXXVII.15) to strip script/iframe/event-handlers/js: URLs
+        // while preserving the chip markup + inline styles Google requires.
         // eslint-disable-next-line react/no-danger
         <div
           className="overflow-x-auto"
-          dangerouslySetInnerHTML={{ __html: rendered }}
+          dangerouslySetInnerHTML={{ __html: sanitizeFragment(rendered) }}
         />
       ) : (
         <div className="flex flex-wrap gap-1.5">

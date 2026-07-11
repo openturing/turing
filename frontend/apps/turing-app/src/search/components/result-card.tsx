@@ -1,4 +1,5 @@
 import { BadgeColorful } from "@/components/badge-colorful";
+import { sanitizeHighlight } from "@/lib/sanitize-html";
 import { Button } from "@/components/ui/button";
 import type { ResolvedDocument, TurDocument } from "@viglet/turing-react-sdk";
 import { useTuringClickTracking } from "@viglet/turing-react-sdk";
@@ -96,7 +97,7 @@ export function ResultCard({ document: doc, raw, siteName, position, defaultImag
                 to={doc.url}
                 onClick={handleResultClick}
                 className="text-foreground hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
-                dangerouslySetInnerHTML={{ __html: doc.title || doc.url }}
+                dangerouslySetInnerHTML={{ __html: sanitizeHighlight(doc.title || doc.url) }}
               />
             ) : (
               <a
@@ -106,7 +107,7 @@ export function ResultCard({ document: doc, raw, siteName, position, defaultImag
                 target="_blank"
                 rel="noopener noreferrer"
               >
-                <span dangerouslySetInnerHTML={{ __html: doc.title || doc.url }} />
+                <span dangerouslySetInnerHTML={{ __html: sanitizeHighlight(doc.title || doc.url) }} />
                 <IconExternalLink className="size-3.5 shrink-0 opacity-40" />
               </a>
             )}
@@ -119,7 +120,7 @@ export function ResultCard({ document: doc, raw, siteName, position, defaultImag
           {doc.description && (
             <p
               className="text-sm text-muted-foreground leading-relaxed mb-3 line-clamp-2"
-              dangerouslySetInnerHTML={{ __html: doc.description }}
+              dangerouslySetInnerHTML={{ __html: sanitizeHighlight(doc.description) }}
             />
           )}
 

@@ -71,20 +71,6 @@
 - 💭 **T480** (deps: T477) **Hosted "try it free" path via Viglet Cloud** — dual-path CTA (self-host docs + hosted sandbox) so visitors who won't install still reach first value. → §XXVII.3
 - 💭 **T481** (deps: real design partners) **Social-proof surface** — adopters/logos, testimonials, quantified case studies (Dify model). Never fabricated. → §XXVII.3
 
-## Block AN — Security hardening (post-audit, 2026-07-10)
-
-> From a full-surface security review assuming a client exercises 100% of the
-> product (all anonymous SN chat/search, admin config, connectors, MCP, storage,
-> imports, custom tools). Findings + CONFIRMED/POTENTIAL status and evidence in
-> [IMPROVEMENTS.md](IMPROVEMENTS.md) §XXXVII. Each task is *analyse-then-fix*:
-> confirm the reachability caveat noted, then remediate. Ordered by severity.
-> The three 🔴 critical items (live-secret / anonymous-data / anonymous-cost
-> exposures — T639/T640/T641) have all shipped; all 🟠 High items have shipped
-> too — the 🟡 Medium/Low items remain.
-
-**🟡 Medium / Low:**
-- 💭 **T653** (deps: —) **Frontend XSS surface** — confirm & enforce that the search-engine highlighter HTML-escapes field content before it reaches the `dangerouslySetInnerHTML` result-card (rendered inside the authenticated admin console); add a client sanitiser allowing only `<mark>`-style markup; sanitise/sandbox the Gemini `renderedContent` fragment injected raw into the console; optionally post-sanitise the LLM-driven D2 SVG. → §XXXVII.15
-
 ## Non-goals (do NOT add as tasks)
 
 Binding constraints — see [IMPROVEMENTS.md](IMPROVEMENTS.md) §I.6 (What NOT to
