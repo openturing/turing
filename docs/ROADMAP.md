@@ -68,41 +68,8 @@
 > [CHANGELOG.md](CHANGELOG.md) → Block AB. Remaining (the defining bets):
 
 - ⏳ **T477** (deps: T451–T457) **Public read-only demo instance behind the site** — ⏳ infra **shipped in `viglet/cloud`** (`docker compose --profile demo`: `turing-demo` + isolated `solr-demo`, anonymous/no-Keycloak, ephemeral tmpfs store wiped on reset, hardened, nginx deny-by-default allowlist + per-IP rate limits on `turing-demo.viglet.org`, periodic systemd reset; see `docker/DEMO.md`). **Seeding + LLM now automatic (T620):** `turing-demo` mounts `docker/demo-seed/` at `/app/export` so Turing auto-imports the seed ZIPs on boot, and `OPENAI_API_KEY` self-provisions the default LLM instance. **Seed sources committed:** `demo-seed-src/mythical-creatures` + `demo-seed-src/turing-docs` (T483). **Live as of 2026-07-10** — deployed at `https://turing-demo.viglet.org` (DNS + TLS resolved; `/api/sn/names` serves the seeded `mythical-creatures` + `turing-docs`). **Pending (host):** set the demo agent's budget cap. It backs the hero + marketplace demos (T478 ✅). → §XXVII.2
-- ✅ **T479** (deps: T474 ✅) **"Switching from Algolia / Elasticsearch?" migration landing** — prerendered `/migrate` page: concept-mapping table (Algolia/Elasticsearch → Turing) + three-step import path + "your data stays in your infra" angle (Meilisearch/Supabase pattern). → CHANGELOG Block AB — 2026-07-10
 - 💭 **T480** (deps: T477) **Hosted "try it free" path via Viglet Cloud** — dual-path CTA (self-host docs + hosted sandbox) so visitors who won't install still reach first value. → §XXVII.3
 - 💭 **T481** (deps: real design partners) **Social-proof surface** — adopters/logos, testimonials, quantified case studies (Dify model). Never fabricated. → §XXVII.3
-- ✅ **T482** (deps: T474 ✅) **Deep comparison / FAQ pages** — prerendered `/compare` page: 4-way capability matrix (Turing vs Algolia vs Elasticsearch vs DIY LangChain), honest "where each wins / where Turing fits" cards, and an objection-answering FAQ with FAQPage JSON-LD. → CHANGELOG Block AB — 2026-07-10
-- ✅ **T484** (deps: T477, T478 ✅) **Real facets + autocomplete + spell-check in the hero search** — swapped the sample facet chips for live `widget.facet` groups, keystroke `createAutoComplete`, and "did you mean" spell-check, all via the SDK; the demo now dogfoods `createSearchController` in a new search-only mode (`chat:false`) so it shows production search depth without an LLM call per keystroke. → CHANGELOG Block AB — 2026-07-10
-- ✅ **T632** (deps: T631 ✅) **D2 diagrams in the playground chat** — wired `TuringD2Diagram` (lazy `@terrastruct/d2`, code-split into its own chunk, only fetched when a ```d2 block appears) into the site demo's `TuringRichContent` so ```d2 answers render as diagrams instead of a code fence. Also taught the agent export/import round-trip to carry `richContentEnabled` (was silently dropped) and flipped it `true` on the demo agent in the `viglet/cloud` seed bundle, so the live demo emits ```d2 blocks with no manual admin toggle. → CHANGELOG Block AB — 2026-07-10
-
-### Persona-adaptive & content-validation demo (site-driven product evolution) → §XXVII.4
-
-> Surfaced by the marketing playground: the PoC-validated Persona + ChatFlow
-> story. Personas + content-fit are fully built (`TurPersona`,
-> `TurPersonaContentFitEvaluator`) but only reachable admin-secured; these tasks
-> expose the minimum anonymously (catalog-restricted, rate-limited) so the public
-> demo can show "same question, different eyes" + "validate content as persona X".
-
-- ✅ **T633** (deps: —) **Anonymous persona selection on the public SN chat** — optional `personaId` on `/api/sn/{site}/chat/conversation` (+ `flow-select`), **validated against the effective agent's persona catalog** (unknown → default, never an arbitrary persona); sets `__activePersonaId` so the existing resolver speaks as it. Enables per-request persona switching on the read-only path without flow authoring. → CHANGELOG Block AB — 2026-07-10
-- ✅ **T634** (deps: —) **Guest persona content-fit endpoint** — public `POST /api/sn/{site}/persona/{personaId}/content-fit` fronting `TurPersonaContentFitEvaluator`, persona restricted to the site agent's catalog, **input-size-capped + nginx rate-limited** (it's an LLM-cost/abuse surface — mirror the chat guard in `docker/DEMO.md`). Returns fit % + condiz/não condiz + flagged spans. Powers the "validate content as persona X" demo. → CHANGELOG Block AB — 2026-07-10
-- ✅ **T635** (deps: T633, T634) **SDK persona surface** — expose persona selection in site-mode chat (pass `personaId`) + a `fetchPersonaContentFit(...)` call in `@viglet/turing-sdk` (and re-export via react-sdk); add `TurPersonaOption` / `TurContentFit` types. → CHANGELOG Block AB — 2026-07-10
-- ✅ **T636** (deps: T635) **Headless persona UI in react-ui** — design-agnostic `TuringPersonaPicker` + `TuringContentFit` (verdict/fit-bar/flagged-spans) in `@viglet/turing-react-ui`, skinnable, reused by admin + site. → CHANGELOG Block AB — 2026-07-10
-- ✅ **T637** (deps: T633) **Seed demo personas** — provision a small persona set (e.g. Skeptical Developer · Enterprise Buyer · First-time User; mix of SPEAKER + AUDIENCE) into the `turing-docs` demo bound to the demo agent's catalog (`viglet/cloud` seed / startup provisioning). → CHANGELOG Block AB — 2026-07-10
-- ✅ **T638** (deps: T635, T636, T637) **Persona in the playground** — a Persona selector on the Ask tab ("same question, different eyes") + a "Validate this content for persona X" mode, dogfooding the T636 components. → CHANGELOG Block AB — 2026-07-10
-
-## Block AG — Bento UI: complete the interface migration (100%)
-
-> A Bento (iOS-flavored frosted-glass mosaic) redesign of the admin. Phases 0–4
-> shipped (T547–T568, T573, T576) — every console CRUD/functional/admin surface
-> now exists in `/bento`; see [CHANGELOG.md](CHANGELOG.md) → Block AG. Design +
-> full screen inventory → [IMPROVEMENTS.md](IMPROVEMENTS.md) §XXXI. Remaining is
-> the cutover & retirement phase:
-
-**Phase 5 — cutover & retirement:** Block AG's committed scope (T547–T571), the
-T572 delight-polish follow-up, and the T619 persona-parity follow-up are all
-**complete** — cutover done, console retired, full a11y/responsive/perf/e2e pass
-passed, onboarding polish shipped, and the two console-only persona tools
-(from-audio authoring + persona-suggest) re-added to bento. Block AG is closed.
 
 ## Block AN — Security hardening (post-audit, 2026-07-10)
 
@@ -135,36 +102,6 @@ passed, onboarding polish shipped, and the two console-only persona tools
 - 💭 **T652** (deps: —) **Config & logging hygiene** — remove committed MinIO creds (`application.yaml:116` `admin`/`minha_senha_forte`, purge from history); keep the H2 console off and drop `web.ignoring("/h2/**")` + `web-allow-others: true`; redact the secret-preview + human-approval capability-token INFO logs; constrain the anonymous self-registration / signup arbitrary-username paths. → §XXXVII.14
 - 📋 **T654** (deps: —) **Triage & patch dependency CVEs (Dependabot)** — GitHub Dependabot reports 13 open advisories on the default branch (7 high · 3 moderate · 3 low) across the backend + frontend dependency trees. Triage each against actual usage (reachable vs transitive-only), bump/override the affected coordinates, and wire a CI gate (`mvn` + `pnpm audit` / Dependabot auto-merge policy) so new highs fail the build. Separate from the code-level findings above but part of the same full-product exposure. → §XXXVII.16
 - 💭 **T653** (deps: —) **Frontend XSS surface** — confirm & enforce that the search-engine highlighter HTML-escapes field content before it reaches the `dangerouslySetInnerHTML` result-card (rendered inside the authenticated admin console); add a client sanitiser allowing only `<mark>`-style markup; sanitise/sandbox the Gemini `renderedContent` fragment injected raw into the console; optionally post-sanitise the LLM-driven D2 SVG. → §XXXVII.15
-
-## Block AO — Migration tooling (Algolia / Elasticsearch → Turing)
-
-> Turns the "Switching from Algolia / Elasticsearch?" funnel (T479 ✅, §XXVII.3)
-> from a documented *manual* path into real product tooling. Today the hard part
-> is step 2 — hand-translating index settings/mappings into a field manifest and
-> reshaping every record into an SN job item. These tasks automate that on top of
-> the existing manifest provisioner (T382/T386) + import API. Design → §XXXVIII.
-
-- ✅ **T657** (deps: T382 ✅, T386 ✅) **Elasticsearch index importer** — backend seam `POST /api/sn/migrate/elasticsearch`: reads a source ES index's `_mapping` and deterministically converts it to a field manifest (ES types → `TurSEFieldType`; `keyword`-family/`boolean` → `facet:true`; `object`/`nested` → dotted names; unsupported types warned), then scrolls `_search` and maps each `_source` → SN job item → batched import + COMMIT via the shared manifest provisioner. URL + credentials + index only (no proprietary SDK). → CHANGELOG Block AO — 2026-07-10
-- ✅ **T658** (deps: T657 ✅, T387 ✅) **Algolia index importer** — `POST /api/sn/migrate/algolia`: settings (`searchableAttributes`/`attributesForFaceting`/`customRanking`) overlay a sample-derived manifest (T387 heuristics or LLM), records browse-imported (`objectID` → id) via the shared importer; synonyms surfaced (count + guidance) since Turing has no synonym API yet (→ Block AP). → CHANGELOG Block AO — 2026-07-10
-- ✅ **T659** (deps: T657 ✅, T658 ✅, T125 ✅) **CLI `turing migrate` command** — `turing migrate elasticsearch|algolia …` in the zero-dep `@viglet/turing-cli`, wrapping the T657/T658 seams via `TuringClient`; `--dry-run` previews the derived manifest. The migration guide's real "step 2". → CHANGELOG Block AO — 2026-07-10
-- ✅ **T660** (deps: T657 ✅) **Field-mapping override layer** — optional `overrides` on both migration requests (+ CLI `--overrides-file`): per-field rename / retype / drop / default applied to both the derived manifest and every document via the pure `TurMigrationOverrides`. → CHANGELOG Block AO — 2026-07-10
-- ✅ **T661** (deps: T657 ✅) **Shadow / dual-run comparison** — `POST /api/sn/migrate/compare` (+ CLI `turing migrate compare --queries-file`): runs a query set against the source engine and the migrated SN site and diffs top-N result sets (Jaccard overlap, source recall, top-1 match) so a team can measure relevance parity before cutover. → CHANGELOG Block AO — 2026-07-10
-
-## Block AP — Native synonyms & query expansion (parity+ with Algolia)
-
-> **Block complete (T662–T667)** — see [CHANGELOG.md](CHANGELOG.md) → Block AP.
-> Turing gained an engine-agnostic, **query-time** synonym model (author once →
-> pushed into Solr/ES/Lucene with no reindex), a **friendly bento admin UI**, an
-> Algolia importer that closes the migration loop, and — past parity — AI-assisted
-> synonym mining over Turing's embeddings. Only the optional semantic
-> query-expansion-at-search-time (part of T667) remains as a possible follow-up.
-
-- ✅ **T662** (deps: —) **Synonym model + management API (engine-agnostic source of truth)** — `TurSNSynonym` per SN site **and locale**, `type` {REGULAR, ONE_WAY, ALTERNATIVE_CORRECTION_1/2, PLACEHOLDER}, term-set / input+expansions / correction pair, `enabled`; Liquibase; CRUD + batch + search REST. The neutral store the engines apply and the Algolia importer writes into. → CHANGELOG Block AP
-- ✅ **T663** (deps: T662) **Search-engine plugin synonym seam + Solr query-time impl** — `TurSearchEnginePlugin.applySynonyms(seInstance, indexName, locale, rules)` + `supportsSynonyms()`; Solr managed-synonyms REST + core reload wired as a **query-time** `SynonymGraphFilter` so edits need **no reindex** (Algolia's model). → CHANGELOG Block AP
-- ✅ **T664** (deps: T662, T663) **Elasticsearch synonym impl** — the Synonyms API / `synonym_graph` filter on the query analyzer (search-time, updatable without reindex). → CHANGELOG Block AP
-- ✅ **T665** (deps: T662, T663) **Lucene synonym impl** — query-time `SynonymGraphFilter` from a Lucene `SynonymMap` over the embedded store; regular + one-way natural, corrections degrade to one-way + warning, placeholder **surfaced as unsupported** (honest Lucene-limits caveat) not silently dropped. → CHANGELOG Block AP
-- ✅ **T666** (deps: T662, T658 ✅) **Friendly synonyms admin UI + "Import from Algolia"** — a **bento** page to manage synonyms per site/locale: per-type editor (chip set for terms, input→expansions for directional types), enable/disable toggle, engine-support banner, push-to-engine action, and a **one-click import** that maps the Algolia synonyms fetched by T658 into the model — closing the migration loop. React-Query `queries/` + service + bento scaffold. → CHANGELOG Block AP
-- ✅ **T667** (deps: T662) **AI-assisted synonym mining (better-than-Algolia)** — cluster query-log terms by embedding proximity into candidate sets proposed for human review (returned disabled, never auto-applied). Semantic query-expansion-at-search-time remains an optional future follow-up. → CHANGELOG Block AP
 
 ## Non-goals (do NOT add as tasks)
 
