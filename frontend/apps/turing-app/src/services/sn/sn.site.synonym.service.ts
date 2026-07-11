@@ -25,6 +25,19 @@ export class TurSNSiteSynonymService {
     return response.data;
   }
 
+  async batch(siteId: string, synonyms: TurSNSynonym[]): Promise<TurSNSynonym[]> {
+    const response = await axios.post<TurSNSynonym[]>(`/sn/${siteId}/synonym/batch`, synonyms);
+    return response.data;
+  }
+
+  /** AI-assisted mining: candidate sets from the search log (never auto-applied). */
+  async mine(siteId: string, locale: string, limit = 100): Promise<TurSNSynonym[]> {
+    const response = await axios.post<TurSNSynonym[]>(`/sn/${siteId}/synonym/mine`, null, {
+      params: { locale, limit },
+    });
+    return response.data;
+  }
+
   async update(siteId: string, id: string, synonym: TurSNSynonym): Promise<TurSNSynonym> {
     const response = await axios.put<TurSNSynonym>(`/sn/${siteId}/synonym/${id}`, synonym);
     return response.data;

@@ -152,19 +152,19 @@ passed, onboarding polish shipped, and the two console-only persona tools
 
 ## Block AP — Native synonyms & query expansion (parity+ with Algolia)
 
-> The Algolia importer (T658) can only *surface* an index's synonyms because Turing
-> has no synonym subsystem to import them into. Synonyms are table stakes for
-> enterprise search; this block gives Turing an engine-agnostic, **query-time**
-> synonym model (author once → pushed into Solr/ES/Lucene), a **friendly admin UI**,
-> an Algolia importer that closes the migration loop, and — past parity — AI-assisted
-> synonym mining over Turing's embeddings. Design → §XXXIX.
+> **Block complete (T662–T667)** — see [CHANGELOG.md](CHANGELOG.md) → Block AP.
+> Turing gained an engine-agnostic, **query-time** synonym model (author once →
+> pushed into Solr/ES/Lucene with no reindex), a **friendly bento admin UI**, an
+> Algolia importer that closes the migration loop, and — past parity — AI-assisted
+> synonym mining over Turing's embeddings. Only the optional semantic
+> query-expansion-at-search-time (part of T667) remains as a possible follow-up.
 
 - ✅ **T662** (deps: —) **Synonym model + management API (engine-agnostic source of truth)** — `TurSNSynonym` per SN site **and locale**, `type` {REGULAR, ONE_WAY, ALTERNATIVE_CORRECTION_1/2, PLACEHOLDER}, term-set / input+expansions / correction pair, `enabled`; Liquibase; CRUD + batch + search REST. The neutral store the engines apply and the Algolia importer writes into. → CHANGELOG Block AP
 - ✅ **T663** (deps: T662) **Search-engine plugin synonym seam + Solr query-time impl** — `TurSearchEnginePlugin.applySynonyms(seInstance, indexName, locale, rules)` + `supportsSynonyms()`; Solr managed-synonyms REST + core reload wired as a **query-time** `SynonymGraphFilter` so edits need **no reindex** (Algolia's model). → CHANGELOG Block AP
 - ✅ **T664** (deps: T662, T663) **Elasticsearch synonym impl** — the Synonyms API / `synonym_graph` filter on the query analyzer (search-time, updatable without reindex). → CHANGELOG Block AP
 - ✅ **T665** (deps: T662, T663) **Lucene synonym impl** — query-time `SynonymGraphFilter` from a Lucene `SynonymMap` over the embedded store; regular + one-way natural, corrections degrade to one-way + warning, placeholder **surfaced as unsupported** (honest Lucene-limits caveat) not silently dropped. → CHANGELOG Block AP
 - ✅ **T666** (deps: T662, T658 ✅) **Friendly synonyms admin UI + "Import from Algolia"** — a **bento** page to manage synonyms per site/locale: per-type editor (chip set for terms, input→expansions for directional types), enable/disable toggle, engine-support banner, push-to-engine action, and a **one-click import** that maps the Algolia synonyms fetched by T658 into the model — closing the migration loop. React-Query `queries/` + service + bento scaffold. → CHANGELOG Block AP
-- 💭 **T667** (deps: T662) **AI-assisted synonym mining & semantic query expansion (better-than-Algolia)** — cluster query-log terms by embedding proximity + co-click and have an LLM propose candidate sets for human review (never auto-applied); optional embedding-neighbour query expansion at search time. → §XXXIX
+- ✅ **T667** (deps: T662) **AI-assisted synonym mining (better-than-Algolia)** — cluster query-log terms by embedding proximity into candidate sets proposed for human review (returned disabled, never auto-applied). Semantic query-expansion-at-search-time remains an optional future follow-up. → CHANGELOG Block AP
 
 ## Non-goals (do NOT add as tasks)
 

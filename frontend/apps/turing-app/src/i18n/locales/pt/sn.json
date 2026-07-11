@@ -408,7 +408,11 @@
       "addTerm": "Adicionar",
       "addTermPlaceholder": "Digite um termo e pressione Enter",
       "removeTerm": "Remover {{term}}",
-      "enabledLabel": "Habilitado"
+      "enabledLabel": "Habilitado",
+      "suggest": "Sugerir a partir dos logs de busca",
+      "suggested": "{{count}} sugestão(ões) adicionada(s) como regras desabilitadas — revise e habilite.",
+      "noSuggestions": "Nenhuma sugestão de sinônimo encontrada nos logs de busca ainda.",
+      "suggestFailed": "Não foi possível minerar sugestões de sinônimos."
     }
   }
 }

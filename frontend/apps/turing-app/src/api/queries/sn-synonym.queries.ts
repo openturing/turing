@@ -68,3 +68,22 @@ export function useImportAlgoliaSynonyms(siteId: string) {
       queryClient.invalidateQueries({ queryKey: queryKeys.synonyms.all() }),
   });
 }
+
+/**
+ * AI-assisted mining: fetch candidate sets from the search log and stage them
+ * as disabled rules for the admin to review and enable (never auto-applied).
+ */
+export function useMineSynonyms(siteId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (locale: string) => {
+      const proposals = await service.mine(siteId, locale);
+      if (proposals.length > 0) {
+        await service.batch(siteId, proposals);
+      }
+      return proposals;
+    },
+    onSuccess: () =>
+      queryClient.invalidateQueries({ queryKey: queryKeys.synonyms.all() }),
+  });
+}

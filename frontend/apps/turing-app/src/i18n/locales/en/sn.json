@@ -408,7 +408,11 @@
       "addTerm": "Add",
       "addTermPlaceholder": "Type a term and press Enter",
       "removeTerm": "Remove {{term}}",
-      "enabledLabel": "Enabled"
+      "enabledLabel": "Enabled",
+      "suggest": "Suggest from search logs",
+      "suggested": "Added {{count}} suggestion(s) as disabled rules — review and enable them.",
+      "noSuggestions": "No synonym suggestions found in the search logs yet.",
+      "suggestFailed": "Could not mine synonym suggestions."
     }
   }
 }

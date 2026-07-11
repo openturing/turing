@@ -40,6 +40,7 @@ import com.viglet.turing.plugins.se.TurSESynonymApplyResult;
 import com.viglet.turing.sn.synonym.TurSNSynonymApplyService;
 import com.viglet.turing.sn.synonym.TurSNSynonymImportService;
 import com.viglet.turing.sn.synonym.TurSNSynonymService;
+import com.viglet.turing.sn.synonym.TurSynonymMiningService;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -62,15 +63,18 @@ public class TurSNSiteSynonymAPI {
     private final TurSNSynonymService turSNSynonymService;
     private final TurSNSynonymApplyService turSNSynonymApplyService;
     private final TurSNSynonymImportService turSNSynonymImportService;
+    private final TurSynonymMiningService turSynonymMiningService;
 
     public TurSNSiteSynonymAPI(TurSNSiteRepository turSNSiteRepository,
             TurSNSynonymService turSNSynonymService,
             TurSNSynonymApplyService turSNSynonymApplyService,
-            TurSNSynonymImportService turSNSynonymImportService) {
+            TurSNSynonymImportService turSNSynonymImportService,
+            TurSynonymMiningService turSynonymMiningService) {
         this.turSNSiteRepository = turSNSiteRepository;
         this.turSNSynonymService = turSNSynonymService;
         this.turSNSynonymApplyService = turSNSynonymApplyService;
         this.turSNSynonymImportService = turSNSynonymImportService;
+        this.turSynonymMiningService = turSynonymMiningService;
     }
 
     private TurSNSite site(String snSiteId) {
@@ -148,5 +152,15 @@ public class TurSNSiteSynonymAPI {
             @RequestBody TurSNSynonymAlgoliaImportRequest request) {
         return turSNSynonymImportService.importFromAlgolia(site(snSiteId), request.appId(),
                 request.apiKey(), request.host(), request.index(), request.locale());
+    }
+
+    @Operation(summary = "Mine candidate synonym sets from the search log (AI-assisted; never auto-applied)")
+    @PostMapping("/mine")
+    public List<TurSNSynonymDto> mine(@PathVariable String snSiteId,
+            @RequestParam Locale locale,
+            @RequestParam(defaultValue = "100") int limit,
+            @RequestParam(required = false) Double threshold) {
+        return turSynonymMiningService.mine(site(snSiteId), locale, limit,
+                threshold == null ? 0 : threshold);
     }
 }

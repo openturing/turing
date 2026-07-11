@@ -2,6 +2,7 @@ import { ROUTES } from "@/app/routes.const";
 import {
   useApplySynonyms,
   useImportAlgoliaSynonyms,
+  useMineSynonyms,
   useSynonyms,
   useSynonymSupport,
 } from "@/api/queries/sn-synonym.queries";
@@ -9,7 +10,7 @@ import { BentoEntityTile, BentoListPage } from "@/components/bento";
 import { GradientButton } from "@/components/ui/gradient-button";
 import { Input } from "@/components/ui/input";
 import type { TurSNSynonym } from "@/models/sn/sn-site-synonym.model";
-import { IconArrowsShuffle, IconDownload, IconRocket } from "@tabler/icons-react";
+import { IconArrowsShuffle, IconDownload, IconRocket, IconSparkles } from "@tabler/icons-react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link, useParams } from "react-router-dom";
@@ -32,6 +33,7 @@ export default function BentoSNSynonymListPage() {
   const { data: support } = useSynonymSupport(id);
   const applyMutation = useApplySynonyms(id);
   const importMutation = useImportAlgoliaSynonyms(id);
+  const mineMutation = useMineSynonyms(id);
 
   const [showImport, setShowImport] = useState(false);
   const [appId, setAppId] = useState("");
@@ -50,6 +52,19 @@ export default function BentoSNSynonymListPage() {
       toast.success(t("sn.synonym.applied", { count: applied }));
     } catch {
       toast.error(t("sn.synonym.applyFailed"));
+    }
+  }
+
+  async function onSuggest() {
+    try {
+      const proposals = await mineMutation.mutateAsync(importLocale);
+      if (proposals.length > 0) {
+        toast.success(t("sn.synonym.suggested", { count: proposals.length }));
+      } else {
+        toast.info(t("sn.synonym.noSuggestions"));
+      }
+    } catch {
+      toast.error(t("sn.synonym.suggestFailed"));
     }
   }
 
@@ -81,6 +96,15 @@ export default function BentoSNSynonymListPage() {
               : t("sn.synonym.engineUnsupported", { engine: support.engine })}
           </span>
         )}
+        <GradientButton
+          type="button"
+          onClick={onSuggest}
+          disabled={mineMutation.isPending}
+          className="gap-1.5"
+        >
+          <IconSparkles size={16} />
+          {t("sn.synonym.suggest")}
+        </GradientButton>
         <GradientButton
           type="button"
           onClick={() => setShowImport((v) => !v)}
