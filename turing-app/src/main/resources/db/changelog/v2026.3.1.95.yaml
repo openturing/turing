@@ -1,0 +1,103 @@
+databaseChangeLog:
+  # T662 / §XXXIX (Block AP) — engine-agnostic synonym store.
+  #
+  #   sn_site_synonym       — one synonym rule per SN site + locale + type
+  #                           (REGULAR / ONE_WAY / ALTERNATIVE_CORRECTION_1|2 /
+  #                           PLACEHOLDER). Scoped through sn_site_id (which
+  #                           carries the @TenantId), like the sibling
+  #                           sn_site_spotlight / sn_site_locale children.
+  #   sn_site_synonym_term  — the ordered token list for a rule
+  #                           (@ElementCollection collection table).
+  #
+  # Column names match the JPA field names (camelCase); portable lowercase
+  # types. Idempotent (MARK_RAN when the tables already exist).
+
+  - changeSet:
+      id: v2026.3.1.95-create-sn_site_synonym
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - tableExists:
+                tableName: sn_site_synonym
+      changes:
+        - createTable:
+            tableName: sn_site_synonym
+            columns:
+              - column:
+                  name: id
+                  type: varchar(255)
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: name
+                  type: varchar(100)
+              - column:
+                  name: type
+                  type: varchar(32)
+                  defaultValue: REGULAR
+                  constraints:
+                    nullable: false
+              - column:
+                  name: language
+                  type: varchar(20)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: input
+                  type: varchar(2000)
+              - column:
+                  name: enabled
+                  type: boolean
+                  defaultValueBoolean: true
+                  constraints:
+                    nullable: false
+              - column:
+                  name: modificationDate
+                  type: timestamp
+              - column:
+                  name: sn_site_id
+                  type: varchar(255)
+                  constraints:
+                    nullable: false
+                    foreignKeyName: fk_sn_site_synonym_site
+                    references: sn_site(id)
+                    deleteCascade: true
+        - createIndex:
+            tableName: sn_site_synonym
+            indexName: idx_sn_site_synonym_site_lang
+            columns:
+              - column:
+                  name: sn_site_id
+              - column:
+                  name: language
+
+  - changeSet:
+      id: v2026.3.1.95-create-sn_site_synonym_term
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - tableExists:
+                tableName: sn_site_synonym_term
+      changes:
+        - createTable:
+            tableName: sn_site_synonym_term
+            columns:
+              - column:
+                  name: synonym_id
+                  type: varchar(255)
+                  constraints:
+                    nullable: false
+                    foreignKeyName: fk_sn_site_synonym_term_synonym
+                    references: sn_site_synonym(id)
+                    deleteCascade: true
+              - column:
+                  name: term
+                  type: varchar(2000)
+              - column:
+                  name: termOrder
+                  type: int
+                  constraints:
+                    nullable: false
