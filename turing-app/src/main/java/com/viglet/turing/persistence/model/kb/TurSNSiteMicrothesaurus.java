@@ -68,7 +68,7 @@ public class TurSNSiteMicrothesaurus implements Serializable {
     @Column(name = "id", updatable = false, nullable = false)
     private String id;
 
-    /** Soft FK to {@link TurMicrothesaurus#getId()} in the KB library. */
+    /** Soft FK to {@link TurMicrothesaurus}'s {@code getId()} in the KB library. */
     @Column(nullable = false, length = 255)
     private String microthesaurusId;
 

@@ -23,7 +23,7 @@ package com.viglet.turing.persistence.model.kb;
  *
  * <p>The <strong>hierarchical spine</strong> ({@link #BROADER}/{@link #NARROWER},
  * i.e. {@code BT}/{@code NT}) is NOT stored here — it lives on
- * {@link TurThesaurusTerm#getParentTermId()} so the index-time ancestor walk
+ * {@link TurThesaurusTerm}'s {@code getParentTermId()} so the index-time ancestor walk
  * (T672) stays a plain loop. These enum values model everything <em>else</em> a
  * term can point at: the associative and equivalence relations plus custom links.
  * {@code BROADER}/{@code NARROWER} remain in the enum so a full round-trip through

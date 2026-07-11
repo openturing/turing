@@ -42,7 +42,7 @@ public interface TurSNSynonymRepository extends JpaRepository<TurSNSynonym, Stri
     /**
      * Loads the enabled synonym rules for a (site, locale) with their term lists
      * eagerly fetched, so the engine-apply path (T663+) can read
-     * {@link TurSNSynonym#getTerms()} outside a persistence context without
+     * {@link TurSNSynonym}'s {@code getTerms()} outside a persistence context without
      * tripping lazy-init (the project runs with
      * {@code enable_lazy_load_no_trans=false}).
      */

@@ -44,7 +44,7 @@ import lombok.Setter;
  * thesaurus vocabulary — associative {@code RELATED}, equivalence
  * {@code USE}/{@code USED_FOR}, or {@code CUSTOM} — with an explicit
  * {@link #directionality}. The broader/narrower hierarchy itself is NOT a relation
- * row; it lives on {@link TurThesaurusTerm#getParentTermId()} so index-time
+ * row; it lives on {@link TurThesaurusTerm}'s {@code getParentTermId()} so index-time
  * expansion stays a plain parent walk.
  *
  * @author Alexandre Oliveira

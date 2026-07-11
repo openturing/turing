@@ -432,7 +432,8 @@ public interface TurSearchEnginePlugin {
 
     /**
      * T686 / §XLI.2 — "did you mean" spell correction for the given query term
-     * on a site's live index. Returns a {@link TurSESpellCheckResult} whose
+     * on a site's live index. Returns a
+     * {@link com.viglet.turing.commons.se.result.spellcheck.TurSESpellCheckResult} whose
      * {@code corrected} flag is set (with a non-empty {@code correctedText})
      * only when the engine found a better-spelled alternative; otherwise an
      * uncorrected result.
