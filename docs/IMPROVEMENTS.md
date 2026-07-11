@@ -2277,15 +2277,6 @@ not a second call site.
 > guard — were all verified present and are called out so they are not "fixed"
 > away.
 
-**XXXVII.2 — Anonymous chat-analytics (CRITICAL, CONFIRMED).**
-`/api/system/chat-analytics/**` is `permitAll` in both auth branches
-(`TurSecurityConfigProduction.java:191,253`). `TurChatAnalyticsAPI` then lets an
-unauthenticated caller enumerate sessions (`GET .../sessions`) and pull the full
-chat-memory transcript of any conversation (`.../sessions/{id}/transcript` →
-`chatMemoryStore.findMessages`), plus router-decisions and tool-calls. That is
-end-user-typed content / PII with no auth; the only "control" is a code comment
-saying to restrict it at the network layer. Fix: require authentication + a role.
-
 **XXXVII.3 — Anonymous chat abuse / cost (CRITICAL, CONFIRMED).** No `@RateLimiter`
 / bucket4j / per-IP / per-session / per-minute throttle exists in the app, and
 `containers/nginx/conf.d/app.conf` is a bare proxy with no `limit_req`/`limit_conn`

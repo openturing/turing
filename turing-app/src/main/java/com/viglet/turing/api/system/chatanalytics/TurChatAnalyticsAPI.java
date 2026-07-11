@@ -27,6 +27,7 @@ import java.util.Set;
 
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.annotation.Secured;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -51,11 +52,17 @@ import io.swagger.v3.oas.annotations.tags.Tag;
  * <p>Time bounds default to the last 7 days when omitted; {@code from}/{@code to}
  * accept ISO-8601 instants ({@code 2026-05-01T00:00:00Z}).
  *
+ * <p><b>Authorization (T639/T640, §XXXVII.2):</b> these reads expose session
+ * enumeration and full chat transcripts (end-user content / PII), so the whole
+ * controller requires an authenticated admin — it is no longer {@code permitAll}
+ * at the HTTP layer. Grafana's Infinity datasource must authenticate.
+ *
  * @author Alexandre Oliveira
  * @since 2026.2.7
  */
 @RestController
 @RequestMapping("/api/system/chat-analytics")
+@Secured({ "ROLE_ADMIN", "AI_AGENT_VIEW" })
 @Tag(name = "Chat Analytics",
         description = "Read API over the chat analytics store; consumed by Grafana via Infinity datasource.")
 public class TurChatAnalyticsAPI {

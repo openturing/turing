@@ -185,10 +185,12 @@ public class TurSecurityConfigProduction {
                                                 mvc.matcher("/actuator/prometheus"),
                                                 mvc.matcher("/actuator/health"),
                                                 mvc.matcher("/actuator/health/**"),
-                                                // Read-only chat analytics API consumed by Grafana
-                                                // via the Infinity datasource. Restrict at network
-                                                // level in prod (same model as /actuator/prometheus).
-                                                mvc.matcher("/api/system/chat-analytics/**"),
+                                                // T640 / §XXXVII.2 — /api/system/chat-analytics/** is NO
+                                                // longer permitAll: it exposed session enumeration + full
+                                                // chat transcripts (end-user PII) anonymously. It now falls
+                                                // under anyRequest().authenticated() and the controller adds
+                                                // @Secured({ROLE_ADMIN, AI_AGENT_VIEW}). Grafana's Infinity
+                                                // datasource must authenticate (basic/bearer).
                                                 mvc.matcher("/assets/**"),
                                                 mvc.matcher("/favicon.ico"),
                                                 mvc.matcher("/*.png"),
@@ -250,10 +252,10 @@ public class TurSecurityConfigProduction {
                                                                 mvc.matcher("/actuator/prometheus"),
                                                                 mvc.matcher("/actuator/health"),
                                                                 mvc.matcher("/actuator/health/**"),
-                                                                // Read-only chat analytics API consumed by Grafana
-                                                                // via the Infinity datasource. Restrict at network
-                                                                // level in prod (same model as /actuator/prometheus).
-                                                                mvc.matcher("/api/system/chat-analytics/**"),
+                                                                // T640 / §XXXVII.2 — /api/system/chat-analytics/**
+                                                                // removed from permitAll (was anonymous session
+                                                                // enumeration + full chat transcripts / PII). Now
+                                                                // authenticated() + @Secured on the controller.
                                                                 mvc.matcher(LOGOUT_PATH),
                                                                 mvc.matcher("/index.html"),
                                                                 mvc.matcher("/welcome/**"),

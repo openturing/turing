@@ -36,15 +36,23 @@ datasources:
   # by the Chat Analytics dashboard to pull aggregated and per-session data
   # from the Turing backend. Engine-agnostic: the same dashboard works whether
   # the backing store is MongoDB or Redis (turing.logging.engine).
+  #
+  # T640 / §XXXVII.2 — /api/system/chat-analytics/** is no longer anonymous
+  # (it exposed chat transcripts / PII). This datasource now authenticates with
+  # HTTP Basic as an admin user. Replace the placeholder credentials below with
+  # a real Turing admin account (ROLE_ADMIN / AI_AGENT_VIEW) for any non-dev
+  # deployment, and prefer a Grafana secret over inlining the password.
   - name: TuringChatAnalytics
     uid: turing-chat-analytics
     type: yesoreyeram-infinity-datasource
     access: proxy
     isDefault: false
     editable: true
+    basicAuth: true
+    basicAuthUser: admin
     jsonData:
       global_queries: []
-      auth_method: "none"
+      auth_method: "basicAuth"
       # host.docker.internal resolves to the Docker host on Windows/macOS, so
       # this works whether Turing runs via `mvn spring-boot:run` on the host or
       # inside docker-compose (compose can alias `turing` → host via
@@ -52,3 +60,5 @@ datasources:
       allowedHosts:
         - "http://host.docker.internal:2700"
       tlsSkipVerify: true
+    secureJsonData:
+      basicAuthPassword: admin

@@ -82,7 +82,6 @@
 > that warrant immediate attention regardless of task sequencing.
 
 **🔴 Critical:**
-- 📋 **T640** (deps: —) 🔴 **Authenticate `/api/system/chat-analytics/**`** — `permitAll` in both auth branches (`TurSecurityConfigProduction.java:191,253`) exposes session enumeration + full chat transcripts (`.../sessions/{id}/transcript`) anonymously — end-user content / PII with no auth. Require auth + role; a code comment is not a control. → §XXXVII.2
 - 📋 **T641** (deps: —) 🔴 **App-layer abuse controls on the anonymous chat path** — no rate-limit / per-IP / per-session cap anywhere in the app, and the shipped `containers/nginx/conf.d/app.conf` has no `limit_req`/`limit_conn`; the only budget gate (`TurChatCostBudgetGate`) is per-agent, monthly, opt-in and *soft* (never aborts). Add per-IP/session throttling + a hard aborting cost/turn kill-switch + nginx limits. → §XXXVII.3
 
 **🟠 High:**
