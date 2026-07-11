@@ -20,6 +20,7 @@ import type {
   TurSearchSuggestions,
   TurSortOption,
   TurSpellCheck,
+  TurRelatedTermSuggestion,
 } from "./types";
 
 /**
@@ -1541,6 +1542,23 @@ export function fetchSpellCheck(
 ): Promise<TurSpellCheck> {
   const qs = new URLSearchParams({ q });
   return get<TurSpellCheck>(`/sn/${site}/${locale}/spell-check?${qs}`);
+}
+
+/**
+ * T678 — fetches controlled-vocabulary "related concepts" for a query
+ * ({@code GET /sn/{site}/{locale}/related-terms?q=...}). For each thesaurus term
+ * recognised in the query it returns the labels of its {@code RELATED} (RT)
+ * neighbours, a sibling suggestion surface to the spell-check "did you mean".
+ *
+ * @since 2026.3.4
+ */
+export function fetchRelatedTerms(
+  site: string,
+  locale: string,
+  q: string,
+): Promise<TurRelatedTermSuggestion[]> {
+  const qs = new URLSearchParams({ q });
+  return get<TurRelatedTermSuggestion[]>(`/sn/${site}/${locale}/related-terms?${qs}`);
 }
 
 /**

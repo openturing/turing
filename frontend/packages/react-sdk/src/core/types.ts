@@ -26,6 +26,7 @@ export type {
   TurFacetGroup,
   TurFacetItem,
   TurSpellCheck,
+  TurRelatedTermSuggestion,
   TurLocaleItem,
   TurSortOption,
   TurLlmVendor,

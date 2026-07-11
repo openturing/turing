@@ -46,6 +46,7 @@ number" looked free but wasn't. Grepping three files (`ROADMAP.md`,
 
 ## Log (most recent first)
 
+- **T678 SHIPPED** (Block AQ §XL — query-time related-concept suggestions on RT links: /related-terms endpoint + TurRelatedTermService + both JS SDK wrappers/useTuringRelatedTerms; only 💭 T675 remains) — 2026-07-11.
 - **T677 SHIPPED** (Block AQ §XL — opt-in hierarchical concept facet: microthesaurus_path level-prefixed path tokens + STRING facet field; only 💭 T675/T678 remain) — 2026-07-11.
 - **T679 SHIPPED** (Block AQ §XL — bento term-tree full editing: rename/enable/scopeNote/reparent/variations/relations; CLOSES Block AQ implementable tasks, only 💭 T675/T677/T678 remain) — 2026-07-11.
 - **T681 SHIPPED** (Block AQ §XL — bento per-site Thesaurus selection + index config UI; frontend for T670) — 2026-07-11.

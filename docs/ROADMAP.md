@@ -116,7 +116,6 @@
 > relations + `variations`) is the import + AI-generation contract.
 
 - 💭 **T675** (deps: T673, T674) **LLM-assisted hierarchy generation** — generate new microthesaurus trees from a domain+language prompt, emitting the T673 authority-file format; reuses the AI-authoring strict-schema + LlmJudge grounding path (T426/T385). → §XL.8
-- 💭 **T678** (deps: T672) **Query-time related-term suggestions** — a did-you-mean-style "related concepts" surface built on the microthesaurus `RELATED` (RT) links, reusing the spell-check/suggestion UI plumbing. → §XL.11
 
 ## Non-goals (do NOT add as tasks)
 

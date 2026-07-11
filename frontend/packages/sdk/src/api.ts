@@ -21,6 +21,7 @@ import type {
   TurSearchSuggestions,
   TurSortOption,
   TurSpellCheck,
+  TurRelatedTermSuggestion,
 } from "./types";
 
 /**
@@ -1678,6 +1679,28 @@ export function fetchSpellCheck(
   return client.get<TurSpellCheck>(`/sn/${site}/${locale}/spell-check?${qs}`);
 }
 
+// ── T678: Related-concept suggestions (microthesaurus RT links) ─────────────
+
+/**
+ * T678 — fetches controlled-vocabulary "related concepts" for a query
+ * ({@code GET /sn/{site}/{locale}/related-terms?q=...}). For each thesaurus term
+ * recognised in the query it returns the labels of its {@code RELATED} (RT)
+ * neighbours, so a search box can offer "you may also be interested in" chips
+ * alongside the spell-check "did you mean" prompt. Empty for an opted-out site or
+ * a query that mentions no thesaurus term.
+ */
+export function fetchRelatedTerms(
+  client: TuringClient,
+  site: string,
+  locale: string,
+  q: string,
+): Promise<TurRelatedTermSuggestion[]> {
+  const qs = new URLSearchParams({ q });
+  return client.get<TurRelatedTermSuggestion[]>(
+    `/sn/${site}/${locale}/related-terms?${qs}`,
+  );
+}
+
 // ── T403: Elasticsearch-compatible DSL search ───────────────────────────────
 
 /**
@@ -1984,6 +2007,8 @@ export function createTuringApi(client: TuringClient) {
     ) => postSiteChatResume(client, site, conversationId, slotUpdates, resumeReason),
     fetchSpellCheck: (site: string, locale: string, q: string) =>
       fetchSpellCheck(client, site, locale, q),
+    fetchRelatedTerms: (site: string, locale: string, q: string) =>
+      fetchRelatedTerms(client, site, locale, q),
     dslSearch: (site: string, request: TurDslSearchRequest, locale?: string) =>
       dslSearch(client, site, request, locale),
     dslQuery: (site: string, query: Record<string, unknown> | string, locale: string) =>

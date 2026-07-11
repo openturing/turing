@@ -2550,7 +2550,3 @@ authority-file format via the AI-authoring strict-schema + LlmJudge grounding pa
 A `/bento/kb` surface (BentoHero + BentoEntityShell + a tree editor) for browsing
 and curating KB → microthesaurus → term trees and relations in-project.
 
-### XL.11 Query-time related-term suggestions (T678, 💭)
-
-A "related concepts" surface built on the `RELATED` (RT) links, reusing the
-existing spell-check / did-you-mean suggestion plumbing.

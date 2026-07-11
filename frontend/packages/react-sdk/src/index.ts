@@ -36,6 +36,7 @@ export {
   postSiteSlotUpload,
   postSiteChatResume,
   fetchSpellCheck,
+  fetchRelatedTerms,
   dslSearch,
   dslQuery,
   fetchDiscovery,
@@ -279,6 +280,11 @@ export type {
   UseTuringSimilarOptions,
 } from "./hooks/use-turing-similar";
 export { useTuringSpellCheck } from "./hooks/use-turing-spell-check";
+export { useTuringRelatedTerms } from "./hooks/use-turing-related-terms";
+export type {
+  UseTuringRelatedTermsReturn,
+  UseTuringRelatedTermsOptions,
+} from "./hooks/use-turing-related-terms";
 export type {
   UseTuringSpellCheckReturn,
   UseTuringSpellCheckOptions,
@@ -431,6 +437,7 @@ export type {
   TurFacetGroup,
   TurFacetItem,
   TurSpellCheck,
+  TurRelatedTermSuggestion,
   TurLocaleItem,
   TurSortOption,
   TurChatResponse,

@@ -165,6 +165,16 @@ export interface TurSpellCheck {
   corrected: { link: string; text: string };
 }
 
+/**
+ * T678 — one query-time "related concepts" suggestion: a controlled-vocabulary
+ * `term` recognised in the query and the labels of the terms it is associatively
+ * linked to through the microthesaurus `RELATED` (RT) edges.
+ */
+export interface TurRelatedTermSuggestion {
+  term: string;
+  related: string[];
+}
+
 export interface TurLocaleItem {
   locale: string;
   link: string;
