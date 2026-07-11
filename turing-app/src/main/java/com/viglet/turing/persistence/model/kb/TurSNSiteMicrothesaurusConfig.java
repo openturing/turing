@@ -61,6 +61,8 @@ public class TurSNSiteMicrothesaurusConfig implements Serializable {
     public static final String DEFAULT_FIELD_NAME = "microthesaurus_terms";
     /** ADR-0003 default {@code qf} boost — below title/body so recall never dominates. */
     public static final double DEFAULT_BOOST = 0.8d;
+    /** T677 default hierarchical concept-facet field name (path tokens). */
+    public static final String DEFAULT_PATH_FIELD_NAME = "microthesaurus_path";
 
     @Id
     @VigletAssignableUuidGenerator
@@ -79,6 +81,18 @@ public class TurSNSiteMicrothesaurusConfig implements Serializable {
 
     @Column(nullable = false)
     private boolean includeSynonyms = true;
+
+    /**
+     * T677 — when {@code true} the enricher also writes level-prefixed cumulative
+     * path tokens ({@code 0/Doença}, {@code 1/Doença/Doença respiratória}, …) to
+     * {@link #pathFieldName} for Semantic-Navigation-style hierarchical drill-down
+     * faceting. Off by default — the MVP keeps only the flat terms field.
+     */
+    @Column(nullable = false)
+    private boolean pathFacetEnabled = false;
+
+    @Column(nullable = false, length = 100)
+    private String pathFieldName = DEFAULT_PATH_FIELD_NAME;
 
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "sn_site_id", nullable = false, unique = true)

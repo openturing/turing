@@ -67,6 +67,8 @@ function ConfigSection({ siteId }: { siteId: string }) {
     fieldName: "microthesaurus_terms",
     boost: 0.8,
     includeSynonyms: true,
+    pathFacetEnabled: false,
+    pathFieldName: "microthesaurus_path",
   });
 
   useEffect(() => {
@@ -133,6 +135,28 @@ function ConfigSection({ siteId }: { siteId: string }) {
             onCheckedChange={(v) => setDraft((d) => ({ ...d, includeSynonyms: v }))}
           />
         </label>
+
+        <label className="flex items-center justify-between gap-3">
+          <span>
+            <span className="block text-sm font-medium">{t("thesaurus.pathFacet")}</span>
+            <span className="block text-xs text-muted-foreground">{t("thesaurus.pathFacetHint")}</span>
+          </span>
+          <GradientSwitch
+            checked={draft.pathFacetEnabled}
+            onCheckedChange={(v) => setDraft((d) => ({ ...d, pathFacetEnabled: v }))}
+          />
+        </label>
+
+        {draft.pathFacetEnabled && (
+          <div className="flex w-64 flex-col gap-1">
+            <label className="text-xs text-muted-foreground">{t("thesaurus.pathFieldName")}</label>
+            <Input
+              value={draft.pathFieldName}
+              onChange={(e) => setDraft((d) => ({ ...d, pathFieldName: e.target.value }))}
+              placeholder="microthesaurus_path"
+            />
+          </div>
+        )}
 
         <GradientButton type="button" className="w-fit" onClick={save} disabled={saveConfig.isPending}>
           {t("forms.common.save", { defaultValue: "Save" })}

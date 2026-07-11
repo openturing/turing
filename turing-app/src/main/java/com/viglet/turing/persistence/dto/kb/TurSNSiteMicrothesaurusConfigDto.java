@@ -18,7 +18,8 @@ package com.viglet.turing.persistence.dto.kb;
 
 /**
  * T670 / §XL (Block AQ) — the per-site microthesaurus index configuration
- * (field name / boost / include-synonyms + master enable).
+ * (field name / boost / include-synonyms + master enable). T677 adds the
+ * opt-in hierarchical concept facet ({@code pathFacetEnabled} + its path field).
  *
  * @author Alexandre Oliveira
  * @since 2026.3.4
@@ -27,5 +28,7 @@ public record TurSNSiteMicrothesaurusConfigDto(
         boolean enabled,
         String fieldName,
         double boost,
-        boolean includeSynonyms) {
+        boolean includeSynonyms,
+        boolean pathFacetEnabled,
+        String pathFieldName) {
 }

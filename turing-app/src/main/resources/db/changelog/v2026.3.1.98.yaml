@@ -1,0 +1,36 @@
+databaseChangeLog:
+  # T677 / §XL (Block AQ) — opt-in hierarchical concept facet on the per-site
+  # microthesaurus config. Adds level-prefixed cumulative path tokens
+  # (0/Doença, 1/Doença/Doença respiratória, …) written by the index-time
+  # enricher to pathFieldName (default microthesaurus_path) when pathFacetEnabled.
+  #
+  # Off by default — the MVP keeps only the flat microthesaurus_terms field, so a
+  # site never re-provisioned stays byte-identical. Idempotent (columnExists +
+  # MARK_RAN) because the app runs between changeset authoring; portable lowercase
+  # types; camelCase columns map literally (no implicit snake_case).
+
+  - changeSet:
+      id: v2026.3.1.98-add-path-facet-to-sn_site_microthesaurus_config
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - columnExists:
+                tableName: sn_site_microthesaurus_config
+                columnName: pathFacetEnabled
+      changes:
+        - addColumn:
+            tableName: sn_site_microthesaurus_config
+            columns:
+              - column:
+                  name: pathFacetEnabled
+                  type: boolean
+                  defaultValueBoolean: false
+                  constraints:
+                    nullable: false
+              - column:
+                  name: pathFieldName
+                  type: varchar(100)
+                  defaultValue: microthesaurus_path
+                  constraints:
+                    nullable: false

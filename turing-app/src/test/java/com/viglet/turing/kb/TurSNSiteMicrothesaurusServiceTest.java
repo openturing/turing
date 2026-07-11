@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -116,6 +117,9 @@ class TurSNSiteMicrothesaurusServiceTest {
         assertThat(cfg.fieldName()).isEqualTo(TurSNSiteMicrothesaurusConfig.DEFAULT_FIELD_NAME);
         assertThat(cfg.boost()).isEqualTo(TurSNSiteMicrothesaurusConfig.DEFAULT_BOOST);
         assertThat(cfg.includeSynonyms()).isTrue();
+        assertThat(cfg.pathFacetEnabled()).isFalse();
+        assertThat(cfg.pathFieldName())
+                .isEqualTo(TurSNSiteMicrothesaurusConfig.DEFAULT_PATH_FIELD_NAME);
     }
 
     @Test
@@ -125,7 +129,7 @@ class TurSNSiteMicrothesaurusServiceTest {
                 .thenAnswer(i -> i.getArgument(0));
 
         service.saveConfig(site,
-                new TurSNSiteMicrothesaurusConfigDto(true, "  ", 0, true));
+                new TurSNSiteMicrothesaurusConfigDto(true, "  ", 0, true, false, "  "));
 
         ArgumentCaptor<TurSNJobAttributeSpec> spec = ArgumentCaptor.forClass(TurSNJobAttributeSpec.class);
         verify(fieldProvisioner).ensureField(any(TurSNSite.class), spec.capture());
@@ -137,13 +141,32 @@ class TurSNSiteMicrothesaurusServiceTest {
     }
 
     @Test
+    void saveWithPathFacetProvisionsBothFields() {
+        when(configRepository.findByTurSNSite(site)).thenReturn(Optional.empty());
+        when(configRepository.save(any(TurSNSiteMicrothesaurusConfig.class)))
+                .thenAnswer(i -> i.getArgument(0));
+
+        service.saveConfig(site,
+                new TurSNSiteMicrothesaurusConfigDto(true, "  ", 0, true, true, "  "));
+
+        ArgumentCaptor<TurSNJobAttributeSpec> spec = ArgumentCaptor.forClass(TurSNJobAttributeSpec.class);
+        verify(fieldProvisioner, times(2)).ensureField(any(TurSNSite.class), spec.capture());
+        assertThat(spec.getAllValues()).extracting(TurSNJobAttributeSpec::getName)
+                .containsExactly(TurSNSiteMicrothesaurusConfig.DEFAULT_FIELD_NAME,
+                        TurSNSiteMicrothesaurusConfig.DEFAULT_PATH_FIELD_NAME);
+        assertThat(spec.getAllValues()).extracting(TurSNJobAttributeSpec::getType)
+                .containsExactly(TurSEFieldType.TEXT, TurSEFieldType.STRING);
+    }
+
+    @Test
     void saveDisabledConfigDoesNotProvision() {
         when(configRepository.findByTurSNSite(site)).thenReturn(Optional.empty());
         when(configRepository.save(any(TurSNSiteMicrothesaurusConfig.class)))
                 .thenAnswer(i -> i.getArgument(0));
 
         service.saveConfig(site,
-                new TurSNSiteMicrothesaurusConfigDto(false, "microthesaurus_terms", 0.8, true));
+                new TurSNSiteMicrothesaurusConfigDto(false, "microthesaurus_terms", 0.8, true,
+                        false, "microthesaurus_path"));
 
         verify(fieldProvisioner, never()).ensureField(any(), any());
     }

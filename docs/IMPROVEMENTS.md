@@ -2550,12 +2550,6 @@ authority-file format via the AI-authoring strict-schema + LlmJudge grounding pa
 A `/bento/kb` surface (BentoHero + BentoEntityShell + a tree editor) for browsing
 and curating KB → microthesaurus → term trees and relations in-project.
 
-### XL.10 Hierarchical concept facet (T677, 💭)
-
-A second `microthesaurus_path` field (path-token values `0/Doença`,
-`1/Doença/Doença respiratória`, …) for Solr drill-down faceting — the semantic-navigation
-Semantic-Navigation browse experience. MVP keeps the flat terms field only.
-
 ### XL.11 Query-time related-term suggestions (T678, 💭)
 
 A "related concepts" surface built on the `RELATED` (RT) links, reusing the

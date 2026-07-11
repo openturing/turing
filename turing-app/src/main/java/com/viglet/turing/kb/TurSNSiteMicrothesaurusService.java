@@ -134,7 +134,8 @@ public class TurSNSiteMicrothesaurusService {
                 .map(TurSNSiteMicrothesaurusService::toConfigDto)
                 .orElseGet(() -> new TurSNSiteMicrothesaurusConfigDto(false,
                         TurSNSiteMicrothesaurusConfig.DEFAULT_FIELD_NAME,
-                        TurSNSiteMicrothesaurusConfig.DEFAULT_BOOST, true));
+                        TurSNSiteMicrothesaurusConfig.DEFAULT_BOOST, true,
+                        false, TurSNSiteMicrothesaurusConfig.DEFAULT_PATH_FIELD_NAME));
     }
 
     @Transactional
@@ -155,9 +156,18 @@ public class TurSNSiteMicrothesaurusService {
                 : dto.fieldName().trim());
         config.setBoost(dto.boost() <= 0 ? TurSNSiteMicrothesaurusConfig.DEFAULT_BOOST : dto.boost());
         config.setIncludeSynonyms(dto.includeSynonyms());
+        config.setPathFacetEnabled(dto.pathFacetEnabled());
+        config.setPathFieldName(StringUtils.isBlank(dto.pathFieldName())
+                ? TurSNSiteMicrothesaurusConfig.DEFAULT_PATH_FIELD_NAME
+                : dto.pathFieldName().trim());
         TurSNSiteMicrothesaurusConfig saved = configRepository.save(config);
         if (saved.isEnabled()) {
-            provisionField(turSNSite, saved.getFieldName());
+            provisionField(turSNSite, saved.getFieldName(), TurSEFieldType.TEXT);
+            if (saved.isPathFacetEnabled()) {
+                // T677 — exact path tokens: a STRING facet field (docValues), not
+                // tokenised TEXT, so hierarchical drill-down values stay intact.
+                provisionField(turSNSite, saved.getPathFieldName(), TurSEFieldType.STRING);
+            }
         }
         dictionaryService.evictAll();
         return toConfigDto(saved);
@@ -168,11 +178,11 @@ public class TurSNSiteMicrothesaurusService {
      * TEXT field (whose {@code _str} copy field becomes the concept facet) in
      * every locale core. Idempotent; failures are logged, never propagated.
      */
-    void provisionField(TurSNSite turSNSite, String fieldName) {
+    void provisionField(TurSNSite turSNSite, String fieldName, TurSEFieldType type) {
         try {
             TurSNJobAttributeSpec spec = TurSNJobAttributeSpec.builder()
                     .name(fieldName)
-                    .type(TurSEFieldType.TEXT)
+                    .type(type)
                     .multiValued(true)
                     .facet(true)
                     .description("Knowledge Base microthesaurus terms (index-time expansion)")
@@ -197,6 +207,7 @@ public class TurSNSiteMicrothesaurusService {
 
     static TurSNSiteMicrothesaurusConfigDto toConfigDto(TurSNSiteMicrothesaurusConfig config) {
         return new TurSNSiteMicrothesaurusConfigDto(config.isEnabled(), config.getFieldName(),
-                config.getBoost(), config.isIncludeSynonyms());
+                config.getBoost(), config.isIncludeSynonyms(),
+                config.isPathFacetEnabled(), config.getPathFieldName());
     }
 }

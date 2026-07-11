@@ -117,6 +117,47 @@ class TurSNMicrothesaurusIndexerTest {
     }
 
     @Test
+    void writesHierarchicalPathTokensWhenPathFacetEnabled() {
+        TurSNSiteMicrothesaurusConfig cfg = config(true);
+        cfg.setPathFacetEnabled(true);
+        when(configRepository.findByTurSNSite(site)).thenReturn(Optional.of(cfg));
+        wireTree();
+
+        Map<String, Object> attributes = new HashMap<>();
+        attributes.put(TurSNFieldName.TITLE, "Diagnóstico de Pneumonia");
+
+        indexer.enrich(site, Locale.forLanguageTag("pt"), attributes);
+
+        Object path = attributes.get(TurSNSiteMicrothesaurusConfig.DEFAULT_PATH_FIELD_NAME);
+        assertThat(path).isInstanceOf(List.class);
+        @SuppressWarnings("unchecked")
+        List<String> tokens = (List<String>) path;
+        assertThat(tokens).containsExactly(
+                "0/Doença",
+                "1/Doença/Doença respiratória",
+                "2/Doença/Doença respiratória/Pneumonia");
+    }
+
+    @Test
+    void doesNotWritePathTokensWhenPathFacetDisabled() {
+        when(configRepository.findByTurSNSite(site)).thenReturn(Optional.of(config(true)));
+        wireTree();
+
+        Map<String, Object> attributes = new HashMap<>();
+        attributes.put(TurSNFieldName.TITLE, "Diagnóstico de Pneumonia");
+        indexer.enrich(site, Locale.forLanguageTag("pt"), attributes);
+
+        assertThat(attributes).containsKey(TurSNSiteMicrothesaurusConfig.DEFAULT_FIELD_NAME)
+                .doesNotContainKey(TurSNSiteMicrothesaurusConfig.DEFAULT_PATH_FIELD_NAME);
+    }
+
+    @Test
+    void pathTokensEscapeSlashInLabels() {
+        assertThat(TurSNMicrothesaurusIndexer.pathTokens(List.of("A/B", "C")))
+                .containsExactly("0/A\\/B", "1/A\\/B/C");
+    }
+
+    @Test
     void optedOutSiteIsUntouched() {
         when(configRepository.findByTurSNSite(site)).thenReturn(Optional.of(config(false)));
 

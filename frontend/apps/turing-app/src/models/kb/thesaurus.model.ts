@@ -86,4 +86,7 @@ export type TurSNSiteMicrothesaurusConfig = {
   fieldName: string;
   boost: number;
   includeSynonyms: boolean;
+  /** T677 — opt-in hierarchical concept facet (level-prefixed path tokens). */
+  pathFacetEnabled: boolean;
+  pathFieldName: string;
 };

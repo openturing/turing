@@ -92,12 +92,23 @@ public class TurSNMicrothesaurusIndexer {
                 return;
             }
             Set<String> terms = new LinkedHashSet<>();
-            dictionary.recognize(text).forEach(recognized -> terms.addAll(recognized.path()));
+            Set<String> pathTokens = new LinkedHashSet<>();
+            dictionary.recognize(text).forEach(recognized -> {
+                terms.addAll(recognized.path());
+                if (config.isPathFacetEnabled()) {
+                    pathTokens.addAll(pathTokens(recognized.path()));
+                }
+            });
             if (terms.isEmpty()) {
                 return;
             }
-            ensureField(turSNSite, config.getFieldName());
+            ensureField(turSNSite, config.getFieldName(), TurSEFieldType.TEXT);
             attributes.put(config.getFieldName(), new ArrayList<>(terms));
+            if (config.isPathFacetEnabled() && !pathTokens.isEmpty()) {
+                // T677 — exact hierarchical drill-down tokens go to a STRING facet field.
+                ensureField(turSNSite, config.getPathFieldName(), TurSEFieldType.STRING);
+                attributes.put(config.getPathFieldName(), new ArrayList<>(pathTokens));
+            }
             log.debug("[T672] expanded a document on site '{}' with {} microthesaurus term(s)",
                     turSNSite.getName(), terms.size());
         } catch (Exception e) {
@@ -137,11 +148,32 @@ public class TurSNMicrothesaurusIndexer {
         }
     }
 
-    private void ensureField(TurSNSite turSNSite, String fieldName) {
+    /**
+     * T677 — builds the level-prefixed cumulative path tokens from a root→term
+     * label path, the standard Solr hierarchical-faceting shape. For
+     * {@code [Doença, Doença respiratória, Pneumonia]} it yields
+     * {@code 0/Doença}, {@code 1/Doença/Doença respiratória},
+     * {@code 2/Doença/Doença respiratória/Pneumonia}. A slash in a label is
+     * escaped so it can't forge a level boundary.
+     */
+    static List<String> pathTokens(List<String> path) {
+        List<String> tokens = new ArrayList<>(path.size());
+        StringBuilder prefix = new StringBuilder();
+        for (int level = 0; level < path.size(); level++) {
+            if (level > 0) {
+                prefix.append('/');
+            }
+            prefix.append(path.get(level).replace("/", "\\/"));
+            tokens.add(level + "/" + prefix);
+        }
+        return tokens;
+    }
+
+    private void ensureField(TurSNSite turSNSite, String fieldName, TurSEFieldType type) {
         fieldProvisioner.ensureField(turSNSite, TurSNJobAttributeSpec.builder()
                 .name(fieldName)
-                .type(TurSEFieldType.TEXT)
-                .description("T672 Knowledge Base microthesaurus terms — index-time "
+                .type(type)
+                .description("T672/T677 Knowledge Base microthesaurus — index-time "
                         + "hierarchical expansion (controlled vocabulary).")
                 .mandatory(false)
                 .multiValued(true)
