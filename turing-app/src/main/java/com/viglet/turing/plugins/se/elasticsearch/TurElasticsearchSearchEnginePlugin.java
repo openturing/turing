@@ -30,11 +30,14 @@ import com.viglet.turing.persistence.model.sn.field.TurSNSiteFieldExt;
 import com.viglet.turing.persistence.model.sn.locale.TurSNSiteLocale;
 import com.viglet.turing.persistence.repository.sn.field.TurSNSiteFieldExtRepository;
 import com.viglet.turing.plugins.se.TurSearchEnginePlugin;
+import com.viglet.turing.plugins.se.TurSESynonymApplyResult;
+import com.viglet.turing.plugins.se.TurSESynonymRule;
 import com.viglet.turing.se.result.TurSEResults;
 import com.viglet.turing.solr.bean.TurSECoreInfo;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -160,6 +163,42 @@ public class TurElasticsearchSearchEnginePlugin implements TurSearchEnginePlugin
     @Override
     public boolean fieldExists(TurSEInstance seInstance, String indexName, String fieldName) {
         return false; // Elasticsearch is schema-less
+    }
+
+    // ---- Synonyms (T664 / §XXXIX, Block AP) ------------------------------
+
+    /**
+     * Base name for the per-locale ES synonyms set. The index's search analyzer
+     * must reference it via a {@code synonym_graph} filter with
+     * {@code synonyms_set="turing_<locale>"} and {@code updateable: true} for the
+     * push to take effect at query time.
+     */
+    private static final String SYNONYM_SET_BASE = "turing";
+
+    @Override
+    public boolean supportsSynonyms() {
+        return true;
+    }
+
+    @Override
+    public TurSESynonymApplyResult applySynonyms(TurSEInstance seInstance, String indexName,
+            Locale locale, List<TurSESynonymRule> rules) {
+        TurElasticsearchSynonymRules built = TurElasticsearchSynonymRulesBuilder.build(rules);
+        List<String> warnings = new ArrayList<>(built.warnings());
+        int applied = built.appliedRules();
+
+        if (!built.ruleLines().isEmpty()) {
+            String setId = TurElasticsearchSynonymRulesBuilder.synonymSetId(SYNONYM_SET_BASE, locale);
+            boolean pushed = TurElasticsearchUtils.putSynonymSet(seInstance.getEndpointUrl(), setId,
+                    built.ruleLines());
+            if (!pushed) {
+                warnings.add("Elasticsearch rejected the synonyms set '" + setId + "'; rules were not "
+                        + "applied. Ensure the index's search analyzer uses a synonym_graph filter with "
+                        + "synonyms_set=\"" + setId + "\" and updateable:true.");
+                applied = 0;
+            }
+        }
+        return new TurSESynonymApplyResult(true, applied, built.unsupportedTypes(), warnings);
     }
 
     // ---- Document operations ---------------------------------------------

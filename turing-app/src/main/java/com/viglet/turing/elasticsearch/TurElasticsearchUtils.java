@@ -21,6 +21,7 @@ import co.elastic.clients.elasticsearch._types.mapping.Property;
 import co.elastic.clients.elasticsearch.cat.IndicesResponse;
 import co.elastic.clients.elasticsearch.cat.indices.IndicesRecord;
 import co.elastic.clients.elasticsearch.indices.ExistsRequest;
+import co.elastic.clients.elasticsearch.synonyms.SynonymRule;
 import co.elastic.clients.json.jackson.JacksonJsonpMapper;
 import co.elastic.clients.transport.rest_client.RestClientTransport;
 import com.viglet.turing.commons.se.field.TurSEFieldType;
@@ -183,6 +184,44 @@ public class TurElasticsearchUtils {
             log.error("Failed to list Elasticsearch indices at {}: {}", endpointUrl, e.getMessage(), e);
         }
         return result;
+    }
+
+    /**
+     * T664 / §XXXIX — PUT (create or replace) an Elasticsearch synonyms set via
+     * the Synonyms API. The index's search analyzer must reference this set via a
+     * {@code synonym_graph} token filter with {@code synonyms_set=<setId>} and
+     * {@code updateable: true}; ES then reloads the search analyzer automatically,
+     * so a search matches equivalents <em>without reindexing</em> (Algolia's
+     * model). Fail-open: a transport/HTTP error is logged and reported as
+     * {@code false}.
+     *
+     * @return {@code true} when the set was accepted by Elasticsearch
+     */
+    public static boolean putSynonymSet(String endpointUrl, String setId, List<String> ruleLines) {
+        if (ruleLines == null || ruleLines.isEmpty()) {
+            return false;
+        }
+        List<SynonymRule> rules = ruleLines.stream()
+                .map(line -> SynonymRule.of(r -> r.synonyms(line)))
+                .toList();
+        try (RestClient restClient = buildRestClient(endpointUrl);
+             RestClientTransport transport = new RestClientTransport(restClient, new JacksonJsonpMapper());
+             ElasticsearchClient client = new ElasticsearchClient(transport)) {
+            client.synonyms().putSynonym(p -> p.id(setId).synonymsSet(rules));
+            log.info("Elasticsearch synonyms set '{}' updated with {} rule(s) at {}",
+                    setId, rules.size(), endpointUrl);
+            return true;
+        } catch (IOException e) {
+            log.error("Failed to put Elasticsearch synonyms set '{}' at {}: {}", setId, endpointUrl,
+                    e.getMessage(), e);
+            return false;
+        } catch (RuntimeException e) {
+            // The typed client raises ElasticsearchException (unchecked) when the
+            // synonyms set can't be created (e.g. no analyzer references it yet).
+            log.error("Elasticsearch rejected synonyms set '{}' at {}: {}", setId, endpointUrl,
+                    e.getMessage());
+            return false;
+        }
     }
 
     /** Parses a doc-count string, treating {@code null} or non-numeric values as zero. */
