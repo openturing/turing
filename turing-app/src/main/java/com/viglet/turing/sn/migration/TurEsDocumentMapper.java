@@ -21,24 +21,15 @@
 
 package com.viglet.turing.sn.migration;
 
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Map;
-
-import com.viglet.turing.commons.sn.field.TurSNFieldName;
 
 /**
  * Pure, deterministic transform of an Elasticsearch {@code _source} document into
  * an SN job-item attribute map (T657 / §XXXVIII.1).
  *
- * <p>Object sub-fields are flattened to dotted names ({@code parent.child}),
- * matching how {@link TurElasticsearchManifestBuilder} derives their field names,
- * so a document attribute and its manifest field always share a key. Per the
- * grounding contract on {@link TurSNJobItem#getAttributes()}, an absent value is
- * dropped entirely — {@code null}, blank strings, and empty collections never
- * become empty index values. A list of nested objects collapses into per-leaf
- * multi-valued lists.</p>
+ * <p>The reshape (dotted flattening, list-of-nested collapse, grounding drop of
+ * absent/blank/empty values) is engine-agnostic and lives in
+ * {@link TurMigrationDocumentMapper}; this type is the ES-flavoured entry point.</p>
  *
  * @author Alexandre Oliveira
  * @since 2026.3.4
@@ -59,103 +50,6 @@ public final class TurEsDocumentMapper {
      */
     public static Map<String, Object> toAttributes(String id, Map<String, Object> source, String type,
             String provider) {
-        Map<String, Object> attributes = new LinkedHashMap<>();
-        if (source != null) {
-            flatten("", source, attributes);
-        }
-        if (id != null && !id.isBlank()) {
-            attributes.put(TurSNFieldName.ID, id);
-        }
-        if (type != null && !type.isBlank()) {
-            attributes.put(TurSNFieldName.TYPE, type);
-        }
-        if (provider != null && !provider.isBlank()) {
-            attributes.put(TurSNFieldName.SOURCE_APPS, provider);
-        }
-        return attributes;
-    }
-
-    private static void flatten(String prefix, Map<String, Object> source, Map<String, Object> out) {
-        for (Map.Entry<String, Object> entry : source.entrySet()) {
-            String key = prefix.isEmpty() ? entry.getKey() : prefix + "." + entry.getKey();
-            put(key, entry.getValue(), out);
-        }
-    }
-
-    @SuppressWarnings("unchecked")
-    private static void put(String key, Object value, Map<String, Object> out) {
-        if (isAbsent(value)) {
-            return;
-        }
-        if (value instanceof Map<?, ?> nested) {
-            flatten(key, (Map<String, Object>) nested, out);
-            return;
-        }
-        if (value instanceof List<?> list) {
-            putList(key, list, out);
-            return;
-        }
-        out.put(key, value);
-    }
-
-    @SuppressWarnings("unchecked")
-    private static void putList(String key, List<?> list, Map<String, Object> out) {
-        List<Object> scalars = new ArrayList<>();
-        for (Object element : list) {
-            if (isAbsent(element)) {
-                continue;
-            }
-            if (element instanceof Map<?, ?> nestedMap) {
-                // A list of nested objects: flatten each into a scratch map, then
-                // merge every produced leaf into a multi-valued list on the parent key.
-                Map<String, Object> scratch = new LinkedHashMap<>();
-                flatten(key, (Map<String, Object>) nestedMap, scratch);
-                scratch.forEach((leafKey, leafValue) -> mergeLeaf(leafKey, leafValue, out));
-            } else if (element instanceof List<?> innerList) {
-                putList(key, innerList, out); // flatten nested arrays of scalars
-            } else {
-                scalars.add(element);
-            }
-        }
-        if (!scalars.isEmpty()) {
-            mergeLeaf(key, scalars.size() == 1 ? scalars.get(0) : scalars, out);
-        }
-    }
-
-    @SuppressWarnings("unchecked")
-    private static void mergeLeaf(String key, Object value, Map<String, Object> out) {
-        Object existing = out.get(key);
-        if (existing == null) {
-            out.put(key, value);
-            return;
-        }
-        List<Object> merged = new ArrayList<>();
-        if (existing instanceof List<?> existingList) {
-            merged.addAll((List<Object>) existingList);
-        } else {
-            merged.add(existing);
-        }
-        if (value instanceof List<?> valueList) {
-            merged.addAll((List<Object>) valueList);
-        } else {
-            merged.add(value);
-        }
-        out.put(key, merged);
-    }
-
-    private static boolean isAbsent(Object value) {
-        if (value == null) {
-            return true;
-        }
-        if (value instanceof String s) {
-            return s.isBlank();
-        }
-        if (value instanceof List<?> list) {
-            return list.isEmpty();
-        }
-        if (value instanceof Map<?, ?> map) {
-            return map.isEmpty();
-        }
-        return false;
+        return TurMigrationDocumentMapper.toAttributes(id, source, type, provider);
     }
 }

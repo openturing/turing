@@ -2483,14 +2483,6 @@ T382/T386, the `/api/sn/import` API, the React + vanilla SDKs); step 2 is the on
 thing that makes a team hesitate to switch. Block AO closes that gap by building
 the importer, not by writing more prose around a manual process.
 
-**XXXVIII.2 — Algolia importer (T658).** Algolia has no strict mapping, so the
-schema is inferred from index *settings* (`searchableAttributes` → searchable
-fields, `attributesForFaceting` → facets, `customRanking` → ranking hints) and,
-where that's thin, from **LLM-assisted manifest derivation (T387)** over a sample
-of records. Records arrive via the Browse API or an uploaded export JSON. Synonyms
-carry across where the target engine (Solr/Elasticsearch) supports them; Lucene's
-limits are surfaced rather than silently dropped.
-
 **XXXVIII.3 — CLI `turing migrate` (T659).** Both importers are wrapped in the
 zero-dependency `@viglet/turing-cli` (`turing migrate elasticsearch|algolia …`),
 reusing the CLI's existing `TuringClient`. This is the real "step 2" the migration

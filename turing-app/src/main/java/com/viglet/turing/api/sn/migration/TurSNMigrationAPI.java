@@ -31,6 +31,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.viglet.turing.sn.migration.TurAlgoliaMigrationRequest;
+import com.viglet.turing.sn.migration.TurAlgoliaMigrationService;
 import com.viglet.turing.sn.migration.TurElasticsearchMigrationService;
 import com.viglet.turing.sn.migration.TurEsMigrationRequest;
 import com.viglet.turing.sn.migration.TurMigrationException;
@@ -66,6 +68,7 @@ public class TurSNMigrationAPI {
     private static final String ERROR = "error";
 
     private final TurElasticsearchMigrationService elasticsearchMigrationService;
+    private final TurAlgoliaMigrationService algoliaMigrationService;
 
     @Operation(summary = "Migrate one Elasticsearch index into an SN site (mapping -> manifest, docs -> import)")
     @PostMapping("/elasticsearch")
@@ -78,6 +81,21 @@ public class TurSNMigrationAPI {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of(ERROR, e.getMessage()));
         } catch (TurMigrationException e) {
             log.warn("[T657] Elasticsearch migration failed: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_GATEWAY).body(Map.of(ERROR, e.getMessage()));
+        }
+    }
+
+    @Operation(summary = "Migrate one Algolia index into an SN site (settings + sample -> manifest, records -> import)")
+    @PostMapping("/algolia")
+    @Secured({"ROLE_ADMIN", "SN_CREATE"})
+    public ResponseEntity<Object> algolia(@RequestBody TurAlgoliaMigrationRequest request) {
+        try {
+            TurMigrationResult result = algoliaMigrationService.migrate(request);
+            return ResponseEntity.ok(result);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of(ERROR, e.getMessage()));
+        } catch (TurMigrationException e) {
+            log.warn("[T658] Algolia migration failed: {}", e.getMessage());
             return ResponseEntity.status(HttpStatus.BAD_GATEWAY).body(Map.of(ERROR, e.getMessage()));
         }
     }
