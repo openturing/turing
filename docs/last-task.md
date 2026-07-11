@@ -46,6 +46,7 @@ number" looked free but wasn't. Grepping three files (`ROADMAP.md`,
 
 ## Log (most recent first)
 
+- **T644 SHIPPED** (Block AN §XXXVII.6 — SpEL RCE sink: StandardEvaluationContext -> SimpleEvaluationContext.forPropertyAccessors in ChatFlowOps.trySpel) — 2026-07-11.
 - **T643 SHIPPED** (Block AN §XXXVII.5 — central TurSsrfGuard egress validator (+IPv6 ULA); routed persona-import/connector oracle/federation proxy+redirect-disable/webhook) — 2026-07-11.
 - **T642 SHIPPED** (Block AN §XXXVII.4 — flip shipped default to turing.permissions=true so authn != super-admin; startup warning; ITs pin false) — 2026-07-11.
 - **T641 SHIPPED** (Block AN §XXXVII.3 — anonymous-chat abuse controls: per-IP/session rate limiter + hard cost kill-switch + nginx limits) — 2026-07-11.

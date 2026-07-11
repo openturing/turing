@@ -25,7 +25,7 @@ import org.springframework.ai.chat.model.ChatModel;
 import org.springframework.ai.chat.prompt.Prompt;
 import org.springframework.expression.spel.standard.SpelExpressionParser;
 import org.springframework.expression.spel.support.MapAccessor;
-import org.springframework.expression.spel.support.StandardEvaluationContext;
+import org.springframework.expression.spel.support.SimpleEvaluationContext;
 
 import com.viglet.turing.genai.flow.ChatFlowEdge;
 import com.viglet.turing.genai.flow.ChatFlowGraph;
@@ -1732,12 +1732,19 @@ public final class ChatFlowOps {
      *       (e.g. a string or number).</li>
      * </ul>
      */
-    private static Optional<Boolean> trySpel(String expression, Map<String, String> variables) {
+    // Package-visible for T644 security tests (SpEL sandbox verification).
+    static Optional<Boolean> trySpel(String expression, Map<String, String> variables) {
         try {
             Map<String, String> root = variables == null ? Map.of() : variables;
-            StandardEvaluationContext ctx = new StandardEvaluationContext(root);
-            ctx.addPropertyAccessor(new MapAccessor());
-            Object result = SPEL_PARSER.parseExpression(expression).getValue(ctx);
+            // T644 / §XXXVII.6 — SimpleEvaluationContext allows ONLY property
+            // access on the variables map; it blocks type references
+            // (T(java.lang.Runtime)...) and method invocation, closing the SpEL
+            // RCE sink reachable via flow-bundle import / LLM authoring. The
+            // runtime only ever needs to read variables, never call methods.
+            SimpleEvaluationContext ctx = SimpleEvaluationContext
+                    .forPropertyAccessors(new MapAccessor())
+                    .build();
+            Object result = SPEL_PARSER.parseExpression(expression).getValue(ctx, root);
             return result instanceof Boolean b ? Optional.of(b) : Optional.empty();
         } catch (RuntimeException e) {
             log.debug("[FlowOps] SpEL could not evaluate '{}': {}", expression, e.getMessage());

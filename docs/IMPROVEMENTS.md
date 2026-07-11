@@ -2277,16 +2277,6 @@ not a second call site.
 > guard — were all verified present and are called out so they are not "fixed"
 > away.
 
-**XXXVII.6 — SpEL RCE in chat-flow conditions (HIGH, CONFIRMED sink).**
-`ChatFlowOps.trySpel:1738` evaluates a node's `conditionExpression` with a
-`StandardEvaluationContext`, which permits `T(java.lang.Runtime).getRuntime().exec(...)`.
-The expression is not end-user chat input, but it *is* attacker-influenceable:
-chat-flow definitions arrive via ZIP import (`TurAIAgentImportService`) and are
-produced by the LLM authoring skill, so any flow author / bundle import / prompt-
-steered authoring yields RCE. Fix: `SimpleEvaluationContext.forPropertyAccessors(...)`
-(blocks type refs + method invocation) — the runtime only needs property access on
-the variables map.
-
 **XXXVII.7 — Storage path-traversal / Zip-Slip (HIGH, CONFIRMED gap + POTENTIAL
 sink).** `TurTenantScopedStorageService.scopeKey:64` rejects `key.contains("..")`
 only when a tenant prefix is active; when tenancy is off or tenant == DEFAULT
