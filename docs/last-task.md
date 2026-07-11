@@ -1,9 +1,10 @@
-# Last task number — `T667` · next block letter — `AQ`
+# Last task number — `T678` · next block letter — `AR`
 
 > **Single source of truth for the next free task number.** The next new task is
-> `T668`; after assigning it, bump the number above and the log line below.
+> `T679`; after assigning it, bump the number above and the log line below.
 >
-> **Next block letter — `AQ`** (highest block shipped is **AP**, native
+> **Next block letter — `AR`** (Block **AQ** = Knowledge Base / microthesauri,
+> T668–T678, created 2026-07-11; highest block shipped is **AP**, native
 > synonyms). The block letter has the *same* non-contiguity hazard as the
 > T-number, and since the 2026-07-10 roadmap cleanup pruned fully-shipped blocks
 > (AG/AO/AP) out of `ROADMAP.md`, that file no longer shows the true maximum —
@@ -44,6 +45,7 @@ number" looked free but wasn't. Grepping three files (`ROADMAP.md`,
 
 ## Log (most recent first)
 
+- **T668–T678 CREATED** (📋/💭, Block AQ — Knowledge Base: microthesauri & index-time term expansion; ADR 0003 + §XL) — 2026-07-11.
 - **T667 SHIPPED** (Block AP §XXXIX — AI-assisted synonym mining; CLOSES Block AP) — 2026-07-10.
 - **T666 SHIPPED** (Block AP §XXXIX — friendly synonyms admin UI + Import from Algolia) — 2026-07-10.
 - **T665 SHIPPED** (Block AP §XXXIX — Lucene synonym impl) — 2026-07-10.

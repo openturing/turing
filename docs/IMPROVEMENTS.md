@@ -2471,3 +2471,107 @@ vulnerable code path used, or is it a transitive dev-only dep?), bump or overrid
 the coordinates, and add a CI gate (`mvn` dependency check + `pnpm audit`, or a
 Dependabot policy) so a new high-severity advisory fails the build rather than
 sitting open. Track the live list at the repo's Dependabot alerts page.
+
+## XL. Knowledge Base — microthesauri & index-time term expansion (Block AQ)
+
+> Architecture is fixed in [ADR 0003](adr/0003-knowledge-base-microthesaurus.md);
+> this section is the design rationale. Status lives in [ROADMAP.md](ROADMAP.md)
+> Block AQ.
+
+### XL.0 The problem — controlled vocabulary the engine can't infer
+
+Embedding search finds *semantically near* text and Block-AP synonyms rewrite the
+*query analyzer*, but neither gives a curated, hierarchical, domain-controlled
+vocabulary. Clients (education-sector first) want documents to be findable by the
+*broader concepts* they belong to — a "pneumonia" page should surface under
+"doença respiratória" and "doença" — using a thesaurus a librarian controls, not
+a statistic. OpenText Semantic Navigation did this with **microthesauri**; we
+rebuild it natively, keeping all cost at index time.
+
+### XL.1 Domain model (T668)
+
+`TurKnowledgeBase` (aggregate root, `@TenantId`) → `TurMicrothesaurus`
+(`language:Locale` + `domain:String`) → `TurThesaurusTerm` → `TurThesaurusTermRelation`.
+The broader/narrower spine is a **soft `parentTermId`** pointer (the
+`TurChatFlowState.parentStateId` precedent — no self-referencing JPA entity
+exists in the repo), so ancestor-walking is a plain loop on the hot index path.
+The relation table carries the rest of the ISO-style vocabulary —
+`RELATED`/`USE`/`USED_FOR`/`CUSTOM` with an explicit `directionality` — so the
+full contract round-trips through XML while expansion stays trivial. Language is a
+`Locale` column (one tree per language), `domain` a free String (not an enum) so
+new domains need no migration. Grounded in the verified nstein TME authority-file
+type set (`BT/NT/RT/U/UF`); see the ADR.
+
+### XL.2 CRUD (T669)
+
+Console REST + DTOs so customers create new terms and adjust existing ones during
+a project. Writes go through a plain `Tur*Repository extends JpaRepository<_,String>`
+(a `*Domain` record is added later only if a read proves hot/cached/cross-aggregate).
+
+### XL.3 Per-site selection (T670)
+
+`TurSNSiteMicrothesaurus` join + per-site index config. Selection is **opt-in**:
+a site with no selected microthesaurus indexes exactly as today (byte-identical
+legacy path). Locale is matched automatically — only microthesauri whose
+`language` equals the document's locale participate.
+
+### XL.4 Recognition dictionary (T671)
+
+Compile the selected microthesauri (∩ locale) into a cached, normalised
+Aho-Corasick automaton. Surface forms = the preferred label + `USE`/`USED_FOR`
+non-preferred terms + `variations`, normalised per each variation's `case`/`accent`
+flags. **Recognition ≠ expansion:** variations/synonyms let us *recognise* a term
+even when the document uses a synonym; the `BROADER` chain is what we *expand*.
+Cached per (site, locale), evicted on any KB/term/selection change (caching-skill
+rule: cache immutable read-models, never repositories, always pair with eviction).
+
+### XL.5 Index-time expansion (T672)
+
+`TurSNMicrothesaurusIndexer.enrich(site, locale, attributes)` wired into
+`TurSNProcessQueue.index(...)` after the T472/T501 enrichers — the settled
+mutate-the-attributes-map seam. For every recognised term it collects the
+root→term ancestor labels (top-down, **path only** — never parallel branches),
+dedupes, and writes them to a multi-valued TEXT `microthesaurus_terms` field
+provisioned via `TurSNFieldProvisioner`. The field enters `qf` at a **low boost**
+(controlled-vocabulary recall without dominating relevance) and its auto `_str`
+copy field becomes the concept facet. Defensive: any failure is swallowed/logged
+so a thesaurus problem never blocks a document.
+
+### XL.6 XML importer + reconstructed contract (T673)
+
+The old OpenText/nstein importer is **unrecoverable** (shallow clone, below the
+graft boundary; no `.dtd`/`.xsd` in-tree). So author the `authorityFile` XSD/DTD
+as the formal contract from a real sample (namespace `.../tme-authority-file/4.10`),
+then import: `BT/NT` → `parentTermId`, `RT/U/UF` → relations, `variations` →
+surface forms. Handle the source's reciprocal-pair storage (BT stored on both
+ends) and observed quirks (a term with both `BT` and `RT` to the same id) with
+dedupe. The same DTD is the format the LLM is told to emit in T675.
+
+### XL.7 Pre-populated EDUCATION knowledge base (T674)
+
+Ship AI-generated microthesaurus hierarchies for the **priority education domain**
+(pt/en/it) as an importable seed bundle — the T373/T655 seed-ZIP precedent, *not*
+baked into product startup — plus a library browse area, so a project starts with
+rich, ready-made vocabulary the engine alone can't infer.
+
+### XL.8 LLM-assisted generation (T675, 💭)
+
+Generate new microthesaurus trees from a domain+language prompt, emitting the T673
+authority-file format via the AI-authoring strict-schema + LlmJudge grounding path
+(T426/T385) — never auto-saved; opens the review form.
+
+### XL.9 Bento editor (T676)
+
+A `/bento/kb` surface (BentoHero + BentoEntityShell + a tree editor) for browsing
+and curating KB → microthesaurus → term trees and relations in-project.
+
+### XL.10 Hierarchical concept facet (T677, 💭)
+
+A second `microthesaurus_path` field (path-token values `0/Doença`,
+`1/Doença/Doença respiratória`, …) for Solr drill-down faceting — the OpenText
+Semantic-Navigation browse experience. MVP keeps the flat terms field only.
+
+### XL.11 Query-time related-term suggestions (T678, 💭)
+
+A "related concepts" surface built on the `RELATED` (RT) links, reusing the
+existing spell-check / did-you-mean suggestion plumbing.
