@@ -31,24 +31,32 @@ import com.viglet.turing.commons.sn.bean.TurSNSearchParams;
 import com.viglet.turing.commons.sn.bean.spellcheck.TurSNSiteSpellCheckBean;
 import com.viglet.turing.commons.sn.search.TurSNParamType;
 import com.viglet.turing.commons.sn.search.TurSNSiteSearchContext;
+import com.viglet.turing.persistence.repository.sn.TurSNSiteRepository;
+import com.viglet.turing.plugins.se.TurSearchEnginePluginFactory;
 import com.viglet.turing.sn.TurSNUtils;
-import com.viglet.turing.solr.TurSolr;
-import com.viglet.turing.solr.TurSolrInstanceProcess;
 
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 
+/**
+ * Semantic Navigation spell-check endpoint. Resolves the site's search-engine
+ * plugin ({@link TurSearchEnginePluginFactory}) and delegates to its
+ * {@code spellCheck} seam, so "did you mean" works on any engine (Solr's
+ * {@code /tur_spell} handler, Lucene's {@code DirectSpellChecker}, …) rather
+ * than being hardwired to Solr (T686 / §XLI.2, Block AR).
+ */
 @RestController
 @RequestMapping("/api/sn/{siteName}/{localeRequest}/spell-check")
 @Tag(name = "Semantic Navigation Spell Check", description = "Semantic Navigation Spell Check API")
 public class TurSNSiteSpellCheckAPI {
     private static final String RELEVANCE = "relevance";
-    private final TurSolr turSolr;
-    private final TurSolrInstanceProcess turSolrInstanceProcess;
+    private final TurSearchEnginePluginFactory pluginFactory;
+    private final TurSNSiteRepository turSNSiteRepository;
 
-    public TurSNSiteSpellCheckAPI(TurSolr turSolr, TurSolrInstanceProcess turSolrInstanceProcess) {
-        this.turSolr = turSolr;
-        this.turSolrInstanceProcess = turSolrInstanceProcess;
+    public TurSNSiteSpellCheckAPI(TurSearchEnginePluginFactory pluginFactory,
+            TurSNSiteRepository turSNSiteRepository) {
+        this.pluginFactory = pluginFactory;
+        this.turSNSiteRepository = turSNSiteRepository;
     }
 
     @GetMapping
@@ -56,23 +64,22 @@ public class TurSNSiteSpellCheckAPI {
             @PathVariable String localeRequest, @RequestParam(name = TurSNParamType.QUERY) String q,
             HttpServletRequest request) {
         Locale locale = LocaleUtils.toLocale(localeRequest);
-        TurSNSearchParams turSNSearchParams = new TurSNSearchParams();
-        turSNSearchParams.setQ(q);
-        turSNSearchParams.setRows(10);
-        turSNSearchParams.setLocale(LocaleUtils.toLocale(localeRequest));
-        turSNSearchParams.setP(1);
-        turSNSearchParams.setSort(RELEVANCE);
-        turSNSearchParams.setGroup(null);
-        turSNSearchParams.setNfpr(0);
-        return turSolrInstanceProcess.initSolrInstance(siteName, locale).map(turSolrInstance -> {
+        return turSNSiteRepository.findByNameIgnoreCase(siteName).map(turSNSite -> {
+            TurSNSearchParams turSNSearchParams = new TurSNSearchParams();
+            turSNSearchParams.setQ(q);
+            turSNSearchParams.setRows(10);
+            turSNSearchParams.setLocale(locale);
+            turSNSearchParams.setP(1);
+            turSNSearchParams.setSort(RELEVANCE);
+            turSNSearchParams.setGroup(null);
+            turSNSearchParams.setNfpr(0);
             TurSNConfig turSNConfig = new TurSNConfig();
             turSNConfig.setHlEnabled(false);
             TurSEParameters turSEParameters = new TurSEParameters(turSNSearchParams);
             TurSNSiteSearchContext turSNSiteSearchContext = new TurSNSiteSearchContext(siteName,
                     turSNConfig, turSEParameters, locale, TurSNUtils.requestToURI(request));
             return new TurSNSiteSpellCheckBean(turSNSiteSearchContext,
-                    turSolr.spellCheckTerm(turSolrInstance, q));
+                    pluginFactory.getPluginForSite(turSNSite).spellCheck(siteName, q, locale));
         }).orElse(null);
-
     }
 }

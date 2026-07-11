@@ -21,11 +21,21 @@ import static org.mockito.Mockito.when;
 import java.net.URI;
 import java.nio.file.Path;
 import java.util.Collections;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 
+import org.apache.lucene.analysis.standard.StandardAnalyzer;
+import org.apache.lucene.document.Document;
+import org.apache.lucene.document.Field;
+import org.apache.lucene.document.StringField;
+import org.apache.lucene.document.TextField;
+import org.apache.lucene.facet.FacetsConfig;
 import org.apache.lucene.index.IndexWriter;
+import org.apache.lucene.index.IndexWriterConfig;
+import org.apache.lucene.store.ByteBuffersDirectory;
+import org.apache.lucene.store.Directory;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -435,5 +445,115 @@ class TurLuceneSearchEnginePluginTest {
     void suggestionTokenLowercases() {
         assertEquals("api-key",
                 TurLuceneSearchEnginePlugin.normalizeSuggestionToken("API-Key."));
+    }
+
+    // ---- Similar documents (T685) over a real in-memory index ----------------
+
+    /**
+     * Builds a real in-memory {@link TurLuceneInstance} with a handful of docs
+     * so the MoreLikeThis / DirectSpellChecker paths run against actual index
+     * terms (mocking a searcher can't exercise them).
+     */
+    private static TurLuceneInstance inMemoryInstance() throws Exception {
+        Directory dir = new ByteBuffersDirectory();
+        IndexWriter writer = new IndexWriter(dir, new IndexWriterConfig(new StandardAnalyzer()));
+        addDoc(writer, "doc1", "Apollo Space Mission", "The Apollo program",
+                "space mission apollo moon landing rocket", "mission", "/doc1");
+        addDoc(writer, "doc2", "Gemini Space Mission", "The Gemini program",
+                "space mission gemini orbit rocket", "mission", "/doc2");
+        addDoc(writer, "doc3", "Pasta Recipes", "Italian cooking",
+                "cooking recipes pasta tomato basil", "recipe", "/doc3");
+        writer.commit();
+        return new TurLuceneInstance(writer, dir, Path.of("mem-index"), new FacetsConfig());
+    }
+
+    private static void addDoc(IndexWriter writer, String id, String title, String abstractText,
+            String text, String type, String url) throws Exception {
+        Document doc = new Document();
+        doc.add(new StringField("id", id, Field.Store.YES));
+        doc.add(new TextField("title", title, Field.Store.YES));
+        doc.add(new TextField("abstract", abstractText, Field.Store.YES));
+        doc.add(new TextField("text", text, Field.Store.YES));
+        doc.add(new StringField("type", type, Field.Store.YES));
+        doc.add(new StringField("url", url, Field.Store.YES));
+        writer.addDocument(doc);
+    }
+
+    @Test
+    void shouldFetchDocumentsByIdsPreservingOrderAndDroppingMisses() throws Exception {
+        TurLuceneInstance instance = inMemoryInstance();
+        TurSNSiteLocale siteLocale = new TurSNSiteLocale();
+        when(turLuceneInstanceProcess.initLuceneInstance(siteLocale))
+                .thenReturn(Optional.of(instance));
+
+        var docs = plugin.getDocumentsByIds(siteLocale, List.of("doc3", "missing", "doc1"));
+
+        assertEquals(2, docs.size());
+        assertEquals("doc3", docs.get(0).get("id"));
+        assertEquals("doc1", docs.get(1).get("id"));
+        assertEquals("Apollo Space Mission", docs.get(1).get("title"));
+    }
+
+    @Test
+    void shouldReturnEmptyDocumentsByIdsWhenBlank() {
+        TurSNSiteLocale siteLocale = new TurSNSiteLocale();
+        assertTrue(plugin.getDocumentsByIds(siteLocale, List.of()).isEmpty());
+        assertTrue(plugin.getDocumentsByIds(siteLocale, Collections.singletonList("  ")).isEmpty());
+    }
+
+    @Test
+    void shouldReturnSimilarDocumentsExcludingSeed() throws Exception {
+        TurLuceneInstance instance = inMemoryInstance();
+        TurSNSiteLocale siteLocale = new TurSNSiteLocale();
+        when(turLuceneInstanceProcess.initLuceneInstance(siteLocale))
+                .thenReturn(Optional.of(instance));
+
+        var similar = plugin.getSimilarDocuments(siteLocale, "doc1", 5);
+
+        // doc2 (space mission) is similar; the cooking doc is not; seed excluded.
+        assertFalse(similar.isEmpty());
+        assertTrue(similar.stream().noneMatch(r -> "doc1".equals(r.getId())));
+        assertTrue(similar.stream().anyMatch(r -> "doc2".equals(r.getId())));
+    }
+
+    @Test
+    void shouldReturnEmptySimilarWhenSeedMissing() throws Exception {
+        TurLuceneInstance instance = inMemoryInstance();
+        TurSNSiteLocale siteLocale = new TurSNSiteLocale();
+        when(turLuceneInstanceProcess.initLuceneInstance(siteLocale))
+                .thenReturn(Optional.of(instance));
+
+        assertTrue(plugin.getSimilarDocuments(siteLocale, "nope", 5).isEmpty());
+    }
+
+    // ---- Spell check (T686) over a real in-memory index ----------------------
+
+    @Test
+    void shouldSuggestCorrectionForMisspelledTerm() throws Exception {
+        TurLuceneInstance instance = inMemoryInstance();
+        when(turLuceneInstanceProcess.initLuceneInstance("site-lc", Locale.ENGLISH))
+                .thenReturn(Optional.of(instance));
+
+        var result = plugin.spellCheck("site-lc", "mision", Locale.ENGLISH);
+
+        assertTrue(result.isCorrected());
+        assertEquals("mission", result.getCorrectedText());
+    }
+
+    @Test
+    void shouldNotCorrectTermAlreadyInIndex() throws Exception {
+        TurLuceneInstance instance = inMemoryInstance();
+        when(turLuceneInstanceProcess.initLuceneInstance("site-lc", Locale.ENGLISH))
+                .thenReturn(Optional.of(instance));
+
+        var result = plugin.spellCheck("site-lc", "mission", Locale.ENGLISH);
+
+        assertFalse(result.isCorrected());
+    }
+
+    @Test
+    void shouldReturnUncorrectedWhenTermBlank() {
+        var result = plugin.spellCheck("site-lc", "  ", Locale.ENGLISH);
+        assertFalse(result.isCorrected());
     }
 }

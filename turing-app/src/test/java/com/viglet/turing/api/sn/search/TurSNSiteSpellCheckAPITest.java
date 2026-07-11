@@ -22,6 +22,8 @@
 package com.viglet.turing.api.sn.search;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
@@ -35,14 +37,17 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.viglet.turing.commons.se.result.spellcheck.TurSESpellCheckResult;
 import com.viglet.turing.commons.sn.bean.spellcheck.TurSNSiteSpellCheckBean;
-import com.viglet.turing.solr.TurSolr;
-import com.viglet.turing.solr.TurSolrInstance;
-import com.viglet.turing.solr.TurSolrInstanceProcess;
+import com.viglet.turing.persistence.model.sn.TurSNSite;
+import com.viglet.turing.persistence.repository.sn.TurSNSiteRepository;
+import com.viglet.turing.plugins.se.TurSearchEnginePlugin;
+import com.viglet.turing.plugins.se.TurSearchEnginePluginFactory;
 
 import jakarta.servlet.http.HttpServletRequest;
 
 /**
- * Unit tests for TurSNSiteSpellCheckAPI.
+ * Unit tests for TurSNSiteSpellCheckAPI. Since T686 the endpoint resolves the
+ * site's search-engine plugin and delegates to its {@code spellCheck} seam
+ * rather than calling Solr directly.
  *
  * @author Alexandre Oliveira
  * @since 2026.1.10
@@ -51,32 +56,36 @@ import jakarta.servlet.http.HttpServletRequest;
 class TurSNSiteSpellCheckAPITest {
 
     @Test
-    void testSpellCheckReturnsNullWhenInstanceMissing() {
-        TurSolr turSolr = mock(TurSolr.class);
-        TurSolrInstanceProcess instanceProcess = mock(TurSolrInstanceProcess.class);
-        TurSNSiteSpellCheckAPI api = new TurSNSiteSpellCheckAPI(turSolr, instanceProcess);
+    void testSpellCheckReturnsNullWhenSiteMissing() {
+        TurSearchEnginePluginFactory pluginFactory = mock(TurSearchEnginePluginFactory.class);
+        TurSNSiteRepository siteRepository = mock(TurSNSiteRepository.class);
+        TurSNSiteSpellCheckAPI api = new TurSNSiteSpellCheckAPI(pluginFactory, siteRepository);
 
-        when(instanceProcess.initSolrInstance("site", Locale.US)).thenReturn(Optional.empty());
+        when(siteRepository.findByNameIgnoreCase("site")).thenReturn(Optional.empty());
 
         TurSNSiteSpellCheckBean result = api.turSNSiteSpellCheck("site", "en_US", "helo",
                 mock(HttpServletRequest.class));
 
         assertThat(result).isNull();
-        verifyNoInteractions(turSolr);
+        verifyNoInteractions(pluginFactory);
     }
 
     @Test
-    void testSpellCheckBuildsResponseWhenInstanceExists() {
-        TurSolr turSolr = mock(TurSolr.class);
-        TurSolrInstanceProcess instanceProcess = mock(TurSolrInstanceProcess.class);
-        TurSNSiteSpellCheckAPI api = new TurSNSiteSpellCheckAPI(turSolr, instanceProcess);
-        TurSolrInstance instance = mock(TurSolrInstance.class);
+    void testSpellCheckBuildsResponseWhenSiteExists() {
+        TurSearchEnginePluginFactory pluginFactory = mock(TurSearchEnginePluginFactory.class);
+        TurSNSiteRepository siteRepository = mock(TurSNSiteRepository.class);
+        TurSearchEnginePlugin plugin = mock(TurSearchEnginePlugin.class);
+        TurSNSiteSpellCheckAPI api = new TurSNSiteSpellCheckAPI(pluginFactory, siteRepository);
         HttpServletRequest request = mock(HttpServletRequest.class);
+        TurSNSite site = new TurSNSite();
+        site.setName("site");
 
-        when(instanceProcess.initSolrInstance("site", Locale.US)).thenReturn(Optional.of(instance));
+        when(siteRepository.findByNameIgnoreCase("site")).thenReturn(Optional.of(site));
+        when(pluginFactory.getPluginForSite(site)).thenReturn(plugin);
         TurSESpellCheckResult spellCheckResult = new TurSESpellCheckResult(true, "hello");
         spellCheckResult.setUsingCorrected(true);
-        when(turSolr.spellCheckTerm(instance, "helo")).thenReturn(spellCheckResult);
+        when(plugin.spellCheck(eq("site"), eq("helo"), any(Locale.class)))
+                .thenReturn(spellCheckResult);
         when(request.getRequestURL()).thenReturn(new StringBuffer("http://example.com/api"));
         when(request.getQueryString()).thenReturn("q=helo");
 
@@ -91,15 +100,18 @@ class TurSNSiteSpellCheckAPITest {
 
     @Test
     void testSpellCheckKeepsOriginalWhenNotCorrected() {
-        TurSolr turSolr = mock(TurSolr.class);
-        TurSolrInstanceProcess instanceProcess = mock(TurSolrInstanceProcess.class);
-        TurSNSiteSpellCheckAPI api = new TurSNSiteSpellCheckAPI(turSolr, instanceProcess);
-        TurSolrInstance instance = mock(TurSolrInstance.class);
+        TurSearchEnginePluginFactory pluginFactory = mock(TurSearchEnginePluginFactory.class);
+        TurSNSiteRepository siteRepository = mock(TurSNSiteRepository.class);
+        TurSearchEnginePlugin plugin = mock(TurSearchEnginePlugin.class);
+        TurSNSiteSpellCheckAPI api = new TurSNSiteSpellCheckAPI(pluginFactory, siteRepository);
         HttpServletRequest request = mock(HttpServletRequest.class);
+        TurSNSite site = new TurSNSite();
+        site.setName("site");
 
-        when(instanceProcess.initSolrInstance("site", Locale.US)).thenReturn(Optional.of(instance));
-        TurSESpellCheckResult spellCheckResult = new TurSESpellCheckResult(false, "");
-        when(turSolr.spellCheckTerm(instance, "query")).thenReturn(spellCheckResult);
+        when(siteRepository.findByNameIgnoreCase("site")).thenReturn(Optional.of(site));
+        when(pluginFactory.getPluginForSite(site)).thenReturn(plugin);
+        when(plugin.spellCheck(eq("site"), eq("query"), any(Locale.class)))
+                .thenReturn(new TurSESpellCheckResult(false, ""));
         when(request.getRequestURL()).thenReturn(new StringBuffer("http://example.com/api"));
         when(request.getQueryString()).thenReturn("q=query");
 

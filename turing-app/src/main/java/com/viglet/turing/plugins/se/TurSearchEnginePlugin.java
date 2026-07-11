@@ -428,6 +428,38 @@ public interface TurSearchEnginePlugin {
         return List.of();
     }
 
+    // ---- Spell check (T686 / §XLI.2, Block AR) ---------------------------
+
+    /**
+     * T686 / §XLI.2 — "did you mean" spell correction for the given query term
+     * on a site's live index. Returns a {@link TurSESpellCheckResult} whose
+     * {@code corrected} flag is set (with a non-empty {@code correctedText})
+     * only when the engine found a better-spelled alternative; otherwise an
+     * uncorrected result.
+     *
+     * <p>Spell-check was originally hardwired to Solr
+     * ({@code TurSolr.spellCheckTerm}), so on a Lucene site the "did you mean"
+     * suggestion never appeared. This seam lets every engine expose the
+     * capability behind one contract:
+     * <ul>
+     *   <li>Solr: delegates to the {@code /tur_spell} handler.</li>
+     *   <li>Lucene-embedded: a {@code DirectSpellChecker} over the live index
+     *       terms (no side dictionary to maintain).</li>
+     *   <li>Engines without a spell-check capability keep the default and
+     *       degrade silently to an uncorrected result rather than throwing.</li>
+     * </ul>
+     *
+     * @param siteName the SN site name
+     * @param term     the raw query term to spell-check
+     * @param locale   the locale whose (site, locale) index to consult
+     * @return the correction result; never {@code null}
+     * @since 2026.3.4
+     */
+    default com.viglet.turing.commons.se.result.spellcheck.TurSESpellCheckResult spellCheck(
+            String siteName, String term, Locale locale) {
+        return new com.viglet.turing.commons.se.result.spellcheck.TurSESpellCheckResult();
+    }
+
     // ---- Monitoring ------------------------------------------------------
 
     long getDocumentTotal(TurSNSiteLocale turSNSiteLocale);

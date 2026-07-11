@@ -103,18 +103,6 @@
 - 📋 **T654** (deps: —) **Triage & patch dependency CVEs (Dependabot)** — GitHub Dependabot reports 13 open advisories on the default branch (7 high · 3 moderate · 3 low) across the backend + frontend dependency trees. Triage each against actual usage (reachable vs transitive-only), bump/override the affected coordinates, and wire a CI gate (`mvn` + `pnpm audit` / Dependabot auto-merge policy) so new highs fail the build. Separate from the code-level findings above but part of the same full-product exposure. → §XXXVII.16
 - 💭 **T653** (deps: —) **Frontend XSS surface** — confirm & enforce that the search-engine highlighter HTML-escapes field content before it reaches the `dangerouslySetInnerHTML` result-card (rendered inside the authenticated admin console); add a client sanitiser allowing only `<mark>`-style markup; sanitise/sandbox the Gemini `renderedContent` fragment injected raw into the console; optionally post-sanitise the LLM-driven D2 SVG. → §XXXVII.15
 
-## Block AR — Live-demo search & chat quality (Lucene parity gaps)
-
-> Surfaced dogfooding the public demo (`turing-demo.viglet.org`, a **Lucene**-backed
-> site). Three quick fixes shipped (see [CHANGELOG.md](CHANGELOG.md) → Block AR:
-> T682 source dedup, T683 autocomplete hyphen, T684 demo typing indicator); the two
-> below are the real Lucene search-engine gaps — features Solr/ES have that the
-> Lucene plugin never implemented, so they degrade to empty on a Lucene site. Design
-> in [IMPROVEMENTS.md](IMPROVEMENTS.md) §XLI.
-
-- 📋 **T685** (deps: —) **Lucene "similar documents" (More Like This)** — the Lucene plugin never overrides `getSimilarDocuments`/`getDocumentsByIds`, inheriting the interface's empty-list defaults, so "Similar"/"Related by AI" returns nothing on a Lucene site (Solr `/mlt` + ES `more_like_this` work). Implement `getDocumentsByIds` (enables the VECTOR neighbour path via the embedded store) and `getSimilarDocuments` via Lucene `MoreLikeThis` over `title`/`abstract`/`text`. Fail-open unchanged. → §XLI.1
-- 📋 **T686** (deps: —) **Lucene spell-check / "did you mean"** — spell-check was never abstracted into `TurSearchEnginePlugin`; `TurSNSiteSpellCheckAPI` + `TurSolr.spellCheckTerm` are hardwired to Solr, so a Lucene site's endpoint returns `null` and "did you mean" never appears. Add a `spellCheck` seam to the plugin, implement it for Lucene (`DirectSpellChecker` over the live index terms, or a built side-index), and re-point the endpoint + main-search spell-check path at the plugin. → §XLI.2
-
 ## Non-goals (do NOT add as tasks)
 
 Binding constraints — see [IMPROVEMENTS.md](IMPROVEMENTS.md) §I.6 (What NOT to

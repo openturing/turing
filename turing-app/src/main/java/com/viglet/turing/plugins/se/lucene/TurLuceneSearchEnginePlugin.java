@@ -17,6 +17,9 @@
 package com.viglet.turing.plugins.se.lucene;
 
 import com.viglet.turing.commons.se.field.TurSEFieldType;
+import com.viglet.turing.commons.se.result.spellcheck.TurSESpellCheckResult;
+import com.viglet.turing.commons.se.similar.TurSESimilarResult;
+import com.viglet.turing.commons.sn.field.TurSNFieldName;
 import com.viglet.turing.commons.sn.search.TurSNSiteSearchContext;
 import com.viglet.turing.lucene.TurLucene;
 import com.viglet.turing.lucene.TurLuceneInstance;
@@ -33,8 +36,25 @@ import com.viglet.turing.plugins.se.TurSESynonymRule;
 import com.viglet.turing.se.result.TurSEResults;
 import com.viglet.turing.solr.bean.TurSECoreInfo;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.lucene.analysis.standard.StandardAnalyzer;
+import org.apache.lucene.document.Document;
+import org.apache.lucene.index.IndexReader;
+import org.apache.lucene.index.Term;
+import org.apache.lucene.queries.mlt.MoreLikeThis;
+import org.apache.lucene.search.IndexSearcher;
+import org.apache.lucene.search.Query;
+import org.apache.lucene.search.ScoreDoc;
+import org.apache.lucene.search.TermQuery;
+import org.apache.lucene.search.TopDocs;
+import org.apache.lucene.search.spell.DirectSpellChecker;
+import org.apache.lucene.search.spell.SuggestMode;
+import org.apache.lucene.search.spell.SuggestWord;
 import org.springframework.stereotype.Component;
 
+import java.io.IOException;
+import java.io.StringReader;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
@@ -77,7 +97,28 @@ public class TurLuceneSearchEnginePlugin implements TurSearchEnginePlugin {
     public Optional<TurSEResults> retrieveSearchResults(TurSNSiteSearchContext context) {
         return turLuceneInstanceProcess
                 .initLuceneInstance(context.getSiteName(), context.getLocale())
-                .flatMap(instance -> turLucene.retrieveLuceneFromSN(instance, context));
+                .flatMap(instance -> turLucene.retrieveLuceneFromSN(instance, context)
+                        .map(results -> withSpellCheck(results, instance, context)));
+    }
+
+    /**
+     * T686 — populates the "did you mean" suggestion on the Lucene search
+     * results when the engine didn't already set one, mirroring the Solr main
+     * search path (which spell-checks every query in {@code retrieveSolrFromSN}).
+     * Reuses the same {@link TurLuceneInstance} already opened for the search so
+     * no second core lookup is needed. Fail-open: any error leaves the results
+     * untouched.
+     */
+    private TurSEResults withSpellCheck(TurSEResults results, TurLuceneInstance instance,
+            TurSNSiteSearchContext context) {
+        if (results.getSpellCheck() != null || context.getTurSEParameters() == null) {
+            return results;
+        }
+        String query = context.getTurSEParameters().getQuery();
+        if (query != null && !query.isBlank()) {
+            results.setSpellCheck(computeSpellCheck(instance, query));
+        }
+        return results;
     }
 
     @Override
@@ -406,6 +447,223 @@ public class TurLuceneSearchEnginePlugin implements TurSearchEnginePlugin {
         return word.toLowerCase()
                 .replaceAll("^[^\\p{L}\\p{N}]+", "")   // trim leading punctuation
                 .replaceAll("[^\\p{L}\\p{N}]+$", "");  // trim trailing punctuation
+    }
+
+    // ---- Similar documents (T685 / §XLI.1, Block AR) --------------------
+
+    /** Standard fields fetched for similar-document hydration / seed content. */
+    private static final List<String> SIMILAR_FIELDS = List.of(
+            TurSNFieldName.ID, TurSNFieldName.TITLE, TurSNFieldName.TYPE, TurSNFieldName.URL,
+            TurSNFieldName.ABSTRACT, TurSNFieldName.TEXT);
+    /** Text fields {@link MoreLikeThis} scores against. */
+    private static final String[] SIMILAR_MLT_FIELDS = {
+            TurSNFieldName.TITLE, TurSNFieldName.ABSTRACT, TurSNFieldName.TEXT};
+    /** Cap the seed text fed to MLT so a huge document can't blow up the query. */
+    private static final int SIMILAR_MAX_SEED_CHARS = 1_000;
+
+    @Override
+    public List<Map<String, Object>> getDocumentsByIds(TurSNSiteLocale siteLocale, List<String> ids) {
+        if (ids == null || ids.isEmpty()) {
+            return List.of();
+        }
+        List<String> wanted = ids.stream().filter(s -> s != null && !s.isBlank()).toList();
+        if (wanted.isEmpty()) {
+            return List.of();
+        }
+        return turLuceneInstanceProcess.initLuceneInstance(siteLocale)
+                .map(instance -> fetchByIds(instance, wanted))
+                .orElse(List.of());
+    }
+
+    /** Fetches the standard fields for {@code ids} via a term lookup on {@code id}, preserving input order. */
+    private List<Map<String, Object>> fetchByIds(TurLuceneInstance instance, List<String> ids) {
+        try {
+            IndexSearcher searcher = instance.getSearcher();
+            Map<String, Map<String, Object>> byId = new HashMap<>();
+            for (String id : ids) {
+                TopDocs topDocs = searcher.search(
+                        new TermQuery(new Term(TurSNFieldName.ID, id)), 1);
+                if (topDocs.scoreDocs.length > 0) {
+                    Document doc = searcher.storedFields().document(topDocs.scoreDocs[0].doc);
+                    byId.put(id, extractSimilarFields(doc));
+                }
+            }
+            List<Map<String, Object>> ordered = new ArrayList<>();
+            for (String id : ids) {
+                Map<String, Object> fields = byId.get(id);
+                if (fields != null) {
+                    ordered.add(fields);
+                }
+            }
+            return ordered;
+        } catch (Exception e) {
+            log.warn("[Lucene] getDocumentsByIds failed: {}", e.getMessage());
+            return List.of();
+        }
+    }
+
+    /** Projects a stored doc down to {@link #SIMILAR_FIELDS} (first stored value), dropping absent fields. */
+    private static Map<String, Object> extractSimilarFields(Document doc) {
+        Map<String, Object> fields = new LinkedHashMap<>();
+        for (String field : SIMILAR_FIELDS) {
+            String value = doc.get(field);
+            if (value != null) {
+                fields.put(field, value);
+            }
+        }
+        return fields;
+    }
+
+    @Override
+    public List<TurSESimilarResult> getSimilarDocuments(TurSNSiteLocale siteLocale, String id, int rows) {
+        if (id == null || id.isBlank() || rows < 1) {
+            return List.of();
+        }
+        List<Map<String, Object>> seed = getDocumentsByIds(siteLocale, List.of(id));
+        if (seed.isEmpty()) {
+            return List.of();
+        }
+        String like = similarityText(seed.get(0));
+        if (like.isBlank()) {
+            return List.of();
+        }
+        return turLuceneInstanceProcess.initLuceneInstance(siteLocale)
+                .map(instance -> searchSimilarDocuments(instance, like, id, rows))
+                .orElse(List.of());
+    }
+
+    /** Runs a Lucene {@link MoreLikeThis} query built from the seed text, excluding the seed and capping at {@code rows}. */
+    private List<TurSESimilarResult> searchSimilarDocuments(TurLuceneInstance instance, String like,
+            String id, int rows) {
+        try {
+            IndexReader reader = instance.getReader();
+            IndexSearcher searcher = instance.getSearcher();
+            MoreLikeThis mlt = new MoreLikeThis(reader);
+            mlt.setAnalyzer(new StandardAnalyzer());
+            mlt.setFieldNames(SIMILAR_MLT_FIELDS);
+            mlt.setMinTermFreq(1);
+            mlt.setMinDocFreq(1);
+            mlt.setMinWordLen(3);
+            mlt.setMaxQueryTerms(40);
+            Query query = mlt.like(TurSNFieldName.TEXT, new StringReader(like));
+            TopDocs topDocs = searcher.search(query, rows + 1);
+            List<TurSESimilarResult> results = new ArrayList<>();
+            for (ScoreDoc scoreDoc : topDocs.scoreDocs) {
+                Document doc = searcher.storedFields().document(scoreDoc.doc);
+                String docId = doc.get(TurSNFieldName.ID);
+                if (docId == null || docId.equals(id)) {
+                    continue;
+                }
+                results.add(TurSESimilarResult.builder()
+                        .id(docId)
+                        .title(doc.get(TurSNFieldName.TITLE))
+                        .type(doc.get(TurSNFieldName.TYPE))
+                        .url(doc.get(TurSNFieldName.URL))
+                        .build());
+                if (results.size() >= rows) {
+                    break;
+                }
+            }
+            return results;
+        } catch (Exception e) {
+            log.warn("[Lucene] getSimilarDocuments for id '{}' failed: {}", id, e.getMessage());
+            return List.of();
+        }
+    }
+
+    /** Builds the seed text (title + abstract + text) used to seed MoreLikeThis, capped to {@link #SIMILAR_MAX_SEED_CHARS}. */
+    private static String similarityText(Map<String, Object> fields) {
+        StringBuilder sb = new StringBuilder();
+        for (String field : SIMILAR_MLT_FIELDS) {
+            Object value = fields.get(field);
+            if (value != null) {
+                String text = value.toString().trim();
+                if (!text.isEmpty()) {
+                    if (!sb.isEmpty()) {
+                        sb.append(' ');
+                    }
+                    sb.append(text);
+                }
+            }
+        }
+        String text = sb.toString().trim();
+        return text.length() > SIMILAR_MAX_SEED_CHARS
+                ? text.substring(0, SIMILAR_MAX_SEED_CHARS)
+                : text;
+    }
+
+    // ---- Spell check (T686 / §XLI.2, Block AR) --------------------------
+
+    /** Candidate text fields the spell-checker consults, in priority order. */
+    private static final String[] SPELL_CHECK_FIELDS = {
+            TurSNFieldName.TEXT, TurSNFieldName.TITLE, TurSNFieldName.ABSTRACT};
+
+    @Override
+    public TurSESpellCheckResult spellCheck(String siteName, String term, Locale locale) {
+        if (term == null || term.isBlank()) {
+            return new TurSESpellCheckResult();
+        }
+        return turLuceneInstanceProcess.initLuceneInstance(siteName, locale)
+                .map(instance -> computeSpellCheck(instance, term))
+                .orElseGet(TurSESpellCheckResult::new);
+    }
+
+    /**
+     * Token-by-token "did you mean" over the live index using
+     * {@link DirectSpellChecker}. A token already present in any candidate field
+     * is kept verbatim; an unindexed token is replaced by its best suggestion.
+     * The result is corrected only when at least one token changed. Fail-open:
+     * any error yields an uncorrected result.
+     */
+    private TurSESpellCheckResult computeSpellCheck(TurLuceneInstance instance, String term) {
+        try {
+            IndexReader reader = instance.getReader();
+            DirectSpellChecker checker = new DirectSpellChecker();
+            String[] tokens = term.trim().toLowerCase().split("\\s+");
+            List<String> out = new ArrayList<>(tokens.length);
+            boolean corrected = false;
+            for (String token : tokens) {
+                if (token.isBlank()) {
+                    continue;
+                }
+                String suggestion = bestSuggestion(checker, reader, token);
+                if (suggestion != null) {
+                    out.add(suggestion);
+                    corrected = true;
+                } else {
+                    out.add(token);
+                }
+            }
+            if (!corrected) {
+                return new TurSESpellCheckResult();
+            }
+            return new TurSESpellCheckResult(true, String.join(" ", out));
+        } catch (Exception e) {
+            log.warn("[Lucene] spell-check for '{}' failed: {}", term, e.getMessage());
+            return new TurSESpellCheckResult();
+        }
+    }
+
+    /**
+     * Returns the best correction for {@code token}, or {@code null} when the
+     * token is already indexed in some candidate field (treated as correctly
+     * spelled) or no suggestion clears the checker's threshold.
+     */
+    private static String bestSuggestion(DirectSpellChecker checker, IndexReader reader, String token)
+            throws IOException {
+        for (String field : SPELL_CHECK_FIELDS) {
+            if (reader.docFreq(new Term(field, token)) > 0) {
+                return null; // present in the index — accept the token as spelled
+            }
+        }
+        for (String field : SPELL_CHECK_FIELDS) {
+            SuggestWord[] words = checker.suggestSimilar(new Term(field, token), 1, reader,
+                    SuggestMode.SUGGEST_ALWAYS);
+            if (words.length > 0 && !words[0].string.equals(token)) {
+                return words[0].string;
+            }
+        }
+        return null;
     }
 
     // ---- Monitoring ------------------------------------------------------

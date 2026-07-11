@@ -919,6 +919,16 @@ public class TurSolrSearchEnginePlugin implements TurSearchEnginePlugin {
                 }).orElse(List.of());
     }
 
+    // ---- Spell check (T686 / §XLI.2, Block AR) ---------------------------
+
+    @Override
+    public com.viglet.turing.commons.se.result.spellcheck.TurSESpellCheckResult spellCheck(
+            String siteName, String term, Locale locale) {
+        return turSolrInstanceProcess.initSolrInstance(siteName, locale)
+                .map(instance -> turSolr.spellCheckTerm(instance, term))
+                .orElseGet(com.viglet.turing.commons.se.result.spellcheck.TurSESpellCheckResult::new);
+    }
+
     // ---- Helpers ---------------------------------------------------------
 
     private static String getSolrUrl(TurSEInstance seInstance) {

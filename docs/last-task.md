@@ -4,8 +4,8 @@
 > `T687`; after assigning it, bump the number above and the log line below.
 >
 > **Next block letter — `AS`** (Block **AR** = Live-demo search & chat quality /
-> Lucene parity gaps, T682–T686, created 2026-07-11: T682–T684 shipped, T685–T686
-> backlog. Block **AQ** = Knowledge Base / microthesauri, T668–T681, created
+> Lucene parity gaps, T682–T686, created 2026-07-11: fully shipped (T682–T686).
+> Block **AQ** = Knowledge Base / microthesauri, T668–T681, created
 > 2026-07-11; highest block shipped is **AR**). The block letter has the *same*
 > non-contiguity hazard as the T-number, and since the 2026-07-10 roadmap cleanup
 > pruned fully-shipped blocks (AG/AO/AP) out of `ROADMAP.md`, that file no longer
@@ -46,6 +46,8 @@ number" looked free but wasn't. Grepping three files (`ROADMAP.md`,
 
 ## Log (most recent first)
 
+- **T686 SHIPPED** (Block AR §XLI — Lucene spell-check via DirectSpellChecker + spellCheck plugin seam; endpoint re-pointed at plugin factory; CLOSES Block AR) — 2026-07-11.
+- **T685 SHIPPED** (Block AR §XLI — Lucene similar documents: getDocumentsByIds + getSimilarDocuments via MoreLikeThis) — 2026-07-11.
 - **T685–T686 CREATED** (📋, Block AR §XLI — Lucene parity gaps: similar/MLT + spell-check seam) — 2026-07-11.
 - **T684 SHIPPED** (Block AR §XLI — demo chat typing indicator in the empty pre-committed assistant bubble) — 2026-07-11.
 - **T683 SHIPPED** (Block AR §XLI — Lucene autocomplete keeps internal hyphens; normalizeSuggestionToken trims edges only) — 2026-07-11.
