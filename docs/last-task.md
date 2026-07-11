@@ -1,7 +1,14 @@
-# Last task number — `T667`
+# Last task number — `T667` · next block letter — `AQ`
 
 > **Single source of truth for the next free task number.** The next new task is
 > `T668`; after assigning it, bump the number above and the log line below.
+>
+> **Next block letter — `AQ`** (highest block shipped is **AP**, native
+> synonyms). The block letter has the *same* non-contiguity hazard as the
+> T-number, and since the 2026-07-10 roadmap cleanup pruned fully-shipped blocks
+> (AG/AO/AP) out of `ROADMAP.md`, that file no longer shows the true maximum —
+> **`CHANGELOG.md` is authoritative for the last block, not `ROADMAP.md`**. When
+> you create Block AQ, bump this to `AR`.
 >
 > (T656 is the highest assigned number. **T639–T654 (📋/💭) are Block AN — the
 > post-audit security-hardening backlog, §XXXVII; T633–T638 (✅) are the
@@ -31,6 +38,9 @@ number" looked free but wasn't. Grepping three files (`ROADMAP.md`,
 1. **Before creating a task**, read the number above and use `T<n+1>`.
 2. **After creating it**, increment the number above and append a log line below.
 3. Never infer the next number from a block header range or a `git log` scan.
+4. **Before creating a new block**, use the next block letter above; confirm the
+   real maximum by grepping **`CHANGELOG.md`** (not `ROADMAP.md`, which no longer
+   lists fully-shipped blocks), then bump the letter after creating the block.
 
 ## Log (most recent first)
 
