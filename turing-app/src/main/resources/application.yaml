@@ -13,7 +13,14 @@ turing:
   # real value here. Rotation: docs/operations/crypto-key-rotation.md
   ai.crypto.key: ${TURING_AI_CRYPTO_KEY:}
   allowedOrigins: http://localhost:4200,http://localhost:5173
-  permissions: false
+  # T642 / §XXXVII.4 — when false, ANY authenticated principal is granted
+  # ROLE_ADMIN + every privilege (see TurCustomUserDetailsService /
+  # TurAuthTokenHeaderFilter), which nullifies all ~240 method-level checks and
+  # turns authentication into super-admin. The shipped default is now `true`
+  # (enforce real per-user authorities; the seeded `admin` keeps full rights via
+  # the Administrator group). Set to `false` only for a deliberately trusted
+  # single-user deployment — a startup WARNING is logged when you do.
+  permissions: true
   tenancy:
     enabled: false
     # T334 / §XIV.8.1 — shared secret for trusted server-to-server callers. When

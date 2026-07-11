@@ -1,5 +1,6 @@
 package com.viglet.turing.properties;
 
+import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertSame;
@@ -8,6 +9,20 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import org.junit.jupiter.api.Test;
 
 class TurConfigPropertiesTest {
+
+    // T642 / §XXXVII.4 — authn must not be implicitly super-admin.
+    @Test
+    void permissionsSecureByDefault() {
+        assertTrue(new TurConfigProperties().isPermissions());
+    }
+
+    @Test
+    void warnHookIsSafeInBothModes() {
+        TurConfigProperties permissive = new TurConfigProperties();
+        permissive.setPermissions(false);
+        assertThatCode(permissive::warnIfPermissionsDisabled).doesNotThrowAnyException();
+        assertThatCode(new TurConfigProperties()::warnIfPermissionsDisabled).doesNotThrowAnyException();
+    }
 
     @Test
     void shouldStoreAndReturnAllConfiguredValues() {

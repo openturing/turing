@@ -2277,18 +2277,6 @@ not a second call site.
 > guard — were all verified present and are called out so they are not "fixed"
 > away.
 
-**XXXVII.4 — `permissions=false` blanket admin (HIGH, CONFIRMED).** With the shipped
-default `turing.permissions: false` (`application.yaml:11`),
-`TurCustomUserDetailsService.loadUserByUsername` and
-`TurAuthTokenHeaderFilter.resolveAuthorities` grant `ROLE_ADMIN` + every DB
-privilege to any principal that authenticates by any means, regardless of their
-groups. All ~240 `@PreAuthorize`/`@Secured` checks across 48 controllers become
-dead, and controllers with no annotation are equally open. This is the multiplier
-that turns the dev-token leak (§XXXVII.8) and self-registration into privilege
-escalation and makes "admin-gated" findings reachable by any authenticated user.
-Fix: stop blanket-granting when permissions are off (grant only the user's real
-authorities), or reconsider the default.
-
 **XXXVII.5 — Egress / SSRF (HIGH, CONFIRMED + POTENTIAL).** One good centralised
 guard (`TurFileUtils.isSafe` + redirect re-validation, used by the persona URL
 import) blocks loopback/link-local/private IPv4 incl. `169.254.169.254`, but every
