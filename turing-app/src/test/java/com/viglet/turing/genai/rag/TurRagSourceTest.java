@@ -12,6 +12,7 @@ package com.viglet.turing.genai.rag;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
 import org.junit.jupiter.api.Test;
@@ -88,6 +89,54 @@ class TurRagSourceTest {
         assertThat(source.sourceId()).isEqualTo("bare-chunk");
         assertThat(source.title()).isEqualTo("bare-chunk");
         assertThat(source.url()).isEmpty();
+    }
+
+    @Test
+    void dedupeByDocumentUnifiesChunksOfTheSameUrlKeepingBestChunk() {
+        // Three chunks: two from the same doc (same url), one from another.
+        List<TurRagSource> raw = List.of(
+                new TurRagSource("doc-1", "Guide", "https://ex.com/guide", 0, 0.90, false),
+                new TurRagSource("doc-2", "FAQ", "https://ex.com/faq", 0, 0.70, false),
+                new TurRagSource("doc-1", "Guide", "https://ex.com/guide", 5, 0.95, false));
+
+        List<TurRagSource> deduped = TurRagSource.dedupeByDocument(raw);
+
+        // One entry per url, first-seen ranking order preserved (guide before faq).
+        assertThat(deduped).extracting(TurRagSource::url)
+                .containsExactly("https://ex.com/guide", "https://ex.com/faq");
+        // The higher-scoring chunk of the guide (0.95, chunkIndex 5) wins.
+        assertThat(deduped.get(0).score()).isEqualTo(0.95);
+        assertThat(deduped.get(0).chunkIndex()).isEqualTo(5);
+    }
+
+    @Test
+    void dedupeByDocumentFallsBackToSourceIdWhenUrlBlank() {
+        List<TurRagSource> raw = List.of(
+                new TurRagSource("doc-1", "A", "", 0, 0.5, false),
+                new TurRagSource("doc-1", "A", "", 1, 0.8, false));
+
+        List<TurRagSource> deduped = TurRagSource.dedupeByDocument(raw);
+
+        assertThat(deduped).hasSize(1);
+        assertThat(deduped.get(0).sourceId()).isEqualTo("doc-1");
+        assertThat(deduped.get(0).score()).isEqualTo(0.8);
+    }
+
+    @Test
+    void dedupeByDocumentKeepsAnonymousChunksDistinct() {
+        // No url and no sourceId on either chunk — must NOT collapse into one.
+        List<TurRagSource> raw = List.of(
+                new TurRagSource("", "", "", null, 0.4, false),
+                new TurRagSource("", "", "", null, 0.6, false));
+
+        assertThat(TurRagSource.dedupeByDocument(raw)).hasSize(2);
+    }
+
+    @Test
+    void dedupeByDocumentHandlesNullAndSingletonWithoutCopying() {
+        assertThat(TurRagSource.dedupeByDocument(null)).isEmpty();
+        List<TurRagSource> single = List.of(new TurRagSource("d", "D", "u", 0, 0.1, false));
+        assertThat(TurRagSource.dedupeByDocument(single)).isSameAs(single);
     }
 
     @Test

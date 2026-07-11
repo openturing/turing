@@ -733,7 +733,9 @@ public class TurChatStreamingDispatcher {
         Object raw = ctx.get(
                 com.viglet.turing.genai.tool.TurCustomToolCallbackService.TOOL_CONTEXT_RAG_SOURCES);
         if (raw instanceof TurRagSourceCollector collector) {
-            return collector.snapshot();
+            // Unify chunk-level provenance into one entry per source document so
+            // the chat client doesn't show the same URL once per retrieved chunk.
+            return TurRagSource.dedupeByDocument(collector.snapshot());
         }
         return List.of();
     }

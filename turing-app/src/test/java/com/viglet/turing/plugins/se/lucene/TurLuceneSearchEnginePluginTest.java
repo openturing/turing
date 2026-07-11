@@ -411,4 +411,29 @@ class TurLuceneSearchEnginePluginTest {
 
         assertNotNull(indexes);
     }
+
+    // ---- Autocomplete token normalization (hyphen round-trip fix) -------------
+
+    @Test
+    void suggestionTokenKeepsInternalHyphen() {
+        // The bug: "self-hosting" used to become "selfhosting", which then
+        // matched nothing (the index tokenizes on the hyphen). The suggestion
+        // must keep the hyphen so the clicked term round-trips to real results.
+        assertEquals("self-hosting",
+                TurLuceneSearchEnginePlugin.normalizeSuggestionToken("self-hosting"));
+    }
+
+    @Test
+    void suggestionTokenTrimsEdgePunctuationOnly() {
+        assertEquals("self-hosting",
+                TurLuceneSearchEnginePlugin.normalizeSuggestionToken("(self-hosting),"));
+        assertEquals("user's",
+                TurLuceneSearchEnginePlugin.normalizeSuggestionToken("\"user's\""));
+    }
+
+    @Test
+    void suggestionTokenLowercases() {
+        assertEquals("api-key",
+                TurLuceneSearchEnginePlugin.normalizeSuggestionToken("API-Key."));
+    }
 }

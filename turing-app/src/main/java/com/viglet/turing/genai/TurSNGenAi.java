@@ -468,9 +468,13 @@ public class TurSNGenAi {
         if (documents == null || documents.isEmpty()) {
             return answer;
         }
-        List<com.viglet.turing.genai.rag.TurRagSource> sources = documents.stream()
-                .map(com.viglet.turing.genai.rag.TurRagSource::fromDocument)
-                .toList();
+        // Unify chunk-level provenance into one entry per source document: a doc
+        // is split into many chunks that all share the same url/source_id, so an
+        // un-deduped list renders the same source repeatedly.
+        List<com.viglet.turing.genai.rag.TurRagSource> sources =
+                com.viglet.turing.genai.rag.TurRagSource.dedupeByDocument(documents.stream()
+                        .map(com.viglet.turing.genai.rag.TurRagSource::fromDocument)
+                        .toList());
         try {
             String json = SOURCES_MAPPER.writeValueAsString(sources);
             return reactor.core.publisher.Flux.concat(

@@ -4,6 +4,8 @@ import type {
   TurMicrothesaurus,
   TurSNSiteMicrothesaurus,
   TurSNSiteMicrothesaurusConfig,
+  TurThesaurusDraft,
+  TurThesaurusGenerationRequest,
   TurThesaurusSeed,
   TurThesaurusTerm,
 } from "@/models/kb/thesaurus.model";
@@ -155,6 +157,21 @@ export function useUploadAuthorityFile(kbId: string) {
   const qc = useQueryClient();
   return useMutation<TurMicrothesaurus, Error, { file: File; domain?: string }>({
     mutationFn: ({ file, domain }) => service.uploadAuthorityFile(kbId, file, domain),
+    onSuccess: () => qc.invalidateQueries({ queryKey: queryKeys.thesaurus.microList(kbId) }),
+  });
+}
+
+// ---- LLM-assisted generation (T675) ----
+export function useGenerateThesaurusDraft(kbId: string) {
+  return useMutation<TurThesaurusDraft, Error, TurThesaurusGenerationRequest>({
+    mutationFn: (request) => service.generateDraft(kbId, request),
+  });
+}
+
+export function useCreateFromDraft(kbId: string) {
+  const qc = useQueryClient();
+  return useMutation<TurMicrothesaurus, Error, TurThesaurusDraft>({
+    mutationFn: (draft) => service.createFromDraft(kbId, draft),
     onSuccess: () => qc.invalidateQueries({ queryKey: queryKeys.thesaurus.microList(kbId) }),
   });
 }

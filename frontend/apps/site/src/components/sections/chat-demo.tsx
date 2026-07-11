@@ -225,7 +225,17 @@ export function ChatDemo({ bare = false, seed }: Readonly<ChatDemoProps>) {
       <div ref={scrollRef} className="flex-1 space-y-3 overflow-y-auto px-4 py-4">
         <Bubble role="assistant" content={GREETING} />
         {convo.map((m, i) => (
-          <Bubble key={i} role={m.role} content={m.content} sources={m.sources} />
+          // The SDK pre-commits an EMPTY assistant bubble the moment a turn
+          // starts (chat controller: "so a UI can render a typing animation
+          // immediately"). Render the thinking dots inside that bubble while it
+          // waits for the first token — otherwise it shows as an empty chip.
+          <Bubble
+            key={i}
+            role={m.role}
+            content={m.content}
+            sources={m.sources}
+            pending={m.role === "assistant" && m.content.length === 0 && busy}
+          />
         ))}
         {busy && convo[convo.length - 1]?.role !== "assistant" && (
           <div className="flex justify-start">
@@ -284,10 +294,13 @@ function Bubble({
   role,
   content,
   sources,
+  pending = false,
 }: Readonly<{
   role: "user" | "assistant";
   content: string;
   sources?: TurChatSource[];
+  /** Assistant bubble awaiting its first token — show the typing indicator. */
+  pending?: boolean;
 }>) {
   const isUser = role === "user";
   return (
@@ -298,7 +311,16 @@ function Bubble({
           isUser ? "bg-primary text-primary-foreground" : "bg-muted text-foreground"
         )}
       >
-        {isUser ? content : <RichAnswer content={content} />}
+        {pending ? (
+          <TuringThinkingDots
+            className="inline-flex items-center gap-1 text-muted-foreground"
+            classNames={{ dot: "inline-block size-1.5 animate-bounce rounded-full bg-current" }}
+          />
+        ) : isUser ? (
+          content
+        ) : (
+          <RichAnswer content={content} />
+        )}
 
         {!isUser && content && (
           <div className="mt-1 flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">

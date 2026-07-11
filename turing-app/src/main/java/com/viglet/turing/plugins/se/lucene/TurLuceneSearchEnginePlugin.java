@@ -368,9 +368,18 @@ public class TurLuceneSearchEnginePlugin implements TurSearchEnginePlugin {
     }
 
     /**
-     * Adds every stored-field word that starts with {@code prefix} (case- and
-     * punctuation-insensitive) to {@code seen}, prepended with the already-typed
+     * Adds every stored-field word that starts with {@code prefix} (case
+     * insensitive) to {@code seen}, prepended with the already-typed
      * {@code leadingContext}.
+     *
+     * <p>Only <em>edge</em> punctuation is trimmed (a trailing comma/period,
+     * surrounding quotes/parentheses); punctuation <em>inside</em> a token — the
+     * hyphen in {@code self-hosting}, the apostrophe in {@code user's} — is kept.
+     * Stripping internal hyphens produced suggestions like {@code selfhosting}
+     * that, when clicked, matched nothing: the index is tokenized with
+     * {@code StandardAnalyzer}, which splits {@code self-hosting} into
+     * {@code self}+{@code hosting}, so only the verbatim hyphenated term
+     * round-trips through the main query analyzer back to real results.
      */
     private void collectPrefixMatches(org.apache.lucene.document.Document doc, String prefix,
             String leadingContext, Set<String> seen) {
@@ -379,12 +388,24 @@ public class TurLuceneSearchEnginePlugin implements TurSearchEnginePlugin {
             if (value == null) continue;
             // Tokenize stored value and find words matching the prefix
             for (String word : value.split("\\s+")) {
-                String clean = word.replaceAll("[^\\p{L}\\p{N}]", "").toLowerCase();
+                String clean = normalizeSuggestionToken(word);
                 if (clean.length() >= prefix.length() && clean.startsWith(prefix)) {
                     seen.add(leadingContext + clean);
                 }
             }
         }
+    }
+
+    /**
+     * Lower-cases a stored-value token and trims only <em>edge</em> punctuation,
+     * preserving punctuation inside the token (the hyphen in {@code self-hosting},
+     * the apostrophe in {@code user's}). Package-private for direct unit testing
+     * of the hyphen round-trip fix.
+     */
+    static String normalizeSuggestionToken(String word) {
+        return word.toLowerCase()
+                .replaceAll("^[^\\p{L}\\p{N}]+", "")   // trim leading punctuation
+                .replaceAll("[^\\p{L}\\p{N}]+$", "");  // trim trailing punctuation
     }
 
     // ---- Monitoring ------------------------------------------------------

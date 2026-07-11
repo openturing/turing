@@ -71,6 +71,37 @@ export type TurThesaurusSeed = {
   language: string;
 };
 
+// T675 — LLM-assisted generation (draft, never auto-persisted).
+export type TurThesaurusGenerationRequest = {
+  domain: string;
+  language: string;
+  guidance?: string;
+  maxTerms?: number;
+};
+
+export type TurThesaurusDraftVariation = {
+  surfaceForm: string;
+  caseSensitive: boolean;
+  accentSensitive: boolean;
+};
+
+export type TurThesaurusDraftTerm = {
+  id: string;
+  label: string;
+  scopeNote?: string | null;
+  broader?: string | null;
+  related?: string[];
+  variations?: TurThesaurusDraftVariation[];
+};
+
+export type TurThesaurusDraft = {
+  name: string;
+  description?: string | null;
+  language: string;
+  domain: string;
+  terms: TurThesaurusDraftTerm[];
+};
+
 // T670 / T681 — per-SN-site selection + index config.
 export type TurSNSiteMicrothesaurus = {
   id: string;

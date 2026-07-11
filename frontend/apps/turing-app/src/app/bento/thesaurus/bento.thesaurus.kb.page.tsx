@@ -1,8 +1,10 @@
 import {
+  useCreateFromDraft,
   useCreateKnowledgeBase,
   useCreateMicrothesaurus,
   useDeleteKnowledgeBase,
   useDeleteMicrothesaurus,
+  useGenerateThesaurusDraft,
   useImportSeed,
   useKnowledgeBase,
   useMicrothesauri,
@@ -21,13 +23,18 @@ import {
 import { LoadProvider } from "@/components/loading-provider";
 import { Input } from "@/components/ui/input";
 import { GradientButton } from "@/components/ui/gradient-button";
-import type { TurKnowledgeBase, TurMicrothesaurus } from "@/models/kb/thesaurus.model";
+import type {
+  TurKnowledgeBase,
+  TurMicrothesaurus,
+  TurThesaurusDraft,
+} from "@/models/kb/thesaurus.model";
 import {
   IconDownload,
   IconLanguage,
   IconLibrary,
   IconPlus,
   IconSitemap,
+  IconSparkles,
   IconTrash,
   IconUpload,
 } from "@tabler/icons-react";
@@ -80,6 +87,7 @@ export default function BentoThesaurusKbPage() {
           <>
             <KbForm isNew={isNew} value={entity} staged={staged} onStateChange={onStateChange} />
             {!isNew && <MicrothesauriSection kbId={kbId} />}
+            {!isNew && <GenerateSection kbId={kbId} />}
             {!isNew && <SeedImportSection kbId={kbId} />}
           </>
         )}
@@ -253,6 +261,147 @@ function MicrothesauriSection({ kbId }: { kbId: string }) {
         </GradientButton>
       </div>
     </BentoFormSection>
+  );
+}
+
+/**
+ * T675 — draft a microthesaurus with the LLM, review it, then persist. The draft
+ * is never auto-saved: Generate shows a read-only tree preview and only "Create"
+ * materialises it (reusing the T673 import path server-side).
+ */
+function GenerateSection({ kbId }: { kbId: string }) {
+  const { t } = useTranslation();
+  const generate = useGenerateThesaurusDraft(kbId);
+  const create = useCreateFromDraft(kbId);
+
+  const [domain, setDomain] = useState("");
+  const [language, setLanguage] = useState("pt");
+  const [guidance, setGuidance] = useState("");
+  const [draft, setDraft] = useState<TurThesaurusDraft | null>(null);
+
+  async function runGenerate() {
+    if (!domain.trim()) {
+      toast.error(t("thesaurus.generateDomainRequired"));
+      return;
+    }
+    try {
+      const result = await generate.mutateAsync({
+        domain: domain.trim(),
+        language: language.trim() || "pt",
+        guidance: guidance.trim() || undefined,
+      });
+      setDraft(result);
+    } catch (err) {
+      console.error(err);
+      toast.error(t("thesaurus.generateFailed"));
+    }
+  }
+
+  async function accept() {
+    if (!draft) return;
+    try {
+      const created = await create.mutateAsync(draft);
+      toast.success(t("thesaurus.seedImported", { name: created.name }));
+      setDraft(null);
+    } catch (err) {
+      console.error(err);
+      toast.error(t("forms.common.formSubmitFailed"));
+    }
+  }
+
+  return (
+    <BentoFormSection
+      icon={IconSparkles}
+      tone="violet"
+      title={t("thesaurus.generateTitle")}
+      description={t("thesaurus.generateDesc")}
+    >
+      <div className="flex flex-wrap items-end gap-2">
+        <div className="flex flex-1 flex-col gap-1">
+          <label className="text-xs text-muted-foreground">{t("thesaurus.domain")}</label>
+          <Input value={domain} onChange={(e) => setDomain(e.target.value)} placeholder="EDUCATION" />
+        </div>
+        <div className="flex w-24 flex-col gap-1">
+          <label className="text-xs text-muted-foreground">{t("thesaurus.language")}</label>
+          <Input value={language} onChange={(e) => setLanguage(e.target.value)} placeholder="pt" />
+        </div>
+      </div>
+      <div className="mt-2 flex flex-col gap-1">
+        <label className="text-xs text-muted-foreground">{t("thesaurus.generateGuidance")}</label>
+        <Input
+          value={guidance}
+          onChange={(e) => setGuidance(e.target.value)}
+          placeholder={t("thesaurus.generateGuidancePlaceholder")}
+        />
+      </div>
+      <div className="mt-3 flex items-center gap-3">
+        <GradientButton type="button" className="gap-1" disabled={generate.isPending} onClick={runGenerate}>
+          <IconSparkles size={16} />
+          {generate.isPending ? t("thesaurus.generating") : t("thesaurus.generate")}
+        </GradientButton>
+        <span className="text-xs text-muted-foreground">{t("thesaurus.generateHint")}</span>
+      </div>
+
+      {draft && (
+        <div className="bento-fade-in mt-4 rounded-2xl border border-border/60 bg-card/40 p-4 backdrop-blur">
+          <div className="mb-2 flex items-center justify-between gap-3">
+            <span className="min-w-0">
+              <span className="block truncate font-medium">{draft.name}</span>
+              <span className="block truncate text-xs text-muted-foreground">
+                {draft.language} · {draft.domain} · {t("thesaurus.termCount", { count: draft.terms.length })}
+              </span>
+            </span>
+            <div className="flex shrink-0 items-center gap-2">
+              <button
+                type="button"
+                className="rounded-lg px-2 py-1 text-xs text-muted-foreground hover:bg-muted/50"
+                onClick={() => setDraft(null)}
+              >
+                {t("thesaurus.discard")}
+              </button>
+              <GradientButton type="button" className="gap-1" disabled={create.isPending} onClick={accept}>
+                <IconPlus size={16} />
+                {t("thesaurus.createFromDraft")}
+              </GradientButton>
+            </div>
+          </div>
+          <DraftPreview draft={draft} />
+        </div>
+      )}
+    </BentoFormSection>
+  );
+}
+
+/** Read-only indented preview of a generated draft, built from the soft broader spine. */
+function DraftPreview({ draft }: { draft: TurThesaurusDraft }) {
+  const byId = new Map(draft.terms.map((term) => [term.id, term]));
+  const depthOf = (id: string): number => {
+    let depth = 0;
+    let current = byId.get(id);
+    const seen = new Set<string>();
+    while (current?.broader && byId.has(current.broader) && !seen.has(current.id)) {
+      seen.add(current.id);
+      depth += 1;
+      current = byId.get(current.broader);
+    }
+    return depth;
+  };
+  // Roots first, then a stable pre-order-ish grouping by depth chain.
+  const ordered = [...draft.terms].sort((a, b) => depthOf(a.id) - depthOf(b.id));
+  return (
+    <ul className="flex max-h-72 flex-col gap-1 overflow-y-auto text-sm">
+      {ordered.map((term) => (
+        <li key={term.id} style={{ paddingLeft: `${depthOf(term.id) * 16}px` }} className="flex items-center gap-2">
+          <IconSitemap size={14} className="shrink-0 text-violet-500" />
+          <span className="truncate">{term.label}</span>
+          {term.related && term.related.length > 0 && (
+            <span className="shrink-0 rounded-full bg-violet-500/10 px-1.5 text-[10px] text-violet-500">
+              {term.related.length} RT
+            </span>
+          )}
+        </li>
+      ))}
+    </ul>
   );
 }
 

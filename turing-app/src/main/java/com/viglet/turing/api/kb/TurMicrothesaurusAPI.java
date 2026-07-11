@@ -36,7 +36,10 @@ import org.springframework.web.multipart.MultipartFile;
 import com.viglet.turing.api.exception.TurNotFoundException;
 import com.viglet.turing.kb.TurAuthorityFileImportService;
 import com.viglet.turing.kb.TurMicrothesaurusService;
+import com.viglet.turing.kb.TurThesaurusGenerationService;
 import com.viglet.turing.persistence.dto.kb.TurMicrothesaurusDto;
+import com.viglet.turing.persistence.dto.kb.TurThesaurusDraft;
+import com.viglet.turing.persistence.dto.kb.TurThesaurusGenerationRequest;
 import com.viglet.turing.persistence.model.kb.TurKnowledgeBase;
 import com.viglet.turing.persistence.repository.kb.TurKnowledgeBaseRepository;
 
@@ -58,13 +61,16 @@ public class TurMicrothesaurusAPI {
     private final TurKnowledgeBaseRepository turKnowledgeBaseRepository;
     private final TurMicrothesaurusService turMicrothesaurusService;
     private final TurAuthorityFileImportService turAuthorityFileImportService;
+    private final TurThesaurusGenerationService turThesaurusGenerationService;
 
     public TurMicrothesaurusAPI(TurKnowledgeBaseRepository turKnowledgeBaseRepository,
             TurMicrothesaurusService turMicrothesaurusService,
-            TurAuthorityFileImportService turAuthorityFileImportService) {
+            TurAuthorityFileImportService turAuthorityFileImportService,
+            TurThesaurusGenerationService turThesaurusGenerationService) {
         this.turKnowledgeBaseRepository = turKnowledgeBaseRepository;
         this.turMicrothesaurusService = turMicrothesaurusService;
         this.turAuthorityFileImportService = turAuthorityFileImportService;
+        this.turThesaurusGenerationService = turThesaurusGenerationService;
     }
 
     private TurKnowledgeBase knowledgeBase(String knowledgeBaseId) {
@@ -120,5 +126,20 @@ public class TurMicrothesaurusAPI {
         } catch (IOException e) {
             throw new IllegalArgumentException("Could not read the uploaded file: " + e.getMessage());
         }
+    }
+
+    @Operation(summary = "Draft a microthesaurus hierarchy with the LLM (never persisted — for review)")
+    @PostMapping("/generate")
+    public TurThesaurusDraft generate(@PathVariable String knowledgeBaseId,
+            @RequestBody TurThesaurusGenerationRequest request) {
+        knowledgeBase(knowledgeBaseId);
+        return turThesaurusGenerationService.generate(request);
+    }
+
+    @Operation(summary = "Persist a reviewed generated draft as a new microthesaurus")
+    @PostMapping("/from-draft")
+    public TurMicrothesaurusDto createFromDraft(@PathVariable String knowledgeBaseId,
+            @RequestBody TurThesaurusDraft draft) {
+        return turThesaurusGenerationService.materialize(knowledgeBase(knowledgeBaseId), draft);
     }
 }

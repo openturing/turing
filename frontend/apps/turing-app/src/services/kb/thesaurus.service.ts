@@ -4,6 +4,8 @@ import type {
   TurMicrothesaurus,
   TurSNSiteMicrothesaurus,
   TurSNSiteMicrothesaurusConfig,
+  TurThesaurusDraft,
+  TurThesaurusGenerationRequest,
   TurThesaurusSeed,
   TurThesaurusTerm,
 } from "@/models/kb/thesaurus.model";
@@ -145,6 +147,28 @@ export class TurThesaurusService {
       `/kb/${knowledgeBaseId}/microthesaurus/import${query}`,
       form,
       { headers: { "Content-Type": "multipart/form-data" } },
+    );
+    return data;
+  }
+
+  // ---- LLM-assisted generation (T675) ----
+  async generateDraft(
+    knowledgeBaseId: string,
+    request: TurThesaurusGenerationRequest,
+  ): Promise<TurThesaurusDraft> {
+    const { data } = await axios.post<TurThesaurusDraft>(
+      `/kb/${knowledgeBaseId}/microthesaurus/generate`,
+      request,
+    );
+    return data;
+  }
+  async createFromDraft(
+    knowledgeBaseId: string,
+    draft: TurThesaurusDraft,
+  ): Promise<TurMicrothesaurus> {
+    const { data } = await axios.post<TurMicrothesaurus>(
+      `/kb/${knowledgeBaseId}/microthesaurus/from-draft`,
+      draft,
     );
     return data;
   }

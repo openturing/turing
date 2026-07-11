@@ -2472,81 +2472,43 @@ the coordinates, and add a CI gate (`mvn` dependency check + `pnpm audit`, or a
 Dependabot policy) so a new high-severity advisory fails the build rather than
 sitting open. Track the live list at the repo's Dependabot alerts page.
 
-## XL. Knowledge Base — microthesauri & index-time term expansion (Block AQ)
+## XLI. Live-demo search & chat quality — Lucene parity gaps (Block AR)
 
-> Architecture is fixed in [ADR 0003](adr/0003-knowledge-base-microthesaurus.md);
-> this section is the design rationale. Status lives in [ROADMAP.md](ROADMAP.md)
-> Block AQ.
+Surfaced dogfooding the public demo (`turing-demo.viglet.org`), which runs on a
+**Lucene**-backed SN site. The `TurSearchEnginePlugin` abstraction lets Solr,
+Elasticsearch and the embedded Lucene index share one API, but a few features
+were only ever implemented for Solr (and sometimes ES); on a Lucene site they
+degrade to empty/`null` **silently**, which reads as "broken" rather than
+"unsupported". Three quick fixes shipped alongside (T682 source dedup, T683
+autocomplete hyphen, T684 demo typing indicator — see CHANGELOG Block AR); the
+two below are the real engine gaps and need design + integration tests against a
+Lucene site.
 
-### XL.0 The problem — controlled vocabulary the engine can't infer
+**XLI.1 — Lucene "similar documents" / More Like This (T685).** Clicking
+"Similar" / "Related by AI" returns nothing on Lucene. The endpoint
+(`TurSNSiteSearchAPI /similar` → `TurSNSimilarDocumentsService.findSimilar`)
+routes through the plugin in both modes: `MLT` calls `getSimilarDocuments`, and
+`VECTOR` calls `getDocumentsByIds` (seed + neighbour hydration) then the hybrid
+store. `TurLuceneSearchEnginePlugin` overrides *neither*, inheriting the
+interface's deliberate "degrade silently" empty-list defaults — so every mode
+returns empty (Solr uses its `/mlt` handler with a BM25 fallback; ES uses
+`more_like_this`). Fix: implement `getDocumentsByIds` (a term-query fetch by id,
+which also unlocks the VECTOR neighbour path over the embedded Lucene store) and
+`getSimilarDocuments` via Lucene `org.apache.lucene.queries.mlt.MoreLikeThis`
+over `title`/`abstract`/`text`. Keep the fail-open contract (empty on any error).
+Deliver with an IT that imports a small Lucene sample and asserts non-empty
+neighbours for a seed doc.
 
-Embedding search finds *semantically near* text and Block-AP synonyms rewrite the
-*query analyzer*, but neither gives a curated, hierarchical, domain-controlled
-vocabulary. Clients (education-sector first) want documents to be findable by the
-*broader concepts* they belong to — a "pneumonia" page should surface under
-"doença respiratória" and "doença" — using a thesaurus a librarian controls, not
-a statistic. Controlled-vocabulary semantic-navigation systems did this with **microthesauri**; we
-rebuild it natively, keeping all cost at index time.
-
-> **XL.1 (domain model, T668) shipped** — see CHANGELOG Block AQ and
-> `docs/adr/0003-knowledge-base-microthesaurus.md`.
-
-> **XL.2 (console CRUD, T669) shipped** — see CHANGELOG Block AQ.
-
-### XL.3 Per-site selection (T670)
-
-`TurSNSiteMicrothesaurus` join + per-site index config. Selection is **opt-in**:
-a site with no selected microthesaurus indexes exactly as today (byte-identical
-legacy path). Locale is matched automatically — only microthesauri whose
-`language` equals the document's locale participate.
-
-### XL.4 Recognition dictionary (T671)
-
-Compile the selected microthesauri (∩ locale) into a cached, normalised
-Aho-Corasick automaton. Surface forms = the preferred label + `USE`/`USED_FOR`
-non-preferred terms + `variations`, normalised per each variation's `case`/`accent`
-flags. **Recognition ≠ expansion:** variations/synonyms let us *recognise* a term
-even when the document uses a synonym; the `BROADER` chain is what we *expand*.
-Cached per (site, locale), evicted on any KB/term/selection change (caching-skill
-rule: cache immutable read-models, never repositories, always pair with eviction).
-
-### XL.5 Index-time expansion (T672)
-
-`TurSNMicrothesaurusIndexer.enrich(site, locale, attributes)` wired into
-`TurSNProcessQueue.index(...)` after the T472/T501 enrichers — the settled
-mutate-the-attributes-map seam. For every recognised term it collects the
-root→term ancestor labels (top-down, **path only** — never parallel branches),
-dedupes, and writes them to a multi-valued TEXT `microthesaurus_terms` field
-provisioned via `TurSNFieldProvisioner`. The field enters `qf` at a **low boost**
-(controlled-vocabulary recall without dominating relevance) and its auto `_str`
-copy field becomes the concept facet. Defensive: any failure is swallowed/logged
-so a thesaurus problem never blocks a document.
-
-### XL.6 XML importer + reconstructed contract (T673)
-
-The old legacy importer is **unrecoverable** (shallow clone, below the
-graft boundary; no `.dtd`/`.xsd` in-tree). So author the `authorityFile` XSD/DTD
-as the formal contract from a real sample (namespace `https://turing.viglet.org/xsd/thesaurus/1.0`),
-then import: `BT/NT` → `parentTermId`, `RT/U/UF` → relations, `variations` →
-surface forms. Handle the source's reciprocal-pair storage (BT stored on both
-ends) and observed quirks (a term with both `BT` and `RT` to the same id) with
-dedupe. The same DTD is the format the LLM is told to emit in T675.
-
-### XL.7 Pre-populated EDUCATION knowledge base (T674)
-
-Ship AI-generated microthesaurus hierarchies for the **priority education domain**
-(pt/en/it) as an importable seed bundle — the T373/T655 seed-ZIP precedent, *not*
-baked into product startup — plus a library browse area, so a project starts with
-rich, ready-made vocabulary the engine alone can't infer.
-
-### XL.8 LLM-assisted generation (T675, 💭)
-
-Generate new microthesaurus trees from a domain+language prompt, emitting the T673
-authority-file format via the AI-authoring strict-schema + LlmJudge grounding path
-(T426/T385) — never auto-saved; opens the review form.
-
-### XL.9 Bento editor (T676)
-
-A `/bento/kb` surface (BentoHero + BentoEntityShell + a tree editor) for browsing
-and curating KB → microthesaurus → term trees and relations in-project.
+**XLI.2 — Lucene spell-check / "did you mean" (T686).** Spell-check was never
+abstracted into `TurSearchEnginePlugin` at all — `TurSNSiteSpellCheckAPI` and the
+in-search `TurSolr.spellCheckTerm` inject Solr directly, so on a Lucene site
+`initSolrInstance` is empty and the endpoint returns `null`; "did you mean" can
+never appear. This is a design gap, not a stub (unlike autocomplete, which *is* a
+plugin method). Fix: add a `spellCheck(siteName, term, locale)` seam to the
+plugin interface; implement it for Lucene with `DirectSpellChecker` over the live
+index terms (no side-index to maintain) or a built `SpellChecker` dictionary; and
+re-point both `TurSNSiteSpellCheckAPI` and the main-search spell-check path at the
+plugin factory instead of `TurSolr`, so Solr keeps its handler and Lucene/ES get a
+real implementation behind one contract. Cover with a unit test over a known
+misspelling and an IT on a Lucene sample.
 

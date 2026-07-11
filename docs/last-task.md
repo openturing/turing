@@ -1,16 +1,16 @@
-# Last task number — `T681` · next block letter — `AR`
+# Last task number — `T686` · next block letter — `AS`
 
 > **Single source of truth for the next free task number.** The next new task is
-> `T682`; after assigning it, bump the number above and the log line below.
+> `T687`; after assigning it, bump the number above and the log line below.
 >
-> **Next block letter — `AR`** (Block **AQ** = Knowledge Base / microthesauri,
-> T668–T681, created 2026-07-11; T679–T681 added when the T676 frontend was split
-> into subtasks; highest block shipped is **AP**, native
-> synonyms). The block letter has the *same* non-contiguity hazard as the
-> T-number, and since the 2026-07-10 roadmap cleanup pruned fully-shipped blocks
-> (AG/AO/AP) out of `ROADMAP.md`, that file no longer shows the true maximum —
-> **`CHANGELOG.md` is authoritative for the last block, not `ROADMAP.md`**. When
-> you create Block AQ, bump this to `AR`.
+> **Next block letter — `AS`** (Block **AR** = Live-demo search & chat quality /
+> Lucene parity gaps, T682–T686, created 2026-07-11: T682–T684 shipped, T685–T686
+> backlog. Block **AQ** = Knowledge Base / microthesauri, T668–T681, created
+> 2026-07-11; highest block shipped is **AR**). The block letter has the *same*
+> non-contiguity hazard as the T-number, and since the 2026-07-10 roadmap cleanup
+> pruned fully-shipped blocks (AG/AO/AP) out of `ROADMAP.md`, that file no longer
+> shows the true maximum — **`CHANGELOG.md` is authoritative for the last block,
+> not `ROADMAP.md`**. When you create Block AS, bump this to `AT`.
 >
 > (T656 is the highest assigned number. **T639–T654 (📋/💭) are Block AN — the
 > post-audit security-hardening backlog, §XXXVII; T633–T638 (✅) are the
@@ -46,6 +46,11 @@ number" looked free but wasn't. Grepping three files (`ROADMAP.md`,
 
 ## Log (most recent first)
 
+- **T685–T686 CREATED** (📋, Block AR §XLI — Lucene parity gaps: similar/MLT + spell-check seam) — 2026-07-11.
+- **T684 SHIPPED** (Block AR §XLI — demo chat typing indicator in the empty pre-committed assistant bubble) — 2026-07-11.
+- **T683 SHIPPED** (Block AR §XLI — Lucene autocomplete keeps internal hyphens; normalizeSuggestionToken trims edges only) — 2026-07-11.
+- **T682 SHIPPED** (Block AR §XLI — RAG sources deduped by document via TurRagSource.dedupeByDocument at both emission chokepoints) — 2026-07-11.
+- **T675 SHIPPED** (Block AQ §XL — LLM-assisted hierarchy generation: TurThesaurusHierarchyGenerator seam + strict-schema draft → sanitise → authority-file XML → T673 import; bento "Generate with AI" review form; CLOSES Block AQ) — 2026-07-11.
 - **T678 SHIPPED** (Block AQ §XL — query-time related-concept suggestions on RT links: /related-terms endpoint + TurRelatedTermService + both JS SDK wrappers/useTuringRelatedTerms; only 💭 T675 remains) — 2026-07-11.
 - **T677 SHIPPED** (Block AQ §XL — opt-in hierarchical concept facet: microthesaurus_path level-prefixed path tokens + STRING facet field; only 💭 T675/T678 remain) — 2026-07-11.
 - **T679 SHIPPED** (Block AQ §XL — bento term-tree full editing: rename/enable/scopeNote/reparent/variations/relations; CLOSES Block AQ implementable tasks, only 💭 T675/T677/T678 remain) — 2026-07-11.
