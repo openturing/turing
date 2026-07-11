@@ -2483,12 +2483,6 @@ T382/T386, the `/api/sn/import` API, the React + vanilla SDKs); step 2 is the on
 thing that makes a team hesitate to switch. Block AO closes that gap by building
 the importer, not by writing more prose around a manual process.
 
-**XXXVIII.3 — CLI `turing migrate` (T659).** Both importers are wrapped in the
-zero-dependency `@viglet/turing-cli` (`turing migrate elasticsearch|algolia …`),
-reusing the CLI's existing `TuringClient`. This is the real "step 2" the migration
-guide will point at, and the primary DX surface — a switching team runs one
-command instead of writing an ETL script.
-
 **XXXVIII.4 — Field-mapping override (T660, idea).** A migration is rarely 1:1, so
 a small declarative override (rename / retype / drop / default a field) applied
 during import lets the operator reshape the schema on the way in without editing

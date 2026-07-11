@@ -9,6 +9,9 @@
  *       redeploying on file change ({@code --watch}).</li>
  *   <li>{@code deploy} — push agent + flows + tools + skills to an instance.</li>
  *   <li>{@code logs --conversation <id>} — tail live chat events.</li>
+ *   <li>{@code migrate elasticsearch|algolia …} — import a source index into an SN
+ *       site (mapping/settings → manifest, records → import); {@code --dry-run}
+ *       previews the derived schema (Block AO / T659).</li>
  *   <li>{@code eval [path]} — run YAML eval suites ({@code --watch} to re-run).</li>
  *   <li>{@code eval --dataset <id|name>} — run a stored dataset × grader stack
  *       server-side as a reusable CI gate (T602).</li>
@@ -41,6 +44,7 @@ import { deployProject } from "./commands/deploy.js";
 import { discoverSuiteFiles, runEvalFiles } from "./commands/eval.js";
 import { parseInitArgs, runInit } from "./commands/init.js";
 import { runLogs } from "./commands/logs.js";
+import { runMigrate, type MigrateEngine } from "./commands/migrate.js";
 
 const log = (line: string) => console.log(line);
 
@@ -101,6 +105,9 @@ async function main(argv: string[]): Promise<void> {
       return;
     case "logs":
       await logsCommand(rest);
+      return;
+    case "migrate":
+      await migrateCommand(rest);
       return;
     case "eval":
       await evalCommand(rest);
@@ -194,6 +201,16 @@ async function logsCommand(rest: string[]): Promise<void> {
   await runLogs(connected.client, { conversationId, slots: extra.slots === true }, log, controller.signal);
 }
 
+async function migrateCommand(rest: string[]): Promise<void> {
+  const { flags, positionals, extra } = extractConnectionFlags(rest);
+  const engine = positionals[0];
+  if (engine !== "elasticsearch" && engine !== "algolia") {
+    throw new Error("Usage: turing migrate <elasticsearch|algolia> [flags]. Run `turing help`.");
+  }
+  const connected = await connect(flags, process.cwd());
+  await runMigrate(connected.client, engine as MigrateEngine, extra, log);
+}
+
 async function evalCommand(rest: string[]): Promise<void> {
   // `eval record <conversationId>` sub-command.
   if (rest[0] === "record") {
@@ -275,6 +292,11 @@ function printHelp(): void {
       "  turing dev [--file <compose>] [--detach] [--watch]",
       "  turing deploy [--env <name>] [connection flags]",
       "  turing logs --conversation <id> [--slots] [connection flags]",
+      "  turing migrate elasticsearch --source-url <u> --index <i> --site <s> [--se-instance <id>]",
+      "                               [--source-user <u> --source-password <p> | --source-api-key <k>]",
+      "                               [--locale <c>] [--batch-size <n>] [--max-documents <n>] [--dry-run]",
+      "  turing migrate algolia --app-id <id> --api-key <k> --index <i> --site <s> [--se-instance <id>]",
+      "                         [--use-llm] [--locale <c>] [--batch-size <n>] [--max-documents <n>] [--dry-run]",
       "  turing eval [path] [--watch] [connection flags]",
       "  turing eval --dataset <id|name> [--stack <id|name>] [--min-score <n>] [connection flags]",
       "  turing eval record <conversationId> [--out <file>] [connection flags]",

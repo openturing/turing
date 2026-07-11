@@ -71,6 +71,41 @@ Capture a real conversation from a running instance into an eval suite, e.g.
 
 Tail live chat events (SSE) for a conversation. `--slots` also streams slot updates.
 
+### `turing migrate elasticsearch|algolia … [connection flags]`
+
+Import a source search index into a Turing SN site — the automated "step 2" of
+switching from Elasticsearch or Algolia. Turing reads the source schema, derives a
+field manifest, provisions the SN site, and imports every record. Add `--dry-run`
+to preview the derived schema without provisioning or importing anything.
+
+```bash
+# Elasticsearch — URL + credentials + index only, no vendor SDK
+turing migrate elasticsearch \
+  --source-url https://es.example.com:9200 \
+  --source-user elastic --source-password secret \
+  --index products --site Products --se-instance <seInstanceId> --dry-run
+
+# Algolia — schema inferred from a record sample + index settings
+turing migrate algolia \
+  --app-id APPID --api-key <read-key> \
+  --index catalog --site Catalog --se-instance <seInstanceId> --use-llm
+```
+
+| Flag | Engine | Purpose |
+| ---- | ------ | ------- |
+| `--index` | both | Source index name (required). |
+| `--site` | both | Target SN site name (required). |
+| `--se-instance` | both | Search-engine instance id (required to create a new site). |
+| `--source-url` | ES | Source cluster URL (required). |
+| `--source-user` / `--source-password` / `--source-api-key` | ES | Source auth. |
+| `--app-id` / `--api-key` | Algolia | Application id + a read-capable API key (required). |
+| `--use-llm` | Algolia | Refine the inferred schema with a configured LLM. |
+| `--locale` `--batch-size` `--max-documents` `--dry-run` | both | Tuning + preview. |
+
+`--se-instance` is only required when the target site doesn't exist yet. Synonyms
+found in an Algolia index are reported for you to apply in the target engine
+(native synonym management is on the roadmap).
+
 ## Eval suites
 
 Eval suites are `*.eval.yaml` files: a list of `fixtures`, each a sequence of
