@@ -74,7 +74,7 @@ public class TurLucene {
             long startTime = System.currentTimeMillis();
             TurSEParameters params = context.getTurSEParameters();
 
-            Query query = turLuceneQueryBuilder.buildQuery(turSNSite, params);
+            Query query = turLuceneQueryBuilder.buildQuery(turSNSite, params, context.getLocale());
             List<TurSNSiteFieldExt> hlFields = turLuceneQueryBuilder.getHLFields(turSNSite);
             var sort = turLuceneQueryBuilder.buildSort(turSNSite, params);
 
@@ -105,7 +105,7 @@ public class TurLucene {
         return turSNSiteRepository.findByNameIgnoreCase(context.getSiteName()).map(turSNSite -> {
             long startTime = System.currentTimeMillis();
             TurSEParameters params = context.getTurSEParameters();
-            Query query = turLuceneQueryBuilder.buildQuery(turSNSite, params);
+            Query query = turLuceneQueryBuilder.buildQuery(turSNSite, params, context.getLocale());
             return turLuceneResultProcessor.getResults(
                     new TurLuceneSearch(instance, turSNSite, query, params),
                     turLuceneQueryBuilder.getFacetFields(turSNSite, facetName),

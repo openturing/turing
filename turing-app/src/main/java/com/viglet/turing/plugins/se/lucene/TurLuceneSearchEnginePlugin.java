@@ -28,6 +28,8 @@ import com.viglet.turing.persistence.model.sn.TurSNSite;
 import com.viglet.turing.persistence.model.sn.locale.TurSNSiteLocale;
 import com.viglet.turing.persistence.repository.sn.TurSNSiteRepository;
 import com.viglet.turing.plugins.se.TurSearchEnginePlugin;
+import com.viglet.turing.plugins.se.TurSESynonymApplyResult;
+import com.viglet.turing.plugins.se.TurSESynonymRule;
 import com.viglet.turing.se.result.TurSEResults;
 import com.viglet.turing.solr.bean.TurSECoreInfo;
 import lombok.extern.slf4j.Slf4j;
@@ -55,17 +57,20 @@ public class TurLuceneSearchEnginePlugin implements TurSearchEnginePlugin {
     private final TurLuceneQueryBuilder turLuceneQueryBuilder;
     private final TurSNSiteRepository turSNSiteRepository;
     private final com.viglet.turing.lucene.TurLuceneStorageSync storageSync;
+    private final TurLuceneSynonymRegistry synonymRegistry;
 
     public TurLuceneSearchEnginePlugin(TurLucene turLucene,
             TurLuceneInstanceProcess turLuceneInstanceProcess,
             TurLuceneQueryBuilder turLuceneQueryBuilder,
             TurSNSiteRepository turSNSiteRepository,
-            com.viglet.turing.lucene.TurLuceneStorageSync storageSync) {
+            com.viglet.turing.lucene.TurLuceneStorageSync storageSync,
+            TurLuceneSynonymRegistry synonymRegistry) {
         this.turLucene = turLucene;
         this.turLuceneInstanceProcess = turLuceneInstanceProcess;
         this.turLuceneQueryBuilder = turLuceneQueryBuilder;
         this.turSNSiteRepository = turSNSiteRepository;
         this.storageSync = storageSync;
+        this.synonymRegistry = synonymRegistry;
     }
 
     @Override
@@ -147,6 +152,24 @@ public class TurLuceneSearchEnginePlugin implements TurSearchEnginePlugin {
     @Override
     public boolean fieldExists(TurSEInstance seInstance, String indexName, String fieldName) {
         return false; // Lucene is schema-less
+    }
+
+    // ---- Synonyms (T665 / §XXXIX, Block AP) ------------------------------
+
+    @Override
+    public boolean supportsSynonyms() {
+        return true;
+    }
+
+    @Override
+    public TurSESynonymApplyResult applySynonyms(TurSEInstance seInstance, String indexName,
+            Locale locale, List<TurSESynonymRule> rules) {
+        // Embedded, single-JVM: "apply" = swap the query-time SynonymMap the query
+        // analyzer consults for this core. No reindex — the next query expands.
+        TurLuceneSynonymMap built = TurLuceneSynonymMapBuilder.build(rules);
+        synonymRegistry.put(indexName, built.map());
+        return new TurSESynonymApplyResult(true, built.appliedRules(),
+                built.unsupportedTypes(), built.warnings());
     }
 
     // ---- Document operations ---------------------------------------------

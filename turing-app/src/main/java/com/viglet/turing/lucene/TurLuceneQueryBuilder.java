@@ -18,10 +18,13 @@ package com.viglet.turing.lucene;
 
 import java.util.EnumSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Optional;
 import java.util.Set;
 
+import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
+import org.apache.lucene.analysis.synonym.SynonymMap;
 import org.apache.lucene.index.Term;
 import org.apache.lucene.queryparser.classic.MultiFieldQueryParser;
 import org.apache.lucene.queryparser.classic.ParseException;
@@ -44,8 +47,12 @@ import com.viglet.turing.persistence.model.sn.TurSNSite;
 import com.viglet.turing.persistence.model.sn.sort.TurSNSiteCustomSortItem;
 import com.viglet.turing.persistence.model.sn.sort.TurSNSiteCustomSortOrderEnum;
 import com.viglet.turing.persistence.model.sn.field.TurSNSiteFieldExt;
+import com.viglet.turing.persistence.model.sn.locale.TurSNSiteLocale;
 import com.viglet.turing.persistence.repository.sn.sort.TurSNSiteCustomSortRepository;
 import com.viglet.turing.persistence.repository.sn.field.TurSNSiteFieldExtRepository;
+import com.viglet.turing.persistence.repository.sn.locale.TurSNSiteLocaleRepository;
+import com.viglet.turing.plugins.se.lucene.TurLuceneSynonymAnalyzer;
+import com.viglet.turing.plugins.se.lucene.TurLuceneSynonymRegistry;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -66,11 +73,17 @@ public class TurLuceneQueryBuilder {
 
     private final TurSNSiteFieldExtRepository turSNSiteFieldExtRepository;
     private final TurSNSiteCustomSortRepository turSNSiteCustomSortRepository;
+    private final TurSNSiteLocaleRepository turSNSiteLocaleRepository;
+    private final TurLuceneSynonymRegistry synonymRegistry;
 
     public TurLuceneQueryBuilder(TurSNSiteFieldExtRepository turSNSiteFieldExtRepository,
-            TurSNSiteCustomSortRepository turSNSiteCustomSortRepository) {
+            TurSNSiteCustomSortRepository turSNSiteCustomSortRepository,
+            TurSNSiteLocaleRepository turSNSiteLocaleRepository,
+            TurLuceneSynonymRegistry synonymRegistry) {
         this.turSNSiteFieldExtRepository = turSNSiteFieldExtRepository;
         this.turSNSiteCustomSortRepository = turSNSiteCustomSortRepository;
+        this.turSNSiteLocaleRepository = turSNSiteLocaleRepository;
+        this.synonymRegistry = synonymRegistry;
     }
 
     // -------------------------------------------------------------------------
@@ -82,10 +95,19 @@ public class TurLuceneQueryBuilder {
      * Includes the user's query string and any active filter queries.
      */
     public Query buildQuery(TurSNSite turSNSite, TurSEParameters params) {
+        return buildQuery(turSNSite, params, null);
+    }
+
+    /**
+     * T665 — same as {@link #buildQuery(TurSNSite, TurSEParameters)} but with the
+     * search {@code locale}, so the main query is analyzed with the site's
+     * query-time synonym map (when one is registered for that locale's core).
+     */
+    public Query buildQuery(TurSNSite turSNSite, TurSEParameters params, Locale locale) {
         BooleanQuery.Builder builder = new BooleanQuery.Builder();
 
         // Main user query
-        Query mainQuery = buildMainQuery(params.getQuery(), turSNSite);
+        Query mainQuery = buildMainQuery(params.getQuery(), turSNSite, locale);
         builder.add(mainQuery, BooleanClause.Occur.MUST);
 
         // Filter queries (facet selections)
@@ -252,19 +274,20 @@ public class TurLuceneQueryBuilder {
     // Internals
     // -------------------------------------------------------------------------
 
-    private Query buildMainQuery(String queryStr, TurSNSite turSNSite) {
+    private Query buildMainQuery(String queryStr, TurSNSite turSNSite, Locale locale) {
         if (!StringUtils.hasText(queryStr) || queryStr.equals("*") || queryStr.equals("*:*")) {
             return new FieldExistsQuery(TurLuceneConstants.ID);
         }
 
         String[] textFields = resolveTextFields(turSNSite);
+        Analyzer analyzer = queryAnalyzer(turSNSite, locale);
         try {
             if (textFields.length == 0) {
                 // Fallback: search the id field
-                return new QueryParser(TurLuceneConstants.ID, new StandardAnalyzer()).parse(
+                return new QueryParser(TurLuceneConstants.ID, analyzer).parse(
                         QueryParserBase.escape(queryStr));
             }
-            MultiFieldQueryParser parser = new MultiFieldQueryParser(textFields, new StandardAnalyzer());
+            MultiFieldQueryParser parser = new MultiFieldQueryParser(textFields, analyzer);
             parser.setDefaultOperator(QueryParser.Operator.AND);
             return parser.parse(queryStr);
         } catch (ParseException e) {
@@ -272,6 +295,26 @@ public class TurLuceneQueryBuilder {
                     e.getMessage());
             return buildTermQueries(queryStr, textFields);
         }
+    }
+
+    /**
+     * T665 — the query-time analyzer: the site's synonym-aware analyzer when a
+     * {@link SynonymMap} is registered for the search locale's core, otherwise
+     * the plain {@link StandardAnalyzer} (identical to pre-T665 behaviour). Zero
+     * overhead for sites without synonyms — the registry short-circuits and no
+     * locale/core lookup runs.
+     */
+    private Analyzer queryAnalyzer(TurSNSite turSNSite, Locale locale) {
+        if (locale == null || synonymRegistry == null || synonymRegistry.isEmpty()) {
+            return new StandardAnalyzer();
+        }
+        String core = turSNSiteLocaleRepository.findByTurSNSite(turSNSite).stream()
+                .filter(l -> locale.equals(l.getLanguage()))
+                .map(TurSNSiteLocale::getCore)
+                .findFirst()
+                .orElse(null);
+        SynonymMap map = core == null ? null : synonymRegistry.get(core);
+        return map == null ? new StandardAnalyzer() : new TurLuceneSynonymAnalyzer(map);
     }
 
     /** Fallback: build OR of TermQuery across text fields. */

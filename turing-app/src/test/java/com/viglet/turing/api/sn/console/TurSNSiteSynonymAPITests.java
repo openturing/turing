@@ -200,12 +200,12 @@ class TurSNSiteSynonymAPITests {
     @Test
     @Order(8)
     void supportReportsEngineCapability() throws Exception {
-        // The test site runs on the Lucene plugin, which does not override
-        // supportsSynonyms() yet (that's T665) -> reports unsupported honestly.
+        // The test site runs on the Lucene plugin, which supports query-time
+        // synonyms via an in-JVM SynonymMap (T665).
         mockMvc.perform(get(serviceUrl + "/support").principal(mockPrincipal))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.engine").value("lucene"))
-                .andExpect(jsonPath("$.supported").value(false));
+                .andExpect(jsonPath("$.supported").value(true));
     }
 
     @Test
@@ -213,8 +213,9 @@ class TurSNSiteSynonymAPITests {
     void applyReturnsPerLocaleResult() throws Exception {
         RequestBuilder rb = MockMvcRequestBuilders.post(serviceUrl + "/apply").principal(mockPrincipal)
                 .accept(MediaType.APPLICATION_JSON).contentType(MediaType.APPLICATION_JSON);
-        // One locale (en) on the site; Lucene reports unsupported rather than throwing.
+        // One locale (en) on the site; Lucene registers the query-time map and
+        // reports it applied.
         mockMvc.perform(rb).andExpect(status().isOk())
-                .andExpect(jsonPath("$.en.supported").value(false));
+                .andExpect(jsonPath("$.en.supported").value(true));
     }
 }
