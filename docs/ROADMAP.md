@@ -150,6 +150,22 @@ passed, onboarding polish shipped, and the two console-only persona tools
 - 💭 **T660** (deps: T657) **Field-mapping override layer** — a small declarative spec (rename / retype / drop / default fields) applied during import, since a source schema is rarely 1:1 with the desired Turing schema. → §XXXVIII.4
 - 💭 **T661** (deps: T657) **Shadow / dual-run comparison** — query the source engine and Turing side-by-side over the same query set and diff the result sets, so a team can measure relevance parity before cutover. → §XXXVIII.5
 
+## Block AP — Native synonyms & query expansion (parity+ with Algolia)
+
+> The Algolia importer (T658) can only *surface* an index's synonyms because Turing
+> has no synonym subsystem to import them into. Synonyms are table stakes for
+> enterprise search; this block gives Turing an engine-agnostic, **query-time**
+> synonym model (author once → pushed into Solr/ES/Lucene), a **friendly admin UI**,
+> an Algolia importer that closes the migration loop, and — past parity — AI-assisted
+> synonym mining over Turing's embeddings. Design → §XXXIX.
+
+- 📋 **T662** (deps: —) **Synonym model + management API (engine-agnostic source of truth)** — `TurSNSynonym`/`TurSNSynonymSet` per SN site **and locale**, `type` {REGULAR, ONE_WAY, ALTERNATIVE_CORRECTION_1/2, PLACEHOLDER}, term-set / input+expansions / correction pair, `enabled`; Liquibase; CRUD + batch + search REST. The neutral store the engines apply and the Algolia importer writes into. → §XXXIX
+- 📋 **T663** (deps: T662) **Search-engine plugin synonym seam + Solr query-time impl** — `TurSearchEnginePlugin.applySynonyms(seInstance, indexName, locale, sets)` + `supportsSynonyms()`; Solr managed-synonyms REST (or `synonyms.txt` + reload) wired as a **query-time** `SynonymGraphFilter` so edits need **no reindex** (Algolia's model). → §XXXIX
+- 📋 **T664** (deps: T662, T663) **Elasticsearch synonym impl** — the Synonyms API / `synonym_graph` filter on the query analyzer (search-time, updatable without reindex). → §XXXIX
+- 💭 **T665** (deps: T662, T663) **Lucene synonym impl** — query-time `SynonymGraphFilter` from a Lucene `SynonymMap` over the embedded store; regular + one-way natural, placeholder / per-typo weighting **surfaced as unsupported** (honest Lucene-limits caveat) not silently dropped. → §XXXIX
+- 📋 **T666** (deps: T662, T658 ✅) **Friendly synonyms admin UI + "Import from Algolia"** — a **bento** page to manage synonyms per site/locale that is genuinely easy to use: per-type editors (chip set for regular, input→expansions for one-way, pair for corrections), enable/disable toggle, live engine-support banner (e.g. "placeholders unsupported on Lucene"), inline validation, and a **one-click import** that maps the Algolia synonyms fetched by T658 into the model — closing the migration loop. React-Query `queries/` + service + bento scaffold. → §XXXIX
+- 💭 **T667** (deps: T662) **AI-assisted synonym mining & semantic query expansion (better-than-Algolia)** — cluster query-log terms by embedding proximity + co-click and have an LLM propose candidate sets for human review (never auto-applied); optional embedding-neighbour query expansion at search time. → §XXXIX
+
 ## Non-goals (do NOT add as tasks)
 
 Binding constraints — see [IMPROVEMENTS.md](IMPROVEMENTS.md) §I.6 (What NOT to

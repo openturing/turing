@@ -2499,3 +2499,76 @@ run the same query set against the source engine and Turing and diff the result
 sets, giving a team an evidence-based relevance-parity check before they flip
 traffic. Higher-effort and only meaningful once the importers exist, so it's an
 idea, not a first build.
+
+## XXXIX. Native synonyms & query expansion (Block AP)
+
+**The gap.** The Algolia importer (T658) fetches an index's synonyms but can only
+*surface* them — Turing has no synonym subsystem to import them into. Synonyms are
+table stakes for enterprise search (a shopper searching "tv" must find
+"television"; "notebook" must find "laptop"), and their absence is the one place
+the migration story says "you lose something." This block closes that gap and then
+goes past parity, because Turing already owns two assets Algolia doesn't combine:
+a pluggable search-engine layer (Solr/Elasticsearch/Lucene) and an embedding/RAG
+stack.
+
+**What Algolia actually offers (the parity target).** Algolia's synonyms are a
+per-index, **query-time** feature (editing a synonym never triggers a reindex),
+managed through a CRUD/browse/batch API, in five types:
+
+1. **Regular (multi-way)** — a set of fully-equivalent terms, e.g.
+   `{tv, television, telly}`; a query for any one matches records containing any
+   other.
+2. **One-way** — an input expands to alternatives but not the reverse, e.g. input
+   `tablet` → `{ipad, galaxy tab}` (searching `tablet` finds iPads; searching
+   `ipad` does *not* broaden to all tablets).
+3. **Alternative correction (1- or 2-typo)** — a term treated as if it were a typo
+   of another, counting against the typo budget, e.g. `tshirt` ≈ `t-shirt`.
+4. **Placeholder** — a tokenised slot in record text (`<streetnumber> street`)
+   that matches any value from a defined set. The most niche/advanced.
+5. Multilingual by construction (sets are user-defined tokens, language-agnostic),
+   with per-index scope.
+
+**The Turing shape.** Synonyms become a **Turing-owned, engine-agnostic source of
+truth** (a `TurSNSynonym`/`TurSNSynonymSet` entity per SN site **and locale**, with
+a `type` enum `{REGULAR, ONE_WAY, ALTERNATIVE_CORRECTION_1, ALTERNATIVE_CORRECTION_2,
+PLACEHOLDER}`, the term set / input+expansions / correction pair, and an `enabled`
+flag), plus a management REST API (CRUD + batch + search) — so a synonym is
+authored once and Turing pushes it into whichever engine backs the site. This
+mirrors how the field manifest (T382/T386) is the neutral schema and the plugin
+applies it, and it is what lets the Algolia importer finally have a home to write
+into. A new **plugin seam** on `TurSearchEnginePlugin`
+(`applySynonyms(seInstance, indexName, locale, sets)` + `boolean supportsSynonyms()`)
+keeps the per-engine mechanics behind the existing abstraction:
+
+- **Solr (T663)** — write the site's synonym sets through the **managed-synonyms
+  REST resource** (or a generated `synonyms.txt` + reload), wired as a **query-time**
+  `SynonymGraphFilter` so edits need no reindex — matching Algolia's model. Regular
+  = comma sets, one-way = `input => expansions`.
+- **Elasticsearch (T664)** — the **Synonyms API** (search-time synonym sets,
+  updatable without reindex) / `synonym_graph` token filter on the query analyzer.
+- **Lucene (T665)** — build a Lucene `SynonymMap` for a **query-time**
+  `SynonymGraphFilter` over the embedded store's query analyzer. Regular + one-way
+  are natural; **placeholder** and **per-typo correction weighting** exceed the
+  filter's model and are surfaced as unsupported (the honest "Lucene limits"
+  caveat generalised) rather than silently dropped.
+
+Alternative corrections map onto each engine's fuzzy/typo mechanism where one
+exists, else degrade to one-way synonyms with a warning.
+
+**Frontend (T666).** A **bento admin page** to manage synonyms per site/locale —
+list/create/edit/delete each type with the right editor shape (chip set for
+regular, input→expansions for one-way, a pair for corrections), an
+enable/disable toggle, an engine-support banner (e.g. "placeholders unsupported on
+Lucene"), and a **one-click "Import from Algolia"** action that maps the Algolia
+synonym types fetched by T658 into the Turing model — closing the migration loop
+end-to-end. Uses the React-Query `queries/` + service pattern and the bento
+scaffold.
+
+**Better than Algolia (T667, idea).** Because Turing already computes embeddings,
+it can do what Algolia can't natively: **AI-assisted synonym mining** — cluster
+query-log terms by embedding proximity and by co-click, then have an LLM propose
+candidate synonym sets for human review (never auto-applied, per the grounding
+invariant); and optional **semantic query expansion** at search time (expand a
+query with its nearest embedding neighbours as soft synonyms), giving recall lifts
+a hand-curated list can't. This turns synonyms from a maintenance chore into a
+suggested-and-approved workflow.
