@@ -1,0 +1,259 @@
+databaseChangeLog:
+  # T696 / §XLIII (Block AT) — Persona Match: N×N persona↔content fit projects.
+  #
+  #   ai_persona_match_project  — aggregate root (the reusable analysis project),
+  #                               carries @TenantId + schedule + llmInstanceId.
+  #   ai_persona_match_source   — project-scoped content (URL/SN_DOC/ASSET),
+  #                               mirrors ai_persona_source but owned by a project;
+  #                               FK -> ai_persona_match_project.
+  #   ai_persona_match_persona  — project↔persona join; persona_id is a SOFT ref to
+  #                               ai_persona (resolved at read); FK -> project.
+  #   ai_persona_match_cell     — one (content × persona) fit result; unique on
+  #                               (project_id, source_id, persona_id); persists
+  #                               across runs, content-hash keyed for re-run skip.
+  #
+  # Column names match the JPA field names (camelCase); FK columns snake_case like
+  # the sibling persona children. Portable lowercase types. Idempotent (MARK_RAN).
+
+  - changeSet:
+      id: v2026.3.1.100-create-ai_persona_match_project
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - tableExists:
+                tableName: ai_persona_match_project
+      changes:
+        - createTable:
+            tableName: ai_persona_match_project
+            columns:
+              - column:
+                  name: id
+                  type: varchar(40)
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: name
+                  type: varchar(200)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: description
+                  type: varchar(2000)
+              - column:
+                  name: enabled
+                  type: boolean
+                  defaultValueBoolean: true
+                  constraints:
+                    nullable: false
+              - column:
+                  name: llmInstanceId
+                  type: varchar(40)
+              - column:
+                  name: schedule
+                  type: varchar(16)
+                  defaultValue: MANUAL
+                  constraints:
+                    nullable: false
+              - column:
+                  name: last_run_at
+                  type: timestamp
+              - column:
+                  name: tenantId
+                  type: varchar(40)
+              - column:
+                  name: creationDate
+                  type: timestamp
+              - column:
+                  name: modificationDate
+                  type: timestamp
+
+  - changeSet:
+      id: v2026.3.1.100-create-ai_persona_match_source
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - tableExists:
+                tableName: ai_persona_match_source
+      changes:
+        - createTable:
+            tableName: ai_persona_match_source
+            columns:
+              - column:
+                  name: id
+                  type: varchar(40)
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: type
+                  type: varchar(16)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: source_name
+                  type: varchar(200)
+              - column:
+                  name: ref
+                  type: varchar(1000)
+              - column:
+                  name: site_name
+                  type: varchar(100)
+              - column:
+                  name: cached_text
+                  type: longtext
+              - column:
+                  name: content_hash
+                  type: varchar(40)
+              - column:
+                  name: extracted_at
+                  type: timestamp
+              - column:
+                  name: extraction_status
+                  type: varchar(16)
+                  defaultValue: PENDING
+                  constraints:
+                    nullable: false
+              - column:
+                  name: extraction_error
+                  type: varchar(500)
+              - column:
+                  name: tenantId
+                  type: varchar(40)
+              - column:
+                  name: project_id
+                  type: varchar(40)
+                  constraints:
+                    nullable: false
+                    foreignKeyName: fk_persona_match_source_project
+                    references: ai_persona_match_project(id)
+                    deleteCascade: true
+        - createIndex:
+            tableName: ai_persona_match_source
+            indexName: idx_persona_match_source_project
+            columns:
+              - column:
+                  name: project_id
+
+  - changeSet:
+      id: v2026.3.1.100-create-ai_persona_match_persona
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - tableExists:
+                tableName: ai_persona_match_persona
+      changes:
+        - createTable:
+            tableName: ai_persona_match_persona
+            columns:
+              - column:
+                  name: id
+                  type: varchar(40)
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: persona_id
+                  type: varchar(40)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: tenantId
+                  type: varchar(40)
+              - column:
+                  name: project_id
+                  type: varchar(40)
+                  constraints:
+                    nullable: false
+                    foreignKeyName: fk_persona_match_persona_project
+                    references: ai_persona_match_project(id)
+                    deleteCascade: true
+        - createIndex:
+            tableName: ai_persona_match_persona
+            indexName: idx_persona_match_persona_project
+            columns:
+              - column:
+                  name: project_id
+
+  - changeSet:
+      id: v2026.3.1.100-create-ai_persona_match_cell
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - tableExists:
+                tableName: ai_persona_match_cell
+      changes:
+        - createTable:
+            tableName: ai_persona_match_cell
+            columns:
+              - column:
+                  name: id
+                  type: varchar(40)
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: project_id
+                  type: varchar(40)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: source_id
+                  type: varchar(40)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: persona_id
+                  type: varchar(40)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: fit_score
+                  type: double
+                  defaultValueNumeric: 0
+                  constraints:
+                    nullable: false
+              - column:
+                  name: readability_score
+                  type: double
+                  defaultValueNumeric: 0
+                  constraints:
+                    nullable: false
+              - column:
+                  name: summary
+                  type: varchar(1000)
+              - column:
+                  name: fits_json
+                  type: longtext
+              - column:
+                  name: misfits_json
+                  type: longtext
+              - column:
+                  name: llm_used
+                  type: boolean
+                  defaultValueBoolean: false
+                  constraints:
+                    nullable: false
+              - column:
+                  name: content_hash
+                  type: varchar(40)
+              - column:
+                  name: evaluated_at
+                  type: timestamp
+              - column:
+                  name: tenantId
+                  type: varchar(40)
+        - addUniqueConstraint:
+            tableName: ai_persona_match_cell
+            constraintName: uk_persona_match_cell
+            columnNames: project_id, source_id, persona_id
+        - createIndex:
+            tableName: ai_persona_match_cell
+            indexName: idx_persona_match_cell_project
+            columns:
+              - column:
+                  name: project_id

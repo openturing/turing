@@ -2254,3 +2254,19 @@ not a second call site.
 > provider-aware picker (LLM combobox / HF searchable picker / manual local path)
 > with on-select dimension + reindex warnings and an ONNX variant/quantization
 > choice, and the default-RAG startup provisioning now seeds an HF repo id.
+
+## XLIII. Persona Match — fit trend/history + adjustment suggestions (Block AT, T704)
+
+> The Persona Match aggregate + N×N runner + studio + scheduled re-analysis
+> shipped (T696–T703, see CHANGELOG Block AT). What remains is the tuning-loop
+> payoff on top of the scheduling that already exists.
+
+**T704 (💭) — fit trend/history + adjustment suggestions.** The scheduled runner
+(T700) already re-extracts sources and recomputes changed cells on a MANUAL/DAILY/
+WEEKLY cadence, but each run overwrites the cell in place — there is no memory of
+how a `(content, persona)` pair's fit moved over time. T704 persists per-cell score
+**history** across scheduled runs so the studio can surface *drift* ("this content
+fell below fit for persona X since last run") and propose LLM-generated
+persona/content adjustments — closing the bidirectional "adjust persona to content
+and content to persona" loop the original request described. Builds on T698 (the
+cell) + T700 (the schedule); the evaluator and grounding stay unchanged.

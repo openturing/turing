@@ -1,9 +1,11 @@
-# Last task number — `T695` · next block letter — `AT`
+# Last task number — `T704` · next block letter — `AU`
 
 > **Single source of truth for the next free task number.** The next new task is
-> `T696`; after assigning it, bump the number above and the log line below.
+> `T705`; after assigning it, bump the number above and the log line below.
 >
-> **Next block letter — `AT`** (Block **AS** = Scalable & pluggable audio
+> **Next block letter — `AU`** (Block **AT** = Persona Match — N×N persona↔content
+> fit projects, T696–T704, created 2026-07-12; Block **AS** = Scalable & pluggable
+> audio
 > transcription / chunking + local backends, T687–T693 + T695, created 2026-07-11;
 > **T694 retired** — the in-process ONNX Whisper runtime will not be built and the
 > `LOCAL_ONNX` backend was removed by T695 (see ROADMAP Non-goals).
@@ -50,6 +52,15 @@ number" looked free but wasn't. Grepping three files (`ROADMAP.md`,
 
 ## Log (most recent first)
 
+- **T703 SHIPPED** (Block AT §XLIII — retire per-persona validate route into a single-persona Match-project shortcut) — 2026-07-12.
+- **T702 SHIPPED** (Block AT §XLIII — interactive N×N fit heatmap + by-content/by-persona reports + live SSE fill + per-lens PDF export) — 2026-07-12.
+- **T701 SHIPPED** (Block AT §XLIII — bento Persona Match studio wired to real API: list + workspace + service/query-hooks/model; mock retired) — 2026-07-12.
+- **T700 SHIPPED** (Block AT §XLIII — scheduled DAILY/WEEKLY re-analysis via @Scheduled + ShedLock; re-extract then recompute changed cells) — 2026-07-12.
+- **T699 SHIPPED** (Block AT §XLIII — TurPersonaMatchAPI: project CRUD + persona-set + content add/upload/re-extract/delete + matrix + report lenses + run (blocking + SSE)) — 2026-07-12.
+- **T698 SHIPPED** (Block AT §XLIII — TurPersonaMatchAnalysisService N×N runner over the Block AA evaluator; content-hash skip; bounded-parallel tenant-safe; SSE event bus) — 2026-07-12.
+- **T697 SHIPPED** (Block AT §XLIII — TurPersonaMatchSourceService project-scoped extraction reusing Block AA paths + contentHash stamp) — 2026-07-12.
+- **T696 SHIPPED** (Block AT §XLIII — Persona Match domain model + persistence: project/source/persona-join/cell entities + repos + Liquibase v2026.3.1.100 + IT) — 2026-07-12.
+- **T696-T704 CREATED** (📋/💭, Block AT §XLIII — Persona Match: N×N persona<->content fit projects; domain model + project-scoped extraction + N×N runner over the Block AA evaluator + CRUD/report API + scheduled re-analysis + bento fit-heatmap studio; retires per-persona validate into a shortcut) — 2026-07-12.
 - **T694 CREATED** (💭, Block AS §XLII.5 — fill the LOCAL_ONNX scaffold with real in-process Whisper ONNX inference; deferred heavy-lift) — 2026-07-11.
 - **T695 SHIPPED** (Block AS — remove non-functional LOCAL_ONNX transcription backend; retires deferred T694; enum/provider/WhisperModelSize/onnxModelSize/config-var/bento dropdown gone; local path stays via OPENAI_COMPATIBLE; recorded as ROADMAP non-goal) — 2026-07-11.
 - **T693 SHIPPED** (Block AS §XLII — AUDIO slot routes through chunk-aware TurTranscriptionService (Gemini fallback only when unconfigured); per-backend TurTranscriptionMetricsService + GET metrics; confidence (verbose_json avg_logprob) + local->cloud fallback) — 2026-07-11.

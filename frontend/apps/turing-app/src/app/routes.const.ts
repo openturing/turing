@@ -97,6 +97,7 @@ export const ROUTES = {
   BENTO_PERSONA: "/bento/persona",
   BENTO_PERSONA_INSTANCE: "/bento/persona/instance",
   BENTO_PERSONA_VALIDATE: "/bento/persona/validate",
+  BENTO_PERSONA_MATCH: "/bento/persona/match",
   BENTO_PERSONA_DIALOGUE: "/bento/persona/dialogue",
   BENTO_PERSONA_SUGGEST: "/bento/persona/suggest",
   BENTO_GIT: "/bento/git",

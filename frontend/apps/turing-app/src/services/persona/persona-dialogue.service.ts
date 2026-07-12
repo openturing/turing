@@ -1,4 +1,5 @@
 import axios from "axios";
+import { getCsrfToken } from "@/lib/axios";
 import type {
   TurDialogueEvent,
   TurPersonaDialogueRequest,
@@ -9,11 +10,6 @@ export interface DialogueStreamHandlers {
   onTurn: (event: TurDialogueEvent) => void;
   onDone?: (event: TurDialogueEvent) => void;
   onError?: (error: unknown, event?: TurDialogueEvent) => void;
-}
-
-function readXsrfToken(): string | null {
-  const match = /(?:^|;\s*)XSRF-TOKEN=([^;]+)/.exec(globalThis.document.cookie);
-  return match ? decodeURIComponent(match[1]) : null;
 }
 
 /**
@@ -29,17 +25,11 @@ export class TurPersonaDialogueService {
     signal?: AbortSignal,
   ): Promise<void> {
     const baseUrl = axios.defaults.baseURL || "/api";
-    // Prime the CSRF cookie if it isn't set yet, then send it as the header
-    // (this POST bypasses the axios interceptor that normally does this).
-    let token = readXsrfToken();
-    if (!token) {
-      try {
-        await axios.get("/csrf");
-      } catch {
-        /* the cookie may still be set from an earlier request */
-      }
-      token = readXsrfToken();
-    }
+    // Prime + read the CSRF token via the shared axios helper and send it as the
+    // header (this POST bypasses the axios interceptor that normally does this).
+    // The XSRF-TOKEN cookie is HttpOnly, so it can't be read from document.cookie
+    // — the token comes from the /csrf response body instead.
+    const token = await getCsrfToken();
 
     try {
       const response = await fetch(`${baseUrl}/v2/persona-dialogue`, {

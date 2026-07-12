@@ -65,6 +65,9 @@ const BentoPersonaEditor = lazy(() => import("../bento/persona/bento.persona.edi
 const BentoPersonaValidatePage = lazy(() => import("../bento/persona/bento.persona.validate.page"));
 // Block AI (T585) — global persona↔persona dialogue (two speakers + a topic).
 const BentoPersonaDialoguePage = lazy(() => import("../bento/persona/bento.persona.dialogue.page"));
+// Block AT (T701-T702) — Persona Match: N×N persona↔content fit projects (UI prototype).
+const BentoPersonaMatchListPage = lazy(() => import("../bento/persona/match/bento.persona.match.list.page"));
+const BentoPersonaMatchWorkspacePage = lazy(() => import("../bento/persona/match/bento.persona.match.workspace.page"));
 // Block AG follow-up (T619) — auto-suggest best-fit persona for content (T471).
 const BentoPersonaSuggestPage = lazy(() => import("../bento/persona/bento.persona.suggest.page"));
 const BentoGitPage = lazy(() => import("../bento/git/bento.git.page"));
@@ -242,6 +245,9 @@ export const BentoRoutes = (
     <Route path="persona/validate/:personaId" element={<BentoPersonaValidatePage />} />
     {/* Block AI (T585) — GLOBAL persona↔persona dialogue (not scoped to one persona). */}
     <Route path="persona/dialogue" element={<BentoPersonaDialoguePage />} />
+    {/* Block AT (T701-T702) — GLOBAL Persona Match: N×N fit projects (UI prototype). */}
+    <Route path="persona/match" element={<BentoPersonaMatchListPage />} />
+    <Route path="persona/match/:projectId" element={<BentoPersonaMatchWorkspacePage />} />
     {/* Block AG follow-up (T619) — GLOBAL auto-suggest best-fit persona for content. */}
     <Route path="persona/suggest" element={<BentoPersonaSuggestPage />} />
     <Route path="persona/instance" element={<BentoPersonaListPage />} />

@@ -116,6 +116,24 @@ function readCsrfTokenFromCookie(): string | null {
   return match ? decodeURIComponent(match[1]) : null;
 }
 
+/**
+ * Returns a usable CSRF token for callers that issue mutating requests OUTSIDE
+ * the axios interceptor (e.g. streaming `fetch` SSE POSTs). The `XSRF-TOKEN`
+ * cookie is HttpOnly, so it can't be read from `document.cookie`; this primes
+ * it via the `/csrf` endpoint (reading the token from the response body/header,
+ * exactly like the interceptor) and returns the cached value.
+ */
+export async function getCsrfToken(): Promise<string | null> {
+  try {
+    if (!csrfToken) {
+      await ensureCsrfToken();
+    }
+  } catch {
+    /* network error — fall back to the (usually empty) cookie below */
+  }
+  return csrfToken ?? readCsrfTokenFromCookie();
+}
+
 async function ensureCsrfToken(): Promise<void> {
   if (csrfToken) return;
 

@@ -1,66 +1,88 @@
+import {
+  personaMatchService,
+  useMatchProjects,
+} from "@/api/queries/persona-match.queries";
 import { usePersona } from "@/api/queries/persona.queries";
 import { ROUTES } from "@/app/routes.const";
 import { BentoHero } from "@/components/bento";
-import { PersonaFitReportSection } from "@/components/persona/persona-fit-report.section";
-import { PersonaSourcesSection } from "@/components/persona/persona-sources.section";
-import { SectionCardChromeProvider } from "@/components/ui/section-card";
-import { IconFileSearch } from "@tabler/icons-react";
-import { useTranslation } from "react-i18next";
-import { Link, Navigate, useParams } from "react-router-dom";
+import { IconLoader2, IconTargetArrow } from "@tabler/icons-react";
+import { useEffect, useRef } from "react";
+import { Navigate, useNavigate, useParams } from "react-router-dom";
 
 /**
- * Bento persona content-fit validation — Block AI / §XXXII.7 (T584). Promotes
- * the fit report from a buried editor tab into a first-class launch surface
- * reached from the Persona Launchpad (T583): a full-page "add sources → score"
- * flow (mirroring how "Open chat" is its own shareable page, not a tab). It
- * composes Block AA's notebook (T465, {@link PersonaSourcesSection}) and the
- * grounded content-fit report (T467/T468, {@link PersonaFitReportSection})
- * verbatim — both self-contained on the persona id. The shared `SectionCard`
- * bodies render as frosted bento cards via the `bento`
- * {@link SectionCardChromeProvider}. Only audience personas reach this (the
- * launchpad gates the action), so a missing id bounces to the persona list.
+ * Persona content-fit validation — **folded into Persona Match** (Block AT /
+ * §XLIII, T703). The per-persona validate notebook (Block AA, 1 persona × N
+ * contents) is retired: this route now creates (or re-opens) a **single-persona
+ * Match project** for the persona and redirects to the Persona Match studio,
+ * where the same content-fit evaluator runs as an N×N project (here N = 1
+ * persona). The "Analyze fit" launch from the persona detail (T583) still points
+ * here, so the entry point is preserved while the canonical home becomes the
+ * project. The old {@code PersonaSourcesSection}/{@code PersonaFitReportSection}
+ * components remain, just no longer routed here.
  *
  * @author Alexandre Oliveira
  * @since 2026.3.4
  */
 export default function BentoPersonaValidatePage() {
-  const { t } = useTranslation();
   const { personaId } = useParams<{ personaId: string }>();
+  const navigate = useNavigate();
   const { data: persona } = usePersona(personaId);
+  const { data: projects } = useMatchProjects();
+  const acted = useRef(false);
+
+  const markerName = persona ? `Fit: ${persona.name}` : null;
+
+  useEffect(() => {
+    if (acted.current || !personaId || !persona || !projects || !markerName) {
+      return;
+    }
+    acted.current = true;
+
+    // Re-open a matching single-persona project if one already exists.
+    const existing = projects.find(
+      (p) => p.name === markerName && p.personaCount === 1,
+    );
+    if (existing) {
+      navigate(`${ROUTES.BENTO_PERSONA_MATCH}/${existing.id}`, { replace: true });
+      return;
+    }
+
+    // Otherwise spin one up, attach the persona, and open it.
+    (async () => {
+      try {
+        const project = await personaMatchService.create({
+          name: markerName,
+          description: `Análise de fit de conteúdo para a persona ${persona.name}.`,
+          enabled: true,
+          schedule: "MANUAL",
+        });
+        await personaMatchService.setPersonas(project.id, [personaId]);
+        navigate(`${ROUTES.BENTO_PERSONA_MATCH}/${project.id}`, { replace: true });
+      } catch {
+        acted.current = false; // allow a retry on transient failure
+        navigate(ROUTES.BENTO_PERSONA_MATCH, { replace: true });
+      }
+    })();
+  }, [personaId, persona, projects, markerName, navigate]);
 
   if (!personaId) {
     return <Navigate to={ROUTES.BENTO_PERSONA_INSTANCE} replace />;
   }
 
   return (
-    <>
-      <BentoHero
-        eyebrow={
-          <Link
-            to={`${ROUTES.BENTO_PERSONA_INSTANCE}/${personaId}`}
-            className="hover:text-foreground"
-          >
-            {persona?.name ?? t("persona.title")}
-          </Link>
-        }
-        leading={
-          <span className="grid h-12 w-12 place-items-center rounded-2xl bg-linear-to-br from-emerald-500 to-teal-600 text-white shadow-md">
-            <IconFileSearch size={24} />
-          </span>
-        }
-        title={t("persona.validate.title", { defaultValue: "Validate content" })}
-        subtitle={t("persona.validate.subtitle", {
-          defaultValue:
-            "Add documents, links or indexed content and score how well it fits this persona's audience.",
-        })}
-      />
-
-      <SectionCardChromeProvider chrome="bento">
-        <div className="mt-6 flex flex-col gap-5">
-          <PersonaSourcesSection personaId={personaId} />
-          <PersonaFitReportSection personaId={personaId} />
-        </div>
-      </SectionCardChromeProvider>
-    </>
+    <BentoHero
+      leading={
+        <span className="grid h-12 w-12 place-items-center rounded-2xl bg-linear-to-br from-indigo-600 to-fuchsia-600 text-white shadow-md">
+          <IconTargetArrow size={24} />
+        </span>
+      }
+      title="Abrindo o projeto de análise…"
+      subtitle={
+        <span className="inline-flex items-center gap-2">
+          <IconLoader2 className="size-4 animate-spin" />
+          Preparando a matriz de fit para {persona?.name ?? "esta persona"} no Persona Match.
+        </span>
+      }
+    />
   );
 }

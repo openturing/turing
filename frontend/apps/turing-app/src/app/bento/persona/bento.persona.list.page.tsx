@@ -2,7 +2,7 @@ import { usePersonas } from "@/api/queries/persona.queries";
 import { ROUTES } from "@/app/routes.const";
 import { BentoEntityTile, BentoListPage } from "@/components/bento";
 import { Button } from "@/components/ui/button";
-import { IconMasksTheater, IconTargetArrow, IconUserCircle } from "@tabler/icons-react";
+import { IconChartGridDots, IconMasksTheater, IconTargetArrow, IconUserCircle } from "@tabler/icons-react";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
 import { BentoPersonaFromAudioButton } from "./persona-from-audio.button";
@@ -31,6 +31,12 @@ export default function BentoPersonaListPage() {
             </Link>
           </Button>
           <BentoPersonaFromAudioButton />
+          <Button asChild variant="outline" size="sm" className="gap-2">
+            <Link to={ROUTES.BENTO_PERSONA_MATCH}>
+              <IconChartGridDots size={16} />
+              {t("persona.launch.personaMatch", { defaultValue: "Persona Match" })}
+            </Link>
+          </Button>
           <Button asChild variant="outline" size="sm" className="gap-2">
             <Link to={ROUTES.BENTO_PERSONA_DIALOGUE}>
               <IconMasksTheater size={16} />

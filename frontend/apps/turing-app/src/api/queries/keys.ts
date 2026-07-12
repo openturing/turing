@@ -102,6 +102,15 @@ export const queryKeys = {
     list: () => [...queryKeys.personas.all(), 'list'] as const,
     detail: (id: string) => [...queryKeys.personas.all(), 'detail', id] as const,
   },
+  // Block AT (T701) — Persona Match: N×N persona↔content fit projects.
+  personaMatch: {
+    all: () => ['persona-match'] as const,
+    list: () => [...queryKeys.personaMatch.all(), 'list'] as const,
+    detail: (id: string) =>
+      [...queryKeys.personaMatch.all(), 'detail', id] as const,
+    matrix: (id: string) =>
+      [...queryKeys.personaMatch.all(), 'matrix', id] as const,
+  },
   // T447 — self-tuning suggestions, scoped per agent.
   agentSuggestions: {
     all: () => ['agent-suggestions'] as const,

@@ -37,6 +37,7 @@ import type { TurSNSiteSpotlight } from "@/models/sn/sn-site-spotlight.model"
 import { TurSNSiteLocaleService } from "@/services/sn/sn.site.locale.service"
 import { TurSNSiteSpotlightService } from "@/services/sn/sn.site.spotlight.service"
 import { fetchSearch, type TurDocument, type TurSearchResponse } from "@viglet/turing-react-sdk"
+import { isAxiosError } from "axios"
 import { toast } from "@viglet/viglet-design-system"
 import { IconCirclePlus, IconDeviceFloppy, IconFileText, IconHelp, IconSearch, IconSpeakerphone, IconTags, IconTrash, IconX } from "@tabler/icons-react"
 import { DialogDelete } from "@/components/dialog.delete"
@@ -86,6 +87,16 @@ export const SNSiteSpotlightForm: React.FC<Props> = ({ snSiteId, value, isNew, o
     useEffect(() => {
         form.reset(value);
     }, [value]);
+
+    // Default the language to the site's first available locale when none is set
+    // yet (new spotlight). The document search is scoped by locale, and a site is
+    // rarely indexed in "en-US" — firing that hardcoded fallback returns HTTP 404
+    // ("site+language not indexed"), which used to surface as a search error.
+    useEffect(() => {
+        if (locales.length > 0 && !form.getValues("language")) {
+            form.setValue("language", locales[0].language);
+        }
+    }, [locales, value]);
 
     async function onSubmit(data: TurSNSiteSpotlight) {
         let hasError = false;
@@ -164,18 +175,29 @@ export const SNSiteSpotlightForm: React.FC<Props> = ({ snSiteId, value, isNew, o
 
     async function searchDocument(page: number) {
         const siteName = value.turSNSite?.name;
-        const language = form.getValues("language");
+        const language = form.getValues("language") || locales[0]?.language;
         if (!siteName || !searchQuery) return;
+        if (!language) {
+            toast.error(t("forms.snSpotlight.selectLanguageFirst"));
+            return;
+        }
         try {
             const result = await fetchSearch(siteName, {
                 q: searchQuery,
                 p: page.toString(),
-                _setlocale: language || "en-US",
+                _setlocale: language,
                 sort: "title:desc",
             });
             setSearchResult(result);
         } catch (error) {
-            console.error("IconSearch error", error);
+            // A 404 means this site isn't indexed in the selected locale (or has no
+            // matching content) — that's an empty result, not a failure. Only real
+            // errors (5xx / network) get an error toast.
+            if (isAxiosError(error) && error.response?.status === 404) {
+                setSearchResult({ results: { document: [] } } as unknown as TurSearchResponse);
+                return;
+            }
+            console.error("Document search error", error);
             toast.error(t("forms.snSpotlight.searchFailed"));
         }
     }
@@ -512,6 +534,11 @@ export const SNSiteSpotlightForm: React.FC<Props> = ({ snSiteId, value, isNew, o
                                                     </TableBody>
                                                 </Table>
                                             </div>
+                                        )}
+                                        {searchResult && (searchResult.results?.document?.length ?? 0) === 0 && (
+                                            <p className="py-4 text-center text-sm text-muted-foreground">
+                                                {t("forms.snSpotlight.noResults")}
+                                            </p>
                                         )}
                                         {searchResult?.pagination && searchResult.pagination.length > 0 && (
                                             <div className="flex items-center gap-1 pt-2">

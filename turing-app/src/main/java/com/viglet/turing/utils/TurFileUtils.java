@@ -65,6 +65,16 @@ public class TurFileUtils {
     private static final String PDF_DOC_INFO_TITLE = "pdf:docinfo:title";
     private static final String TMP = "tmp";
 
+    // Many sites sit behind a CDN/WAF (nginx, Akamai, Cloudflare) that rejects
+    // the default Java HttpURLConnection User-Agent ("Java/21") with a bot-block
+    // response such as HTTP 444 (nginx "no response"). Present browser-like
+    // request headers so legitimate content ingestion isn't refused.
+    private static final String USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+            + "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36";
+    private static final String ACCEPT = "text/html,application/xhtml+xml,application/xml;q=0.9,"
+            + "application/pdf,*/*;q=0.8";
+    private static final String ACCEPT_LANGUAGE = "en-US,en;q=0.9";
+
     private TurFileUtils() {
         throw new IllegalStateException("Turing File Utilities class");
     }
@@ -281,6 +291,9 @@ public class TurFileUtils {
             connection.setInstanceFollowRedirects(false);
             connection.setRequestMethod("GET");
             connection.setRequestProperty("Host", originalHost);
+            connection.setRequestProperty("User-Agent", USER_AGENT);
+            connection.setRequestProperty("Accept", ACCEPT);
+            connection.setRequestProperty("Accept-Language", ACCEPT_LANGUAGE);
 
             return connection;
         } catch (IOException e) {
