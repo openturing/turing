@@ -24,7 +24,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 
 /**
  * T693 / §XLII.7 — per-backend transcription metrics for the admin surface: one
- * percentile row per backend (OPENAI / OPENAI_COMPATIBLE / LOCAL_ONNX / NONE)
+ * percentile row per backend (OPENAI / OPENAI_COMPATIBLE / NONE)
  * with count, error rate, latency percentiles and total bytes — the data an
  * operator uses to judge whether the local path is fast enough or the cloud
  * fallback is carrying the load.

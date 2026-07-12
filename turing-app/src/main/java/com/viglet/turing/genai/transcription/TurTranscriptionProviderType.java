@@ -26,9 +26,7 @@ import java.util.Locale;
  *   <li>{@link #OPENAI_COMPATIBLE} — the same REST contract but pointed at a
  *       dedicated (typically self-hosted, e.g. {@code faster-whisper-server})
  *       endpoint/model/key configured under transcription, decoupled from the
- *       default LLM instance (T690).</li>
- *   <li>{@link #LOCAL_ONNX} — an in-process DJL/ONNX Whisper backend for
- *       air-gapped installs, no sidecar (T691).</li>
+ *       default LLM instance (T690). This is the supported fully-local path.</li>
  *   <li>{@link #NONE} — transcription disabled; callers get a fail-soft result.</li>
  * </ul>
  *
@@ -38,7 +36,6 @@ import java.util.Locale;
 public enum TurTranscriptionProviderType {
     OPENAI,
     OPENAI_COMPATIBLE,
-    LOCAL_ONNX,
     NONE;
 
     /**

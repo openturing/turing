@@ -188,8 +188,8 @@ public class TurConfigVarOnStartup {
 	/**
 	 * T687 / §XLII.1 — active speech-to-text backend: {@code OPENAI} (legacy
 	 * default, piggybacks the default LLM instance) | {@code OPENAI_COMPATIBLE}
-	 * (dedicated self-hosted endpoint) | {@code LOCAL_ONNX} (in-process) |
-	 * {@code NONE} (disabled). Unknown values fall back to {@code OPENAI}.
+	 * (dedicated self-hosted endpoint) | {@code NONE} (disabled). Unknown values
+	 * fall back to {@code OPENAI}.
 	 */
 	public static final String TRANSCRIPTION_STRATEGY = "GLOBAL_TRANSCRIPTION_STRATEGY";
 	public static final String TRANSCRIPTION_STRATEGY_DEFAULT_VALUE = "OPENAI";
@@ -206,9 +206,6 @@ public class TurConfigVarOnStartup {
 	 */
 	public static final String TRANSCRIPTION_MAX_UPLOAD_BYTES = "GLOBAL_TRANSCRIPTION_MAX_UPLOAD_BYTES";
 	public static final String TRANSCRIPTION_MAX_UPLOAD_BYTES_DEFAULT_VALUE = "26214400";
-	/** T687 — LOCAL_ONNX Whisper model size: {@code tiny} | {@code base} | {@code small} (consumed by T691). */
-	public static final String TRANSCRIPTION_ONNX_MODEL_SIZE = "GLOBAL_TRANSCRIPTION_ONNX_MODEL_SIZE";
-	public static final String TRANSCRIPTION_ONNX_MODEL_SIZE_DEFAULT_VALUE = "base";
 	public static final String SYSTEM_PATH = "/system";
 	public static final String GLOBAL_PATH = "/system/global";
 	public static final String DECIMAL_SEPARATOR_DEFAULT_VALUE = "DOT";
@@ -282,8 +279,6 @@ public class TurConfigVarOnStartup {
 		ensureConfigVar(TRANSCRIPTION_API_KEY, GLOBAL_PATH, "");
 		ensureConfigVar(TRANSCRIPTION_MAX_UPLOAD_BYTES, GLOBAL_PATH,
 				TRANSCRIPTION_MAX_UPLOAD_BYTES_DEFAULT_VALUE);
-		ensureConfigVar(TRANSCRIPTION_ONNX_MODEL_SIZE, GLOBAL_PATH,
-				TRANSCRIPTION_ONNX_MODEL_SIZE_DEFAULT_VALUE);
 	}
 
 	private void ensureConfigVar(String id, String path, String value) {

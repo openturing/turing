@@ -60,7 +60,6 @@ const DEFAULT_SETTINGS: TurGlobalSettings = {
     transcriptionEndpoint: "",
     transcriptionModel: "",
     transcriptionMaxUploadBytes: 26214400,
-    transcriptionOnnxModelSize: "base",
     transcriptionApiKey: "",
     transcriptionApiKeySet: false,
 };

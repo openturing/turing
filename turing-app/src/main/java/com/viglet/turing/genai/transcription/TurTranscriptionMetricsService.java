@@ -23,9 +23,9 @@ import org.springframework.stereotype.Service;
  * T693 / §XLII.7 — per-backend transcription metrics. The T88 tool-latency
  * accumulator answers "which tool is the p95 outlier?"; this answers the same
  * for transcription backends: <b>which backend</b> (OPENAI vs a self-hosted
- * OPENAI_COMPATIBLE vs LOCAL_ONNX) costs how much latency, how many bytes, and
- * how often it fails — the data an operator needs to decide whether the local
- * path is fast/accurate enough or the cloud fallback is carrying the load.
+ * OPENAI_COMPATIBLE) costs how much latency, how many bytes, and how often it
+ * fails — the data an operator needs to decide whether the local path is
+ * fast/accurate enough or the cloud fallback is carrying the load.
  *
  * <p>Every {@link TurTranscriptionService#transcribe} call records one sample
  * keyed by the backend that served it (or the fallback backend when the

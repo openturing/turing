@@ -89,7 +89,6 @@ export function TranscriptionSection({ state }: { state: GlobalSettingsFormState
                                     <SelectContent>
                                         <SelectItem value="OPENAI">{t("globalSettings.transcriptionStrategyOpenai")}</SelectItem>
                                         <SelectItem value="OPENAI_COMPATIBLE">{t("globalSettings.transcriptionStrategyOpenaiCompatible")}</SelectItem>
-                                        <SelectItem value="LOCAL_ONNX">{t("globalSettings.transcriptionStrategyLocalOnnx")}</SelectItem>
                                         <SelectItem value="NONE">{t("globalSettings.transcriptionStrategyNone")}</SelectItem>
                                     </SelectContent>
                                 </Select>
@@ -172,37 +171,6 @@ export function TranscriptionSection({ state }: { state: GlobalSettingsFormState
                                         {...field}
                                         value={field.value ?? ""}
                                     />
-                                </FormControl>
-                                <FormMessage />
-                            </FormItem>
-                        )}
-                    />
-                )}
-                {strategy === "LOCAL_ONNX" && (
-                    <FormField
-                        control={form.control}
-                        name="transcriptionOnnxModelSize"
-                        render={({ field }) => (
-                            <FormItem>
-                                <FormLabel>{t("globalSettings.transcriptionOnnxModelSize")}</FormLabel>
-                                <FormDescription>
-                                    {t("globalSettings.transcriptionOnnxModelSizeDesc")}
-                                </FormDescription>
-                                <FormControl>
-                                    <Select
-                                        onValueChange={field.onChange}
-                                        value={field.value ?? "base"}
-                                        disabled={isLoading}
-                                    >
-                                        <SelectTrigger className="w-full max-w-xs">
-                                            <SelectValue placeholder={t("globalSettings.choose")} />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            <SelectItem value="tiny">tiny</SelectItem>
-                                            <SelectItem value="base">base</SelectItem>
-                                            <SelectItem value="small">small</SelectItem>
-                                        </SelectContent>
-                                    </Select>
                                 </FormControl>
                                 <FormMessage />
                             </FormItem>

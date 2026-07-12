@@ -1,10 +1,12 @@
-# Last task number — `T694` · next block letter — `AT`
+# Last task number — `T695` · next block letter — `AT`
 
 > **Single source of truth for the next free task number.** The next new task is
-> `T695`; after assigning it, bump the number above and the log line below.
+> `T696`; after assigning it, bump the number above and the log line below.
 >
 > **Next block letter — `AT`** (Block **AS** = Scalable & pluggable audio
-> transcription / chunking + local backends, T687–T693, created 2026-07-11.
+> transcription / chunking + local backends, T687–T693 + T695, created 2026-07-11;
+> **T694 retired** — the in-process ONNX Whisper runtime will not be built and the
+> `LOCAL_ONNX` backend was removed by T695 (see ROADMAP Non-goals).
 > Block **AR** = Live-demo search & chat quality /
 > Lucene parity gaps, T682–T686, created 2026-07-11: fully shipped (T682–T686).
 > Block **AQ** = Knowledge Base / microthesauri, T668–T681, created
@@ -49,6 +51,7 @@ number" looked free but wasn't. Grepping three files (`ROADMAP.md`,
 ## Log (most recent first)
 
 - **T694 CREATED** (💭, Block AS §XLII.5 — fill the LOCAL_ONNX scaffold with real in-process Whisper ONNX inference; deferred heavy-lift) — 2026-07-11.
+- **T695 SHIPPED** (Block AS — remove non-functional LOCAL_ONNX transcription backend; retires deferred T694; enum/provider/WhisperModelSize/onnxModelSize/config-var/bento dropdown gone; local path stays via OPENAI_COMPATIBLE; recorded as ROADMAP non-goal) — 2026-07-11.
 - **T693 SHIPPED** (Block AS §XLII — AUDIO slot routes through chunk-aware TurTranscriptionService (Gemini fallback only when unconfigured); per-backend TurTranscriptionMetricsService + GET metrics; confidence (verbose_json avg_logprob) + local->cloud fallback) — 2026-07-11.
 - **T692 SHIPPED** (Block AS §XLII — async transcription jobs: bounded pool + queue back-pressure (429), submit/poll/SSE job surface over TurTranscriptionJobService/EventBus, retention sweep; delegates to T689 orchestrator) — 2026-07-11.
 - **T691 SHIPPED** (Block AS §XLII — LOCAL_ONNX seam/scaffold: TurWhisperModelSize + TurLocalOnnxTranscriptionProvider owns the slot (privacy-safe, no cloud fallback) + fail-soft; runtime deferred to T694, Jlama discipline) — 2026-07-11.

@@ -47,7 +47,7 @@ class TurTranscriptionServiceTest {
     private TurTranscriptionConfigResolver resolverWithLimit(long maxBytes) {
         TurTranscriptionConfigResolver resolver = mock(TurTranscriptionConfigResolver.class);
         when(resolver.resolve()).thenReturn(new TurTranscriptionConfig(
-                TurTranscriptionProviderType.OPENAI, "", "", "", maxBytes, "base"));
+                TurTranscriptionProviderType.OPENAI, "", "", "", maxBytes));
         return resolver;
     }
 
@@ -193,7 +193,7 @@ class TurTranscriptionServiceTest {
     private TurTranscriptionConfigResolver resolver(TurTranscriptionProviderType type, long maxBytes) {
         TurTranscriptionConfigResolver resolver = mock(TurTranscriptionConfigResolver.class);
         when(resolver.resolve()).thenReturn(
-                new TurTranscriptionConfig(type, "", "", "", maxBytes, "base"));
+                new TurTranscriptionConfig(type, "", "", "", maxBytes));
         return resolver;
     }
 

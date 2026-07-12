@@ -601,16 +601,6 @@ public class TurGlobalSettingsService {
         return configVars.setLong(TurConfigVarOnStartup.TRANSCRIPTION_MAX_UPLOAD_BYTES, maxUploadBytes);
     }
 
-    /** T687 — LOCAL_ONNX Whisper model size ({@code tiny}/{@code base}/{@code small}); consumed by T691. */
-    public String getTranscriptionOnnxModelSize() {
-        return configVars.getStringNonBlank(TurConfigVarOnStartup.TRANSCRIPTION_ONNX_MODEL_SIZE,
-                TurConfigVarOnStartup.TRANSCRIPTION_ONNX_MODEL_SIZE_DEFAULT_VALUE);
-    }
-
-    public String updateTranscriptionOnnxModelSize(String size) {
-        return configVars.setString(TurConfigVarOnStartup.TRANSCRIPTION_ONNX_MODEL_SIZE, size);
-    }
-
     /**
      * T687 — the decrypted transcription API key, or {@code ""} when unset.
      * Stored encrypted at rest; never echoed back to the client.

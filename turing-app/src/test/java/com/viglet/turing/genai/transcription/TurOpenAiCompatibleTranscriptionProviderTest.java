@@ -33,7 +33,7 @@ class TurOpenAiCompatibleTranscriptionProviderTest {
     private TurTranscriptionConfigResolver resolver(String endpoint, String model, String apiKey) {
         TurTranscriptionConfigResolver resolver = mock(TurTranscriptionConfigResolver.class);
         when(resolver.resolve()).thenReturn(new TurTranscriptionConfig(
-                TurTranscriptionProviderType.OPENAI_COMPATIBLE, endpoint, model, apiKey, 26_214_400L, "base"));
+                TurTranscriptionProviderType.OPENAI_COMPATIBLE, endpoint, model, apiKey, 26_214_400L));
         return resolver;
     }
 

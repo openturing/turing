@@ -89,7 +89,6 @@ public class TurGlobalSettingsAPI {
                 .transcriptionEndpoint(turGlobalSettingsService.getTranscriptionEndpoint())
                 .transcriptionModel(turGlobalSettingsService.getTranscriptionModel())
                 .transcriptionMaxUploadBytes(turGlobalSettingsService.getTranscriptionMaxUploadBytes())
-                .transcriptionOnnxModelSize(turGlobalSettingsService.getTranscriptionOnnxModelSize())
                 // write-only secret: never echo the key, only its set/not-set status
                 .transcriptionApiKey("")
                 .transcriptionApiKeySet(turGlobalSettingsService.isTranscriptionApiKeySet())
@@ -187,8 +186,6 @@ public class TurGlobalSettingsAPI {
                         .updateTranscriptionModel(globalSettings.getTranscriptionModel()))
                 .transcriptionMaxUploadBytes(turGlobalSettingsService
                         .updateTranscriptionMaxUploadBytes(globalSettings.getTranscriptionMaxUploadBytes()))
-                .transcriptionOnnxModelSize(turGlobalSettingsService
-                        .updateTranscriptionOnnxModelSize(globalSettings.getTranscriptionOnnxModelSize()))
                 // Write-only secret — persisted only when a non-blank value
                 // arrives, blank leaves the stored key untouched, never echoed
                 .transcriptionApiKey("")

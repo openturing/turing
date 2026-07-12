@@ -36,13 +36,12 @@ export type TurRagRerankStrategy =
  * T687 — speech-to-text backend. `OPENAI` (legacy default) POSTs to an
  * OpenAI-compatible `/audio/transcriptions` endpoint, falling back to the
  * default LLM instance's URL/key; `OPENAI_COMPATIBLE` (T690) points at a
- * dedicated self-hosted server; `LOCAL_ONNX` (T691) runs Whisper in-process;
- * `NONE` disables transcription.
+ * dedicated self-hosted server (the supported fully-local path); `NONE`
+ * disables transcription.
  */
 export type TurTranscriptionProviderType =
   | "OPENAI"
   | "OPENAI_COMPATIBLE"
-  | "LOCAL_ONNX"
   | "NONE";
 
 export interface TurGlobalSettings {
@@ -149,8 +148,6 @@ export interface TurGlobalSettings {
   transcriptionModel?: string;
   /** T687 — per-request upload limit in bytes; audio above this is chunked (T688/T689). */
   transcriptionMaxUploadBytes?: number;
-  /** T687 — LOCAL_ONNX Whisper model size: `tiny` | `base` | `small` (T691). */
-  transcriptionOnnxModelSize?: string;
   /**
    * T687 — transcription API key. Write-only: sent on update, never returned on
    * read (always blank in GET). A blank value on save leaves the stored key intact.

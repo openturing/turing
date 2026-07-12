@@ -25,10 +25,9 @@ import lombok.extern.slf4j.Slf4j;
  * <p>{@link #resolveActive()} is the single entry point callers use — it reads
  * the effective strategy from {@link TurTranscriptionConfigResolver} and returns
  * the matching provider. Falls back to {@link TurTranscriptionProviderType#OPENAI}
- * when the requested type has no registered implementation (e.g. a config points
- * at {@code OPENAI_COMPATIBLE}/{@code LOCAL_ONNX} before that backend ships), so
- * an incomplete config degrades to the always-present OpenAI-compatible path
- * instead of throwing.
+ * when the requested type has no registered implementation, so an incomplete
+ * config degrades to the always-present OpenAI-compatible path instead of
+ * throwing.
  *
  * @author Alexandre Oliveira
  * @since 2026.3.4

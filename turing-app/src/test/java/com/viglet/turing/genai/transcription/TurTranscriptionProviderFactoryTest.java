@@ -52,8 +52,8 @@ class TurTranscriptionProviderFactoryTest {
 
         var factory = new TurTranscriptionProviderFactory(List.of(openai), resolver);
 
-        // LOCAL_ONNX has no bean yet (ships in T691) → degrade to OPENAI, never null.
-        assertThat(factory.resolve(TurTranscriptionProviderType.LOCAL_ONNX)).isSameAs(openai);
+        // OPENAI_COMPATIBLE has no bean in this list → degrade to OPENAI, never null.
+        assertThat(factory.resolve(TurTranscriptionProviderType.OPENAI_COMPATIBLE)).isSameAs(openai);
     }
 
     @Test
@@ -62,7 +62,7 @@ class TurTranscriptionProviderFactoryTest {
         TurTranscriptionProvider none = provider(TurTranscriptionProviderType.NONE);
         TurTranscriptionConfigResolver resolver = mock(TurTranscriptionConfigResolver.class);
         when(resolver.resolve()).thenReturn(new TurTranscriptionConfig(
-                TurTranscriptionProviderType.NONE, "", "", "", 26_214_400L, "base"));
+                TurTranscriptionProviderType.NONE, "", "", "", 26_214_400L));
 
         var factory = new TurTranscriptionProviderFactory(List.of(openai, none), resolver);
 

@@ -46,7 +46,7 @@ class TurGlobalSettingsBeanTest {
                 null, false,  // ragSnRerankApiKey / apiKeySet (T339)
                 false,  // ragSnRerankCacheEnabled (T341)
                 null, null, null,  // transcriptionStrategy / endpoint / model (T687)
-                0L, null,  // transcriptionMaxUploadBytes / onnxModelSize (T687)
+                0L,  // transcriptionMaxUploadBytes (T687)
                 null, false);  // transcriptionApiKey / apiKeySet (T687)
 
         assertThat(bean.getDecimalSeparator()).isEqualTo(TurGlobalDecimalSeparator.DOT);

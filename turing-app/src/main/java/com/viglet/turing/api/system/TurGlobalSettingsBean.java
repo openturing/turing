@@ -146,7 +146,7 @@ public class TurGlobalSettingsBean {
     private boolean ragSnRerankCacheEnabled;
     /**
      * T687 — active speech-to-text backend: {@code OPENAI} (legacy default) |
-     * {@code OPENAI_COMPATIBLE} | {@code LOCAL_ONNX} | {@code NONE}.
+     * {@code OPENAI_COMPATIBLE} | {@code NONE}.
      *
      * @since 2026.3.4
      */
@@ -157,8 +157,6 @@ public class TurGlobalSettingsBean {
     private String transcriptionModel;
     /** T687 — per-request upload limit in bytes; audio above this is chunked (T688/T689). */
     private long transcriptionMaxUploadBytes;
-    /** T687 — LOCAL_ONNX Whisper size: {@code tiny}/{@code base}/{@code small} (T691). */
-    private String transcriptionOnnxModelSize;
     /**
      * T687 — transcription API key, <b>write-only</b>: accepted on update, never
      * echoed back on read (always blank in GET). Blank on update leaves the

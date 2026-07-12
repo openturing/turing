@@ -57,10 +57,7 @@ public class TurTranscriptionConfigResolver {
         long maxUploadBytes = properties.getMaxUploadBytes() != null && properties.getMaxUploadBytes() > 0
                 ? properties.getMaxUploadBytes()
                 : globalSettingsService.getTranscriptionMaxUploadBytes();
-        String onnxModelSize = firstNonBlank(properties.getOnnxModelSize(),
-                globalSettingsService.getTranscriptionOnnxModelSize());
-
-        return new TurTranscriptionConfig(type, endpoint, model, apiKey, maxUploadBytes, onnxModelSize);
+        return new TurTranscriptionConfig(type, endpoint, model, apiKey, maxUploadBytes);
     }
 
     private static String firstNonBlank(String preferred, String fallback) {

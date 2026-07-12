@@ -25,7 +25,6 @@ package com.viglet.turing.genai.transcription;
  * @param model          transcription model name, or {@code ""} (backend default)
  * @param apiKey         decrypted API key, or {@code ""} (fall back to LLM instance)
  * @param maxUploadBytes per-request upload limit for the active backend
- * @param onnxModelSize  LOCAL_ONNX Whisper size ({@code tiny}/{@code base}/{@code small})
  *
  * @author Alexandre Oliveira
  * @since 2026.3.4
@@ -35,6 +34,5 @@ public record TurTranscriptionConfig(
         String endpoint,
         String model,
         String apiKey,
-        long maxUploadBytes,
-        String onnxModelSize) {
+        long maxUploadBytes) {
 }

@@ -51,9 +51,6 @@ public class TurTranscriptionProperty {
      */
     private Long maxUploadBytes;
 
-    /** LOCAL_ONNX model size: {@code tiny} | {@code base} | {@code small} (T691). */
-    private String onnxModelSize;
-
     /**
      * T688 — {@code ffmpeg} executable used to decode/re-encode/split audio that
      * exceeds {@link #maxUploadBytes}. Defaults to {@code ffmpeg} (on PATH). Small

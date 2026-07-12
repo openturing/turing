@@ -49,7 +49,6 @@ class TurTranscriptionConfigResolverTest {
         lenient().when(globalSettings.getTranscriptionModel()).thenReturn("db-model");
         lenient().when(globalSettings.getTranscriptionApiKey()).thenReturn("db-key");
         lenient().when(globalSettings.getTranscriptionMaxUploadBytes()).thenReturn(26_214_400L);
-        lenient().when(globalSettings.getTranscriptionOnnxModelSize()).thenReturn("base");
     }
 
     @Test
@@ -62,7 +61,6 @@ class TurTranscriptionConfigResolverTest {
         assertThat(config.model()).isEqualTo("db-model");
         assertThat(config.apiKey()).isEqualTo("db-key");
         assertThat(config.maxUploadBytes()).isEqualTo(26_214_400L);
-        assertThat(config.onnxModelSize()).isEqualTo("base");
     }
 
     @Test
@@ -74,7 +72,6 @@ class TurTranscriptionConfigResolverTest {
         props.setModel("Systran/faster-whisper-large-v3");
         props.setApiKey("env-key");
         props.setMaxUploadBytes(500_000_000L);
-        props.setOnnxModelSize("small");
 
         TurTranscriptionConfig config = resolver(props).resolve();
 
@@ -83,7 +80,6 @@ class TurTranscriptionConfigResolverTest {
         assertThat(config.model()).isEqualTo("Systran/faster-whisper-large-v3");
         assertThat(config.apiKey()).isEqualTo("env-key");
         assertThat(config.maxUploadBytes()).isEqualTo(500_000_000L);
-        assertThat(config.onnxModelSize()).isEqualTo("small");
     }
 
     @Test
@@ -93,7 +89,6 @@ class TurTranscriptionConfigResolverTest {
         when(globalSettings.getTranscriptionModel()).thenReturn("");
         when(globalSettings.getTranscriptionApiKey()).thenReturn("");
         when(globalSettings.getTranscriptionMaxUploadBytes()).thenReturn(26_214_400L);
-        when(globalSettings.getTranscriptionOnnxModelSize()).thenReturn("base");
 
         TurTranscriptionProperty props = new TurTranscriptionProperty();
         props.setMaxUploadBytes(0L); // non-positive → ignore, use DB

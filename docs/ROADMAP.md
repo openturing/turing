@@ -71,20 +71,6 @@
 - 💭 **T480** (deps: T477) **Hosted "try it free" path via Viglet Cloud** — dual-path CTA (self-host docs + hosted sandbox) so visitors who won't install still reach first value. → §XXVII.3
 - 💭 **T481** (deps: real design partners) **Social-proof surface** — adopters/logos, testimonials, quantified case studies (Dify model). Never fabricated. → §XXVII.3
 
-## Block AS — Scalable & pluggable audio transcription (chunking + local backends)
-
-> The transcription seam (`TurTranscriptionProvider`, Block AA/T469) ships a
-> single OpenAI-compatible impl whose model + endpoint piggyback on the default
-> LLM instance, with no `turing.transcription.*` config and no chunking — so
-> audio over the provider's per-request limit (OpenAI Whisper = 25 MiB) fails with
-> a raw `413` (guarded now with a clear error, but still not transcribable). This
-> block makes transcription **config-selectable**, **chunk-capable** (works past
-> any single-request limit), and runnable **fully locally** (self-hosted
-> OpenAI-compatible server or in-process ONNX). All opt-in; empty/legacy config =
-> today's behavior. Design in [IMPROVEMENTS.md](IMPROVEMENTS.md) §XLII.
-
-- 💭 **T694** (deps: T691) **In-process Whisper ONNX inference runtime** — fill the `LOCAL_ONNX` scaffold (T691) with real in-process inference: resilient Whisper model acquisition via `TurOnnxModelDownloader` (keyed by the tiny/base/small size), an ffmpeg→16 kHz-mono-PCM front-end (reuse `TurFfmpegAudioChunker`'s shell-out), log-mel features, and the encoder/decoder decode loop — either raw `ai.onnxruntime` + `HuggingFaceTokenizer` (zero new deps, hand-rolled DSP, mirrors the T656 embedding path) or a DJL Whisper translator + `ai.djl.audio` (heavier deps). Deferred deliberately so the platform doesn't prematurely commit to a fragile Whisper dependency (the T193 Jlama discipline). → §XLII.5
-
 ## Non-goals (do NOT add as tasks)
 
 Binding constraints — see [IMPROVEMENTS.md](IMPROVEMENTS.md) §I.6 (What NOT to
@@ -99,3 +85,4 @@ refactor) and §I.7 (Restrictions) for the full text. Summary:
 - Keep Spring AI `ChatModel.call()` + `internalToolExecutionEnabled(true)` (no framework swap).
 - Heuristic and LlmJudge strategies coexist.
 - No "auto-detect" middleware guessing node intent (toolFree, captureMode) — that's authorship.
+- No in-process ONNX/DJL Whisper transcription runtime (the retired `LOCAL_ONNX` backend, ex-T694). The supported fully-local path is `OPENAI_COMPATIBLE` pointed at a self-hosted server (e.g. faster-whisper-server) — the platform won't bundle a fragile in-process Whisper dependency (T193 Jlama discipline).
