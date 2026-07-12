@@ -93,6 +93,20 @@ public class TurPersonaDialogueService {
             IMPORTANT: every single time you reply you MUST end with a direct question addressed to \
             the other participant(s), so the dialogue always keeps going.""";
 
+    /**
+     * Directive for the <b>final</b> utterance. Nobody will reply after it, so a
+     * trailing question would dangle — instead the last speaker gives a brief,
+     * natural closing remark that wraps up the conversation.
+     */
+    private static final String DIALOGUE_CLOSING_DIRECTIVE = """
+            You are one of several personas having a live, turn-by-turn conversation about a topic. \
+            Stay fully in character and speak in your own distinct voice. \
+            Reply in the same language as the conversation, and keep each reply short and natural \
+            (at most a few sentences). \
+            IMPORTANT: this is the FINAL turn of the conversation — do NOT ask any question. \
+            Instead, give a brief, natural closing remark that wraps up your view and ends the \
+            conversation gracefully.""";
+
     private final TurPersonaRepository personaRepository;
     private final TurLLMInstanceRepository llmInstanceRepository;
     private final TurInfraTenantScope tenantScope;
@@ -147,9 +161,10 @@ public class TurPersonaDialogueService {
                     return;
                 }
                 TurPersona speaker = speakers.get(i % speakers.size());
+                boolean isLast = i == turns - 1;
                 String utterance;
                 try {
-                    utterance = runTurn(speaker, llm, incoming);
+                    utterance = runTurn(speaker, llm, incoming, isLast);
                 } catch (Exception e) {
                     log.error("[PersonaDialogue] turn {} ({}) failed: {}", i, speaker.getName(), e.getMessage(), e);
                     sink.next(TurDialogueEvent.error(i, e.getMessage()));
@@ -169,9 +184,13 @@ public class TurPersonaDialogueService {
         }).subscribeOn(Schedulers.boundedElastic());
     }
 
-    /** One utterance: drive the executor for {@code speaker} replying to {@code incoming}. */
-    private String runTurn(TurPersona speaker, TurLLMInstance llm, String incoming) {
-        TurAIAgent agent = buildTransientAgent(speaker);
+    /**
+     * One utterance: drive the executor for {@code speaker} replying to
+     * {@code incoming}. {@code isLast} swaps in the closing directive (no trailing
+     * question) for the final turn.
+     */
+    private String runTurn(TurPersona speaker, TurLLMInstance llm, String incoming, boolean isLast) {
+        TurAIAgent agent = buildTransientAgent(speaker, isLast);
         List<TurAgentChatExecutor.ChatMessageItem> history =
                 List.of(new TurAgentChatExecutor.ChatMessageItem("user", incoming));
         // Default CALL mode emits the full assistant text as a single "token"
@@ -189,13 +208,15 @@ public class TurPersonaDialogueService {
     /**
      * The never-persisted agent shell that carries a speaker's voice. Unlike the
      * chat MVP it sets a base {@link #DIALOGUE_DIRECTIVE} system prompt (the
-     * persona is fused on top) and loads no native tools.
+     * persona is fused on top) and loads no native tools. The final turn uses the
+     * {@link #DIALOGUE_CLOSING_DIRECTIVE closing} directive so it doesn't end on a
+     * dangling question.
      */
-    private TurAIAgent buildTransientAgent(TurPersona persona) {
+    private TurAIAgent buildTransientAgent(TurPersona persona, boolean isLast) {
         TurAIAgent agent = new TurAIAgent();
         agent.setTitle("Persona: " + persona.getName());
         agent.setEnabled(1);
-        agent.setSystemPrompt(DIALOGUE_DIRECTIVE);
+        agent.setSystemPrompt(isLast ? DIALOGUE_CLOSING_DIRECTIVE : DIALOGUE_DIRECTIVE);
         agent.setDefaultPersona(persona);
         return agent;
     }
