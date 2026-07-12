@@ -274,7 +274,10 @@
       "transcriptEmpty": "No conversation yet. Set a topic, pick speakers and run the dialogue.",
       "thinking": "The next persona is thinking…",
       "runError": "Failed to run the dialogue",
-      "needTwo": "Pick at least two speakers to run the dialogue."
+      "needTwo": "Pick at least two speakers to run the dialogue.",
+      "feature": "Dialogue project",
+      "saveToRun": "Save your changes to run the dialogue.",
+      "runTitle": "Conversation"
     }
   }
 }

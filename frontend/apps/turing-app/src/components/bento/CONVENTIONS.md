@@ -16,6 +16,12 @@ The shared scaffold (`BentoEntityShell`, `BentoListPage`, `BentoEntityTile`,
   only hand-roll a tile when the entity genuinely needs a different layout.
 - Identity fields (title / description / icon / enabled) live in the **hero**,
   never as form `FormField`s — the shell owns them.
+- A **back-link eyebrow leads with a left arrow** (`IconArrowLeft`) so it reads as
+  the way back to the list — a plain link is easy to miss. `BentoEntityShell`
+  renders this automatically (it wraps `eyebrow` in a Link to `listRoute` with the
+  arrow), so pass just the label. When hand-rolling a `BentoHero` whose eyebrow is a
+  back-link, include `<IconArrowLeft size={14} aria-hidden />` inside the `<Link>`
+  (`inline-flex items-center gap-1`). Don't add it to non-navigational eyebrows.
 - The save bar always uses the **hero → sticky bar morph** (same as
   `BentoEntityShell`), never a hand-rolled `<div className="sticky …">` wrapper
   or a permanently-visible bar. The controls live in the hero at the top and a

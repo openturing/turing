@@ -274,7 +274,10 @@
       "transcriptEmpty": "Nenhuma conversa ainda. Defina um tema, escolha personas e rode o diálogo.",
       "thinking": "A próxima persona está pensando…",
       "runError": "Falha ao rodar o diálogo",
-      "needTwo": "Escolha ao menos duas personas para rodar o diálogo."
+      "needTwo": "Escolha ao menos duas personas para rodar o diálogo.",
+      "feature": "Projeto de diálogo",
+      "saveToRun": "Salve as alterações para rodar o diálogo.",
+      "runTitle": "Conversa"
     }
   }
 }

@@ -9,7 +9,12 @@ import {
 import { useLlmInstances } from "@/api/queries/llm-instance.queries";
 import { usePersonas } from "@/api/queries/persona.queries";
 import { ROUTES } from "@/app/routes.const";
-import { BentoFormSection, BentoHero } from "@/components/bento";
+import {
+  BentoEntityShell,
+  BentoFormSection,
+  BentoSaveBar,
+  type BentoEntityShellRenderArgs,
+} from "@/components/bento";
 import { PersonaSelectGrid } from "@/components/persona/persona-select-grid";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -20,26 +25,23 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import type {
-  DialogueProjectRequest,
-  DialogueTurn,
-} from "@/models/persona/persona-dialogue.model";
+import type { DialogueProject } from "@/models/persona/persona-dialogue.model";
+import { toast } from "@viglet/viglet-design-system";
 import { useQueryClient } from "@tanstack/react-query";
 import {
-  IconArrowLeft,
   IconCalendarQuestion,
   IconLoader2,
   IconMasksTheater,
   IconMessages,
   IconPlayerPlayFilled,
-  IconPlus,
-  IconSettings,
-  IconTrash,
   IconUserCircle,
 } from "@tabler/icons-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Link, useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
+
+/** DOM id the hero-anchored Save button submits via `form="..."`. */
+const FORM_ID = "bento-dialogue-project-form";
 
 /** Per-speaker bubble colours, cycled by the speaker's position in the roster. */
 const BUBBLE_PALETTE = [
@@ -52,90 +54,61 @@ const BUBBLE_PALETTE = [
 ];
 
 /**
- * Persona Dialogue — project workspace (Block AU / §XLIV, T706). A saved topic +
- * ordered speaker roster (via the shared {@link PersonaSelectGrid}) + model +
- * turn budget. "Run" streams the round-robin dialogue live over SSE and persists
- * the transcript, so re-opening the project shows the last conversation.
+ * Persona Dialogue — project workspace (Block AU / §XLIV, T706). Built on the
+ * gold-standard {@link BentoEntityShell}: name + description are edited inline in
+ * the hero, a scroll-linked Save bar commits the topic / turns / model / ordered
+ * speaker roster, and Delete lives in the hero `⋮` menu (only for a saved
+ * project). Running the dialogue + the live transcript are a separate block shown
+ * only once the project exists and its edits are saved.
  *
  * @author Alexandre Oliveira
  * @since 2026.3.4
  */
 export default function BentoPersonaDialogueWorkspacePage() {
-  const { projectId } = useParams();
-  if (projectId === "new") {
-    return <CreateProjectCard />;
-  }
-  return <ProjectWorkspace projectId={projectId as string} />;
-}
-
-// ---------------------------------------------------------------------------
-
-function CreateProjectCard() {
   const { t } = useTranslation();
-  const navigate = useNavigate();
-  const create = useCreateDialogueProject();
-  const [name, setName] = useState("");
-  const [description, setDescription] = useState("");
+  const { projectId } = useParams();
+  const isNew = projectId === "new";
 
-  const submit = () => {
-    const trimmed = name.trim();
-    if (!trimmed) return;
-    create.mutate(
-      { name: trimmed, description, turns: 10 },
-      { onSuccess: (project) => navigate(`${ROUTES.BENTO_PERSONA_DIALOGUE}/${project.id}`) },
-    );
+  const { data: project } = useDialogueProject(isNew ? undefined : projectId);
+  const updateMutation = useUpdateDialogueProject(projectId ?? "");
+  const deleteMutation = useDeleteDialogueProject();
+
+  const entity = {
+    id: project?.id,
+    title: project?.name ?? "",
+    description: project?.description ?? "",
   };
 
   return (
-    <>
-      <BentoHero
-        eyebrow={
-          <Link to={ROUTES.BENTO_PERSONA_DIALOGUE} className="inline-flex items-center gap-1 hover:text-foreground">
-            <IconArrowLeft size={12} /> {t("persona.dialogueProject.back")}
-          </Link>
-        }
-        leading={
-          <span className="grid h-12 w-12 place-items-center rounded-2xl bg-linear-to-br from-fuchsia-500 to-pink-600 text-white shadow-md">
-            <IconMasksTheater size={24} />
-          </span>
-        }
-        title={t("persona.dialogueProject.newTitle")}
-        subtitle={t("persona.dialogueProject.newHeroSubtitle")}
-      />
-      <BentoFormSection
-        icon={IconSettings}
-        tone="rose"
-        title={t("persona.dialogueProject.projectSection")}
-        description={t("persona.dialogueProject.projectSectionDesc")}
-      >
-        <div className="flex flex-col gap-3">
-          <label className="flex flex-col gap-1.5">
-            <span className="text-sm font-medium">{t("persona.dialogueProject.nameLabel")}</span>
-            <Input
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && submit()}
-              placeholder={t("persona.dialogueProject.namePlaceholder")}
-              autoFocus
-            />
-          </label>
-          <label className="flex flex-col gap-1.5">
-            <span className="text-sm font-medium">{t("persona.dialogueProject.descriptionLabel")}</span>
-            <Input
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              placeholder={t("persona.dialogueProject.descriptionPlaceholder")}
-            />
-          </label>
-          <div>
-            <Button onClick={submit} disabled={!name.trim() || create.isPending} className="gap-2">
-              {create.isPending ? <IconLoader2 className="size-4 animate-spin" /> : <IconPlus className="size-4" />}
-              {t("persona.dialogueProject.createButton")}
-            </Button>
-          </div>
-        </div>
-      </BentoFormSection>
-    </>
+    <BentoEntityShell
+      entity={entity}
+      isNew={isNew}
+      headlineFallback={t("persona.dialogueProject.newTitle")}
+      eyebrow={t("persona.dialogueProject.title")}
+      listRoute={ROUTES.BENTO_PERSONA_DIALOGUE}
+      icon={IconMasksTheater}
+      tone="rose"
+      hideIcon
+      formId={FORM_ID}
+      feature={t("persona.dialogueProject.feature")}
+      onUpdate={
+        isNew
+          ? undefined
+          : (next) =>
+              updateMutation.mutateAsync({
+                name: next.title,
+                description: next.description,
+                topic: project?.topic ?? null,
+                turns: project?.turns ?? 10,
+                llmInstanceId: project?.llmInstanceId ?? null,
+              })
+      }
+      onDelete={isNew ? undefined : () => deleteMutation.mutateAsync(projectId ?? "")}
+    >
+      {(args) => (
+        <DialogueEditor projectId={projectId} isNew={isNew} project={project} {...args} />
+      )}
+    </BentoEntityShell>
   );
 }
 
@@ -147,30 +120,45 @@ interface DisplayTurn {
   content: string | null;
 }
 
-function ProjectWorkspace({ projectId }: Readonly<{ projectId: string }>) {
+interface EditorProps extends BentoEntityShellRenderArgs {
+  projectId?: string;
+  isNew: boolean;
+  project?: DialogueProject;
+}
+
+function DialogueEditor({ projectId, isNew, project, staged, onStateChange }: Readonly<EditorProps>) {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-
-  const { data: project } = useDialogueProject(projectId);
   const { data: personaPool } = usePersonas();
   const { data: llmInstances } = useLlmInstances();
+  const createMutation = useCreateDialogueProject();
+  const updateMutation = useUpdateDialogueProject(projectId ?? "");
 
-  const updateProject = useUpdateDialogueProject(projectId);
-  const deleteProject = useDeleteDialogueProject();
-
-  const [name, setName] = useState("");
-  const [description, setDescription] = useState("");
+  // Local, immediately-reflected edit state (persisted only on Save).
   const [topic, setTopic] = useState("");
   const [turns, setTurns] = useState(10);
+  const [llmInstanceId, setLlmInstanceId] = useState("");
+  const [speakerIds, setSpeakerIds] = useState<string[]>([]);
+  const [saving, setSaving] = useState(false);
 
+  // Run + transcript (only shown once the user runs, on a saved project).
   const [turnsList, setTurnsList] = useState<DisplayTurn[]>([]);
   const [running, setRunning] = useState(false);
+  const [started, setStarted] = useState(false);
   const [runError, setRunError] = useState<string | null>(null);
   const abortRef = useRef<AbortController | null>(null);
 
-  const speakers = useMemo(() => project?.speakers ?? [], [project]);
-  const selectedSpeakerIds = useMemo(() => speakers.map((s) => s.id), [speakers]);
+  // Seed local state from the loaded project.
+  useEffect(() => {
+    if (!project) return;
+    setTopic(project.topic ?? "");
+    setTurns(project.turns);
+    setLlmInstanceId(project.llmInstanceId ?? "");
+    setSpeakerIds(project.speakers.map((s) => s.id));
+  }, [project]);
+
+  useEffect(() => () => abortRef.current?.abort(), []);
 
   // Only speaker-capable personas (SPEAKER / BOTH, or legacy unset) can talk.
   const pool = useMemo(
@@ -181,72 +169,76 @@ function ProjectWorkspace({ projectId }: Readonly<{ projectId: string }>) {
     [personaPool],
   );
 
-  // Stable colour per speaker: position in the roster → palette slot.
+  const savedSpeakerIds = useMemo(() => project?.speakers.map((s) => s.id) ?? [], [project]);
+  const dirty =
+    isNew ||
+    topic !== (project?.topic ?? "") ||
+    turns !== (project?.turns ?? 10) ||
+    llmInstanceId !== (project?.llmInstanceId ?? "") ||
+    JSON.stringify(speakerIds) !== JSON.stringify(savedSpeakerIds);
+
+  useEffect(() => {
+    onStateChange({ isDirty: dirty, isSubmitting: saving });
+  }, [dirty, saving, onStateChange]);
+
+  const handleSubmit = useCallback(
+    async (e: React.FormEvent) => {
+      e.preventDefault();
+      if (!staged.title.trim()) {
+        toast.error(t("forms.common.title"));
+        return;
+      }
+      setSaving(true);
+      try {
+        const body = {
+          name: staged.title,
+          description: staged.description,
+          topic,
+          turns,
+          llmInstanceId: llmInstanceId || null,
+        };
+        if (isNew) {
+          const created = await createMutation.mutateAsync(body);
+          if (speakerIds.length) {
+            await dialogueProjectService.setSpeakers(created.id, speakerIds);
+          }
+          navigate(`${ROUTES.BENTO_PERSONA_DIALOGUE}/${created.id}`);
+        } else if (projectId) {
+          await updateMutation.mutateAsync(body);
+          await dialogueProjectService.setSpeakers(projectId, speakerIds);
+          invalidateDialogueProject(queryClient, projectId);
+        }
+      } catch {
+        toast.error(t("persona.dialogueProject.runError"));
+      } finally {
+        setSaving(false);
+      }
+    },
+    [staged, topic, turns, llmInstanceId, speakerIds, isNew, projectId, createMutation, updateMutation, navigate, queryClient, t],
+  );
+
+  // --- run ---
   const colorIndexById = useMemo(() => {
     const map = new Map<string, number>();
-    speakers.forEach((s, i) => map.set(s.id, i));
+    speakerIds.forEach((id, i) => map.set(id, i));
     return map;
-  }, [speakers]);
-
-  // Seed local mirrors + the persisted transcript when the project (re)loads.
-  useEffect(() => {
-    if (!project) return;
-    setName(project.name);
-    setDescription(project.description ?? "");
-    setTopic(project.topic ?? "");
-    setTurns(project.turns);
-    if (!running) {
-      setTurnsList(
-        (project.transcript ?? []).map((tt: DialogueTurn) => ({
-          personaId: tt.personaId,
-          personaName: tt.personaName,
-          content: tt.content,
-        })),
-      );
-    }
-  }, [project, running]);
-
-  useEffect(() => () => abortRef.current?.abort(), []);
-
-  const refresh = useCallback(
-    () => invalidateDialogueProject(queryClient, projectId),
-    [queryClient, projectId],
-  );
-
-  const saveProject = useCallback(
-    (patch: Partial<DialogueProjectRequest>) => {
-      if (!project) return;
-      updateProject.mutate({
-        name: patch.name ?? name,
-        description: patch.description ?? description,
-        topic: patch.topic ?? topic,
-        llmInstanceId: patch.llmInstanceId ?? project.llmInstanceId,
-        turns: patch.turns ?? turns,
-      });
-    },
-    [project, updateProject, name, description, topic, turns],
-  );
-
-  const changeSpeakers = useCallback(
-    async (ids: string[]) => {
-      await dialogueProjectService.setSpeakers(projectId, ids);
-      refresh();
-    },
-    [projectId, refresh],
-  );
+  }, [speakerIds]);
 
   const canRun =
+    !isNew &&
+    !dirty &&
     Boolean(topic.trim()) &&
-    speakers.length >= 2 &&
-    Boolean(project?.llmInstanceId) &&
+    speakerIds.length >= 2 &&
+    Boolean(llmInstanceId) &&
     !running;
 
   const runDialogue = useCallback(() => {
-    if (!canRun) return;
+    if (!projectId || !canRun) return;
     abortRef.current?.abort();
     const ctrl = new AbortController();
     abortRef.current = ctrl;
     setRunning(true);
+    setStarted(true);
     setRunError(null);
     setTurnsList([]);
     dialogueProjectService.runStream(
@@ -257,10 +249,7 @@ function ProjectWorkspace({ projectId }: Readonly<{ projectId: string }>) {
             ...prev,
             { personaId: event.personaId ?? null, personaName: event.personaName ?? null, content: event.content ?? null },
           ]),
-        onDone: () => {
-          setRunning(false);
-          refresh();
-        },
+        onDone: () => setRunning(false),
         onError: (err) => {
           setRunning(false);
           setRunError(err instanceof Error ? err.message : t("persona.dialogueProject.runError"));
@@ -268,57 +257,30 @@ function ProjectWorkspace({ projectId }: Readonly<{ projectId: string }>) {
       },
       ctrl.signal,
     );
-  }, [canRun, projectId, refresh, t]);
+  }, [projectId, canRun, t]);
 
-  const removeProject = useCallback(() => {
-    deleteProject.mutate(projectId, { onSuccess: () => navigate(ROUTES.BENTO_PERSONA_DIALOGUE) });
-  }, [deleteProject, projectId, navigate]);
-
-  let runLabel = t("persona.dialogueProject.run");
-  if (running) runLabel = t("persona.dialogueProject.running");
-  else if (project?.lastRunAt) runLabel = t("persona.dialogueProject.rerun");
+  const showSaveBar = true;
 
   return (
     <>
-      <BentoHero
-        eyebrow={
-          <Link to={ROUTES.BENTO_PERSONA_DIALOGUE} className="inline-flex items-center gap-1 hover:text-foreground">
-            <IconArrowLeft size={12} /> {t("persona.dialogueProject.back")}
-          </Link>
-        }
-        leading={
-          <span className="grid h-12 w-12 place-items-center rounded-2xl bg-linear-to-br from-fuchsia-500 to-pink-600 text-white shadow-md">
-            <IconMasksTheater size={24} />
-          </span>
-        }
-        title={name || t("persona.dialogueProject.defaultTitle")}
-        subtitle={topic || description || t("persona.dialogueProject.defaultSubtitle")}
-        trailing={
-          <Button onClick={runDialogue} disabled={!canRun} className="gap-2">
-            {running ? <IconLoader2 className="size-4 animate-spin" /> : <IconPlayerPlayFilled className="size-4" />}
-            {runLabel}
-          </Button>
-        }
-      />
+      <form id={FORM_ID} onSubmit={handleSubmit} className="flex flex-col gap-5">
+        {showSaveBar && (
+          <>
+            <div aria-hidden className="bento-save-bar-spacer" />
+            <div className="bento-fade-in fixed inset-x-0 top-20 z-20 mx-auto w-full max-w-7xl px-4 md:px-8">
+              <BentoSaveBar
+                title={staged.title || t("persona.dialogueProject.newTitle")}
+                disabled={!staged.title.trim() || (!isNew && !dirty)}
+                titleMissing={!staged.title.trim()}
+                dirty={dirty}
+                loading={saving}
+                onCancel={() => navigate(ROUTES.BENTO_PERSONA_DIALOGUE)}
+              />
+            </div>
+          </>
+        )}
 
-      <div className="flex flex-col gap-5">
-        {/* --- Speakers --- */}
-        <BentoFormSection
-          icon={IconUserCircle}
-          tone="rose"
-          title={t("persona.dialogueProject.speakersTitle")}
-          description={t("persona.dialogueProject.speakersDesc")}
-        >
-          <PersonaSelectGrid
-            ordered
-            personas={pool}
-            selectedIds={selectedSpeakerIds}
-            onChange={changeSpeakers}
-            emptyText={t("persona.dialogueProject.noSpeakers")}
-          />
-        </BentoFormSection>
-
-        {/* --- Topic, turns, model --- */}
+        {/* --- Topic, turns & model (first) --- */}
         <BentoFormSection
           icon={IconCalendarQuestion}
           tone="amber"
@@ -331,15 +293,10 @@ function ProjectWorkspace({ projectId }: Readonly<{ projectId: string }>) {
               <Input
                 value={topic}
                 onChange={(e) => setTopic(e.target.value)}
-                onBlur={() => topic !== (project?.topic ?? "") && saveProject({ topic })}
                 placeholder={t("persona.dialogueProject.topicPlaceholder")}
               />
             </label>
             <div className="grid gap-4 sm:grid-cols-2">
-              <label className="flex flex-col gap-1.5">
-                <span className="text-sm font-medium">{t("persona.dialogueProject.nameLabel")}</span>
-                <Input value={name} onChange={(e) => setName(e.target.value)} onBlur={() => name.trim() && name !== project?.name && saveProject({ name })} />
-              </label>
               <label className="flex flex-col gap-1.5">
                 <span className="text-sm font-medium">{t("persona.dialogueProject.turnsLabel")}</span>
                 <Input
@@ -348,15 +305,11 @@ function ProjectWorkspace({ projectId }: Readonly<{ projectId: string }>) {
                   max={40}
                   value={turns}
                   onChange={(e) => setTurns(Number(e.target.value) || 10)}
-                  onBlur={() => turns !== project?.turns && saveProject({ turns })}
                 />
               </label>
-              <label className="flex flex-col gap-1.5 sm:col-span-2">
+              <label className="flex flex-col gap-1.5">
                 <span className="text-sm font-medium">{t("persona.dialogueProject.modelLabel")}</span>
-                <Select
-                  value={project?.llmInstanceId ?? ""}
-                  onValueChange={(v) => saveProject({ llmInstanceId: v })}
-                >
+                <Select value={llmInstanceId} onValueChange={setLlmInstanceId}>
                   <SelectTrigger>
                     <SelectValue placeholder={t("persona.dialogueProject.defaultLlm")} />
                   </SelectTrigger>
@@ -370,45 +323,78 @@ function ProjectWorkspace({ projectId }: Readonly<{ projectId: string }>) {
                 </Select>
               </label>
             </div>
-            <div>
-              <Button type="button" variant="ghost" size="sm" className="gap-1.5 text-red-600" onClick={removeProject}>
-                <IconTrash className="size-4" />
-                {t("persona.dialogueProject.deleteProject")}
-              </Button>
-            </div>
           </div>
         </BentoFormSection>
 
-        {/* --- Transcript --- */}
+        {/* --- Speakers (second) --- */}
         <BentoFormSection
-          icon={IconMessages}
-          tone="violet"
-          title={t("persona.dialogueProject.transcriptTitle")}
-          description={t("persona.dialogueProject.transcriptDesc")}
+          icon={IconUserCircle}
+          tone="rose"
+          title={t("persona.dialogueProject.speakersTitle")}
+          description={t("persona.dialogueProject.speakersDesc")}
         >
-          {runError && <p className="mb-3 text-sm text-red-600">{runError}</p>}
-          {turnsList.length === 0 && !running ? (
-            <p className="text-sm text-muted-foreground">{t("persona.dialogueProject.transcriptEmpty")}</p>
-          ) : (
-            <div className="flex flex-col gap-3">
-              {turnsList.map((turn, i) => (
-                <DialogueBubble
-                  key={`${turn.personaId}-${i}`}
-                  name={turn.personaName ?? ""}
-                  content={turn.content ?? ""}
-                  colorIndex={colorIndexById.get(turn.personaId ?? "") ?? 0}
-                />
-              ))}
-              {running && (
-                <p className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <IconLoader2 className="size-4 animate-spin" />
-                  {t("persona.dialogueProject.thinking")}
-                </p>
-              )}
-            </div>
-          )}
+          <PersonaSelectGrid
+            ordered
+            personas={pool}
+            selectedIds={speakerIds}
+            onChange={setSpeakerIds}
+            emptyText={t("persona.dialogueProject.noSpeakers")}
+          />
         </BentoFormSection>
-      </div>
+      </form>
+
+      {/* --- Run + transcript (saved projects only) --- */}
+      {!isNew && (
+        <div className="mt-5">
+          <BentoFormSection
+            icon={IconMessages}
+            tone="violet"
+            title={t("persona.dialogueProject.runTitle")}
+            description={t("persona.dialogueProject.transcriptDesc")}
+            trailing={
+              <Button onClick={runDialogue} disabled={!canRun} size="sm" className="gap-2">
+                {running ? <IconLoader2 className="size-4 animate-spin" /> : <IconPlayerPlayFilled className="size-4" />}
+                {running
+                  ? t("persona.dialogueProject.running")
+                  : started
+                    ? t("persona.dialogueProject.rerun")
+                    : t("persona.dialogueProject.run")}
+              </Button>
+            }
+          >
+            {dirty && (
+              <p className="mb-2 text-sm text-amber-600 dark:text-amber-400">
+                {t("persona.dialogueProject.saveToRun")}
+              </p>
+            )}
+            {!dirty && speakerIds.length < 2 && (
+              <p className="mb-2 text-sm text-muted-foreground">{t("persona.dialogueProject.needTwo")}</p>
+            )}
+            {runError && <p className="mb-2 text-sm text-red-600">{runError}</p>}
+
+            {!started ? (
+              <p className="text-sm text-muted-foreground">{t("persona.dialogueProject.transcriptEmpty")}</p>
+            ) : (
+              <div className="flex flex-col gap-3">
+                {turnsList.map((turn, i) => (
+                  <DialogueBubble
+                    key={`${turn.personaId}-${i}`}
+                    name={turn.personaName ?? ""}
+                    content={turn.content ?? ""}
+                    colorIndex={colorIndexById.get(turn.personaId ?? "") ?? 0}
+                  />
+                ))}
+                {running && (
+                  <p className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <IconLoader2 className="size-4 animate-spin" />
+                    {t("persona.dialogueProject.thinking")}
+                  </p>
+                )}
+              </div>
+            )}
+          </BentoFormSection>
+        </div>
+      )}
     </>
   );
 }

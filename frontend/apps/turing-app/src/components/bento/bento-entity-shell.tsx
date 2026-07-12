@@ -1,7 +1,7 @@
 import { DialogDelete } from "@/components/dialog.delete";
 import { GradientButton } from "@/components/ui/gradient-button";
 import type { Icon as TablerIcon } from "@tabler/icons-react";
-import { IconDeviceFloppy, IconTrash, IconX } from "@tabler/icons-react";
+import { IconArrowLeft, IconDeviceFloppy, IconTrash, IconX } from "@tabler/icons-react";
 import { toast } from "@viglet/viglet-design-system";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
@@ -253,7 +253,17 @@ export function BentoEntityShell<TEntity extends BentoEntityLike>({
       <BentoHero
         eyebrow={
           <span className="inline-flex items-center gap-2">
-            <Link to={listRoute} className="hover:text-foreground">{eyebrow}</Link>
+            {/*
+             * A leading back-arrow makes the eyebrow read as a "return to the
+             * list" affordance — without it the link is easy to miss. The Shell
+             * always wraps the eyebrow in a Link to `listRoute`, so the arrow is
+             * always meaningful here. (See turing-bento-ui skill: back-link
+             * eyebrows lead with IconArrowLeft.)
+             */}
+            <Link to={listRoute} className="inline-flex items-center gap-1 hover:text-foreground">
+              <IconArrowLeft size={14} aria-hidden />
+              {eyebrow}
+            </Link>
             {!readOnly && (
               <BentoStatusMarker titleMissing={titleMissing} dirty={isNew || formState.isDirty} />
             )}

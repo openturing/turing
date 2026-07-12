@@ -29,6 +29,14 @@ Three things, in order of how often they're the missing piece:
    Large airy iOS "navigation title": eyebrow (usually a back-`<Link>` to the list),
    a tonal gradient icon chip in `leading`, the title, a subtitle, and a `trailing`
    slot for actions. Animates in via `.bento-shell-header`.
+   > **Back-link eyebrows lead with a left arrow.** When the eyebrow is a link back
+   > to the list, prefix it with `<IconArrowLeft size={14} aria-hidden />` (inside the
+   > `<Link>`, `inline-flex items-center gap-1`). Without the arrow the link reads as a
+   > plain label and users miss that it's the way back. **`BentoEntityShell` does this
+   > for you** — it always wraps `eyebrow` in a Link to `listRoute` with the arrow, so
+   > pass just the label text. Only add the arrow by hand when you hand-roll a
+   > `BentoHero` whose eyebrow is a back-link (workspace/detail pages that don't use the
+   > Shell). Don't add it to non-navigational eyebrows (a plain section label).
 2. **`BentoFormSection` cards** (not the console `SectionCard`). Each field group is a
    frosted `.bento-tile .bento-glass` card with a tonal icon chip — and it gets the
    **hover-lift animation** for free: `.bento-tile:hover` lifts `translateY(-3px)` with

@@ -221,7 +221,7 @@ function CreateProjectCard() {
       <BentoHero
         eyebrow={
           <Link to={ROUTES.BENTO_PERSONA_MATCH} className="inline-flex items-center gap-1 hover:text-foreground">
-            <IconArrowLeft size={12} /> {t("persona.match.back")}
+            <IconArrowLeft size={14} /> {t("persona.match.back")}
           </Link>
         }
         leading={
@@ -510,7 +510,7 @@ function ProjectWorkspace({ projectId }: Readonly<{ projectId: string }>) {
       <BentoHero
         eyebrow={
           <Link to={ROUTES.BENTO_PERSONA_MATCH} className="inline-flex items-center gap-1 hover:text-foreground">
-            <IconArrowLeft size={12} /> {t("persona.match.back")}
+            <IconArrowLeft size={14} /> {t("persona.match.back")}
           </Link>
         }
         leading={
