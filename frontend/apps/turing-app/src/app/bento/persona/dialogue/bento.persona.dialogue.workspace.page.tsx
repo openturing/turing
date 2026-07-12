@@ -148,6 +148,14 @@ function DialogueEditor({ projectId, isNew, project, staged, onStateChange }: Re
   const [started, setStarted] = useState(false);
   const [runError, setRunError] = useState<string | null>(null);
   const abortRef = useRef<AbortController | null>(null);
+  const bottomRef = useRef<HTMLDivElement | null>(null);
+
+  // Keep the newest utterance in view so the conversation follows itself.
+  useEffect(() => {
+    if (started) {
+      bottomRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
+    }
+  }, [turnsList.length, running, started]);
 
   // Seed local state from the loaded project.
   useEffect(() => {
@@ -306,6 +314,18 @@ function DialogueEditor({ projectId, isNew, project, staged, onStateChange }: Re
                   value={turns}
                   onChange={(e) => setTurns(Number(e.target.value) || 10)}
                 />
+                <span className="text-xs text-muted-foreground">
+                  {t("persona.dialogueProject.turnsDesc")}
+                  {speakerIds.length >= 2 && (
+                    <>
+                      {" "}
+                      {t("persona.dialogueProject.turnsPerPersona", {
+                        each: Math.max(1, Math.round(turns / speakerIds.length)),
+                        personas: speakerIds.length,
+                      })}
+                    </>
+                  )}
+                </span>
               </label>
               <label className="flex flex-col gap-1.5">
                 <span className="text-sm font-medium">{t("persona.dialogueProject.modelLabel")}</span>
@@ -390,6 +410,7 @@ function DialogueEditor({ projectId, isNew, project, staged, onStateChange }: Re
                     {t("persona.dialogueProject.thinking")}
                   </p>
                 )}
+                <div ref={bottomRef} aria-hidden />
               </div>
             )}
           </BentoFormSection>

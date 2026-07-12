@@ -265,7 +265,7 @@
       "noSpeakers": "No speaker personas available. Create SPEAKER or BOTH personas first.",
       "settingsTitle": "Topic, turns & model",
       "settingsDesc": "The topic seeds the first turn; each persona must end every reply with a question so the dialogue keeps flowing.",
-      "turnsLabel": "Turns",
+      "turnsLabel": "Turns (total messages)",
       "modelLabel": "Model (LLM)",
       "defaultLlm": "Default LLM (Global)",
       "deleteProject": "Delete project",
@@ -277,7 +277,9 @@
       "needTwo": "Pick at least two speakers to run the dialogue.",
       "feature": "Dialogue project",
       "saveToRun": "Save your changes to run the dialogue.",
-      "runTitle": "Conversation"
+      "runTitle": "Conversation",
+      "turnsDesc": "Total number of messages in the conversation, alternating between the personas in order.",
+      "turnsPerPersona": "≈ {{each}} each across {{personas}} personas"
     }
   }
 }
