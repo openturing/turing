@@ -124,7 +124,19 @@ public class TurPersonaDialogueProjectService {
         project.setDescription(dto.description());
         project.setTopic(dto.topic());
         project.setLlmInstanceId(StringUtils.trimToNull(dto.llmInstanceId()));
-        project.setTurns(dto.turns() <= 0 ? 10 : dto.turns());
+        project.setTurns(clampRounds(dto.turns()));
+    }
+
+    /**
+     * The project's {@code turns} field is the number of <b>rounds</b> (Block AU):
+     * one round = every persona speaks once, in order, so nobody is left out on an
+     * incomplete final round. Default 5, clamped to [1, 20].
+     */
+    private static int clampRounds(int rounds) {
+        if (rounds <= 0) {
+            return 5;
+        }
+        return Math.min(20, rounds);
     }
 
     // ---- speakers ----------------------------------------------------------
@@ -199,8 +211,13 @@ public class TurPersonaDialogueProjectService {
         String tenant = tenantContext.getCurrentTenant();
         List<TurDialogueEvent> collected = Collections.synchronizedList(new ArrayList<>());
 
+        // `turns` is the number of rounds; one round = every persona speaks once,
+        // so the engine's total utterance budget is rounds × speakers (complete
+        // rounds — no persona is dropped on an incomplete final round).
+        int totalUtterances = clampRounds(project.getTurns()) * Math.max(1, speakerIds.size());
+
         return dialogueService.stream(project.getTopic(), speakerIds,
-                        project.getLlmInstanceId(), project.getTurns())
+                        project.getLlmInstanceId(), totalUtterances)
                 .doOnNext(event -> {
                     if (event.type() == TurDialogueEventType.TURN) {
                         collected.add(event);

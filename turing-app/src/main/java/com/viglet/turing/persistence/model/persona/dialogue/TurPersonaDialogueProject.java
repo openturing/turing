@@ -68,9 +68,13 @@ public class TurPersonaDialogueProject implements Serializable {
     @Column(name = "llmInstanceId", length = 40)
     private String llmInstanceId;
 
-    /** Turn budget (utterances). Clamped [2, 40] by the engine at run time. */
+    /**
+     * Number of <b>rounds</b> (one round = every persona speaks once, in order).
+     * The run budget is {@code rounds × speakers} total utterances. Default 5,
+     * clamped [1, 20] by the service.
+     */
     @Column(name = "turns", nullable = false)
-    private int turns = 10;
+    private int turns = 5;
 
     @Column(name = "last_run_at")
     private Instant lastRunAt;

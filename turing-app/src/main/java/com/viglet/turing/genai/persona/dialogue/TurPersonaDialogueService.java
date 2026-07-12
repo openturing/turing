@@ -71,7 +71,10 @@ public class TurPersonaDialogueService {
     /** Default number of turns (utterances) when the caller doesn't specify. */
     public static final int DEFAULT_TURNS = 10;
     private static final int MIN_TURNS = 2;
-    private static final int MAX_TURNS = 40;
+    // Total-utterance safety cap. Raised from 40 so a project's rounds × personas
+    // (rounds ≤ 20) isn't clamped — clamping would truncate the final round and
+    // leave a persona without a turn (Block AU). Still bounds runaway cost.
+    private static final int MAX_TURNS = 300;
     private static final int MIN_PERSONAS = 2;
     /** Per-turn upper bound on the blocking LLM call. */
     private static final Duration TURN_TIMEOUT = Duration.ofSeconds(120);

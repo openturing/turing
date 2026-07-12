@@ -137,7 +137,8 @@ function DialogueEditor({ projectId, isNew, project, staged, onStateChange }: Re
 
   // Local, immediately-reflected edit state (persisted only on Save).
   const [topic, setTopic] = useState("");
-  const [turns, setTurns] = useState(10);
+  // `turns` = number of rounds (each round = every persona speaks once).
+  const [turns, setTurns] = useState(5);
   const [llmInstanceId, setLlmInstanceId] = useState("");
   const [speakerIds, setSpeakerIds] = useState<string[]>([]);
   const [saving, setSaving] = useState(false);
@@ -309,20 +310,23 @@ function DialogueEditor({ projectId, isNew, project, staged, onStateChange }: Re
                 <span className="text-sm font-medium">{t("persona.dialogueProject.turnsLabel")}</span>
                 <Input
                   type="number"
-                  min={2}
-                  max={40}
+                  min={1}
+                  max={20}
                   value={turns}
-                  onChange={(e) => setTurns(Number(e.target.value) || 10)}
+                  onChange={(e) => setTurns(Number(e.target.value) || 5)}
                 />
                 <span className="text-xs text-muted-foreground">
                   {t("persona.dialogueProject.turnsDesc")}
                   {speakerIds.length >= 2 && (
                     <>
                       {" "}
-                      {t("persona.dialogueProject.turnsPerPersona", {
-                        each: Math.max(1, Math.round(turns / speakerIds.length)),
-                        personas: speakerIds.length,
-                      })}
+                      <span className="font-medium">
+                        {t("persona.dialogueProject.turnsPerPersona", {
+                          rounds: turns,
+                          personas: speakerIds.length,
+                          total: turns * speakerIds.length,
+                        })}
+                      </span>
                     </>
                   )}
                 </span>

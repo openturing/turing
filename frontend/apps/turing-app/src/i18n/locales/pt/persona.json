@@ -265,7 +265,7 @@
       "noSpeakers": "Nenhuma persona locutora disponível. Crie personas SPEAKER ou BOTH primeiro.",
       "settingsTitle": "Tema, turnos & modelo",
       "settingsDesc": "O tema inicia o primeiro turno; cada persona deve terminar cada resposta com uma pergunta para o diálogo continuar.",
-      "turnsLabel": "Turnos (total de falas)",
+      "turnsLabel": "Rodadas",
       "modelLabel": "Modelo (LLM)",
       "defaultLlm": "LLM padrão (Global)",
       "deleteProject": "Excluir projeto",
@@ -278,8 +278,8 @@
       "feature": "Projeto de diálogo",
       "saveToRun": "Salve as alterações para rodar o diálogo.",
       "runTitle": "Conversa",
-      "turnsDesc": "Número total de falas na conversa, alternando entre as personas na ordem.",
-      "turnsPerPersona": "≈ {{each}} por persona ({{personas}} personas)"
+      "turnsDesc": "Uma rodada = todas as personas falam uma vez, na ordem — assim ninguém fica de fora.",
+      "turnsPerPersona": "{{rounds}} rodadas × {{personas}} personas = {{total}} falas"
     }
   }
 }
