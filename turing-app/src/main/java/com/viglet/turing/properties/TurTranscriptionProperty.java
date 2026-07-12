@@ -80,4 +80,25 @@ public class TurTranscriptionProperty {
      * result is preserved regardless. Clamped ≥ 1; default 3.
      */
     private int chunkConcurrency = 3;
+
+    /**
+     * T692 — worker threads in the async transcription job pool. Bounds how many
+     * long recordings transcribe off the HTTP thread at once (each may itself fan
+     * out to {@link #chunkConcurrency} chunk workers). Clamped ≥ 1; default 2.
+     */
+    private int asyncWorkers = 2;
+
+    /**
+     * T692 — bounded queue depth for the async job pool. Once this many jobs wait
+     * with all workers busy, further submissions are rejected (back-pressure, HTTP
+     * 429) rather than growing memory unbounded. Clamped ≥ 1; default 8.
+     */
+    private int asyncQueueCapacity = 8;
+
+    /**
+     * T692 — seconds a terminal (succeeded/failed) async job's result is retained
+     * for polling before eviction. A daily-ish sweep drops older jobs so completed
+     * transcripts don't accumulate in memory. Clamped ≥ 60; default 3600 (1h).
+     */
+    private int asyncJobRetentionSeconds = 3600;
 }

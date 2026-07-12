@@ -2308,13 +2308,6 @@ but **no** Whisper model, translator, audio decoder, or DJL onnxruntime engine):
 No external service, fully offline after the one-time model fetch — at the cost
 of JVM footprint and single-node scaling.
 
-### XLII.6 Async transcription jobs (T692, 💭)
-
-Long audio should not block an HTTP request thread. A job surface — submit →
-SSE/poll status → result — backed by a bounded worker pool with back-pressure,
-reusing the workspace / SSE-bus patterns already in the platform. This is the scale
-lever once chunking makes multi-hour recordings tractable.
-
 ### XLII.7 AUDIO-slot / voice wiring + per-backend metrics (T693, 💭)
 
 Route the existing T64 AUDIO slot and the F.5 voice callers through the chunked
