@@ -11,6 +11,7 @@ import { useLlmInstances } from "@/api/queries/llm-instance.queries";
 import { usePersonas } from "@/api/queries/persona.queries";
 import { ROUTES } from "@/app/routes.const";
 import { BentoFormSection, BentoHero } from "@/components/bento";
+import { PersonaSelectGrid } from "@/components/persona/persona-select-grid";
 import { SnDocumentPicker, type PickedSnDocument } from "@/components/sn/sn-document-picker";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -333,7 +334,7 @@ function ProjectWorkspace({ projectId }: Readonly<{ projectId: string }>) {
   );
   const byContent = useMemo(() => rankByContent(sources, personas, matrix), [sources, personas, matrix]);
   const byPersona = useMemo(() => rankByPersona(sources, personas, matrix), [sources, personas, matrix]);
-  const selectedIds = useMemo(() => new Set(personas.map((p) => p.id)), [personas]);
+  const selectedPersonaIds = useMemo(() => personas.map((p) => p.id), [personas]);
 
   const refresh = useCallback(
     () => invalidateMatchProject(queryClient, projectId),
@@ -446,15 +447,12 @@ function ProjectWorkspace({ projectId }: Readonly<{ projectId: string }>) {
     [projectId, refresh],
   );
 
-  const togglePersona = useCallback(
-    async (personaId: string) => {
-      const next = selectedIds.has(personaId)
-        ? [...selectedIds].filter((id) => id !== personaId)
-        : [...selectedIds, personaId];
-      await personaMatchService.setPersonas(projectId, next);
+  const changePersonas = useCallback(
+    async (ids: string[]) => {
+      await personaMatchService.setPersonas(projectId, ids);
       refresh();
     },
-    [selectedIds, projectId, refresh],
+    [projectId, refresh],
   );
 
   const handleExport = useCallback(
@@ -656,35 +654,16 @@ function ProjectWorkspace({ projectId }: Readonly<{ projectId: string }>) {
           description={t("persona.match.personasDesc")}
           trailing={<Badge variant="secondary">{personas.length}</Badge>}
         >
-          <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
-            {pool.map((persona) => {
-              const selected = selectedIds.has(persona.id);
-              return (
-                <button
-                  key={persona.id}
-                  type="button"
-                  onClick={() => togglePersona(persona.id)}
-                  aria-pressed={selected}
-                  className={`bento-tile bento-tile-clickable flex items-center gap-3 rounded-2xl border px-3 py-2.5 text-left backdrop-blur transition-colors ${
-                    selected ? "border-rose-500/40 bg-rose-500/10" : "border-border/60 bg-card/40 hover:border-rose-500/30"
-                  }`}
-                >
-                  <span
-                    className={`grid size-9 shrink-0 place-items-center rounded-xl ${
-                      selected ? "bg-linear-to-br from-rose-600 to-pink-600 text-white" : "bg-muted text-muted-foreground"
-                    }`}
-                  >
-                    {selected ? <IconCheck size={18} /> : <IconUserCircle size={18} />}
-                  </span>
-                  <div className="min-w-0 flex-1">
-                    <div className="truncate text-sm font-medium">{persona.name}</div>
-                    <div className="text-xs text-muted-foreground">{t(`persona.match.kind.${persona.kind}`)}</div>
-                  </div>
-                </button>
-              );
-            })}
-            {pool.length === 0 && <p className="text-sm text-muted-foreground">{t("persona.match.noPersonas")}</p>}
-          </div>
+          <PersonaSelectGrid
+            personas={pool.map((p) => ({
+              id: p.id,
+              name: p.name,
+              subtitle: t(`persona.match.kind.${p.kind}`),
+            }))}
+            selectedIds={selectedPersonaIds}
+            onChange={changePersonas}
+            emptyText={t("persona.match.noPersonas")}
+          />
         </BentoFormSection>
 
         {/* --- Project settings --- */}

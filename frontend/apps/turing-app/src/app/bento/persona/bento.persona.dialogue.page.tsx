@@ -2,6 +2,7 @@ import { usePersonas } from "@/api/queries/persona.queries";
 import { DEFAULT_CONTEXT_WINDOW } from "@/app/console/chat/chat.types";
 import { ROUTES } from "@/app/routes.const";
 import { BentoFormSection, BentoHero } from "@/components/bento";
+import { PersonaSelectGrid } from "@/components/persona/persona-select-grid";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -21,9 +22,7 @@ import {
   IconMasksTheater,
   IconMessages,
   IconPlayerPlayFilled,
-  IconPlus,
   IconSettings,
-  IconTrash,
 } from "@tabler/icons-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -87,9 +86,9 @@ export default function BentoPersonaDialoguePage() {
 
   const [topic, setTopic] = useState("");
   const [turns, setTurns] = useState(10);
-  // The ordered roster of speakers — two or more slots (ids may be empty until
-  // picked). The user can add/remove slots.
-  const [personaIds, setPersonaIds] = useState<string[]>(["", ""]);
+  // The ordered roster of speakers, in speaking order (round-robin). The grid
+  // appends on select / removes on deselect, so selection order = turn order.
+  const [personaIds, setPersonaIds] = useState<string[]>([]);
 
   const [liveTurns, setLiveTurns] = useState<TurDialogueEvent[]>([]);
   const [running, setRunning] = useState(false);
@@ -104,33 +103,22 @@ export default function BentoPersonaDialoguePage() {
   useEffect(() => {
     if (speakers.length === 0) return;
     setPersonaIds((prev) => {
-      if (prev.some(Boolean)) return prev;
+      if (prev.length) return prev;
       const preferredA = searchParams.get("a");
       const a = preferredA && speakers.some((p) => p.id === preferredA) ? preferredA : speakers[0].id;
-      const b = speakers.find((p) => p.id !== a)?.id ?? "";
-      return [a, b];
+      const b = speakers.find((p) => p.id !== a)?.id;
+      return b ? [a, b] : [a];
     });
   }, [speakers, searchParams]);
 
   // Abort an in-flight stream on unmount.
   useEffect(() => () => abortRef.current?.abort(), []);
 
-  const filledIds = personaIds.filter(Boolean);
   const canRun =
     Boolean(topic.trim()) &&
-    filledIds.length >= 2 &&
+    personaIds.length >= 2 &&
     Boolean(effectiveLlmId) &&
     !running;
-
-  function setSlot(index: number, id: string) {
-    setPersonaIds((prev) => prev.map((v, i) => (i === index ? id : v)));
-  }
-  function addSlot() {
-    setPersonaIds((prev) => [...prev, ""]);
-  }
-  function removeSlot(index: number) {
-    setPersonaIds((prev) => (prev.length <= 2 ? prev : prev.filter((_, i) => i !== index)));
-  }
 
   function run() {
     abortRef.current?.abort();
@@ -139,9 +127,9 @@ export default function BentoPersonaDialoguePage() {
     setLiveTurns([]);
     setErrorMsg(null);
     setRunning(true);
-    setRunRoster(filledIds);
+    setRunRoster(personaIds);
     dialogueService.stream(
-      { topic: topic.trim(), personaIds: filledIds, llmInstanceId: effectiveLlmId, turns },
+      { topic: topic.trim(), personaIds, llmInstanceId: effectiveLlmId, turns },
       {
         onTurn: (event) => setLiveTurns((prev) => [...prev, event]),
         onDone: () => setRunning(false),
@@ -216,42 +204,17 @@ export default function BentoPersonaDialoguePage() {
                 <span className="text-sm font-medium">
                   {t("persona.dialogue.speakers", { defaultValue: "Speakers" })}
                 </span>
-                {personaIds.map((id, index) => (
-                  // eslint-disable-next-line react/no-array-index-key -- roster slots are positional
-                  <div key={index} className="flex items-center gap-2">
-                    <span className="w-6 shrink-0 text-center text-xs text-muted-foreground">{index + 1}</span>
-                    <div className="flex-1">
-                      <Select value={id} onValueChange={(v) => setSlot(index, v)}>
-                        <SelectTrigger>
-                          <SelectValue placeholder={t("persona.dialogue.selectPersona", { defaultValue: "Select a persona" })} />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {speakers.map((persona) => (
-                            <SelectItem key={persona.id} value={persona.id}>
-                              {persona.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <Button
-                      type="button"
-                      size="icon"
-                      variant="ghost"
-                      disabled={personaIds.length <= 2}
-                      title={t("persona.dialogue.removeSpeaker", { defaultValue: "Remove speaker" })}
-                      onClick={() => removeSlot(index)}
-                    >
-                      <IconTrash className="size-4 text-red-600" />
-                    </Button>
-                  </div>
-                ))}
-                <div>
-                  <Button type="button" variant="outline" size="sm" onClick={addSlot}>
-                    <IconPlus className="size-4" />
-                    {t("persona.dialogue.addSpeaker", { defaultValue: "Add persona" })}
-                  </Button>
-                </div>
+                <p className="text-xs text-muted-foreground">
+                  {t("persona.dialogue.speakersHint", {
+                    defaultValue: "Pick two or more — the number shows the speaking order.",
+                  })}
+                </p>
+                <PersonaSelectGrid
+                  ordered
+                  personas={speakers.map((p) => ({ id: p.id, name: p.name }))}
+                  selectedIds={personaIds}
+                  onChange={setPersonaIds}
+                />
               </div>
 
               <div className="grid gap-4 sm:grid-cols-2">

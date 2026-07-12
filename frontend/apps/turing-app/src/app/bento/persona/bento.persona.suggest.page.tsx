@@ -5,8 +5,8 @@ import {
   ContentFitDetails,
   FitBar,
 } from "@/components/persona/content-fit-result.view";
+import { PersonaSelectGrid } from "@/components/persona/persona-select-grid";
 import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
 import type { TurPersona } from "@/models/persona/persona.model.ts";
 import type { TurPersonaSuggestionReport } from "@/models/persona/persona-suggestion.model.ts";
@@ -56,15 +56,6 @@ export default function BentoPersonaSuggestPage() {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [report, setReport] = useState<TurPersonaSuggestionReport | null>(null);
   const [busy, setBusy] = useState(false);
-
-  const toggle = useCallback((id: string) => {
-    setSelectedIds((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
-    });
-  }, []);
 
   const run = useCallback(
     async (regenerate: boolean) => {
@@ -128,20 +119,19 @@ export default function BentoPersonaSuggestPage() {
               <p className="mb-2 text-xs text-muted-foreground">
                 {t("forms.persona.suggest.restrictLabel")}
               </p>
-              <div className="flex flex-wrap gap-3">
-                {audiencePersonas.map((p) => (
-                  <label
-                    key={p.id}
-                    className="flex cursor-pointer items-center gap-2 text-sm"
-                  >
-                    <Checkbox
-                      checked={p.id ? selectedIds.has(p.id) : false}
-                      onCheckedChange={() => p.id && toggle(p.id)}
-                    />
-                    {p.name}
-                  </label>
-                ))}
-              </div>
+              <PersonaSelectGrid
+                personas={audiencePersonas
+                  .filter((p) => p.id)
+                  .map((p) => ({
+                    id: p.id as string,
+                    name: p.name,
+                    subtitle: p.personaKind
+                      ? t(`persona.match.kind.${p.personaKind}`)
+                      : undefined,
+                  }))}
+                selectedIds={[...selectedIds]}
+                onChange={(ids) => setSelectedIds(new Set(ids))}
+              />
             </div>
           )}
 
