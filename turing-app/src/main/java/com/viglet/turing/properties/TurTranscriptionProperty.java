@@ -101,4 +101,27 @@ public class TurTranscriptionProperty {
      * transcripts don't accumulate in memory. Clamped ≥ 60; default 3600 (1h).
      */
     private int asyncJobRetentionSeconds = 3600;
+
+    /**
+     * T693 — enable the local→cloud confidence fallback. When {@code true} and the
+     * active backend either fails or returns a confidence below
+     * {@link #confidenceThreshold}, the transcription is retried once on
+     * {@link #confidenceFallbackType} (unless that is the same backend). Default
+     * {@code false} = legacy behavior (single backend, no retry).
+     */
+    private boolean confidenceFallbackEnabled = false;
+
+    /**
+     * T693 — the backend the confidence fallback escalates to (typically the cloud
+     * {@code OPENAI} provider). Ignored when it equals the active backend or when
+     * {@link #confidenceFallbackEnabled} is {@code false}. Default {@code OPENAI}.
+     */
+    private TurTranscriptionProviderType confidenceFallbackType = TurTranscriptionProviderType.OPENAI;
+
+    /**
+     * T693 — minimum acceptable 0–1 confidence from the active backend before the
+     * fallback escalates. A result with a {@code null} confidence never triggers on
+     * this threshold (only outright failure does). Clamped to [0,1]; default 0.5.
+     */
+    private double confidenceThreshold = 0.5;
 }

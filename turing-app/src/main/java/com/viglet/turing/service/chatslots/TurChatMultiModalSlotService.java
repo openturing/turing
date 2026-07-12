@@ -36,6 +36,8 @@ import com.viglet.turing.genai.flow.TurChatFlowEngineService;
 import com.viglet.turing.genai.nativeapi.gemini.TurGeminiVideoUnderstandingService;
 import com.viglet.turing.genai.nativeapi.gemini.TurGeminiVideoUnderstandingService.VideoUnderstanding;
 import com.viglet.turing.genai.provider.llm.TurGenAiLlmProviderFactory;
+import com.viglet.turing.genai.transcription.TurTranscriptionResult;
+import com.viglet.turing.genai.transcription.TurTranscriptionService;
 import com.viglet.turing.persistence.model.agent.TurAIAgent;
 import com.viglet.turing.persistence.model.agent.TurAIAgentSlot;
 import com.viglet.turing.persistence.model.agent.TurAIAgentSlotType;
@@ -91,19 +93,22 @@ public class TurChatMultiModalSlotService {
     private final TurChatFlowEngineService engineService;
     private final TurAIAgentSlotRepository slotRepository;
     private final TurGeminiVideoUnderstandingService videoUnderstanding;
+    private final TurTranscriptionService transcriptionService;
 
     public TurChatMultiModalSlotService(TurStorageService storageService,
             TurGenAiLlmProviderFactory llmProviderFactory,
             TurSecretCryptoService cryptoService,
             TurChatFlowEngineService engineService,
             TurAIAgentSlotRepository slotRepository,
-            TurGeminiVideoUnderstandingService videoUnderstanding) {
+            TurGeminiVideoUnderstandingService videoUnderstanding,
+            TurTranscriptionService transcriptionService) {
         this.storageService = storageService;
         this.llmProviderFactory = llmProviderFactory;
         this.cryptoService = cryptoService;
         this.engineService = engineService;
         this.slotRepository = slotRepository;
         this.videoUnderstanding = videoUnderstanding;
+        this.transcriptionService = transcriptionService;
     }
 
     /**
@@ -217,9 +222,12 @@ public class TurChatMultiModalSlotService {
 
     /**
      * Dispatch the optional extraction pass by slot modality: IMAGE → Vision LLM
-     * (fills scalar slots from a document photo); VIDEO/AUDIO → Gemini native
-     * understanding (T501, transcript + scene description into a target text
-     * slot). Any other modality has no extraction and returns {@link VisionResult#none()}.
+     * (fills scalar slots from a document photo); AUDIO → the pluggable,
+     * chunk-aware transcription seam (T693 — any config-selected backend, past
+     * any per-request size limit), falling back to Gemini understanding when no
+     * transcription backend is configured; VIDEO → Gemini native understanding
+     * (T501, transcript + scene description — the visual track the audio-only
+     * seam can't cover). Any other modality has no extraction.
      */
     private VisionResult runExtraction(TurAIAgentSlot slot, byte[] bytes, String contentType,
             String filename, TurAIAgent agent, String conversationId, List<String> visionSlotNames) {
@@ -227,11 +235,55 @@ public class TurChatMultiModalSlotService {
             return runVisionExtraction(bytes, contentType, filename, agent, conversationId,
                     visionSlotNames);
         }
-        if (slot.getType() == TurAIAgentSlotType.VIDEO || slot.getType() == TurAIAgentSlotType.AUDIO) {
+        if (slot.getType() == TurAIAgentSlotType.AUDIO) {
+            VisionResult transcribed = runAudioTranscription(bytes, contentType, agent,
+                    conversationId, visionSlotNames);
+            if (transcribed != null) {
+                return transcribed;
+            }
+            // No transcription backend configured — fall back to Gemini understanding.
+            return runVideoUnderstanding(bytes, contentType, filename, agent, conversationId,
+                    visionSlotNames);
+        }
+        if (slot.getType() == TurAIAgentSlotType.VIDEO) {
             return runVideoUnderstanding(bytes, contentType, filename, agent, conversationId,
                     visionSlotNames);
         }
         return VisionResult.none();
+    }
+
+    /**
+     * T693 — transcribe an AUDIO slot upload through the pluggable, chunk-aware
+     * {@link TurTranscriptionService} and write the transcript into the first
+     * target text slot. Returns {@code null} (not a result) when no transcription
+     * backend is configured, so the caller can fall back to Gemini understanding;
+     * returns {@link VisionResult#none()} when a backend exists but produced no
+     * transcript or there is no target slot — either way the binary slot upload
+     * already succeeded, so this is strictly additive.
+     */
+    private VisionResult runAudioTranscription(byte[] bytes, String contentType, TurAIAgent agent,
+            String conversationId, List<String> targetSlotNames) {
+        if (!transcriptionService.isAvailable()) {
+            return null;
+        }
+        List<TurAIAgentSlot> targets = resolveScalarTargetSlots(agent, targetSlotNames);
+        if (targets.isEmpty()) {
+            log.info("[MultiModalSlot] No target text slot for the transcript — transcription skipped");
+            return VisionResult.none();
+        }
+        TurTranscriptionResult transcription =
+                transcriptionService.transcribe(bytes, contentType, null);
+        if (!transcription.success() || transcription.text() == null
+                || transcription.text().isBlank()) {
+            log.info("[MultiModalSlot] Audio transcription produced no text for conv={}: {}",
+                    conversationId, transcription.error());
+            return VisionResult.none();
+        }
+        String targetName = targets.get(0).getName();
+        String text = transcription.text();
+        int touched = engineService.writeSlot(conversationId, targetName, text,
+                TurChatSlotAuditSource.EXTRACT, "transcription-agent=" + agent.getId());
+        return new VisionResult(Map.of(targetName, text), touched > 0 ? 1 : 0);
     }
 
     /**

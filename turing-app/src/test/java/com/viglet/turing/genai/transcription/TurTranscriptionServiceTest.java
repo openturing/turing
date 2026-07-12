@@ -20,6 +20,7 @@ import java.util.List;
 import org.junit.jupiter.api.Test;
 
 import com.viglet.turing.properties.TurConfigProperties;
+import com.viglet.turing.properties.TurTranscriptionProperty;
 
 /**
  * T689 / §XLII.3 — {@link TurTranscriptionService}: pure stitch/dedupe +
@@ -33,7 +34,14 @@ class TurTranscriptionServiceTest {
 
     private TurTranscriptionService service(TurTranscriptionProviderFactory factory,
             TurAudioChunker chunker, TurTranscriptionConfigResolver resolver) {
-        return new TurTranscriptionService(factory, chunker, resolver, new TurConfigProperties());
+        return new TurTranscriptionService(factory, chunker, resolver,
+                new TurTranscriptionMetricsService(), new TurConfigProperties());
+    }
+
+    private TurTranscriptionService service(TurTranscriptionProviderFactory factory,
+            TurAudioChunker chunker, TurTranscriptionConfigResolver resolver,
+            TurTranscriptionMetricsService metrics, TurConfigProperties config) {
+        return new TurTranscriptionService(factory, chunker, resolver, metrics, config);
     }
 
     private TurTranscriptionConfigResolver resolverWithLimit(long maxBytes) {
@@ -159,6 +167,147 @@ class TurTranscriptionServiceTest {
 
         assertThat(result.success()).isFalse();
         assertThat(result.error()).contains("backend 500");
+    }
+
+    // ---- confidence aggregation ----------------------------------------
+
+    @Test
+    void aggregateConfidenceMeansNonNullValues() {
+        assertThat(TurTranscriptionService.aggregateConfidence(List.of(
+                TurTranscriptionResult.ok("a", "en", 0.4),
+                TurTranscriptionResult.ok("b", "en", 0.6),
+                TurTranscriptionResult.ok("c", "en", null))))
+                .isEqualTo(0.5);
+    }
+
+    @Test
+    void aggregateConfidenceNullWhenNoneReported() {
+        assertThat(TurTranscriptionService.aggregateConfidence(List.of(
+                TurTranscriptionResult.ok("a", "en"),
+                TurTranscriptionResult.ok("b", "en"))))
+                .isNull();
+    }
+
+    // ---- confidence fallback (T693) ------------------------------------
+
+    private TurTranscriptionConfigResolver resolver(TurTranscriptionProviderType type, long maxBytes) {
+        TurTranscriptionConfigResolver resolver = mock(TurTranscriptionConfigResolver.class);
+        when(resolver.resolve()).thenReturn(
+                new TurTranscriptionConfig(type, "", "", "", maxBytes, "base"));
+        return resolver;
+    }
+
+    private TurAudioChunker singleChunk() {
+        TurAudioChunker chunker = mock(TurAudioChunker.class);
+        when(chunker.chunk(any(), any(), anyLong()))
+                .thenReturn(List.of(new TurAudioChunk(new byte[10], "audio/mpeg", 0, 0, -1, 0)));
+        return chunker;
+    }
+
+    private TurConfigProperties fallbackConfig(boolean enabled, double threshold) {
+        TurTranscriptionProperty t = new TurTranscriptionProperty();
+        t.setConfidenceFallbackEnabled(enabled);
+        t.setConfidenceFallbackType(TurTranscriptionProviderType.OPENAI);
+        t.setConfidenceThreshold(threshold);
+        TurConfigProperties cfg = new TurConfigProperties();
+        cfg.setTranscription(t);
+        return cfg;
+    }
+
+    @Test
+    void confidenceFallbackEscalatesOnPrimaryFailure() {
+        TurTranscriptionProvider local = mock(TurTranscriptionProvider.class);
+        when(local.transcribe(any(), any(), any())).thenReturn(TurTranscriptionResult.fail("local down"));
+        TurTranscriptionProvider cloud = mock(TurTranscriptionProvider.class);
+        when(cloud.isAvailable()).thenReturn(true);
+        when(cloud.transcribe(any(), any(), any())).thenReturn(TurTranscriptionResult.ok("cloud text", "en"));
+
+        TurTranscriptionProviderFactory factory = mock(TurTranscriptionProviderFactory.class);
+        when(factory.resolveActive()).thenReturn(local);
+        when(factory.resolve(TurTranscriptionProviderType.OPENAI)).thenReturn(cloud);
+
+        TurTranscriptionResult result = service(factory, singleChunk(),
+                resolver(TurTranscriptionProviderType.OPENAI_COMPATIBLE, 100L),
+                new TurTranscriptionMetricsService(), fallbackConfig(true, 0.5))
+                .transcribe(new byte[10], "audio/mpeg", "en");
+
+        assertThat(result.success()).isTrue();
+        assertThat(result.text()).isEqualTo("cloud text");
+    }
+
+    @Test
+    void confidenceFallbackEscalatesOnLowConfidence() {
+        TurTranscriptionProvider local = mock(TurTranscriptionProvider.class);
+        when(local.transcribe(any(), any(), any()))
+                .thenReturn(TurTranscriptionResult.ok("weak", "en", 0.2));
+        TurTranscriptionProvider cloud = mock(TurTranscriptionProvider.class);
+        when(cloud.isAvailable()).thenReturn(true);
+        when(cloud.transcribe(any(), any(), any()))
+                .thenReturn(TurTranscriptionResult.ok("strong", "en", 0.9));
+
+        TurTranscriptionProviderFactory factory = mock(TurTranscriptionProviderFactory.class);
+        when(factory.resolveActive()).thenReturn(local);
+        when(factory.resolve(TurTranscriptionProviderType.OPENAI)).thenReturn(cloud);
+
+        TurTranscriptionResult result = service(factory, singleChunk(),
+                resolver(TurTranscriptionProviderType.OPENAI_COMPATIBLE, 100L),
+                new TurTranscriptionMetricsService(), fallbackConfig(true, 0.5))
+                .transcribe(new byte[10], "audio/mpeg", "en");
+
+        assertThat(result.text()).isEqualTo("strong");
+    }
+
+    @Test
+    void confidenceFallbackKeepsPrimaryWhenDisabled() {
+        TurTranscriptionProvider local = mock(TurTranscriptionProvider.class);
+        when(local.transcribe(any(), any(), any()))
+                .thenReturn(TurTranscriptionResult.ok("weak", "en", 0.2));
+        TurTranscriptionProviderFactory factory = mock(TurTranscriptionProviderFactory.class);
+        when(factory.resolveActive()).thenReturn(local);
+
+        TurTranscriptionResult result = service(factory, singleChunk(),
+                resolver(TurTranscriptionProviderType.OPENAI_COMPATIBLE, 100L),
+                new TurTranscriptionMetricsService(), fallbackConfig(false, 0.5))
+                .transcribe(new byte[10], "audio/mpeg", "en");
+
+        assertThat(result.text()).isEqualTo("weak");
+    }
+
+    @Test
+    void confidenceFallbackKeepsPrimaryWhenFallbackAlsoFails() {
+        TurTranscriptionProvider local = mock(TurTranscriptionProvider.class);
+        when(local.transcribe(any(), any(), any()))
+                .thenReturn(TurTranscriptionResult.ok("weak", "en", 0.2));
+        TurTranscriptionProvider cloud = mock(TurTranscriptionProvider.class);
+        when(cloud.isAvailable()).thenReturn(true);
+        when(cloud.transcribe(any(), any(), any())).thenReturn(TurTranscriptionResult.fail("cloud down"));
+
+        TurTranscriptionProviderFactory factory = mock(TurTranscriptionProviderFactory.class);
+        when(factory.resolveActive()).thenReturn(local);
+        when(factory.resolve(TurTranscriptionProviderType.OPENAI)).thenReturn(cloud);
+
+        TurTranscriptionResult result = service(factory, singleChunk(),
+                resolver(TurTranscriptionProviderType.OPENAI_COMPATIBLE, 100L),
+                new TurTranscriptionMetricsService(), fallbackConfig(true, 0.5))
+                .transcribe(new byte[10], "audio/mpeg", "en");
+
+        assertThat(result.text()).isEqualTo("weak");
+    }
+
+    @Test
+    void recordsPerBackendMetric() {
+        TurTranscriptionProvider provider = mock(TurTranscriptionProvider.class);
+        when(provider.transcribe(any(), any(), any())).thenReturn(TurTranscriptionResult.ok("x", "en"));
+        TurTranscriptionProviderFactory factory = mock(TurTranscriptionProviderFactory.class);
+        when(factory.resolveActive()).thenReturn(provider);
+
+        TurTranscriptionMetricsService metrics = new TurTranscriptionMetricsService();
+        service(factory, singleChunk(), resolver(TurTranscriptionProviderType.OPENAI, 100L),
+                metrics, new TurConfigProperties())
+                .transcribe(new byte[10], "audio/mpeg", "en");
+
+        assertThat(metrics.rows()).anySatisfy(row ->
+                assertThat(row).containsEntry("backend", "OPENAI").containsEntry("count", 1));
     }
 
 }

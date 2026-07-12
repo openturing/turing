@@ -77,7 +77,11 @@ public class TurOpenAiTranscriptionClient {
                 }
             }).contentType(resolveMediaType(mimeType));
             body.part("model", StringUtils.defaultIfBlank(model, DEFAULT_MODEL));
-            body.part("response_format", "json");
+            // verbose_json is a strict superset of json (still carries top-level
+            // text/language) and adds per-segment avg_logprob, from which T693
+            // derives an optional 0–1 confidence for the local→cloud fallback. A
+            // backend that ignores the param simply yields no segments → null.
+            body.part("response_format", "verbose_json");
             if (StringUtils.isNotBlank(languageHint)) {
                 body.part("language", languageHint.trim());
             }
@@ -100,11 +104,39 @@ public class TurOpenAiTranscriptionClient {
                 return TurTranscriptionResult.fail("Transcription returned no text.");
             }
             Object lang = response.get("language");
-            return TurTranscriptionResult.ok(text, lang instanceof String s ? s : languageHint);
+            return TurTranscriptionResult.ok(text, lang instanceof String s ? s : languageHint,
+                    confidenceFromSegments(response.get("segments")));
         } catch (RuntimeException e) {
             log.warn("[Transcription] failed: {}", e.getMessage());
             return TurTranscriptionResult.fail("Transcription failed: " + e.getMessage());
         }
+    }
+
+    /**
+     * T693 — derive a 0–1 confidence from a {@code verbose_json} response's
+     * {@code segments[].avg_logprob}: the mean segment log-probability mapped
+     * through {@code exp(...)} (log-prob → probability) and clamped to [0,1].
+     * Returns {@code null} when the backend emits no usable segment logprobs, so
+     * a confidence-less backend simply disables the confidence fallback rather
+     * than reporting a fake score.
+     */
+    static Double confidenceFromSegments(Object segments) {
+        if (!(segments instanceof java.util.List<?> list) || list.isEmpty()) {
+            return null;
+        }
+        double sum = 0;
+        int n = 0;
+        for (Object element : list) {
+            if (element instanceof Map<?, ?> seg
+                    && seg.get("avg_logprob") instanceof Number logProb) {
+                sum += logProb.doubleValue();
+                n++;
+            }
+        }
+        if (n == 0) {
+            return null;
+        }
+        return Math.clamp(Math.exp(sum / n), 0.0, 1.0);
     }
 
     private MediaType resolveMediaType(String mimeType) {

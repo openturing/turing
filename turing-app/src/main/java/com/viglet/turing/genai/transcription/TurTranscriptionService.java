@@ -55,18 +55,24 @@ public class TurTranscriptionService {
     /** Cap on how many trailing/leading words to test when deduping an overlap. */
     static final int MAX_OVERLAP_WORDS = 40;
 
+    /** Cloud OpenAI's fixed 25 MiB per-request cap — the fallback chunks below this. */
+    static final long OPENAI_MAX_UPLOAD_BYTES = 26_214_400L;
+
     private final TurTranscriptionProviderFactory providerFactory;
     private final TurAudioChunker audioChunker;
     private final TurTranscriptionConfigResolver configResolver;
+    private final TurTranscriptionMetricsService metrics;
     private final TurTranscriptionProperty props;
 
     public TurTranscriptionService(TurTranscriptionProviderFactory providerFactory,
             TurAudioChunker audioChunker,
             TurTranscriptionConfigResolver configResolver,
+            TurTranscriptionMetricsService metrics,
             TurConfigProperties configProperties) {
         this.providerFactory = providerFactory;
         this.audioChunker = audioChunker;
         this.configResolver = configResolver;
+        this.metrics = metrics;
         this.props = configProperties.getTranscription() != null
                 ? configProperties.getTranscription()
                 : new TurTranscriptionProperty();
@@ -80,14 +86,74 @@ public class TurTranscriptionService {
     /**
      * Transcribe audio of any size, chunking transparently when it exceeds the
      * active backend's per-request limit. Fail-soft — never throws.
+     *
+     * <p>T693 — records a per-backend metric for every attempt and, when the
+     * confidence fallback is enabled, escalates a failed/low-confidence result
+     * from the active (typically local) backend to the configured cloud backend.
      */
     public TurTranscriptionResult transcribe(byte[] audio, String mimeType, String languageHint) {
         if (audio == null || audio.length == 0) {
             return TurTranscriptionResult.fail("Empty audio.");
         }
+        TurTranscriptionConfig config = configResolver.resolve();
+        TurTranscriptionProviderType activeType = config.type();
         TurTranscriptionProvider provider = providerFactory.resolveActive();
-        long maxBytes = configResolver.resolve().maxUploadBytes();
 
+        TurTranscriptionResult primary = timedTranscribe(
+                activeType, provider, config.maxUploadBytes(), audio, mimeType, languageHint);
+
+        if (!shouldFallback(primary, activeType)) {
+            return primary;
+        }
+        TurTranscriptionProviderType fbType = props.getConfidenceFallbackType();
+        TurTranscriptionProvider fallback = providerFactory.resolve(fbType);
+        if (fallback == null || !fallback.isAvailable() || fbType == activeType) {
+            return primary;
+        }
+        log.info("[Transcription] {} result {} — escalating to fallback {}", activeType,
+                primary.success() ? "confidence " + primary.confidence() : "failed", fbType);
+        TurTranscriptionResult fbResult = timedTranscribe(fbType, fallback,
+                fallbackMaxBytes(fbType, config.maxUploadBytes()), audio, mimeType, languageHint);
+        return fbResult.success() ? fbResult : primary;
+    }
+
+    /** True when the confidence fallback is enabled and this result warrants escalation. */
+    private boolean shouldFallback(TurTranscriptionResult result, TurTranscriptionProviderType activeType) {
+        if (!props.isConfidenceFallbackEnabled()) {
+            return false;
+        }
+        if (props.getConfidenceFallbackType() == null
+                || props.getConfidenceFallbackType() == activeType) {
+            return false;
+        }
+        if (!result.success()) {
+            return true;
+        }
+        Double confidence = result.confidence();
+        return confidence != null && confidence < Math.clamp(props.getConfidenceThreshold(), 0.0, 1.0);
+    }
+
+    /** Cloud OpenAI needs its 25 MiB cap; a local fallback keeps the active limit. */
+    private long fallbackMaxBytes(TurTranscriptionProviderType fbType, long activeMax) {
+        if (fbType == TurTranscriptionProviderType.OPENAI) {
+            return activeMax > 0 ? Math.min(activeMax, OPENAI_MAX_UPLOAD_BYTES) : OPENAI_MAX_UPLOAD_BYTES;
+        }
+        return activeMax;
+    }
+
+    /** Transcribe (chunk + stitch) on one provider, recording a per-backend metric. */
+    private TurTranscriptionResult timedTranscribe(TurTranscriptionProviderType backend,
+            TurTranscriptionProvider provider, long maxBytes,
+            byte[] audio, String mimeType, String languageHint) {
+        long start = System.currentTimeMillis();
+        TurTranscriptionResult result = transcribeWith(provider, maxBytes, audio, mimeType, languageHint);
+        metrics.record(backend, System.currentTimeMillis() - start, result.success(), audio.length);
+        return result;
+    }
+
+    /** The chunk-or-passthrough + stitch pipeline for a single provider. */
+    private TurTranscriptionResult transcribeWith(TurTranscriptionProvider provider, long maxBytes,
+            byte[] audio, String mimeType, String languageHint) {
         List<TurAudioChunk> chunks = audioChunker.chunk(audio, mimeType, maxBytes);
         if (chunks.isEmpty()) {
             return TurTranscriptionResult.fail("Empty audio.");
@@ -110,9 +176,23 @@ public class TurTranscriptionService {
         String stitched = stitchTranscripts(results.stream().map(TurTranscriptionResult::text).toList());
         String language = aggregateLanguage(
                 results.stream().map(TurTranscriptionResult::language).toList(), languageHint);
+        Double confidence = aggregateConfidence(results);
         log.info("[Transcription] stitched {} chunk transcripts into {} chars (lang {})",
                 results.size(), stitched.length(), language);
-        return TurTranscriptionResult.ok(stitched, language);
+        return TurTranscriptionResult.ok(stitched, language, confidence);
+    }
+
+    /** Mean of the non-null per-chunk confidences, or {@code null} when none reported one. */
+    static Double aggregateConfidence(List<TurTranscriptionResult> results) {
+        double sum = 0;
+        int n = 0;
+        for (TurTranscriptionResult r : results) {
+            if (r != null && r.confidence() != null) {
+                sum += r.confidence();
+                n++;
+            }
+        }
+        return n == 0 ? null : sum / n;
     }
 
     /** Transcribe chunks bounded-parallel, preserving order. */

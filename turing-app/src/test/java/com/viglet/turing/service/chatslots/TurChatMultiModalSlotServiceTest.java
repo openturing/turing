@@ -66,13 +66,15 @@ class TurChatMultiModalSlotServiceTest {
     @Mock private TurChatFlowEngineService engineService;
     @Mock private TurAIAgentSlotRepository slotRepository;
     @Mock private com.viglet.turing.genai.nativeapi.gemini.TurGeminiVideoUnderstandingService videoUnderstanding;
+    @Mock private com.viglet.turing.genai.transcription.TurTranscriptionService transcriptionService;
 
     private TurChatMultiModalSlotService service;
 
     @BeforeEach
     void setUp() {
         service = new TurChatMultiModalSlotService(storageService, llmProviderFactory,
-                cryptoService, engineService, slotRepository, videoUnderstanding);
+                cryptoService, engineService, slotRepository, videoUnderstanding,
+                transcriptionService);
     }
 
     private TurAIAgent agent() {
@@ -255,6 +257,31 @@ class TurChatMultiModalSlotServiceTest {
         assertThat(result.error()).isNull();
         assertThat(result.visionSlotsWritten()).isZero();
         verify(llmProviderFactory, never()).getProvider(any());
+    }
+
+    @Test
+    void audioSlotTranscribesThroughSeamIntoTextSlot() {
+        when(storageService.isEnabled()).thenReturn(true);
+        when(slotRepository.findByTurAIAgent_IdOrderByNameAsc(AGENT_ID)).thenReturn(List.of(
+                slot("voice", TurAIAgentSlotType.AUDIO),
+                slot("notes", TurAIAgentSlotType.STRING)));
+        when(engineService.writeSlot(anyString(), anyString(), anyString(), any(), any()))
+                .thenReturn(1);
+        when(transcriptionService.isAvailable()).thenReturn(true);
+        when(transcriptionService.transcribe(any(), any(), any())).thenReturn(
+                com.viglet.turing.genai.transcription.TurTranscriptionResult.ok("hello there", "en"));
+
+        MultiModalSlotResult result = service.upload(
+                file("clip.mp3", "audio/mpeg", new byte[] { 1, 2, 3 }),
+                agent(), CONV, "voice", true, List.of());
+
+        assertThat(result.error()).isNull();
+        assertThat(result.visionSlotsWritten()).isEqualTo(1);
+        assertThat(result.visionExtracted()).containsEntry("notes", "hello there");
+        verify(engineService).writeSlot(eq(CONV), eq("notes"), eq("hello there"),
+                eq(TurChatSlotAuditSource.EXTRACT), anyString());
+        // The Gemini fallback must NOT run when the transcription seam handled it.
+        verify(videoUnderstanding, never()).understand(any(), any(), any(), any());
     }
 
     @Test

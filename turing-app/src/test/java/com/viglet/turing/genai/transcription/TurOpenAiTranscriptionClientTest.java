@@ -48,4 +48,31 @@ class TurOpenAiTranscriptionClientTest {
         assertThat(r.success()).isFalse();
         assertThat(r.error()).contains("above the");
     }
+
+    // ---- T693 confidence extraction from verbose_json segments ----------
+
+    @Test
+    void confidenceFromSegmentsMeansLogprobsThroughExp() {
+        // avg_logprob 0 → exp(0)=1.0; two segments averaged then exp.
+        Double c = TurOpenAiTranscriptionClient.confidenceFromSegments(java.util.List.of(
+                java.util.Map.of("avg_logprob", 0.0),
+                java.util.Map.of("avg_logprob", 0.0)));
+        assertThat(c).isEqualTo(1.0);
+    }
+
+    @Test
+    void confidenceFromSegmentsNullWhenAbsentOrEmpty() {
+        assertThat(TurOpenAiTranscriptionClient.confidenceFromSegments(null)).isNull();
+        assertThat(TurOpenAiTranscriptionClient.confidenceFromSegments(java.util.List.of())).isNull();
+        assertThat(TurOpenAiTranscriptionClient.confidenceFromSegments(
+                java.util.List.of(java.util.Map.of("no_logprob", 1)))).isNull();
+    }
+
+    @Test
+    void confidenceFromSegmentsClampsToUnitRange() {
+        // A negative avg_logprob maps to a probability in (0,1).
+        Double c = TurOpenAiTranscriptionClient.confidenceFromSegments(java.util.List.of(
+                java.util.Map.of("avg_logprob", -0.7)));
+        assertThat(c).isBetween(0.0, 1.0);
+    }
 }

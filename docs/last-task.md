@@ -49,6 +49,7 @@ number" looked free but wasn't. Grepping three files (`ROADMAP.md`,
 ## Log (most recent first)
 
 - **T694 CREATED** (💭, Block AS §XLII.5 — fill the LOCAL_ONNX scaffold with real in-process Whisper ONNX inference; deferred heavy-lift) — 2026-07-11.
+- **T693 SHIPPED** (Block AS §XLII — AUDIO slot routes through chunk-aware TurTranscriptionService (Gemini fallback only when unconfigured); per-backend TurTranscriptionMetricsService + GET metrics; confidence (verbose_json avg_logprob) + local->cloud fallback) — 2026-07-11.
 - **T692 SHIPPED** (Block AS §XLII — async transcription jobs: bounded pool + queue back-pressure (429), submit/poll/SSE job surface over TurTranscriptionJobService/EventBus, retention sweep; delegates to T689 orchestrator) — 2026-07-11.
 - **T691 SHIPPED** (Block AS §XLII — LOCAL_ONNX seam/scaffold: TurWhisperModelSize + TurLocalOnnxTranscriptionProvider owns the slot (privacy-safe, no cloud fallback) + fail-soft; runtime deferred to T694, Jlama discipline) — 2026-07-11.
 - **T690 SHIPPED** (Block AS §XLII — local OPENAI_COMPATIBLE backend: shared TurOpenAiTranscriptionClient (blank-key omits auth), TurOpenAiCompatibleTranscriptionProvider requires dedicated endpoint; faster-whisper-server sidecar recipe in docs/references) — 2026-07-11.
