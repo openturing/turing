@@ -9,9 +9,11 @@
  */
 package com.viglet.turing.api.persona.dialogue;
 
+import java.time.Duration;
 import java.util.List;
 
 import org.springframework.http.MediaType;
+import org.springframework.http.codec.ServerSentEvent;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -107,10 +109,28 @@ public class TurPersonaDialogueProjectAPI {
 
     @Operation(summary = "Run the dialogue and stream it live over SSE (persists the transcript)")
     @PostMapping(value = "/{id}/run/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
-    public Flux<TurDialogueEvent> run(@PathVariable String id) {
+    public Flux<ServerSentEvent<TurDialogueEvent>> run(@PathVariable String id) {
         if (service.get(id).isEmpty()) {
             throw TurNotFoundException.of("Dialogue project", id);
         }
-        return service.run(id);
+        /*
+         * Wrap each turn in a ServerSentEvent (the canonical Spring MVC SSE shape,
+         * same as the persona-match stream) so the framework flushes one event at
+         * a time — a raw Flux<POJO> can buffer, making the whole dialogue land at
+         * once instead of turn-by-turn. A comment heartbeat keeps the connection
+         * alive across the long per-turn LLM calls; the stream ends on the
+         * terminal DONE/ERROR event.
+         */
+        Flux<ServerSentEvent<TurDialogueEvent>> data = service.run(id)
+                .map(event -> ServerSentEvent.builder(event).build());
+        Flux<ServerSentEvent<TurDialogueEvent>> heartbeat = Flux.interval(Duration.ofSeconds(20))
+                .map(tick -> ServerSentEvent.<TurDialogueEvent>builder().comment("heartbeat").build());
+        return Flux.merge(data, heartbeat)
+                .takeUntil(sse -> sse.data() != null && terminal(sse.data()));
+    }
+
+    private static boolean terminal(TurDialogueEvent event) {
+        return event.type() == TurDialogueEvent.TurDialogueEventType.DONE
+                || event.type() == TurDialogueEvent.TurDialogueEventType.ERROR;
     }
 }

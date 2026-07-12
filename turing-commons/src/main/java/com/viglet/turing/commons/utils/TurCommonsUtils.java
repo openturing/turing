@@ -138,21 +138,62 @@ public class TurCommonsUtils {
     public static void addParameterToQueryString(StringBuilder sbQueryString, String name,
             String value) {
         if (value != null) {
-            sbQueryString.append(String.format("%s=%s&", name, value));
+            // Percent-encode the value here (not via the URI constructor in
+            // modifiedURI) so structural delimiters — above all '&' — inside a
+            // value cannot be read as parameter separators. The parameter name is
+            // an internal constant (q, p, sort, fq[], …) and is emitted literally.
+            sbQueryString.append(name).append('=').append(encodeQueryValue(value)).append('&');
         }
+    }
+
+    private static final String QUERY_VALUE_SAFE =
+            "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~:/@,;!$'()*?";
+    private static final char[] HEX = "0123456789ABCDEF".toCharArray();
+
+    /**
+     * Percent-encodes a query-parameter <em>value</em> per RFC 3986. Unreserved
+     * characters and the sub-delimiters that are safe to keep literal in a value
+     * ({@code : / @ , ; ! $ ' ( ) * ?}) are preserved so links stay readable and
+     * backward-compatible; everything else — crucially the structural delimiters
+     * {@code & = + # %}, whitespace and non-ASCII — is percent-encoded as UTF-8.
+     *
+     * <p>This is required because a raw {@code &} inside a value (e.g. a facet
+     * value {@code "RAG & Chat"}) would otherwise be read as a parameter
+     * separator, truncating the filter and returning no results. The
+     * multi-argument {@link URI} constructor cannot do this job: it leaves
+     * {@code &}/{@code =} literal (they are legal query characters) and
+     * double-encodes existing {@code %XX} escapes ({@code %26} &rarr;
+     * {@code %2526}) — so {@link #modifiedURI(URI, StringBuilder)} sets the
+     * already-encoded query verbatim instead.
+     */
+    private static String encodeQueryValue(String value) {
+        StringBuilder out = new StringBuilder(value.length());
+        for (byte b : value.getBytes(StandardCharsets.UTF_8)) {
+            int c = b & 0xFF;
+            if (c < 0x80 && QUERY_VALUE_SAFE.indexOf(c) >= 0) {
+                out.append((char) c);
+            } else {
+                out.append('%').append(HEX[c >> 4]).append(HEX[c & 0x0F]);
+            }
+        }
+        return out.toString();
     }
 
     public static URI modifiedURI(URI uri, StringBuilder sbQueryString) {
         String query = removeAmpersand(sbQueryString);
+        String path = uri.getRawPath() == null ? "" : uri.getRawPath();
         try {
-            // Use the multi-argument URI constructor so any character that needs
-            // quoting (non-ASCII like 'é', whitespace, '"', etc.) is percent-encoded.
-            // All callers pass decoded values from URIBuilder.getQueryParams(), so we
-            // don't risk double-encoding pre-existing pct-encoded sequences.
-            return new URI(null, null, uri.getRawPath(), query.isEmpty() ? null : query, null);
+            // addParameterToQueryString has already percent-encoded every value,
+            // so set the query verbatim. Routing it through the multi-argument URI
+            // constructor would be wrong twice over: it leaves reserved sub-delims
+            // ('&', '=') literal — so an '&' inside a value would split the params —
+            // and it double-encodes existing "%XX" escapes ("%26" -> "%2526"). The
+            // single-string URI parser keeps the encoded query and the literal
+            // "fq[]" brackets intact.
+            return new URI(query.isEmpty() ? path : path + "?" + query);
         } catch (URISyntaxException e) {
             log.error("Failed to build URI from path '{}' with query '{}': {}",
-                    uri.getRawPath(), query, e.getMessage(), e);
+                    path, query, e.getMessage(), e);
         }
         return uri;
     }

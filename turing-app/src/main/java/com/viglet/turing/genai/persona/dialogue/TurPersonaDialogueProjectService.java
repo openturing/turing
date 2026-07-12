@@ -206,7 +206,11 @@ public class TurPersonaDialogueProjectService {
                         collected.add(event);
                     }
                 })
-                .doOnComplete(() -> persistTranscript(projectId, collected, tenant));
+                // doFinally (not doOnComplete): the SSE endpoint wraps this with a
+                // takeUntil(terminal) that CANCELS upstream the instant the DONE
+                // event passes, which would skip doOnComplete. doFinally still
+                // fires on that cancel, so the transcript is persisted either way.
+                .doFinally(signal -> persistTranscript(projectId, collected, tenant));
     }
 
     /**

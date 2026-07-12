@@ -11,6 +11,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
 
+import org.apache.hc.core5.http.NameValuePair;
+import org.apache.hc.core5.net.URIBuilder;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -20,6 +22,7 @@ import org.springframework.mock.web.MockHttpServletRequest;
 import com.viglet.turing.commons.se.TurSEParameters;
 import com.viglet.turing.commons.se.result.spellcheck.TurSESpellCheckResult;
 import com.viglet.turing.commons.sn.bean.TurSNSiteSearchDocumentBean;
+import com.viglet.turing.commons.sn.search.TurSNParamType;
 import com.viglet.turing.commons.sn.search.TurSNSiteSearchContext;
 import com.viglet.turing.persistence.dto.sn.field.TurSNSiteFieldExtDto;
 import com.viglet.turing.persistence.model.sn.TurSNSite;
@@ -227,6 +230,27 @@ class TurSNUtilsTest {
         assertThat(resultStr)
                 .contains("category")
                 .contains("pdf");
+    }
+
+    @Test
+    void addFilterQueryShouldPercentEncodeAmpersandInValue() {
+        // A facet value containing '&' (e.g. "RAG & Chat") must be percent-encoded
+        // so the '&' is not read as a parameter separator. Regression: the filter
+        // was truncated to "section:RAG " on the wire and matched no documents.
+        URI uri = URI.create("http://localhost/search?q=*");
+        URI result = TurSNUtils.addFilterQuery(uri, "section:RAG & Chat");
+
+        // '&' and spaces encoded; ':' kept literal for readable links.
+        assertThat(result.getRawQuery())
+                .contains("fq[]=section:RAG%20%26%20Chat")
+                .doesNotContain("RAG & Chat");
+
+        // Round-trips (as the search code reads it) back to the intact value.
+        List<String> fq = new URIBuilder(result).getQueryParams().stream()
+                .filter(p -> TurSNParamType.FILTER_QUERIES_DEFAULT.equals(p.getName()))
+                .map(NameValuePair::getValue)
+                .toList();
+        assertThat(fq).containsExactly("section:RAG & Chat");
     }
 
     // --- removeFilterQuery ---
