@@ -151,7 +151,7 @@
     "transcriptionFfmpegChecking": "Verificando…",
     "transcriptionFfmpegAvailable": "ffmpeg disponível — {{version}}",
     "transcriptionFfmpegUnavailable": "ffmpeg indisponível. {{error}}",
-    "transcriptionFfmpegDesc": "O ffmpeg divide áudios maiores que o limite de envio em partes. Clipes pequenos são enviados diretamente e não precisam de ffmpeg.",
+    "transcriptionFfmpegDesc": "O ffmpeg divide áudios maiores que o limite de envio em partes. Clipes pequenos são enviados diretamente e não precisam de ffmpeg. O caminho do executável é definido pela propriedade turing.transcription.ffmpeg-path / ffprobe-path (padrão: buscado no PATH), não aqui.",
     "emailSettings": "Configurações de E-mail",
     "emailSettingsDesc": "Configure o serviço de e-mail para notificações e relatórios semanais.",
     "emailProvider": "Provedor de E-mail",

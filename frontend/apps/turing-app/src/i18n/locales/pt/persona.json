@@ -126,6 +126,10 @@
     "fromAudio": {
       "trigger": "Criar a partir de áudio",
       "working": "Transcrevendo…",
+      "queued": "Na fila…",
+      "transcribing": "Transcrevendo…",
+      "transcribingChunks": "Transcrevendo {{done}}/{{total}}…",
+      "analyzing": "Analisando…",
       "drafted": "Rascunho de persona pronto — revise e salve",
       "failed": "Não foi possível criar uma persona a partir do áudio"
     },

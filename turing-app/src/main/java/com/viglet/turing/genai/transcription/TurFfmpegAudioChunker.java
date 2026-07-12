@@ -107,7 +107,8 @@ public class TurFfmpegAudioChunker implements TurAudioChunker {
             }
             double overlap = Math.max(0.0, props.getChunkOverlapSeconds());
             List<Double> silences = detectSilenceMidpoints(source);
-            List<Segment> plan = planSegments(duration, maxBytes, overlap, silences);
+            List<Segment> plan = planSegments(duration, maxBytes, overlap, silences,
+                    props.getMaxChunkSeconds());
 
             List<TurAudioChunk> chunks = new ArrayList<>(plan.size());
             for (int i = 0; i < plan.size(); i++) {
@@ -132,9 +133,14 @@ public class TurFfmpegAudioChunker implements TurAudioChunker {
      * {@code overlapSeconds} early.
      */
     static List<Segment> planSegments(double durationSec, long maxBytes, double overlapSec,
-            List<Double> silenceMidpoints) {
+            List<Double> silenceMidpoints, double maxSegmentSeconds) {
         double targetSeg = Math.max(MIN_SEGMENT_SECONDS,
                 Math.floor((maxBytes * SIZE_SAFETY) / OUTPUT_BYTES_PER_SEC));
+        // T715 — a positive duration cap forces more (shorter) chunks so long
+        // recordings both parallelise and report per-chunk progress.
+        if (maxSegmentSeconds > 0) {
+            targetSeg = Math.max(MIN_SEGMENT_SECONDS, Math.min(targetSeg, maxSegmentSeconds));
+        }
         if (durationSec <= targetSeg) {
             return List.of(new Segment(0.0, durationSec, 0.0));
         }

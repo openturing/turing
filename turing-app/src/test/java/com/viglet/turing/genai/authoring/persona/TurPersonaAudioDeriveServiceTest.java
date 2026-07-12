@@ -95,6 +95,31 @@ class TurPersonaAudioDeriveServiceTest {
     }
 
     @Test
+    void synthesisesNameAndSystemInstructionWhenModelLeavesThemBlank() {
+        when(transcriptionService.transcribe(any(), any(), any()))
+                .thenReturn(TurTranscriptionResult.ok("A calm expert explains taxes.", "en"));
+        // Model fills the constrained enums but omits the two free-text fields.
+        String draftJson = """
+                {"description": "A calm tax expert.", "systemInstruction": "",
+                 "tone": "TECHNICAL", "verbosity": 2, "languageStyle": "INSTRUCTIONAL",
+                 "personaKind": "BOTH", "domainExpertise": "EXPERT"}
+                """;
+        when(llmSummaryService.generate(anyString(), anyString(), anyString(), anyBoolean()))
+                .thenReturn(new SummaryResult(true, null, draftJson, false));
+
+        DraftResult result = service.derive(new byte[] { 1 }, "audio/mpeg", "en");
+
+        assertThat(result.success()).isTrue();
+        // name derived from the description slug — never blank / placeholder.
+        assertThat(result.draft().getName()).isEqualTo("a-calm-tax-expert");
+        // systemInstruction synthesised from the extracted traits — never blank.
+        assertThat(result.draft().getSystemInstruction())
+                .isNotBlank()
+                .contains("technical")
+                .contains("instructional");
+    }
+
+    @Test
     void defaultsBothKindAndIgnoresBadEnums() {
         when(transcriptionService.transcribe(any(), any(), any()))
                 .thenReturn(TurTranscriptionResult.ok("Some words.", "en"));

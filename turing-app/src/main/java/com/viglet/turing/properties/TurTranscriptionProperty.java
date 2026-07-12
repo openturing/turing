@@ -68,6 +68,17 @@ public class TurTranscriptionProperty {
      */
     private double chunkOverlapSeconds = 2.0;
 
+    /**
+     * T715 — optional cap on a single chunk's <em>duration</em> (seconds). When
+     * {@code > 0}, a long recording is split into segments no longer than this
+     * even if the re-encoded bytes would still fit the upload limit — trading a
+     * few extra provider calls for bounded-parallel throughput (via
+     * {@link #chunkConcurrency}) <b>and</b> visible per-chunk progress. {@code 0}
+     * (default) keeps the legacy byte-limit-only behaviour, where a long clip
+     * stays a single chunk if it re-encodes under the limit.
+     */
+    private double maxChunkSeconds = 0;
+
     /** T688 — timeout (seconds) for a single ffmpeg/ffprobe invocation. Default 120. */
     private int ffmpegTimeoutSeconds = 120;
 

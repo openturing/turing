@@ -92,6 +92,20 @@ public class TurTranscriptionService {
      * from the active (typically local) backend to the configured cloud backend.
      */
     public TurTranscriptionResult transcribe(byte[] audio, String mimeType, String languageHint) {
+        return transcribe(audio, mimeType, languageHint, TurTranscriptionProgressListener.NOOP);
+    }
+
+    /**
+     * T715 — chunk-aware transcription that reports per-chunk progress to
+     * {@code listener} (used by the async persona-from-audio job for a live
+     * progress bar). Behaviour is otherwise identical to
+     * {@link #transcribe(byte[], String, String)}; a {@code null} listener is
+     * treated as {@link TurTranscriptionProgressListener#NOOP}.
+     */
+    public TurTranscriptionResult transcribe(byte[] audio, String mimeType, String languageHint,
+            TurTranscriptionProgressListener listener) {
+        TurTranscriptionProgressListener progress =
+                listener == null ? TurTranscriptionProgressListener.NOOP : listener;
         if (audio == null || audio.length == 0) {
             return TurTranscriptionResult.fail("Empty audio.");
         }
@@ -100,7 +114,7 @@ public class TurTranscriptionService {
         TurTranscriptionProvider provider = providerFactory.resolveActive();
 
         TurTranscriptionResult primary = timedTranscribe(
-                activeType, provider, config.maxUploadBytes(), audio, mimeType, languageHint);
+                activeType, provider, config.maxUploadBytes(), audio, mimeType, languageHint, progress);
 
         if (!shouldFallback(primary, activeType)) {
             return primary;
@@ -113,7 +127,7 @@ public class TurTranscriptionService {
         log.info("[Transcription] {} result {} — escalating to fallback {}", activeType,
                 primary.success() ? "confidence " + primary.confidence() : "failed", fbType);
         TurTranscriptionResult fbResult = timedTranscribe(fbType, fallback,
-                fallbackMaxBytes(fbType, config.maxUploadBytes()), audio, mimeType, languageHint);
+                fallbackMaxBytes(fbType, config.maxUploadBytes()), audio, mimeType, languageHint, progress);
         return fbResult.success() ? fbResult : primary;
     }
 
@@ -144,26 +158,32 @@ public class TurTranscriptionService {
     /** Transcribe (chunk + stitch) on one provider, recording a per-backend metric. */
     private TurTranscriptionResult timedTranscribe(TurTranscriptionProviderType backend,
             TurTranscriptionProvider provider, long maxBytes,
-            byte[] audio, String mimeType, String languageHint) {
+            byte[] audio, String mimeType, String languageHint,
+            TurTranscriptionProgressListener progress) {
         long start = System.currentTimeMillis();
-        TurTranscriptionResult result = transcribeWith(provider, maxBytes, audio, mimeType, languageHint);
+        TurTranscriptionResult result =
+                transcribeWith(provider, maxBytes, audio, mimeType, languageHint, progress);
         metrics.record(backend, System.currentTimeMillis() - start, result.success(), audio.length);
         return result;
     }
 
     /** The chunk-or-passthrough + stitch pipeline for a single provider. */
     private TurTranscriptionResult transcribeWith(TurTranscriptionProvider provider, long maxBytes,
-            byte[] audio, String mimeType, String languageHint) {
+            byte[] audio, String mimeType, String languageHint,
+            TurTranscriptionProgressListener progress) {
         List<TurAudioChunk> chunks = audioChunker.chunk(audio, mimeType, maxBytes);
         if (chunks.isEmpty()) {
             return TurTranscriptionResult.fail("Empty audio.");
         }
         if (chunks.size() == 1) {
+            progress.onProgress(0, 1);
             TurAudioChunk only = chunks.get(0);
-            return provider.transcribe(only.audio(), only.mimeType(), languageHint);
+            TurTranscriptionResult single = provider.transcribe(only.audio(), only.mimeType(), languageHint);
+            progress.onProgress(1, 1);
+            return single;
         }
 
-        List<TurTranscriptionResult> results = transcribeChunks(provider, chunks, languageHint);
+        List<TurTranscriptionResult> results = transcribeChunks(provider, chunks, languageHint, progress);
         for (int i = 0; i < results.size(); i++) {
             TurTranscriptionResult r = results.get(i);
             if (r == null || !r.success() || StringUtils.isBlank(r.text())) {
@@ -195,16 +215,25 @@ public class TurTranscriptionService {
         return n == 0 ? null : sum / n;
     }
 
-    /** Transcribe chunks bounded-parallel, preserving order. */
+    /** Transcribe chunks bounded-parallel, preserving order, reporting progress. */
     private List<TurTranscriptionResult> transcribeChunks(TurTranscriptionProvider provider,
-            List<TurAudioChunk> chunks, String languageHint) {
-        int concurrency = Math.max(1, Math.min(props.getChunkConcurrency(), chunks.size()));
+            List<TurAudioChunk> chunks, String languageHint,
+            TurTranscriptionProgressListener progress) {
+        int total = chunks.size();
+        progress.onProgress(0, total);
+        java.util.concurrent.atomic.AtomicInteger done = new java.util.concurrent.atomic.AtomicInteger();
+        int concurrency = Math.clamp(props.getChunkConcurrency(), 1, total);
         ExecutorService pool = Executors.newFixedThreadPool(concurrency);
         try {
             List<Future<TurTranscriptionResult>> futures = new ArrayList<>(chunks.size());
             for (TurAudioChunk chunk : chunks) {
-                Callable<TurTranscriptionResult> task =
-                        () -> provider.transcribe(chunk.audio(), chunk.mimeType(), languageHint);
+                Callable<TurTranscriptionResult> task = () -> {
+                    try {
+                        return provider.transcribe(chunk.audio(), chunk.mimeType(), languageHint);
+                    } finally {
+                        progress.onProgress(done.incrementAndGet(), total);
+                    }
+                };
                 futures.add(pool.submit(task));
             }
             List<TurTranscriptionResult> results = new ArrayList<>(chunks.size());

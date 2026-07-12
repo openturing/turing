@@ -126,6 +126,10 @@
     "fromAudio": {
       "trigger": "Derive from audio",
       "working": "Transcribing…",
+      "queued": "Queued…",
+      "transcribing": "Transcribing…",
+      "transcribingChunks": "Transcribing {{done}}/{{total}}…",
+      "analyzing": "Analysing…",
       "drafted": "Draft persona ready — review and save",
       "failed": "Could not derive a persona from the audio"
     },

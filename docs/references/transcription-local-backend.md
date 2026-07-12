@@ -65,4 +65,73 @@ Audio above `max-upload-bytes` is split into overlapping ≤-limit chunks
 the host), transcribed bounded-parallel, and stitched back together. Small clips
 are sent directly and need no ffmpeg.
 
+Because chunks are re-encoded to a compact 16 kHz mono MP3 (~4000 B/s), a long
+recording often fits a **single** chunk even when the source file is large (e.g.
+a 35-min clip re-encodes to ~8 MB, under the 25 MiB cap → one provider call). To
+make a long transcription both **faster** and **show progress**, cap the chunk
+*duration* so it splits into several shorter chunks that transcribe in parallel:
+
+```properties
+# Split into chunks no longer than 5 min each (0 = off; byte-limit only).
+turing.transcription.max-chunk-seconds=300
+# How many chunks transcribe at once (bounds backend load / cloud spend).
+turing.transcription.chunk-concurrency=3
+```
+
+With this set, the async persona-from-audio job (and any chunk-aware caller)
+reports live per-chunk progress (`3/7 …`); left at `0` (default), a long clip
+that re-encodes under the limit stays one chunk (legacy behaviour).
+
+## 4. Configuring the ffmpeg toolchain
+
+The chunker (T688) shells out to `ffmpeg` (re-encode/split) and `ffprobe`
+(duration probe). There is **no Global Settings UI field** for these — the
+executable paths are configured only via properties / environment, so the path
+stays at the trusted container level (an executable path is not something an
+admin should be able to point anywhere from a web form). By default Turing calls
+`ffmpeg`/`ffprobe` as found on the `PATH`; override when they live elsewhere or
+you want to pin a specific build:
+
+```properties
+# Absolute paths (or bare names to resolve on PATH — the defaults)
+turing.transcription.ffmpeg-path=/usr/bin/ffmpeg
+turing.transcription.ffprobe-path=/usr/bin/ffprobe
+# Per-invocation timeout for a single ffmpeg/ffprobe call (seconds; default 120)
+turing.transcription.ffmpeg-timeout-seconds=120
+```
+
+Equivalent environment variables (Spring relaxed binding):
+
+```bash
+TURING_TRANSCRIPTION_FFMPEG_PATH=/usr/bin/ffmpeg
+TURING_TRANSCRIPTION_FFPROBE_PATH=/usr/bin/ffprobe
+TURING_TRANSCRIPTION_FFMPEG_TIMEOUT_SECONDS=120
+```
+
+**Installing ffmpeg** (needed only for recordings above `max-upload-bytes`):
+
+- **Debian/Ubuntu**: `apt-get install -y ffmpeg` (provides both `ffmpeg` and `ffprobe`)
+- **Alpine** (common in containers): `apk add --no-cache ffmpeg`
+- **macOS**: `brew install ffmpeg`
+- **Windows**: `choco install ffmpeg` (or `winget install Gyan.FFmpeg`), then
+  ensure the `bin` directory is on `PATH` — otherwise set the absolute
+  `ffmpeg-path`/`ffprobe-path` above (e.g. `C:\ffmpeg\bin\ffmpeg.exe`).
+
+After adjusting the paths, restart Turing and use **Check ffmpeg** in *Global
+Settings → Generative AI → Transcription* to confirm the toolchain is reachable
+(it reports the resolved ffmpeg version banner, or the error if not runnable).
+
+> **In most cases you set nothing.** If `ffmpeg`/`ffprobe` are on the system
+> `PATH` — the normal outcome of `apt install ffmpeg`, `brew install ffmpeg`, or
+> `winget install "FFmpeg (Essentials Build)"` — the defaults already find them;
+> `ffmpeg-path`/`ffprobe-path` are only for non-PATH installs.
+
+> **Troubleshooting — "ffmpeg works in my terminal but Check ffmpeg says
+> unavailable"**: a running process keeps the `PATH` it started with. If you
+> installed ffmpeg *after* Turing (or the IDE that launched it) was already
+> running, the JVM still has the old `PATH` and can't see the new binary — this
+> is especially common on Windows after `winget`/`choco`. **Restart Turing (and
+> the IDE if it started the backend)**, then run Check ffmpeg again. No path
+> configuration is needed once the process is restarted with the updated `PATH`.
+
 [`faster-whisper-server`]: https://github.com/fedirz/faster-whisper-server

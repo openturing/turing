@@ -83,7 +83,7 @@ class TurFfmpegAudioChunkerTest {
     @Test
     void planSingleSegmentWhenDurationFits() {
         // 10 MiB limit → target ~ (10485760*0.85)/4000 ≈ 2228s; a 60s clip fits.
-        List<Segment> plan = TurFfmpegAudioChunker.planSegments(60.0, 10_485_760L, 2.0, List.of());
+        List<Segment> plan = TurFfmpegAudioChunker.planSegments(60.0, 10_485_760L, 2.0, List.of(), 0);
 
         assertThat(plan).hasSize(1);
         assertThat(plan.get(0).start()).isZero();
@@ -95,7 +95,7 @@ class TurFfmpegAudioChunkerTest {
     void planMultipleSegmentsEachUnderByteLimit() {
         long maxBytes = 4_000_000L; // ~850s target segment
         double duration = 3600.0;   // 1 hour → several segments
-        List<Segment> plan = TurFfmpegAudioChunker.planSegments(duration, maxBytes, 3.0, List.of());
+        List<Segment> plan = TurFfmpegAudioChunker.planSegments(duration, maxBytes, 3.0, List.of(), 0);
 
         assertThat(plan).hasSizeGreaterThan(1);
         double targetSeg = Math.floor((maxBytes * TurFfmpegAudioChunker.SIZE_SAFETY)
@@ -127,9 +127,27 @@ class TurFfmpegAudioChunkerTest {
         // A silence 5s after the target cut, within the 10s window.
         double silence = targetSeg + 5;
         List<Segment> plan = TurFfmpegAudioChunker.planSegments(duration, maxBytes, 10.0,
-                List.of(silence));
+                List.of(silence), 0);
 
         // The interior boundary (end of chunk 0) snaps to the silence midpoint.
         assertThat(plan.get(0).end()).isEqualTo(silence);
+    }
+
+    @Test
+    void capsSegmentDurationWhenMaxChunkSecondsSet() {
+        // T715 — a 600s clip fits one byte-limited chunk, but a 120s duration cap
+        // forces several shorter chunks (so a long recording parallelises + shows
+        // per-chunk progress). Legacy (cap 0) keeps it a single chunk.
+        long maxBytes = 10_485_760L; // byte target ≈ 2228s
+        assertThat(TurFfmpegAudioChunker.planSegments(600.0, maxBytes, 2.0, List.of(), 0))
+                .hasSize(1);
+
+        List<Segment> capped =
+                TurFfmpegAudioChunker.planSegments(600.0, maxBytes, 2.0, List.of(), 120.0);
+        assertThat(capped).hasSizeGreaterThan(1);
+        for (Segment seg : capped) {
+            assertThat(seg.end() - seg.start()).isLessThanOrEqualTo(120.0 + 2.0 + 0.001);
+        }
+        assertThat(capped.get(capped.size() - 1).end()).isEqualTo(600.0);
     }
 }

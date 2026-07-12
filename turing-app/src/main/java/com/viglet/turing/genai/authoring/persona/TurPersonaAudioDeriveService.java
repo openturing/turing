@@ -9,6 +9,8 @@
  */
 package com.viglet.turing.genai.authoring.persona;
 
+import java.util.Locale;
+
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
 
@@ -71,6 +73,13 @@ public class TurPersonaAudioDeriveService {
 
             Infer values ONLY from evidence in the transcript. Ground the reading
             level and expertise in how the person actually speaks.
+
+            "name" and "systemInstruction" are REQUIRED and must be non-empty —
+            they are the whole point of the draft. Always write a descriptive
+            kebab-case "name" (never a placeholder) and a concrete 2-5 sentence
+            "systemInstruction" in the second person that captures this specific
+            voice. Never return them blank, null, or omitted. Write the
+            systemInstruction in the transcript's own language.
             """;
 
     private final TurTranscriptionService transcriptionService;
@@ -94,8 +103,19 @@ public class TurPersonaAudioDeriveService {
             return new DraftResult(false, StringUtils.defaultString(transcription.error(),
                     "Could not transcribe the audio."), null, null);
         }
+        return draftFromTranscript(transcription.text());
+    }
 
-        String transcript = transcription.text();
+    /**
+     * T715 — the analyse→draft half of {@link #derive}, split out so the async
+     * persona-from-audio job (which transcribes separately, with a progress
+     * listener) can reuse it. Runs the LLM behavioural analysis over the
+     * transcript and maps the result to a never-saved draft persona.
+     */
+    public DraftResult draftFromTranscript(String transcript) {
+        if (StringUtils.isBlank(transcript)) {
+            return new DraftResult(false, "Empty transcript.", transcript, null);
+        }
         String clipped = transcript.length() > MAX_TRANSCRIPT_CHARS
                 ? transcript.substring(0, MAX_TRANSCRIPT_CHARS) : transcript;
         String cacheKey = "persona-from-audio:" + Integer.toHexString(clipped.hashCode());
@@ -105,6 +125,11 @@ public class TurPersonaAudioDeriveService {
             return new DraftResult(false, StringUtils.defaultString(llm.error(),
                     "Could not analyse the transcript."), transcript, null);
         }
+
+        // Debug aid: the raw model draft is the ground truth when a field (esp.
+        // name / systemInstruction) comes back empty — logged verbatim on request.
+        log.info("[PersonaFromAudio] transcript {} chars, raw LLM draft: {}",
+                transcript.length(), llm.content());
 
         DraftDto dto = parse(llm.content());
         if (dto == null) {
@@ -117,15 +142,20 @@ public class TurPersonaAudioDeriveService {
     private TurPersonaDto toDraft(DraftDto dto) {
         TurPersonaDto draft = new TurPersonaDto();
         // id stays null — the UuidGenerator assigns one only on a real save.
-        draft.setName(StringUtils.defaultIfBlank(dto.name(), "persona-from-audio"));
         draft.setDescription(dto.description());
-        draft.setSystemInstruction(dto.systemInstruction());
         draft.setTone(parseEnum(TurPersonaTone.class, dto.tone()));
         draft.setVerbosity(dto.verbosity() == null ? 3 : Math.clamp(dto.verbosity(), 1, 5));
         draft.setLanguageStyle(parseEnum(TurPersonaLanguageStyle.class, dto.languageStyle()));
         draft.setEnabled(1);
         TurPersonaKind kind = parseEnum(TurPersonaKind.class, dto.personaKind());
         draft.setPersonaKind(kind == null ? TurPersonaKind.BOTH : kind);
+
+        // name / systemInstruction are the two free-text fields the model must
+        // author; weak models sometimes leave them blank while still filling the
+        // constrained enums. Never hand the review form an empty draft for
+        // either — synthesise a deterministic fallback and flag it in the log.
+        draft.setName(resolveName(dto));
+        draft.setSystemInstruction(resolveSystemInstruction(dto, draft));
 
         TurPersonaAudience audience = new TurPersonaAudience();
         audience.setReadingLevel(parseEnum(TurPersonaReadingLevel.class, dto.readingLevel()));
@@ -134,6 +164,70 @@ public class TurPersonaAudioDeriveService {
         audience.setPrimaryLanguage(dto.primaryLanguage());
         draft.setAudience(audience);
         return draft;
+    }
+
+    /** LLM name, else a slug of the description, else the generic placeholder. */
+    private String resolveName(DraftDto dto) {
+        if (StringUtils.isNotBlank(dto.name())) {
+            return dto.name().trim();
+        }
+        String fromDescription = slugify(dto.description());
+        if (StringUtils.isNotBlank(fromDescription)) {
+            log.warn("[PersonaFromAudio] model returned no name; derived '{}' from description",
+                    fromDescription);
+            return fromDescription;
+        }
+        log.warn("[PersonaFromAudio] model returned no name and no description; using placeholder");
+        return "persona-from-audio";
+    }
+
+    /**
+     * LLM systemInstruction, else a voice contract synthesised from the extracted
+     * traits so the review form is never handed an empty (and most important)
+     * field. A warn marks the synthesised path so a recurring blank is visible.
+     */
+    private String resolveSystemInstruction(DraftDto dto, TurPersonaDto draft) {
+        if (StringUtils.isNotBlank(dto.systemInstruction())) {
+            return dto.systemInstruction().trim();
+        }
+        StringBuilder voice = new StringBuilder("Respond in the voice extracted from the recording.");
+        if (draft.getTone() != null) {
+            voice.append(" Keep a ").append(draft.getTone().name().toLowerCase(Locale.ROOT))
+                    .append(" tone.");
+        }
+        if (draft.getLanguageStyle() != null) {
+            voice.append(" Use a ").append(draft.getLanguageStyle().name().toLowerCase(Locale.ROOT))
+                    .append(" style.");
+        }
+        voice.append(" Aim for verbosity ").append(draft.getVerbosity()).append(" of 5.");
+        if (StringUtils.isNotBlank(dto.vocabularyCeiling())) {
+            voice.append(" Vocabulary: ").append(dto.vocabularyCeiling().trim()).append('.');
+        }
+        voice.append(" Review and refine this before saving.");
+        log.warn("[PersonaFromAudio] model returned no systemInstruction; synthesised one from traits");
+        return voice.toString();
+    }
+
+    /** Lowercase kebab-case slug of the first few words, or blank when unusable. */
+    private static String slugify(String text) {
+        if (StringUtils.isBlank(text)) {
+            return "";
+        }
+        String slug = StringUtils.strip(text.trim().toLowerCase(Locale.ROOT)
+                .replaceAll("[^\\p{L}\\p{N}]+", "-"), "-");
+        int fifth = ordinalDashIndex(slug);
+        return fifth > 0 ? slug.substring(0, fifth) : slug;
+    }
+
+    /** Index of the 5th dash (word boundary) so a slug is capped to ~5 words, else -1. */
+    private static int ordinalDashIndex(String slug) {
+        int dashes = 0;
+        for (int i = 0; i < slug.length(); i++) {
+            if (slug.charAt(i) == '-' && ++dashes == 5) {
+                return i;
+            }
+        }
+        return -1;
     }
 
     private <E extends Enum<E>> E parseEnum(Class<E> type, String value) {

@@ -2,7 +2,7 @@ import { ROUTES } from "@/app/routes.const";
 import { LoadProvider } from "@/components/loading-provider";
 import type { TurPersona } from "@/models/persona/persona.model.ts";
 import { TurPersonaService } from "@/services/persona/persona.service";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Outlet, useLocation, useParams } from "react-router-dom";
 
@@ -41,9 +41,19 @@ export default function BentoPersonaPage() {
   const [persona, setPersona] = useState<TurPersona>();
   const [isNew, setIsNew] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+  // The persona section sub-routes (/new/general, /new/system-instruction, …)
+  // are separate URLs that don't carry router state, so an audio-derived draft
+  // lives only in the state of the FIRST /new navigation. Seed it exactly once
+  // per "new" session — re-running on a stateless section switch would wipe the
+  // draft back to an empty persona.
+  const seededNewRef = useRef(false);
 
   useEffect(() => {
     if (id === "new") {
+      if (seededNewRef.current) {
+        return;
+      }
+      seededNewRef.current = true;
       if (draft) {
         const seeded = { ...draft };
         delete (seeded as Partial<TurPersona>).id;
@@ -53,6 +63,7 @@ export default function BentoPersonaPage() {
       }
       setIsNew(true);
     } else {
+      seededNewRef.current = false;
       turPersonaService.get(id)
         .then(setPersona)
         .catch(() => setError(t("common.connectionError", { resource: t("persona.title") })));
