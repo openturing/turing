@@ -1,9 +1,11 @@
-# Last task number — `T706` · next block letter — `AV`
+# Last task number — `T714` · next block letter — `AW`
 
 > **Single source of truth for the next free task number.** The next new task is
-> `T707`; after assigning it, bump the number above and the log line below.
+> `T715`; after assigning it, bump the number above and the log line below.
 >
-> **Next block letter — `AV`** (Block **AU** = Persona Dialogue projects — saved
+> **Next block letter — `AW`** (Block **AV** = POST-native search & link-free
+> response contract — T707–T714, created 2026-07-12; Block **AU** = Persona
+> Dialogue projects — saved
 > multi-project dialogues (topic + ordered speaker roster + persisted transcript),
 > T705–T706, created 2026-07-12; Block **AT** = Persona Match — N×N persona↔content
 > fit projects, T696–T704, created 2026-07-12; Block **AS** = Scalable & pluggable
@@ -54,6 +56,7 @@ number" looked free but wasn't. Grepping three files (`ROADMAP.md`,
 
 ## Log (most recent first)
 
+- **T707-T714 CREATED** (📋/💭, Block AV §XLV — POST-native search & link-free response contract: anonymous read-only JSON request bean + opt-in structured (field/value/selected + pagination/sort/cleanup/locale actions) response behind format negotiation, both JS SDKs to 100% POST driving toggles from structured state, autocomplete/list POST variants, href-field deprecation, docs/showcase/EDS; additive — GET + server-rendered links stay for deep-linking/SEO/no-JS) — 2026-07-12.
 - **T706 SHIPPED** (Block AU §XLIV — bento Persona Dialogue studio: list + workspace + create wired to real API; ordered speakers via shared PersonaSelectGrid; live SSE transcript; old single-page dialogue retired) — 2026-07-12.
 - **T705 SHIPPED** (Block AU §XLIV — Persona Dialogue projects backend: project + ordered speaker roster + persisted transcript, CRUD/API + project-scoped run/stream reusing the round-robin engine; Liquibase v2026.3.1.101 + IT) — 2026-07-12.
 - **T705-T706 CREATED** (Block AU §XLIV — Persona Dialogue as saved multi-projects, mirroring Persona Match) — 2026-07-12.

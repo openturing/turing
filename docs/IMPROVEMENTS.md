@@ -2270,3 +2270,119 @@ fell below fit for persona X since last run") and propose LLM-generated
 persona/content adjustments — closing the bidirectional "adjust persona to content
 and content to persona" loop the original request described. Builds on T698 (the
 cell) + T700 (the schedule); the evaluator and grounding stay unchanged.
+
+## XLV. POST-native search & link-free response contract (Block AV)
+
+> Motivated by a production bug on the live demo: selecting a facet whose value
+> contains `&` (e.g. `section:RAG & Chat`, `Deploy & Operate`, `SDKs & Tools`)
+> returned zero results. Root cause was an *encoding* fault in the backend
+> facet-link builder (fixed separately — `TurCommonsUtils.modifiedURI` left the
+> `&` literal, so the value was truncated to `section:RAG ` on the wire). But the
+> encoder fix treats a symptom of a deeper architectural coupling, which is what
+> this block addresses.
+
+### XLV.1 The coupling: the response hands the client GET URLs to re-parse
+
+The search response (`TurSNSiteSearchBean`) does not just return data — it returns
+**pre-serialized GET query-string links** the client is expected to navigate:
+
+- facet item → `link` (`/api/sn/{site}/search?q=*&fq[]=category:RAG%20%26%20Chat`),
+- facet group → `cleanUpLink`; widget → `cleanUpFacets`,
+- pagination → `href`; spell-check → `corrected.link`; locale switch → a link.
+
+The JS SDKs then **parse that href back into params** (`parseHrefToParams` via
+`URLSearchParams`) and **re-serialize** it into a new request
+(`buildQueryString`). So every filter click makes a value survive a four-hop
+query-string round-trip:
+
+```
+backend href-build  →  SDK URLSearchParams parse  →  SDK query-string rebuild  →  server decode
+```
+
+Every hop is a chance for a reserved character (`&`, `=`, `+`, `#`, `%`, space) in
+a *value* to be mis-read as query structure. The `&` bug is one instance of a
+whole class; the encoder fix closes today's leak, but the architecture keeps the
+risk alive because the contract is "here is a URL, go parse it." A **JSON request
+body has no query-string grammar**, so the entire class of bug becomes impossible
+by construction — this is the core argument for going POST-native.
+
+### XLV.2 Current state — POST exists but doesn't solve it
+
+`TurSNSiteSearchAPI` already has a `@PostMapping`, but it is not a usable public
+contract:
+
+1. it **401s anonymously** (`if (principal == null) return UNAUTHORIZED`) — the
+   public demo and most embedded search are anonymous, so they can't use it;
+2. it takes `TurSNSitePostParamsBean`, an **impersonation/admin-oriented** payload
+   (`userId`, `populateMetrics`, `targetingRulesWithCondition*`) rather than a
+   clean read-only search request;
+3. it returns the **same href-laden bean** as GET — so even over POST the client
+   still parses URLs. POST today changes the transport, not the contract.
+
+### XLV.3 The key insight — the structured state already (almost) exists
+
+The response is *already* carrying the structured data needed to reconstruct the
+next request without touching a URL:
+
+- `TurSNSiteSearchFacetItemBean` has `filterQuery` (the raw `field:value`) **and**
+  `selected` **and** `count` — a client can toggle the `fq[]` array directly from
+  these, no href parse;
+- the widget has `selectedFilterQueries`; pagination has `page` and a `type`.
+
+So the link-free response is mostly a *formalization + exposure* of state that is
+already computed, not a new computation. The user's own framing applies here:
+because a POST request is a distinct entry point, its **response payload may differ
+from the GET default** — we can ship a cleaner v2 shape on the POST/opt-in path
+without disturbing the GET response one byte.
+
+### XLV.4 Design (phased, additive)
+
+**Phase 1 — public POST contract (T707).** A read-only `TurSNSearchRequest` JSON
+bean (`q`, `fq[]`, `fqAnd`, `fqOr`, operators, `page`, `rows`, `sort`, `locale`,
+`group`, `fieldList`, `targetingRules`) that is **anonymous-capable** and decoupled
+from the impersonation-only `TurSNSitePostParamsBean` (which stays for the
+authenticated metrics/impersonation path). GET is untouched.
+
+**Phase 2 — structured, link-free response (T708) behind format negotiation
+(folded into T708).** Formalize facet items as `field` + `value` + `selected`
+(+`count`) and add structured **pagination** (page/type), **sort**, **cleanup**
+(clear-filters as an action, not an href) and **locale-switch** actions, so the
+client reconstructs any next request from data alone. Emit this shape only when the
+caller asks for it (a request flag / `responseFormat` / `Accept` negotiation),
+**default = legacy `LINKS`**, so existing GET consumers get a byte-identical
+response.
+
+**Phase 3 — SDKs go 100% POST (T709 vanilla, T710 React + react-ui).** Move the
+search/autocomplete/similar controllers to POST + JSON body; drive facet /
+pagination / sort / cleanup toggles from the structured state; retire
+`parseHrefToParams` / `buildQueryString` from the hot path; react-ui facet
+components navigate via structured actions instead of `item.link`. POST is a state
+change, so the SDKs prime CSRF via `/csrf` (already the established pattern —
+`X-XSRF-TOKEN` header, cookie is HttpOnly). **T711** extends the T406 parity guard
+to the POST/structured paths and confirms the anonymous demo's nginx allowlist +
+CSRF priming cover POST search.
+
+**Phase 4 — breadth & retirement (T712–T714, 💭).** POST variants for `/ac`
+(autocomplete) and `/list`; once both SDKs are POST-native, mark the embedded
+`link`/`href`/`cleanUpFacets`/spell-check-`link` fields legacy (kept — see
+non-goals) and drop the query-string round-trip helpers from the SDKs; migrate
+`rest-api.md` / `javascript-sdk.md`, the Atlas Store showcase and the EDS example
+blocks to the POST-native flow.
+
+### XLV.5 Non-goals & open questions
+
+- **Do NOT remove GET or the server-rendered links.** They are valuable for
+  deep-linkable / bookmarkable / shareable search URLs, SEO-crawlable facet pages,
+  and no-JS / progressive-enhancement HTML consumers. This block is **purely
+  additive** — POST + structured response is opt-in; the GET + href contract is
+  frozen, not deprecated (Phase 4's "deprecate" means *flag as legacy for the JS
+  SDK path*, not delete).
+- **CSRF on anonymous POST (T709/T715 territory).** A search is a read, but POST
+  triggers CSRF; the SDK must prime `/csrf` first, adding a round-trip on public
+  embeds. Open question: exempt the read-only public search POST from CSRF, or
+  accept the priming call. Decide in Phase 3; document either way.
+- **Response-format negotiation mechanism (T708).** Request flag vs `Accept`
+  header vs `responseFormat` field — pick one; a request field is simplest and
+  works over both GET and POST for A/B testing the shape.
+- The impersonation POST payload and the authenticated metrics path are **out of
+  scope** — they keep their current bean and behavior.

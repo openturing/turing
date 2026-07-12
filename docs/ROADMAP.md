@@ -92,6 +92,34 @@
 
 - 💭 **T704** (deps: T698, T700) **Fit trend/history + adjustment suggestions** — persist per-cell score across scheduled runs; surface drift ("this content dropped below fit for persona X since last run") and LLM-suggested persona/content adjustments, closing the bidirectional tuning loop. → §XLIII
 
+## Block AV — POST-native search & link-free response contract (§XLV)
+
+> The search response hands the client **pre-serialized GET query-string links**
+> (facet `link`, pagination `href`, `cleanUpFacets`, spell-check `link`) and the
+> JS SDKs parse them back (`parseHrefToParams`) and re-serialize them
+> (`buildQueryString`) — a four-hop query-string round-trip that just produced the
+> `&`-in-facet-value bug (`section:RAG & Chat` truncated to `section:RAG `). The
+> encoder was fixed, but the coupling keeps the whole bug class (`& = + # %`, space
+> in a value) alive; a **JSON request body has no query-string grammar**, so the
+> class becomes impossible. A POST mapping already exists but is anonymous-blocked
+> (401), takes the impersonation-oriented `TurSNSitePostParamsBean`, and returns
+> the same href-laden bean — so POST today changes transport, not contract. Key
+> insight: facet items already carry `filterQuery` + `selected` + `count`, so the
+> "next request" is reconstructable **without parsing any URL**. This block makes
+> search POST-native with a clean anonymous read-only JSON request and an opt-in
+> **structured, link-free** response, then moves both JS SDKs to 100% POST driving
+> toggles from structured state. **Additive:** GET + server-rendered links stay for
+> deep-linking / SEO / no-JS. Design in [IMPROVEMENTS.md](IMPROVEMENTS.md) §XLV.
+
+- 📋 **T707** (deps: —) **Public POST read-only search contract** — new anonymous-capable `TurSNSearchRequest` JSON bean (`q`/`fq[]`/`fqAnd`/`fqOr`/operators/`page`/`rows`/`sort`/`locale`/`group`/`fieldList`/`targetingRules`), decoupled from the impersonation-only `TurSNSitePostParamsBean` (the authenticated metrics/impersonation POST stays); GET untouched. → §XLV
+- 📋 **T708** (deps: T707) **Structured link-free response + format negotiation** — formalize facet items as `field`+`value`+`selected`(+`count`) and add structured pagination (page/type), sort, cleanup and locale-switch **actions** so the client rebuilds the next request without parsing an href; selectable via a response-format flag (`Accept`/`responseFormat`), default = legacy `LINKS` so the GET response stays byte-identical. → §XLV
+- 📋 **T709** (deps: T707, T708) **Vanilla `@viglet/turing-sdk` → POST-native** — search/autocomplete/similar controllers POST the JSON request and toggle facets/pagination/sort/cleanup from structured state; retire `parseHrefToParams`/`buildQueryString` from the hot path; prime CSRF via `/csrf`. → §XLV
+- 📋 **T710** (deps: T708, T709) **React `@viglet/turing-react-sdk` + react-ui → POST-native** — same request/toggle model; react-ui facet/pagination components navigate via structured actions instead of `item.link`. → §XLV
+- 📋 **T711** (deps: T709, T710) **Parity guard + demo wiring** — extend the T406 SDK contract test to the POST/structured paths; confirm the anonymous demo's nginx allowlist + CSRF priming cover POST search (the public demo is anonymous). → §XLV
+- 💭 **T712** (deps: T708) **Autocomplete + select-list POST variants** — `/ac` and `/list` accept the same structured `TurSNSearchRequest` so the whole read surface is POST-capable. → §XLV
+- 💭 **T713** (deps: T709, T710, T712) **Deprecate embedded href/link fields behind the format flag** — once both SDKs are POST-native, mark `link`/`href`/`cleanUpFacets`/spell-check `link` legacy (kept for no-JS/HTML/SEO/deep-linking) and drop the query-string round-trip helpers from the SDKs. → §XLV
+- 💭 **T714** (deps: T709, T710) **Docs + showcase + EDS POST-native** — update `rest-api.md`/`javascript-sdk.md`, the Atlas Store showcase and the EDS example blocks to the POST-native flow. → §XLV
+
 ## Non-goals (do NOT add as tasks)
 
 Binding constraints — see [IMPROVEMENTS.md](IMPROVEMENTS.md) §I.6 (What NOT to
