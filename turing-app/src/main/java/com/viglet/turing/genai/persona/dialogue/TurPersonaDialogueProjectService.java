@@ -28,7 +28,6 @@ import com.viglet.turing.persistence.model.llm.TurLLMInstance;
 import com.viglet.turing.persistence.model.persona.TurPersona;
 import com.viglet.turing.persistence.model.persona.dialogue.TurPersonaDialogueProject;
 import com.viglet.turing.persistence.model.persona.dialogue.TurPersonaDialogueSpeaker;
-import com.viglet.turing.persistence.model.persona.dialogue.TurPersonaDialogueTurn;
 import com.viglet.turing.persistence.repository.llm.TurLLMInstanceRepository;
 import com.viglet.turing.persistence.repository.persona.TurPersonaRepository;
 import com.viglet.turing.persistence.repository.persona.dialogue.TurPersonaDialogueProjectRepository;
@@ -59,6 +58,7 @@ public class TurPersonaDialogueProjectService {
     private final TurPersonaRepository personaRepository;
     private final TurLLMInstanceRepository llmInstanceRepository;
     private final TurPersonaDialogueService dialogueService;
+    private final TurPersonaDialogueTranscriptWriter transcriptWriter;
     private final TurTenantContext tenantContext;
 
     public TurPersonaDialogueProjectService(
@@ -68,6 +68,7 @@ public class TurPersonaDialogueProjectService {
             TurPersonaRepository personaRepository,
             TurLLMInstanceRepository llmInstanceRepository,
             TurPersonaDialogueService dialogueService,
+            TurPersonaDialogueTranscriptWriter transcriptWriter,
             TurTenantContext tenantContext) {
         this.projectRepository = projectRepository;
         this.speakerRepository = speakerRepository;
@@ -75,6 +76,7 @@ public class TurPersonaDialogueProjectService {
         this.personaRepository = personaRepository;
         this.llmInstanceRepository = llmInstanceRepository;
         this.dialogueService = dialogueService;
+        this.transcriptWriter = transcriptWriter;
         this.tenantContext = tenantContext;
     }
 
@@ -204,30 +206,32 @@ public class TurPersonaDialogueProjectService {
                         collected.add(event);
                     }
                 })
-                .doOnComplete(() -> tenantContext.runAs(tenant,
-                        () -> persistTranscript(projectId, collected)));
+                .doOnComplete(() -> persistTranscript(projectId, collected, tenant));
     }
 
-    @Transactional
+    /**
+     * Persist the streamed transcript on stream completion. Runs on the reactive
+     * worker thread, so it re-establishes the caller's tenant and delegates to the
+     * {@link TurPersonaDialogueTranscriptWriter proxied writer} (a self-invoked
+     * {@code @Transactional} method here would bypass the proxy and run the delete
+     * without a transaction). A failure is logged and swallowed — the client has
+     * already received every turn, so it must never corrupt the SSE response.
+     */
+    private void persistTranscript(String projectId, List<TurDialogueEvent> turns, String tenant) {
+        try {
+            tenantContext.runAs(tenant, () -> {
+                transcriptWriter.replace(projectId, turns);
+                return null;
+            });
+        } catch (RuntimeException e) {
+            log.warn("[PersonaDialogue] could not persist transcript for project={}: {}",
+                    projectId, e.getMessage());
+        }
+    }
+
+    /** Test/seam entry point — delegates to the transactional writer. */
     public void persistTranscript(String projectId, List<TurDialogueEvent> turns) {
-        turnRepository.deleteByProjectId(projectId);
-        List<TurPersonaDialogueTurn> rows = new ArrayList<>(turns.size());
-        for (TurDialogueEvent event : turns) {
-            TurPersonaDialogueTurn row = new TurPersonaDialogueTurn();
-            row.setProjectId(projectId);
-            row.setTurnIndex(event.index() == null ? rows.size() : event.index());
-            row.setPersonaId(event.personaId());
-            row.setPersonaName(event.personaName());
-            row.setContent(event.content());
-            rows.add(row);
-        }
-        if (!rows.isEmpty()) {
-            turnRepository.saveAll(rows);
-        }
-        projectRepository.findById(projectId).ifPresent(project -> {
-            project.setLastRunAt(Instant.now());
-            projectRepository.save(project);
-        });
+        transcriptWriter.replace(projectId, turns);
     }
 
     // ---- mapping -----------------------------------------------------------
