@@ -7,6 +7,7 @@ import { ROUTES } from "@/app/routes.const";
 import { BentoHero } from "@/components/bento";
 import { IconLoader2, IconTargetArrow } from "@tabler/icons-react";
 import { useEffect, useRef } from "react";
+import { useTranslation } from "react-i18next";
 import { Navigate, useNavigate, useParams } from "react-router-dom";
 
 /**
@@ -24,13 +25,16 @@ import { Navigate, useNavigate, useParams } from "react-router-dom";
  * @since 2026.3.4
  */
 export default function BentoPersonaValidatePage() {
+  const { t } = useTranslation();
   const { personaId } = useParams<{ personaId: string }>();
   const navigate = useNavigate();
   const { data: persona } = usePersona(personaId);
   const { data: projects } = useMatchProjects();
   const acted = useRef(false);
 
-  const markerName = persona ? `Fit: ${persona.name}` : null;
+  const markerName = persona
+    ? t("persona.match.markerName", { name: persona.name })
+    : null;
 
   useEffect(() => {
     if (acted.current || !personaId || !persona || !projects || !markerName) {
@@ -52,7 +56,7 @@ export default function BentoPersonaValidatePage() {
       try {
         const project = await personaMatchService.create({
           name: markerName,
-          description: `Análise de fit de conteúdo para a persona ${persona.name}.`,
+          description: t("persona.match.singlePersonaDesc", { name: persona.name }),
           enabled: true,
           schedule: "MANUAL",
         });
@@ -76,11 +80,13 @@ export default function BentoPersonaValidatePage() {
           <IconTargetArrow size={24} />
         </span>
       }
-      title="Abrindo o projeto de análise…"
+      title={t("persona.match.validateOpening")}
       subtitle={
         <span className="inline-flex items-center gap-2">
           <IconLoader2 className="size-4 animate-spin" />
-          Preparando a matriz de fit para {persona?.name ?? "esta persona"} no Persona Match.
+          {t("persona.match.validatePreparing", {
+            name: persona?.name ?? t("persona.match.validateThisPersona"),
+          })}
         </span>
       }
     />

@@ -35,12 +35,10 @@ import {
   buildMatrixMap,
   cellKey,
   fitTone,
-  PERSONA_KIND_LABEL,
   projectAvgFit,
   rankByContent,
   rankByPersona,
-  SCHEDULE_LABEL,
-  SOURCE_TYPE_LABEL,
+  SCHEDULES,
   type MatchCell,
   type MatchPersonaKind,
   type MatchPersonaRef,
@@ -71,6 +69,7 @@ import {
   IconWorldSearch,
 } from "@tabler/icons-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Link, useNavigate, useParams } from "react-router-dom";
 
 const SOURCE_TYPE_ICON: Record<MatchSourceType, typeof IconLink> = {
@@ -93,10 +92,10 @@ interface ReportGroup {
 
 function escapeHtml(value: string): string {
   return value
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;");
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;");
 }
 
 function fitHex(score: number): string {
@@ -105,7 +104,13 @@ function fitHex(score: number): string {
   return "#f43f5e";
 }
 
-function buildReportHtml(title: string, subtitle: string, groups: ReportGroup[]): string {
+function buildReportHtml(
+  title: string,
+  subtitle: string,
+  groups: ReportGroup[],
+  brand: string,
+  footer: string,
+): string {
   const groupsHtml = groups
     .map((g) => {
       const rowsHtml = g.rows
@@ -126,7 +131,7 @@ function buildReportHtml(title: string, subtitle: string, groups: ReportGroup[])
     })
     .join("");
 
-  return `<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><title>${escapeHtml(title)}</title>
+  return `<!doctype html><html><head><meta charset="utf-8"><title>${escapeHtml(title)}</title>
   <style>
     @page { margin: 20mm 16mm; }
     * { box-sizing: border-box; }
@@ -147,12 +152,12 @@ function buildReportHtml(title: string, subtitle: string, groups: ReportGroup[])
   </style></head>
   <body>
     <header>
-      <div class="brand">Viglet Turing ES &middot; Persona Match</div>
+      <div class="brand">${escapeHtml(brand)}</div>
       <h1>${escapeHtml(title)}</h1>
       <p class="subtitle">${escapeHtml(subtitle)}</p>
     </header>
     ${groupsHtml}
-    <footer>Relatorio gerado a partir da matriz de fit N&times;N. Os percentuais combinam legibilidade deterministica e avaliacao por LLM.</footer>
+    <footer>${escapeHtml(footer)}</footer>
   </body></html>`;
 }
 
@@ -175,8 +180,9 @@ interface ActiveCell {
 /**
  * Persona Match — project workspace (Block AT / §XLIII, T701–T702). Contents
  * (URL / Indexed / File) + personas → an N×N fit matrix with three lenses
- * (Matrix / By content / By persona) and a per-cell drill-in. "Rodar análise"
+ * (Matrix / By content / By persona) and a per-cell drill-in. "Run analysis"
  * streams the real runner (T698) over SSE, filling the heatmap cell-by-cell.
+ * Fully localized via the `persona.match.*` i18n namespace.
  *
  * @author Alexandre Oliveira
  * @since 2026.3.4
@@ -194,6 +200,7 @@ export default function BentoPersonaMatchWorkspacePage() {
 // ---------------------------------------------------------------------------
 
 function CreateProjectCard() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const create = useCreateMatchProject();
   const [name, setName] = useState("");
@@ -213,7 +220,7 @@ function CreateProjectCard() {
       <BentoHero
         eyebrow={
           <Link to={ROUTES.BENTO_PERSONA_MATCH} className="inline-flex items-center gap-1 hover:text-foreground">
-            <IconArrowLeft size={12} /> Persona Match
+            <IconArrowLeft size={12} /> {t("persona.match.back")}
           </Link>
         }
         leading={
@@ -221,33 +228,38 @@ function CreateProjectCard() {
             <IconTargetArrow size={24} />
           </span>
         }
-        title="Novo projeto de análise"
-        subtitle="Dê um nome ao projeto. Depois adicione conteúdos e personas para gerar a matriz N×N."
+        title={t("persona.match.newTitle")}
+        subtitle={t("persona.match.newHeroSubtitle")}
       />
-      <BentoFormSection icon={IconSparkles} tone="indigo" title="Projeto" description="Nome e descrição do projeto de análise.">
+      <BentoFormSection
+        icon={IconSparkles}
+        tone="indigo"
+        title={t("persona.match.projectSection")}
+        description={t("persona.match.projectSectionDesc")}
+      >
         <div className="flex flex-col gap-3">
           <label className="flex flex-col gap-1.5">
-            <span className="text-sm font-medium">Nome</span>
+            <span className="text-sm font-medium">{t("persona.match.nameLabel")}</span>
             <Input
               value={name}
               onChange={(e) => setName(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && submit()}
-              placeholder="Campanha de captação 2026"
+              placeholder={t("persona.match.namePlaceholder")}
               autoFocus
             />
           </label>
           <label className="flex flex-col gap-1.5">
-            <span className="text-sm font-medium">Descrição</span>
+            <span className="text-sm font-medium">{t("persona.match.descriptionLabel")}</span>
             <Input
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              placeholder="O que este projeto avalia"
+              placeholder={t("persona.match.descriptionPlaceholder")}
             />
           </label>
           <div>
             <Button onClick={submit} disabled={!name.trim() || create.isPending} className="gap-2">
               {create.isPending ? <IconLoader2 className="size-4 animate-spin" /> : <IconPlus className="size-4" />}
-              Criar projeto
+              {t("persona.match.createButton")}
             </Button>
           </div>
         </div>
@@ -265,6 +277,7 @@ function toPersonaRef(p: { id: string; name: string; personaKind?: string | null
 }
 
 function ProjectWorkspace({ projectId }: Readonly<{ projectId: string }>) {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
 
@@ -291,7 +304,6 @@ function ProjectWorkspace({ projectId }: Readonly<{ projectId: string }>) {
   const fileRef = useRef<HTMLInputElement | null>(null);
   const abortRef = useRef<AbortController | null>(null);
 
-  // Editable identity/settings, mirrored from the server project.
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
 
@@ -299,7 +311,6 @@ function ProjectWorkspace({ projectId }: Readonly<{ projectId: string }>) {
   const personas = useMemo(() => project?.personas ?? [], [project]);
   const everRun = Boolean(project?.lastRunAt);
 
-  // Sync local mirrors + persisted matrix when the project (re)loads.
   useEffect(() => {
     if (!project) return;
     setName(project.name);
@@ -343,7 +354,6 @@ function ProjectWorkspace({ projectId }: Readonly<{ projectId: string }>) {
     [project, updateProject, name, description],
   );
 
-  // --- run (SSE) ---
   const runAnalysis = useCallback(() => {
     if (total === 0 || running) return;
     abortRef.current?.abort();
@@ -375,16 +385,15 @@ function ProjectWorkspace({ projectId }: Readonly<{ projectId: string }>) {
         },
         onError: (err) => {
           setRunning(false);
-          setRunError(err instanceof Error ? err.message : "Falha ao rodar a análise");
+          setRunError(err instanceof Error ? err.message : t("persona.match.runError"));
         },
       },
       ctrl.signal,
     );
-  }, [projectId, total, running, refresh]);
+  }, [projectId, total, running, refresh, t]);
 
   useEffect(() => () => abortRef.current?.abort(), []);
 
-  // --- source mutations ---
   const addUrlSource = useCallback(async () => {
     const value = addValue.trim();
     if (!value || busy) return;
@@ -450,23 +459,41 @@ function ProjectWorkspace({ projectId }: Readonly<{ projectId: string }>) {
 
   const handleExport = useCallback(
     (kind: "content" | "persona") => {
+      const brand = t("persona.match.reportBrand");
+      const footer = t("persona.match.reportFooter");
       if (kind === "content") {
         const groups: ReportGroup[] = byContent.map((g) => ({
           head: g.source.name,
-          sub: `${SOURCE_TYPE_LABEL[g.source.type]} · fit médio ${g.avg}%`,
+          sub: `${t(`persona.match.sourceType.${g.source.type}`)} · ${t("persona.match.reportAvgFit", { avg: g.avg })}`,
           rows: g.ranked.map((r) => ({ label: r.persona.name, score: r.cell.fitScore })),
         }));
-        openPrintWindow(buildReportHtml(`${name} — Por conteúdo`, "O que cada conteúdo serve para cada persona.", groups));
+        openPrintWindow(
+          buildReportHtml(
+            t("persona.match.reportByContentTitle", { name }),
+            t("persona.match.reportByContentSub"),
+            groups,
+            brand,
+            footer,
+          ),
+        );
       } else {
         const groups: ReportGroup[] = byPersona.map((g) => ({
           head: g.persona.name,
-          sub: `${PERSONA_KIND_LABEL[g.persona.kind]} · fit médio ${g.avg}%`,
+          sub: `${t(`persona.match.kind.${g.persona.kind}`)} · ${t("persona.match.reportAvgFit", { avg: g.avg })}`,
           rows: g.ranked.map((r) => ({ label: r.source.name, score: r.cell.fitScore })),
         }));
-        openPrintWindow(buildReportHtml(`${name} — Por persona`, "O que cada persona serve para cada conteúdo.", groups));
+        openPrintWindow(
+          buildReportHtml(
+            t("persona.match.reportByPersonaTitle", { name }),
+            t("persona.match.reportByPersonaSub"),
+            groups,
+            brand,
+            footer,
+          ),
+        );
       }
     },
-    [byContent, byPersona, name],
+    [byContent, byPersona, name, t],
   );
 
   const removeProject = useCallback(() => {
@@ -476,12 +503,16 @@ function ProjectWorkspace({ projectId }: Readonly<{ projectId: string }>) {
   const canRun = total > 0 && !running;
   const pool = useMemo(() => (personaPool ?? []).map(toPersonaRef), [personaPool]);
 
+  let runLabel = t("persona.match.run");
+  if (running) runLabel = t("persona.match.running");
+  else if (everRun) runLabel = t("persona.match.rerun");
+
   return (
     <>
       <BentoHero
         eyebrow={
           <Link to={ROUTES.BENTO_PERSONA_MATCH} className="inline-flex items-center gap-1 hover:text-foreground">
-            <IconArrowLeft size={12} /> Persona Match
+            <IconArrowLeft size={12} /> {t("persona.match.back")}
           </Link>
         }
         leading={
@@ -489,14 +520,14 @@ function ProjectWorkspace({ projectId }: Readonly<{ projectId: string }>) {
             <IconTargetArrow size={24} />
           </span>
         }
-        title={name || "Projeto de análise"}
-        subtitle={description || "Selecione conteúdos e personas, e gere a matriz de fit N×N."}
+        title={name || t("persona.match.defaultTitle")}
+        subtitle={description || t("persona.match.defaultSubtitle")}
         trailing={
           <div className="flex items-center gap-2">
-            {avgFit !== null && <FitBadge score={avgFit} prefix="Fit médio" />}
+            {avgFit !== null && <FitBadge score={avgFit} prefix={t("persona.match.avgFit")} />}
             <Button onClick={runAnalysis} disabled={!canRun} className="gap-2">
               {running ? <IconLoader2 className="size-4 animate-spin" /> : <IconPlayerPlayFilled className="size-4" />}
-              {running ? "Analisando…" : everRun ? "Reanalisar" : "Rodar análise"}
+              {runLabel}
             </Button>
           </div>
         }
@@ -507,8 +538,8 @@ function ProjectWorkspace({ projectId }: Readonly<{ projectId: string }>) {
         <BentoFormSection
           icon={IconServerBolt}
           tone="blue"
-          title="Conteúdos"
-          description="URL, conteúdo indexado ou arquivo. Adicionados uma vez por projeto — não por persona."
+          title={t("persona.match.contentsTitle")}
+          description={t("persona.match.contentsDesc")}
           trailing={<Badge variant="secondary">{sources.length}</Badge>}
         >
           <div className="flex flex-col gap-2">
@@ -527,11 +558,11 @@ function ProjectWorkspace({ projectId }: Readonly<{ projectId: string }>) {
                     <div className="flex items-center gap-2">
                       <span className="truncate text-sm font-medium">{source.name}</span>
                       <Badge variant="outline" className="shrink-0 text-[10px]">
-                        {SOURCE_TYPE_LABEL[source.type]}
+                        {t(`persona.match.sourceType.${source.type}`)}
                       </Badge>
                       {failed && (
                         <Badge variant="destructive" className="shrink-0 text-[10px]">
-                          Falha
+                          {t("persona.match.failedBadge")}
                         </Badge>
                       )}
                     </div>
@@ -539,14 +570,14 @@ function ProjectWorkspace({ projectId }: Readonly<{ projectId: string }>) {
                   </div>
                   {source.charCount > 0 && (
                     <span className="hidden shrink-0 text-xs text-muted-foreground sm:block">
-                      {source.charCount.toLocaleString("pt-BR")} car.
+                      {t("persona.match.charCount", { count: source.charCount })}
                     </span>
                   )}
                   <Button
                     type="button"
                     size="icon"
                     variant="ghost"
-                    aria-label="Remover conteúdo"
+                    aria-label={t("persona.match.removeContent")}
                     onClick={() => removeSource(source.id)}
                   >
                     <IconTrash className="size-4 text-red-600" />
@@ -555,7 +586,7 @@ function ProjectWorkspace({ projectId }: Readonly<{ projectId: string }>) {
               );
             })}
             {sources.length === 0 && (
-              <p className="text-sm text-muted-foreground">Nenhum conteúdo ainda. Adicione o primeiro abaixo.</p>
+              <p className="text-sm text-muted-foreground">{t("persona.match.noContents")}</p>
             )}
           </div>
 
@@ -565,15 +596,15 @@ function ProjectWorkspace({ projectId }: Readonly<{ projectId: string }>) {
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="URL">URL</SelectItem>
-                <SelectItem value="SN_DOC">Indexado</SelectItem>
-                <SelectItem value="ASSET">Arquivo</SelectItem>
+                <SelectItem value="URL">{t("persona.match.sourceType.URL")}</SelectItem>
+                <SelectItem value="SN_DOC">{t("persona.match.sourceType.SN_DOC")}</SelectItem>
+                <SelectItem value="ASSET">{t("persona.match.sourceType.ASSET")}</SelectItem>
               </SelectContent>
             </Select>
             {addType === "SN_DOC" && (
               <Button type="button" variant="outline" onClick={() => setPickerOpen(true)} className="flex-1 justify-center gap-1.5" disabled={busy}>
                 <IconWorldSearch className="size-4" />
-                Buscar documento indexado…
+                {t("persona.match.searchIndexed")}
               </Button>
             )}
             {addType === "ASSET" && (
@@ -590,7 +621,7 @@ function ProjectWorkspace({ projectId }: Readonly<{ projectId: string }>) {
                 />
                 <Button type="button" variant="outline" onClick={() => fileRef.current?.click()} className="flex-1 justify-center gap-1.5" disabled={busy}>
                   {busy ? <IconLoader2 className="size-4 animate-spin" /> : <IconUpload className="size-4" />}
-                  Enviar arquivo…
+                  {t("persona.match.uploadFile")}
                 </Button>
               </>
             )}
@@ -605,12 +636,12 @@ function ProjectWorkspace({ projectId }: Readonly<{ projectId: string }>) {
                       addUrlSource();
                     }
                   }}
-                  placeholder="https://exemplo.com/pagina"
+                  placeholder={t("persona.match.urlPlaceholder")}
                   className="flex-1"
                 />
                 <Button type="button" variant="outline" onClick={addUrlSource} className="gap-1.5" disabled={busy}>
                   {busy ? <IconLoader2 className="size-4 animate-spin" /> : <IconPlus className="size-4" />}
-                  Adicionar
+                  {t("persona.match.addButton")}
                 </Button>
               </>
             )}
@@ -621,8 +652,8 @@ function ProjectWorkspace({ projectId }: Readonly<{ projectId: string }>) {
         <BentoFormSection
           icon={IconUserCircle}
           tone="rose"
-          title="Personas"
-          description="Selecione as personas que este projeto avalia. A matriz é o produto conteúdos × personas."
+          title={t("persona.match.personas")}
+          description={t("persona.match.personasDesc")}
           trailing={<Badge variant="secondary">{personas.length}</Badge>}
         >
           <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
@@ -647,12 +678,12 @@ function ProjectWorkspace({ projectId }: Readonly<{ projectId: string }>) {
                   </span>
                   <div className="min-w-0 flex-1">
                     <div className="truncate text-sm font-medium">{persona.name}</div>
-                    <div className="text-xs text-muted-foreground">{PERSONA_KIND_LABEL[persona.kind]}</div>
+                    <div className="text-xs text-muted-foreground">{t(`persona.match.kind.${persona.kind}`)}</div>
                   </div>
                 </button>
               );
             })}
-            {pool.length === 0 && <p className="text-sm text-muted-foreground">Nenhuma persona cadastrada ainda.</p>}
+            {pool.length === 0 && <p className="text-sm text-muted-foreground">{t("persona.match.noPersonas")}</p>}
           </div>
         </BentoFormSection>
 
@@ -660,44 +691,44 @@ function ProjectWorkspace({ projectId }: Readonly<{ projectId: string }>) {
         <BentoFormSection
           icon={IconCalendarRepeat}
           tone="amber"
-          title="Projeto, agenda & modelo"
-          description="Nome, descrição e a frequência com que a análise reextrai os conteúdos e recalcula as células que mudaram."
+          title={t("persona.match.settingsTitle")}
+          description={t("persona.match.settingsDesc")}
         >
           <div className="grid gap-4 sm:grid-cols-2">
             <label className="flex flex-col gap-1.5">
-              <span className="text-sm font-medium">Nome</span>
+              <span className="text-sm font-medium">{t("persona.match.nameLabel")}</span>
               <Input value={name} onChange={(e) => setName(e.target.value)} onBlur={() => name.trim() && name !== project?.name && saveProject({ name })} />
             </label>
             <label className="flex flex-col gap-1.5">
-              <span className="text-sm font-medium">Descrição</span>
+              <span className="text-sm font-medium">{t("persona.match.descriptionLabel")}</span>
               <Input value={description} onChange={(e) => setDescription(e.target.value)} onBlur={() => description !== (project?.description ?? "") && saveProject({ description })} />
             </label>
             <label className="flex flex-col gap-1.5">
-              <span className="text-sm font-medium">Frequência</span>
+              <span className="text-sm font-medium">{t("persona.match.frequencyLabel")}</span>
               <Select value={project?.schedule ?? "MANUAL"} onValueChange={(v) => saveProject({ schedule: v as MatchSchedule })}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {(Object.keys(SCHEDULE_LABEL) as MatchSchedule[]).map((s) => (
+                  {SCHEDULES.map((s) => (
                     <SelectItem key={s} value={s}>
-                      {SCHEDULE_LABEL[s]}
+                      {t(`persona.match.schedule.${s}`)}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </label>
             <label className="flex flex-col gap-1.5">
-              <span className="text-sm font-medium">Modelo (LLM)</span>
+              <span className="text-sm font-medium">{t("persona.match.modelLabel")}</span>
               <Select
                 value={project?.llmInstanceId ?? "__default"}
                 onValueChange={(v) => saveProject({ llmInstanceId: v === "__default" ? null : v })}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="LLM padrão" />
+                  <SelectValue placeholder={t("persona.match.defaultLlm")} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="__default">LLM padrão (Global)</SelectItem>
+                  <SelectItem value="__default">{t("persona.match.defaultLlm")}</SelectItem>
                   {(llmInstances ?? []).map((llm) => (
                     <SelectItem key={llm.id} value={llm.id}>
                       {llm.title}
@@ -710,7 +741,7 @@ function ProjectWorkspace({ projectId }: Readonly<{ projectId: string }>) {
           <div className="mt-2">
             <Button type="button" variant="ghost" size="sm" className="gap-1.5 text-red-600" onClick={removeProject}>
               <IconTrash className="size-4" />
-              Excluir projeto
+              {t("persona.match.deleteProject")}
             </Button>
           </div>
         </BentoFormSection>
@@ -719,8 +750,8 @@ function ProjectWorkspace({ projectId }: Readonly<{ projectId: string }>) {
         <BentoFormSection
           icon={IconSparkles}
           tone="violet"
-          title="Relatório N×N"
-          description="O que cada conteúdo serve para cada persona — e o que cada persona serve para cada conteúdo."
+          title={t("persona.match.resultsTitle")}
+          description={t("persona.match.resultsDesc")}
           trailing={
             running ? (
               <span className="flex items-center gap-2 text-xs text-muted-foreground">
@@ -734,15 +765,17 @@ function ProjectWorkspace({ projectId }: Readonly<{ projectId: string }>) {
           {total === 0 ? (
             <div className="rounded-2xl border border-dashed border-border/60 p-8 text-center">
               <IconTargetArrow className="mx-auto mb-2 size-8 text-muted-foreground/60" />
-              <p className="text-sm text-muted-foreground">
-                Adicione ao menos um conteúdo e uma persona, depois clique em <strong>Rodar análise</strong>.
-              </p>
+              <p className="text-sm text-muted-foreground">{t("persona.match.emptyPrompt")}</p>
             </div>
           ) : !everRun && !running ? (
             <div className="rounded-2xl border border-dashed border-border/60 p-8 text-center">
               <IconWand className="mx-auto mb-2 size-8 text-violet-500/70" />
               <p className="text-sm text-muted-foreground">
-                {total} células prontas para avaliar ({sources.length} × {personas.length}). Clique em <strong>Rodar análise</strong>.
+                {t("persona.match.readyPrompt", {
+                  count: total,
+                  sources: sources.length,
+                  personas: personas.length,
+                })}
               </p>
             </div>
           ) : (
@@ -752,19 +785,19 @@ function ProjectWorkspace({ projectId }: Readonly<{ projectId: string }>) {
                 <div className="flex flex-wrap justify-end gap-2">
                   <Button type="button" variant="outline" size="sm" className="gap-1.5" onClick={() => handleExport("content")}>
                     <IconFileTypePdf className="size-4 text-rose-600" />
-                    PDF · por conteúdo
+                    {t("persona.match.pdfByContent")}
                   </Button>
                   <Button type="button" variant="outline" size="sm" className="gap-1.5" onClick={() => handleExport("persona")}>
                     <IconFileTypePdf className="size-4 text-rose-600" />
-                    PDF · por persona
+                    {t("persona.match.pdfByPersona")}
                   </Button>
                 </div>
               )}
               <Tabs defaultValue="matrix">
                 <TabsList>
-                  <TabsTrigger value="matrix">Matriz</TabsTrigger>
-                  <TabsTrigger value="byContent">Por conteúdo</TabsTrigger>
-                  <TabsTrigger value="byPersona">Por persona</TabsTrigger>
+                  <TabsTrigger value="matrix">{t("persona.match.tabMatrix")}</TabsTrigger>
+                  <TabsTrigger value="byContent">{t("persona.match.tabByContent")}</TabsTrigger>
+                  <TabsTrigger value="byPersona">{t("persona.match.tabByPersona")}</TabsTrigger>
                 </TabsList>
 
                 <TabsContent value="matrix" className="mt-4">
@@ -778,7 +811,7 @@ function ProjectWorkspace({ projectId }: Readonly<{ projectId: string }>) {
                       <RankPanel
                         key={source.id}
                         title={source.name}
-                        subtitle={`${SOURCE_TYPE_LABEL[source.type]} · fit médio ${avg}%`}
+                        subtitle={`${t(`persona.match.sourceType.${source.type}`)} · ${t("persona.match.avgFitInline", { avg })}`}
                         icon={SOURCE_TYPE_ICON[source.type]}
                         rows={ranked.map((r) => ({
                           label: r.persona.name,
@@ -796,7 +829,7 @@ function ProjectWorkspace({ projectId }: Readonly<{ projectId: string }>) {
                       <RankPanel
                         key={persona.id}
                         title={persona.name}
-                        subtitle={`${PERSONA_KIND_LABEL[persona.kind]} · fit médio ${avg}%`}
+                        subtitle={`${t(`persona.match.kind.${persona.kind}`)} · ${t("persona.match.avgFitInline", { avg })}`}
                         icon={IconUserCircle}
                         rows={ranked.map((r) => ({
                           label: r.source.name,
@@ -832,16 +865,17 @@ function FitBadge({ score, prefix }: Readonly<{ score: number; prefix?: string }
 }
 
 function FitLegend() {
+  const { t } = useTranslation();
   return (
     <div className="mt-3 flex flex-wrap items-center gap-4 text-xs text-muted-foreground">
       <span className="inline-flex items-center gap-1.5">
-        <span className="size-3 rounded bg-emerald-500" /> Alto (≥ 75%)
+        <span className="size-3 rounded bg-emerald-500" /> {t("persona.match.legendHigh")}
       </span>
       <span className="inline-flex items-center gap-1.5">
-        <span className="size-3 rounded bg-amber-500" /> Médio (50–74%)
+        <span className="size-3 rounded bg-amber-500" /> {t("persona.match.legendMedium")}
       </span>
       <span className="inline-flex items-center gap-1.5">
-        <span className="size-3 rounded bg-rose-500" /> Baixo (&lt; 50%)
+        <span className="size-3 rounded bg-rose-500" /> {t("persona.match.legendLow")}
       </span>
     </div>
   );
@@ -956,6 +990,7 @@ function RankPanel({
 }
 
 function CellSheet({ active, onClose }: Readonly<{ active: ActiveCell | null; onClose: () => void }>) {
+  const { t } = useTranslation();
   const cell = active?.cell;
   const tone = cell ? fitTone(cell.fitScore) : null;
   return (
@@ -968,7 +1003,7 @@ function CellSheet({ active, onClose }: Readonly<{ active: ActiveCell | null; on
                 {active.source.name} <span className="text-muted-foreground">×</span> {active.persona.name}
               </SheetTitle>
               <SheetDescription>
-                {SOURCE_TYPE_LABEL[active.source.type]} × {PERSONA_KIND_LABEL[active.persona.kind]}
+                {t(`persona.match.sourceType.${active.source.type}`)} × {t(`persona.match.kind.${active.persona.kind}`)}
               </SheetDescription>
             </SheetHeader>
 
@@ -976,9 +1011,18 @@ function CellSheet({ active, onClose }: Readonly<{ active: ActiveCell | null; on
               <div className={`flex items-center gap-4 rounded-2xl border p-4 ${tone.border} ${tone.soft}`}>
                 <div className={`text-4xl font-bold ${tone.text}`}>{Math.round(cell.fitScore)}%</div>
                 <div className="text-sm">
-                  <div className={`font-medium ${tone.text}`}>Fit {tone.label.toLowerCase()}</div>
+                  <div className={`font-medium ${tone.text}`}>
+                    {t("persona.match.fitLevelLine", {
+                      level: t(`persona.match.fitTone.${tone.level}`).toLowerCase(),
+                    })}
+                  </div>
                   <div className="text-muted-foreground">
-                    Legibilidade {Math.round(cell.readability)}% · {cell.llmUsed ? "avaliado com LLM" : "só heurística"}
+                    {t("persona.match.readabilityLine", {
+                      score: Math.round(cell.readability),
+                      mode: cell.llmUsed
+                        ? t("persona.match.evaluatedWithLlm")
+                        : t("persona.match.heuristicOnly"),
+                    })}
                   </div>
                 </div>
               </div>
@@ -987,7 +1031,7 @@ function CellSheet({ active, onClose }: Readonly<{ active: ActiveCell | null; on
 
               <div>
                 <h4 className="mb-2 flex items-center gap-1.5 text-sm font-semibold text-emerald-700 dark:text-emerald-300">
-                  <IconCheck size={16} /> O que condiz
+                  <IconCheck size={16} /> {t("persona.match.whatFits")}
                 </h4>
                 {cell.fits.length ? (
                   <ul className="flex flex-col gap-1.5">
@@ -1005,7 +1049,7 @@ function CellSheet({ active, onClose }: Readonly<{ active: ActiveCell | null; on
 
               <div>
                 <h4 className="mb-2 flex items-center gap-1.5 text-sm font-semibold text-amber-700 dark:text-amber-300">
-                  <IconBulb size={16} /> O que ajustar
+                  <IconBulb size={16} /> {t("persona.match.whatToAdjust")}
                 </h4>
                 {cell.misfits.length ? (
                   <ul className="flex flex-col gap-2.5">
@@ -1021,7 +1065,7 @@ function CellSheet({ active, onClose }: Readonly<{ active: ActiveCell | null; on
                     ))}
                   </ul>
                 ) : (
-                  <p className="text-sm text-muted-foreground">Nada a ajustar — conteúdo bem alinhado a esta persona.</p>
+                  <p className="text-sm text-muted-foreground">{t("persona.match.nothingToAdjust")}</p>
                 )}
               </div>
             </div>

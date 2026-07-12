@@ -118,12 +118,16 @@ export function buildMatrixMap(cells: MatchCell[]): Map<string, MatchCell> {
   return map;
 }
 
+/** Semantic fit level — translated at the render site (i18n). */
+export type FitLevel = "high" | "medium" | "low";
+
 export interface FitTone {
   fill: string;
   soft: string;
   text: string;
   border: string;
-  label: string;
+  /** i18n-friendly level key (`persona.match.fitTone.<level>`). */
+  level: FitLevel;
 }
 
 export function fitTone(score: number): FitTone {
@@ -133,7 +137,7 @@ export function fitTone(score: number): FitTone {
       soft: "bg-emerald-500/10",
       text: "text-emerald-700 dark:text-emerald-300",
       border: "border-emerald-500/30",
-      label: "Alto",
+      level: "high",
     };
   }
   if (score >= 50) {
@@ -142,7 +146,7 @@ export function fitTone(score: number): FitTone {
       soft: "bg-amber-500/10",
       text: "text-amber-700 dark:text-amber-300",
       border: "border-amber-500/30",
-      label: "Médio",
+      level: "medium",
     };
   }
   return {
@@ -150,27 +154,13 @@ export function fitTone(score: number): FitTone {
     soft: "bg-rose-500/10",
     text: "text-rose-700 dark:text-rose-300",
     border: "border-rose-500/30",
-    label: "Baixo",
+    level: "low",
   };
 }
 
-export const SOURCE_TYPE_LABEL: Record<MatchSourceType, string> = {
-  URL: "URL",
-  SN_DOC: "Indexado",
-  ASSET: "Arquivo",
-};
-
-export const SCHEDULE_LABEL: Record<MatchSchedule, string> = {
-  MANUAL: "Manual",
-  DAILY: "Diária",
-  WEEKLY: "Semanal",
-};
-
-export const PERSONA_KIND_LABEL: Record<MatchPersonaKind, string> = {
-  SPEAKER: "Locutor",
-  AUDIENCE: "Público",
-  BOTH: "Ambos",
-};
+/** i18n key suffixes for the label maps (translate via `persona.match.*`). */
+export const SOURCE_TYPES: MatchSourceType[] = ["URL", "SN_DOC", "ASSET"];
+export const SCHEDULES: MatchSchedule[] = ["MANUAL", "DAILY", "WEEKLY"];
 
 export interface RankedPersona {
   persona: MatchPersonaRef;

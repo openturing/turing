@@ -2,7 +2,6 @@ import { useMatchProjects } from "@/api/queries/persona-match.queries";
 import { ROUTES } from "@/app/routes.const";
 import { BentoEntityTile, BentoListPage } from "@/components/bento";
 import { Button } from "@/components/ui/button";
-import { SCHEDULE_LABEL } from "@/models/persona/persona-match.model";
 import {
   IconCalendarRepeat,
   IconMasksTheater,
@@ -27,7 +26,7 @@ export default function BentoPersonaMatchListPage() {
   const { t } = useTranslation();
   const { data: projects, isError } = useMatchProjects();
   const error = isError
-    ? t("common.connectionError", { resource: "Persona Match" })
+    ? t("common.connectionError", { resource: t("persona.match.connectionResource") })
     : null;
 
   return (
@@ -37,35 +36,35 @@ export default function BentoPersonaMatchListPage() {
       tryAgainUrl={ROUTES.BENTO_PERSONA_MATCH}
       eyebrow={
         <Link to={ROUTES.BENTO_PERSONA_INSTANCE} className="hover:text-foreground">
-          Personas
+          {t("persona.match.personas")}
         </Link>
       }
       heroIcon={IconTargetArrow}
       tone="indigo"
-      title="Persona Match"
-      subtitle="Agrupe conteúdos e personas em projetos e veja, numa matriz, o que cada conteúdo serve para cada persona — e vice-versa. A análise roda de tempos em tempos e reajusta os dois lados."
+      title={t("persona.match.title")}
+      subtitle={t("persona.match.subtitle")}
       headerAction={
         <>
           <Button asChild variant="outline" size="sm" className="gap-2">
             <Link to={ROUTES.BENTO_PERSONA_INSTANCE}>
               <IconUserCircle size={16} />
-              Personas
+              {t("persona.match.personas")}
             </Link>
           </Button>
           <Button asChild variant="outline" size="sm" className="gap-2">
             <Link to={ROUTES.BENTO_PERSONA_DIALOGUE}>
               <IconMasksTheater size={16} />
-              Diálogo entre personas
+              {t("persona.match.dialogue")}
             </Link>
           </Button>
         </>
       }
       newRoute={`${ROUTES.BENTO_PERSONA_MATCH}/new`}
-      newLabel="Novo projeto de análise"
-      newSubtitle="Conteúdos + personas → matriz de fit"
+      newLabel={t("persona.match.newLabel")}
+      newSubtitle={t("persona.match.newSubtitle")}
       itemKey={(project) => project.id}
-      emptyTitle="Nenhum projeto de análise ainda"
-      emptyDescription="Crie um grupo de conteúdos e personas para gerar o relatório N×N."
+      emptyTitle={t("persona.match.emptyTitle")}
+      emptyDescription={t("persona.match.emptyDescription")}
       listId="personaMatch"
       renderTile={(project, emphasis) => (
         <BentoEntityTile
@@ -80,18 +79,20 @@ export default function BentoPersonaMatchListPage() {
           meta={
             <div className="flex flex-wrap items-center gap-1.5">
               <span className="rounded-full border border-border/60 bg-card/40 px-2 py-0.5 backdrop-blur">
-                {project.sourceCount} conteúdos
+                {t("persona.match.contentsCount", { count: project.sourceCount })}
               </span>
               <span className="rounded-full border border-border/60 bg-card/40 px-2 py-0.5 backdrop-blur">
-                {project.personaCount} personas
+                {t("persona.match.personasCount", { count: project.personaCount })}
               </span>
               <span className="inline-flex items-center gap-1 rounded-full border border-border/60 bg-card/40 px-2 py-0.5 backdrop-blur">
                 <IconCalendarRepeat size={12} />
-                {SCHEDULE_LABEL[project.schedule]}
+                {t(`persona.match.schedule.${project.schedule}`)}
               </span>
               {project.lastRunAt && (
                 <span className="rounded-full border border-border/60 bg-card/40 px-2 py-0.5 backdrop-blur">
-                  Rodou {new Date(project.lastRunAt).toLocaleDateString("pt-BR")}
+                  {t("persona.match.ranAt", {
+                    date: new Date(project.lastRunAt).toLocaleDateString(),
+                  })}
                 </span>
               )}
             </div>
