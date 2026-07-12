@@ -43,15 +43,27 @@ import { useNavigate, useParams } from "react-router-dom";
 /** DOM id the hero-anchored Save button submits via `form="..."`. */
 const FORM_ID = "bento-dialogue-project-form";
 
-/** Per-speaker bubble colours, cycled by the speaker's position in the roster. */
-const BUBBLE_PALETTE = [
-  { bg: "bg-blue-500/10", border: "border-blue-500/30", text: "text-blue-700 dark:text-blue-300" },
-  { bg: "bg-fuchsia-500/10", border: "border-fuchsia-500/30", text: "text-fuchsia-700 dark:text-fuchsia-300" },
-  { bg: "bg-emerald-500/10", border: "border-emerald-500/30", text: "text-emerald-700 dark:text-emerald-300" },
-  { bg: "bg-amber-500/10", border: "border-amber-500/30", text: "text-amber-700 dark:text-amber-300" },
-  { bg: "bg-violet-500/10", border: "border-violet-500/30", text: "text-violet-700 dark:text-violet-300" },
-  { bg: "bg-rose-500/10", border: "border-rose-500/30", text: "text-rose-700 dark:text-rose-300" },
+/**
+ * Per-speaker colour, cycled by the speaker's position in the roster. Every
+ * message is left-aligned (nobody is "me" in a persona↔persona dialogue) —
+ * identity comes from a solid coloured avatar + the name + a tinted bubble, a
+ * group-chat / channel look rather than a me-vs-them left/right split.
+ */
+const SPEAKER_PALETTE = [
+  { avatar: "bg-blue-500", bg: "bg-blue-500/10", border: "border-blue-500/25", text: "text-blue-700 dark:text-blue-300" },
+  { avatar: "bg-fuchsia-500", bg: "bg-fuchsia-500/10", border: "border-fuchsia-500/25", text: "text-fuchsia-700 dark:text-fuchsia-300" },
+  { avatar: "bg-emerald-500", bg: "bg-emerald-500/10", border: "border-emerald-500/25", text: "text-emerald-700 dark:text-emerald-300" },
+  { avatar: "bg-amber-500", bg: "bg-amber-500/10", border: "border-amber-500/25", text: "text-amber-700 dark:text-amber-300" },
+  { avatar: "bg-violet-500", bg: "bg-violet-500/10", border: "border-violet-500/25", text: "text-violet-700 dark:text-violet-300" },
+  { avatar: "bg-rose-500", bg: "bg-rose-500/10", border: "border-rose-500/25", text: "text-rose-700 dark:text-rose-300" },
 ];
+
+/** Up to two initials from a persona name (first letters of its first words). */
+function speakerInitials(name: string): string {
+  const words = name.split(/[^\p{L}\p{N}]+/u).filter(Boolean);
+  if (words.length === 0) return "?";
+  return (words[0][0] + (words[1]?.[0] ?? "")).toUpperCase();
+}
 
 /**
  * Persona Dialogue — project workspace (Block AU / §XLIV, T706). Built on the
@@ -399,7 +411,7 @@ function DialogueEditor({ projectId, isNew, project, staged, onStateChange }: Re
             {!started ? (
               <p className="text-sm text-muted-foreground">{t("persona.dialogueProject.transcriptEmpty")}</p>
             ) : (
-              <div className="flex flex-col gap-3">
+              <div className="flex flex-col gap-4">
                 {turnsList.map((turn, i) => (
                   <DialogueBubble
                     key={`${turn.personaId}-${i}`}
@@ -429,13 +441,22 @@ function DialogueBubble({
   content,
   colorIndex,
 }: Readonly<{ name: string; content: string; colorIndex: number }>) {
-  const palette = BUBBLE_PALETTE[colorIndex % BUBBLE_PALETTE.length];
-  const left = colorIndex % 2 === 0;
+  const palette = SPEAKER_PALETTE[colorIndex % SPEAKER_PALETTE.length];
   return (
-    <div className={`flex ${left ? "justify-start" : "justify-end"}`}>
-      <div className={`max-w-[85%] rounded-2xl border px-4 py-3 ${palette.border} ${palette.bg}`}>
-        <div className={`mb-1 text-xs font-semibold ${palette.text}`}>{name}</div>
-        <p className="whitespace-pre-wrap text-sm">{content}</p>
+    <div className="flex gap-3">
+      <span
+        className={`grid size-9 shrink-0 place-items-center rounded-xl text-xs font-bold text-white shadow-sm ${palette.avatar}`}
+        aria-hidden
+      >
+        {speakerInitials(name)}
+      </span>
+      <div className="min-w-0 flex-1">
+        <div className={`mb-1 text-sm font-semibold ${palette.text}`}>{name}</div>
+        <div
+          className={`inline-block max-w-full rounded-2xl rounded-tl-md border px-4 py-2.5 ${palette.border} ${palette.bg}`}
+        >
+          <p className="whitespace-pre-wrap text-sm">{content}</p>
+        </div>
       </div>
     </div>
   );
