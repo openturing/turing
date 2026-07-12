@@ -1,9 +1,11 @@
-# Last task number — `T704` · next block letter — `AU`
+# Last task number — `T706` · next block letter — `AV`
 
 > **Single source of truth for the next free task number.** The next new task is
-> `T705`; after assigning it, bump the number above and the log line below.
+> `T707`; after assigning it, bump the number above and the log line below.
 >
-> **Next block letter — `AU`** (Block **AT** = Persona Match — N×N persona↔content
+> **Next block letter — `AV`** (Block **AU** = Persona Dialogue projects — saved
+> multi-project dialogues (topic + ordered speaker roster + persisted transcript),
+> T705–T706, created 2026-07-12; Block **AT** = Persona Match — N×N persona↔content
 > fit projects, T696–T704, created 2026-07-12; Block **AS** = Scalable & pluggable
 > audio
 > transcription / chunking + local backends, T687–T693 + T695, created 2026-07-11;
@@ -52,6 +54,9 @@ number" looked free but wasn't. Grepping three files (`ROADMAP.md`,
 
 ## Log (most recent first)
 
+- **T706 SHIPPED** (Block AU §XLIV — bento Persona Dialogue studio: list + workspace + create wired to real API; ordered speakers via shared PersonaSelectGrid; live SSE transcript; old single-page dialogue retired) — 2026-07-12.
+- **T705 SHIPPED** (Block AU §XLIV — Persona Dialogue projects backend: project + ordered speaker roster + persisted transcript, CRUD/API + project-scoped run/stream reusing the round-robin engine; Liquibase v2026.3.1.101 + IT) — 2026-07-12.
+- **T705-T706 CREATED** (Block AU §XLIV — Persona Dialogue as saved multi-projects, mirroring Persona Match) — 2026-07-12.
 - **T703 SHIPPED** (Block AT §XLIII — retire per-persona validate route into a single-persona Match-project shortcut) — 2026-07-12.
 - **T702 SHIPPED** (Block AT §XLIII — interactive N×N fit heatmap + by-content/by-persona reports + live SSE fill + per-lens PDF export) — 2026-07-12.
 - **T701 SHIPPED** (Block AT §XLIII — bento Persona Match studio wired to real API: list + workspace + service/query-hooks/model; mock retired) — 2026-07-12.

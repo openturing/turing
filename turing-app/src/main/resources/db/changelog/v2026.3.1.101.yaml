@@ -1,0 +1,159 @@
+databaseChangeLog:
+  # T705 / §XLIV (Block AU) — Persona Dialogue projects: saved dialogue setups.
+  #
+  #   ai_persona_dialogue_project  — aggregate root (topic + model + turn budget),
+  #                                  carries @TenantId + lastRunAt.
+  #   ai_persona_dialogue_speaker  — ordered speaker roster (speaker_order = the
+  #                                  round-robin order); persona_id SOFT ref to
+  #                                  ai_persona; FK -> project.
+  #   ai_persona_dialogue_turn     — persisted last-run transcript (replaced each
+  #                                  run); project_id plain column.
+  #
+  # camelCase columns map literally; FK columns snake_case like sibling children.
+  # Portable lowercase types. Idempotent (MARK_RAN).
+
+  - changeSet:
+      id: v2026.3.1.101-create-ai_persona_dialogue_project
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - tableExists:
+                tableName: ai_persona_dialogue_project
+      changes:
+        - createTable:
+            tableName: ai_persona_dialogue_project
+            columns:
+              - column:
+                  name: id
+                  type: varchar(40)
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: name
+                  type: varchar(200)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: description
+                  type: varchar(2000)
+              - column:
+                  name: topic
+                  type: varchar(2000)
+              - column:
+                  name: llmInstanceId
+                  type: varchar(40)
+              - column:
+                  name: turns
+                  type: int
+                  defaultValueNumeric: 10
+                  constraints:
+                    nullable: false
+              - column:
+                  name: last_run_at
+                  type: timestamp
+              - column:
+                  name: tenantId
+                  type: varchar(40)
+              - column:
+                  name: creationDate
+                  type: timestamp
+              - column:
+                  name: modificationDate
+                  type: timestamp
+
+  - changeSet:
+      id: v2026.3.1.101-create-ai_persona_dialogue_speaker
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - tableExists:
+                tableName: ai_persona_dialogue_speaker
+      changes:
+        - createTable:
+            tableName: ai_persona_dialogue_speaker
+            columns:
+              - column:
+                  name: id
+                  type: varchar(40)
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: persona_id
+                  type: varchar(40)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: speaker_order
+                  type: int
+                  defaultValueNumeric: 0
+                  constraints:
+                    nullable: false
+              - column:
+                  name: tenantId
+                  type: varchar(40)
+              - column:
+                  name: project_id
+                  type: varchar(40)
+                  constraints:
+                    nullable: false
+                    foreignKeyName: fk_persona_dialogue_speaker_project
+                    references: ai_persona_dialogue_project(id)
+                    deleteCascade: true
+        - createIndex:
+            tableName: ai_persona_dialogue_speaker
+            indexName: idx_persona_dialogue_speaker_project
+            columns:
+              - column:
+                  name: project_id
+
+  - changeSet:
+      id: v2026.3.1.101-create-ai_persona_dialogue_turn
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - tableExists:
+                tableName: ai_persona_dialogue_turn
+      changes:
+        - createTable:
+            tableName: ai_persona_dialogue_turn
+            columns:
+              - column:
+                  name: id
+                  type: varchar(40)
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: project_id
+                  type: varchar(40)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: turn_index
+                  type: int
+                  defaultValueNumeric: 0
+                  constraints:
+                    nullable: false
+              - column:
+                  name: persona_id
+                  type: varchar(40)
+              - column:
+                  name: persona_name
+                  type: varchar(200)
+              - column:
+                  name: content
+                  type: longtext
+              - column:
+                  name: tenantId
+                  type: varchar(40)
+        - createIndex:
+            tableName: ai_persona_dialogue_turn
+            indexName: idx_persona_dialogue_turn_project
+            columns:
+              - column:
+                  name: project_id

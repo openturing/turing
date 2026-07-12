@@ -63,8 +63,9 @@ const BentoPersonaDashboard = lazy(() => import("../bento/persona/bento.persona.
 const BentoPersonaEditor = lazy(() => import("../bento/persona/bento.persona.editor"));
 // Block AI (T584) — content-fit validation as a first-class launch surface.
 const BentoPersonaValidatePage = lazy(() => import("../bento/persona/bento.persona.validate.page"));
-// Block AI (T585) — global persona↔persona dialogue (two speakers + a topic).
-const BentoPersonaDialoguePage = lazy(() => import("../bento/persona/bento.persona.dialogue.page"));
+// Block AU (T706) — global persona↔persona dialogue as saved multi-projects.
+const BentoPersonaDialogueListPage = lazy(() => import("../bento/persona/dialogue/bento.persona.dialogue.list.page"));
+const BentoPersonaDialogueWorkspacePage = lazy(() => import("../bento/persona/dialogue/bento.persona.dialogue.workspace.page"));
 // Block AT (T701-T702) — Persona Match: N×N persona↔content fit projects (UI prototype).
 const BentoPersonaMatchListPage = lazy(() => import("../bento/persona/match/bento.persona.match.list.page"));
 const BentoPersonaMatchWorkspacePage = lazy(() => import("../bento/persona/match/bento.persona.match.workspace.page"));
@@ -243,8 +244,10 @@ export const BentoRoutes = (
     <Route path="persona" element={<Navigate to={ROUTES.BENTO_PERSONA_INSTANCE} replace />} />
     {/* Block AI (T584) — persona content-fit validation launch surface. */}
     <Route path="persona/validate/:personaId" element={<BentoPersonaValidatePage />} />
-    {/* Block AI (T585) — GLOBAL persona↔persona dialogue (not scoped to one persona). */}
-    <Route path="persona/dialogue" element={<BentoPersonaDialoguePage />} />
+    {/* Block AU (T706) — GLOBAL persona↔persona dialogue as saved multi-projects. */}
+    <Route path="persona/dialogue" element={<BentoPersonaDialogueListPage />} />
+    <Route path="persona/dialogue/new" element={<BentoPersonaDialogueWorkspacePage />} />
+    <Route path="persona/dialogue/:projectId" element={<BentoPersonaDialogueWorkspacePage />} />
     {/* Block AT (T701-T702) — GLOBAL Persona Match: N×N fit projects (UI prototype). */}
     <Route path="persona/match" element={<BentoPersonaMatchListPage />} />
     <Route path="persona/match/:projectId" element={<BentoPersonaMatchWorkspacePage />} />

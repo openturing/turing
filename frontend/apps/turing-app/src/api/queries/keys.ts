@@ -111,6 +111,13 @@ export const queryKeys = {
     matrix: (id: string) =>
       [...queryKeys.personaMatch.all(), 'matrix', id] as const,
   },
+  // Block AU (T706) — Persona Dialogue: saved multi-project dialogues.
+  personaDialogue: {
+    all: () => ['persona-dialogue'] as const,
+    list: () => [...queryKeys.personaDialogue.all(), 'list'] as const,
+    detail: (id: string) =>
+      [...queryKeys.personaDialogue.all(), 'detail', id] as const,
+  },
   // T447 — self-tuning suggestions, scoped per agent.
   agentSuggestions: {
     all: () => ['agent-suggestions'] as const,
