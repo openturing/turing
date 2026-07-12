@@ -98,17 +98,14 @@ export default function BentoPersonaDialoguePage() {
   const [runRoster, setRunRoster] = useState<string[]>([]);
   const abortRef = useRef<AbortController | null>(null);
 
-  // Default the first two slots once personas load: slot 0 honours a `?a=` deep
-  // link (from a persona's launchpad), slot 1 the next distinct speaker.
+  // Start with an empty roster so speakers are chosen at creation time. The only
+  // pre-selection is when arriving from a persona's launchpad (`?a=<personaId>`),
+  // which seeds just that one persona as the first speaker.
   useEffect(() => {
     if (speakers.length === 0) return;
-    setPersonaIds((prev) => {
-      if (prev.length) return prev;
-      const preferredA = searchParams.get("a");
-      const a = preferredA && speakers.some((p) => p.id === preferredA) ? preferredA : speakers[0].id;
-      const b = speakers.find((p) => p.id !== a)?.id;
-      return b ? [a, b] : [a];
-    });
+    const preferredA = searchParams.get("a");
+    if (!preferredA || !speakers.some((p) => p.id === preferredA)) return;
+    setPersonaIds((prev) => (prev.length ? prev : [preferredA]));
   }, [speakers, searchParams]);
 
   // Abort an in-flight stream on unmount.
