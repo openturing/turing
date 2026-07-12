@@ -244,9 +244,10 @@ export const BentoRoutes = (
     <Route path="persona" element={<Navigate to={ROUTES.BENTO_PERSONA_INSTANCE} replace />} />
     {/* Block AI (T584) — persona content-fit validation launch surface. */}
     <Route path="persona/validate/:personaId" element={<BentoPersonaValidatePage />} />
-    {/* Block AU (T706) — GLOBAL persona↔persona dialogue as saved multi-projects. */}
+    {/* Block AU (T706) — GLOBAL persona↔persona dialogue as saved multi-projects.
+        No separate `/new` route: `/dialogue/new` matches `:projectId="new"` (same
+        as Persona Match), so useParams().projectId is "new" and isNew resolves. */}
     <Route path="persona/dialogue" element={<BentoPersonaDialogueListPage />} />
-    <Route path="persona/dialogue/new" element={<BentoPersonaDialogueWorkspacePage />} />
     <Route path="persona/dialogue/:projectId" element={<BentoPersonaDialogueWorkspacePage />} />
     {/* Block AT (T701-T702) — GLOBAL Persona Match: N×N fit projects (UI prototype). */}
     <Route path="persona/match" element={<BentoPersonaMatchListPage />} />
