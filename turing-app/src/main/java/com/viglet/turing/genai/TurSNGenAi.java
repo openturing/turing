@@ -267,6 +267,23 @@ public class TurSNGenAi {
                     new TurAgentChatExecutor.ChatResponse(ASSISTANT, localizedRefusal(locale)));
         }
 
+        // STRICT_RAG hard grounding gate. Prompt-only grounding leaks on weak
+        // models: a tangential retrieval (e.g. "how does bubble sort work?"
+        // matching docs that merely MENTION code) passes the T329 non-empty gate,
+        // and the model then answers from parametric knowledge despite the
+        // STRICT_RAG_GUARD instruction. So in strict mode add a model-independent
+        // semantic check — a cheap judge decides whether the retrieved content
+        // actually contains the answer. If not, refuse deterministically (same
+        // contract as T329) instead of generating. Skipped when a chat flow
+        // governs the turn (the message is flow input, not a site question).
+        if (isStrictRag(context) && !chatFlowEngineService.hasActiveFlow(conversationId)
+                && !canAnswerFromRetrievedContent(context, latestUserQuery, relevantDocuments)) {
+            log.debug("RAG chat streaming (STRICT_RAG): retrieved content does not answer '{}' — "
+                    + "deterministic refusal (locale={})", latestUserQuery, locale);
+            return reactor.core.publisher.Flux.just(
+                    new TurAgentChatExecutor.ChatResponse(ASSISTANT, localizedRefusal(locale)));
+        }
+
         String information = relevantDocuments.stream()
                 .map(Document::getText)
                 .collect(Collectors.joining("\n\n"));
@@ -855,6 +872,62 @@ public class TurSNGenAi {
             language = "en";
         }
         return byLanguage.getOrDefault(language.toLowerCase(Locale.ROOT), byLanguage.get("en"));
+    }
+
+    /**
+     * STRICT_RAG hard grounding gate — a model-independent check that the
+     * retrieved content can actually answer the question, catching the
+     * "tangential retrieval passed the non-empty gate, model answered from
+     * parametric knowledge" leak that a prompt instruction alone cannot prevent
+     * (especially on weak models like {@code gpt-4o-mini}).
+     *
+     * <p>One cheap LLM judge call returns YES/NO on whether the CONTEXT contains
+     * the information needed. Lenient by design: returns {@code true} (answerable)
+     * on any error or unparseable/blank verdict (fail-open — a judge outage must
+     * not refuse every legitimate site question); only a clear leading NO refuses.
+     */
+    // Package-visible for the STRICT_RAG answerability-gate test.
+    boolean canAnswerFromRetrievedContent(TurGenAiContext context, String query,
+            List<Document> documents) {
+        if (documents == null || documents.isEmpty()) {
+            // No content to ground on — treat as not answerable so strict mode
+            // refuses. (In practice the T329 empty gate already handled this.)
+            return false;
+        }
+        try {
+            StringBuilder snippets = new StringBuilder();
+            int n = Math.min(documents.size(), 6);
+            for (int i = 0; i < n; i++) {
+                String text = documents.get(i).getText();
+                if (text == null) {
+                    continue;
+                }
+                text = text.strip().replaceAll("\\s+", " ");
+                snippets.append("- ").append(text.length() > 500
+                        ? text.substring(0, 500) + "…" : text).append('\n');
+            }
+            String prompt = """
+                    You decide whether a QUESTION can be answered using ONLY the CONTEXT below.
+                    Reply with exactly one word on the first line: YES or NO.
+                    Answer YES only if the CONTEXT contains the specific information needed to answer the QUESTION.
+                    Answer NO if the CONTEXT is about different topics — even if the question is generally answerable from world knowledge.
+
+                    QUESTION: %s
+
+                    CONTEXT:
+                    %s""".formatted(query, snippets);
+            String raw = context.getChatModel()
+                    .call(new Prompt(prompt))
+                    .getResult().getOutput().getText();
+            if (raw == null || raw.isBlank()) {
+                return true;
+            }
+            String firstLine = raw.strip().split("\\R", 2)[0].strip().toUpperCase(Locale.ROOT);
+            return !firstLine.startsWith("NO");
+        } catch (RuntimeException e) {
+            log.warn("RAG chat STRICT_RAG answerability check failed (fail-open): {}", e.getMessage());
+            return true;
+        }
     }
 
     public record ConversationMessage(String role, String content) {

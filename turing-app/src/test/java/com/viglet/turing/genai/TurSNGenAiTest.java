@@ -130,6 +130,52 @@ class TurSNGenAiTest {
                 < prompt.indexOf("<untrusted_website_content>"));
     }
 
+    /** Builds a context whose chat model returns the given verdict text. */
+    private TurGenAiContext contextWithJudgeVerdict(String verdict) {
+        TurGenAiContext context = mock(TurGenAiContext.class);
+        ChatModel chatModel = mock(ChatModel.class);
+        when(context.getChatModel()).thenReturn(chatModel);
+        when(chatModel.call(any(Prompt.class))).thenReturn(new ChatResponse(List.of(
+                new Generation(new org.springframework.ai.chat.messages.AssistantMessage(verdict)))));
+        return context;
+    }
+
+    // STRICT_RAG answerability gate — a clear leading NO means the retrieved
+    // content does not answer the question, so the gate refuses.
+    @Test
+    void answerabilityGateRefusesWhenJudgeSaysNo() {
+        TurGenAiContext context = contextWithJudgeVerdict("NO\nThe context is about other topics.");
+        boolean answerable = turSNGenAi.canAnswerFromRetrievedContent(
+                context, "how does bubble sort work?",
+                List.of(new Document("Turing has a built-in code interpreter feature.")));
+        assertFalse(answerable);
+    }
+
+    // A YES verdict lets a legitimate site question through.
+    @Test
+    void answerabilityGateAllowsWhenJudgeSaysYes() {
+        TurGenAiContext context = contextWithJudgeVerdict("YES");
+        boolean answerable = turSNGenAi.canAnswerFromRetrievedContent(
+                context, "what is Turing?",
+                List.of(new Document("Viglet Turing ES is an enterprise search platform.")));
+        assertTrue(answerable);
+    }
+
+    // Empty documents are treated as not answerable (strict refuses) — and the
+    // judge is never called (no stubbing, so strict stubbing stays happy).
+    @Test
+    void answerabilityGateRefusesOnEmptyDocsWithoutCallingJudge() {
+        TurGenAiContext context = mock(TurGenAiContext.class);
+        assertFalse(turSNGenAi.canAnswerFromRetrievedContent(context, "q", List.of()));
+    }
+
+    // Fail-open: a blank / unparseable verdict must NOT refuse a real question.
+    @Test
+    void answerabilityGateFailsOpenOnBlankVerdict() {
+        assertTrue(turSNGenAi.canAnswerFromRetrievedContent(
+                contextWithJudgeVerdict("   "), "q", List.of(new Document("some content"))));
+    }
+
     @Test
     void shouldReturnDisabledMessageWhenContextIsDisabled() {
         TurGenAiContext context = mock(TurGenAiContext.class);
