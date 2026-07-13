@@ -269,9 +269,16 @@ public class TurRagFacetExtractor {
                     - Return ONLY the JSON object — no prose, no markdown, no commentary.
                     """.formatted(facetsJson);
 
+            // T707 — pin temperature to 0 so the same query maps to the same
+            // filters run-to-run. Non-deterministic extraction was the root cause
+            // of intermittent "not in this site" refusals: one sampling could
+            // pick a facet that zeroed the filtered search. builderFrom keeps the
+            // provider-specific options type (avoids the OpenAI hard-cast CCE).
+            var options = TurChatToolOptions.builderFrom(chatModel);
+            options.temperature(0.0);
             Prompt prompt = new Prompt(List.of(
                     new SystemMessage(systemPrompt),
-                    new UserMessage(query)));
+                    new UserMessage(query)), options.build());
             String response = chatModel.call(prompt).getResult().getOutput().getText();
             Map<String, List<String>> parsed = parseFilters(response);
             // Final defensive pass: drop keys/values not present in availableFacets so a

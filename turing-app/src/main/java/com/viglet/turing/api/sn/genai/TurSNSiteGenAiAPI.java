@@ -256,13 +256,37 @@ public class TurSNSiteGenAiAPI {
 		}
 	}
 
+	/**
+	 * T707 — resolves a locale that actually has an index for this site. A
+	 * client that requests a locale the site was never indexed in (e.g. {@code en}
+	 * when only {@code en-US} exists) previously got the misleading
+	 * "Language Model is not enabled for this site." Now we fall back to the
+	 * site's default indexed locale so chat answers from the content that exists,
+	 * instead of refusing. Returns the requested locale unchanged when it is
+	 * indexed, or when no indexed fallback is available (the caller still guards).
+	 */
+	private Locale resolveIndexedLocale(String requested, String siteName) {
+		Locale locale = resolveLocale(requested, siteName);
+		if (locale != null && turSNSearchProcess.existsByTurSNSiteAndLanguage(siteName, locale)) {
+			return locale;
+		}
+		Locale fallback = turSNSiteSearchService.resolveDefaultLocale(siteName);
+		if (fallback != null && !fallback.equals(locale)
+				&& turSNSearchProcess.existsByTurSNSiteAndLanguage(siteName, fallback)) {
+			log.debug("RAG chat: requested locale '{}' not indexed for SN Site '{}', falling back to '{}'",
+					requested, siteName, fallback);
+			return fallback;
+		}
+		return locale;
+	}
+
 	@GetMapping
 	public TurChatMessage chatMessage(@PathVariable String siteName,
 			@RequestParam(name = TurSNParamType.QUERY) String q,
 			@RequestParam(required = false, name = TurSNParamType.LOCALE) String localeRequest) {
 		log.debug("RAG chat (single-turn) received for SN Site '{}': locale='{}', query='{}'",
 				siteName, localeRequest, q);
-		Locale locale = resolveLocale(localeRequest, siteName);
+		Locale locale = resolveIndexedLocale(localeRequest, siteName);
 		if (turSNSearchProcess.existsByTurSNSiteAndLanguage(siteName, locale)) {
 			return turSNSearchProcess.getSNSite(siteName).map(site -> {
 				var turSNSiteGenAI = site.getTurSNSiteGenAi();
@@ -333,7 +357,9 @@ public class TurSNSiteGenAiAPI {
 				siteName, request.locale(), historySize);
 		// T648 / §XXXVII.10 — bound anonymous message count + length before any work.
 		assertMessagesWithinCaps(request.messages());
-		Locale locale = resolveLocale(request.locale(), siteName);
+		// T707 — fall back to the site's default indexed locale when the client
+		// requests one that was never indexed, instead of refusing the turn.
+		Locale locale = resolveIndexedLocale(request.locale(), siteName);
 		// Defer all heavy work (RAG retrieval + prompt build + provider calls) to
 		// subscription time so the SSE handshake (200 text/event-stream) is
 		// committed before any upstream call fires. onErrorResume then turns an

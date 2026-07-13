@@ -26,8 +26,11 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
-import org.springframework.web.server.ResponseStatusException;
 
+import com.viglet.turing.api.exception.TurApiException;
+import com.viglet.turing.api.exception.TurNotFoundException;
+import com.viglet.turing.api.exception.TurPayloadTooLargeException;
+import com.viglet.turing.api.exception.TurValidationException;
 import com.viglet.turing.api.sn.genai.TurSNSitePersonaContentFitAPI.ContentFitRequest;
 import com.viglet.turing.genai.TurDefaultAgentResolver;
 import com.viglet.turing.genai.persona.fit.TurContentFitMisfit;
@@ -100,16 +103,16 @@ class TurSNSitePersonaContentFitAPITest {
     @Test
     void blankContentIsBadRequest() {
         assertThatThrownBy(() -> api.evaluate(SITE, "p-audience", new ContentFitRequest("  ", null)))
-                .isInstanceOf(ResponseStatusException.class)
-                .extracting(e -> ((ResponseStatusException) e).getStatusCode())
+                .isInstanceOf(TurValidationException.class)
+                .extracting(e -> ((TurApiException) e).getStatus())
                 .isEqualTo(HttpStatus.BAD_REQUEST);
     }
 
     @Test
     void nullBodyIsBadRequest() {
         assertThatThrownBy(() -> api.evaluate(SITE, "p-audience", null))
-                .isInstanceOf(ResponseStatusException.class)
-                .extracting(e -> ((ResponseStatusException) e).getStatusCode())
+                .isInstanceOf(TurValidationException.class)
+                .extracting(e -> ((TurApiException) e).getStatus())
                 .isEqualTo(HttpStatus.BAD_REQUEST);
     }
 
@@ -117,8 +120,8 @@ class TurSNSitePersonaContentFitAPITest {
     void oversizedContentIsRejected() {
         String huge = "x".repeat(TurSNSitePersonaContentFitAPI.MAX_CONTENT_CHARS + 1);
         assertThatThrownBy(() -> api.evaluate(SITE, "p-audience", new ContentFitRequest(huge, null)))
-                .isInstanceOf(ResponseStatusException.class)
-                .extracting(e -> ((ResponseStatusException) e).getStatusCode())
+                .isInstanceOf(TurPayloadTooLargeException.class)
+                .extracting(e -> ((TurApiException) e).getStatus())
                 .isEqualTo(HttpStatus.CONTENT_TOO_LARGE);
     }
 
@@ -126,8 +129,8 @@ class TurSNSitePersonaContentFitAPITest {
     void unknownPersonaIsNotFound() {
         assertThatThrownBy(() -> api.evaluate(SITE, "does-not-exist",
                 new ContentFitRequest("text", null)))
-                .isInstanceOf(ResponseStatusException.class)
-                .extracting(e -> ((ResponseStatusException) e).getStatusCode())
+                .isInstanceOf(TurNotFoundException.class)
+                .extracting(e -> ((TurApiException) e).getStatus())
                 .isEqualTo(HttpStatus.NOT_FOUND);
     }
 
@@ -136,8 +139,8 @@ class TurSNSitePersonaContentFitAPITest {
         // In the catalog, but not usable as an audience → cannot be validated against.
         assertThatThrownBy(() -> api.evaluate(SITE, "p-speaker",
                 new ContentFitRequest("text", null)))
-                .isInstanceOf(ResponseStatusException.class)
-                .extracting(e -> ((ResponseStatusException) e).getStatusCode())
+                .isInstanceOf(TurNotFoundException.class)
+                .extracting(e -> ((TurApiException) e).getStatus())
                 .isEqualTo(HttpStatus.NOT_FOUND);
     }
 
@@ -146,8 +149,37 @@ class TurSNSitePersonaContentFitAPITest {
         when(turSNSearchProcess.getSNSite("ghost")).thenReturn(Optional.empty());
         assertThatThrownBy(() -> api.evaluate("ghost", "p-audience",
                 new ContentFitRequest("text", null)))
-                .isInstanceOf(ResponseStatusException.class)
-                .extracting(e -> ((ResponseStatusException) e).getStatusCode())
+                .isInstanceOf(TurNotFoundException.class)
+                .extracting(e -> ((TurApiException) e).getStatus())
+                .isEqualTo(HttpStatus.NOT_FOUND);
+    }
+
+    @Test
+    void siteWithoutGenAiBindingFallsBackToDefaultAgent() {
+        // The public-demo case: a search-only site has no per-site GenAI binding,
+        // but a global Default AI Agent is configured. The resolver is null-safe,
+        // so the endpoint must still validate — never a spurious 404/500.
+        TurSNSite searchOnly = new TurSNSite();
+        searchOnly.setTurSNSiteGenAi(null);
+        when(turSNSearchProcess.getSNSite("demo")).thenReturn(Optional.of(searchOnly));
+        when(turDefaultAgentResolver.resolveEffectiveAgent(null)).thenReturn(agent);
+        when(evaluator.evaluateText(any(), eq("text"), any(), any(), eq(false)))
+                .thenReturn(new TurContentFitResult(0.5, "ok", List.of(), List.of(),
+                        0.5, null, true, null, false, null, "text"));
+
+        var response = api.evaluate("demo", "p-audience", new ContentFitRequest("text", null));
+
+        assertThat(response.personaId()).isEqualTo("p-audience");
+    }
+
+    @Test
+    void noSiteAgentAndNoDefaultAgentIsNotFound() {
+        // Neither a site agent nor a global default → the only true 404 for agents.
+        when(turDefaultAgentResolver.resolveEffectiveAgent(any())).thenReturn(null);
+        assertThatThrownBy(() -> api.evaluate(SITE, "p-audience",
+                new ContentFitRequest("text", null)))
+                .isInstanceOf(TurNotFoundException.class)
+                .extracting(e -> ((TurApiException) e).getStatus())
                 .isEqualTo(HttpStatus.NOT_FOUND);
     }
 

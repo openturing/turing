@@ -516,6 +516,37 @@ public class TurSNGenAi {
         return Collections.emptyMap();
     }
 
+    /**
+     * Resolved retrieval filters plus whether they came from the (heuristic)
+     * auto-extractor. Only auto-extracted filters are eligible for the
+     * fallback-on-empty retry in {@link #retrieveDocuments}.
+     *
+     * @since 2026.3.4
+     */
+    private record ResolvedFilters(java.util.Map<String, List<String>> filters, boolean autoExtracted) {
+    }
+
+    /**
+     * T707 — resolves the effective retrieval filters. Caller-supplied filters
+     * win untouched. Otherwise auto-extraction (T328) runs ONLY for
+     * enumeration-intent queries; a single-entity lookup keeps plain similarity.
+     */
+    private ResolvedFilters resolveEffectiveFilters(TurGenAiContext context, String query,
+            java.util.Map<String, List<String>> callerFilters) {
+        if (callerFilters != null && !callerFilters.isEmpty()) {
+            return new ResolvedFilters(callerFilters, false);
+        }
+        if (looksLikeEnumerationIntent(query)) {
+            java.util.Map<String, List<String>> extracted = autoExtractFilters(context, query);
+            if (!extracted.isEmpty()) {
+                log.info("RAG chat auto-extracted filters {} from enumeration query '{}'",
+                        extracted, query);
+                return new ResolvedFilters(extracted, true);
+            }
+        }
+        return new ResolvedFilters(null, false);
+    }
+
     private List<Document> retrieveDocuments(TurGenAiContext context,
             String latestUserQuery,
             java.util.Map<String, List<String>> filters) {
@@ -532,40 +563,28 @@ public class TurSNGenAi {
                 return fullCorpus.get();
             }
         }
-        java.util.Map<String, List<String>> effectiveFilters = filters;
-        boolean autoExtracted = false;
-        if (effectiveFilters == null || effectiveFilters.isEmpty()) {
-            java.util.Map<String, List<String>> extracted = autoExtractFilters(context, latestUserQuery);
-            if (!extracted.isEmpty()) {
-                effectiveFilters = extracted;
-                autoExtracted = true;
-            }
+
+        // T707 — decide the effective filters. Caller-supplied filters are
+        // authoritative. Auto-extraction (T328) is a heuristic LLM call and is
+        // now gated to ENUMERATION-intent queries only ("list all", "quais",
+        // "how many", …). A single-entity lookup ("Tell me about X") must never
+        // switch to the hard-filtered path, whose 0-hit outcome fires the T329
+        // "not in this site" refusal for content that plainly exists.
+        ResolvedFilters resolved = resolveEffectiveFilters(context, latestUserQuery, callerFilters ? filters : null);
+
+        List<Document> relevantDocuments = similaritySearch(context, latestUserQuery, resolved.filters());
+
+        // T707 — fallback-on-empty. An auto-extracted (heuristic) filter that
+        // yields zero hits must never degrade into a false "not in this site"
+        // refusal: a wrong guess by the extractor should reduce ranking quality,
+        // not erase an existing document. Retry once with plain similarity (no
+        // filter). Caller-supplied filters are a deliberate narrowing and are
+        // NOT widened — only the auto-extracted guess is dropped.
+        if (relevantDocuments.isEmpty() && resolved.autoExtracted()) {
+            log.info("RAG chat auto-extracted filter returned 0 documents for '{}' — "
+                    + "retrying without filter (fallback)", latestUserQuery);
+            relevantDocuments = similaritySearch(context, latestUserQuery, null);
         }
-        boolean hasFilters = effectiveFilters != null && !effectiveFilters.isEmpty();
-        int topK = hasFilters ? 50 : 10;
-        // T328 — the filtered path historically used a hard-coded 0.0 floor,
-        // stuffing every filter-matching hit regardless of semantic score (the
-        // dominant hallucination driver). Now config-driven (default 0.0 keeps
-        // legacy behavior). The unfiltered path keeps its own 0.4 floor.
-        double similarityThreshold = hasFilters
-                ? globalSettingsService.getRagSnSimilarityThreshold()
-                : 0.4;
-        org.springframework.ai.vectorstore.filter.Filter.Expression filterExpr =
-                TurRagFilters.buildFilterExpression(effectiveFilters);
-        SearchRequest.Builder reqBuilder = SearchRequest.builder()
-                .query(latestUserQuery)
-                .topK(topK)
-                .similarityThreshold(similarityThreshold);
-        if (filterExpr != null) {
-            reqBuilder.filterExpression(filterExpr);
-        }
-        SearchRequest embeddingSearchRequest = reqBuilder.build();
-        log.debug("RAG chat similaritySearch: topK={}, threshold={}, filters={}{}, query='{}'",
-                topK, similarityThreshold, effectiveFilters,
-                autoExtracted ? " (auto-extracted)" : "", latestUserQuery);
-        List<Document> searchResult = context.getVectorStore().similaritySearch(embeddingSearchRequest);
-        List<Document> relevantDocuments = searchResult == null ? Collections.emptyList() : searchResult;
-        log.debug("RAG chat similaritySearch returned {} document(s)", relevantDocuments.size());
 
         // T328 — optional LLM reranker: narrow the candidate pool to the
         // highest-precision top-k before stuffing. Opt-in (default off);
@@ -579,6 +598,62 @@ public class TurSNGenAi {
             relevantDocuments = reranked;
         }
         return relevantDocuments;
+    }
+
+    /**
+     * Runs a single embedding similarity search with the given (possibly null)
+     * effective filters. Filtered searches widen top-K to 50 and use the
+     * config-driven relevance floor (T328); the unfiltered path keeps the 0.4
+     * floor. Returns an empty list (never null) so callers can branch on empty.
+     *
+     * @since 2026.3.4
+     */
+    private List<Document> similaritySearch(TurGenAiContext context, String query,
+            java.util.Map<String, List<String>> effectiveFilters) {
+        boolean hasFilters = effectiveFilters != null && !effectiveFilters.isEmpty();
+        int topK = hasFilters ? 50 : 10;
+        // T328 — the filtered path historically used a hard-coded 0.0 floor,
+        // stuffing every filter-matching hit regardless of semantic score (the
+        // dominant hallucination driver). Now config-driven (default 0.0 keeps
+        // legacy behavior). The unfiltered path keeps its own 0.4 floor.
+        double similarityThreshold = hasFilters
+                ? globalSettingsService.getRagSnSimilarityThreshold()
+                : 0.4;
+        org.springframework.ai.vectorstore.filter.Filter.Expression filterExpr =
+                TurRagFilters.buildFilterExpression(effectiveFilters);
+        SearchRequest.Builder reqBuilder = SearchRequest.builder()
+                .query(query)
+                .topK(topK)
+                .similarityThreshold(similarityThreshold);
+        if (filterExpr != null) {
+            reqBuilder.filterExpression(filterExpr);
+        }
+        SearchRequest embeddingSearchRequest = reqBuilder.build();
+        log.debug("RAG chat similaritySearch: topK={}, threshold={}, filters={}, query='{}'",
+                topK, similarityThreshold, effectiveFilters, query);
+        List<Document> searchResult = context.getVectorStore().similaritySearch(embeddingSearchRequest);
+        List<Document> relevantDocuments = searchResult == null ? Collections.emptyList() : searchResult;
+        log.debug("RAG chat similaritySearch returned {} document(s)", relevantDocuments.size());
+        return relevantDocuments;
+    }
+
+    /**
+     * T707 — heuristic gate for whether a query is an enumeration/list request
+     * (where switching from top-K similarity to a hard metadata filter is the
+     * whole point of T328) versus a single-entity lookup (where a filter can
+     * only hurt). Matches common list cues across the configset locales
+     * (en/pt/es/ca). Deliberately conservative: when in doubt it returns false,
+     * keeping the reliable plain-similarity path — and the {@code retrieveDocuments}
+     * fallback still recovers if a filter is applied and returns nothing.
+     */
+    private static final java.util.regex.Pattern ENUMERATION_INTENT = java.util.regex.Pattern.compile(
+            "(?iu)\\b(list|lists|show me all|show all|all the|which|how many|how much|"
+            + "quais|quantos|quantas|todos|todas|liste|listar|mostre|mostrar|"
+            + "cu[aá]les|cu[aá]l|cu[aá]ntos|cu[aá]ntas|mu[eé]strame|mostrar|"
+            + "quins|quines|quants|quantes|tots|totes)\\b");
+
+    boolean looksLikeEnumerationIntent(String query) {
+        return query != null && ENUMERATION_INTENT.matcher(query).find();
     }
 
     public TurChatMessage assistantConversation(TurGenAiContext context, List<ConversationMessage> history,
@@ -739,29 +814,13 @@ public class TurSNGenAi {
     }
 
     private TurChatMessage getTurChatMessage(TurGenAiContext context, String q) {
-        int topK = 10;
-        double similarityThreshold = 0.4;
-        SearchRequest embeddingSearchRequest = SearchRequest.builder()
-                .query(q)
-                .topK(topK)
-                .similarityThreshold(similarityThreshold)
-                .build();
-        String vectorStoreType = context.getVectorStore().getClass().getSimpleName();
-        log.debug("RAG chat (single-turn) similaritySearch: store='{}', topK={}, threshold={}, query='{}'",
-                vectorStoreType, topK, similarityThreshold, q);
-        List<Document> searchResult = context.getVectorStore().similaritySearch(embeddingSearchRequest);
-        List<Document> relevantDocuments = searchResult == null ? Collections.emptyList() : searchResult;
-        log.debug("RAG chat (single-turn) similaritySearch returned {} document(s)", relevantDocuments.size());
-        if (relevantDocuments.isEmpty()) {
-            log.warn("RAG chat (single-turn) retrieved 0 documents — check that indexing populated the store '{}' with the collection matching this site/locale",
-                    vectorStoreType);
-        } else if (log.isInfoEnabled()) {
-            for (int i = 0; i < relevantDocuments.size(); i++) {
-                Document d = relevantDocuments.get(i);
-                String text = d.getText() == null ? "" : d.getText();
-                log.debug("  RAG chat (single-turn) doc[{}] metadata={} text=<<<\n{}\n>>>", i, d.getMetadata(), text);
-            }
-        }
+        // T707 — the single-turn path now shares the same retrieval pipeline as
+        // the conversational path (full-context, intent-gated auto-extraction,
+        // fallback-on-empty and optional rerank) instead of a private
+        // similaritySearch. Passing null filters keeps its historical behavior
+        // for plain lookups while inheriting the reliability fixes.
+        List<Document> relevantDocuments = retrieveDocuments(context, q, null);
+        logRetrievedDocuments(relevantDocuments, context.getVectorStore().getClass().getSimpleName());
 
         String information = relevantDocuments.stream()
                 .map(Document::getText)
@@ -774,14 +833,7 @@ public class TurSNGenAi {
         messages.add(new SystemMessage(systemContent));
         messages.add(new UserMessage(q));
         Prompt prompt = new Prompt(messages);
-        if (log.isInfoEnabled()) {
-            StringBuilder dump = new StringBuilder();
-            for (Message m : messages) {
-                dump.append("\n---- ").append(m.getMessageType()).append(" ----\n")
-                        .append(m.getText() == null ? "" : m.getText());
-            }
-            log.debug("RAG chat (single-turn) full prompt (system + turns) sent to LLM=<<<{}\n>>>", dump);
-        }
+        dumpPromptIfEnabled(messages);
         String answer = context.getChatModel().call(prompt).getResult().getOutput().getText();
         log.debug("RAG chat (single-turn) LLM answer=<<<\n{}\n>>>", answer);
         return TurChatMessage.builder()

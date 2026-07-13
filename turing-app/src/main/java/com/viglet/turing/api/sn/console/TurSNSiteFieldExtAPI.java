@@ -268,7 +268,11 @@ public class TurSNSiteFieldExtAPI {
         existing.setFacetItemType(payload.getFacetItemType());
         existing.setSecondaryFacet(Boolean.TRUE.equals(payload.getSecondaryFacet()));
         existing.setShowAllFacetItems(Boolean.TRUE.equals(payload.getShowAllFacetItems()));
-        existing.setHl(payload.getHl());
+        // T707 — reserved identifier/URL fields must never be highlightable: a
+        // <mark> injected into `id` corrupts the value clients feed to
+        // /search/similar ("Related"). Coerce hl=0 regardless of the payload.
+        existing.setHl(com.viglet.turing.commons.sn.field.TurSNFieldName.NON_HIGHLIGHTABLE
+                .contains(existing.getName()) ? 0 : payload.getHl());
         existing.setEnabled(payload.getEnabled());
         existing.setMlt(payload.getMlt());
         existing.setExternalId(payload.getExternalId());

@@ -40,6 +40,28 @@ class TurLuceneQueryBuilderTest {
     @InjectMocks
     private TurLuceneQueryBuilder queryBuilder;
 
+    // ---- T707: reserved id/url fields are never highlightable ----
+
+    @Test
+    void getHLFieldsExcludesReservedIdAndUrlFields() {
+        TurSNSite site = mock(TurSNSite.class);
+        TurSNSiteFieldExt idField = mock(TurSNSiteFieldExt.class);
+        when(idField.getName()).thenReturn("id");
+        TurSNSiteFieldExt urlField = mock(TurSNSiteFieldExt.class);
+        when(urlField.getName()).thenReturn("url");
+        TurSNSiteFieldExt titleField = mock(TurSNSiteFieldExt.class);
+        when(titleField.getName()).thenReturn("title");
+        when(turSNSiteFieldExtRepository.findByTurSNSiteAndHlAndEnabled(site, 1, 1))
+                .thenReturn(List.of(idField, urlField, titleField));
+
+        List<TurSNSiteFieldExt> hlFields = queryBuilder.getHLFields(site);
+
+        // Only the genuine text field survives — a <mark> in `id` would corrupt the
+        // value the SDK feeds back to /search/similar and silently break "Related".
+        assertEquals(1, hlFields.size());
+        assertEquals("title", hlFields.getFirst().getName());
+    }
+
     // ---- buildQuery: wildcard / match-all inputs ----
 
     @ParameterizedTest

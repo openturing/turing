@@ -42,4 +42,16 @@ public class TurSNFieldName {
     public static final String DEFAULT = "_text_";
     public static final String EXACT_MATCH = "exact_match";
 
+    /**
+     * Fields whose value is an identifier or URL consumed programmatically by
+     * clients (the {@code id} feeds {@code GET /search/similar} — a {@code <mark>}
+     * highlight tag injected into it breaks the "Related" lookup; {@code url} feeds
+     * links). Highlighting them is never useful, so the search engines must never
+     * add these to {@code hl.fl} even when a field is (mis)configured with
+     * {@code hl=1}. Belt-and-suspenders alongside the creation-time guard.
+     *
+     * @since 2026.3.4
+     */
+    public static final java.util.Set<String> NON_HIGHLIGHTABLE = java.util.Set.of(ID, URL);
+
 }

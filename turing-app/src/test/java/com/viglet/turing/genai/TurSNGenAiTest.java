@@ -11,6 +11,8 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.when;
 
 import java.util.Collections;
@@ -660,5 +662,97 @@ class TurSNGenAiTest {
                 events.get(0).content());
         // The LLM/executor must never run when the gate yields nothing.
         verifyNoInteractions(agentChatExecutor);
+    }
+
+    // ---- T707: enumeration-intent gate + fallback-on-empty ----
+
+    @Test
+    void enumerationIntentIsDetectedAcrossConfigsetLocales() {
+        // list / enumeration cues (en/pt/es/ca) → true
+        assertTrue(turSNGenAi.looksLikeEnumerationIntent("list all adventures"));
+        assertTrue(turSNGenAi.looksLikeEnumerationIntent("Quais aventuras existem?"));
+        assertTrue(turSNGenAi.looksLikeEnumerationIntent("how many ski trips are there"));
+        assertTrue(turSNGenAi.looksLikeEnumerationIntent("muéstrame todos los cursos"));
+        // single-entity lookups → false (must NOT switch to the hard-filtered path)
+        assertFalse(turSNGenAi.looksLikeEnumerationIntent("Tell me about: Ski Touring Mont Blanc"));
+        assertFalse(turSNGenAi.looksLikeEnumerationIntent("what is AI?"));
+        assertFalse(turSNGenAi.looksLikeEnumerationIntent(null));
+    }
+
+    @Test
+    void singleEntityQueryNeverInvokesFacetAutoExtraction() {
+        TurGenAiContext context = mock(TurGenAiContext.class);
+        when(context.isEnabled()).thenReturn(true);
+        VectorStore vectorStore = mock(VectorStore.class);
+        when(context.getVectorStore()).thenReturn(vectorStore);
+        when(vectorStore.similaritySearch(any(SearchRequest.class)))
+                .thenReturn(List.of(new Document("Ski Touring Mont Blanc is a 5-day tour")));
+        when(context.getSystemPrompt()).thenReturn(null);
+        ChatModel chatModel = mock(ChatModel.class);
+        when(context.getChatModel()).thenReturn(chatModel);
+        when(chatModel.call(any(Prompt.class))).thenReturn(new ChatResponse(List.of(
+                new Generation(new org.springframework.ai.chat.messages.AssistantMessage("grounded answer")))));
+
+        List<TurSNGenAi.ConversationMessage> history =
+                List.of(new TurSNGenAi.ConversationMessage("user", "Tell me about: Ski Touring Mont Blanc"));
+        TurChatMessage result = turSNGenAi.assistantConversation(context, history, null);
+
+        assertEquals("grounded answer", result.getText());
+        // A single-entity lookup must not run the heuristic facet extractor at all.
+        verifyNoInteractions(facetExtractor);
+    }
+
+    @Test
+    void autoExtractedFilterReturningEmptyFallsBackToPlainSimilarity() {
+        TurGenAiContext context = mock(TurGenAiContext.class);
+        when(context.isEnabled()).thenReturn(true);
+        VectorStore vectorStore = mock(VectorStore.class);
+        when(context.getVectorStore()).thenReturn(vectorStore);
+        when(context.getSystemPrompt()).thenReturn(null);
+        ChatModel chatModel = mock(ChatModel.class);
+        when(context.getChatModel()).thenReturn(chatModel);
+        when(chatModel.call(any(Prompt.class))).thenReturn(new ChatResponse(List.of(
+                new Generation(new org.springframework.ai.chat.messages.AssistantMessage("recovered answer")))));
+
+        // Enumeration query → auto-extraction runs and returns a filter…
+        Map<String, List<String>> facets = Map.of("category", List.of("ski"));
+        when(facetExtractor.getAvailableFacets(any())).thenReturn(facets);
+        when(facetExtractor.extractFilters(any(), any(), any())).thenReturn(facets);
+        // …but the filtered search finds nothing; the fallback (no filter) recovers.
+        when(vectorStore.similaritySearch(any(SearchRequest.class)))
+                .thenReturn(List.of())
+                .thenReturn(List.of(new Document("recovered grounding content")));
+
+        List<TurSNGenAi.ConversationMessage> history =
+                List.of(new TurSNGenAi.ConversationMessage("user", "list all ski adventures"));
+        TurChatMessage result = turSNGenAi.assistantConversation(context, history, null);
+
+        assertEquals("recovered answer", result.getText());
+        // Two searches: the filtered attempt (empty) then the plain-similarity fallback.
+        verify(vectorStore, times(2)).similaritySearch(any(SearchRequest.class));
+    }
+
+    @Test
+    void callerSuppliedFilterIsNeverWidenedByFallback() {
+        TurGenAiContext context = mock(TurGenAiContext.class);
+        when(context.isEnabled()).thenReturn(true);
+        VectorStore vectorStore = mock(VectorStore.class);
+        when(context.getVectorStore()).thenReturn(vectorStore);
+        when(context.getSystemPrompt()).thenReturn(null);
+        ChatModel chatModel = mock(ChatModel.class);
+        when(context.getChatModel()).thenReturn(chatModel);
+        when(chatModel.call(any(Prompt.class))).thenReturn(new ChatResponse(List.of(
+                new Generation(new org.springframework.ai.chat.messages.AssistantMessage("answer")))));
+        // Caller-supplied filter yields nothing — a deliberate narrowing we respect.
+        when(vectorStore.similaritySearch(any(SearchRequest.class))).thenReturn(List.of());
+
+        List<TurSNGenAi.ConversationMessage> history =
+                List.of(new TurSNGenAi.ConversationMessage("user", "list all ski adventures"));
+        turSNGenAi.assistantConversation(context, history, Map.of("category", List.of("ski")));
+
+        // Exactly one search: the caller's filter is authoritative, no fallback retry,
+        // and no auto-extraction (caller filters short-circuit the extractor).
+        verify(vectorStore, times(1)).similaritySearch(any(SearchRequest.class));
+        verifyNoInteractions(facetExtractor);
     }
 }

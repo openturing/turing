@@ -150,7 +150,14 @@ public class TurLuceneQueryBuilder {
      * Returns the list of enabled highlight fields for the given site.
      */
     public List<TurSNSiteFieldExt> getHLFields(TurSNSite turSNSite) {
-        return turSNSiteFieldExtRepository.findByTurSNSiteAndHlAndEnabled(turSNSite, 1, 1);
+        // T707 — never highlight identifier/URL fields even if a field is
+        // (mis)configured with hl=1: a <mark> injected into `id` corrupts the
+        // value clients feed back to /search/similar, silently breaking "Related".
+        return turSNSiteFieldExtRepository.findByTurSNSiteAndHlAndEnabled(turSNSite, 1, 1)
+                .stream()
+                .filter(field -> !com.viglet.turing.commons.sn.field.TurSNFieldName.NON_HIGHLIGHTABLE
+                        .contains(field.getName()))
+                .toList();
     }
 
     /**

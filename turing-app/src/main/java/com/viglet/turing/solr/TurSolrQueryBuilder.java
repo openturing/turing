@@ -57,6 +57,7 @@ import com.viglet.turing.commons.se.TurSEParameters;
 import com.viglet.turing.commons.se.field.TurSEFieldType;
 import com.viglet.turing.commons.se.result.spellcheck.TurSESpellCheckResult;
 import com.viglet.turing.commons.sn.bean.TurSNFilterParams;
+import com.viglet.turing.commons.sn.field.TurSNFieldName;
 import com.viglet.turing.commons.sn.bean.TurSNSitePostParamsBean;
 import com.viglet.turing.commons.sn.search.TurSNFilterQueryOperator;
 import com.viglet.turing.commons.sn.search.TurSNSiteSearchContext;
@@ -990,7 +991,13 @@ public class TurSolrQueryBuilder {
     }
 
     private List<TurSNSiteFieldExt> getHLFields(TurSNSite turSNSite) {
-        return turSNSiteFieldExtRepository.findByTurSNSiteAndHlAndEnabled(turSNSite, 1, 1);
+        // T707 — never highlight identifier/URL fields even if a field is
+        // (mis)configured with hl=1: a <mark> injected into `id` corrupts the
+        // value clients feed back to /search/similar, silently breaking "Related".
+        return turSNSiteFieldExtRepository.findByTurSNSiteAndHlAndEnabled(turSNSite, 1, 1)
+                .stream()
+                .filter(field -> !TurSNFieldName.NON_HIGHLIGHTABLE.contains(field.getName()))
+                .toList();
     }
 
     private void setRows(TurSNSite turSNSite, TurSEParameters turSEParameters) {

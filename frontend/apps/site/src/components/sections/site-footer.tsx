@@ -22,7 +22,6 @@ const COLUMNS: { heading: string; links: { label: string; href: string }[] }[] =
       { label: "Documentation", href: LINKS.docs },
       { label: "npm", href: LINKS.npm },
       { label: "CLI", href: LINKS.cli },
-      { label: "llms.txt", href: "/llms.txt" },
     ],
   },
   {

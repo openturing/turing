@@ -78,6 +78,50 @@ function scriptedSources(titles: string[]): TurChatSource[] {
   return titles.map((title, i) => ({ sourceId: `s${i}`, title }));
 }
 
+// T707 — the canonical "not in this site" refusals the backend emits (per
+// locale: en/pt/es/ca) plus the "LLM not enabled" guard. A LIVE turn that comes
+// back matching one of these WITH NO SOURCES means retrieval found nothing to
+// ground on — we fall back to the scripted answer so the demo never dead-ends
+// (its stated "never looks broken" contract), even if a re-seed left a gap.
+const REFUSAL_RE =
+  /not available in the website|não está disponível na base|no está disponible en la base|no està disponible a la base|not enabled for this site/i;
+
+/** Picks the scripted answer for a user message (same matching as the offline path). */
+function scriptedAnswerFor(
+  userText: string,
+  script: ChatScriptEntry[],
+  fallback: { answer: string; sources: string[] },
+): { answer: string; sources: TurChatSource[] } {
+  const hit = script.find((s) => s.match.test(userText)) ?? fallback;
+  return { answer: hit.answer, sources: scriptedSources(hit.sources) };
+}
+
+/**
+ * T707 — post-processes a completed LIVE conversation: any sourceless refusal
+ * assistant turn is rewritten to the scripted answer for its preceding user
+ * message. Pure + idempotent, so it can run on every store emission. Skipped
+ * while streaming (a partial answer may transiently look empty).
+ */
+function withScriptedFallback(
+  msgs: DemoMsg[],
+  streaming: boolean,
+  script: ChatScriptEntry[],
+  fallback: { answer: string; sources: string[] },
+): DemoMsg[] {
+  if (streaming) return msgs;
+  return msgs.map((m, i) => {
+    const sourceless = !m.sources || m.sources.length === 0;
+    if (m.role !== "assistant" || !sourceless || !REFUSAL_RE.test(m.content)) return m;
+    for (let j = i - 1; j >= 0; j--) {
+      if (msgs[j].role === "user") {
+        const sc = scriptedAnswerFor(msgs[j].content, script, fallback);
+        return { role: "assistant" as const, content: sc.answer, sources: sc.sources };
+      }
+    }
+    return m;
+  });
+}
+
 export interface ChatDemoProps {
   /** Drop the standalone card chrome + header so a parent (the playground) frames it. */
   bare?: boolean;
@@ -121,6 +165,13 @@ export function ChatDemo({
   const scrollRef = useRef<HTMLDivElement | null>(null);
   const busyRef = useRef(false);
   const seedNonce = useRef<number | null>(null);
+  // T707 — mirror the (per-render, new-identity) script/fallback props into refs
+  // so the subscribe effect can read the latest values without re-subscribing
+  // (and re-creating the controller) on every render.
+  const scriptRef = useRef(script);
+  scriptRef.current = script;
+  const fallbackRef = useRef(fallback);
+  fallbackRef.current = fallback;
 
   // Live mode: drive the widget from the SDK chat controller. Re-runs once the
   // site resolves (pinned or auto-discovered) so the controller binds to it.
@@ -129,12 +180,18 @@ export function ChatDemo({
     const c = createChatController(client, { site, personaId: personaId ?? undefined });
     controllerRef.current = c;
     const unsub = c.subscribe((s) => {
+      const mapped: DemoMsg[] = s.messages.map((m) => ({
+        role: m.role === "user" ? "user" : "assistant",
+        content: m.content,
+        sources: m.sources,
+      }));
       setConvo(
-        s.messages.map((m) => ({
-          role: m.role === "user" ? "user" : "assistant",
-          content: m.content,
-          sources: m.sources,
-        }))
+        withScriptedFallback(
+          mapped,
+          s.status === "loading",
+          scriptRef.current,
+          fallbackRef.current,
+        )
       );
       setBusy(s.status === "loading");
     });

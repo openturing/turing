@@ -12,15 +12,16 @@ package com.viglet.turing.api.sn.genai;
 import java.util.List;
 
 import org.apache.commons.lang3.StringUtils;
-import org.springframework.http.HttpStatus;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.server.ResponseStatusException;
 
+import com.viglet.turing.api.exception.TurNotFoundException;
+import com.viglet.turing.api.exception.TurPayloadTooLargeException;
+import com.viglet.turing.api.exception.TurValidationException;
 import com.viglet.turing.genai.TurDefaultAgentResolver;
 import com.viglet.turing.genai.persona.fit.TurContentFitMisfit;
 import com.viglet.turing.genai.persona.fit.TurContentFitResult;
@@ -81,18 +82,17 @@ public class TurSNSitePersonaContentFitAPI {
     public TurSNPersonaContentFitResponse evaluate(@PathVariable String siteName,
             @PathVariable String personaId, @RequestBody ContentFitRequest request) {
         if (request == null || StringUtils.isBlank(request.content())) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "content is required");
+            throw new TurValidationException("content is required");
         }
         String content = request.content();
         if (content.length() > MAX_CONTENT_CHARS) {
-            throw new ResponseStatusException(HttpStatus.CONTENT_TOO_LARGE,
+            throw new TurPayloadTooLargeException(
                     "content exceeds the " + MAX_CONTENT_CHARS + "-character limit");
         }
 
         TurAIAgent agent = turSNSearchProcess.getSNSite(siteName)
                 .map(site -> resolveAgent(site.getTurSNSiteGenAi()))
-                .orElseThrow(() -> new ResponseStatusException(
-                        HttpStatus.NOT_FOUND, "Site not found: " + siteName));
+                .orElseThrow(() -> new TurNotFoundException("Site not found: " + siteName));
 
         TurPersona persona = findAudiencePersona(agent, personaId);
 
@@ -103,15 +103,18 @@ public class TurSNSitePersonaContentFitAPI {
                 result.llmUsed());
     }
 
+    /**
+     * Resolves the effective agent for the site. A missing {@code genAi} binding
+     * is <em>not</em> an error on its own: {@link TurDefaultAgentResolver} is
+     * null-safe and falls back to the global <b>Default AI Agent</b> (exactly as
+     * SN chat does), so a search-only demo site with no per-site binding still
+     * works. Only when neither a site agent nor a default agent exists is this a
+     * 404.
+     */
     private TurAIAgent resolveAgent(TurSNSiteGenAi genAi) {
-        if (genAi == null) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND,
-                    "No AI agent configured for this site");
-        }
         TurAIAgent agent = turDefaultAgentResolver.resolveEffectiveAgent(genAi);
         if (agent == null) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND,
-                    "No AI agent configured for this site");
+            throw new TurNotFoundException("No AI agent configured for this site");
         }
         return agent;
     }
@@ -124,14 +127,14 @@ public class TurSNSitePersonaContentFitAPI {
      */
     private TurPersona findAudiencePersona(TurAIAgent agent, String personaId) {
         if (agent.getPersonas() == null) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Persona not found");
+            throw new TurNotFoundException("Persona not found");
         }
         return agent.getPersonas().stream()
                 .filter(p -> personaId.equals(p.getId()))
                 .filter(TurPersona::isUsableAsAudience)
                 .findFirst()
-                .orElseThrow(() -> new ResponseStatusException(
-                        HttpStatus.NOT_FOUND, "Persona not found in this site's catalog"));
+                .orElseThrow(() -> new TurNotFoundException(
+                        "Persona not found in this site's catalog"));
     }
 
     /** Guest request body: the text to validate + an optional display name. */
