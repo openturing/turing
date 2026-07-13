@@ -104,6 +104,32 @@ class TurSNGenAiTest {
         assertEquals("You are helpful.", prompt);
     }
 
+    // OPEN mode (2-arg overload and explicit false) never adds the strict guard,
+    // so a general-purpose agent keeps its configured prompt verbatim.
+    @Test
+    void buildSystemPromptOpenModeDoesNotAddStrictGuard() {
+        String prompt = turSNGenAi.buildSystemPrompt("You are helpful.", "", false);
+        assertFalse(prompt.contains("STRICT GROUNDING"));
+        assertEquals("You are helpful.", prompt);
+    }
+
+    // STRICT_RAG mode prefixes the non-removable grounding guard AHEAD of the
+    // configured prompt, so a permissive custom prompt cannot relax it.
+    @Test
+    void buildSystemPromptStrictRagPrependsNonRemovableGuard() {
+        String prompt = turSNGenAi.buildSystemPrompt(
+                "You are a fun assistant that loves writing code.", "some site content", true);
+
+        // The guard is present and precedes the operator's configured prompt.
+        assertTrue(prompt.contains("STRICT GROUNDING"));
+        assertTrue(prompt.indexOf("STRICT GROUNDING")
+                < prompt.indexOf("You are a fun assistant"));
+        // Retrieved content is still fenced as untrusted, after the behavior text.
+        assertTrue(prompt.contains("<untrusted_website_content>"));
+        assertTrue(prompt.indexOf("You are a fun assistant")
+                < prompt.indexOf("<untrusted_website_content>"));
+    }
+
     @Test
     void shouldReturnDisabledMessageWhenContextIsDisabled() {
         TurGenAiContext context = mock(TurGenAiContext.class);

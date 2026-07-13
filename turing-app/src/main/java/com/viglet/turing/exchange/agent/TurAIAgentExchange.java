@@ -46,6 +46,10 @@ public class TurAIAgentExchange {
     private String systemPromptMetaPrompt;
     private int enabled;
     private boolean ragEnabled;
+    // Per-agent grounding policy. Carried so STRICT_RAG survives an export/import
+    // round-trip (e.g. the public demo ships its agent locked to site content).
+    // Null on a pre-existing export that omits it → import falls back to OPEN.
+    private com.viglet.turing.persistence.model.agent.TurAgentGroundingMode groundingMode;
     // T295 / render.md — per-agent rich-content rendering (```html/```d2/charts).
     // Carried so the capability survives an export/import round-trip (e.g. the
     // public demo ships its agent with this on). Primitive default (false)
@@ -109,6 +113,7 @@ public class TurAIAgentExchange {
         e.systemPromptMetaPrompt = agent.getSystemPromptMetaPrompt();
         e.enabled = agent.getEnabled();
         e.ragEnabled = agent.isRagEnabled();
+        e.groundingMode = agent.getGroundingMode();
         e.richContentEnabled = agent.isRichContentEnabled();
         e.chatMemoryEnabled = agent.isChatMemoryEnabled();
         e.chatMemoryFlushIntervalMinutes = agent.getChatMemoryFlushIntervalMinutes();

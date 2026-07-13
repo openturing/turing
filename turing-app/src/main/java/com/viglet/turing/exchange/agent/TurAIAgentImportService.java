@@ -404,6 +404,12 @@ public class TurAIAgentImportService {
         agent.setSystemPromptMetaPrompt(a.getSystemPromptMetaPrompt());
         agent.setEnabled(a.getEnabled());
         agent.setRagEnabled(a.isRagEnabled());
+        // Grounding policy travels with the agent. Null-guarded: a pre-existing
+        // export that omits the field keeps the entity default (OPEN) instead of
+        // nulling a non-null column.
+        agent.setGroundingMode(a.getGroundingMode() == null
+                ? com.viglet.turing.persistence.model.agent.TurAgentGroundingMode.OPEN
+                : a.getGroundingMode());
         // T632 / T295 — rich-content rendering travels with the agent. Primitive
         // boolean: a pre-T632 export that omits it deserializes to false, which
         // matches the entity default, so old bundles are unaffected.

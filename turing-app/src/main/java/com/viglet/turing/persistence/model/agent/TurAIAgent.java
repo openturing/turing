@@ -639,6 +639,20 @@ public class TurAIAgent implements Serializable {
     private TurMemoryScope memoryScope = TurMemoryScope.CONVERSATION;
 
     /**
+     * Per-agent grounding policy. {@code OPEN} (default) keeps the flexible,
+     * general-purpose behaviour (code generation, tool calling, prompt used
+     * verbatim). {@code STRICT_RAG} makes the agent answer ONLY from retrieved
+     * website content: a non-removable guard is prefixed to the system prompt at
+     * runtime, so the grounding cannot be lost by editing the prompt and survives
+     * an export/import round-trip. Stored as a string to avoid ordinal drift.
+     *
+     * @since 2026.3.4
+     */
+    @jakarta.persistence.Enumerated(jakarta.persistence.EnumType.STRING)
+    @Column(name = "grounding_mode", length = 20, nullable = false)
+    private TurAgentGroundingMode groundingMode = TurAgentGroundingMode.OPEN;
+
+    /**
      * T66 / §VII.6.g — age threshold in days used only when
      * {@link #submissionRetention} is {@code RETAIN_DAYS}. Null or
      * non-positive disables the time-based purge (effectively

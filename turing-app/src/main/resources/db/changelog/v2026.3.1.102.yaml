@@ -1,0 +1,28 @@
+databaseChangeLog:
+  # Per-agent grounding policy. OPEN (default) keeps the flexible, general-purpose
+  # behaviour (code generation, tool calling, configured prompt used verbatim).
+  # STRICT_RAG makes the agent answer ONLY from retrieved website content — a
+  # non-removable guard is prefixed to the system prompt at runtime. Default OPEN
+  # → existing agents keep their exact current behaviour.
+  #
+  # Idempotent: gated by columnExists so re-running on a DB that already has the
+  # column is a no-op.
+  - changeSet:
+      id: add-grounding-mode-to-ai-agent
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - columnExists:
+                tableName: ai_agent
+                columnName: grounding_mode
+      changes:
+        - addColumn:
+            tableName: ai_agent
+            columns:
+              - column:
+                  name: grounding_mode
+                  type: varchar(20)
+                  defaultValue: OPEN
+                  constraints:
+                    nullable: false

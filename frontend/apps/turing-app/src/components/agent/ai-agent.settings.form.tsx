@@ -201,6 +201,10 @@ export const AIAgentSettingsForm: React.FC<Props> = ({ value, isNew, chrome = "c
       // T166 / §X.9.d — CONVERSATION matches the backend enum default (memory
       // tool scoped per conversation until the operator opts into per-user).
       memoryScope: value.memoryScope ?? "CONVERSATION",
+      // OPEN matches the backend enum default (flexible, general-purpose).
+      // STRICT_RAG locks the agent to the site's indexed content on the SN
+      // chat path only.
+      groundingMode: value.groundingMode ?? "OPEN",
       // T19/T24 reposition (2026.2.7): ragBm25Fallback and ragHybridSearch
       // moved from agent to TurSNSiteGenAi (RAG only runs in SN site
       // context; locale-aware retrieval needs SN site's locale config).
@@ -1434,6 +1438,42 @@ export const AIAgentSettingsForm: React.FC<Props> = ({ value, isNew, chrome = "c
                           <SelectContent>
                             <SelectItem value="CALL">{t("forms.agentSettings.chatModeCall")}</SelectItem>
                             <SelectItem value="STREAM">{t("forms.agentSettings.chatModeStream")}</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItemTwoColumns.Right>
+                  </FormItemTwoColumns>
+                )}
+              />
+        </Section>
+
+          <Section variant="blue" tone="blue" icon={IconShieldLock} title={t("forms.agentSettings.groundingMode")} description={t("forms.agentSettings.groundingModeDesc")}>
+              <FormField
+                control={form.control}
+                name="groundingMode"
+                render={({ field }) => (
+                  <FormItemTwoColumns>
+                    <FormItemTwoColumns.Left>
+                      <FormItemTwoColumns.Label>{t("forms.agentSettings.groundingMode")}</FormItemTwoColumns.Label>
+                      <FormItemTwoColumns.Description>
+                        {field.value === "STRICT_RAG"
+                          ? t("forms.agentSettings.groundingModeStrictDesc")
+                          : t("forms.agentSettings.groundingModeOpenDesc")}
+                      </FormItemTwoColumns.Description>
+                    </FormItemTwoColumns.Left>
+                    <FormItemTwoColumns.Right>
+                      <FormControl>
+                        <Select
+                          onValueChange={(v) => field.onChange(v)}
+                          value={field.value ?? "OPEN"}
+                        >
+                          <SelectTrigger className="w-full">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="OPEN">{t("forms.agentSettings.groundingModeOpen")}</SelectItem>
+                            <SelectItem value="STRICT_RAG">{t("forms.agentSettings.groundingModeStrict")}</SelectItem>
                           </SelectContent>
                         </Select>
                       </FormControl>

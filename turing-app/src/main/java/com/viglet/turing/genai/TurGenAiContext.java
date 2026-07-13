@@ -35,6 +35,13 @@ public class TurGenAiContext {
     private final ChatModel chatModel;
     private final boolean enabled;
     private final String systemPrompt;
+    /**
+     * Per-agent grounding policy (from {@code TurAIAgent#groundingMode}). When
+     * {@code STRICT_RAG}, the SN RAG path prefixes a non-removable grounding
+     * guard to the system prompt. {@code null} is treated as {@code OPEN} (e.g.
+     * the {@link #disabled()} context), so it never forces grounding by accident.
+     */
+    private final com.viglet.turing.persistence.model.agent.TurAgentGroundingMode groundingMode;
     private final RagInfrastructure ragInfrastructure;
     /**
      * T500 / §X.19 — per-site full-context (retrieval-free) answering opt-in.

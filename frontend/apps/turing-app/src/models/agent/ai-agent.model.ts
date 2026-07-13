@@ -44,11 +44,22 @@ export type TurSubmissionRetention =
  */
 export type TurMemoryScope = "CONVERSATION" | "USER";
 
+/**
+ * Per-agent grounding policy. OPEN (default) keeps the flexible general-purpose
+ * behaviour (code generation, tool calling, prompt used verbatim). STRICT_RAG
+ * makes the agent answer ONLY from retrieved website content: a non-removable
+ * guard is prefixed to the system prompt at runtime and off-topic tasks are
+ * refused. Enforced on the Semantic Navigation RAG chat path.
+ */
+export type TurAgentGroundingMode = "OPEN" | "STRICT_RAG";
+
 export interface TurAIAgent {
   id: string;
   title: string;
   description: string;
   systemPrompt?: string;
+  /** Per-agent grounding policy (OPEN / STRICT_RAG). Default OPEN. */
+  groundingMode?: TurAgentGroundingMode;
   /** User-authored brief that drives the SystemPromptEditor "Help me write" sheet. */
   systemPromptMetaPrompt?: string | null;
   enabled: number;

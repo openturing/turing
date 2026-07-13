@@ -89,6 +89,7 @@ public class TurGenAiContextFactory {
                 .chatModel(chatModel)
                 .enabled(true)
                 .systemPrompt(agent.getSystemPrompt())
+                .groundingMode(agent.getGroundingMode())
                 .ragInfrastructure(infra)
                 // T500 — thread the per-site full-context opt-in + budget through
                 // so TurSNGenAi.retrieveDocuments can bypass top-K when the corpus

@@ -249,6 +249,14 @@ public class TurLLMInstanceOnStartup implements ApplicationRunner {
         agent.setSystemPrompt(DEFAULT_AGENT_PROMPT);
         agent.setEnabled(1);
         agent.setRagEnabled(true);
+        // The auto-provisioned default agent is the T622 fail-open fallback for
+        // the zero-config public demo's SN chat — an anonymous, un-configured
+        // surface answering questions about a crawled site. Lock it to
+        // STRICT_RAG so it is grounded out of the box (no code generation /
+        // off-topic tasks). This only affects the SN RAG path; general agent
+        // chat / MCP ignore the mode, so reusing this agent elsewhere is
+        // unaffected. Operators can flip it to OPEN in the UI.
+        agent.setGroundingMode(com.viglet.turing.persistence.model.agent.TurAgentGroundingMode.STRICT_RAG);
         agent.getLlmInstances().add(llm);
 
         // Optional soft spend caps (T289–T291). Left null when unset/blank/<= 0,

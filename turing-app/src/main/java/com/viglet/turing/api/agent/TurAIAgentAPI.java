@@ -285,6 +285,12 @@ public class TurAIAgentAPI {
             if (turAIAgent.getMemoryScope() != null) {
                 agentEdit.setMemoryScope(turAIAgent.getMemoryScope());
             }
+            // Grounding policy (OPEN / STRICT_RAG). Same field-by-field copy
+            // contract: a null DTO value keeps the previously-persisted mode
+            // (older clients), never nulling a non-null column.
+            if (turAIAgent.getGroundingMode() != null) {
+                agentEdit.setGroundingMode(turAIAgent.getGroundingMode());
+            }
             // T19/T24 reposition (2026.2.7) — ragBm25Fallback and
             // ragHybridSearch moved to TurSNSiteGenAi; no longer copied
             // here. See TurSNSiteGenAi field javadoc + TurSNSiteAPI for

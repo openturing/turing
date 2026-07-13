@@ -90,6 +90,10 @@ class TurLLMInstanceOnStartupAgentProvisionTest {
         TurAIAgent created = captor.getValue();
         assertThat(created.getTitle()).isEqualTo("Default Agent");
         assertThat(created.getLlmInstances()).hasSize(1);
+        // The auto-provisioned default agent backs the zero-config public demo's
+        // SN chat (T622 fallback), so it ships grounded to the site's content.
+        assertThat(created.getGroundingMode())
+                .isEqualTo(com.viglet.turing.persistence.model.agent.TurAgentGroundingMode.STRICT_RAG);
         verify(turGlobalSettingsService).updateDefaultAiAgentId(any());
     }
 
