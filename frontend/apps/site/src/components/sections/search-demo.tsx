@@ -70,6 +70,17 @@ function stripMarks(text: string): string {
   return text.replace(/<\/?mark>/gi, "");
 }
 
+/**
+ * Whether a result has enough body to be worth "Ask about this". A nav/landing
+ * hub (e.g. WKND's region pages) is indexed with a title but no snippet/text, so
+ * seeding the chat with it dead-ends ("no info about X"). Gate the CTA on having
+ * a non-empty description or text — "Related" stays available for such pages.
+ */
+function isAskable(document: TuringResolvedDocument): boolean {
+  const body = `${document.description ?? ""} ${document.text ?? ""}`;
+  return stripMarks(body).trim().length > 0;
+}
+
 /** The human-meaningful badge for a result (category on turing-docs; else type). */
 function docBadge(raw: TuringResolvedDocument["raw"]): string {
   const f = raw.fields as Record<string, unknown>;
@@ -105,7 +116,7 @@ export interface SearchDemoProps {
   /** Drop the standalone card chrome so a parent (the playground) frames it. */
   bare?: boolean;
   /** When set, each result shows an "Ask about this" action (search→ask bridge). */
-  onAskAbout?: (title: string) => void;
+  onAskAbout?: (title: string, id?: string) => void;
   /** Pin a specific demo SN site (else the env pin / first discovered). */
   siteOverride?: string;
   /** Offline fallback corpus (default = the Turing-docs sample). */
@@ -158,7 +169,7 @@ function LiveSearchDemo({
   client: NonNullable<ReturnType<typeof useTuringDemo>["client"]>;
   site: string;
   bare: boolean;
-  onAskAbout?: (title: string) => void;
+  onAskAbout?: (title: string, id?: string) => void;
   placeholder?: string;
 }>) {
   const [query, setQuery] = useState("");
@@ -467,10 +478,20 @@ function LiveSearchDemo({
               </p>
             )}
             <div className="mt-1.5 flex flex-wrap items-center gap-3">
-              {onAskAbout && (
+              {/* Only offer "Ask about this" when the page has answerable body:
+                  a nav/landing hub with no snippet (e.g. WKND's region pages)
+                  would dead-end the chat, so we hide the CTA and leave "Related"
+                  as the useful action instead. */}
+              {onAskAbout && isAskable(document) && (
                 <button
                   type="button"
-                  onClick={() => onAskAbout(stripMarks(document.title))}
+                  onClick={() =>
+                    onAskAbout(
+                      stripMarks(document.title),
+                      String((document.raw.fields as Record<string, unknown>).id ?? "") ||
+                        undefined
+                    )
+                  }
                   className="inline-flex items-center gap-1 text-[0.7rem] font-semibold text-primary hover:underline"
                 >
                   <MessageSquare className="size-3" />
@@ -523,7 +544,7 @@ function SampleSearchDemo({
   placeholder,
 }: Readonly<{
   bare: boolean;
-  onAskAbout?: (title: string) => void;
+  onAskAbout?: (title: string, id?: string) => void;
   docs?: SearchDoc[];
   placeholder?: string;
 }>) {
@@ -625,7 +646,7 @@ function SampleSearchDemo({
                 <Highlighted text={document.description} />
               </p>
             )}
-            {onAskAbout && (
+            {onAskAbout && isAskable(document) && (
               <button
                 type="button"
                 onClick={() => onAskAbout(stripMarks(document.title))}

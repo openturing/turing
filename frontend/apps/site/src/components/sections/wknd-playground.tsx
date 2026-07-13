@@ -94,10 +94,12 @@ function TabButton({
 export function WkndPlayground() {
   const { live } = useTuringDemo(WKND_DEMO_SITE);
   const [tab, setTab] = useState<Tab>("search");
-  const [seed, setSeed] = useState<{ text: string; nonce: number } | undefined>();
+  const [seed, setSeed] = useState<
+    { text: string; nonce: number; id?: string } | undefined
+  >();
 
-  const askAbout = (title: string) => {
-    setSeed((s) => ({ text: `Tell me about: ${title}`, nonce: s ? s.nonce + 1 : 1 }));
+  const askAbout = (title: string, id?: string) => {
+    setSeed((s) => ({ text: `Tell me about: ${title}`, id, nonce: s ? s.nonce + 1 : 1 }));
     setTab("ask");
   };
 

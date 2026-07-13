@@ -28,6 +28,7 @@ import com.viglet.turing.lucene.TurLuceneQueryBuilder;
 import com.viglet.turing.lucene.TurLuceneUtils;
 import com.viglet.turing.persistence.model.se.TurSEInstance;
 import com.viglet.turing.persistence.model.sn.TurSNSite;
+import com.viglet.turing.persistence.model.sn.field.TurSNSiteFieldExt;
 import com.viglet.turing.persistence.model.sn.locale.TurSNSiteLocale;
 import com.viglet.turing.persistence.repository.sn.TurSNSiteRepository;
 import com.viglet.turing.persistence.repository.sn.field.TurSNSiteFieldExtRepository;
@@ -134,11 +135,12 @@ public class TurLuceneSearchEnginePlugin implements TurSearchEnginePlugin {
         }
         try {
             TurSNSite site = turSNSiteRepository.findByName(context.getSiteName()).orElse(null);
+            String[] mltFields = resolveMltFields(site);
             if (site == null || !TurSNUtils.isTrue(site.getMlt())
                     || turSNSiteFieldExtRepository.findByTurSNSiteAndMltAndEnabled(site, 1, 1).isEmpty()) {
                 return results;
             }
-            results.setSimilarResults(collectMoreLikeThis(instance, docs));
+            results.setSimilarResults(collectMoreLikeThis(instance, docs, mltFields));
         } catch (Exception e) {
             log.warn("[Lucene] MoreLikeThis enrichment for site '{}' failed: {}",
                     context.getSiteName(), e.getMessage());
@@ -152,7 +154,7 @@ public class TurLuceneSearchEnginePlugin implements TurSearchEnginePlugin {
      * de-duplicated list, dropping any document already in the result set.
      */
     private List<TurSESimilarResult> collectMoreLikeThis(TurLuceneInstance instance,
-            List<TurSEResult> docs) {
+            List<TurSEResult> docs, String[] mltFields) {
         List<String> seedIds = docs.stream()
                 .map(doc -> asString(doc.getFields().get(TurSNFieldName.ID)))
                 .filter(id -> id != null && !id.isBlank())
@@ -166,14 +168,13 @@ public class TurLuceneSearchEnginePlugin implements TurSearchEnginePlugin {
                 .filter(id -> id != null && !id.isBlank())
                 .collect(java.util.stream.Collectors.toSet());
         Map<String, TurSESimilarResult> merged = new LinkedHashMap<>();
-        for (Map<String, Object> seed : fetchByIds(instance, seedIds)) {
-            String seedId = asString(seed.get(TurSNFieldName.ID));
-            String like = similarityText(seed);
-            if (seedId == null || like.isBlank()) {
+        for (String seedId : seedIds) {
+            String like = seedText(instance, seedId, mltFields);
+            if (like.isBlank()) {
                 continue;
             }
             for (TurSESimilarResult hit : searchSimilarDocuments(instance, like, seedId,
-                    MLT_ROWS_PER_SEED)) {
+                    MLT_ROWS_PER_SEED, mltFields)) {
                 if (hit.getId() != null && !resultIds.contains(hit.getId())) {
                     merged.putIfAbsent(hit.getId(), hit);
                 }
@@ -608,33 +609,33 @@ public class TurLuceneSearchEnginePlugin implements TurSearchEnginePlugin {
         if (id == null || id.isBlank() || rows < 1) {
             return List.of();
         }
-        List<Map<String, Object>> seed = getDocumentsByIds(siteLocale, List.of(id));
-        if (seed.isEmpty()) {
-            return List.of();
-        }
-        String like = similarityText(seed.get(0));
-        if (like.isBlank()) {
-            return List.of();
-        }
+        String[] mltFields = resolveMltFields(siteLocale == null ? null : siteLocale.getTurSNSite());
         return turLuceneInstanceProcess.initLuceneInstance(siteLocale)
-                .map(instance -> searchSimilarDocuments(instance, like, id, rows))
+                .map(instance -> {
+                    String like = seedText(instance, id, mltFields);
+                    return like.isBlank()
+                            ? List.<TurSESimilarResult>of()
+                            : searchSimilarDocuments(instance, like, id, rows, mltFields);
+                })
                 .orElse(List.of());
     }
 
     /** Runs a Lucene {@link MoreLikeThis} query built from the seed text, excluding the seed and capping at {@code rows}. */
     private List<TurSESimilarResult> searchSimilarDocuments(TurLuceneInstance instance, String like,
-            String id, int rows) {
+            String id, int rows, String[] mltFields) {
         try {
             IndexReader reader = instance.getReader();
             IndexSearcher searcher = instance.getSearcher();
             MoreLikeThis mlt = new MoreLikeThis(reader);
             mlt.setAnalyzer(new StandardAnalyzer());
-            mlt.setFieldNames(SIMILAR_MLT_FIELDS);
+            mlt.setFieldNames(mltFields);
             mlt.setMinTermFreq(1);
             mlt.setMinDocFreq(1);
             mlt.setMinWordLen(3);
             mlt.setMaxQueryTerms(40);
-            Query query = mlt.like(TurSNFieldName.TEXT, new StringReader(like));
+            // Seed the interesting-term extraction from the first configured MLT
+            // field; setFieldNames above is what actually scans all MLT fields.
+            Query query = mlt.like(mltFields[0], new StringReader(like));
             TopDocs topDocs = searcher.search(query, rows + 1);
             List<TurSESimilarResult> results = new ArrayList<>();
             for (ScoreDoc scoreDoc : topDocs.scoreDocs) {
@@ -660,25 +661,61 @@ public class TurLuceneSearchEnginePlugin implements TurSearchEnginePlugin {
         }
     }
 
-    /** Builds the seed text (title + abstract + text) used to seed MoreLikeThis, capped to {@link #SIMILAR_MAX_SEED_CHARS}. */
-    private static String similarityText(Map<String, Object> fields) {
-        StringBuilder sb = new StringBuilder();
-        for (String field : SIMILAR_MLT_FIELDS) {
-            Object value = fields.get(field);
-            if (value != null) {
-                String text = value.toString().trim();
-                if (!text.isEmpty()) {
-                    if (!sb.isEmpty()) {
-                        sb.append(' ');
-                    }
-                    sb.append(text);
-                }
+    /**
+     * Resolves the MoreLikeThis field set for a site from its per-field
+     * {@code mlt} attribute (the fields where {@code mlt==1 && enabled==1}),
+     * mirroring Solr's {@code prepareQueryMLT}. Falls back to the legacy
+     * {@link #SIMILAR_MLT_FIELDS} when the site is unknown or has no MLT field
+     * configured, so behaviour is unchanged for sites that never set the flag.
+     */
+    private String[] resolveMltFields(TurSNSite site) {
+        if (site != null) {
+            List<String> configured = turSNSiteFieldExtRepository
+                    .findByTurSNSiteAndMltAndEnabled(site, 1, 1).stream()
+                    .map(TurSNSiteFieldExt::getName)
+                    .filter(name -> name != null && !name.isBlank())
+                    .toList();
+            if (!configured.isEmpty()) {
+                return configured.toArray(new String[0]);
             }
         }
-        String text = sb.toString().trim();
-        return text.length() > SIMILAR_MAX_SEED_CHARS
-                ? text.substring(0, SIMILAR_MAX_SEED_CHARS)
-                : text;
+        return SIMILAR_MLT_FIELDS;
+    }
+
+    /**
+     * Builds the MoreLikeThis seed text from the seed document's configured MLT
+     * fields (ALL stored values, so a multi-valued body field like {@code
+     * paragraphs} contributes fully), capped to {@link #SIMILAR_MAX_SEED_CHARS}.
+     * Returns an empty string when the seed id is not found or has no text in
+     * those fields.
+     */
+    private String seedText(TurLuceneInstance instance, String id, String[] mltFields) {
+        try {
+            IndexSearcher searcher = instance.getSearcher();
+            TopDocs topDocs = searcher.search(new TermQuery(new Term(TurSNFieldName.ID, id)), 1);
+            if (topDocs.scoreDocs.length == 0) {
+                return "";
+            }
+            Document doc = searcher.storedFields().document(topDocs.scoreDocs[0].doc);
+            StringBuilder sb = new StringBuilder();
+            for (String field : mltFields) {
+                for (String value : doc.getValues(field)) {
+                    if (value != null && !value.isBlank()) {
+                        if (!sb.isEmpty()) {
+                            sb.append(' ');
+                        }
+                        sb.append(value.trim());
+                    }
+                }
+            }
+            String text = sb.toString().trim();
+            return text.length() > SIMILAR_MAX_SEED_CHARS
+                    ? text.substring(0, SIMILAR_MAX_SEED_CHARS)
+                    : text;
+        } catch (Exception e) {
+            log.warn("[Lucene] seedText for id '{}' failed: {}", id, e.getMessage());
+            return "";
+        }
     }
 
     // ---- Spell check (T686 / §XLI.2, Block AR) --------------------------

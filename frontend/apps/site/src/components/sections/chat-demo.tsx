@@ -2,8 +2,12 @@ import { useEffect, useRef, useState } from "react";
 import { ArrowUp, Check, Copy, FileText, Sparkles } from "lucide-react";
 import {
   createChatController,
+  createSimilarController,
   type ChatController,
+  type SimilarController,
+  type SimilarStatus,
   type TurChatSource,
+  type TurSimilarResult,
 } from "@viglet/turing-sdk";
 import {
   TuringCopyButton,
@@ -78,13 +82,16 @@ function scriptedSources(titles: string[]): TurChatSource[] {
   return titles.map((title, i) => ({ sourceId: `s${i}`, title }));
 }
 
-// T707 — the canonical "not in this site" refusals the backend emits (per
-// locale: en/pt/es/ca) plus the "LLM not enabled" guard. A LIVE turn that comes
-// back matching one of these WITH NO SOURCES means retrieval found nothing to
-// ground on — we fall back to the scripted answer so the demo never dead-ends
-// (its stated "never looks broken" contract), even if a re-seed left a gap.
+// T707 — the "not in this site" refusals the demo should never surface as a
+// dead-end. Covers (a) the canonical deterministic refusals the backend emits
+// per locale (en/pt/es/ca) + the "LLM not enabled" guard, AND (b) the softer
+// LLM-phrased "the content doesn't cover X" refusals a model produces when a
+// thin page (e.g. a nav/landing hub with no body) is retrieved but has nothing
+// to answer. Matching any of these rewrites the turn to the scripted fallback so
+// the demo never dead-ends (its "never looks broken" contract) — regardless of
+// whether a (thin) source was attached.
 const REFUSAL_RE =
-  /not available in the website|não está disponível na base|no está disponible en la base|no està disponible a la base|not enabled for this site/i;
+  /not available in the website|não está disponível na base|no está disponible en la base|no està disponible a la base|not enabled for this site|does not (?:provide|contain) any (?:information|details)|no (?:information|details) (?:about|on|regarding)|couldn'?t find|could not find|não (?:fornece|contém) (?:nenhuma|)\s*informaç|nenhuma informação|no (?:proporciona|contiene) (?:ninguna|)\s*informaci/i;
 
 /** Picks the scripted answer for a user message (same matching as the offline path). */
 function scriptedAnswerFor(
@@ -110,8 +117,10 @@ function withScriptedFallback(
 ): DemoMsg[] {
   if (streaming) return msgs;
   return msgs.map((m, i) => {
-    const sourceless = !m.sources || m.sources.length === 0;
-    if (m.role !== "assistant" || !sourceless || !REFUSAL_RE.test(m.content)) return m;
+    // A refusal is a dead-end whether or not a (thin) source was attached — a
+    // nav/landing page with no body is often retrieved as a source yet answers
+    // nothing. So match on the refusal text alone, not on sourcelessness.
+    if (m.role !== "assistant" || !REFUSAL_RE.test(m.content)) return m;
     for (let j = i - 1; j >= 0; j--) {
       if (msgs[j].role === "user") {
         const sc = scriptedAnswerFor(msgs[j].content, script, fallback);
@@ -125,8 +134,13 @@ function withScriptedFallback(
 export interface ChatDemoProps {
   /** Drop the standalone card chrome + header so a parent (the playground) frames it. */
   bare?: boolean;
-  /** When `nonce` changes, the given text is sent as a user message (search→ask bridge). */
-  seed?: { text: string; nonce: number };
+  /**
+   * When `nonce` changes, the given text is sent as a user message (search→ask
+   * bridge). `id` (when known) is the seed document's id: if that ask comes back
+   * as a refusal, the chat pivots to that document's related pages instead of
+   * dead-ending.
+   */
+  seed?: { text: string; nonce: number; id?: string };
   /** Pin a specific demo SN site (else the env pin / first discovered). */
   siteOverride?: string;
   /** Opening assistant line (per-page flavor). */
@@ -173,31 +187,63 @@ export function ChatDemo({
   const fallbackRef = useRef(fallback);
   fallbackRef.current = fallback;
 
+  // Rich pivot: when a seeded "Ask about this page" comes back as a refusal
+  // (the page had no answerable body), surface that page's RELATED documents
+  // instead of dead-ending. Reuses the same /search/similar controller the
+  // search panel uses (T485).
+  const [related, setRelated] = useState<{ status: SimilarStatus; results: TurSimilarResult[] }>({
+    status: "idle",
+    results: [],
+  });
+  const similarRef = useRef<SimilarController | null>(null);
+  const seedIdRef = useRef<string | null>(null);
+  // Dedupe the pivot per seed nonce so it fires once per seeded ask.
+  const pivotRef = useRef<{ nonce: number; done: boolean } | null>(null);
+
   // Live mode: drive the widget from the SDK chat controller. Re-runs once the
   // site resolves (pinned or auto-discovered) so the controller binds to it.
   useEffect(() => {
     if (!client || !site) return;
     const c = createChatController(client, { site, personaId: personaId ?? undefined });
     controllerRef.current = c;
+
+    const similar = createSimilarController(client, site, { rows: 5, locale: "en_US" });
+    similarRef.current = similar;
+    const unsubSimilar = similar.subscribe((s) =>
+      setRelated({ status: s.status, results: s.results })
+    );
+
     const unsub = c.subscribe((s) => {
+      const loading = s.status === "loading";
       const mapped: DemoMsg[] = s.messages.map((m) => ({
         role: m.role === "user" ? "user" : "assistant",
         content: m.content,
         sources: m.sources,
       }));
-      setConvo(
-        withScriptedFallback(
-          mapped,
-          s.status === "loading",
-          scriptRef.current,
-          fallbackRef.current,
-        )
-      );
-      setBusy(s.status === "loading");
+      // Rich pivot: a seeded page ask that came back as a refusal → load that
+      // page's related docs (once per seed nonce). Detect on the RAW message
+      // (before withScriptedFallback rewrites it to the generic fallback).
+      const last = mapped[mapped.length - 1];
+      if (
+        !loading &&
+        last?.role === "assistant" &&
+        REFUSAL_RE.test(last.content) &&
+        seedIdRef.current &&
+        pivotRef.current &&
+        !pivotRef.current.done
+      ) {
+        pivotRef.current.done = true;
+        setRelated({ status: "loading", results: [] });
+        void similarRef.current?.load(seedIdRef.current);
+      }
+      setConvo(withScriptedFallback(mapped, loading, scriptRef.current, fallbackRef.current));
+      setBusy(loading);
     });
     return () => {
       controllerRef.current = null;
+      similarRef.current = null;
       if (typeof unsub === "function") unsub();
+      if (typeof unsubSimilar === "function") unsubSimilar();
     };
   }, [client, site, personaId]);
 
@@ -235,10 +281,19 @@ export function ChatDemo({
     }, 60);
   }
 
-  function send(text: string) {
+  function send(text: string, seeded = false) {
     const t = text.trim();
     if (!t || busyRef.current) return;
     setInput("");
+    // An organic (typed) question is a fresh topic — drop any armed/loaded pivot
+    // so the previous page's related list doesn't linger. The seeded path arms
+    // its own pivot just before calling this, so it opts out of the reset.
+    if (!seeded) {
+      seedIdRef.current = null;
+      pivotRef.current = null;
+      similarRef.current?.clear();
+      setRelated({ status: "idle", results: [] });
+    }
     if (controllerRef.current) {
       void controllerRef.current.send(t);
     } else {
@@ -250,7 +305,14 @@ export function ChatDemo({
   useEffect(() => {
     if (!seed || seed.nonce === seedNonce.current) return;
     seedNonce.current = seed.nonce;
-    send(seed.text);
+    // Arm the rich pivot for this seeded ask: remember the seed page id and
+    // clear any prior related list. If the ask refuses, the subscribe handler
+    // loads this id's related docs.
+    seedIdRef.current = seed.id ?? null;
+    pivotRef.current = { nonce: seed.nonce, done: false };
+    similarRef.current?.clear();
+    setRelated({ status: "idle", results: [] });
+    send(seed.text, true);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [seed?.nonce]);
 
@@ -327,6 +389,40 @@ export function ChatDemo({
             pending={m.role === "assistant" && m.content.length === 0 && busy}
           />
         ))}
+        {/* Rich pivot — a seeded page ask that refused surfaces the page's
+            related docs here (reusing /search/similar), so it never dead-ends. */}
+        {related.status === "loading" && (
+          <div className="flex justify-start">
+            <div className="rounded-2xl bg-muted px-3.5 py-2 text-xs text-muted-foreground">
+              Finding related pages…
+            </div>
+          </div>
+        )}
+        {related.results.length > 0 && (
+          <div className="flex justify-start">
+            <div className="max-w-[85%] rounded-2xl border border-primary/20 bg-primary/5 px-3.5 py-2.5">
+              <div className="mb-1.5 inline-flex items-center gap-1.5 text-xs font-semibold text-primary">
+                <Sparkles className="size-3.5" />
+                Related pages
+              </div>
+              <ul className="flex flex-col gap-1">
+                {related.results.map((r) => (
+                  <li key={r.id}>
+                    <a
+                      href={r.url || undefined}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="flex items-center gap-2 rounded px-1.5 py-1 text-sm text-foreground hover:bg-muted"
+                    >
+                      <Sparkles className="size-3 shrink-0 text-primary/60" />
+                      <span className="truncate">{r.title}</span>
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
+        )}
         {busy && convo[convo.length - 1]?.role !== "assistant" && (
           <div className="flex justify-start">
             <div className="rounded-2xl bg-muted px-3.5 py-2.5">
