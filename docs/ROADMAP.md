@@ -157,9 +157,9 @@
 
 **Phase 2 — the study model — ✅ shipped (T719 study aggregate + CRUD/API, T720 interview engine, T721 N-persona runner + SSE; see CHANGELOG Block AW).**
 
-**Phase 3 — synthesis & sufficiency:**
-- 📋 **T722** (deps: T721) **Insights report — themes + verbatim quotes + recommendations** — synthesize transcripts through `TurLlmSummaryService` (cached, regenerable) into an executive summary, ranked themes with **verbatim participant quotes** (traceable to the interview + persona), and recommendations; bidirectional lenses (*by theme* / *by persona*). **UI:** none of its own — the report renderer + lens toggle + regenerate button ship in T730. → §XLVI.3
-- 📋 **T723** (deps: T721) **Saturation scoring (deterministic, CI-free)** — a pure novelty scorer (embedding/keyword theme-overlap, T385/T466 pattern — no LLM in CI) that flags when marginal personas stop adding new themes → "sample adequate at N", the honest antidote to fabricated-confidence synthetic research. **UI:** the saturation gauge/curve is part of the studio (T730). → §XLVI.3
+**Phase 3 — synthesis & sufficiency — ✅ shipped (T722 insights report, T723 saturation scoring; see CHANGELOG Block AW). 💭 T724 (theme/affinity graph) remains.**
+- ✅ **T722** (deps: T721) **Insights report — themes + verbatim quotes + recommendations** — synthesize transcripts through `TurLlmSummaryService` (cached, regenerable) into an executive summary, ranked themes with **verbatim participant quotes** (traceable to the interview + persona), and recommendations; bidirectional lenses (*by theme* / *by persona*). **UI:** none of its own — the report renderer + lens toggle + regenerate button ship in T730. → §XLVI.3
+- ✅ **T723** (deps: T721) **Saturation scoring (deterministic, CI-free)** — a pure novelty scorer (embedding/keyword theme-overlap, T385/T466 pattern — no LLM in CI) that flags when marginal personas stop adding new themes → "sample adequate at N", the honest antidote to fabricated-confidence synthetic research. **UI:** the saturation gauge/curve is part of the studio (T730). → §XLVI.3
 - 💭 **T724** (deps: T722) **Theme / affinity knowledge graph** — a concept↔problem↔persona graph over the synthesized themes (which cohorts cluster on which pain point). **UI:** interactive graph view in the studio, rendered with the existing viz stack. → §XLVI.3
 
 **Phase 4 — interconnection (the value multiplier over synth.users):**

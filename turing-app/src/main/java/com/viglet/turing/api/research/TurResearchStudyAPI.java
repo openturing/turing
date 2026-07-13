@@ -26,11 +26,14 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.viglet.turing.api.exception.TurNotFoundException;
 import com.viglet.turing.genai.research.TurResearchEventBus;
+import com.viglet.turing.genai.research.TurResearchInsightsService;
 import com.viglet.turing.genai.research.TurResearchRunEvent;
 import com.viglet.turing.genai.research.TurResearchRunResultDto;
 import com.viglet.turing.genai.research.TurResearchRunnerService;
 import com.viglet.turing.genai.research.TurResearchStudyService;
 import com.viglet.turing.genai.research.dto.TurResearchInterviewDto;
+import com.viglet.turing.genai.research.dto.TurResearchReportDto;
+import com.viglet.turing.genai.research.dto.TurResearchSaturationResultDto;
 import com.viglet.turing.genai.research.dto.TurResearchStudyDto;
 import com.viglet.turing.genai.research.dto.TurResearchStudyPersonaRefDto;
 import com.viglet.turing.tenant.TurTenantContext;
@@ -62,15 +65,18 @@ public class TurResearchStudyAPI {
 
     private final TurResearchStudyService service;
     private final TurResearchRunnerService runnerService;
+    private final TurResearchInsightsService insightsService;
     private final TurResearchEventBus eventBus;
     private final TurTenantContext tenantContext;
 
     public TurResearchStudyAPI(TurResearchStudyService service,
             TurResearchRunnerService runnerService,
+            TurResearchInsightsService insightsService,
             TurResearchEventBus eventBus,
             TurTenantContext tenantContext) {
         this.service = service;
         this.runnerService = runnerService;
+        this.insightsService = insightsService;
         this.eventBus = eventBus;
         this.tenantContext = tenantContext;
     }
@@ -130,6 +136,29 @@ public class TurResearchStudyAPI {
     @GetMapping("/{id}/interviews")
     public List<TurResearchInterviewDto> interviews(@PathVariable String id) {
         return service.interviews(id);
+    }
+
+    // ---- synthesis & sufficiency (Phase 3) ---------------------------------
+
+    @Operation(summary = "Synthesized insights report — themes, verbatim quotes, "
+            + "recommendations (cached, regenerable) with by-theme / by-persona lenses")
+    @GetMapping("/{id}/insights")
+    public TurResearchReportDto insights(@PathVariable String id,
+            @RequestParam(defaultValue = "false") boolean regenerate) {
+        if (service.get(id).isEmpty()) {
+            throw TurNotFoundException.of("Research study", id);
+        }
+        return insightsService.report(id, regenerate);
+    }
+
+    @Operation(summary = "Deterministic saturation scoring (LLM-free) — when marginal "
+            + "personas stop adding new themes")
+    @GetMapping("/{id}/saturation")
+    public TurResearchSaturationResultDto saturation(@PathVariable String id) {
+        if (service.get(id).isEmpty()) {
+            throw TurNotFoundException.of("Research study", id);
+        }
+        return insightsService.saturation(id);
     }
 
     // ---- run ---------------------------------------------------------------
