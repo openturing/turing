@@ -155,10 +155,7 @@
 
 **Phase 1 — persona depth — ✅ shipped (T717 OCEAN facet, T718 RAG grounding; see CHANGELOG Block AW).**
 
-**Phase 2 — the study model (the new first-class concept):**
-- 📋 **T719** (deps: T717) **Research Study aggregate + persistence + CRUD/API** — `TurResearchStudy` (goal, hypothesis, audience = ordered persona roster via the shared `PersonaSelectGrid`, protocol, `@TenantId`) owning `TurResearchInterview` (per-persona transcript) — mirrors the Persona Match project model; `/api/research-study` CRUD + Liquibase + IT. **UI:** none of its own — surfaced by the studio (T730). → §XLVI.2
-- 📋 **T720** (deps: T719) **Interview protocols + adaptive interviewer engine** — `DYNAMIC_SCRIPT` (goal-driven adaptive follow-ups), `CUSTOM_SCRIPT` (fixed question list), `CONCEPT_TEST` (react to a proposed concept/message). An interviewer sub-loop asks the next question and each synthetic user answers via the T578 persona-chat executor (persona fused, grounded per T718). **UI:** none (protocol editor lives in T730). → §XLVI.2
-- 📋 **T721** (deps: T720) **Study runner: N-persona parallel interviews + live SSE** — bounded-parallel, tenant-safe (each worker `TurTenantContext.runAs`, DB writes on caller thread — the Persona Match runner pattern), `run`/`run/stream` SSE with per-interview + per-turn events; content-hash skip for re-runs. **UI:** none (the live feed consuming this SSE ships in T730). → §XLVI.2
+**Phase 2 — the study model — ✅ shipped (T719 study aggregate + CRUD/API, T720 interview engine, T721 N-persona runner + SSE; see CHANGELOG Block AW).**
 
 **Phase 3 — synthesis & sufficiency:**
 - 📋 **T722** (deps: T721) **Insights report — themes + verbatim quotes + recommendations** — synthesize transcripts through `TurLlmSummaryService` (cached, regenerable) into an executive summary, ranked themes with **verbatim participant quotes** (traceable to the interview + persona), and recommendations; bidirectional lenses (*by theme* / *by persona*). **UI:** none of its own — the report renderer + lens toggle + regenerate button ship in T730. → §XLVI.3

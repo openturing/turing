@@ -1,0 +1,206 @@
+databaseChangeLog:
+  # T719 / §XLVI.2 (Block AW) — Synthetic User Research: the study aggregate.
+  #
+  #   ai_research_study          — aggregate root (goal/hypothesis/protocol),
+  #                                carries @TenantId + llmInstanceId + lastRunAt.
+  #   ai_research_study_persona  — study↔persona ordered audience roster; persona_id
+  #                                is a SOFT ref to ai_persona (resolved at read);
+  #                                FK -> ai_research_study.
+  #   ai_research_interview      — one per-persona interview transcript; unique on
+  #                                (study_id, persona_id); content-hash keyed for
+  #                                re-run skip; FK -> ai_research_study.
+  #
+  # Column names match the JPA field names (camelCase); FK/child columns snake_case
+  # like the sibling persona-match children. Portable lowercase types; longtext for
+  # @Lob. Idempotent (MARK_RAN).
+
+  - changeSet:
+      id: v2026.3.1.105-create-ai_research_study
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - tableExists:
+                tableName: ai_research_study
+      changes:
+        - createTable:
+            tableName: ai_research_study
+            columns:
+              - column:
+                  name: id
+                  type: varchar(40)
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: name
+                  type: varchar(200)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: goal
+                  type: longtext
+              - column:
+                  name: hypothesis
+                  type: longtext
+              - column:
+                  name: description
+                  type: varchar(2000)
+              - column:
+                  name: enabled
+                  type: boolean
+                  defaultValueBoolean: true
+                  constraints:
+                    nullable: false
+              - column:
+                  name: protocol
+                  type: varchar(16)
+                  defaultValue: DYNAMIC_SCRIPT
+                  constraints:
+                    nullable: false
+              - column:
+                  name: concept_text
+                  type: longtext
+              - column:
+                  name: questions_json
+                  type: longtext
+              - column:
+                  name: max_questions
+                  type: int
+                  defaultValueNumeric: 6
+                  constraints:
+                    nullable: false
+              - column:
+                  name: llmInstanceId
+                  type: varchar(40)
+              - column:
+                  name: last_run_at
+                  type: timestamp
+              - column:
+                  name: tenantId
+                  type: varchar(40)
+              - column:
+                  name: creationDate
+                  type: timestamp
+              - column:
+                  name: modificationDate
+                  type: timestamp
+
+  - changeSet:
+      id: v2026.3.1.105-create-ai_research_study_persona
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - tableExists:
+                tableName: ai_research_study_persona
+      changes:
+        - createTable:
+            tableName: ai_research_study_persona
+            columns:
+              - column:
+                  name: id
+                  type: varchar(40)
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: persona_id
+                  type: varchar(40)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: position
+                  type: int
+                  defaultValueNumeric: 0
+                  constraints:
+                    nullable: false
+              - column:
+                  name: tenantId
+                  type: varchar(40)
+              - column:
+                  name: study_id
+                  type: varchar(40)
+                  constraints:
+                    nullable: false
+                    foreignKeyName: fk_research_study_persona_study
+                    references: ai_research_study(id)
+                    deleteCascade: true
+        - createIndex:
+            tableName: ai_research_study_persona
+            indexName: idx_research_study_persona_study
+            columns:
+              - column:
+                  name: study_id
+
+  - changeSet:
+      id: v2026.3.1.105-create-ai_research_interview
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - tableExists:
+                tableName: ai_research_interview
+      changes:
+        - createTable:
+            tableName: ai_research_interview
+            columns:
+              - column:
+                  name: id
+                  type: varchar(40)
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: persona_id
+                  type: varchar(40)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: status
+                  type: varchar(16)
+                  defaultValue: PENDING
+                  constraints:
+                    nullable: false
+              - column:
+                  name: transcript_json
+                  type: longtext
+              - column:
+                  name: turn_count
+                  type: int
+                  defaultValueNumeric: 0
+                  constraints:
+                    nullable: false
+              - column:
+                  name: content_hash
+                  type: varchar(40)
+              - column:
+                  name: error
+                  type: varchar(500)
+              - column:
+                  name: started_at
+                  type: timestamp
+              - column:
+                  name: completed_at
+                  type: timestamp
+              - column:
+                  name: tenantId
+                  type: varchar(40)
+              - column:
+                  name: study_id
+                  type: varchar(40)
+                  constraints:
+                    nullable: false
+                    foreignKeyName: fk_research_interview_study
+                    references: ai_research_study(id)
+                    deleteCascade: true
+        - addUniqueConstraint:
+            tableName: ai_research_interview
+            constraintName: uk_research_interview
+            columnNames: study_id, persona_id
+        - createIndex:
+            tableName: ai_research_interview
+            indexName: idx_research_interview_study
+            columns:
+              - column:
+                  name: study_id

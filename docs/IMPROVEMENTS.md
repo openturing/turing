@@ -2419,20 +2419,7 @@ the studio are thin compositions over shipped code — which is why the block ca
 large without being risky, and why the two interconnection bets (§XLVI.4) are where
 the actual product differentiation lives.
 
-### XLVI.2 Phase 2 — the study model
-
-`TurResearchStudy` is a new aggregate that deliberately mirrors the Persona Match
-project (Block AT): goal + hypothesis + an ordered persona roster (the shared
-`PersonaSelectGrid`) + a protocol, owning per-persona `TurResearchInterview`
-transcripts, tenant-scoped (T719). The three **protocols** (T720) map to
-synth.users' three interview types — `DYNAMIC_SCRIPT` (a goal-driven interviewer
-sub-loop that asks adaptive follow-ups), `CUSTOM_SCRIPT` (a fixed question list),
-`CONCEPT_TEST` (react to a proposed concept/message). Each answer is produced by the
-**T578 persona-chat executor unchanged** — the persona is fused, tools are the
-generic set, and grounding comes from T718. The runner (T721) is the Persona Match
-runner pattern verbatim: bounded-parallel, each worker `TurTenantContext.runAs` the
-captured tenant, DB writes only on the caller thread, `run`/`run/stream` SSE, and a
-content-hash skip so a re-run only re-interviews what changed.
+### XLVI.2 Phase 2 — the study model — ✅ shipped (see CHANGELOG Block AW: T719–T721)
 
 ### XLVI.3 Phase 3 — synthesis & sufficiency
 
