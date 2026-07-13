@@ -1,3 +1,47 @@
+## 2026.2
+
+#### NEW FEATURES
+* Chat Flow Visual Builder (drag-and-drop conversational flows)
+* Agent-centric chat with default agent
+* AI Mode chat
+* Query DSL API with Solr and Elasticsearch executors
+* DSL aggregations, collapse, suggest, rescore and kNN
+* ANN / vector search UI and API
+* RAG reindexing with filters, parallel reindex and smoothed ETA
+* Lucene vector store provider
+* Lucene autocomplete, highlighter, sort and numeric doc values
+* Marketplace (API + UI) with connector and sample apps
+* Customizable dashboard with draggable widgets
+* Git server (JGit HTTP backend) and Git repository browser
+* Collection import/export (JSONL/ZIP)
+* OAuth2 social login (Google, Microsoft, GitHub)
+* User self-registration
+* SN SPA templates served from storage (`searchTemplate`, SPA manifest, `includeTemplate` export)
+* URL-synced search store with composable hooks and grouped search
+* `TuringSearchField` and search history hook
+* Site icons and result-card thumbnails
+* Additional custom facet operators
+* Redis logging support and configurable engine
+* Property-based Solr mode (`turing.solr.enabled` / `turing.solr.endpoint`)
+* React SDK Storybook and documentation
+* Turing bootloader UI with animated molecule logo
+* Koyeb deploy configuration and GitHub Pages workflow
+
+#### IMPROVEMENTS
+* Migrated frontend to pnpm + Turborepo monorepo
+* Hazelcast-backed distributed cache (`hazelcast-spring`)
+* Refactored LLM/Store provider forms and options
+* Improved RAG GenAI flows, logging and AI UX
+* Upgraded Viglet Design System
+* Dependency upgrades (Vite, React Router, Jedis 7, ESLint)
+
+#### FIXES
+* CORS wildcard origin handling now uses `allowedOriginPatterns`
+* OAuth2 `ClientRegistrationRepository` bean made optional
+* Setup flow handles missing admin user on fresh deploy
+* Upgraded Storybook and Vite to patch security vulnerabilities
+* Fixed Koyeb build (multi-stage Dockerfile, `git-commit-id` plugin)
+
 ## 2026.1
 
 #### BREAKING CHANGES
