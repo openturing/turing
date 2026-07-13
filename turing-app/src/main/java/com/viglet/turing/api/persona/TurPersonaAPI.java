@@ -246,6 +246,11 @@ public class TurPersonaAPI {
         to.setExtraversion(from.getExtraversion());
         to.setAgreeableness(from.getAgreeableness());
         to.setNeuroticism(from.getNeuroticism());
+        // T718 / §XLVI.1 — knowledge binding. Default NONE when the client omits it.
+        to.setGroundingSource(from.getGroundingSource() == null
+                ? com.viglet.turing.persistence.model.persona.TurPersonaGroundingSource.NONE
+                : from.getGroundingSource());
+        to.setGroundingSnSite(from.getGroundingSnSite());
         // Block AA / §XXVI.1 — audience facet. Default SPEAKER when the client
         // omits the discriminator so legacy persona forms stay unchanged.
         to.setPersonaKind(from.getPersonaKind() == null

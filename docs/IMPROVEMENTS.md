@@ -2419,17 +2419,6 @@ the studio are thin compositions over shipped code — which is why the block ca
 large without being risky, and why the two interconnection bets (§XLVI.4) are where
 the actual product differentiation lives.
 
-### XLVI.1 Phase 1 — persona depth
-
-A cohort is only useful if its members answer *differently*. Two additions make a
-persona a believable participant rather than a single reskinned voice:
-
-- **T718 — RAG-grounded persona.** Bind a persona to an SN site or a Block AA
-  notebook source set so interview answers are grounded in proprietary content
-  through the existing retrieval + grounding contract, not the base model's priors.
-  This is the honest version of synth.users' "upload proprietary content" — it
-  reuses the grounding hard-fail (T385) instead of stuffing context and hoping.
-
 ### XLVI.2 Phase 2 — the study model
 
 `TurResearchStudy` is a new aggregate that deliberately mirrors the Persona Match

@@ -1599,6 +1599,16 @@
         "neuroticismLow": "Calmo",
         "neuroticismHigh": "Ansioso"
       },
+      "grounding": "Ancoragem de Conhecimento",
+      "groundingDesc": "Ancore as respostas desta persona em conteúdo proprietário em vez do conhecimento geral do modelo.",
+      "groundingSource": "Fonte de conhecimento",
+      "groundingSources": {
+        "NONE": "Nenhuma (conhecimento do próprio modelo)",
+        "NOTEBOOK": "Caderno desta persona",
+        "SN_SITE": "Um site de Navegação Semântica"
+      },
+      "groundingSnSite": "Site de Navegação Semântica",
+      "groundingSnSitePlaceholder": "Selecione um site",
       "vocabulary": "Vocabulário",
       "vocabularyDesc": "Termos que a persona deve incluir ou nunca usar. Um termo por linha.",
       "mandatoryTerms": "Termos Obrigatórios",

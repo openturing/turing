@@ -19,10 +19,13 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { Slider } from "@/components/ui/slider"
+import { useSnSites } from "@/api/queries/sn-site.queries"
 import { useSubPageBreadcrumb } from "@/hooks/use-sub-page-breadcrumb"
-import { IconMoodSmile, IconPalette } from "@tabler/icons-react"
+import { IconDatabaseSearch, IconMoodSmile, IconPalette } from "@tabler/icons-react"
 import { useTranslation } from "react-i18next"
 import { useOutletContext } from "react-router-dom"
+
+const GROUNDING_SOURCES = ["NONE", "NOTEBOOK", "SN_SITE"] as const
 
 const NONE_VALUE = "__none__"
 const TONES = ["FORMAL", "CASUAL", "TECHNICAL", "EXECUTIVE"] as const
@@ -178,7 +181,98 @@ export default function PersonaInstanceStyleSection() {
       </SectionCard>
 
       <PersonalitySection />
+      <GroundingSection />
     </div>
+  )
+}
+
+/**
+ * T718 / §XLVI.1 — knowledge grounding. Binds the persona to a knowledge source so
+ * its answers come from proprietary content (a Semantic Navigation site's indexed
+ * corpus, or this persona's own notebook) instead of the model's priors. `NONE`
+ * (default) keeps the persona ungrounded. The SN-site option surfaces a site picker
+ * populated from the real site catalog.
+ */
+function GroundingSection() {
+  const { t } = useTranslation()
+  const { form } = useOutletContext<PersonaFormContext>()
+  const { data: sites } = useSnSites()
+
+  const source = form.watch("groundingSource") ?? "NONE"
+
+  return (
+    <SectionCard variant="emerald">
+      <SectionCard.Header
+        icon={IconDatabaseSearch}
+        title={t("forms.persona.grounding")}
+        description={t("forms.persona.groundingDesc")}
+      />
+      <SectionCard.Content>
+        <FormField
+          control={form.control}
+          name="groundingSource"
+          render={({ field }) => (
+            <FormItem className="w-full">
+              <FormLabel>{t("forms.persona.groundingSource")}</FormLabel>
+              <FormControl>
+                <Select
+                  value={field.value ?? "NONE"}
+                  onValueChange={(v) => field.onChange(v)}
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {GROUNDING_SOURCES.map((s) => (
+                      <SelectItem key={s} value={s}>
+                        {t(`forms.persona.groundingSources.${s}`)}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </FormControl>
+            </FormItem>
+          )}
+        />
+
+        {source === "SN_SITE" && (
+          <FormField
+            control={form.control}
+            name="groundingSnSite"
+            render={({ field }) => (
+              <FormItem className="w-full">
+                <FormLabel>{t("forms.persona.groundingSnSite")}</FormLabel>
+                <FormControl>
+                  <Select
+                    value={field.value ?? NONE_VALUE}
+                    onValueChange={(v) =>
+                      field.onChange(v === NONE_VALUE ? null : v)
+                    }
+                  >
+                    <SelectTrigger className="w-full">
+                      <SelectValue
+                        placeholder={t("forms.persona.groundingSnSitePlaceholder")}
+                      />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value={NONE_VALUE}>
+                        {t("forms.persona.groundingSnSitePlaceholder")}
+                      </SelectItem>
+                      {(sites ?? []).map((site) => (
+                        <SelectItem key={site.id} value={site.name}>
+                          {site.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        )}
+      </SectionCard.Content>
+    </SectionCard>
   )
 }
 

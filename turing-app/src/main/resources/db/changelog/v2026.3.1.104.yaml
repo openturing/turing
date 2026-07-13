@@ -1,0 +1,43 @@
+databaseChangeLog:
+  # T718 / §XLVI.1 — opt-in persona knowledge binding on ai_persona.
+  # grounding_source (NONE|SN_SITE|NOTEBOOK, default NONE = today's behavior) plus
+  # grounding_sn_site (the bound SN site name, only for SN_SITE). Idempotent: each
+  # addColumn is gated by columnExists not present so re-running on a reused H2 file
+  # is safe.
+
+  - changeSet:
+      id: v2026.3.1.104-add-ai_persona-grounding_source
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - columnExists:
+                tableName: ai_persona
+                columnName: grounding_source
+      changes:
+        - addColumn:
+            tableName: ai_persona
+            columns:
+              - column:
+                  name: grounding_source
+                  type: varchar(16)
+                  defaultValue: NONE
+                  constraints:
+                    nullable: false
+
+  - changeSet:
+      id: v2026.3.1.104-add-ai_persona-grounding_sn_site
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - columnExists:
+                tableName: ai_persona
+                columnName: grounding_sn_site
+      changes:
+        - addColumn:
+            tableName: ai_persona
+            columns:
+              - column:
+                  name: grounding_sn_site
+                  type: varchar(255)

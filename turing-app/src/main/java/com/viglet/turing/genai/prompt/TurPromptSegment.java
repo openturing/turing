@@ -53,6 +53,8 @@ public record TurPromptSegment(
 
     public static final String ORIGIN_PERSONA = "PERSONA";
     public static final String ORIGIN_FEW_SHOT = "FEW_SHOT";
+    /** T718 — persona grounded-knowledge block (retrieved proprietary content). */
+    public static final String ORIGIN_GROUNDING = "GROUNDING";
     public static final String ORIGIN_AGENT = "AGENT";
     public static final String ORIGIN_MCP = "MCP";
     public static final String ORIGIN_CAPABILITY = "CAPABILITY";

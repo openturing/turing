@@ -154,6 +154,21 @@ public class TurPersona implements Serializable {
     @Column
     private Integer neuroticism;
 
+    /**
+     * T718 / §XLVI.1 — opt-in knowledge binding. When not {@link
+     * TurPersonaGroundingSource#NONE}, the persona's answers are grounded in
+     * retrieved proprietary content (an SN site's corpus, or this persona's Block
+     * AA notebook) instead of the model's priors. Default {@code NONE} keeps every
+     * existing persona byte-for-byte unchanged.
+     */
+    @Enumerated(EnumType.STRING)
+    @Column(name = "grounding_source", length = 16, nullable = false)
+    private TurPersonaGroundingSource groundingSource = TurPersonaGroundingSource.NONE;
+
+    /** The bound Semantic Navigation site name — used only when {@link #groundingSource} is {@code SN_SITE}. */
+    @Column(name = "grounding_sn_site", length = 255)
+    private String groundingSnSite;
+
     @ManyToOne
     @JoinColumn(name = "few_shot_store_id")
     private TurStoreInstance fewShotStore;

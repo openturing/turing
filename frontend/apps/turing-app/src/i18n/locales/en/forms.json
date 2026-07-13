@@ -1599,6 +1599,16 @@
         "neuroticismLow": "Calm",
         "neuroticismHigh": "Anxious"
       },
+      "grounding": "Knowledge Grounding",
+      "groundingDesc": "Ground this persona's answers in proprietary content instead of the model's general knowledge.",
+      "groundingSource": "Knowledge source",
+      "groundingSources": {
+        "NONE": "None (model's own knowledge)",
+        "NOTEBOOK": "This persona's notebook",
+        "SN_SITE": "A Semantic Navigation site"
+      },
+      "groundingSnSite": "Semantic Navigation site",
+      "groundingSnSitePlaceholder": "Select a site",
       "vocabulary": "Vocabulary",
       "vocabularyDesc": "Terms the persona must include or never use. One term per line.",
       "mandatoryTerms": "Required Terms",

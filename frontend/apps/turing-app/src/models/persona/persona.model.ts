@@ -16,6 +16,13 @@ export type TurPersonaLanguageStyle =
  */
 export type TurPersonaKind = "SPEAKER" | "AUDIENCE" | "BOTH";
 
+/**
+ * T718 / §XLVI.1 — where a persona's answers are grounded. `NONE` (default) =
+ * the model's priors; `SN_SITE` = a Semantic Navigation site's indexed corpus;
+ * `NOTEBOOK` = the persona's own Block AA notebook source set.
+ */
+export type TurPersonaGroundingSource = "NONE" | "SN_SITE" | "NOTEBOOK";
+
 export type TurPersonaReadingLevel =
   | "ELEMENTARY"
   | "MIDDLE"
@@ -78,6 +85,14 @@ export interface TurPersona {
   extraversion?: number | null;
   agreeableness?: number | null;
   neuroticism?: number | null;
+  /**
+   * T718 / §XLVI.1 — opt-in knowledge binding. `NONE` (default) keeps legacy
+   * behavior; `SN_SITE` grounds on `groundingSnSite`; `NOTEBOOK` grounds on the
+   * persona's own notebook source set.
+   */
+  groundingSource?: TurPersonaGroundingSource;
+  /** The bound SN site name — used only when `groundingSource` is `SN_SITE`. */
+  groundingSnSite?: string | null;
   fewShotStore?: TurStoreInstance | null;
   brandContextMcpServer?: TurMcpServer | null;
   /** Block AA — defaults to SPEAKER for legacy voice personas. */

@@ -153,8 +153,7 @@
 > persona surface (T717); the programmatic/developer surface for running studies is
 > a **CLI** concern (T734), consistent with `turing eval`.
 
-**Phase 1 — persona depth (make a persona a believable, grounded participant):**
-- 📋 **T718** (deps: —) **RAG-grounded persona (knowledge binding)** — bind a persona to a knowledge source (an SN site or a Block AA notebook source set) so interview answers are grounded in proprietary content via the existing RAG/SN retrieval + T385 grounding contract, not the model's priors. Reuses `personaKind=AUDIENCE`'s notebook (T465) as the grounding corpus. **UI:** knowledge-source picker on the persona bento form (reuse `SnDocumentPicker` + the Block AA notebook source list). **SDK:** none — grounding is server-side; an embedded persona chat benefits transparently. → §XLVI.1
+**Phase 1 — persona depth — ✅ shipped (T717 OCEAN facet, T718 RAG grounding; see CHANGELOG Block AW).**
 
 **Phase 2 — the study model (the new first-class concept):**
 - 📋 **T719** (deps: T717) **Research Study aggregate + persistence + CRUD/API** — `TurResearchStudy` (goal, hypothesis, audience = ordered persona roster via the shared `PersonaSelectGrid`, protocol, `@TenantId`) owning `TurResearchInterview` (per-persona transcript) — mirrors the Persona Match project model; `/api/research-study` CRUD + Liquibase + IT. **UI:** none of its own — surfaced by the studio (T730). → §XLVI.2

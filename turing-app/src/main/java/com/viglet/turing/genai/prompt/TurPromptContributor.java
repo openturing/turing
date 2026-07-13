@@ -35,6 +35,8 @@ public interface TurPromptContributor {
 
     /** Persona head (static block + few-shot) — wraps the body. */
     int ORDER_PERSONA = 100;
+    /** T718 — persona grounded-knowledge block — right after the persona head. */
+    int ORDER_GROUNDING = 150;
     /** Agent base / RAG-override system prompt — first body segment. */
     int ORDER_AGENT_BASE = 200;
     /** MCP server instructions. */
