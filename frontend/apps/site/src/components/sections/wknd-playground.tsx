@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { MessageSquare, Search, Sparkles } from "lucide-react";
+import { MessageSquare, Search } from "lucide-react";
 import { SearchDemo } from "@/components/sections/search-demo";
 import { ChatDemo, type ChatScriptEntry } from "@/components/sections/chat-demo";
 import { useTuringDemo } from "@/lib/turing-demo";
@@ -160,13 +160,9 @@ export function WkndPlayground() {
         </div>
       </div>
 
-      {/* footer note */}
-      <div className="flex items-center justify-between border-t border-border px-4 py-2.5 text-xs text-muted-foreground">
-        <span>Adobe WKND content · indexed from AEM via the Dumont connector</span>
-        <span className="inline-flex items-center gap-1">
-          <Sparkles className="size-3.5 text-primary" />
-          Built with @viglet/turing-sdk
-        </span>
+      {/* provenance note — the inner demo already shows "Built with …" */}
+      <div className="border-t border-border px-4 py-2.5 text-xs text-muted-foreground">
+        Adobe WKND content · indexed from AEM via the Dumont connector
       </div>
     </div>
   );

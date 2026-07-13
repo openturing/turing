@@ -80,6 +80,8 @@
   }
   html {
     scroll-behavior: smooth;
+    /* Clear the sticky nav (h-16 = 4rem) so anchored sections aren't hidden. */
+    scroll-padding-top: 4.5rem;
   }
   body {
     @apply bg-background text-foreground;

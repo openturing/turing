@@ -1,10 +1,18 @@
 import {
   Bot,
   Boxes,
+  Clock,
+  EyeOff,
+  Globe,
+  KeyRound,
+  Lock,
+  MessageSquare,
   Search,
+  Server,
   ServerCog,
   ShieldCheck,
   Sparkles,
+  TrendingDown,
   Workflow,
   type LucideIcon,
 } from "lucide-react";
@@ -311,11 +319,25 @@ export const RESOURCES: LinkCard[] = [
     tag: "npm",
   },
   {
+    title: "@viglet/turing-sdk",
+    description:
+      "Vanilla JS, zero-dependency SDK — framework-agnostic client + observable controllers for search, chat and autocomplete. Works in Adobe EDS blocks, a plain <script>, or any bundler.",
+    href: "https://www.npmjs.com/package/@viglet/turing-sdk",
+    tag: "Vanilla JS",
+  },
+  {
     title: "@viglet/turing-cli",
     description:
       "Zero-dependency developer CLI: scaffold a project, run a local stack, deploy agents/flows/tools/skills, and run YAML eval suites.",
     href: "https://www.npmjs.com/package/@viglet/turing-cli",
     tag: "CLI",
+  },
+  {
+    title: "@viglet/turing-flow-dsl",
+    description:
+      "TypeScript DSL for chat flows — author flows as typed source and transpile to the editor's JSON wire format, catching enum typos (tone, guardrail, trigger) at compile time.",
+    href: "https://www.npmjs.com/package/@viglet/turing-flow-dsl",
+    tag: "DSL",
   },
   {
     title: "Documentation",
@@ -324,12 +346,137 @@ export const RESOURCES: LinkCard[] = [
     href: "https://docs.viglet.org/turing/",
     tag: "Docs",
   },
+];
+
+/* -------------------------------------------------------------------------- */
+/* Outcomes (sell results, not features) — buyer-facing benefit layer         */
+/* -------------------------------------------------------------------------- */
+
+export interface Outcome {
+  icon: LucideIcon;
+  iconClass: string;
+  /** The outcome (a business result), not the feature. */
+  title: string;
+  /** One line on how the platform delivers it. */
+  body: string;
+}
+
+export const OUTCOMES: Outcome[] = [
   {
-    title: "Source Code",
-    description:
-      "Apache 2.0. Spring Boot 4 backend, React 19 frontend and pluggable AI providers.",
-    href: "https://github.com/openviglet/turing-ce",
-    tag: "GitHub",
+    icon: MessageSquare,
+    iconClass: "from-[#059669] to-[#10b981]",
+    title: "Users get answers, not a list of links",
+    body: "Grounded, cited answers over your own content cut the time from question to answer — and every claim traces back to the exact source passage.",
+  },
+  {
+    icon: TrendingDown,
+    iconClass: "from-[#2563eb] to-[#4f46e5]",
+    title: "Fewer repetitive support tickets",
+    body: "A self-service assistant over your docs and knowledge base deflects the questions your team answers again and again.",
+  },
+  {
+    icon: Clock,
+    iconClass: "from-[#d97706] to-[#f59e0b]",
+    title: "Ship in days, not quarters",
+    body: "Connectors, hybrid search, reranking, agents and SDKs come wired and tested — you configure a product instead of building a RAG stack from scratch.",
+  },
+  {
+    icon: ShieldCheck,
+    iconClass: "from-[#4f46e5] to-[#6366f1]",
+    title: "Answers you can defend",
+    body: "Inline citations, a relevance gate and an optional groundedness check keep a governed brand from shipping confident, wrong answers.",
+  },
+];
+
+/* -------------------------------------------------------------------------- */
+/* Audience split — a clear path for developers vs enterprise buyers          */
+/* -------------------------------------------------------------------------- */
+
+export interface Audience {
+  eyebrow: string;
+  title: string;
+  body: string;
+  points: string[];
+  primary: { label: string; href: string };
+  secondary: { label: string; href: string };
+}
+
+export const AUDIENCES: Audience[] = [
+  {
+    eyebrow: "For developers",
+    title: "Own your search stack — from npx to prod",
+    body: "Open source, self-hosted, and built to drop straight into your app.",
+    points: [
+      "Local stack in one command: npx @viglet/turing-cli init",
+      "React SDK + zero-dependency vanilla-JS SDK (headless)",
+      "Bring your own LLM and search engine",
+      "Self-host with one docker run — no account, no telemetry",
+    ],
+    primary: { label: "Get started", href: "https://docs.viglet.org/turing/" },
+    secondary: { label: "Try it live", href: "/#playground" },
+  },
+  {
+    eyebrow: "For enterprises",
+    title: "Production AI search — on your own infrastructure",
+    body: "The depth and control a regulated, content-heavy organization needs.",
+    points: [
+      "Your content and users' queries never leave your network",
+      "Connect Adobe AEM, WordPress, databases and files",
+      "SSO, encrypted secrets, any LLM (including fully local)",
+      "Cited, auditable answers — not black-box AI",
+    ],
+    primary: { label: "AEM AI Search", href: "/aem-search" },
+    secondary: { label: "Security & data residency", href: "/security" },
+  },
+];
+
+/* -------------------------------------------------------------------------- */
+/* Security & data residency page (/security)                                 */
+/* -------------------------------------------------------------------------- */
+
+export interface SecurityPoint {
+  icon: LucideIcon;
+  iconClass: string;
+  title: string;
+  body: string;
+}
+
+export const SECURITY_POINTS: SecurityPoint[] = [
+  {
+    icon: Server,
+    iconClass: "from-[#1a3a9e] to-[#4169E1]",
+    title: "Your data never leaves your network",
+    body: "Turing is self-hosted. Indexed content, embeddings and query logs live on your own infrastructure — there is no SaaS tier collecting them and no telemetry phoning home.",
+  },
+  {
+    icon: Globe,
+    iconClass: "from-[#059669] to-[#10b981]",
+    title: "Data residency by construction",
+    body: "Because you run it, your data stays in whatever region and account you already control — no data-processing addendum to negotiate, no cross-border transfer to reason about.",
+  },
+  {
+    icon: KeyRound,
+    iconClass: "from-[#4f46e5] to-[#6366f1]",
+    title: "SSO & encrypted secrets",
+    body: "Put the admin console behind your identity provider over OIDC single sign-on (Keycloak-based). Provider API keys and credentials are stored encrypted at rest.",
+  },
+  {
+    icon: EyeOff,
+    iconClass: "from-[#d97706] to-[#f59e0b]",
+    title: "Keep even the LLM in-house",
+    body: "Run fully local models (Ollama) or an OpenAI-compatible endpoint inside your network, so prompts and content never reach a third-party model provider.",
+  },
+  {
+    icon: ShieldCheck,
+    iconClass: "from-[#0ea5e9] to-[#4169E1]",
+    title: "Auditable, open source",
+    body: "Every line is Apache 2.0 — your security team can read exactly what it does, pin a version and build it themselves. No black box to take on faith.",
+  },
+  {
+    icon: Lock,
+    iconClass: "from-[#8b5cf6] to-[#6366f1]",
+    title: "Small attack surface",
+    body: "CSRF protection, a read-only public search/chat surface with every write and admin endpoint behind authentication, and sandboxed (Docker) code execution and skills.",
   },
 ];
 
@@ -968,25 +1115,33 @@ export const AEM_DEPTH: AemDepth[] = [
 export const AEM_CODE = {
   caption: "Drop cited AI search into an AEM page or EDS block",
   lang: "html",
-  code: `<!-- Vanilla, zero-dependency: works in an AEM component or an EDS block -->
+  code: `<!-- Vanilla, zero-dependency: AEM or EDS block -->
 <div id="turing-search"></div>
 <script type="module">
   import {
     createTuringClient,
     createSearchController,
     createChatController,
-  } from "https://your-host/turing-sdk.js";
+  } from "https://esm.sh/@viglet/turing-sdk";
 
-  // Points at YOUR Turing instance — content never leaves your network.
-  const client = createTuringClient({ baseURL: "https://search.acme.com/api" });
+  // Live demo: Adobe's WKND site, indexed from AEM.
+  // Swap baseURL for your own instance — data stays put.
+  const client = createTuringClient({
+    baseURL: "https://turing-demo.viglet.org/api",
+  });
 
-  // Faceted, typo-tolerant search over indexed AEM content…
-  const search = createSearchController(client, { site: "intranet", locale: "en_US" });
-  // …plus a grounded, cited chat answer that streams over SSE.
-  const chat = createChatController(client, { site: "intranet" });
+  // Faceted, typo-tolerant search over WKND content…
+  const search = createSearchController(client, {
+    site: "wknd-publish",
+    locale: "en_US",
+  });
+  // …and a grounded, cited chat answer streamed over SSE.
+  const chat = createChatController(client, {
+    site: "wknd-publish",
+  });
 
-  search.subscribe((state) => render("#turing-search", state));
-  search.query("parental leave policy");
+  search.subscribe((s) => render("#turing-search", s));
+  search.query("surf camps in Bali");
 </script>`,
 } as const;
 
@@ -997,6 +1152,14 @@ export interface AemFaqItem {
 
 /** AEM-specific objection-answering FAQ (emitted as FAQPage JSON-LD too). */
 export const AEM_FAQ: AemFaqItem[] = [
+  {
+    q: "What is AEM search?",
+    a: "AEM search is how visitors and employees find content managed in Adobe Experience Manager — pages, components and DAM assets. Adobe's built-in Query Builder / Omnisearch handles basic keyword lookups; for typo-tolerant, faceted and AI-powered search (semantic results and cited answers) you add a dedicated search layer. Viglet Turing ES indexes your AEM content and serves exactly that, without moving off AEM.",
+  },
+  {
+    q: "How do I add AI search to AEM?",
+    a: "Point the Turing AEM connector at your author or publish instance — it crawls pages and DAM assets (including PDFs) into a search index on Solr, Elasticsearch or embedded Lucene. Then drop the search + cited-chat UI into an AEM component, an Edge Delivery Services (EDS) block or your own SPA with the zero-dependency JavaScript SDK. It works with AEM 6.5 and AEM as a Cloud Service, needs no template changes, and first results come back in minutes — no multi-week engagement.",
+  },
   {
     q: "Do I have to move off AEM?",
     a: "No. Turing sits alongside AEM. Its connector indexes AEM 6.5+ and AEM as a Cloud Service — pages, components and DAM assets — without touching your templates or authoring workflow. AEM stays your content source of truth; Turing adds the AI search and agent layer on top.",

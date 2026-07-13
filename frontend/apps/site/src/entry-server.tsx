@@ -39,10 +39,16 @@ export const routes: PrerenderRoute[] = [
       "An honest comparison of Viglet Turing ES against Algolia, Elasticsearch and a DIY LangChain RAG stack: a deep capability matrix, where each alternative wins, and an objection-answering FAQ. Self-hosted, open source, any LLM.",
   },
   {
-    path: "/aem",
-    title: "AI Search for Adobe Experience Manager (AEM) | Viglet Turing ES",
+    path: "/aem-search",
+    title: "AEM Search with AI — Adobe Experience Manager | Viglet Turing ES",
     description:
-      "Add cited, streaming AI search to Adobe Experience Manager without the lock-in. Turing connects to AEM 6.5 + AEM as a Cloud Service, then goes deeper than an AEM-native add-on: cross-repository search, agents, tools, skills, MCP, any LLM, any search engine — self-hosted, open source (Apache 2.0).",
+      "AEM search, reimagined with AI. Add cited, streaming answers to Adobe Experience Manager (AEM 6.5 + Cloud Service) — semantic + keyword search, agents, MCP, any LLM, self-hosted. Deeper than an AEM-native add-on, with a live demo on Adobe's WKND site.",
+  },
+  {
+    path: "/security",
+    title: "Security & Data Residency — Self-Hosted AI Search | Viglet Turing ES",
+    description:
+      "Your content and users' queries never leave your network. Viglet Turing ES is self-hosted and open source: data residency by construction, SSO, encrypted secrets, any LLM (including fully local), and an auditable Apache 2.0 codebase — instead of trusting a SaaS vendor's compliance badges.",
   },
 ];
 

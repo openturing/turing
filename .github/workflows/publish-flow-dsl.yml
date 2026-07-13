@@ -1,0 +1,50 @@
+name: Publish @viglet/turing-flow-dsl
+
+# Publishes the Viglet Turing ES chat-flow DSL to npm.
+# Bump the version in frontend/packages/flow-dsl/package.json and commit it
+# before dispatching this workflow. The build + tests run as a publish gate; npm
+# itself rejects a version that is already published, so re-dispatching without a
+# version bump is a safe no-op.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v6
+        with:
+          version: 10.33.0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 26.3.1
+          registry-url: "https://registry.npmjs.org"
+          scope: "@viglet"
+          cache: "pnpm"
+          cache-dependency-path: frontend/pnpm-lock.yaml
+
+      - name: Install workspace deps
+        working-directory: frontend
+        run: pnpm install --frozen-lockfile=false
+
+      - name: Build @viglet/turing-flow-dsl
+        working-directory: frontend
+        run: pnpm --filter "@viglet/turing-flow-dsl..." run build
+
+      - name: Test (publish gate)
+        working-directory: frontend/packages/flow-dsl
+        run: pnpm run test
+
+      - name: Publish to npm
+        working-directory: frontend/packages/flow-dsl
+        run: npm publish --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

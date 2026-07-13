@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { ArrowRight, ChevronDown } from "lucide-react";
+import { ArrowRight, ChevronDown, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -8,14 +8,15 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { ModeToggle } from "@/components/mode-toggle";
-import { Container, GitHubIcon, Logo, LINKS } from "@/components/brand";
+import { Container, Logo, LINKS } from "@/components/brand";
 import { cn } from "@/lib/utils";
 
 // Hrefs are root-anchored ("/#…") so they also work from the feature pages —
 // the browser navigates home and scrolls to the section.
 //
 // The bar stays uncluttered: two direct links ("Try it live", "Docs") flank two
-// grouped dropdowns. Everything is still one hover/click away.
+// grouped dropdowns. AEM is deliberately pulled OUT of the Solutions dropdown
+// and rendered as a highlighted top-level pill — it's our headline solution.
 const NAV_LINKS = [
   { label: "Try it live", href: "/#playground" },
   { label: "Docs", href: LINKS.docs },
@@ -34,9 +35,9 @@ const NAV_GROUPS = [
   {
     label: "Solutions",
     items: [
+      { label: "Security & data residency", href: "/security" },
       { label: "Compare", href: "/compare" },
       { label: "Migrate", href: "/migrate" },
-      { label: "AEM", href: "/aem" },
     ],
   },
 ];
@@ -74,6 +75,14 @@ export function SiteNav() {
               {item.label}
             </a>
           ))}
+          {/* Headline solution — pulled out of the dropdown and highlighted. */}
+          <a
+            href="/aem-search"
+            className="inline-flex items-center gap-1.5 rounded-full border border-primary/30 bg-primary/10 px-3 py-1 text-sm font-bold whitespace-nowrap text-primary transition-colors hover:border-primary/50 hover:bg-primary/15"
+          >
+            <Sparkles className="size-3.5" />
+            AEM AI Search
+          </a>
           {NAV_GROUPS.map((group) => (
             <DropdownMenu key={group.label}>
               <DropdownMenuTrigger className="group flex items-center gap-1 text-sm font-semibold whitespace-nowrap text-muted-foreground outline-hidden transition-colors hover:text-foreground data-[state=open]:text-foreground">
@@ -93,12 +102,6 @@ export function SiteNav() {
           ))}
         </nav>
         <div className="ml-auto flex items-center gap-2">
-          <Button asChild variant="outline" size="sm" className="hidden sm:inline-flex">
-            <a href={LINKS.github} target="_blank" rel="noreferrer" title="View on GitHub">
-              <GitHubIcon className="size-4" />
-              GitHub
-            </a>
-          </Button>
           <Button asChild size="sm">
             <a href={LINKS.docs}>
               Get started

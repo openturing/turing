@@ -31,22 +31,58 @@ function Cell({ value, highlight }: Readonly<{ value: string; highlight?: boolea
   return <span className="text-xs font-medium text-muted-foreground">{value}</span>;
 }
 
-/** FAQPage structured data so the AEM objection answers can win rich results. */
-function AemFaqJsonLd() {
-  const json = {
+/**
+ * Structured data (@graph): a BreadcrumbList (Home › AEM Search), a
+ * SoftwareApplication describing the solution, and the FAQPage so the objection
+ * answers can win rich results. All prerendered to static HTML.
+ */
+function AemJsonLd() {
+  const graph = {
     "@context": "https://schema.org",
-    "@type": "FAQPage",
-    mainEntity: AEM_FAQ.map((item) => ({
-      "@type": "Question",
-      name: item.q,
-      acceptedAnswer: { "@type": "Answer", text: item.a },
-    })),
+    "@graph": [
+      {
+        "@type": "BreadcrumbList",
+        itemListElement: [
+          {
+            "@type": "ListItem",
+            position: 1,
+            name: "Viglet Turing ES",
+            item: "https://turing.viglet.org/",
+          },
+          {
+            "@type": "ListItem",
+            position: 2,
+            name: "AEM Search",
+            item: "https://turing.viglet.org/aem-search",
+          },
+        ],
+      },
+      {
+        "@type": "SoftwareApplication",
+        name: "Viglet Turing ES — AEM AI Search",
+        applicationCategory: "BusinessApplication",
+        operatingSystem: "Any (self-hosted, Docker)",
+        url: "https://turing.viglet.org/aem-search",
+        description:
+          "AI search for Adobe Experience Manager: cited, streaming answers plus faceted keyword + semantic search over AEM 6.5 and AEM as a Cloud Service, indexed via the Dumont connector. Self-hosted, open source (Apache 2.0).",
+        offers: { "@type": "Offer", price: "0", priceCurrency: "USD" },
+        license: "https://www.apache.org/licenses/LICENSE-2.0",
+      },
+      {
+        "@type": "FAQPage",
+        mainEntity: AEM_FAQ.map((item) => ({
+          "@type": "Question",
+          name: item.q,
+          acceptedAnswer: { "@type": "Answer", text: item.a },
+        })),
+      },
+    ],
   };
   return (
     <script
       type="application/ld+json"
       // Prerendered to static HTML; this is our own content, not user input.
-      dangerouslySetInnerHTML={{ __html: JSON.stringify(json) }}
+      dangerouslySetInnerHTML={{ __html: JSON.stringify(graph) }}
     />
   );
 }
@@ -63,7 +99,7 @@ function AemFaqJsonLd() {
 export function AemPage() {
   return (
     <div className="flex min-h-screen flex-col">
-      <AemFaqJsonLd />
+      <AemJsonLd />
       <SiteNav />
       <main className="flex-1">
         {/* hero */}
@@ -81,7 +117,7 @@ export function AemPage() {
               Turing for Adobe Experience Manager
             </p>
             <h1 className="mt-3 max-w-3xl text-3xl font-extrabold leading-[1.1] tracking-tight sm:text-4xl lg:text-5xl">
-              AI search for AEM — without the ceiling
+              AEM search, reimagined with AI — without the ceiling
             </h1>
             <p className="mt-5 max-w-2xl text-lg leading-relaxed text-[#aeb7d4]">
               The AEM-native pitch is “Cloud-Service-native.” That's also its
@@ -135,8 +171,8 @@ export function AemPage() {
 
         {/* how it plugs into AEM */}
         <section className="border-t border-border py-16 lg:py-20">
-          <Container className="grid gap-10 lg:grid-cols-[1fr_1fr] lg:items-start">
-            <div>
+          <Container className="grid gap-10 lg:grid-cols-2 lg:items-start">
+            <div className="min-w-0">
               <p className="text-xs font-extrabold tracking-[0.12em] text-primary uppercase">
                 How it plugs in
               </p>
@@ -164,7 +200,7 @@ export function AemPage() {
                 ))}
               </ul>
             </div>
-            <div className="lg:sticky lg:top-24">
+            <div className="min-w-0 lg:sticky lg:top-24">
               <CodeBlock caption={AEM_CODE.caption} code={AEM_CODE.code} />
             </div>
           </Container>

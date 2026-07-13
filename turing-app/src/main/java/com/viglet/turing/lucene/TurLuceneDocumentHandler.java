@@ -32,6 +32,8 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.time.Instant;
+import java.time.format.DateTimeParseException;
 import java.util.*;
 import java.util.stream.IntStream;
 
@@ -259,19 +261,40 @@ public class TurLuceneDocumentHandler {
     }
 
     private void addDateField(Document doc, String key, String strValue) {
-        try {
-            SimpleDateFormat sdf = new SimpleDateFormat(SOLR_DATE_PATTERN);
-            sdf.setTimeZone(TimeZone.getTimeZone("UTC"));
-            long epochMs = sdf.parse(strValue).getTime();
+        Long epochMs = parseDateToEpochMs(strValue);
+        if (epochMs != null) {
             doc.add(new LongPoint(key, epochMs));
             doc.add(new StoredField(key, epochMs));
             doc.add(new NumericDocValuesField(key, epochMs));
-        } catch (ParseException e) {
+        } else {
             log.warn("Cannot parse DATE value '{}' for field '{}'", strValue, key);
             doc.add(new StringField(key, strValue, Field.Store.YES));
         }
         // Use _sf suffix to avoid conflict with NumericDocValuesField on same field name
         addFacetField(doc, key + SORTED_SET_FACET_SUFFIX, strValue);
+    }
+
+    /**
+     * Parses an ISO-8601 date into epoch milliseconds, tolerating optional fractional
+     * seconds (e.g. {@code 2020-07-09T15:56:36.000Z}) which AEM and other sources emit but
+     * the strict Solr pattern ({@link TurLuceneConstants#SOLR_DATE_PATTERN}) does not accept.
+     *
+     * @return epoch millis, or {@code null} if the value cannot be parsed.
+     */
+    private Long parseDateToEpochMs(String strValue) {
+        // Fast path: ISO-8601 instant handles both with/without fractional seconds ('...Z').
+        try {
+            return Instant.parse(strValue).toEpochMilli();
+        } catch (DateTimeParseException ignored) {
+            // Fall back to the canonical Solr pattern for any non-standard/legacy value.
+        }
+        try {
+            SimpleDateFormat sdf = new SimpleDateFormat(SOLR_DATE_PATTERN);
+            sdf.setTimeZone(TimeZone.getTimeZone("UTC"));
+            return sdf.parse(strValue).getTime();
+        } catch (ParseException ignored) {
+            return null;
+        }
     }
 
     private void addFacetField(Document doc, String fieldName, String value) {

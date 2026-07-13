@@ -9,7 +9,8 @@ const COLUMNS: { heading: string; links: { label: string; href: string }[] }[] =
       { label: "How it works", href: "/#how" },
       { label: "Compare", href: "/compare" },
       { label: "Migrate", href: "/migrate" },
-      { label: "AEM search", href: "/aem" },
+      { label: "AEM search", href: "/aem-search" },
+      { label: "Security", href: "/security" },
       { label: "Self-host", href: "/#self-host" },
       { label: "Marketplace", href: "/#marketplace" },
       { label: "React SDK", href: LINKS.storybook },
@@ -19,7 +20,6 @@ const COLUMNS: { heading: string; links: { label: string; href: string }[] }[] =
     heading: "Developers",
     links: [
       { label: "Documentation", href: LINKS.docs },
-      { label: "GitHub", href: LINKS.github },
       { label: "npm", href: LINKS.npm },
       { label: "CLI", href: LINKS.cli },
       { label: "llms.txt", href: "/llms.txt" },
@@ -30,8 +30,6 @@ const COLUMNS: { heading: string; links: { label: string; href: string }[] }[] =
     links: [
       { label: "Roadmap", href: LINKS.roadmap },
       { label: "Changelog", href: LINKS.changelog },
-      { label: "Discussions", href: LINKS.discussions },
-      { label: "Issues", href: LINKS.issues },
       { label: "viglet.org", href: LINKS.viglet },
     ],
   },

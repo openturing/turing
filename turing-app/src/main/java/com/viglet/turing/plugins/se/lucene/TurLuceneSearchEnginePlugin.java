@@ -30,10 +30,13 @@ import com.viglet.turing.persistence.model.se.TurSEInstance;
 import com.viglet.turing.persistence.model.sn.TurSNSite;
 import com.viglet.turing.persistence.model.sn.locale.TurSNSiteLocale;
 import com.viglet.turing.persistence.repository.sn.TurSNSiteRepository;
+import com.viglet.turing.persistence.repository.sn.field.TurSNSiteFieldExtRepository;
 import com.viglet.turing.plugins.se.TurSearchEnginePlugin;
 import com.viglet.turing.plugins.se.TurSESynonymApplyResult;
 import com.viglet.turing.plugins.se.TurSESynonymRule;
+import com.viglet.turing.se.result.TurSEResult;
 import com.viglet.turing.se.result.TurSEResults;
+import com.viglet.turing.sn.TurSNUtils;
 import com.viglet.turing.solr.bean.TurSECoreInfo;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
@@ -76,6 +79,7 @@ public class TurLuceneSearchEnginePlugin implements TurSearchEnginePlugin {
     private final TurLuceneInstanceProcess turLuceneInstanceProcess;
     private final TurLuceneQueryBuilder turLuceneQueryBuilder;
     private final TurSNSiteRepository turSNSiteRepository;
+    private final TurSNSiteFieldExtRepository turSNSiteFieldExtRepository;
     private final com.viglet.turing.lucene.TurLuceneStorageSync storageSync;
     private final TurLuceneSynonymRegistry synonymRegistry;
 
@@ -83,12 +87,14 @@ public class TurLuceneSearchEnginePlugin implements TurSearchEnginePlugin {
             TurLuceneInstanceProcess turLuceneInstanceProcess,
             TurLuceneQueryBuilder turLuceneQueryBuilder,
             TurSNSiteRepository turSNSiteRepository,
+            TurSNSiteFieldExtRepository turSNSiteFieldExtRepository,
             com.viglet.turing.lucene.TurLuceneStorageSync storageSync,
             TurLuceneSynonymRegistry synonymRegistry) {
         this.turLucene = turLucene;
         this.turLuceneInstanceProcess = turLuceneInstanceProcess;
         this.turLuceneQueryBuilder = turLuceneQueryBuilder;
         this.turSNSiteRepository = turSNSiteRepository;
+        this.turSNSiteFieldExtRepository = turSNSiteFieldExtRepository;
         this.storageSync = storageSync;
         this.synonymRegistry = synonymRegistry;
     }
@@ -98,7 +104,86 @@ public class TurLuceneSearchEnginePlugin implements TurSearchEnginePlugin {
         return turLuceneInstanceProcess
                 .initLuceneInstance(context.getSiteName(), context.getLocale())
                 .flatMap(instance -> turLucene.retrieveLuceneFromSN(instance, context)
-                        .map(results -> withSpellCheck(results, instance, context)));
+                        .map(results -> withSpellCheck(results, instance, context))
+                        .map(results -> withMoreLikeThis(results, instance, context)));
+    }
+
+    /**
+     * Populates the query-level "Related" (MoreLikeThis) block on the search
+     * results, mirroring the Solr main-search path
+     * ({@code TurSolrResultProcessor#setMLT}). Without this the Lucene engine
+     * always returned an empty {@code similarResults}, so the search-widget
+     * "Related" panel never rendered for Lucene-backed sites (e.g. WKND on
+     * turing-demo) while it worked on Solr-backed sites.
+     *
+     * <p>Gated exactly like Solr: the site must have MoreLikeThis enabled
+     * ({@code site.getMlt()}) and at least one enabled MLT field configured.
+     * For each result document (capped) it seeds a Lucene {@link MoreLikeThis}
+     * query and merges the hits, de-duplicated and excluding documents already
+     * present in the result set. Reuses the {@link TurLuceneInstance} already
+     * open for the search. Fail-open: any error leaves the results untouched.
+     */
+    private TurSEResults withMoreLikeThis(TurSEResults results, TurLuceneInstance instance,
+            TurSNSiteSearchContext context) {
+        if (results.getSimilarResults() != null && !results.getSimilarResults().isEmpty()) {
+            return results;
+        }
+        List<TurSEResult> docs = results.getResults();
+        if (docs == null || docs.isEmpty()) {
+            return results;
+        }
+        try {
+            TurSNSite site = turSNSiteRepository.findByName(context.getSiteName()).orElse(null);
+            if (site == null || !TurSNUtils.isTrue(site.getMlt())
+                    || turSNSiteFieldExtRepository.findByTurSNSiteAndMltAndEnabled(site, 1, 1).isEmpty()) {
+                return results;
+            }
+            results.setSimilarResults(collectMoreLikeThis(instance, docs));
+        } catch (Exception e) {
+            log.warn("[Lucene] MoreLikeThis enrichment for site '{}' failed: {}",
+                    context.getSiteName(), e.getMessage());
+        }
+        return results;
+    }
+
+    /**
+     * Runs {@link MoreLikeThis} seeded from each result document (up to
+     * {@link #MLT_MAX_SEED_DOCS}) and merges the hits into a single ordered,
+     * de-duplicated list, dropping any document already in the result set.
+     */
+    private List<TurSESimilarResult> collectMoreLikeThis(TurLuceneInstance instance,
+            List<TurSEResult> docs) {
+        List<String> seedIds = docs.stream()
+                .map(doc -> asString(doc.getFields().get(TurSNFieldName.ID)))
+                .filter(id -> id != null && !id.isBlank())
+                .limit(MLT_MAX_SEED_DOCS)
+                .toList();
+        if (seedIds.isEmpty()) {
+            return List.of();
+        }
+        Set<String> resultIds = docs.stream()
+                .map(doc -> asString(doc.getFields().get(TurSNFieldName.ID)))
+                .filter(id -> id != null && !id.isBlank())
+                .collect(java.util.stream.Collectors.toSet());
+        Map<String, TurSESimilarResult> merged = new LinkedHashMap<>();
+        for (Map<String, Object> seed : fetchByIds(instance, seedIds)) {
+            String seedId = asString(seed.get(TurSNFieldName.ID));
+            String like = similarityText(seed);
+            if (seedId == null || like.isBlank()) {
+                continue;
+            }
+            for (TurSESimilarResult hit : searchSimilarDocuments(instance, like, seedId,
+                    MLT_ROWS_PER_SEED)) {
+                if (hit.getId() != null && !resultIds.contains(hit.getId())) {
+                    merged.putIfAbsent(hit.getId(), hit);
+                }
+            }
+        }
+        return new ArrayList<>(merged.values());
+    }
+
+    private static String asString(Object value) {
+        return value == null ? null : value.toString();
     }
 
     /**
@@ -460,6 +545,10 @@ public class TurLuceneSearchEnginePlugin implements TurSearchEnginePlugin {
             TurSNFieldName.TITLE, TurSNFieldName.ABSTRACT, TurSNFieldName.TEXT};
     /** Cap the seed text fed to MLT so a huge document can't blow up the query. */
     private static final int SIMILAR_MAX_SEED_CHARS = 1_000;
+    /** Max result documents used to seed the query-level "Related" MoreLikeThis. */
+    private static final int MLT_MAX_SEED_DOCS = 10;
+    /** Similar hits requested per seed document before merge/de-dup. */
+    private static final int MLT_ROWS_PER_SEED = 5;
 
     @Override
     public List<Map<String, Object>> getDocumentsByIds(TurSNSiteLocale siteLocale, List<String> ids) {

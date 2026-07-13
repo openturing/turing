@@ -246,9 +246,7 @@ export function ComparePage() {
                   </a>
                 </Button>
                 <Button asChild size="lg" variant="outline">
-                  <a href={LINKS.github} target="_blank" rel="noreferrer">
-                    View the source
-                  </a>
+                  <a href="/#playground">Try it live</a>
                 </Button>
               </div>
             </Card>

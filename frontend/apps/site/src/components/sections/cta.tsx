@@ -1,6 +1,6 @@
 import { ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Container, GitHubIcon, LINKS } from "@/components/brand";
+import { Container, LINKS } from "@/components/brand";
 
 export function CallToAction() {
   return (
@@ -29,10 +29,7 @@ export function CallToAction() {
               variant="outline"
               className="border-white/20 bg-white/10 text-white hover:bg-white/20 hover:text-white dark:bg-white/10"
             >
-              <a href={LINKS.github} target="_blank" rel="noreferrer">
-                <GitHubIcon className="size-4" />
-                View on GitHub
-              </a>
+              <a href="/#playground">Try it live</a>
             </Button>
           </div>
         </div>
