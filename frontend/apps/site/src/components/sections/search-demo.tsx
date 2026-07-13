@@ -78,6 +78,29 @@ function docBadge(raw: TuringResolvedDocument["raw"]): string {
   );
 }
 
+/**
+ * The result title. In live mode a resolved `url` makes it a link that opens the
+ * source page (new tab, like "Related by AI"); offline sample docs have no url,
+ * so it stays plain text. The "Ask"/"Related" actions render as sibling buttons
+ * below, so there's no click-target overlap to guard against.
+ */
+function ResultTitle({ title, url }: Readonly<{ title: string; url?: string }>) {
+  const inner = <Highlighted text={title} />;
+  if (!url) {
+    return <span className="text-sm font-semibold">{inner}</span>;
+  }
+  return (
+    <a
+      href={url}
+      target="_blank"
+      rel="noreferrer"
+      className="text-sm font-semibold hover:text-primary hover:underline"
+    >
+      {inner}
+    </a>
+  );
+}
+
 export interface SearchDemoProps {
   /** Drop the standalone card chrome so a parent (the playground) frames it. */
   bare?: boolean;
@@ -433,9 +456,7 @@ function LiveSearchDemo({
         itemComponent={({ document }) => (
           <div className="px-4 py-3 transition-colors hover:bg-muted/50">
             <div className="flex items-center gap-2">
-              <span className="text-sm font-semibold">
-                <Highlighted text={document.title} />
-              </span>
+              <ResultTitle title={document.title} url={document.url} />
               <span className="rounded bg-primary/10 px-1.5 py-0.5 text-[0.65rem] font-semibold text-primary">
                 {docBadge(document.raw)}
               </span>
@@ -594,9 +615,7 @@ function SampleSearchDemo({
         itemComponent={({ document }) => (
           <div className="px-4 py-3 transition-colors hover:bg-muted/50">
             <div className="flex items-center gap-2">
-              <span className="text-sm font-semibold">
-                <Highlighted text={document.title} />
-              </span>
+              <ResultTitle title={document.title} url={document.url} />
               <span className="rounded bg-primary/10 px-1.5 py-0.5 text-[0.65rem] font-semibold text-primary">
                 {String(document.raw.fields.type ?? "Result")}
               </span>
