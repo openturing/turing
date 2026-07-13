@@ -2386,3 +2386,156 @@ blocks to the POST-native flow.
   works over both GET and POST for A/B testing the shape.
 - The impersonation POST payload and the authenticated metrics path are **out of
   scope** — they keep their current bean and behavior.
+
+## XLVI. Synthetic User Research — persona studies, interviews & continuous insight (Block AW)
+
+> Persona work so far has treated a `TurPersona` as something you act on **one at a
+> time**: a voice on an agent, a chat partner (T578), a fit lens over content
+> (Block AA/AT), a speaker in a dialogue (Block AU). The maturity gap — and the
+> thing **synth.users** (Synthetic Users) productized — is *research as a method*:
+> define an audience, interview a whole cohort, and synthesize what they collectively
+> tell you. This block adds that method, but the thesis is that **Turing should not
+> ship a synth.users clone — it should ship the version only Turing can build**,
+> because it already owns every primitive synth.users has to approximate.
+
+### XLVI.0 What synth.users does, and the Turing primitive that already covers it
+
+| synth.users concept | Turing primitive it maps onto |
+| --- | --- |
+| Audience definition (demographics + psychographics) | `TurPersona` + `personaKind` AUDIENCE facet (Block AA) |
+| Multi-agent, OCEAN-profiled participants | personas + a new Big Five facet (T717) + T605 style→model calibration |
+| RAG grounding (upload proprietary content) | the RAG/SN retrieval stack + Block AA notebook sources (T465) + T385 grounding |
+| Dynamic / custom / concept-test interviews | persona-chat executor (T578) driven by an interviewer sub-loop (T720) |
+| Multi-model "Big Shuffle" | the T517 per-stage model-lane seam (T728) |
+| Insights report (themes, quotes, recs) | `TurLlmSummaryService` cached synthesis (T722) |
+| Saturation scoring | a deterministic novelty scorer, T385/T466 pattern (T723) |
+| Continuous validation | the Persona Match scheduler + ShedLock (T729) |
+| PRISMA multi-study planner | the project-mosaic studio pattern (Block AT/AU) → T733 |
+| Research Assistant | AI Authoring (T426) → T732 |
+
+The point of the table is the design constraint: **almost nothing here is new
+infrastructure.** The study aggregate, the interview engine, the synthesizer, and
+the studio are thin compositions over shipped code — which is why the block can be
+large without being risky, and why the two interconnection bets (§XLVI.4) are where
+the actual product differentiation lives.
+
+### XLVI.1 Phase 1 — persona depth
+
+A cohort is only useful if its members answer *differently*. Two additions make a
+persona a believable participant rather than a single reskinned voice:
+
+- **T717 — Big Five / OCEAN facet.** Five 0–100 traits, opt-in, additive Liquibase.
+  They render into the system prompt as behavioral guidance **and** feed the
+  existing T605 calibration seam (verbosity/temperature), so trait spread produces
+  answer spread. Default empty = today's behavior byte-for-byte.
+- **T718 — RAG-grounded persona.** Bind a persona to an SN site or a Block AA
+  notebook source set so interview answers are grounded in proprietary content
+  through the existing retrieval + grounding contract, not the base model's priors.
+  This is the honest version of synth.users' "upload proprietary content" — it
+  reuses the grounding hard-fail (T385) instead of stuffing context and hoping.
+
+### XLVI.2 Phase 2 — the study model
+
+`TurResearchStudy` is a new aggregate that deliberately mirrors the Persona Match
+project (Block AT): goal + hypothesis + an ordered persona roster (the shared
+`PersonaSelectGrid`) + a protocol, owning per-persona `TurResearchInterview`
+transcripts, tenant-scoped (T719). The three **protocols** (T720) map to
+synth.users' three interview types — `DYNAMIC_SCRIPT` (a goal-driven interviewer
+sub-loop that asks adaptive follow-ups), `CUSTOM_SCRIPT` (a fixed question list),
+`CONCEPT_TEST` (react to a proposed concept/message). Each answer is produced by the
+**T578 persona-chat executor unchanged** — the persona is fused, tools are the
+generic set, and grounding comes from T718. The runner (T721) is the Persona Match
+runner pattern verbatim: bounded-parallel, each worker `TurTenantContext.runAs` the
+captured tenant, DB writes only on the caller thread, `run`/`run/stream` SSE, and a
+content-hash skip so a re-run only re-interviews what changed.
+
+### XLVI.3 Phase 3 — synthesis & sufficiency
+
+- **T722 — insights report.** Synthesis runs through `TurLlmSummaryService` (cached,
+  regenerable, already the home of SN-site + System-Info insights): executive
+  summary, ranked themes each carrying **verbatim quotes traceable to (interview,
+  persona)**, and recommendations, with *by-theme* / *by-persona* lenses like the
+  Match report.
+- **T723 — saturation scoring.** A **pure, LLM-free** novelty scorer (theme overlap
+  via embeddings/keywords, the T385/T466 deterministic pattern so it runs in CI)
+  that reports when marginal personas stop adding themes → "sample adequate at N."
+  This is deliberately the antidote to the strongest criticism of synthetic research
+  (NN/g): it makes the *sufficiency* claim measurable instead of asserted.
+- **T724 (💭) — theme/affinity graph.** A concept↔problem↔persona graph over the
+  synthesized themes; visualization only, no new inference.
+
+### XLVI.4 Phase 4 — the interconnection (why this beats a standalone tool)
+
+This is the part a dedicated research SaaS **cannot** do, because it does not own an
+agent runtime or an eval platform:
+
+- **T725 — studies → eval datasets.** Promote transcripts + findings into a
+  `TurEvalDataset` (T595) and expose the cohort as a reusable **agent-QA harness**: a
+  study becomes a repeatable regression test of an agent against a synthetic
+  audience. The research panel stops being a one-shot report and becomes CI.
+- **T726 — interview your own deployed agent.** Point a study at a live `TurAIAgent`
+  (its real flow, tools, RAG) rather than a bare LLM, so synthetic users UX-test and
+  red-team the *actual shipped assistant*. This is the flagship of the block: it only
+  works because Turing owns both the panel and the subject.
+- **T727 (💭) — concept-test ↔ Persona Match.** A `CONCEPT_TEST` over a piece of
+  content is content-fit's sibling; route it through `TurPersonaContentFitEvaluator`
+  (Block AT) so the two share one evaluator instead of forking.
+- **T728 (💭) — "Big Shuffle" model lanes.** Assign different LLM instances per stage
+  (interview / synthesize / judge) via the T517 lane seam, so no single model's bias
+  colors a whole study — the same idea synth.users markets as multi-model, expressed
+  through infrastructure Turing already has.
+- **T729 (💭) — Continuous Insight.** Re-run a study on a schedule (Persona Match
+  scheduler + ShedLock) and track theme/sentiment drift over time (T87 sentiment
+  trajectory) — one-shot research becomes continuous validation.
+
+### XLVI.5 Phase 5 — authoring, the studio & the developer surface
+
+`/bento/persona/research` reuses the Match/Dialogue studio shape (T730) and is the
+**frontend hub**: Phases 2–4 ship deliberately headless backends, and T730 renders
+their surfaces (live SSE feed, report lenses, saturation gauge, target/lane pickers,
+schedule + drift chart). Audience **cohort synthesis** (T731) generates a diverse
+persona set from a one-paragraph brief via the T426 strict-schema authoring path +
+T470 drafting, never auto-saved. The **Research Assistant** (T732) is a skippable
+conversational guide over AI Authoring. **PRISMA** (T733, 💭) is the multi-study
+planner + program rollup. **T734 (💭)** adds the *developer* surface — a `turing
+research` CLI verb mirroring `turing eval` (fits because T725 already makes studies
+eval-like) plus an optional programmatic client.
+
+### XLVI.7 Frontend & SDK scope — the deliberate split
+
+Two decisions shape where UI and SDK work land, so the block isn't padded with
+speculative surface:
+
+- **UI is explicit per task, but the studio is the hub.** Each task carries a `UI:`
+  clause naming its visible surface. The persona-*form* additions (OCEAN sliders
+  T717, knowledge binding T718) live on the existing `/bento/persona/:id` page —
+  *not* the studio — because they are properties of a persona, usable outside any
+  study. Everything study-scoped (interview feed, report, saturation, target/lane
+  pickers, schedule/drift) renders in the T730 studio; the Phase 2–4 backends stay
+  headless on purpose so there is one rendering surface, not many drifting ones —
+  the same discipline Persona Match/Dialogue followed (backend tasks + one studio).
+- **The embed SDKs are customer-facing; research is admin tooling.** `@viglet/turing-sdk`
+  and `@viglet/turing-react-sdk` exist to embed **search and chat** into a
+  customer's site. Running studies, synthesizing reports, and the eval bridge are
+  internal research/admin capabilities with no embed use case, so they are **not**
+  SDK work. The single embed-SDK touch is OCEAN metadata flowing through the
+  persona surface that already exists (T635 vanilla / T579 react), so an embedded
+  persona chat reflects personality. The *programmatic* surface for running a study
+  from code/CI belongs to the **CLI** (`@viglet/turing-cli`, T734), mirroring
+  `turing eval` — not the browser embed client. Adding study endpoints to the embed
+  SDK would be scope with no consumer.
+
+### XLVI.6 Non-goals & guardrails
+
+- **Synthetic research does not replace real users.** The docs and UI must frame
+  studies as a *discovery co-pilot* (front-load problem-space mapping, sharpen
+  questions), not ground truth — exactly the NN/g caution. Saturation scoring (T723)
+  and grounding (T718) exist to keep the output honest; do not add features that
+  imply statistical validity Turing can't defend.
+- **Default persona/agent behavior is untouched.** Every addition is opt-in; an
+  empty OCEAN facet, no bound knowledge source, and no study leave the existing
+  persona chat / Match / Dialogue paths byte-for-byte unchanged.
+- **Reuse, don't fork.** The study runner reuses the Persona Match runner; answers
+  reuse the T578 executor; synthesis reuses `TurLlmSummaryService`; concept-test
+  reuses `TurPersonaContentFitEvaluator`. A new parallel engine for any of these is
+  the anti-pattern this block exists to avoid.

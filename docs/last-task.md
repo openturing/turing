@@ -1,9 +1,12 @@
-# Last task number — `T716` · next block letter — `AW`
+# Last task number — `T734` · next block letter — `AX`
 
 > **Single source of truth for the next free task number.** The next new task is
-> `T717`; after assigning it, bump the number above and the log line below.
+> `T735`; after assigning it, bump the number above and the log line below.
 >
-> **Next block letter — `AW`** (Block **AV** = POST-native search & link-free
+> **Next block letter — `AX`** (Block **AW** = Synthetic User Research — persona
+> studies, interviews, insights report + saturation, continuous insight,
+> agent-QA/eval bridge + explicit per-task UI + developer CLI surface,
+> T717–T734, created 2026-07-13; Block **AV** = POST-native search & link-free
 > response contract — T707–T714, created 2026-07-12; Block **AU** = Persona
 > Dialogue projects — saved
 > multi-project dialogues (topic + ordered speaker roster + persisted transcript),
@@ -56,6 +59,7 @@ number" looked free but wasn't. Grepping three files (`ROADMAP.md`,
 
 ## Log (most recent first)
 
+- **T717-T734 CREATED** (📋/💭, Block AW §XLVI — Synthetic User Research: OCEAN persona facet + RAG-grounded persona; TurResearchStudy aggregate + dynamic/custom/concept-test interview engine over the T578 executor + N-persona SSE runner; insights report via TurLlmSummaryService + deterministic saturation scoring + theme graph; interconnection bets = studies→Block AJ eval datasets, interview-your-own-agent, concept-test↔Persona Match, Big-Shuffle model lanes, Continuous Insight; bento Research Studio + audience cohort synthesis + Research Assistant + PRISMA planner; explicit per-task UI clauses + T734 turing research CLI developer surface, embed SDK unchanged beyond OCEAN metadata) — 2026-07-13.
 - **T716 SHIPPED** (Block AS §XLII.8 — richer persona-from-audio: two-call derivation (structured JSON classification + a separate plain-markdown multi-section character brief as the systemInstruction, capturing verbal tics/catchphrases/reasoning/reactions grounded in the transcript) + raise transcript analysis cap so the whole 30-min recording is used) — 2026-07-12.
 - **T715 SHIPPED** (Block AS §XLII.7 — async persona-from-audio job + live SSE progress bar + per-chunk transcription progress + opt-in chunk-by-duration `max-chunk-seconds`; plus persona-draft hardening: raw-draft debug log + required-field prompt + name/systemInstruction fallback) — 2026-07-12.
 - **T707-T714 CREATED** (📋/💭, Block AV §XLV — POST-native search & link-free response contract: anonymous read-only JSON request bean + opt-in structured (field/value/selected + pagination/sort/cleanup/locale actions) response behind format negotiation, both JS SDKs to 100% POST driving toggles from structured state, autocomplete/list POST variants, href-field deprecation, docs/showcase/EDS; additive — GET + server-rendered links stay for deep-linking/SEO/no-JS) — 2026-07-12.

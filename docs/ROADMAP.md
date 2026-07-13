@@ -120,6 +120,67 @@
 - 💭 **T713** (deps: T709, T710, T712) **Deprecate embedded href/link fields behind the format flag** — once both SDKs are POST-native, mark `link`/`href`/`cleanUpFacets`/spell-check `link` legacy (kept for no-JS/HTML/SEO/deep-linking) and drop the query-string round-trip helpers from the SDKs. → §XLV
 - 💭 **T714** (deps: T709, T710) **Docs + showcase + EDS POST-native** — update `rest-api.md`/`javascript-sdk.md`, the Atlas Store showcase and the EDS example blocks to the POST-native flow. → §XLV
 
+## Block AW — Synthetic User Research: persona studies, interviews & continuous insight (§XLVI)
+
+> Matures the persona surface from *acting on one persona at a time* (chat, Match,
+> Dialogue) into a **research method**: run structured interviews with a cohort of
+> synthetic users, synthesize an insights report with saturation scoring, and feed
+> the findings back into the product. Benchmarked against **synth.users** (Synthetic
+> Users): audience definition → dynamic/custom/concept-test interviews → multi-agent
+> OCEAN-profiled participants → RAG-grounded answers → thematic insights report +
+> saturation scoring → continuous validation + a multi-study planner (PRISMA).
+>
+> **The value is the interconnection, not a clone.** Turing already owns every half
+> that synth.users has to fake: a persona model (`TurPersona`, SPEAKER/AUDIENCE/BOTH
+> since Block AA), a grounded RAG/SN retrieval stack, a real agent runtime under
+> test, an evaluation platform (Block AJ), an analytics stack (sentiment trajectory
+> T87), a scheduler + project pattern (Persona Match / Dialogue), an LLM-lane router
+> (T517), cached LLM synthesis (`TurLlmSummaryService`), and persona synthesis from
+> audio (Block AS). This block is thin composition over those primitives — a study
+> aggregate + an interview engine + a synthesizer + the bridges that make the panel
+> pay for itself (interview your **own** deployed agent; promote transcripts into
+> eval datasets). Reuses the Persona Match aggregate/scheduler/studio shape (Block
+> AT) and the persona-chat executor (T578) unchanged where possible. All opt-in;
+> default persona/agent behavior is untouched. Design in
+> [IMPROVEMENTS.md](IMPROVEMENTS.md) §XLVI.
+
+> **Frontend & SDK scope.** Per the "explicit UI per task" decision, every task
+> below carries its own **UI:** clause (the visible surface it must ship), with
+> `/bento/persona/research` (T730) as the studio hub. **SDK stance:** the embed JS
+> SDKs (`@viglet/turing-sdk` / `@viglet/turing-react-sdk`) are customer-facing
+> (search/chat) — synthetic research is an **admin/research tool**, so most tasks
+> are *not* SDK work. The only embed-SDK touch is OCEAN metadata on the existing
+> persona surface (T717); the programmatic/developer surface for running studies is
+> a **CLI** concern (T734), consistent with `turing eval`.
+
+**Phase 1 — persona depth (make a persona a believable, grounded participant):**
+- 📋 **T717** (deps: —) **Big Five / OCEAN personality facet on `TurPersona`** — opt-in `openness/conscientiousness/extraversion/agreeableness/neuroticism` (0–100) that (a) render into the persona system prompt as behavioral guidance and (b) feed the T605 style→model calibration seam (e.g. high-neuroticism → more hedging, low-agreeableness → more pushback), so a cohort answers *differently* instead of collapsing to one voice. Liquibase additive; empty = legacy. **UI:** trait sliders/inputs on the persona bento form (`/bento/persona/:id`, Style/Personality section). **SDK:** surface the traits through the existing persona SDK surface (T635 vanilla / T579 `useTuringChat({persona})`) so an embedded persona chat reflects them. → §XLVI.1
+- 📋 **T718** (deps: —) **RAG-grounded persona (knowledge binding)** — bind a persona to a knowledge source (an SN site or a Block AA notebook source set) so interview answers are grounded in proprietary content via the existing RAG/SN retrieval + T385 grounding contract, not the model's priors. Reuses `personaKind=AUDIENCE`'s notebook (T465) as the grounding corpus. **UI:** knowledge-source picker on the persona bento form (reuse `SnDocumentPicker` + the Block AA notebook source list). **SDK:** none — grounding is server-side; an embedded persona chat benefits transparently. → §XLVI.1
+
+**Phase 2 — the study model (the new first-class concept):**
+- 📋 **T719** (deps: T717) **Research Study aggregate + persistence + CRUD/API** — `TurResearchStudy` (goal, hypothesis, audience = ordered persona roster via the shared `PersonaSelectGrid`, protocol, `@TenantId`) owning `TurResearchInterview` (per-persona transcript) — mirrors the Persona Match project model; `/api/research-study` CRUD + Liquibase + IT. **UI:** none of its own — surfaced by the studio (T730). → §XLVI.2
+- 📋 **T720** (deps: T719) **Interview protocols + adaptive interviewer engine** — `DYNAMIC_SCRIPT` (goal-driven adaptive follow-ups), `CUSTOM_SCRIPT` (fixed question list), `CONCEPT_TEST` (react to a proposed concept/message). An interviewer sub-loop asks the next question and each synthetic user answers via the T578 persona-chat executor (persona fused, grounded per T718). **UI:** none (protocol editor lives in T730). → §XLVI.2
+- 📋 **T721** (deps: T720) **Study runner: N-persona parallel interviews + live SSE** — bounded-parallel, tenant-safe (each worker `TurTenantContext.runAs`, DB writes on caller thread — the Persona Match runner pattern), `run`/`run/stream` SSE with per-interview + per-turn events; content-hash skip for re-runs. **UI:** none (the live feed consuming this SSE ships in T730). → §XLVI.2
+
+**Phase 3 — synthesis & sufficiency:**
+- 📋 **T722** (deps: T721) **Insights report — themes + verbatim quotes + recommendations** — synthesize transcripts through `TurLlmSummaryService` (cached, regenerable) into an executive summary, ranked themes with **verbatim participant quotes** (traceable to the interview + persona), and recommendations; bidirectional lenses (*by theme* / *by persona*). **UI:** none of its own — the report renderer + lens toggle + regenerate button ship in T730. → §XLVI.3
+- 📋 **T723** (deps: T721) **Saturation scoring (deterministic, CI-free)** — a pure novelty scorer (embedding/keyword theme-overlap, T385/T466 pattern — no LLM in CI) that flags when marginal personas stop adding new themes → "sample adequate at N", the honest antidote to fabricated-confidence synthetic research. **UI:** the saturation gauge/curve is part of the studio (T730). → §XLVI.3
+- 💭 **T724** (deps: T722) **Theme / affinity knowledge graph** — a concept↔problem↔persona graph over the synthesized themes (which cohorts cluster on which pain point). **UI:** interactive graph view in the studio, rendered with the existing viz stack. → §XLVI.3
+
+**Phase 4 — interconnection (the value multiplier over synth.users):**
+- 📋 **T725** (deps: T721, T722) **Studies → Block AJ eval datasets/graders bridge** — promote interview transcripts + synthesized findings into a `TurEvalDataset` (T595) and expose the persona panel as a reusable **agent-QA harness**: a study becomes a repeatable eval that regression-tests an agent against a synthetic audience. **UI:** a "promote to dataset / run as eval" action in the studio that deep-links into the existing Eval Studio (`/bento/eval`) — no new eval UI. → §XLVI.4
+- 📋 **T726** (deps: T720) **Interview your *own* deployed agent** — a study target can be a live `TurAIAgent` (its real flow/tools/RAG) instead of a bare LLM, so synthetic users UX-test / red-team the actual shipped agent. Uniquely Turing's, because it owns both the research panel *and* the agent under test. **UI:** a target selector (Default LLM ↔ pick an agent) in the study config within the studio. → §XLVI.4
+- 💭 **T727** (deps: T719) **Concept-testing bridge onto Persona Match** — a `CONCEPT_TEST` study over a piece of content is content-fit's sibling; route it through `TurPersonaContentFitEvaluator` (Block AT) so concept feedback and fit scoring share one evaluator. **UI:** reuses the Match report surface (no new UI). → §XLVI.4
+- 💭 **T728** (deps: T721, T722) **Multi-model per-stage lanes ("Big Shuffle")** — let a study assign different LLM instances per stage (fast model to interview, a stronger model to synthesize, a third to judge saturation) reusing the T517 model-lane seam, so no single model's bias colors the whole study. **UI:** per-stage LLM-instance pickers in the study config (studio), reusing the existing LLM-instance combobox. → §XLVI.4
+- 💭 **T729** (deps: T721, T722) **Continuous Insight — scheduled re-runs + insight drift** — re-run a study on a MANUAL/DAILY/WEEKLY cadence (reuse the Persona Match scheduler + ShedLock) and surface how themes/sentiment move over time (T87 sentiment trajectory), turning one-shot research into continuous validation. **UI:** schedule control + a drift/trend chart in the studio, reusing the Persona Match schedule UX + recharts. → §XLVI.4
+
+**Phase 5 — authoring, the studio & the developer surface:**
+- 📋 **T730** (deps: T721, T722) **Bento Research Studio (the frontend hub)** — `/bento/persona/research` project mosaic + `:studyId` workspace: audience picker (shared `PersonaSelectGrid`), protocol editor, live SSE interview feed, report lenses, saturation gauge, PDF export — the Persona Match / Dialogue studio pattern. Renders the surfaces that Phases 2–4 deliberately left headless. → §XLVI.5
+- 📋 **T731** (deps: T717) **Audience cohort synthesis** — generate a *diverse* persona cohort from a one-paragraph audience brief (demographics + psychographics → N personas with spread OCEAN facets), reusing the AI-authoring strict-schema path (T426) + persona-from-audio drafting (T470); never auto-saved. **UI:** brief input + a review grid of the drafted personas (edit/keep/discard) opening the existing persona review form. → §XLVI.5
+- 📋 **T732** (deps: T730, T731) **Research Assistant (guided authoring)** — a conversational guide that helps define the audience + goal + protocol up front and offers to synthesize on completion (synth.users' Research Assistant), built on AI Authoring; skippable. **UI:** a chat-style setup drawer/step in the studio create flow. → §XLVI.5
+- 💭 **T733** (deps: T730) **Multi-study planner + cross-study rollup (PRISMA)** — one surface to design/run several studies across different audiences and roll their insights up into a program-level view. **UI:** a planner board + a program rollup page under `/bento/persona/research`. → §XLVI.5
+- 💭 **T734** (deps: T721, T722, T725) **Developer surface — `turing research` CLI (+ optional client)** — a `@viglet/turing-cli` verb (mirroring `turing eval`) to define/run a study and fetch its insights from code/CI, plus an optional thin programmatic client; the customer-facing **embed** SDKs stay unchanged beyond the T717 OCEAN metadata. → §XLVI.5
+
 ## Non-goals (do NOT add as tasks)
 
 Binding constraints — see [IMPROVEMENTS.md](IMPROVEMENTS.md) §I.6 (What NOT to
