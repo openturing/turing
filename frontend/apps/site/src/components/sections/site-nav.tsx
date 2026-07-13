@@ -1,27 +1,48 @@
 import { useEffect, useState } from "react";
-import { ArrowRight, Star } from "lucide-react";
+import { ArrowRight, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { ModeToggle } from "@/components/mode-toggle";
 import { Container, GitHubIcon, Logo, LINKS } from "@/components/brand";
-import { formatStars, useGitHubStars } from "@/components/github-stars";
 import { cn } from "@/lib/utils";
 
 // Hrefs are root-anchored ("/#…") so they also work from the feature pages —
 // the browser navigates home and scrolls to the section.
-const NAV_ITEMS = [
+//
+// The bar stays uncluttered: two direct links ("Try it live", "Docs") flank two
+// grouped dropdowns. Everything is still one hover/click away.
+const NAV_LINKS = [
   { label: "Try it live", href: "/#playground" },
-  { label: "Capabilities", href: "/#features" },
-  { label: "Why Turing", href: "/#why" },
-  { label: "Compare", href: "/compare" },
-  { label: "Migrate", href: "/migrate" },
-  { label: "Developers", href: "/#developers" },
-  { label: "Marketplace", href: "/#marketplace" },
   { label: "Docs", href: LINKS.docs },
+];
+
+const NAV_GROUPS = [
+  {
+    label: "Product",
+    items: [
+      { label: "Capabilities", href: "/#features" },
+      { label: "Why Turing", href: "/#why" },
+      { label: "Developers", href: "/#developers" },
+      { label: "Marketplace", href: "/#marketplace" },
+    ],
+  },
+  {
+    label: "Solutions",
+    items: [
+      { label: "Compare", href: "/compare" },
+      { label: "Migrate", href: "/migrate" },
+      { label: "AEM", href: "/aem" },
+    ],
+  },
 ];
 
 export function SiteNav() {
   const [scrolled, setScrolled] = useState(false);
-  const stars = useGitHubStars();
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 8);
@@ -44,7 +65,7 @@ export function SiteNav() {
           <Logo />
         </a>
         <nav className="ml-4 hidden items-center gap-5 lg:flex xl:ml-6 xl:gap-6">
-          {NAV_ITEMS.map((item) => (
+          {NAV_LINKS.map((item) => (
             <a
               key={item.label}
               href={item.href}
@@ -53,18 +74,29 @@ export function SiteNav() {
               {item.label}
             </a>
           ))}
+          {NAV_GROUPS.map((group) => (
+            <DropdownMenu key={group.label}>
+              <DropdownMenuTrigger className="group flex items-center gap-1 text-sm font-semibold whitespace-nowrap text-muted-foreground outline-hidden transition-colors hover:text-foreground data-[state=open]:text-foreground">
+                {group.label}
+                <ChevronDown className="size-3.5 transition-transform group-data-[state=open]:rotate-180" />
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start" className="min-w-44">
+                {group.items.map((item) => (
+                  <DropdownMenuItem key={item.label} asChild>
+                    <a href={item.href} className="w-full cursor-pointer font-medium">
+                      {item.label}
+                    </a>
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          ))}
         </nav>
         <div className="ml-auto flex items-center gap-2">
           <Button asChild variant="outline" size="sm" className="hidden sm:inline-flex">
-            <a href={LINKS.github} target="_blank" rel="noreferrer" title="Star on GitHub">
+            <a href={LINKS.github} target="_blank" rel="noreferrer" title="View on GitHub">
               <GitHubIcon className="size-4" />
-              Star
-              {stars !== null && (
-                <span className="ml-0.5 inline-flex items-center gap-1 font-mono text-xs text-muted-foreground">
-                  <Star className="size-3 fill-current" />
-                  {formatStars(stars)}
-                </span>
-              )}
+              GitHub
             </a>
           </Button>
           <Button asChild size="sm">

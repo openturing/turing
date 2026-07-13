@@ -36,6 +36,7 @@ const LOCALE = "en_US";
 // Keep the facet rail compact: at most this many groups, this many chips each.
 const MAX_FACET_GROUPS = 3;
 const MAX_FACET_ITEMS = 6;
+const DEFAULT_SEARCH_PLACEHOLDER = "Search your content…  (try “SSO”, “RAG”, “API”)";
 
 // Semantic Navigation highlighting wraps matched terms in <mark>…</mark>.
 // Render those as real <mark> elements while letting React escape everything
@@ -82,23 +83,43 @@ export interface SearchDemoProps {
   bare?: boolean;
   /** When set, each result shows an "Ask about this" action (search→ask bridge). */
   onAskAbout?: (title: string) => void;
+  /** Pin a specific demo SN site (else the env pin / first discovered). */
+  siteOverride?: string;
+  /** Offline fallback corpus (default = the Turing-docs sample). */
+  sampleDocs?: SearchDoc[];
+  /** Search input placeholder (per-page flavor). */
+  placeholder?: string;
 }
 
-export function SearchDemo({ bare = false, onAskAbout }: Readonly<SearchDemoProps>) {
-  const { client, site, live } = useTuringDemo();
+export function SearchDemo({
+  bare = false,
+  onAskAbout,
+  siteOverride,
+  sampleDocs,
+  placeholder,
+}: Readonly<SearchDemoProps>) {
+  const { client, site, live } = useTuringDemo(siteOverride);
 
   if (live && client && site) {
     return (
       <LiveSearchDemo
-        key={`${site}`}
+        key={site}
         client={client}
         site={site}
         bare={bare}
         onAskAbout={onAskAbout}
+        placeholder={placeholder}
       />
     );
   }
-  return <SampleSearchDemo bare={bare} onAskAbout={onAskAbout} />;
+  return (
+    <SampleSearchDemo
+      bare={bare}
+      onAskAbout={onAskAbout}
+      docs={sampleDocs}
+      placeholder={placeholder}
+    />
+  );
 }
 
 // ── Live mode ────────────────────────────────────────────────────────────────
@@ -109,11 +130,13 @@ function LiveSearchDemo({
   site,
   bare,
   onAskAbout,
+  placeholder,
 }: Readonly<{
   client: NonNullable<ReturnType<typeof useTuringDemo>["client"]>;
   site: string;
   bare: boolean;
   onAskAbout?: (title: string) => void;
+  placeholder?: string;
 }>) {
   const [query, setQuery] = useState("");
   const [documents, setDocuments] = useState<ResolvedDocument[]>([]);
@@ -238,7 +261,7 @@ function LiveSearchDemo({
             onChange={(e) => onInput(e.target.value)}
             onFocus={() => setAcOpen(true)}
             onBlur={() => window.setTimeout(() => setAcOpen(false), 120)}
-            placeholder="Search your content…  (try “SSO”, “RAG”, “API”)"
+            placeholder={placeholder ?? DEFAULT_SEARCH_PLACEHOLDER}
             className="w-full bg-transparent text-sm outline-none placeholder:text-muted-foreground"
             aria-label="Search demo"
             autoComplete="off"
@@ -475,18 +498,25 @@ function LiveSearchDemo({
 function SampleSearchDemo({
   bare,
   onAskAbout,
-}: Readonly<{ bare: boolean; onAskAbout?: (title: string) => void }>) {
+  docs = SEARCH_DOCS,
+  placeholder,
+}: Readonly<{
+  bare: boolean;
+  onAskAbout?: (title: string) => void;
+  docs?: SearchDoc[];
+  placeholder?: string;
+}>) {
   const [query, setQuery] = useState("");
   const [type, setType] = useState("All");
 
   const types = useMemo(
-    () => ["All", ...Array.from(new Set(SEARCH_DOCS.map((d) => d.type)))],
-    []
+    () => ["All", ...Array.from(new Set(docs.map((d) => d.type)))],
+    [docs]
   );
 
   const results = useMemo(() => {
     const q = query.trim().toLowerCase();
-    return SEARCH_DOCS.filter((d: SearchDoc) => {
+    return docs.filter((d: SearchDoc) => {
       const matchesType = type === "All" || d.type === type;
       const matchesQuery =
         !q ||
@@ -495,7 +525,7 @@ function SampleSearchDemo({
         d.type.toLowerCase().includes(q);
       return matchesType && matchesQuery;
     });
-  }, [query, type]);
+  }, [query, type, docs]);
 
   const documents: TuringResolvedDocument[] = useMemo(
     () =>
@@ -523,7 +553,7 @@ function SampleSearchDemo({
         <input
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          placeholder="Search your content…  (try “SSO”, “RAG”, “API”)"
+          placeholder={placeholder ?? DEFAULT_SEARCH_PLACEHOLDER}
           className="w-full bg-transparent text-sm outline-none placeholder:text-muted-foreground"
           aria-label="Search demo"
         />

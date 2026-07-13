@@ -29,18 +29,26 @@ interface DemoMsg {
   sources?: TurChatSource[];
 }
 
-const GREETING = "Hi! I'm the Turing assistant — ask me anything about the platform.";
+const DEFAULT_GREETING =
+  "Hi! I'm the Turing assistant — ask me anything about the platform.";
 // T638 — the "default voice" option has no entry in PLAYGROUND_PERSONAS, so give
 // it its own one-line hint for the active-persona caption below the picker.
 const DEFAULT_PERSONA_HINT = "The agent's own voice — no persona applied.";
-const SUGGESTIONS = [
+const DEFAULT_SUGGESTIONS = [
   "Does Turing support self-hosting?",
   "Which LLM providers work?",
   "What can the agents do?",
 ];
 
+/** A scripted, keyword-matched exchange for the offline (sample-data) fallback. */
+export interface ChatScriptEntry {
+  match: RegExp;
+  answer: string;
+  sources: string[];
+}
+
 // Scripted fallback answers (keyword-matched) for the offline demo.
-const SCRIPT: { match: RegExp; answer: string; sources: string[] }[] = [
+const DEFAULT_SCRIPT: ChatScriptEntry[] = [
   {
     match: /self.?host|host|infra|data/i,
     answer:
@@ -60,7 +68,7 @@ const SCRIPT: { match: RegExp; answer: string; sources: string[] }[] = [
     sources: ["AI agents", "MCP server"],
   },
 ];
-const FALLBACK = {
+const DEFAULT_FALLBACK = {
   answer:
     "Turing unifies enterprise search, RAG and AI agents in one self-hosted platform. Ask about self-hosting, LLM providers, or agents & tools.",
   sources: ["Platform overview"],
@@ -75,10 +83,33 @@ export interface ChatDemoProps {
   bare?: boolean;
   /** When `nonce` changes, the given text is sent as a user message (search→ask bridge). */
   seed?: { text: string; nonce: number };
+  /** Pin a specific demo SN site (else the env pin / first discovered). */
+  siteOverride?: string;
+  /** Opening assistant line (per-page flavor). */
+  greeting?: string;
+  /** Starter prompt chips (per-page flavor). */
+  suggestions?: string[];
+  /** Offline scripted answers + fallback (per-page flavor). */
+  script?: ChatScriptEntry[];
+  fallback?: { answer: string; sources: string[] };
+  /**
+   * Show the "answer as persona" picker. The seeded personas describe evaluating
+   * the Turing platform, so pages over other corpora (e.g. WKND) hide it.
+   */
+  showPersonas?: boolean;
 }
 
-export function ChatDemo({ bare = false, seed }: Readonly<ChatDemoProps>) {
-  const { client, site, live } = useTuringDemo();
+export function ChatDemo({
+  bare = false,
+  seed,
+  siteOverride,
+  greeting = DEFAULT_GREETING,
+  suggestions = DEFAULT_SUGGESTIONS,
+  script = DEFAULT_SCRIPT,
+  fallback = DEFAULT_FALLBACK,
+  showPersonas = true,
+}: Readonly<ChatDemoProps>) {
+  const { client, site, live } = useTuringDemo(siteOverride);
   const [convo, setConvo] = useState<DemoMsg[]>([]);
   const [input, setInput] = useState("");
   const [busy, setBusy] = useState(false);
@@ -123,7 +154,7 @@ export function ChatDemo({ bare = false, seed }: Readonly<ChatDemoProps>) {
 
   function scriptedSend(text: string) {
     setConvo((c) => [...c, { role: "user", content: text }]);
-    const hit = SCRIPT.find((s) => s.match.test(text)) ?? FALLBACK;
+    const hit = script.find((s) => s.match.test(text)) ?? fallback;
     setBusy(true);
     setConvo((c) => [...c, { role: "assistant", content: "" }]);
     const words = hit.answer.split(" ");
@@ -198,6 +229,7 @@ export function ChatDemo({ bare = false, seed }: Readonly<ChatDemoProps>) {
       {/* T638 — persona intro + picker + active-persona caption. The one-line
           concept sits above the pills; the selected persona's description sits
           below so its meaning is always visible (no tooltip hunt, mobile-safe). */}
+      {showPersonas && (
       <div className="border-b border-border px-4 py-2">
         <p className="mb-1.5 text-[0.7rem] leading-snug text-muted-foreground/80">
           Hear the same answer through different eyes — pick a persona to answer as.
@@ -221,9 +253,10 @@ export function ChatDemo({ bare = false, seed }: Readonly<ChatDemoProps>) {
           {activePersonaHint}
         </p>
       </div>
+      )}
 
       <div ref={scrollRef} className="flex-1 space-y-3 overflow-y-auto px-4 py-4">
-        <Bubble role="assistant" content={GREETING} />
+        <Bubble role="assistant" content={greeting} />
         {convo.map((m, i) => (
           // The SDK pre-commits an EMPTY assistant bubble the moment a turn
           // starts (chat controller: "so a UI can render a typing animation
@@ -249,7 +282,7 @@ export function ChatDemo({ bare = false, seed }: Readonly<ChatDemoProps>) {
         )}
         {showSuggestions && (
           <div className="flex flex-wrap gap-1.5 pt-1">
-            {SUGGESTIONS.map((s) => (
+            {suggestions.map((s) => (
               <button
                 key={s}
                 type="button"

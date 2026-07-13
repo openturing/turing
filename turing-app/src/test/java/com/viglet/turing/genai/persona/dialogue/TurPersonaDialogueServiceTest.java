@@ -126,7 +126,7 @@ class TurPersonaDialogueServiceTest {
     }
 
     @Test
-    void defaultsToTenTurnsAndClampsToForty() {
+    void defaultsToTenTurnsAndClampsToMax() {
         when(personaRepository.findById("A")).thenReturn(Optional.of(speaker("A", "Alice")));
         when(personaRepository.findById("B")).thenReturn(Optional.of(speaker("B", "Bob")));
         TurLLMInstance llm = llm();
@@ -136,7 +136,7 @@ class TurPersonaDialogueServiceTest {
 
         assertThat(turnCount(service.stream("t", List.of("A", "B"), "llm1", null)))
                 .isEqualTo(TurPersonaDialogueService.DEFAULT_TURNS);
-        assertThat(turnCount(service.stream("t", List.of("A", "B"), "llm1", 999))).isEqualTo(40);
+        assertThat(turnCount(service.stream("t", List.of("A", "B"), "llm1", 999))).isEqualTo(300);
         assertThat(turnCount(service.stream("t", List.of("A", "B"), "llm1", 1))).isEqualTo(2);
     }
 

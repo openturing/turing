@@ -1,19 +1,20 @@
 import * as React from "react";
 import { cn } from "@/lib/utils";
+import { VigletLogo } from "@/components/viglet-logo";
 
-/** Turing "Tu" gradient mark + wordmark. */
+/** Original Viglet "Tu" brand mark + wordmark. */
 export function Logo({
   className,
   showWord = true,
+  size = 32,
 }: {
   className?: string;
   showWord?: boolean;
+  size?: number;
 }) {
   return (
     <span className={cn("inline-flex items-center gap-2 font-extrabold", className)}>
-      <span className="inline-flex h-8 w-8 items-center justify-center rounded-[9px] bg-gradient-to-br from-[#1a3a9e] to-[#4f46e5] text-sm font-extrabold text-[#FFDEAD] shadow-md shadow-primary/30">
-        Tu
-      </span>
+      <VigletLogo identifier="turing" size={size} />
       {showWord && <span>Viglet Turing ES</span>}
     </span>
   );
@@ -79,6 +80,9 @@ export const REPO = "openviglet/turing-ce";
 
 export const LINKS = {
   docs: "https://docs.viglet.org/turing/",
+  // Connectors ship in the Dumont project — the AEM connector docs live under
+  // the /dumont route (docs-dumont/connectors/aem.md), not under /turing.
+  aemConnector: "https://docs.viglet.org/dumont/connectors/aem",
   github: "https://github.com/openviglet/turing-ce",
   discussions: "https://github.com/openviglet/turing-ce/discussions",
   issues: "https://github.com/openviglet/turing-ce/issues",

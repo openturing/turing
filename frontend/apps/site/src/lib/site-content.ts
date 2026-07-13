@@ -1,8 +1,11 @@
 import {
   Bot,
+  Boxes,
   Search,
   ServerCog,
+  ShieldCheck,
   Sparkles,
+  Workflow,
   type LucideIcon,
 } from "lucide-react";
 import type { TuringPersonaOption } from "@viglet/turing-react-ui";
@@ -189,6 +192,33 @@ export const SEARCH_DOCS: SearchDoc[] = [
   { title: "Self-host with Docker Compose", type: "Ops", snippet: "Run the full Turing stack locally with turing dev in one command." },
 ];
 
+/**
+ * The SN site the AEM page's live demo pins on the public demo instance. Must
+ * match the seeded site name in `viglet/cloud → docker/demo-seed-src/wknd/`
+ * (`wknd-publish_content.json`). Until that seed is deployed the demo falls
+ * back to WKND_SEARCH_DOCS below.
+ */
+export const WKND_DEMO_SITE = "wknd-publish";
+
+/**
+ * Offline fallback corpus for the AEM page's WKND demo — a slice of the Adobe
+ * WKND reference site (indexed live via the Dumont AEM connector). Mirrors the
+ * kind of content the live `wknd-publish` site returns; URLs resolve on the
+ * public WKND publish site, wknd.site.
+ */
+export const WKND_SEARCH_DOCS: SearchDoc[] = [
+  { title: "Bali Surf Camp", type: "Adventure", snippet: "Home to the best right-handers in Bali — big-wave surfing at Nusa Dua for advanced surfers." },
+  { title: "Beervana in Portland", type: "Adventure", snippet: "A craft-beer tour through Oregon's Willamette Valley, from taprooms to hop farms." },
+  { title: "Yosemite Backpacking", type: "Adventure", snippet: "A guided multi-day trek across granite domes, alpine meadows and giant sequoias." },
+  { title: "Ski Touring Mont Blanc", type: "Adventure", snippet: "Backcountry ski touring across the Chamonix valley beneath Western Europe's highest peak." },
+  { title: "Napa Wine Tasting", type: "Adventure", snippet: "A weekend of cellar-door tastings and vineyard tours through California wine country." },
+  { title: "Arctic Surfing", type: "Magazine", snippet: "Chasing cold-water swells inside the Arctic Circle — wetsuits, aurora and empty line-ups." },
+  { title: "Western Australia Road Trip", type: "Magazine", snippet: "Coast-to-outback across WA: quokkas, karri forests and the Coral Coast." },
+  { title: "Guide to LA Skateparks", type: "Magazine", snippet: "The bowls, ledges and DIY spots that shaped Southern California skate culture." },
+  { title: "About WKND", type: "Page", snippet: "A collective of outdoors, music, crafts, adventure-sports and travel enthusiasts sharing experiences." },
+  { title: "WKND Adventures & Travel", type: "Page", snippet: "Browse curated surf, ski, cycling and camping adventures around the world." },
+];
+
 export interface Step {
   title: string;
   description: string;
@@ -300,20 +330,6 @@ export const RESOURCES: LinkCard[] = [
       "Apache 2.0. Spring Boot 4 backend, React 19 frontend and pluggable AI providers.",
     href: "https://github.com/openviglet/turing-ce",
     tag: "GitHub",
-  },
-  {
-    title: "llms.txt",
-    description:
-      "Machine-readable summary of the platform for LLMs and AI coding agents.",
-    href: "/llms.txt",
-    tag: "AI-ready",
-  },
-  {
-    title: "Marketplace API",
-    description:
-      "JSON catalog of example sites and templates you can import and adapt.",
-    href: "/marketplace/marketplace.json",
-    tag: "JSON",
   },
 ];
 
@@ -813,5 +829,200 @@ export const FAQ: FaqItem[] = [
   {
     q: "Is it production-ready and observable?",
     a: "Yes. Micrometer metrics, chat and conversion analytics, cache-hit gauges and per-tool latency percentiles are built in, multi-tenancy is available behind a feature flag, and YAML eval suites let you gate agent and prompt changes in CI.",
+  },
+];
+
+/* -------------------------------------------------------------------------- */
+/* AEM solution page (/aem) — "AI search for Adobe Experience Manager".        */
+/* Reframes the AEM-native AI-search pitch: Turing gives AEM the same cited    */
+/* AI answers, then goes deeper — cross-repository search, agents, any LLM,    */
+/* any engine, self-hosted data residency, open source. Honest & defensible:   */
+/* where the AEM-native add-on genuinely matches, we say so.                   */
+/* -------------------------------------------------------------------------- */
+
+export interface AemMatrixRow {
+  /** The capability, phrased vendor-neutrally. */
+  capability: string;
+  /** "yes" | "partial" | "no" | freeform short text (per Cell). */
+  turing: string;
+  /** A Cloud-Service-native AEM AI-search add-on (e.g. aem-ai-search.com). */
+  aemAi: string;
+  /** Adobe's own built-in search (Query Builder / Omnisearch). */
+  adobe: string;
+}
+
+export const AEM_COLUMNS = {
+  turing: "Viglet Turing ES",
+  aemAi: "AEM-native AI add-on",
+  adobe: "Adobe native search",
+} as const;
+
+/**
+ * Capability matrix vs a Cloud-Service-native AEM AI-search add-on and Adobe's
+ * own search. Honest — the add-on matches Turing on the core AI-answer story;
+ * the depth gap opens on everything around it. Verify current vendor
+ * capabilities — high-level, as of 2026.
+ */
+export const AEM_MATRIX: AemMatrixRow[] = [
+  { capability: "AI-generated answers with citations", turing: "yes", aemAi: "yes", adobe: "no" },
+  { capability: "Vector / semantic search", turing: "yes", aemAi: "yes", adobe: "no" },
+  { capability: "Real-time SSE streaming", turing: "yes", aemAi: "yes", adobe: "no" },
+  { capability: "Faceted, typo-tolerant search", turing: "yes", aemAi: "partial", adobe: "partial" },
+  { capability: "Indexes AEM 6.5 + AEM as a Cloud Service", turing: "connector", aemAi: "native", adobe: "yes" },
+  { capability: "PDF & DAM asset text extraction", turing: "yes", aemAi: "yes", adobe: "partial" },
+  { capability: "Searches beyond AEM (CMS, DBs, files)", turing: "yes", aemAi: "no", adobe: "no" },
+  { capability: "AI agents, tools & skills", turing: "yes", aemAi: "no", adobe: "no" },
+  { capability: "MCP server & client", turing: "yes", aemAi: "no", adobe: "no" },
+  { capability: "Native provider tools (web search, code, computer use)", turing: "yes", aemAi: "no", adobe: "no" },
+  { capability: "LLM providers", turing: "OpenAI · Anthropic · Gemini · Azure · Ollama", aemAi: "OpenAI · Anthropic", adobe: "—" },
+  { capability: "Bring your own search engine", turing: "Solr · ES · Lucene", aemAi: "no (Oak)", adobe: "no (Oak)" },
+  { capability: "Pluggable reranker (LLM / cross-encoder / Cohere)", turing: "yes", aemAi: "no", adobe: "no" },
+  { capability: "Groundedness check & honest refusal", turing: "yes", aemAi: "partial", adobe: "no" },
+  { capability: "Open source (Apache 2.0)", turing: "yes", aemAi: "no", adobe: "no" },
+  { capability: "Where content & queries live", turing: "your infra", aemAi: "Adobe cloud", adobe: "Adobe cloud" },
+  { capability: "Pricing model", turing: "free / self-host", aemAi: "license + consulting", adobe: "bundled w/ AEM" },
+  { capability: "Time to first result", turing: "minutes", aemAi: "2–4 week engagement", adobe: "bundled" },
+];
+
+export interface AemStep {
+  step: string;
+  title: string;
+  body: string;
+}
+
+/** How Turing plugs into an AEM stack — connect → index → answer → automate. */
+export const AEM_STEPS: AemStep[] = [
+  {
+    step: "1",
+    title: "Connect your AEM tier",
+    body: "Point the Turing AEM connector at your author or publish instance. It crawls pages, components and DAM assets — extracting text from PDFs and Office files — into a Semantic Navigation site. Works with AEM 6.5+ and AEM as a Cloud Service; no code changes to your templates.",
+  },
+  {
+    step: "2",
+    title: "Index into the engine you choose",
+    body: "Content lands in Apache Solr, Elasticsearch or an embedded Lucene index with vector embeddings — not locked to AEM's Oak repository. Fields are described as code in a versioned manifest, and hybrid RRF fuses keyword and semantic relevance for every query.",
+  },
+  {
+    step: "3",
+    title: "Drop the UI anywhere",
+    body: "Mount cited AI search and chat into an AEM page component, an Adobe Edge Delivery Services (EDS) block, or your own SPA — with the zero-dependency vanilla-JS SDK or the React SDK. Answers stream token-by-token over SSE with inline citations back to the source page.",
+  },
+  {
+    step: "4",
+    title: "Turn search into an agent",
+    body: "Go past answers: configure an agent that calls your tools, captures form slots, runs Anthropic-standard skills in a Docker sandbox, federates over MCP and uses each LLM's native tools — the depth an AEM-only add-on can't reach.",
+  },
+];
+
+export interface AemDepth {
+  icon: LucideIcon;
+  iconClass: string;
+  title: string;
+  body: string;
+}
+
+/**
+ * "We have more depth" — the capabilities that live beyond an AEM-native
+ * add-on's ceiling. Each names what the AEM-only pitch can't do and what
+ * Turing does instead.
+ */
+export const AEM_DEPTH: AemDepth[] = [
+  {
+    icon: Boxes,
+    iconClass: "from-[#d97706] to-[#f59e0b]",
+    title: "One index across every repository",
+    body: "AEM is rarely your only source. Turing federates AEM pages and DAM assets with WordPress, databases, file shares and any REST source into a single index — so one answer can cite a policy PDF, a product record and an AEM page together. An AEM-native tool stops at the AEM boundary.",
+  },
+  {
+    icon: Bot,
+    iconClass: "from-[#1a3a9e] to-[#4169E1]",
+    title: "Agents, not just answers",
+    body: "Beyond RAG, configure agents that call your tools, capture form slots, run skills in a sandbox and hand off to a human. An AEM search box becomes an AI concierge that can actually do things — book, look up, escalate — not only summarize a page.",
+  },
+  {
+    icon: ServerCog,
+    iconClass: "from-[#4f46e5] to-[#6366f1]",
+    title: "Any LLM, any engine — your choice",
+    body: "Not two providers, but OpenAI, Anthropic, Gemini, Azure OpenAI and local Ollama — running on Solr, Elasticsearch or Lucene. Switch per agent, store keys encrypted, and pin nothing to a single vendor's cloud.",
+  },
+  {
+    icon: ShieldCheck,
+    iconClass: "from-[#059669] to-[#10b981]",
+    title: "Your content stays in your infrastructure",
+    body: "A Cloud-Service-native add-on runs — and reasons over your content — inside Adobe's cloud. Turing is self-hosted under Apache 2.0: pages, embeddings and query logs never leave your network, and you can run fully local models to keep even the LLM in-house.",
+  },
+  {
+    icon: Workflow,
+    iconClass: "from-[#0ea5e9] to-[#4169E1]",
+    title: "MCP + native provider tools",
+    body: "Expose AEM search as an MCP server for any AI client, federate out to other MCP servers, and switch on each provider's server-side web search, code execution and computer use — opt-in per agent, wired into the same cited-answer UI.",
+  },
+  {
+    icon: Sparkles,
+    iconClass: "from-[#8b5cf6] to-[#6366f1]",
+    title: "Answers a governed brand can trust",
+    body: "A pluggable reranker, a configurable relevance gate, an optional groundedness check and a deterministic “not in this site” refusal keep a regulated AEM property from shipping confident hallucinations — auditable end to end.",
+  },
+];
+
+export const AEM_CODE = {
+  caption: "Drop cited AI search into an AEM page or EDS block",
+  lang: "html",
+  code: `<!-- Vanilla, zero-dependency: works in an AEM component or an EDS block -->
+<div id="turing-search"></div>
+<script type="module">
+  import {
+    createTuringClient,
+    createSearchController,
+    createChatController,
+  } from "https://your-host/turing-sdk.js";
+
+  // Points at YOUR Turing instance — content never leaves your network.
+  const client = createTuringClient({ baseURL: "https://search.acme.com/api" });
+
+  // Faceted, typo-tolerant search over indexed AEM content…
+  const search = createSearchController(client, { site: "intranet", locale: "en_US" });
+  // …plus a grounded, cited chat answer that streams over SSE.
+  const chat = createChatController(client, { site: "intranet" });
+
+  search.subscribe((state) => render("#turing-search", state));
+  search.query("parental leave policy");
+</script>`,
+} as const;
+
+export interface AemFaqItem {
+  q: string;
+  a: string;
+}
+
+/** AEM-specific objection-answering FAQ (emitted as FAQPage JSON-LD too). */
+export const AEM_FAQ: AemFaqItem[] = [
+  {
+    q: "Do I have to move off AEM?",
+    a: "No. Turing sits alongside AEM. Its connector indexes AEM 6.5+ and AEM as a Cloud Service — pages, components and DAM assets — without touching your templates or authoring workflow. AEM stays your content source of truth; Turing adds the AI search and agent layer on top.",
+  },
+  {
+    q: "Isn't it limited to AEM content, like the AEM-native tools?",
+    a: "The opposite. An AEM-native add-on stops at the AEM repository. Turing federates AEM with WordPress, databases, file shares and any REST source into one index, so a single cited answer can span your whole content estate — not just what lives in Oak.",
+  },
+  {
+    q: "Where do my content and my users' queries go?",
+    a: "Into your own infrastructure. Turing is self-hosted under Apache 2.0 — indexed AEM content, embeddings and query logs stay on your hardware. A Cloud-Service-native add-on reasons over your content inside Adobe's cloud; Turing doesn't. Run local Ollama models and even the LLM stays in-house.",
+  },
+  {
+    q: "Which LLMs can it use — just OpenAI and Anthropic?",
+    a: "More than that. OpenAI, Anthropic Claude, Google Gemini, Azure OpenAI, local Ollama and any OpenAI-compatible endpoint plug in behind one interface, switchable per agent, with encrypted keys. Reranking and embeddings are pluggable too.",
+  },
+  {
+    q: "Do I need a multi-week consulting engagement to install it?",
+    a: "No. It's open source with a zero-dependency CLI: scaffold a project, run a local stack and point the connector at AEM in one session. First searches come back in minutes, not a 2–4 week paid implementation.",
+  },
+  {
+    q: "Can I drop it into AEM pages or Edge Delivery Services?",
+    a: "Yes. The vanilla-JS SDK is zero-dependency and framework-agnostic — it runs in an AEM component, a plain <script> tag or an Adobe EDS block (example blocks ship in the repo). There's also a React SDK with headless hooks and components for search, facets, autocomplete and cited chat.",
+  },
+  {
+    q: "Does it handle PDFs and DAM assets?",
+    a: "Yes. The connector extracts text from PDFs and Office documents in the DAM and indexes them alongside pages, so answers can cite an asset the same way they cite a page.",
   },
 ];

@@ -9,6 +9,7 @@ const COLUMNS: { heading: string; links: { label: string; href: string }[] }[] =
       { label: "How it works", href: "/#how" },
       { label: "Compare", href: "/compare" },
       { label: "Migrate", href: "/migrate" },
+      { label: "AEM search", href: "/aem" },
       { label: "Self-host", href: "/#self-host" },
       { label: "Marketplace", href: "/#marketplace" },
       { label: "React SDK", href: LINKS.storybook },

@@ -4,7 +4,7 @@ import { Container, Eyebrow, LINKS } from "@/components/brand";
 import { CopyCommand } from "@/components/copy-command";
 
 const POINTS = [
-  "One Docker Compose stack — search engine, vector store, admin console and API",
+  "Prebuilt image on GitHub Container Registry — nothing to clone, nothing to build",
   "Your content and embeddings never leave your network — no SaaS tier, no telemetry",
   "Point it at any LLM provider and your own Solr, Elasticsearch or embedded Lucene",
 ];
@@ -24,14 +24,13 @@ function ComposeTerminal() {
       </div>
       <pre className="overflow-x-auto p-5 font-mono text-[0.8rem] leading-relaxed text-[#d7def5]">
         <code>
-          <span className={P}>$</span> git clone{" "}
-          <span className={F}>https://github.com/openviglet/turing-ce.git</span>
-          {"\n"}
-          <span className={P}>$</span> cd turing-ce
-          {"\n"}
-          <span className={P}>$</span> docker compose up -d <span className={F}>--wait</span>
+          <span className={P}>$</span> docker run -p 2700:2700{" "}
+          <span className={F}>ghcr.io/openviglet/turing-ce</span>
           {"\n\n"}
-          <span className={OK}>✓</span> solr        <span className={C}>running</span>
+          <span className={C}># pulling ghcr.io/openviglet/turing-ce:latest ...</span>
+          {"\n"}
+          <span className={OK}>✓</span> image pulled{"   "}
+          <span className={C}>no build step</span>
           {"\n"}
           <span className={OK}>✓</span> turing-app  <span className={C}>running</span>
           {"\n\n"}
@@ -53,9 +52,14 @@ export function SelfHost() {
             Self-host the whole platform in one command
           </h2>
           <p className="mt-3 text-base leading-relaxed text-muted-foreground sm:text-lg">
-            No account, no sales call, no data leaving your infrastructure. Clone the
-            repo and bring the full stack up with Docker Compose — then open the
-            console and index your first site.
+            No account, no sales call, no data leaving your infrastructure. There is
+            nothing to clone or build — the image is already published on GitHub
+            Container Registry. Pull it, run it, then open the console and index your
+            first site. Want the full stack (Solr, MariaDB, monitoring)? A ready
+            <code className="mx-1 rounded bg-muted px-1.5 py-0.5 text-[0.85em]">
+              docker compose
+            </code>
+            file ships in the repo too.
           </p>
           <ul className="mt-6 space-y-3">
             {POINTS.map((p) => (
@@ -67,7 +71,7 @@ export function SelfHost() {
           </ul>
           <div className="mt-7">
             <CopyCommand
-              command="docker compose up -d --wait"
+              command="docker run -p 2700:2700 ghcr.io/openviglet/turing-ce"
               className="border-border bg-muted text-foreground"
             />
           </div>
