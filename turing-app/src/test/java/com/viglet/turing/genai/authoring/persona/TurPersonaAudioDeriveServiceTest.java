@@ -13,6 +13,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.startsWith;
 import static org.mockito.Mockito.when;
 
 import org.junit.jupiter.api.Test;
@@ -67,16 +68,22 @@ class TurPersonaAudioDeriveServiceTest {
     void drafsPersonaFromTranscript() {
         when(transcriptionService.transcribe(any(), any(), any()))
                 .thenReturn(TurTranscriptionResult.ok("Olá, eu vendo carros há vinte anos.", "pt"));
-        String draftJson = """
+        // Call 1 — classification JSON (no systemInstruction here in T716).
+        String classifyJson = """
                 {"name": "veteran-car-salesman", "description": "Seasoned dealer.",
-                 "systemInstruction": "You are a veteran car salesman.",
                  "tone": "CASUAL", "verbosity": 4, "languageStyle": "PERSUASIVE",
                  "personaKind": "BOTH", "readingLevel": "SECONDARY",
                  "domainExpertise": "EXPERT", "vocabularyCeiling": "everyday words",
                  "primaryLanguage": "pt"}
                 """;
-        when(llmSummaryService.generate(anyString(), anyString(), anyString(), anyBoolean()))
-                .thenReturn(new SummaryResult(true, null, draftJson, true));
+        when(llmSummaryService.generate(startsWith("persona-from-audio:classify"),
+                anyString(), anyString(), anyBoolean()))
+                .thenReturn(new SummaryResult(true, null, classifyJson, true));
+        // Call 2 — the rich markdown voice brief becomes the systemInstruction.
+        String brief = "# Quem você é\nVocê é um vendedor veterano. Fala \"né?\" o tempo todo.";
+        when(llmSummaryService.generate(startsWith("persona-from-audio:brief"),
+                anyString(), anyString(), anyBoolean()))
+                .thenReturn(new SummaryResult(true, null, brief, true));
 
         DraftResult result = service.derive(new byte[] { 1 }, "audio/mpeg", "pt");
 
@@ -85,6 +92,7 @@ class TurPersonaAudioDeriveServiceTest {
         assertThat(result.draft()).isNotNull();
         assertThat(result.draft().getId()).isNull();
         assertThat(result.draft().getName()).isEqualTo("veteran-car-salesman");
+        assertThat(result.draft().getSystemInstruction()).isEqualTo(brief);
         assertThat(result.draft().getTone()).isEqualTo(TurPersonaTone.CASUAL);
         assertThat(result.draft().getVerbosity()).isEqualTo(4);
         assertThat(result.draft().getPersonaKind()).isEqualTo(TurPersonaKind.BOTH);
@@ -98,14 +106,18 @@ class TurPersonaAudioDeriveServiceTest {
     void synthesisesNameAndSystemInstructionWhenModelLeavesThemBlank() {
         when(transcriptionService.transcribe(any(), any(), any()))
                 .thenReturn(TurTranscriptionResult.ok("A calm expert explains taxes.", "en"));
-        // Model fills the constrained enums but omits the two free-text fields.
-        String draftJson = """
-                {"description": "A calm tax expert.", "systemInstruction": "",
+        // Classification omits name; the brief call comes back blank.
+        String classifyJson = """
+                {"description": "A calm tax expert.",
                  "tone": "TECHNICAL", "verbosity": 2, "languageStyle": "INSTRUCTIONAL",
                  "personaKind": "BOTH", "domainExpertise": "EXPERT"}
                 """;
-        when(llmSummaryService.generate(anyString(), anyString(), anyString(), anyBoolean()))
-                .thenReturn(new SummaryResult(true, null, draftJson, false));
+        when(llmSummaryService.generate(startsWith("persona-from-audio:classify"),
+                anyString(), anyString(), anyBoolean()))
+                .thenReturn(new SummaryResult(true, null, classifyJson, false));
+        when(llmSummaryService.generate(startsWith("persona-from-audio:brief"),
+                anyString(), anyString(), anyBoolean()))
+                .thenReturn(new SummaryResult(true, null, "", false));
 
         DraftResult result = service.derive(new byte[] { 1 }, "audio/mpeg", "en");
 
@@ -123,12 +135,16 @@ class TurPersonaAudioDeriveServiceTest {
     void defaultsBothKindAndIgnoresBadEnums() {
         when(transcriptionService.transcribe(any(), any(), any()))
                 .thenReturn(TurTranscriptionResult.ok("Some words.", "en"));
-        String draftJson = """
+        String classifyJson = """
                 {"name": "x", "tone": "NONSENSE", "verbosity": 99,
                  "personaKind": "", "readingLevel": "BOGUS"}
                 """;
-        when(llmSummaryService.generate(anyString(), anyString(), anyString(), anyBoolean()))
-                .thenReturn(new SummaryResult(true, null, draftJson, false));
+        when(llmSummaryService.generate(startsWith("persona-from-audio:classify"),
+                anyString(), anyString(), anyBoolean()))
+                .thenReturn(new SummaryResult(true, null, classifyJson, false));
+        when(llmSummaryService.generate(startsWith("persona-from-audio:brief"),
+                anyString(), anyString(), anyBoolean()))
+                .thenReturn(new SummaryResult(true, null, "# Voice\nSpeaks plainly.", false));
 
         DraftResult result = service.derive(new byte[] { 1 }, "audio/wav", null);
 

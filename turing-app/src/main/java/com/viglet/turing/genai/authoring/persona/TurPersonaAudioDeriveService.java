@@ -40,6 +40,14 @@ import tools.jackson.databind.json.JsonMapper;
  * existing persona review form (the "derive, never auto-apply" discipline of
  * the T387 manifest deriver).
  *
+ * <p>T716 — the analysis is a <strong>two-call</strong> derivation: call 1
+ * classifies the constrained fields (name/description/enums/audience) as strict
+ * JSON; call 2 writes the {@code systemInstruction} as a rich, multi-section
+ * character brief in <em>plain markdown</em> (verbal tics, catchphrases,
+ * reasoning and reactions quoted from the transcript), because a long multi-line
+ * brief embedded in a JSON string is what weak models truncate. The whole
+ * recording is analysed (see {@link #MAX_TRANSCRIPT_CHARS}).
+ *
  * @author Alexandre Oliveira
  * @since 2026.3.4
  */
@@ -47,21 +55,32 @@ import tools.jackson.databind.json.JsonMapper;
 @Service
 public class TurPersonaAudioDeriveService {
 
-    private static final int MAX_TRANSCRIPT_CHARS = 16_000;
+    /**
+     * T716 — analyse the whole recording, not the first few minutes: a 30-min
+     * transcript is ~40-45k chars, and the richest speech mannerisms (tics,
+     * catchphrases, how they react under pressure) surface throughout, not just
+     * up front.
+     */
+    private static final int MAX_TRANSCRIPT_CHARS = 60_000;
 
     private static final JsonMapper MAPPER = JsonMapper.builder()
             .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
             .build();
 
-    private static final String SYSTEM_PROMPT = """
-            You analyse a transcript of a real conversation/interview and draft a
-            reusable Persona for the Turing platform. Extract BOTH how the speaker
-            sounds (a voice) AND who they are as a reader (an audience).
+    /**
+     * T716 — call 1: classify the speaker into the constrained persona fields.
+     * Strict single-line JSON (no free-text {@code systemInstruction} here — the
+     * rich voice brief is a separate plain-markdown call, since a long multi-line
+     * brief embedded in a JSON string is exactly what weak models truncate).
+     */
+    private static final String CLASSIFY_PROMPT = """
+            You analyse a transcript of a real conversation/interview and classify
+            the speaker for the Turing platform: BOTH how they sound (a voice) AND
+            who they are as a reader (an audience).
 
             Return EXACTLY ONE JSON object on a single line — no prose, no code
             fences. Schema:
-            {"name": "<kebab-case id>", "description": "<one sentence>",
-             "systemInstruction": "<2-5 sentences, second person, the voice>",
+            {"name": "<descriptive kebab-case id>", "description": "<one sentence>",
              "tone": "FORMAL|CASUAL|TECHNICAL|EXECUTIVE",
              "verbosity": <1-5>,
              "languageStyle": "NEUTRAL|DIRECT|NARRATIVE|PERSUASIVE|INSTRUCTIONAL",
@@ -72,14 +91,65 @@ public class TurPersonaAudioDeriveService {
              "primaryLanguage": "<ISO-639 code, e.g. pt|en|es>"}
 
             Infer values ONLY from evidence in the transcript. Ground the reading
-            level and expertise in how the person actually speaks.
+            level and expertise in how the person actually speaks. "name" and
+            "description" are REQUIRED and non-empty — write a descriptive
+            kebab-case "name" (never a placeholder), and prefer the person's real
+            name/role when the transcript reveals it.
+            """;
 
-            "name" and "systemInstruction" are REQUIRED and must be non-empty —
-            they are the whole point of the draft. Always write a descriptive
-            kebab-case "name" (never a placeholder) and a concrete 2-5 sentence
-            "systemInstruction" in the second person that captures this specific
-            voice. Never return them blank, null, or omitted. Write the
-            systemInstruction in the transcript's own language.
+    /**
+     * T716 — call 2: the rich voice contract. Plain markdown (NOT JSON) so a long
+     * multi-section brief with quotes and line breaks is robust; this text becomes
+     * the persona's {@code systemInstruction}.
+     */
+    private static final String BRIEF_PROMPT = """
+            You are given a transcript of a real person speaking. Write a reusable,
+            richly detailed PERSONA BRIEF that lets an LLM convincingly role-play
+            this specific person as a conversational counterpart.
+
+            Output ONLY the brief — no preamble, no code fences, no JSON. Use
+            Markdown with the sections below. Write the ENTIRE brief — headings
+            included — in the SAME LANGUAGE the person speaks in the transcript
+            (e.g. if they speak Portuguese, write it in Portuguese), and in the
+            SECOND PERSON ("You are…"). Ground EVERYTHING in evidence from the
+            transcript — quote the person's actual words VERBATIM. If the
+            transcript gives no evidence for a section, omit it rather than
+            inventing; NEVER fabricate names, numbers, employers, clients, or
+            facts the transcript doesn't contain.
+
+            The single most important goal is to capture HOW THIS PERSON SPEAKS in
+            maximum detail, so a reader can imitate them convincingly. Enumerate,
+            do NOT summarise — the more concrete verbatim mannerisms, the better.
+
+            Sections (translate these English headings into the transcript's
+            language; skip any without evidence):
+            # Who you are — role/identity and what this conversation is for
+            # Your background — background that emerges from how they talk
+            # How you speak — THE MOST IMPORTANT SECTION; be exhaustive, not a
+              summary. Give a bulleted list of this person's characteristic
+              expressions QUOTED VERBATIM (each exactly as they say it) — capture
+              as many as the transcript supports, aiming for 10+ when available:
+              filler words and discourse markers, connectors, interjections,
+              catchphrases/bordões, slang, diminutives, idiosyncratic
+              pronunciations or coinages, and their typical sentence openers and
+              enders. Then describe register (formal/informal), sentence rhythm
+              and length, humour, and any recurring metaphors — with quotes.
+            # How you reason — how they reason and what drives their decisions
+            # How you react — how they respond to ideas and pushback; what they
+              probe for; when they commit vs. defer
+            # What you know and what you don't — domains of confidence vs. deference
+            # Examples of how you sound — 2-3 short example exchanges (a question
+              from a colleague + your reply) reconstructed in this person's EXACT
+              voice, reusing the real expressions listed above so the cadence
+              matches. Imitate only the MANNER — do not invent facts, names, or
+              numbers the transcript doesn't contain.
+            # Rules — always stay in character; refuse to "leave character" unless
+              the user explicitly asks, then note it is a synthetic persona
+            # Notice — one line: this is a synthetic persona built from notes, not
+              the real person, and does not represent their real opinions
+
+            Be concrete and specific to THIS person — a stranger reading the brief
+            should be able to imitate them. Use the WHOLE transcript.
             """;
 
     private final TurTranscriptionService transcriptionService;
@@ -118,28 +188,34 @@ public class TurPersonaAudioDeriveService {
         }
         String clipped = transcript.length() > MAX_TRANSCRIPT_CHARS
                 ? transcript.substring(0, MAX_TRANSCRIPT_CHARS) : transcript;
-        String cacheKey = "persona-from-audio:" + Integer.toHexString(clipped.hashCode());
+        String hash = Integer.toHexString(clipped.hashCode());
 
-        SummaryResult llm = llmSummaryService.generate(cacheKey, clipped, SYSTEM_PROMPT, false);
-        if (!llm.success() || StringUtils.isBlank(llm.content())) {
-            return new DraftResult(false, StringUtils.defaultString(llm.error(),
+        // Call 1 — structured classification (strict JSON).
+        SummaryResult classify = llmSummaryService.generate(
+                "persona-from-audio:classify:" + hash, clipped, CLASSIFY_PROMPT, false);
+        if (!classify.success() || StringUtils.isBlank(classify.content())) {
+            return new DraftResult(false, StringUtils.defaultString(classify.error(),
                     "Could not analyse the transcript."), transcript, null);
         }
-
-        // Debug aid: the raw model draft is the ground truth when a field (esp.
-        // name / systemInstruction) comes back empty — logged verbatim on request.
-        log.info("[PersonaFromAudio] transcript {} chars, raw LLM draft: {}",
-                transcript.length(), llm.content());
-
-        DraftDto dto = parse(llm.content());
+        log.info("[PersonaFromAudio] transcript {} chars, classify JSON: {}",
+                transcript.length(), classify.content());
+        DraftDto dto = parse(classify.content());
         if (dto == null) {
             return new DraftResult(false, "Could not parse the drafted persona.",
                     transcript, null);
         }
-        return new DraftResult(true, null, transcript, toDraft(dto));
+
+        // Call 2 — the rich voice brief (plain markdown → systemInstruction).
+        SummaryResult brief = llmSummaryService.generate(
+                "persona-from-audio:brief:" + hash, clipped, BRIEF_PROMPT, false);
+        String briefText = brief.success() ? StringUtils.trimToNull(brief.content()) : null;
+        log.info("[PersonaFromAudio] voice brief {} chars",
+                briefText == null ? 0 : briefText.length());
+
+        return new DraftResult(true, null, transcript, toDraft(dto, briefText));
     }
 
-    private TurPersonaDto toDraft(DraftDto dto) {
+    private TurPersonaDto toDraft(DraftDto dto, String briefText) {
         TurPersonaDto draft = new TurPersonaDto();
         // id stays null — the UuidGenerator assigns one only on a real save.
         draft.setDescription(dto.description());
@@ -150,12 +226,11 @@ public class TurPersonaAudioDeriveService {
         TurPersonaKind kind = parseEnum(TurPersonaKind.class, dto.personaKind());
         draft.setPersonaKind(kind == null ? TurPersonaKind.BOTH : kind);
 
-        // name / systemInstruction are the two free-text fields the model must
-        // author; weak models sometimes leave them blank while still filling the
-        // constrained enums. Never hand the review form an empty draft for
-        // either — synthesise a deterministic fallback and flag it in the log.
+        // name comes from call 1, the systemInstruction from call 2 (the brief);
+        // never hand the review form an empty draft for either — synthesise a
+        // deterministic fallback and flag it in the log.
         draft.setName(resolveName(dto));
-        draft.setSystemInstruction(resolveSystemInstruction(dto, draft));
+        draft.setSystemInstruction(resolveSystemInstruction(briefText, dto, draft));
 
         TurPersonaAudience audience = new TurPersonaAudience();
         audience.setReadingLevel(parseEnum(TurPersonaReadingLevel.class, dto.readingLevel()));
@@ -182,13 +257,13 @@ public class TurPersonaAudioDeriveService {
     }
 
     /**
-     * LLM systemInstruction, else a voice contract synthesised from the extracted
+     * The call-2 voice brief, else a voice contract synthesised from the extracted
      * traits so the review form is never handed an empty (and most important)
      * field. A warn marks the synthesised path so a recurring blank is visible.
      */
-    private String resolveSystemInstruction(DraftDto dto, TurPersonaDto draft) {
-        if (StringUtils.isNotBlank(dto.systemInstruction())) {
-            return dto.systemInstruction().trim();
+    private String resolveSystemInstruction(String briefText, DraftDto dto, TurPersonaDto draft) {
+        if (StringUtils.isNotBlank(briefText)) {
+            return briefText.trim();
         }
         StringBuilder voice = new StringBuilder("Respond in the voice extracted from the recording.");
         if (draft.getTone() != null) {
@@ -256,7 +331,7 @@ public class TurPersonaAudioDeriveService {
     }
 
     @JsonIgnoreProperties(ignoreUnknown = true)
-    private record DraftDto(String name, String description, String systemInstruction,
+    private record DraftDto(String name, String description,
             String tone, Integer verbosity, String languageStyle, String personaKind,
             String readingLevel, String domainExpertise, String vocabularyCeiling,
             String primaryLanguage) {

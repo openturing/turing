@@ -1,7 +1,7 @@
-# Last task number — `T715` · next block letter — `AW`
+# Last task number — `T716` · next block letter — `AW`
 
 > **Single source of truth for the next free task number.** The next new task is
-> `T716`; after assigning it, bump the number above and the log line below.
+> `T717`; after assigning it, bump the number above and the log line below.
 >
 > **Next block letter — `AW`** (Block **AV** = POST-native search & link-free
 > response contract — T707–T714, created 2026-07-12; Block **AU** = Persona
@@ -56,6 +56,7 @@ number" looked free but wasn't. Grepping three files (`ROADMAP.md`,
 
 ## Log (most recent first)
 
+- **T716 SHIPPED** (Block AS §XLII.8 — richer persona-from-audio: two-call derivation (structured JSON classification + a separate plain-markdown multi-section character brief as the systemInstruction, capturing verbal tics/catchphrases/reasoning/reactions grounded in the transcript) + raise transcript analysis cap so the whole 30-min recording is used) — 2026-07-12.
 - **T715 SHIPPED** (Block AS §XLII.7 — async persona-from-audio job + live SSE progress bar + per-chunk transcription progress + opt-in chunk-by-duration `max-chunk-seconds`; plus persona-draft hardening: raw-draft debug log + required-field prompt + name/systemInstruction fallback) — 2026-07-12.
 - **T707-T714 CREATED** (📋/💭, Block AV §XLV — POST-native search & link-free response contract: anonymous read-only JSON request bean + opt-in structured (field/value/selected + pagination/sort/cleanup/locale actions) response behind format negotiation, both JS SDKs to 100% POST driving toggles from structured state, autocomplete/list POST variants, href-field deprecation, docs/showcase/EDS; additive — GET + server-rendered links stay for deep-linking/SEO/no-JS) — 2026-07-12.
 - **T706 SHIPPED** (Block AU §XLIV — bento Persona Dialogue studio: list + workspace + create wired to real API; ordered speakers via shared PersonaSelectGrid; live SSE transcript; old single-page dialogue retired) — 2026-07-12.
