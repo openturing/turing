@@ -10,6 +10,8 @@ REM Packages (all under frontend/packages/, scope @viglet):
 REM   js-sdk     -> @viglet/turing-sdk        (vanilla JS, zero-dep)
 REM   react-sdk  -> @viglet/turing-react-sdk  (React hooks + components)
 REM   react-ui   -> @viglet/turing-react-ui   (headless React UI primitives)
+REM   flow-dsl   -> @viglet/turing-flow-dsl   (chatflow DSL transpiler)
+REM   cli        -> @viglet/turing-cli        (init/dev/deploy/logs/eval CLI)
 REM
 REM Auth (publish to registry.npmjs.org):
 REM   Either be `npm login`-ed already, OR set a token:
@@ -22,14 +24,19 @@ REM automatically before it is built and published, so the new version is never
 REM rejected by npm as already-published. Pass --no-bump to skip this.
 REM
 REM Usage:
-REM   publish-js.cmd                       Patch-bump + publish ALL three packages.
+REM   publish-js.cmd                       Patch-bump + publish ALL packages.
 REM   publish-js.cmd js-sdk                Only the vanilla JS SDK.
 REM   publish-js.cmd react-sdk react-ui    A chosen subset.
+REM   publish-js.cmd flow-dsl cli          The DSL transpiler + CLI.
 REM   publish-js.cmd --no-bump [targets]   Publish the current version as-is
 REM                                        (no patch bump).
 REM
 REM Notes:
-REM   * react-ui runs its bundle-size budget + tests as a publish gate.
+REM   * Every run patch-bumps each target package.json (npm version patch, no git
+REM     tag) BEFORE building, so the new version is never rejected by npm as
+REM     already-published. Pass --no-bump to opt out.
+REM   * react-ui / flow-dsl / cli run their tests (and react-ui its bundle-size
+REM     budget) as a publish gate.
 REM   * Publishes to registry.npmjs.org (per each package's publishConfig).
 REM ============================================================================
 
@@ -59,6 +66,8 @@ set "DO_BUMP=1"
 set "WANT_JSSDK=0"
 set "WANT_REACTSDK=0"
 set "WANT_REACTUI=0"
+set "WANT_FLOWDSL=0"
+set "WANT_CLI=0"
 set "ANY_TARGET=0"
 
 :parse
@@ -68,8 +77,10 @@ if /i "%~1"=="js-sdk"     ( set "WANT_JSSDK=1"    & set "ANY_TARGET=1" & shift &
 if /i "%~1"=="sdk"        ( set "WANT_JSSDK=1"    & set "ANY_TARGET=1" & shift & goto parse )
 if /i "%~1"=="react-sdk"  ( set "WANT_REACTSDK=1" & set "ANY_TARGET=1" & shift & goto parse )
 if /i "%~1"=="react-ui"   ( set "WANT_REACTUI=1"  & set "ANY_TARGET=1" & shift & goto parse )
+if /i "%~1"=="flow-dsl"   ( set "WANT_FLOWDSL=1"  & set "ANY_TARGET=1" & shift & goto parse )
+if /i "%~1"=="cli"        ( set "WANT_CLI=1"      & set "ANY_TARGET=1" & shift & goto parse )
 echo [ERROR] Unknown argument: %~1
-echo         Valid targets: js-sdk ^| react-sdk ^| react-ui   (flag: --bump)
+echo         Valid targets: js-sdk ^| react-sdk ^| react-ui ^| flow-dsl ^| cli   (flag: --no-bump)
 exit /b 1
 
 :after_parse
@@ -77,6 +88,8 @@ if "%ANY_TARGET%"=="0" (
     set "WANT_JSSDK=1"
     set "WANT_REACTSDK=1"
     set "WANT_REACTUI=1"
+    set "WANT_FLOWDSL=1"
+    set "WANT_CLI=1"
 )
 
 echo ============================================================
@@ -84,6 +97,8 @@ echo  Publishing Viglet Turing ES JS packages to npm
 echo  js-sdk    (@viglet/turing-sdk)       : %WANT_JSSDK%
 echo  react-sdk (@viglet/turing-react-sdk) : %WANT_REACTSDK%
 echo  react-ui  (@viglet/turing-react-ui)  : %WANT_REACTUI%
+echo  flow-dsl  (@viglet/turing-flow-dsl)  : %WANT_FLOWDSL%
+echo  cli       (@viglet/turing-cli)       : %WANT_CLI%
 echo  patch-bump before publish            : %DO_BUMP% ^(1=yes^)
 echo ============================================================
 
@@ -123,6 +138,35 @@ REM version at publish time. So sdk and react-ui MUST be bumped+published BEFORE
 REM react-sdk — otherwise react-sdk pins the pre-bump version of its deps (it
 REM did once: react-sdk@2026.3.4 → react-ui@2026.3.3 instead of 2026.3.4).
 REM Therefore: sdk → react-ui → react-sdk (react-sdk always LAST).
+
+REM flow-dsl and cli have NO workspace deps, so their order is free; publish
+REM them first, then the sdk → react-ui → react-sdk chain.
+
+REM ── flow-dsl ────────────────────────────────────────────────────────────
+if "%WANT_FLOWDSL%"=="1" (
+    echo.
+    echo --- @viglet/turing-flow-dsl -------------------------------------------
+    if "%DO_BUMP%"=="1" call :bump "%FRONTEND%\packages\flow-dsl" || exit /b 1
+    call "%PNPM%" -C "%FRONTEND%" --filter "@viglet/turing-flow-dsl" run build
+    if errorlevel 1 ( echo [ERROR] flow-dsl build failed. & exit /b 1 )
+    echo [INFO] Publish gate: tests ...
+    call "%PNPM%" -C "%FRONTEND%\packages\flow-dsl" run test
+    if errorlevel 1 ( echo [ERROR] flow-dsl tests failed. & exit /b 1 )
+    call :publish "%FRONTEND%\packages\flow-dsl" || exit /b 1
+)
+
+REM ── cli ─────────────────────────────────────────────────────────────────
+if "%WANT_CLI%"=="1" (
+    echo.
+    echo --- @viglet/turing-cli ------------------------------------------------
+    if "%DO_BUMP%"=="1" call :bump "%FRONTEND%\packages\cli" || exit /b 1
+    call "%PNPM%" -C "%FRONTEND%" --filter "@viglet/turing-cli" run build
+    if errorlevel 1 ( echo [ERROR] cli build failed. & exit /b 1 )
+    echo [INFO] Publish gate: tests ...
+    call "%PNPM%" -C "%FRONTEND%\packages\cli" run test
+    if errorlevel 1 ( echo [ERROR] cli tests failed. & exit /b 1 )
+    call :publish "%FRONTEND%\packages\cli" || exit /b 1
+)
 
 REM ── js-sdk ──────────────────────────────────────────────────────────────
 if "%WANT_JSSDK%"=="1" (
