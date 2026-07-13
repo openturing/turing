@@ -6,7 +6,7 @@ function result(over: Partial<TuringContentFitResult> = {}): TuringContentFitRes
   return {
     personaId: "p1",
     personaName: "Skeptical Developer",
-    fitScore: 0.66,
+    fitScore: 66,
     summary: "Mostly fits, some jargon.",
     fits: ["Concrete examples"],
     misfits: [{ span: "leverage synergies", reason: "jargon", suggestion: "work together" }],
@@ -27,7 +27,7 @@ describe("TuringContentFit (T636)", () => {
   });
 
   it("exposes the fit as an accessible progressbar clamped to 0..100", () => {
-    render(<TuringContentFit result={result({ fitScore: 1.4 })} />);
+    render(<TuringContentFit result={result({ fitScore: 140 })} />);
     const bar = screen.getByRole("progressbar");
     expect(bar).toHaveAttribute("aria-valuenow", "100");
     expect(screen.getByText("100%")).toBeInTheDocument();

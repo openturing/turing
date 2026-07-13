@@ -20,7 +20,7 @@ function scriptedFit(personaId: string): TurContentFit {
   return {
     personaId: persona.id,
     personaName: persona.name,
-    fitScore: 0.34,
+    fitScore: 34,
     summary:
       "Dense with buzzwords and abstract claims; this reader wants concrete, verifiable specifics.",
     fits: ["Signals ambition and scale"],

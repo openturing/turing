@@ -20,7 +20,7 @@ export interface TuringContentFitMisfit {
 export interface TuringContentFitResult {
   personaId: string;
   personaName: string;
-  /** Overall fit on a 0..1 scale; rendered as a percentage. */
+  /** Overall fit on a 0–100 scale (already a percentage; matches the backend). */
   fitScore: number;
   summary: string;
   fits: string[];
@@ -97,11 +97,11 @@ export interface TuringContentFitProps {
   icons?: TuringContentFitIcons;
 }
 
-/** Clamps a raw fit score to 0..1 (defends against out-of-range LLM output). */
+/** Clamps a raw fit score to 0–100 (defends against out-of-range LLM output). */
 function clampFit(score: number): number {
   if (Number.isNaN(score)) return 0;
   if (score < 0) return 0;
-  if (score > 1) return 1;
+  if (score > 100) return 100;
   return score;
 }
 
@@ -129,7 +129,7 @@ export function TuringContentFit({
   labels,
   icons,
 }: Readonly<TuringContentFitProps>) {
-  const pct = Math.round(clampFit(result.fitScore) * 100);
+  const pct = Math.round(clampFit(result.fitScore));
   const fitsHeading = labels?.fitsHeading ?? "What fits";
   const misfitsHeading = labels?.misfitsHeading ?? "What doesn't fit";
   const fillStyle = { ["--turing-ui-fit"]: `${pct}%` } as CSSProperties;

@@ -416,6 +416,7 @@ export interface TurContentFitMisfit {
 export interface TurContentFit {
   readonly personaId: string;
   readonly personaName: string;
+  /** Overall fit on a 0–100 scale (already a percentage). */
   readonly fitScore: number;
   readonly summary: string;
   readonly fits: string[];

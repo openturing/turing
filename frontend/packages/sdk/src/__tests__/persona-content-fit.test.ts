@@ -11,7 +11,7 @@ describe("fetchPersonaContentFit (T635)", () => {
   const verdict: TurContentFit = {
     personaId: "p1",
     personaName: "Skeptical Developer",
-    fitScore: 0.66,
+    fitScore: 66,
     summary: "Mostly fits, some jargon.",
     fits: ["Concrete examples"],
     misfits: [{ span: "leverage synergies", reason: "jargon", suggestion: "work together" }],
