@@ -12,8 +12,10 @@ import org.apache.lucene.document.Document;
 import org.apache.lucene.index.DirectoryReader;
 import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.index.IndexWriterConfig;
+import org.apache.lucene.index.Term;
 import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.FieldExistsQuery;
+import org.apache.lucene.search.TermQuery;
 import org.apache.lucene.search.TopDocs;
 import org.apache.lucene.store.MMapDirectory;
 import org.json.JSONArray;
@@ -616,6 +618,37 @@ class TurLuceneDocumentHandlerTest {
 
         assertThrows(java.io.UncheckedIOException.class,
                 () -> handler.deIndexing(failingInstance, "doc-io-fail"));
+    }
+
+    @Test
+    void indexingShouldForceIdToKeywordEvenWhenConfiguredAsText() throws IOException {
+        // Regression (Block AR "Related"/similar): an AEM-style path id configured as TEXT
+        // used to be tokenized, so the exact-term seed lookup behind similar (a TermQuery on
+        // `id`) never matched a path like /content/wknd/.../ski-touring-mont-blanc and the
+        // feature returned empty. The primary key `id` must always be a non-analyzed keyword
+        // so the whole path stays one exact term — regardless of the configured field type.
+        Map<String, TurSNSiteField> fieldMap = new HashMap<>();
+        fieldMap.put("id", TurSNSiteField.builder().name("id")
+                .type(TurSEFieldType.TEXT).multiValued(0).build());
+        when(turSNSiteFieldService.toMap(turSNSite)).thenReturn(fieldMap);
+
+        String pathId = "/content/wknd/language-masters/en/adventures/ski-touring-mont-blanc";
+        Map<String, Object> attrs = new LinkedHashMap<>();
+        attrs.put("id", pathId);
+        attrs.put("title", "Ski Touring Mont Blanc");
+
+        handler.indexing(instance, turSNSite, attrs);
+        writer.commit();
+
+        DirectoryReader reader = DirectoryReader.open(directory);
+        IndexSearcher searcher = new IndexSearcher(reader);
+        // Exact-term lookup on the full path — the very query the similar feature runs.
+        TopDocs exact = searcher.search(new TermQuery(new Term("id", pathId)), 10);
+        assertThat(exact.totalHits.value()).isEqualTo(1);
+        // And it must NOT be tokenized: a single path segment is not a standalone term.
+        TopDocs tokenized = searcher.search(new TermQuery(new Term("id", "blanc")), 10);
+        assertThat(tokenized.totalHits.value()).isZero();
+        reader.close();
     }
 
     @Test

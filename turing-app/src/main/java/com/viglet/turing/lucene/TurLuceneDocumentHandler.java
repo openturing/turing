@@ -174,6 +174,18 @@ public class TurLuceneDocumentHandler {
         String strValue = value != null ? value.toString().trim() : "";
         if (strValue.isEmpty()) return;
 
+        // The primary key `id` is an identifier, never free text: always index it
+        // as a non-analyzed keyword (StringField), regardless of the configured
+        // field type. A TEXT-typed id is tokenized, which (a) makes it wrongly
+        // highlightable and (b) breaks the exact-term seed lookup used by
+        // "Related"/similar (a TermQuery on `id`) for path-like ids such as AEM's
+        // /content/wknd/.../ski-touring-mont-blanc — leaving the feature empty.
+        // Forcing StringField keeps `id` a single exact term.
+        if (ID.equals(key)) {
+            addStringField(doc, key, strValue);
+            return;
+        }
+
         switch (fieldType) {
             case TEXT -> addTextField(doc, key, strValue);
             case STRING, ARRAY, BOOL -> addStringField(doc, key, strValue);
