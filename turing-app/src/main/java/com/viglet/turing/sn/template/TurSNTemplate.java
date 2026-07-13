@@ -180,8 +180,8 @@ public class TurSNTemplate {
                                 // highlightable: a <mark> in `id` corrupts the value clients
                                 // feed to /search/similar (breaks "Related"). Coerce hl=0
                                 // regardless of the template definition.
-                                .hl(com.viglet.turing.commons.sn.field.TurSNFieldName.NON_HIGHLIGHTABLE
-                                                .contains(turSNSiteField.getName()) ? 0 : fieldDefinition.hl())
+                                .hl(com.viglet.turing.commons.sn.field.TurSNFieldName
+                                                .isNonHighlightable(turSNSiteField.getName()) ? 0 : fieldDefinition.hl())
                                 .multiValued(turSNSiteField.getMultiValued())
                                 .mlt(0)
                                 .externalId(turSNSiteField.getId())

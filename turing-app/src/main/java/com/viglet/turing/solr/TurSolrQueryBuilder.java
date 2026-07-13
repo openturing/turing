@@ -996,7 +996,7 @@ public class TurSolrQueryBuilder {
         // value clients feed back to /search/similar, silently breaking "Related".
         return turSNSiteFieldExtRepository.findByTurSNSiteAndHlAndEnabled(turSNSite, 1, 1)
                 .stream()
-                .filter(field -> !TurSNFieldName.NON_HIGHLIGHTABLE.contains(field.getName()))
+                .filter(field -> !TurSNFieldName.isNonHighlightable(field.getName()))
                 .toList();
     }
 

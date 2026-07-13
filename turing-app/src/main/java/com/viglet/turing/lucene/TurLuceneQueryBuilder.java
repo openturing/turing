@@ -155,8 +155,8 @@ public class TurLuceneQueryBuilder {
         // value clients feed back to /search/similar, silently breaking "Related".
         return turSNSiteFieldExtRepository.findByTurSNSiteAndHlAndEnabled(turSNSite, 1, 1)
                 .stream()
-                .filter(field -> !com.viglet.turing.commons.sn.field.TurSNFieldName.NON_HIGHLIGHTABLE
-                        .contains(field.getName()))
+                .filter(field -> !com.viglet.turing.commons.sn.field.TurSNFieldName
+                        .isNonHighlightable(field.getName()))
                 .toList();
     }
 

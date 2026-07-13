@@ -54,4 +54,15 @@ public class TurSNFieldName {
      */
     public static final java.util.Set<String> NON_HIGHLIGHTABLE = java.util.Set.of(ID, URL);
 
+    /**
+     * Null-safe check for {@link #NON_HIGHLIGHTABLE} membership ({@code Set.of(...)}
+     * rejects {@code null} in {@code contains}, so a field with a null name must
+     * not blow up the highlight-field filter).
+     *
+     * @since 2026.3.4
+     */
+    public static boolean isNonHighlightable(String fieldName) {
+        return fieldName != null && NON_HIGHLIGHTABLE.contains(fieldName);
+    }
+
 }
