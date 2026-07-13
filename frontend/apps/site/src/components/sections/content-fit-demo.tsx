@@ -98,7 +98,7 @@ export function ContentFitDemo({ bare = false }: Readonly<ContentFitDemoProps>) 
           rows={3}
           maxLength={12000}
           placeholder="Paste a paragraph and see if it lands for this reader…"
-          className="w-full resize-none rounded-lg border border-border bg-background/60 px-3 py-2 text-sm outline-none focus:border-primary/50"
+          className="w-full shrink-0 resize-none rounded-lg border border-border bg-background/60 px-3 py-2 text-sm outline-none focus:border-primary/50"
           aria-label="Content to validate"
         />
         <div>

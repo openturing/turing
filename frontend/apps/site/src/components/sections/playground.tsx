@@ -47,7 +47,11 @@ export function Playground() {
         "flex flex-col overflow-hidden border border-border bg-card shadow-2xl shadow-black/30",
         expanded
           ? "fixed inset-3 z-50 rounded-2xl sm:inset-6 lg:inset-12"
-          : "h-[520px] rounded-2xl"
+          // Chat-style tabs get a fixed height (they scroll internally); the
+          // validate tab grows with its verdict instead of scrolling.
+          : tab === "validate"
+            ? "min-h-[520px] rounded-2xl"
+            : "h-[520px] rounded-2xl"
       )}
     >
       {/* control bar: tabs · corpus · fullscreen */}
@@ -95,15 +99,22 @@ export function Playground() {
         )}
       </div>
 
-      {/* body — keep both mounted so state (query, conversation) survives tab switches */}
-      <div className="relative flex-1 overflow-hidden">
-        <div className={cn("absolute inset-0", tab === "search" ? "block" : "hidden")}>
+      {/* body — keep all mounted so state (query, conversation) survives tab switches */}
+      <div className="relative flex-1">
+        <div className={cn("absolute inset-0 overflow-hidden", tab === "search" ? "block" : "hidden")}>
           <SearchDemo bare onAskAbout={askAbout} />
         </div>
-        <div className={cn("absolute inset-0", tab === "ask" ? "block" : "hidden")}>
+        <div className={cn("absolute inset-0 overflow-hidden", tab === "ask" ? "block" : "hidden")}>
           <ChatDemo bare seed={seed} />
         </div>
-        <div className={cn("absolute inset-0", tab === "validate" ? "block" : "hidden")}>
+        {/* Validate flows in normal layout (non-expanded) so the panel grows with
+            the verdict; in fullscreen it fills and scrolls like the other tabs. */}
+        <div
+          className={cn(
+            tab === "validate" ? "block" : "hidden",
+            expanded ? "absolute inset-0 overflow-y-auto" : "relative"
+          )}
+        >
           <ContentFitDemo bare />
         </div>
       </div>

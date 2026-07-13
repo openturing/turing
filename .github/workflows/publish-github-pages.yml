@@ -94,3 +94,7 @@ jobs:
           external_repository: openviglet/turing-ce
           publish_branch: github-pages
           publish_dir: ./_site
+          # Persist the custom domain across deploys. Each publish overwrites the
+          # github-pages branch; without a CNAME in the published root, GitHub
+          # Pages drops the custom domain and it has to be re-added by hand.
+          cname: turing.viglet.org
