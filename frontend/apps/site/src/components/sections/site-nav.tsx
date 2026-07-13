@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { ArrowRight, ChevronDown, Sparkles } from "lucide-react";
+import { ArrowRight, ArrowUpRight, ChevronDown, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -62,9 +62,20 @@ export function SiteNav() {
       )}
     >
       <Container className="flex h-16 items-center gap-4">
-        <a href="/" className="shrink-0 text-base" aria-label="Viglet Turing ES — home">
-          <Logo />
-        </a>
+        <div className="flex shrink-0 items-center gap-2.5">
+          <a href="/" className="text-base" aria-label="Viglet Turing ES — home">
+            <Logo />
+          </a>
+          {/* Fluid path back to the umbrella brand — keeps the product from
+              feeling like a dead end and reinforces the Viglet portfolio. */}
+          <a
+            href={LINKS.viglet}
+            className="hidden items-center gap-1 rounded-full border border-border/60 px-2 py-0.5 text-[11px] font-semibold whitespace-nowrap text-muted-foreground transition-colors hover:border-border hover:text-foreground sm:inline-flex"
+          >
+            part of viglet.org
+            <ArrowUpRight className="size-3" />
+          </a>
+        </div>
         <nav className="ml-4 hidden items-center gap-5 lg:flex xl:ml-6 xl:gap-6">
           {NAV_LINKS.map((item) => (
             <a

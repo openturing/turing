@@ -74,7 +74,10 @@ export const LINKS = {
   aemConnector: "https://docs.viglet.org/dumont/connectors/aem",
   // Roadmap/Changelog are rendered markdown (blob/HEAD follows the default branch).
   roadmap: "https://github.com/openviglet/turing-ce/blob/HEAD/docs/ROADMAP.md",
-  changelog: "https://github.com/openviglet/turing-ce/blob/HEAD/docs/CHANGELOG.md",
+  // User-facing release notes render the single-source changelog.json this site
+  // owns and serves (public/changelog.json → turing.viglet.org/changelog.json).
+  // The dev-facing ledger lives in docs/CHANGELOG.md (linked as Roadmap above).
+  changelog: "https://www.viglet.org/turing/release-notes/",
   npm: "https://www.npmjs.com/package/@viglet/turing-react-sdk",
   cli: "https://www.npmjs.com/package/@viglet/turing-cli",
   storybook: "/react-sdk/",
