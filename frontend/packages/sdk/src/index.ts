@@ -243,6 +243,7 @@ export type {
   TurChatGrounding,
   TurChatSecondOpinion,
   TurPersonaOption,
+  TurPersonaPersonality,
   TurContentFit,
   TurContentFitMisfit,
   TurSearchSuggestions,

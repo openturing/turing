@@ -160,6 +160,37 @@ class TurPersonaStaticPromptCacheTest {
                 .doesNotContain("\n\n----\n");
     }
 
+    @Test
+    void includesPersonalityBlockForDeviatingTraits() {
+        // T717 — high openness + low agreeableness should render distinct guidance.
+        TurPersona p = persona("p-12", null);
+        p.setVerbosity(0); // suppress the style block so we isolate personality
+        p.setOpenness(90);
+        p.setAgreeableness(10);
+        String out = cache.composeStaticBlock(p);
+        assertThat(out)
+                .contains("# Personality")
+                .contains("intellectually curious")
+                .contains("push back readily");
+    }
+
+    @Test
+    void skipsPersonalityBlockForUnsetOrMidRangeTraits() {
+        // T717 — null traits and mid-band (34..66) values render nothing.
+        TurPersona p = persona("p-13", "instr");
+        p.setVerbosity(0);
+        p.setOpenness(50);
+        p.setConscientiousness(60);
+        // extraversion / agreeableness / neuroticism left null
+        assertThat(cache.composeStaticBlock(p)).doesNotContain("# Personality");
+    }
+
+    @Test
+    void skipsPersonalityBlockWhenNoTraitsSet() {
+        TurPersona p = persona("p-14", "instr");
+        assertThat(cache.composeStaticBlock(p)).doesNotContain("# Personality");
+    }
+
     private static TurPersona persona(String id, String instruction) {
         TurPersona p = new TurPersona();
         p.setId(id);

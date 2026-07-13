@@ -129,6 +129,31 @@ public class TurPersona implements Serializable {
     @Column(name = "calibrate_model_params", nullable = false)
     private int calibrateModelParams = 0;
 
+    /**
+     * T717 / §XLVI.1 — opt-in Big Five (OCEAN) personality facet. Each trait is a
+     * 0–100 score; {@code null} means "unset" and renders nothing, so an existing
+     * persona is byte-for-byte unchanged. When set, the traits (a) render into the
+     * system prompt as behavioral guidance (see {@code TurPersonaStaticPromptCache})
+     * and (b) nudge the calibrated sampling temperature when
+     * {@link #calibrateModelParams} is on (see {@code TurPersonaModelCalibration}),
+     * so a synthetic-research cohort answers <em>differently</em> instead of
+     * collapsing to one voice.
+     */
+    @Column
+    private Integer openness;
+
+    @Column
+    private Integer conscientiousness;
+
+    @Column
+    private Integer extraversion;
+
+    @Column
+    private Integer agreeableness;
+
+    @Column
+    private Integer neuroticism;
+
     @ManyToOne
     @JoinColumn(name = "few_shot_store_id")
     private TurStoreInstance fewShotStore;

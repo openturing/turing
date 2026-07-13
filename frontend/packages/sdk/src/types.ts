@@ -393,6 +393,22 @@ export interface TurChatSource {
 export interface TurPersonaOption {
   readonly id: string;
   readonly name: string;
+  /**
+   * T717 / §XLVI.1 — optional Big Five (OCEAN) personality traits (0–100 each).
+   * Present only when the persona has opted in; a consumer may surface them (e.g.
+   * a trait badge). The traits already shape the persona's answers server-side, so
+   * this metadata is display-only — omitting it changes nothing in the chat.
+   */
+  readonly personality?: TurPersonaPersonality;
+}
+
+/** T717 — opt-in Big Five (OCEAN) trait scores, 0–100 each. */
+export interface TurPersonaPersonality {
+  readonly openness?: number | null;
+  readonly conscientiousness?: number | null;
+  readonly extraversion?: number | null;
+  readonly agreeableness?: number | null;
+  readonly neuroticism?: number | null;
 }
 
 /**

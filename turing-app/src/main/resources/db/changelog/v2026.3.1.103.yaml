@@ -1,0 +1,92 @@
+databaseChangeLog:
+  # T717 / §XLVI.1 — opt-in Big Five (OCEAN) personality facet on ai_persona.
+  # Five nullable 0-100 trait columns; NULL = unset = today's behavior byte-for-byte.
+  # When set they render as behavioral guidance in the persona prompt and nudge the
+  # calibrated sampling temperature (only when calibrate_model_params = 1). Idempotent:
+  # each addColumn is gated by columnExists not present so re-running on a reused H2
+  # file is safe.
+
+  - changeSet:
+      id: v2026.3.1.103-add-ai_persona-openness
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - columnExists:
+                tableName: ai_persona
+                columnName: openness
+      changes:
+        - addColumn:
+            tableName: ai_persona
+            columns:
+              - column:
+                  name: openness
+                  type: int
+
+  - changeSet:
+      id: v2026.3.1.103-add-ai_persona-conscientiousness
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - columnExists:
+                tableName: ai_persona
+                columnName: conscientiousness
+      changes:
+        - addColumn:
+            tableName: ai_persona
+            columns:
+              - column:
+                  name: conscientiousness
+                  type: int
+
+  - changeSet:
+      id: v2026.3.1.103-add-ai_persona-extraversion
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - columnExists:
+                tableName: ai_persona
+                columnName: extraversion
+      changes:
+        - addColumn:
+            tableName: ai_persona
+            columns:
+              - column:
+                  name: extraversion
+                  type: int
+
+  - changeSet:
+      id: v2026.3.1.103-add-ai_persona-agreeableness
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - columnExists:
+                tableName: ai_persona
+                columnName: agreeableness
+      changes:
+        - addColumn:
+            tableName: ai_persona
+            columns:
+              - column:
+                  name: agreeableness
+                  type: int
+
+  - changeSet:
+      id: v2026.3.1.103-add-ai_persona-neuroticism
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - columnExists:
+                tableName: ai_persona
+                columnName: neuroticism
+      changes:
+        - addColumn:
+            tableName: ai_persona
+            columns:
+              - column:
+                  name: neuroticism
+                  type: int

@@ -67,6 +67,17 @@ export interface TurPersona {
    * keeps the LLM instance's own params.
    */
   calibrateModelParams?: number;
+  /**
+   * T717 / §XLVI.1 — opt-in Big Five (OCEAN) personality traits, 0–100 each.
+   * `null`/omitted = unset (renders nothing, byte-for-byte legacy). When set they
+   * render as behavioral guidance in the persona prompt and — when
+   * `calibrateModelParams` is on — nudge the calibrated sampling temperature.
+   */
+  openness?: number | null;
+  conscientiousness?: number | null;
+  extraversion?: number | null;
+  agreeableness?: number | null;
+  neuroticism?: number | null;
   fewShotStore?: TurStoreInstance | null;
   brandContextMcpServer?: TurMcpServer | null;
   /** Block AA — defaults to SPEAKER for legacy voice personas. */

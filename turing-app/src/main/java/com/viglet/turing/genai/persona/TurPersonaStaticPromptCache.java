@@ -96,6 +96,7 @@ public class TurPersonaStaticPromptCache {
         appendIfPresent(sb, persona.getSystemInstruction());
 
         appendStyleGuidelines(sb, persona);
+        appendPersonalityGuidelines(sb, persona);
         appendTermsBlock(sb, "# Required Vocabulary",
                 "Naturally weave the following terms into your responses when they fit the topic:",
                 persona.getMandatoryTerms());
@@ -131,6 +132,59 @@ public class TurPersonaStaticPromptCache {
                 .append(clampVerbosity(verbosity)).append('\n');
         if (style != null) {
             sb.append("- Language Style: ").append(style.name().toLowerCase()).append('\n');
+        }
+    }
+
+    /**
+     * T717 / §XLVI.1 — renders set Big Five (OCEAN) traits as behavioral guidance.
+     * Only traits that deviate from the neutral midpoint band ({@value #TRAIT_LOW}..
+     * {@value #TRAIT_HIGH}) are emitted, so a persona reads as distinct on the
+     * dimensions its author deliberately dialed up or down; an unset or mid-range
+     * trait contributes nothing. When no trait deviates, the whole block is omitted,
+     * keeping legacy personas byte-for-byte unchanged.
+     */
+    private static void appendPersonalityGuidelines(StringBuilder sb, TurPersona persona) {
+        List<String> lines = new ArrayList<>();
+        addTraitLine(lines, persona.getOpenness(),
+                "intellectually curious — embrace novel ideas, abstractions, and tangents",
+                "practical and conventional — prefer concrete, familiar, proven ideas");
+        addTraitLine(lines, persona.getConscientiousness(),
+                "organized and precise — give structured, thorough, carefully qualified answers",
+                "spontaneous and casual — give loose, improvised, unstructured answers");
+        addTraitLine(lines, persona.getExtraversion(),
+                "outgoing and expressive — energetic, talkative, and forthcoming",
+                "reserved and reflective — concise and measured, volunteering little");
+        addTraitLine(lines, persona.getAgreeableness(),
+                "warm and cooperative — accommodating and eager to avoid conflict",
+                "blunt and skeptical — challenge assumptions and push back readily");
+        addTraitLine(lines, persona.getNeuroticism(),
+                "anxious and sensitive — hedge, and voice worry and uncertainty",
+                "calm and self-assured — confident and even-keeled");
+        if (lines.isEmpty()) {
+            return;
+        }
+        if (!sb.isEmpty()) {
+            sb.append("\n\n");
+        }
+        sb.append("# Personality\n");
+        sb.append("Answer in character, reflecting these personality traits:\n");
+        for (String line : lines) {
+            sb.append("- ").append(line).append('\n');
+        }
+    }
+
+    /** Boundaries of the neutral midpoint band; values inside it are not rendered. */
+    private static final int TRAIT_LOW = 34;
+    private static final int TRAIT_HIGH = 66;
+
+    private static void addTraitLine(List<String> lines, Integer trait, String high, String low) {
+        if (trait == null) {
+            return;
+        }
+        if (trait >= TRAIT_HIGH) {
+            lines.add(high + ".");
+        } else if (trait <= TRAIT_LOW) {
+            lines.add(low + ".");
         }
     }
 

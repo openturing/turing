@@ -72,6 +72,7 @@ export type {
   TurChatHandoffResponse,
   TurChatFlowSelectResponse,
   TurPersonaOption,
+  TurPersonaPersonality,
   TurContentFit,
   TurContentFitMisfit,
   TurChatConversationState,

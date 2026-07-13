@@ -236,6 +236,16 @@ public class TurPersonaAPI {
         to.setMandatoryTerms(from.getMandatoryTerms());
         to.setForbiddenTerms(from.getForbiddenTerms());
         to.setEnabled(from.getEnabled());
+        // T605 — the opt-in style→model calibration flag was previously dropped on
+        // the PUT path (only the create path kept it), so toggling it in the editor
+        // never persisted. Copy it here so updates round-trip.
+        to.setCalibrateModelParams(from.getCalibrateModelParams());
+        // T717 / §XLVI.1 — Big Five (OCEAN) personality facet (nullable = unset).
+        to.setOpenness(from.getOpenness());
+        to.setConscientiousness(from.getConscientiousness());
+        to.setExtraversion(from.getExtraversion());
+        to.setAgreeableness(from.getAgreeableness());
+        to.setNeuroticism(from.getNeuroticism());
         // Block AA / §XXVI.1 — audience facet. Default SPEAKER when the client
         // omits the discriminator so legacy persona forms stay unchanged.
         to.setPersonaKind(from.getPersonaKind() == null

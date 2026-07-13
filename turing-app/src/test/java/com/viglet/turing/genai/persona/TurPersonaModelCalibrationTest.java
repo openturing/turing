@@ -86,4 +86,66 @@ class TurPersonaModelCalibrationTest {
         Params params = TurPersonaModelCalibration.forPersona(persona(1, TurPersonaTone.FORMAL, verbosity));
         assertThat(params.maxTokens()).isEqualTo(expected);
     }
+
+    // --- T717 Big Five (OCEAN) temperature nudge ---------------------------------
+
+    @Test
+    void ignoresPersonalityWhenNotOptedIn() {
+        // calibrate=0 -> NONE regardless of traits set.
+        TurPersona p = persona(0, TurPersonaTone.CASUAL, 3);
+        p.setOpenness(100);
+        assertThat(TurPersonaModelCalibration.forPersona(p)).isSameAs(Params.NONE);
+    }
+
+    @Test
+    void leavesTemperatureAtToneValueWhenNoTraitsSet() {
+        // Opted in, tone set, no OCEAN -> tone-only temperature, unchanged.
+        Params params = TurPersonaModelCalibration.forPersona(persona(1, TurPersonaTone.FORMAL, 3));
+        assertThat(params.temperature()).isEqualTo(0.3);
+    }
+
+    @Test
+    void nudgesFromNeutralBaselineWhenNoToneButTraitsSet() {
+        // No tone -> 0.5 baseline; openness 90 -> +0.12 -> 0.62.
+        TurPersona p = persona(1, null, 3);
+        p.setOpenness(90);
+        assertThat(TurPersonaModelCalibration.forPersona(p).temperature()).isEqualTo(0.62);
+    }
+
+    @Test
+    void opennessAndNeuroticismRaiseConscientiousnessLowers() {
+        // tone TECHNICAL 0.2; openness 100 (+0.15), neuroticism 100 (+0.15),
+        // conscientiousness 0 (-(-0.15)=+0.15) -> delta 0.45 clamped to 0.3 -> 0.5.
+        TurPersona p = persona(1, TurPersonaTone.TECHNICAL, 3);
+        p.setOpenness(100);
+        p.setNeuroticism(100);
+        p.setConscientiousness(0);
+        assertThat(TurPersonaModelCalibration.forPersona(p).temperature()).isEqualTo(0.5);
+    }
+
+    @Test
+    void highConscientiousnessLowersTemperature() {
+        // tone CASUAL 0.8; conscientiousness 100 -> -0.15 -> 0.65.
+        TurPersona p = persona(1, TurPersonaTone.CASUAL, 3);
+        p.setConscientiousness(100);
+        assertThat(TurPersonaModelCalibration.forPersona(p).temperature()).isEqualTo(0.65);
+    }
+
+    @Test
+    void clampsNudgedTemperatureToOne() {
+        // tone CASUAL 0.8 + openness/neuroticism 100 (+0.3) -> 1.1 clamped to 1.0.
+        TurPersona p = persona(1, TurPersonaTone.CASUAL, 3);
+        p.setOpenness(100);
+        p.setNeuroticism(100);
+        assertThat(TurPersonaModelCalibration.forPersona(p).temperature()).isEqualTo(1.0);
+    }
+
+    @Test
+    void extraversionAndAgreeablenessDoNotAffectTemperature() {
+        // These two are behavioral-only (prompt), not sampling.
+        TurPersona p = persona(1, TurPersonaTone.FORMAL, 3);
+        p.setExtraversion(100);
+        p.setAgreeableness(0);
+        assertThat(TurPersonaModelCalibration.forPersona(p).temperature()).isEqualTo(0.3);
+    }
 }

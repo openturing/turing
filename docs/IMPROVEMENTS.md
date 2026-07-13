@@ -2424,10 +2424,6 @@ the actual product differentiation lives.
 A cohort is only useful if its members answer *differently*. Two additions make a
 persona a believable participant rather than a single reskinned voice:
 
-- **T717 — Big Five / OCEAN facet.** Five 0–100 traits, opt-in, additive Liquibase.
-  They render into the system prompt as behavioral guidance **and** feed the
-  existing T605 calibration seam (verbosity/temperature), so trait spread produces
-  answer spread. Default empty = today's behavior byte-for-byte.
 - **T718 — RAG-grounded persona.** Bind a persona to an SN site or a Block AA
   notebook source set so interview answers are grounded in proprietary content
   through the existing retrieval + grounding contract, not the base model's priors.
