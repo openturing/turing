@@ -35,7 +35,7 @@ class TurConfigVarOnStartupTest {
         when(turConfigVarRepository.findById(anyString())).thenReturn(Optional.empty());
         turConfigVarOnStartup.createDefaultRows();
         ArgumentCaptor<TurConfigVar> captor = ArgumentCaptor.forClass(TurConfigVar.class);
-        verify(turConfigVarRepository, times(47)).save(captor.capture());
+        verify(turConfigVarRepository, times(50)).save(captor.capture());
         return captor.getAllValues();
     }
 
@@ -110,7 +110,7 @@ class TurConfigVarOnStartupTest {
         // ensureConfigVar leaves these alone (existing row → no save), but
         // ensureSecretConfigVar AUTO-HEALS blank values for the HMAC
         // secret. So save is called exactly once — for the secret heal —
-        // and the other 46 rows are skipped.
+        // and the other 49 rows are skipped.
         when(turConfigVarRepository.findById(anyString()))
                 .thenReturn(Optional.of(new TurConfigVar()));
 
