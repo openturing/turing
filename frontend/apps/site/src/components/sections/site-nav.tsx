@@ -27,6 +27,7 @@ const NAV_GROUPS = [
     label: "Product",
     items: [
       { label: "Capabilities", href: "/#features" },
+      { label: "AI Personas", href: "/persona" },
       { label: "Why Turing", href: "/#why" },
       { label: "Developers", href: "/#developers" },
       { label: "Marketplace", href: "/#marketplace" },

@@ -4,6 +4,7 @@ import { FeaturePage } from "@/pages/feature-page";
 import { MigratePage } from "@/pages/migrate";
 import { ComparePage } from "@/pages/compare";
 import { AemPage } from "@/pages/aem";
+import { PersonaPage } from "@/pages/persona";
 import { SecurityPage } from "@/pages/security";
 import { FEATURE_DETAILS } from "@/lib/site-content";
 
@@ -11,6 +12,7 @@ import { FEATURE_DETAILS } from "@/lib/site-content";
 export const MIGRATE_PATH = "/migrate";
 export const COMPARE_PATH = "/compare";
 export const AEM_PATH = "/aem-search";
+export const PERSONA_PATH = "/persona";
 export const SECURITY_PATH = "/security";
 
 /**
@@ -56,6 +58,7 @@ export default function App({ path = "/" }: Readonly<{ path?: string }>) {
   if (/^\/migrate\/?$/.test(path)) return <MigratePage />;
   if (/^\/compare\/?$/.test(path)) return <ComparePage />;
   if (/^\/aem-search\/?$/.test(path)) return <AemPage />;
+  if (/^\/persona\/?$/.test(path)) return <PersonaPage />;
   if (/^\/security\/?$/.test(path)) return <SecurityPage />;
   const slug = matchRoute(path);
   if (slug) return <FeaturePage detail={FEATURE_DETAILS[slug]} />;

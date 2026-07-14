@@ -9,6 +9,7 @@
 
 ## Solutions
 
+- [AI Personas — brand voice for AI](https://turing.viglet.org/persona): Give your AI agents a governed brand voice. A Persona is the reusable voice profile of your AI — system instruction, tone, required and forbidden vocabulary enforced in two layers (in the prompt and after the response), live brand facts via MCP, audience content-fit scoring, Persona Match (N×N content × audience), Persona Dialogue and synthetic user research. Define once, attach to any agent; swap the LLM, the voice stays. The complete guide is [The Persona Book](https://docs.viglet.org/turing/persona-book).
 - [AI Search for Adobe Experience Manager](https://turing.viglet.org/aem-search): Add cited, streaming AI search to AEM without lock-in — connects to AEM 6.5 + AEM as a Cloud Service, then goes deeper than an AEM-native add-on with cross-repository search, agents, tools, skills, MCP, any LLM and any search engine. Includes a live demo over Adobe's WKND reference site (indexed from AEM; result links resolve on wknd.site).
 - [Compare](https://turing.viglet.org/compare): Honest comparison vs Algolia, Elasticsearch and a DIY LangChain RAG stack
 - [Migrate](https://turing.viglet.org/migrate): Switching from Algolia or Elasticsearch — concept mapping and import path

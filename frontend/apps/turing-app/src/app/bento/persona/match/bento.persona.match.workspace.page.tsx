@@ -41,6 +41,7 @@ import {
   rankByPersona,
   SCHEDULES,
   type MatchCell,
+  type MatchMisfit,
   type MatchPersonaKind,
   type MatchPersonaRef,
   type MatchProjectRequest,
@@ -83,11 +84,22 @@ const SOURCE_TYPE_ICON: Record<MatchSourceType, typeof IconLink> = {
 interface ReportRow {
   label: string;
   score: number;
+  /** Pre-resolved "Readability NN% · mode" line (i18n done at call site). */
+  meta: string;
+  summary?: string | null;
+  fits: string[];
+  misfits: MatchMisfit[];
 }
 interface ReportGroup {
   head: string;
   sub: string;
   rows: ReportRow[];
+}
+/** Section labels resolved once at the call site (buildReportHtml is pure). */
+interface ReportLabels {
+  fits: string;
+  adjust: string;
+  nothingToAdjust: string;
 }
 
 function escapeHtml(value: string): string {
@@ -104,25 +116,52 @@ function fitHex(score: number): string {
   return "#f43f5e";
 }
 
+function buildRowHtml(r: ReportRow, labels: ReportLabels): string {
+  const color = fitHex(r.score);
+  const summaryHtml = r.summary
+    ? `<p class="summary">${escapeHtml(r.summary)}</p>`
+    : "";
+  const fitsHtml = r.fits.length
+    ? `<div class="subhead fit">${escapeHtml(labels.fits)}</div>
+       <ul class="fits">${r.fits.map((f) => `<li>${escapeHtml(f)}</li>`).join("")}</ul>`
+    : "";
+  const misfitsHtml = r.misfits.length
+    ? `<div class="subhead adjust">${escapeHtml(labels.adjust)}</div>
+       ${r.misfits
+         .map(
+           (m) => `<div class="misfit">
+             <div class="span">${escapeHtml(m.span)}</div>
+             <div class="reason">${escapeHtml(m.reason)}</div>
+             <div class="sugg">→ ${escapeHtml(m.suggestion)}</div>
+           </div>`,
+         )
+         .join("")}`
+    : `<p class="none">${escapeHtml(labels.nothingToAdjust)}</p>`;
+
+  return `<article class="item">
+    <div class="item-head">
+      <span class="item-label">${escapeHtml(r.label)}</span>
+      <span class="item-score" style="color:${color}">${Math.round(r.score)}%</span>
+    </div>
+    <span class="bar"><span class="fill" style="width:${r.score}%;background:${color}"></span></span>
+    <p class="meta">${escapeHtml(r.meta)}</p>
+    ${summaryHtml}
+    ${fitsHtml}
+    ${misfitsHtml}
+  </article>`;
+}
+
 function buildReportHtml(
   title: string,
   subtitle: string,
   groups: ReportGroup[],
   brand: string,
   footer: string,
+  labels: ReportLabels,
 ): string {
   const groupsHtml = groups
     .map((g) => {
-      const rowsHtml = g.rows
-        .map((r) => {
-          const color = fitHex(r.score);
-          return `<div class="row">
-            <span class="rlabel">${escapeHtml(r.label)}</span>
-            <span class="bar"><span class="fill" style="width:${r.score}%;background:${color}"></span></span>
-            <span class="score" style="color:${color}">${Math.round(r.score)}%</span>
-          </div>`;
-        })
-        .join("");
+      const rowsHtml = g.rows.map((r) => buildRowHtml(r, labels)).join("");
       return `<section class="group">
         <h2>${escapeHtml(g.head)}</h2>
         <p class="sub">${escapeHtml(g.sub)}</p>
@@ -140,14 +179,27 @@ function buildReportHtml(
     .brand { font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: #6366f1; font-weight: 600; }
     h1 { font-size: 22px; margin: 4px 0 2px; }
     .subtitle { color: #64748b; font-size: 13px; margin: 0; }
-    .group { margin-bottom: 18px; page-break-inside: avoid; }
-    .group h2 { font-size: 15px; margin: 0 0 2px; }
-    .group .sub { color: #64748b; font-size: 12px; margin: 0 0 8px; }
-    .row { display: flex; align-items: center; gap: 10px; margin: 4px 0; }
-    .rlabel { width: 200px; font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    .bar { flex: 1; height: 8px; background: #e2e8f0; border-radius: 999px; overflow: hidden; }
+    .group { margin-bottom: 22px; page-break-inside: avoid; }
+    .group h2 { font-size: 16px; margin: 0 0 2px; padding-bottom: 4px; border-bottom: 1px solid #e2e8f0; }
+    .group .sub { color: #64748b; font-size: 12px; margin: 6px 0 10px; }
+    .item { border: 1px solid #e2e8f0; border-radius: 12px; padding: 12px 14px; margin: 8px 0; page-break-inside: avoid; }
+    .item-head { display: flex; align-items: baseline; gap: 10px; }
+    .item-label { flex: 1; font-size: 13px; font-weight: 600; }
+    .item-score { font-size: 16px; font-weight: 800; }
+    .bar { display: block; height: 7px; background: #e2e8f0; border-radius: 999px; overflow: hidden; margin: 6px 0 0; }
     .fill { display: block; height: 100%; border-radius: 999px; }
-    .score { width: 44px; text-align: right; font-size: 12px; font-weight: 700; }
+    .meta { color: #64748b; font-size: 11px; margin: 6px 0 0; }
+    .summary { font-size: 12px; color: #334155; margin: 8px 0 0; line-height: 1.45; }
+    .subhead { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; margin: 10px 0 4px; }
+    .subhead.fit { color: #059669; }
+    .subhead.adjust { color: #b45309; }
+    .fits { margin: 0; padding-left: 16px; }
+    .fits li { font-size: 12px; margin: 2px 0; line-height: 1.4; }
+    .misfit { border-left: 3px solid #f59e0b; background: #fffbeb; padding: 6px 10px; border-radius: 0 6px 6px 0; margin: 5px 0; }
+    .misfit .span { font-size: 12px; font-weight: 600; }
+    .misfit .reason { font-size: 11px; color: #64748b; margin-top: 2px; line-height: 1.4; }
+    .misfit .sugg { font-size: 11px; color: #059669; margin-top: 4px; line-height: 1.4; }
+    .none { color: #94a3b8; font-size: 12px; margin: 8px 0 0; }
     footer { margin-top: 24px; border-top: 1px solid #e2e8f0; padding-top: 8px; color: #94a3b8; font-size: 10px; }
   </style></head>
   <body>
@@ -162,7 +214,10 @@ function buildReportHtml(
 }
 
 function openPrintWindow(html: string): void {
-  const win = window.open("", "_blank", "noopener,width=900,height=1100");
+  // NOTE: do NOT pass `noopener` here — with that feature `window.open`
+  // returns null by spec, so we'd never get the handle needed to write the
+  // report into the child document (the window would stay blank).
+  const win = window.open("", "_blank", "width=900,height=1100");
   if (!win) return;
   win.document.open();
   win.document.write(html);
@@ -455,11 +510,32 @@ function ProjectWorkspace({ projectId }: Readonly<{ projectId: string }>) {
     (kind: "content" | "persona") => {
       const brand = t("persona.match.reportBrand");
       const footer = t("persona.match.reportFooter");
+      const labels: ReportLabels = {
+        fits: t("persona.match.whatFits"),
+        adjust: t("persona.match.whatToAdjust"),
+        nothingToAdjust: t("persona.match.nothingToAdjust"),
+      };
+      // Pre-resolve the per-cell "Readability NN% · mode" line so buildReportHtml
+      // can stay pure (no `t`). Mirrors the CellSheet drill-in exactly.
+      const cellMeta = (cell: MatchCell): string =>
+        t("persona.match.readabilityLine", {
+          score: Math.round(cell.readability),
+          mode: cell.llmUsed
+            ? t("persona.match.evaluatedWithLlm")
+            : t("persona.match.heuristicOnly"),
+        });
       if (kind === "content") {
         const groups: ReportGroup[] = byContent.map((g) => ({
           head: g.source.name,
           sub: `${t(`persona.match.sourceType.${g.source.type}`)} · ${t("persona.match.reportAvgFit", { avg: g.avg })}`,
-          rows: g.ranked.map((r) => ({ label: r.persona.name, score: r.cell.fitScore })),
+          rows: g.ranked.map((r) => ({
+            label: r.persona.name,
+            score: r.cell.fitScore,
+            meta: cellMeta(r.cell),
+            summary: r.cell.summary,
+            fits: r.cell.fits,
+            misfits: r.cell.misfits,
+          })),
         }));
         openPrintWindow(
           buildReportHtml(
@@ -468,13 +544,21 @@ function ProjectWorkspace({ projectId }: Readonly<{ projectId: string }>) {
             groups,
             brand,
             footer,
+            labels,
           ),
         );
       } else {
         const groups: ReportGroup[] = byPersona.map((g) => ({
           head: g.persona.name,
           sub: `${t(`persona.match.kind.${g.persona.kind}`)} · ${t("persona.match.reportAvgFit", { avg: g.avg })}`,
-          rows: g.ranked.map((r) => ({ label: r.source.name, score: r.cell.fitScore })),
+          rows: g.ranked.map((r) => ({
+            label: r.source.name,
+            score: r.cell.fitScore,
+            meta: cellMeta(r.cell),
+            summary: r.cell.summary,
+            fits: r.cell.fits,
+            misfits: r.cell.misfits,
+          })),
         }));
         openPrintWindow(
           buildReportHtml(
@@ -483,6 +567,7 @@ function ProjectWorkspace({ projectId }: Readonly<{ projectId: string }>) {
             groups,
             brand,
             footer,
+            labels,
           ),
         );
       }

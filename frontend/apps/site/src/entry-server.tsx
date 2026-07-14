@@ -45,6 +45,12 @@ export const routes: PrerenderRoute[] = [
       "AEM search, reimagined with AI. Add cited, streaming answers to Adobe Experience Manager (AEM 6.5 + Cloud Service) — semantic + keyword search, agents, MCP, any LLM, self-hosted. Deeper than an AEM-native add-on, with a live demo on Adobe's WKND site.",
   },
   {
+    path: "/persona",
+    title: "AI Personas — Give Your AI a Brand Voice | Viglet Turing ES",
+    description:
+      "Give your AI agents a governed brand voice. A Persona turns a generic LLM into your most on-brand representative — required and forbidden vocabulary enforced in two layers, live brand facts via MCP, audience content-fit scoring, Persona Match and synthetic user research. Define once, attach to any agent; swap the LLM, the voice stays. Self-hosted, open source.",
+  },
+  {
     path: "/security",
     title: "Security & Data Residency — Self-Hosted AI Search | Viglet Turing ES",
     description:

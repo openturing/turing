@@ -198,9 +198,20 @@ public class TurLLMChatAPI {
                 .orElseThrow(() -> new IllegalStateException(
                         "LLM instance vanished between port and entity load: " + id));
         TurGenAiLlmProvider provider = llmProviderFactory.getProvider(turLLMInstance);
-        String decryptedApiKey = turSecretCryptoService.decrypt(turLLMInstance.getApiKeyEncrypted());
 
-        OptionalInt fetched = provider.fetchContextWindow(turLLMInstance, decryptedApiKey);
+        // The API key is only needed to OPTIONALLY enrich the response with the
+        // provider's live context window. A secret encrypted under a rotated or
+        // absent TURING_AI_CRYPTO_KEY throws (AEADBadTagException) — that must
+        // not 500 this non-critical read, so fall back to the configured window.
+        OptionalInt fetched;
+        try {
+            String decryptedApiKey = turSecretCryptoService.decrypt(turLLMInstance.getApiKeyEncrypted());
+            fetched = provider.fetchContextWindow(turLLMInstance, decryptedApiKey);
+        } catch (RuntimeException e) {
+            log.warn("[ContextInfo] Could not use API key for instance {} ({}); "
+                    + "falling back to configured context window", id, e.getMessage());
+            fetched = OptionalInt.empty();
+        }
         if (fetched.isPresent()) {
             return new ContextInfoResponse(fetched.getAsInt(), "provider");
         }

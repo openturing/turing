@@ -3,16 +3,21 @@ import {
   Boxes,
   Clock,
   EyeOff,
+  FlaskConical,
   Globe,
   KeyRound,
+  LayoutGrid,
   Lock,
+  MessagesSquare,
   MessageSquare,
+  Mic,
   Search,
   Server,
   ServerCog,
   ShieldCheck,
   Sparkles,
   TrendingDown,
+  Users,
   Workflow,
   type LucideIcon,
 } from "lucide-react";
@@ -1208,5 +1213,210 @@ export const AEM_FAQ: AemFaqItem[] = [
   {
     q: "Does it handle PDFs and DAM assets?",
     a: "Yes. The connector extracts text from PDFs and Office documents in the DAM and indexes them alongside pages, so answers can cite an asset the same way they cite a page.",
+  },
+];
+
+/* -------------------------------------------------------------------------- */
+/* Persona solution page (/persona) — "Give your AI a voice that sounds like   */
+/* your company". Reframes prompt-engineering-per-agent as a reusable,         */
+/* governable brand voice: define once, attach to any agent, enforce           */
+/* vocabulary in two layers, and measure whether content fits its audience.    */
+/* Honest — where a plain system prompt genuinely gets you part-way, "partial".*/
+/* -------------------------------------------------------------------------- */
+
+export interface PersonaMatrixRow {
+  /** The capability, phrased neutrally. */
+  capability: string;
+  /** "yes" | "partial" | "no" | freeform short text (per Cell). */
+  turing: string;
+  /** Hand-rolled prompt engineering, per agent. */
+  prompt: string;
+  /** An off-the-shelf chatbot / a single system prompt. */
+  chatbot: string;
+}
+
+export const PERSONA_COLUMNS = {
+  turing: "Turing Persona",
+  prompt: "Prompt engineering",
+  chatbot: "Off-the-shelf chatbot",
+} as const;
+
+/**
+ * What a governed Persona gives you that a hand-written prompt or a generic
+ * chatbot can't. "partial" means a plain system prompt can approximate it but
+ * without reuse, enforcement or measurement. High-level, as of 2026.
+ */
+export const PERSONA_MATRIX: PersonaMatrixRow[] = [
+  { capability: "One brand voice, reused across every agent", turing: "yes", prompt: "copy-paste", chatbot: "partial" },
+  { capability: "Mandatory & forbidden vocabulary, enforced", turing: "two layers", prompt: "no", chatbot: "no" },
+  { capability: "Post-response tone masking (PT · EN · ES)", turing: "yes", prompt: "no", chatbot: "no" },
+  { capability: "Teach the voice by example (few-shot store)", turing: "yes", prompt: "manual", chatbot: "no" },
+  { capability: "Live brand facts via MCP — no redeploy", turing: "yes", prompt: "no", chatbot: "no" },
+  { capability: "Ground answers in your indexed content", turing: "yes", prompt: "manual", chatbot: "no" },
+  { capability: "Big Five (OCEAN) personality control", turing: "yes", prompt: "no", chatbot: "no" },
+  { capability: "Swap the LLM — the voice stays", turing: "yes", prompt: "rewrite", chatbot: "no" },
+  { capability: "Audience personas + content-fit scoring", turing: "yes", prompt: "no", chatbot: "no" },
+  { capability: "Persona Match — N×N content × audience", turing: "yes", prompt: "no", chatbot: "no" },
+  { capability: "Synthetic user research at scale", turing: "yes", prompt: "no", chatbot: "no" },
+  { capability: "Draft a persona from a voice recording", turing: "yes", prompt: "no", chatbot: "no" },
+  { capability: "Configured by non-engineers, no code", turing: "yes", prompt: "no", chatbot: "partial" },
+];
+
+export interface PersonaStep {
+  step: string;
+  title: string;
+  body: string;
+}
+
+/** How a Persona reaches production — define → attach → govern → measure. */
+export const PERSONA_STEPS: PersonaStep[] = [
+  {
+    step: "1",
+    title: "Define the voice once",
+    body: "In Administration → Personas, describe who the persona is (a free-text system instruction), set tone, verbosity and language style, and pin the vocabulary you require and the vocabulary you forbid. An AI-authoring assistant can draft every field from a plain-language brief — nothing is saved until you approve it.",
+  },
+  {
+    step: "2",
+    title: "Attach it to any agent",
+    body: "Give an AI Agent a catalog of personas and star one as default. The voice is decoupled from the brain and the hands: switch the LLM, swap the tools — the persona keeps every agent it's attached to sounding like the same on-brand representative. A flow can even switch persona mid-conversation.",
+  },
+  {
+    step: "3",
+    title: "Govern in two layers",
+    body: "Forbidden terms are enforced twice — in the prompt, so the model never intends to say them, and again after the response, where any slip is masked as [***] before it reaches the user. It understands Portuguese, English and Spanish, and matches word variants and whole phrases — compliance auditors review one list, not every reply.",
+  },
+  {
+    step: "4",
+    title: "Measure the audience",
+    body: "Personas aren't only a voice. Turn one into a reader profile and score whether a document actually fits the people meant to read it — readability plus a text-grounded AI review. Persona Match runs that across many contents × many audiences on a schedule; Synthetic User Research interviews a cohort before you spend a real participant's time.",
+  },
+];
+
+export interface PersonaSurface {
+  icon: LucideIcon;
+  iconClass: string;
+  title: string;
+  body: string;
+}
+
+/**
+ * The persona surfaces — a persona is far more than a system prompt. Each card
+ * names one thing you operate directly, grounded in the product's real feature
+ * set (voice, audience/content-fit, match, dialogue, research, from-audio).
+ */
+export const PERSONA_SURFACES: PersonaSurface[] = [
+  {
+    icon: MessageSquare,
+    iconClass: "from-[#1a3a9e] to-[#4169E1]",
+    title: "A voice for every agent",
+    body: "Attach a persona and the agent speaks in your tone, uses the words you want to be remembered by, and never the ones that get you in trouble. Talk to a persona directly on a shareable URL to approve the voice before it goes live — no agent required.",
+  },
+  {
+    icon: Users,
+    iconClass: "from-[#059669] to-[#10b981]",
+    title: "Audiences & content-fit",
+    body: "Model a target reader — reading level, domain expertise, vocabulary ceiling — and measure whether a page fits them. You get a readability score (no AI needed) plus a text-grounded AI review that flags the exact spans that miss, each with a rewrite suggestion.",
+  },
+  {
+    icon: LayoutGrid,
+    iconClass: "from-[#d97706] to-[#f59e0b]",
+    title: "Persona Match (N×N)",
+    body: "A reusable project that scores many contents against many audiences at once, filling a color-coded heatmap live. Re-runs on a daily or weekly schedule, re-reading only what changed — so your content and your audiences stay aligned. Exports to PDF.",
+  },
+  {
+    icon: MessagesSquare,
+    iconClass: "from-[#8b5cf6] to-[#6366f1]",
+    title: "Persona Dialogue",
+    body: "Put two or more brand voices in a room and let them debate a topic, turn by turn, live. It's the fastest way to hear where your voices diverge — a \"diff of voices\" — before you decide which to attach to which agent. Saved as reusable projects.",
+  },
+  {
+    icon: FlaskConical,
+    iconClass: "from-[#0ea5e9] to-[#4169E1]",
+    title: "Synthetic user research",
+    body: "Interview a cohort of personas against a research script and summarize the findings by theme — with verbatim quotes and a \"good enough\" saturation signal that tells you honestly when more interviews stop adding anything. A discovery aid, never a substitute for real users.",
+  },
+  {
+    icon: Mic,
+    iconClass: "from-[#4f46e5] to-[#6366f1]",
+    title: "Draft from a recording",
+    body: "Hand Turing five minutes of \"here's how our ideal rep sounds\" and it transcribes, classifies the style fields, and writes a system instruction — producing a persona draft for you to review and save. Derive, never auto-apply.",
+  },
+];
+
+export interface PersonaVoice {
+  /** The style label shown on the card. */
+  style: string;
+  /** tone · verbosity · language-style, as a short caption. */
+  config: string;
+  /** The answer that configuration produces. */
+  answer: string;
+  /** Where you'd use it. */
+  use: string;
+}
+
+/**
+ * "Same question, three voices" (book ch. 7). One question — "Is the annual
+ * plan worth it?" — answered by three persona configurations over the *same*
+ * model. Shows that the persona, not the model, decides how the company sounds.
+ */
+export const PERSONA_VOICES: PersonaVoice[] = [
+  {
+    style: "The closer",
+    config: "EXECUTIVE · verbosity 2 · PERSUASIVE",
+    answer: "\"Worth it: you lock this year's price and get two months free. Most teams that switch recover the cost in 90 days. Want me to run the numbers for your volume?\"",
+    use: "Sales chat on a corporate site",
+  },
+  {
+    style: "The advisor",
+    config: "TECHNICAL · verbosity 4 · INSTRUCTIONAL",
+    answer: "A short paragraph walking through the month-by-month savings math, with each plan's limits laid out in bullets so the reader can verify it themselves.",
+    use: "Developer-relations or pre-sales",
+  },
+  {
+    style: "The friend",
+    config: "CASUAL · verbosity 2 · DIRECT",
+    answer: "\"Way cheaper yearly 😊 it's 16% off. Wanna go for it?\"",
+    use: "In-app chat on a mobile product",
+  },
+];
+
+export interface PersonaFaqItem {
+  q: string;
+  a: string;
+}
+
+/** Objection-answering FAQ for the persona page (emitted as FAQPage JSON-LD). */
+export const PERSONA_FAQ: PersonaFaqItem[] = [
+  {
+    q: "What is an AI persona?",
+    a: "A persona is the voice profile of your AI — a small, reusable bundle of decisions (system instruction, tone, verbosity, required and forbidden vocabulary, optional personality and knowledge grounding) that replaces an LLM's generic default voice with your company's. You configure it once in Viglet Turing ES and attach it to any AI Agent; the same persona keeps every agent sounding like the same on-brand representative.",
+  },
+  {
+    q: "How is a persona different from a system prompt?",
+    a: "A system prompt is text you hand-write into one agent. A persona is a governed, reusable object: it's enforced in two layers (forbidden terms are stripped both in the prompt and after the response), it teaches the voice by example from a few-shot store, it pulls live brand facts from an MCP server, and it's decoupled from the model — swap the LLM and the voice stays. It's also editable by non-engineers, and the same persona reuses across every agent instead of being copy-pasted.",
+  },
+  {
+    q: "Can a persona keep the AI from saying the wrong thing?",
+    a: "Yes — that's the point of forbidden terms. They're applied twice: in the prompt so the model never intends to say them, and again after the response, where any match is masked as [***] before the user sees it. It works in Portuguese, English and Spanish and recognizes word variants and whole phrases, so 'promotion', 'promotions' and 'promoting' are all caught. Compliance reviews one list instead of every reply.",
+  },
+  {
+    q: "Do I have to re-write prompts when I change the LLM?",
+    a: "No. A persona is the voice; the LLM is the brain and the tools are the hands. Because the three are decoupled, you can switch from one provider to another — OpenAI, Anthropic, Gemini, Azure OpenAI, local Ollama — and the persona keeps every agent it's attached to speaking the same way.",
+  },
+  {
+    q: "How do I keep prices and promotions up to date without engineering?",
+    a: "Point the persona at a Brand Context MCP server you control. On every conversation Turing calls it and injects the current facts as a 'brand facts' block, so marketing updates a promotion in their own panel and the very next message reflects it — no prompt edit, no redeploy. The same MCP feeds every persona at once.",
+  },
+  {
+    q: "Can a persona tell me whether my content fits its audience?",
+    a: "Yes. Model a target reader as an AUDIENCE persona (reading level, domain expertise, vocabulary ceiling) and score any document against it. You get a fixed readability score plus a text-grounded AI review that lists what fits, what doesn't — with the exact span, the reason, and a rewrite suggestion. Persona Match scales this to many contents × many audiences on a schedule.",
+  },
+  {
+    q: "Is synthetic user research a replacement for talking to real users?",
+    a: "No, and Turing is explicit about it. Synthetic research interviews a cohort of personas to sharpen your questions, surface likely themes and pressure-test an idea before you spend a real participant's time. A 'good enough' saturation signal tells you when more interviews stop adding anything, and every study reads as a discovery aid. Always validate with real users before you act.",
+  },
+  {
+    q: "Do I need to write code to use personas?",
+    a: "No. Personas are configured entirely in the admin UI, and an AI-authoring assistant can draft every field from a plain-language brief — a marketer can create one. A REST API (/api/persona and friends) is there for teams that integrate by code, but nothing about day-to-day persona operation requires it.",
   },
 ];

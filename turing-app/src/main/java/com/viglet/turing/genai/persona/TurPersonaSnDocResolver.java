@@ -12,6 +12,7 @@ package com.viglet.turing.genai.persona;
 import java.net.URI;
 import java.util.List;
 import java.util.Locale;
+import java.util.Objects;
 import java.util.StringJoiner;
 
 import org.apache.commons.lang3.StringUtils;
@@ -21,8 +22,10 @@ import com.viglet.turing.commons.se.TurSEParameters;
 import com.viglet.turing.commons.sn.TurSNConfig;
 import com.viglet.turing.commons.sn.bean.TurSNSearchParams;
 import com.viglet.turing.commons.sn.search.TurSNSiteSearchContext;
-import com.viglet.turing.persistence.model.sn.TurSNSite;
+import com.viglet.turing.persistence.model.sn.locale.TurSNSiteLocale;
 import com.viglet.turing.sn.TurSNSearchProcess;
+import com.viglet.turing.sn.snapshot.TurSNSiteSearchSnapshot;
+import com.viglet.turing.sn.snapshot.TurSNSiteSearchSnapshotService;
 
 import lombok.extern.slf4j.Slf4j;
 import tools.jackson.databind.ObjectMapper;
@@ -48,10 +51,13 @@ public class TurPersonaSnDocResolver {
     private static final int MAX_FIELD_VALUE = 100_000;
 
     private final TurSNSearchProcess turSNSearchProcess;
+    private final TurSNSiteSearchSnapshotService snapshotService;
     private final ObjectMapper objectMapper = new ObjectMapper();
 
-    public TurPersonaSnDocResolver(TurSNSearchProcess turSNSearchProcess) {
+    public TurPersonaSnDocResolver(TurSNSearchProcess turSNSearchProcess,
+            TurSNSiteSearchSnapshotService snapshotService) {
         this.turSNSearchProcess = turSNSearchProcess;
+        this.snapshotService = snapshotService;
     }
 
     /**
@@ -62,14 +68,20 @@ public class TurPersonaSnDocResolver {
         if (StringUtils.isAnyBlank(siteName, documentId)) {
             return "";
         }
-        TurSNSite site = turSNSearchProcess.getSNSite(siteName).orElse(null);
-        if (site == null) {
+        // Use the materialized snapshot (allLocales) rather than the site
+        // entity's LAZY turSNSiteLocales collection: getSnapshot returns a
+        // cached, detached TurSNSite, so touching its lazy associations throws
+        // LazyInitializationException ("no session") and rolls back the caller's
+        // transaction. The snapshot already carries the locales it loaded.
+        TurSNSiteSearchSnapshot snapshot = snapshotService.getSnapshot(siteName, null).orElse(null);
+        if (snapshot == null || snapshot.site() == null) {
             log.warn("[PersonaSource] SN_DOC site '{}' not found", siteName);
             return "";
         }
-        List<Locale> locales = site.getTurSNSiteLocales().stream()
-                .map(l -> l.getLanguage())
-                .filter(java.util.Objects::nonNull)
+        List<Locale> locales = snapshot.allLocales().stream()
+                .map(TurSNSiteLocale::getLanguage)
+                .filter(Objects::nonNull)
+                .distinct()
                 .toList();
         if (locales.isEmpty()) {
             locales = List.of(Locale.ENGLISH);
