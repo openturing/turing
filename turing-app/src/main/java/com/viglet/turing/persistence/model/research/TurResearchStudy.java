@@ -138,6 +138,14 @@ public class TurResearchStudy implements Serializable {
     @Column(name = "target_agent_id", length = 40)
     private String targetAgentId;
 
+    /**
+     * T729 / §XLVI.4 — Continuous Insight cadence. MANUAL (default) runs only on an
+     * explicit "run now"; DAILY/WEEKLY are picked up by the scheduled re-run job.
+     */
+    @Enumerated(EnumType.STRING)
+    @Column(name = "schedule", nullable = false, length = 16)
+    private TurResearchSchedule schedule = TurResearchSchedule.MANUAL;
+
     /** When the last cohort interview run completed (null until first run). */
     @Column(name = "last_run_at")
     private Instant lastRunAt;

@@ -1,0 +1,95 @@
+databaseChangeLog:
+  # T729 / §XLVI.4 (Block AW) — Continuous Insight: a study re-run cadence + the
+  # insight-drift snapshot series.
+  #
+  #   ai_research_study.schedule       — MANUAL (default) / DAILY / WEEKLY cadence.
+  #   ai_research_insight_snapshot     — one deterministic (LLM-free) point per run:
+  #                                      completed-interview count + T723 saturation
+  #                                      counts; FK -> ai_research_study.
+  #
+  # Portable lowercase types; idempotent (MARK_RAN).
+
+  - changeSet:
+      id: v2026.3.1.108-add-schedule-to-ai_research_study
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - columnExists:
+                tableName: ai_research_study
+                columnName: schedule
+      changes:
+        - addColumn:
+            tableName: ai_research_study
+            columns:
+              - column:
+                  name: schedule
+                  type: varchar(16)
+                  defaultValue: MANUAL
+                  constraints:
+                    nullable: false
+
+  - changeSet:
+      id: v2026.3.1.108-create-ai_research_insight_snapshot
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - tableExists:
+                tableName: ai_research_insight_snapshot
+      changes:
+        - createTable:
+            tableName: ai_research_insight_snapshot
+            columns:
+              - column:
+                  name: id
+                  type: varchar(40)
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: captured_at
+                  type: timestamp
+                  constraints:
+                    nullable: false
+              - column:
+                  name: interview_count
+                  type: int
+                  defaultValueNumeric: 0
+                  constraints:
+                    nullable: false
+              - column:
+                  name: total_unique_themes
+                  type: int
+                  defaultValueNumeric: 0
+                  constraints:
+                    nullable: false
+              - column:
+                  name: adequate_at_n
+                  type: int
+                  defaultValueNumeric: -1
+                  constraints:
+                    nullable: false
+              - column:
+                  name: saturated
+                  type: boolean
+                  defaultValueBoolean: false
+                  constraints:
+                    nullable: false
+              - column:
+                  name: tenantId
+                  type: varchar(40)
+              - column:
+                  name: study_id
+                  type: varchar(40)
+                  constraints:
+                    nullable: false
+                    foreignKeyName: fk_research_snapshot_study
+                    references: ai_research_study(id)
+                    deleteCascade: true
+        - createIndex:
+            tableName: ai_research_insight_snapshot
+            indexName: idx_research_snapshot_study
+            columns:
+              - column:
+                  name: study_id

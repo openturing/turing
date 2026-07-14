@@ -26,6 +26,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.viglet.turing.api.exception.TurNotFoundException;
 import com.viglet.turing.genai.research.TurResearchConceptFitService;
+import com.viglet.turing.genai.research.TurResearchDriftService;
 import com.viglet.turing.genai.research.TurResearchEvalBridgeService;
 import com.viglet.turing.genai.research.TurResearchEventBus;
 import com.viglet.turing.genai.research.TurResearchInsightsService;
@@ -34,6 +35,7 @@ import com.viglet.turing.genai.research.TurResearchRunResultDto;
 import com.viglet.turing.genai.research.TurResearchRunnerService;
 import com.viglet.turing.genai.research.TurResearchStudyService;
 import com.viglet.turing.genai.research.dto.TurResearchConceptFitDto;
+import com.viglet.turing.genai.research.dto.TurResearchDriftDto;
 import com.viglet.turing.genai.research.dto.TurResearchGraphDto;
 import com.viglet.turing.genai.research.dto.TurResearchInterviewDto;
 import com.viglet.turing.genai.research.dto.TurResearchReportDto;
@@ -74,6 +76,7 @@ public class TurResearchStudyAPI {
     private final TurResearchInsightsService insightsService;
     private final TurResearchEvalBridgeService evalBridgeService;
     private final TurResearchConceptFitService conceptFitService;
+    private final TurResearchDriftService driftService;
     private final TurResearchEventBus eventBus;
     private final TurTenantContext tenantContext;
 
@@ -82,6 +85,7 @@ public class TurResearchStudyAPI {
             TurResearchInsightsService insightsService,
             TurResearchEvalBridgeService evalBridgeService,
             TurResearchConceptFitService conceptFitService,
+            TurResearchDriftService driftService,
             TurResearchEventBus eventBus,
             TurTenantContext tenantContext) {
         this.service = service;
@@ -89,6 +93,7 @@ public class TurResearchStudyAPI {
         this.insightsService = insightsService;
         this.evalBridgeService = evalBridgeService;
         this.conceptFitService = conceptFitService;
+        this.driftService = driftService;
         this.eventBus = eventBus;
         this.tenantContext = tenantContext;
     }
@@ -209,6 +214,18 @@ public class TurResearchStudyAPI {
             throw TurNotFoundException.of("Research study", id);
         }
         return conceptFitService.conceptFit(id, regenerate);
+    }
+
+    // ---- continuous insight — drift (Phase 4, T729) ------------------------
+
+    @Operation(summary = "Insight drift — the ordered series of deterministic sufficiency "
+            + "snapshots captured after each run (theme coverage + saturation over time)")
+    @GetMapping("/{id}/drift")
+    public TurResearchDriftDto drift(@PathVariable String id) {
+        if (service.get(id).isEmpty()) {
+            throw TurNotFoundException.of("Research study", id);
+        }
+        return driftService.drift(id);
     }
 
     // ---- run ---------------------------------------------------------------

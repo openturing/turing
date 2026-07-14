@@ -75,7 +75,7 @@ class TurResearchStudyIT extends AbstractTuringSpringIT {
                 null, "Research IT study", "Understand onboarding friction",
                 "New users abandon at signup", "desc", true, "CUSTOM_SCRIPT", null,
                 List.of("What brought you here?", "What almost stopped you?"), 6, null, null,
-                null, null, null, null, null, 0, 0, null, null));
+                null, null, null, null, null, null, 0, 0, null, null));
         String studyId = created.id();
         assertNotNull(studyId);
         assertEquals("CUSTOM_SCRIPT", created.protocol());

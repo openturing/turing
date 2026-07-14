@@ -6,6 +6,19 @@ import { BENTO_TONE_GRADIENTS, type BentoTone } from "./bento-tones";
 export interface BentoTileProps {
   /** Destination route. When omitted, the tile renders as a non-clickable surface. */
   to?: string;
+  /**
+   * Click handler for action tiles (e.g. "Open chat") that run imperative work
+   * before navigating rather than being a plain link. Ignored when `to` is set
+   * or the tile is `disabled`; renders the tile as a `<button>`.
+   */
+  onClick?: () => void;
+  /**
+   * Renders the tile as a non-interactive surface with reduced opacity and the
+   * `disabledHint` tooltip — for actions that exist but don't apply to the
+   * current entity (e.g. content validation on a non-audience persona).
+   */
+  disabled?: boolean;
+  disabledHint?: string;
   icon: ComponentType<{ size?: number }>;
   tone: BentoTone;
   eyebrow: string;
@@ -29,6 +42,9 @@ export interface BentoTileProps {
  */
 export function BentoTile({
   to,
+  onClick,
+  disabled = false,
+  disabledHint,
   icon: Icon,
   tone,
   eyebrow,
@@ -37,6 +53,9 @@ export function BentoTile({
   featured = false,
   children,
 }: Readonly<BentoTileProps>) {
+  // A tile is interactive when it can navigate (`to`) or act (`onClick`) and
+  // isn't disabled. The chevron + press/hover affordance follow from that.
+  const interactive = !disabled && Boolean(to || onClick);
   const iconChipClass = featured
     ? "h-14 w-14 rounded-2xl"
     : "h-9 w-9 rounded-2xl";
@@ -70,7 +89,7 @@ export function BentoTile({
         <span className={`grid place-items-center bg-linear-to-br ${BENTO_TONE_GRADIENTS[tone]} text-white shadow-md ${iconChipClass}`}>
           <Icon size={iconSize} />
         </span>
-        {to && (
+        {interactive && (
           <IconChevronRight
             size={featured ? 18 : 16}
             className="text-muted-foreground transition-transform duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] group-hover:translate-x-1"
@@ -97,9 +116,24 @@ export function BentoTile({
    * how tall the row ends up — empty space, when it exists, lands at
    * the bottom (and on featured tiles, the tonal ornament fills it).
    */
-  const className = `bento-tile bento-glass group relative flex flex-col ${featured ? "gap-5" : "gap-4"} overflow-hidden ${featured ? "p-6 md:p-7" : "p-5"} ${span}${to ? " bento-tile-clickable" : ""}`;
+  const className = `bento-tile bento-glass group relative flex flex-col ${featured ? "gap-5" : "gap-4"} overflow-hidden text-left ${featured ? "p-6 md:p-7" : "p-5"} ${span}${interactive ? " bento-tile-clickable" : ""}${disabled ? " cursor-not-allowed opacity-60" : ""}`;
 
-  return to
-    ? <Link to={to} className={className}>{content}</Link>
-    : <div className={className}>{content}</div>;
+  if (disabled) {
+    return (
+      <div className={className} aria-disabled="true" title={disabledHint}>
+        {content}
+      </div>
+    );
+  }
+  if (to) {
+    return <Link to={to} className={className}>{content}</Link>;
+  }
+  if (onClick) {
+    return (
+      <button type="button" onClick={onClick} className={`${className} w-full`}>
+        {content}
+      </button>
+    );
+  }
+  return <div className={className}>{content}</div>;
 }

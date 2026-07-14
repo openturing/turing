@@ -2438,12 +2438,11 @@ the actual product differentiation lives.
 
 ### XLVI.4 Phase 4 — the interconnection (why this beats a standalone tool)
 
-This is the part a dedicated research SaaS **cannot** do, because it does not own an
-agent runtime or an eval platform:
-
-- **T729 (💭) — Continuous Insight.** Re-run a study on a schedule (Persona Match
-  scheduler + ShedLock) and track theme/sentiment drift over time (T87 sentiment
-  trajectory) — one-shot research becomes continuous validation.
+✅ **Shipped (T725–T729) — see CHANGELOG Block AW.** The part a dedicated research
+SaaS cannot do, because it owns neither an agent runtime nor an eval platform:
+studies promote into eval datasets, a study interviews your own deployed agent,
+concept-tests route through the Persona Match content-fit evaluator, per-stage
+"Big Shuffle" model lanes, and Continuous Insight (scheduled re-runs + drift).
 
 ### XLVI.5 Phase 5 — authoring, the studio & the developer surface
 

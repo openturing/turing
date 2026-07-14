@@ -30,6 +30,7 @@ import com.viglet.turing.persistence.model.llm.TurLLMInstance;
 import com.viglet.turing.persistence.model.persona.TurPersona;
 import com.viglet.turing.persistence.model.research.TurResearchInterview;
 import com.viglet.turing.persistence.model.research.TurResearchProtocol;
+import com.viglet.turing.persistence.model.research.TurResearchSchedule;
 import com.viglet.turing.persistence.model.research.TurResearchStudy;
 import com.viglet.turing.persistence.model.research.TurResearchStudyPersona;
 import com.viglet.turing.persistence.repository.agent.TurAIAgentRepository;
@@ -135,6 +136,18 @@ public class TurResearchStudyService {
         study.setTargetAgentId(StringUtils.trimToNull(dto.targetAgentId()));
         study.setInterviewLlmInstanceId(StringUtils.trimToNull(dto.interviewLlmInstanceId()));
         study.setSynthesisLlmInstanceId(StringUtils.trimToNull(dto.synthesisLlmInstanceId()));
+        study.setSchedule(parseSchedule(dto.schedule()));
+    }
+
+    private TurResearchSchedule parseSchedule(String raw) {
+        if (StringUtils.isBlank(raw)) {
+            return TurResearchSchedule.MANUAL;
+        }
+        try {
+            return TurResearchSchedule.valueOf(raw.trim().toUpperCase());
+        } catch (IllegalArgumentException e) {
+            return TurResearchSchedule.MANUAL;
+        }
     }
 
     private TurResearchProtocol parseProtocol(String raw) {
@@ -199,7 +212,8 @@ public class TurResearchStudyService {
                 s.getDescription(), s.isEnabled(), s.getProtocol().name(), s.getConceptText(),
                 parseQuestions(s.getQuestionsJson()), s.getMaxQuestions(), s.getLlmInstanceId(),
                 llmName(s), s.getTargetAgentId(), targetAgentName(s),
-                s.getInterviewLlmInstanceId(), s.getSynthesisLlmInstanceId(), s.getLastRunAt(),
+                s.getInterviewLlmInstanceId(), s.getSynthesisLlmInstanceId(),
+                s.getSchedule().name(), s.getLastRunAt(),
                 personaJoinRepository.findByStudy_IdOrderByPositionAsc(s.getId()).size(),
                 (int) interviewRepository.countByStudy_Id(s.getId()), null, null);
     }
@@ -211,7 +225,8 @@ public class TurResearchStudyService {
                 s.getDescription(), s.isEnabled(), s.getProtocol().name(), s.getConceptText(),
                 parseQuestions(s.getQuestionsJson()), s.getMaxQuestions(), s.getLlmInstanceId(),
                 llmName(s), s.getTargetAgentId(), targetAgentName(s),
-                s.getInterviewLlmInstanceId(), s.getSynthesisLlmInstanceId(), s.getLastRunAt(),
+                s.getInterviewLlmInstanceId(), s.getSynthesisLlmInstanceId(),
+                s.getSchedule().name(), s.getLastRunAt(),
                 personas.size(), interviews.size(), personas, interviews);
     }
 

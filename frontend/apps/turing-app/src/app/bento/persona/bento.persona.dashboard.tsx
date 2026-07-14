@@ -1,35 +1,32 @@
 import { useDeletePersona, useUpdatePersona } from "@/api/queries/persona.queries";
+import { CHAT_INITIAL_PROMPT_KEY } from "@/app/console/chat/chat.types";
 import { ROUTES } from "@/app/routes.const";
 import { BentoActionsMenu, BentoHero, BentoInlineEdit, BentoTile } from "@/components/bento";
 import { DialogDelete } from "@/components/dialog.delete";
 import type { TurPersona } from "@/models/persona/persona.model.ts";
 import { toast } from "@viglet/viglet-design-system";
 import {
-  IconBook2,
-  IconPalette,
+  IconFileSearch,
+  IconMessageChatbot,
   IconSettings,
-  IconSparkles,
   IconTrash,
   IconUserCircle,
-  IconUsers,
 } from "@tabler/icons-react";
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link, Navigate, useNavigate, useOutletContext } from "react-router-dom";
 import type { BentoPersonaContext } from "./bento.persona.page";
-import { PersonaLaunchBar } from "./persona.launch.bar";
-
-const countTerms = (raw?: string | null) =>
-  (raw ?? "").split("|").map((term) => term.trim()).filter(Boolean).length;
 
 /**
  * Bento persona dashboard — Block AI / §XXXII.5 (T582). Reads like the AI-agent
  * dashboard: a {@link BentoHero} with inline-edit identity + status + delete,
- * the {@link PersonaLaunchBar}, then a frosted {@link BentoTile} mosaic where
- * each card is a doorway into a section (system instruction, style, general,
- * guidelines, and — for AUDIENCE/BOTH personas — audience, notebook, fit
- * report). A new persona has nothing to dashboard, so it redirects to the
- * general editor section.
+ * then a frosted {@link BentoTile} mosaic. Because the persona is a CRUD whose
+ * sections already live behind the editor's pill tabs, the mosaic no longer
+ * duplicates one tile per tab — it surfaces a single **Configure** card that
+ * opens the editor, plus the per-persona **actions as cards**: Open chat (T580,
+ * always live) and Validate content (T584, live for AUDIENCE/BOTH, else a
+ * disabled hint). A new persona has nothing to dashboard, so it redirects to
+ * the general editor section.
  */
 export default function BentoPersonaDashboard() {
   const { persona, isNew, setPersona } = useOutletContext<BentoPersonaContext>();
@@ -41,7 +38,7 @@ export default function BentoPersonaDashboard() {
 
   const enabled = Number(persona.enabled) === 1;
   const kind = persona.personaKind ?? "SPEAKER";
-  const showAudience = kind === "AUDIENCE" || kind === "BOTH";
+  const canValidate = kind === "AUDIENCE" || kind === "BOTH";
   const base = `${ROUTES.BENTO_PERSONA_INSTANCE}/${persona.id}`;
 
   const styleSummary = useMemo(() => {
@@ -52,7 +49,12 @@ export default function BentoPersonaDashboard() {
     return parts.join(" · ");
   }, [persona.tone, persona.languageStyle, persona.verbosity, t]);
 
-  const termCount = countTerms(persona.mandatoryTerms) + countTerms(persona.forbiddenTerms);
+  // "Open chat" clears any stale one-shot prompt before navigating (mirrors the
+  // old launch bar), so it runs as an onClick action tile rather than a link.
+  function openChat() {
+    sessionStorage.removeItem(CHAT_INITIAL_PROMPT_KEY);
+    navigate(`${ROUTES.BENTO_CHAT_PERSONA}/${persona.id}`);
+  }
 
   /*
    * Dashboard identity edits aren't backed by a form/save bar, so each inline
@@ -162,84 +164,56 @@ export default function BentoPersonaDashboard() {
         trigger={<span className="hidden" aria-hidden />}
       />
 
-      <PersonaLaunchBar persona={persona} />
-
       <div className="bento-grid grid auto-rows-[minmax(140px,auto)] grid-cols-2 gap-4 md:grid-cols-4 md:gap-5 lg:grid-cols-6">
-        {/* HERO: System instruction — large 2x2 frosted tile. */}
-        <BentoTile
-          to={`${base}/system-instruction`}
-          icon={IconSparkles}
-          tone="violet"
-          featured
-          span="col-span-2 row-span-2 md:col-span-2 md:row-span-2 lg:col-span-3 lg:row-span-2"
-          eyebrow={t("persona.sidebar.systemInstruction")}
-          title={persona.systemInstruction?.trim()
-            ? t("persona.dashboard.systemInstructionSet", { defaultValue: "Voice contract defined" })
-            : t("persona.dashboard.systemInstructionEmpty", { defaultValue: "Set the voice contract" })}
-        >
-          <p className="line-clamp-5 text-sm text-muted-foreground">
-            {persona.systemInstruction?.trim() || t("persona.dashboard.systemInstructionHint", {
-              defaultValue: "The system instruction prepended to chats that adopt this persona.",
-            })}
-          </p>
-        </BentoTile>
-
-        <BentoTile
-          to={`${base}/style`}
-          icon={IconPalette}
-          tone="emerald"
-          span="col-span-2 row-span-1 md:col-span-2 md:row-span-1 lg:col-span-3 lg:row-span-1"
-          eyebrow={t("persona.sidebar.style")}
-          title={t("persona.dashboard.styleTitle", { defaultValue: "Style & voice" })}
-        >
-          <p className="text-sm text-muted-foreground">{styleSummary}</p>
-        </BentoTile>
-
+        {/* CONFIGURE (CRUD): one door into the editor, whose pill tabs already
+            expose every section — so the dashboard doesn't duplicate a tile per
+            tab. Featured 2x2 hero. */}
         <BentoTile
           to={`${base}/general`}
           icon={IconSettings}
-          tone="blue"
-          span="col-span-1 row-span-1 md:col-span-1 lg:col-span-1"
-          eyebrow={t("persona.sidebar.general")}
-          title={t(`persona.kinds.${kind}`)}
-        />
-
-        <BentoTile
-          to={`${base}/guidelines`}
-          icon={IconBook2}
-          tone="amber"
-          span="col-span-1 row-span-1 md:col-span-1 lg:col-span-2"
-          eyebrow={t("persona.sidebar.guidelines")}
-          title={t("persona.dashboard.guidelinesTitle", { defaultValue: "Guidelines" })}
+          tone="violet"
+          featured
+          span="col-span-2 row-span-2 md:col-span-2 md:row-span-2 lg:col-span-3 lg:row-span-2"
+          eyebrow={t(`persona.kinds.${kind}`)}
+          title={t("persona.dashboard.configureTitle", { defaultValue: "Configure persona" })}
         >
           <p className="text-sm text-muted-foreground">
-            {termCount > 0
-              ? t("persona.dashboard.termCount", {
-                  mandatory: countTerms(persona.mandatoryTerms),
-                  forbidden: countTerms(persona.forbiddenTerms),
-                  defaultValue: "{{mandatory}} mandatory · {{forbidden}} forbidden",
-                })
-              : t("persona.dashboard.guidelinesHint", { defaultValue: "Mandatory and forbidden terms." })}
+            {t("persona.dashboard.configureHint", {
+              defaultValue: "Identity, system instruction, style, guidelines and audience.",
+            })}
+          </p>
+          <p className="mt-2 text-sm text-muted-foreground">{styleSummary}</p>
+        </BentoTile>
+
+        {/* ACTION: Open chat — always live. */}
+        <BentoTile
+          onClick={openChat}
+          icon={IconMessageChatbot}
+          tone="blue"
+          span="col-span-2 row-span-1 md:col-span-2 lg:col-span-3"
+          eyebrow={t("persona.launch.title", { defaultValue: "Launch" })}
+          title={t("persona.launch.openChat", { defaultValue: "Open chat" })}
+        >
+          <p className="text-sm text-muted-foreground">
+            {t("persona.dashboard.chatHint", { defaultValue: "Talk to a chat that adopts this persona." })}
           </p>
         </BentoTile>
 
-        {showAudience && (
-          // Notebook + fit report are reached through the "Validate content"
-          // launchpad action (a single add-sources → score flow), so the
-          // dashboard only surfaces the audience-profile config here.
-          <BentoTile
-            to={`${base}/audience`}
-            icon={IconUsers}
-            tone="indigo"
-            span="col-span-2 row-span-1 md:col-span-2 lg:col-span-2"
-            eyebrow={t("persona.sidebar.audience")}
-            title={t("persona.dashboard.audienceTitle", { defaultValue: "Audience profile" })}
-          >
-            <p className="text-sm text-muted-foreground">
-              {t("persona.dashboard.audienceHint", { defaultValue: "Who this persona reads for." })}
-            </p>
-          </BentoTile>
-        )}
+        {/* ACTION: Validate content — content-fit scoring, audience personas only. */}
+        <BentoTile
+          {...(canValidate
+            ? { onClick: () => navigate(`${ROUTES.BENTO_PERSONA_VALIDATE}/${persona.id}`) }
+            : { disabled: true, disabledHint: t("persona.launch.audienceOnly", { defaultValue: "Available for audience personas" }) })}
+          icon={IconFileSearch}
+          tone="emerald"
+          span="col-span-2 row-span-1 md:col-span-2 lg:col-span-3"
+          eyebrow={t("persona.launch.title", { defaultValue: "Launch" })}
+          title={t("persona.launch.validateContent", { defaultValue: "Validate content" })}
+        >
+          <p className="text-sm text-muted-foreground">
+            {t("persona.dashboard.validateHint", { defaultValue: "Score how well content fits this audience." })}
+          </p>
+        </BentoTile>
       </div>
     </>
   );

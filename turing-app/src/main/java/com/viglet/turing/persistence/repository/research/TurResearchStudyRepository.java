@@ -13,6 +13,7 @@ import java.util.List;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 
+import com.viglet.turing.persistence.model.research.TurResearchSchedule;
 import com.viglet.turing.persistence.model.research.TurResearchStudy;
 
 /**
@@ -25,4 +26,7 @@ import com.viglet.turing.persistence.model.research.TurResearchStudy;
 public interface TurResearchStudyRepository extends JpaRepository<TurResearchStudy, String> {
 
     List<TurResearchStudy> findByOrderByNameAsc();
+
+    /** T729 — enabled studies on a given Continuous-Insight cadence (scheduled re-run). */
+    List<TurResearchStudy> findByEnabledTrueAndSchedule(TurResearchSchedule schedule);
 }

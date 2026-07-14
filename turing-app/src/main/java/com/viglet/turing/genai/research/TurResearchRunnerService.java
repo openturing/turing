@@ -84,6 +84,7 @@ public class TurResearchRunnerService {
     private final TurLLMInstanceRepository llmInstanceRepository;
     private final TurResearchModelLaneResolver laneResolver;
     private final TurResearchInterviewEngine engine;
+    private final TurResearchDriftService driftService;
     private final TurResearchEventBus eventBus;
     private final TurTenantContext tenantContext;
 
@@ -94,6 +95,7 @@ public class TurResearchRunnerService {
             TurLLMInstanceRepository llmInstanceRepository,
             TurResearchModelLaneResolver laneResolver,
             TurResearchInterviewEngine engine,
+            TurResearchDriftService driftService,
             TurResearchEventBus eventBus,
             TurTenantContext tenantContext) {
         this.studyRepository = studyRepository;
@@ -103,6 +105,7 @@ public class TurResearchRunnerService {
         this.llmInstanceRepository = llmInstanceRepository;
         this.laneResolver = laneResolver;
         this.engine = engine;
+        this.driftService = driftService;
         this.eventBus = eventBus;
         this.tenantContext = tenantContext;
     }
@@ -152,6 +155,14 @@ public class TurResearchRunnerService {
 
         List<Computed> computed = interviewAll(study, llm, force, personas, existing, inputHash);
         persist(study, computed, personas, existing, inputHash);
+
+        // T729 — capture a deterministic insight-drift snapshot for this run; a
+        // snapshot failure must never break the run itself.
+        try {
+            driftService.snapshot(studyId);
+        } catch (RuntimeException e) {
+            log.debug("[Research] drift snapshot failed for study={}: {}", studyId, e.getMessage());
+        }
 
         List<TurResearchInterviewDto> interviews = computed.stream().map(Computed::dto).toList();
         return new TurResearchRunResultDto(studyId, interviews);
