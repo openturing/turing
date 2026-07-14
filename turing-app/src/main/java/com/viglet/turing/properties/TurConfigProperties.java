@@ -38,6 +38,7 @@ public class TurConfigProperties {
 	private TurDistillationProperty distillation = new TurDistillationProperty();
 	private TurOcrProperty ocr = new TurOcrProperty();
 	private TurTranscriptionProperty transcription = new TurTranscriptionProperty();
+	private TurUrlFetchProperty urlFetch = new TurUrlFetchProperty();
 
 	/**
 	 * T642 / §XXXVII.4 — loudly flag the permissive mode at startup so an operator

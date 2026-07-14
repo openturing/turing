@@ -167,4 +167,23 @@ public class TurGlobalSettingsBean {
     private String transcriptionApiKey;
     /** T687 — read-only status: whether a transcription API key is configured. */
     private boolean transcriptionApiKeySet;
+    /**
+     * T739 — active URL content-fetch mode: {@code SIMPLE} (legacy default) |
+     * {@code HEADLESS} | {@code AUTO}.
+     *
+     * @since 2026.3.4
+     */
+    private com.viglet.turing.genai.urlfetch.TurUrlFetchMode urlFetchMode;
+    /** T739 — browserless sidecar base URL (e.g. {@code http://browserless:3000}); blank = no sidecar. */
+    private String urlFetchBrowserlessUrl;
+    /**
+     * T739 — browserless token, <b>write-only</b>: accepted on update, never
+     * echoed back on read (always blank in GET). Blank on update leaves the stored
+     * token unchanged.
+     *
+     * @since 2026.3.4
+     */
+    private String urlFetchBrowserlessToken;
+    /** T739 — read-only status: whether a browserless token is configured. */
+    private boolean urlFetchBrowserlessTokenSet;
 }

@@ -47,7 +47,9 @@ class TurGlobalSettingsBeanTest {
                 false,  // ragSnRerankCacheEnabled (T341)
                 null, null, null,  // transcriptionStrategy / endpoint / model (T687)
                 0L,  // transcriptionMaxUploadBytes (T687)
-                null, false);  // transcriptionApiKey / apiKeySet (T687)
+                null, false,  // transcriptionApiKey / apiKeySet (T687)
+                null, null,  // urlFetchMode / browserlessUrl (T739)
+                null, false);  // urlFetchBrowserlessToken / tokenSet (T739)
 
         assertThat(bean.getDecimalSeparator()).isEqualTo(TurGlobalDecimalSeparator.DOT);
         assertThat(bean.getEmailProvider()).isEqualTo(TurEmailProviderType.BREVO);

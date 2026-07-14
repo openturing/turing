@@ -44,6 +44,15 @@ export type TurTranscriptionProviderType =
   | "OPENAI_COMPATIBLE"
   | "NONE";
 
+/**
+ * T739 — how a content URL is turned into text. `SIMPLE` (legacy default) is a
+ * plain HTTP GET + Tika parse — fast, but a JS-rendered SPA yields no body text.
+ * `HEADLESS` always renders the page in a `browserless` sidecar first. `AUTO`
+ * runs `SIMPLE` and only escalates to `HEADLESS` when too little text is
+ * extracted (the SPA case) and a sidecar is configured.
+ */
+export type TurUrlFetchMode = "SIMPLE" | "HEADLESS" | "AUTO";
+
 export interface TurGlobalSettings {
   decimalSeparator: TurGlobalDecimalSeparator;
   pythonExecutable?: string;
@@ -155,4 +164,15 @@ export interface TurGlobalSettings {
   transcriptionApiKey?: string;
   /** T687 — read-only status: whether a transcription API key is configured. */
   transcriptionApiKeySet?: boolean;
+  /** T739 — active URL content-fetch mode. */
+  urlFetchMode?: TurUrlFetchMode;
+  /** T739 — browserless sidecar base URL (e.g. `http://browserless:3000`); blank = no sidecar. */
+  urlFetchBrowserlessUrl?: string;
+  /**
+   * T739 — browserless token. Write-only: sent on update, never returned on read
+   * (always blank in GET). A blank value on save leaves the stored token intact.
+   */
+  urlFetchBrowserlessToken?: string;
+  /** T739 — read-only status: whether a browserless token is configured. */
+  urlFetchBrowserlessTokenSet?: boolean;
 }

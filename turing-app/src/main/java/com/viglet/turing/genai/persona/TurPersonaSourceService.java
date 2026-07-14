@@ -9,8 +9,6 @@
  */
 package com.viglet.turing.genai.persona;
 
-import java.net.MalformedURLException;
-import java.net.URI;
 import java.time.Instant;
 
 import org.apache.commons.lang3.StringUtils;
@@ -18,6 +16,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.viglet.turing.commons.file.TurFileAttributes;
+import com.viglet.turing.genai.urlfetch.TurUrlFetchService;
 import com.viglet.turing.persistence.model.persona.TurPersonaSource;
 import com.viglet.turing.persistence.model.persona.TurPersonaSourceStatus;
 import com.viglet.turing.utils.TurFileUtils;
@@ -40,9 +39,12 @@ import lombok.extern.slf4j.Slf4j;
 public class TurPersonaSourceService {
 
     private final TurPersonaSnDocResolver snDocResolver;
+    private final TurUrlFetchService urlFetchService;
 
-    public TurPersonaSourceService(TurPersonaSnDocResolver snDocResolver) {
+    public TurPersonaSourceService(TurPersonaSnDocResolver snDocResolver,
+            TurUrlFetchService urlFetchService) {
         this.snDocResolver = snDocResolver;
+        this.urlFetchService = urlFetchService;
     }
 
     /**
@@ -75,19 +77,13 @@ public class TurPersonaSourceService {
     }
 
     private String extractUrl(String urlString) {
-        if (StringUtils.isBlank(urlString)
-                || !TurFileUtils.isAllowedRemoteUrlString(urlString)) {
-            log.warn("[PersonaSource] blocked or blank URL: {}", urlString);
-            return null;
-        }
-        try {
-            TurFileAttributes attributes = TurFileUtils.urlContentToText(
-                    URI.create(urlString).toURL());
-            return attributes == null ? null : attributes.getContent();
-        } catch (IllegalArgumentException | MalformedURLException e) {
-            log.warn("[PersonaSource] malformed URL {}: {}", urlString, e.getMessage());
-            return null;
-        }
+        // T739 / §XLVIII — routed through the pluggable URL-fetch seam, which
+        // applies the configured mode (SIMPLE / HEADLESS / AUTO). AUTO renders
+        // JS-heavy SPAs in the browserless sidecar when the cheap HTTP path
+        // extracts too little text. Guard + malformed-URL handling live in the
+        // service; it never throws and returns blank content on failure.
+        TurFileAttributes attributes = urlFetchService.fetch(urlString);
+        return attributes == null ? null : attributes.getContent();
     }
 
     private TurPersonaSource reaffirmAsset(TurPersonaSource source) {

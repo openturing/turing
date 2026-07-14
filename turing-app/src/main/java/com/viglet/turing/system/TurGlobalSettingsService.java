@@ -635,6 +635,74 @@ public class TurGlobalSettingsService {
         return true;
     }
 
+    // ---------------------------------------------------------------------
+    // T739 / §XLVIII — URL content-fetch mode + browserless sidecar. Config-var
+    // backed (UI-editable); a non-blank turing.url-fetch.* env prop overrides
+    // these at resolution time (TurUrlFetchConfigResolver).
+    // ---------------------------------------------------------------------
+
+    /**
+     * T739 — active URL-fetch mode. Unknown/blank values fall back to
+     * {@link com.viglet.turing.genai.urlfetch.TurUrlFetchMode#SIMPLE} (the legacy
+     * default), so a corrupt row can never break ingestion.
+     */
+    public com.viglet.turing.genai.urlfetch.TurUrlFetchMode getUrlFetchMode() {
+        return com.viglet.turing.genai.urlfetch.TurUrlFetchMode.fromValue(
+                configVars.getString(TurConfigVarOnStartup.URL_FETCH_MODE,
+                        TurConfigVarOnStartup.URL_FETCH_MODE_DEFAULT_VALUE));
+    }
+
+    public com.viglet.turing.genai.urlfetch.TurUrlFetchMode updateUrlFetchMode(
+            com.viglet.turing.genai.urlfetch.TurUrlFetchMode mode) {
+        com.viglet.turing.genai.urlfetch.TurUrlFetchMode value =
+                mode == null ? com.viglet.turing.genai.urlfetch.TurUrlFetchMode.DEFAULT : mode;
+        configVars.setRaw(TurConfigVarOnStartup.URL_FETCH_MODE, value.name());
+        return value;
+    }
+
+    /** T739 — browserless sidecar base URL; blank = no sidecar (HEADLESS/AUTO degrade to SIMPLE). */
+    public String getUrlFetchBrowserlessUrl() {
+        return configVars.getString(TurConfigVarOnStartup.URL_FETCH_BROWSERLESS_URL, "");
+    }
+
+    public String updateUrlFetchBrowserlessUrl(String url) {
+        return configVars.setString(TurConfigVarOnStartup.URL_FETCH_BROWSERLESS_URL, url);
+    }
+
+    /**
+     * T739 — the decrypted browserless token, or {@code ""} when unset. Stored
+     * encrypted at rest; never echoed back to the client.
+     */
+    public String getUrlFetchBrowserlessToken() {
+        String stored = configVars.getString(TurConfigVarOnStartup.URL_FETCH_BROWSERLESS_TOKEN, "");
+        if (stored.isBlank()) {
+            return "";
+        }
+        String decrypted = turSecretCryptoService.decrypt(stored);
+        return decrypted == null ? "" : decrypted;
+    }
+
+    /** T739 — whether a browserless token is configured (write-only UI status). */
+    public boolean isUrlFetchBrowserlessTokenSet() {
+        return configVars.find(TurConfigVarOnStartup.URL_FETCH_BROWSERLESS_TOKEN)
+                .filter(v -> !v.isBlank())
+                .isPresent();
+    }
+
+    /**
+     * T739 — sets the browserless token (encrypted at rest). A {@code null}/blank
+     * value clears it. Returns the resulting "configured" status.
+     */
+    public boolean updateUrlFetchBrowserlessToken(String token) {
+        if (token == null || token.isBlank()) {
+            configVars.setRaw(TurConfigVarOnStartup.URL_FETCH_BROWSERLESS_TOKEN, "");
+            return false;
+        }
+        configVars.setRaw(TurConfigVarOnStartup.URL_FETCH_BROWSERLESS_TOKEN,
+                turSecretCryptoService.encrypt(token.trim()));
+        return true;
+    }
+
     /** T331 — whether grounded follow-up questions are generated for SN answers. */
     public boolean isRagSnFollowupsEnabled() {
         return configVars.getBoolean(TurConfigVarOnStartup.RAG_SN_FOLLOWUPS_ENABLED, false);

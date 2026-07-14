@@ -62,7 +62,17 @@ const DEFAULT_SETTINGS: TurGlobalSettings = {
     transcriptionMaxUploadBytes: 26214400,
     transcriptionApiKey: "",
     transcriptionApiKeySet: false,
+    urlFetchMode: "SIMPLE",
+    urlFetchBrowserlessUrl: "",
+    urlFetchBrowserlessToken: "",
+    urlFetchBrowserlessTokenSet: false,
 };
+
+export interface BrowserlessStatus {
+    available: boolean;
+    version: string | null;
+    error: string | null;
+}
 
 export interface DockerStatus {
     available: boolean;
@@ -103,6 +113,10 @@ export interface GlobalSettingsFormState {
     dockerStatus: DockerStatus | null;
     isCheckingDocker: boolean;
     onCheckDocker: () => Promise<void>;
+    // T739 — browserless sidecar probe (headless URL fetching).
+    browserlessStatus: BrowserlessStatus | null;
+    isCheckingBrowserless: boolean;
+    onCheckBrowserless: () => Promise<void>;
 }
 
 export function useGlobalSettingsForm(): GlobalSettingsFormState {
@@ -127,6 +141,11 @@ export function useGlobalSettingsForm(): GlobalSettingsFormState {
     // confirm the host can run containers before saving.
     const [dockerStatus, setDockerStatus] = useState<DockerStatus | null>(null);
     const [isCheckingDocker, setIsCheckingDocker] = useState(false);
+    // T739 — browserless reachability probe for headless URL fetching. Only
+    // meaningful when the URL-fetch mode is HEADLESS/AUTO; lets the admin
+    // confirm the sidecar responds before saving.
+    const [browserlessStatus, setBrowserlessStatus] = useState<BrowserlessStatus | null>(null);
+    const [isCheckingBrowserless, setIsCheckingBrowserless] = useState(false);
     const [llmInstances, setLlmInstances] = useState<TurLLMInstance[]>([]);
     const [embeddingModels, setEmbeddingModels] = useState<TurEmbeddingModel[]>([]);
     const [storeInstances, setStoreInstances] = useState<TurStoreInstance[]>([]);
@@ -197,6 +216,25 @@ export function useGlobalSettingsForm(): GlobalSettingsFormState {
         }
     };
 
+    const onCheckBrowserless = async () => {
+        try {
+            setIsCheckingBrowserless(true);
+            const status = await turGlobalSettingsService.getBrowserlessStatus();
+            setBrowserlessStatus(status);
+            if (status.available) {
+                toast.success(t("globalSettings.browserlessCheckSuccess", { version: status.version ?? "" }));
+            } else {
+                toast.error(t("globalSettings.browserlessCheckFailed", { error: status.error ?? "" }));
+            }
+        } catch (error) {
+            console.error("browserless status check failed", error);
+            setBrowserlessStatus({ available: false, version: null, error: "request failed" });
+            toast.error(t("globalSettings.browserlessCheckFailed", { error: "" }));
+        } finally {
+            setIsCheckingBrowserless(false);
+        }
+    };
+
     const onSubmit = async (data: TurGlobalSettings) => {
         try {
             setIsSaving(true);
@@ -246,5 +284,8 @@ export function useGlobalSettingsForm(): GlobalSettingsFormState {
         dockerStatus,
         isCheckingDocker,
         onCheckDocker,
+        browserlessStatus,
+        isCheckingBrowserless,
+        onCheckBrowserless,
     };
 }

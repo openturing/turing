@@ -2,6 +2,7 @@ import { BentoFormHero } from "@/components/bento";
 import { ROUTES } from "@/app/routes.const";
 import { Form } from "@/components/ui/form";
 import { SectionCardChromeProvider } from "@/components/ui/section-card";
+import { ContentIngestionSection } from "@/app/console/system/sections/content-ingestion.section";
 import { EmailSettingsSection } from "@/app/console/system/sections/email-settings.section";
 import { GeneralSettingsSection } from "@/app/console/system/sections/general-settings.section";
 import { LlmSettingsSection } from "@/app/console/system/sections/llm-settings.section";
@@ -132,6 +133,7 @@ export default function BentoGlobalSettingsPage() {
             className="flex flex-col gap-5"
           >
             <GeneralSettingsSection state={state} />
+            <ContentIngestionSection state={state} />
             <EmailSettingsSection state={state} />
             <UrlSigningSecretSection state={state} />
             <PiiSlotSection state={state} />

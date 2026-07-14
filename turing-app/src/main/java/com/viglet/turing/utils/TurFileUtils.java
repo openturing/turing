@@ -388,6 +388,35 @@ public class TurFileUtils {
         return VigletContentExtractor.parseDocument(stream);
     }
 
+    /**
+     * T739 / §XLVIII — parse an already-fetched HTML document (e.g. the rendered
+     * DOM returned by a headless-browser sidecar) into plain text via the same
+     * Tika extraction the URL/file paths use. No network access — the HTML is
+     * supplied by the caller, which is responsible for having SSRF-guarded and
+     * fetched it. Returns an empty {@link TurFileAttributes} (never {@code null})
+     * when the input is blank or unparseable.
+     *
+     * @param html the raw HTML markup
+     * @param name a display name for the source (used as the file name / title)
+     */
+    public static TurFileAttributes htmlToText(String html, String name) {
+        if (html == null || html.isBlank()) {
+            return new TurFileAttributes();
+        }
+        try (InputStream in = new java.io.ByteArrayInputStream(
+                html.getBytes(java.nio.charset.StandardCharsets.UTF_8))) {
+            String text = parseDocument(in).orElse("");
+            return TurFileAttributes.builder()
+                    .name(name)
+                    .title(name)
+                    .content(text)
+                    .build();
+        } catch (IOException e) {
+            log.error("Error parsing rendered HTML for {}: {}", name, e.getMessage());
+            return new TurFileAttributes();
+        }
+    }
+
     private static File createTempFile() throws IOException {
         return File.createTempFile(UUID.randomUUID().toString(), null,
                 TurCommonsUtils.addSubDirToStoreDir(TMP));

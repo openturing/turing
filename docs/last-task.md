@@ -1,9 +1,12 @@
-# Last task number — `T738` · next block letter — `AY`
+# Last task number — `T739` · next block letter — `AZ`
 
 > **Single source of truth for the next free task number.** The next new task is
-> `T739`; after assigning it, bump the number above and the log line below.
+> `T740`; after assigning it, bump the number above and the log line below.
 >
-> **Next block letter — `AY`** (Block **AX** = Bento header consistency — the
+> **Next block letter — `AZ`** (Block **AY** = Pluggable URL content fetcher with
+> headless-browser fallback — `TurUrlFetcher` seam (SIMPLE/HEADLESS/AUTO) over a
+> `browserless/chromium` sidecar for JS-rendered SPAs, T739, created 2026-07-14;
+> Block **AX** = Bento header consistency — the
 > `BentoFormHero` single-component hero→sticky-save-bar morph + `backTo` breadcrumb,
 > applied across bento own-hero form pages, T735–T738, created 2026-07-13; Block
 > **AW** = Synthetic User Research — persona
@@ -62,6 +65,7 @@ number" looked free but wasn't. Grepping three files (`ROADMAP.md`,
 
 ## Log (most recent first)
 
+- **T739 SHIPPED** (Block AY §XLVIII — Pluggable URL content fetcher + headless fallback: TurUrlFetcher seam (SIMPLE=HttpURLConnection+Tika / HEADLESS=browserless sidecar POST /content -> TurFileUtils.htmlToText) behind TurUrlFetchService with AUTO escalation when SIMPLE text < autoMinChars; turing.url-fetch.* env over Global Settings config-vars; Content Ingestion settings section + Check-browserless probe; turing-browserless docker-compose service; both extractUrl callers repointed; 11 unit tests) — 2026-07-14. OPENS+CLOSES Block AY.
 - **T738 ASSESSED & DEFERRED** (Block AX §XLVII — collapsing the ~14 hand-morphing forms onto BentoFormHero is NOT the no-op it looks: those forms render the hero as a separate row (header/BentoAgentSubHero) with the save bar below in the body, so BentoFormHero (Save in hero trailing) would visibly relocate Save; and imperative-save forms like sn.site.custom.facet.item use actions= onClick while BentoFormHero hardcodes type=submit. Prereq if revived: add an actions? escape hatch to BentoFormHero. Stays 💭) — 2026-07-13.
 - **T737 SHIPPED** (Block AX §XLVII — added the back-arrow breadcrumb to every own-hero bento back-link eyebrow the audit flagged (~16) + persona.suggest; one edit each to shared bento.ai-agent.sub-hero (all agent sub-pages) + bento.sn.section-list (5 SN lists), plus SN custom-facet.item/field.coverage/facet.list/field.list/insights/locale.list/synonym.list/top-terms/thesaurus, admin user/group/role, se cores/system-info, store collection-import/system-info; se.core.new + synonym editor arrows came from T736 BentoFormHero.backTo; tsc clean + 66 bento tests) — 2026-07-13.
 - **T736 SHIPPED** (Block AX §XLVII — closed the 3 morph gaps: bento.sn.synonym.page -> BentoFormHero; se.instance.core.new swapped header prop for chrome flag rendering BentoFormHero in-form (bento.se.core.new); ai-agent.system-prompt.form static justify-end -> two-piece BentoSaveBar+BentoScrollSaveBar matching its sibling settings form; console paths unchanged; tsc clean + 52 bento tests pass) — 2026-07-13.

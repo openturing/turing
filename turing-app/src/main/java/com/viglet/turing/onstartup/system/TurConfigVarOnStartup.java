@@ -206,6 +206,18 @@ public class TurConfigVarOnStartup {
 	 */
 	public static final String TRANSCRIPTION_MAX_UPLOAD_BYTES = "GLOBAL_TRANSCRIPTION_MAX_UPLOAD_BYTES";
 	public static final String TRANSCRIPTION_MAX_UPLOAD_BYTES_DEFAULT_VALUE = "26214400";
+	/**
+	 * T739 / §XLVIII — URL content-fetch mode: {@code SIMPLE} (legacy
+	 * HttpURLConnection+Tika, default) | {@code HEADLESS} (always render in the
+	 * browserless sidecar) | {@code AUTO} (SIMPLE, escalate to HEADLESS for
+	 * JS-rendered SPAs). Unknown values fall back to {@code SIMPLE}.
+	 */
+	public static final String URL_FETCH_MODE = "GLOBAL_URL_FETCH_MODE";
+	public static final String URL_FETCH_MODE_DEFAULT_VALUE = "SIMPLE";
+	/** T739 — base URL of the {@code browserless/chromium} sidecar (e.g. {@code http://browserless:3000}); blank = no sidecar. */
+	public static final String URL_FETCH_BROWSERLESS_URL = "GLOBAL_URL_FETCH_BROWSERLESS_URL";
+	/** T739 — optional browserless auth token, stored encrypted; blank = none. */
+	public static final String URL_FETCH_BROWSERLESS_TOKEN = "GLOBAL_URL_FETCH_BROWSERLESS_TOKEN";
 	public static final String SYSTEM_PATH = "/system";
 	public static final String GLOBAL_PATH = "/system/global";
 	public static final String DECIMAL_SEPARATOR_DEFAULT_VALUE = "DOT";
@@ -279,6 +291,9 @@ public class TurConfigVarOnStartup {
 		ensureConfigVar(TRANSCRIPTION_API_KEY, GLOBAL_PATH, "");
 		ensureConfigVar(TRANSCRIPTION_MAX_UPLOAD_BYTES, GLOBAL_PATH,
 				TRANSCRIPTION_MAX_UPLOAD_BYTES_DEFAULT_VALUE);
+		ensureConfigVar(URL_FETCH_MODE, GLOBAL_PATH, URL_FETCH_MODE_DEFAULT_VALUE);
+		ensureConfigVar(URL_FETCH_BROWSERLESS_URL, GLOBAL_PATH, "");
+		ensureConfigVar(URL_FETCH_BROWSERLESS_TOKEN, GLOBAL_PATH, "");
 	}
 
 	private void ensureConfigVar(String id, String path, String value) {

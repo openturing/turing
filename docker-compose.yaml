@@ -73,6 +73,30 @@ services:
 #     SERVER_SSL_KEY_STORE_TYPE: PKCS12
 #     SERVER_SSL_KEY_ALIAS: turing
 #     SERVER_SSL_ENABLED: true
+      # --- T739 / Content Ingestion: headless URL fetching (browserless) ---
+      # The turing-browserless sidecar below renders JS-heavy pages (SPAs) so
+      # their text can be ingested (Persona Match, Persona sources). Uncomment
+      # to PIN the mode per container; otherwise configure it in the admin UI
+      # (Global Settings -> Platform -> Content Ingestion). AUTO = cheap HTTP
+      # fetch first, render only when too little text is extracted.
+#     TURING_URLFETCH_MODE: AUTO
+#     TURING_URLFETCH_BROWSERLESSURL: http://turing-browserless:3000
+  turing-browserless:
+    container_name: turing-browserless
+    # Headless Chromium sidecar (T739 / §XLVIII). Exposes a REST /content that
+    # returns the rendered DOM. Kept on the internal compose network — do NOT
+    # publish its port publicly: a reachable headless browser is an SSRF pivot.
+    image: ghcr.io/browserless/chromium:latest
+    restart: always
+    environment:
+      # Cap concurrent sessions and per-page time so a heavy page can't exhaust
+      # the container. Set TOKEN and mirror it in the admin UI / TURING_URLFETCH_BROWSERLESSTOKEN.
+      MAX_CONCURRENT_SESSIONS: "5"
+      TIMEOUT: "30000"
+      # TOKEN: change-me
+    # Not published to the host by default (internal-only). Uncomment to debug:
+    # ports:
+    #   - "3000:3000"
   turing-prometheus:
     container_name: turing-prometheus
     build: ./containers/prometheus

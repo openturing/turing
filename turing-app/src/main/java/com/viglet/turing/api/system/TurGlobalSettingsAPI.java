@@ -13,6 +13,8 @@ import com.viglet.turing.genai.tool.TurCodeInterpreterToolService;
 import com.viglet.turing.genai.tool.TurCodeInterpreterToolService.TurDockerStatus;
 import com.viglet.turing.genai.transcription.TurAudioChunker;
 import com.viglet.turing.genai.transcription.TurAudioChunker.TurFfmpegStatus;
+import com.viglet.turing.genai.urlfetch.TurUrlFetchService;
+import com.viglet.turing.genai.urlfetch.TurUrlFetchService.TurBrowserlessStatus;
 import com.viglet.turing.system.TurGlobalSettingsService;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -28,15 +30,18 @@ public class TurGlobalSettingsAPI {
     private final TurEmailService turEmailService;
     private final TurCodeInterpreterToolService turCodeInterpreterToolService;
     private final TurAudioChunker turAudioChunker;
+    private final TurUrlFetchService turUrlFetchService;
 
     public TurGlobalSettingsAPI(TurGlobalSettingsService turGlobalSettingsService,
             TurEmailService turEmailService,
             TurCodeInterpreterToolService turCodeInterpreterToolService,
-            TurAudioChunker turAudioChunker) {
+            TurAudioChunker turAudioChunker,
+            TurUrlFetchService turUrlFetchService) {
         this.turGlobalSettingsService = turGlobalSettingsService;
         this.turEmailService = turEmailService;
         this.turCodeInterpreterToolService = turCodeInterpreterToolService;
         this.turAudioChunker = turAudioChunker;
+        this.turUrlFetchService = turUrlFetchService;
     }
 
     @Operation(summary = "Get global settings")
@@ -92,6 +97,11 @@ public class TurGlobalSettingsAPI {
                 // write-only secret: never echo the key, only its set/not-set status
                 .transcriptionApiKey("")
                 .transcriptionApiKeySet(turGlobalSettingsService.isTranscriptionApiKeySet())
+                .urlFetchMode(turGlobalSettingsService.getUrlFetchMode())
+                .urlFetchBrowserlessUrl(turGlobalSettingsService.getUrlFetchBrowserlessUrl())
+                // write-only secret: never echo the token, only its set/not-set status
+                .urlFetchBrowserlessToken("")
+                .urlFetchBrowserlessTokenSet(turGlobalSettingsService.isUrlFetchBrowserlessTokenSet())
                 .build();
     }
 
@@ -190,7 +200,28 @@ public class TurGlobalSettingsAPI {
                 // arrives, blank leaves the stored key untouched, never echoed
                 .transcriptionApiKey("")
                 .transcriptionApiKeySet(updateTranscriptionApiKeyIfPresent(globalSettings.getTranscriptionApiKey()))
+                .urlFetchMode(turGlobalSettingsService
+                        .updateUrlFetchMode(globalSettings.getUrlFetchMode()))
+                .urlFetchBrowserlessUrl(turGlobalSettingsService
+                        .updateUrlFetchBrowserlessUrl(globalSettings.getUrlFetchBrowserlessUrl()))
+                // Write-only secret — persisted only when a non-blank value
+                // arrives, blank leaves the stored token untouched, never echoed
+                .urlFetchBrowserlessToken("")
+                .urlFetchBrowserlessTokenSet(
+                        updateUrlFetchTokenIfPresent(globalSettings.getUrlFetchBrowserlessToken()))
                 .build();
+    }
+
+    /**
+     * T739 — persists the browserless token only when the client sent a non-blank
+     * value (write-only field); a blank submit preserves the existing token.
+     * Returns the resulting configured status.
+     */
+    private boolean updateUrlFetchTokenIfPresent(String token) {
+        if (token == null || token.isBlank()) {
+            return turGlobalSettingsService.isUrlFetchBrowserlessTokenSet();
+        }
+        return turGlobalSettingsService.updateUrlFetchBrowserlessToken(token);
     }
 
     /**
@@ -275,6 +306,18 @@ public class TurGlobalSettingsAPI {
     @GetMapping("/transcription/ffmpeg/status")
     public TurFfmpegStatus getFfmpegStatus() {
         return turAudioChunker.checkFfmpeg();
+    }
+
+    /**
+     * T739 / §XLVIII — probes whether the configured {@code browserless} sidecar
+     * is reachable, so the admin can validate it before switching the URL-fetch
+     * mode to {@code HEADLESS}/{@code AUTO}. Never sends anything sensitive — only
+     * an availability flag, the reported browser version, and an error string.
+     */
+    @Operation(summary = "Check whether the browserless sidecar is reachable for headless URL fetching")
+    @GetMapping("/url-fetch/browserless/status")
+    public TurBrowserlessStatus getBrowserlessStatus() {
+        return turUrlFetchService.checkBrowserless();
     }
 
     @Operation(summary = "Send a test email to validate email configuration")
