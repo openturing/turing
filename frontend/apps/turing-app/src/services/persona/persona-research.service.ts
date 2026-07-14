@@ -5,6 +5,7 @@ import type {
   ResearchDrift,
   ResearchGraph,
   ResearchPersonaRef,
+  ResearchProgramRollup,
   ResearchProposalResult,
   ResearchReport,
   ResearchRunEvent,
@@ -96,6 +97,20 @@ export class TurPersonaResearchService {
       `/research-study/${id}/concept-fit?regenerate=${regenerate}`,
     );
     return response.data;
+  }
+
+  /** Program rollup (T733): aggregate several studies into a program-level view. */
+  async rollup(studyIds: string[]): Promise<ResearchProgramRollup> {
+    const response = await axios.post<ResearchProgramRollup>(
+      "/research-study/program/rollup",
+      studyIds,
+    );
+    return response.data;
+  }
+
+  /** Blocking run of one study (used by the program board's "run all"). */
+  async run(id: string, force = false): Promise<void> {
+    await axios.post(`/research-study/${id}/run?force=${force}`);
   }
 
   /** Research Assistant (T732): a free-text goal → a proposed study config (not saved). */

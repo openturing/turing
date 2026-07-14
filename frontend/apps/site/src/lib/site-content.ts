@@ -801,49 +801,68 @@ export const MIGRATION_COLUMNS = {
   turing: "Viglet Turing ES",
 } as const;
 
-export interface MigrationStep {
-  step: string;
+export interface MigrationOutcome {
   title: string;
   body: string;
 }
 
-/** The import path — three concrete moves, not a rip-and-replace weekend. */
-export const MIGRATION_STEPS: MigrationStep[] = [
+/**
+ * The payoff — what a team actually walks away with after the switch. Framed as
+ * outcomes, not steps; the how-to lives in the docs.
+ */
+export const MIGRATION_OUTCOMES: MigrationOutcome[] = [
   {
-    step: "1",
-    title: "Describe the schema as code",
-    body: "Turn your Algolia index settings or Elasticsearch mappings into a versioned field manifest and POST it. Turing converges the live schema and flags breaking changes before they run. No schema handy? Derive a draft from sample documents.",
+    title: "The same search, only better",
+    body: "Faceting, typo tolerance and synonyms carry over — now with hybrid keyword + vector ranking on top.",
   },
   {
-    step: "2",
-    title: "Bring your records over",
-    body: "Bulk-index from your source of truth (or a records/_source export) through the REST index API, or point a connector at AEM, WordPress, a database or files. Your data flows straight into your own Solr, Elasticsearch or embedded Lucene index.",
+    title: "AI answers, no glue code",
+    body: "RAG, cited chat and agents over your own content ship in the box — nothing to assemble or host separately.",
   },
   {
-    step: "3",
-    title: "Swap the front-end client",
-    body: "Replace InstantSearch or the elasticsearch-js client with the Turing React SDK or the zero-dependency vanilla-JS SDK — headless hooks and components for search, facets, autocomplete and cited chat, so the same UI now runs on your infrastructure.",
+    title: "Your front-end barely changes",
+    body: "Swap InstantSearch or elasticsearch-js for the React or zero-dependency vanilla-JS SDK — the same UI, on your infra.",
   },
 ];
 
-export const MIGRATION_CODE = {
-  caption: "Converge the schema, then bulk-index your records",
+/**
+ * The one moment of code the page shows: `turing migrate` points at your live
+ * index and moves schema + records in a single command. Full flag reference and
+ * the manual REST path live in the docs — the page only needs the "wow".
+ * Provided by the @viglet/turing-cli package (T479 / E.7).
+ */
+export const MIGRATION_CLI_CODE = {
+  caption: "Point it at your live index — schema and records move together",
   lang: "bash",
-  code: String.raw`# 1. Provision fields from a manifest (replaces index settings / mappings)
-curl -X POST https://your-host/api/sn/manifest \
-  -H "Key: <API_TOKEN>" -H "Content-Type: application/json" \
-  -d @products.manifest.json
+  code: `# From Elasticsearch — mappings become a manifest, documents are imported
+turing migrate elasticsearch --index products --site Products
 
-# 2. Bulk-index the records you exported from Algolia / Elasticsearch
-curl -X POST https://your-host/api/sn/import \
-  -H "Key: <API_TOKEN>" -H "Content-Type: application/json" \
-  -d @products-jobitems.json
-
-# 3. Query it — on your own host, data never left your network
-curl -X POST https://your-host/api/sn/products/search \
-  -H "Content-Type: application/json" \
-  -d '{ "q": "wireless headphones", "fq": ["brand:Acme"] }'`,
+# From Algolia — --use-llm infers types for the schemaless records
+turing migrate algolia --index catalog --site Catalog --use-llm`,
 } as const;
+
+export interface MigrationCliFeature {
+  /** Short reassurance headline. */
+  title: string;
+  /** One-line explanation. */
+  body: string;
+}
+
+/** Trust signals for the cautious buyer: the switch is previewable and reversible. */
+export const MIGRATION_CLI_FEATURES: MigrationCliFeature[] = [
+  {
+    title: "Preview before you commit",
+    body: "--dry-run shows the schema Turing derived — nothing is written until you're happy with it.",
+  },
+  {
+    title: "Prove parity, then cut over",
+    body: "compare replays your real queries against both engines and reports the relevance difference.",
+  },
+  {
+    title: "Reshape fields on the way in",
+    body: "--overrides-file renames, retypes or drops any field — no changes to your source index.",
+  },
+];
 
 /* -------------------------------------------------------------------------- */
 /* Comparison / FAQ page (/compare) — §XXVII.3 / T482.                        */

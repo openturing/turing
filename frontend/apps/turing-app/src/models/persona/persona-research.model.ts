@@ -230,6 +230,42 @@ export interface ResearchConceptFit {
 }
 
 // ---------------------------------------------------------------------------
+// Multi-study program rollup — PRISMA (Phase 5, T733).
+// ---------------------------------------------------------------------------
+
+export interface ResearchProgramStudy {
+  studyId: string;
+  name: string;
+  protocol: ResearchProtocol;
+  participants: number;
+  interviews: number;
+  reportAvailable: boolean;
+  themeCount: number;
+  saturated: boolean;
+  adequateAtN: number;
+  lastRunAt?: string | null;
+}
+
+export interface ResearchProgramTheme {
+  title: string;
+  studyCount: number;
+  totalPrevalence: number;
+  studyNames: string[];
+}
+
+export interface ResearchProgramRollup {
+  available: boolean;
+  message?: string | null;
+  studyCount: number;
+  totalParticipants: number;
+  totalInterviews: number;
+  totalDistinctThemes: number;
+  sharedThemeCount: number;
+  studies: ResearchProgramStudy[];
+  themes: ResearchProgramTheme[];
+}
+
+// ---------------------------------------------------------------------------
 // Research Assistant — guided authoring (Phase 5, T732).
 // ---------------------------------------------------------------------------
 

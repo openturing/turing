@@ -1,4 +1,4 @@
-import { ArrowLeft, ArrowRight, Check, ShieldCheck } from "lucide-react";
+import { ArrowLeft, ArrowRight, Check, ShieldCheck, Terminal } from "lucide-react";
 import { SiteNav } from "@/components/sections/site-nav";
 import { SiteFooter } from "@/components/sections/site-footer";
 import { CodeBlock } from "@/components/code-block";
@@ -6,6 +6,8 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Container, LINKS } from "@/components/brand";
 import {
+  MIGRATION_CLI_CODE,
+  MIGRATION_CLI_FEATURES,
   MIGRATION_CODE,
   MIGRATION_COLUMNS,
   MIGRATION_MAP,
@@ -44,8 +46,9 @@ export function MigratePage() {
             <p className="mt-5 max-w-2xl text-lg leading-relaxed text-[#aeb7d4]">
               Keep faceted, typo-tolerant search — and add RAG, cited chat and
               agents — without shipping your content to someone else's cloud.
-              Viglet Turing ES is open source and self-hosted: your documents and
-              embeddings stay in your own infrastructure.
+              One <code className="rounded bg-white/10 px-1.5 py-0.5 font-mono text-[0.95em]">turing&nbsp;migrate</code>{" "}
+              command reads your Algolia or Elasticsearch index and moves it into
+              your own infrastructure — schema and records in a single step.
             </p>
             <div className="mt-7 flex flex-wrap gap-3">
               <Button asChild size="lg">
@@ -121,16 +124,64 @@ export function MigratePage() {
           </Container>
         </section>
 
-        {/* import path */}
+        {/* fast path: turing migrate CLI */}
+        <section className="border-t border-border py-16 lg:py-20">
+          <Container>
+            <div className="mx-auto mb-10 max-w-2xl text-center">
+              <p className="inline-flex items-center gap-1.5 text-xs font-extrabold tracking-[0.12em] text-primary uppercase">
+                <Terminal className="size-4" /> The fast path
+              </p>
+              <h2 className="mt-3 text-2xl font-extrabold tracking-tight sm:text-3xl">
+                One command reads your index and moves it over
+              </h2>
+              <p className="mt-3 text-base leading-relaxed text-muted-foreground">
+                <code className="rounded bg-muted px-1.5 py-0.5 font-mono text-sm">
+                  turing migrate
+                </code>{" "}
+                connects to your Elasticsearch or Algolia index, translates the
+                mappings or settings into a Turing field manifest, and streams
+                the records into a Semantic Navigation site — schema translation
+                and import in a single step.
+              </p>
+            </div>
+            <div className="mx-auto max-w-3xl">
+              <CodeBlock
+                caption={MIGRATION_CLI_CODE.caption}
+                code={MIGRATION_CLI_CODE.code}
+              />
+            </div>
+            <ul className="mx-auto mt-8 grid max-w-3xl gap-4 sm:grid-cols-2">
+              {MIGRATION_CLI_FEATURES.map((f) => (
+                <li
+                  key={f.flag}
+                  className="rounded-xl border border-border bg-muted/40 p-4"
+                >
+                  <code className="font-mono text-sm font-bold text-primary">
+                    {f.flag}
+                  </code>
+                  <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">
+                    {f.body}
+                  </p>
+                </li>
+              ))}
+            </ul>
+          </Container>
+        </section>
+
+        {/* import path — the manual / API route */}
         <section className="border-t border-border bg-muted/40 py-16 lg:py-20">
           <Container className="grid gap-10 lg:grid-cols-[1fr_1fr] lg:items-start">
             <div>
               <p className="text-xs font-extrabold tracking-[0.12em] text-primary uppercase">
-                The import path
+                Prefer the API? The same three moves, by hand
               </p>
               <h2 className="mt-3 text-2xl font-extrabold tracking-tight sm:text-3xl">
                 Three moves, not a rewrite
               </h2>
+              <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
+                The CLI does these for you, but every step is a plain REST call
+                you can drive from your own pipeline, connector or script.
+              </p>
               <ul className="mt-8 space-y-6">
                 {MIGRATION_STEPS.map((s) => (
                   <li key={s.step} className="flex gap-3.5">

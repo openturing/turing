@@ -6,6 +6,7 @@ import {
   IconCalendarRepeat,
   IconMasksTheater,
   IconMessageQuestion,
+  IconStack2,
   IconTargetArrow,
   IconUserCircle,
   IconUsersGroup,
@@ -48,6 +49,12 @@ export default function BentoPersonaResearchListPage() {
       subtitle={t("persona.research.subtitle")}
       headerAction={
         <>
+          <Button asChild variant="outline" size="sm" className="gap-2">
+            <Link to={`${ROUTES.BENTO_PERSONA_RESEARCH}/program`}>
+              <IconStack2 size={16} />
+              {t("persona.research.program.link")}
+            </Link>
+          </Button>
           <Button asChild variant="outline" size="sm" className="gap-2">
             <Link to={ROUTES.BENTO_PERSONA_INSTANCE}>
               <IconUserCircle size={16} />
