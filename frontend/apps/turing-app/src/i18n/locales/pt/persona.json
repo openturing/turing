@@ -298,6 +298,16 @@
       "audienceDesc": "Selecione as personas a entrevistar, em ordem. Cada uma é entrevistada de forma independente sobre o protocolo acima.",
       "noPersonas": "Nenhuma persona cadastrada ainda.",
       "synthesizeCohort": "Sintetizar coorte",
+      "assistant": {
+        "title": "Assistente de Pesquisa",
+        "desc": "Não sabe como configurar? Descreva o que você quer aprender e o assistente rascunha um estudo que você pode editar antes de criar.",
+        "placeholder": "ex.: Quero entender por que usuários em trial desistem antes de convidar o time.",
+        "draft": "Rascunhar com o assistente",
+        "redraft": "Rascunhar de novo",
+        "drafted": "Aqui está um rascunho de estudo — revise e edite os campos abaixo e depois crie.",
+        "skippable": "Opcional — você também pode preencher os campos abaixo diretamente e pular o assistente.",
+        "failed": "Não foi possível rascunhar um estudo. Verifique se há um LLM padrão configurado."
+      },
       "feedTitle": "Entrevistas",
       "feedDesc": "Execute a coorte e veja cada transcrição chegar ao vivo. Expanda uma entrevista para ler suas perguntas e respostas.",
       "saveToRun": "Salve suas alterações antes de executar as entrevistas.",

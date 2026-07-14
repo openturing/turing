@@ -5,6 +5,7 @@ import type {
   ResearchDrift,
   ResearchGraph,
   ResearchPersonaRef,
+  ResearchProposalResult,
   ResearchReport,
   ResearchRunEvent,
   ResearchSaturation,
@@ -93,6 +94,15 @@ export class TurPersonaResearchService {
   async conceptFit(id: string, regenerate = false): Promise<ResearchConceptFit> {
     const response = await axios.get<ResearchConceptFit>(
       `/research-study/${id}/concept-fit?regenerate=${regenerate}`,
+    );
+    return response.data;
+  }
+
+  /** Research Assistant (T732): a free-text goal → a proposed study config (not saved). */
+  async propose(brief: string, regenerate = false): Promise<ResearchProposalResult> {
+    const response = await axios.post<ResearchProposalResult>(
+      "/research-study/assistant/propose",
+      { brief, regenerate },
     );
     return response.data;
   }

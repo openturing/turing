@@ -229,6 +229,30 @@ export interface ResearchConceptFit {
   personas: ResearchConceptFitEntry[];
 }
 
+// ---------------------------------------------------------------------------
+// Research Assistant — guided authoring (Phase 5, T732).
+// ---------------------------------------------------------------------------
+
+/** A proposed study configuration from the Research Assistant (never auto-applied). */
+export interface ResearchStudyProposal {
+  name: string;
+  goal: string;
+  hypothesis: string;
+  protocol: ResearchProtocol;
+  conceptText: string;
+  questions: string[];
+  maxQuestions: number;
+  suggestedCohortBrief: string;
+  suggestedParticipantCount: number;
+  assistantMessage: string;
+}
+
+export interface ResearchProposalResult {
+  success: boolean;
+  error?: string | null;
+  proposal?: ResearchStudyProposal | null;
+}
+
 /** SSE progress event streamed by the cohort interview runner. */
 export interface ResearchRunEvent {
   type: "STARTED" | "INTERVIEW" | "DONE" | "ERROR";

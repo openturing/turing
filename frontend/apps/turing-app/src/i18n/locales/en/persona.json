@@ -298,6 +298,16 @@
       "audienceDesc": "Select the personas to interview, in order. Each is interviewed independently over the protocol above.",
       "noPersonas": "No personas registered yet.",
       "synthesizeCohort": "Synthesize cohort",
+      "assistant": {
+        "title": "Research Assistant",
+        "desc": "Not sure how to set it up? Describe what you want to learn and the assistant drafts a study you can edit before creating.",
+        "placeholder": "e.g. I want to understand why trial users drop off before inviting their team.",
+        "draft": "Draft with assistant",
+        "redraft": "Redraft",
+        "drafted": "Here's a study draft — review and edit the fields below, then create.",
+        "skippable": "Optional — you can also fill the fields below directly and skip the assistant.",
+        "failed": "Could not draft a study. Check that a default LLM is configured."
+      },
       "feedTitle": "Interviews",
       "feedDesc": "Run the cohort and watch each transcript land live. Expand an interview to read its questions and answers.",
       "saveToRun": "Save your changes before running the interviews.",

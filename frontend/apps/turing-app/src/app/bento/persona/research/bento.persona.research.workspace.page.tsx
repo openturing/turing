@@ -73,13 +73,67 @@ function CreateStudyCard() {
   const create = useCreateResearchStudy();
   const [name, setName] = useState("");
   const [goal, setGoal] = useState("");
+  const [hypothesis, setHypothesis] = useState("");
   const [protocol, setProtocol] = useState<ResearchProtocol>("DYNAMIC_SCRIPT");
+  const [conceptText, setConceptText] = useState("");
+  const [questionsText, setQuestionsText] = useState("");
+  const [maxQuestions, setMaxQuestions] = useState(6);
+
+  // Research Assistant (T732) — a skippable guided-authoring drawer.
+  const [assistantBrief, setAssistantBrief] = useState("");
+  const [proposing, setProposing] = useState(false);
+  const [assistantMessage, setAssistantMessage] = useState<string | null>(null);
+  const [assistantError, setAssistantError] = useState<string | null>(null);
+
+  const questions = useMemo(
+    () => questionsText.split("\n").map((q) => q.trim()).filter(Boolean),
+    [questionsText],
+  );
+
+  const draftWithAssistant = useCallback(
+    async (regenerate: boolean) => {
+      if (!assistantBrief.trim() || proposing) return;
+      setProposing(true);
+      setAssistantError(null);
+      try {
+        const result = await personaResearchService.propose(assistantBrief.trim(), regenerate);
+        if (result.success && result.proposal) {
+          const p = result.proposal;
+          setName(p.name);
+          setGoal(p.goal);
+          setHypothesis(p.hypothesis);
+          setProtocol(p.protocol);
+          setConceptText(p.conceptText);
+          setQuestionsText((p.questions ?? []).join("\n"));
+          setMaxQuestions(p.maxQuestions || 6);
+          setAssistantMessage(p.assistantMessage || t("persona.research.assistant.drafted"));
+        } else {
+          setAssistantError(result.error ?? t("persona.research.assistant.failed"));
+        }
+      } catch {
+        setAssistantError(t("persona.research.assistant.failed"));
+      } finally {
+        setProposing(false);
+      }
+    },
+    [assistantBrief, proposing, t],
+  );
 
   const submit = () => {
     const trimmed = name.trim();
     if (!trimmed) return;
     create.mutate(
-      { name: trimmed, goal, enabled: true, protocol, schedule: "MANUAL" },
+      {
+        name: trimmed,
+        goal,
+        hypothesis,
+        enabled: true,
+        protocol,
+        conceptText,
+        questions,
+        maxQuestions,
+        schedule: "MANUAL",
+      },
       { onSuccess: (study) => navigate(`${ROUTES.BENTO_PERSONA_RESEARCH}/${study.id}`) },
     );
   };
@@ -100,55 +154,110 @@ function CreateStudyCard() {
         title={t("persona.research.newTitle")}
         subtitle={t("persona.research.newHeroSubtitle")}
       />
-      <BentoFormSection
-        icon={IconSettings}
-        tone="violet"
-        title={t("persona.research.studySection")}
-        description={t("persona.research.studySectionDesc")}
-      >
-        <div className="flex flex-col gap-3">
-          <label className="flex flex-col gap-1.5">
-            <span className="text-sm font-medium">{t("persona.research.nameLabel")}</span>
-            <Input
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && submit()}
-              placeholder={t("persona.research.namePlaceholder")}
-              autoFocus
-            />
-          </label>
-          <label className="flex flex-col gap-1.5">
-            <span className="text-sm font-medium">{t("persona.research.goalLabel")}</span>
+      <div className="flex flex-col gap-5">
+        {/* --- Research Assistant (skippable guided authoring) --- */}
+        <BentoFormSection
+          icon={IconSparkles}
+          tone="indigo"
+          title={t("persona.research.assistant.title")}
+          description={t("persona.research.assistant.desc")}
+        >
+          <div className="flex flex-col gap-3">
             <Textarea
-              value={goal}
-              onChange={(e) => setGoal(e.target.value)}
-              placeholder={t("persona.research.goalPlaceholder")}
-              rows={2}
+              value={assistantBrief}
+              onChange={(e) => setAssistantBrief(e.target.value)}
+              placeholder={t("persona.research.assistant.placeholder")}
+              rows={3}
             />
-          </label>
-          <label className="flex flex-col gap-1.5">
-            <span className="text-sm font-medium">{t("persona.research.protocolLabel")}</span>
-            <Select value={protocol} onValueChange={(v) => setProtocol(v as ResearchProtocol)}>
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {RESEARCH_PROTOCOLS.map((p) => (
-                  <SelectItem key={p} value={p}>
-                    {t(`persona.research.protocol.${p}`)}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </label>
-          <div>
-            <Button onClick={submit} disabled={!name.trim() || create.isPending} className="gap-2">
-              {create.isPending ? <IconLoader2 className="size-4 animate-spin" /> : <IconPlus className="size-4" />}
-              {t("persona.research.createButton")}
-            </Button>
+            <div className="flex flex-wrap items-center gap-2">
+              <Button
+                type="button"
+                onClick={() => draftWithAssistant(false)}
+                disabled={!assistantBrief.trim() || proposing}
+                className="gap-2"
+              >
+                {proposing ? <IconLoader2 className="size-4 animate-spin" /> : <IconSparkles className="size-4" />}
+                {t("persona.research.assistant.draft")}
+              </Button>
+              {assistantMessage && !proposing && (
+                <Button type="button" variant="outline" className="gap-2" onClick={() => draftWithAssistant(true)}>
+                  <IconSparkles className="size-4" />
+                  {t("persona.research.assistant.redraft")}
+                </Button>
+              )}
+            </div>
+            {assistantError && <p className="text-sm text-red-600">{assistantError}</p>}
+            {assistantMessage && (
+              <div className="rounded-2xl border border-indigo-500/25 bg-indigo-500/5 p-3 text-sm">
+                {assistantMessage}
+              </div>
+            )}
+            <p className="text-xs text-muted-foreground">{t("persona.research.assistant.skippable")}</p>
           </div>
-        </div>
-      </BentoFormSection>
+        </BentoFormSection>
+
+        {/* --- Study fields (edited directly or pre-filled by the assistant) --- */}
+        <BentoFormSection
+          icon={IconSettings}
+          tone="violet"
+          title={t("persona.research.studySection")}
+          description={t("persona.research.studySectionDesc")}
+        >
+          <div className="flex flex-col gap-3">
+            <label className="flex flex-col gap-1.5">
+              <span className="text-sm font-medium">{t("persona.research.nameLabel")}</span>
+              <Input
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder={t("persona.research.namePlaceholder")}
+              />
+            </label>
+            <label className="flex flex-col gap-1.5">
+              <span className="text-sm font-medium">{t("persona.research.goalLabel")}</span>
+              <Textarea
+                value={goal}
+                onChange={(e) => setGoal(e.target.value)}
+                placeholder={t("persona.research.goalPlaceholder")}
+                rows={2}
+              />
+            </label>
+            <label className="flex flex-col gap-1.5">
+              <span className="text-sm font-medium">{t("persona.research.protocolLabel")}</span>
+              <Select value={protocol} onValueChange={(v) => setProtocol(v as ResearchProtocol)}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {RESEARCH_PROTOCOLS.map((p) => (
+                    <SelectItem key={p} value={p}>
+                      {t(`persona.research.protocol.${p}`)}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </label>
+            {protocol === "CONCEPT_TEST" && (
+              <label className="flex flex-col gap-1.5">
+                <span className="text-sm font-medium">{t("persona.research.conceptLabel")}</span>
+                <Textarea value={conceptText} onChange={(e) => setConceptText(e.target.value)} rows={3} placeholder={t("persona.research.conceptPlaceholder")} />
+              </label>
+            )}
+            {protocol === "CUSTOM_SCRIPT" && (
+              <label className="flex flex-col gap-1.5">
+                <span className="text-sm font-medium">{t("persona.research.questionsLabel")}</span>
+                <Textarea value={questionsText} onChange={(e) => setQuestionsText(e.target.value)} rows={5} placeholder={t("persona.research.questionsPlaceholder")} />
+                <span className="text-xs text-muted-foreground">{t("persona.research.questionsHint", { count: questions.length })}</span>
+              </label>
+            )}
+            <div>
+              <Button onClick={submit} disabled={!name.trim() || create.isPending} className="gap-2">
+                {create.isPending ? <IconLoader2 className="size-4 animate-spin" /> : <IconPlus className="size-4" />}
+                {t("persona.research.createButton")}
+              </Button>
+            </div>
+          </div>
+        </BentoFormSection>
+      </div>
     </>
   );
 }
