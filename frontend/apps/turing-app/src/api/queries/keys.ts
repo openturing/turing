@@ -118,6 +118,23 @@ export const queryKeys = {
     detail: (id: string) =>
       [...queryKeys.personaDialogue.all(), 'detail', id] as const,
   },
+  // Block AW (T730) — Synthetic User Research: cohort interview studies.
+  personaResearch: {
+    all: () => ['research-study'] as const,
+    list: () => [...queryKeys.personaResearch.all(), 'list'] as const,
+    detail: (id: string) =>
+      [...queryKeys.personaResearch.all(), 'detail', id] as const,
+    insights: (id: string) =>
+      [...queryKeys.personaResearch.all(), 'insights', id] as const,
+    saturation: (id: string) =>
+      [...queryKeys.personaResearch.all(), 'saturation', id] as const,
+    graph: (id: string) =>
+      [...queryKeys.personaResearch.all(), 'graph', id] as const,
+    drift: (id: string) =>
+      [...queryKeys.personaResearch.all(), 'drift', id] as const,
+    conceptFit: (id: string) =>
+      [...queryKeys.personaResearch.all(), 'concept-fit', id] as const,
+  },
   // T447 — self-tuning suggestions, scoped per agent.
   agentSuggestions: {
     all: () => ['agent-suggestions'] as const,

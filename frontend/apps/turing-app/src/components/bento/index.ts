@@ -21,6 +21,7 @@ export {
 export { BentoFormSection, type BentoFormSectionProps } from "./bento-form-section";
 export { BentoSaveBar, type BentoSaveBarProps } from "./bento-save-bar";
 export { BentoScrollSaveBar } from "./bento-scroll-save-bar";
+export { BentoFormHero, type BentoFormHeroProps } from "./bento-form-hero";
 export { useBentoScrollFade } from "./bento-scroll-fade";
 export { BentoStatusMarker, type BentoStatusMarkerProps } from "./bento-status-marker";
 export { BentoHeroIconPicker, type BentoHeroIconPickerProps } from "./bento-hero-icon-picker";

@@ -7,6 +7,7 @@ import {
   IconMasksTheater,
   IconRepeat,
   IconTargetArrow,
+  IconUsersGroup,
   IconUserCircle,
 } from "@tabler/icons-react";
 import { useTranslation } from "react-i18next";
@@ -55,6 +56,12 @@ export default function BentoPersonaDialogueListPage() {
             <Link to={ROUTES.BENTO_PERSONA_MATCH}>
               <IconTargetArrow size={16} />
               {t("persona.dialogueProject.match")}
+            </Link>
+          </Button>
+          <Button asChild variant="outline" size="sm" className="gap-2">
+            <Link to={ROUTES.BENTO_PERSONA_RESEARCH}>
+              <IconUsersGroup size={16} />
+              {t("persona.dialogueProject.research", { defaultValue: "Synthetic research" })}
             </Link>
           </Button>
         </>

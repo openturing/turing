@@ -69,6 +69,9 @@ const BentoPersonaDialogueWorkspacePage = lazy(() => import("../bento/persona/di
 // Block AT (T701-T702) — Persona Match: N×N persona↔content fit projects (UI prototype).
 const BentoPersonaMatchListPage = lazy(() => import("../bento/persona/match/bento.persona.match.list.page"));
 const BentoPersonaMatchWorkspacePage = lazy(() => import("../bento/persona/match/bento.persona.match.workspace.page"));
+// Block AW (T730) — Synthetic User Research: cohort interview studies.
+const BentoPersonaResearchListPage = lazy(() => import("../bento/persona/research/bento.persona.research.list.page"));
+const BentoPersonaResearchWorkspacePage = lazy(() => import("../bento/persona/research/bento.persona.research.workspace.page"));
 // Block AG follow-up (T619) — auto-suggest best-fit persona for content (T471).
 const BentoPersonaSuggestPage = lazy(() => import("../bento/persona/bento.persona.suggest.page"));
 const BentoGitPage = lazy(() => import("../bento/git/bento.git.page"));
@@ -252,6 +255,10 @@ export const BentoRoutes = (
     {/* Block AT (T701-T702) — GLOBAL Persona Match: N×N fit projects (UI prototype). */}
     <Route path="persona/match" element={<BentoPersonaMatchListPage />} />
     <Route path="persona/match/:projectId" element={<BentoPersonaMatchWorkspacePage />} />
+    {/* Block AW (T730) — GLOBAL Synthetic User Research studio: study list + workspace.
+        No separate `/new` route: `/research/new` matches `:studyId="new"`. */}
+    <Route path="persona/research" element={<BentoPersonaResearchListPage />} />
+    <Route path="persona/research/:studyId" element={<BentoPersonaResearchWorkspacePage />} />
     {/* Block AG follow-up (T619) — GLOBAL auto-suggest best-fit persona for content. */}
     <Route path="persona/suggest" element={<BentoPersonaSuggestPage />} />
     <Route path="persona/instance" element={<BentoPersonaListPage />} />

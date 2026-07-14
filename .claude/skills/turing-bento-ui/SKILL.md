@@ -1,6 +1,6 @@
 ---
 name: turing-bento-ui
-description: How to build and fix pages in the Turing "bento" admin UI (the frosted-glass iOS-flavored redesign under /bento) so they match the gold-standard pattern — the BentoHero header, BentoEntityShell identity + scroll-linked save-bar morph, BentoFormSection frosted cards with hover-lift animation, BentoListPage/BentoEntityTile mosaic, and the pill tab-bar for multi-section/functional surfaces. Explains the shared scaffold in components/bento/, the bento-tile/bento-glass animation classes, and the exact swaps to convert a page that still reuses console chrome (StickyPageHeader / SectionCard / SubPage / GridList / useSidebar) into a proper bento page. Use whenever creating a new /bento page, or when a bento page "doesn't look bento" (no frosted hover cards, wrong header, a leftover console sidebar) and needs to be brought up to the standard.
+description: How to build and fix pages in the Turing "bento" admin UI (the frosted-glass iOS-flavored redesign under /bento) so they match the gold-standard pattern — the BentoHero header, BentoEntityShell identity + scroll-linked save-bar morph (and BentoFormHero, the single drop-in that gives that same hero→sticky-save-bar morph to own-hero form pages like the persona editor), BentoFormSection frosted cards with hover-lift animation, BentoListPage/BentoEntityTile mosaic, and the pill tab-bar for multi-section/functional surfaces. Explains the shared scaffold in components/bento/, the bento-tile/bento-glass animation classes, and the exact swaps to convert a page that still reuses console chrome (StickyPageHeader / SectionCard / SubPage / GridList / useSidebar) into a proper bento page. Use whenever creating a new /bento page, or when a bento page "doesn't look bento" (no frosted hover cards, wrong header, a leftover console sidebar) and needs to be brought up to the standard.
 ---
 
 # Bento UI — build & fix pages to the standard
@@ -135,6 +135,37 @@ References: `app/bento/ai-analytics/bento.ai-analytics.page.tsx`,
 branch in
 [`persona.instance.form.layout.tsx`](../../frontend/apps/turing-app/src/components/persona/persona.instance.form.layout.tsx).
 
+**If this surface is a `<form>` with Save/Cancel** (like the persona editor), use
+[`BentoFormHero`](../../frontend/apps/turing-app/src/components/bento/bento-form-hero.tsx)
+**instead of a raw `BentoHero`** — it is the *single drop-in* that reproduces the
+`BentoEntityShell` "hero → sticky save bar" morph (Save/Cancel in the hero fade
+away on scroll; a fixed frosted bar fades in) for pages that render their own
+hero and so can't use the Shell. It wraps `BentoHero` (injecting the fade-out
+Save/Cancel into `trailing`, after any extra `trailing` you pass) **and** renders
+the `BentoScrollSaveBar` twin, so the two halves can't drift apart. Render it as
+the first child **inside the `<form>`** it submits — both Save buttons are plain
+`type="submit"`. Do **not** hand-wire a `bento-fade-out BentoSaveBar` + a separate
+`BentoScrollSaveBar` (the old two-piece dance in the SN/admin forms), and **never**
+use the console `StickySaveBar` in bento — it has no scroll morph.
+
+```tsx
+<form onSubmit={handleSubmit(onSubmit)}>
+  <BentoFormHero
+    eyebrow={<Link to={listRoute}>{feature}</Link>}
+    leading={<IconChip/>}
+    title={watchedTitle || fallback}
+    subtitle={t("…")}
+    trailing={!isNew && <BentoActionsMenu actions={[deleteAction]} />}
+    onCancel={() => navigate(urlBase)}
+    loading={form.formState.isSubmitting}
+    dirty={isNew || form.formState.isDirty}
+    titleMissing={!watchedTitle?.trim()}
+    stickyTitle={watchedTitle || fallback}
+  />
+  {/* pill nav + <Outlet/> sections … */}
+</form>
+```
+
 ```tsx
 <nav className="mb-6 flex flex-wrap gap-2">
   {tabs.map((tab) => (
@@ -163,7 +194,7 @@ Fix — do the swaps, don't rewrite the field logic:
 | --- | --- |
 | `SubPage` / `SubPageHeader` / `PageHeader` | `BentoHero` (+ pill tab-bar if multi-section) |
 | `SectionCard` / `SectionCard.Header` | `BentoFormSection` (`icon`, `tone`, `title`, `description`) |
-| `StickyPageHeader` + its Save/Cancel | `BentoSaveBar` in the `--bento-fade` wrapper (or `BentoEntityShell` for identity entities) |
+| `StickyPageHeader` / `StickySaveBar` + its Save/Cancel | `BentoEntityShell` (identity CRUD) · `BentoFormHero` (own-hero form page — single drop-in with the morph) · raw `BentoSaveBar` in the `--bento-fade` wrapper only if you must hand-place it |
 | console `GridList` | `BentoListPage` + `BentoEntityTile` |
 | `<Card>` list items | `BentoEntityTile` / `BentoTile` |
 | hardcoded `ROUTES.*` console nav in a reused form | a `baseRoute` prop (default = console) so save/cancel/back stay in `/bento` |

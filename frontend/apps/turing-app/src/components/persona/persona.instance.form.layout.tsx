@@ -25,9 +25,9 @@ import {
 import { useEffect, useMemo, useState } from "react"
 import { useForm, type UseFormReturn } from "react-hook-form"
 import { useTranslation } from "react-i18next"
-import { Link, NavLink, Outlet, useNavigate } from "react-router-dom"
+import { NavLink, Outlet, useNavigate } from "react-router-dom"
 import { toast } from "@viglet/viglet-design-system"
-import { BentoActionsMenu, BentoHero } from "@/components/bento"
+import { BentoActionsMenu, BentoFormHero } from "@/components/bento"
 import { DialogDelete } from "@/components/dialog.delete"
 import { SectionCardChromeProvider } from "@/components/ui/section-card"
 import { SubPage } from "../sub.page"
@@ -289,29 +289,28 @@ export const PersonaInstanceFormLayout: React.FC<Props> = ({ value, isNew, baseR
         className="space-y-4 md:space-y-6"
         autoComplete="off"
       >
-        <StickySaveBar
-          title={watchedName || (isNew ? t("persona.newInstance") : t("persona.title"))}
-          onCancel={() => navigate(urlBase)}
-        />
-
         {chrome === "bento" ? (
           <>
-            <BentoHero
-              eyebrow={
-                <Link
-                  to={isNew ? baseRoute : instanceUrlBase}
-                  className="hover:text-foreground"
-                >
-                  {isNew ? t("persona.title") : (value.name || t("persona.title"))}
-                </Link>
-              }
+            {/*
+             * Single-component "hero → sticky save bar" morph (matches the LLM
+             * instance surface): Save/Cancel live in the hero and fade away as
+             * you scroll; a fixed frosted bar fades in below the shell header.
+             * Rendered inside the <form>, so both Save buttons submit it.
+             */}
+            <BentoFormHero
+              backTo={isNew ? baseRoute : instanceUrlBase}
+              backLabel={isNew ? t("persona.title") : (value.name || t("persona.title"))}
               leading={
                 <span className="grid h-12 w-12 place-items-center rounded-2xl bg-linear-to-br from-blue-500 to-indigo-600 text-white shadow-md">
                   <IconUserCircle size={24} />
                 </span>
               }
-              title={watchedName || value.name || (isNew ? t("persona.newInstance") : t("persona.title"))}
-              subtitle={t("persona.description")}
+              // Match the "Configure persona" dashboard card that opens this
+              // editor: the persona name is the eyebrow breadcrumb (back to the
+              // dashboard), so the title is the section — not the name again
+              // (which read as a duplicate of the eyebrow).
+              title={isNew ? t("persona.newInstance") : t("persona.dashboard.configureTitle")}
+              subtitle={t("persona.dashboard.configureHint")}
               trailing={
                 !isNew ? (
                   <BentoActionsMenu
@@ -326,6 +325,11 @@ export const PersonaInstanceFormLayout: React.FC<Props> = ({ value, isNew, baseR
                   />
                 ) : undefined
               }
+              onCancel={() => navigate(urlBase)}
+              loading={form.formState.isSubmitting}
+              dirty={isNew || form.formState.isDirty}
+              titleMissing={!watchedName?.trim()}
+              stickyTitle={watchedName || value.name || (isNew ? t("persona.newInstance") : t("persona.title"))}
             />
 
             <nav className="mb-6 flex flex-wrap gap-2">
@@ -366,18 +370,24 @@ export const PersonaInstanceFormLayout: React.FC<Props> = ({ value, isNew, baseR
             )}
           </>
         ) : (
-          <SubPage
-            icon={IconUserCircle}
-            feature={t("persona.title")}
-            name={watchedName || value.name || t("persona.title")}
-            urlBase={instanceUrlBase}
-            isNew={isNew}
-            data={navData}
-            open={deleteOpen}
-            setOpen={setDeleteOpen}
-            onDelete={onDelete}
-            outletContext={outletContext}
-          />
+          <>
+            <StickySaveBar
+              title={watchedName || (isNew ? t("persona.newInstance") : t("persona.title"))}
+              onCancel={() => navigate(urlBase)}
+            />
+            <SubPage
+              icon={IconUserCircle}
+              feature={t("persona.title")}
+              name={watchedName || value.name || t("persona.title")}
+              urlBase={instanceUrlBase}
+              isNew={isNew}
+              data={navData}
+              open={deleteOpen}
+              setOpen={setDeleteOpen}
+              onDelete={onDelete}
+              outletContext={outletContext}
+            />
+          </>
         )}
       </form>
     </Form>

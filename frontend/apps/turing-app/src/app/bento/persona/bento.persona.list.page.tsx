@@ -2,7 +2,7 @@ import { usePersonas } from "@/api/queries/persona.queries";
 import { ROUTES } from "@/app/routes.const";
 import { BentoEntityTile, BentoListPage } from "@/components/bento";
 import { Button } from "@/components/ui/button";
-import { IconChartGridDots, IconMasksTheater, IconTargetArrow, IconUserCircle } from "@tabler/icons-react";
+import { IconChartGridDots, IconMasksTheater, IconTargetArrow, IconUsersGroup, IconUserCircle } from "@tabler/icons-react";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
 import { BentoPersonaFromAudioButton } from "./persona-from-audio.button";
@@ -41,6 +41,12 @@ export default function BentoPersonaListPage() {
             <Link to={ROUTES.BENTO_PERSONA_DIALOGUE}>
               <IconMasksTheater size={16} />
               {t("persona.launch.personaDialogue", { defaultValue: "Persona dialogue" })}
+            </Link>
+          </Button>
+          <Button asChild variant="outline" size="sm" className="gap-2">
+            <Link to={ROUTES.BENTO_PERSONA_RESEARCH}>
+              <IconUsersGroup size={16} />
+              {t("persona.launch.personaResearch", { defaultValue: "Synthetic research" })}
             </Link>
           </Button>
         </>
