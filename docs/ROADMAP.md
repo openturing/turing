@@ -176,6 +176,25 @@
 - 💭 **T733** (deps: T730) **Multi-study planner + cross-study rollup (PRISMA)** — one surface to design/run several studies across different audiences and roll their insights up into a program-level view. **UI:** a planner board + a program rollup page under `/bento/persona/research`. → §XLVI.5
 - 💭 **T734** (deps: T721, T722, T725) **Developer surface — `turing research` CLI (+ optional client)** — a `@viglet/turing-cli` verb (mirroring `turing eval`) to define/run a study and fetch its insights from code/CI, plus an optional thin programmatic client; the customer-facing **embed** SDKs stay unchanged beyond the T717 OCEAN metadata. → §XLVI.5
 
+## Block AX — Bento header consistency: the `BentoFormHero` morph everywhere (§XLVII)
+
+> Every bento **detail form** should present the same header the LLM-instance page
+> settled on: Save/Cancel live in the hero and fade away on scroll while a fixed
+> frosted save bar fades in (the `--bento-fade` morph), and the breadcrumb eyebrow
+> leads with a `←` back-arrow. Identity-CRUD pages already get this free from
+> `BentoEntityShell`; own-hero form pages (persona editor, AI-agent sub-sections,
+> SN forms) historically hand-wired it — or, in a few cases, shipped a static
+> non-morphing save row. This block makes the own-hero pattern a **single drop-in**
+> (`BentoFormHero`) and applies it. A read-only audit
+> (`scratchpad/bento-header-audit.md`) found **zero** broken `StickySaveBar`-in-bento
+> cases, 3 real morph gaps, and ~16 heroes missing the arrow. All cosmetic/structural,
+> no behavior change. Design in [IMPROVEMENTS.md](IMPROVEMENTS.md) §XLVII.
+
+- ✅ **T735** **`BentoFormHero` single-component morph + `backTo` breadcrumb** — a drop-in that wraps `BentoHero` (fade-out Save/Cancel in `trailing`) + `BentoScrollSaveBar`, plus `backTo`/`backLabel` props that render the `←` breadcrumb like `BentoEntityShell`. Adopted in the persona editor (retires its non-morphing console `StickySaveBar` on the bento branch); `turing-bento-ui` skill documents it. → CHANGELOG Block AX / §XLVII
+- 📋 **T736** (deps: T735) **Close the 3 morph gaps** — route the bento forms that today show a static (non-fading) Save row through `BentoFormHero`: `bento.sn.synonym.page.tsx` (Save is a lone floating bar, no hero Save / no scroll twin), `bento.se.core.new` (reused `se.instance.core.new` bento `header` path renders a static actions row), and `ai-agent.system-prompt.form.tsx` (bento branch renders a static `justify-end` Save/Cancel). → §XLVII
+- 📋 **T737** (deps: T735) **Back-arrow breadcrumb across own-hero bento forms** — add the `←` affordance systematically: the shared `bento.ai-agent.sub-hero.tsx` (covers every agent sub-page in one edit), the 11 SN shared forms, `bento.persona.suggest`, `bento.se.core.new`, `bento.sn.custom-facet.item`. Prefer migrating to `BentoFormHero.backTo`; otherwise add `IconArrowLeft` to the eyebrow `<Link>`. → §XLVII
+- 💭 **T738** (deps: T735) **Collapse the working manual-two-piece forms onto `BentoFormHero`** — the ~14 forms that already morph correctly by hand (11 SN forms + `ai-agent.settings.form` + `bento.global-settings` + `sn.site.custom.facet.item`) could drop their `bento-fade-out BentoSaveBar` + `BentoScrollSaveBar` boilerplate for the single component, so there is one canonical own-hero pattern. Pure consistency; no visible change. → §XLVII
+
 ## Non-goals (do NOT add as tasks)
 
 Binding constraints — see [IMPROVEMENTS.md](IMPROVEMENTS.md) §I.6 (What NOT to

@@ -1,9 +1,12 @@
-# Last task number — `T734` · next block letter — `AX`
+# Last task number — `T738` · next block letter — `AY`
 
 > **Single source of truth for the next free task number.** The next new task is
-> `T735`; after assigning it, bump the number above and the log line below.
+> `T739`; after assigning it, bump the number above and the log line below.
 >
-> **Next block letter — `AX`** (Block **AW** = Synthetic User Research — persona
+> **Next block letter — `AY`** (Block **AX** = Bento header consistency — the
+> `BentoFormHero` single-component hero→sticky-save-bar morph + `backTo` breadcrumb,
+> applied across bento own-hero form pages, T735–T738, created 2026-07-13; Block
+> **AW** = Synthetic User Research — persona
 > studies, interviews, insights report + saturation, continuous insight,
 > agent-QA/eval bridge + explicit per-task UI + developer CLI surface,
 > T717–T734, created 2026-07-13; Block **AV** = POST-native search & link-free
@@ -59,6 +62,8 @@ number" looked free but wasn't. Grepping three files (`ROADMAP.md`,
 
 ## Log (most recent first)
 
+- **T735 SHIPPED** (Block AX §XLVII — BentoFormHero single-component hero->sticky save-bar morph + backTo/backLabel breadcrumb; adopted in the persona editor, retiring its non-morphing console StickySaveBar on the bento branch; turing-bento-ui skill documents it) — 2026-07-13. OPENS Block AX.
+- **T735-T738 CREATED** (Block AX §XLVII — Bento header consistency: the BentoFormHero morph + back-arrow breadcrumb across own-hero bento forms; audit found 0 StickySaveBar-in-bento, 3 morph gaps (T736), ~16 missing arrows (T737), ~14 optional manual-two-piece migrations (T738)) — 2026-07-13.
 - **T730 SHIPPED** (Block AW §XLVI.5 — Bento Research Studio: `/bento/persona/research` list + `:studyId` workspace rendering the headless Phase 2–4 backends — protocol editor (target-agent + Big-Shuffle lanes + schedule), ordered audience picker, live SSE interview feed, and `ResearchInsightsSection` (report by-theme/by-persona lenses + regenerate + PDF, saturation gauge, theme graph, drift chart, concept-fit, promote-to-eval bridge); new persona-research model/service/queries; i18n en+pt) — 2026-07-13. OPENS Block AW Phase 5.
 - **T729 SHIPPED** (Block AW §XLVI.4 — Continuous Insight: `TurResearchSchedule` MANUAL/DAILY/WEEKLY + `TurResearchScheduleJob` (@Scheduled+ShedLock, kill-switch turing.research.schedule.enabled) re-runs enabled studies; `TurResearchDriftService` captures a deterministic LLM-free snapshot (`ai_research_insight_snapshot`) after every run reusing T723 saturation counts; GET /drift series w/ theme deltas; runner best-effort snapshot; Liquibase v2026.3.1.108; `TurResearchDriftServiceTest` 5 + IT) — 2026-07-13. CLOSES Block AW Phase 4 (T725-T729).
 - **T728 SHIPPED** (Block AW §XLVI.4 — "Big Shuffle" per-stage model lanes: per-study interview_llm_instance_id + synthesis_llm_instance_id; `TurResearchModelLaneResolver` stage→study-wide→default fail-open (T517 discipline); runner rides INTERVIEW lane, insights rides SYNTHESIS lane via new `TurLlmSummaryService.generate(...,override)` + cache-key fold; saturation stays LLM-free/no lane; Liquibase v2026.3.1.107; `TurResearchModelLaneResolverTest` 6 + IT) — 2026-07-13.
