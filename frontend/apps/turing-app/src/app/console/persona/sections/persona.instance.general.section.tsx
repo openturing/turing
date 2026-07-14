@@ -11,7 +11,7 @@ import {
 import { FormItemTwoColumns } from "@/components/ui/form-item-two-columns"
 import { GradientSwitch } from "@/components/ui/gradient-switch"
 import { Input } from "@/components/ui/input"
-import { SectionCard } from "@/components/ui/section-card"
+import { SectionCard, useSectionChrome } from "@/components/ui/section-card"
 import {
   Select,
   SelectContent,
@@ -44,10 +44,11 @@ const PERSONA_KINDS = ["SPEAKER", "AUDIENCE", "BOTH"] as const
 export default function PersonaInstanceGeneralSection() {
   const { t } = useTranslation()
   const { form, isNew, setDeleteOpen } = useOutletContext<PersonaFormContext>()
+  const chrome = useSectionChrome()
   useSubPageBreadcrumb(t("persona.sidebar.general"))
 
   return (
-    <div className="w-full max-w-2xl mx-auto px-2 md:px-6 py-2 md:py-8 flex flex-col gap-4">
+    <div className={`w-full px-2 md:px-6 py-2 md:py-8 flex flex-col gap-4${chrome === "bento" ? "" : " max-w-2xl mx-auto"}`}>
       {/* General Info */}
       <SectionCard variant="blue">
         <SectionCard.Header

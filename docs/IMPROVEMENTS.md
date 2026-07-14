@@ -2441,10 +2441,6 @@ the actual product differentiation lives.
 This is the part a dedicated research SaaS **cannot** do, because it does not own an
 agent runtime or an eval platform:
 
-- **T728 (💭) — "Big Shuffle" model lanes.** Assign different LLM instances per stage
-  (interview / synthesize / judge) via the T517 lane seam, so no single model's bias
-  colors a whole study — the same idea synth.users markets as multi-model, expressed
-  through infrastructure Turing already has.
 - **T729 (💭) — Continuous Insight.** Re-run a study on a schedule (Persona Match
   scheduler + ShedLock) and track theme/sentiment drift over time (T87 sentiment
   trajectory) — one-shot research becomes continuous validation.

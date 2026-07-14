@@ -36,6 +36,17 @@ export function SectionCardChromeProvider({
   return <SectionChromeContext.Provider value={chrome}>{children}</SectionChromeContext.Provider>;
 }
 
+/**
+ * Read the active {@link SectionChrome} from context. Shared sections use this
+ * to drop console-only layout constraints (e.g. the narrow `max-w-2xl` centered
+ * column) when rendered inside the full-width bento shell.
+ *
+ * @since 2026.3.4
+ */
+export function useSectionChrome(): SectionChrome {
+  return useContext(SectionChromeContext);
+}
+
 /** SectionCard color variants → the closest Bento tone. */
 type SectionVariant = "blue" | "violet" | "emerald" | "amber" | "rose" | "slate" | "cyan" | "orange";
 

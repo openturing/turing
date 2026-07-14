@@ -39,7 +39,6 @@ import com.viglet.turing.persistence.repository.persona.TurPersonaRepository;
 import com.viglet.turing.persistence.repository.research.TurResearchInterviewRepository;
 import com.viglet.turing.persistence.repository.research.TurResearchStudyPersonaRepository;
 import com.viglet.turing.persistence.repository.research.TurResearchStudyRepository;
-import com.viglet.turing.system.TurGlobalSettingsService;
 import com.viglet.turing.tenant.TurTenantContext;
 
 import lombok.extern.slf4j.Slf4j;
@@ -83,7 +82,7 @@ public class TurResearchRunnerService {
     private final TurResearchInterviewRepository interviewRepository;
     private final TurPersonaRepository personaRepository;
     private final TurLLMInstanceRepository llmInstanceRepository;
-    private final TurGlobalSettingsService globalSettingsService;
+    private final TurResearchModelLaneResolver laneResolver;
     private final TurResearchInterviewEngine engine;
     private final TurResearchEventBus eventBus;
     private final TurTenantContext tenantContext;
@@ -93,7 +92,7 @@ public class TurResearchRunnerService {
             TurResearchInterviewRepository interviewRepository,
             TurPersonaRepository personaRepository,
             TurLLMInstanceRepository llmInstanceRepository,
-            TurGlobalSettingsService globalSettingsService,
+            TurResearchModelLaneResolver laneResolver,
             TurResearchInterviewEngine engine,
             TurResearchEventBus eventBus,
             TurTenantContext tenantContext) {
@@ -102,7 +101,7 @@ public class TurResearchRunnerService {
         this.interviewRepository = interviewRepository;
         this.personaRepository = personaRepository;
         this.llmInstanceRepository = llmInstanceRepository;
-        this.globalSettingsService = globalSettingsService;
+        this.laneResolver = laneResolver;
         this.engine = engine;
         this.eventBus = eventBus;
         this.tenantContext = tenantContext;
@@ -305,18 +304,13 @@ public class TurResearchRunnerService {
     // ---- llm resolution ----------------------------------------------------
 
     private TurLLMInstance resolveLlm(TurResearchStudy study) {
-        String id = StringUtils.trimToNull(study.getLlmInstanceId());
-        if (id != null) {
-            TurLLMInstance instance = llmInstanceRepository.findById(id).orElse(null);
-            if (instance != null) {
-                return instance;
-            }
-        }
-        String defaultId = globalSettingsService.getDefaultLlmId();
-        if (StringUtils.isBlank(defaultId)) {
+        // T728 — the interview stage rides its own lane: interview instance →
+        // study-wide instance → default LLM (all fail-open in the resolver).
+        String id = laneResolver.resolveInstanceId(study, TurResearchStage.INTERVIEW);
+        if (StringUtils.isBlank(id)) {
             return null;
         }
-        return llmInstanceRepository.findById(defaultId).orElse(null);
+        return llmInstanceRepository.findById(id).orElse(null);
     }
 
     // ---- input hash --------------------------------------------------------
@@ -333,7 +327,8 @@ public class TurResearchRunnerService {
                 + "|" + StringUtils.defaultString(study.getConceptText())
                 + "|" + StringUtils.defaultString(study.getQuestionsJson())
                 + "|" + study.getMaxQuestions()
-                + "|" + StringUtils.defaultString(study.getTargetAgentId());
+                + "|" + StringUtils.defaultString(study.getTargetAgentId())
+                + "|" + StringUtils.defaultString(study.getInterviewLlmInstanceId());
         return Integer.toHexString(material.length()) + "-"
                 + Integer.toHexString(material.hashCode());
     }

@@ -6,7 +6,7 @@ import {
   FormItem,
   FormLabel,
 } from "@/components/ui/form"
-import { SectionCard } from "@/components/ui/section-card"
+import { SectionCard, useSectionChrome } from "@/components/ui/section-card"
 import {
   Select,
   SelectContent,
@@ -33,10 +33,11 @@ const NONE_VALUE = "__none__"
 export default function PersonaInstanceGuidelinesSection() {
   const { t } = useTranslation()
   const { form, stores, mcpServers } = useOutletContext<PersonaFormContext>()
+  const chrome = useSectionChrome()
   useSubPageBreadcrumb(t("persona.sidebar.guidelines"))
 
   return (
-    <div className="w-full max-w-2xl mx-auto px-2 md:px-6 py-2 md:py-8 flex flex-col gap-4">
+    <div className={`w-full px-2 md:px-6 py-2 md:py-8 flex flex-col gap-4${chrome === "bento" ? "" : " max-w-2xl mx-auto"}`}>
       {/* Vocabulary */}
       <SectionCard variant="amber">
         <SectionCard.Header

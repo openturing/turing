@@ -40,6 +40,8 @@ public record TurResearchStudyDto(
         String llmName,
         String targetAgentId,
         String targetAgentName,
+        String interviewLlmInstanceId,
+        String synthesisLlmInstanceId,
         Instant lastRunAt,
         int personaCount,
         int interviewCount,

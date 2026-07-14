@@ -100,9 +100,32 @@ public class TurResearchStudy implements Serializable {
     @Column(name = "max_questions", nullable = false)
     private int maxQuestions = 6;
 
-    /** Which LLM instance drives the interviewer + persona answers; null = default. */
+    /**
+     * The study-wide LLM instance override (null = default). Per-stage lanes
+     * ({@link #interviewLlmInstanceId} / {@link #synthesisLlmInstanceId}) take
+     * precedence over this; this in turn takes precedence over the platform default.
+     */
     @Column(name = "llmInstanceId", length = 40)
     private String llmInstanceId;
+
+    /**
+     * T728 / §XLVI.4 — "Big Shuffle" per-stage model lane: the LLM instance that
+     * drives the <em>interview</em> stage (interviewer sub-loop + answers), so a
+     * fast/cheap model can conduct interviews independent of synthesis. Null falls
+     * back to {@link #llmInstanceId} then the default LLM.
+     */
+    @Column(name = "interview_llm_instance_id", length = 40)
+    private String interviewLlmInstanceId;
+
+    /**
+     * T728 / §XLVI.4 — per-stage model lane for the <em>synthesis</em> stage (the
+     * T722 insights report), so a stronger model can synthesize without its bias
+     * coloring the interviews. Null falls back to {@link #llmInstanceId} then the
+     * default LLM. (Saturation scoring is deterministic / LLM-free, so it has no
+     * lane.)
+     */
+    @Column(name = "synthesis_llm_instance_id", length = 40)
+    private String synthesisLlmInstanceId;
 
     /**
      * T726 / §XLVI.4 — the study <em>target</em>. When set, the study interviews

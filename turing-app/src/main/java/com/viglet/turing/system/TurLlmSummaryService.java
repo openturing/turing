@@ -40,7 +40,20 @@ public class TurLlmSummaryService {
     }
 
     public SummaryResult generate(String cacheKey, String data, String systemPrompt, boolean regenerate) {
-        String llmId = globalSettingsService.getDefaultLlmId();
+        return generate(cacheKey, data, systemPrompt, regenerate, null);
+    }
+
+    /**
+     * T728 — synthesis-stage overload: when {@code llmInstanceIdOverride} names an
+     * existing, enabled instance it drives this summary instead of the default LLM
+     * (so a research study can synthesize on a different model than it interviews
+     * on); a blank/missing/disabled override fails open to the platform default.
+     * The caller is responsible for folding the resolved instance into its
+     * {@code cacheKey} so a lane change misses the cache.
+     */
+    public SummaryResult generate(String cacheKey, String data, String systemPrompt,
+            boolean regenerate, String llmInstanceIdOverride) {
+        String llmId = resolveUsableLlmId(llmInstanceIdOverride);
         if (!StringUtils.hasText(llmId)) {
             return new SummaryResult(false, "No default LLM configured in Global Settings.", null, false);
         }
@@ -84,6 +97,22 @@ public class TurLlmSummaryService {
             log.error("Failed to generate AI summary for key {}", cacheKey, e);
             return new SummaryResult(false, "Failed to generate summary: " + e.getMessage(), null, canRegenerate);
         }
+    }
+
+    /**
+     * The override id when it names an existing enabled instance, otherwise the
+     * platform default LLM id (possibly blank).
+     */
+    private String resolveUsableLlmId(String llmInstanceIdOverride) {
+        if (StringUtils.hasText(llmInstanceIdOverride)) {
+            boolean usable = llmInstanceRepository.findById(llmInstanceIdOverride.trim())
+                    .filter(instance -> instance.getEnabled() == 1)
+                    .isPresent();
+            if (usable) {
+                return llmInstanceIdOverride.trim();
+            }
+        }
+        return globalSettingsService.getDefaultLlmId();
     }
 
     private String resolveUsername() {

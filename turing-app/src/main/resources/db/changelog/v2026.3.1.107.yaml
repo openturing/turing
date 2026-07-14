@@ -1,0 +1,40 @@
+databaseChangeLog:
+  # T728 / §XLVI.4 (Block AW) — "Big Shuffle" per-stage model lanes: a study can
+  # assign a distinct LLM instance to the interview stage and the synthesis stage,
+  # so no single model's bias colors the whole study. Both null fall back to the
+  # study-wide llmInstanceId then the platform default. Portable lowercase type;
+  # idempotent (MARK_RAN).
+
+  - changeSet:
+      id: v2026.3.1.107-add-interview_llm_instance_id-to-ai_research_study
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - columnExists:
+                tableName: ai_research_study
+                columnName: interview_llm_instance_id
+      changes:
+        - addColumn:
+            tableName: ai_research_study
+            columns:
+              - column:
+                  name: interview_llm_instance_id
+                  type: varchar(40)
+
+  - changeSet:
+      id: v2026.3.1.107-add-synthesis_llm_instance_id-to-ai_research_study
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - columnExists:
+                tableName: ai_research_study
+                columnName: synthesis_llm_instance_id
+      changes:
+        - addColumn:
+            tableName: ai_research_study
+            columns:
+              - column:
+                  name: synthesis_llm_instance_id
+                  type: varchar(40)

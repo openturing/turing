@@ -122,6 +122,7 @@ public class TurResearchInsightsService {
     private final TurLlmSummaryService llmSummaryService;
     private final TurResearchSaturationScorer saturationScorer;
     private final TurResearchThemeGraphBuilder graphBuilder;
+    private final TurResearchModelLaneResolver laneResolver;
 
     public TurResearchInsightsService(TurResearchStudyRepository studyRepository,
             TurResearchStudyPersonaRepository personaJoinRepository,
@@ -129,7 +130,8 @@ public class TurResearchInsightsService {
             TurPersonaRepository personaRepository,
             TurLlmSummaryService llmSummaryService,
             TurResearchSaturationScorer saturationScorer,
-            TurResearchThemeGraphBuilder graphBuilder) {
+            TurResearchThemeGraphBuilder graphBuilder,
+            TurResearchModelLaneResolver laneResolver) {
         this.studyRepository = studyRepository;
         this.personaJoinRepository = personaJoinRepository;
         this.interviewRepository = interviewRepository;
@@ -137,6 +139,7 @@ public class TurResearchInsightsService {
         this.llmSummaryService = llmSummaryService;
         this.saturationScorer = saturationScorer;
         this.graphBuilder = graphBuilder;
+        this.laneResolver = laneResolver;
     }
 
     // ---- T722 insights report ---------------------------------------------
@@ -163,11 +166,16 @@ public class TurResearchInsightsService {
                     "No completed interviews to synthesize yet. Run the study first.", false);
         }
 
+        // T728 — the synthesis stage rides its own model lane (fail-open to the
+        // study-wide instance, then the default LLM). Fold the resolved instance
+        // into the cache key so switching the synthesis model misses stale cache.
+        String synthesisLlmId = laneResolver.resolveInstanceId(study, TurResearchStage.SYNTHESIS);
         String corpus = buildCorpus(completed);
-        String cacheKey = "research-insights-" + studyId + "-" + stableHash(corpus);
+        String cacheKey = "research-insights-" + studyId + "-" + stableHash(corpus)
+                + "-" + Integer.toHexString(StringUtils.defaultString(synthesisLlmId).hashCode());
 
         TurLlmSummaryService.SummaryResult result =
-                llmSummaryService.generate(cacheKey, corpus, SYSTEM_PROMPT, regenerate);
+                llmSummaryService.generate(cacheKey, corpus, SYSTEM_PROMPT, regenerate, synthesisLlmId);
         if (!result.success()) {
             return TurResearchReportDto.unavailable(result.error(), result.canRegenerate());
         }

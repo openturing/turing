@@ -133,6 +133,8 @@ public class TurResearchStudyService {
         study.setMaxQuestions(dto.maxQuestions() > 0 ? dto.maxQuestions() : 6);
         study.setLlmInstanceId(StringUtils.trimToNull(dto.llmInstanceId()));
         study.setTargetAgentId(StringUtils.trimToNull(dto.targetAgentId()));
+        study.setInterviewLlmInstanceId(StringUtils.trimToNull(dto.interviewLlmInstanceId()));
+        study.setSynthesisLlmInstanceId(StringUtils.trimToNull(dto.synthesisLlmInstanceId()));
     }
 
     private TurResearchProtocol parseProtocol(String raw) {
@@ -196,7 +198,8 @@ public class TurResearchStudyService {
         return new TurResearchStudyDto(s.getId(), s.getName(), s.getGoal(), s.getHypothesis(),
                 s.getDescription(), s.isEnabled(), s.getProtocol().name(), s.getConceptText(),
                 parseQuestions(s.getQuestionsJson()), s.getMaxQuestions(), s.getLlmInstanceId(),
-                llmName(s), s.getTargetAgentId(), targetAgentName(s), s.getLastRunAt(),
+                llmName(s), s.getTargetAgentId(), targetAgentName(s),
+                s.getInterviewLlmInstanceId(), s.getSynthesisLlmInstanceId(), s.getLastRunAt(),
                 personaJoinRepository.findByStudy_IdOrderByPositionAsc(s.getId()).size(),
                 (int) interviewRepository.countByStudy_Id(s.getId()), null, null);
     }
@@ -207,7 +210,8 @@ public class TurResearchStudyService {
         return new TurResearchStudyDto(s.getId(), s.getName(), s.getGoal(), s.getHypothesis(),
                 s.getDescription(), s.isEnabled(), s.getProtocol().name(), s.getConceptText(),
                 parseQuestions(s.getQuestionsJson()), s.getMaxQuestions(), s.getLlmInstanceId(),
-                llmName(s), s.getTargetAgentId(), targetAgentName(s), s.getLastRunAt(),
+                llmName(s), s.getTargetAgentId(), targetAgentName(s),
+                s.getInterviewLlmInstanceId(), s.getSynthesisLlmInstanceId(), s.getLastRunAt(),
                 personas.size(), interviews.size(), personas, interviews);
     }
 

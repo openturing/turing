@@ -7,7 +7,7 @@ import {
   FormLabel,
 } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
-import { SectionCard } from "@/components/ui/section-card"
+import { SectionCard, useSectionChrome } from "@/components/ui/section-card"
 import {
   Select,
   SelectContent,
@@ -48,10 +48,11 @@ const DOMAIN_EXPERTISE = [
 export default function PersonaInstanceAudienceSection() {
   const { t } = useTranslation()
   const { form } = useOutletContext<PersonaFormContext>()
+  const chrome = useSectionChrome()
   useSubPageBreadcrumb(t("persona.sidebar.audience"))
 
   return (
-    <div className="w-full max-w-2xl mx-auto px-2 md:px-6 py-2 md:py-8 flex flex-col gap-4">
+    <div className={`w-full px-2 md:px-6 py-2 md:py-8 flex flex-col gap-4${chrome === "bento" ? "" : " max-w-2xl mx-auto"}`}>
       <SectionCard variant="slate">
         <SectionCard.Header
           icon={IconUsers}
