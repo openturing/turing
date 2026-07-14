@@ -2441,10 +2441,6 @@ the actual product differentiation lives.
 This is the part a dedicated research SaaS **cannot** do, because it does not own an
 agent runtime or an eval platform:
 
-- **T726 — interview your own deployed agent.** Point a study at a live `TurAIAgent`
-  (its real flow, tools, RAG) rather than a bare LLM, so synthetic users UX-test and
-  red-team the *actual shipped assistant*. This is the flagship of the block: it only
-  works because Turing owns both the panel and the subject.
 - **T727 (💭) — concept-test ↔ Persona Match.** A `CONCEPT_TEST` over a piece of
   content is content-fit's sibling; route it through `TurPersonaContentFitEvaluator`
   (Block AT) so the two share one evaluator instead of forking.

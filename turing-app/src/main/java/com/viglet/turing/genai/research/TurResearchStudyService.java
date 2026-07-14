@@ -25,12 +25,14 @@ import com.viglet.turing.genai.research.dto.TurResearchInterviewDto;
 import com.viglet.turing.genai.research.dto.TurResearchStudyDto;
 import com.viglet.turing.genai.research.dto.TurResearchStudyPersonaRefDto;
 import com.viglet.turing.genai.research.dto.TurResearchTurnDto;
+import com.viglet.turing.persistence.model.agent.TurAIAgent;
 import com.viglet.turing.persistence.model.llm.TurLLMInstance;
 import com.viglet.turing.persistence.model.persona.TurPersona;
 import com.viglet.turing.persistence.model.research.TurResearchInterview;
 import com.viglet.turing.persistence.model.research.TurResearchProtocol;
 import com.viglet.turing.persistence.model.research.TurResearchStudy;
 import com.viglet.turing.persistence.model.research.TurResearchStudyPersona;
+import com.viglet.turing.persistence.repository.agent.TurAIAgentRepository;
 import com.viglet.turing.persistence.repository.llm.TurLLMInstanceRepository;
 import com.viglet.turing.persistence.repository.persona.TurPersonaRepository;
 import com.viglet.turing.persistence.repository.research.TurResearchInterviewRepository;
@@ -63,17 +65,20 @@ public class TurResearchStudyService {
     private final TurResearchInterviewRepository interviewRepository;
     private final TurPersonaRepository personaRepository;
     private final TurLLMInstanceRepository llmInstanceRepository;
+    private final TurAIAgentRepository agentRepository;
 
     public TurResearchStudyService(TurResearchStudyRepository studyRepository,
             TurResearchStudyPersonaRepository personaJoinRepository,
             TurResearchInterviewRepository interviewRepository,
             TurPersonaRepository personaRepository,
-            TurLLMInstanceRepository llmInstanceRepository) {
+            TurLLMInstanceRepository llmInstanceRepository,
+            TurAIAgentRepository agentRepository) {
         this.studyRepository = studyRepository;
         this.personaJoinRepository = personaJoinRepository;
         this.interviewRepository = interviewRepository;
         this.personaRepository = personaRepository;
         this.llmInstanceRepository = llmInstanceRepository;
+        this.agentRepository = agentRepository;
     }
 
     // ---- study CRUD --------------------------------------------------------
@@ -127,6 +132,7 @@ public class TurResearchStudyService {
         study.setQuestionsJson(writeQuestions(dto.questions()));
         study.setMaxQuestions(dto.maxQuestions() > 0 ? dto.maxQuestions() : 6);
         study.setLlmInstanceId(StringUtils.trimToNull(dto.llmInstanceId()));
+        study.setTargetAgentId(StringUtils.trimToNull(dto.targetAgentId()));
     }
 
     private TurResearchProtocol parseProtocol(String raw) {
@@ -190,7 +196,7 @@ public class TurResearchStudyService {
         return new TurResearchStudyDto(s.getId(), s.getName(), s.getGoal(), s.getHypothesis(),
                 s.getDescription(), s.isEnabled(), s.getProtocol().name(), s.getConceptText(),
                 parseQuestions(s.getQuestionsJson()), s.getMaxQuestions(), s.getLlmInstanceId(),
-                llmName(s), s.getLastRunAt(),
+                llmName(s), s.getTargetAgentId(), targetAgentName(s), s.getLastRunAt(),
                 personaJoinRepository.findByStudy_IdOrderByPositionAsc(s.getId()).size(),
                 (int) interviewRepository.countByStudy_Id(s.getId()), null, null);
     }
@@ -201,8 +207,8 @@ public class TurResearchStudyService {
         return new TurResearchStudyDto(s.getId(), s.getName(), s.getGoal(), s.getHypothesis(),
                 s.getDescription(), s.isEnabled(), s.getProtocol().name(), s.getConceptText(),
                 parseQuestions(s.getQuestionsJson()), s.getMaxQuestions(), s.getLlmInstanceId(),
-                llmName(s), s.getLastRunAt(), personas.size(), interviews.size(), personas,
-                interviews);
+                llmName(s), s.getTargetAgentId(), targetAgentName(s), s.getLastRunAt(),
+                personas.size(), interviews.size(), personas, interviews);
     }
 
     private String llmName(TurResearchStudy s) {
@@ -211,6 +217,16 @@ public class TurResearchStudyService {
         }
         return llmInstanceRepository.findById(s.getLlmInstanceId())
                 .map(TurLLMInstance::getTitle)
+                .orElse(null);
+    }
+
+    /** The resolved label of the T726 target agent, or null when unset/unknown. */
+    private String targetAgentName(TurResearchStudy s) {
+        if (StringUtils.isBlank(s.getTargetAgentId())) {
+            return null;
+        }
+        return agentRepository.findById(s.getTargetAgentId())
+                .map(TurAIAgent::getTitle)
                 .orElse(null);
     }
 

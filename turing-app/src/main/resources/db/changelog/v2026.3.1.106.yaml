@@ -1,0 +1,23 @@
+databaseChangeLog:
+  # T726 / §XLVI.4 (Block AW) — "interview your own deployed agent": add the study
+  # target. When target_agent_id is set, the study interviews that live agent (its
+  # real system prompt/tools/RAG) with the roster persona playing the synthetic
+  # user; null keeps the legacy bare-LLM persona interview. Portable lowercase
+  # type; idempotent (MARK_RAN).
+
+  - changeSet:
+      id: v2026.3.1.106-add-target_agent_id-to-ai_research_study
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - columnExists:
+                tableName: ai_research_study
+                columnName: target_agent_id
+      changes:
+        - addColumn:
+            tableName: ai_research_study
+            columns:
+              - column:
+                  name: target_agent_id
+                  type: varchar(40)

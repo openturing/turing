@@ -30,10 +30,14 @@ import com.viglet.turing.genai.TurAgentChatExecutor.ChatResponse;
 import com.viglet.turing.genai.TurAgentChatRequest;
 import com.viglet.turing.genai.research.dto.TurResearchTurnDto;
 import com.viglet.turing.genai.tool.TurNativeToolService;
+import com.viglet.turing.persistence.model.agent.TurAIAgent;
 import com.viglet.turing.persistence.model.llm.TurLLMInstance;
 import com.viglet.turing.persistence.model.persona.TurPersona;
 import com.viglet.turing.persistence.model.research.TurResearchProtocol;
 import com.viglet.turing.persistence.model.research.TurResearchStudy;
+import com.viglet.turing.persistence.repository.agent.TurAIAgentRepository;
+
+import java.util.Optional;
 
 import reactor.core.publisher.Flux;
 
@@ -56,13 +60,15 @@ class TurResearchInterviewEngineTest {
     private TurAgentChatExecutor executor;
     @Mock
     private TurNativeToolService nativeToolService;
+    @Mock
+    private TurAIAgentRepository agentRepository;
 
     private TurResearchInterviewEngine engine;
     private final List<TurAgentChatRequest> captured = new ArrayList<>();
 
     @BeforeEach
     void setUp() {
-        engine = new TurResearchInterviewEngine(executor, nativeToolService);
+        engine = new TurResearchInterviewEngine(executor, nativeToolService, agentRepository);
         captured.clear();
         lenient().when(nativeToolService.getAllTools()).thenReturn(List.of());
     }
@@ -158,5 +164,76 @@ class TurResearchInterviewEngineTest {
                 .filter(r -> r.systemPromptOverride() != null)
                 .anyMatch(r -> r.systemPromptOverride()
                         .contains("A flat $9/month plan with unlimited searches")));
+    }
+
+    // ---- T726 — interview your own deployed agent --------------------------
+
+    private TurAIAgent targetAgent(String id, String title) {
+        TurAIAgent agent = new TurAIAgent();
+        agent.setId(id);
+        agent.setTitle(title);
+        when(agentRepository.findById(id)).thenReturn(Optional.of(agent));
+        return agent;
+    }
+
+    @Test
+    void targetAgentInvertsRolesSoTheDeployedAgentAnswers() {
+        targetAgent("agent-1", "Deployed Support Bot");
+        stubExecutor(List.of("Hi, I need help with billing.", "DONE"));
+        TurResearchStudy study = new TurResearchStudy();
+        study.setProtocol(TurResearchProtocol.DYNAMIC_SCRIPT);
+        study.setGoal("See if the bot can resolve a billing dispute");
+        study.setMaxQuestions(4);
+        study.setTargetAgentId("agent-1");
+
+        List<TurResearchTurnDto> turns = engine.interview(study, persona(), new TurLLMInstance());
+
+        assertEquals(1, turns.size());
+        // The synthetic-user simulator (questioner) carries the persona identity + goal.
+        assertTrue(captured.stream()
+                .filter(r -> r.systemPromptOverride() != null)
+                .anyMatch(r -> r.systemPromptOverride().contains("Test participant")
+                        && r.systemPromptOverride().contains("resolve a billing dispute")));
+        // The answerer (override == null) is the live deployed agent, not a persona shell.
+        assertTrue(captured.stream()
+                .filter(r -> r.systemPromptOverride() == null)
+                .allMatch(r -> "Deployed Support Bot".equals(r.agent().getTitle())));
+    }
+
+    @Test
+    void customScriptReplaysToTargetAgent() {
+        targetAgent("agent-2", "Deployed FAQ Bot");
+        stubExecutor(List.of()); // no questioner in a custom script
+        TurResearchStudy study = new TurResearchStudy();
+        study.setProtocol(TurResearchProtocol.CUSTOM_SCRIPT);
+        study.setQuestionsJson("[\"Reset my password\",\"Cancel my plan\"]");
+        study.setTargetAgentId("agent-2");
+
+        List<TurResearchTurnDto> turns = engine.interview(study, persona(), new TurLLMInstance());
+
+        assertEquals(2, turns.size());
+        assertEquals("Answer to: Reset my password", turns.get(0).answer());
+        // Every executor turn is the deployed agent answering the fixed script.
+        assertTrue(captured.stream()
+                .allMatch(r -> "Deployed FAQ Bot".equals(r.agent().getTitle())));
+    }
+
+    @Test
+    void unknownTargetFallsBackToLegacyInterview() {
+        when(agentRepository.findById("missing")).thenReturn(Optional.empty());
+        stubExecutor(List.of("First question?", "DONE"));
+        TurResearchStudy study = new TurResearchStudy();
+        study.setProtocol(TurResearchProtocol.DYNAMIC_SCRIPT);
+        study.setGoal("goal");
+        study.setMaxQuestions(4);
+        study.setTargetAgentId("missing");
+
+        List<TurResearchTurnDto> turns = engine.interview(study, persona(), new TurLLMInstance());
+
+        assertEquals(1, turns.size());
+        // Legacy path: the persona-fused shell answers (title carries the persona name).
+        assertTrue(captured.stream()
+                .filter(r -> r.systemPromptOverride() == null)
+                .allMatch(r -> r.agent().getTitle().contains("Test participant")));
     }
 }

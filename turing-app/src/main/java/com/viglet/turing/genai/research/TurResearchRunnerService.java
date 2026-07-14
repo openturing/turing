@@ -323,15 +323,17 @@ public class TurResearchRunnerService {
 
     /**
      * Stable hash of the study inputs that determine an interview's content
-     * (protocol + concept + questions + question cap). Shared by every persona in
-     * a run, so an unchanged re-run reuses each completed transcript.
+     * (protocol + goal/hypothesis + concept + questions + question cap + T726
+     * target agent). Shared by every persona in a run, so an unchanged re-run
+     * reuses each completed transcript; changing the target forces a re-run.
      */
     private String inputHash(TurResearchStudy study) {
         String material = study.getProtocol() + "|" + StringUtils.defaultString(study.getGoal())
                 + "|" + StringUtils.defaultString(study.getHypothesis())
                 + "|" + StringUtils.defaultString(study.getConceptText())
                 + "|" + StringUtils.defaultString(study.getQuestionsJson())
-                + "|" + study.getMaxQuestions();
+                + "|" + study.getMaxQuestions()
+                + "|" + StringUtils.defaultString(study.getTargetAgentId());
         return Integer.toHexString(material.length()) + "-"
                 + Integer.toHexString(material.hashCode());
     }

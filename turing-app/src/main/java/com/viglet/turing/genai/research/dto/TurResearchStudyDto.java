@@ -18,6 +18,9 @@ import java.util.List;
  * derived counts / {@code llmName} / {@code lastRunAt} / roster / interviews are
  * ignored on write). {@code questions} is the CUSTOM_SCRIPT list; {@code conceptText}
  * the CONCEPT_TEST stimulus; {@code maxQuestions} the DYNAMIC_SCRIPT follow-up cap.
+ * {@code targetAgentId} (T726) points the study at a live agent — the persona then
+ * plays the synthetic user testing it; {@code targetAgentName} is the resolved
+ * label (read-only, ignored on write).
  *
  * @author Alexandre Oliveira
  * @since 2026.3.4
@@ -35,6 +38,8 @@ public record TurResearchStudyDto(
         int maxQuestions,
         String llmInstanceId,
         String llmName,
+        String targetAgentId,
+        String targetAgentName,
         Instant lastRunAt,
         int personaCount,
         int interviewCount,

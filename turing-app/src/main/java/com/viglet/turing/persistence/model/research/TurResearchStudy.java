@@ -104,6 +104,17 @@ public class TurResearchStudy implements Serializable {
     @Column(name = "llmInstanceId", length = 40)
     private String llmInstanceId;
 
+    /**
+     * T726 / §XLVI.4 — the study <em>target</em>. When set, the study interviews
+     * this live {@link com.viglet.turing.persistence.model.agent.TurAIAgent} (its
+     * real system prompt, tools and RAG) instead of a bare persona-fused LLM: the
+     * roster persona plays the synthetic <em>user</em> testing/red-teaming the
+     * deployed agent, which plays the assistant. Null (the default) keeps the
+     * legacy behaviour — the persona is the interviewee answered by a bare LLM.
+     */
+    @Column(name = "target_agent_id", length = 40)
+    private String targetAgentId;
+
     /** When the last cohort interview run completed (null until first run). */
     @Column(name = "last_run_at")
     private Instant lastRunAt;
