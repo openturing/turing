@@ -25,6 +25,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.viglet.turing.api.exception.TurNotFoundException;
+import com.viglet.turing.genai.research.TurResearchConceptFitService;
 import com.viglet.turing.genai.research.TurResearchEvalBridgeService;
 import com.viglet.turing.genai.research.TurResearchEventBus;
 import com.viglet.turing.genai.research.TurResearchInsightsService;
@@ -32,6 +33,7 @@ import com.viglet.turing.genai.research.TurResearchRunEvent;
 import com.viglet.turing.genai.research.TurResearchRunResultDto;
 import com.viglet.turing.genai.research.TurResearchRunnerService;
 import com.viglet.turing.genai.research.TurResearchStudyService;
+import com.viglet.turing.genai.research.dto.TurResearchConceptFitDto;
 import com.viglet.turing.genai.research.dto.TurResearchGraphDto;
 import com.viglet.turing.genai.research.dto.TurResearchInterviewDto;
 import com.viglet.turing.genai.research.dto.TurResearchReportDto;
@@ -71,6 +73,7 @@ public class TurResearchStudyAPI {
     private final TurResearchRunnerService runnerService;
     private final TurResearchInsightsService insightsService;
     private final TurResearchEvalBridgeService evalBridgeService;
+    private final TurResearchConceptFitService conceptFitService;
     private final TurResearchEventBus eventBus;
     private final TurTenantContext tenantContext;
 
@@ -78,12 +81,14 @@ public class TurResearchStudyAPI {
             TurResearchRunnerService runnerService,
             TurResearchInsightsService insightsService,
             TurResearchEvalBridgeService evalBridgeService,
+            TurResearchConceptFitService conceptFitService,
             TurResearchEventBus eventBus,
             TurTenantContext tenantContext) {
         this.service = service;
         this.runnerService = runnerService;
         this.insightsService = insightsService;
         this.evalBridgeService = evalBridgeService;
+        this.conceptFitService = conceptFitService;
         this.eventBus = eventBus;
         this.tenantContext = tenantContext;
     }
@@ -190,6 +195,20 @@ public class TurResearchStudyAPI {
         }
         TurEvalDataset dataset = evalBridgeService.promoteToDataset(id, name);
         return TurEvalDatasetDto.summary(dataset, dataset.getRows().size());
+    }
+
+    // ---- concept-test <-> Persona Match bridge (Phase 4, T727) -------------
+
+    @Operation(summary = "Concept fit — score a CONCEPT_TEST study's concept against each "
+            + "roster persona through the shared Block AT content-fit evaluator (reuses the "
+            + "Match report surface)")
+    @GetMapping("/{id}/concept-fit")
+    public TurResearchConceptFitDto conceptFit(@PathVariable String id,
+            @RequestParam(defaultValue = "false") boolean regenerate) {
+        if (service.get(id).isEmpty()) {
+            throw TurNotFoundException.of("Research study", id);
+        }
+        return conceptFitService.conceptFit(id, regenerate);
     }
 
     // ---- run ---------------------------------------------------------------
