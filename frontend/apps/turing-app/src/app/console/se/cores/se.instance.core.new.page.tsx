@@ -1,4 +1,5 @@
 import { ROUTES } from "@/app/routes.const";
+import { BentoFormHero } from "@/components/bento";
 import { LanguageSelect } from "@/components/language-select";
 import { StickyPageHeader } from "@/components/sticky-page-header";
 import {
@@ -21,7 +22,7 @@ import { useSubPageBreadcrumb } from "@/hooks/use-sub-page-breadcrumb";
 import { IconDatabase, IconDeviceFloppy, IconInfoCircle, IconX } from "@tabler/icons-react";
 import { GradientButton } from "@/components/ui/gradient-button";
 
-import { type ReactNode, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { useNavigate, useParams } from "react-router-dom";
@@ -44,13 +45,17 @@ function buildCoreName(name: string, locale: string, appendLocale: boolean): str
 }
 
 interface SEInstanceCoreNewPageProps {
-  /** Override the console `StickyPageHeader` title block (e.g. a `BentoHero`). */
-  header?: ReactNode;
+  /**
+   * Render inside the bento shell — the `StickyPageHeader` is replaced by a
+   * {@link BentoFormHero} (hero → sticky-save-bar morph + `←` breadcrumb) and
+   * the frosted body comes from the enclosing `SectionCardChromeProvider`.
+   */
+  chrome?: "console" | "bento";
   /** Route base for cores navigation; defaults to the console SE instance route. */
   baseRoute?: string;
 }
 
-export default function SEInstanceCoreNewPage({ header, baseRoute = ROUTES.SE_INSTANCE }: Readonly<SEInstanceCoreNewPageProps>) {
+export default function SEInstanceCoreNewPage({ chrome = "console", baseRoute = ROUTES.SE_INSTANCE }: Readonly<SEInstanceCoreNewPageProps>) {
   const { t } = useTranslation();
   const { id } = useParams() as { id: string };
   const navigate = useNavigate();
@@ -107,12 +112,24 @@ export default function SEInstanceCoreNewPage({ header, baseRoute = ROUTES.SE_IN
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 px-4 lg:px-6 pb-8">
-        {header !== undefined ? (
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            {header}
-            <div className="flex items-center gap-2">{actions}</div>
-          </div>
+      <form onSubmit={form.handleSubmit(onSubmit)} className={chrome === "bento" ? "space-y-4 md:space-y-5 pb-8" : "space-y-4 px-4 lg:px-6 pb-8"}>
+        {chrome === "bento" ? (
+          <BentoFormHero
+            backTo={coresRoute}
+            backLabel={t("se.cores.title")}
+            leading={
+              <span className="grid h-12 w-12 place-items-center rounded-2xl bg-linear-to-br from-emerald-500 to-teal-600 text-white shadow-md">
+                <IconDatabase size={24} />
+              </span>
+            }
+            title={t("se.newCore.title")}
+            subtitle={t("se.newCore.description")}
+            onCancel={() => navigate(coresRoute)}
+            loading={createCoreMutation.isPending}
+            dirty={form.formState.isDirty}
+            titleMissing={!finalCoreName}
+            stickyTitle={t("se.newCore.title")}
+          />
         ) : (
           <StickyPageHeader>
             <StickyPageHeader.Title

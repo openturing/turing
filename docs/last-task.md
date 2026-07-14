@@ -62,6 +62,7 @@ number" looked free but wasn't. Grepping three files (`ROADMAP.md`,
 
 ## Log (most recent first)
 
+- **T736 SHIPPED** (Block AX §XLVII — closed the 3 morph gaps: bento.sn.synonym.page -> BentoFormHero; se.instance.core.new swapped header prop for chrome flag rendering BentoFormHero in-form (bento.se.core.new); ai-agent.system-prompt.form static justify-end -> two-piece BentoSaveBar+BentoScrollSaveBar matching its sibling settings form; console paths unchanged; tsc clean + 52 bento tests pass) — 2026-07-13.
 - **T735 SHIPPED** (Block AX §XLVII — BentoFormHero single-component hero->sticky save-bar morph + backTo/backLabel breadcrumb; adopted in the persona editor, retiring its non-morphing console StickySaveBar on the bento branch; turing-bento-ui skill documents it) — 2026-07-13. OPENS Block AX.
 - **T735-T738 CREATED** (Block AX §XLVII — Bento header consistency: the BentoFormHero morph + back-arrow breadcrumb across own-hero bento forms; audit found 0 StickySaveBar-in-bento, 3 morph gaps (T736), ~16 missing arrows (T737), ~14 optional manual-two-piece migrations (T738)) — 2026-07-13.
 - **T734 SHIPPED** (Block AW §XLVI.5 — `turing research` CLI verb in @viglet/turing-cli mirroring `turing eval`: list/run/insights/rollup subcommands over the zero-dep TuringClient (CI exit codes), pure formatters + runResearch dispatcher unit-tested with node:test (8 cases); embed SDKs unchanged) — 2026-07-13. CLOSES Block AW (T717-T734 fully shipped).

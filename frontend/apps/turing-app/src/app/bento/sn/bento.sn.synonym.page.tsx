@@ -1,6 +1,6 @@
 import { ROUTES } from "@/app/routes.const";
 import { useDeleteSynonym, useSaveSynonym, useSynonym } from "@/api/queries/sn-synonym.queries";
-import { BentoFormSection, BentoHero, BentoSaveBar } from "@/components/bento";
+import { BentoFormHero, BentoFormSection } from "@/components/bento";
 import { GradientButton } from "@/components/ui/gradient-button";
 import { GradientSwitch } from "@/components/ui/gradient-switch";
 import { Input } from "@/components/ui/input";
@@ -149,20 +149,19 @@ export default function BentoSNSynonymPage() {
     }
   }
 
+  const heroTitle = isNew ? t("sn.synonym.newSynonym") : name || t(`sn.synonym.type.${type}`);
+
   return (
     <form onSubmit={onSubmit}>
-      <BentoHero
-        eyebrow={
-          <button type="button" onClick={() => navigate(listRoute)} className="hover:text-foreground">
-            {t("sn.synonym.title")}
-          </button>
-        }
+      <BentoFormHero
+        backTo={listRoute}
+        backLabel={t("sn.synonym.title")}
         leading={
           <span className="grid h-12 w-12 place-items-center rounded-2xl bg-linear-to-br from-emerald-500 to-teal-600 text-white shadow-sm">
             <IconArrowsShuffle size={24} />
           </span>
         }
-        title={isNew ? t("sn.synonym.newSynonym") : name || t(`sn.synonym.type.${type}`)}
+        title={heroTitle}
         subtitle={t("sn.synonym.description")}
         trailing={
           !isNew && (
@@ -172,6 +171,11 @@ export default function BentoSNSynonymPage() {
             </GradientButton>
           )
         }
+        onCancel={() => navigate(listRoute)}
+        loading={saveMutation.isPending}
+        dirty={dirty}
+        titleMissing={!valid}
+        stickyTitle={heroTitle}
       />
 
       <div className="bento-grid mx-auto grid w-full max-w-4xl gap-4 px-4 pb-32 md:px-8">
@@ -255,18 +259,6 @@ export default function BentoSNSynonymPage() {
           </div>
         </BentoFormSection>
       </div>
-
-      {dirty && (
-        <div className="bento-fade-in fixed inset-x-0 top-20 z-20 mx-auto w-full max-w-4xl px-4 md:px-8">
-          <BentoSaveBar
-            title={isNew ? t("sn.synonym.newSynonym") : name || t(`sn.synonym.type.${type}`)}
-            disabled={!valid}
-            titleMissing={!valid}
-            loading={saveMutation.isPending}
-            onCancel={() => navigate(listRoute)}
-          />
-        </div>
-      )}
     </form>
   );
 }

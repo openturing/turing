@@ -22,6 +22,7 @@ import { useNavigate } from "react-router-dom"
 import { StickyPageHeader } from "../sticky-page-header"
 import { GradientButton } from "../ui/gradient-button"
 import { SectionCard } from "../ui/section-card"
+import { BentoSaveBar, BentoScrollSaveBar } from "../bento"
 import { SystemPromptWarningsPanel } from "./system-prompt-warnings-panel"
 
 const urlBase = ROUTES.AI_AGENT_INSTANCE
@@ -123,7 +124,25 @@ export const AIAgentSystemPromptForm: React.FC<Props> = ({ value, chrome = "cons
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
           {isBento ? (
-            <div className="flex items-center justify-end gap-3">{actions}</div>
+            <>
+              {/* Two-piece hero → sticky-save-bar morph (T736): the
+                  BentoAgentSubHero supplies the hero above this form, so Save
+                  lives in a fade-out bar at the top of the body and a fixed
+                  BentoScrollSaveBar fades in as it scrolls away — matching every
+                  sibling agent sub-page (settings/LLM/tools/…). */}
+              <div className="bento-fade-out">
+                <BentoSaveBar
+                  onCancel={() => navigate(baseRoute)}
+                  loading={updateMutation.isPending}
+                  dirty={form.formState.isDirty}
+                />
+              </div>
+              <BentoScrollSaveBar
+                onCancel={() => navigate(baseRoute)}
+                loading={updateMutation.isPending}
+                dirty={form.formState.isDirty}
+              />
+            </>
           ) : (
             <StickyPageHeader>
               <StickyPageHeader.Title
