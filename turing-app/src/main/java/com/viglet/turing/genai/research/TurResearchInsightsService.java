@@ -21,6 +21,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.viglet.turing.genai.research.TurResearchSaturationScorer.Participant;
+import com.viglet.turing.genai.research.dto.TurResearchGraphDto;
 import com.viglet.turing.genai.research.dto.TurResearchPersonaLensDto;
 import com.viglet.turing.genai.research.dto.TurResearchQuoteDto;
 import com.viglet.turing.genai.research.dto.TurResearchReportDto;
@@ -120,19 +121,22 @@ public class TurResearchInsightsService {
     private final TurPersonaRepository personaRepository;
     private final TurLlmSummaryService llmSummaryService;
     private final TurResearchSaturationScorer saturationScorer;
+    private final TurResearchThemeGraphBuilder graphBuilder;
 
     public TurResearchInsightsService(TurResearchStudyRepository studyRepository,
             TurResearchStudyPersonaRepository personaJoinRepository,
             TurResearchInterviewRepository interviewRepository,
             TurPersonaRepository personaRepository,
             TurLlmSummaryService llmSummaryService,
-            TurResearchSaturationScorer saturationScorer) {
+            TurResearchSaturationScorer saturationScorer,
+            TurResearchThemeGraphBuilder graphBuilder) {
         this.studyRepository = studyRepository;
         this.personaJoinRepository = personaJoinRepository;
         this.interviewRepository = interviewRepository;
         this.personaRepository = personaRepository;
         this.llmSummaryService = llmSummaryService;
         this.saturationScorer = saturationScorer;
+        this.graphBuilder = graphBuilder;
     }
 
     // ---- T722 insights report ---------------------------------------------
@@ -183,6 +187,23 @@ public class TurResearchInsightsService {
                 .map(i -> new Participant(i.personaId(), i.personaName(), i.answersText()))
                 .toList();
         return saturationScorer.score(participants);
+    }
+
+    // ---- T724 theme / affinity graph ---------------------------------------
+
+    /**
+     * The theme/affinity graph — a deterministic re-projection of the (cached)
+     * T722 report into a persona↔theme graph. Visualization only: it adds no
+     * inference, it just reuses the synthesized report (generating it once if not
+     * already cached, then reusing the cache).
+     */
+    @Transactional(readOnly = true)
+    public TurResearchGraphDto graph(String studyId) {
+        TurResearchReportDto report = report(studyId, false);
+        if (!report.available()) {
+            return TurResearchGraphDto.unavailable(report.error());
+        }
+        return graphBuilder.build(report);
     }
 
     // ---- interview loading (roster order) ----------------------------------

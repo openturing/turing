@@ -31,6 +31,7 @@ import com.viglet.turing.genai.research.TurResearchRunEvent;
 import com.viglet.turing.genai.research.TurResearchRunResultDto;
 import com.viglet.turing.genai.research.TurResearchRunnerService;
 import com.viglet.turing.genai.research.TurResearchStudyService;
+import com.viglet.turing.genai.research.dto.TurResearchGraphDto;
 import com.viglet.turing.genai.research.dto.TurResearchInterviewDto;
 import com.viglet.turing.genai.research.dto.TurResearchReportDto;
 import com.viglet.turing.genai.research.dto.TurResearchSaturationResultDto;
@@ -159,6 +160,16 @@ public class TurResearchStudyAPI {
             throw TurNotFoundException.of("Research study", id);
         }
         return insightsService.saturation(id);
+    }
+
+    @Operation(summary = "Theme / affinity knowledge graph — persona↔theme edges "
+            + "derived from the insights report (which cohorts cluster on which pain point)")
+    @GetMapping("/{id}/graph")
+    public TurResearchGraphDto graph(@PathVariable String id) {
+        if (service.get(id).isEmpty()) {
+            throw TurNotFoundException.of("Research study", id);
+        }
+        return insightsService.graph(id);
     }
 
     // ---- run ---------------------------------------------------------------
