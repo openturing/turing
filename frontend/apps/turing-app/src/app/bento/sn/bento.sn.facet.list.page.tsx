@@ -5,7 +5,7 @@ import { SNSiteFacetDraggableList } from "@/components/sn/facet/sn.site.facet.dr
 import { GradientButtonLink } from "@viglet/viglet-design-system/router";
 import type { TurSNSiteFacetOrdering } from "@/models/sn/sn-site-facet-ordering.model";
 import { TurSNFacetedFieldService } from "@/services/sn/sn.faceted.field.service";
-import { IconFilter, IconPlus } from "@tabler/icons-react";
+import { IconArrowLeft, IconFilter, IconPlus } from "@tabler/icons-react";
 import * as React from "react";
 import { useTranslation } from "react-i18next";
 import { Link, useParams } from "react-router-dom";
@@ -29,7 +29,7 @@ export default function BentoSNFacetListPage() {
   return (
     <LoadProvider checkIsNotUndefined={tableData} error={error} tryAgainUrl={facetRoute}>
       <BentoHero
-        eyebrow={<Link to={instanceRoute} className="hover:text-foreground">{t("sn.title")}</Link>}
+        eyebrow={<Link to={instanceRoute} className="inline-flex items-center gap-1 hover:text-foreground"><IconArrowLeft size={14} aria-hidden />{t("sn.title")}</Link>}
         leading={
           <span className="grid h-12 w-12 place-items-center rounded-2xl bg-linear-to-br from-emerald-500 to-teal-600 text-white shadow-md">
             <IconFilter size={24} />

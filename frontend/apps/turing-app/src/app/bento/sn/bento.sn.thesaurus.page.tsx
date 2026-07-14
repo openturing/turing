@@ -14,7 +14,7 @@ import { GradientButton } from "@/components/ui/gradient-button";
 import { GradientSwitch } from "@/components/ui/gradient-switch";
 import { Input } from "@/components/ui/input";
 import type { TurSNSiteMicrothesaurusConfig } from "@/models/kb/thesaurus.model";
-import {
+import { IconArrowLeft,
   IconAdjustments,
   IconPlus,
   IconSitemap,
@@ -39,7 +39,7 @@ export default function BentoSNThesaurusPage() {
     <>
       <BentoHero
         eyebrow={
-          <Link to={instanceRoute} className="hover:text-foreground">
+          <Link to={instanceRoute} className="inline-flex items-center gap-1 hover:text-foreground"><IconArrowLeft size={14} aria-hidden />
             {t("sn.title")}
           </Link>
         }

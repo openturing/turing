@@ -2,7 +2,7 @@ import { ROUTES } from "@/app/routes.const";
 import SEInstanceSystemInfoPage from "@/app/console/se/system-info/se.instance.system-info.page";
 import { BentoHero } from "@/components/bento";
 import { SectionCardChromeProvider } from "@/components/ui/section-card";
-import { IconInfoCircle } from "@tabler/icons-react";
+import { IconArrowLeft, IconInfoCircle } from "@tabler/icons-react";
 import { useTranslation } from "react-i18next";
 import { Link, useParams } from "react-router-dom";
 
@@ -20,7 +20,7 @@ export default function BentoSESystemInfoPage() {
       <SEInstanceSystemInfoPage
         header={
           <BentoHero
-            eyebrow={<Link to={instanceRoute} className="hover:text-foreground">{t("se.title")}</Link>}
+            eyebrow={<Link to={instanceRoute} className="inline-flex items-center gap-1 hover:text-foreground"><IconArrowLeft size={14} aria-hidden />{t("se.title")}</Link>}
             leading={
               <span className="grid h-12 w-12 place-items-center rounded-2xl bg-linear-to-br from-emerald-500 to-teal-600 text-white shadow-md">
                 <IconInfoCircle size={24} />

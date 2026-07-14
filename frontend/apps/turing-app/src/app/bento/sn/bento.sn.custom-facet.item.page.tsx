@@ -2,7 +2,7 @@ import SNSiteCustomFacetItemPage from "@/app/console/sn/facet/sn.site.custom.fac
 import { ROUTES } from "@/app/routes.const";
 import { BentoHero } from "@/components/bento";
 import { SectionCardChromeProvider } from "@/components/ui/section-card";
-import { IconListDetails } from "@tabler/icons-react";
+import { IconArrowLeft, IconListDetails } from "@tabler/icons-react";
 import { useTranslation } from "react-i18next";
 import { Link, useParams } from "react-router-dom";
 
@@ -24,7 +24,7 @@ export default function BentoSNCustomFacetItemPage() {
         baseRoute={ROUTES.BENTO_SN_INSTANCE}
         header={
           <BentoHero
-            eyebrow={<Link to={facetRoute} className="hover:text-foreground">{t("sn.facets.title")}</Link>}
+            eyebrow={<Link to={facetRoute} className="inline-flex items-center gap-1 hover:text-foreground"><IconArrowLeft size={14} aria-hidden />{t("sn.facets.title")}</Link>}
             leading={
               <span className="grid h-12 w-12 place-items-center rounded-2xl bg-linear-to-br from-amber-500 to-orange-500 text-white shadow-md">
                 <IconListDetails size={24} />

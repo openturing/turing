@@ -1,6 +1,6 @@
 import { ROUTES } from "@/app/routes.const";
 import { BentoHero, BENTO_TONE_GRADIENTS, type BentoTone } from "@/components/bento";
-import type { Icon as TablerIcon } from "@tabler/icons-react";
+import { IconArrowLeft, type Icon as TablerIcon } from "@tabler/icons-react";
 import type { ReactNode } from "react";
 import { Link } from "react-router-dom";
 
@@ -36,7 +36,11 @@ export function BentoAgentSubHero({
   return (
     <BentoHero
       eyebrow={
-        <Link to={`${ROUTES.BENTO_AI_AGENT_INSTANCE}/${agentId}`} className="hover:text-foreground">
+        <Link
+          to={`${ROUTES.BENTO_AI_AGENT_INSTANCE}/${agentId}`}
+          className="inline-flex items-center gap-1 hover:text-foreground"
+        >
+          <IconArrowLeft size={14} aria-hidden />
           {agentTitle}
         </Link>
       }

@@ -9,7 +9,7 @@ import type { TurUser } from "@/models/auth/user";
 import { TurAdminUserService } from "@/services/auth/admin-user.service";
 import { TurAuthorizationService } from "@/services/auth/authorization.service";
 import { TurKeycloakAdminService } from "@/services/auth/keycloak-admin.service";
-import { IconUser } from "@tabler/icons-react";
+import { IconArrowLeft, IconUser } from "@tabler/icons-react";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link, useNavigate, useParams } from "react-router-dom";
@@ -87,7 +87,7 @@ export default function BentoAdminUserPage() {
 
   const hero = (title: string, subtitle: string) => (
     <BentoHero
-      eyebrow={<Link to={ROUTES.BENTO_ADMIN_USERS} className="hover:text-foreground">{t("admin.users.title")}</Link>}
+      eyebrow={<Link to={ROUTES.BENTO_ADMIN_USERS} className="inline-flex items-center gap-1 hover:text-foreground"><IconArrowLeft size={14} aria-hidden />{t("admin.users.title")}</Link>}
       leading={
         <span className="grid h-12 w-12 place-items-center rounded-2xl bg-linear-to-br from-slate-600 to-slate-700 text-white shadow-md">
           <IconUser size={24} />

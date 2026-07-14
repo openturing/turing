@@ -9,7 +9,7 @@ import type { TurKeycloakGroup } from "@/models/auth/keycloak-group";
 import { TurAuthorizationService } from "@/services/auth/authorization.service";
 import { TurGroupService } from "@/services/auth/group.service";
 import { TurKeycloakAdminService } from "@/services/auth/keycloak-admin.service";
-import { IconUsersGroup } from "@tabler/icons-react";
+import { IconArrowLeft, IconUsersGroup } from "@tabler/icons-react";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link, useNavigate, useParams } from "react-router-dom";
@@ -87,7 +87,7 @@ export default function BentoAdminGroupPage() {
 
   const hero = (title: string, subtitle: string) => (
     <BentoHero
-      eyebrow={<Link to={ROUTES.BENTO_ADMIN_GROUPS} className="hover:text-foreground">{t("admin.groups.title")}</Link>}
+      eyebrow={<Link to={ROUTES.BENTO_ADMIN_GROUPS} className="inline-flex items-center gap-1 hover:text-foreground"><IconArrowLeft size={14} aria-hidden />{t("admin.groups.title")}</Link>}
       leading={
         <span className="grid h-12 w-12 place-items-center rounded-2xl bg-linear-to-br from-slate-600 to-slate-700 text-white shadow-md">
           <IconUsersGroup size={24} />

@@ -13,6 +13,7 @@ import type { TurPersonaSuggestionReport } from "@/models/persona/persona-sugges
 import { TurPersonaSuggestionService } from "@/services/persona/persona-suggestion.service";
 import {
   IconAlertTriangle,
+  IconArrowLeft,
   IconRefresh,
   IconSparkles,
   IconTargetArrow,
@@ -84,7 +85,8 @@ export default function BentoPersonaSuggestPage() {
     <>
       <BentoHero
         eyebrow={
-          <Link to={ROUTES.BENTO_PERSONA_INSTANCE} className="hover:text-foreground">
+          <Link to={ROUTES.BENTO_PERSONA_INSTANCE} className="inline-flex items-center gap-1 hover:text-foreground">
+            <IconArrowLeft size={14} aria-hidden />
             {t("persona.title")}
           </Link>
         }

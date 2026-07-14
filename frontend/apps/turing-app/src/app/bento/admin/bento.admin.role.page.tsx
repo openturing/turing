@@ -5,7 +5,7 @@ import { LoadProvider } from "@/components/loading-provider";
 import { SectionCardChromeProvider } from "@/components/ui/section-card";
 import type { TurRole } from "@/models/auth/role";
 import { TurRoleService } from "@/services/auth/role.service";
-import { IconUserShield } from "@tabler/icons-react";
+import { IconArrowLeft, IconUserShield } from "@tabler/icons-react";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link, useParams } from "react-router-dom";
@@ -47,7 +47,7 @@ export default function BentoAdminRolePage() {
             listRoute={ROUTES.BENTO_ADMIN_ROLES}
             header={
               <BentoHero
-                eyebrow={<Link to={ROUTES.BENTO_ADMIN_ROLES} className="hover:text-foreground">{t("admin.roles.title")}</Link>}
+                eyebrow={<Link to={ROUTES.BENTO_ADMIN_ROLES} className="inline-flex items-center gap-1 hover:text-foreground"><IconArrowLeft size={14} aria-hidden />{t("admin.roles.title")}</Link>}
                 leading={
                   <span className="grid h-12 w-12 place-items-center rounded-2xl bg-linear-to-br from-slate-600 to-slate-700 text-white shadow-md">
                     <IconUserShield size={24} />

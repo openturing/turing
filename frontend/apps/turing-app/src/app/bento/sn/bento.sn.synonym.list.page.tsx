@@ -10,7 +10,7 @@ import { BentoEntityTile, BentoListPage } from "@/components/bento";
 import { GradientButton } from "@/components/ui/gradient-button";
 import { Input } from "@/components/ui/input";
 import type { TurSNSynonym } from "@/models/sn/sn-site-synonym.model";
-import { IconArrowsShuffle, IconDownload, IconRocket, IconSparkles } from "@tabler/icons-react";
+import { IconArrowLeft, IconArrowsShuffle, IconDownload, IconRocket, IconSparkles } from "@tabler/icons-react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link, useParams } from "react-router-dom";
@@ -147,7 +147,7 @@ export default function BentoSNSynonymListPage() {
       items={items}
       error={error}
       tryAgainUrl={sectionRoute}
-      eyebrow={<Link to={instanceRoute} className="hover:text-foreground">{t("sn.title")}</Link>}
+      eyebrow={<Link to={instanceRoute} className="inline-flex items-center gap-1 hover:text-foreground"><IconArrowLeft size={14} aria-hidden />{t("sn.title")}</Link>}
       heroIcon={IconArrowsShuffle}
       tone="emerald"
       title={t("sn.synonym.title")}

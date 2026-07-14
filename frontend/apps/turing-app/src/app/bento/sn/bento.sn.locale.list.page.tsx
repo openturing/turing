@@ -7,7 +7,7 @@ import { GradientButtonLink } from "@viglet/viglet-design-system/router";
 import type { TurSNSiteLocale } from "@/models/sn/sn-site-locale.model.ts";
 import { TurSNSiteLocaleService } from "@/services/sn/sn.site.locale.service";
 import { TurFeaturesService } from "@/services/system/features.service";
-import { IconLanguage, IconPlus } from "@tabler/icons-react";
+import { IconArrowLeft, IconLanguage, IconPlus } from "@tabler/icons-react";
 import * as React from "react";
 import { useTranslation } from "react-i18next";
 import { Link, useParams } from "react-router-dom";
@@ -34,7 +34,7 @@ export default function BentoSNLocaleListPage() {
   return (
     <LoadProvider checkIsNotUndefined={data} error={error} tryAgainUrl={localeRoute}>
       <BentoHero
-        eyebrow={<Link to={instanceRoute} className="hover:text-foreground">{t("sn.title")}</Link>}
+        eyebrow={<Link to={instanceRoute} className="inline-flex items-center gap-1 hover:text-foreground"><IconArrowLeft size={14} aria-hidden />{t("sn.title")}</Link>}
         leading={
           <span className="grid h-12 w-12 place-items-center rounded-2xl bg-linear-to-br from-emerald-500 to-teal-600 text-white shadow-md">
             <IconLanguage size={24} />

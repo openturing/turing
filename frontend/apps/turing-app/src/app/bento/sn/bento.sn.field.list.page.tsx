@@ -10,7 +10,7 @@ import { GradientButtonLink } from "@viglet/viglet-design-system/router";
 import type { TurSNStatusFields } from "@/models/sn/sn-field-status.model";
 import type { TurSNSiteField } from "@/models/sn/sn-site-field.model.ts";
 import { TurSNFieldService } from "@/services/sn/sn.field.service";
-import { IconAlignBoxCenterStretch, IconPlus, IconSparkles } from "@tabler/icons-react";
+import { IconArrowLeft, IconAlignBoxCenterStretch, IconPlus, IconSparkles } from "@tabler/icons-react";
 import { useTranslation } from "react-i18next";
 import { Link, useParams } from "react-router-dom";
 
@@ -58,7 +58,7 @@ export default function BentoSNFieldListPage() {
       {data && statusFields && (
         <>
           <BentoHero
-            eyebrow={<Link to={instanceRoute} className="hover:text-foreground">{t("sn.title")}</Link>}
+            eyebrow={<Link to={instanceRoute} className="inline-flex items-center gap-1 hover:text-foreground"><IconArrowLeft size={14} aria-hidden />{t("sn.title")}</Link>}
             leading={
               <span className="grid h-12 w-12 place-items-center rounded-2xl bg-linear-to-br from-emerald-500 to-teal-600 text-white shadow-md">
                 <IconAlignBoxCenterStretch size={24} />

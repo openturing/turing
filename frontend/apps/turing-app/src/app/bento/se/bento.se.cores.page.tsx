@@ -1,7 +1,7 @@
 import { ROUTES } from "@/app/routes.const";
 import SEInstanceCoresPage from "@/app/console/se/cores/se.instance.cores.page";
 import { BentoHero } from "@/components/bento";
-import { IconDatabase } from "@tabler/icons-react";
+import { IconArrowLeft, IconDatabase } from "@tabler/icons-react";
 import { useTranslation } from "react-i18next";
 import { Link, useParams } from "react-router-dom";
 
@@ -20,7 +20,7 @@ export default function BentoSECoresPage() {
       baseRoute={ROUTES.BENTO_SE_INSTANCE}
       header={
         <BentoHero
-          eyebrow={<Link to={instanceRoute} className="hover:text-foreground">{t("se.title")}</Link>}
+          eyebrow={<Link to={instanceRoute} className="inline-flex items-center gap-1 hover:text-foreground"><IconArrowLeft size={14} aria-hidden />{t("se.title")}</Link>}
           leading={
             <span className="grid h-12 w-12 place-items-center rounded-2xl bg-linear-to-br from-emerald-500 to-teal-600 text-white shadow-md">
               <IconDatabase size={24} />
