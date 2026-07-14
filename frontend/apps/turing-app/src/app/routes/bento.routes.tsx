@@ -72,6 +72,8 @@ const BentoPersonaMatchWorkspacePage = lazy(() => import("../bento/persona/match
 // Block AW (T730) — Synthetic User Research: cohort interview studies.
 const BentoPersonaResearchListPage = lazy(() => import("../bento/persona/research/bento.persona.research.list.page"));
 const BentoPersonaResearchWorkspacePage = lazy(() => import("../bento/persona/research/bento.persona.research.workspace.page"));
+// Block AW (T731) — audience cohort synthesis from a one-paragraph brief.
+const BentoPersonaCohortPage = lazy(() => import("../bento/persona/cohort/bento.persona.cohort.page"));
 // Block AG follow-up (T619) — auto-suggest best-fit persona for content (T471).
 const BentoPersonaSuggestPage = lazy(() => import("../bento/persona/bento.persona.suggest.page"));
 const BentoGitPage = lazy(() => import("../bento/git/bento.git.page"));
@@ -259,6 +261,8 @@ export const BentoRoutes = (
         No separate `/new` route: `/research/new` matches `:studyId="new"`. */}
     <Route path="persona/research" element={<BentoPersonaResearchListPage />} />
     <Route path="persona/research/:studyId" element={<BentoPersonaResearchWorkspacePage />} />
+    {/* Block AW (T731) — audience cohort synthesis from a one-paragraph brief. */}
+    <Route path="persona/cohort" element={<BentoPersonaCohortPage />} />
     {/* Block AG follow-up (T619) — GLOBAL auto-suggest best-fit persona for content. */}
     <Route path="persona/suggest" element={<BentoPersonaSuggestPage />} />
     <Route path="persona/instance" element={<BentoPersonaListPage />} />

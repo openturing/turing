@@ -294,6 +294,7 @@
       "audienceTitle": "Público",
       "audienceDesc": "Selecione as personas a entrevistar, em ordem. Cada uma é entrevistada de forma independente sobre o protocolo acima.",
       "noPersonas": "Nenhuma persona cadastrada ainda.",
+      "synthesizeCohort": "Sintetizar coorte",
       "feedTitle": "Entrevistas",
       "feedDesc": "Execute a coorte e veja cada transcrição chegar ao vivo. Expanda uma entrevista para ler suas perguntas e respostas.",
       "saveToRun": "Salve suas alterações antes de executar as entrevistas.",
@@ -359,6 +360,32 @@
         "RUNNING": "Em execução",
         "COMPLETED": "Concluída",
         "FAILED": "Falhou"
+      }
+    },
+    "cohort": {
+      "back": "Pesquisa Sintética",
+      "title": "Síntese de coorte de público",
+      "subtitle": "Descreva um público em um parágrafo e gere um conjunto diverso de rascunhos de persona — distribuídos pelos Cinco Grandes — prontos para revisar, manter e entrevistar.",
+      "briefTitle": "Brief do público",
+      "briefDesc": "Um parágrafo de dados demográficos + psicográficos. A coorte é rascunhada para cobrir uma faixa real de temperamentos, não clones.",
+      "briefLabel": "Brief",
+      "briefPlaceholder": "ex.: Gerentes de marketing de mercado intermediário no Brasil avaliando uma nova ferramenta de analytics — sem tempo, céticos quanto a hype, profundidade técnica variada.",
+      "countLabel": "Personas",
+      "synthesize": "Sintetizar coorte",
+      "regenerate": "Regenerar",
+      "neverSaved": "Os rascunhos nunca são salvos automaticamente — mantenha os que quiser e refine-os no formulário de persona.",
+      "failed": "Não foi possível sintetizar a coorte. Verifique se há um LLM padrão configurado.",
+      "reviewTitle": "Personas rascunhadas",
+      "reviewDesc": "Mantenha um rascunho para abri-lo no formulário de persona (editar + salvar), ou descarte-o.",
+      "allDiscarded": "Todos os rascunhos descartados. Ajuste o brief e sintetize novamente.",
+      "keep": "Manter e editar",
+      "discard": "Descartar",
+      "facet": {
+        "openness": "Abertura",
+        "conscientiousness": "Conscienciosidade",
+        "extraversion": "Extroversão",
+        "agreeableness": "Amabilidade",
+        "neuroticism": "Neuroticismo"
       }
     },
     "dialogueProject": {

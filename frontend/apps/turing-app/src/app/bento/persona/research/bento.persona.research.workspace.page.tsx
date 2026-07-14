@@ -45,6 +45,7 @@ import {
   IconPlus,
   IconRobot,
   IconSettings,
+  IconSparkles,
   IconTrash,
   IconUserCircle,
   IconUsersGroup,
@@ -520,7 +521,17 @@ function StudyWorkspace({ studyId }: Readonly<{ studyId: string }>) {
           tone="rose"
           title={t("persona.research.audienceTitle")}
           description={t("persona.research.audienceDesc")}
-          trailing={<Badge variant="secondary">{personas.length}</Badge>}
+          trailing={
+            <div className="flex items-center gap-2">
+              <Button asChild variant="outline" size="sm" className="gap-1.5">
+                <Link to={ROUTES.BENTO_PERSONA_COHORT}>
+                  <IconSparkles className="size-4" />
+                  {t("persona.research.synthesizeCohort")}
+                </Link>
+              </Button>
+              <Badge variant="secondary">{personas.length}</Badge>
+            </div>
+          }
         >
           <PersonaSelectGrid
             ordered

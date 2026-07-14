@@ -294,6 +294,7 @@
       "audienceTitle": "Audience",
       "audienceDesc": "Select the personas to interview, in order. Each is interviewed independently over the protocol above.",
       "noPersonas": "No personas registered yet.",
+      "synthesizeCohort": "Synthesize cohort",
       "feedTitle": "Interviews",
       "feedDesc": "Run the cohort and watch each transcript land live. Expand an interview to read its questions and answers.",
       "saveToRun": "Save your changes before running the interviews.",
@@ -359,6 +360,32 @@
         "RUNNING": "Running",
         "COMPLETED": "Completed",
         "FAILED": "Failed"
+      }
+    },
+    "cohort": {
+      "back": "Synthetic Research",
+      "title": "Audience cohort synthesis",
+      "subtitle": "Describe an audience in a paragraph and generate a diverse set of persona drafts — spread across the Big Five — ready to review, keep and interview.",
+      "briefTitle": "Audience brief",
+      "briefDesc": "One paragraph of demographics + psychographics. The cohort is drafted to span a real range of temperaments, not clones.",
+      "briefLabel": "Brief",
+      "briefPlaceholder": "e.g. Mid-market marketing managers in Brazil evaluating a new analytics tool — time-pressed, skeptical of hype, mixed technical depth.",
+      "countLabel": "Personas",
+      "synthesize": "Synthesize cohort",
+      "regenerate": "Regenerate",
+      "neverSaved": "Drafts are never saved automatically — keep the ones you want and refine them in the persona form.",
+      "failed": "Could not synthesize the cohort. Check that a default LLM is configured.",
+      "reviewTitle": "Drafted personas",
+      "reviewDesc": "Keep a draft to open it in the persona form (edit + save), or discard it.",
+      "allDiscarded": "All drafts discarded. Adjust the brief and synthesize again.",
+      "keep": "Keep & edit",
+      "discard": "Discard",
+      "facet": {
+        "openness": "Openness",
+        "conscientiousness": "Conscientiousness",
+        "extraversion": "Extraversion",
+        "agreeableness": "Agreeableness",
+        "neuroticism": "Neuroticism"
       }
     },
     "dialogueProject": {
