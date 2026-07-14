@@ -120,62 +120,6 @@
 - 💭 **T713** (deps: T709, T710, T712) **Deprecate embedded href/link fields behind the format flag** — once both SDKs are POST-native, mark `link`/`href`/`cleanUpFacets`/spell-check `link` legacy (kept for no-JS/HTML/SEO/deep-linking) and drop the query-string round-trip helpers from the SDKs. → §XLV
 - 💭 **T714** (deps: T709, T710) **Docs + showcase + EDS POST-native** — update `rest-api.md`/`javascript-sdk.md`, the Atlas Store showcase and the EDS example blocks to the POST-native flow. → §XLV
 
-## Block AW — Synthetic User Research: persona studies, interviews & continuous insight (§XLVI)
-
-> Matures the persona surface from *acting on one persona at a time* (chat, Match,
-> Dialogue) into a **research method**: run structured interviews with a cohort of
-> synthetic users, synthesize an insights report with saturation scoring, and feed
-> the findings back into the product. Benchmarked against **synth.users** (Synthetic
-> Users): audience definition → dynamic/custom/concept-test interviews → multi-agent
-> OCEAN-profiled participants → RAG-grounded answers → thematic insights report +
-> saturation scoring → continuous validation + a multi-study planner (PRISMA).
->
-> **The value is the interconnection, not a clone.** Turing already owns every half
-> that synth.users has to fake: a persona model (`TurPersona`, SPEAKER/AUDIENCE/BOTH
-> since Block AA), a grounded RAG/SN retrieval stack, a real agent runtime under
-> test, an evaluation platform (Block AJ), an analytics stack (sentiment trajectory
-> T87), a scheduler + project pattern (Persona Match / Dialogue), an LLM-lane router
-> (T517), cached LLM synthesis (`TurLlmSummaryService`), and persona synthesis from
-> audio (Block AS). This block is thin composition over those primitives — a study
-> aggregate + an interview engine + a synthesizer + the bridges that make the panel
-> pay for itself (interview your **own** deployed agent; promote transcripts into
-> eval datasets). Reuses the Persona Match aggregate/scheduler/studio shape (Block
-> AT) and the persona-chat executor (T578) unchanged where possible. All opt-in;
-> default persona/agent behavior is untouched. Design in
-> [IMPROVEMENTS.md](IMPROVEMENTS.md) §XLVI.
-
-> **Frontend & SDK scope.** Per the "explicit UI per task" decision, every task
-> below carries its own **UI:** clause (the visible surface it must ship), with
-> `/bento/persona/research` (T730) as the studio hub. **SDK stance:** the embed JS
-> SDKs (`@viglet/turing-sdk` / `@viglet/turing-react-sdk`) are customer-facing
-> (search/chat) — synthetic research is an **admin/research tool**, so most tasks
-> are *not* SDK work. The only embed-SDK touch is OCEAN metadata on the existing
-> persona surface (T717); the programmatic/developer surface for running studies is
-> a **CLI** concern (T734), consistent with `turing eval`.
-
-**Phase 1 — persona depth — ✅ shipped (T717 OCEAN facet, T718 RAG grounding; see CHANGELOG Block AW).**
-
-**Phase 2 — the study model — ✅ shipped (T719 study aggregate + CRUD/API, T720 interview engine, T721 N-persona runner + SSE; see CHANGELOG Block AW).**
-
-**Phase 3 — synthesis & sufficiency — ✅ shipped (T722 insights report, T723 saturation scoring, T724 theme/affinity graph; see CHANGELOG Block AW).**
-- ✅ **T722** (deps: T721) **Insights report — themes + verbatim quotes + recommendations** — synthesize transcripts through `TurLlmSummaryService` (cached, regenerable) into an executive summary, ranked themes with **verbatim participant quotes** (traceable to the interview + persona), and recommendations; bidirectional lenses (*by theme* / *by persona*). **UI:** none of its own — the report renderer + lens toggle + regenerate button ship in T730. → §XLVI.3
-- ✅ **T723** (deps: T721) **Saturation scoring (deterministic, CI-free)** — a pure novelty scorer (embedding/keyword theme-overlap, T385/T466 pattern — no LLM in CI) that flags when marginal personas stop adding new themes → "sample adequate at N", the honest antidote to fabricated-confidence synthetic research. **UI:** the saturation gauge/curve is part of the studio (T730). → §XLVI.3
-- ✅ **T724** (deps: T722) **Theme / affinity knowledge graph** — a concept↔problem↔persona graph over the synthesized themes (which cohorts cluster on which pain point). Pure, LLM-free re-projection of the T722 report into a persona↔theme bipartite graph (no new inference). **UI:** interactive graph view in the studio, rendered with the existing viz stack. → §XLVI.3
-
-**Phase 4 — interconnection (the value multiplier over synth.users):**
-- ✅ **T725** (deps: T721, T722) **Studies → Block AJ eval datasets/graders bridge** — promote interview transcripts + synthesized findings into a `TurEvalDataset` (T595) and expose the persona panel as a reusable **agent-QA harness**: a study becomes a repeatable eval that regression-tests an agent against a synthetic audience. **UI:** a "promote to dataset / run as eval" action in the studio that deep-links into the existing Eval Studio (`/bento/eval`) — no new eval UI. → §XLVI.4
-- ✅ **T726** (deps: T720) **Interview your *own* deployed agent** — a study target can be a live `TurAIAgent` (its real flow/tools/RAG) instead of a bare LLM, so synthetic users UX-test / red-team the actual shipped agent. Uniquely Turing's, because it owns both the research panel *and* the agent under test. **UI:** a target selector (Default LLM ↔ pick an agent) in the study config within the studio. → §XLVI.4
-- ✅ **T727** (deps: T719) **Concept-testing bridge onto Persona Match** — a `CONCEPT_TEST` study over a piece of content is content-fit's sibling; route it through `TurPersonaContentFitEvaluator` (Block AT) so concept feedback and fit scoring share one evaluator. **UI:** reuses the Match report surface (no new UI). → §XLVI.4
-- ✅ **T728** (deps: T721, T722) **Multi-model per-stage lanes ("Big Shuffle")** — let a study assign different LLM instances per stage (fast model to interview, a stronger model to synthesize) reusing the T517 model-lane seam, so no single model's bias colors the whole study. Saturation is LLM-free, so it has no lane. **UI:** per-stage LLM-instance pickers in the study config (studio), reusing the existing LLM-instance combobox. → §XLVI.4
-- ✅ **T729** (deps: T721, T722) **Continuous Insight — scheduled re-runs + insight drift** — re-run a study on a MANUAL/DAILY/WEEKLY cadence (reuse the Persona Match scheduler + ShedLock) and surface how themes/saturation move over time (deterministic snapshots; T87 sentiment trajectory a future extension), turning one-shot research into continuous validation. **UI:** schedule control + a drift/trend chart in the studio, reusing the Persona Match schedule UX + recharts. → §XLVI.4
-
-**Phase 5 — authoring, the studio & the developer surface:**
-- ✅ **T730** (deps: T721, T722) **Bento Research Studio (the frontend hub)** — `/bento/persona/research` project mosaic + `:studyId` workspace: audience picker (shared `PersonaSelectGrid`), protocol editor, live SSE interview feed, report lenses, saturation gauge, PDF export — the Persona Match / Dialogue studio pattern. Renders the surfaces that Phases 2–4 deliberately left headless. → §XLVI.5
-- ✅ **T731** (deps: T717) **Audience cohort synthesis** — generate a *diverse* persona cohort from a one-paragraph audience brief (demographics + psychographics → N personas with spread OCEAN facets), reusing the AI-authoring strict-schema path (T426) + persona-from-audio drafting (T470); never auto-saved. **UI:** brief input + a review grid of the drafted personas (edit/keep/discard) opening the existing persona review form. → §XLVI.5
-- ✅ **T732** (deps: T730, T731) **Research Assistant (guided authoring)** — a conversational guide that helps define the audience + goal + protocol up front and offers to synthesize on completion (synth.users' Research Assistant), built on AI Authoring; skippable. **UI:** a chat-style setup drawer/step in the studio create flow. → §XLVI.5
-- ✅ **T733** (deps: T730) **Multi-study planner + cross-study rollup (PRISMA)** — one surface to design/run several studies across different audiences and roll their insights up into a program-level view. **UI:** a planner board + a program rollup page under `/bento/persona/research`. → §XLVI.5
-- ✅ **T734** (deps: T721, T722, T725) **Developer surface — `turing research` CLI (+ optional client)** — a `@viglet/turing-cli` verb (mirroring `turing eval`) to define/run a study and fetch its insights from code/CI, plus an optional thin programmatic client; the customer-facing **embed** SDKs stay unchanged beyond the T717 OCEAN metadata. → §XLVI.5
-
 ## Block AX — Bento header consistency: the `BentoFormHero` morph everywhere (§XLVII)
 
 > Every bento **detail form** should present the same header the LLM-instance page
@@ -185,14 +129,12 @@
 > `BentoEntityShell`; own-hero form pages (persona editor, AI-agent sub-sections,
 > SN forms) historically hand-wired it — or, in a few cases, shipped a static
 > non-morphing save row. This block makes the own-hero pattern a **single drop-in**
-> (`BentoFormHero`) and applies it. A read-only audit
-> (`scratchpad/bento-header-audit.md`) found **zero** broken `StickySaveBar`-in-bento
-> cases, 3 real morph gaps, and ~16 heroes missing the arrow. All cosmetic/structural,
-> no behavior change. Design in [IMPROVEMENTS.md](IMPROVEMENTS.md) §XLVII.
+> (`BentoFormHero`) and applies it. Design in [IMPROVEMENTS.md](IMPROVEMENTS.md) §XLVII.
 
-- ✅ **T735** **`BentoFormHero` single-component morph + `backTo` breadcrumb** — a drop-in that wraps `BentoHero` (fade-out Save/Cancel in `trailing`) + `BentoScrollSaveBar`, plus `backTo`/`backLabel` props that render the `←` breadcrumb like `BentoEntityShell`. Adopted in the persona editor (retires its non-morphing console `StickySaveBar` on the bento branch); `turing-bento-ui` skill documents it. → CHANGELOG Block AX / §XLVII
-- ✅ **T736** (deps: T735) **Close the 3 morph gaps** — routed the bento forms that showed a static (non-fading) Save row through the morph: `bento.sn.synonym.page.tsx` (lone floating bar → `BentoFormHero`), `bento.se.core.new` (reused `se.instance.core.new` swapped its `header` prop for a `chrome` flag rendering `BentoFormHero` in-form), and `ai-agent.system-prompt.form.tsx` (static `justify-end` → the two-piece `BentoSaveBar` + `BentoScrollSaveBar` its sibling `ai-agent.settings.form` uses, since the shared `BentoAgentSubHero` owns the hero). Cosmetic only; console paths unchanged. → CHANGELOG Block AX / §XLVII
-- ✅ **T737** (deps: T735) **Back-arrow breadcrumb across own-hero bento forms** — added the `←` affordance systematically to every back-link eyebrow the §XLVII audit flagged (~16) + `bento.persona.suggest`: one edit to the shared `bento.ai-agent.sub-hero.tsx` (all agent sub-pages) and one to `bento.sn.section-list.tsx` (all 5 SN section lists), plus SN custom-facet.item/field.coverage/facet.list/field.list/insights/locale.list/synonym.list/top-terms/thesaurus, admin user/group/role, se cores/system-info, store collection-import/system-info. (`bento.se.core.new` + the synonym editor got theirs from T736 `BentoFormHero.backTo`.) Additive/cosmetic. → CHANGELOG Block AX / §XLVII
+> **T735–T737 shipped** (see CHANGELOG Block AX) — the `BentoFormHero` drop-in +
+> `backTo` breadcrumb, the 3 morph gaps closed, and the `←` back-arrow applied
+> across every own-hero surface. Only the speculative collapse remains:
+
 - 💭 **T738** (deps: T735) **Collapse the working manual-two-piece forms onto `BentoFormHero`** — the ~14 forms that already morph correctly by hand (11 SN forms + `ai-agent.settings.form` + `bento.global-settings` + `sn.site.custom.facet.item`) could drop their `bento-fade-out BentoSaveBar` + `BentoScrollSaveBar` boilerplate for the single component, so there is one canonical own-hero pattern. **Assessment (2026-07-13, deferred):** *not* the pure no-op it looks like. These forms render the hero as a **separate row** (`{header}` / shared `BentoAgentSubHero`) with the save bar **below** it in the body; `BentoFormHero` puts Save **inside** the hero `trailing`, so collapsing them would (1) **visibly** relocate Save into the hero — contradicting the "no visible change" premise — and (2) require the page↔form hero contract to move into each form. Worse, several (e.g. `sn.site.custom.facet.item`) save **imperatively** via `actions=` onClick, but `BentoFormHero` hardcodes `type="submit"` Save/Cancel — so it can't be dropped in without first extending its API to accept custom `actions`. Prereq if revived: add an `actions?` escape hatch to `BentoFormHero` and accept the layout change (or keep the two-piece as the sanctioned pattern for page-supplied heroes). → §XLVII
 
 ## Non-goals (do NOT add as tasks)
