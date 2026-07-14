@@ -25,6 +25,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.viglet.turing.api.exception.TurNotFoundException;
+import com.viglet.turing.genai.research.TurResearchEvalBridgeService;
 import com.viglet.turing.genai.research.TurResearchEventBus;
 import com.viglet.turing.genai.research.TurResearchInsightsService;
 import com.viglet.turing.genai.research.TurResearchRunEvent;
@@ -37,6 +38,8 @@ import com.viglet.turing.genai.research.dto.TurResearchReportDto;
 import com.viglet.turing.genai.research.dto.TurResearchSaturationResultDto;
 import com.viglet.turing.genai.research.dto.TurResearchStudyDto;
 import com.viglet.turing.genai.research.dto.TurResearchStudyPersonaRefDto;
+import com.viglet.turing.persistence.dto.agent.TurEvalDatasetDto;
+import com.viglet.turing.persistence.model.agent.TurEvalDataset;
 import com.viglet.turing.tenant.TurTenantContext;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -67,17 +70,20 @@ public class TurResearchStudyAPI {
     private final TurResearchStudyService service;
     private final TurResearchRunnerService runnerService;
     private final TurResearchInsightsService insightsService;
+    private final TurResearchEvalBridgeService evalBridgeService;
     private final TurResearchEventBus eventBus;
     private final TurTenantContext tenantContext;
 
     public TurResearchStudyAPI(TurResearchStudyService service,
             TurResearchRunnerService runnerService,
             TurResearchInsightsService insightsService,
+            TurResearchEvalBridgeService evalBridgeService,
             TurResearchEventBus eventBus,
             TurTenantContext tenantContext) {
         this.service = service;
         this.runnerService = runnerService;
         this.insightsService = insightsService;
+        this.evalBridgeService = evalBridgeService;
         this.eventBus = eventBus;
         this.tenantContext = tenantContext;
     }
@@ -170,6 +176,20 @@ public class TurResearchStudyAPI {
             throw TurNotFoundException.of("Research study", id);
         }
         return insightsService.graph(id);
+    }
+
+    // ---- studies -> eval bridge (Phase 4, T725) ----------------------------
+
+    @Operation(summary = "Promote the study's completed interviews into a reusable eval "
+            + "dataset (agent-QA harness); the studio deep-links the returned id into /bento/eval")
+    @PostMapping("/{id}/promote-to-dataset")
+    public TurEvalDatasetDto promoteToDataset(@PathVariable String id,
+            @RequestParam(required = false) String name) {
+        if (service.get(id).isEmpty()) {
+            throw TurNotFoundException.of("Research study", id);
+        }
+        TurEvalDataset dataset = evalBridgeService.promoteToDataset(id, name);
+        return TurEvalDatasetDto.summary(dataset, dataset.getRows().size());
     }
 
     // ---- run ---------------------------------------------------------------

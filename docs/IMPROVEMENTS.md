@@ -2441,10 +2441,6 @@ the actual product differentiation lives.
 This is the part a dedicated research SaaS **cannot** do, because it does not own an
 agent runtime or an eval platform:
 
-- **T725 — studies → eval datasets.** Promote transcripts + findings into a
-  `TurEvalDataset` (T595) and expose the cohort as a reusable **agent-QA harness**: a
-  study becomes a repeatable regression test of an agent against a synthetic
-  audience. The research panel stops being a one-shot report and becomes CI.
 - **T726 — interview your own deployed agent.** Point a study at a live `TurAIAgent`
   (its real flow, tools, RAG) rather than a bare LLM, so synthetic users UX-test and
   red-team the *actual shipped assistant*. This is the flagship of the block: it only
