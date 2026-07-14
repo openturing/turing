@@ -23,6 +23,8 @@
       "validateContent": "Validar conteúdo",
       "audienceOnly": "Disponível para personas de audiência",
       "personaDialogue": "Diálogo entre personas",
+      "personaMatch": "Persona Match",
+      "personaResearch": "Pesquisa sintética",
       "soon": "Em breve"
     },
     "validate": {
@@ -142,6 +144,7 @@
       "subtitle": "Agrupe conteúdos e personas em projetos e veja, numa matriz, o que cada conteúdo serve para cada persona — e vice-versa. A análise roda de tempos em tempos e reajusta os dois lados.",
       "personas": "Personas",
       "dialogue": "Diálogo entre personas",
+      "research": "Pesquisa sintética",
       "newLabel": "Novo projeto de análise",
       "newSubtitle": "Conteúdos + personas → matriz de fit",
       "emptyTitle": "Nenhum projeto de análise ainda",
@@ -393,6 +396,7 @@
       "subtitle": "Salve projetos de diálogo — um tema e um elenco de personas — e veja-as conversarem, turno a turno. Reabra e rode novamente qualquer projeto.",
       "personas": "Personas",
       "match": "Persona Match",
+      "research": "Pesquisa sintética",
       "connectionResource": "Diálogo entre personas",
       "newLabel": "Novo projeto de diálogo",
       "newSubtitle": "Tema + personas → conversa ao vivo",

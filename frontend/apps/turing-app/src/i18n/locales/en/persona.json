@@ -23,6 +23,8 @@
       "validateContent": "Validate content",
       "audienceOnly": "Available for audience personas",
       "personaDialogue": "Persona dialogue",
+      "personaMatch": "Persona Match",
+      "personaResearch": "Synthetic research",
       "soon": "Soon"
     },
     "validate": {
@@ -142,6 +144,7 @@
       "subtitle": "Group contents and personas into projects and see, in a matrix, what each content serves each persona for — and vice versa. The analysis runs periodically and re-tunes both sides.",
       "personas": "Personas",
       "dialogue": "Persona dialogue",
+      "research": "Synthetic research",
       "newLabel": "New analysis project",
       "newSubtitle": "Contents + personas -> fit matrix",
       "emptyTitle": "No analysis project yet",
@@ -393,6 +396,7 @@
       "subtitle": "Save dialogue projects — a topic and a roster of speaker personas — and watch them talk it through, turn by turn. Re-open and re-run any project.",
       "personas": "Personas",
       "match": "Persona Match",
+      "research": "Synthetic research",
       "connectionResource": "Persona dialogue",
       "newLabel": "New dialogue project",
       "newSubtitle": "Topic + speakers → live conversation",
