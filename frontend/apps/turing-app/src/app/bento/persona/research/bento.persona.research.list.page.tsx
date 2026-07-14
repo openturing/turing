@@ -38,11 +38,8 @@ export default function BentoPersonaResearchListPage() {
       items={studies}
       error={error}
       tryAgainUrl={ROUTES.BENTO_PERSONA_RESEARCH}
-      eyebrow={
-        <Link to={ROUTES.BENTO_PERSONA_INSTANCE} className="hover:text-foreground">
-          {t("persona.research.personas")}
-        </Link>
-      }
+      backTo={ROUTES.BENTO_PERSONA_INSTANCE}
+      backLabel={t("persona.research.personas")}
       heroIcon={IconUsersGroup}
       tone="violet"
       title={t("persona.research.title")}

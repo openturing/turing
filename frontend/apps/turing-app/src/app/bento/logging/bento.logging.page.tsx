@@ -52,7 +52,8 @@ export default function BentoLoggingPage() {
   return (
     <>
       <BentoHero
-        eyebrow={t("home.sections.management.label")}
+        backTo={ROUTES.BENTO_AREA_MANAGEMENT}
+        backLabel={t("home.sections.management.label")}
         leading={
           <span className="grid h-12 w-12 place-items-center rounded-2xl bg-linear-to-br from-rose-500 to-pink-600 text-white shadow-md">
             <IconReceiptRupee size={24} />

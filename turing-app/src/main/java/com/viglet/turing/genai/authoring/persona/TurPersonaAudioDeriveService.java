@@ -33,12 +33,12 @@ import tools.jackson.databind.json.JsonMapper;
 
 /**
  * Persona-from-audio derivation (Block AA / §XXVI.7): transcribe a recording,
- * then have the LLM extract <strong>both</strong> voice traits (tone, verbosity,
- * language style, vocabulary) <strong>and</strong> audience descriptors
- * (reading level, domain expertise, language) into a <strong>draft</strong>
- * persona. The draft is <strong>never auto-saved</strong> — it is handed to the
- * existing persona review form (the "derive, never auto-apply" discipline of
- * the T387 manifest deriver).
+ * then have the LLM extract voice traits (tone, verbosity, language style,
+ * vocabulary), audience descriptors (reading level, domain expertise, language)
+ * <strong>and</strong> the Big Five (OCEAN) personality traits (T717) into a
+ * <strong>draft</strong> persona. The draft is <strong>never auto-saved</strong>
+ * — it is handed to the existing persona review form (the "derive, never
+ * auto-apply" discipline of the T387 manifest deriver).
  *
  * <p>T716 — the analysis is a <strong>two-call</strong> derivation: call 1
  * classifies the constrained fields (name/description/enums/audience) as strict
@@ -88,13 +88,27 @@ public class TurPersonaAudioDeriveService {
              "readingLevel": "ELEMENTARY|MIDDLE|SECONDARY|UNDERGRADUATE|GRADUATE",
              "domainExpertise": "NOVICE|BEGINNER|INTERMEDIATE|ADVANCED|EXPERT",
              "vocabularyCeiling": "<short note on the speaker's vocabulary>",
-             "primaryLanguage": "<ISO-639 code, e.g. pt|en|es>"}
+             "primaryLanguage": "<ISO-639 code, e.g. pt|en|es>",
+             "openness": <0-100 or null>,
+             "conscientiousness": <0-100 or null>,
+             "extraversion": <0-100 or null>,
+             "agreeableness": <0-100 or null>,
+             "neuroticism": <0-100 or null>}
 
             Infer values ONLY from evidence in the transcript. Ground the reading
             level and expertise in how the person actually speaks. "name" and
             "description" are REQUIRED and non-empty — write a descriptive
             kebab-case "name" (never a placeholder), and prefer the person's real
             name/role when the transcript reveals it.
+
+            The last five fields are the Big Five (OCEAN) personality traits, each
+            a 0-100 score inferred from HOW the person speaks and reasons:
+            openness (curiosity, abstraction, new ideas), conscientiousness
+            (structure, planning, detail), extraversion (energy, talkativeness,
+            assertiveness), agreeableness (warmth, cooperation, deference), and
+            neuroticism (anxiety, defensiveness, emotional volatility). Use null
+            for any trait the transcript gives NO clear evidence for — never
+            guess a score to fill the slot.
             """;
 
     /**
@@ -238,7 +252,20 @@ public class TurPersonaAudioDeriveService {
         audience.setVocabularyCeiling(dto.vocabularyCeiling());
         audience.setPrimaryLanguage(dto.primaryLanguage());
         draft.setAudience(audience);
+
+        // T717 — Big Five (OCEAN). Null stays null (unset renders nothing); a
+        // returned score is clamped to the entity's 0-100 range.
+        draft.setOpenness(clampTrait(dto.openness()));
+        draft.setConscientiousness(clampTrait(dto.conscientiousness()));
+        draft.setExtraversion(clampTrait(dto.extraversion()));
+        draft.setAgreeableness(clampTrait(dto.agreeableness()));
+        draft.setNeuroticism(clampTrait(dto.neuroticism()));
         return draft;
+    }
+
+    /** Clamp an OCEAN score to 0-100, preserving {@code null} ("unset"). */
+    private static Integer clampTrait(Integer score) {
+        return score == null ? null : Math.clamp(score, 0, 100);
     }
 
     /** LLM name, else a slug of the description, else the generic placeholder. */
@@ -334,6 +361,8 @@ public class TurPersonaAudioDeriveService {
     private record DraftDto(String name, String description,
             String tone, Integer verbosity, String languageStyle, String personaKind,
             String readingLevel, String domainExpertise, String vocabularyCeiling,
-            String primaryLanguage) {
+            String primaryLanguage,
+            Integer openness, Integer conscientiousness, Integer extraversion,
+            Integer agreeableness, Integer neuroticism) {
     }
 }

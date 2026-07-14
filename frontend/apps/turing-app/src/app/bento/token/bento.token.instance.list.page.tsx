@@ -14,7 +14,8 @@ export default function BentoTokenInstanceListPage() {
       items={tokens}
       error={error}
       tryAgainUrl={ROUTES.BENTO_TOKEN_INSTANCE}
-      eyebrow={t("home.sections.management.label")}
+      backTo={ROUTES.BENTO_AREA_MANAGEMENT}
+      backLabel={t("home.sections.management.label")}
       heroIcon={IconCode}
       tone="slate"
       title={t("apiToken.title")}

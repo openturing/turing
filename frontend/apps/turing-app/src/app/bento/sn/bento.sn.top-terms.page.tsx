@@ -1,9 +1,9 @@
 import { ROUTES } from "@/app/routes.const";
 import SNSiteTopSearchTermsPage from "@/app/console/sn/top-search-terms/sn.site.top.search.terms.page";
 import { BentoHero } from "@/components/bento";
-import { IconArrowLeft, IconChartBar } from "@tabler/icons-react";
+import { IconChartBar } from "@tabler/icons-react";
 import { useTranslation } from "react-i18next";
-import { Link, useParams } from "react-router-dom";
+import { useParams } from "react-router-dom";
 
 /**
  * Bento SN top search terms — T576. Reuses the console page (self-contained
@@ -20,7 +20,8 @@ export default function BentoSNTopTermsPage() {
       baseRoute={ROUTES.BENTO_SN_INSTANCE}
       header={
         <BentoHero
-          eyebrow={<Link to={instanceRoute} className="inline-flex items-center gap-1 hover:text-foreground"><IconArrowLeft size={14} aria-hidden />{t("sn.title")}</Link>}
+          backTo={instanceRoute}
+          backLabel={t("sn.title")}
           leading={
             <span className="grid h-12 w-12 place-items-center rounded-2xl bg-linear-to-br from-emerald-500 to-teal-600 text-white shadow-md">
               <IconChartBar size={24} />

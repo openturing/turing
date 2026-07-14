@@ -14,7 +14,7 @@ import { GradientButton } from "@/components/ui/gradient-button";
 import { GradientSwitch } from "@/components/ui/gradient-switch";
 import { Input } from "@/components/ui/input";
 import type { TurSNSiteMicrothesaurusConfig } from "@/models/kb/thesaurus.model";
-import { IconArrowLeft,
+import {
   IconAdjustments,
   IconPlus,
   IconSitemap,
@@ -23,7 +23,7 @@ import { IconArrowLeft,
 import { toast } from "@viglet/viglet-design-system";
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Link, useParams } from "react-router-dom";
+import { useParams } from "react-router-dom";
 
 /**
  * Block AQ (§XL) / T681 — per-SN-site Thesaurus selection + index config
@@ -38,11 +38,8 @@ export default function BentoSNThesaurusPage() {
   return (
     <>
       <BentoHero
-        eyebrow={
-          <Link to={instanceRoute} className="inline-flex items-center gap-1 hover:text-foreground"><IconArrowLeft size={14} aria-hidden />
-            {t("sn.title")}
-          </Link>
-        }
+        backTo={instanceRoute}
+        backLabel={t("sn.title")}
         leading={
           <span className="grid h-12 w-12 place-items-center rounded-2xl bg-linear-to-br from-violet-500 to-indigo-600 text-white shadow-md">
             <IconSitemap size={24} />

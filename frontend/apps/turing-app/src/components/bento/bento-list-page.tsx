@@ -56,7 +56,16 @@ export interface BentoListPageProps<T> {
   listId?: string;
 
   // --- hero ---
-  eyebrow: ReactNode;
+  /**
+   * Bespoke eyebrow content. For the common "breadcrumb back to a parent"
+   * case prefer {@link backTo} / {@link backLabel}, which render the canonical
+   * arrow+label via BentoHero. Provide at most one of `eyebrow` / `backTo`.
+   */
+  eyebrow?: ReactNode;
+  /** Canonical breadcrumb back-link target (forwarded to BentoHero). */
+  backTo?: string;
+  /** Label for the {@link backTo} back-link. */
+  backLabel?: ReactNode;
   heroIcon: TablerIcon;
   title: string;
   subtitle: string;
@@ -104,6 +113,8 @@ export function BentoListPage<T>({
   tryAgainUrl,
   listId,
   eyebrow,
+  backTo,
+  backLabel,
   heroIcon: HeroIcon,
   title,
   subtitle,
@@ -134,6 +145,8 @@ export function BentoListPage<T>({
     <LoadProvider checkIsNotUndefined={items} error={error ?? null} tryAgainUrl={tryAgainUrl}>
       <BentoHero
         eyebrow={eyebrow}
+        backTo={backTo}
+        backLabel={backLabel}
         leading={
           <span className={`grid h-12 w-12 place-items-center rounded-2xl bg-linear-to-br ${gradient} text-white shadow-md`}>
             <HeroIcon size={24} />

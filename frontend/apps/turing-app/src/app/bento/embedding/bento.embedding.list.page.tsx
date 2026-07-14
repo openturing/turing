@@ -18,7 +18,8 @@ export default function BentoEmbeddingModelListPage() {
       items={models}
       error={error}
       tryAgainUrl={ROUTES.BENTO_EMBEDDING_MODEL_INSTANCE}
-      eyebrow={t("home.sections.generativeAi.label")}
+      backTo={ROUTES.BENTO_AREA_GENERATIVE_AI}
+      backLabel={t("home.sections.generativeAi.label")}
       heroIcon={IconCube}
       tone="violet"
       title={t("embeddingModel.title")}

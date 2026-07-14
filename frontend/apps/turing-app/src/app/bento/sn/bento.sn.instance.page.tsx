@@ -12,6 +12,7 @@ import {
   IconCompass,
   IconCpu2,
   IconDashboard,
+  IconDownload,
   IconFilter,
   IconGavel,
   IconGitMerge,
@@ -22,9 +23,11 @@ import {
   IconSpeakerphone,
   type Icon as TablerIcon,
 } from "@tabler/icons-react";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link, useParams } from "react-router-dom";
 import { BENTO_SN_FORM_ID, BentoSNInstanceForm } from "./bento.sn.instance.form";
+import { BentoSnExportDialog } from "./bento.sn.export.dialog";
 import { SnLaunchBar } from "./sn.launch.bar";
 
 /**
@@ -107,6 +110,7 @@ export default function BentoSNInstancePage() {
 
   const updateMutation = useUpdateSnSite();
   const deleteMutation = useDeleteSnSite();
+  const [exportOpen, setExportOpen] = useState(false);
 
   function shell(entity: TurSNSite, headlineFallback: string) {
     return (
@@ -122,6 +126,11 @@ export default function BentoSNInstancePage() {
         feature={t("sn.title")}
         onUpdate={isNew ? undefined : (next) => updateMutation.mutateAsync(fromView(next))}
         onDelete={isNew ? undefined : () => deleteMutation.mutateAsync(entity)}
+        extraActions={
+          isNew
+            ? undefined
+            : [{ label: t("sn.export.title"), icon: IconDownload, onSelect: () => setExportOpen(true) }]
+        }
       >
         {({ staged, onStateChange }) => (
           <>
@@ -130,6 +139,7 @@ export default function BentoSNInstancePage() {
               <>
                 <SnLaunchBar site={entity} />
                 <SNSectionsPanel siteId={entity.id} />
+                <BentoSnExportDialog snSite={entity} open={exportOpen} onOpenChange={setExportOpen} />
               </>
             )}
           </>

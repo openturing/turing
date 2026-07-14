@@ -4,7 +4,7 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { SmartDescription } from "@/components/ui/smart-description";
-import { BentoSaveBar, BentoScrollSaveBar } from "@/components/bento";
+import { BentoFormHero } from "@/components/bento";
 import { StickyPageHeader } from "@/components/sticky-page-header";
 import { GradientSwitch } from "@/components/ui/gradient-switch";
 import { SectionCard } from "@/components/ui/section-card";
@@ -46,16 +46,23 @@ interface Props {
     /** List route to return to on save/cancel. Defaults to the console admin
      *  roles list; the Bento surface passes its own route (T567). */
     listRoute?: string;
-    /** Optional header override. The console renders its own sidebar-coupled
-     *  {@link StickyPageHeader}; Bento passes a `BentoHero` + sticky BentoSaveBar. */
-    header?: ReactNode;
+    /** Bento hero descriptor. When set, the form renders the standard
+     *  {@link BentoFormHero} (Save/Cancel in the hero + scroll-linked sticky
+     *  save-bar morph); otherwise it renders the console {@link StickyPageHeader}. */
+    bentoHero?: {
+        backTo: string;
+        backLabel: string;
+        leading: ReactNode;
+        title: string;
+        subtitle: string;
+    };
 }
 
-export const AdminRoleForm: React.FC<Props> = ({ value, isNew, listRoute = ROUTES.ADMIN_ROLES, header }) => {
+export const AdminRoleForm: React.FC<Props> = ({ value, isNew, listRoute = ROUTES.ADMIN_ROLES, bentoHero }) => {
     const { t } = useTranslation();
     const form = useForm<TurRole>({ defaultValues: value });
     const navigate = useNavigate();
-    const isBento = header !== undefined;
+    const isBento = bentoHero !== undefined;
     const [allPrivileges, setAllPrivileges] = useState<TurPrivilege[]>([]);
 
     useEffect(() => {
@@ -148,27 +155,17 @@ export const AdminRoleForm: React.FC<Props> = ({ value, isNew, listRoute = ROUTE
     return (
         <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className={isBento ? "flex flex-col gap-5 pb-8" : "space-y-4 px-4 lg:px-6 pb-8"}>
-                {isBento ? (
-                    <>
-                        {header}
-                        <div className="bento-fade-out">
-                            <BentoSaveBar
-                                actions={
-                                    <>
-                                        <GradientButton type="submit" size="sm">
-                                            <IconDeviceFloppy className="size-4" />
-                                            {t("forms.formActions.saveChanges")}
-                                        </GradientButton>
-                                        <GradientButton type="button" variant="outline" size="sm" onClick={() => navigate(listRoute)}>
-                                            <IconX className="size-4" />
-                                            {t("forms.formActions.cancel")}
-                                        </GradientButton>
-                                    </>
-                                }
-                            />
-                        </div>
-                        <BentoScrollSaveBar onCancel={() => navigate(listRoute)} />
-                    </>
+                {bentoHero ? (
+                    <BentoFormHero
+                        backTo={bentoHero.backTo}
+                        backLabel={bentoHero.backLabel}
+                        leading={bentoHero.leading}
+                        title={bentoHero.title}
+                        subtitle={bentoHero.subtitle}
+                        stickyTitle={bentoHero.title}
+                        onCancel={() => navigate(listRoute)}
+                        saveDisabled={false}
+                    />
                 ) : (
                     <StickyPageHeader>
                         <StickyPageHeader.Title

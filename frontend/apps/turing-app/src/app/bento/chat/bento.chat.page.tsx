@@ -1,4 +1,5 @@
 import { BentoHero } from "@/components/bento";
+import { ROUTES } from "@/app/routes.const";
 import ChatPage from "@/app/console/chat/chat.page";
 import { IconMessageChatbot } from "@tabler/icons-react";
 import { useTranslation } from "react-i18next";
@@ -25,7 +26,8 @@ export default function BentoChatPage() {
       initialAgentId={agentId}
       emptyStateHeader={
         <BentoHero
-          eyebrow={t("home.sections.generativeAi.label")}
+          backTo={ROUTES.BENTO_AREA_GENERATIVE_AI}
+          backLabel={t("home.sections.generativeAi.label")}
           leading={
             <span className="grid h-12 w-12 place-items-center rounded-2xl bg-linear-to-br from-blue-500 to-indigo-600 text-white shadow-md">
               <IconMessageChatbot size={24} />

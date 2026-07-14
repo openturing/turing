@@ -1,9 +1,9 @@
 import { ROUTES } from "@/app/routes.const";
 import { BentoHero } from "@/components/bento";
 import { SNFieldCoveragePanel } from "@/components/sn/field-coverage/sn.field.coverage.panel";
-import { IconArrowLeft, IconChartHistogram } from "@tabler/icons-react";
+import { IconChartHistogram } from "@tabler/icons-react";
 import { useTranslation } from "react-i18next";
-import { Link, useParams } from "react-router-dom";
+import { useParams } from "react-router-dom";
 
 /**
  * Bento SN field-coverage — T558. The T388 coverage bars + T472 content-fit
@@ -17,7 +17,8 @@ export default function BentoSNFieldCoveragePage() {
   return (
     <>
       <BentoHero
-        eyebrow={<Link to={instanceRoute} className="inline-flex items-center gap-1 hover:text-foreground"><IconArrowLeft size={14} aria-hidden />{t("sn.title")}</Link>}
+        backTo={instanceRoute}
+        backLabel={t("sn.title")}
         leading={
           <span className="grid h-12 w-12 place-items-center rounded-2xl bg-linear-to-br from-emerald-500 to-teal-600 text-white shadow-md">
             <IconChartHistogram size={24} />

@@ -1,13 +1,13 @@
 import { DialogDelete } from "@/components/dialog.delete";
 import { GradientButton } from "@/components/ui/gradient-button";
 import type { Icon as TablerIcon } from "@tabler/icons-react";
-import { IconArrowLeft, IconDeviceFloppy, IconTrash, IconX } from "@tabler/icons-react";
+import { IconDeviceFloppy, IconTrash, IconX } from "@tabler/icons-react";
 import { toast } from "@viglet/viglet-design-system";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { BentoActionsMenu, type BentoActionsMenuItem } from "./bento-actions-menu";
-import { BentoHero } from "./bento-hero";
+import { BentoBackLink, BentoHero } from "./bento-hero";
 import { BentoHeroIconPicker } from "./bento-hero-icon-picker";
 import { BentoInlineEdit } from "./bento-inline-edit";
 import { BentoStatusMarker } from "./bento-status-marker";
@@ -255,15 +255,11 @@ export function BentoEntityShell<TEntity extends BentoEntityLike>({
           <span className="inline-flex items-center gap-2">
             {/*
              * A leading back-arrow makes the eyebrow read as a "return to the
-             * list" affordance — without it the link is easy to miss. The Shell
-             * always wraps the eyebrow in a Link to `listRoute`, so the arrow is
-             * always meaningful here. (See turing-bento-ui skill: back-link
-             * eyebrows lead with IconArrowLeft.)
+             * list" affordance — without it the link is easy to miss. Shared
+             * {@link BentoBackLink} renders the canonical arrow+label so this
+             * matches every other bento breadcrumb. (See turing-bento-ui skill.)
              */}
-            <Link to={listRoute} className="inline-flex items-center gap-1 hover:text-foreground">
-              <IconArrowLeft size={14} aria-hidden />
-              {eyebrow}
-            </Link>
+            <BentoBackLink to={listRoute}>{eyebrow}</BentoBackLink>
             {!readOnly && (
               <BentoStatusMarker titleMissing={titleMissing} dirty={isNew || formState.isDirty} />
             )}

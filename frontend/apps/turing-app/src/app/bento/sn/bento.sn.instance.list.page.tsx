@@ -31,7 +31,8 @@ export default function BentoSNInstanceListPage() {
       items={snSites}
       error={error}
       tryAgainUrl={ROUTES.BENTO_SN_INSTANCE}
-      eyebrow={t("home.sections.enterpriseSearch.label")}
+      backTo={ROUTES.BENTO_AREA_ENTERPRISE_SEARCH}
+      backLabel={t("home.sections.enterpriseSearch.label")}
       heroIcon={IconCompass}
       tone="emerald"
       title={t("sn.title")}

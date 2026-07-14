@@ -1,4 +1,5 @@
 import { BentoHero } from "@/components/bento";
+import { ROUTES } from "@/app/routes.const";
 import { SectionCardChromeProvider } from "@/components/ui/section-card";
 import SystemInfoPage from "@/app/console/system/system-info.page";
 import { IconInfoCircle } from "@tabler/icons-react";
@@ -21,7 +22,8 @@ export default function BentoSystemInfoPage() {
       <SystemInfoPage
         header={
           <BentoHero
-            eyebrow={t("home.sections.management.label")}
+            backTo={ROUTES.BENTO_AREA_MANAGEMENT}
+            backLabel={t("home.sections.management.label")}
             leading={
               <span className="grid h-12 w-12 place-items-center rounded-2xl bg-linear-to-br from-slate-500 to-slate-700 text-white shadow-md">
                 <IconInfoCircle size={24} />

@@ -1,8 +1,7 @@
 import { ROUTES } from "@/app/routes.const";
 import { BentoEntityTile, BentoListPage } from "@/components/bento";
-import { IconArrowLeft, type Icon as TablerIcon } from "@tabler/icons-react";
+import { type Icon as TablerIcon } from "@tabler/icons-react";
 import { useTranslation } from "react-i18next";
-import { Link } from "react-router-dom";
 
 /**
  * Shared scaffold for the GridList-style SN instance sub-section lists in the
@@ -52,7 +51,8 @@ export function BentoSnSectionList<T>({
       items={items}
       error={error}
       tryAgainUrl={sectionRoute}
-      eyebrow={<Link to={instanceRoute} className="inline-flex items-center gap-1 hover:text-foreground"><IconArrowLeft size={14} aria-hidden />{t("sn.title")}</Link>}
+      backTo={instanceRoute}
+      backLabel={t("sn.title")}
       heroIcon={icon}
       tone="emerald"
       title={title}

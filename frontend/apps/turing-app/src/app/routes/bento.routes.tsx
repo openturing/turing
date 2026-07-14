@@ -156,11 +156,8 @@ const BentoGlobalSettingsPage = lazy(() => import("../bento/settings/bento.globa
 const BentoImportPage = lazy(() => import("../bento/import/bento.import.page"));
 const BentoLoggingPage = lazy(() => import("../bento/logging/bento.logging.page"));
 const BentoSystemInfoPage = lazy(() => import("../bento/system-info/bento.system-info.page"));
-const LoggingServerPage = lazy(() => import("../console/logging/instance/logging.server.page"));
-const LoggingIndexingPage = lazy(() => import("../console/logging/instance/logging.indexing.page"));
-const LoggingAemPage = lazy(() => import("../console/logging/instance/logging.aem.page"));
+const BentoLoggingSourcePage = lazy(() => import("../bento/logging/bento.logging.source.page"));
 // Phase 4 (T567) — Admin settings (users/groups/roles) in the bento shell.
-const BentoAdminPage = lazy(() => import("../bento/admin/bento.admin.page"));
 const BentoAdminUsersListPage = lazy(() => import("../bento/admin/bento.admin.users.list.page"));
 const BentoAdminUserPage = lazy(() => import("../bento/admin/bento.admin.user.page"));
 const BentoAdminGroupsListPage = lazy(() => import("../bento/admin/bento.admin.groups.list.page"));
@@ -351,21 +348,19 @@ export const BentoRoutes = (
     <Route path="global-settings" element={<BentoGlobalSettingsPage />} />
     <Route path="import" element={<BentoImportPage />} />
     <Route path="logging" element={<BentoLoggingPage />} />
-    <Route path="logging/server" element={<LoggingServerPage />} />
-    <Route path="logging/indexing" element={<LoggingIndexingPage />} />
-    <Route path="logging/aem" element={<LoggingAemPage />} />
+    <Route path="logging/server" element={<BentoLoggingSourcePage source="server" />} />
+    <Route path="logging/indexing" element={<BentoLoggingSourcePage source="indexing" />} />
+    <Route path="logging/aem" element={<BentoLoggingSourcePage source="aem" />} />
     <Route path="system-info" element={<BentoSystemInfoPage />} />
-    {/* Phase 4 (T567) — Administration: hero + tab-bar over users/groups/roles;
-        settings & tokens tabs link to their own migrated surfaces. Detail
-        editors are separate full-page routes (no tab bar). */}
-    <Route path="admin" element={<BentoAdminPage />}>
-      <Route index element={<Navigate to={ROUTES.BENTO_ADMIN_USERS} replace />} />
-      <Route path="users" element={<BentoAdminUsersListPage />} />
-      <Route path="groups" element={<BentoAdminGroupsListPage />} />
-      <Route path="roles" element={<BentoAdminRolesListPage />} />
-    </Route>
+    {/* Users / Groups / Roles are now standalone Management cards (no
+        Administration hub); each list owns its BentoHero and links back to the
+        Management area. Old /bento/admin links redirect there. */}
+    <Route path="admin" element={<Navigate to={ROUTES.BENTO_AREA_MANAGEMENT} replace />} />
+    <Route path="admin/users" element={<BentoAdminUsersListPage />} />
     <Route path="admin/users/:username" element={<BentoAdminUserPage />} />
+    <Route path="admin/groups" element={<BentoAdminGroupsListPage />} />
     <Route path="admin/groups/:groupId" element={<BentoAdminGroupPage />} />
+    <Route path="admin/roles" element={<BentoAdminRolesListPage />} />
     <Route path="admin/roles/:roleId" element={<BentoAdminRolePage />} />
     {/* Phase 4 (T568) — user account (profile/preferences) + tenant surfaces. */}
     <Route path="user/account" element={<BentoUserAccountPage />}>

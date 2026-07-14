@@ -30,7 +30,7 @@ import { TurFeaturesService, type LoggingEngine } from "@/services/system/featur
 import { TurGlobalSettingsService } from "@/services/system/global-settings.service"
 import { IconActivity, IconBolt, IconBrain, IconBrandPython, IconDatabase, IconDeviceFloppy, IconHeadset, IconHistory, IconInfoCircle, IconMoon, IconPlug, IconPower, IconSettings, IconShieldLock, IconSparkles, IconWorldSearch, IconX } from "@tabler/icons-react"
 import { GradientButton } from "../ui/gradient-button"
-import { useEffect, useState } from "react"
+import { useCallback, useEffect, useState } from "react"
 import { useForm } from "react-hook-form"
 import { useTranslation } from "react-i18next"
 import { useNavigate } from "react-router-dom"
@@ -41,7 +41,8 @@ import { GradientSwitch } from "../ui/gradient-switch"
 import { IconPicker } from "../ui/icon-picker"
 import { SectionCard } from "../ui/section-card"
 import { SmartDescription } from "../ui/smart-description"
-import { BentoFormSection, BentoSaveBar, BentoScrollSaveBar, type BentoTone } from "../bento"
+import { BentoFormSection, type BentoTone } from "../bento"
+import { BentoAgentSubHero } from "@/app/bento/ai-agent/bento.ai-agent.sub-hero"
 import type { ComponentType, ReactNode } from "react"
 
 const turEmbeddingModelService = new TurEmbeddingModelService();
@@ -62,37 +63,53 @@ interface Props {
   baseRoute?: string;
 }
 
+type SectionProps = {
+  readonly variant?: "blue" | "violet" | "emerald" | "amber" | "cyan";
+  readonly tone: BentoTone;
+  readonly icon: ComponentType<{ size?: number }>;
+  readonly title: string;
+  readonly description?: string;
+  readonly children: ReactNode;
+};
+
+// Defined at module scope (NOT inside AIAgentSettingsForm): a component created
+// inside the render body gets a new function identity on every render, which
+// makes React unmount+remount its entire subtree on each keystroke — that
+// remount is what caused the visible "refresh" and the burst of
+// /api/system/global-settings fetches from the remounting SmartDescription /
+// IconPicker children. Switches each field group between the console
+// SectionCard and the frosted bento card, keeping the field bodies identical.
+const AgentFormSection: React.FC<SectionProps & { readonly chrome: "console" | "bento" }> = ({
+  chrome,
+  variant,
+  tone,
+  icon,
+  title,
+  description,
+  children,
+}) =>
+  chrome === "bento" ? (
+    <BentoFormSection icon={icon} tone={tone} title={title} description={description}>
+      {children}
+    </BentoFormSection>
+  ) : (
+    <SectionCard variant={variant}>
+      <SectionCard.Header icon={icon} title={title} description={description} />
+      <SectionCard.Content>{children}</SectionCard.Content>
+    </SectionCard>
+  );
+
 export const AIAgentSettingsForm: React.FC<Props> = ({ value, isNew, chrome = "console", baseRoute }) => {
   const { t } = useTranslation();
   const urlBase = baseRoute ?? ROUTES.AI_AGENT_INSTANCE;
 
-  // Switches each field group between the console SectionCard and the frosted
-  // bento card, keeping the field bodies identical across both shells.
-  const Section = ({
-    variant,
-    tone,
-    icon,
-    title,
-    description,
-    children,
-  }: {
-    readonly variant?: "blue" | "violet" | "emerald" | "amber" | "cyan";
-    readonly tone: BentoTone;
-    readonly icon: ComponentType<{ size?: number }>;
-    readonly title: string;
-    readonly description?: string;
-    readonly children: ReactNode;
-  }) =>
-    chrome === "bento" ? (
-      <BentoFormSection icon={icon} tone={tone} title={title} description={description}>
-        {children}
-      </BentoFormSection>
-    ) : (
-      <SectionCard variant={variant}>
-        <SectionCard.Header icon={icon} title={title} description={description} />
-        <SectionCard.Content>{children}</SectionCard.Content>
-      </SectionCard>
-    );
+  // Stable alias so the ~15 <Section> call sites below stay unchanged. The
+  // identity only changes with `chrome` (which is fixed for the form's life),
+  // so children never remount on keystroke re-renders. See AgentFormSection.
+  const Section = useCallback(
+    (props: SectionProps) => <AgentFormSection chrome={chrome} {...props} />,
+    [chrome],
+  );
   const form = useForm<TurAIAgent>({
     defaultValues: value
   });
@@ -303,22 +320,18 @@ export const AIAgentSettingsForm: React.FC<Props> = ({ value, isNew, chrome = "c
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className={chrome === "bento" ? "space-y-4 md:space-y-5 pb-8" : "space-y-4 px-4 lg:px-6 pb-8"}>
         {chrome === "bento" ? (
-          <>
-            <div className="bento-fade-out">
-              <BentoSaveBar
-                onCancel={() => navigate(urlBase)}
-                loading={createMutation.isPending || updateMutation.isPending}
-                titleMissing={!form.watch("title")?.trim()}
-                dirty={isNew || form.formState.isDirty}
-              />
-            </div>
-            <BentoScrollSaveBar
-              onCancel={() => navigate(urlBase)}
-              loading={createMutation.isPending || updateMutation.isPending}
-              titleMissing={!form.watch("title")?.trim()}
-              dirty={isNew || form.formState.isDirty}
-            />
-          </>
+          <BentoAgentSubHero
+            agentId={isNew ? "new" : (value.id ?? "new")}
+            agentTitle={isNew ? t("aiAgent.newInstance") : (value.title || t("aiAgent.title"))}
+            icon={IconSettings}
+            tone="blue"
+            title={t("aiAgent.settings.title")}
+            subtitle={t("aiAgent.settings.description")}
+            onCancel={() => navigate(urlBase)}
+            loading={createMutation.isPending || updateMutation.isPending}
+            titleMissing={!form.watch("title")?.trim()}
+            dirty={isNew || form.formState.isDirty}
+          />
         ) : (
           <StickyPageHeader>
             <StickyPageHeader.Title

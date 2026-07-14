@@ -1,9 +1,9 @@
 import { ROUTES } from "@/app/routes.const";
 import StoreInstanceCollectionImportPage from "@/app/console/store/collections/store.instance.collection.import.page";
 import { BentoHero } from "@/components/bento";
-import { IconArrowLeft, IconPackageImport } from "@tabler/icons-react";
+import { IconPackageImport } from "@tabler/icons-react";
 import { useTranslation } from "react-i18next";
-import { Link, useParams } from "react-router-dom";
+import { useParams } from "react-router-dom";
 
 /**
  * Bento Embedding Store collection import — reuses the console
@@ -21,7 +21,8 @@ export default function BentoStoreCollectionImportPage() {
       backHref={instanceRoute}
       header={
         <BentoHero
-          eyebrow={<Link to={instanceRoute} className="inline-flex items-center gap-1 hover:text-foreground"><IconArrowLeft size={14} aria-hidden />{t("store.title")}</Link>}
+          backTo={instanceRoute}
+          backLabel={t("store.title")}
           leading={
             <span className="grid h-12 w-12 place-items-center rounded-2xl bg-linear-to-br from-violet-500 to-purple-600 text-white shadow-md">
               <IconPackageImport size={24} />

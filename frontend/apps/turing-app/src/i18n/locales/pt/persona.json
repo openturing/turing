@@ -8,6 +8,13 @@
     "blankTitle": "Você ainda não tem nenhuma persona.",
     "blankDescription": "Crie um perfil de voz reutilizável para aplicar tom, vocabulário e contexto de marca consistentes nos seus agentes de IA.",
     "newInstance": "Nova Persona",
+    "create": {
+      "chooseMethod": "Como você quer criar esta persona?",
+      "manualTitle": "Preencher manualmente",
+      "manualDesc": "Preencha você mesmo a identidade, o estilo e as diretrizes da persona.",
+      "audioTitle": "A partir de um áudio",
+      "audioDesc": "Envie uma gravação e deixe a IA rascunhar a persona para você revisar."
+    },
     "sidebar": {
       "general": "Geral",
       "systemInstruction": "Instrução do Sistema",

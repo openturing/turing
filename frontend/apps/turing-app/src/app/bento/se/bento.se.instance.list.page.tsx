@@ -22,7 +22,8 @@ export default function BentoSEInstanceListPage() {
       items={seInstances}
       error={error}
       tryAgainUrl={ROUTES.BENTO_SE_INSTANCE}
-      eyebrow={t("home.sections.enterpriseSearch.label")}
+      backTo={ROUTES.BENTO_AREA_ENTERPRISE_SEARCH}
+      backLabel={t("home.sections.enterpriseSearch.label")}
       heroIcon={IconZoomCode}
       tone="emerald"
       title={t("se.title")}

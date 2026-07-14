@@ -4,11 +4,9 @@ import { IntentSettingsForm } from "@/components/intent/intent.settings.form";
 import { LoadProvider } from "@/components/loading-provider";
 import type { TurIntent } from "@/models/intent/intent.model";
 import { TurIntentService } from "@/services/intent/intent.service";
-import { IconBulb } from "@tabler/icons-react";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useParams } from "react-router-dom";
-import { BentoAgentSubHero } from "./bento.ai-agent.sub-hero";
 
 const turIntentService = new TurIntentService();
 
@@ -39,19 +37,12 @@ export default function BentoAIAgentIntentPage() {
       error={error}
       tryAgainUrl={`${ROUTES.BENTO_AI_AGENT_INSTANCE}/${agentId}/intent/${intentId}`}
     >
-      <BentoAgentSubHero
-        agentId={agentId}
-        agentTitle={agent?.title ?? t("aiAgent.title")}
-        icon={IconBulb}
-        tone="amber"
-        title={isNew ? t("intent.newInstance") : (intent?.title ?? t("intent.title"))}
-        subtitle={t("intent.settings.description")}
-      />
       {intent && (
         <IntentSettingsForm
           value={intent}
           isNew={isNew}
           agentId={agentId}
+          agentTitle={agent?.title ?? t("aiAgent.title")}
           chrome="bento"
           baseRoute={ROUTES.BENTO_AI_AGENT_INSTANCE}
         />

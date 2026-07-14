@@ -9,10 +9,10 @@ import type { TurKeycloakGroup } from "@/models/auth/keycloak-group";
 import { TurAuthorizationService } from "@/services/auth/authorization.service";
 import { TurGroupService } from "@/services/auth/group.service";
 import { TurKeycloakAdminService } from "@/services/auth/keycloak-admin.service";
-import { IconArrowLeft, IconUsersGroup } from "@tabler/icons-react";
+import { IconUsersGroup } from "@tabler/icons-react";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Link, useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { toast } from "@viglet/viglet-design-system";
 
 const turGroupService = new TurGroupService();
@@ -85,14 +85,18 @@ export default function BentoAdminGroupPage() {
       .finally(() => setOpen(false));
   }
 
+  const leading = (
+    <span className="grid h-12 w-12 place-items-center rounded-2xl bg-linear-to-br from-slate-600 to-slate-700 text-white shadow-md">
+      <IconUsersGroup size={24} />
+    </span>
+  );
+
+  // Read-only Keycloak view has no form/save bar, so it renders a plain BentoHero.
   const hero = (title: string, subtitle: string) => (
     <BentoHero
-      eyebrow={<Link to={ROUTES.BENTO_ADMIN_GROUPS} className="inline-flex items-center gap-1 hover:text-foreground"><IconArrowLeft size={14} aria-hidden />{t("admin.groups.title")}</Link>}
-      leading={
-        <span className="grid h-12 w-12 place-items-center rounded-2xl bg-linear-to-br from-slate-600 to-slate-700 text-white shadow-md">
-          <IconUsersGroup size={24} />
-        </span>
-      }
+      backTo={ROUTES.BENTO_ADMIN_GROUPS}
+      backLabel={t("admin.groups.title")}
+      leading={leading}
       title={title}
       subtitle={subtitle}
     />
@@ -125,10 +129,13 @@ export default function BentoAdminGroupPage() {
             open={open}
             setOpen={setOpen}
             listRoute={ROUTES.BENTO_ADMIN_GROUPS}
-            header={hero(
-              isNew ? t("admin.groups.newGroup") : (group.name || ""),
-              isNew ? t("admin.groups.createDescription") : t("admin.groups.editDescription"),
-            )}
+            bentoHero={{
+              backTo: ROUTES.BENTO_ADMIN_GROUPS,
+              backLabel: t("admin.groups.title"),
+              leading,
+              title: isNew ? t("admin.groups.newGroup") : (group.name || ""),
+              subtitle: isNew ? t("admin.groups.createDescription") : t("admin.groups.editDescription"),
+            }}
           />
         )}
       </LoadProvider>

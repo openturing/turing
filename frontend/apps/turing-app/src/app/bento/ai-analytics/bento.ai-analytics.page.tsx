@@ -21,7 +21,8 @@ export default function BentoAiAnalyticsPage() {
   return (
     <>
       <BentoHero
-        eyebrow={t("home.sections.generativeAi.label")}
+        backTo={ROUTES.BENTO_AREA_GENERATIVE_AI}
+        backLabel={t("home.sections.generativeAi.label")}
         leading={
           <span className="grid h-12 w-12 place-items-center rounded-2xl bg-linear-to-br from-indigo-500 to-blue-600 text-white shadow-md">
             <IconReportAnalytics size={24} />

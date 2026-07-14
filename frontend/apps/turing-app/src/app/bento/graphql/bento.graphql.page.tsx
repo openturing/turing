@@ -1,4 +1,5 @@
 import { BentoHero } from "@/components/bento";
+import { ROUTES } from "@/app/routes.const";
 import GraphiQLPage from "@/app/console/graphql/graphql.page";
 import { IconBrandGraphql } from "@tabler/icons-react";
 import { useTranslation } from "react-i18next";
@@ -13,7 +14,8 @@ export default function BentoGraphqlPage() {
   return (
     <>
       <BentoHero
-        eyebrow={t("home.sections.enterpriseSearch.label")}
+        backTo={ROUTES.BENTO_AREA_ENTERPRISE_SEARCH}
+        backLabel={t("home.sections.enterpriseSearch.label")}
         leading={
           <span className="grid h-12 w-12 place-items-center rounded-2xl bg-linear-to-br from-rose-500 to-pink-600 text-white shadow-md">
             <IconBrandGraphql size={24} />

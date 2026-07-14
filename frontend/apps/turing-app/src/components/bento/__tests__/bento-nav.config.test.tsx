@@ -53,7 +53,7 @@ describe("useVisibleBentoNav", () => {
     expect(ids).toContain("mcpServer");
     expect(ids).not.toContain("languageModel"); // LLM_VIEW
     expect(ids).not.toContain("aiAgent"); // AI_AGENT_VIEW
-    expect(ids).not.toContain("administration"); // __admin__
+    expect(ids).not.toContain("adminUsers"); // __admin__
   });
 
   it("reveals an item once the user holds its privilege", () => {

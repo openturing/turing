@@ -18,7 +18,8 @@ export default function BentoThesaurusListPage() {
       items={kbs}
       error={error}
       tryAgainUrl={ROUTES.BENTO_THESAURUS}
-      eyebrow={t("home.sections.enterpriseSearch.label")}
+      backTo={ROUTES.BENTO_AREA_ENTERPRISE_SEARCH}
+      backLabel={t("home.sections.enterpriseSearch.label")}
       heroIcon={IconSitemap}
       tone="violet"
       title={t("thesaurus.title")}

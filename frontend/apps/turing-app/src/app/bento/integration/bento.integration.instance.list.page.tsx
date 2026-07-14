@@ -18,7 +18,8 @@ export default function BentoIntegrationInstanceListPage() {
       items={integrations}
       error={error}
       tryAgainUrl={ROUTES.BENTO_INTEGRATION_INSTANCE}
-      eyebrow={t("home.sections.enterpriseSearch.label")}
+      backTo={ROUTES.BENTO_AREA_ENTERPRISE_SEARCH}
+      backLabel={t("home.sections.enterpriseSearch.label")}
       heroIcon={IconPlugConnectedX}
       tone="amber"
       title={t("integration.title")}

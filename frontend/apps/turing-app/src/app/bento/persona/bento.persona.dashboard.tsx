@@ -14,8 +14,9 @@ import {
 } from "@tabler/icons-react";
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Link, Navigate, useNavigate, useOutletContext } from "react-router-dom";
+import { useNavigate, useOutletContext } from "react-router-dom";
 import type { BentoPersonaContext } from "./bento.persona.page";
+import { BentoPersonaCreateChooser } from "./bento.persona.create.chooser";
 
 /**
  * Bento persona dashboard — Block AI / §XXXII.5 (T582). Reads like the AI-agent
@@ -90,18 +91,16 @@ export default function BentoPersonaDashboard() {
   }
 
   if (isNew) {
-    // A new persona has no data to dashboard — go straight to the editor.
-    return <Navigate to="general" replace />;
+    // A new persona has no data to dashboard — offer the create-method chooser
+    // (manual vs. from-audio) before opening the editor.
+    return <BentoPersonaCreateChooser setPersona={setPersona} />;
   }
 
   return (
     <>
       <BentoHero
-        eyebrow={
-          <Link to={ROUTES.BENTO_PERSONA_INSTANCE} className="hover:text-foreground">
-            {t("persona.title")}
-          </Link>
-        }
+        backTo={ROUTES.BENTO_PERSONA_INSTANCE}
+        backLabel={t("persona.title")}
         leading={
           <span className="grid h-12 w-12 place-items-center rounded-2xl bg-linear-to-br from-blue-500 to-indigo-600 text-white shadow-md">
             <IconUserCircle size={24} />

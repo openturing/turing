@@ -5,7 +5,6 @@ import { Button } from "@/components/ui/button";
 import { IconChartGridDots, IconMasksTheater, IconTargetArrow, IconUsersGroup, IconUserCircle } from "@tabler/icons-react";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
-import { BentoPersonaFromAudioButton } from "./persona-from-audio.button";
 
 export default function BentoPersonaListPage() {
   const { t } = useTranslation();
@@ -17,7 +16,8 @@ export default function BentoPersonaListPage() {
       items={personas}
       error={error}
       tryAgainUrl={ROUTES.BENTO_PERSONA_INSTANCE}
-      eyebrow={t("home.sections.generativeAi.label")}
+      backTo={ROUTES.BENTO_AREA_GENERATIVE_AI}
+      backLabel={t("home.sections.generativeAi.label")}
       heroIcon={IconUserCircle}
       tone="rose"
       title={t("persona.title")}
@@ -30,7 +30,6 @@ export default function BentoPersonaListPage() {
               {t("forms.persona.suggest.trigger")}
             </Link>
           </Button>
-          <BentoPersonaFromAudioButton />
           <Button asChild variant="outline" size="sm" className="gap-2">
             <Link to={ROUTES.BENTO_PERSONA_MATCH}>
               <IconChartGridDots size={16} />

@@ -5,7 +5,6 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import type { ResearchProgramRollup } from "@/models/persona/persona-research.model";
 import {
-  IconArrowLeft,
   IconChartBar,
   IconCheck,
   IconLoader2,
@@ -84,11 +83,8 @@ export default function BentoPersonaResearchProgramPage() {
   return (
     <>
       <BentoHero
-        eyebrow={
-          <Link to={ROUTES.BENTO_PERSONA_RESEARCH} className="inline-flex items-center gap-1 hover:text-foreground">
-            <IconArrowLeft size={14} aria-hidden /> {t("persona.research.program.back")}
-          </Link>
-        }
+        backTo={ROUTES.BENTO_PERSONA_RESEARCH}
+        backLabel={t("persona.research.program.back")}
         leading={
           <span className="grid h-12 w-12 place-items-center rounded-2xl bg-linear-to-br from-violet-600 to-fuchsia-600 text-white shadow-md">
             <IconStack2 size={24} />

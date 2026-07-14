@@ -1,9 +1,9 @@
 import { ROUTES } from "@/app/routes.const";
 import { AiSummaryPanel } from "@/components/ai-summary-panel";
 import { BentoHero } from "@/components/bento";
-import { IconArrowLeft, IconSparkles } from "@tabler/icons-react";
+import { IconSparkles } from "@tabler/icons-react";
 import { useTranslation } from "react-i18next";
-import { Link, useParams } from "react-router-dom";
+import { useParams } from "react-router-dom";
 
 /** Bento SN insights — T576. Reuses `AiSummaryPanel` under a `BentoHero`. */
 export default function BentoSNInsightsPage() {
@@ -14,7 +14,8 @@ export default function BentoSNInsightsPage() {
   return (
     <>
       <BentoHero
-        eyebrow={<Link to={instanceRoute} className="inline-flex items-center gap-1 hover:text-foreground"><IconArrowLeft size={14} aria-hidden />{t("sn.title")}</Link>}
+        backTo={instanceRoute}
+        backLabel={t("sn.title")}
         leading={
           <span className="grid h-12 w-12 place-items-center rounded-2xl bg-linear-to-br from-emerald-500 to-teal-600 text-white shadow-md">
             <IconSparkles size={24} />

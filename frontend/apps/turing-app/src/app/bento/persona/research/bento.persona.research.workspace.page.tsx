@@ -10,7 +10,7 @@ import { useAiAgents } from "@/api/queries/ai-agent.queries";
 import { useLlmInstances } from "@/api/queries/llm-instance.queries";
 import { usePersonas } from "@/api/queries/persona.queries";
 import { ROUTES } from "@/app/routes.const";
-import { BentoFormSection, BentoHero } from "@/components/bento";
+import { BentoActionsMenu, BentoFormSection, BentoHero } from "@/components/bento";
 import { PersonaSelectGrid } from "@/components/persona/persona-select-grid";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -35,7 +35,6 @@ import {
 } from "@/models/persona/persona-research.model";
 import { useQueryClient } from "@tanstack/react-query";
 import {
-  IconArrowLeft,
   IconChevronDown,
   IconDeviceFloppy,
   IconLoader2,
@@ -141,11 +140,8 @@ function CreateStudyCard() {
   return (
     <>
       <BentoHero
-        eyebrow={
-          <Link to={ROUTES.BENTO_PERSONA_RESEARCH} className="inline-flex items-center gap-1 hover:text-foreground">
-            <IconArrowLeft size={14} aria-hidden /> {t("persona.research.back")}
-          </Link>
-        }
+        backTo={ROUTES.BENTO_PERSONA_RESEARCH}
+        backLabel={t("persona.research.back")}
         leading={
           <span className="grid h-12 w-12 place-items-center rounded-2xl bg-linear-to-br from-violet-600 to-fuchsia-600 text-white shadow-md">
             <IconUsersGroup size={24} />
@@ -473,11 +469,8 @@ function StudyWorkspace({ studyId }: Readonly<{ studyId: string }>) {
   return (
     <>
       <BentoHero
-        eyebrow={
-          <Link to={ROUTES.BENTO_PERSONA_RESEARCH} className="inline-flex items-center gap-1 hover:text-foreground">
-            <IconArrowLeft size={14} aria-hidden /> {t("persona.research.back")}
-          </Link>
-        }
+        backTo={ROUTES.BENTO_PERSONA_RESEARCH}
+        backLabel={t("persona.research.back")}
         leading={
           <span className="grid h-12 w-12 place-items-center rounded-2xl bg-linear-to-br from-violet-600 to-fuchsia-600 text-white shadow-md">
             <IconUsersGroup size={24} />
@@ -486,10 +479,20 @@ function StudyWorkspace({ studyId }: Readonly<{ studyId: string }>) {
         title={name || t("persona.research.defaultTitle")}
         subtitle={goal || description || t("persona.research.defaultSubtitle")}
         trailing={
-          <Button onClick={runStudy} disabled={!canRun} className="gap-2">
-            {running ? <IconLoader2 className="size-4 animate-spin" /> : <IconPlayerPlayFilled className="size-4" />}
-            {runLabel}
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button onClick={runStudy} disabled={!canRun} className="gap-2">
+              {running ? <IconLoader2 className="size-4 animate-spin" /> : <IconPlayerPlayFilled className="size-4" />}
+              {runLabel}
+            </Button>
+            <BentoActionsMenu
+              actions={[{
+                label: t("persona.research.deleteStudy"),
+                icon: IconTrash,
+                tone: "destructive",
+                onSelect: removeStudy,
+              }]}
+            />
+          </div>
         }
       />
 
@@ -613,13 +616,6 @@ function StudyWorkspace({ studyId }: Readonly<{ studyId: string }>) {
                 <span className="text-sm font-medium">{t("persona.research.modelLabel")}</span>
                 <LlmSelect value={defaultLlm} onChange={setDefaultLlm} instances={llmInstances} defaultLabel={t("persona.research.defaultLlm")} />
               </label>
-            </div>
-
-            <div>
-              <Button type="button" variant="ghost" size="sm" className="gap-1.5 text-red-600" onClick={removeStudy}>
-                <IconTrash className="size-4" />
-                {t("persona.research.deleteStudy")}
-              </Button>
             </div>
           </div>
         </BentoFormSection>

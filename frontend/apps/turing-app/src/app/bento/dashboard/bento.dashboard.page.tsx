@@ -1,4 +1,5 @@
 import { BentoHero } from "@/components/bento";
+import { ROUTES } from "@/app/routes.const";
 import { DashboardCustomize } from "@/app/console/dashboard/dashboard-customize";
 import { DashboardGrid } from "@/app/console/dashboard/dashboard-grid";
 import { useDashboard } from "@/app/console/dashboard/use-dashboard";
@@ -45,7 +46,8 @@ export default function BentoDashboardPage() {
   return (
     <>
       <BentoHero
-        eyebrow={t("home.title")}
+        backTo={ROUTES.BENTO_HOME}
+        backLabel={t("home.title")}
         leading={
           <span className="grid h-12 w-12 place-items-center rounded-2xl bg-linear-to-br from-blue-500 to-indigo-600 text-white shadow-md">
             <IconLayoutDashboard size={24} />

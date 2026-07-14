@@ -14,7 +14,8 @@ export default function BentoAIAgentListPage() {
       items={agents}
       error={error}
       tryAgainUrl={ROUTES.BENTO_AI_AGENT_INSTANCE}
-      eyebrow={t("home.sections.generativeAi.label")}
+      backTo={ROUTES.BENTO_AREA_GENERATIVE_AI}
+      backLabel={t("home.sections.generativeAi.label")}
       heroIcon={IconRobot}
       tone="blue"
       title={t("aiAgent.title")}

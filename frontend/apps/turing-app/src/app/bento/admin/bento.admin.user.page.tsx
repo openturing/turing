@@ -9,10 +9,10 @@ import type { TurUser } from "@/models/auth/user";
 import { TurAdminUserService } from "@/services/auth/admin-user.service";
 import { TurAuthorizationService } from "@/services/auth/authorization.service";
 import { TurKeycloakAdminService } from "@/services/auth/keycloak-admin.service";
-import { IconArrowLeft, IconUser } from "@tabler/icons-react";
+import { IconUser } from "@tabler/icons-react";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Link, useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { toast } from "@viglet/viglet-design-system";
 
 const turAdminUserService = new TurAdminUserService();
@@ -85,14 +85,18 @@ export default function BentoAdminUserPage() {
       .finally(() => setOpen(false));
   }
 
+  const leading = (
+    <span className="grid h-12 w-12 place-items-center rounded-2xl bg-linear-to-br from-slate-600 to-slate-700 text-white shadow-md">
+      <IconUser size={24} />
+    </span>
+  );
+
+  // Read-only Keycloak view has no form/save bar, so it renders a plain BentoHero.
   const hero = (title: string, subtitle: string) => (
     <BentoHero
-      eyebrow={<Link to={ROUTES.BENTO_ADMIN_USERS} className="inline-flex items-center gap-1 hover:text-foreground"><IconArrowLeft size={14} aria-hidden />{t("admin.users.title")}</Link>}
-      leading={
-        <span className="grid h-12 w-12 place-items-center rounded-2xl bg-linear-to-br from-slate-600 to-slate-700 text-white shadow-md">
-          <IconUser size={24} />
-        </span>
-      }
+      backTo={ROUTES.BENTO_ADMIN_USERS}
+      backLabel={t("admin.users.title")}
+      leading={leading}
       title={title}
       subtitle={subtitle}
     />
@@ -125,10 +129,13 @@ export default function BentoAdminUserPage() {
             open={open}
             setOpen={setOpen}
             listRoute={ROUTES.BENTO_ADMIN_USERS}
-            header={hero(
-              isNew ? t("admin.users.newUser") : (user.username || username),
-              isNew ? t("admin.users.createDescription") : t("admin.users.editDescription"),
-            )}
+            bentoHero={{
+              backTo: ROUTES.BENTO_ADMIN_USERS,
+              backLabel: t("admin.users.title"),
+              leading,
+              title: isNew ? t("admin.users.newUser") : (user.username || username),
+              subtitle: isNew ? t("admin.users.createDescription") : t("admin.users.editDescription"),
+            }}
           />
         )}
       </LoadProvider>

@@ -14,7 +14,8 @@ export default function BentoCustomToolListPage() {
       items={tools}
       error={error}
       tryAgainUrl={ROUTES.BENTO_CUSTOM_TOOL_INSTANCE}
-      eyebrow={t("home.sections.generativeAi.label")}
+      backTo={ROUTES.BENTO_AREA_GENERATIVE_AI}
+      backLabel={t("home.sections.generativeAi.label")}
       heroIcon={IconBraces}
       tone="slate"
       title={t("customTool.title")}

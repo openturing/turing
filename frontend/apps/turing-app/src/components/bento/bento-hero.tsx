@@ -1,12 +1,48 @@
 import type { ReactNode } from "react";
+import { IconArrowLeft } from "@tabler/icons-react";
+import { Link } from "react-router-dom";
+
+/**
+ * Canonical breadcrumb back-link for Bento heroes — a leading
+ * `IconArrowLeft` followed by the label, pointing at the parent list/route.
+ *
+ * Centralised here so the arrow is part of the shared component instead of
+ * being re-typed inline on every page (which is how the persona dashboard
+ * ended up without it). Use it directly only when the eyebrow needs extra
+ * trailing content (e.g. a status marker); otherwise pass
+ * {@link BentoHeroProps.backTo} / {@link BentoHeroProps.backLabel} and let
+ * {@link BentoHero} render it.
+ */
+export function BentoBackLink({ to, children }: Readonly<{ to: string; children: ReactNode }>) {
+  return (
+    <Link to={to} className="inline-flex items-center gap-1 hover:text-foreground">
+      <IconArrowLeft size={14} aria-hidden />
+      {children}
+    </Link>
+  );
+}
 
 export interface BentoHeroProps {
   /**
    * Small label above the headline. Typically the parent section
    * name (acts as a breadcrumb back-link). Accepts a `ReactNode` so
-   * consumers can pass a `<Link>` to make it clickable.
+   * consumers can pass bespoke content.
+   *
+   * Prefer {@link BentoHeroProps.backTo} for the common "breadcrumb back to
+   * the parent list" case — it renders the canonical leading `IconArrowLeft`
+   * so no page can forget it. Pass `eyebrow` only for bespoke content (e.g. a
+   * status marker appended after the link, composed with {@link BentoBackLink}).
+   * If both are set, `eyebrow` wins.
    */
   eyebrow?: ReactNode;
+  /**
+   * Convenience for the canonical breadcrumb: renders the eyebrow as a
+   * back-link (leading `IconArrowLeft` + {@link BentoHeroProps.backLabel})
+   * pointing at this route. Ignored when `eyebrow` is provided.
+   */
+  backTo?: string;
+  /** Label for the {@link BentoHeroProps.backTo} back-link. */
+  backLabel?: ReactNode;
   /** Headline — a greeting, the page title, etc. */
   title: ReactNode;
   /** Sub-line below the title. */
@@ -33,19 +69,26 @@ export interface BentoHeroProps {
  */
 export function BentoHero({
   eyebrow,
+  backTo,
+  backLabel,
   title,
   subtitle,
   leading,
   trailing,
 }: Readonly<BentoHeroProps>) {
+  // `eyebrow` wins for bespoke content; otherwise `backTo` renders the
+  // canonical arrow+label back-link so no page has to re-type it.
+  const eyebrowContent =
+    eyebrow ?? (backTo != null ? <BentoBackLink to={backTo}>{backLabel}</BentoBackLink> : null);
+
   return (
     <header className="bento-shell-header mb-6 flex flex-col items-start gap-3 md:mb-10">
       <div className="flex w-full items-start gap-4">
         {leading && <div className="shrink-0">{leading}</div>}
         <div className="flex flex-1 flex-col gap-1">
-          {eyebrow && (
+          {eyebrowContent && (
             <span className="text-xs uppercase tracking-[0.18em] text-muted-foreground">
-              {eyebrow}
+              {eyebrowContent}
             </span>
           )}
           <h1 className="text-3xl font-semibold tracking-tight md:text-4xl">{title}</h1>

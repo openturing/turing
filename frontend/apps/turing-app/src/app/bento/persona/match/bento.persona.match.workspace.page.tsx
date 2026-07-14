@@ -10,7 +10,7 @@ import {
 import { useLlmInstances } from "@/api/queries/llm-instance.queries";
 import { usePersonas } from "@/api/queries/persona.queries";
 import { ROUTES } from "@/app/routes.const";
-import { BentoFormSection, BentoHero } from "@/components/bento";
+import { BentoActionsMenu, BentoFormSection, BentoHero } from "@/components/bento";
 import { PersonaSelectGrid } from "@/components/persona/persona-select-grid";
 import { SnDocumentPicker, type PickedSnDocument } from "@/components/sn/sn-document-picker";
 import { Badge } from "@/components/ui/badge";
@@ -50,7 +50,6 @@ import {
 } from "@/models/persona/persona-match.model";
 import { useQueryClient } from "@tanstack/react-query";
 import {
-  IconArrowLeft,
   IconBulb,
   IconCalendarRepeat,
   IconCheck,
@@ -71,7 +70,7 @@ import {
 } from "@tabler/icons-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Link, useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 
 const SOURCE_TYPE_ICON: Record<MatchSourceType, typeof IconLink> = {
   URL: IconLink,
@@ -219,11 +218,8 @@ function CreateProjectCard() {
   return (
     <>
       <BentoHero
-        eyebrow={
-          <Link to={ROUTES.BENTO_PERSONA_MATCH} className="inline-flex items-center gap-1 hover:text-foreground">
-            <IconArrowLeft size={14} /> {t("persona.match.back")}
-          </Link>
-        }
+        backTo={ROUTES.BENTO_PERSONA_MATCH}
+        backLabel={t("persona.match.back")}
         leading={
           <span className="grid h-12 w-12 place-items-center rounded-2xl bg-linear-to-br from-indigo-600 to-fuchsia-600 text-white shadow-md">
             <IconTargetArrow size={24} />
@@ -508,11 +504,8 @@ function ProjectWorkspace({ projectId }: Readonly<{ projectId: string }>) {
   return (
     <>
       <BentoHero
-        eyebrow={
-          <Link to={ROUTES.BENTO_PERSONA_MATCH} className="inline-flex items-center gap-1 hover:text-foreground">
-            <IconArrowLeft size={14} /> {t("persona.match.back")}
-          </Link>
-        }
+        backTo={ROUTES.BENTO_PERSONA_MATCH}
+        backLabel={t("persona.match.back")}
         leading={
           <span className="grid h-12 w-12 place-items-center rounded-2xl bg-linear-to-br from-indigo-600 to-fuchsia-600 text-white shadow-md">
             <IconTargetArrow size={24} />
@@ -527,6 +520,14 @@ function ProjectWorkspace({ projectId }: Readonly<{ projectId: string }>) {
               {running ? <IconLoader2 className="size-4 animate-spin" /> : <IconPlayerPlayFilled className="size-4" />}
               {runLabel}
             </Button>
+            <BentoActionsMenu
+              actions={[{
+                label: t("persona.match.deleteProject"),
+                icon: IconTrash,
+                tone: "destructive",
+                onSelect: removeProject,
+              }]}
+            />
           </div>
         }
       />
@@ -716,12 +717,6 @@ function ProjectWorkspace({ projectId }: Readonly<{ projectId: string }>) {
                 </SelectContent>
               </Select>
             </label>
-          </div>
-          <div className="mt-2">
-            <Button type="button" variant="ghost" size="sm" className="gap-1.5 text-red-600" onClick={removeProject}>
-              <IconTrash className="size-4" />
-              {t("persona.match.deleteProject")}
-            </Button>
           </div>
         </BentoFormSection>
 

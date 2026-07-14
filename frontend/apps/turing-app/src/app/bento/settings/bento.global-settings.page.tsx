@@ -1,4 +1,5 @@
-import { BentoHero, BentoSaveBar, BentoScrollSaveBar } from "@/components/bento";
+import { BentoFormHero } from "@/components/bento";
+import { ROUTES } from "@/app/routes.const";
 import { Form } from "@/components/ui/form";
 import { SectionCardChromeProvider } from "@/components/ui/section-card";
 import { EmailSettingsSection } from "@/app/console/system/sections/email-settings.section";
@@ -14,6 +15,7 @@ import { useGlobalSettingsForm } from "@/app/console/system/use-global-settings-
 import { IconAdjustments, IconCode, IconSettings, IconSparkles, type Icon as TablerIcon } from "@tabler/icons-react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
+import { useNavigate } from "react-router-dom";
 
 type TabId = "platform" | "genai" | "code";
 
@@ -33,6 +35,7 @@ type TabId = "platform" | "genai" | "code";
  */
 export default function BentoGlobalSettingsPage() {
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const state = useGlobalSettingsForm();
   const { form, isLoading, isSaving, onSubmit } = state;
   const [activeTab, setActiveTab] = useState<TabId>("platform");
@@ -74,27 +77,20 @@ export default function BentoGlobalSettingsPage() {
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col gap-5 pb-8">
-        <BentoHero
+        <BentoFormHero
           leading={
             <span className="grid h-11 w-11 place-items-center rounded-2xl bg-linear-to-br from-slate-600 to-slate-700 text-white shadow-md">
               <IconSettings size={22} />
             </span>
           }
-          eyebrow={t("home.sections.management.label", { defaultValue: "Management" })}
+          backTo={ROUTES.BENTO_AREA_MANAGEMENT}
+          backLabel={t("home.sections.management.label", { defaultValue: "Management" })}
           title={t("globalSettings.breadcrumb")}
           subtitle={t("globalSettings.description")}
-        />
-
-        <div className="bento-fade-out">
-          <BentoSaveBar
-            loading={isSaving}
-            disabled={isLoading}
-            dirty={form.formState.isDirty}
-          />
-        </div>
-        <BentoScrollSaveBar
+          stickyTitle={t("globalSettings.breadcrumb")}
+          onCancel={() => navigate(ROUTES.BENTO_AREA_MANAGEMENT)}
           loading={isSaving}
-          disabled={isLoading}
+          saveDisabled={isLoading}
           dirty={form.formState.isDirty}
         />
 

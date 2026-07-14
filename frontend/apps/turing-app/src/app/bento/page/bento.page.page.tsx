@@ -93,7 +93,8 @@ export default function BentoPagePage() {
         onChange={handleFileSelect}
       />
       <BentoHero
-        eyebrow={t("home.sections.management.label")}
+        backTo={ROUTES.BENTO_AREA_MANAGEMENT}
+        backLabel={t("home.sections.management.label")}
         leading={
           <span className="grid h-12 w-12 place-items-center rounded-2xl bg-linear-to-br from-blue-600 to-indigo-600 text-white shadow-md">
             <IconGlobe size={24} />

@@ -58,6 +58,8 @@ export default function BentoAreaPage() {
   return (
     <>
       <BentoHero
+        backTo={ROUTES.BENTO_HOME}
+        backLabel={t("home.title")}
         leading={SectionIcon ? <SectionIcon size={40} /> : undefined}
         title={label}
         subtitle={description}

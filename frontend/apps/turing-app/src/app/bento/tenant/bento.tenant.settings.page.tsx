@@ -1,4 +1,5 @@
 import { BentoHero } from "@/components/bento";
+import { ROUTES } from "@/app/routes.const";
 import TenantSettingsPage from "@/app/console/tenant/tenant-settings.page";
 import { IconBuildingCommunity } from "@tabler/icons-react";
 import { useTranslation } from "react-i18next";
@@ -13,7 +14,8 @@ export default function BentoTenantSettingsPage() {
   return (
     <>
       <BentoHero
-        eyebrow={t("home.sections.management.label")}
+        backTo={ROUTES.BENTO_AREA_MANAGEMENT}
+        backLabel={t("home.sections.management.label")}
         leading={
           <span className="grid h-12 w-12 place-items-center rounded-2xl bg-linear-to-br from-slate-500 to-slate-700 text-white shadow-md">
             <IconBuildingCommunity size={24} />

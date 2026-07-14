@@ -22,7 +22,7 @@ import { useNavigate } from "react-router-dom"
 import { StickyPageHeader } from "../sticky-page-header"
 import { GradientButton } from "../ui/gradient-button"
 import { SectionCard } from "../ui/section-card"
-import { BentoSaveBar, BentoScrollSaveBar } from "../bento"
+import { BentoAgentSubHero } from "@/app/bento/ai-agent/bento.ai-agent.sub-hero"
 import { SystemPromptWarningsPanel } from "./system-prompt-warnings-panel"
 
 const urlBase = ROUTES.AI_AGENT_INSTANCE
@@ -124,25 +124,22 @@ export const AIAgentSystemPromptForm: React.FC<Props> = ({ value, chrome = "cons
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
           {isBento ? (
-            <>
-              {/* Two-piece hero → sticky-save-bar morph (T736): the
-                  BentoAgentSubHero supplies the hero above this form, so Save
-                  lives in a fade-out bar at the top of the body and a fixed
-                  BentoScrollSaveBar fades in as it scrolls away — matching every
-                  sibling agent sub-page (settings/LLM/tools/…). */}
-              <div className="bento-fade-out">
-                <BentoSaveBar
-                  onCancel={() => navigate(baseRoute)}
-                  loading={updateMutation.isPending}
-                  dirty={form.formState.isDirty}
-                />
-              </div>
-              <BentoScrollSaveBar
-                onCancel={() => navigate(baseRoute)}
-                loading={updateMutation.isPending}
-                dirty={form.formState.isDirty}
-              />
-            </>
+            /* Standard agent form-hero (T736): Save/Cancel live in the hero and
+               fade into a fixed sticky save-bar on scroll — matching every
+               sibling agent sub-page (settings/intent/…). */
+            <BentoAgentSubHero
+              agentId={value.id}
+              agentTitle={value.title || t("aiAgent.title")}
+              icon={IconFileText}
+              tone="violet"
+              title={t("aiAgent.systemPrompt.title", { defaultValue: "System Prompt" })}
+              subtitle={t("aiAgent.systemPrompt.description", {
+                defaultValue: "The behavioral contract sent to the model on every turn.",
+              })}
+              onCancel={() => navigate(baseRoute)}
+              loading={updateMutation.isPending}
+              dirty={form.formState.isDirty}
+            />
           ) : (
             <StickyPageHeader>
               <StickyPageHeader.Title

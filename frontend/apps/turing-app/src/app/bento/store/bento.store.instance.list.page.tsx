@@ -18,7 +18,8 @@ export default function BentoStoreInstanceListPage() {
       items={stores}
       error={error}
       tryAgainUrl={ROUTES.BENTO_STORE_INSTANCE}
-      eyebrow={t("home.sections.generativeAi.label")}
+      backTo={ROUTES.BENTO_AREA_GENERATIVE_AI}
+      backLabel={t("home.sections.generativeAi.label")}
       heroIcon={IconDatabase}
       tone="violet"
       title={t("store.title")}

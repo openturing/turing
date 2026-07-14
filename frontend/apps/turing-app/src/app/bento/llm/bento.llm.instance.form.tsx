@@ -186,7 +186,7 @@ export const BentoLLMInstanceForm: React.FC<Props> = ({ value, isNew, staged, on
       setMaxTokensInput("256")
     }
     if (vendorId === "OPENAI") {
-      form.setValue("url", "https://api.openai.com", { shouldDirty: true })
+      form.setValue("url", "https://api.openai.com/v1", { shouldDirty: true })
       form.setValue("modelName", "gpt-4o-mini", { shouldDirty: true })
       form.setValue("temperature", 0.7, { shouldDirty: true })
       form.setValue("topP", 0.9, { shouldDirty: true })

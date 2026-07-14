@@ -140,7 +140,8 @@ export default function BentoGitPage() {
   return (
     <LoadProvider checkIsNotUndefined={repositories} error={error} tryAgainUrl={ROUTES.BENTO_GIT}>
       <BentoHero
-        eyebrow={t("home.sections.management.label")}
+        backTo={ROUTES.BENTO_AREA_MANAGEMENT}
+        backLabel={t("home.sections.management.label")}
         leading={
           <span className="grid h-12 w-12 place-items-center rounded-2xl bg-linear-to-br from-violet-500 to-purple-600 text-white shadow-md">
             <IconGitBranch size={24} />

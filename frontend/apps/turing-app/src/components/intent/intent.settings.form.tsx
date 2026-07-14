@@ -18,6 +18,7 @@ import type { TurIntent, TurIntentAction } from "@/models/intent/intent.model"
 import { IconPicker } from "@/components/ui/icon-picker"
 import { SmartDescription } from "@/components/ui/smart-description"
 import {
+  IconBulb,
   IconDeviceFloppy,
   IconGripVertical,
   IconInfoCircle,
@@ -39,20 +40,23 @@ import { FormItemTwoColumns } from "../ui/form-item-two-columns"
 import { GradientButton } from "../ui/gradient-button"
 import { GradientSwitch } from "../ui/gradient-switch"
 import { SectionCard } from "../ui/section-card"
-import { BentoFormSection, BentoSaveBar, BentoScrollSaveBar, type BentoTone } from "../bento"
+import { BentoActionsMenu, BentoFormSection, type BentoTone } from "../bento"
+import { BentoAgentSubHero } from "@/app/bento/ai-agent/bento.ai-agent.sub-hero"
 import type { ComponentType, ReactNode } from "react"
 
 interface Props {
   value: TurIntent
   isNew: boolean
   agentId: string
-  /** Render inside the bento shell (frosted BentoFormSection + BentoSaveBar) instead of console chrome. */
+  /** Parent agent title — shown as the bento hero breadcrumb back-link. */
+  agentTitle?: string
+  /** Render inside the bento shell (frosted BentoFormSection + BentoFormHero) instead of console chrome. */
   chrome?: "console" | "bento"
   /** Base route for navigation after save/cancel (defaults to the console AI agent list). */
   baseRoute?: string
 }
 
-export const IntentSettingsForm: React.FC<Props> = ({ value, isNew, agentId, chrome = "console", baseRoute }) => {
+export const IntentSettingsForm: React.FC<Props> = ({ value, isNew, agentId, agentTitle, chrome = "console", baseRoute }) => {
   const urlBase = `${baseRoute ?? ROUTES.AI_AGENT_INSTANCE}/${agentId}/intent`
   const { t } = useTranslation();
 
@@ -200,32 +204,36 @@ export const IntentSettingsForm: React.FC<Props> = ({ value, isNew, agentId, chr
       <form onSubmit={form.handleSubmit(onSubmit)} className={chrome === "bento" ? "space-y-4 md:space-y-5 pb-8" : "space-y-4 px-4 lg:px-6 pb-8"}>
         {chrome === "bento" ? (
           <>
-            <div className="bento-fade-out">
-              <BentoSaveBar
-                actions={
-                  <>
-                    <GradientButton type="submit" size="sm">
-                      <IconDeviceFloppy className="size-4" />
-                      {t("forms.formActions.saveChanges")}
-                    </GradientButton>
-                    <GradientButton type="button" variant="outline" size="sm" onClick={() => navigate(urlBase)}>
-                      <IconX className="size-4" />
-                      {t("forms.formActions.cancel")}
-                    </GradientButton>
-                    {!isNew && (
-                      <DialogDelete
-                        feature={t("intent.title")}
-                        name={value.title}
-                        onDelete={onDelete}
-                        open={deleteOpen}
-                        setOpen={setDeleteOpen}
-                      />
-                    )}
-                  </>
-                }
+            <BentoAgentSubHero
+              agentId={agentId}
+              agentTitle={agentTitle ?? t("aiAgent.title")}
+              icon={IconBulb}
+              tone="amber"
+              title={isNew ? t("intent.newInstance") : (value.title || t("intent.title"))}
+              subtitle={t("intent.settings.description")}
+              onCancel={() => navigate(urlBase)}
+              saveDisabled={false}
+              trailing={!isNew ? (
+                <BentoActionsMenu
+                  actions={[{
+                    label: t("forms.formActions.delete"),
+                    icon: IconTrash,
+                    tone: "destructive",
+                    onSelect: () => setDeleteOpen(true),
+                  }]}
+                />
+              ) : undefined}
+            />
+            {!isNew && (
+              <DialogDelete
+                feature={t("intent.title")}
+                name={value.title}
+                onDelete={onDelete}
+                open={deleteOpen}
+                setOpen={setDeleteOpen}
+                trigger={<span className="hidden" aria-hidden />}
               />
-            </div>
-            <BentoScrollSaveBar onCancel={() => navigate(urlBase)} />
+            )}
           </>
         ) : (
           <StickyPageHeader>

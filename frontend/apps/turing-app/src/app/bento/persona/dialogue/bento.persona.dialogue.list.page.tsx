@@ -35,11 +35,8 @@ export default function BentoPersonaDialogueListPage() {
       items={projects}
       error={error}
       tryAgainUrl={ROUTES.BENTO_PERSONA_DIALOGUE}
-      eyebrow={
-        <Link to={ROUTES.BENTO_PERSONA_INSTANCE} className="hover:text-foreground">
-          {t("persona.dialogueProject.personas")}
-        </Link>
-      }
+      backTo={ROUTES.BENTO_PERSONA_INSTANCE}
+      backLabel={t("persona.dialogueProject.personas")}
       heroIcon={IconMasksTheater}
       tone="rose"
       title={t("persona.dialogueProject.title")}

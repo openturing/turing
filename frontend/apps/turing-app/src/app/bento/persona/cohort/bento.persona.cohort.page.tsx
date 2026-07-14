@@ -7,7 +7,6 @@ import { Textarea } from "@/components/ui/textarea";
 import type { TurPersona } from "@/models/persona/persona.model";
 import { TurPersonaCohortService } from "@/services/persona/persona-cohort.service";
 import {
-  IconArrowLeft,
   IconArrowRight,
   IconLoader2,
   IconRefresh,
@@ -18,7 +17,7 @@ import {
 } from "@tabler/icons-react";
 import { useCallback, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 
 const service = new TurPersonaCohortService();
 
@@ -87,11 +86,8 @@ export default function BentoPersonaCohortPage() {
   return (
     <>
       <BentoHero
-        eyebrow={
-          <Link to={ROUTES.BENTO_PERSONA_RESEARCH} className="inline-flex items-center gap-1 hover:text-foreground">
-            <IconArrowLeft size={14} aria-hidden /> {t("persona.cohort.back")}
-          </Link>
-        }
+        backTo={ROUTES.BENTO_PERSONA_RESEARCH}
+        backLabel={t("persona.cohort.back")}
         leading={
           <span className="grid h-12 w-12 place-items-center rounded-2xl bg-linear-to-br from-violet-600 to-fuchsia-600 text-white shadow-md">
             <IconUsersGroup size={24} />

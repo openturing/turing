@@ -8,6 +8,13 @@
     "blankTitle": "You don't seem to have any persona.",
     "blankDescription": "Create a reusable voice profile to apply consistent tone, vocabulary and brand context across your AI agents.",
     "newInstance": "New Persona",
+    "create": {
+      "chooseMethod": "How do you want to create this persona?",
+      "manualTitle": "Enter details manually",
+      "manualDesc": "Fill in the persona's identity, style and guidelines yourself.",
+      "audioTitle": "From an audio recording",
+      "audioDesc": "Upload a recording and let AI draft the persona for you to review."
+    },
     "sidebar": {
       "general": "General",
       "systemInstruction": "System Instruction",

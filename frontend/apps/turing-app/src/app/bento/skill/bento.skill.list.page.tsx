@@ -81,7 +81,8 @@ export default function BentoSkillListPage() {
         onChange={(e) => handleImport(e.target.files)}
       />
       <BentoHero
-        eyebrow={t("home.sections.generativeAi.label")}
+        backTo={ROUTES.BENTO_AREA_GENERATIVE_AI}
+        backLabel={t("home.sections.generativeAi.label")}
         leading={
           <span className="grid h-12 w-12 place-items-center rounded-2xl bg-linear-to-br from-violet-500 to-purple-600 text-white shadow-md">
             <IconSparkles size={24} />

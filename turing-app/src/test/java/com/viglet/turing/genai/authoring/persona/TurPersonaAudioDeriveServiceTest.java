@@ -74,7 +74,9 @@ class TurPersonaAudioDeriveServiceTest {
                  "tone": "CASUAL", "verbosity": 4, "languageStyle": "PERSUASIVE",
                  "personaKind": "BOTH", "readingLevel": "SECONDARY",
                  "domainExpertise": "EXPERT", "vocabularyCeiling": "everyday words",
-                 "primaryLanguage": "pt"}
+                 "primaryLanguage": "pt",
+                 "openness": 70, "conscientiousness": 55, "extraversion": 120,
+                 "neuroticism": 30}
                 """;
         when(llmSummaryService.generate(startsWith("persona-from-audio:classify"),
                 anyString(), anyString(), anyBoolean()))
@@ -100,6 +102,13 @@ class TurPersonaAudioDeriveServiceTest {
         assertThat(result.draft().getAudience().getReadingLevel())
                 .isEqualTo(TurPersonaReadingLevel.SECONDARY);
         assertThat(result.draft().getAudience().getPrimaryLanguage()).isEqualTo("pt");
+        // T717 — Big Five: scored traits carry over, out-of-range clamps to 0-100,
+        // and a trait the model omitted stays null ("unset").
+        assertThat(result.draft().getOpenness()).isEqualTo(70);
+        assertThat(result.draft().getConscientiousness()).isEqualTo(55);
+        assertThat(result.draft().getExtraversion()).isEqualTo(100); // clamped from 120
+        assertThat(result.draft().getNeuroticism()).isEqualTo(30);
+        assertThat(result.draft().getAgreeableness()).isNull(); // omitted → unset
     }
 
     @Test
@@ -153,5 +162,8 @@ class TurPersonaAudioDeriveServiceTest {
         assertThat(result.draft().getVerbosity()).isEqualTo(5); // clamped 1..5
         assertThat(result.draft().getPersonaKind()).isEqualTo(TurPersonaKind.BOTH);
         assertThat(result.draft().getAudience().getReadingLevel()).isNull();
+        // No OCEAN scores in the JSON → all traits stay null (unset).
+        assertThat(result.draft().getOpenness()).isNull();
+        assertThat(result.draft().getNeuroticism()).isNull();
     }
 }

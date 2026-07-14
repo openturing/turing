@@ -10,10 +10,10 @@ import { BentoEntityTile, BentoListPage } from "@/components/bento";
 import { GradientButton } from "@/components/ui/gradient-button";
 import { Input } from "@/components/ui/input";
 import type { TurSNSynonym } from "@/models/sn/sn-site-synonym.model";
-import { IconArrowLeft, IconArrowsShuffle, IconDownload, IconRocket, IconSparkles } from "@tabler/icons-react";
+import { IconArrowsShuffle, IconDownload, IconRocket, IconSparkles } from "@tabler/icons-react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Link, useParams } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import { toast } from "@viglet/viglet-design-system";
 
 /** Human summary of a rule for the tile description. */
@@ -147,7 +147,8 @@ export default function BentoSNSynonymListPage() {
       items={items}
       error={error}
       tryAgainUrl={sectionRoute}
-      eyebrow={<Link to={instanceRoute} className="inline-flex items-center gap-1 hover:text-foreground"><IconArrowLeft size={14} aria-hidden />{t("sn.title")}</Link>}
+      backTo={instanceRoute}
+      backLabel={t("sn.title")}
       heroIcon={IconArrowsShuffle}
       tone="emerald"
       title={t("sn.synonym.title")}

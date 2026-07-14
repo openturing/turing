@@ -14,7 +14,8 @@ export default function BentoWebhookListPage() {
       items={webhooks}
       error={error}
       tryAgainUrl={ROUTES.BENTO_CHAT_WEBHOOK_INSTANCE}
-      eyebrow={t("home.sections.generativeAi.label")}
+      backTo={ROUTES.BENTO_AREA_GENERATIVE_AI}
+      backLabel={t("home.sections.generativeAi.label")}
       heroIcon={IconWebhook}
       tone="rose"
       title={t("webhook.title")}

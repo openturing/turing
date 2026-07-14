@@ -35,11 +35,8 @@ export default function BentoPersonaMatchListPage() {
       items={projects}
       error={error}
       tryAgainUrl={ROUTES.BENTO_PERSONA_MATCH}
-      eyebrow={
-        <Link to={ROUTES.BENTO_PERSONA_INSTANCE} className="hover:text-foreground">
-          {t("persona.match.personas")}
-        </Link>
-      }
+      backTo={ROUTES.BENTO_PERSONA_INSTANCE}
+      backLabel={t("persona.match.personas")}
       heroIcon={IconTargetArrow}
       tone="indigo"
       title={t("persona.match.title")}

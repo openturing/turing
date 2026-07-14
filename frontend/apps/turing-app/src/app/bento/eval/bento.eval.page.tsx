@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { ROUTES } from "@/app/routes.const";
 import { useTranslation } from "react-i18next";
 import {
   IconActivityHeartbeat,
@@ -79,7 +80,8 @@ export default function BentoEvalPage() {
   return (
     <div className="mx-auto w-full max-w-7xl px-4 pb-16 md:px-8">
       <BentoHero
-        eyebrow={t("home.sections.generativeAi.label", { defaultValue: "Generative AI" })}
+        backTo={ROUTES.BENTO_AREA_GENERATIVE_AI}
+        backLabel={t("home.sections.generativeAi.label", { defaultValue: "Generative AI" })}
         title={t("evalStudio.title", { defaultValue: "Eval Studio" })}
         subtitle={t("evalStudio.subtitle", {
           defaultValue:

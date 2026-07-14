@@ -14,7 +14,8 @@ export default function BentoLLMInstanceListPage() {
       items={llms}
       error={error}
       tryAgainUrl={ROUTES.BENTO_LLM_INSTANCE}
-      eyebrow={t("home.sections.generativeAi.label")}
+      backTo={ROUTES.BENTO_AREA_GENERATIVE_AI}
+      backLabel={t("home.sections.generativeAi.label")}
       heroIcon={IconCpu2}
       tone="indigo"
       title={t("llm.title")}

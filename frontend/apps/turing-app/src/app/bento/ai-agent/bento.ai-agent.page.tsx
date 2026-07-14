@@ -27,7 +27,7 @@ import {
 } from "@tabler/icons-react";
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Link, useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { AiAgentLaunchBar } from "./ai-agent.launch.bar";
 
 export default function BentoAIAgentPage() {
@@ -110,11 +110,8 @@ function AgentBento({ agent }: Readonly<{ agent: TurAIAgent }>) {
   return (
     <>
       <BentoHero
-        eyebrow={
-          <Link to={ROUTES.BENTO_AI_AGENT_INSTANCE} className="hover:text-foreground">
-            {t("aiAgent.title")}
-          </Link>
-        }
+        backTo={ROUTES.BENTO_AI_AGENT_INSTANCE}
+        backLabel={t("aiAgent.title")}
         leading={
           <BentoHeroIconPicker
             value={agent.icon}

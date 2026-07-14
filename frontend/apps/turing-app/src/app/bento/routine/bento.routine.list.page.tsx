@@ -14,7 +14,8 @@ export default function BentoRoutineListPage() {
       items={routines}
       error={error}
       tryAgainUrl={ROUTES.BENTO_ROUTINE_INSTANCE}
-      eyebrow={t("home.sections.generativeAi.label")}
+      backTo={ROUTES.BENTO_AREA_GENERATIVE_AI}
+      backLabel={t("home.sections.generativeAi.label")}
       heroIcon={IconClock}
       tone="emerald"
       title={t("routine.title")}

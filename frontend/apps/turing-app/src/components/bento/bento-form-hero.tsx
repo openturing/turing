@@ -1,17 +1,16 @@
 import { GradientButton } from "@/components/ui/gradient-button";
-import { IconArrowLeft, IconDeviceFloppy, IconX } from "@tabler/icons-react";
+import { IconDeviceFloppy, IconX } from "@tabler/icons-react";
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
-import { Link } from "react-router-dom";
-import { BentoHero, type BentoHeroProps } from "./bento-hero";
+import { BentoBackLink, BentoHero, type BentoHeroProps } from "./bento-hero";
 import { BentoScrollSaveBar } from "./bento-scroll-save-bar";
 
 export interface BentoFormHeroProps extends BentoHeroProps {
   /**
    * Convenience back-link breadcrumb: when set, the hero renders its own
-   * `eyebrow` as a `<Link to={backTo}>` prefixed with an `IconArrowLeft` arrow
-   * (the same affordance `BentoEntityShell` bakes in), so every form page gets a
-   * consistent "← back" breadcrumb without hand-assembling it. Overrides
+   * `eyebrow` as the shared {@link BentoBackLink} (arrow + label) — the same
+   * affordance `BentoEntityShell` and `BentoHero` bake in — so every form page
+   * gets a consistent "← back" breadcrumb without hand-assembling it. Overrides
    * `eyebrow`. Pair with {@link backLabel}.
    */
   backTo?: string;
@@ -99,12 +98,10 @@ export function BentoFormHero({
   const disabled = saveDisabled ?? (Boolean(titleMissing) || !dirty);
 
   // A `backTo` route wins over a hand-passed `eyebrow` and renders the standard
-  // "← label" breadcrumb (matches BentoEntityShell's built-in back-arrow).
+  // "← label" breadcrumb via the shared {@link BentoBackLink} (matches
+  // BentoEntityShell's and BentoHero's built-in back-arrow).
   const resolvedEyebrow = backTo !== undefined ? (
-    <Link to={backTo} className="inline-flex items-center gap-1 hover:text-foreground">
-      <IconArrowLeft size={14} aria-hidden />
-      {backLabel}
-    </Link>
+    <BentoBackLink to={backTo}>{backLabel}</BentoBackLink>
   ) : eyebrow;
 
   return (

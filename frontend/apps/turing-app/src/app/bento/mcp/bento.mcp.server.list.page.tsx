@@ -18,7 +18,8 @@ export default function BentoMcpServerListPage() {
       items={servers}
       error={error}
       tryAgainUrl={ROUTES.BENTO_MCP_INSTANCE}
-      eyebrow={t("home.sections.generativeAi.label")}
+      backTo={ROUTES.BENTO_AREA_GENERATIVE_AI}
+      backLabel={t("home.sections.generativeAi.label")}
       heroIcon={IconServer2}
       tone="amber"
       title={t("mcp.title")}
