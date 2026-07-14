@@ -1,4 +1,4 @@
-import { ArrowLeft, ArrowRight, Check, ShieldCheck, Terminal } from "lucide-react";
+import { ArrowLeft, ArrowRight, Check, ShieldCheck } from "lucide-react";
 import { SiteNav } from "@/components/sections/site-nav";
 import { SiteFooter } from "@/components/sections/site-footer";
 import { CodeBlock } from "@/components/code-block";
@@ -8,18 +8,18 @@ import { Container, LINKS } from "@/components/brand";
 import {
   MIGRATION_CLI_CODE,
   MIGRATION_CLI_FEATURES,
-  MIGRATION_CODE,
   MIGRATION_COLUMNS,
   MIGRATION_MAP,
-  MIGRATION_STEPS,
+  MIGRATION_OUTCOMES,
 } from "@/lib/site-content";
 
 /**
  * "Switching from Algolia / Elasticsearch?" migration landing (§XXVII.3, T479).
  *
- * Mirrors the FeaturePage shell (dark hero, dependency-free routing via plain
- * <a href> full loads) but leads with the differentiator that matters to a team
- * evaluating a switch: their data stays in their own infrastructure.
+ * A sales page, not a runbook: the how-to lives in the docs. It leads with the
+ * one thing that removes the objection ("switching is one command"), shows the
+ * team keeps everything it has (concept map) and gains more (outcomes), and
+ * closes on the differentiator — the data never leaves their infrastructure.
  */
 export function MigratePage() {
   return (
@@ -41,19 +41,17 @@ export function MigratePage() {
               Migrate to Turing
             </p>
             <h1 className="mt-3 max-w-3xl text-3xl font-extrabold leading-[1.1] tracking-tight sm:text-4xl lg:text-5xl">
-              Switching from Algolia or Elasticsearch?
+              Switching from Algolia or Elasticsearch is one command
             </h1>
             <p className="mt-5 max-w-2xl text-lg leading-relaxed text-[#aeb7d4]">
-              Keep faceted, typo-tolerant search — and add RAG, cited chat and
-              agents — without shipping your content to someone else's cloud.
-              One <code className="rounded bg-white/10 px-1.5 py-0.5 font-mono text-[0.95em]">turing&nbsp;migrate</code>{" "}
-              command reads your Algolia or Elasticsearch index and moves it into
-              your own infrastructure — schema and records in a single step.
+              Keep the faceted, typo-tolerant search your team relies on — add
+              RAG, cited chat and agents — and bring it all home to your own
+              infrastructure. No rewrite, no lock-in, no per-record bill.
             </p>
             <div className="mt-7 flex flex-wrap gap-3">
               <Button asChild size="lg">
                 <a href={`${LINKS.docs}migration`} target="_blank" rel="noreferrer">
-                  Read the migration docs <ArrowRight className="size-4" />
+                  Read the migration guide <ArrowRight className="size-4" />
                 </a>
               </Button>
               <Button
@@ -68,17 +66,53 @@ export function MigratePage() {
           </Container>
         </section>
 
-        {/* concept mapping table */}
+        {/* the one command + trust signals */}
         <section className="py-16 lg:py-20">
+          <Container className="grid gap-10 lg:grid-cols-2 lg:items-center">
+            <div>
+              <h2 className="text-2xl font-extrabold tracking-tight sm:text-3xl">
+                Point it at your live index
+              </h2>
+              <p className="mt-4 text-base leading-relaxed text-muted-foreground">
+                <code className="rounded bg-muted px-1.5 py-0.5 font-mono text-sm">
+                  turing migrate
+                </code>{" "}
+                reads your Elasticsearch mappings or Algolia settings, turns them
+                into a Turing schema, and streams the records across — in a single
+                step. And it's cautious by design:
+              </p>
+              <ul className="mt-6 space-y-4">
+                {MIGRATION_CLI_FEATURES.map((f) => (
+                  <li key={f.title} className="flex gap-3">
+                    <Check className="mt-0.5 size-5 shrink-0 text-emerald-500" />
+                    <div>
+                      <p className="text-sm font-bold">{f.title}</p>
+                      <p className="mt-0.5 text-sm leading-relaxed text-muted-foreground">
+                        {f.body}
+                      </p>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            </div>
+            <CodeBlock
+              caption={MIGRATION_CLI_CODE.caption}
+              code={MIGRATION_CLI_CODE.code}
+            />
+          </Container>
+        </section>
+
+        {/* concept mapping — you keep everything */}
+        <section className="border-t border-border bg-muted/40 py-16 lg:py-20">
           <Container>
             <div className="mx-auto mb-10 max-w-2xl text-center">
               <h2 className="text-2xl font-extrabold tracking-tight sm:text-3xl">
-                What you know maps to what Turing does
+                Everything you rely on carries over
               </h2>
               <p className="mt-3 text-base leading-relaxed text-muted-foreground">
-                The concepts carry over almost one-to-one. Where a hosted feature
-                is paid, beta or vendor-locked, Turing ships the equivalent in the
-                box — running on the search engine you already operate.
+                The concepts map almost one-to-one. Where a hosted feature is
+                paid, beta or vendor-locked, Turing ships the equivalent in the
+                box — on the search engine you already operate.
               </p>
             </div>
             <div className="overflow-x-auto">
@@ -124,101 +158,44 @@ export function MigratePage() {
           </Container>
         </section>
 
-        {/* fast path: turing migrate CLI */}
-        <section className="border-t border-border py-16 lg:py-20">
+        {/* what you gain */}
+        <section className="py-16 lg:py-20">
           <Container>
             <div className="mx-auto mb-10 max-w-2xl text-center">
-              <p className="inline-flex items-center gap-1.5 text-xs font-extrabold tracking-[0.12em] text-primary uppercase">
-                <Terminal className="size-4" /> The fast path
-              </p>
-              <h2 className="mt-3 text-2xl font-extrabold tracking-tight sm:text-3xl">
-                One command reads your index and moves it over
+              <h2 className="text-2xl font-extrabold tracking-tight sm:text-3xl">
+                And you come out ahead
               </h2>
-              <p className="mt-3 text-base leading-relaxed text-muted-foreground">
-                <code className="rounded bg-muted px-1.5 py-0.5 font-mono text-sm">
-                  turing migrate
-                </code>{" "}
-                connects to your Elasticsearch or Algolia index, translates the
-                mappings or settings into a Turing field manifest, and streams
-                the records into a Semantic Navigation site — schema translation
-                and import in a single step.
-              </p>
             </div>
-            <div className="mx-auto max-w-3xl">
-              <CodeBlock
-                caption={MIGRATION_CLI_CODE.caption}
-                code={MIGRATION_CLI_CODE.code}
-              />
-            </div>
-            <ul className="mx-auto mt-8 grid max-w-3xl gap-4 sm:grid-cols-2">
-              {MIGRATION_CLI_FEATURES.map((f) => (
-                <li
-                  key={f.flag}
-                  className="rounded-xl border border-border bg-muted/40 p-4"
+            <div className="grid gap-6 md:grid-cols-3">
+              {MIGRATION_OUTCOMES.map((o) => (
+                <div
+                  key={o.title}
+                  className="rounded-2xl border border-border bg-card p-6"
                 >
-                  <code className="font-mono text-sm font-bold text-primary">
-                    {f.flag}
-                  </code>
-                  <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">
-                    {f.body}
+                  <h3 className="text-base font-bold">{o.title}</h3>
+                  <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+                    {o.body}
                   </p>
-                </li>
+                </div>
               ))}
-            </ul>
-          </Container>
-        </section>
-
-        {/* import path — the manual / API route */}
-        <section className="border-t border-border bg-muted/40 py-16 lg:py-20">
-          <Container className="grid gap-10 lg:grid-cols-[1fr_1fr] lg:items-start">
-            <div>
-              <p className="text-xs font-extrabold tracking-[0.12em] text-primary uppercase">
-                Prefer the API? The same three moves, by hand
-              </p>
-              <h2 className="mt-3 text-2xl font-extrabold tracking-tight sm:text-3xl">
-                Three moves, not a rewrite
-              </h2>
-              <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
-                The CLI does these for you, but every step is a plain REST call
-                you can drive from your own pipeline, connector or script.
-              </p>
-              <ul className="mt-8 space-y-6">
-                {MIGRATION_STEPS.map((s) => (
-                  <li key={s.step} className="flex gap-3.5">
-                    <span className="mt-0.5 flex size-7 shrink-0 items-center justify-center rounded-full bg-primary/10 text-sm font-extrabold text-primary">
-                      {s.step}
-                    </span>
-                    <div>
-                      <h3 className="text-base font-bold">{s.title}</h3>
-                      <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
-                        {s.body}
-                      </p>
-                    </div>
-                  </li>
-                ))}
-              </ul>
-            </div>
-            <div className="lg:sticky lg:top-24">
-              <CodeBlock caption={MIGRATION_CODE.caption} code={MIGRATION_CODE.code} />
             </div>
           </Container>
         </section>
 
         {/* your data stays in your infra */}
-        <section className="py-16 lg:py-20">
+        <section className="border-t border-border py-16 lg:py-20">
           <Container>
             <Card className="mx-auto max-w-3xl gap-0 border-primary/20 bg-primary/5 p-8 text-center sm:p-10">
               <span className="mx-auto flex size-12 items-center justify-center rounded-2xl bg-primary/10 text-primary">
                 <ShieldCheck className="size-6" />
               </span>
               <h2 className="mt-5 text-2xl font-extrabold tracking-tight">
-                Your data stays in your infrastructure
+                And your data never leaves your network
               </h2>
               <p className="mx-auto mt-3 max-w-xl text-base leading-relaxed text-muted-foreground">
                 A hosted SaaS keeps your index — and increasingly your users'
-                queries — in someone else's cloud. Turing runs entirely on your
-                own hardware: your documents, embeddings and query logs never
-                leave your network. Apache 2.0, no per-record pricing, no lock-in.
+                queries — in someone else's cloud. Turing runs on your own
+                hardware: documents, embeddings and query logs stay put.
               </p>
               <ul className="mx-auto mt-6 grid max-w-xl gap-2.5 text-left sm:grid-cols-2">
                 {[
@@ -235,8 +212,8 @@ export function MigratePage() {
               </ul>
               <div className="mt-8 flex flex-wrap justify-center gap-3">
                 <Button asChild size="lg">
-                  <a href="/features/search">
-                    See enterprise search <ArrowRight className="size-4" />
+                  <a href={`${LINKS.docs}migration`} target="_blank" rel="noreferrer">
+                    Read the migration guide <ArrowRight className="size-4" />
                   </a>
                 </Button>
                 <Button asChild size="lg" variant="outline">

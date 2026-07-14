@@ -19,6 +19,8 @@
  *   <li>{@code eval --dataset <id|name>} — run a stored dataset × grader stack
  *       server-side as a reusable CI gate (T602).</li>
  *   <li>{@code eval record <conversationId>} — freeze a conversation as a fixture.</li>
+ *   <li>{@code research list|run|insights|rollup …} — define/run a Synthetic User
+ *       Research study and fetch its insights from code/CI (Block AW / T734).</li>
  * </ul>
  *
  * <p>Zero runtime dependencies — Node 22+ built-ins only. Connection details
@@ -48,6 +50,7 @@ import { discoverSuiteFiles, runEvalFiles } from "./commands/eval.js";
 import { parseInitArgs, runInit } from "./commands/init.js";
 import { runLogs } from "./commands/logs.js";
 import { runCompare, runMigrate, type MigrateEngine } from "./commands/migrate.js";
+import { runResearch } from "./commands/research.js";
 
 const log = (line: string) => console.log(line);
 
@@ -114,6 +117,9 @@ async function main(argv: string[]): Promise<void> {
       return;
     case "eval":
       await evalCommand(rest);
+      return;
+    case "research":
+      await researchCommand(rest);
       return;
     case "version":
     case "--version":
@@ -292,6 +298,14 @@ async function evalCommand(rest: string[]): Promise<void> {
   if (!passed) process.exitCode = 1;
 }
 
+async function researchCommand(rest: string[]): Promise<void> {
+  const { flags, positionals, extra } = extractConnectionFlags(rest);
+  const connected = await connect(flags, process.cwd());
+  await connected.client.authenticate();
+  const code = await runResearch(connected.client, positionals, extra, log);
+  if (code !== 0) process.exitCode = code;
+}
+
 async function evalRecord(rest: string[]): Promise<void> {
   const { flags, positionals, extra } = extractConnectionFlags(rest);
   const conversationId = positionals[0];
@@ -332,6 +346,10 @@ function printHelp(): void {
       "  turing eval [path] [--watch] [connection flags]",
       "  turing eval --dataset <id|name> [--stack <id|name>] [--min-score <n>] [connection flags]",
       "  turing eval record <conversationId> [--out <file>] [connection flags]",
+      "  turing research list [connection flags]",
+      "  turing research run <studyId> [--force] [connection flags]",
+      "  turing research insights <studyId> [connection flags]",
+      "  turing research rollup <studyId> [<studyId>...] [connection flags]",
       "",
       "Connection flags (override turing.config.json + env):",
       "  --url <u> --env <name> --token <t> --username <u> --password <p> --agent <id>",

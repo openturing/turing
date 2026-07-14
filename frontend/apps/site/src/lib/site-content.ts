@@ -832,13 +832,15 @@ export const MIGRATION_OUTCOMES: MigrationOutcome[] = [
  * Provided by the @viglet/turing-cli package (T479 / E.7).
  */
 export const MIGRATION_CLI_CODE = {
-  caption: "Point it at your live index — schema and records move together",
+  caption: "Schema and records move together",
   lang: "bash",
-  code: `# From Elasticsearch — mappings become a manifest, documents are imported
-turing migrate elasticsearch --index products --site Products
+  code: `# Elasticsearch: mappings → schema, docs imported
+turing migrate elasticsearch \\
+  --index products --site Products
 
-# From Algolia — --use-llm infers types for the schemaless records
-turing migrate algolia --index catalog --site Catalog --use-llm`,
+# Algolia: --use-llm infers types for schemaless data
+turing migrate algolia \\
+  --index catalog --site Catalog --use-llm`,
 } as const;
 
 export interface MigrationCliFeature {
