@@ -11,6 +11,7 @@ import { GradientSwitch } from "@/components/ui/gradient-switch"
 import { Input } from "@/components/ui/input"
 import { ModelCombobox } from "@/components/ui/model-combobox"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Textarea } from "@/components/ui/textarea"
 import { useLlmModels } from "@/api/queries/llm-model.queries"
 import type { TurLLMInstance } from "@/models/llm/llm-instance.model.ts"
 import type { TurLLMVendor } from "@/models/llm/llm-vendor.model"
@@ -96,6 +97,14 @@ const parseNumber = (value: string) => {
 
 const USES_NUM_PREDICT = (vendorId?: string) => vendorId === "OLLAMA"
 
+// Vendors whose backend provider IGNORES the instance `url` field: Vertex AI
+// (project/location + IAM), Bedrock (region + IAM) and Voyage (fixed hardcoded
+// endpoints). For these the Endpoint URL input is hidden so it doesn't confuse
+// — the field stays blank and its required-rule never applies.
+const VENDORS_WITHOUT_ENDPOINT = new Set(["VERTEX_AI", "BEDROCK", "VOYAGE"])
+const VENDOR_NEEDS_ENDPOINT = (vendorId?: string) =>
+  Boolean(vendorId) && !VENDORS_WITHOUT_ENDPOINT.has(vendorId as string)
+
 export const BentoLLMInstanceForm: React.FC<Props> = ({ value, isNew, staged, onStateChange }) => {
   const { t } = useTranslation()
   const form = useForm<TurLLMInstance>({ defaultValues: value })
@@ -103,6 +112,13 @@ export const BentoLLMInstanceForm: React.FC<Props> = ({ value, isNew, staged, on
   const [vendors, setVendors] = useState<TurLLMVendor[]>([])
   const [maxTokensInput, setMaxTokensInput] = useState<string>("")
   const [preservedOptions, setPreservedOptions] = useState<Record<string, unknown>>({})
+  /*
+   * `preservedOptions` and `maxTokensInput` live outside react-hook-form, so
+   * editing only those (e.g. the Vertex project) would not flip
+   * `form.formState.isDirty` and the Save bar would stay disabled. This flag
+   * mirrors dirtiness for the option-backed inputs.
+   */
+  const [optionsDirty, setOptionsDirty] = useState(false)
   const selectedVendorId = form.watch("turLLMVendor.id")
   const watchedUrl = form.watch("url")
   const watchedApiKey = form.watch("apiKey")
@@ -164,9 +180,32 @@ export const BentoLLMInstanceForm: React.FC<Props> = ({ value, isNew, staged, on
       setMaxTokensInput(optionMaxTokens)
     }
     setPreservedOptions(unknown)
+    setOptionsDirty(false)
     // form is stable across renders and including it triggers a needless re-reset.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [value])
+
+  /**
+   * Updates a `providerOptionsJson`-backed key held in `preservedOptions`.
+   * A blank value removes the key so we never persist e.g. `"project": ""`.
+   */
+  const setPreservedOption = (key: string, rawValue: string) => {
+    setPreservedOptions((prev) => {
+      const next = { ...prev }
+      if (rawValue.trim()) {
+        next[key] = rawValue
+      } else {
+        delete next[key]
+      }
+      return next
+    })
+    setOptionsDirty(true)
+  }
+
+  const isVertexAi = selectedVendorId === "VERTEX_AI"
+  const vertexProject = toText(preservedOptions.project)
+  const vertexLocation = toText(preservedOptions.location)
+  const vertexProjectMissing = isVertexAi && !vertexProject.trim()
 
   const applyVendorDefaults = (vendorId: string) => {
     form.setValue("timeout", "PT60S", { shouldDirty: true })
@@ -204,7 +243,9 @@ export const BentoLLMInstanceForm: React.FC<Props> = ({ value, isNew, staged, on
       setMaxTokensInput("1024")
     }
     if (vendorId === "GEMINI") {
-      form.setValue("url", "", { shouldDirty: true })
+      // Google AI Studio (Gemini Developer API) default endpoint — mirrors
+      // GEMINI_DEFAULT_BASE_URL in TurNativeProviderClientImpl.
+      form.setValue("url", "https://generativelanguage.googleapis.com", { shouldDirty: true })
       form.setValue("modelName", "gemini-2.0-flash", { shouldDirty: true })
       form.setValue("temperature", 0.7, { shouldDirty: true })
       form.setValue("topP", 0.9, { shouldDirty: true })
@@ -220,6 +261,68 @@ export const BentoLLMInstanceForm: React.FC<Props> = ({ value, isNew, staged, on
       form.setValue("supportedCapabilities", "", { shouldDirty: true })
       setMaxTokensInput("8192")
     }
+    if (vendorId === "MISTRAL") {
+      form.setValue("url", "https://api.mistral.ai/v1", { shouldDirty: true })
+      form.setValue("modelName", "mistral-large-latest", { shouldDirty: true })
+      form.setValue("temperature", 0.7, { shouldDirty: true })
+      form.setValue("topP", 0.9, { shouldDirty: true })
+      form.setValue("supportedCapabilities", "", { shouldDirty: true })
+      setMaxTokensInput("8192")
+    }
+    if (vendorId === "COHERE") {
+      // Cohere's OpenAI-compatibility gateway (chat + Embed v4).
+      form.setValue("url", "https://api.cohere.ai/compatibility/v1", { shouldDirty: true })
+      form.setValue("modelName", "command-r-plus", { shouldDirty: true })
+      form.setValue("temperature", 0.7, { shouldDirty: true })
+      form.setValue("topP", 0.9, { shouldDirty: true })
+      form.setValue("supportedCapabilities", "", { shouldDirty: true })
+      setMaxTokensInput("4096")
+    }
+    if (vendorId === "VOYAGE") {
+      // Retrieval-specialist embeddings + rerank (no chat API). The provider
+      // uses fixed hardcoded endpoints and ignores `url`, so it stays blank
+      // and the Endpoint URL input is hidden.
+      form.setValue("url", "", { shouldDirty: true })
+      form.setValue("modelName", "voyage-3", { shouldDirty: true })
+      form.setValue("temperature", 0.7, { shouldDirty: true })
+      form.setValue("topP", 0.9, { shouldDirty: true })
+      form.setValue("supportedCapabilities", "", { shouldDirty: true })
+      setMaxTokensInput("")
+    }
+    if (vendorId === "OPENAI_COMPAT") {
+      // Base URL is provider-specific (DeepSeek, Groq, xAI, OpenRouter,
+      // local vLLM/LM-Studio…), so it can't be auto-filled — the user
+      // must supply it. Everything else gets sensible defaults.
+      form.setValue("url", "", { shouldDirty: true })
+      form.setValue("modelName", "", { shouldDirty: true })
+      form.setValue("temperature", 0.7, { shouldDirty: true })
+      form.setValue("topP", 0.9, { shouldDirty: true })
+      form.setValue("supportedCapabilities", "", { shouldDirty: true })
+      setMaxTokensInput("1024")
+    }
+    if (vendorId === "BEDROCK") {
+      // AWS Bedrock is IAM-authenticated and region-scoped — no base URL;
+      // credentials/region are resolved from the AWS SDK provider chain.
+      form.setValue("url", "", { shouldDirty: true })
+      form.setValue("modelName", "anthropic.claude-3-5-sonnet-20241022-v2:0", { shouldDirty: true })
+      form.setValue("temperature", 0.7, { shouldDirty: true })
+      form.setValue("topP", 0.9, { shouldDirty: true })
+      form.setValue("supportedCapabilities", "", { shouldDirty: true })
+      setMaxTokensInput("4096")
+    }
+    if (vendorId === "VERTEX_AI") {
+      // Regional endpoint + GCP project/location — no single universal URL;
+      // resolved from provider options / ADC, so it can't be auto-filled.
+      // `project` is surfaced as a required field below; `location` defaults
+      // to us-central1 (mirrors DEFAULT_LOCATION in TurVertexAiLlmProvider).
+      form.setValue("url", "", { shouldDirty: true })
+      form.setValue("modelName", "gemini-2.0-flash", { shouldDirty: true })
+      form.setValue("temperature", 0.7, { shouldDirty: true })
+      form.setValue("topP", 0.9, { shouldDirty: true })
+      form.setValue("supportedCapabilities", "", { shouldDirty: true })
+      setMaxTokensInput("8192")
+      setPreservedOptions((prev) => (prev.location ? prev : { ...prev, location: "us-central1" }))
+    }
   }
 
   async function onSubmit(llmInstance: TurLLMInstance) {
@@ -229,6 +332,13 @@ export const BentoLLMInstanceForm: React.FC<Props> = ({ value, isNew, staged, on
     // (form submitted via Enter, programmatic submit, etc).
     if (!staged?.title?.trim()) {
       toast.error(t("forms.llm.titleRequired"))
+      return
+    }
+
+    // Vertex AI cannot be created without a GCP project — the backend
+    // provider throws at model-build time otherwise.
+    if (selectedVendorId === "VERTEX_AI" && !toText(preservedOptions.project).trim()) {
+      toast.error(t("forms.llm.gcpProjectRequired"))
       return
     }
 
@@ -322,9 +432,9 @@ export const BentoLLMInstanceForm: React.FC<Props> = ({ value, isNew, staged, on
             <div className="bento-fade-in fixed inset-x-0 top-20 z-20 mx-auto w-full max-w-7xl px-4 md:px-8">
               <BentoSaveBar
                 title={stagedTitle || (isNew ? t("llm.newLanguageModel") : t("llm.title"))}
-                disabled={titleMissing || (!isNew && !form.formState.isDirty)}
+                disabled={titleMissing || vertexProjectMissing || (!isNew && !form.formState.isDirty && !optionsDirty)}
                 titleMissing={titleMissing}
-                dirty={isNew || form.formState.isDirty}
+                dirty={isNew || form.formState.isDirty || optionsDirty}
                 loading={isSubmitting}
                 badges={vendorLabel && <BentoSaveBar.Badge>{vendorLabel}</BentoSaveBar.Badge>}
                 onCancel={() => navigate(urlBase)}
@@ -393,21 +503,57 @@ export const BentoLLMInstanceForm: React.FC<Props> = ({ value, isNew, staged, on
           title={t("forms.llm.modelSettings")}
           description={t("forms.llm.modelSettingsDesc")}
         >
-          <FormField
-            control={form.control}
-            name="url"
-            rules={{ required: t("forms.se.endpointRequired") }}
-            render={({ field }) => (
-              <FormItem className="w-full">
-                <FormLabel>{t("forms.common.endpointUrl")}</FormLabel>
-                <p className="text-sm text-muted-foreground">{t("forms.llm.endpointDesc")}</p>
-                <FormControl>
-                  <Input placeholder={t("forms.llm.endpointPlaceholder")} type="text" className="w-full" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+          {VENDOR_NEEDS_ENDPOINT(selectedVendorId) && (
+            <FormField
+              control={form.control}
+              name="url"
+              rules={{ required: t("forms.se.endpointRequired") }}
+              render={({ field }) => (
+                <FormItem className="w-full">
+                  <FormLabel>{t("forms.common.endpointUrl")}</FormLabel>
+                  <p className="text-sm text-muted-foreground">{t("forms.llm.endpointDesc")}</p>
+                  <FormControl>
+                    <Input placeholder={t("forms.llm.endpointPlaceholder")} type="text" className="w-full" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          )}
+
+          {isVertexAi && (
+            <>
+              <div className="w-full">
+                <FormLabel className={vertexProjectMissing ? "text-destructive" : undefined}>
+                  {t("forms.llm.gcpProject")}
+                </FormLabel>
+                <p className="text-sm text-muted-foreground">{t("forms.llm.gcpProjectDesc")}</p>
+                <Input
+                  placeholder={t("forms.llm.gcpProjectPlaceholder")}
+                  type="text"
+                  className="mt-2 w-full"
+                  value={vertexProject}
+                  onChange={(event) => setPreservedOption("project", event.target.value)}
+                />
+                {vertexProjectMissing && (
+                  <p className="mt-1 text-sm font-medium text-destructive">
+                    {t("forms.llm.gcpProjectRequired")}
+                  </p>
+                )}
+              </div>
+              <div className="w-full">
+                <FormLabel>{t("forms.llm.gcpLocation")}</FormLabel>
+                <p className="text-sm text-muted-foreground">{t("forms.llm.gcpLocationDesc")}</p>
+                <Input
+                  placeholder={t("forms.llm.gcpLocationPlaceholder")}
+                  type="text"
+                  className="mt-2 w-full"
+                  value={vertexLocation}
+                  onChange={(event) => setPreservedOption("location", event.target.value)}
+                />
+              </div>
+            </>
+          )}
 
           <FormField
             control={form.control}
@@ -437,17 +583,34 @@ export const BentoLLMInstanceForm: React.FC<Props> = ({ value, isNew, staged, on
             name="apiKey"
             render={({ field }) => (
               <FormItem className="w-full">
-                <FormLabel>{t("forms.common.apiKey")}</FormLabel>
-                <p className="text-sm text-muted-foreground">{t("forms.llm.apiKeyDesc")}</p>
+                <FormLabel>{isVertexAi ? t("forms.llm.vertexCredentials") : t("forms.common.apiKey")}</FormLabel>
+                <p className="text-sm text-muted-foreground">
+                  {isVertexAi ? t("forms.llm.vertexCredentialsDesc") : t("forms.llm.apiKeyDesc")}
+                </p>
                 <FormControl>
-                  <Input
-                    placeholder={t("forms.llm.apiKeyPlaceholder")}
-                    type="text"
-                    className="w-full [-webkit-text-security:disc]"
-                    autoComplete="one-time-code"
-                    {...field}
-                    value={field.value ?? ""}
-                  />
+                  {isVertexAi ? (
+                    // Vertex AI credentials are a multi-line service-account
+                    // JSON. Rendered as a textarea (not masked) but still saved
+                    // to the encrypted `apiKey` field.
+                    <Textarea
+                      placeholder={t("forms.llm.vertexCredentialsPlaceholder")}
+                      rows={6}
+                      className="w-full font-mono text-xs"
+                      autoComplete="off"
+                      spellCheck={false}
+                      {...field}
+                      value={field.value ?? ""}
+                    />
+                  ) : (
+                    <Input
+                      placeholder={t("forms.llm.apiKeyPlaceholder")}
+                      type="text"
+                      className="w-full [-webkit-text-security:disc]"
+                      autoComplete="one-time-code"
+                      {...field}
+                      value={field.value ?? ""}
+                    />
+                  )}
                 </FormControl>
                 <FormMessage />
               </FormItem>

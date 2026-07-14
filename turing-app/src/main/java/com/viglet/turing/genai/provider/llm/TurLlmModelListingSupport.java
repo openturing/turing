@@ -86,7 +86,8 @@ public final class TurLlmModelListingSupport {
         if (!StringUtils.hasText(apiKey)) {
             return List.of();
         }
-        String base = StringUtils.hasText(baseUrl) ? baseUrl : "https://generativelanguage.googleapis.com/v1beta";
+        String base = ensureGeminiApiVersion(
+                StringUtils.hasText(baseUrl) ? baseUrl : "https://generativelanguage.googleapis.com/v1beta");
         try {
             Map<String, Object> body = RestClient.create(normalize(base)).get()
                     .uri("/models?pageSize=1000&key={key}", apiKey)
@@ -168,6 +169,19 @@ public final class TurLlmModelListingSupport {
     private static String normalize(String baseUrl) {
         String trimmed = baseUrl.trim();
         return trimmed.endsWith("/") ? trimmed.substring(0, trimmed.length() - 1) : trimmed;
+    }
+
+    /**
+     * The Gemini REST "list models" call needs an explicit API-version segment
+     * ({@code /v1beta}). A chat instance may store only the bare host
+     * ({@code https://generativelanguage.googleapis.com}) because the GenAI SDK
+     * appends the version itself — so append {@code /v1beta} when the base has
+     * no version segment, leaving proxy/custom bases that already carry one
+     * (e.g. {@code /v1beta}, {@code /v1alpha}) untouched.
+     */
+    private static String ensureGeminiApiVersion(String base) {
+        String normalized = normalize(base);
+        return normalized.contains("/v1") ? normalized : normalized + "/v1beta";
     }
 
     private static String stripPrefix(String value, String prefix) {

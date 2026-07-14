@@ -114,7 +114,12 @@ public class TurToolCallbackPipeline {
             base = Arrays.copyOf(offloaded, offloaded.length + 1);
             base[offloaded.length] = new TurWorkspaceReadToolCallback(agentWorkspace);
         }
-        ToolCallback[] withDescriptions = TurToolDescriptionCallback.wrap(base, toolDescriptionService);
+        // Strip null-valued JSON-Schema entries (e.g. "default": null) that
+        // crash the Google GenAI (Gemini/Vertex) Schema binder. Safe for all
+        // providers, so it runs before description override / logging so those
+        // wrap the sanitized definition.
+        ToolCallback[] sanitized = TurToolSchemaSanitizerCallback.wrap(base);
+        ToolCallback[] withDescriptions = TurToolDescriptionCallback.wrap(sanitized, toolDescriptionService);
         return TurLoggingToolCallback.wrap(withDescriptions, analyticsService);
     }
 
