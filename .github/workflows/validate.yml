@@ -19,7 +19,7 @@ jobs:
         with:
           fetch-depth: 0 # Shallow clones should be disabled for a better relevancy of analysis
       - name: Use Node.js 26.3.1
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@v7
         with:
           node-version: 26.3.1
       - name: Set up JDK 21
