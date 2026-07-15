@@ -8,6 +8,7 @@ import { BentoFormSection, BentoSaveBar } from "@/components/bento"
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
 import { FormItemTwoColumns } from "@/components/ui/form-item-two-columns"
 import { GradientSwitch } from "@/components/ui/gradient-switch"
+import { LLMInstanceCapabilitiesForm } from "@/components/llm/llm.instance.capabilities.form"
 import { Input } from "@/components/ui/input"
 import { ModelCombobox } from "@/components/ui/model-combobox"
 import { ModelVerifyButton } from "@/components/ui/model-verify-button"
@@ -877,6 +878,14 @@ export const BentoLLMInstanceForm: React.FC<Props> = ({ value, isNew, staged, on
             )}
           />
         </BentoFormSection>
+
+        {/* Native Capabilities — the per-instance capability matrix (F.15 /
+            T132). Self-saves per toggle through the capability API, so it's
+            independent of the SaveBar and only shown for a saved instance.
+            Renders nothing when the vendor exposes no native capabilities. */}
+        {!isNew && value.id && (
+          <LLMInstanceCapabilitiesForm instanceId={value.id} vendorId={selectedVendorId} />
+        )}
       </form>
     </Form>
   )
