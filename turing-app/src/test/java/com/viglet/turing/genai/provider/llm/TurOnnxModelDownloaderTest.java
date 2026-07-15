@@ -168,9 +168,12 @@ class TurOnnxModelDownloaderTest {
     }
 
     @Test
-    void cacheDirectoryFallsBackToTempWhenBlank() {
+    void cacheDirectoryFallsBackToStoreWhenBlank() {
         TurOnnxModelDownloader d = new TurOnnxModelDownloader("");
         assertTrue(d.cacheDirectory().contains(TurOnnxModelDownloader.CACHE_SUBDIR));
+        // Blank config resolves under the project-wide store/ dir, not a temp dir.
+        assertTrue(d.cacheDirectory().contains(TurOnnxModelDownloader.DEFAULT_STORE_DIR),
+                "blank cache-dir must fall back under store/, got: " + d.cacheDirectory());
         assertNotEquals("", d.cacheDirectory());
     }
 }

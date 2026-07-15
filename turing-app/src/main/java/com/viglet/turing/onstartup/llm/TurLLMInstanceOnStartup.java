@@ -42,8 +42,7 @@ import com.viglet.turing.system.security.TurSecretCryptoService;
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * Provisions a default OpenAI {@link TurLLMInstance} from the
- * {@code OPENAI_API_KEY}
+ * Provisions a default {@link TurLLMInstance} from a provider API-key
  * environment variable on startup, so a fresh deployment (notably the public
  * demo —
  * {@code turing-demo.viglet.org}) has a working chat/RAG LLM without a manual
@@ -53,6 +52,18 @@ import lombok.extern.slf4j.Slf4j;
  * this bean
  * turns that env var into a configured, encrypted, default-selected LLM
  * instance.
+ *
+ * <p>
+ * <b>Providers.</b> Two provider env vars are supported; the first one set wins
+ * (OpenAI takes precedence for backward compatibility):
+ * <ul>
+ * <li>{@code OPENAI_API_KEY} → OpenAI vendor, default model {@code gpt-4o-mini},</li>
+ * <li>{@code GEMINI_API_KEY} → Google Gemini (native) vendor, default model
+ * {@code gemini-3.1-flash-lite}.</li>
+ * </ul>
+ * A single shared model override — {@code turing.startup.default-llm.model} — is
+ * applied to whichever provider is provisioned; when it is unset the per-provider
+ * default above is used.
  *
  * <p>
  * Runs after {@link com.viglet.turing.onstartup.TurExportImportOnStartup}
@@ -80,11 +91,9 @@ import lombok.extern.slf4j.Slf4j;
  *
  * <p>
  * The created instance is a platform-provided GLOBAL one
- * ({@code tenantId = null},
- * usable by every tenant), OpenAI vendor, cheap chat model (default
- * {@code gpt-4o-mini},
- * override via {@code turing.startup.default-llm.model}), and is registered as
- * the
+ * ({@code tenantId = null}, usable by every tenant), the resolved provider's
+ * vendor, a cheap chat model (per-provider default, override via
+ * {@code turing.startup.default-llm.model}), and is registered as the
  * global default LLM.
  *
  * <p>
@@ -116,7 +125,10 @@ public class TurLLMInstanceOnStartup implements ApplicationRunner {
     private static final String OPENAI_API_KEY_ENV = "OPENAI_API_KEY";
     private static final String OPENAI_VENDOR_ID = "OPENAI";
     private static final String OPENAI_BASE_URL = "https://api.openai.com/v1";
-    private static final String DEFAULT_MODEL = "gpt-4o-mini";
+    private static final String DEFAULT_OPENAI_MODEL = "gpt-4o-mini";
+    private static final String GEMINI_API_KEY_ENV = "GEMINI_API_KEY";
+    private static final String GEMINI_VENDOR_ID = "GEMINI";
+    private static final String DEFAULT_GEMINI_MODEL = "gemini-3.1-flash-lite";
     private static final String DEFAULT_AGENT_TITLE = "Default Agent";
     private static final String DEFAULT_AGENT_PROMPT = """
             You are a helpful assistant. Answer the user's questions clearly and \
@@ -150,8 +162,11 @@ public class TurLLMInstanceOnStartup implements ApplicationRunner {
             return;
         }
 
-        String apiKey = environment.getProperty(OPENAI_API_KEY_ENV);
-        if (!StringUtils.hasText(apiKey)) {
+        // Resolve the provider from whichever API-key env var is set. OpenAI wins
+        // when both are present (backward compatible with the pre-Gemini behavior).
+        String openAiKey = environment.getProperty(OPENAI_API_KEY_ENV);
+        String geminiKey = environment.getProperty(GEMINI_API_KEY_ENV);
+        if (!StringUtils.hasText(openAiKey) && !StringUtils.hasText(geminiKey)) {
             return;
         }
 
@@ -162,21 +177,51 @@ public class TurLLMInstanceOnStartup implements ApplicationRunner {
             return;
         }
 
-        TurLLMVendor openAiVendor = turLLMVendorRepository.findById(OPENAI_VENDOR_ID).orElse(null);
-        if (openAiVendor == null) {
-            log.warn("Cannot bootstrap default OpenAI LLM instance: vendor '{}' not found.",
-                    OPENAI_VENDOR_ID);
+        // Shared model override, applied to whichever provider is provisioned. When
+        // unset, the per-provider default (gpt-4o-mini / gemini-3.1-flash-lite) wins.
+        String modelOverride = environment.getProperty(MODEL_PROPERTY);
+
+        TurLLMInstance instance;
+        if (StringUtils.hasText(openAiKey)) {
+            instance = provisionInstance(OPENAI_VENDOR_ID, "OpenAI (default)",
+                    "Auto-provisioned from " + OPENAI_API_KEY_ENV + " on startup.",
+                    OPENAI_BASE_URL, firstNonBlank(modelOverride, DEFAULT_OPENAI_MODEL),
+                    openAiKey, OPENAI_API_KEY_ENV);
+        } else {
+            instance = provisionInstance(GEMINI_VENDOR_ID, "Google Gemini (default)",
+                    "Auto-provisioned from " + GEMINI_API_KEY_ENV + " on startup.",
+                    null, firstNonBlank(modelOverride, DEFAULT_GEMINI_MODEL),
+                    geminiKey, GEMINI_API_KEY_ENV);
+        }
+        if (instance == null) {
             return;
         }
 
-        String model = environment.getProperty(MODEL_PROPERTY, DEFAULT_MODEL);
+        provisionDefaultAgent(instance);
+    }
+
+    /**
+     * Builds, saves and registers a GLOBAL default {@link TurLLMInstance} for the
+     * given vendor, encrypting the API key. Returns {@code null} (and logs) when
+     * the vendor row is missing. The {@code baseUrl} is set only when non-blank —
+     * the native Gemini provider needs no base URL, so it is left null there.
+     */
+    private TurLLMInstance provisionInstance(String vendorId, String title, String description,
+            String baseUrl, String model, String apiKey, String envName) {
+        TurLLMVendor vendor = turLLMVendorRepository.findById(vendorId).orElse(null);
+        if (vendor == null) {
+            log.warn("Cannot bootstrap default LLM instance: vendor '{}' not found.", vendorId);
+            return null;
+        }
 
         TurLLMInstance instance = new TurLLMInstance();
-        instance.setTitle("OpenAI (default)");
-        instance.setDescription("Auto-provisioned from OPENAI_API_KEY on startup.");
-        instance.setTurLLMVendor(openAiVendor);
+        instance.setTitle(title);
+        instance.setDescription(description);
+        instance.setTurLLMVendor(vendor);
         instance.setModelName(model);
-        instance.setUrl(OPENAI_BASE_URL);
+        if (StringUtils.hasText(baseUrl)) {
+            instance.setUrl(baseUrl);
+        }
         instance.setEnabled(1);
         instance.setToolsEnabled(true);
         instance.setApiKeyEncrypted(turSecretCryptoService.encrypt(apiKey.trim()));
@@ -185,10 +230,9 @@ public class TurLLMInstanceOnStartup implements ApplicationRunner {
 
         turGlobalSettingsService.updateDefaultLlmId(instance.getId());
 
-        log.info("Bootstrapped default OpenAI LLM instance '{}' (model '{}') from {} and set it as the "
-                + "global default LLM.", instance.getId(), model, OPENAI_API_KEY_ENV);
-
-        provisionDefaultAgent(instance);
+        log.info("Bootstrapped default {} LLM instance '{}' (model '{}') from {} and set it as the "
+                + "global default LLM.", vendorId, instance.getId(), model, envName);
+        return instance;
     }
 
     /**
@@ -287,6 +331,11 @@ public class TurLLMInstanceOnStartup implements ApplicationRunner {
         agent.getLlmInstances().add(llm);
         turAIAgentRepository.save(agent);
         log.info("Wired default LLM '{}' onto default agent '{}'.", llm.getId(), agent.getId());
+    }
+
+    /** Returns the first argument that has text, or the last one as a fallback. */
+    private static String firstNonBlank(String preferred, String fallback) {
+        return StringUtils.hasText(preferred) ? preferred : fallback;
     }
 
     /**

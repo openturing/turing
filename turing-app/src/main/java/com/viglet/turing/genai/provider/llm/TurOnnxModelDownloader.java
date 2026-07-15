@@ -83,9 +83,11 @@ import lombok.extern.slf4j.Slf4j;
  * <b>Persistence.</b> When {@code turing.genai.embedding.local.cache-dir} points
  * at a mounted volume, a warm cache survives a wiped/ephemeral environment (the
  * public demo's reset) so the ~90&nbsp;MB model is not re-downloaded on every
- * boot. Left blank it falls back to {@code ${java.io.tmpdir}/turing-onnx-cache}
- * (still avoids re-download within a container's lifetime, but not across a
- * tmpfs wipe). A pre-seeded cache volume remains an optional {@code viglet/cloud}
+ * boot. Left blank it falls back to {@code store/turing-onnx-cache} — the
+ * project-wide {@code store/} directory that already holds the H2 db, asset
+ * storage, the Artemis queue, and logs, so the model cache is persisted next to
+ * them (in Docker, under the {@code /app/store} volume) instead of a volatile OS
+ * temp dir. A pre-seeded cache volume remains an optional {@code viglet/cloud}
  * belt — not the fix.
  *
  * @author Alexandre Oliveira
@@ -97,6 +99,15 @@ public class TurOnnxModelDownloader {
 
     /** Sub-directory (under the configured cache dir) that holds downloaded artifacts. */
     static final String CACHE_SUBDIR = "turing-onnx-cache";
+
+    /**
+     * Default base directory when {@code turing.genai.embedding.local.cache-dir}
+     * is blank. {@code store} is the project-wide convention shared by the H2 db,
+     * asset storage, the Artemis queue, and logs (all relative to the working
+     * directory), so the ONNX cache lands next to them under {@code store/} rather
+     * than a volatile OS temp dir.
+     */
+    static final String DEFAULT_STORE_DIR = "store";
 
     /**
      * A {@code .onnx} artifact below this many bytes is almost certainly not a
@@ -328,7 +339,7 @@ public class TurOnnxModelDownloader {
     private Path baseCacheDir() {
         String base = StringUtils.hasText(cacheDirectory)
                 ? cacheDirectory
-                : System.getProperty("java.io.tmpdir");
+                : DEFAULT_STORE_DIR;
         return Paths.get(base, CACHE_SUBDIR);
     }
 

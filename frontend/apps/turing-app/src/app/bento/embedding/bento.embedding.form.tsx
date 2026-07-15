@@ -8,8 +8,10 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { HuggingFaceModelCombobox } from "@/components/ui/huggingface-model-combobox"
 import { Input } from "@/components/ui/input"
 import { ModelCombobox } from "@/components/ui/model-combobox"
+import { ModelVerifyButton } from "@/components/ui/model-verify-button"
 import { Select, SelectContent, SelectItem, SelectSeparator, SelectTrigger, SelectValue } from "@/components/ui/select"
 import type { TurEmbeddingModel } from "@/models/embedding/embedding-model.model.ts"
+import { TurEmbeddingModelService } from "@/services/embedding/embedding-model.service"
 import { IconAdjustments, IconAlertTriangle, IconCube, IconPlug } from "@tabler/icons-react"
 import { toast } from "@viglet/viglet-design-system"
 import { useEffect, useState } from "react"
@@ -22,6 +24,7 @@ const HUGGINGFACE = "HUGGINGFACE"
 /** Must match {@code TurHuggingFaceRepoResolver.VARIANT_SEPARATOR} (T628). */
 const HF_VARIANT_SEPARATOR = "::"
 const urlBase = ROUTES.BENTO_EMBEDDING_MODEL_INSTANCE
+const turEmbeddingModelService = new TurEmbeddingModelService()
 
 /** Splits a stored `modelReference` into `[repoId, variantPath]` (T628). */
 function splitHfRef(reference: string): [string, string] {
@@ -388,6 +391,21 @@ export const BentoEmbeddingModelForm: React.FC<Props> = ({ value, isNew, readOnl
           {/* No provider chosen yet */}
           {!selectedProviderType && (
             <p className="text-sm text-muted-foreground">{t("forms.embedding.selectProviderFirst")}</p>
+          )}
+
+          {/* Verify — embeds a probe string against the SAVED model (local ONNX,
+              HuggingFace ONNX, or a cloud LLM instance). Saved-by-id only:
+              disabled for new / unsaved-edit / no-provider state. */}
+          {selectedProviderType && !readOnly && (
+            <div className="w-full border-t pt-4">
+              <FormLabel>{t("forms.common.verifyTitle")}</FormLabel>
+              <p className="mb-3 text-sm text-muted-foreground">{t("forms.embedding.verifyDesc")}</p>
+              <ModelVerifyButton
+                onVerify={() => turEmbeddingModelService.verify(value.id)}
+                disabled={isNew || form.formState.isDirty}
+                disabledHint={t("forms.common.verifySaveFirst")}
+              />
+            </div>
           )}
         </BentoFormSection>
 

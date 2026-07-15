@@ -13,7 +13,12 @@
 FROM eclipse-temurin:25-jre
 ARG CACHE_BUST=none
 LABEL org.opencontainers.image.revision=$CACHE_BUST
-RUN groupadd -r java && useradd -r -g java -u 1001 java
+# ffmpeg — used by Turing for audio/video transcoding (e.g. transcription,
+# multimodal audio slots). Installed as root before dropping to the java user.
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends ffmpeg \
+    && rm -rf /var/lib/apt/lists/* \
+    && groupadd -r java && useradd -r -g java -u 1001 java
 WORKDIR /app
 COPY turing-app/target/viglet-turing.jar app.jar
 # Pre-create the store subdirs the demo mounts as their OWN named volumes

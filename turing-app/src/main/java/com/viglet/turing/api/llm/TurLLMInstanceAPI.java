@@ -33,9 +33,12 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.viglet.turing.api.exception.TurNotFoundException;
 import com.viglet.turing.domain.llm.LlmInstanceUpdatedEvent;
 import com.viglet.turing.domain.llm.LlmProviderType;
 import com.viglet.turing.genai.provider.llm.TurLlmModelDiscoveryService;
+import com.viglet.turing.genai.verify.TurModelVerifyResult;
+import com.viglet.turing.genai.verify.TurModelVerifyService;
 import com.viglet.turing.persistence.dto.llm.TurLLMInstanceDto;
 import com.viglet.turing.persistence.mapper.llm.TurLLMInstanceMapper;
 import com.viglet.turing.persistence.model.llm.TurLLMInstance;
@@ -59,6 +62,7 @@ public class TurLLMInstanceAPI {
     private final ApplicationEventPublisher eventPublisher;
     private final TurInfraTenantScope tenantScope;
     private final TurLlmModelDiscoveryService modelDiscoveryService;
+    private final TurModelVerifyService modelVerifyService;
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     public TurLLMInstanceAPI(TurLLMInstanceRepository turLLMInstanceRepository,
@@ -66,13 +70,15 @@ public class TurLLMInstanceAPI {
             TurSecretCryptoService turSecretCryptoService,
             ApplicationEventPublisher eventPublisher,
             TurInfraTenantScope tenantScope,
-            TurLlmModelDiscoveryService modelDiscoveryService) {
+            TurLlmModelDiscoveryService modelDiscoveryService,
+            TurModelVerifyService modelVerifyService) {
         this.turLLMInstanceRepository = turLLMInstanceRepository;
         this.turLLMInstanceMapper = turLLMInstanceMapper;
         this.turSecretCryptoService = turSecretCryptoService;
         this.eventPublisher = eventPublisher;
         this.tenantScope = tenantScope;
         this.modelDiscoveryService = modelDiscoveryService;
+        this.modelVerifyService = modelVerifyService;
     }
 
     /**
@@ -93,6 +99,22 @@ public class TurLLMInstanceAPI {
     /** Request body for {@link #turLLMInstanceModels(TurLlmModelListRequest)}. */
     public record TurLlmModelListRequest(String vendorId, String instanceId, String apiKey, String url,
             String providerOptionsJson) {
+    }
+
+    /**
+     * Verifies a saved LLM instance by firing one minimal live chat call at its
+     * configured vendor/URL/model with the decrypted key, so an operator can
+     * confirm the configuration actually works. Never throws on a bad
+     * config — a failure is reported in the result body (HTTP 200 with
+     * {@code ok=false}); only an unknown/foreign id is a 404.
+     */
+    @Secured({"ROLE_ADMIN", "LLM_VIEW", "LLM_CREATE", "LLM_EDIT"})
+    @Operation(summary = "Verify that a Large Language Model instance is working")
+    @PostMapping("/{id}/verify")
+    public TurModelVerifyResult turLLMInstanceVerify(@PathVariable String id) {
+        return turLLMInstanceRepository.findById(id).filter(tenantScope::isVisibleToTenant)
+                .map(modelVerifyService::verifyLlmInstance)
+                .orElseThrow(() -> TurNotFoundException.of("LLM instance", id));
     }
 
     @Secured({"ROLE_ADMIN", "LLM_VIEW"})

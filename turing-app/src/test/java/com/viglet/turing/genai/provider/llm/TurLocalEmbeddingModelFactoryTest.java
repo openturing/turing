@@ -38,7 +38,7 @@ class TurLocalEmbeddingModelFactoryTest {
 
     private final TurLocalEmbeddingModelFactory factory =
             new TurLocalEmbeddingModelFactory(
-                    new TurTransformersEmbeddingModelBuilder(new TurOnnxModelDownloader("")));
+                    new TurTransformersEmbeddingModelBuilder(new TurOnnxModelDownloader(""), ""));
 
     @Test
     void supportsOnlyTheLocalSentinelCaseInsensitively() {

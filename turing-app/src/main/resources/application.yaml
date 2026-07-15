@@ -198,8 +198,15 @@ turing:
         # Persistent cache directory for downloaded .onnx/tokenizer.json files.
         # Point at a mounted volume so a wiped/ephemeral environment (demo reset)
         # reuses the warm cache instead of re-downloading ~90 MB on every boot.
-        # Blank falls back to ${java.io.tmpdir}/turing-onnx-cache.
+        # Blank falls back to store/turing-onnx-cache — the project-wide store/
+        # dir (H2 db, assets, queue, logs) so the model cache persists next to
+        # them (in Docker under the /app/store volume), not a volatile temp dir.
         cache-dir:
+        # DJL model/engine cache (DJL backs the in-process ONNX runtime). Blank
+        # sets DJL_CACHE_DIR to store/djl-cache unless the env var / system
+        # property is already pinned. Matches the /app/store/djl-cache dir the
+        # runtime image pre-creates.
+        djl-cache-dir:
       download:
         # Bounded retry with exponential backoff on transient network failures.
         max-attempts: 4

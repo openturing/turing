@@ -20,11 +20,13 @@
  */
 package com.viglet.turing.genai.provider.llm;
 
+import java.nio.file.Paths;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.springframework.ai.embedding.EmbeddingModel;
 import org.springframework.ai.transformers.TransformersEmbeddingModel;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 
@@ -71,8 +73,36 @@ public class TurTransformersEmbeddingModelBuilder {
      */
     private final TurOnnxModelDownloader downloader;
 
-    public TurTransformersEmbeddingModelBuilder(TurOnnxModelDownloader downloader) {
+    /** Env var / system property DJL reads to locate its model + engine cache. */
+    private static final String DJL_CACHE_ENV = "DJL_CACHE_DIR";
+    /** Sub-directory (under {@code store/}) for the DJL cache when unconfigured. */
+    private static final String DJL_CACHE_SUBDIR = "djl-cache";
+
+    public TurTransformersEmbeddingModelBuilder(TurOnnxModelDownloader downloader,
+            @Value("${turing.genai.embedding.local.djl-cache-dir:}") String djlCacheDir) {
         this.downloader = downloader;
+        ensureDjlCacheDir(djlCacheDir);
+    }
+
+    /**
+     * Default DJL's model/engine cache to {@code store/djl-cache} when the
+     * operator hasn't pinned it via the {@code DJL_CACHE_DIR} env var / system
+     * property. DJL (used by {@link TransformersEmbeddingModel} for the ONNX
+     * runtime + tokenizer downloads) otherwise writes to {@code ~/.djl.ai}, which
+     * is volatile in an ephemeral container. {@code store/djl-cache} lives next to
+     * the H2 db, assets, queue, and the ONNX cache — and matches the
+     * {@code /app/store/djl-cache} directory the runtime image pre-creates.
+     */
+    private static void ensureDjlCacheDir(String configured) {
+        if (StringUtils.hasText(System.getProperty(DJL_CACHE_ENV))
+                || StringUtils.hasText(System.getenv(DJL_CACHE_ENV))) {
+            return; // operator pinned it explicitly — respect it
+        }
+        String dir = StringUtils.hasText(configured)
+                ? configured.trim()
+                : Paths.get(TurOnnxModelDownloader.DEFAULT_STORE_DIR, DJL_CACHE_SUBDIR).toString();
+        System.setProperty(DJL_CACHE_ENV, dir);
+        log.info("DJL_CACHE_DIR not set — defaulting DJL model/engine cache to '{}'.", dir);
     }
 
     /**

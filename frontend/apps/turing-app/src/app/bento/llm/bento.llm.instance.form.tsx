@@ -10,11 +10,13 @@ import { FormItemTwoColumns } from "@/components/ui/form-item-two-columns"
 import { GradientSwitch } from "@/components/ui/gradient-switch"
 import { Input } from "@/components/ui/input"
 import { ModelCombobox } from "@/components/ui/model-combobox"
+import { ModelVerifyButton } from "@/components/ui/model-verify-button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
 import { useLlmModels } from "@/api/queries/llm-model.queries"
 import type { TurLLMInstance } from "@/models/llm/llm-instance.model.ts"
 import type { TurLLMVendor } from "@/models/llm/llm-vendor.model"
+import { TurLLMInstanceService } from "@/services/llm/llm.service"
 import { TurLLMVendorService } from "@/services/llm/llm-vendor.service"
 import { IconAdjustments, IconBrain, IconSettings, IconSparkles, IconToggleLeft } from "@tabler/icons-react"
 import { useEffect, useState } from "react"
@@ -24,6 +26,7 @@ import { useNavigate } from "react-router-dom"
 import { toast } from "@viglet/viglet-design-system"
 
 const turLLMVendorService = new TurLLMVendorService()
+const turLLMInstanceService = new TurLLMInstanceService()
 const urlBase = ROUTES.BENTO_LLM_INSTANCE
 
 interface StagedHeroFields {
@@ -616,6 +619,19 @@ export const BentoLLMInstanceForm: React.FC<Props> = ({ value, isNew, staged, on
               </FormItem>
             )}
           />
+
+          {/* Verify — fires a live probe against the SAVED instance so the
+              operator can confirm the vendor/URL/model/key work. Saved-by-id
+              only: disabled for new or unsaved-edit state (save first). */}
+          <div className="w-full border-t pt-4">
+            <FormLabel>{t("forms.common.verifyTitle")}</FormLabel>
+            <p className="mb-3 text-sm text-muted-foreground">{t("forms.llm.verifyDesc")}</p>
+            <ModelVerifyButton
+              onVerify={() => turLLMInstanceService.verify(value.id)}
+              disabled={isNew || form.formState.isDirty || optionsDirty}
+              disabledHint={t("forms.common.verifySaveFirst")}
+            />
+          </div>
         </BentoFormSection>
 
         {/* Generation Section */}

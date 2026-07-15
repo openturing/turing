@@ -16,10 +16,13 @@ import org.springframework.web.bind.annotation.RestController;
 
 import org.springframework.data.domain.Sort;
 
+import com.viglet.turing.api.exception.TurNotFoundException;
 import com.viglet.turing.genai.provider.llm.TurEmbeddingDimensionService;
 import com.viglet.turing.genai.provider.llm.TurHuggingFaceModelDiscoveryService;
 import com.viglet.turing.genai.provider.llm.TurHuggingFaceRepoResolver;
 import com.viglet.turing.genai.provider.llm.TurLlmModelDiscoveryService;
+import com.viglet.turing.genai.verify.TurModelVerifyResult;
+import com.viglet.turing.genai.verify.TurModelVerifyService;
 import com.viglet.turing.persistence.dto.embedding.TurEmbeddingModelDto;
 import com.viglet.turing.persistence.mapper.embedding.TurEmbeddingModelMapper;
 import com.viglet.turing.persistence.model.embedding.TurEmbeddingModel;
@@ -46,6 +49,7 @@ public class TurEmbeddingModelAPI {
     private final TurLlmModelDiscoveryService llmModelDiscoveryService;
     private final TurEmbeddingDimensionService embeddingDimensionService;
     private final TurHuggingFaceRepoResolver huggingFaceRepoResolver;
+    private final TurModelVerifyService modelVerifyService;
 
     public TurEmbeddingModelAPI(TurEmbeddingModelRepository turEmbeddingModelRepository,
             TurEmbeddingModelMapper turEmbeddingModelMapper,
@@ -53,7 +57,8 @@ public class TurEmbeddingModelAPI {
             TurHuggingFaceModelDiscoveryService huggingFaceModelDiscoveryService,
             TurLlmModelDiscoveryService llmModelDiscoveryService,
             TurEmbeddingDimensionService embeddingDimensionService,
-            TurHuggingFaceRepoResolver huggingFaceRepoResolver) {
+            TurHuggingFaceRepoResolver huggingFaceRepoResolver,
+            TurModelVerifyService modelVerifyService) {
         this.turEmbeddingModelRepository = turEmbeddingModelRepository;
         this.turEmbeddingModelMapper = turEmbeddingModelMapper;
         this.tenantScope = tenantScope;
@@ -61,6 +66,7 @@ public class TurEmbeddingModelAPI {
         this.llmModelDiscoveryService = llmModelDiscoveryService;
         this.embeddingDimensionService = embeddingDimensionService;
         this.huggingFaceRepoResolver = huggingFaceRepoResolver;
+        this.modelVerifyService = modelVerifyService;
     }
 
     /**
@@ -192,5 +198,21 @@ public class TurEmbeddingModelAPI {
         tenantScope.stampOnCreate(turEmbeddingModel);
         this.turEmbeddingModelRepository.save(turEmbeddingModel);
         return turEmbeddingModelMapper.toDto(turEmbeddingModel);
+    }
+
+    /**
+     * Verifies a saved embedding model by resolving it (local ONNX, HuggingFace
+     * ONNX, or a cloud LLM instance) and embedding one probe string, so an
+     * operator can confirm the model actually produces vectors. A bad config is
+     * reported in the result body (HTTP 200 with {@code ok=false}); only an
+     * unknown/foreign id is a 404.
+     */
+    @Operation(summary = "Verify that an Embedding Model is working")
+    @PostMapping("/{id}/verify")
+    @Secured({"ROLE_ADMIN", "EMBEDDING_VIEW", "EMBEDDING_CREATE", "EMBEDDING_EDIT"})
+    public TurModelVerifyResult turEmbeddingModelVerify(@PathVariable String id) {
+        return this.turEmbeddingModelRepository.findById(id).filter(tenantScope::isVisibleToTenant)
+                .map(modelVerifyService::verifyEmbeddingModel)
+                .orElseThrow(() -> TurNotFoundException.of("Embedding model", id));
     }
 }

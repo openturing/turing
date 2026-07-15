@@ -114,6 +114,42 @@ class TurLLMInstanceOnStartupAgentProvisionTest {
     }
 
     @Test
+    void geminiKeyProvisionsGeminiInstanceWithDefaultModel() {
+        // No OpenAI key, but GEMINI_API_KEY is set → Gemini vendor, default model.
+        when(environment.getProperty("OPENAI_API_KEY")).thenReturn(null);
+        when(environment.getProperty("GEMINI_API_KEY")).thenReturn("gm-test");
+        when(environment.getProperty("turing.startup.default-llm.model")).thenReturn(null);
+        when(turLLMVendorRepository.findById("GEMINI"))
+                .thenReturn(java.util.Optional.of(new TurLLMVendor()));
+        when(turAIAgentRepository.findAll()).thenReturn(List.of());
+
+        runner.run(args);
+
+        ArgumentCaptor<TurLLMInstance> captor = ArgumentCaptor.forClass(TurLLMInstance.class);
+        verify(turLLMInstanceRepository).save(captor.capture());
+        TurLLMInstance created = captor.getValue();
+        assertThat(created.getModelName()).isEqualTo("gemini-3.1-flash-lite");
+        assertThat(created.getTitle()).isEqualTo("Google Gemini (default)");
+        verify(turGlobalSettingsService).updateDefaultLlmId(any());
+    }
+
+    @Test
+    void sharedModelOverrideAppliesToGemini() {
+        when(environment.getProperty("OPENAI_API_KEY")).thenReturn(null);
+        when(environment.getProperty("GEMINI_API_KEY")).thenReturn("gm-test");
+        when(environment.getProperty("turing.startup.default-llm.model")).thenReturn("gemini-3.1-pro");
+        when(turLLMVendorRepository.findById("GEMINI"))
+                .thenReturn(java.util.Optional.of(new TurLLMVendor()));
+        when(turAIAgentRepository.findAll()).thenReturn(List.of());
+
+        runner.run(args);
+
+        ArgumentCaptor<TurLLMInstance> captor = ArgumentCaptor.forClass(TurLLMInstance.class);
+        verify(turLLMInstanceRepository).save(captor.capture());
+        assertThat(captor.getValue().getModelName()).isEqualTo("gemini-3.1-pro");
+    }
+
+    @Test
     void importedAgentAlreadyWiredIsNotDoubleWired() {
         TurAIAgent imported = new TurAIAgent();
         imported.setId("imported-1");

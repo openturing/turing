@@ -1,5 +1,6 @@
 import axios from "axios";
 import type { TurLLMInstance } from "@/models/llm/llm-instance.model.ts";
+import type { TurModelVerifyResult } from "@/models/verify.model.ts";
 
 export class TurLLMInstanceService {
   async query(): Promise<TurLLMInstance[]> {
@@ -28,5 +29,10 @@ export class TurLLMInstanceService {
       `/llm/${turLLMInstance.id.toString()}`
     );
     return  response.status == 200;
+  }
+  /** Fires a live probe against the saved instance to confirm it works. */
+  async verify(id: string): Promise<TurModelVerifyResult> {
+    const response = await axios.post<TurModelVerifyResult>(`/llm/${id}/verify`);
+    return response.data;
   }
 }
