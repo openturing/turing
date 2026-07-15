@@ -44,6 +44,13 @@ FROM eclipse-temurin:25-jre
 ARG CACHE_BUST=none
 LABEL org.opencontainers.image.revision=$CACHE_BUST
 RUN groupadd -r java && useradd -r -g java -u 1001 java
+# Docker CLI (client only — NO daemon) for the opt-in Code Interpreter DOCKER
+# execution mode (T80). At runtime the container talks to a Docker daemon via a
+# bind-mounted host socket (Docker-out-of-Docker) or a DinD sidecar — see
+# docker-compose.yaml / docker-compose-minimal.yaml. Copying just the static
+# client from the official image keeps the daemon + its deps out of this image
+# (~50 MB) and is a no-op for NATIVE-mode deployments that never mount a socket.
+COPY --from=docker:28-cli /usr/local/bin/docker /usr/local/bin/docker
 WORKDIR /app
 COPY --from=build /src/turing-app/target/viglet-turing.jar app.jar
 # Pre-create the store subdirs the demo mounts as their OWN named volumes

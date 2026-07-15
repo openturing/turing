@@ -51,16 +51,47 @@ services:
   turing:
     container_name: turing
     build: .
-    restart: always    
+    restart: always
     ports:
      - "2700:2700"
     volumes:
-      - vol-turing-models:/turing/models
-      - vol-turing-store:/turing/store
+      # The app writes ALL state under ${user.dir}/store == /app/store (H2 DB,
+      # Lucene index, assets, ONNX/DJL caches, code-interpreter sessions). This
+      # MUST match the image's WORKDIR/VOLUME (/app/store) — an earlier mount at
+      # /turing/store never persisted anything.
+      - vol-turing-store:/app/store
+      # ─────────────────── Code Interpreter DOCKER mode (T80) ────────────────
+      # Uncomment the block below to enable the containerized ("DOCKER") Code
+      # Interpreter execution mode. It uses Docker-out-of-Docker: the Turing
+      # container talks to the HOST's Docker daemon over the bind-mounted socket
+      # and spawns each Python sandbox as a SIBLING container on the host.
+      #
+      # CRITICAL: with Docker-out-of-Docker the per-execution session directory
+      # is bind-mounted into the sandbox BY ABSOLUTE PATH (/app/store/code-
+      # interpreter/...), and the HOST daemon resolves that path against the HOST
+      # filesystem. So the store dir must exist on the host at the SAME path.
+      # Replace the named volume above with a host bind mount at /app/store:
+      #   - /opt/turing/store:/app/store   # (remove the vol-turing-store line)
+      # and create /opt/turing/store on the host (chown to uid 1001). A named
+      # volume will NOT work for DOCKER mode — its host path (/var/lib/docker/
+      # volumes/...) differs from /app/store, so the sandbox sees an empty mount.
+      #
+      # Then mount the host Docker socket:
+      #   - /var/run/docker.sock:/var/run/docker.sock
+      #
+      # Finally, in Console -> Global Settings -> Code Interpreter, switch the
+      # execution mode to DOCKER and click "Check Docker". For hardened /
+      # multi-tenant setups, consider gVisor via
+      # turing.code-interpreter.docker.runtime=runsc (see docs).
     depends_on:
       - turing-nginx
       - turing-mariadb
       - turing-solr
+    # DOCKER mode only: give the non-root `java` process (uid 1001) access to the
+    # mounted host socket by joining the socket's group. Replace 999 with your
+    # host's docker gid: `getent group docker | cut -d: -f3`.
+    # group_add:
+    #   - "999"
     environment:
       SPRING_DATASOURCE_URL: jdbc:mariadb://turing-mariadb:3306/turing
       SPRING_DATASOURCE_USERNAME: turing
@@ -125,7 +156,6 @@ services:
 volumes:
   vol-solr:
   vol-zk:
-  vol-turing-models:
   vol-turing-store:
   vol-mariadb:
   vol-prometheus:

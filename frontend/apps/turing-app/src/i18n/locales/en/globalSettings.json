@@ -36,6 +36,7 @@
     "codeInterpreterSkillImage": "Skill Sandbox Image",
     "codeInterpreterSkillImageDesc": "Image for the Anthropic-compatible skill session — a bash-driven container with the skill folder mounted that the model drives across turns. Should bundle python + node + bash to match Anthropic's skill container. Defaults to python:3.12-slim; publish your own to add node or extra tools.",
     "dockerCheckAction": "Check Docker",
+    "dockerCheckPreflightHint": "Verify Docker can run containers on this host before switching to Docker mode.",
     "dockerCheckSuccess": "Docker is available (server {{version}}).",
     "dockerCheckFailed": "Docker is not available. {{error}}",
     "dockerStatusAvailable": "Available — server {{version}}",

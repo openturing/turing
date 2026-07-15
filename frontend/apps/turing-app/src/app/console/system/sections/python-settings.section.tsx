@@ -119,9 +119,10 @@ export function PythonSettingsSection({ state }: { state: GlobalSettingsFormStat
                     )}
                 />
 
-                {/* Docker-only options — image + availability probe.
-                    Shown only when the mode is DOCKER to keep the
-                    NATIVE form uncluttered. */}
+                {/* Docker-only options — the sandbox image + skill image.
+                    Shown only when the mode is DOCKER to keep the NATIVE form
+                    uncluttered. The availability probe below is intentionally
+                    OUTSIDE this block (see next comment). */}
                 {codeInterpreterMode === "DOCKER" && (
                     <>
                         <FormField
@@ -172,40 +173,54 @@ export function PythonSettingsSection({ state }: { state: GlobalSettingsFormStat
                                 </FormItem>
                             )}
                         />
-                        <div className="flex flex-col gap-2">
-                            <div className="flex items-center gap-2">
-                                <GradientButton
-                                    type="button"
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={onCheckDocker}
-                                    loading={isCheckingDocker}
-                                    disabled={isLoading || isCheckingDocker}
-                                >
-                                    <IconBrandDocker className="size-4" />
-                                    {t("globalSettings.dockerCheckAction")}
-                                </GradientButton>
-                                {dockerStatus?.available && (
-                                    <span className="inline-flex items-center gap-1 text-xs text-emerald-600 dark:text-emerald-400">
-                                        <IconCheck className="size-4" />
-                                        {t("globalSettings.dockerStatusAvailable", { version: dockerStatus.serverVersion })}
-                                    </span>
-                                )}
-                                {dockerStatus && !dockerStatus.available && (
-                                    <span className="inline-flex items-center gap-1 text-xs text-amber-600 dark:text-amber-400">
-                                        <IconAlertTriangle className="size-4" />
-                                        {t("globalSettings.dockerStatusUnavailable")}
-                                    </span>
-                                )}
-                            </div>
-                            {dockerStatus && !dockerStatus.available && dockerStatus.error && (
-                                <p className="font-mono text-xs text-muted-foreground break-all max-w-md">
-                                    {dockerStatus.error}
-                                </p>
-                            )}
-                        </div>
                     </>
                 )}
+
+                {/* Docker availability probe — ALWAYS visible as a pre-flight
+                    check, even in NATIVE mode, so an admin can confirm the host
+                    can run containers BEFORE switching to DOCKER. Keeping it
+                    inside the DOCKER-only block created a chicken-and-egg: the
+                    button only appeared after committing the mode change, so you
+                    couldn't validate the environment ahead of time. In NATIVE
+                    mode it reads purely as an informational "can I use DOCKER?"
+                    check. */}
+                <div className="flex flex-col gap-2">
+                    {codeInterpreterMode !== "DOCKER" && (
+                        <FormDescription>
+                            {t("globalSettings.dockerCheckPreflightHint")}
+                        </FormDescription>
+                    )}
+                    <div className="flex items-center gap-2">
+                        <GradientButton
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={onCheckDocker}
+                            loading={isCheckingDocker}
+                            disabled={isLoading || isCheckingDocker}
+                        >
+                            <IconBrandDocker className="size-4" />
+                            {t("globalSettings.dockerCheckAction")}
+                        </GradientButton>
+                        {dockerStatus?.available && (
+                            <span className="inline-flex items-center gap-1 text-xs text-emerald-600 dark:text-emerald-400">
+                                <IconCheck className="size-4" />
+                                {t("globalSettings.dockerStatusAvailable", { version: dockerStatus.serverVersion })}
+                            </span>
+                        )}
+                        {dockerStatus && !dockerStatus.available && (
+                            <span className="inline-flex items-center gap-1 text-xs text-amber-600 dark:text-amber-400">
+                                <IconAlertTriangle className="size-4" />
+                                {t("globalSettings.dockerStatusUnavailable")}
+                            </span>
+                        )}
+                    </div>
+                    {dockerStatus && !dockerStatus.available && dockerStatus.error && (
+                        <p className="font-mono text-xs text-muted-foreground break-all max-w-md">
+                            {dockerStatus.error}
+                        </p>
+                    )}
+                </div>
             </SectionCard.Content>
         </SectionCard>
     );

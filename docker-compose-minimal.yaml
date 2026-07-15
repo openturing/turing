@@ -83,6 +83,26 @@ services:
       # All state (H2 DB, Lucene index, assets, logs, ONNX cache, TLS keystore)
       # in one persistent volume so restarts keep your data.
       - vol-turing-store:/app/store
+      # ─────────────────── Code Interpreter DOCKER mode (T80) ────────────────
+      # The bundled image ships the `docker` CLI, so the containerized Code
+      # Interpreter ("DOCKER" execution mode) works with Docker-out-of-Docker:
+      # mount the host socket so Turing can spawn sandbox containers on the host.
+      #   - /var/run/docker.sock:/var/run/docker.sock
+      # CRITICAL: sandbox session dirs are bind-mounted BY ABSOLUTE PATH
+      # (/app/store/code-interpreter/...) and resolved by the HOST daemon against
+      # the HOST filesystem. So the store must live on the host at the SAME path.
+      # Replace the named volume above with a host bind mount at /app/store:
+      #   - /opt/turing/store:/app/store   # (remove the vol-turing-store line)
+      # and `mkdir -p /opt/turing/store && chown 1001:1001 /opt/turing/store`.
+      # A named volume will NOT work for DOCKER mode (its host path differs from
+      # /app/store, so the sandbox sees an empty mount).
+      # Then, in Console -> Global Settings -> Code Interpreter, set the mode to
+      # DOCKER and click "Check Docker".
+    # DOCKER mode only: let the non-root `java` process (uid 1001) use the
+    # mounted host socket. Replace 999 with the host docker gid
+    # (`getent group docker | cut -d: -f3`).
+    # group_add:
+    #   - "999"
 
 volumes:
   vol-turing-store:

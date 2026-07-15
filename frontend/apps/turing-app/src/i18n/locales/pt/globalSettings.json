@@ -36,6 +36,7 @@
     "codeInterpreterSkillImage": "Imagem do Sandbox de Skill",
     "codeInterpreterSkillImageDesc": "Imagem para a sessão de skill compatível com a Anthropic — um contêiner controlado via bash com a pasta da skill montada, que o modelo conduz ao longo dos turnos. Deve conter python + node + bash para combinar com o contêiner de skill da Anthropic. Padrão python:3.12-slim; publique a sua própria para adicionar node ou outras ferramentas.",
     "dockerCheckAction": "Verificar Docker",
+    "dockerCheckPreflightHint": "Verifique se o Docker consegue executar contêineres neste host antes de mudar para o modo Docker.",
     "dockerCheckSuccess": "Docker disponível (servidor {{version}}).",
     "dockerCheckFailed": "Docker indisponível. {{error}}",
     "dockerStatusAvailable": "Disponível — servidor {{version}}",
