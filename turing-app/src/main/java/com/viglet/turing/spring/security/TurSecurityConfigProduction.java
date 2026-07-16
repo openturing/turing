@@ -72,6 +72,13 @@ public class TurSecurityConfigProduction {
 
         private static final String LOGIN_PATH = "/api/login";
         private static final String LOGOUT_PATH = "/logout";
+        // OIDC Back-Channel Logout callback (Single Logout). Keycloak POSTs a signed
+        // logout token here when the SSO session ends (e.g. logout from the Console),
+        // and Spring invalidates the matching local session on its own. Server-to-
+        // server, token-authenticated: no browser cookie/CSRF, so it must be CSRF-
+        // exempt and permitAll (the logout token IS the credential). Path is Spring's
+        // default: /logout/connect/back-channel/{registrationId} (registrationId=keycloak).
+        private static final String BACK_CHANNEL_LOGOUT_PATH = "/logout/connect/back-channel/**";
         private static final String SETUP_PATH = "/api/setup";
         public static final String ERROR_PATH = "/error/**";
         private final UserDetailsService userDetailsService;
@@ -145,6 +152,7 @@ public class TurSecurityConfigProduction {
                                                 mvc.matcher("/graphql"),
                                                 mvc.matcher(ERROR_PATH),
                                                 mvc.matcher(LOGOUT_PATH),
+                                                mvc.matcher(BACK_CHANNEL_LOGOUT_PATH),
                                                 mvc.matcher("/api/ocr/**"),
                                                 mvc.matcher("/api/genai/**"),
                                                 // T245 — MCP server (Streamable HTTP). Not a
@@ -173,10 +181,20 @@ public class TurSecurityConfigProduction {
                                                 userInfo -> userInfo
                                                         .userService(turOAuth2UserService)
                                                         .oidcUserService(turOidcUserService)));
+                                // Single Logout: accept Keycloak's OIDC Back-Channel Logout so a
+                                // logout at the Console (which ends the shared SSO session) cascades
+                                // here — turing invalidates its own session without the user having
+                                // to visit /logout. Requires this app's own Keycloak client
+                                // (viglet-turing / per-silo viglet-turing-<key>) with a Backchannel
+                                // Logout URL; the shared viglet-cloud client cannot fan out to every app.
+                                http.oidcLogout(oidc -> oidc.backChannel(Customizer.withDefaults()));
                         }
                         http.authorizeHttpRequests(authorizeRequests -> {
                                 authorizeRequests.requestMatchers(
                                                 mvc.matcher(ERROR_PATH),
+                                                // OIDC Back-Channel Logout callback (Single Logout) —
+                                                // authenticated by Keycloak's signed logout token, not a session.
+                                                mvc.matcher(BACK_CHANNEL_LOGOUT_PATH),
                                                 mvc.matcher("/api/discovery"),
                                                 mvc.matcher("/api/csrf"),
                                                 mvc.matcher("/api/v2/ping"),
