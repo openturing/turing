@@ -70,8 +70,8 @@ interface PromptEditorProps {
   metaPrompt?: PromptEditorMetaPrompt;
   /**
    * Start with the box expanded to fit the whole text (no internal scroll).
-   * Handy on a page whose only field is this prompt. The user can still
-   * collapse it via the toolbar toggle. Defaults to false (capped + scroll).
+   * The user can still collapse it via the toolbar toggle. Defaults to true
+   * (grow to content); pass `false` for a capped + scrolling box.
    */
   defaultExpanded?: boolean;
 }
@@ -106,7 +106,7 @@ export const PromptEditor: React.FC<PromptEditorProps> = ({
   hint,
   requireVariables = false,
   metaPrompt,
-  defaultExpanded = false,
+  defaultExpanded = true,
 }) => {
   const internalRef = useRef<HTMLTextAreaElement>(null);
   const [mode, setMode] = useState<"write" | "preview">("preview");

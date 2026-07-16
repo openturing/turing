@@ -84,7 +84,6 @@ export default function PersonaInstanceSystemInstructionSection() {
                     onChange={field.onChange}
                     fieldRef={field.ref}
                     rows={8}
-                    defaultExpanded
                     placeholder={t("forms.persona.systemInstructionPlaceholder")}
                     metaPrompt={{
                       fieldInstruction: buildPersonaSystemInstructionFieldInstruction({
