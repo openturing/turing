@@ -8,6 +8,8 @@ import org.springframework.security.oauth2.core.user.DefaultOAuth2User;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.stereotype.Service;
 
+import com.viglet.turing.properties.TurConfigProperties;
+
 import java.util.HashSet;
 import java.util.Objects;
 import java.util.Set;
@@ -26,9 +28,12 @@ public class TurOAuth2UserService extends DefaultOAuth2UserService {
     private static final String EMAIL = "email";
 
     private final TurAuthorityResolver turAuthorityResolver;
+    private final TurConfigProperties turConfigProperties;
 
-    public TurOAuth2UserService(TurAuthorityResolver turAuthorityResolver) {
+    public TurOAuth2UserService(TurAuthorityResolver turAuthorityResolver,
+            TurConfigProperties turConfigProperties) {
         this.turAuthorityResolver = turAuthorityResolver;
+        this.turConfigProperties = turConfigProperties;
     }
 
     @Override
@@ -37,6 +42,11 @@ public class TurOAuth2UserService extends DefaultOAuth2UserService {
         if (oAuth2User == null) {
             throw new OAuth2AuthenticationException("invalid_user_info_response");
         }
+
+        // Client Silos isolation (C051): reject a login whose viglet_client claim
+        // doesn't match this instance's dedicated client (no-op if unrestricted).
+        TurClientClaimGate.enforce(turConfigProperties.getRequiredVigletClient(),
+                oAuth2User.getAttribute(TurClientClaimGate.VIGLET_CLIENT_CLAIM));
 
         String username = oAuth2User.getAttribute(PREFERRED_USERNAME);
         if (username == null) {

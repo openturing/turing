@@ -8,6 +8,8 @@ import org.springframework.security.oauth2.core.oidc.user.DefaultOidcUser;
 import org.springframework.security.oauth2.core.oidc.user.OidcUser;
 import org.springframework.stereotype.Service;
 
+import com.viglet.turing.properties.TurConfigProperties;
+
 import java.util.HashSet;
 import java.util.Set;
 
@@ -26,9 +28,12 @@ public class TurOidcUserService extends OidcUserService {
     private static final String EMAIL = "email";
 
     private final TurAuthorityResolver turAuthorityResolver;
+    private final TurConfigProperties turConfigProperties;
 
-    public TurOidcUserService(TurAuthorityResolver turAuthorityResolver) {
+    public TurOidcUserService(TurAuthorityResolver turAuthorityResolver,
+            TurConfigProperties turConfigProperties) {
         this.turAuthorityResolver = turAuthorityResolver;
+        this.turConfigProperties = turConfigProperties;
     }
 
     @Override
@@ -37,6 +42,11 @@ public class TurOidcUserService extends OidcUserService {
         if (oidcUser == null) {
             throw new OAuth2AuthenticationException("invalid_user_info_response");
         }
+
+        // Client Silos isolation (C051): on a dedicated per-client instance, reject
+        // a login whose viglet_client claim doesn't match this instance's client.
+        TurClientClaimGate.enforce(turConfigProperties.getRequiredVigletClient(),
+                oidcUser.getClaims().get(TurClientClaimGate.VIGLET_CLIENT_CLAIM));
 
         String username = oidcUser.getAttribute(PREFERRED_USERNAME);
         if (username == null) {
