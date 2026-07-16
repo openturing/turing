@@ -1,4 +1,4 @@
-import { IconCirclePlus, IconEye, IconInfoCircle, IconPencil } from "@tabler/icons-react";
+import { IconArrowsMaximize, IconArrowsMinimize, IconCirclePlus, IconEye, IconInfoCircle, IconPencil } from "@tabler/icons-react";
 import React, { useCallback, useMemo, useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import rehypeHighlight from "rehype-highlight";
@@ -68,6 +68,12 @@ interface PromptEditorProps {
   requireVariables?: boolean;
   /** When set, renders an inline "Help me write" button + MetaPromptSheet. */
   metaPrompt?: PromptEditorMetaPrompt;
+  /**
+   * Start with the box expanded to fit the whole text (no internal scroll).
+   * Handy on a page whose only field is this prompt. The user can still
+   * collapse it via the toolbar toggle. Defaults to false (capped + scroll).
+   */
+  defaultExpanded?: boolean;
 }
 
 // ---------------------------------------------------------------------------
@@ -100,9 +106,14 @@ export const PromptEditor: React.FC<PromptEditorProps> = ({
   hint,
   requireVariables = false,
   metaPrompt,
+  defaultExpanded = false,
 }) => {
   const internalRef = useRef<HTMLTextAreaElement>(null);
   const [mode, setMode] = useState<"write" | "preview">("preview");
+  // When true, the box grows to fit the whole text (no internal scroll);
+  // otherwise it's capped and scrolls. Useful on a page whose only field is
+  // the prompt, where reading the full text at once beats scrolling a box.
+  const [expanded, setExpanded] = useState(defaultExpanded);
 
   const setRef = useCallback((el: HTMLTextAreaElement | null) => {
     (internalRef as React.MutableRefObject<HTMLTextAreaElement | null>).current = el;
@@ -141,7 +152,7 @@ export const PromptEditor: React.FC<PromptEditorProps> = ({
   const rowHeight = rows * 1.625;
 
   return (
-    <div className="space-y-2">
+    <div className="space-y-2 min-w-0 w-full">
       {/* Toolbar: variable buttons + write/preview toggle */}
       <div className="flex items-center justify-between gap-2">
         {variables && variables.length > 0 ? (
@@ -178,6 +189,16 @@ export const PromptEditor: React.FC<PromptEditorProps> = ({
               disabled={metaPrompt.disabled}
             />
           )}
+
+          <button
+            type="button"
+            onClick={() => setExpanded((e) => !e)}
+            aria-pressed={expanded}
+            title={expanded ? "Recolher altura" : "Expandir altura"}
+            className="flex items-center gap-1 rounded-md border bg-muted/50 px-2.5 py-1 text-xs font-medium text-muted-foreground transition-all hover:text-foreground"
+          >
+            {expanded ? <IconArrowsMinimize className="size-3.5" /> : <IconArrowsMaximize className="size-3.5" />}
+          </button>
 
           <div className="flex items-center rounded-md border bg-muted/50 p-0.5 gap-0.5">
             <button
@@ -221,8 +242,8 @@ export const PromptEditor: React.FC<PromptEditorProps> = ({
       {/* Preview mode: Rendered Markdown */}
       {mode === "preview" && (
         <div
-          className="rounded-md border bg-background px-3 py-2 overflow-y-auto prose prose-sm dark:prose-invert prose-neutral max-w-none break-words prose-p:my-2 prose-pre:my-2 prose-ul:my-2 prose-ol:my-2 prose-headings:my-3 prose-code:before:content-none prose-code:after:content-none prose-code:bg-muted prose-code:px-1 prose-code:py-0.5 prose-code:rounded prose-code:text-sm prose-code:text-foreground prose-pre:bg-muted prose-pre:text-foreground prose-pre:border prose-pre:rounded-lg"
-          style={{ minHeight: `${rowHeight}rem` }}
+          className={`w-full min-w-0 rounded-md border bg-background px-3 py-2 prose prose-sm dark:prose-invert prose-neutral max-w-none break-words prose-p:my-2 prose-pre:my-2 prose-ul:my-2 prose-ol:my-2 prose-headings:my-3 prose-code:before:content-none prose-code:after:content-none prose-code:bg-muted prose-code:px-1 prose-code:py-0.5 prose-code:rounded prose-code:text-sm prose-code:text-foreground prose-pre:bg-muted prose-pre:text-foreground prose-pre:border prose-pre:rounded-lg prose-pre:whitespace-pre-wrap prose-pre:break-words ${expanded ? "overflow-x-auto" : "overflow-auto"}`}
+          style={{ minHeight: `${rowHeight}rem`, maxHeight: expanded ? undefined : "60vh" }}
         >
           {value.trim() ? (
             <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeHighlight]}>
