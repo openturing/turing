@@ -106,3 +106,4 @@ frontend/apps/marketplace/vinyl-records/vinyl-records.zip
 scripts/sonar/scan.log
 /frontend/packages/cli/dist
 /frontend/packages/cli/.turbo
+/frontend/packages/flow-dsl/.turbo
