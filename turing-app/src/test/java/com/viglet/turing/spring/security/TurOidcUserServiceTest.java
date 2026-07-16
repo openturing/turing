@@ -10,6 +10,8 @@ import java.time.Instant;
 import java.util.HashSet;
 import java.util.Set;
 
+import com.viglet.turing.properties.TurConfigProperties;
+
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
@@ -172,7 +174,7 @@ class TurOidcUserServiceTest {
     }
 
     private TurOidcUserService createTestServiceWithBaseUser(OidcUser baseUser) {
-        return new TurOidcUserService(turAuthorityResolver) {
+        return new TurOidcUserService(turAuthorityResolver, new TurConfigProperties()) {
             @Override
             public OidcUser loadUser(OidcUserRequest userRequest) {
                 Set<GrantedAuthority> authorities = new HashSet<>(baseUser.getAuthorities());

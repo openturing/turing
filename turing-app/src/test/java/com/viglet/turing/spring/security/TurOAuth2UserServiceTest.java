@@ -11,6 +11,8 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
+import com.viglet.turing.properties.TurConfigProperties;
+
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
@@ -166,7 +168,7 @@ class TurOAuth2UserServiceTest {
     }
 
     private TurOAuth2UserService createTestServiceWithBaseUser(OAuth2User baseUser) {
-        return new TurOAuth2UserService(turAuthorityResolver) {
+        return new TurOAuth2UserService(turAuthorityResolver, new TurConfigProperties()) {
             @Override
             public OAuth2User loadUser(OAuth2UserRequest userRequest) {
                 Set<GrantedAuthority> authorities = new HashSet<>(baseUser.getAuthorities());

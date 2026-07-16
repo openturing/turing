@@ -33,11 +33,16 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
+import java.util.LinkedHashSet;
+import java.util.Set;
 
 /**
  * Ensures the Keycloak admin user (configured via turing.keycloak-admin-id) has the
- * Administrator group on every startup.
+ * Administrator group on every startup, plus any users listed in
+ * turing.admin-emails (Client Silos — a dedicated silo grants its client's
+ * operators full admin without hand-editing the DB).
  *
  * @author Alexandre Oliveira
  * @since 2026.1.17
@@ -64,8 +69,6 @@ public class TurKeycloakAdminOnStartup implements ApplicationRunner {
     @Override
     public void run(ApplicationArguments args) {
         if (!turConfigProperties.isKeycloak()) return;
-        String adminId = turConfigProperties.getKeycloakAdminId();
-        if (!StringUtils.hasText(adminId)) return;
 
         TurGroup adminGroup = turGroupRepository.findByName(ADMINISTRATOR);
         if (adminGroup == null) {
@@ -73,10 +76,30 @@ public class TurKeycloakAdminOnStartup implements ApplicationRunner {
             return;
         }
 
-        TurUser user = turUserRepository.findByUsername(adminId);
+        // Every admin identity to seed: the bootstrap admin + the Client Silos
+        // admin-emails (deduped, order-preserving; blanks ignored).
+        Set<String> adminIds = new LinkedHashSet<>();
+        if (StringUtils.hasText(turConfigProperties.getKeycloakAdminId())) {
+            adminIds.add(turConfigProperties.getKeycloakAdminId());
+        }
+        if (StringUtils.hasText(turConfigProperties.getAdminEmails())) {
+            Arrays.stream(turConfigProperties.getAdminEmails().split(","))
+                    .map(String::trim)
+                    .filter(StringUtils::hasText)
+                    .forEach(adminIds::add);
+        }
+
+        for (String adminId : adminIds) {
+            ensureAdministrator(adminId, adminGroup);
+        }
+    }
+
+    /** Idempotently ensure {@code username} exists and is in the Administrator group. */
+    private void ensureAdministrator(String username, TurGroup adminGroup) {
+        TurUser user = turUserRepository.findByUsername(username);
         if (user == null) {
             user = TurUser.builder()
-                    .username(adminId)
+                    .username(username)
                     .firstName("Keycloak")
                     .lastName("Admin")
                     .realm("keycloak")
@@ -84,7 +107,7 @@ public class TurKeycloakAdminOnStartup implements ApplicationRunner {
                     .turGroups(Collections.singletonList(adminGroup))
                     .build();
             turUserRepository.save(user);
-            log.info("Created Keycloak admin user '{}' with Administrator group.", adminId);
+            log.info("Created Keycloak admin user '{}' with Administrator group.", username);
         } else {
             var groups = turGroupRepository.findByTurUsersContaining(user);
             boolean hasAdmin = groups.stream().anyMatch(g -> ADMINISTRATOR.equals(g.getName()));
@@ -93,7 +116,7 @@ public class TurKeycloakAdminOnStartup implements ApplicationRunner {
                 groupList.add(adminGroup);
                 user.setTurGroups(groupList);
                 turUserRepository.save(user);
-                log.info("Added Administrator group to Keycloak user '{}'.", adminId);
+                log.info("Added Administrator group to Keycloak user '{}'.", username);
             }
         }
     }

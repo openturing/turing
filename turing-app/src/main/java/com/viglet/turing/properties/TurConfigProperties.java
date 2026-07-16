@@ -31,6 +31,16 @@ public class TurConfigProperties {
 	 * shared instance, no restriction. Env: {@code TURING_REQUIRED_VIGLET_CLIENT}.
 	 */
 	private String requiredVigletClient;
+	/**
+	 * Client Silos (Viglet Cloud). Comma-separated list of usernames/e-mails
+	 * granted full admin (the {@code Administrator} group → {@code ROLE_ADMIN} +
+	 * all privileges) on this instance, seeded on startup exactly like
+	 * {@link #keycloakAdminId}. Lets a dedicated silo give its client's operators
+	 * total autonomy without hand-editing the DB. Matches the login username
+	 * (which is the e-mail when {@code registrationEmailAsUsername} is on).
+	 * Env: {@code TURING_ADMIN_EMAILS}.
+	 */
+	private String adminEmails;
 	private TurSolrProperty solr;
 	private TurStorageProperty storage;
 	private TurGitProperty git;
