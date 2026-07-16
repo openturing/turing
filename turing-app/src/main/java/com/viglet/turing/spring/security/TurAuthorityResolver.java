@@ -17,6 +17,7 @@ import com.viglet.core.tenancy.VigletPlatformAdminService;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
 import java.util.HashSet;
@@ -57,6 +58,7 @@ public class TurAuthorityResolver {
         this.turConfigProperties = turConfigProperties;
     }
 
+    @Transactional(readOnly = true)
     public void resolve(String username, Set<GrantedAuthority> authorities) {
         resolve(username, Set.of(), authorities);
     }
@@ -70,6 +72,7 @@ public class TurAuthorityResolver {
      * pass an empty set — the bootstrap admin can still be granted via
      * {@code turing.tenancy.admin-implies-platform-admin}.
      */
+    @Transactional(readOnly = true)
     public void resolve(String username, Set<String> realmRoles, Set<GrantedAuthority> authorities) {
         if (!turConfigProperties.isPermissions()) {
             grantAllAuthorities(authorities);
@@ -151,6 +154,9 @@ public class TurAuthorityResolver {
                 .forEach(p -> authorities.add(new SimpleGrantedAuthority(p.getName())));
     }
 
+    // Traverses the lazy role → turPrivileges collection, so it must run inside
+    // the read-only transaction opened by the public resolve() methods; otherwise
+    // role.getTurPrivileges() throws LazyInitializationException (no session).
     private void resolveFromDatabase(String username, Set<GrantedAuthority> authorities) {
         TurUser turUser = turUserRepository.findByUsername(username);
         if (turUser != null) {
