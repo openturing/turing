@@ -1,8 +1,12 @@
 # syntax=docker/dockerfile:1.7
 # Multi-stage build for Viglet Turing ES.
 # Ported from viglet/cloud docker/Dockerfile.turing — the `viglet/jdk-build`
-# base (eclipse-temurin:25-jdk + git) is inlined here so the build is
+# base (eclipse-temurin:21-jdk + git) is inlined here so the build is
 # self-contained and needs no externally published base image.
+#
+# Java 21 (NOT 25): embedded Artemis 2.43.0 (via Netty) crashes on Java 25 with
+# "Cannot clean arbitrary ByteBuffer instances" (CleanerJava25) while loading its
+# NIO journal, which takes down the broker and every JMS listener.
 
 # Stage 1 — Frontend (pnpm monorepo → SPA)
 FROM node:26.3.1-slim AS node-builder
@@ -31,7 +35,7 @@ RUN --mount=type=cache,target=/root/.local/share/pnpm/store/v3 \
 RUN pnpm run build:app
 
 # Stage 2 — Backend (Maven, frontend já compilado)
-FROM eclipse-temurin:25-jdk AS build
+FROM eclipse-temurin:21-jdk AS build
 COPY --from=node-builder /src /src
 WORKDIR /src
 RUN chmod +x mvnw
@@ -40,7 +44,7 @@ RUN --mount=type=cache,target=/root/.m2 \
       -Dskip.installnodenpm=true -Dskip.npm=true -Dskip.pnpm=true 2>&1
 
 # Stage 3 — Runtime
-FROM eclipse-temurin:25-jre
+FROM eclipse-temurin:21-jre
 ARG CACHE_BUST=none
 LABEL org.opencontainers.image.revision=$CACHE_BUST
 RUN groupadd -r java && useradd -r -g java -u 1001 java
