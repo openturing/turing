@@ -101,7 +101,16 @@ export function SiteNav() {
                 {group.label}
                 <ChevronDown className="size-3.5 transition-transform group-data-[state=open]:rotate-180" />
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="start" className="min-w-44">
+              {/* Prevent Radix from returning focus to the trigger on close:
+                  its trigger.focus() scrolls the (top-of-page) trigger back
+                  into view, which cancels the native hash scroll to the target
+                  section when clicking a "/#…" item from the landing page
+                  itself. Cross-page items full-load so they're unaffected. */}
+              <DropdownMenuContent
+                align="start"
+                className="min-w-44"
+                onCloseAutoFocus={(e) => e.preventDefault()}
+              >
                 {group.items.map((item) => (
                   <DropdownMenuItem key={item.label} asChild>
                     <a href={item.href} className="w-full cursor-pointer font-medium">

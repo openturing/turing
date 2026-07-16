@@ -70,7 +70,10 @@ export function ContentFitDemo({ bare = false }: Readonly<ContentFitDemoProps>) 
     <div
       className={cn(
         "flex flex-col overflow-hidden bg-card text-card-foreground",
-        bare ? "h-full" : "h-[420px] rounded-2xl border border-border shadow-xl"
+        // bare: fill the playground frame (fixed height → inner scroll).
+        // standalone (persona page): grow with the report instead of scrolling
+        // inside a fixed box — min height keeps the empty state from collapsing.
+        bare ? "h-full" : "min-h-105 rounded-2xl border border-border shadow-xl"
       )}
     >
       <TuringPersonaPicker
@@ -88,7 +91,14 @@ export function ContentFitDemo({ bare = false }: Readonly<ContentFitDemoProps>) 
         }}
       />
 
-      <div className="flex flex-1 flex-col gap-3 overflow-y-auto px-4 py-4">
+      <div
+        className={cn(
+          "flex flex-1 flex-col gap-3 px-4 py-4",
+          // Only scroll inside a fixed frame (playground). Standalone lets the
+          // page scroll so the whole report is visible without a nested scrollbar.
+          bare && "overflow-y-auto",
+        )}
+      >
         <label className="text-[0.65rem] font-bold uppercase tracking-wide text-muted-foreground/70">
           Content to validate
         </label>
