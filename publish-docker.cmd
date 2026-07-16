@@ -78,8 +78,8 @@ echo ============================================================
 
 REM --- Build the fat-jar on the host (authenticated ~/.m2) -------------------
 if "%SKIP_BUILD%"=="0" (
-    echo [INFO] Building viglet-turing.jar on the host ...
-    call mvnw.cmd clean package -DskipTests -Dmaven.test.skip=true -pl "!turing-utils"
+    echo [INFO] Building viglet-turing.jar on the host ^(mvn clean install, no tests / IT^) ...
+    call mvnw.cmd clean install -DskipTests -Dmaven.test.skip=true -DskipITs -Dskip.npm=true -pl "!turing-utils"
     if errorlevel 1 (
         echo [ERROR] Maven build failed.
         exit /b 1
