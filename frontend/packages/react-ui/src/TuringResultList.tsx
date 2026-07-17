@@ -80,15 +80,25 @@ export function TuringResultList({
 
   return (
     <div className={className} role="list">
-      {documents.map((doc, index) => (
-        <div
-          key={doc.url || index}
-          role="listitem"
-          onClick={onResultClick ? () => onResultClick(doc, index) : undefined}
-        >
-          {itemComponent({ document: doc, raw: doc.raw, index })}
-        </div>
-      ))}
+      {documents.map((doc, index) => {
+        // A document's `url` is NOT a reliable React key: a real corpus can hold
+        // two hits with the same url (a page and one of its sections, the same
+        // page indexed under two categories, a PDF referenced twice). Duplicate
+        // keys make React mis-reconcile on the next query — a stale row lingers
+        // as a "ghost" duplicate. Prefer the document's stable id when present,
+        // and otherwise fall back to `url#index`, which is always unique.
+        const rawId = doc.raw?.fields?.id;
+        const key = rawId != null ? String(rawId) : `${doc.url}#${index}`;
+        return (
+          <div
+            key={key}
+            role="listitem"
+            onClick={onResultClick ? () => onResultClick(doc, index) : undefined}
+          >
+            {itemComponent({ document: doc, raw: doc.raw, index })}
+          </div>
+        );
+      })}
     </div>
   );
 }

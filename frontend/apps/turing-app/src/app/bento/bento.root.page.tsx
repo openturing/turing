@@ -74,6 +74,14 @@ export default function BentoRootPage() {
   const { pathname } = useLocation();
   const { t } = useTranslation();
   const parentPath = resolveBentoParent(pathname);
+  /*
+   * "Immersive" app-like surfaces (the chat) fill the shell edge-to-edge
+   * instead of being centered in the `max-w-7xl` reading column — they own a
+   * viewport-height layout with their own internal scroll, so the extra width
+   * is used by the conversation rather than left as empty margins.
+   */
+  const isImmersive =
+    pathname === ROUTES.BENTO_CHAT || pathname.startsWith(`${ROUTES.BENTO_CHAT}/`);
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [shortcutsOpen, setShortcutsOpen] = useState(false);
   const [tourOpen, setTourOpen] = useState(false);
@@ -133,7 +141,11 @@ export default function BentoRootPage() {
        * `md:pl-16` reserves the left gutter for the fixed BentoNavRail so
        * the header + main clear it on desktop.
        */}
-      <div className="relative min-h-svh w-full bg-background text-foreground md:pl-16">
+      <div
+        className={`relative w-full bg-background text-foreground md:pl-16 ${
+          isImmersive ? "flex h-svh flex-col overflow-hidden" : "min-h-svh"
+        }`}
+      >
         {/*
          * Skip-to-content link (a11y / T571): the first focusable element so a
          * keyboard user can jump past the nav rail + header straight to the
@@ -149,7 +161,7 @@ export default function BentoRootPage() {
 
         <BentoNavRail />
 
-        <header className="bento-shell-header sticky top-0 z-30 flex items-center justify-between gap-3 border-b border-border/40 bg-background/55 px-4 py-3 backdrop-blur-xl backdrop-saturate-150 md:px-8">
+        <header className="bento-shell-header sticky top-0 z-30 flex shrink-0 items-center justify-between gap-3 border-b border-border/40 bg-background/55 px-4 py-3 backdrop-blur-xl backdrop-saturate-150 md:px-8">
           <div className="flex items-center gap-3">
             {parentPath && (
               <Link
@@ -196,7 +208,11 @@ export default function BentoRootPage() {
           id="bento-main-content"
           tabIndex={-1}
           aria-label={t("bento.mainContent", { defaultValue: "Main content" })}
-          className="relative z-10 mx-auto w-full max-w-7xl px-4 py-6 focus:outline-none md:px-8 md:py-10"
+          className={
+            isImmersive
+              ? "relative z-10 flex min-h-0 w-full flex-1 flex-col px-4 pt-6 focus:outline-none md:px-8 md:pt-8"
+              : "relative z-10 mx-auto w-full max-w-7xl px-4 py-6 focus:outline-none md:px-8 md:py-10"
+          }
         >
           <Outlet />
         </main>

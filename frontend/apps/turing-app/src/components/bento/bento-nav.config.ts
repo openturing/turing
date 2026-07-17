@@ -7,7 +7,6 @@ import {
   IconCode,
   IconBuildingStore,
   IconClock,
-  IconCoin,
   IconCompass,
   IconCpu2,
   IconCube,
@@ -20,7 +19,6 @@ import {
   IconHome,
   IconInfoCircle,
   IconLayoutDashboard,
-  IconMessageChatbot,
   IconPlugConnectedX,
   IconReceiptRupee,
   IconReportAnalytics,
@@ -148,10 +146,16 @@ export const BENTO_NAV_ITEMS: readonly BentoNavItem[] = [
   { id: "routine", titleKey: "home.features.routine.title", descriptionKey: "home.features.routine.description", icon: IconClock, section: "generativeAi", tone: "emerald", bentoRoute: ROUTES.BENTO_ROUTINE_INSTANCE, consoleRoute: ROUTES.ROUTINE_INSTANCE },
   { id: "chatWebhook", titleKey: "home.features.chatWebhook.title", descriptionKey: "home.features.chatWebhook.description", icon: IconWebhook, section: "generativeAi", tone: "rose", bentoRoute: ROUTES.BENTO_CHAT_WEBHOOK_INSTANCE, consoleRoute: ROUTES.CHAT_WEBHOOK_INSTANCE },
   { id: "evalStudio", titleKey: "home.features.evalStudio.title", descriptionKey: "home.features.evalStudio.description", icon: IconFlask2, section: "generativeAi", tone: "amber", bentoRoute: ROUTES.BENTO_EVAL, consoleRoute: ROUTES.BENTO_EVAL, privilege: "AI_AGENT_VIEW" },
-  { id: "costGovernance", titleKey: "home.features.costGovernance.title", descriptionKey: "home.features.costGovernance.description", icon: IconCoin, section: "generativeAi", tone: "emerald", bentoRoute: ROUTES.BENTO_COST_GOVERNANCE, consoleRoute: ROUTES.COST_GOVERNANCE },
+  // Cost Governance is intentionally NOT a top-level card here — it lives as a
+  // tab inside "AI Analytics & Costs" (aiAnalytics → /cost-governance). A
+  // standalone card duplicated the same surface on the Generative AI hub.
   { id: "skills", titleKey: "home.features.skills.title", descriptionKey: "home.features.skills.description", icon: IconSparkles, section: "generativeAi", tone: "violet", bentoRoute: ROUTES.BENTO_SKILL, consoleRoute: ROUTES.SKILL_ROOT },
   { id: "aiAnalytics", titleKey: "home.features.aiAnalytics.title", descriptionKey: "home.features.aiAnalytics.description", icon: IconReportAnalytics, section: "generativeAi", tone: "indigo", bentoRoute: ROUTES.BENTO_AI_ANALYTICS, consoleRoute: ROUTES.AI_ANALYTICS_ROOT },
-  { id: "chat", titleKey: "home.features.chat.title", descriptionKey: "home.features.chat.description", icon: IconMessageChatbot, section: "generativeAi", tone: "indigo", bentoRoute: ROUTES.BENTO_CHAT, consoleRoute: ROUTES.CHAT_ROOT, requiresLlm: true },
+  // Chat is intentionally NOT a top-level card here — you enter chat from a
+  // specific surface: the AI Agent card (opens `/bento/chat/agent/:id`) or the
+  // Persona card (`/bento/chat/persona/:id`), and the home overview keeps its
+  // inline ChatStarter. A standalone "Chat" tile just duplicated that entry.
+  // The `/bento/chat` route (default agent) still works for deep links.
 
   // --- enterprise search ---
   { id: "semanticNavigation", titleKey: "home.features.semanticNavigation.title", descriptionKey: "home.features.semanticNavigation.description", icon: IconCompass, section: "enterpriseSearch", tone: "emerald", span: BENTO_SPAN_FEATURED, bentoRoute: ROUTES.BENTO_SN_INSTANCE, consoleRoute: "/admin/sn/instance", privilege: "SN_VIEW" },

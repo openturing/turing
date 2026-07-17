@@ -7,6 +7,7 @@ import {
   Globe,
   KeyRound,
   LayoutGrid,
+  LineChart,
   Lock,
   MessagesSquare,
   MessageSquare,
@@ -415,6 +416,7 @@ export const AUDIENCES: Audience[] = [
       "Local stack in one command: npx @viglet/turing-cli init",
       "React SDK + zero-dependency vanilla-JS SDK (headless)",
       "Bring your own LLM and search engine",
+      "Funnel analytics to your own GA4, GTM, Segment or Matomo — vendor-neutral, zero-config",
       "Self-host with one docker run — no account, no telemetry",
     ],
     primary: { label: "Get started", href: "https://docs.viglet.org/turing/" },
@@ -675,6 +677,10 @@ npx @viglet/turing-cli deploy   # push agents, flows, tools & skills`,
       {
         title: "Observable & operable",
         body: "Micrometer metrics, chat & conversion analytics, cache-hit gauges and per-tool latency percentiles give you the operational visibility a production search platform needs.",
+      },
+      {
+        title: "Measure the funnel in the analytics stack you already run",
+        body: "Server metrics tell you the platform is healthy; the SDK tells you what your users do. It emits a canonical, vendor-neutral event for every step of the funnel — query, no-results, result click, chat start, conversion and abandonment. A GA4 / Google Tag Manager sink auto-detects the gtag / dataLayer your page already loads (Adobe Edge Delivery Services included), so it lights up with zero extra config — with a generic escape hatch for Segment, Matomo or Plausible. Cross-surface session stitching ties a chat lead back to the search that started it, and because it's your own tag on your own page, you decide what's collected.",
       },
       {
         title: "A real developer experience",
@@ -1135,6 +1141,12 @@ export const AEM_DEPTH: AemDepth[] = [
     iconClass: "from-[#8b5cf6] to-[#6366f1]",
     title: "Answers a governed brand can trust",
     body: "A pluggable reranker, a configurable relevance gate, an optional groundedness check and a deterministic “not in this site” refusal keep a regulated AEM property from shipping confident hallucinations — auditable end to end.",
+  },
+  {
+    icon: LineChart,
+    iconClass: "from-[#0891b2] to-[#06b6d4]",
+    title: "Measure it in GA4 / GTM — zero config on EDS",
+    body: "The search and cited-chat UI emit a vendor-neutral analytics event for every funnel step — query, result click, chat, conversion, abandonment. The GA4 / Google Tag Manager sink auto-detects the gtag / dataLayer your AEM pages or Edge Delivery Services blocks already load, so the funnel shows up in the analytics your marketing team already lives in — with a Segment / Matomo / Plausible escape hatch, and nothing phoned home to a vendor.",
   },
 ];
 

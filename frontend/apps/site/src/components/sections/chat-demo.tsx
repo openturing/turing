@@ -167,7 +167,7 @@ export function ChatDemo({
   fallback = DEFAULT_FALLBACK,
   showPersonas = true,
 }: Readonly<ChatDemoProps>) {
-  const { client, site, live } = useTuringDemo(siteOverride);
+  const { client, site, live, analytics } = useTuringDemo(siteOverride);
   const [convo, setConvo] = useState<DemoMsg[]>([]);
   const [input, setInput] = useState("");
   const [busy, setBusy] = useState(false);
@@ -204,7 +204,15 @@ export function ChatDemo({
   // site resolves (pinned or auto-discovered) so the controller binds to it.
   useEffect(() => {
     if (!client || !site) return;
-    const c = createChatController(client, { site, personaId: personaId ?? undefined });
+    const c = createChatController(client, {
+      site,
+      personaId: personaId ?? undefined,
+      // T458/T460 — route chat lifecycle (start, funnel steps, conversion) and
+      // client-side abandonment into GA4 via the shared bus. Additive: a failed
+      // emit never breaks the chat.
+      analytics,
+      abandonment: true,
+    });
     controllerRef.current = c;
 
     const similar = createSimilarController(client, site, { rows: 5, locale: "en_US" });
@@ -245,7 +253,7 @@ export function ChatDemo({
       if (typeof unsub === "function") unsub();
       if (typeof unsubSimilar === "function") unsubSimilar();
     };
-  }, [client, site, personaId]);
+  }, [client, site, personaId, analytics]);
 
   useEffect(() => {
     busyRef.current = busy;

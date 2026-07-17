@@ -9,8 +9,9 @@ import { ROUTES } from "@/app/routes.const";
  * Bento persona chat workspace — Block AI / §XXXII.4 (T580/T581). Reached from
  * `/bento/chat/persona/:personaId`. Reuses {@link PersonaChatPage} under the
  * frosted Bento header (same "sits inside the shell" treatment as the agent
- * chat, per §XXXI.8); only the empty-state header is swapped for a
- * {@link BentoHero}. A missing id redirects to the persona list.
+ * chat, per §XXXI.8); it is given a {@link BentoHero} page header rendered in
+ * every state, like the other Bento pages. A missing id redirects to the
+ * persona list.
  */
 export default function BentoPersonaChatPage() {
   const { t } = useTranslation();

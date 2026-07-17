@@ -25,7 +25,6 @@ describe("AgentChatTab — reasoning summary panel (T178)", () => {
       <AgentChatTab
         agent={makeAgent()}
         llmInstanceId="llm-1"
-        modelLabel="openai · o3"
         contextWindow={128000}
         conversationId="conv-1"
         initialMessages={[]}

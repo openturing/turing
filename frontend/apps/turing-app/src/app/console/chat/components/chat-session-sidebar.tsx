@@ -17,7 +17,7 @@ export function ChatSessionSidebar({ open, onClose, sessions, activeSessionId, o
   const { t } = useTranslation()
   const dateLocale = useDateLocale()
   return (
-    <div className={`shrink-0 border-r bg-muted/30 flex flex-col transition-all duration-200 ${open ? "w-72" : "w-0"} overflow-hidden`}>
+    <div className={`shrink-0 bg-muted/30 flex flex-col transition-all duration-200 overflow-hidden ${open ? "w-72 border-r" : "w-0"}`}>
       <div className="flex items-center justify-between px-4 py-3 border-b">
         <span className="text-sm font-medium">{t("chat.sessions")}</span>
         <button type="button" onClick={onClose} className="text-muted-foreground hover:text-foreground transition-colors">

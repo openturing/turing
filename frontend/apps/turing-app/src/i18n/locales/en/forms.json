@@ -143,6 +143,7 @@
       "dangerZoneTitle": "Danger zone",
       "dangerZoneDesc": "Permanently delete this language model instance. Agents that reference it will fail on their next call until reassigned.",
       "deleteAction": "Delete this language model",
+      "tabConfiguration": "Configuration",
       "nativeCapabilities": "Native Capabilities",
       "nativeCapabilitiesDesc": "Provider-native features (image generation, web search, …) this instance is allowed to use. An agent can only select a capability that is enabled here.",
       "nativeCapabilityOwnsTurn": "takes the whole turn",

@@ -46,13 +46,31 @@ interface DisplayInstance {
   turLLMVendor?: { id: string } | null
 }
 
+/** Picker shape for the bottom-bar model selector — vendor + model, so the
+ *  option reads e.g. "ANTHROPIC · claude-haiku-4-5-20251001". */
+interface ModelPickerInstance {
+  id: string
+  turLLMVendor?: { id: string } | null
+  modelName?: string
+}
+
+/** Format one instance as "VENDOR · modelName" (same text the old label showed). */
+function formatModelOption(instance: ModelPickerInstance): string {
+  return `${instance.turLLMVendor?.id ?? ""} · ${instance.modelName ?? ""}`
+}
+
 interface AgentChatTabProps {
   agent: TurAIAgent
   /** Resolved LLM for this tab — guaranteed valid for the agent by the parent. */
   llmInstanceId: string
   selectedInstance?: DisplayInstance
-  modelLabel: string
   contextWindow: number
+  // ── Model selector (moved from the header into the composer bar) ──
+  /** Instances the active agent allows, rendered as "vendor · model" options. */
+  llmInstances?: ModelPickerInstance[]
+  /** Currently selected LLM instance id. */
+  selectedLlmId?: string
+  onModelChange?: (id: string) => void
   /** Controlled backend conversation id (== the host's IndexedDB session id). */
   conversationId?: string
   /** Seed transcript (restored session / post-compaction summary), SDK shape. */
@@ -108,7 +126,7 @@ export function AgentNoLlmFallback({
         />
       </div>
       <div className="shrink-0 border-t bg-background">
-        <div className="max-w-3xl mx-auto px-4 py-4">
+        <div className="max-w-5xl mx-auto px-4 py-4">
           <ChatInput
             value=""
             onChange={() => {}}
@@ -141,8 +159,10 @@ export function AgentChatTab({
   agent,
   llmInstanceId,
   selectedInstance,
-  modelLabel,
   contextWindow,
+  llmInstances = [],
+  selectedLlmId = "",
+  onModelChange,
   conversationId,
   initialMessages,
   flowId,
@@ -370,7 +390,7 @@ export function AgentChatTab({
         )}
       </div>
       <div className="shrink-0 border-t bg-background">
-        <div className="max-w-3xl mx-auto px-4 py-4">
+        <div className="max-w-5xl mx-auto px-4 py-4">
           {routineWaiting.waiting && (
             <div className="mb-2 flex items-center gap-2 rounded-md border border-lime-500/40 bg-lime-500/10 px-3 py-2 text-xs text-lime-900 dark:text-lime-100">
               <IconLoader2 className="size-3.5 animate-spin" />
@@ -398,64 +418,79 @@ export function AgentChatTab({
             }
             accentColor="violet"
           />
-          <div className="flex items-center justify-between mt-2 gap-4">
-            <div className="flex items-center gap-3 min-w-0">
-              <span className="text-xs text-muted-foreground shrink-0">{modelLabel}</span>
-              {activeFlows.length > 0 && (
-                <>
-                  <Select value={selectedFlowId} onValueChange={onFlowChange}>
-                    <SelectTrigger className="h-7 text-xs w-44">
-                      <SelectValue placeholder={t("chatFlow.selector.placeholder")} />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value={FLOW_AUTO}>{t("chatFlow.selector.auto")}</SelectItem>
-                      {activeFlows.map((flow) => (
-                        <SelectItem key={flow.id} value={flow.id ?? ""}>
-                          {flow.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  {canResetFlow && (
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      className="h-7 w-7 shrink-0"
-                      title={t("chatFlow.reset.label")}
-                      aria-label={t("chatFlow.reset.label")}
-                      onClick={handleResetFlow}
-                    >
-                      <IconRefresh className="size-3.5" />
-                    </Button>
-                  )}
-                </>
-              )}
-              {skillModeEnabled && (
-                <Select value={selectedSkillId} onValueChange={onSkillChange ?? (() => {})}>
+          <div className="flex flex-wrap items-center gap-x-2 gap-y-2 mt-2">
+            {/* Model — vendor · model, moved out of the header. */}
+            <Select value={selectedLlmId} onValueChange={onModelChange}>
+              <SelectTrigger className="h-7 text-xs w-auto min-w-52 max-w-full gap-1.5">
+                <SelectValue placeholder={t("chat.selectModel")} />
+              </SelectTrigger>
+              <SelectContent>
+                {llmInstances.map((instance) => (
+                  <SelectItem key={instance.id} value={instance.id}>
+                    {formatModelOption(instance)}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            {activeFlows.length > 0 && (
+              <div className="flex items-center gap-1.5">
+                <Select value={selectedFlowId} onValueChange={onFlowChange}>
                   <SelectTrigger className="h-7 text-xs w-44">
-                    <SelectValue placeholder={t("chat.skill.selector.placeholder")} />
+                    <SelectValue placeholder={t("chatFlow.selector.placeholder")} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value={SKILL_NONE}>{t("chat.skill.selector.auto")}</SelectItem>
-                    {skills.map((skill) => (
-                      <SelectItem key={skill.id} value={skill.id}>
-                        {skill.name}
+                    <SelectItem value={FLOW_AUTO}>{t("chatFlow.selector.auto")}</SelectItem>
+                    {activeFlows.map((flow) => (
+                      <SelectItem key={flow.id} value={flow.id ?? ""}>
+                        {flow.name}
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
-              )}
-            </div>
+                {canResetFlow && (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="h-7 w-7 shrink-0"
+                    title={t("chatFlow.reset.label")}
+                    aria-label={t("chatFlow.reset.label")}
+                    onClick={handleResetFlow}
+                  >
+                    <IconRefresh className="size-3.5" />
+                  </Button>
+                )}
+              </div>
+            )}
+
+            {skillModeEnabled && (
+              <Select value={selectedSkillId} onValueChange={onSkillChange ?? (() => {})}>
+                <SelectTrigger className="h-7 text-xs w-44">
+                  <SelectValue placeholder={t("chat.skill.selector.placeholder")} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={SKILL_NONE}>{t("chat.skill.selector.auto")}</SelectItem>
+                  {skills.map((skill) => (
+                    <SelectItem key={skill.id} value={skill.id}>
+                      {skill.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
+
             {messages.length > 0 && (
-              <ContextBar
-                tokens={tokens}
-                percentage={percentage}
-                contextWindow={contextWindow}
-                compacting={compacting}
-                canCompact={canCompact}
-                onCompact={() => onCompactRequested(messages)}
-              />
+              <div className="ml-auto">
+                <ContextBar
+                  tokens={tokens}
+                  percentage={percentage}
+                  contextWindow={contextWindow}
+                  compacting={compacting}
+                  canCompact={canCompact}
+                  onCompact={() => onCompactRequested(messages)}
+                />
+              </div>
             )}
           </div>
         </div>

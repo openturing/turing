@@ -1,5 +1,11 @@
 import { useEffect, useState } from "react";
-import { createTuringClient, type TuringClient } from "@viglet/turing-sdk";
+import {
+  createTuringAnalytics,
+  createTuringClient,
+  googleAnalyticsSink,
+  type TuringAnalytics,
+  type TuringClient,
+} from "@viglet/turing-sdk";
 
 // T620 — shared wiring for the hero live-demos (search + chat). The demo runs on
 // the product's own zero-dependency `@viglet/turing-sdk`. It goes LIVE against the
@@ -25,6 +31,18 @@ export const DEMO_ORIGIN = DEMO_URL ?? "";
 export const demoClient: TuringClient | null = DEMO_URL
   ? createTuringClient({ baseURL: `${DEMO_URL}/api` })
   : null;
+
+/**
+ * Shared analytics bus for the live demos. The GA4 sink auto-detects the site's
+ * `window.gtag` (configured in `index.html`), so every SDK search/chat event —
+ * `turing_search`, `turing_chat_start`, `turing_chat_conversion`,
+ * `turing_chat_abandoned`, funnel steps, result clicks — flows into GA4 with no
+ * extra wiring. Constructed unconditionally (safe during SSR/prerender: the sink
+ * resolves `gtag` lazily at emit time and no-ops when it's absent).
+ */
+export const demoAnalytics: TuringAnalytics = createTuringAnalytics({
+  sinks: [googleAnalyticsSink()],
+});
 
 let namesPromise: Promise<string[]> | null = null;
 
@@ -67,6 +85,8 @@ export interface TuringDemo {
   readonly site: string | null;
   /** True once both a client and a site are available — safe to issue live calls. */
   readonly live: boolean;
+  /** Shared analytics bus (GA4-backed) to pass to the SDK search/chat controllers. */
+  readonly analytics: TuringAnalytics;
 }
 
 /**
@@ -95,5 +115,10 @@ export function useTuringDemo(preferredSite?: string): TuringDemo {
     };
   }, [preferredSite]);
 
-  return { client: demoClient, site, live: Boolean(demoClient && site) };
+  return {
+    client: demoClient,
+    site,
+    live: Boolean(demoClient && site),
+    analytics: demoAnalytics,
+  };
 }

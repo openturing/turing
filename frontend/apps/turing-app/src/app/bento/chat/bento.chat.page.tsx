@@ -10,9 +10,10 @@ import { useParams } from "react-router-dom";
  * own internal chrome (tab bar, model picker, session sidebar), so it "sits
  * inside the shell" per §XXXI.8 rather than adopting the hero/save-bar CRUD
  * pattern: the reused {@link ChatPage} renders under the frosted Bento
- * header/nav unchanged. Only the empty-state header is swapped for a
- * {@link BentoHero} so the reused surface never pulls the console
- * {@code SidebarTrigger} into a shell that has no SidebarProvider.
+ * header/nav unchanged. It is given a {@link BentoHero} page header (rendered in
+ * every state, like the other Bento pages) so the surface matches them and never
+ * pulls the console {@code SidebarTrigger} into a shell that has no
+ * SidebarProvider.
  *
  * <p>T580 — serves both `/bento/chat` (default agent) and
  * `/bento/chat/agent/:agentId` (deterministic, shareable). The optional route

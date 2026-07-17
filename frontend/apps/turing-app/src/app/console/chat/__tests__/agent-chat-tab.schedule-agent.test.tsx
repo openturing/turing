@@ -18,7 +18,6 @@ describe("AgentChatTab — scheduleAgent waiting banner (T232.3)", () => {
       <AgentChatTab
         agent={makeAgent()}
         llmInstanceId="llm-1"
-        modelLabel="openai · gpt-4o"
         contextWindow={128000}
         conversationId="conv-3"
         initialMessages={[]}

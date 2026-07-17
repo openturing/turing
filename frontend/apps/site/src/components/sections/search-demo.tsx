@@ -10,6 +10,7 @@ import {
   type SimilarController,
   type SimilarStatus,
   type TurFacetGroup,
+  type TuringAnalytics,
   type TurSimilarResult,
   type TurSpellCheck,
 } from "@viglet/turing-sdk";
@@ -95,7 +96,11 @@ function docBadge(raw: TuringResolvedDocument["raw"]): string {
  * so it stays plain text. The "Ask"/"Related" actions render as sibling buttons
  * below, so there's no click-target overlap to guard against.
  */
-function ResultTitle({ title, url }: Readonly<{ title: string; url?: string }>) {
+function ResultTitle({
+  title,
+  url,
+  onOpen,
+}: Readonly<{ title: string; url?: string; onOpen?: () => void }>) {
   const inner = <Highlighted text={title} />;
   if (!url) {
     return <span className="text-sm font-semibold">{inner}</span>;
@@ -105,6 +110,7 @@ function ResultTitle({ title, url }: Readonly<{ title: string; url?: string }>) 
       href={url}
       target="_blank"
       rel="noreferrer"
+      onClick={onOpen}
       className="text-sm font-semibold hover:text-primary hover:underline"
     >
       {inner}
@@ -132,7 +138,7 @@ export function SearchDemo({
   sampleDocs,
   placeholder,
 }: Readonly<SearchDemoProps>) {
-  const { client, site, live } = useTuringDemo(siteOverride);
+  const { client, site, live, analytics } = useTuringDemo(siteOverride);
 
   if (live && client && site) {
     return (
@@ -140,6 +146,7 @@ export function SearchDemo({
         key={site}
         client={client}
         site={site}
+        analytics={analytics}
         bare={bare}
         onAskAbout={onAskAbout}
         placeholder={placeholder}
@@ -162,12 +169,14 @@ export function SearchDemo({
 function LiveSearchDemo({
   client,
   site,
+  analytics,
   bare,
   onAskAbout,
   placeholder,
 }: Readonly<{
   client: NonNullable<ReturnType<typeof useTuringDemo>["client"]>;
   site: string;
+  analytics: TuringAnalytics;
   bare: boolean;
   onAskAbout?: (title: string, id?: string) => void;
   placeholder?: string;
@@ -201,7 +210,9 @@ function LiveSearchDemo({
       client,
       { site, locale: LOCALE, sort: "relevance" },
       { rows: "8", q: "*" },
-      { chat: false }
+      // T462 — emit search funnel events (query, no-results, result clicks) to
+      // GA4 via the shared bus; `chat:false` keeps it a pure (no-LLM) surface.
+      { chat: false, analytics }
     );
     controllerRef.current = controller;
     const unsub = controller.subscribe((s) => {
@@ -236,7 +247,7 @@ function LiveSearchDemo({
       unsubSimilar();
       if (searchTimer.current) window.clearTimeout(searchTimer.current);
     };
-  }, [client, site]);
+  }, [client, site, analytics]);
 
   function loadSimilar(id: string, title: string) {
     setSimilarSeed(title);
@@ -246,6 +257,26 @@ function LiveSearchDemo({
   function clearSimilar() {
     setSimilarSeed(null);
     similarRef.current?.clear();
+  }
+
+  // Reset every active facet filter. When the current result set is empty the
+  // response carries no facet groups (and often no cleanup link), so the facet
+  // rail — and its "Clear filters" button — would vanish, trapping the user with
+  // filters they can't remove. Prefer the engine's cleanup link when present;
+  // otherwise fall back to a fresh, unfiltered base search.
+  function clearFilters() {
+    clearSimilar();
+    setQuery("");
+    if (cleanUpFacets) {
+      void controllerRef.current?.navigate(cleanUpFacets);
+    } else {
+      void controllerRef.current?.search({
+        q: "*",
+        rows: "8",
+        _setlocale: LOCALE,
+        sort: "relevance",
+      });
+    }
   }
 
   // Debounced text query (facet state is preserved on the controller between
@@ -347,8 +378,9 @@ function LiveSearchDemo({
         </div>
       )}
 
-      {/* live facet groups */}
-      {facets.length > 0 && (
+      {/* live facet groups — keep the rail (and Clear filters) whenever a filter
+          is active, even if a zero-result response returned no facet groups. */}
+      {(facets.length > 0 || hasFilters) && (
         <div className="flex flex-col gap-1.5 border-b border-border px-4 py-2.5">
           {facets.slice(0, MAX_FACET_GROUPS).map((group) => (
             <div key={group.name} className="flex flex-wrap items-center gap-1.5">
@@ -381,10 +413,10 @@ function LiveSearchDemo({
               ))}
             </div>
           ))}
-          {hasFilters && cleanUpFacets && (
+          {hasFilters && (
             <button
               type="button"
-              onClick={() => void controllerRef.current?.navigate(cleanUpFacets)}
+              onClick={clearFilters}
               className="mt-0.5 inline-flex w-fit items-center gap-1 text-[0.7rem] font-semibold text-muted-foreground hover:text-foreground"
             >
               <X className="size-3" />
@@ -467,7 +499,25 @@ function LiveSearchDemo({
         itemComponent={({ document }) => (
           <div className="px-4 py-3 transition-colors hover:bg-muted/50">
             <div className="flex items-center gap-2">
-              <ResultTitle title={document.title} url={document.url} />
+              <ResultTitle
+                title={document.title}
+                url={document.url}
+                onOpen={() => {
+                  // T462 — record the result click (server CTR + GA4
+                  // `turing_search_result_click`) so the search→open funnel is
+                  // measurable. No-ops when the doc has no id.
+                  const docId = String(
+                    (document.raw.fields as Record<string, unknown>).id ?? ""
+                  );
+                  if (docId) {
+                    controllerRef.current?.trackResultClick(
+                      docId,
+                      documentsView.indexOf(document),
+                      query
+                    );
+                  }
+                }}
+              />
               <span className="rounded bg-primary/10 px-1.5 py-0.5 text-[0.65rem] font-semibold text-primary">
                 {docBadge(document.raw)}
               </span>

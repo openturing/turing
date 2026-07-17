@@ -1,50 +1,121 @@
 import { useFeatures } from "@/api/queries/features.queries";
 import { useDeleteSeInstance, useSeInstance, useUpdateSeInstance } from "@/api/queries/se-instance.queries";
 import { ROUTES } from "@/app/routes.const";
-import { BentoEntityShell } from "@/components/bento";
+import SEInstanceCoresPage from "@/app/console/se/cores/se.instance.cores.page";
+import SEInstanceSystemInfoPage from "@/app/console/se/system-info/se.instance.system-info.page";
+import { BentoEntityShell, type BentoIdentity, type BentoShellFormState } from "@/components/bento";
 import { GlobalBadge, GlobalReadOnlyNotice } from "@/components/infra-global-notice";
 import { LoadProvider } from "@/components/loading-provider";
 import { useInfraReadOnly } from "@/hooks/use-infra-read-only";
 import type { TurSEInstance } from "@/models/se/se-instance.model.ts";
-import { IconDatabase, IconInfoCircle, IconLock, IconServer, IconZoomCode, type Icon as TablerIcon } from "@tabler/icons-react";
+import { IconAdjustments, IconDatabase, IconInfoCircle, IconLock, IconZoomCode, type Icon as TablerIcon } from "@tabler/icons-react";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Link, useParams } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import { BENTO_SE_FORM_ID, BentoSEInstanceForm } from "./bento.se.instance.form";
 
-interface SESectionLink {
-  labelKey: string;
-  icon: TablerIcon;
-  path: string;
+type SEDetailTab = "settings" | "cores" | "systemInfo";
+
+/** A single frosted pill in the SE detail tab-bar (see turing-bento-ui skill). */
+function SETabPill({
+  active,
+  icon: Icon,
+  label,
+  onSelect,
+}: Readonly<{ active: boolean; icon: TablerIcon; label: string; onSelect: () => void }>) {
+  return (
+    <button
+      type="button"
+      onClick={onSelect}
+      className={`bento-tile bento-tile-clickable inline-flex items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-sm backdrop-blur transition-colors ${
+        active
+          ? "border-primary/40 bg-primary text-primary-foreground"
+          : "border-border/60 bg-card/60 text-muted-foreground hover:text-foreground"
+      }`}
+    >
+      <Icon size={16} />
+      {label}
+    </button>
+  );
 }
 
-const SE_SECTIONS: readonly SESectionLink[] = [
-  { labelKey: "se.nav.cores", icon: IconDatabase, path: "cores" },
-  { labelKey: "se.nav.systemInfo", icon: IconInfoCircle, path: "system-info" },
-];
-
-function SESectionsPanel({ seId }: Readonly<{ seId: string }>) {
+/**
+ * Detail body for an existing search engine: a frosted pill tab-bar splitting
+ * the connection form ("Settings") from the Solr cores ("Cores") and the
+ * read-only diagnostics ("System Information").
+ *
+ * The form stays mounted on every tab — hidden with `hidden` rather than
+ * unmounted — so the hero-anchored Save button keeps its `form="…"` submit
+ * target and the react-hook-form dirty state survives a tab switch. The other
+ * tabs mount lazily so they fetch fresh each time they are opened. On a new
+ * instance there are no cores or diagnostics yet, so the tab-bar is suppressed
+ * and only the form renders (its Save creates the entity).
+ */
+function BentoSEInstanceBody({
+  entity,
+  isNew,
+  readOnly,
+  staged,
+  onStateChange,
+}: Readonly<{
+  entity: TurSEInstance;
+  isNew: boolean;
+  readOnly: boolean;
+  staged: BentoIdentity;
+  onStateChange: (state: BentoShellFormState) => void;
+}>) {
   const { t } = useTranslation();
+  const [tab, setTab] = useState<SEDetailTab>("settings");
+  const showTabs = !isNew && !!entity.id;
+
   return (
-    <section className="mt-2">
-      <h2 className="mb-3 flex items-center gap-2 text-sm font-medium text-muted-foreground">
-        <IconServer size={16} className="text-emerald-500" />
-        {t("se.title")}
-      </h2>
-      <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-4">
-        {SE_SECTIONS.map(({ labelKey, icon: Icon, path }) => (
-          <Link
-            key={path}
-            to={`${ROUTES.BENTO_SE_INSTANCE}/${seId}/${path}`}
-            className="bento-tile bento-tile-clickable bento-glass flex items-center gap-3 rounded-2xl p-4"
-          >
-            <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-linear-to-br from-emerald-500 to-teal-600 text-white shadow-sm">
-              <Icon size={18} />
-            </span>
-            <span className="text-sm font-medium">{t(labelKey)}</span>
-          </Link>
-        ))}
+    <>
+      {showTabs && (
+        <nav className="mb-6 flex flex-wrap gap-2">
+          <SETabPill
+            active={tab === "settings"}
+            icon={IconAdjustments}
+            label={t("se.nav.settings")}
+            onSelect={() => setTab("settings")}
+          />
+          <SETabPill
+            active={tab === "cores"}
+            icon={IconDatabase}
+            label={t("se.nav.cores")}
+            onSelect={() => setTab("cores")}
+          />
+          <SETabPill
+            active={tab === "systemInfo"}
+            icon={IconInfoCircle}
+            label={t("se.nav.systemInfo")}
+            onSelect={() => setTab("systemInfo")}
+          />
+        </nav>
+      )}
+
+      {/* Settings tab. Kept in the DOM on every tab (hidden, not unmounted) so
+          the form="…" submit target and dirty state persist across switches. */}
+      <div className={showTabs && tab !== "settings" ? "hidden" : undefined}>
+        <BentoSEInstanceForm
+          value={entity}
+          isNew={isNew}
+          readOnly={readOnly}
+          staged={staged}
+          onStateChange={onStateChange}
+        />
       </div>
-    </section>
+
+      {/* Cores tab — mounted lazily; keeps "New Core"/try-again links in /bento. */}
+      {showTabs && entity.id && tab === "cores" && (
+        <SEInstanceCoresPage header={null} baseRoute={ROUTES.BENTO_SE_INSTANCE} />
+      )}
+
+      {/* System Information tab — the console body with the shell hero
+          suppressed (header={null} keeps it in its frosted bento layout). */}
+      {showTabs && entity.id && tab === "systemInfo" && (
+        <SEInstanceSystemInfoPage header={null} />
+      )}
+    </>
   );
 }
 
@@ -105,10 +176,13 @@ export default function BentoSEInstancePage() {
         onDelete={isNew || readOnly ? undefined : () => deleteMutation.mutateAsync(entity)}
       >
         {({ staged, onStateChange }) => (
-          <>
-            <BentoSEInstanceForm value={entity} isNew={isNew} readOnly={readOnly} staged={staged} onStateChange={onStateChange} />
-            {!isNew && entity.id && <SESectionsPanel seId={entity.id} />}
-          </>
+          <BentoSEInstanceBody
+            entity={entity}
+            isNew={isNew}
+            readOnly={readOnly}
+            staged={staged}
+            onStateChange={onStateChange}
+          />
         )}
       </BentoEntityShell>
     );

@@ -1,15 +1,24 @@
 "use client"
-import { useCallback, useEffect, useState, type ReactNode } from "react"
+import {
+  cloneElement,
+  isValidElement,
+  useCallback,
+  useEffect,
+  useState,
+  type ReactElement,
+  type ReactNode,
+} from "react"
 import { toast } from "@viglet/viglet-design-system"
 import "./chat-highlight.css"
 
 import { ROUTES } from "@/app/routes.const"
 import { BlankSlate } from "@/components/blank-slate"
+import { GradientButton } from "@/components/ui/gradient-button"
 import { PageHeader } from "@/components/page-header"
 import type { TurPersona } from "@/models/persona/persona.model"
 import { TurPersonaService } from "@/services/persona/persona.service"
 import type { ChatSession } from "@/services/chat/chat-session.service"
-import { IconMasksTheater, IconMessageChatbot } from "@tabler/icons-react"
+import { IconHistory, IconMasksTheater, IconMessageChatbot, IconPlus } from "@tabler/icons-react"
 import { useTranslation } from "react-i18next"
 import {
   postPersonaChat,
@@ -25,7 +34,7 @@ import {
   toAdminMessages,
   toTuringMessages,
 } from "./chat.types"
-import { ChatHeader } from "./components/chat-header"
+import { ChatSessionInfoSheet } from "./components/chat-session-info-sheet"
 import { ChatSessionSidebar } from "./components/chat-session-sidebar"
 import { PersonaChatTab } from "./components/persona-chat-tab"
 import { useChatSession } from "./hooks/use-chat-session"
@@ -95,10 +104,6 @@ export default function PersonaChatPage({
     handleDeleteSession,
     resetSession,
   } = useChatSession(getLlmTitle)
-
-  const modelLabel = selectedInstance
-    ? `${selectedInstance.turLLMVendor?.id ?? ""} · ${selectedInstance.modelName ?? ""}`
-    : t("chat.noModelSelected", { defaultValue: "No model selected" })
 
   // ── Handlers ──
 
@@ -223,6 +228,36 @@ export default function PersonaChatPage({
     <PageHeader turIcon={IconMasksTheater} title={t("persona.title", { defaultValue: "Persona" })} />
   )
 
+  // Chat controls (session history · session info · new chat) hosted in the
+  // BentoHero's `trailing` slot instead of a header bar, to free vertical space
+  // (injected via `cloneElement` so the wrapper keeps owning the hero).
+  const headerActions = (
+    <>
+      <button
+        type="button"
+        onClick={() => setSidebarOpen((open) => !open)}
+        title={t("chat.sessions")}
+        aria-label={t("chat.sessions")}
+        className="rounded-md p-1.5 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+      >
+        <IconHistory className="size-5" />
+      </button>
+      <ChatSessionInfoSheet conversationId={activeSessionId} agentId={null} />
+      {hasMessages && (
+        <GradientButton variant="outline" size="sm" onClick={handleNewChat} className="shrink-0">
+          <IconPlus className="size-4 md:mr-1" />
+          <span className="hidden md:inline">{t("chat.newChat")}</span>
+        </GradientButton>
+      )}
+    </>
+  )
+
+  const headerWithActions = isValidElement(emptyStateHeader)
+    ? cloneElement(emptyStateHeader as ReactElement<{ trailing?: ReactNode }>, {
+        trailing: headerActions,
+      })
+    : emptyStateHeader
+
   if (loaded && llmInstances.length === 0) {
     return (
       <>
@@ -256,48 +291,40 @@ export default function PersonaChatPage({
   }
 
   return (
-    <div className="flex h-[calc(100dvh-2rem)]">
-      <ChatSessionSidebar
-        open={sidebarOpen}
-        onClose={() => setSidebarOpen(false)}
-        sessions={sessions.filter((s) => s.tab === tabId)}
-        activeSessionId={activeSessionId}
-        onRestore={handleRestoreSession}
-        onDelete={handleDeleteSession}
-      />
-
-      <div className="flex flex-col flex-1 min-w-0">
-        <ChatHeader
-          activeTab={tabId}
-          onTabChange={() => {}}
-          llmInstances={llmInstances}
-          selectedLlmId={selectedLlmId}
-          onModelChange={handleModelChange}
-          onToggleSidebar={() => setSidebarOpen(!sidebarOpen)}
-          hasMessages={hasMessages}
-          onNewChat={handleNewChat}
-          agents={[]}
+    <div className="flex min-h-0 flex-1 flex-col">
+      <div className="shrink-0">{headerWithActions}</div>
+      <div className="flex min-h-0 flex-1">
+        <ChatSessionSidebar
+          open={sidebarOpen}
+          onClose={() => setSidebarOpen(false)}
+          sessions={sessions.filter((s) => s.tab === tabId)}
           activeSessionId={activeSessionId}
+          onRestore={handleRestoreSession}
+          onDelete={handleDeleteSession}
         />
 
-        {persona && effectiveLlmId && (
-          <PersonaChatTab
-            key={`${personaId}:${chatEpoch}`}
-            persona={persona}
-            llmInstanceId={effectiveLlmId}
-            selectedInstance={selectedInstance}
-            modelLabel={modelLabel}
-            contextWindow={contextWindow}
-            conversationId={activeSessionId ?? undefined}
-            initialMessages={seedMessages}
-            compacting={compacting}
-            onCompactRequested={handleCompactRequested}
-            onResponseComplete={handleResponseComplete}
-            onHasMessagesChange={setHasMessages}
-            autoSendPrompt={pendingAutoSend}
-            onAutoSendConsumed={handleAutoSendConsumed}
-          />
-        )}
+        <div className="flex flex-col flex-1 min-w-0">
+          {persona && effectiveLlmId && (
+            <PersonaChatTab
+              key={`${personaId}:${chatEpoch}`}
+              persona={persona}
+              llmInstanceId={effectiveLlmId}
+              selectedInstance={selectedInstance}
+              contextWindow={contextWindow}
+              llmInstances={llmInstances}
+              selectedLlmId={selectedLlmId}
+              onModelChange={handleModelChange}
+              conversationId={activeSessionId ?? undefined}
+              initialMessages={seedMessages}
+              compacting={compacting}
+              onCompactRequested={handleCompactRequested}
+              onResponseComplete={handleResponseComplete}
+              onHasMessagesChange={setHasMessages}
+              autoSendPrompt={pendingAutoSend}
+              onAutoSendConsumed={handleAutoSendConsumed}
+            />
+          )}
+        </div>
       </div>
     </div>
   )

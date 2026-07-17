@@ -1,10 +1,20 @@
 "use client"
-import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react"
+import {
+  cloneElement,
+  isValidElement,
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+  type ReactElement,
+  type ReactNode,
+} from "react"
 import { toast } from "@viglet/viglet-design-system"
 import "./chat-highlight.css"
 
 import { ROUTES } from "@/app/routes.const"
 import { BlankSlate } from "@/components/blank-slate"
+import { GradientButton } from "@/components/ui/gradient-button"
 import { PageHeader } from "@/components/page-header"
 import type { TurAIAgent } from "@/models/agent/ai-agent.model"
 import type { TurChatFlow } from "@/models/agent/chat-flow.model"
@@ -14,7 +24,7 @@ import { TurChatFlowService } from "@/services/agent/chat-flow.service"
 import type { ChatSession } from "@/services/chat/chat-session.service"
 import { TurSkillService } from "@/services/skill/skill.service"
 import { TurGlobalSettingsService } from "@/services/system/global-settings.service"
-import { IconMessageChatbot, IconRobot } from "@tabler/icons-react"
+import { IconHistory, IconMessageChatbot, IconPlus, IconRobot } from "@tabler/icons-react"
 import { useTranslation } from "react-i18next"
 import {
   postAgentChat,
@@ -30,7 +40,7 @@ import {
   toAdminMessages,
   toTuringMessages,
 } from "./chat.types"
-import { ChatHeader } from "./components/chat-header"
+import { ChatSessionInfoSheet } from "./components/chat-session-info-sheet"
 import { ChatSessionSidebar } from "./components/chat-session-sidebar"
 import { AgentChatTab, AgentNoLlmFallback, FLOW_AUTO, SKILL_NONE } from "./components/agent-chat-tab"
 import { useChatSession } from "./hooks/use-chat-session"
@@ -41,10 +51,13 @@ const turChatFlowService = new TurChatFlowService()
 const turSkillService = new TurSkillService()
 
 /**
- * @param emptyStateHeader Optional header rendered above the "no LLM" / "no
- * agent" blank slates. Defaults to the console {@link PageHeader}; the Bento
- * shell (T563) passes its own frosted header so the reused surface never pulls
- * the console {@code SidebarTrigger} into a shell that has no SidebarProvider.
+ * @param emptyStateHeader Optional page header rendered above the surface in
+ * every state — the "no LLM" / "no agent" blank slates and the live chat alike
+ * — so the chat matches the other Bento pages (a {@link BentoHero} in normal
+ * flow, then a sized body below). Defaults to the console {@link PageHeader};
+ * the Bento shell (T563) passes its own frosted {@code BentoHero} so the reused
+ * surface never pulls the console {@code SidebarTrigger} into a shell that has
+ * no SidebarProvider.
  * @param initialAgentId Block AI / §XXXII.3 (T580) — the agent to open on
  * mount, resolved from the deterministic `/bento/chat/agent/:agentId` route
  * (replaces the retired `CHAT_INITIAL_AGENT_KEY` sessionStorage hand-off). When
@@ -146,10 +159,6 @@ export default function ChatPage({
   const selectedSkillIdForSend =
     skillModeEnabled && selectedSkillId !== SKILL_NONE ? selectedSkillId : undefined
 
-  const modelLabel = selectedInstance
-    ? `${selectedInstance.turLLMVendor?.id ?? ""} · ${selectedInstance.modelName ?? ""}`
-    : "No model selected"
-
   // ── Handlers ──
 
   // Save the completed turn to the session store. The conversation id the
@@ -210,15 +219,6 @@ export default function ChatPage({
     setChatEpoch((e) => e + 1)
     resetSession()
   }, [resetSession])
-
-  const handleTabChange = useCallback(
-    (tab: string) => {
-      if (tab === activeTab) return
-      setActiveTab(tab)
-      startFreshChat()
-    },
-    [activeTab, startFreshChat],
-  )
 
   const handleNewChat = useCallback(() => {
     startFreshChat()
@@ -361,6 +361,37 @@ export default function ChatPage({
     <PageHeader turIcon={IconMessageChatbot} title={t("chat.chatTab")} />
   )
 
+  // Chat controls (session history · session info · new chat) — hosted in the
+  // BentoHero's `trailing` slot instead of a dedicated header bar, to free the
+  // vertical space that bar used to take. Injected into the passed hero via
+  // `cloneElement` so the wrapper still owns the hero's title/icon/back-link.
+  const headerActions = (
+    <>
+      <button
+        type="button"
+        onClick={() => setSidebarOpen((open) => !open)}
+        title={t("chat.sessions")}
+        aria-label={t("chat.sessions")}
+        className="rounded-md p-1.5 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+      >
+        <IconHistory className="size-5" />
+      </button>
+      <ChatSessionInfoSheet conversationId={activeSessionId} agentId={activeAgentId} />
+      {hasMessages && (
+        <GradientButton variant="outline" size="sm" onClick={handleNewChat} className="shrink-0">
+          <IconPlus className="size-4 md:mr-1" />
+          <span className="hidden md:inline">{t("chat.newChat")}</span>
+        </GradientButton>
+      )}
+    </>
+  )
+
+  const headerWithActions = isValidElement(emptyStateHeader)
+    ? cloneElement(emptyStateHeader as ReactElement<{ trailing?: ReactNode }>, {
+        trailing: headerActions,
+      })
+    : emptyStateHeader
+
   if (loaded && llmInstances.length === 0) {
     return (
       <>
@@ -392,62 +423,54 @@ export default function ChatPage({
   }
 
   return (
-    <div className="flex h-[calc(100dvh-2rem)]">
-      <ChatSessionSidebar
-        open={sidebarOpen}
-        onClose={() => setSidebarOpen(false)}
-        sessions={sessions}
-        activeSessionId={activeSessionId}
-        onRestore={handleRestoreSession}
-        onDelete={handleDeleteSession}
-      />
-
-      <div className="flex flex-col flex-1 min-w-0">
-        <ChatHeader
-          activeTab={activeTab}
-          onTabChange={handleTabChange}
-          llmInstances={visibleLlmInstances}
-          selectedLlmId={selectedLlmId}
-          onModelChange={handleModelChange}
-          onToggleSidebar={() => setSidebarOpen(!sidebarOpen)}
-          hasMessages={hasMessages}
-          onNewChat={handleNewChat}
-          agents={agents}
+    <div className="flex min-h-0 flex-1 flex-col">
+      <div className="shrink-0">{headerWithActions}</div>
+      <div className="flex min-h-0 flex-1">
+        <ChatSessionSidebar
+          open={sidebarOpen}
+          onClose={() => setSidebarOpen(false)}
+          sessions={sessions}
           activeSessionId={activeSessionId}
+          onRestore={handleRestoreSession}
+          onDelete={handleDeleteSession}
         />
 
-        {/* Agent Tabs */}
-        {activeAgentId && activeAgent && (
-          effectiveLlmId ? (
-            <AgentChatTab
-              key={`${activeAgentId}:${chatEpoch}`}
-              agent={activeAgent}
-              llmInstanceId={effectiveLlmId}
-              selectedInstance={selectedInstance}
-              modelLabel={modelLabel}
-              contextWindow={contextWindow}
-              conversationId={activeSessionId ?? undefined}
-              initialMessages={seedMessages}
-              flowId={flowIdForSend}
-              activeFlows={activeFlows}
-              selectedFlowId={selectedFlowId}
-              onFlowChange={handleFlowChange}
-              selectedSkillIdForSend={selectedSkillIdForSend}
-              skillModeEnabled={skillModeEnabled}
-              skills={skills}
-              selectedSkillId={selectedSkillId}
-              onSkillChange={handleSkillChange}
-              compacting={compacting}
-              onCompactRequested={handleCompactRequested}
-              onResponseComplete={handleResponseComplete}
-              onHasMessagesChange={setHasMessages}
-              autoSendPrompt={pendingAutoSend}
-              onAutoSendConsumed={handleAutoSendConsumed}
-            />
-          ) : (
-            <AgentNoLlmFallback agent={activeAgent} selectedInstance={selectedInstance} />
-          )
-        )}
+        <div className="flex flex-col flex-1 min-w-0">
+          {/* Agent chat surface */}
+          {activeAgentId && activeAgent && (
+            effectiveLlmId ? (
+              <AgentChatTab
+                key={`${activeAgentId}:${chatEpoch}`}
+                agent={activeAgent}
+                llmInstanceId={effectiveLlmId}
+                selectedInstance={selectedInstance}
+                contextWindow={contextWindow}
+                llmInstances={visibleLlmInstances}
+                selectedLlmId={selectedLlmId}
+                onModelChange={handleModelChange}
+                conversationId={activeSessionId ?? undefined}
+                initialMessages={seedMessages}
+                flowId={flowIdForSend}
+                activeFlows={activeFlows}
+                selectedFlowId={selectedFlowId}
+                onFlowChange={handleFlowChange}
+                selectedSkillIdForSend={selectedSkillIdForSend}
+                skillModeEnabled={skillModeEnabled}
+                skills={skills}
+                selectedSkillId={selectedSkillId}
+                onSkillChange={handleSkillChange}
+                compacting={compacting}
+                onCompactRequested={handleCompactRequested}
+                onResponseComplete={handleResponseComplete}
+                onHasMessagesChange={setHasMessages}
+                autoSendPrompt={pendingAutoSend}
+                onAutoSendConsumed={handleAutoSendConsumed}
+              />
+            ) : (
+              <AgentNoLlmFallback agent={activeAgent} selectedInstance={selectedInstance} />
+            )
+          )}
+        </div>
       </div>
     </div>
   )

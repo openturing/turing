@@ -6,6 +6,7 @@ import {
   type ChatMessage as TuringChatMessage,
 } from "@viglet/turing-react-sdk"
 import type { TurPersona } from "@/models/persona/persona.model"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { estimateTokens, toAdminMessages } from "../chat.types"
 import { ChatEmptyState } from "./chat-empty-state"
 import { ChatInput } from "./chat-input"
@@ -19,13 +20,28 @@ interface DisplayInstance {
   turLLMVendor?: { id: string } | null
 }
 
+/** Picker shape for the bottom-bar model selector — vendor + model. */
+interface ModelPickerInstance {
+  id: string
+  turLLMVendor?: { id: string } | null
+  modelName?: string
+}
+
+/** Format one instance as "VENDOR · modelName". */
+function formatModelOption(instance: ModelPickerInstance): string {
+  return `${instance.turLLMVendor?.id ?? ""} · ${instance.modelName ?? ""}`
+}
+
 interface PersonaChatTabProps {
   persona: TurPersona
   /** Resolved LLM for this tab — any enabled instance (personas have no allow-list). */
   llmInstanceId: string
   selectedInstance?: DisplayInstance
-  modelLabel: string
   contextWindow: number
+  // ── Model selector (moved from the header into the composer bar) ──
+  llmInstances?: ModelPickerInstance[]
+  selectedLlmId?: string
+  onModelChange?: (id: string) => void
   /** Controlled backend conversation id (== the host's IndexedDB session id). */
   conversationId?: string
   /** Seed transcript (restored session / post-compaction summary), SDK shape. */
@@ -60,8 +76,10 @@ export function PersonaChatTab({
   persona,
   llmInstanceId,
   selectedInstance,
-  modelLabel,
   contextWindow,
+  llmInstances = [],
+  selectedLlmId = "",
+  onModelChange,
   conversationId,
   initialMessages,
   compacting,
@@ -157,7 +175,7 @@ export function PersonaChatTab({
         )}
       </div>
       <div className="shrink-0 border-t bg-background">
-        <div className="max-w-3xl mx-auto px-4 py-4">
+        <div className="max-w-5xl mx-auto px-4 py-4">
           <ChatInput
             value={input}
             onChange={setInput}
@@ -174,17 +192,31 @@ export function PersonaChatTab({
             }
             accentColor="fuchsia"
           />
-          <div className="flex items-center justify-between mt-2 gap-4">
-            <span className="text-xs text-muted-foreground shrink-0">{modelLabel}</span>
+          <div className="flex flex-wrap items-center gap-x-2 gap-y-2 mt-2">
+            {/* Model — vendor · model, moved out of the header. */}
+            <Select value={selectedLlmId} onValueChange={onModelChange}>
+              <SelectTrigger className="h-7 text-xs w-auto min-w-52 max-w-full gap-1.5">
+                <SelectValue placeholder={t("chat.selectModel")} />
+              </SelectTrigger>
+              <SelectContent>
+                {llmInstances.map((instance) => (
+                  <SelectItem key={instance.id} value={instance.id}>
+                    {formatModelOption(instance)}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
             {messages.length > 0 && (
-              <ContextBar
-                tokens={tokens}
-                percentage={percentage}
-                contextWindow={contextWindow}
-                compacting={compacting}
-                canCompact={canCompact}
-                onCompact={() => onCompactRequested(messages)}
-              />
+              <div className="ml-auto">
+                <ContextBar
+                  tokens={tokens}
+                  percentage={percentage}
+                  contextWindow={contextWindow}
+                  compacting={compacting}
+                  canCompact={canCompact}
+                  onCompact={() => onCompactRequested(messages)}
+                />
+              </div>
             )}
           </div>
         </div>

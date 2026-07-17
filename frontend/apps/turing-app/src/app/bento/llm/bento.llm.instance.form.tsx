@@ -9,6 +9,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { FormItemTwoColumns } from "@/components/ui/form-item-two-columns"
 import { GradientSwitch } from "@/components/ui/gradient-switch"
 import { LLMInstanceCapabilitiesForm } from "@/components/llm/llm.instance.capabilities.form"
+import { useLlmInstanceCapabilities } from "@/api/queries/llm-capability.queries"
 import { Input } from "@/components/ui/input"
 import { ModelCombobox } from "@/components/ui/model-combobox"
 import { ModelVerifyButton } from "@/components/ui/model-verify-button"
@@ -20,7 +21,7 @@ import type { TurLLMVendor } from "@/models/llm/llm-vendor.model"
 import { TurLLMInstanceService } from "@/services/llm/llm.service"
 import { TurLLMVendorService } from "@/services/llm/llm-vendor.service"
 import { IconAdjustments, IconBrain, IconSettings, IconSparkles, IconToggleLeft } from "@tabler/icons-react"
-import { useEffect, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { useForm } from "react-hook-form"
 import { useTranslation } from "react-i18next"
 import { useNavigate } from "react-router-dom"
@@ -130,6 +131,27 @@ export const BentoLLMInstanceForm: React.FC<Props> = ({ value, isNew, staged, on
 
   const createMutation = useCreateLlmInstance()
   const updateMutation = useUpdateLlmInstance()
+
+  // Native Capabilities are surfaced as a second tab (instead of a card at the
+  // bottom of the CRUD form). The tab only exists for a saved instance whose
+  // vendor actually exposes native capabilities — mirrors the filter inside
+  // LLMInstanceCapabilitiesForm so we never show an empty tab.
+  const [activeTab, setActiveTab] = useState<"config" | "capabilities">("config")
+  const { data: instanceCapabilities } = useLlmInstanceCapabilities(isNew ? undefined : value.id)
+  const hasCapabilitiesTab = useMemo(
+    () =>
+      !isNew &&
+      Boolean(value.id) &&
+      (instanceCapabilities ?? []).some((c) => c.pluginType === selectedVendorId?.toLowerCase()),
+    [isNew, value.id, instanceCapabilities, selectedVendorId],
+  )
+  // If the capabilities tab disappears (vendor changed to one without native
+  // capabilities), fall back to the config tab so we never render nothing.
+  useEffect(() => {
+    if (!hasCapabilitiesTab && activeTab === "capabilities") {
+      setActiveTab("config")
+    }
+  }, [hasCapabilitiesTab, activeTab])
 
   // T577 — models for the picker: live from the vendor when a key is available
   // (typed here, or reused from the saved instance), else the static catalog.
@@ -447,6 +469,39 @@ export const BentoLLMInstanceForm: React.FC<Props> = ({ value, isNew, staged, on
           </>
         )}
 
+        {/* Native Capabilities are shown as a second tab rather than a card at
+            the bottom, keeping the CRUD form and the per-instance capability
+            matrix on distinct surfaces of the same screen. */}
+        {hasCapabilitiesTab && (
+          <nav className="flex flex-wrap gap-2">
+            {([
+              { key: "config", label: t("forms.llm.tabConfiguration"), icon: IconSettings },
+              { key: "capabilities", label: t("forms.llm.nativeCapabilities"), icon: IconSparkles },
+            ] as const).map((tab) => {
+              const isActive = activeTab === tab.key
+              return (
+                <button
+                  key={tab.key}
+                  type="button"
+                  onClick={() => setActiveTab(tab.key)}
+                  className={`bento-tile bento-tile-clickable inline-flex items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-sm backdrop-blur transition-colors ${
+                    isActive
+                      ? "border-primary/40 bg-primary text-primary-foreground"
+                      : "border-border/60 bg-card/60 text-muted-foreground hover:text-foreground"
+                  }`}
+                  aria-pressed={isActive}
+                >
+                  <tab.icon size={16} aria-hidden />
+                  {tab.label}
+                </button>
+              )
+            })}
+          </nav>
+        )}
+
+        {/* Configuration tab — the CRUD form sections. Kept mounted (hidden via
+            class) so form state and dirty tracking survive tab switches. */}
+        <div className={`flex flex-col gap-5 ${activeTab === "config" ? "" : "hidden"}`}>
         {/* General Section */}
         <BentoFormSection
           icon={IconSettings}
@@ -878,12 +933,13 @@ export const BentoLLMInstanceForm: React.FC<Props> = ({ value, isNew, staged, on
             )}
           />
         </BentoFormSection>
+        </div>
 
-        {/* Native Capabilities — the per-instance capability matrix (F.15 /
+        {/* Native Capabilities tab — the per-instance capability matrix (F.15 /
             T132). Self-saves per toggle through the capability API, so it's
-            independent of the SaveBar and only shown for a saved instance.
-            Renders nothing when the vendor exposes no native capabilities. */}
-        {!isNew && value.id && (
+            independent of the SaveBar and only shown for a saved instance whose
+            vendor exposes native capabilities. */}
+        {hasCapabilitiesTab && activeTab === "capabilities" && value.id && (
           <LLMInstanceCapabilitiesForm instanceId={value.id} vendorId={selectedVendorId} />
         )}
       </form>

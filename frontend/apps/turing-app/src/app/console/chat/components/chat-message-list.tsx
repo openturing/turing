@@ -526,7 +526,7 @@ export function ChatMessageList({ messages, loading, assistantName, assistantIco
   const { user } = useCurrentUser()
 
   return (
-    <div className="max-w-3xl mx-auto py-6 px-4 space-y-6">
+    <div className="max-w-5xl mx-auto py-6 px-4 space-y-6">
       {messages.map((message) => {
         const isAssistant = message.role === "assistant"
         const avatar = (
