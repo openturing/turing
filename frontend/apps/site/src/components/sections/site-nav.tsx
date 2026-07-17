@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { ArrowRight, ArrowUpRight, ChevronDown, Sparkles } from "lucide-react";
+import { ArrowRight, ArrowUpRight, ChevronDown, Menu, Sparkles, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -45,6 +45,8 @@ const NAV_GROUPS = [
 
 export function SiteNav() {
   const [scrolled, setScrolled] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const closeMenu = () => setMenuOpen(false);
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 8);
@@ -52,6 +54,14 @@ export function SiteNav() {
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
+
+  // Close the mobile menu on Escape (the panel itself closes on any nav click).
+  useEffect(() => {
+    if (!menuOpen) return;
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && setMenuOpen(false);
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [menuOpen]);
 
   return (
     <header
@@ -65,7 +75,10 @@ export function SiteNav() {
       <Container className="flex h-16 items-center gap-4">
         <div className="flex shrink-0 items-center gap-2.5">
           <a href="/" className="text-base" aria-label="Viglet Turing ES — home">
-            <Logo />
+            {/* Icon-only mark on mobile to leave room for the CTA + menu; full
+                wordmark from sm up. */}
+            <Logo className="hidden sm:inline-flex" />
+            <Logo showWord={false} className="sm:hidden" />
           </a>
           {/* Fluid path back to the umbrella brand — keeps the product from
               feeling like a dead end and reinforces the Viglet portfolio. */}
@@ -130,8 +143,70 @@ export function SiteNav() {
             </a>
           </Button>
           <ModeToggle />
+          {/* Mobile/tablet menu trigger — the desktop <nav> is hidden below lg,
+              so without this there'd be no way to reach Docs/AEM/Product/Solutions. */}
+          <button
+            type="button"
+            onClick={() => setMenuOpen((v) => !v)}
+            aria-label={menuOpen ? "Close menu" : "Open menu"}
+            aria-expanded={menuOpen}
+            className="flex size-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground lg:hidden"
+          >
+            {menuOpen ? <X className="size-5" /> : <Menu className="size-5" />}
+          </button>
         </div>
       </Container>
+
+      {/* Mobile/tablet nav panel */}
+      {menuOpen && (
+        <nav className="border-t border-border bg-background/95 backdrop-blur-md lg:hidden">
+          <Container className="flex flex-col py-3">
+            {NAV_LINKS.map((item) => (
+              <a
+                key={item.label}
+                href={item.href}
+                onClick={closeMenu}
+                className="rounded-lg px-2 py-2.5 text-sm font-semibold text-foreground transition-colors hover:bg-muted"
+              >
+                {item.label}
+              </a>
+            ))}
+            <a
+              href="/aem-search"
+              onClick={closeMenu}
+              className="mt-1 inline-flex items-center gap-1.5 rounded-lg bg-primary/10 px-2 py-2.5 text-sm font-bold text-primary transition-colors hover:bg-primary/15"
+            >
+              <Sparkles className="size-4" />
+              AEM AI Search
+            </a>
+            {NAV_GROUPS.map((group) => (
+              <div key={group.label} className="mt-2 border-t border-border/60 pt-2">
+                <p className="px-2 py-1 text-[0.7rem] font-bold tracking-wide text-muted-foreground/70 uppercase">
+                  {group.label}
+                </p>
+                {group.items.map((item) => (
+                  <a
+                    key={item.label}
+                    href={item.href}
+                    onClick={closeMenu}
+                    className="block rounded-lg px-2 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                  >
+                    {item.label}
+                  </a>
+                ))}
+              </div>
+            ))}
+            <a
+              href={LINKS.viglet}
+              onClick={closeMenu}
+              className="mt-3 inline-flex w-fit items-center gap-1 px-2 text-xs font-semibold text-muted-foreground transition-colors hover:text-foreground"
+            >
+              part of viglet.org
+              <ArrowUpRight className="size-3" />
+            </a>
+          </Container>
+        </nav>
+      )}
     </header>
   );
 }

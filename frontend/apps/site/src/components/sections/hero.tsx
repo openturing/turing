@@ -15,8 +15,8 @@ export function Hero() {
       <div className="animate-orb-a pointer-events-none absolute -top-44 -left-20 -z-10 h-[520px] w-[520px] rounded-full bg-[radial-gradient(circle,#4169E1,transparent_70%)] opacity-50 blur-[70px]" />
       <div className="animate-orb-b pointer-events-none absolute -top-28 -right-24 -z-10 h-[460px] w-[460px] rounded-full bg-[radial-gradient(circle,#6366f1,transparent_70%)] opacity-50 blur-[70px]" />
 
-      <Container className="grid items-center gap-12 py-20 lg:grid-cols-[1.05fr_0.95fr] lg:py-28">
-        <div>
+      <Container className="grid grid-cols-1 items-center gap-12 py-20 lg:grid-cols-[1.05fr_0.95fr] lg:py-28">
+        <div className="min-w-0">
           <span className="mb-6 inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-3.5 py-1.5 text-xs font-semibold text-[#c7d0ee]">
             <span className="size-1.5 rounded-full bg-emerald-400 shadow-[0_0_8px] shadow-emerald-400" />
             Open source · Apache 2.0 · Self-hosted
@@ -70,7 +70,7 @@ export function Hero() {
           </div>
         </div>
 
-        <div>
+        <div className="min-w-0">
           <SearchDemo />
           <p className="mt-3 text-center text-xs text-[#8b94b3]">
             Try it — type to search.

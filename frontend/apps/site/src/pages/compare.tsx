@@ -3,7 +3,7 @@ import { SiteNav } from "@/components/sections/site-nav";
 import { SiteFooter } from "@/components/sections/site-footer";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Container, LINKS } from "@/components/brand";
+import { Container, LINKS, TableScroll } from "@/components/brand";
 import {
   COMPARE_COLUMNS,
   COMPARE_MATRIX,
@@ -119,11 +119,11 @@ export function ComparePage() {
                 you production search and auditable AI in one deployable product.
               </p>
             </div>
-            <div className="overflow-x-auto">
+            <TableScroll>
               <table className="w-full min-w-[760px] border-collapse text-sm">
                 <thead>
                   <tr>
-                    <th className="w-2/5 p-3 text-left font-semibold"></th>
+                    <th className="sticky left-0 z-10 w-[150px] bg-background p-3 text-left font-semibold sm:w-2/5"></th>
                     <th className="rounded-t-xl bg-primary/10 p-3 text-center font-extrabold text-primary">
                       {COMPARE_COLUMNS.turing}
                     </th>
@@ -141,7 +141,9 @@ export function ComparePage() {
                 <tbody>
                   {COMPARE_MATRIX.map((row, i) => (
                     <tr key={row.capability} className="border-t border-border">
-                      <td className="p-3 font-medium">{row.capability}</td>
+                      <td className="sticky left-0 z-10 bg-background p-3 font-medium">
+                        {row.capability}
+                      </td>
                       <td
                         className={cn(
                           "p-3 text-center bg-primary/5",
@@ -163,7 +165,7 @@ export function ComparePage() {
                   ))}
                 </tbody>
               </table>
-            </div>
+            </TableScroll>
             <p className="mt-4 text-center text-xs text-muted-foreground">
               High-level comparison as of 2026 — verify current vendor
               capabilities. “DIY” = assembling LangChain/LlamaIndex with a vector

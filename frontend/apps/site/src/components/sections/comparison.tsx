@@ -1,5 +1,5 @@
 import { ArrowRight, Check, Minus } from "lucide-react";
-import { Container, SectionHeader } from "@/components/brand";
+import { Container, SectionHeader, TableScroll } from "@/components/brand";
 import { COMPARISON, COMPARISON_COLUMNS } from "@/lib/site-content";
 import { cn } from "@/lib/utils";
 
@@ -28,11 +28,11 @@ export function Comparison() {
           title="The open-source way to do AI search"
           description="A hosted SaaS locks your data in someone else's cloud. A DIY stack is months of glue code. Turing gives you both halves, self-hosted."
         />
-        <div className="overflow-x-auto">
+        <TableScroll fadeClassName="from-muted">
           <table className="w-full min-w-[640px] border-collapse text-sm">
             <thead>
               <tr>
-                <th className="w-2/5 p-3 text-left font-semibold"></th>
+                <th className="sticky left-0 z-10 w-[150px] bg-background p-3 text-left font-semibold sm:w-2/5"></th>
                 <th className="rounded-t-xl bg-primary/10 p-3 text-center font-extrabold text-primary">
                   {COMPARISON_COLUMNS.turing}
                 </th>
@@ -47,7 +47,9 @@ export function Comparison() {
             <tbody>
               {COMPARISON.map((row, i) => (
                 <tr key={row.feature} className="border-t border-border">
-                  <td className="p-3 font-medium">{row.feature}</td>
+                  <td className="sticky left-0 z-10 bg-background p-3 font-medium">
+                    {row.feature}
+                  </td>
                   <td
                     className={cn(
                       "p-3 text-center",
@@ -67,7 +69,7 @@ export function Comparison() {
               ))}
             </tbody>
           </table>
-        </div>
+        </TableScroll>
         <p className="mt-4 text-center text-xs text-muted-foreground">
           High-level comparison as of 2026 — verify current vendor capabilities. “DIY” = assembling LangChain/LlamaIndex with a vector database yourself.
         </p>

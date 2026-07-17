@@ -4,7 +4,7 @@ import { SiteFooter } from "@/components/sections/site-footer";
 import { CodeBlock } from "@/components/code-block";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Container, LINKS } from "@/components/brand";
+import { Container, LINKS, TableScroll } from "@/components/brand";
 import {
   MIGRATION_CLI_CODE,
   MIGRATION_CLI_FEATURES,
@@ -115,11 +115,11 @@ export function MigratePage() {
                 box — on the search engine you already operate.
               </p>
             </div>
-            <div className="overflow-x-auto">
+            <TableScroll fadeClassName="from-muted">
               <table className="w-full min-w-[720px] border-collapse text-sm">
                 <thead>
                   <tr>
-                    <th className="w-1/5 p-3 text-left font-semibold text-muted-foreground">
+                    <th className="sticky left-0 z-10 w-[140px] bg-background p-3 text-left font-semibold text-muted-foreground sm:w-1/5">
                       {MIGRATION_COLUMNS.concept}
                     </th>
                     <th className="p-3 text-left font-semibold text-muted-foreground">
@@ -136,7 +136,9 @@ export function MigratePage() {
                 <tbody>
                   {MIGRATION_MAP.map((row, i) => (
                     <tr key={row.concept} className="border-t border-border">
-                      <td className="p-3 font-semibold">{row.concept}</td>
+                      <td className="sticky left-0 z-10 bg-background p-3 font-semibold">
+                        {row.concept}
+                      </td>
                       <td className="p-3 text-muted-foreground">{row.algolia}</td>
                       <td className="p-3 text-muted-foreground">{row.elastic}</td>
                       <td
@@ -151,7 +153,7 @@ export function MigratePage() {
                   ))}
                 </tbody>
               </table>
-            </div>
+            </TableScroll>
             <p className="mt-4 text-center text-xs text-muted-foreground">
               High-level mapping as of 2026 — verify current vendor capabilities.
             </p>

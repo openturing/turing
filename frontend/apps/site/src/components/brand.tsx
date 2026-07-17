@@ -33,6 +33,35 @@ export function Container({
   );
 }
 
+/**
+ * Horizontally-scrollable table wrapper for mobile. Adds a right-edge fade that
+ * hints "more columns →" (shown only on small screens, where the comparison
+ * tables scroll). Pair it with a `sticky left-0` first column so the row label
+ * stays visible while the value columns scroll.
+ */
+export function TableScroll({
+  className,
+  fadeClassName = "from-background",
+  children,
+}: {
+  className?: string;
+  fadeClassName?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="relative">
+      <div className={cn("overflow-x-auto", className)}>{children}</div>
+      <div
+        aria-hidden
+        className={cn(
+          "pointer-events-none absolute inset-y-0 right-0 w-8 bg-gradient-to-l to-transparent sm:hidden",
+          fadeClassName
+        )}
+      />
+    </div>
+  );
+}
+
 /** Gradient eyebrow / kicker text above a heading. */
 export function Eyebrow({ children }: { children: React.ReactNode }) {
   return (

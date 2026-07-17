@@ -1,5 +1,14 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import { MessageSquare, Search, Sparkles, Square, SquareCheck, X } from "lucide-react";
+import {
+  ChevronDown,
+  MessageSquare,
+  Search,
+  SlidersHorizontal,
+  Sparkles,
+  Square,
+  SquareCheck,
+  X,
+} from "lucide-react";
 import {
   createAutoComplete,
   createSearchController,
@@ -189,6 +198,9 @@ function LiveSearchDemo({
   const [hasFilters, setHasFilters] = useState(false);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
+  // On mobile the facet rail is collapsed behind a "Filters" toggle so results
+  // are visible immediately; on sm+ it's always shown (see the rail classes).
+  const [filtersOpen, setFiltersOpen] = useState(false);
 
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [acOpen, setAcOpen] = useState(false);
@@ -309,6 +321,10 @@ function LiveSearchDemo({
   // current query context; navigate re-runs the search with it (selected items
   // carry a removal link, so this toggles both ways).
   const documentsView = documents as unknown as TuringResolvedDocument[];
+  const activeCount = Math.max(
+    facets.reduce((n, g) => n + g.facets.filter((f) => f.selected).length, 0),
+    hasFilters ? 1 : 0
+  );
 
   return (
     <div
@@ -382,7 +398,31 @@ function LiveSearchDemo({
       {/* live facet groups — keep the rail (and Clear filters) whenever a filter
           is active, even if a zero-result response returned no facet groups. */}
       {(facets.length > 0 || hasFilters) && (
-        <div className="flex flex-col gap-1.5 border-b border-border px-4 py-2.5">
+        <div className="border-b border-border">
+          {/* Mobile: collapse filters behind a toggle so results show first. */}
+          <button
+            type="button"
+            onClick={() => setFiltersOpen((v) => !v)}
+            aria-expanded={filtersOpen}
+            className="flex w-full items-center justify-between px-4 py-2.5 sm:hidden"
+          >
+            <span className="inline-flex items-center gap-1.5 text-[0.7rem] font-semibold tracking-wide text-muted-foreground uppercase">
+              <SlidersHorizontal className="size-3.5" />
+              Filters{activeCount > 0 ? ` · ${activeCount}` : ""}
+            </span>
+            <ChevronDown
+              className={cn(
+                "size-4 text-muted-foreground transition-transform",
+                filtersOpen && "rotate-180"
+              )}
+            />
+          </button>
+          <div
+            className={cn(
+              "flex-col gap-1.5 px-4 pb-2.5 sm:flex sm:pt-2.5",
+              filtersOpen ? "flex" : "hidden"
+            )}
+          >
           {facets.slice(0, MAX_FACET_GROUPS).map((group) => (
             <div key={group.name} className="flex flex-wrap items-center gap-1.5">
               <span className="mr-0.5 text-[0.65rem] font-semibold uppercase tracking-wide text-muted-foreground">
@@ -437,6 +477,7 @@ function LiveSearchDemo({
               Clear filters
             </button>
           )}
+          </div>
         </div>
       )}
 

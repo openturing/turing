@@ -63,8 +63,8 @@ export function FeaturePage({ detail }: Readonly<{ detail: FeatureDetail }>) {
 
         {/* capability sections */}
         <section className="py-16 lg:py-20">
-          <Container className="grid gap-10 lg:grid-cols-[1.1fr_0.9fr] lg:items-start">
-            <ul className="space-y-6">
+          <Container className="grid grid-cols-1 gap-10 lg:grid-cols-[1.1fr_0.9fr] lg:items-start">
+            <ul className="min-w-0 space-y-6">
               {detail.sections.map((s) => (
                 <li key={s.title} className="flex gap-3.5">
                   <span className="mt-1 flex size-6 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
@@ -80,7 +80,7 @@ export function FeaturePage({ detail }: Readonly<{ detail: FeatureDetail }>) {
               ))}
             </ul>
             {detail.code && (
-              <div className="lg:sticky lg:top-24">
+              <div className="min-w-0 lg:sticky lg:top-24">
                 <CodeBlock caption={detail.code.caption} code={detail.code.code} />
               </div>
             )}

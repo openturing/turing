@@ -15,7 +15,7 @@ function ComposeTerminal() {
   const F = "text-[#82aaff]"; // arg
   const OK = "text-emerald-400";
   return (
-    <div className="overflow-hidden rounded-xl border border-white/10 bg-[#0d101e]/90 shadow-2xl shadow-black/50">
+    <div className="min-w-0 overflow-hidden rounded-xl border border-white/10 bg-[#0d101e]/90 shadow-2xl shadow-black/50">
       <div className="flex items-center gap-1.5 border-b border-white/8 bg-white/[0.02] px-3.5 py-2.5">
         <span className="size-2.5 rounded-full bg-[#ff5f57]" />
         <span className="size-2.5 rounded-full bg-[#febc2e]" />
@@ -44,9 +44,9 @@ function ComposeTerminal() {
 export function SelfHost() {
   return (
     <section id="self-host" className="py-20">
-      <Container className="grid items-center gap-12 lg:grid-cols-2">
+      <Container className="grid grid-cols-1 items-center gap-12 lg:grid-cols-2">
         <ComposeTerminal />
-        <div>
+        <div className="min-w-0">
           <Eyebrow>Run it yourself</Eyebrow>
           <h2 className="mt-3 text-3xl font-extrabold tracking-tight sm:text-4xl">
             Self-host the whole platform in one command

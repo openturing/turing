@@ -5,7 +5,7 @@ import { CodeBlock } from "@/components/code-block";
 import { WkndPlayground } from "@/components/sections/wknd-playground";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Container, LINKS } from "@/components/brand";
+import { Container, LINKS, TableScroll } from "@/components/brand";
 import {
   AEM_CODE,
   AEM_COLUMNS,
@@ -218,11 +218,11 @@ export function AemPage() {
                 AI-answer story. The depth gap opens on everything around it.
               </p>
             </div>
-            <div className="overflow-x-auto">
+            <TableScroll fadeClassName="from-muted">
               <table className="w-full min-w-[760px] border-collapse text-sm">
                 <thead>
                   <tr>
-                    <th className="w-2/5 p-3 text-left font-semibold"></th>
+                    <th className="sticky left-0 z-10 w-[150px] bg-background p-3 text-left font-semibold sm:w-2/5"></th>
                     <th className="rounded-t-xl bg-primary/10 p-3 text-center font-extrabold text-primary">
                       {AEM_COLUMNS.turing}
                     </th>
@@ -237,7 +237,9 @@ export function AemPage() {
                 <tbody>
                   {AEM_MATRIX.map((row, i) => (
                     <tr key={row.capability} className="border-t border-border">
-                      <td className="p-3 font-medium">{row.capability}</td>
+                      <td className="sticky left-0 z-10 bg-background p-3 font-medium">
+                        {row.capability}
+                      </td>
                       <td
                         className={cn(
                           "p-3 text-center bg-primary/5",
@@ -256,7 +258,7 @@ export function AemPage() {
                   ))}
                 </tbody>
               </table>
-            </div>
+            </TableScroll>
             <p className="mt-4 text-center text-xs text-muted-foreground">
               High-level comparison as of 2026 — verify current vendor
               capabilities. “AEM-native AI add-on” = a Cloud-Service-native AI
