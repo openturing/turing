@@ -16,9 +16,12 @@
  */
 package com.viglet.turing.lucene;
 
+import java.util.ArrayList;
 import java.util.EnumSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
@@ -44,6 +47,7 @@ import com.viglet.turing.commons.se.field.TurSEFieldType;
 import com.viglet.turing.commons.sn.search.TurSNSiteSearchContext;
 import com.viglet.turing.commons.utils.TurCommonsUtils;
 import com.viglet.turing.persistence.model.sn.TurSNSite;
+import com.viglet.turing.persistence.model.sn.field.TurSNSiteFacetFieldEnum;
 import com.viglet.turing.persistence.model.sn.sort.TurSNSiteCustomSortItem;
 import com.viglet.turing.persistence.model.sn.sort.TurSNSiteCustomSortOrderEnum;
 import com.viglet.turing.persistence.model.sn.field.TurSNSiteFieldExt;
@@ -113,11 +117,127 @@ public class TurLuceneQueryBuilder {
         // Filter queries (facet selections)
         List<String> filterQueries = params.getTurSNFilterParams().getDefaultValues();
         if (!CollectionUtils.isEmpty(filterQueries)) {
-            filterQueries
-                    .forEach(fq -> parseFilterQuery(fq).ifPresent(q -> builder.add(q, BooleanClause.Occur.FILTER)));
+            addFilterQueries(builder, turSNSite, filterQueries);
         }
 
         return builder.build();
+    }
+
+    /**
+     * Adds the active facet selections as filter clauses, mirroring the Solr
+     * builder's multi-select semantics (see {@code TurSolrQueryBuilder#
+     * setFilterQueryString}):
+     * <ul>
+     *   <li>selections are grouped by field;</li>
+     *   <li>within a field, multiple values are combined with <b>OR</b> when the
+     *       field's effective {@code facetItemType} is {@code OR} (multi-select),
+     *       otherwise with <b>AND</b>;</li>
+     *   <li>fields whose effective {@code facetType} is {@code OR} are OR'd with
+     *       the AND-combined remainder, otherwise they intersect (AND).</li>
+     * </ul>
+     * The previous implementation added every value as its own {@code FILTER}
+     * (AND) clause, so selecting two values of the same OR facet (e.g. two
+     * mutually-exclusive categories) yielded zero hits even though the facet
+     * counts promised a multi-select union.
+     */
+    private void addFilterQueries(BooleanQuery.Builder builder, TurSNSite turSNSite,
+            List<String> filterQueries) {
+        Map<String, List<String>> valuesByField = new LinkedHashMap<>();
+        filterQueries.forEach(fq -> parseFieldValue(fq).ifPresent(fv -> valuesByField
+                .computeIfAbsent(fv.field(), k -> new ArrayList<>()).add(fv.value())));
+        if (valuesByField.isEmpty()) {
+            return;
+        }
+
+        Map<String, TurSNSiteFieldExt> fieldsByName = enabledFieldsByName(turSNSite);
+        List<Query> andFieldQueries = new ArrayList<>();
+        List<Query> orFieldQueries = new ArrayList<>();
+        valuesByField.forEach((field, values) -> {
+            TurSNSiteFieldExt ext = fieldsByName.get(field);
+            Query fieldQuery = buildFieldFilterQuery(field, values,
+                    effectiveFacetItemType(ext, turSNSite));
+            if (effectiveFacetType(ext, turSNSite) == TurSNSiteFacetFieldEnum.OR) {
+                orFieldQueries.add(fieldQuery);
+            } else {
+                andFieldQueries.add(fieldQuery);
+            }
+        });
+
+        // Common case (no OR-type facet fields): each field intersects the result.
+        if (orFieldQueries.isEmpty()) {
+            andFieldQueries.forEach(q -> builder.add(q, BooleanClause.Occur.FILTER));
+            return;
+        }
+        // Mixed: (AND-of-and-fields) OR (each OR-field) — a single FILTER whose
+        // SHOULD set unions the AND remainder with the OR-type fields.
+        BooleanQuery.Builder composite = new BooleanQuery.Builder();
+        if (!andFieldQueries.isEmpty()) {
+            BooleanQuery.Builder andPart = new BooleanQuery.Builder();
+            andFieldQueries.forEach(q -> andPart.add(q, BooleanClause.Occur.MUST));
+            composite.add(andPart.build(), BooleanClause.Occur.SHOULD);
+        }
+        orFieldQueries.forEach(q -> composite.add(q, BooleanClause.Occur.SHOULD));
+        composite.setMinimumNumberShouldMatch(1);
+        builder.add(composite.build(), BooleanClause.Occur.FILTER);
+    }
+
+    /**
+     * Combines the selected values of a single field into one query: OR
+     * (SHOULD, min-should-match 1) for a multi-select facet, AND (MUST)
+     * otherwise. A single value collapses to a plain {@link TermQuery}.
+     */
+    private static Query buildFieldFilterQuery(String field, List<String> values,
+            TurSNSiteFacetFieldEnum itemType) {
+        if (values.size() == 1) {
+            return new TermQuery(new Term(field, values.getFirst()));
+        }
+        BooleanQuery.Builder builder = new BooleanQuery.Builder();
+        BooleanClause.Occur occur = itemType == TurSNSiteFacetFieldEnum.OR
+                ? BooleanClause.Occur.SHOULD
+                : BooleanClause.Occur.MUST;
+        values.forEach(value -> builder.add(new TermQuery(new Term(field, value)), occur));
+        if (occur == BooleanClause.Occur.SHOULD) {
+            builder.setMinimumNumberShouldMatch(1);
+        }
+        return builder.build();
+    }
+
+    /** Enabled fields keyed by name, for resolving a selection's facet type. */
+    private Map<String, TurSNSiteFieldExt> enabledFieldsByName(TurSNSite turSNSite) {
+        Map<String, TurSNSiteFieldExt> map = new LinkedHashMap<>();
+        turSNSiteFieldExtRepository.findByTurSNSiteAndEnabled(turSNSite, 1)
+                .forEach(ext -> {
+                    if (ext.getName() != null) {
+                        map.putIfAbsent(ext.getName(), ext);
+                    }
+                });
+        return map;
+    }
+
+    /** Field-level {@code facetItemType} wins over the site default; DEFAULT/null → AND. */
+    private static TurSNSiteFacetFieldEnum effectiveFacetItemType(TurSNSiteFieldExt ext,
+            TurSNSite turSNSite) {
+        TurSNSiteFacetFieldEnum fieldType = ext != null ? ext.getFacetItemType() : null;
+        if (fieldType != null && fieldType != TurSNSiteFacetFieldEnum.DEFAULT) {
+            return fieldType;
+        }
+        return normalize(turSNSite.getFacetItemType());
+    }
+
+    /** Field-level {@code facetType} wins over the site default; DEFAULT/null → AND. */
+    private static TurSNSiteFacetFieldEnum effectiveFacetType(TurSNSiteFieldExt ext,
+            TurSNSite turSNSite) {
+        TurSNSiteFacetFieldEnum fieldType = ext != null ? ext.getFacetType() : null;
+        if (fieldType != null && fieldType != TurSNSiteFacetFieldEnum.DEFAULT) {
+            return fieldType;
+        }
+        return normalize(turSNSite.getFacetType());
+    }
+
+    private static TurSNSiteFacetFieldEnum normalize(TurSNSiteFacetFieldEnum value) {
+        return (value == null || value == TurSNSiteFacetFieldEnum.DEFAULT)
+                ? TurSNSiteFacetFieldEnum.AND
+                : value;
     }
 
     /**
@@ -344,7 +464,16 @@ public class TurLuceneQueryBuilder {
                 .toArray(String[]::new);
     }
 
-    private Optional<Query> parseFilterQuery(String fq) {
+    /** A parsed {@code field:value} filter-query selection. */
+    private record FieldValue(String field, String value) {
+    }
+
+    /**
+     * Parses a {@code field:value} filter query into its field and (unquoted)
+     * value. Values keep their exact case — Lucene {@code StringField}s are not
+     * analyzed, so facet term matching is exact.
+     */
+    private Optional<FieldValue> parseFieldValue(String fq) {
         if (!StringUtils.hasText(fq))
             return Optional.empty();
         int colonIndex = fq.indexOf(':');
@@ -358,7 +487,6 @@ public class TurLuceneQueryBuilder {
         if (value.length() >= 2 && value.startsWith("\"") && value.endsWith("\"")) {
             value = value.substring(1, value.length() - 1);
         }
-        // Use TermQuery to preserve exact case (StringField values are not analyzed)
-        return Optional.of(new TermQuery(new Term(field, value)));
+        return Optional.of(new FieldValue(field, value));
     }
 }

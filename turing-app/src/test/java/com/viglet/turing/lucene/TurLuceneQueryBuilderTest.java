@@ -6,6 +6,7 @@ import static org.mockito.Mockito.*;
 import java.util.Collections;
 import java.util.List;
 
+import org.apache.lucene.search.BooleanClause;
 import org.apache.lucene.search.BooleanQuery;
 import org.apache.lucene.search.FieldExistsQuery;
 import org.apache.lucene.search.Query;
@@ -22,6 +23,7 @@ import com.viglet.turing.commons.se.TurSEParameters;
 import com.viglet.turing.commons.se.field.TurSEFieldType;
 import com.viglet.turing.commons.sn.bean.TurSNSearchParams;
 import com.viglet.turing.persistence.model.sn.TurSNSite;
+import com.viglet.turing.persistence.model.sn.field.TurSNSiteFacetFieldEnum;
 import com.viglet.turing.persistence.model.sn.field.TurSNSiteFieldExt;
 import com.viglet.turing.persistence.repository.sn.field.TurSNSiteFieldExtRepository;
 
@@ -206,6 +208,64 @@ class TurLuceneQueryBuilderTest {
         TurSEParameters params = createParamsWithFilters("test", List.of("field:[invalid"));
         Query query = queryBuilder.buildQuery(site, params);
         assertNotNull(query);
+    }
+
+    // ---- buildQuery: multi-select (OR) facet grouping ----
+
+    @Test
+    void buildQuerySameFieldOrFacetShouldOrValues() {
+        TurSNSite site = mock(TurSNSite.class);
+        TurSNSiteFieldExt category = mock(TurSNSiteFieldExt.class);
+        when(category.getName()).thenReturn("category");
+        when(category.getFacetItemType()).thenReturn(TurSNSiteFacetFieldEnum.OR);
+        when(category.getFacetType()).thenReturn(TurSNSiteFacetFieldEnum.AND);
+        when(turSNSiteFieldExtRepository.findByTurSNSiteAndEnabled(site, 1))
+                .thenReturn(List.of(category));
+
+        // Two values of the same OR facet must union (OR), not intersect (AND) —
+        // otherwise mutually-exclusive categories collapse to zero hits.
+        TurSEParameters params = createParamsWithFilters("*",
+                List.of("category:Search", "category:Integrations"));
+        Query query = queryBuilder.buildQuery(site, params);
+
+        BooleanQuery bq = (BooleanQuery) query;
+        BooleanQuery filter = (BooleanQuery) filterClause(bq);
+        long shoulds = filter.clauses().stream()
+                .filter(c -> c.occur() == BooleanClause.Occur.SHOULD)
+                .count();
+        assertEquals(2, shoulds, "same-field OR facet values must be OR'd (SHOULD)");
+        assertEquals(1, filter.getMinimumNumberShouldMatch());
+    }
+
+    @Test
+    void buildQuerySameFieldDefaultFacetShouldAndValues() {
+        TurSNSite site = mock(TurSNSite.class);
+        TurSNSiteFieldExt tags = mock(TurSNSiteFieldExt.class);
+        when(tags.getName()).thenReturn("tags");
+        when(tags.getFacetItemType()).thenReturn(TurSNSiteFacetFieldEnum.DEFAULT);
+        when(tags.getFacetType()).thenReturn(TurSNSiteFacetFieldEnum.DEFAULT);
+        when(turSNSiteFieldExtRepository.findByTurSNSiteAndEnabled(site, 1))
+                .thenReturn(List.of(tags));
+
+        // Default (non-OR) facet keeps the historic AND (intersect) semantics.
+        TurSEParameters params = createParamsWithFilters("*",
+                List.of("tags:java", "tags:spring"));
+        Query query = queryBuilder.buildQuery(site, params);
+
+        BooleanQuery bq = (BooleanQuery) query;
+        BooleanQuery filter = (BooleanQuery) filterClause(bq);
+        long musts = filter.clauses().stream()
+                .filter(c -> c.occur() == BooleanClause.Occur.MUST)
+                .count();
+        assertEquals(2, musts, "default facet values must AND (MUST)");
+    }
+
+    private static Query filterClause(BooleanQuery bq) {
+        return bq.clauses().stream()
+                .filter(c -> c.occur() == BooleanClause.Occur.FILTER)
+                .map(BooleanClause::query)
+                .findFirst()
+                .orElseThrow(() -> new AssertionError("no FILTER clause present"));
     }
 
     // ---- getFacetFields ----
