@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import { MessageSquare, Search, Sparkles, X } from "lucide-react";
+import { MessageSquare, Search, Sparkles, Square, SquareCheck, X } from "lucide-react";
 import {
   createAutoComplete,
   createSearchController,
@@ -366,6 +366,7 @@ function LiveSearchDemo({
             onClick={() => {
               const t = stripMarks(spellCheck.corrected.text);
               setQuery(t);
+              clearSimilar();
               const link = spellCheck.corrected.link;
               if (link) void controllerRef.current?.navigate(link);
               else void controllerRef.current?.searchQuery(t);
@@ -388,23 +389,36 @@ function LiveSearchDemo({
                 {group.label?.text || group.name}
               </span>
               {group.facets.slice(0, MAX_FACET_ITEMS).map((item) => (
+                // Checkbox affordance (not a solid pill): within one field, picking
+                // several values UNIONS them (OR), so the count is "docs with this
+                // value", not a narrower subset. The check box makes "pick any,
+                // results combine" explicit — a plain "(3)" reads like a drill-down.
                 <button
                   key={item.label}
                   type="button"
-                  onClick={() => void controllerRef.current?.navigate(item.link)}
-                  aria-pressed={item.selected}
+                  role="checkbox"
+                  aria-checked={item.selected}
+                  onClick={() => {
+                    clearSimilar();
+                    void controllerRef.current?.navigate(item.link);
+                  }}
                   className={cn(
-                    "inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-semibold transition-colors",
+                    "inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors",
                     item.selected
-                      ? "bg-primary text-primary-foreground"
-                      : "bg-muted text-muted-foreground hover:text-foreground"
+                      ? "border-primary bg-primary/10 text-foreground"
+                      : "border-border bg-muted text-muted-foreground hover:border-primary/40 hover:text-foreground"
                   )}
                 >
+                  {item.selected ? (
+                    <SquareCheck className="size-3.5 shrink-0 text-primary" />
+                  ) : (
+                    <Square className="size-3.5 shrink-0 opacity-50" />
+                  )}
                   {item.label}
                   <span
                     className={cn(
                       "text-[0.65rem] font-normal tabular-nums",
-                      item.selected ? "text-primary-foreground/70" : "opacity-60"
+                      item.selected ? "text-primary/80" : "opacity-60"
                     )}
                   >
                     {item.count}

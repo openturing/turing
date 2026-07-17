@@ -218,7 +218,6 @@ class TurLuceneQueryBuilderTest {
         TurSNSiteFieldExt category = mock(TurSNSiteFieldExt.class);
         when(category.getName()).thenReturn("category");
         when(category.getFacetItemType()).thenReturn(TurSNSiteFacetFieldEnum.OR);
-        when(category.getFacetType()).thenReturn(TurSNSiteFacetFieldEnum.AND);
         when(turSNSiteFieldExtRepository.findByTurSNSiteAndEnabled(site, 1))
                 .thenReturn(List.of(category));
 
@@ -243,7 +242,6 @@ class TurLuceneQueryBuilderTest {
         TurSNSiteFieldExt tags = mock(TurSNSiteFieldExt.class);
         when(tags.getName()).thenReturn("tags");
         when(tags.getFacetItemType()).thenReturn(TurSNSiteFacetFieldEnum.DEFAULT);
-        when(tags.getFacetType()).thenReturn(TurSNSiteFacetFieldEnum.DEFAULT);
         when(turSNSiteFieldExtRepository.findByTurSNSiteAndEnabled(site, 1))
                 .thenReturn(List.of(tags));
 

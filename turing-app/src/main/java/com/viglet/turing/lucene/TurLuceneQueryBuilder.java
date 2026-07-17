@@ -124,21 +124,22 @@ public class TurLuceneQueryBuilder {
     }
 
     /**
-     * Adds the active facet selections as filter clauses, mirroring the Solr
-     * builder's multi-select semantics (see {@code TurSolrQueryBuilder#
-     * setFilterQueryString}):
+     * Adds the active facet selections as filter clauses, following standard
+     * faceted-navigation semantics:
      * <ul>
      *   <li>selections are grouped by field;</li>
-     *   <li>within a field, multiple values are combined with <b>OR</b> when the
-     *       field's effective {@code facetItemType} is {@code OR} (multi-select),
-     *       otherwise with <b>AND</b>;</li>
-     *   <li>fields whose effective {@code facetType} is {@code OR} are OR'd with
-     *       the AND-combined remainder, otherwise they intersect (AND).</li>
+     *   <li><b>within a field</b>, multiple values union (<b>OR</b>) when the
+     *       field is multi-select ({@code facetItemType == OR}), otherwise they
+     *       intersect (<b>AND</b>);</li>
+     *   <li><b>across fields</b>, each field group intersects (<b>AND</b>) — a
+     *       selection in one field narrows the result set of another.</li>
      * </ul>
      * The previous implementation added every value as its own {@code FILTER}
-     * (AND) clause, so selecting two values of the same OR facet (e.g. two
-     * mutually-exclusive categories) yielded zero hits even though the facet
-     * counts promised a multi-select union.
+     * (AND) clause, so selecting two values of the same multi-select facet (e.g.
+     * two mutually-exclusive categories) yielded zero hits even though the facet
+     * counts promised a union. Cross-field union ({@code facetType == OR}) is
+     * intentionally not honoured: it broadens instead of narrowing and breaks
+     * the expected "pick another field to drill down" behaviour.
      */
     private void addFilterQueries(BooleanQuery.Builder builder, TurSNSite turSNSite,
             List<String> filterQueries) {
@@ -150,35 +151,10 @@ public class TurLuceneQueryBuilder {
         }
 
         Map<String, TurSNSiteFieldExt> fieldsByName = enabledFieldsByName(turSNSite);
-        List<Query> andFieldQueries = new ArrayList<>();
-        List<Query> orFieldQueries = new ArrayList<>();
-        valuesByField.forEach((field, values) -> {
-            TurSNSiteFieldExt ext = fieldsByName.get(field);
-            Query fieldQuery = buildFieldFilterQuery(field, values,
-                    effectiveFacetItemType(ext, turSNSite));
-            if (effectiveFacetType(ext, turSNSite) == TurSNSiteFacetFieldEnum.OR) {
-                orFieldQueries.add(fieldQuery);
-            } else {
-                andFieldQueries.add(fieldQuery);
-            }
-        });
-
-        // Common case (no OR-type facet fields): each field intersects the result.
-        if (orFieldQueries.isEmpty()) {
-            andFieldQueries.forEach(q -> builder.add(q, BooleanClause.Occur.FILTER));
-            return;
-        }
-        // Mixed: (AND-of-and-fields) OR (each OR-field) — a single FILTER whose
-        // SHOULD set unions the AND remainder with the OR-type fields.
-        BooleanQuery.Builder composite = new BooleanQuery.Builder();
-        if (!andFieldQueries.isEmpty()) {
-            BooleanQuery.Builder andPart = new BooleanQuery.Builder();
-            andFieldQueries.forEach(q -> andPart.add(q, BooleanClause.Occur.MUST));
-            composite.add(andPart.build(), BooleanClause.Occur.SHOULD);
-        }
-        orFieldQueries.forEach(q -> composite.add(q, BooleanClause.Occur.SHOULD));
-        composite.setMinimumNumberShouldMatch(1);
-        builder.add(composite.build(), BooleanClause.Occur.FILTER);
+        valuesByField.forEach((field, values) -> builder.add(
+                buildFieldFilterQuery(field, values,
+                        effectiveFacetItemType(fieldsByName.get(field), turSNSite)),
+                BooleanClause.Occur.FILTER));
     }
 
     /**
@@ -222,16 +198,6 @@ public class TurLuceneQueryBuilder {
             return fieldType;
         }
         return normalize(turSNSite.getFacetItemType());
-    }
-
-    /** Field-level {@code facetType} wins over the site default; DEFAULT/null → AND. */
-    private static TurSNSiteFacetFieldEnum effectiveFacetType(TurSNSiteFieldExt ext,
-            TurSNSite turSNSite) {
-        TurSNSiteFacetFieldEnum fieldType = ext != null ? ext.getFacetType() : null;
-        if (fieldType != null && fieldType != TurSNSiteFacetFieldEnum.DEFAULT) {
-            return fieldType;
-        }
-        return normalize(turSNSite.getFacetType());
     }
 
     private static TurSNSiteFacetFieldEnum normalize(TurSNSiteFacetFieldEnum value) {
