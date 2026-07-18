@@ -129,7 +129,7 @@ export function AemPage() {
             </p>
             <div className="mt-7 flex flex-wrap gap-3">
               <Button asChild size="lg">
-                <a href="/#playground">
+                <a href="#demo">
                   Try it live <ArrowRight className="size-4" />
                 </a>
               </Button>
@@ -148,7 +148,7 @@ export function AemPage() {
         </section>
 
         {/* live WKND demo — the centerpiece proof */}
-        <section className="py-16 lg:py-20">
+        <section id="demo" className="scroll-mt-24 py-16 lg:py-20">
           <Container>
             <div className="mx-auto mb-10 max-w-2xl text-center">
               <p className="text-xs font-extrabold tracking-[0.12em] text-primary uppercase">
@@ -170,7 +170,7 @@ export function AemPage() {
         </section>
 
         {/* how it plugs into AEM */}
-        <section className="border-t border-border py-16 lg:py-20">
+        <section id="how" className="scroll-mt-24 border-t border-border py-16 lg:py-20">
           <Container className="grid gap-10 lg:grid-cols-2 lg:items-start">
             <div className="min-w-0">
               <p className="text-xs font-extrabold tracking-[0.12em] text-primary uppercase">
@@ -207,7 +207,7 @@ export function AemPage() {
         </section>
 
         {/* capability matrix */}
-        <section className="border-t border-border bg-muted/40 py-16 lg:py-20">
+        <section id="matrix" className="scroll-mt-24 border-t border-border bg-muted/40 py-16 lg:py-20">
           <Container>
             <div className="mx-auto mb-10 max-w-2xl text-center">
               <h2 className="text-2xl font-extrabold tracking-tight sm:text-3xl">
@@ -269,7 +269,7 @@ export function AemPage() {
         </section>
 
         {/* depth cards */}
-        <section className="py-16 lg:py-20">
+        <section id="depth" className="scroll-mt-24 py-16 lg:py-20">
           <Container>
             <div className="mx-auto mb-10 max-w-2xl text-center">
               <h2 className="text-2xl font-extrabold tracking-tight sm:text-3xl">
@@ -301,7 +301,7 @@ export function AemPage() {
         </section>
 
         {/* objection-answering FAQ */}
-        <section className="border-t border-border bg-muted/40 py-16 lg:py-20">
+        <section id="faq" className="scroll-mt-24 border-t border-border bg-muted/40 py-16 lg:py-20">
           <Container className="max-w-3xl">
             <div className="mb-10 text-center">
               <h2 className="text-2xl font-extrabold tracking-tight sm:text-3xl">
@@ -326,7 +326,7 @@ export function AemPage() {
         </section>
 
         {/* CTA */}
-        <section className="py-16">
+        <section id="cta" className="scroll-mt-24 py-16">
           <Container>
             <Card className="mx-auto max-w-3xl gap-0 border-primary/20 bg-primary/5 p-8 text-center sm:p-10">
               <h2 className="text-2xl font-extrabold tracking-tight">
