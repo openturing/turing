@@ -13,6 +13,7 @@ import {
 
 import { ROUTES } from "@/app/routes.const";
 import { BentoFormSection, BentoHero } from "@/components/bento";
+import { GatewayModelPicker } from "@/components/gateway/gateway-model-picker";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -155,17 +156,6 @@ export default function BentoGatewayPage() {
               />
             </div>
             <div className="grid gap-1.5">
-              <Label htmlFor="gw-models">
-                {t("gateway.fieldAllowedModels", { defaultValue: "Allowed models (CSV, blank = any)" })}
-              </Label>
-              <Input
-                id="gw-models"
-                value={allowedModels}
-                onChange={(e) => setAllowedModels(e.target.value)}
-                placeholder="gpt-4o, turing-sn:wknd"
-              />
-            </div>
-            <div className="grid gap-1.5">
               <Label htmlFor="gw-budget">
                 {t("gateway.fieldMonthlyBudget", { defaultValue: "Monthly budget (USD)" })}
               </Label>
@@ -201,6 +191,10 @@ export default function BentoGatewayPage() {
                 placeholder="60"
               />
             </div>
+          </div>
+          <div className="mt-4 grid gap-1.5">
+            <Label>{t("gateway.fieldAllowedModels", { defaultValue: "Allowed models" })}</Label>
+            <GatewayModelPicker value={allowedModels} onChange={setAllowedModels} />
           </div>
           <div className="mt-4">
             <Button onClick={onCreate} disabled={!name.trim() || createKey.isPending}>
