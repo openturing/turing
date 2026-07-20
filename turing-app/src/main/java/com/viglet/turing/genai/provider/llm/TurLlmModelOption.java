@@ -7,12 +7,24 @@ package com.viglet.turing.genai.provider.llm;
  * {@link com.viglet.turing.persistence.model.llm.TurLLMInstance}'s
  * {@code modelName} (what the provider SDK sends to the vendor). {@code label} is a
  * human-friendly name for the dropdown; when the vendor API only returns an id
- * the label is just the id echoed back.
+ * the label is just the id echoed back. {@code kind} is the classified
+ * {@link TurLlmModelKind model kind} (T750) so the picker can badge and filter
+ * by type; it is derived from {@code id} + {@code label} unless supplied.
  *
  * @author Alexandre Oliveira
  * @since 2026.3.4
  */
-public record TurLlmModelOption(String id, String label) {
+public record TurLlmModelOption(String id, String label, TurLlmModelKind kind) {
+
+    /**
+     * Backward-compatible {@code (id, label)} form: classifies the
+     * {@link TurLlmModelKind kind} from the id + label heuristically. Existing
+     * call sites (live vendor listings, the catalog loader) use this and gain a
+     * kind for free.
+     */
+    public TurLlmModelOption(String id, String label) {
+        this(id, label, TurLlmModelKind.classify(id, label));
+    }
 
     /** Convenience factory for the common id-only case. */
     public static TurLlmModelOption of(String id) {

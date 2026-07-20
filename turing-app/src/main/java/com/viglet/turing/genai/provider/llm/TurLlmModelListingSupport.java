@@ -1,6 +1,7 @@
 package com.viglet.turing.genai.provider.llm;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
@@ -97,11 +98,9 @@ public final class TurLlmModelListingSupport {
                 List<TurLlmModelOption> result = new ArrayList<>();
                 for (Object item : models) {
                     if (item instanceof Map<?, ?> model) {
-                        String name = stripPrefix(String.valueOf(model.get("name")), "models/");
-                        String label = model.get("displayName") != null
-                                ? String.valueOf(model.get("displayName")) : name;
-                        if (StringUtils.hasText(name)) {
-                            result.add(new TurLlmModelOption(name, label));
+                        TurLlmModelOption option = geminiModel(model);
+                        if (option != null) {
+                            result.add(option);
                         }
                     }
                 }
@@ -111,6 +110,18 @@ public final class TurLlmModelListingSupport {
             log.debug("Could not list Gemini models: {}", e.getMessage());
         }
         return List.of();
+    }
+
+    /** Maps one Gemini {@code models[]} entry, honouring supportedGenerationMethods. */
+    private static TurLlmModelOption geminiModel(Map<?, ?> model) {
+        String name = stripPrefix(String.valueOf(model.get("name")), "models/");
+        if (!StringUtils.hasText(name)) {
+            return null;
+        }
+        String label = model.get("displayName") != null ? String.valueOf(model.get("displayName")) : name;
+        // Prefer Gemini's authoritative supportedGenerationMethods over the name heuristic.
+        Collection<?> methods = model.get("supportedGenerationMethods") instanceof Collection<?> c ? c : null;
+        return new TurLlmModelOption(name, label, TurLlmModelKind.fromGeminiGenerationMethods(methods, name, label));
     }
 
     /**
@@ -145,7 +156,6 @@ public final class TurLlmModelListingSupport {
     }
 
     /** Parses the common {@code {"data":[{"id":..., "display_name"/"name":...}]}} shape. */
-    @SuppressWarnings("unchecked")
     private static List<TurLlmModelOption> extractFromData(Map<String, Object> body) {
         if (body == null || !(body.get("data") instanceof List<?> data)) {
             return List.of();
@@ -153,16 +163,26 @@ public final class TurLlmModelListingSupport {
         List<TurLlmModelOption> result = new ArrayList<>();
         for (Object item : data) {
             if (item instanceof Map<?, ?> model) {
-                String id = String.valueOf(model.get("id"));
-                if (!StringUtils.hasText(id) || "null".equals(id)) {
-                    continue;
+                TurLlmModelOption option = dataModel(model);
+                if (option != null) {
+                    result.add(option);
                 }
-                Object display = model.get("display_name") != null ? model.get("display_name") : model.get("name");
-                String label = display != null ? String.valueOf(display) : id;
-                result.add(new TurLlmModelOption(id, label));
             }
         }
         return result;
+    }
+
+    /** Maps one OpenAI-style {@code data[]} entry, honouring an "endpoints" array when present. */
+    private static TurLlmModelOption dataModel(Map<?, ?> model) {
+        String id = String.valueOf(model.get("id"));
+        if (!StringUtils.hasText(id) || "null".equals(id)) {
+            return null;
+        }
+        Object display = model.get("display_name") != null ? model.get("display_name") : model.get("name");
+        String label = display != null ? String.valueOf(display) : id;
+        // Honour an authoritative "endpoints" array (Cohere) when present, else classify by name.
+        Collection<?> endpoints = model.get("endpoints") instanceof Collection<?> c ? c : null;
+        return new TurLlmModelOption(id, label, TurLlmModelKind.fromVendorEndpoints(endpoints, id, label));
     }
 
     /** Trims a trailing slash so {@code baseUrl + "/models"} never double-slashes. */

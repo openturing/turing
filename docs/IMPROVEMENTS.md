@@ -2563,43 +2563,6 @@ bridge — all opt-in behind `turing.gateway.enabled` (default off).
    two in-process ONNX modes (`TRANSFORMERS_LOCAL`, `HUGGINGFACE`) have no vendor
    connection at all.
 
-### L.1 Model-kind taxonomy (T750)
-
-Every model any supported vendor can list falls into one **kind**. The full set:
-
-| Kind | What it does | Representative ids |
-|---|---|---|
-| `CHAT` | Text / conversational generation (the "LLM") | gpt-4o, claude-sonnet, gemini-2.5, mistral-large, command-r, llama3 |
-| `EMBEDDING` | Text → vector (RAG / semantic search) | text-embedding-3, voyage-3, gemini-embedding-001, cohere embed-v4, mistral-embed |
-| `RERANK` | Reorders candidates by relevance | cohere rerank-3, voyage rerank-2 (only Cohere + Voyage) |
-| `IMAGE` | Text → image | dall-e-3 / gpt-image-1, Imagen (Gemini/Vertex), Titan Image (Bedrock) |
-| `TRANSCRIPTION` | Audio → text (STT) | whisper-1, gpt-4o-transcribe |
-| `SPEECH` | Text → audio (TTS) | tts-1, gpt-4o-mini-tts |
-| `VIDEO` | Text → video | Sora (OpenAI), Veo (Gemini/Vertex) |
-| `MODERATION` | Safety classification | omni-moderation |
-| `UNKNOWN` | Blank / unparseable id | — |
-
-Notes that shaped the enum:
-
-- **Vision is a *capability*, not a kind.** A multimodal chat model (gpt-4o
-  reading an image) is still `CHAT`; image *understanding* is already modelled by
-  the per-instance `nativeCapabilities` matrix (F.15), so it is not a kind here.
-- **The classifier is a pure heuristic over `id` + `label`.** Order matters —
-  `rerank` before `embed` (Cohere/Voyage rerank ids also contain the vendor
-  family), then `embed` / the `voyage-` prefix → EMBEDDING, then the image /
-  audio / video / moderation keywords. Anything that matches no specialised
-  keyword defaults to **CHAT** (most listed models are chat and have no keyword);
-  `UNKNOWN` is reserved for blank / null ids so it stays honest rather than
-  swallowing every real chat model. This generalises the existing
-  `TurLlmModelDiscoveryService.isEmbeddingModel` heuristic (T625), which is
-  rewritten as `classify(...) == EMBEDDING`.
-- `models-catalog.json` entries gain an **optional `kind`** so a curated entry
-  can override the heuristic when a name is ambiguous; live lists rely on the
-  heuristic.
-
-This task is purely additive: `kind` rides along on every `TurLlmModelOption`
-and no consumer changes behavior.
-
 ### L.2 Visual selection (T751)
 
 With `kind` available, both pickers stop being text-only:

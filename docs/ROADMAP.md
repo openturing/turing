@@ -31,7 +31,6 @@
 > touches the RAG / vector-store read path. Design → §L.
 
 **Phase 1 — visual model-type selection (additive, ready):**
-- 📋 **T750** (deps: T749) **Model-kind taxonomy + heuristic classifier** — new `TurLlmModelKind` enum (CHAT · EMBEDDING · RERANK · IMAGE · TRANSCRIPTION · SPEECH · VIDEO · MODERATION · UNKNOWN) + a pure `classify(id, label)` over per-vendor name patterns; add `kind` to the backend `TurLlmModelOption` record and the TS `TurLlmModelOption` model; refactor `TurLlmModelDiscoveryService.isEmbeddingModel` to `kind == EMBEDDING`; optional per-entry `kind` override in `models-catalog.json`. Default for unrecognised ids is CHAT (UNKNOWN reserved for blank/unparseable). Zero behavior change to consumers. → §L.1
 - 📋 **T751** (deps: T750) **Visual picker — kind badges + type filter** — `LlmModelMultiSelect` (chat instance form) and the embedding `ModelCombobox` render a colour-coded kind badge on each option + selected row, plus a segmented type filter (All / Chat / Embedding / …) defaulting to the surface's expected kind; i18n en+pt + RTL tests. → §L.2
 
 **Phase 2 — unify `TurEmbeddingModel` into the LLM instance (gated on the T752 ADR):**

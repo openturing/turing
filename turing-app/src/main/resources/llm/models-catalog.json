@@ -1,5 +1,5 @@
 {
-  "_comment": "Curated fallback model catalog for the LLM-instance model picker (T577). Keyed by provider plugin type (lower-case, as resolved by TurGenAiLlmProviderFactory). Used when a live vendor query returns nothing (no API key, offline, or a provider without a list endpoint). The combobox is editable, so an id not listed here can still be typed. Keep current on redeploy.",
+  "_comment": "Curated fallback model catalog for the LLM-instance model picker (T577). Keyed by provider plugin type (lower-case, as resolved by TurGenAiLlmProviderFactory). Used when a live vendor query returns nothing (no API key, offline, or a provider without a list endpoint). The combobox is editable, so an id not listed here can still be typed. Each entry may carry an optional \"kind\" (CHAT|EMBEDDING|RERANK|IMAGE|TRANSCRIPTION|SPEECH|VIDEO|MODERATION) to override the T750 heuristic classifier when an id/label is ambiguous; omit it to let the classifier decide. Keep current on redeploy.",
   "openai": [
     { "id": "gpt-4.1", "label": "GPT-4.1" },
     { "id": "gpt-4.1-mini", "label": "GPT-4.1 mini" },

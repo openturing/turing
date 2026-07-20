@@ -51,7 +51,9 @@ public class TurLlmModelCatalog {
                         String id = node.path("id").asText(null);
                         if (id != null && !id.isBlank()) {
                             String label = node.path("label").asText(id);
-                            models.add(new TurLlmModelOption(id, label));
+                            String kindOverride = node.path("kind").asText(null);
+                            models.add(new TurLlmModelOption(id, label,
+                                    TurLlmModelKind.parseOrClassify(kindOverride, id, label)));
                         }
                     });
                     parsed.put(entry.getKey().toLowerCase(Locale.ROOT), List.copyOf(models));

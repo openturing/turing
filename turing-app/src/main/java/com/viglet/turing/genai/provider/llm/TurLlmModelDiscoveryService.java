@@ -123,21 +123,12 @@ public class TurLlmModelDiscoveryService {
     }
 
     /**
-     * Recognizes an embedding-capable model from its id/label. The catalog tags
-     * embedding entries with an {@code (embedding)} label marker; more robustly,
-     * any id/label containing {@code embed} is an embedding model, and every
-     * non-rerank Voyage model is an embedding model. Rerank models are excluded.
+     * Recognizes an embedding-capable model — now simply {@code kind == EMBEDDING}
+     * (T750). The {@link TurLlmModelKind classifier} generalises the former
+     * inline heuristic (embed / Voyage id, rerank excluded).
      */
     static boolean isEmbeddingModel(TurLlmModelOption option) {
-        if (option == null || !StringUtils.hasText(option.id())) {
-            return false;
-        }
-        String id = option.id().toLowerCase(Locale.ROOT);
-        String hay = (id + " " + (option.label() == null ? "" : option.label())).toLowerCase(Locale.ROOT);
-        if (hay.contains("rerank")) {
-            return false;
-        }
-        return hay.contains("embed") || id.startsWith("voyage-");
+        return option != null && option.kind() == TurLlmModelKind.EMBEDDING;
     }
 
     private String resolveKey(String typedApiKey, String instanceId) {
