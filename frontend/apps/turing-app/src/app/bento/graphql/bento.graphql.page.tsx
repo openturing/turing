@@ -8,6 +8,11 @@ import { useTranslation } from "react-i18next";
  * Bento GraphQL explorer — T565. GraphiQL is an embedded iframe tool, not a
  * form CRUD, so per §XXXI.8 it sits under a {@link BentoHero} inside the shell;
  * the reused {@link GraphiQLPage} keeps its theme-sync + iframe logic unchanged.
+ *
+ * The GraphiQL UI wants every available pixel, so this route is rendered in the
+ * shell's "immersive" mode (see {@link BentoRootPage}): the hero stays a fixed
+ * band at the top and the frosted iframe card flex-fills the rest of the
+ * viewport, edge-to-edge left/right and down to the bottom.
  */
 export default function BentoGraphqlPage() {
   const { t } = useTranslation();
@@ -24,7 +29,7 @@ export default function BentoGraphqlPage() {
         title={t("home.features.graphqlExplorer.title")}
         subtitle={t("home.features.graphqlExplorer.description")}
       />
-      <div className="bento-glass h-[calc(100svh-16rem)] overflow-hidden rounded-3xl">
+      <div className="bento-glass mb-6 min-h-0 flex-1 overflow-hidden rounded-3xl">
         <GraphiQLPage className="flex h-full w-full flex-col" />
       </div>
     </>

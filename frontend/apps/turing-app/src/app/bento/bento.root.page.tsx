@@ -75,13 +75,16 @@ export default function BentoRootPage() {
   const { t } = useTranslation();
   const parentPath = resolveBentoParent(pathname);
   /*
-   * "Immersive" app-like surfaces (the chat) fill the shell edge-to-edge
-   * instead of being centered in the `max-w-7xl` reading column — they own a
-   * viewport-height layout with their own internal scroll, so the extra width
-   * is used by the conversation rather than left as empty margins.
+   * "Immersive" app-like surfaces (the chat, the GraphQL explorer) fill the
+   * shell edge-to-edge instead of being centered in the `max-w-7xl` reading
+   * column — they own a viewport-height layout with their own internal scroll,
+   * so the extra width and height are used by the tool (conversation / GraphiQL
+   * iframe) rather than left as empty margins.
    */
   const isImmersive =
-    pathname === ROUTES.BENTO_CHAT || pathname.startsWith(`${ROUTES.BENTO_CHAT}/`);
+    pathname === ROUTES.BENTO_CHAT ||
+    pathname.startsWith(`${ROUTES.BENTO_CHAT}/`) ||
+    pathname === ROUTES.BENTO_GRAPHQL;
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [shortcutsOpen, setShortcutsOpen] = useState(false);
   const [tourOpen, setTourOpen] = useState(false);
