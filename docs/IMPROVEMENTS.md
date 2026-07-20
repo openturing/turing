@@ -2540,3 +2540,120 @@ cache + guardrails + RAG-as-a-header, `turing-agent:` / `turing-sn:` /
 `turing-local:` / `turing-router:` model routing, `x-turing-tools` native tools,
 per-key observability, a `/bento/gateway` admin, and a traffic → eval/distillation
 bridge — all opt-in behind `turing.gateway.enabled` (default off).
+
+## L. Unified model entity & visual model-type selection (Block BB)
+
+**The problem.** Two related rough edges surfaced from the multi-model work
+(Block BA, T749):
+
+1. **The model picker is type-blind.** `TurLlmModelOption` is only `{id, label}`.
+   When an operator selects models on `/bento/llm/instance/:id`, nothing tells
+   them whether an id is a chat model, an embedding model, an image generator, a
+   transcription model, etc. A vendor's `/v1/models` returns everything mixed
+   together, so it is easy to pick `text-embedding-3-small` or `dall-e-3` as the
+   chat default by mistake. The only existing hint is a hand-written
+   `(embedding)` suffix baked into some `models-catalog.json` labels — which
+   disappears the moment the list is served **live** from the vendor.
+2. **Embedding models are a second, near-duplicate entity.** `TurEmbeddingModel`
+   duplicates `TurLLMInstance`'s identity (`id`, `tenantId`, `modelName`,
+   `description`, `icon`, `enabled`) and — for its cloud case — **already holds a
+   `@ManyToOne TurLLMInstance`** (T626): the embedding row just names a model id
+   on the *same* vendor connection. An embedding model is not a different kind of
+   *provider*; it is a different kind of *model* on the same provider. Only the
+   two in-process ONNX modes (`TRANSFORMERS_LOCAL`, `HUGGINGFACE`) have no vendor
+   connection at all.
+
+### L.1 Model-kind taxonomy (T750)
+
+Every model any supported vendor can list falls into one **kind**. The full set:
+
+| Kind | What it does | Representative ids |
+|---|---|---|
+| `CHAT` | Text / conversational generation (the "LLM") | gpt-4o, claude-sonnet, gemini-2.5, mistral-large, command-r, llama3 |
+| `EMBEDDING` | Text → vector (RAG / semantic search) | text-embedding-3, voyage-3, gemini-embedding-001, cohere embed-v4, mistral-embed |
+| `RERANK` | Reorders candidates by relevance | cohere rerank-3, voyage rerank-2 (only Cohere + Voyage) |
+| `IMAGE` | Text → image | dall-e-3 / gpt-image-1, Imagen (Gemini/Vertex), Titan Image (Bedrock) |
+| `TRANSCRIPTION` | Audio → text (STT) | whisper-1, gpt-4o-transcribe |
+| `SPEECH` | Text → audio (TTS) | tts-1, gpt-4o-mini-tts |
+| `VIDEO` | Text → video | Sora (OpenAI), Veo (Gemini/Vertex) |
+| `MODERATION` | Safety classification | omni-moderation |
+| `UNKNOWN` | Blank / unparseable id | — |
+
+Notes that shaped the enum:
+
+- **Vision is a *capability*, not a kind.** A multimodal chat model (gpt-4o
+  reading an image) is still `CHAT`; image *understanding* is already modelled by
+  the per-instance `nativeCapabilities` matrix (F.15), so it is not a kind here.
+- **The classifier is a pure heuristic over `id` + `label`.** Order matters —
+  `rerank` before `embed` (Cohere/Voyage rerank ids also contain the vendor
+  family), then `embed` / the `voyage-` prefix → EMBEDDING, then the image /
+  audio / video / moderation keywords. Anything that matches no specialised
+  keyword defaults to **CHAT** (most listed models are chat and have no keyword);
+  `UNKNOWN` is reserved for blank / null ids so it stays honest rather than
+  swallowing every real chat model. This generalises the existing
+  `TurLlmModelDiscoveryService.isEmbeddingModel` heuristic (T625), which is
+  rewritten as `classify(...) == EMBEDDING`.
+- `models-catalog.json` entries gain an **optional `kind`** so a curated entry
+  can override the heuristic when a name is ambiguous; live lists rely on the
+  heuristic.
+
+This task is purely additive: `kind` rides along on every `TurLlmModelOption`
+and no consumer changes behavior.
+
+### L.2 Visual selection (T751)
+
+With `kind` available, both pickers stop being text-only:
+
+- **Badge.** Each option in the popover and each selected row shows a small,
+  colour-coded kind badge (reusing the brand palette — e.g. blue→indigo for CHAT,
+  emerald/teal for EMBEDDING, amber for RERANK, distinct tones for the media
+  kinds). The badge is the answer to "what am I selecting?".
+- **Type filter.** A segmented control at the top of the picker filters by kind
+  (All / Chat / Embedding / …). It defaults to the surface's expected kind — the
+  chat instance form defaults to Chat, the embedding picker to Embedding — so the
+  common case shows only relevant models while everything stays reachable via
+  *All*. The picker stays free-text tolerant (an unlisted id can still be typed).
+
+### L.3 Unifying `TurEmbeddingModel` into the LLM instance (T752–T758)
+
+The end state: **one entity represents a model-provider instance** (a vendor
+connection with a key/URL + generation params) that can serve models of any
+kind, with a **default model per kind** the platform consumes:
+
+- chat default = today's `modelName` (unchanged contract);
+- embedding default = a new column (what RAG / the vector store read);
+- rerank default = a new column (what the Block N reranker reads when the mode is
+  a provider reranker).
+
+**Why it is safe in principle.** The cloud embedding case already *is* an LLM
+instance plus a model id (T626), so collapsing it removes duplication rather than
+inventing structure. The two in-process ONNX modes become first-class
+`TurLLMVendor`s (`TRANSFORMERS_LOCAL`, `HUGGINGFACE`) over the existing
+`TurLocalEmbeddingModelFactory` / `TurHuggingFaceEmbeddingModelFactory`, so a
+"local embedding" is just an instance whose vendor happens to run in-process and
+whose embedding default carries the ONNX `modelPath` / `tokenizerPath` (or HF
+`modelReference` / variant).
+
+**Why it is gated on an ADR (T752).** The risk is entirely on the **read path**:
+RAG context building, the Lucene/pgvector/Chroma/Milvus vector stores, batch
+re-embedding, SN-site GenAI, the default-RAG-infra startup seed, and the store
+API all resolve a `TurEmbeddingModel` by id today. Repointing them (T756) must
+preserve embedding **dimensions** (a dimension change silently invalidates an
+index — see the T627 dimension-mismatch guard) and the GLOBAL-vs-tenant
+visibility rule (both entities are `VigletTenantOwnedInfra` with the explicit
+`tenantId = :current OR IS NULL` read). The ADR must lock: the unified entity
+name, whether the migration is destructive or leaves `embedding_model` as a
+read-only compatibility view, and the exchange/import story (existing embedding
+exports and the Cloud GLOBAL seed ZIP, T373, must still import). Only once that
+is decided do T753–T758 become implementable; until then they stay 💭.
+
+**Sequencing.** schema (T753) → local/HF-as-vendors (T754) → data migration
+(T755) → repoint consumers (T756) → unified admin UI + retire `/bento/embedding`
+(T757) → exchange/API/SDK compat (T758). Each is one commit; the migration
+(T755) and the consumer repoint (T756) are the two that need an integration test
+proving an existing RAG index still resolves its embedding model after the move.
+
+**Non-goals.** No new embedding *runtime* — this is a persistence/UX
+consolidation, not a change to how embeddings are computed. The in-process ONNX
+Whisper non-goal (ex-T694) is unaffected. The platform stays single-default per
+kind; serving multiple embedding models simultaneously is out of scope.

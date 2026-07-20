@@ -1,9 +1,14 @@
-# Last task number — `T749` · next block letter — `BB`
+# Last task number — `T758` · next block letter — `BC`
 
 > **Single source of truth for the next free task number.** The next new task is
-> `T750`; after assigning it, bump the number above and the log line below.
+> `T759`; after assigning it, bump the number above and the log line below.
 >
-> **Next block letter — `BB`** (Block **BA** = Multi-model LLM instance —
+> **Next block letter — `BC`** (Block **BB** = Unified model entity & visual
+> model-type selection — a `TurLlmModelKind` taxonomy + heuristic classifier and
+> visual picker badges/type-filter (T750-T751, additive, ready), then fold
+> `TurEmbeddingModel` into the LLM instance as `kind=EMBEDDING` with per-kind
+> defaults, gated on the T752 ADR because it touches the RAG/vector-store read
+> path (T753-T758, 💭), created 2026-07-20; Block **BA** = Multi-model LLM instance —
 > `TurLLMInstance.modelNames` CSV superset + `modelName` stays the single default;
 > `LlmModelMultiSelect` + dedicated Models card on the instance form, T749,
 > created 2026-07-20; Block **AZ** = Governed LLM Gateway —
@@ -73,6 +78,7 @@ number" looked free but wasn't. Grepping three files (`ROADMAP.md`,
 
 ## Log (most recent first)
 
+- **T750-T758 CREATED** (📋/💭, Block BB §L — Unified model entity & visual model-type selection: TurLlmModelKind taxonomy (CHAT/EMBEDDING/RERANK/IMAGE/TRANSCRIPTION/SPEECH/VIDEO/MODERATION/UNKNOWN) + pure classify(id,label) heuristic + kind on TurLlmModelOption (T750); visual picker kind badges + segmented type filter on LlmModelMultiSelect + embedding ModelCombobox (T751); then unify TurEmbeddingModel into the LLM instance as kind=EMBEDDING with per-kind defaults — ADR 0004 (T752), unified schema (T753), local/HF ONNX as vendors (T754), data migration (T755), repoint RAG/vector-store consumers (T756), unified admin UI retiring /bento/embedding (T757), exchange+API/SDK compat (T758); T753-T758 gated on the T752 ADR) — 2026-07-20.
 - **T749 SHIPPED** (Block BA — multi-model LLM instance: modelNames CSV superset + modelName default; LlmModelMultiSelect + Models card) — 2026-07-20.
 - **T746 SHIPPED** (Block AZ §XLIX — gateway traffic → eval/distillation bridge: TurGatewayTrafficCaptureService captures base+router turns as TurEvalDataset canonical rows (importCanonicalRows/append; opt-in turing.gateway.capture-traffic; referenceAnswer material, expectedOutcome ANY, gateway-traffic tag) fed into base/router complete; GET /api/gateway/traffic + POST /traffic/distill → propose-only distillForReview (never auto-applied); TurGatewayTrafficCaptureServiceTest 4) — 2026-07-20. CLOSES Block AZ (T740-T748 all shipped).
 - **T745 SHIPPED** (Block AZ §XLIX — router: turing-router:<strategy>/<ids> model via TurGatewayRouterService; rr (in-mem counter) / latency (EWMA) / failover strategies; orderedCandidates → routerAnswer walks pick+fallback chain, records winner latency+spend; in-memory, no entity; TurGatewayRouterServiceTest 6) — 2026-07-20.

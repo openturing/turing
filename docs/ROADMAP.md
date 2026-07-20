@@ -16,6 +16,33 @@
 | ⏳ | Partial — direction is right, more work remains |
 | 🛠 | In progress |
 
+## Block BB — Unified model entity & visual model-type selection
+
+> Two connected goals building directly on Block BA (multi-model LLM instance,
+> shipped T749): **(1)** make model selection fully **visual** — every model in the
+> picker shows *what kind* it is (chat, embedding, rerank, image, transcription,
+> speech, video, moderation) so an operator never has to remember a model id or
+> guess whether an id is a chat vs an embedding model; **(2)** collapse the separate
+> `TurEmbeddingModel` entity into the unified LLM instance — an embedding model is
+> just a model of `kind=EMBEDDING`, and `TurEmbeddingModel` already points at a
+> `TurLLMInstance` for its cloud case (T626), so one entity can serve chat +
+> embedding + rerank models with per-kind defaults. Phase 1 (T750–T751) is additive
+> and ships now; the unification (T752–T758) is gated on the T752 ADR because it
+> touches the RAG / vector-store read path. Design → §L.
+
+**Phase 1 — visual model-type selection (additive, ready):**
+- 📋 **T750** (deps: T749) **Model-kind taxonomy + heuristic classifier** — new `TurLlmModelKind` enum (CHAT · EMBEDDING · RERANK · IMAGE · TRANSCRIPTION · SPEECH · VIDEO · MODERATION · UNKNOWN) + a pure `classify(id, label)` over per-vendor name patterns; add `kind` to the backend `TurLlmModelOption` record and the TS `TurLlmModelOption` model; refactor `TurLlmModelDiscoveryService.isEmbeddingModel` to `kind == EMBEDDING`; optional per-entry `kind` override in `models-catalog.json`. Default for unrecognised ids is CHAT (UNKNOWN reserved for blank/unparseable). Zero behavior change to consumers. → §L.1
+- 📋 **T751** (deps: T750) **Visual picker — kind badges + type filter** — `LlmModelMultiSelect` (chat instance form) and the embedding `ModelCombobox` render a colour-coded kind badge on each option + selected row, plus a segmented type filter (All / Chat / Embedding / …) defaulting to the surface's expected kind; i18n en+pt + RTL tests. → §L.2
+
+**Phase 2 — unify `TurEmbeddingModel` into the LLM instance (gated on the T752 ADR):**
+- 📋 **T752** (deps: T750) **ADR — one entity for every model kind** — decide the unified shape (extend `TurLLMInstance` vs a renamed `TurModelInstance`), how the in-process ONNX embedding modes (`TRANSFORMERS_LOCAL` / `HUGGINGFACE`) become provider types/vendors, per-kind default-model columns (chat = `modelName`, an embedding default, a rerank default), and the backward-compat + exchange story. Deliverable = ADR 0004 + §L.3; no code. → §L.3
+- 💭 **T753** (deps: T752) **Unified schema + entity** — fold the embedding-serving fields (embedding default `modelReference`, `modelPath` / `tokenizerPath` / `batchSize`, detected dimensions) and the per-kind default columns onto the unified entity; new idempotent Liquibase file; keep the `embedding_model` table until T755 migrates it. → §L.3
+- 💭 **T754** (deps: T753) **Local/HF ONNX as vendors** — model `TRANSFORMERS_LOCAL` + `HUGGINGFACE` as `TurLLMVendor`s over the existing local/HF embedding factories so they live on the unified entity instead of the `providerType` sentinel. → §L.3
+- 💭 **T755** (deps: T753, T754) **Data migration** — move existing `embedding_model` rows onto the unified entity (Liquibase data migration + one-time reconciliation): instance-backed rows collapse into their instance's embedding default; local/HF rows become their own unified instances. → §L.3
+- 💭 **T756** (deps: T755) **Repoint consumers** — switch the RAG context builder, the Lucene/vector store, batch re-embedding, SN-site GenAI, the default-RAG-infra startup, and the store API off `TurEmbeddingModel` onto the unified model reference. → §L.3
+- 💭 **T757** (deps: T751, T756) **Unified admin UI** — one "Models" surface with kind tabs/filter; the instance form grows an Embedding-default picker (filtered to `kind=EMBEDDING`); retire the standalone `/bento/embedding` route with a redirect. → §L.3
+- 💭 **T758** (deps: T756) **Exchange + API/SDK compat** — keep old embedding exports importable, alias the embedding endpoints onto the unified entity, and update the SDK / shared-types so external callers aren't broken. → §L.3
+
 ## Block W — Agent↔UI transparency & client tools (AG-UI parity)
 
 > Closed the two AG-UI parity gaps for Turing's own agent runtime (live tool-call
