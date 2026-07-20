@@ -69,6 +69,12 @@ public class TurSecurityConfigProduction {
     // --- S1192: extracted duplicated literals ---
     private static final String MCP = "/mcp/**";
     private static final String API_SIGNUP = "/api/signup";
+    // T740 / §XLIX — OpenAI-compatible gateway (Block AZ). The /v1/* surface is a
+    // server-to-server API (no browser cookie jar → CSRF-exempt) and is
+    // permitAll here so authorization is enforced by the T741 virtual-key bearer
+    // filter, not a session principal. The whole controller is
+    // @ConditionalOnProperty(turing.gateway.enabled) — when off these paths 404.
+    private static final String GATEWAY_V1 = "/v1/**";
 
         private static final String LOGIN_PATH = "/api/login";
         private static final String LOGOUT_PATH = "/logout";
@@ -155,6 +161,7 @@ public class TurSecurityConfigProduction {
                                                 mvc.matcher(BACK_CHANNEL_LOGOUT_PATH),
                                                 mvc.matcher("/api/ocr/**"),
                                                 mvc.matcher("/api/genai/**"),
+                                                mvc.matcher(GATEWAY_V1),
                                                 // T245 — MCP server (Streamable HTTP). Not a
                                                 // browser surface (no cookie jar); auth/loopback is
                                                 // enforced by TurMcpLoopbackFilter today and the
@@ -239,6 +246,8 @@ public class TurSecurityConfigProduction {
                                                 // T245 — MCP server endpoint (loopback-gated, see CSRF note above).
                                                 mvc.matcher("/mcp"),
                                                 mvc.matcher(MCP),
+                                                // T740 / §XLIX — gateway /v1/* (virtual-key auth, see note above).
+                                                mvc.matcher(GATEWAY_V1),
                                                 mvc.matcher(API_SIGNUP),
                                                 mvc.matcher(LOGIN_PATH),
                                                 mvc.matcher(SETUP_PATH)).permitAll();
@@ -310,6 +319,8 @@ public class TurSecurityConfigProduction {
                                                                 // T245 — MCP server endpoint (loopback-gated, see CSRF note above).
                                                                 mvc.matcher("/mcp"),
                                                                 mvc.matcher(MCP),
+                                                                // T740 / §XLIX — gateway /v1/* (virtual-key auth).
+                                                                mvc.matcher(GATEWAY_V1),
                                                                 mvc.matcher("/favicon.ico"),
                                                                 mvc.matcher("/*.png"),
                                                                 mvc.matcher("/manifest.json"),

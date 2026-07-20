@@ -111,7 +111,7 @@
 > Design in [IMPROVEMENTS.md](IMPROVEMENTS.md) §XLIX.
 
 **Phase 1 — inbound seam + passthrough parity:**
-- 📋 **T740** (deps: —) **OpenAI-compatible inbound gateway API** — `TurOpenAiCompatibleGatewayAPI` under `api/gateway/`: `POST /v1/chat/completions` (blocking + SSE in OpenAI's `data:` wire format), `/v1/embeddings`, `GET /v1/models`; pure wire-format translation over the existing `TurGenAiLlmProviderFactory` (no new LLM logic), gated by `turing.gateway.enabled` (default off). Streaming reuses `TurAgentChatExecutor.execute()`'s `Flux<ChatResponse>`. → §XLIX
+- ✅ **T740** shipped — see CHANGELOG.
 - 📋 **T741** (deps: T740) **Virtual keys** — `TurGatewayKey` entity reusing `TurSecretCryptoService` for the secret; a bearer-`sk-turing-...` auth filter parallel to the existing Keycloak/httpBasic chain; per-key scope (allowed models, `@TenantId`, enabled/expiresAt); Liquibase. The "give a dev a key with $50/mo on gpt-4o only" primitive LiteLLM sells. → §XLIX
 
 **Phase 2 — reuse the governance half:**
