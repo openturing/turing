@@ -1,0 +1,26 @@
+databaseChangeLog:
+  # Multi-model LLM instance — records the wider set of models an instance may
+  # serve as a comma-separated list. `modelName` stays the single default model
+  # consumed by the rest of the platform (which does not yet support multiple
+  # models per instance); this column is additive and null/blank on legacy rows.
+  - changeSet:
+      id: v2026.3.1.111-add-llm_instance-modelNames
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - tableExists:
+            tableName: llm_instance
+        - not:
+            - columnExists:
+                tableName: llm_instance
+                columnName: modelNames
+      changes:
+        - addColumn:
+            tableName: llm_instance
+            columns:
+              - column:
+                  name: modelNames
+                  type: longtext
+                  constraints:
+                    nullable: true
+                  remarks: "Comma-separated models this instance may serve; modelName remains the default."

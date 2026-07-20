@@ -11,7 +11,7 @@ import { GradientSwitch } from "@/components/ui/gradient-switch"
 import { LLMInstanceCapabilitiesForm } from "@/components/llm/llm.instance.capabilities.form"
 import { useLlmInstanceCapabilities } from "@/api/queries/llm-capability.queries"
 import { Input } from "@/components/ui/input"
-import { ModelCombobox } from "@/components/ui/model-combobox"
+import { LlmModelMultiSelect } from "@/components/ui/llm-model-multi-select"
 import { ModelVerifyButton } from "@/components/ui/model-verify-button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
@@ -20,7 +20,7 @@ import type { TurLLMInstance } from "@/models/llm/llm-instance.model.ts"
 import type { TurLLMVendor } from "@/models/llm/llm-vendor.model"
 import { TurLLMInstanceService } from "@/services/llm/llm.service"
 import { TurLLMVendorService } from "@/services/llm/llm-vendor.service"
-import { IconAdjustments, IconBrain, IconSettings, IconSparkles, IconToggleLeft } from "@tabler/icons-react"
+import { IconAdjustments, IconBrain, IconSettings, IconSparkles, IconStack2, IconToggleLeft } from "@tabler/icons-react"
 import { useEffect, useMemo, useState } from "react"
 import { useForm } from "react-hook-form"
 import { useTranslation } from "react-i18next"
@@ -128,6 +128,28 @@ export const BentoLLMInstanceForm: React.FC<Props> = ({ value, isNew, staged, on
   const watchedUrl = form.watch("url")
   const watchedApiKey = form.watch("apiKey")
   const navigate = useNavigate()
+
+  // Multi-model selection: `modelNames` is the comma-separated superset, while
+  // `modelName` stays the single default consumed by the rest of the platform.
+  // Legacy instances have only `modelName` — seed the selection from it.
+  const watchedModelName = form.watch("modelName")
+  const watchedModelNames = form.watch("modelNames")
+  const selectedModels = useMemo(() => {
+    const list = (watchedModelNames ?? "")
+      .split(",")
+      .map((s) => s.trim())
+      .filter(Boolean)
+    const def = (watchedModelName ?? "").trim()
+    if (list.length === 0) return def ? [def] : []
+    // Keep the default present even if it isn't in the stored list yet.
+    return def && !list.includes(def) ? [def, ...list] : list
+  }, [watchedModelNames, watchedModelName])
+  const defaultModel = (watchedModelName ?? "").trim() || selectedModels[0] || ""
+
+  const handleModelsChange = (next: string[], nextDefault: string) => {
+    form.setValue("modelNames", next.join(","), { shouldDirty: true })
+    form.setValue("modelName", nextDefault, { shouldDirty: true })
+  }
 
   const createMutation = useCreateLlmInstance()
   const updateMutation = useUpdateLlmInstance()
@@ -237,6 +259,9 @@ export const BentoLLMInstanceForm: React.FC<Props> = ({ value, isNew, staged, on
     form.setValue("timeout", "PT60S", { shouldDirty: true })
     form.setValue("maxRetries", 3, { shouldDirty: true })
     form.setValue("responseFormat", "", { shouldDirty: true })
+    // Reset the multi-model list so it reseeds from the new vendor's preset
+    // model below (never mixing models across vendors).
+    form.setValue("modelNames", "", { shouldDirty: true })
 
     if (vendorId === "OLLAMA") {
       form.setValue("url", "http://localhost:11434", { shouldDirty: true })
@@ -358,6 +383,13 @@ export const BentoLLMInstanceForm: React.FC<Props> = ({ value, isNew, staged, on
     // (form submitted via Enter, programmatic submit, etc).
     if (!staged?.title?.trim()) {
       toast.error(t("forms.llm.titleRequired"))
+      return
+    }
+
+    // At least one model with a default is required (the default → modelName is
+    // the single model the rest of the platform consumes).
+    if (!llmInstance.modelName?.trim()) {
+      toast.error(t("forms.llm.modelsRequired", { defaultValue: "Select at least one model." }))
       return
     }
 
@@ -616,29 +648,6 @@ export const BentoLLMInstanceForm: React.FC<Props> = ({ value, isNew, staged, on
 
           <FormField
             control={form.control}
-            name="modelName"
-            rules={{ required: t("forms.llm.modelName") }}
-            render={({ field }) => (
-              <FormItem className="w-full">
-                <FormLabel>{t("forms.llm.modelName")}</FormLabel>
-                <p className="text-sm text-muted-foreground">{t("forms.llm.modelNameDesc")}</p>
-                <FormControl>
-                  <ModelCombobox
-                    value={field.value ?? ""}
-                    onChange={field.onChange}
-                    options={modelList?.models ?? []}
-                    isLoading={modelsLoading}
-                    source={modelList?.source}
-                    onOpen={() => refetchModels()}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          <FormField
-            control={form.control}
             name="apiKey"
             render={({ field }) => (
               <FormItem className="w-full">
@@ -687,6 +696,40 @@ export const BentoLLMInstanceForm: React.FC<Props> = ({ value, isNew, staged, on
               disabled={isNew || form.formState.isDirty || optionsDirty}
               disabledHint={t("forms.common.verifySaveFirst")}
             />
+          </div>
+        </BentoFormSection>
+
+        {/* Models Section — one or more models with a single default. */}
+        <BentoFormSection
+          icon={IconStack2}
+          tone="violet"
+          title={t("forms.llm.modelsTitle", { defaultValue: "Models" })}
+          description={t("forms.llm.modelsDesc", {
+            defaultValue:
+              "Select one or more models for this instance and mark one as the default — the default is the model used across the platform.",
+          })}
+        >
+          <div className="w-full">
+            <FormLabel>{t("forms.llm.modelsLabel", { defaultValue: "Available models" })}</FormLabel>
+            <p className="mb-2 text-sm text-muted-foreground">
+              {t("forms.llm.modelsHelp", {
+                defaultValue: "Star a model to make it the default. The default must be one of the selected models.",
+              })}
+            </p>
+            <LlmModelMultiSelect
+              selected={selectedModels}
+              defaultModel={defaultModel}
+              onChange={handleModelsChange}
+              options={modelList?.models ?? []}
+              isLoading={modelsLoading}
+              source={modelList?.source}
+              onOpen={() => refetchModels()}
+            />
+            {selectedModels.length === 0 && (
+              <p className="mt-2 text-sm font-medium text-destructive">
+                {t("forms.llm.modelsRequired", { defaultValue: "Select at least one model." })}
+              </p>
+            )}
           </div>
         </BentoFormSection>
 

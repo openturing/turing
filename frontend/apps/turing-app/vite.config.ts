@@ -56,6 +56,24 @@ export default defineConfig({
         target: "http://localhost:2700",
         changeOrigin: true,
       },
+      // GraphiQL is served by the backend (spring.graphql.graphiql.path
+      // = /graphiql) and issues its queries to /graphql. Neither is under
+      // /api, so without these the dev server (5173) would resolve them to
+      // the SPA index.html and the embedded explorer would be blank.
+      //
+      // changeOrigin stays FALSE here on purpose: with it on, the Host header
+      // becomes localhost:2700, so Spring builds absolute redirects/URLs
+      // pointing at :2700. The iframe then navigates cross-origin (top page is
+      // :5173) and the backend's X-Frame-Options: SAMEORIGIN refuses to frame
+      // it. Keeping the original Host keeps every GraphiQL URL same-origin.
+      "/graphiql": {
+        target: "http://localhost:2700",
+        changeOrigin: false,
+      },
+      "/graphql": {
+        target: "http://localhost:2700",
+        changeOrigin: false,
+      },
       "/api": {
         target: "http://localhost:2700",
         changeOrigin: true,

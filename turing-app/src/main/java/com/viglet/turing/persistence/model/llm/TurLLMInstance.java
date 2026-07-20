@@ -88,6 +88,19 @@ public class TurLLMInstance implements Serializable, VigletTenantOwnedInfra {
 	@Column
 	private String modelName;
 
+	/**
+	 * Comma-separated list of models this instance may serve. {@code modelName}
+	 * stays the single <em>default</em> model consumed everywhere the platform
+	 * does not (yet) support multiple models per instance; this column simply
+	 * records the wider set the operator selected so it can be surfaced (e.g. the
+	 * gateway model picker) without changing the default-model contract. Null or
+	 * blank on legacy rows means "only {@code modelName}".
+	 *
+	 * @since 2026.3.4
+	 */
+	@Column
+	private String modelNames;
+
 	@Column
 	private Double temperature;
 

@@ -1,9 +1,12 @@
-# Last task number — `T748` · next block letter — `BA`
+# Last task number — `T749` · next block letter — `BB`
 
 > **Single source of truth for the next free task number.** The next new task is
-> `T749`; after assigning it, bump the number above and the log line below.
+> `T750`; after assigning it, bump the number above and the log line below.
 >
-> **Next block letter — `BA`** (Block **AZ** = Governed LLM Gateway —
+> **Next block letter — `BB`** (Block **BA** = Multi-model LLM instance —
+> `TurLLMInstance.modelNames` CSV superset + `modelName` stays the single default;
+> `LlmModelMultiSelect` + dedicated Models card on the instance form, T749,
+> created 2026-07-20; Block **AZ** = Governed LLM Gateway —
 > OpenAI-compatible governed egress: inbound `/v1/*` seam over the existing provider
 > factory + virtual keys, per-key spend/budget/rate-limit reusing the token-usage +
 > `TurChatCostBudgetGate` governance, `model`-name/header routing into agent/SN/
@@ -70,6 +73,7 @@ number" looked free but wasn't. Grepping three files (`ROADMAP.md`,
 
 ## Log (most recent first)
 
+- **T749 SHIPPED** (Block BA — multi-model LLM instance: modelNames CSV superset + modelName default; LlmModelMultiSelect + Models card) — 2026-07-20.
 - **T746 SHIPPED** (Block AZ §XLIX — gateway traffic → eval/distillation bridge: TurGatewayTrafficCaptureService captures base+router turns as TurEvalDataset canonical rows (importCanonicalRows/append; opt-in turing.gateway.capture-traffic; referenceAnswer material, expectedOutcome ANY, gateway-traffic tag) fed into base/router complete; GET /api/gateway/traffic + POST /traffic/distill → propose-only distillForReview (never auto-applied); TurGatewayTrafficCaptureServiceTest 4) — 2026-07-20. CLOSES Block AZ (T740-T748 all shipped).
 - **T745 SHIPPED** (Block AZ §XLIX — router: turing-router:<strategy>/<ids> model via TurGatewayRouterService; rr (in-mem counter) / latency (EWMA) / failover strategies; orderedCandidates → routerAnswer walks pick+fallback chain, records winner latency+spend; in-memory, no entity; TurGatewayRouterServiceTest 6) — 2026-07-20.
 - **T748 SHIPPED** (Block AZ §XLIX — bento gateway admin: virtual-key CRUD on TurGatewayAdminAPI (GET/POST/PUT/DELETE /api/gateway/keys + /rotate; KeyView hides secret; raw key once in CreatedKey); /bento/gateway page (BentoHero + BentoFormSection: create form + keys table rotate/revoke + spend dashboard + OpenAI playground curl); gateway model/service/queries + i18n en+pt + route + nav; TurGatewayAdminAPITest 4; tsc clean; 52 bento tests) — 2026-07-20. CLOSES Block AZ committed scope (T740-T744,T747,T748); T745/T746 remain 💭.

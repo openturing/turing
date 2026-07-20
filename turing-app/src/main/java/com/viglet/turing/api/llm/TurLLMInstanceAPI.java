@@ -161,6 +161,7 @@ public class TurLLMInstanceAPI {
             turLLMInstanceEdit.setUrl(turLLMInstance.getUrl());
             turLLMInstanceEdit.setEnabled(turLLMInstance.getEnabled());
             turLLMInstanceEdit.setModelName(turLLMInstance.getModelName());
+            turLLMInstanceEdit.setModelNames(turLLMInstance.getModelNames());
             turLLMInstanceEdit.setTemperature(turLLMInstance.getTemperature());
             turLLMInstanceEdit.setTopK(turLLMInstance.getTopK());
             turLLMInstanceEdit.setTopP(turLLMInstance.getTopP());
