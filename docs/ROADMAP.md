@@ -30,8 +30,7 @@
 > and **shipped** (see [CHANGELOG.md](CHANGELOG.md)); the unification (T752–T758) is
 > gated on the T752 ADR because it touches the RAG / vector-store read path. Design → §L.
 
-**Phase 2 — unify `TurEmbeddingModel` into the LLM instance (gated on the T752 ADR):**
-- 📋 **T752** (deps: T750) **ADR — one entity for every model kind** — decide the unified shape (extend `TurLLMInstance` vs a renamed `TurModelInstance`), how the in-process ONNX embedding modes (`TRANSFORMERS_LOCAL` / `HUGGINGFACE`) become provider types/vendors, per-kind default-model columns (chat = `modelName`, an embedding default, a rerank default), and the backward-compat + exchange story. Deliverable = ADR 0004 + §L.3; no code. → §L.3
+**Phase 2 — unify `TurEmbeddingModel` into the LLM instance (ADR 0004 accepted, T752):**
 - 💭 **T753** (deps: T752) **Unified schema + entity** — fold the embedding-serving fields (embedding default `modelReference`, `modelPath` / `tokenizerPath` / `batchSize`, detected dimensions) and the per-kind default columns onto the unified entity; new idempotent Liquibase file; keep the `embedding_model` table until T755 migrates it. → §L.3
 - 💭 **T754** (deps: T753) **Local/HF ONNX as vendors** — model `TRANSFORMERS_LOCAL` + `HUGGINGFACE` as `TurLLMVendor`s over the existing local/HF embedding factories so they live on the unified entity instead of the `providerType` sentinel. → §L.3
 - 💭 **T755** (deps: T753, T754) **Data migration** — move existing `embedding_model` rows onto the unified entity (Liquibase data migration + one-time reconciliation): instance-backed rows collapse into their instance's embedding default; local/HF rows become their own unified instances. → §L.3

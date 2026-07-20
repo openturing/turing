@@ -2563,7 +2563,13 @@ bridge — all opt-in behind `turing.gateway.enabled` (default off).
    two in-process ONNX modes (`TRANSFORMERS_LOCAL`, `HUGGINGFACE`) have no vendor
    connection at all.
 
-### L.3 Unifying `TurEmbeddingModel` into the LLM instance (T752–T758)
+### L.3 Unifying `TurEmbeddingModel` into the LLM instance (T753–T758)
+
+> **Decided in [ADR 0004](adr/0004-unified-model-entity.md) (T752, accepted
+> 2026-07-20).** Keep the `TurLLMInstance` name; add a nullable default model
+> name per kind; fold the embedding-serving fields; ONNX modes become vendors;
+> id-preserving non-destructive migration. The rationale below is retained for
+> the still-unshipped T753–T758.
 
 The end state: **one entity represents a model-provider instance** (a vendor
 connection with a key/URL + generation params) that can serve models of any
