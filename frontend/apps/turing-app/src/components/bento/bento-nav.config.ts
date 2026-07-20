@@ -2,6 +2,7 @@ import { ROUTES } from "@/app/routes.const";
 import { useCurrentUser } from "@/contexts/user.context";
 import type { Icon as TablerIcon } from "@tabler/icons-react";
 import {
+  IconApi,
   IconBraces,
   IconBrandGraphql,
   IconCode,
@@ -151,6 +152,7 @@ export const BENTO_NAV_ITEMS: readonly BentoNavItem[] = [
   // standalone card duplicated the same surface on the Generative AI hub.
   { id: "skills", titleKey: "home.features.skills.title", descriptionKey: "home.features.skills.description", icon: IconSparkles, section: "generativeAi", tone: "violet", bentoRoute: ROUTES.BENTO_SKILL, consoleRoute: ROUTES.SKILL_ROOT },
   { id: "aiAnalytics", titleKey: "home.features.aiAnalytics.title", descriptionKey: "home.features.aiAnalytics.description", icon: IconReportAnalytics, section: "generativeAi", tone: "indigo", bentoRoute: ROUTES.BENTO_AI_ANALYTICS, consoleRoute: ROUTES.AI_ANALYTICS_ROOT },
+  { id: "gateway", titleKey: "gateway.title", descriptionKey: "gateway.description", icon: IconApi, section: "generativeAi", tone: "indigo", bentoRoute: ROUTES.BENTO_GATEWAY, consoleRoute: ROUTES.BENTO_GATEWAY, privilege: "LLM_VIEW" },
   // Chat is intentionally NOT a top-level card here — you enter chat from a
   // specific surface: the AI Agent card (opens `/bento/chat/agent/:id`) or the
   // Persona card (`/bento/chat/persona/:id`), and the home overview keeps its

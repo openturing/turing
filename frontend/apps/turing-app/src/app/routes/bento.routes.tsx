@@ -45,6 +45,7 @@ const BentoEmbeddingModelListPage = lazy(() => import("../bento/embedding/bento.
 const BentoEmbeddingModelPage = lazy(() => import("../bento/embedding/bento.embedding.page"));
 const BentoTokenInstanceListPage = lazy(() => import("../bento/token/bento.token.instance.list.page"));
 const BentoTokenInstancePage = lazy(() => import("../bento/token/bento.token.instance.page"));
+const BentoGatewayPage = lazy(() => import("../bento/gateway/bento.gateway.page"));
 const BentoIntegrationInstanceListPage = lazy(() => import("../bento/integration/bento.integration.instance.list.page"));
 const BentoIntegrationInstancePage = lazy(() => import("../bento/integration/bento.integration.instance.page"));
 const BentoMcpServerListPage = lazy(() => import("../bento/mcp/bento.mcp.server.list.page"));
@@ -229,6 +230,7 @@ export const BentoRoutes = (
     <Route path="token" element={<Navigate to={ROUTES.BENTO_TOKEN_INSTANCE} replace />} />
     <Route path="token/instance" element={<BentoTokenInstanceListPage />} />
     <Route path="token/instance/:id" element={<BentoTokenInstancePage />} />
+    <Route path="gateway" element={<BentoGatewayPage />} />
     <Route path="integration" element={<Navigate to={ROUTES.BENTO_INTEGRATION_INSTANCE} replace />} />
     <Route path="integration/instance" element={<BentoIntegrationInstanceListPage />} />
     {/* Splat: Turing-owned settings at the base, Dumont's remote (relative) routes under it. */}

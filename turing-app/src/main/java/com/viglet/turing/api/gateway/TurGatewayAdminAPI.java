@@ -16,14 +16,24 @@ import java.time.format.DateTimeFormatter;
 import java.util.List;
 
 import org.springframework.security.access.annotation.Secured;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.viglet.turing.api.exception.TurNotFoundException;
+import com.viglet.turing.genai.gateway.TurGatewayKeyService;
+import com.viglet.turing.genai.gateway.TurGatewayKeyService.GeneratedKey;
 import com.viglet.turing.genai.gateway.TurGatewayUsageService;
 import com.viglet.turing.genai.gateway.TurGatewayUsageService.KeyBudgetStatus;
 import com.viglet.turing.genai.gateway.TurGatewayUsageService.KeyUsageRow;
+import com.viglet.turing.persistence.model.gateway.TurGatewayKey;
+import com.viglet.turing.persistence.repository.gateway.TurGatewayKeyRepository;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -45,9 +55,105 @@ public class TurGatewayAdminAPI {
     private static final int DEFAULT_WINDOW_DAYS = 30;
 
     private final TurGatewayUsageService usageService;
+    private final TurGatewayKeyService keyService;
+    private final TurGatewayKeyRepository keyRepository;
 
-    public TurGatewayAdminAPI(TurGatewayUsageService usageService) {
+    public TurGatewayAdminAPI(TurGatewayUsageService usageService,
+            TurGatewayKeyService keyService,
+            TurGatewayKeyRepository keyRepository) {
         this.usageService = usageService;
+        this.keyService = keyService;
+        this.keyRepository = keyRepository;
+    }
+
+    // ---- Virtual-key CRUD (T748) -----------------------------------------
+
+    /** Safe projection of a virtual key — never carries the secret or its hash. */
+    public record KeyView(String id, String name, String keyPrefix, String allowedModels,
+            String tenantId, int enabled, LocalDateTime expiresAt, LocalDateTime creationDate,
+            Double monthlyBudgetUsd, String budgetDowngradeLlmId, Double hardMonthlyCapUsd,
+            Integer rateLimitPerMinute) {
+    }
+
+    /** Create/update payload (scope + budget + rate limit; secret never accepted). */
+    public record KeyUpsertRequest(String name, String allowedModels, LocalDateTime expiresAt,
+            Double monthlyBudgetUsd, String budgetDowngradeLlmId, Double hardMonthlyCapUsd,
+            Integer rateLimitPerMinute, Integer enabled) {
+    }
+
+    /** Create/rotate response — the raw {@code sk-turing-...} key is shown exactly once. */
+    public record CreatedKey(KeyView key, String rawKey) {
+    }
+
+    @Operation(summary = "List virtual keys (never returns the secret)")
+    @GetMapping("/keys")
+    @Secured({"ROLE_ADMIN"})
+    public List<KeyView> listKeys() {
+        return keyRepository.findAll().stream().map(TurGatewayAdminAPI::toView).toList();
+    }
+
+    @Operation(summary = "Create a virtual key — raw key returned once")
+    @PostMapping("/keys")
+    @Secured({"ROLE_ADMIN"})
+    public CreatedKey createKey(@RequestBody KeyUpsertRequest request) {
+        GeneratedKey generated = keyService.create(request.name(), request.allowedModels(),
+                request.expiresAt(), null);
+        TurGatewayKey key = generated.key();
+        applyBudget(key, request);
+        keyRepository.save(key);
+        return new CreatedKey(toView(key), generated.rawKey());
+    }
+
+    @Operation(summary = "Update a virtual key's scope / budget / rate limit")
+    @PutMapping("/keys/{id}")
+    @Secured({"ROLE_ADMIN"})
+    public KeyView updateKey(@PathVariable String id, @RequestBody KeyUpsertRequest request) {
+        TurGatewayKey key = keyRepository.findById(id)
+                .orElseThrow(() -> TurNotFoundException.of("Gateway key", id));
+        if (request.name() != null && !request.name().isBlank()) {
+            key.setName(request.name());
+        }
+        key.setAllowedModels(request.allowedModels());
+        key.setExpiresAt(request.expiresAt());
+        if (request.enabled() != null) {
+            key.setEnabled(request.enabled());
+        }
+        applyBudget(key, request);
+        key.setModificationDate(LocalDateTime.now());
+        keyRepository.save(key);
+        return toView(key);
+    }
+
+    @Operation(summary = "Rotate a virtual key's secret — new raw key returned once")
+    @PostMapping("/keys/{id}/rotate")
+    @Secured({"ROLE_ADMIN"})
+    public CreatedKey rotateKey(@PathVariable String id) {
+        TurGatewayKey key = keyRepository.findById(id)
+                .orElseThrow(() -> TurNotFoundException.of("Gateway key", id));
+        GeneratedKey rotated = keyService.rotate(key);
+        return new CreatedKey(toView(rotated.key()), rotated.rawKey());
+    }
+
+    @Operation(summary = "Revoke (delete) a virtual key")
+    @DeleteMapping("/keys/{id}")
+    @Secured({"ROLE_ADMIN"})
+    public boolean deleteKey(@PathVariable String id) {
+        keyRepository.findById(id).ifPresent(keyRepository::delete);
+        return true;
+    }
+
+    private void applyBudget(TurGatewayKey key, KeyUpsertRequest request) {
+        key.setMonthlyBudgetUsd(request.monthlyBudgetUsd());
+        key.setBudgetDowngradeLlmId(request.budgetDowngradeLlmId());
+        key.setHardMonthlyCapUsd(request.hardMonthlyCapUsd());
+        key.setRateLimitPerMinute(request.rateLimitPerMinute());
+    }
+
+    private static KeyView toView(TurGatewayKey k) {
+        return new KeyView(k.getId(), k.getName(), k.getKeyPrefix(), k.getAllowedModels(),
+                k.getTenantId(), k.getEnabled(), k.getExpiresAt(), k.getCreationDate(),
+                k.getMonthlyBudgetUsd(), k.getBudgetDowngradeLlmId(), k.getHardMonthlyCapUsd(),
+                k.getRateLimitPerMinute());
     }
 
     @Operation(summary = "Per-virtual-key spend / tokens / requests over a window")

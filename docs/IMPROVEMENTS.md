@@ -2530,6 +2530,12 @@ only; the field logic, validation, and save mutations stay exactly as they are.
 
 ## XLIX. Governed LLM Gateway — OpenAI-compatible governed egress (Block AZ)
 
+> **Status (2026-07-20):** committed scope **shipped** — Phases 1–4 (T740–T744,
+> T747, T748); see `CHANGELOG.md` for what landed. The rationale below is retained
+> for the two still-open 💭 bets: **T745** (generic least-cost/least-latency router)
+> and **T746** (gateway traffic → eval/distillation bridge, "the gateway that
+> learns"). The shipped-phase prose is history — do not re-expand it here.
+
 LiteLLM's whole product is one idea: point your apps at a proxy that **speaks the
 OpenAI wire protocol**, and get spend tracking, virtual keys, budgets, rate
 limits, routing and fallback for free — with zero client code change. Turing today

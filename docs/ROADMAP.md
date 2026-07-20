@@ -125,7 +125,7 @@
 
 **Phase 4 — surfacing + admin:**
 - ✅ **T747** shipped — see CHANGELOG.
-- 📋 **T748** (deps: T741, T742, T747) **Bento gateway admin** — `/bento/gateway`: virtual-key CRUD (create / rotate / revoke, scope + budget), per-key spend dashboard, and an OpenAI-compat playground with a copy-paste `curl`/SDK snippet; built on `BentoListPage` + `BentoEntityShell`. → §XLIX
+- ✅ **T748** shipped — see CHANGELOG. **Block AZ committed scope complete (T740–T744, T747, T748); only 💭 T745/T746 remain.**
 
 ## Block AV — POST-native search & link-free response contract (§XLV)
 

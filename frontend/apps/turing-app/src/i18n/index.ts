@@ -22,6 +22,7 @@ import enEvalStudio from "./locales/en/evalStudio.json";
 import enExchange from "./locales/en/exchange.json";
 import enForms from "./locales/en/forms.json";
 import enGit from "./locales/en/git.json";
+import enGateway from "./locales/en/gateway.json";
 import enGlobalSettings from "./locales/en/globalSettings.json";
 import enGraphql from "./locales/en/graphql.json";
 import enHome from "./locales/en/home.json";
@@ -73,6 +74,7 @@ import ptEvalStudio from "./locales/pt/evalStudio.json";
 import ptExchange from "./locales/pt/exchange.json";
 import ptForms from "./locales/pt/forms.json";
 import ptGit from "./locales/pt/git.json";
+import ptGateway from "./locales/pt/gateway.json";
 import ptGlobalSettings from "./locales/pt/globalSettings.json";
 import ptGraphql from "./locales/pt/graphql.json";
 import ptHome from "./locales/pt/home.json";
@@ -112,7 +114,7 @@ const en = {
   ...enAiAgent, ...enAiAuthoring, ...enIntent, ...enAnalyticsIntent, ...enApiToken, ...enAdmin, ...enAccount,
   ...enExchange, ...enGraphql, ...enLogging, ...enTokenUsage, ...enParkedConversations, ...enCostGovernance,
   ...enSystemInfo, ...enGlobalSettings, ...enForms, ...enSearch, ...enAnn, ...enCapabilityMatrix,
-  ...enPage, ...enGit, ...enMarketplace, ...enPersona, ...enRoutine, ...enWebhook,
+  ...enPage, ...enGit, ...enGateway, ...enMarketplace, ...enPersona, ...enRoutine, ...enWebhook,
   ...enVoiceKiosk, ...enBento, ...enEvalStudio, ...enSkill, ...enThesaurus,
 };
 
@@ -123,7 +125,7 @@ const pt = {
   ...ptAiAgent, ...ptAiAuthoring, ...ptIntent, ...ptAnalyticsIntent, ...ptApiToken, ...ptAdmin, ...ptAccount,
   ...ptExchange, ...ptGraphql, ...ptLogging, ...ptTokenUsage, ...ptParkedConversations, ...ptCostGovernance,
   ...ptSystemInfo, ...ptGlobalSettings, ...ptForms, ...ptSearch, ...ptAnn, ...ptCapabilityMatrix,
-  ...ptPage, ...ptGit, ...ptMarketplace, ...ptPersona, ...ptRoutine, ...ptWebhook,
+  ...ptPage, ...ptGit, ...ptGateway, ...ptMarketplace, ...ptPersona, ...ptRoutine, ...ptWebhook,
   ...ptVoiceKiosk, ...ptBento, ...ptEvalStudio, ...ptSkill, ...ptThesaurus,
 };
 

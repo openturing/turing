@@ -84,6 +84,8 @@ export const ROUTES = {
   BENTO_EMBEDDING_MODEL_INSTANCE: "/bento/embedding/instance",
   BENTO_TOKEN: "/bento/token",
   BENTO_TOKEN_INSTANCE: "/bento/token/instance",
+  // Block AZ (§XLIX) — Governed LLM Gateway admin.
+  BENTO_GATEWAY: "/bento/gateway",
   BENTO_INTEGRATION: "/bento/integration",
   BENTO_INTEGRATION_INSTANCE: "/bento/integration/instance",
   BENTO_MCP: "/bento/mcp",

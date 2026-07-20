@@ -254,6 +254,12 @@ export const queryKeys = {
     list: () => [...queryKeys.tokenInstances.all(), 'list'] as const,
     detail: (id: string) => [...queryKeys.tokenInstances.all(), 'detail', id] as const,
   },
+  // Block AZ (§XLIX) — Governed LLM Gateway virtual keys + per-key spend.
+  gateway: {
+    all: () => ['gateway'] as const,
+    keys: () => [...queryKeys.gateway.all(), 'keys'] as const,
+    usage: () => [...queryKeys.gateway.all(), 'usage'] as const,
+  },
   // Block AQ (§XL) — Thesaurus (Knowledge Base / microthesauri / terms) admin.
   thesaurus: {
     all: () => ['thesaurus'] as const,
