@@ -120,7 +120,7 @@
 
 **Phase 3 — the intelligence differentiators (the moat LiteLLM can't copy):**
 - ✅ **T744** shipped — see CHANGELOG.
-- 💭 **T745** (deps: T742, T744) **Router — least-cost / least-latency / fallback** — first-class `turing-router:*` model that load-balances (round-robin / least-busy / latency-based) across N deployments of a model with fallback chains, generalizing the budget-downgrade logic into a per-key routing policy. The most genuinely-new piece; least reuse. → §XLIX
+- ✅ **T745** shipped — see CHANGELOG.
 - 💭 **T746** (deps: T744) **Gateway traffic → eval/distillation bridge ("the gateway that learns")** — capture inbound traffic as `TurEvalDataset` rows (reuse Block AJ graders / `LlmJudge`), measure per-model quality on real production traffic, and recommend/auto-route low-risk traffic to the embedded or a distilled model via `TurOpenAiDistillationService`. → §XLIX
 
 **Phase 4 — surfacing + admin:**

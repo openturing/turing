@@ -100,6 +100,7 @@ public class TurGatewayLlmService {
     private final TurModerationService moderationService;
     private final TurGatewayModelRouter modelRouter;
     private final TurGatewayNativeToolsService nativeToolsService;
+    private final TurGatewayRouterService routerService;
     private final ObjectMapper objectMapper;
 
     public TurGatewayLlmService(TurLLMInstanceRepository llmInstanceRepository,
@@ -114,6 +115,7 @@ public class TurGatewayLlmService {
             TurModerationService moderationService,
             TurGatewayModelRouter modelRouter,
             TurGatewayNativeToolsService nativeToolsService,
+            TurGatewayRouterService routerService,
             ObjectMapper objectMapper) {
         this.llmInstanceRepository = llmInstanceRepository;
         this.llmModelFactory = llmModelFactory;
@@ -127,7 +129,36 @@ public class TurGatewayLlmService {
         this.moderationService = moderationService;
         this.modelRouter = modelRouter;
         this.nativeToolsService = nativeToolsService;
+        this.routerService = routerService;
         this.objectMapper = objectMapper;
+    }
+
+    /**
+     * T745 — execute a {@code turing-router:*} turn: walk the ordered candidate
+     * deployments (per the router strategy), returning the first success and
+     * feeding the observed latency back for least-latency routing. Records spend
+     * on the winning instance. Throws the last error when every candidate fails.
+     */
+    private String routerAnswer(ChatCompletionRequest request, String username,
+            TurGatewayOptions options, TurGatewayKey key) {
+        List<TurLLMInstance> candidates = routerService.orderedCandidates(request.model());
+        RuntimeException last = null;
+        for (TurLLMInstance instance : candidates) {
+            try {
+                ChatModel chatModel = buildChatModel(instance);
+                Prompt prompt = new Prompt(buildPromptMessages(request.messages(), options));
+                long startedAt = System.currentTimeMillis();
+                ChatResponse response = chatModel.call(prompt);
+                routerService.recordLatency(instance.getId(), System.currentTimeMillis() - startedAt);
+                tokenUsageService.recordUsage(instance, response, username, null, STAGE_GATEWAY, keyId(key));
+                return extractText(response);
+            } catch (RuntimeException e) {
+                last = e;
+                log.warn("[Gateway] router candidate {} failed, trying next: {}",
+                        instance.getId(), e.getMessage());
+            }
+        }
+        throw last != null ? last : new IllegalStateException("turing-router: all candidates failed");
     }
 
     /** T747 — map wire messages to executor chat items (for the native-tool vendor services). */
@@ -321,6 +352,16 @@ public class TurGatewayLlmService {
             return completionOf(request.model(), routed, new Usage(0, 0, 0));
         }
 
+        // T745 — turing-router: load-balance across deployments with fallback.
+        if (routerService.isRouter(request.model())) {
+            String text = routerAnswer(request, username, options, key);
+            guardOutput(options, text);
+            if (cacheKey != null) {
+                responseCache.put(cacheKey, text);
+            }
+            return completionOf(request.model(), text, new Usage(0, 0, 0));
+        }
+
         TurLLMInstance instance = budgetGate.resolveInstanceForKey(key, resolveChatInstance(request.model()));
 
         // T747 — x-turing-tools: enable F.15 provider-native tools on the base model.
@@ -392,6 +433,15 @@ public class TurGatewayLlmService {
                 responseCache.put(cacheKey, routed);
             }
             return replayCached(id, created, request.model(), routed);
+        }
+
+        // T745 — turing-router: pick + fallback, blocking, replayed as one chunk.
+        if (routerService.isRouter(request.model())) {
+            String text = routerAnswer(request, username, options, key);
+            if (cacheKey != null) {
+                responseCache.put(cacheKey, text);
+            }
+            return replayCached(id, created, request.model(), text);
         }
 
         TurLLMInstance instance = budgetGate.resolveInstanceForKey(key, resolveChatInstance(request.model()));
