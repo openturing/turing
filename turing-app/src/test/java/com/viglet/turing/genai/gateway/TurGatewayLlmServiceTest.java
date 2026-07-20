@@ -58,11 +58,15 @@ class TurGatewayLlmServiceTest {
     private TurGatewayRateLimiter gatewayRateLimiter;
     @Mock
     private com.viglet.turing.service.llm.budget.TurChatCostBudgetGate budgetGate;
+    @Mock
+    private TurGatewayResponseCache responseCache;
+    @Mock
+    private com.viglet.turing.genai.safety.TurModerationService moderationService;
 
     private TurGatewayLlmService service() {
         return new TurGatewayLlmService(llmInstanceRepository, llmModelFactory, secretCryptoService,
                 tokenUsageService, globalSettingsService, gatewayKeyService, gatewayRateLimiter,
-                budgetGate, new ObjectMapper());
+                budgetGate, responseCache, moderationService, new ObjectMapper());
     }
 
     private TurLLMInstance instance(String id, String modelName, int enabled) {
@@ -125,6 +129,19 @@ class TurGatewayLlmServiceTest {
         assertThatThrownBy(() -> service().resolveChatInstance("mystery"))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("Unknown model");
+    }
+
+    @Test
+    void guardrailsBlockFlaggedInput() {
+        when(moderationService.moderateAlways(org.mockito.ArgumentMatchers.anyString()))
+                .thenReturn(new com.viglet.turing.genai.safety.TurModerationService.Verdict(
+                        true, List.of("violence")));
+        var request = new TurOpenAiWire.ChatCompletionRequest("gpt-4o",
+                List.of(new TurOpenAiWire.WireMessage("user", "bad input")),
+                false, null, null, null, null);
+
+        assertThatThrownBy(() -> service().complete(request, "u", new TurGatewayOptions(false, true)))
+                .isInstanceOf(TurGatewayGuardrailException.class);
     }
 
     @Test

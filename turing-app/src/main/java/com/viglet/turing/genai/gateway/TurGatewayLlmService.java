@@ -12,6 +12,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.Collectors;
 
 import org.springframework.ai.chat.messages.AssistantMessage;
 import org.springframework.ai.chat.messages.Message;
@@ -37,6 +38,7 @@ import com.viglet.turing.genai.gateway.TurOpenAiWire.ModelList;
 import com.viglet.turing.genai.gateway.TurOpenAiWire.ModelObject;
 import com.viglet.turing.genai.gateway.TurOpenAiWire.Usage;
 import com.viglet.turing.genai.gateway.TurOpenAiWire.WireMessage;
+import com.viglet.turing.genai.safety.TurModerationService;
 import com.viglet.turing.persistence.model.gateway.TurGatewayKey;
 import com.viglet.turing.persistence.model.llm.TurLLMInstance;
 import com.viglet.turing.persistence.repository.llm.TurLLMInstanceRepository;
@@ -91,6 +93,8 @@ public class TurGatewayLlmService {
     private final TurGatewayKeyService gatewayKeyService;
     private final TurGatewayRateLimiter gatewayRateLimiter;
     private final TurChatCostBudgetGate budgetGate;
+    private final TurGatewayResponseCache responseCache;
+    private final TurModerationService moderationService;
     private final ObjectMapper objectMapper;
 
     public TurGatewayLlmService(TurLLMInstanceRepository llmInstanceRepository,
@@ -101,6 +105,8 @@ public class TurGatewayLlmService {
             TurGatewayKeyService gatewayKeyService,
             TurGatewayRateLimiter gatewayRateLimiter,
             TurChatCostBudgetGate budgetGate,
+            TurGatewayResponseCache responseCache,
+            TurModerationService moderationService,
             ObjectMapper objectMapper) {
         this.llmInstanceRepository = llmInstanceRepository;
         this.llmModelFactory = llmModelFactory;
@@ -110,6 +116,8 @@ public class TurGatewayLlmService {
         this.gatewayKeyService = gatewayKeyService;
         this.gatewayRateLimiter = gatewayRateLimiter;
         this.budgetGate = budgetGate;
+        this.responseCache = responseCache;
+        this.moderationService = moderationService;
         this.objectMapper = objectMapper;
     }
 
@@ -135,6 +143,49 @@ public class TurGatewayLlmService {
 
     private static String keyId(TurGatewayKey key) {
         return key == null ? null : key.getId();
+    }
+
+    /**
+     * T743 / §XLIX — {@code x-turing-guardrails: strict} input moderation over the
+     * concatenated user turns. Uses {@code moderateAlways} so it runs regardless
+     * of the global moderation enable flag (fail-open when no moderation provider
+     * is configured). Flagged input → {@link TurGatewayGuardrailException} (400).
+     */
+    private void guardInput(TurGatewayOptions options, List<WireMessage> messages) {
+        if (!options.guardrails() || messages == null) {
+            return;
+        }
+        String userText = messages.stream()
+                .filter(m -> m.content() != null
+                        && !ROLE_ASSISTANT.equals(m.role()) && !ROLE_SYSTEM.equals(m.role()))
+                .map(WireMessage::content)
+                .collect(Collectors.joining("\n"));
+        if (userText.isBlank()) {
+            return;
+        }
+        var verdict = moderationService.moderateAlways(userText);
+        if (verdict.flagged()) {
+            throw new TurGatewayGuardrailException("Request input flagged by guardrails", verdict.categories());
+        }
+    }
+
+    /** T743 — {@code x-turing-guardrails: strict} output moderation (blocking path only). */
+    private void guardOutput(TurGatewayOptions options, String text) {
+        if (!options.guardrails() || text == null || text.isBlank()) {
+            return;
+        }
+        var verdict = moderationService.moderateAlways(text);
+        if (verdict.flagged()) {
+            throw new TurGatewayGuardrailException("Model output flagged by guardrails", verdict.categories());
+        }
+    }
+
+    /** T743 — replay a cache-hit as a single content chunk + terminator (streaming path). */
+    private Flux<ServerSentEvent<String>> replayCached(String id, long created, String model, String text) {
+        ServerSentEvent<String> content = chunkFrame(id, created, model,
+                new Delta(ROLE_ASSISTANT, text), null);
+        ServerSentEvent<String> stop = chunkFrame(id, created, model, new Delta(null, ""), FINISH_STOP);
+        return Flux.just(content, stop, ServerSentEvent.<String>builder(DONE).build());
     }
 
     /**
@@ -180,9 +231,20 @@ public class TurGatewayLlmService {
      * Blocking {@code chat.completion}. Resolves the instance, calls the model
      * once and assembles a single OpenAI completion object with usage.
      */
-    public ChatCompletion complete(ChatCompletionRequest request, String username) {
+    public ChatCompletion complete(ChatCompletionRequest request, String username, TurGatewayOptions options) {
         enforceScope(request.model());
         TurGatewayKey key = applyPerKeyPreCall();
+        guardInput(options, request.messages());
+
+        String cacheKey = options.semanticCache()
+                ? responseCache.keyFor(request.model(), request.messages()) : null;
+        if (cacheKey != null) {
+            String cached = responseCache.get(cacheKey);
+            if (cached != null) {
+                return completionOf(request.model(), cached, new Usage(0, 0, 0));
+            }
+        }
+
         TurLLMInstance instance = budgetGate.resolveInstanceForKey(key, resolveChatInstance(request.model()));
         ChatModel chatModel = buildChatModel(instance);
         Prompt prompt = new Prompt(buildMessages(request.messages()));
@@ -191,11 +253,17 @@ public class TurGatewayLlmService {
         tokenUsageService.recordUsage(instance, response, username, null, STAGE_GATEWAY, keyId(key));
 
         String text = extractText(response);
-        Usage usage = extractUsage(response);
-        WireMessage message = new WireMessage(ROLE_ASSISTANT, text);
-        Choice choice = new Choice(0, message, FINISH_STOP);
+        guardOutput(options, text);
+        if (cacheKey != null) {
+            responseCache.put(cacheKey, text);
+        }
+        return completionOf(request.model(), text, extractUsage(response));
+    }
+
+    private ChatCompletion completionOf(String model, String text, Usage usage) {
+        Choice choice = new Choice(0, new WireMessage(ROLE_ASSISTANT, text), FINISH_STOP);
         return new ChatCompletion("chatcmpl-" + UUID.randomUUID(), OBJ_CHAT_COMPLETION,
-                nowEpochSeconds(), request.model(), List.of(choice), usage);
+                nowEpochSeconds(), model, List.of(choice), usage);
     }
 
     // ---- Chat completions (streaming SSE) --------------------------------
@@ -207,27 +275,52 @@ public class TurGatewayLlmService {
      * errors are surfaced as a readable final frame (the servlet stream is
      * already committed, so a JSON error body is no longer possible).
      */
-    public Flux<ServerSentEvent<String>> stream(ChatCompletionRequest request, String username) {
+    public Flux<ServerSentEvent<String>> stream(ChatCompletionRequest request, String username,
+            TurGatewayOptions options) {
         enforceScope(request.model());
         TurGatewayKey key = applyPerKeyPreCall();
+        // Input moderation blocks before any streaming starts. Output moderation
+        // is not applied to streamed tokens (they are already committed) — use
+        // the blocking endpoint for strict output guardrails.
+        guardInput(options, request.messages());
+
+        String id = "chatcmpl-" + UUID.randomUUID();
+        long created = nowEpochSeconds();
+
+        String cacheKey = options.semanticCache()
+                ? responseCache.keyFor(request.model(), request.messages()) : null;
+        if (cacheKey != null) {
+            String cached = responseCache.get(cacheKey);
+            if (cached != null) {
+                return replayCached(id, created, request.model(), cached);
+            }
+        }
+
         TurLLMInstance instance = budgetGate.resolveInstanceForKey(key, resolveChatInstance(request.model()));
         ChatModel chatModel = llmModelFactory.createStreamingChatModel(
                 instance, secretCryptoService.decrypt(instance.getApiKeyEncrypted()));
         Prompt prompt = new Prompt(buildMessages(request.messages()));
-        String id = "chatcmpl-" + UUID.randomUUID();
-        long created = nowEpochSeconds();
         AtomicReference<ChatResponse> last = new AtomicReference<>();
+        StringBuilder assembled = new StringBuilder();
 
         Flux<ServerSentEvent<String>> tokens = chatModel.stream(prompt)
                 .doOnNext(last::set)
-                .map(resp -> chunkFrame(id, created, request.model(),
-                        new Delta(null, extractText(resp)), null))
+                .map(resp -> {
+                    String token = extractText(resp);
+                    if (!token.isEmpty()) {
+                        assembled.append(token);
+                    }
+                    return chunkFrame(id, created, request.model(), new Delta(null, token), null);
+                })
                 .filter(frame -> frame != null);
 
         Flux<ServerSentEvent<String>> tail = Flux.defer(() -> {
             ChatResponse finalResponse = last.get();
             if (finalResponse != null) {
                 tokenUsageService.recordUsage(instance, finalResponse, username, null, STAGE_GATEWAY, keyId(key));
+            }
+            if (cacheKey != null) {
+                responseCache.put(cacheKey, assembled.toString());
             }
             ServerSentEvent<String> stop = chunkFrame(id, created, request.model(),
                     new Delta(null, ""), FINISH_STOP);

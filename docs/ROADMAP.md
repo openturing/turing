@@ -116,7 +116,7 @@
 
 **Phase 2 — reuse the governance half:**
 - ✅ **T742** shipped — see CHANGELOG.
-- 📋 **T743** (deps: T740) **Cross-cutting headers: semantic cache + guardrails** — `x-turing-cache: semantic` routes the response through `TurLlmCacheService`; `x-turing-guardrails: strict` applies `TurModerationService` in/out (+ optional `TurSecondOpinionService` dual-model consensus for critical keys). Stackable on any `model`. → §XLIX
+- ✅ **T743** shipped — see CHANGELOG.
 
 **Phase 3 — the intelligence differentiators (the moat LiteLLM can't copy):**
 - 📋 **T744** (deps: T740) **`model`-name routing into the Turing stack** — `turing-agent:<id>` runs the full agent via `TurAgentChatExecutor.execute()` (system prompt + tools + MCP + grounding mode); `turing-sn:<site>` returns RAG-grounded answers over a Semantic Navigation site (`TurSNGenAi` + reranker + citations); `turing-local:*` forces the `TurEmbeddedLlmProvider` ($0). Plus `x-turing-rag-site: <site>` = RAG-as-a-header on any base model. → §XLIX

@@ -48,4 +48,16 @@ public class TurGatewayProperty {
      * until the T741 virtual-key filter is in place.
      */
     private boolean requireVirtualKey = true;
+
+    /**
+     * T743 / §XLIX — TTL (seconds) for a gateway response cached via the
+     * {@code x-turing-cache: semantic} header. Default 300s.
+     */
+    private long cacheTtlSeconds = 300;
+
+    /**
+     * T743 / §XLIX — max entries in the gateway response cache (LRU-evicted past
+     * this bound). Default 1000.
+     */
+    private int cacheMaxEntries = 1000;
 }
