@@ -52,10 +52,12 @@ class TurGatewayLlmServiceTest {
     private TurLLMTokenUsageService tokenUsageService;
     @Mock
     private TurGlobalSettingsService globalSettingsService;
+    @Mock
+    private TurGatewayKeyService gatewayKeyService;
 
     private TurGatewayLlmService service() {
         return new TurGatewayLlmService(llmInstanceRepository, llmModelFactory, secretCryptoService,
-                tokenUsageService, globalSettingsService, new ObjectMapper());
+                tokenUsageService, globalSettingsService, gatewayKeyService, new ObjectMapper());
     }
 
     private TurLLMInstance instance(String id, String modelName, int enabled) {

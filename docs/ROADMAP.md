@@ -112,7 +112,7 @@
 
 **Phase 1 — inbound seam + passthrough parity:**
 - ✅ **T740** shipped — see CHANGELOG.
-- 📋 **T741** (deps: T740) **Virtual keys** — `TurGatewayKey` entity reusing `TurSecretCryptoService` for the secret; a bearer-`sk-turing-...` auth filter parallel to the existing Keycloak/httpBasic chain; per-key scope (allowed models, `@TenantId`, enabled/expiresAt); Liquibase. The "give a dev a key with $50/mo on gpt-4o only" primitive LiteLLM sells. → §XLIX
+- ✅ **T741** shipped — see CHANGELOG.
 
 **Phase 2 — reuse the governance half:**
 - 📋 **T742** (deps: T741) **Per-key spend + budget + rate-limit** — add a `keyId` column to `TurLLMTokenUsage` + a `findCostByKey` aggregation (mirrors the existing by-agent/tenant/model/stage queries); generalize `TurChatCostBudgetGate.resolveInstance` from per-agent to per-key (monthly cap, auto-downgrade LLM, hard kill-switch); per-key rate limit reusing `TurAnonymousAbuseRateLimitFilter`. → §XLIX

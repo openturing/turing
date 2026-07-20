@@ -86,6 +86,7 @@ public class TurGatewayLlmService {
     private final TurSecretCryptoService secretCryptoService;
     private final TurLLMTokenUsageService tokenUsageService;
     private final TurGlobalSettingsService globalSettingsService;
+    private final TurGatewayKeyService gatewayKeyService;
     private final ObjectMapper objectMapper;
 
     public TurGatewayLlmService(TurLLMInstanceRepository llmInstanceRepository,
@@ -93,13 +94,28 @@ public class TurGatewayLlmService {
             TurSecretCryptoService secretCryptoService,
             TurLLMTokenUsageService tokenUsageService,
             TurGlobalSettingsService globalSettingsService,
+            TurGatewayKeyService gatewayKeyService,
             ObjectMapper objectMapper) {
         this.llmInstanceRepository = llmInstanceRepository;
         this.llmModelFactory = llmModelFactory;
         this.secretCryptoService = secretCryptoService;
         this.tokenUsageService = tokenUsageService;
         this.globalSettingsService = globalSettingsService;
+        this.gatewayKeyService = gatewayKeyService;
         this.objectMapper = objectMapper;
+    }
+
+    /**
+     * T741 / §XLIX — enforce the authenticated virtual key's model allow-list.
+     * No-op in open mode (no key on the request thread). Throws
+     * {@link IllegalArgumentException} (→ 403-shaped OpenAI error) when the
+     * requested model is outside the key's scope.
+     */
+    private void enforceScope(String model) {
+        var key = TurGatewayContext.get();
+        if (key != null && !gatewayKeyService.isModelAllowed(key, model)) {
+            throw new IllegalArgumentException("Model not permitted for this key: " + model);
+        }
     }
 
     // ---- Model listing ----------------------------------------------------
@@ -133,6 +149,7 @@ public class TurGatewayLlmService {
      * once and assembles a single OpenAI completion object with usage.
      */
     public ChatCompletion complete(ChatCompletionRequest request, String username) {
+        enforceScope(request.model());
         TurLLMInstance instance = resolveChatInstance(request.model());
         ChatModel chatModel = buildChatModel(instance);
         Prompt prompt = new Prompt(buildMessages(request.messages()));
@@ -158,6 +175,7 @@ public class TurGatewayLlmService {
      * already committed, so a JSON error body is no longer possible).
      */
     public Flux<ServerSentEvent<String>> stream(ChatCompletionRequest request, String username) {
+        enforceScope(request.model());
         TurLLMInstance instance = resolveChatInstance(request.model());
         ChatModel chatModel = llmModelFactory.createStreamingChatModel(
                 instance, secretCryptoService.decrypt(instance.getApiKeyEncrypted()));
@@ -195,6 +213,7 @@ public class TurGatewayLlmService {
 
     /** {@code /v1/embeddings} over the resolved instance's embedding model. */
     public EmbeddingResponse embed(EmbeddingRequest request) {
+        enforceScope(request.model());
         TurLLMInstance instance = resolveChatInstance(request.model());
         EmbeddingModel embeddingModel = llmModelFactory.createEmbeddingModel(
                 instance, secretCryptoService.decrypt(instance.getApiKeyEncrypted()));
@@ -259,7 +278,6 @@ public class TurGatewayLlmService {
         return messages;
     }
 
-    @SuppressWarnings("unchecked")
     private List<String> normaliseInput(Object input) {
         if (input instanceof List<?> list) {
             List<String> out = new ArrayList<>(list.size());

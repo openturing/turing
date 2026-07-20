@@ -1,0 +1,60 @@
+databaseChangeLog:
+  - changeSet:
+      id: v2026.3.1.109-create-tur_gateway_key
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - tableExists:
+                tableName: tur_gateway_key
+      changes:
+        - createTable:
+            tableName: tur_gateway_key
+            remarks: "T741/§XLIX Governed LLM Gateway virtual key (sk-turing-...)."
+            columns:
+              - column:
+                  name: id
+                  type: varchar(40)
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: name
+                  type: varchar(150)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: key_prefix
+                  type: varchar(40)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: key_hash
+                  type: varchar(64)
+                  constraints:
+                    nullable: false
+                    unique: true
+              - column:
+                  name: secret_encrypted
+                  type: longtext
+              - column:
+                  name: allowed_models
+                  type: varchar(2000)
+              - column:
+                  name: tenantId
+                  type: varchar(40)
+              - column:
+                  name: enabled
+                  type: int
+                  defaultValueNumeric: 1
+                  constraints:
+                    nullable: false
+              - column:
+                  name: expires_at
+                  type: timestamp
+              - column:
+                  name: creation_date
+                  type: timestamp
+              - column:
+                  name: modification_date
+                  type: timestamp

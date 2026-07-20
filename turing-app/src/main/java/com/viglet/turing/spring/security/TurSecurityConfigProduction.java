@@ -52,6 +52,7 @@ import org.springframework.security.web.servlet.util.matcher.PathPatternRequestM
 import com.viglet.core.security.VigletCsrfCookieFilter;
 import com.viglet.turing.properties.TurConfigProperties;
 import com.viglet.turing.spring.security.auth.TurAuthTokenHeaderFilter;
+import com.viglet.turing.spring.security.auth.TurGatewayKeyAuthFilter;
 import com.viglet.turing.spring.security.auth.TurLogoutHandler;
 import com.viglet.turing.spring.security.auth.TurSNSiteApiKeyGateFilter;
 import com.viglet.turing.tenant.TurTenantResolutionFilter;
@@ -109,6 +110,7 @@ public class TurSecurityConfigProduction {
         @SuppressWarnings("java:S4502")
         SecurityFilterChain filterChain(HttpSecurity http,
                         TurAuthTokenHeaderFilter turAuthTokenHeaderFilter,
+                        TurGatewayKeyAuthFilter turGatewayKeyAuthFilter,
                         TurSNSiteApiKeyGateFilter turSNSiteApiKeyGateFilter,
                         TurTenantResolutionFilter turTenantResolutionFilter,
                         TurLogoutHandler turLogoutHandler,
@@ -123,6 +125,10 @@ public class TurSecurityConfigProduction {
                                                 .cacheControl(HeadersConfigurer.CacheControlConfig::disable)));
                 http.cors(Customizer.withDefaults());
                 http.addFilterBefore(turAuthTokenHeaderFilter, BasicAuthenticationFilter.class);
+                // T741 / §XLIX — authenticate the gateway /v1/* surface with a
+                // virtual key (Authorization: Bearer sk-turing-...). No-op off /v1/*
+                // and when the gateway is disabled.
+                http.addFilterBefore(turGatewayKeyAuthFilter, BasicAuthenticationFilter.class);
                 // T233 / §VII.6.h — runs after the Dev-Token filter so a valid `Key`
                 // header is already authenticated; gates per-site API_KEY mode on the
                 // public SN surface (PUBLIC sites pass straight through).
