@@ -371,6 +371,36 @@ Note the **lag**: model training cutoffs mean own-domain content can take months
 to surface in answers; off-domain mentions (X.1 #1) and live-retrieval surfaces
 (the models that browse) reflect it sooner — another reason to front-load #1.
 
+### X.5 The public model catalog as a reference asset (Block BC)
+
+> Added 2026-07-20. Positioning for **Block BC** (ROADMAP / IMPROVEMENTS §LI).
+> The endpoint is **planned, not yet live** — this is the strategy behind it.
+
+A **vendor-neutral, kind-aware model catalog** published as an open JSON endpoint
+at `turing.viglet.org` is a cheap, durable discoverability lever that no one in
+the market owns cleanly. LiteLLM's `model_prices_and_context_window.json` is the
+nearest thing and it is pricing-first and buried in a repo; there is no canonical,
+browsable "what kind of model is this id, and what are its context window /
+embedding dimensions / capabilities" reference.
+
+**Why it compounds the GEO thesis (§X.1).** A citable, linkable reference page +
+a machine-readable endpoint is exactly the kind of off-domain-friendly,
+live-retrievable artifact that assistants surface *fast* (it doesn't wait on a
+training cutoff). Every tool that fetches the endpoint, and every doc/post that
+cites "per the Turing model catalog", builds the association we're trying to
+manufacture — and it does so while being genuinely useful, not SEO filler. It
+also removes a product wart (the catalog no longer has to ship inside the jar to
+be current) and gives Turing a reason to appear in `awesome-*` lists and
+integration docs on its own merit.
+
+**Guardrails.** First cut is **identity + kind + capability**, deliberately *not*
+pricing — LiteLLM owns pricing and it is a maintenance treadmill; we can link out
+to prices later. The catalog must stay honestly curated (wrong `kind`/dimension
+data would poison the very trust that makes it a reference), versioned so external
+consumers can pin a schema, and CORS-open so it is trivially usable. It is a
+distribution/authority asset, **not** a monetised API — keep it free and
+unauthenticated.
+
 ---
 
 ## XI. Open-core source split — `turing` (private) → `turing-ce` (public)

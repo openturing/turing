@@ -2668,12 +2668,6 @@ listing path and the T750 metadata-first classification are unchanged; this only
 swaps where the *fallback catalog* comes from. Keeping the bundled copy means no
 new hard network dependency.
 
-### LI.5 Positioning + public docs (T763, 💭)
-
-A `STRATEGY.md` note framing the catalog as a market-reference asset + a public
-schema/usage doc so it is discoverable and citable, feeding the Block O
-LLM-discoverability funnel.
-
 **Non-goals.** Not a pricing database (LiteLLM already owns that; we can *link*
 prices later but the first cut is identity + kind + capability). No dynamic
 per-request backend on the marketing site — the endpoint is a build-time static
