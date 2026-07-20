@@ -16,6 +16,25 @@
 | ⏳ | Partial — direction is right, more work remains |
 | 🛠 | In progress |
 
+## Block BC — Public curated model catalog API (turing.viglet.org as market reference)
+
+> Turn Block BB's curated `models-catalog.json` into a **public, versioned model
+> catalog** published at `turing.viglet.org` — an open, CORS-enabled JSON endpoint
+> that any tool can consume as a **market reference** (the community-registry role
+> LiteLLM's `model_prices_and_context_window.json` plays), plus a human-browsable
+> `/models` page. The catalog is enriched with the T750 `kind`, vendor, context
+> window, embedding dimensions and capabilities. **Turing itself consumes this
+> public API** (remote fetch + cache) as the primary catalog source, with the
+> bundled `models-catalog.json` as the offline fallback — so the product and the
+> market read the same reference data. The live per-vendor `/v1/models` path
+> (Block BB metadata-first classification) is unchanged. Design → §LI.
+
+- 📋 **T759** (deps: T750) **Canonical enriched catalog schema + source of truth** — promote `models-catalog.json` to a canonical enriched dataset (per entry: `kind`, `vendor`, `contextWindow`, `embeddingDimensions`, `capabilities`, `deprecated`) wrapped in a versioned envelope (`version`, `lastUpdated`, `schema`); publish a documented JSON Schema; a build/emit step produces the artifact both the site and the backend consume. → §LI.1
+- 📋 **T760** (deps: T759) **Public static JSON endpoint on `turing.viglet.org`** — the `frontend/apps/site` build emits the catalog at a stable, versioned URL (`/models/catalog.json` + pinned `/models/catalog-v1.json`), CORS-open with cache headers, so external tools can fetch it as a reference. → §LI.2
+- 📋 **T761** (deps: T759) **Public browsable `/models` reference page** — a site page listing every curated model grouped by vendor with colour-coded kind badges + search/type filter (mirrors the Block BB admin picker visuals); the human-facing face of the reference API. → §LI.3
+- 📋 **T762** (deps: T760) **Turing consumes the public catalog** — `TurLlmModelCatalog` fetches the public JSON (config var `turing.models-catalog.url`, cached with ETag/TTL) as the primary source and falls back to the bundled `models-catalog.json` when offline/unreachable; the live-vendor listing path stays as-is. → §LI.4
+- 💭 **T763** (deps: T760) **Positioning + public schema/usage docs** — a `STRATEGY.md` note + a public schema/usage doc so the catalog is discoverable and citable (ties into the Block O GEO/discoverability play). → §LI.5
+
 ## Block BB — Unified model entity & visual model-type selection
 
 > Two connected goals building directly on Block BA (multi-model LLM instance,

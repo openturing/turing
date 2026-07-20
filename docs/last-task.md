@@ -1,9 +1,14 @@
-# Last task number — `T758` · next block letter — `BC`
+# Last task number — `T763` · next block letter — `BD`
 
 > **Single source of truth for the next free task number.** The next new task is
-> `T759`; after assigning it, bump the number above and the log line below.
+> `T764`; after assigning it, bump the number above and the log line below.
 >
-> **Next block letter — `BC`** (Block **BB** = Unified model entity & visual
+> **Next block letter — `BD`** (Block **BC** = Public curated model catalog API —
+> turing.viglet.org publishes Block BB's enriched `models-catalog.json` as a
+> versioned, CORS-open static JSON endpoint (market reference, LiteLLM-registry
+> role) + a browsable `/models` page; Turing consumes the public API (remote fetch
+> + cache) with the bundled catalog as offline fallback, T759-T763, created
+> 2026-07-20; Block **BB** = Unified model entity & visual
 > model-type selection — a `TurLlmModelKind` taxonomy + heuristic classifier and
 > visual picker badges/type-filter (T750-T751, additive, ready), then fold
 > `TurEmbeddingModel` into the LLM instance as `kind=EMBEDDING` with per-kind
@@ -78,6 +83,7 @@ number" looked free but wasn't. Grepping three files (`ROADMAP.md`,
 
 ## Log (most recent first)
 
+- **T759-T763 CREATED** (📋/💭, Block BC §LI — Public curated model catalog API: canonical enriched catalog + JSON Schema/version envelope (kind/vendor/contextWindow/embeddingDimensions/capabilities) (T759); versioned CORS-open static JSON endpoint on turing.viglet.org via the site build (T760); browsable /models reference page w/ kind badges (T761); Turing consumes the public catalog via turing.models-catalog.url with bundled offline fallback (T762); STRATEGY positioning + public schema docs (💭 T763)) — 2026-07-20.
 - **T752 SHIPPED** (Block BB §L.3 — ADR 0004 unified model entity: keep TurLLMInstance name, per-kind default model columns (modelName chat + embeddingModelName + rerankModelName), fold embedding-serving fields, TRANSFORMERS_LOCAL/HUGGINGFACE as vendors, id-preserving non-destructive migration keeping embedding_model as compat shadow; unblocks T753-T758) — 2026-07-20.
 - **T751 SHIPPED** (Block BB §L.2 — visual model picker: shared ModelKindBadge (per-kind brand pill) + ModelKindFilter segmented control on LlmModelMultiSelect + embedding ModelCombobox; expectedKind default (CHAT/EMBEDDING) with effectiveFilter empty-guard; i18n en+pt; RTL 8) — 2026-07-20.
 - **T750 SHIPPED** (Block BB §L.1 — model-kind taxonomy + heuristic classifier: TurLlmModelKind enum + pure classify(id,label); kind on TurLlmModelOption (auto-classifying 2-arg ctor) + TS model; isEmbeddingModel = kind==EMBEDDING; optional catalog kind override; metadata-first — Gemini supportedGenerationMethods + Cohere endpoints authoritative in TurLlmModelListingSupport, heuristic fallback) — 2026-07-20.

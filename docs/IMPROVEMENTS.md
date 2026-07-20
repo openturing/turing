@@ -2612,3 +2612,69 @@ proving an existing RAG index still resolves its embedding model after the move.
 consolidation, not a change to how embeddings are computed. The in-process ONNX
 Whisper non-goal (ex-T694) is unaffected. The platform stays single-default per
 kind; serving multiple embedding models simultaneously is out of scope.
+
+## LI. Public curated model catalog API (Block BC)
+
+**The bet.** Block BB's `models-catalog.json` is already a hand-curated map of
+which model ids exist per vendor and (T750) what kind each is. Nobody in the
+market publishes a *vendor-neutral, kind-aware* catalog as an open endpoint —
+LiteLLM's `model_prices_and_context_window.json` is the closest thing and it is
+pricing-first, buried in a repo. Publishing Turing's curated catalog as a
+**public, versioned JSON API at `turing.viglet.org`** — open, CORS-enabled,
+documented — lets any tool consume it as a reference and makes `turing.viglet.org`
+the canonical place people look up "is `text-embedding-3-large` an embedding
+model? what's its dimension?". It is a low-cost discoverability/authority play
+(ties into the Block O GEO strategy) that also removes a real product wart: the
+catalog no longer has to ship inside the jar to be current.
+
+**Why the site can serve it.** `frontend/apps/site` is a static Vite build
+(`build:site` → `_site`). A "public API" for a static host is a **versioned
+static JSON artifact** emitted at build time at a stable path, served with open
+CORS + cache headers. That is enough to be a real, fetchable reference endpoint;
+no dynamic backend is introduced.
+
+### LI.1 Canonical enriched catalog + schema (T759)
+
+Promote `models-catalog.json` from a picker-fallback into the **canonical source
+of truth**, enriched per entry with `kind` (T750), `vendor`, `contextWindow`,
+`embeddingDimensions` (for `kind=EMBEDDING`), `capabilities`, and a `deprecated`
+flag, wrapped in a versioned envelope (`version`, `lastUpdated`, `$schema`). A
+published JSON Schema documents the contract. A single build/emit step produces
+the artifact that **both** the site (LI.2) and the backend (LI.4) consume, so
+there is one source, not two drifting copies.
+
+### LI.2 Public static JSON endpoint (T760)
+
+The site build emits the catalog at a stable, versioned URL — a rolling
+`/models/catalog.json` plus a pinned `/models/catalog-v1.json` so external
+consumers can lock a schema version. Served CORS-open (`Access-Control-Allow-Origin:
+*`) with sensible cache headers. The URL + schema are documented as the public
+contract.
+
+### LI.3 Public `/models` reference page (T761)
+
+A human-browsable site page listing every curated model grouped by vendor, each
+with the colour-coded kind badge and a search/type filter that mirror the Block
+BB admin picker — the face of the reference API and a shareable link for "which
+models does Turing know about".
+
+### LI.4 Turing consumes the public catalog (T762)
+
+`TurLlmModelCatalog` fetches the public JSON (new config var
+`turing.models-catalog.url`, cached with ETag/TTL, defensive) as the **primary**
+source and falls back to the bundled `models-catalog.json` only when the endpoint
+is unreachable (offline installs, air-gapped). The live per-vendor `/v1/models`
+listing path and the T750 metadata-first classification are unchanged; this only
+swaps where the *fallback catalog* comes from. Keeping the bundled copy means no
+new hard network dependency.
+
+### LI.5 Positioning + public docs (T763, 💭)
+
+A `STRATEGY.md` note framing the catalog as a market-reference asset + a public
+schema/usage doc so it is discoverable and citable, feeding the Block O
+LLM-discoverability funnel.
+
+**Non-goals.** Not a pricing database (LiteLLM already owns that; we can *link*
+prices later but the first cut is identity + kind + capability). No dynamic
+per-request backend on the marketing site — the endpoint is a build-time static
+artifact. No change to live vendor listing or to how models are actually invoked.
