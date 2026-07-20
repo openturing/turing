@@ -17,6 +17,7 @@ import java.util.Optional;
 import org.springframework.stereotype.Service;
 
 import com.viglet.turing.persistence.model.agent.TurAIAgent;
+import com.viglet.turing.persistence.model.gateway.TurGatewayKey;
 import com.viglet.turing.persistence.model.llm.TurLLMInstance;
 import com.viglet.turing.persistence.repository.llm.TurLLMInstanceRepository;
 import com.viglet.turing.persistence.repository.llm.TurLLMTokenUsageRepository;
@@ -140,6 +141,77 @@ public class TurChatCostBudgetGate {
         } catch (RuntimeException e) {
             log.debug("[BudgetGate] monthly budget check failed for agent '{}': {}",
                     agent == null ? null : agent.getId(), e.getMessage());
+            return current;
+        }
+    }
+
+    /**
+     * T742 / §XLIX — per-key <b>hard</b> month-to-date kill-switch for the
+     * Governed LLM Gateway. When {@code key.hardMonthlyCapUsd > 0} and the key's
+     * month-to-date spend reaches it, returns {@code true} and the gateway refuses
+     * the call before any upstream LLM request. Best-effort → "not exceeded" on
+     * any failure.
+     */
+    public boolean isKeyHardCapExceeded(TurGatewayKey key) {
+        try {
+            if (key == null || key.getId() == null) {
+                return false;
+            }
+            Double cap = key.getHardMonthlyCapUsd();
+            if (cap == null || cap <= 0) {
+                return false;
+            }
+            LocalDateTime monthStart = LocalDate.now(ZoneId.systemDefault())
+                    .withDayOfMonth(1).atStartOfDay();
+            double spent = tokenUsageRepository.sumCostByKeySince(key.getId(), monthStart);
+            if (spent >= cap) {
+                log.warn("[BudgetGate] gateway key '{}' HARD cap reached (spent ${} >= cap ${}) — "
+                        + "refusing call", key.getId(), spent, cap);
+                return true;
+            }
+            return false;
+        } catch (RuntimeException e) {
+            log.debug("[BudgetGate] key hard-cap check failed: {}", e.getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * T742 / §XLIX — per-key monthly soft budget + auto-downgrade, mirroring the
+     * per-agent {@link #resolveInstance}. Returns {@code current} unchanged when
+     * the key has no soft budget, is under budget, or has no usable downgrade
+     * LLM. Best-effort — degrades to the original instance on any failure.
+     */
+    public TurLLMInstance resolveInstanceForKey(TurGatewayKey key, TurLLMInstance current) {
+        try {
+            if (key == null || current == null || key.getId() == null) {
+                return current;
+            }
+            Double budget = key.getMonthlyBudgetUsd();
+            if (budget == null || budget <= 0) {
+                return current;
+            }
+            LocalDateTime monthStart = LocalDate.now(ZoneId.systemDefault())
+                    .withDayOfMonth(1).atStartOfDay();
+            double spent = tokenUsageRepository.sumCostByKeySince(key.getId(), monthStart);
+            if (spent < budget) {
+                return current;
+            }
+            String downgradeId = key.getBudgetDowngradeLlmId();
+            if (downgradeId != null && !downgradeId.isBlank() && !downgradeId.equals(current.getId())) {
+                Optional<TurLLMInstance> downgrade = llmInstanceRepository.findById(downgradeId);
+                if (downgrade.isPresent()) {
+                    log.warn("[BudgetGate] gateway key '{}' over monthly budget "
+                            + "(spent ${} >= cap ${}) — downgrading '{}' -> '{}'",
+                            key.getId(), spent, budget, current.getTitle(), downgrade.get().getTitle());
+                    return downgrade.get();
+                }
+            }
+            log.warn("[BudgetGate] gateway key '{}' over monthly budget (spent ${} >= cap ${}) — "
+                    + "warn-only, proceeding on '{}'", key.getId(), spent, budget, current.getTitle());
+            return current;
+        } catch (RuntimeException e) {
+            log.debug("[BudgetGate] key monthly budget check failed: {}", e.getMessage());
             return current;
         }
     }

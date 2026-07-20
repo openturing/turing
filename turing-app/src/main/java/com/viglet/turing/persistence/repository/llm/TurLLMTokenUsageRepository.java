@@ -154,4 +154,33 @@ public interface TurLLMTokenUsageRepository extends JpaRepository<TurLLMTokenUsa
             WHERE u.createdAt >= :start
             """)
     double sumCostSince(@Param("start") LocalDateTime start);
+
+    /**
+     * T742 / §XLIX — cost / tokens / request-count per gateway virtual key in a
+     * window, for the per-key spend dashboard (mirrors {@link #findCostByAgent}).
+     * Rows with a {@code null} keyId (non-gateway traffic) are excluded.
+     */
+    @Query("""
+            SELECT u.keyId AS keyId,
+                   SUM(u.costUsd) AS costUsd,
+                   SUM(u.totalTokens) AS totalTokens,
+                   COUNT(u) AS requestCount
+            FROM TurLLMTokenUsage u
+            WHERE u.createdAt >= :start AND u.createdAt < :end AND u.keyId IS NOT NULL
+            GROUP BY u.keyId
+            ORDER BY costUsd DESC
+            """)
+    List<Object[]> findCostByKey(@Param("start") LocalDateTime start, @Param("end") LocalDateTime end);
+
+    /**
+     * T742 / §XLIX — month-to-date (or any window) spend for one virtual key, used
+     * by the per-key soft budget + hard kill-switch gate. {@code 0.0} when the key
+     * has no rows in the window (COALESCE).
+     */
+    @Query("""
+            SELECT COALESCE(SUM(u.costUsd), 0.0)
+            FROM TurLLMTokenUsage u
+            WHERE u.keyId = :keyId AND u.createdAt >= :start
+            """)
+    double sumCostByKeySince(@Param("keyId") String keyId, @Param("start") LocalDateTime start);
 }

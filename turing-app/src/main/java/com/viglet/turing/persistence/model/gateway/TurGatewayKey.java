@@ -95,6 +95,29 @@ public class TurGatewayKey implements Serializable {
     @Column(name = "expires_at")
     private LocalDateTime expiresAt;
 
+    /**
+     * T742 / §XLIX — soft month-to-date USD budget. When spend reaches it, the
+     * gateway auto-downgrades to {@link #budgetDowngradeLlmId} (if set) instead of
+     * the requested model. {@code null}/{@code <=0} = no soft budget.
+     */
+    @Column(name = "monthly_budget_usd")
+    private Double monthlyBudgetUsd;
+
+    /** T742 — LLM instance id to fall back to once the soft budget is hit. */
+    @Column(name = "budget_downgrade_llm_id", length = 40)
+    private String budgetDowngradeLlmId;
+
+    /**
+     * T742 — hard month-to-date USD kill-switch. When spend reaches it the call
+     * is refused (429, no upstream LLM call). {@code null}/{@code <=0} = off.
+     */
+    @Column(name = "hard_monthly_cap_usd")
+    private Double hardMonthlyCapUsd;
+
+    /** T742 — max requests per minute for this key. {@code null}/{@code <=0} = unlimited. */
+    @Column(name = "rate_limit_per_minute")
+    private Integer rateLimitPerMinute;
+
     @Column(name = "creation_date")
     private LocalDateTime creationDate;
 

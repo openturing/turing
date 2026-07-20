@@ -37,9 +37,11 @@ import com.viglet.turing.genai.gateway.TurOpenAiWire.ModelList;
 import com.viglet.turing.genai.gateway.TurOpenAiWire.ModelObject;
 import com.viglet.turing.genai.gateway.TurOpenAiWire.Usage;
 import com.viglet.turing.genai.gateway.TurOpenAiWire.WireMessage;
+import com.viglet.turing.persistence.model.gateway.TurGatewayKey;
 import com.viglet.turing.persistence.model.llm.TurLLMInstance;
 import com.viglet.turing.persistence.repository.llm.TurLLMInstanceRepository;
 import com.viglet.turing.resilience.llm.TurLlmModelFactory;
+import com.viglet.turing.service.llm.budget.TurChatCostBudgetGate;
 import com.viglet.turing.service.llm.tokenusage.TurLLMTokenUsageService;
 import com.viglet.turing.system.TurGlobalSettingsService;
 import com.viglet.turing.system.security.TurSecretCryptoService;
@@ -87,6 +89,8 @@ public class TurGatewayLlmService {
     private final TurLLMTokenUsageService tokenUsageService;
     private final TurGlobalSettingsService globalSettingsService;
     private final TurGatewayKeyService gatewayKeyService;
+    private final TurGatewayRateLimiter gatewayRateLimiter;
+    private final TurChatCostBudgetGate budgetGate;
     private final ObjectMapper objectMapper;
 
     public TurGatewayLlmService(TurLLMInstanceRepository llmInstanceRepository,
@@ -95,6 +99,8 @@ public class TurGatewayLlmService {
             TurLLMTokenUsageService tokenUsageService,
             TurGlobalSettingsService globalSettingsService,
             TurGatewayKeyService gatewayKeyService,
+            TurGatewayRateLimiter gatewayRateLimiter,
+            TurChatCostBudgetGate budgetGate,
             ObjectMapper objectMapper) {
         this.llmInstanceRepository = llmInstanceRepository;
         this.llmModelFactory = llmModelFactory;
@@ -102,7 +108,33 @@ public class TurGatewayLlmService {
         this.tokenUsageService = tokenUsageService;
         this.globalSettingsService = globalSettingsService;
         this.gatewayKeyService = gatewayKeyService;
+        this.gatewayRateLimiter = gatewayRateLimiter;
+        this.budgetGate = budgetGate;
         this.objectMapper = objectMapper;
+    }
+
+    /**
+     * T742 / §XLIX — per-key pre-call governance: enforce the key's rate limit and
+     * hard budget cap before any upstream LLM call. Returns the authenticated key
+     * (or {@code null} in open mode) so callers can attribute spend and apply the
+     * soft-budget downgrade. Throws {@link TurGatewayLimitException} (→ 429) when a
+     * limit is hit.
+     */
+    private TurGatewayKey applyPerKeyPreCall() {
+        TurGatewayKey key = TurGatewayContext.get();
+        if (key != null) {
+            if (!gatewayRateLimiter.tryAcquire(key)) {
+                throw TurGatewayLimitException.rateLimited();
+            }
+            if (budgetGate.isKeyHardCapExceeded(key)) {
+                throw TurGatewayLimitException.quotaExceeded();
+            }
+        }
+        return key;
+    }
+
+    private static String keyId(TurGatewayKey key) {
+        return key == null ? null : key.getId();
     }
 
     /**
@@ -150,12 +182,13 @@ public class TurGatewayLlmService {
      */
     public ChatCompletion complete(ChatCompletionRequest request, String username) {
         enforceScope(request.model());
-        TurLLMInstance instance = resolveChatInstance(request.model());
+        TurGatewayKey key = applyPerKeyPreCall();
+        TurLLMInstance instance = budgetGate.resolveInstanceForKey(key, resolveChatInstance(request.model()));
         ChatModel chatModel = buildChatModel(instance);
         Prompt prompt = new Prompt(buildMessages(request.messages()));
 
         ChatResponse response = chatModel.call(prompt);
-        tokenUsageService.recordUsage(instance, response, username, null, STAGE_GATEWAY);
+        tokenUsageService.recordUsage(instance, response, username, null, STAGE_GATEWAY, keyId(key));
 
         String text = extractText(response);
         Usage usage = extractUsage(response);
@@ -176,7 +209,8 @@ public class TurGatewayLlmService {
      */
     public Flux<ServerSentEvent<String>> stream(ChatCompletionRequest request, String username) {
         enforceScope(request.model());
-        TurLLMInstance instance = resolveChatInstance(request.model());
+        TurGatewayKey key = applyPerKeyPreCall();
+        TurLLMInstance instance = budgetGate.resolveInstanceForKey(key, resolveChatInstance(request.model()));
         ChatModel chatModel = llmModelFactory.createStreamingChatModel(
                 instance, secretCryptoService.decrypt(instance.getApiKeyEncrypted()));
         Prompt prompt = new Prompt(buildMessages(request.messages()));
@@ -193,7 +227,7 @@ public class TurGatewayLlmService {
         Flux<ServerSentEvent<String>> tail = Flux.defer(() -> {
             ChatResponse finalResponse = last.get();
             if (finalResponse != null) {
-                tokenUsageService.recordUsage(instance, finalResponse, username, null, STAGE_GATEWAY);
+                tokenUsageService.recordUsage(instance, finalResponse, username, null, STAGE_GATEWAY, keyId(key));
             }
             ServerSentEvent<String> stop = chunkFrame(id, created, request.model(),
                     new Delta(null, ""), FINISH_STOP);
@@ -214,6 +248,7 @@ public class TurGatewayLlmService {
     /** {@code /v1/embeddings} over the resolved instance's embedding model. */
     public EmbeddingResponse embed(EmbeddingRequest request) {
         enforceScope(request.model());
+        applyPerKeyPreCall();
         TurLLMInstance instance = resolveChatInstance(request.model());
         EmbeddingModel embeddingModel = llmModelFactory.createEmbeddingModel(
                 instance, secretCryptoService.decrypt(instance.getApiKeyEncrypted()));

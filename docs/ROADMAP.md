@@ -115,7 +115,7 @@
 - ✅ **T741** shipped — see CHANGELOG.
 
 **Phase 2 — reuse the governance half:**
-- 📋 **T742** (deps: T741) **Per-key spend + budget + rate-limit** — add a `keyId` column to `TurLLMTokenUsage` + a `findCostByKey` aggregation (mirrors the existing by-agent/tenant/model/stage queries); generalize `TurChatCostBudgetGate.resolveInstance` from per-agent to per-key (monthly cap, auto-downgrade LLM, hard kill-switch); per-key rate limit reusing `TurAnonymousAbuseRateLimitFilter`. → §XLIX
+- ✅ **T742** shipped — see CHANGELOG.
 - 📋 **T743** (deps: T740) **Cross-cutting headers: semantic cache + guardrails** — `x-turing-cache: semantic` routes the response through `TurLlmCacheService`; `x-turing-guardrails: strict` applies `TurModerationService` in/out (+ optional `TurSecondOpinionService` dual-model consensus for critical keys). Stackable on any `model`. → §XLIX
 
 **Phase 3 — the intelligence differentiators (the moat LiteLLM can't copy):**

@@ -66,6 +66,16 @@ public class TurLLMTokenUsageService {
      */
     public double recordUsage(TurLLMInstance instance, ChatResponse response, String username,
             String agentId, String stage) {
+        return recordUsage(instance, response, username, agentId, stage, null);
+    }
+
+    /**
+     * T742 / §XLIX — as above, additionally attributing the turn to a Governed
+     * LLM Gateway virtual key ({@code keyId}, {@code null} for non-gateway calls)
+     * so per-key spend can be aggregated and budget-gated.
+     */
+    public double recordUsage(TurLLMInstance instance, ChatResponse response, String username,
+            String agentId, String stage, String keyId) {
         try {
             if (response == null || response.getMetadata() == null) {
                 return 0.0;
@@ -104,6 +114,8 @@ public class TurLLMTokenUsageService {
             turLLMTokenUsage.setAgentId(agentId);
             turLLMTokenUsage.setStage(stage == null || stage.isBlank() ? STAGE_OTHER : stage);
             turLLMTokenUsage.setCostUsd(costUsd);
+            // T742 / §XLIX — per-key attribution for the Governed LLM Gateway.
+            turLLMTokenUsage.setKeyId(keyId);
 
             tokenUsageRepository.save(turLLMTokenUsage);
 

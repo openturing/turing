@@ -161,4 +161,53 @@ class TurChatCostBudgetGateTest {
 
         assertThat(gate.isAnonymousChatHardCapExceeded()).isFalse();
     }
+
+    // ---- T742 / §XLIX per-key gateway budget + hard cap ---------------------
+
+    private com.viglet.turing.persistence.model.gateway.TurGatewayKey key() {
+        var k = new com.viglet.turing.persistence.model.gateway.TurGatewayKey();
+        k.setId("key-1");
+        return k;
+    }
+
+    @Test
+    void keyHardCapOffByDefault() {
+        assertThat(gate.isKeyHardCapExceeded(key())).isFalse();
+        verify(tokenUsageRepository, never()).sumCostByKeySince(anyString(), any());
+    }
+
+    @Test
+    void keyHardCapExceededAtOrOverCap() {
+        var k = key();
+        k.setHardMonthlyCapUsd(30.0);
+        when(tokenUsageRepository.sumCostByKeySince(eq("key-1"), any(LocalDateTime.class))).thenReturn(30.0);
+
+        assertThat(gate.isKeyHardCapExceeded(k)).isTrue();
+    }
+
+    @Test
+    void keyResolveDowngradesWhenOverSoftBudget() {
+        var k = key();
+        k.setMonthlyBudgetUsd(10.0);
+        k.setBudgetDowngradeLlmId("cheap");
+        TurLLMInstance cheap = instance("cheap", "Cheap LLM");
+        when(tokenUsageRepository.sumCostByKeySince(eq("key-1"), any(LocalDateTime.class))).thenReturn(12.0);
+        when(llmInstanceRepository.findById("cheap")).thenReturn(Optional.of(cheap));
+
+        assertThat(gate.resolveInstanceForKey(k, primary)).isSameAs(cheap);
+    }
+
+    @Test
+    void keyResolveKeepsCurrentUnderBudget() {
+        var k = key();
+        k.setMonthlyBudgetUsd(10.0);
+        when(tokenUsageRepository.sumCostByKeySince(eq("key-1"), any(LocalDateTime.class))).thenReturn(3.0);
+
+        assertThat(gate.resolveInstanceForKey(k, primary)).isSameAs(primary);
+    }
+
+    @Test
+    void keyResolveKeepsCurrentWhenNoKey() {
+        assertThat(gate.resolveInstanceForKey(null, primary)).isSameAs(primary);
+    }
 }

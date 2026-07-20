@@ -20,6 +20,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.viglet.turing.genai.gateway.TurGatewayLimitException;
 import com.viglet.turing.genai.gateway.TurGatewayLlmService;
 import com.viglet.turing.genai.gateway.TurOpenAiWire.ChatCompletionRequest;
 import com.viglet.turing.genai.gateway.TurOpenAiWire.EmbeddingRequest;
@@ -70,6 +71,8 @@ public class TurOpenAiCompatibleGatewayAPI {
                         .body(gatewayService.stream(request, username));
             }
             return ResponseEntity.ok(gatewayService.complete(request, username));
+        } catch (TurGatewayLimitException e) {
+            return error(HttpStatus.TOO_MANY_REQUESTS, e.getMessage(), e.getType(), e.getType());
         } catch (IllegalArgumentException e) {
             return error(HttpStatus.BAD_REQUEST, e.getMessage(), "invalid_request_error", "model_not_found");
         } catch (RuntimeException e) {
@@ -84,6 +87,8 @@ public class TurOpenAiCompatibleGatewayAPI {
     public ResponseEntity<?> embeddings(@RequestBody EmbeddingRequest request) {
         try {
             return ResponseEntity.ok(gatewayService.embed(request));
+        } catch (TurGatewayLimitException e) {
+            return error(HttpStatus.TOO_MANY_REQUESTS, e.getMessage(), e.getType(), e.getType());
         } catch (IllegalArgumentException e) {
             return error(HttpStatus.BAD_REQUEST, e.getMessage(), "invalid_request_error", "model_not_found");
         } catch (RuntimeException e) {

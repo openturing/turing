@@ -54,10 +54,15 @@ class TurGatewayLlmServiceTest {
     private TurGlobalSettingsService globalSettingsService;
     @Mock
     private TurGatewayKeyService gatewayKeyService;
+    @Mock
+    private TurGatewayRateLimiter gatewayRateLimiter;
+    @Mock
+    private com.viglet.turing.service.llm.budget.TurChatCostBudgetGate budgetGate;
 
     private TurGatewayLlmService service() {
         return new TurGatewayLlmService(llmInstanceRepository, llmModelFactory, secretCryptoService,
-                tokenUsageService, globalSettingsService, gatewayKeyService, new ObjectMapper());
+                tokenUsageService, globalSettingsService, gatewayKeyService, gatewayRateLimiter,
+                budgetGate, new ObjectMapper());
     }
 
     private TurLLMInstance instance(String id, String modelName, int enabled) {

@@ -1,0 +1,47 @@
+databaseChangeLog:
+  - changeSet:
+      id: v2026.3.1.110-add-llm_token_usage-key_id
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - tableExists:
+            tableName: llm_token_usage
+        - not:
+            - columnExists:
+                tableName: llm_token_usage
+                columnName: key_id
+      changes:
+        - addColumn:
+            tableName: llm_token_usage
+            columns:
+              - column:
+                  name: key_id
+                  type: varchar(40)
+                  remarks: "T742/§XLIX gateway virtual-key id (null for non-gateway calls)."
+  - changeSet:
+      id: v2026.3.1.110-add-tur_gateway_key-budget
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - tableExists:
+            tableName: tur_gateway_key
+        - not:
+            - columnExists:
+                tableName: tur_gateway_key
+                columnName: monthly_budget_usd
+      changes:
+        - addColumn:
+            tableName: tur_gateway_key
+            columns:
+              - column:
+                  name: monthly_budget_usd
+                  type: double
+              - column:
+                  name: budget_downgrade_llm_id
+                  type: varchar(40)
+              - column:
+                  name: hard_monthly_cap_usd
+                  type: double
+              - column:
+                  name: rate_limit_per_minute
+                  type: int

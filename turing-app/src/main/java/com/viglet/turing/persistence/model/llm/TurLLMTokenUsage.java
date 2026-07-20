@@ -90,4 +90,14 @@ public class TurLLMTokenUsage implements Serializable {
      */
     @Column(name = "cost_usd", nullable = false)
     private double costUsd;
+
+    /**
+     * T742 / §XLIX — id of the {@link com.viglet.turing.persistence.model.gateway.TurGatewayKey}
+     * virtual key this turn was billed to, when the call arrived through the
+     * Governed LLM Gateway ({@code /v1/*}). {@code null} for every non-gateway
+     * call, so per-key spend groups cleanly ({@code GROUP BY keyId}) without
+     * polluting agent/tenant rollups.
+     */
+    @Column(name = "key_id", length = 40)
+    private String keyId;
 }
