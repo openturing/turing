@@ -1,9 +1,14 @@
-# Last task number — `T739` · next block letter — `AZ`
+# Last task number — `T748` · next block letter — `BA`
 
 > **Single source of truth for the next free task number.** The next new task is
-> `T740`; after assigning it, bump the number above and the log line below.
+> `T749`; after assigning it, bump the number above and the log line below.
 >
-> **Next block letter — `AZ`** (Block **AY** = Pluggable URL content fetcher with
+> **Next block letter — `BA`** (Block **AZ** = Governed LLM Gateway —
+> OpenAI-compatible governed egress: inbound `/v1/*` seam over the existing provider
+> factory + virtual keys, per-key spend/budget/rate-limit reusing the token-usage +
+> `TurChatCostBudgetGate` governance, `model`-name/header routing into agent/SN/
+> embedded + RAG-as-a-header, eval/distillation bridge, router, bento admin, T740–T748,
+> created 2026-07-20; Block **AY** = Pluggable URL content fetcher with
 > headless-browser fallback — `TurUrlFetcher` seam (SIMPLE/HEADLESS/AUTO) over a
 > `browserless/chromium` sidecar for JS-rendered SPAs, T739, created 2026-07-14;
 > Block **AX** = Bento header consistency — the
@@ -65,6 +70,7 @@ number" looked free but wasn't. Grepping three files (`ROADMAP.md`,
 
 ## Log (most recent first)
 
+- **T740-T748 CREATED** (📋/💭, Block AZ §XLIX — Governed LLM Gateway (OpenAI-compatible governed egress): thin inbound /v1/chat/completions (+SSE)/embeddings/models over TurGenAiLlmProviderFactory behind turing.gateway.enabled; TurGatewayKey virtual keys reusing TurSecretCryptoService; per-key spend/budget/rate-limit via keyId on TurLLMTokenUsage + generalized TurChatCostBudgetGate + abuse filter; semantic cache + guardrails headers; model-name routing turing-agent/turing-sn/turing-local + x-turing-rag-site over TurAgentChatExecutor/TurSNGenAi/TurEmbeddedLlmProvider; router (💭 T745); eval/distillation bridge (💭 T746) over Block AJ + TurOpenAiDistillationService; observability + F.15 native tools; /bento/gateway admin) — 2026-07-20.
 - **T739 SHIPPED** (Block AY §XLVIII — Pluggable URL content fetcher + headless fallback: TurUrlFetcher seam (SIMPLE=HttpURLConnection+Tika / HEADLESS=browserless sidecar POST /content -> TurFileUtils.htmlToText) behind TurUrlFetchService with AUTO escalation when SIMPLE text < autoMinChars; turing.url-fetch.* env over Global Settings config-vars; Content Ingestion settings section + Check-browserless probe; turing-browserless docker-compose service; both extractUrl callers repointed; 11 unit tests) — 2026-07-14. OPENS+CLOSES Block AY.
 - **T738 ASSESSED & DEFERRED** (Block AX §XLVII — collapsing the ~14 hand-morphing forms onto BentoFormHero is NOT the no-op it looks: those forms render the hero as a separate row (header/BentoAgentSubHero) with the save bar below in the body, so BentoFormHero (Save in hero trailing) would visibly relocate Save; and imperative-save forms like sn.site.custom.facet.item use actions= onClick while BentoFormHero hardcodes type=submit. Prereq if revived: add an actions? escape hatch to BentoFormHero. Stays 💭) — 2026-07-13.
 - **T737 SHIPPED** (Block AX §XLVII — added the back-arrow breadcrumb to every own-hero bento back-link eyebrow the audit flagged (~16) + persona.suggest; one edit each to shared bento.ai-agent.sub-hero (all agent sub-pages) + bento.sn.section-list (5 SN lists), plus SN custom-facet.item/field.coverage/facet.list/field.list/insights/locale.list/synonym.list/top-terms/thesaurus, admin user/group/role, se cores/system-info, store collection-import/system-info; se.core.new + synonym editor arrows came from T736 BentoFormHero.backTo; tsc clean + 66 bento tests) — 2026-07-13.

@@ -92,6 +92,41 @@
 
 - 💭 **T704** (deps: T698, T700) **Fit trend/history + adjustment suggestions** — persist per-cell score across scheduled runs; surface drift ("this content dropped below fit for persona X since last run") and LLM-suggested persona/content adjustments, closing the bidirectional tuning loop. → §XLIII
 
+## Block AZ — Governed LLM Gateway (OpenAI-compatible governed egress) (§XLIX)
+
+> Turn Turing's internal LLM layer inside-out: expose an **OpenAI-compatible
+> inbound API** (`/v1/chat/completions`, `/v1/embeddings`, `/v1/models`) so any
+> existing app points its `base_url` at Turing with **zero code change** — the
+> LiteLLM baseline. But the endpoint is a *thin façade* over the whole stack, so
+> the same call transparently gains RAG, guardrails, semantic cache, tools,
+> budget-aware routing and audit. The reuse is the moat: ~85–95% of the
+> governance half already exists (`TurGenAiLlmProviderFactory`, `TurLLMTokenUsage`
+> + cost aggregations, `TurChatCostBudgetGate`, `TurSecretCryptoService`,
+> `@TenantId`, `TurLlmCacheService`, `TurModerationService`), and the
+> differentiators reuse `TurAgentChatExecutor`, `TurSNGenAi`, the F.15 capability
+> matrix and the Block AJ eval/distillation path. **Strategic stance:** not a
+> commodity-proxy play (that market is crowded and infra-shaped); this is a
+> *governed enterprise gateway* for orgs already running Turing. All opt-in behind
+> `turing.gateway.enabled` (default off); nothing changes for non-gateway paths.
+> Design in [IMPROVEMENTS.md](IMPROVEMENTS.md) §XLIX.
+
+**Phase 1 — inbound seam + passthrough parity:**
+- 📋 **T740** (deps: —) **OpenAI-compatible inbound gateway API** — `TurOpenAiCompatibleGatewayAPI` under `api/gateway/`: `POST /v1/chat/completions` (blocking + SSE in OpenAI's `data:` wire format), `/v1/embeddings`, `GET /v1/models`; pure wire-format translation over the existing `TurGenAiLlmProviderFactory` (no new LLM logic), gated by `turing.gateway.enabled` (default off). Streaming reuses `TurAgentChatExecutor.execute()`'s `Flux<ChatResponse>`. → §XLIX
+- 📋 **T741** (deps: T740) **Virtual keys** — `TurGatewayKey` entity reusing `TurSecretCryptoService` for the secret; a bearer-`sk-turing-...` auth filter parallel to the existing Keycloak/httpBasic chain; per-key scope (allowed models, `@TenantId`, enabled/expiresAt); Liquibase. The "give a dev a key with $50/mo on gpt-4o only" primitive LiteLLM sells. → §XLIX
+
+**Phase 2 — reuse the governance half:**
+- 📋 **T742** (deps: T741) **Per-key spend + budget + rate-limit** — add a `keyId` column to `TurLLMTokenUsage` + a `findCostByKey` aggregation (mirrors the existing by-agent/tenant/model/stage queries); generalize `TurChatCostBudgetGate.resolveInstance` from per-agent to per-key (monthly cap, auto-downgrade LLM, hard kill-switch); per-key rate limit reusing `TurAnonymousAbuseRateLimitFilter`. → §XLIX
+- 📋 **T743** (deps: T740) **Cross-cutting headers: semantic cache + guardrails** — `x-turing-cache: semantic` routes the response through `TurLlmCacheService`; `x-turing-guardrails: strict` applies `TurModerationService` in/out (+ optional `TurSecondOpinionService` dual-model consensus for critical keys). Stackable on any `model`. → §XLIX
+
+**Phase 3 — the intelligence differentiators (the moat LiteLLM can't copy):**
+- 📋 **T744** (deps: T740) **`model`-name routing into the Turing stack** — `turing-agent:<id>` runs the full agent via `TurAgentChatExecutor.execute()` (system prompt + tools + MCP + grounding mode); `turing-sn:<site>` returns RAG-grounded answers over a Semantic Navigation site (`TurSNGenAi` + reranker + citations); `turing-local:*` forces the `TurEmbeddedLlmProvider` ($0). Plus `x-turing-rag-site: <site>` = RAG-as-a-header on any base model. → §XLIX
+- 💭 **T745** (deps: T742, T744) **Router — least-cost / least-latency / fallback** — first-class `turing-router:*` model that load-balances (round-robin / least-busy / latency-based) across N deployments of a model with fallback chains, generalizing the budget-downgrade logic into a per-key routing policy. The most genuinely-new piece; least reuse. → §XLIX
+- 💭 **T746** (deps: T744) **Gateway traffic → eval/distillation bridge ("the gateway that learns")** — capture inbound traffic as `TurEvalDataset` rows (reuse Block AJ graders / `LlmJudge`), measure per-model quality on real production traffic, and recommend/auto-route low-risk traffic to the embedded or a distilled model via `TurOpenAiDistillationService`. → §XLIX
+
+**Phase 4 — surfacing + admin:**
+- 📋 **T747** (deps: T742) **Gateway observability + unified native tools** — inbound spend/tokens feed the existing token-usage + cost dashboards keyed by virtual key; expose the F.15 native capabilities (web_search / web_fetch / code_execution) uniformly to any OpenAI client via `x-turing-tools` — a unification LiteLLM does not offer. → §XLIX
+- 📋 **T748** (deps: T741, T742, T747) **Bento gateway admin** — `/bento/gateway`: virtual-key CRUD (create / rotate / revoke, scope + budget), per-key spend dashboard, and an OpenAI-compat playground with a copy-paste `curl`/SDK snippet; built on `BentoListPage` + `BentoEntityShell`. → §XLIX
+
 ## Block AV — POST-native search & link-free response contract (§XLV)
 
 > The search response hands the client **pre-serialized GET query-string links**
