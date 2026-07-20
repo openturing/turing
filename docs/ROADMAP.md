@@ -124,7 +124,7 @@
 - 💭 **T746** (deps: T744) **Gateway traffic → eval/distillation bridge ("the gateway that learns")** — capture inbound traffic as `TurEvalDataset` rows (reuse Block AJ graders / `LlmJudge`), measure per-model quality on real production traffic, and recommend/auto-route low-risk traffic to the embedded or a distilled model via `TurOpenAiDistillationService`. → §XLIX
 
 **Phase 4 — surfacing + admin:**
-- 📋 **T747** (deps: T742) **Gateway observability + unified native tools** — inbound spend/tokens feed the existing token-usage + cost dashboards keyed by virtual key; expose the F.15 native capabilities (web_search / web_fetch / code_execution) uniformly to any OpenAI client via `x-turing-tools` — a unification LiteLLM does not offer. → §XLIX
+- ✅ **T747** shipped — see CHANGELOG.
 - 📋 **T748** (deps: T741, T742, T747) **Bento gateway admin** — `/bento/gateway`: virtual-key CRUD (create / rotate / revoke, scope + budget), per-key spend dashboard, and an OpenAI-compat playground with a copy-paste `curl`/SDK snippet; built on `BentoListPage` + `BentoEntityShell`. → §XLIX
 
 ## Block AV — POST-native search & link-free response contract (§XLV)

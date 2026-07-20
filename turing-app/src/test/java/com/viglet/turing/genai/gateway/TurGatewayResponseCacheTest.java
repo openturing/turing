@@ -61,12 +61,21 @@ class TurGatewayResponseCacheTest {
 
     @Test
     void optionsParseFromHeaders() {
-        assertThat(TurGatewayOptions.from("semantic", "strict", null))
-                .isEqualTo(new TurGatewayOptions(true, true, null));
-        assertThat(TurGatewayOptions.from(null, null, null)).isEqualTo(TurGatewayOptions.none());
-        assertThat(TurGatewayOptions.from("SEMANTIC", null, null).semanticCache()).isTrue();
-        assertThat(TurGatewayOptions.from(null, "lax", null).guardrails()).isFalse();
-        assertThat(TurGatewayOptions.from(null, null, "wknd").ragSite()).isEqualTo("wknd");
-        assertThat(TurGatewayOptions.from(null, null, "  ").ragSite()).isNull();
+        assertThat(TurGatewayOptions.from("semantic", "strict", null, null).semanticCache()).isTrue();
+        assertThat(TurGatewayOptions.from("semantic", "strict", null, null).guardrails()).isTrue();
+        assertThat(TurGatewayOptions.from(null, null, null, null)).isEqualTo(TurGatewayOptions.none());
+        assertThat(TurGatewayOptions.from("SEMANTIC", null, null, null).semanticCache()).isTrue();
+        assertThat(TurGatewayOptions.from(null, "lax", null, null).guardrails()).isFalse();
+        assertThat(TurGatewayOptions.from(null, null, "wknd", null).ragSite()).isEqualTo("wknd");
+        assertThat(TurGatewayOptions.from(null, null, "  ", null).ragSite()).isNull();
+    }
+
+    @Test
+    void optionsParseNativeToolsHeader() {
+        assertThat(TurGatewayOptions.from(null, null, null, "web_search, code_execution").nativeTools())
+                .containsExactlyInAnyOrder("web-search", "code-exec");
+        assertThat(TurGatewayOptions.from(null, null, null, "web-fetch").nativeTools())
+                .containsExactly("web-fetch");
+        assertThat(TurGatewayOptions.none().nativeTools()).isEmpty();
     }
 }

@@ -99,6 +99,7 @@ public class TurGatewayLlmService {
     private final TurGatewayResponseCache responseCache;
     private final TurModerationService moderationService;
     private final TurGatewayModelRouter modelRouter;
+    private final TurGatewayNativeToolsService nativeToolsService;
     private final ObjectMapper objectMapper;
 
     public TurGatewayLlmService(TurLLMInstanceRepository llmInstanceRepository,
@@ -112,6 +113,7 @@ public class TurGatewayLlmService {
             TurGatewayResponseCache responseCache,
             TurModerationService moderationService,
             TurGatewayModelRouter modelRouter,
+            TurGatewayNativeToolsService nativeToolsService,
             ObjectMapper objectMapper) {
         this.llmInstanceRepository = llmInstanceRepository;
         this.llmModelFactory = llmModelFactory;
@@ -124,7 +126,29 @@ public class TurGatewayLlmService {
         this.responseCache = responseCache;
         this.moderationService = moderationService;
         this.modelRouter = modelRouter;
+        this.nativeToolsService = nativeToolsService;
         this.objectMapper = objectMapper;
+    }
+
+    /** T747 — map wire messages to executor chat items (for the native-tool vendor services). */
+    private List<com.viglet.turing.genai.TurAgentChatExecutor.ChatMessageItem> toChatItems(
+            List<WireMessage> messages) {
+        if (messages == null) {
+            return List.of();
+        }
+        return messages.stream()
+                .map(m -> new com.viglet.turing.genai.TurAgentChatExecutor.ChatMessageItem(
+                        m.role(), m.content()))
+                .toList();
+    }
+
+    /** T747 — the RAG-as-a-header system prompt for a native-tool turn, or {@code null}. */
+    private String ragSystemPrompt(TurGatewayOptions options, List<WireMessage> messages) {
+        if (options.ragSite() == null) {
+            return null;
+        }
+        String context = modelRouter.retrieveContext(options.ragSite(), lastUserText(messages));
+        return (context == null || context.isBlank()) ? null : RAG_PREAMBLE + context + "\n</context>";
     }
 
     /** T744 — a {@code turing-agent:} / {@code turing-sn:} answer, or {@code null} for passthrough. */
@@ -298,6 +322,19 @@ public class TurGatewayLlmService {
         }
 
         TurLLMInstance instance = budgetGate.resolveInstanceForKey(key, resolveChatInstance(request.model()));
+
+        // T747 — x-turing-tools: enable F.15 provider-native tools on the base model.
+        if (!options.nativeTools().isEmpty()
+                && nativeToolsService.supports(instance, options.nativeTools())) {
+            String text = nativeToolsService.answer(instance, toChatItems(request.messages()),
+                    ragSystemPrompt(options, request.messages()), options.nativeTools());
+            guardOutput(options, text);
+            if (cacheKey != null) {
+                responseCache.put(cacheKey, text);
+            }
+            return completionOf(request.model(), text, new Usage(0, 0, 0));
+        }
+
         ChatModel chatModel = buildChatModel(instance);
         Prompt prompt = new Prompt(buildPromptMessages(request.messages(), options));
 
@@ -358,6 +395,18 @@ public class TurGatewayLlmService {
         }
 
         TurLLMInstance instance = budgetGate.resolveInstanceForKey(key, resolveChatInstance(request.model()));
+
+        // T747 — x-turing-tools on a streamed base model: produce blocking, replay as one chunk.
+        if (!options.nativeTools().isEmpty()
+                && nativeToolsService.supports(instance, options.nativeTools())) {
+            String text = nativeToolsService.answer(instance, toChatItems(request.messages()),
+                    ragSystemPrompt(options, request.messages()), options.nativeTools());
+            if (cacheKey != null) {
+                responseCache.put(cacheKey, text);
+            }
+            return replayCached(id, created, request.model(), text);
+        }
+
         ChatModel chatModel = llmModelFactory.createStreamingChatModel(
                 instance, secretCryptoService.decrypt(instance.getApiKeyEncrypted()));
         Prompt prompt = new Prompt(buildPromptMessages(request.messages(), options));
