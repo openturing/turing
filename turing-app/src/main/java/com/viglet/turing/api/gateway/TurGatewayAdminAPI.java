@@ -27,8 +27,11 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.viglet.turing.api.exception.TurNotFoundException;
+import com.viglet.turing.genai.distillation.TurOpenAiDistillationService;
+import com.viglet.turing.genai.distillation.TurOpenAiDistillationService.DistillResult;
 import com.viglet.turing.genai.gateway.TurGatewayKeyService;
 import com.viglet.turing.genai.gateway.TurGatewayKeyService.GeneratedKey;
+import com.viglet.turing.genai.gateway.TurGatewayTrafficCaptureService;
 import com.viglet.turing.genai.gateway.TurGatewayUsageService;
 import com.viglet.turing.genai.gateway.TurGatewayUsageService.KeyBudgetStatus;
 import com.viglet.turing.genai.gateway.TurGatewayUsageService.KeyUsageRow;
@@ -57,13 +60,51 @@ public class TurGatewayAdminAPI {
     private final TurGatewayUsageService usageService;
     private final TurGatewayKeyService keyService;
     private final TurGatewayKeyRepository keyRepository;
+    private final TurGatewayTrafficCaptureService trafficCapture;
+    private final TurOpenAiDistillationService distillationService;
 
     public TurGatewayAdminAPI(TurGatewayUsageService usageService,
             TurGatewayKeyService keyService,
-            TurGatewayKeyRepository keyRepository) {
+            TurGatewayKeyRepository keyRepository,
+            TurGatewayTrafficCaptureService trafficCapture,
+            TurOpenAiDistillationService distillationService) {
         this.usageService = usageService;
         this.keyService = keyService;
         this.keyRepository = keyRepository;
+        this.trafficCapture = trafficCapture;
+        this.distillationService = distillationService;
+    }
+
+    // ---- Traffic → eval/distillation bridge (T746) ------------------------
+
+    /** Capture status: whether traffic capture is on and the growing dataset id. */
+    public record TrafficCaptureStatus(boolean enabled, String datasetId) {
+    }
+
+    /** Propose-only distillation outcome (never auto-applied). */
+    public record DistillReview(boolean started, String reason, String jobId) {
+    }
+
+    @Operation(summary = "Gateway traffic-capture status (dataset feeding the eval bridge)")
+    @GetMapping("/traffic")
+    @Secured({"ROLE_ADMIN"})
+    public TrafficCaptureStatus trafficStatus() {
+        return new TrafficCaptureStatus(trafficCapture.isEnabled(), trafficCapture.currentDatasetId());
+    }
+
+    /**
+     * Propose a distilled/cheaper model for an agent from its captured traffic —
+     * the "gateway that learns" bet. Delegates to the propose-only distillation
+     * path ({@code distillForReview}); it is <b>never</b> auto-applied (a human
+     * curates the resulting suggestion). Opt-in behind {@code turing.distillation.enabled}.
+     */
+    @Operation(summary = "Propose a distilled model from captured traffic (never auto-applied)")
+    @PostMapping("/traffic/distill")
+    @Secured({"ROLE_ADMIN"})
+    public DistillReview distill(@RequestParam String agentId) {
+        DistillResult result = distillationService.distillForReview(agentId);
+        return new DistillReview(result.started(), result.reason(),
+                result.job() != null ? result.job().getId() : null);
     }
 
     // ---- Virtual-key CRUD (T748) -----------------------------------------

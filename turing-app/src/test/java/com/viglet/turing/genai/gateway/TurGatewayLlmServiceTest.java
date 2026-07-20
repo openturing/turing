@@ -68,12 +68,14 @@ class TurGatewayLlmServiceTest {
     private TurGatewayNativeToolsService nativeToolsService;
     @Mock
     private TurGatewayRouterService routerService;
+    @Mock
+    private TurGatewayTrafficCaptureService trafficCapture;
 
     private TurGatewayLlmService service() {
         return new TurGatewayLlmService(llmInstanceRepository, llmModelFactory, secretCryptoService,
                 tokenUsageService, globalSettingsService, gatewayKeyService, gatewayRateLimiter,
                 budgetGate, responseCache, moderationService, modelRouter, nativeToolsService,
-                routerService, new ObjectMapper());
+                routerService, trafficCapture, new ObjectMapper());
     }
 
     private TurLLMInstance instance(String id, String modelName, int enabled) {

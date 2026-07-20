@@ -60,4 +60,16 @@ public class TurGatewayProperty {
      * this bound). Default 1000.
      */
     private int cacheMaxEntries = 1000;
+
+    /**
+     * T746 / §XLIX — capture inbound gateway traffic (base-model + router turns)
+     * as rows of a reusable {@code TurEvalDataset} so real production traffic can
+     * be replayed through the Block AJ eval graders and feed the distillation
+     * bridge ("the gateway that learns"). Default off — capturing prompts/answers
+     * is opt-in and admin-managed.
+     */
+    private boolean captureTraffic = false;
+
+    /** T746 — display name of the eval dataset gateway traffic is captured into. */
+    private String captureDatasetName = "Gateway Traffic";
 }

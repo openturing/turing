@@ -2530,72 +2530,13 @@ only; the field logic, validation, and save mutations stay exactly as they are.
 
 ## XLIX. Governed LLM Gateway — OpenAI-compatible governed egress (Block AZ)
 
-> **Status (2026-07-20):** committed scope **shipped** — Phases 1–4 (T740–T744,
-> T747, T748); see `CHANGELOG.md` for what landed. The rationale below is retained
-> for the two still-open 💭 bets: **T745** (generic least-cost/least-latency router)
-> and **T746** (gateway traffic → eval/distillation bridge, "the gateway that
-> learns"). The shipped-phase prose is history — do not re-expand it here.
-
-LiteLLM's whole product is one idea: point your apps at a proxy that **speaks the
-OpenAI wire protocol**, and get spend tracking, virtual keys, budgets, rate
-limits, routing and fallback for free — with zero client code change. Turing today
-has *most of the governance half of that* built for its own internal use
-(multi-provider abstraction, encrypted keys, per-row token/cost metering with
-aggregations by agent/tenant/model/stage, soft/hard budget gates with model
-auto-downgrade, anonymous rate limiting, multi-tenant billing roll-up) — but it
-has **no inbound OpenAI-compatible surface**. Every `OpenAiCompatible*` class in
-the codebase is *outbound* (Turing calling providers), never inbound. So no
-existing app can "just point at Turing". This block adds that missing seam and, in
-doing so, turns Turing into a *governed enterprise LLM gateway* — without becoming
-a commodity proxy.
-
-**Why not chase LiteLLM head-on.** The generic-gateway market is commodity infra
-(thin, fast, 100+ providers, drop-in) and crowded (LiteLLM, Portkey, Kong AI
-Gateway, Cloudflare AI Gateway, OpenRouter, Helicone). A heavy Spring Boot app
-carries a latency/footprint disadvantage there and would forever chase 100+
-provider APIs. The defensible play is the opposite: a gateway that is *worse* at
-being a dumb pipe but *uniquely good* at governed, identity-aware, RAG-grounded
-egress for orgs that already run Turing — leveraging Keycloak SSO, the tenant
-model, audit, encrypted secrets and the search/agent stack that no pure gateway
-has. Positioning detail belongs in STRATEGY.md; this section is the build.
-
-**The integration seam: `model` name + headers.** A client controls two things —
-the `model` string and request headers. Use them as the router into the stack:
-`gpt-4o`/`claude-*` = pure passthrough (parity); `turing-agent:<id>` = the full
-agent (`TurAgentChatExecutor.execute()`, already returning `Flux<ChatResponse>`
-for SSE); `turing-sn:<site>` = RAG-grounded over a Semantic Navigation site;
-`turing-local:*` = the embedded `$0` provider; `turing-router:*` = policy routing.
-Cross-cutting behavior stacks via headers on any base model — `x-turing-rag-site`,
-`x-turing-cache: semantic`, `x-turing-guardrails: strict`, `x-turing-tools`. The
-payoff: a legacy OpenAI app gains RAG, guardrails and audit by changing its
-`base_url` and adding one header.
-
-**Phasing mirrors the reuse gradient — enter through governance, not the pipe.**
-
-- **Phase 1 (T740–T741) — the inbound seam.** A thin `TurOpenAiCompatibleGatewayAPI`
-  that only translates the OpenAI wire format (including the `data:` SSE frames)
-  and delegates to the existing `TurGenAiLlmProviderFactory`; no new LLM logic
-  lives there. Virtual keys (`TurGatewayKey`) reuse `TurSecretCryptoService` and
-  authenticate as a bearer scheme parallel to the current Keycloak/httpBasic chain.
-  All behind `turing.gateway.enabled` (default off), so no existing IT re-validates.
-- **Phase 2 (T742–T743) — reuse the governance half (~85–95% exists).** Adding a
-  `keyId` to `TurLLMTokenUsage` + a `findCostByKey` query is a mechanical mirror of
-  the existing aggregations; generalizing `TurChatCostBudgetGate` from per-agent to
-  per-key reuses the monthly-cap / auto-downgrade / hard-kill-switch logic wholesale.
-  Semantic cache (`TurLlmCacheService`) and guardrails (`TurModerationService`,
-  `TurSecondOpinionService`) are reused, not rebuilt.
-- **Phase 3 (T744–T746) — the differentiators.** `model`-name routing over the
-  agent/SN/embedded stack; RAG-as-a-header; and the moat bet — feeding gateway
-  traffic into the Block AJ eval/distillation path so the gateway *learns* which
-  traffic can be routed cheaply to a local/distilled model with measured quality.
-  T745 (the generic router) is the least-reuse, most-infra piece and is kept 💭 so
-  it isn't over-committed before a real need.
-- **Phase 4 (T747–T748) — surfacing.** Inbound spend feeds the *existing*
-  dashboards; native F.15 capabilities are exposed uniformly (a thing pure gateways
-  don't unify); and a `/bento/gateway` admin gives key CRUD + spend + a playground.
-
-**Non-goals.** Not a race for 100+ provider parity, and not full OpenAI wire
-fidelity — support the subset 95% of clients use (chat + embeddings + streaming +
-tools) and be explicit about the rest. The gateway never becomes a hard dependency
-of any existing path: it is additive, opt-in, and default-off.
-
+**Fully shipped (2026-07-20) — T740–T748.** The design rationale that lived here
+has been removed now that the block is complete; see `CHANGELOG.md` → "Block AZ"
+for what shipped and `git log` for the implementation history (per the
+IMPROVEMENTS.md header rule: no shipped implementation reports). In short: an
+OpenAI-compatible `/v1/*` inbound seam over the existing provider factory,
+`sk-turing-…` virtual keys with per-key budget / rate-limit / spend, cross-cutting
+cache + guardrails + RAG-as-a-header, `turing-agent:` / `turing-sn:` /
+`turing-local:` / `turing-router:` model routing, `x-turing-tools` native tools,
+per-key observability, a `/bento/gateway` admin, and a traffic → eval/distillation
+bridge — all opt-in behind `turing.gateway.enabled` (default off).

@@ -49,9 +49,14 @@ class TurGatewayAdminAPITest {
     private TurGatewayKeyService keyService;
     @Mock
     private TurGatewayKeyRepository keyRepository;
+    @Mock
+    private com.viglet.turing.genai.gateway.TurGatewayTrafficCaptureService trafficCapture;
+    @Mock
+    private com.viglet.turing.genai.distillation.TurOpenAiDistillationService distillationService;
 
     private TurGatewayAdminAPI api() {
-        return new TurGatewayAdminAPI(usageService, keyService, keyRepository);
+        return new TurGatewayAdminAPI(usageService, keyService, keyRepository, trafficCapture,
+                distillationService);
     }
 
     private TurGatewayKey key(String id) {

@@ -121,7 +121,7 @@
 **Phase 3 — the intelligence differentiators (the moat LiteLLM can't copy):**
 - ✅ **T744** shipped — see CHANGELOG.
 - ✅ **T745** shipped — see CHANGELOG.
-- 💭 **T746** (deps: T744) **Gateway traffic → eval/distillation bridge ("the gateway that learns")** — capture inbound traffic as `TurEvalDataset` rows (reuse Block AJ graders / `LlmJudge`), measure per-model quality on real production traffic, and recommend/auto-route low-risk traffic to the embedded or a distilled model via `TurOpenAiDistillationService`. → §XLIX
+- ✅ **T746** shipped — see CHANGELOG. **Block AZ fully shipped (T740–T748).**
 
 **Phase 4 — surfacing + admin:**
 - ✅ **T747** shipped — see CHANGELOG.

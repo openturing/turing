@@ -101,6 +101,7 @@ public class TurGatewayLlmService {
     private final TurGatewayModelRouter modelRouter;
     private final TurGatewayNativeToolsService nativeToolsService;
     private final TurGatewayRouterService routerService;
+    private final TurGatewayTrafficCaptureService trafficCapture;
     private final ObjectMapper objectMapper;
 
     public TurGatewayLlmService(TurLLMInstanceRepository llmInstanceRepository,
@@ -116,6 +117,7 @@ public class TurGatewayLlmService {
             TurGatewayModelRouter modelRouter,
             TurGatewayNativeToolsService nativeToolsService,
             TurGatewayRouterService routerService,
+            TurGatewayTrafficCaptureService trafficCapture,
             ObjectMapper objectMapper) {
         this.llmInstanceRepository = llmInstanceRepository;
         this.llmModelFactory = llmModelFactory;
@@ -130,6 +132,7 @@ public class TurGatewayLlmService {
         this.modelRouter = modelRouter;
         this.nativeToolsService = nativeToolsService;
         this.routerService = routerService;
+        this.trafficCapture = trafficCapture;
         this.objectMapper = objectMapper;
     }
 
@@ -151,7 +154,9 @@ public class TurGatewayLlmService {
                 ChatResponse response = chatModel.call(prompt);
                 routerService.recordLatency(instance.getId(), System.currentTimeMillis() - startedAt);
                 tokenUsageService.recordUsage(instance, response, username, null, STAGE_GATEWAY, keyId(key));
-                return extractText(response);
+                String routerText = extractText(response);
+                trafficCapture.capture(request.model(), request.messages(), routerText, instance, keyId(key));
+                return routerText;
             } catch (RuntimeException e) {
                 last = e;
                 log.warn("[Gateway] router candidate {} failed, trying next: {}",
@@ -387,6 +392,8 @@ public class TurGatewayLlmService {
         if (cacheKey != null) {
             responseCache.put(cacheKey, text);
         }
+        // T746 — capture base-model traffic for the eval/distillation bridge.
+        trafficCapture.capture(request.model(), request.messages(), text, instance, keyId(key));
         return completionOf(request.model(), text, extractUsage(response));
     }
 
