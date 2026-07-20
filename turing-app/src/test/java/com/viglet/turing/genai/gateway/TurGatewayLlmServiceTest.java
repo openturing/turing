@@ -62,11 +62,13 @@ class TurGatewayLlmServiceTest {
     private TurGatewayResponseCache responseCache;
     @Mock
     private com.viglet.turing.genai.safety.TurModerationService moderationService;
+    @Mock
+    private TurGatewayModelRouter modelRouter;
 
     private TurGatewayLlmService service() {
         return new TurGatewayLlmService(llmInstanceRepository, llmModelFactory, secretCryptoService,
                 tokenUsageService, globalSettingsService, gatewayKeyService, gatewayRateLimiter,
-                budgetGate, responseCache, moderationService, new ObjectMapper());
+                budgetGate, responseCache, moderationService, modelRouter, new ObjectMapper());
     }
 
     private TurLLMInstance instance(String id, String modelName, int enabled) {
@@ -140,7 +142,7 @@ class TurGatewayLlmServiceTest {
                 List.of(new TurOpenAiWire.WireMessage("user", "bad input")),
                 false, null, null, null, null);
 
-        assertThatThrownBy(() -> service().complete(request, "u", new TurGatewayOptions(false, true)))
+        assertThatThrownBy(() -> service().complete(request, "u", new TurGatewayOptions(false, true, null)))
                 .isInstanceOf(TurGatewayGuardrailException.class);
     }
 

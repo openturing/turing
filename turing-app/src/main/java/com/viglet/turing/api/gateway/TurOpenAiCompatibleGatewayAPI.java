@@ -67,9 +67,10 @@ public class TurOpenAiCompatibleGatewayAPI {
             produces = {MediaType.APPLICATION_JSON_VALUE, MediaType.TEXT_EVENT_STREAM_VALUE})
     public ResponseEntity<?> chatCompletions(@RequestBody ChatCompletionRequest request,
             @RequestHeader(name = "x-turing-cache", required = false) String cacheHeader,
-            @RequestHeader(name = "x-turing-guardrails", required = false) String guardrailsHeader) {
+            @RequestHeader(name = "x-turing-guardrails", required = false) String guardrailsHeader,
+            @RequestHeader(name = "x-turing-rag-site", required = false) String ragSiteHeader) {
         String username = resolveUsername();
-        TurGatewayOptions options = TurGatewayOptions.from(cacheHeader, guardrailsHeader);
+        TurGatewayOptions options = TurGatewayOptions.from(cacheHeader, guardrailsHeader, ragSiteHeader);
         try {
             if (Boolean.TRUE.equals(request.stream())) {
                 return ResponseEntity.ok()

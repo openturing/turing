@@ -119,7 +119,7 @@
 - ✅ **T743** shipped — see CHANGELOG.
 
 **Phase 3 — the intelligence differentiators (the moat LiteLLM can't copy):**
-- 📋 **T744** (deps: T740) **`model`-name routing into the Turing stack** — `turing-agent:<id>` runs the full agent via `TurAgentChatExecutor.execute()` (system prompt + tools + MCP + grounding mode); `turing-sn:<site>` returns RAG-grounded answers over a Semantic Navigation site (`TurSNGenAi` + reranker + citations); `turing-local:*` forces the `TurEmbeddedLlmProvider` ($0). Plus `x-turing-rag-site: <site>` = RAG-as-a-header on any base model. → §XLIX
+- ✅ **T744** shipped — see CHANGELOG.
 - 💭 **T745** (deps: T742, T744) **Router — least-cost / least-latency / fallback** — first-class `turing-router:*` model that load-balances (round-robin / least-busy / latency-based) across N deployments of a model with fallback chains, generalizing the budget-downgrade logic into a per-key routing policy. The most genuinely-new piece; least reuse. → §XLIX
 - 💭 **T746** (deps: T744) **Gateway traffic → eval/distillation bridge ("the gateway that learns")** — capture inbound traffic as `TurEvalDataset` rows (reuse Block AJ graders / `LlmJudge`), measure per-model quality on real production traffic, and recommend/auto-route low-risk traffic to the embedded or a distilled model via `TurOpenAiDistillationService`. → §XLIX
 

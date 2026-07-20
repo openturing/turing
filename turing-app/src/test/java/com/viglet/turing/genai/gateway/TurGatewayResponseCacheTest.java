@@ -61,10 +61,12 @@ class TurGatewayResponseCacheTest {
 
     @Test
     void optionsParseFromHeaders() {
-        assertThat(TurGatewayOptions.from("semantic", "strict"))
-                .isEqualTo(new TurGatewayOptions(true, true));
-        assertThat(TurGatewayOptions.from(null, null)).isEqualTo(TurGatewayOptions.none());
-        assertThat(TurGatewayOptions.from("SEMANTIC", null).semanticCache()).isTrue();
-        assertThat(TurGatewayOptions.from(null, "lax").guardrails()).isFalse();
+        assertThat(TurGatewayOptions.from("semantic", "strict", null))
+                .isEqualTo(new TurGatewayOptions(true, true, null));
+        assertThat(TurGatewayOptions.from(null, null, null)).isEqualTo(TurGatewayOptions.none());
+        assertThat(TurGatewayOptions.from("SEMANTIC", null, null).semanticCache()).isTrue();
+        assertThat(TurGatewayOptions.from(null, "lax", null).guardrails()).isFalse();
+        assertThat(TurGatewayOptions.from(null, null, "wknd").ragSite()).isEqualTo("wknd");
+        assertThat(TurGatewayOptions.from(null, null, "  ").ragSite()).isNull();
     }
 }

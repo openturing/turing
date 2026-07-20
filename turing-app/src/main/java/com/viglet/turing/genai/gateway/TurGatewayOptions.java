@@ -14,24 +14,30 @@ package com.viglet.turing.genai.gateway;
  * <ul>
  *   <li>{@code x-turing-cache: semantic} → {@link #semanticCache}</li>
  *   <li>{@code x-turing-guardrails: strict} → {@link #guardrails}</li>
+ *   <li>{@code x-turing-rag-site: <site>} → {@link #ragSite} (RAG-as-a-header)</li>
  * </ul>
  *
  * @author Alexandre Oliveira
  * @since 2026.3.4
  */
-public record TurGatewayOptions(boolean semanticCache, boolean guardrails) {
+public record TurGatewayOptions(boolean semanticCache, boolean guardrails, String ragSite) {
 
-    private static final TurGatewayOptions NONE = new TurGatewayOptions(false, false);
+    private static final TurGatewayOptions NONE = new TurGatewayOptions(false, false, null);
 
     public static TurGatewayOptions none() {
         return NONE;
     }
 
-    /** Builds options from the two gateway headers ({@code null}/other values = off). */
-    public static TurGatewayOptions from(String cacheHeader, String guardrailsHeader) {
+    /** Builds options from the gateway headers ({@code null}/other values = off). */
+    public static TurGatewayOptions from(String cacheHeader, String guardrailsHeader, String ragSiteHeader) {
         boolean cache = "semantic".equalsIgnoreCase(trim(cacheHeader));
         boolean guard = "strict".equalsIgnoreCase(trim(guardrailsHeader));
-        return (cache || guard) ? new TurGatewayOptions(cache, guard) : NONE;
+        String ragSite = trim(ragSiteHeader);
+        if (ragSite != null && ragSite.isEmpty()) {
+            ragSite = null;
+        }
+        return (cache || guard || ragSite != null)
+                ? new TurGatewayOptions(cache, guard, ragSite) : NONE;
     }
 
     private static String trim(String value) {

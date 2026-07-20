@@ -82,6 +82,9 @@ public class TurGatewayLlmService {
     private static final String OBJ_CHAT_CHUNK = "chat.completion.chunk";
     private static final String FINISH_STOP = "stop";
     private static final String STAGE_GATEWAY = "gateway.chat";
+    private static final String RAG_PREAMBLE =
+            "Use the following retrieved context to answer the user's question. "
+                    + "If the answer is not contained in the context, say you don't know.\n<context>\n";
     /** SSE terminator every OpenAI streaming client waits for. */
     public static final String DONE = "[DONE]";
 
@@ -95,6 +98,7 @@ public class TurGatewayLlmService {
     private final TurChatCostBudgetGate budgetGate;
     private final TurGatewayResponseCache responseCache;
     private final TurModerationService moderationService;
+    private final TurGatewayModelRouter modelRouter;
     private final ObjectMapper objectMapper;
 
     public TurGatewayLlmService(TurLLMInstanceRepository llmInstanceRepository,
@@ -107,6 +111,7 @@ public class TurGatewayLlmService {
             TurChatCostBudgetGate budgetGate,
             TurGatewayResponseCache responseCache,
             TurModerationService moderationService,
+            TurGatewayModelRouter modelRouter,
             ObjectMapper objectMapper) {
         this.llmInstanceRepository = llmInstanceRepository;
         this.llmModelFactory = llmModelFactory;
@@ -118,7 +123,44 @@ public class TurGatewayLlmService {
         this.budgetGate = budgetGate;
         this.responseCache = responseCache;
         this.moderationService = moderationService;
+        this.modelRouter = modelRouter;
         this.objectMapper = objectMapper;
+    }
+
+    /** T744 — a {@code turing-agent:} / {@code turing-sn:} answer, or {@code null} for passthrough. */
+    private String routedAnswer(String model, List<WireMessage> messages) {
+        if (modelRouter.isAgent(model)) {
+            return modelRouter.agentAnswer(model, messages);
+        }
+        if (modelRouter.isSn(model)) {
+            return modelRouter.snAnswer(model, messages);
+        }
+        return null;
+    }
+
+    /** T744 — base-model messages, with retrieved context prepended for {@code x-turing-rag-site}. */
+    private List<Message> buildPromptMessages(List<WireMessage> messages, TurGatewayOptions options) {
+        List<Message> springMessages = buildMessages(messages);
+        if (options.ragSite() != null) {
+            String context = modelRouter.retrieveContext(options.ragSite(), lastUserText(messages));
+            if (context != null && !context.isBlank()) {
+                springMessages.add(0, new SystemMessage(RAG_PREAMBLE + context + "\n</context>"));
+            }
+        }
+        return springMessages;
+    }
+
+    private String lastUserText(List<WireMessage> messages) {
+        if (messages == null) {
+            return "";
+        }
+        for (int i = messages.size() - 1; i >= 0; i--) {
+            WireMessage m = messages.get(i);
+            if (m.content() != null && !ROLE_ASSISTANT.equals(m.role()) && !ROLE_SYSTEM.equals(m.role())) {
+                return m.content();
+            }
+        }
+        return "";
     }
 
     /**
@@ -245,9 +287,19 @@ public class TurGatewayLlmService {
             }
         }
 
+        // T744 — turing-agent: / turing-sn: route into the Turing stack.
+        String routed = routedAnswer(request.model(), request.messages());
+        if (routed != null) {
+            guardOutput(options, routed);
+            if (cacheKey != null) {
+                responseCache.put(cacheKey, routed);
+            }
+            return completionOf(request.model(), routed, new Usage(0, 0, 0));
+        }
+
         TurLLMInstance instance = budgetGate.resolveInstanceForKey(key, resolveChatInstance(request.model()));
         ChatModel chatModel = buildChatModel(instance);
-        Prompt prompt = new Prompt(buildMessages(request.messages()));
+        Prompt prompt = new Prompt(buildPromptMessages(request.messages(), options));
 
         ChatResponse response = chatModel.call(prompt);
         tokenUsageService.recordUsage(instance, response, username, null, STAGE_GATEWAY, keyId(key));
@@ -296,10 +348,19 @@ public class TurGatewayLlmService {
             }
         }
 
+        // T744 — native routing produces a blocking answer, replayed as one chunk.
+        String routed = routedAnswer(request.model(), request.messages());
+        if (routed != null) {
+            if (cacheKey != null) {
+                responseCache.put(cacheKey, routed);
+            }
+            return replayCached(id, created, request.model(), routed);
+        }
+
         TurLLMInstance instance = budgetGate.resolveInstanceForKey(key, resolveChatInstance(request.model()));
         ChatModel chatModel = llmModelFactory.createStreamingChatModel(
                 instance, secretCryptoService.decrypt(instance.getApiKeyEncrypted()));
-        Prompt prompt = new Prompt(buildMessages(request.messages()));
+        Prompt prompt = new Prompt(buildPromptMessages(request.messages(), options));
         AtomicReference<ChatResponse> last = new AtomicReference<>();
         StringBuilder assembled = new StringBuilder();
 
@@ -363,6 +424,10 @@ public class TurGatewayLlmService {
      * T744's native-model router can reuse the base resolution.
      */
     TurLLMInstance resolveChatInstance(String model) {
+        // T744 — turing-local:* forces the embedded ($0) provider instance.
+        if (modelRouter.isLocal(model)) {
+            return modelRouter.resolveEmbeddedInstance();
+        }
         if (model != null && !model.isBlank()) {
             var byId = llmInstanceRepository.findById(model).filter(i -> i.getEnabled() == 1);
             if (byId.isPresent()) {
