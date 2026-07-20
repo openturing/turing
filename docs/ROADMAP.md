@@ -27,11 +27,8 @@
 > just a model of `kind=EMBEDDING`, and `TurEmbeddingModel` already points at a
 > `TurLLMInstance` for its cloud case (T626), so one entity can serve chat +
 > embedding + rerank models with per-kind defaults. Phase 1 (T750–T751) is additive
-> and ships now; the unification (T752–T758) is gated on the T752 ADR because it
-> touches the RAG / vector-store read path. Design → §L.
-
-**Phase 1 — visual model-type selection (additive, ready):**
-- 📋 **T751** (deps: T750) **Visual picker — kind badges + type filter** — `LlmModelMultiSelect` (chat instance form) and the embedding `ModelCombobox` render a colour-coded kind badge on each option + selected row, plus a segmented type filter (All / Chat / Embedding / …) defaulting to the surface's expected kind; i18n en+pt + RTL tests. → §L.2
+> and **shipped** (see [CHANGELOG.md](CHANGELOG.md)); the unification (T752–T758) is
+> gated on the T752 ADR because it touches the RAG / vector-store read path. Design → §L.
 
 **Phase 2 — unify `TurEmbeddingModel` into the LLM instance (gated on the T752 ADR):**
 - 📋 **T752** (deps: T750) **ADR — one entity for every model kind** — decide the unified shape (extend `TurLLMInstance` vs a renamed `TurModelInstance`), how the in-process ONNX embedding modes (`TRANSFORMERS_LOCAL` / `HUGGINGFACE`) become provider types/vendors, per-kind default-model columns (chat = `modelName`, an embedding default, a rerank default), and the backward-compat + exchange story. Deliverable = ADR 0004 + §L.3; no code. → §L.3

@@ -1,7 +1,13 @@
 "use client"
 import { Input } from "@/components/ui/input"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
-import type { TurLlmModelOption, TurLlmModelSource } from "@/models/llm/llm-model-option.model.ts"
+import type {
+  TurLlmModelKind,
+  TurLlmModelOption,
+  TurLlmModelSource,
+} from "@/models/llm/llm-model-option.model.ts"
+import { ModelKindBadge, resolveModelKind } from "@/components/ui/model-kind-badge"
+import { ModelKindFilter, type ModelKindFilterValue } from "@/components/ui/model-kind-filter"
 import { cn } from "@/lib/utils"
 import { IconCheck, IconChevronDown, IconLoader2 } from "@tabler/icons-react"
 import { useMemo, useState } from "react"
@@ -19,6 +25,8 @@ interface Props {
   className?: string
   /** Called when the picker opens — parent can refetch with the latest typed key/url. */
   onOpen?: () => void
+  /** The kind this surface expects; the type filter defaults to it when present. */
+  expectedKind?: TurLlmModelKind
 }
 
 /**
@@ -38,22 +46,32 @@ export function ModelCombobox({
   id,
   className,
   onOpen,
+  expectedKind,
 }: Props) {
   const { t } = useTranslation()
   const [open, setOpen] = useState(false)
   const [query, setQuery] = useState("")
+  const [kindFilter, setKindFilter] = useState<ModelKindFilterValue>(expectedKind ?? "ALL")
+
+  // Fall back to "ALL" when the chosen kind isn't present, so the list never empties.
+  const effectiveFilter = useMemo<ModelKindFilterValue>(() => {
+    if (kindFilter === "ALL") return "ALL"
+    return options.some((o) => resolveModelKind(o) === kindFilter) ? kindFilter : "ALL"
+  }, [options, kindFilter])
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase()
-    if (!q) return options
-    return options.filter(
-      (o) => o.id.toLowerCase().includes(q) || o.label.toLowerCase().includes(q),
-    )
-  }, [options, query])
+    return options.filter((o) => {
+      if (effectiveFilter !== "ALL" && resolveModelKind(o) !== effectiveFilter) return false
+      if (!q) return true
+      return o.id.toLowerCase().includes(q) || o.label.toLowerCase().includes(q)
+    })
+  }, [options, query, effectiveFilter])
 
   const typed = query.trim()
   const hasExactMatch = options.some((o) => o.id === typed)
-  const selectedLabel = options.find((o) => o.id === value)?.label ?? value
+  const selectedOption = options.find((o) => o.id === value)
+  const selectedLabel = selectedOption?.label ?? value
 
   const commit = (next: string) => {
     onChange(next)
@@ -81,8 +99,11 @@ export function ModelCombobox({
             className,
           )}
         >
-          <span className={cn("truncate", !value && "text-muted-foreground")}>
-            {value ? selectedLabel : placeholder ?? t("forms.llm.modelNamePlaceholder")}
+          <span className="flex min-w-0 items-center gap-2">
+            <span className={cn("truncate", !value && "text-muted-foreground")}>
+              {value ? selectedLabel : placeholder ?? t("forms.llm.modelNamePlaceholder")}
+            </span>
+            {value && selectedOption && <ModelKindBadge kind={resolveModelKind(selectedOption)} />}
           </span>
           <IconChevronDown className="ml-2 size-4 shrink-0 opacity-50" />
         </button>
@@ -91,7 +112,7 @@ export function ModelCombobox({
         className="w-(--radix-popper-anchor-width) min-w-56 p-0"
         align="start"
       >
-        <div className="border-b p-2">
+        <div className="space-y-2 border-b p-2">
           <Input
             autoFocus
             value={query}
@@ -105,6 +126,7 @@ export function ModelCombobox({
               }
             }}
           />
+          <ModelKindFilter options={options} value={effectiveFilter} onChange={setKindFilter} />
         </div>
 
         <div className="max-h-64 overflow-y-auto p-1">
@@ -139,12 +161,13 @@ export function ModelCombobox({
                 <IconCheck
                   className={cn("size-4 shrink-0", option.id === value ? "opacity-100" : "opacity-0")}
                 />
-                <span className="flex min-w-0 flex-col">
+                <span className="flex min-w-0 flex-1 flex-col">
                   <span className="truncate">{option.label}</span>
                   {option.label !== option.id && (
                     <span className="text-muted-foreground truncate text-xs">{option.id}</span>
                   )}
                 </span>
+                <ModelKindBadge kind={resolveModelKind(option)} />
               </button>
             ))}
 

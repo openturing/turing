@@ -724,6 +724,7 @@ export const BentoLLMInstanceForm: React.FC<Props> = ({ value, isNew, staged, on
               isLoading={modelsLoading}
               source={modelList?.source}
               onOpen={() => refetchModels()}
+              expectedKind="CHAT"
             />
             {selectedModels.length === 0 && (
               <p className="mt-2 text-sm font-medium text-destructive">

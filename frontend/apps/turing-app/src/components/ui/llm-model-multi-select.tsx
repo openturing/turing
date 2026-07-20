@@ -1,7 +1,13 @@
 "use client"
 import { Input } from "@/components/ui/input"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
-import type { TurLlmModelOption, TurLlmModelSource } from "@/models/llm/llm-model-option.model.ts"
+import type {
+  TurLlmModelKind,
+  TurLlmModelOption,
+  TurLlmModelSource,
+} from "@/models/llm/llm-model-option.model.ts"
+import { ModelKindBadge, resolveModelKind } from "@/components/ui/model-kind-badge"
+import { ModelKindFilter, type ModelKindFilterValue } from "@/components/ui/model-kind-filter"
 import { cn } from "@/lib/utils"
 import {
   IconCheck,
@@ -30,6 +36,8 @@ interface Props {
   id?: string
   /** Called when the add-popover opens — parent can refetch with the latest key/url. */
   onOpen?: () => void
+  /** The kind this surface expects; the type filter defaults to it when present. */
+  expectedKind?: TurLlmModelKind
 }
 
 /**
@@ -53,21 +61,36 @@ export function LlmModelMultiSelect({
   disabled = false,
   id,
   onOpen,
+  expectedKind,
 }: Props) {
   const { t } = useTranslation()
   const [open, setOpen] = useState(false)
   const [query, setQuery] = useState("")
+  const [kindFilter, setKindFilter] = useState<ModelKindFilterValue>(expectedKind ?? "ALL")
 
   const labelFor = (modelId: string) =>
     options.find((o) => o.id === modelId)?.label ?? modelId
 
+  const kindFor = (modelId: string): TurLlmModelKind => {
+    const opt = options.find((o) => o.id === modelId)
+    return opt ? resolveModelKind(opt) : "UNKNOWN"
+  }
+
+  // If the chosen kind isn't present in the current options, fall back to "ALL"
+  // so the list is never silently empty (e.g. an all-chat vendor on a chat surface).
+  const effectiveFilter = useMemo<ModelKindFilterValue>(() => {
+    if (kindFilter === "ALL") return "ALL"
+    return options.some((o) => resolveModelKind(o) === kindFilter) ? kindFilter : "ALL"
+  }, [options, kindFilter])
+
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase()
-    if (!q) return options
-    return options.filter(
-      (o) => o.id.toLowerCase().includes(q) || o.label.toLowerCase().includes(q),
-    )
-  }, [options, query])
+    return options.filter((o) => {
+      if (effectiveFilter !== "ALL" && resolveModelKind(o) !== effectiveFilter) return false
+      if (!q) return true
+      return o.id.toLowerCase().includes(q) || o.label.toLowerCase().includes(q)
+    })
+  }, [options, query, effectiveFilter])
 
   const typed = query.trim()
   const hasExactMatch = options.some((o) => o.id === typed) || selected.includes(typed)
@@ -132,7 +155,7 @@ export function LlmModelMultiSelect({
           </button>
         </PopoverTrigger>
         <PopoverContent className="w-(--radix-popper-anchor-width) min-w-56 p-0" align="start">
-          <div className="border-b p-2">
+          <div className="space-y-2 border-b p-2">
             <Input
               autoFocus
               value={query}
@@ -145,6 +168,11 @@ export function LlmModelMultiSelect({
                   addModel(typed)
                 }
               }}
+            />
+            <ModelKindFilter
+              options={options}
+              value={effectiveFilter}
+              onChange={setKindFilter}
             />
           </div>
 
@@ -182,12 +210,13 @@ export function LlmModelMultiSelect({
                     <IconCheck
                       className={cn("size-4 shrink-0", isSel ? "opacity-100 text-primary" : "opacity-0")}
                     />
-                    <span className="flex min-w-0 flex-col">
+                    <span className="flex min-w-0 flex-1 flex-col">
                       <span className="truncate">{option.label}</span>
                       {option.label !== option.id && (
                         <span className="text-muted-foreground truncate text-xs">{option.id}</span>
                       )}
                     </span>
+                    <ModelKindBadge kind={resolveModelKind(option)} />
                   </button>
                 )
               })}
@@ -253,6 +282,8 @@ export function LlmModelMultiSelect({
                     <span className="text-muted-foreground truncate text-xs">{modelId}</span>
                   )}
                 </span>
+
+                <ModelKindBadge kind={kindFor(modelId)} />
 
                 {isDefault && (
                   <span className="rounded-full bg-linear-to-br from-blue-600 to-indigo-600 px-2 py-0.5 text-[11px] font-medium text-white">

@@ -338,6 +338,7 @@ export const BentoEmbeddingModelForm: React.FC<Props> = ({ value, isNew, readOnl
                       onOpen={() => refetchLlmEmbedding()}
                       placeholder={t("forms.embedding.modelIdPlaceholder")}
                       disabled={readOnly}
+                      expectedKind="EMBEDDING"
                     />
                   </FormControl>
                   <FormMessage />

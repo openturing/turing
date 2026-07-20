@@ -2563,20 +2563,6 @@ bridge — all opt-in behind `turing.gateway.enabled` (default off).
    two in-process ONNX modes (`TRANSFORMERS_LOCAL`, `HUGGINGFACE`) have no vendor
    connection at all.
 
-### L.2 Visual selection (T751)
-
-With `kind` available, both pickers stop being text-only:
-
-- **Badge.** Each option in the popover and each selected row shows a small,
-  colour-coded kind badge (reusing the brand palette — e.g. blue→indigo for CHAT,
-  emerald/teal for EMBEDDING, amber for RERANK, distinct tones for the media
-  kinds). The badge is the answer to "what am I selecting?".
-- **Type filter.** A segmented control at the top of the picker filters by kind
-  (All / Chat / Embedding / …). It defaults to the surface's expected kind — the
-  chat instance form defaults to Chat, the embedding picker to Embedding — so the
-  common case shows only relevant models while everything stays reachable via
-  *All*. The picker stays free-text tolerant (an unlisted id can still be typed).
-
 ### L.3 Unifying `TurEmbeddingModel` into the LLM instance (T752–T758)
 
 The end state: **one entity represents a model-provider instance** (a vendor
