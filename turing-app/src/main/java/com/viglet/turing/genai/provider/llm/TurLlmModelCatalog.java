@@ -43,7 +43,11 @@ public class TurLlmModelCatalog {
         Map<String, List<TurLlmModelOption>> parsed = new LinkedHashMap<>();
         try {
             JsonNode root = objectMapper.readTree(new ClassPathResource(CATALOG_RESOURCE).getInputStream());
-            root.fields().forEachRemaining(entry -> {
+            // T759 — the canonical catalog wraps the vendor map in a versioned
+            // envelope ({version, lastUpdated, schema, vendors:{...}}); tolerate the
+            // legacy flat shape ({vendor:[...]}) where the root itself is the map.
+            JsonNode vendors = root.has("vendors") ? root.get("vendors") : root;
+            vendors.fields().forEachRemaining(entry -> {
                 JsonNode value = entry.getValue();
                 if (value.isArray()) {
                     List<TurLlmModelOption> models = new ArrayList<>();

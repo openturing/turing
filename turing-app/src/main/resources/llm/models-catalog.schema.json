@@ -1,0 +1,93 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://turing.viglet.org/models/catalog.schema.json",
+  "title": "Turing Public Model Catalog",
+  "description": "Vendor-neutral, kind-aware catalog of LLM / embedding / rerank / media models (Block BC / T759). The source file keys entries by provider plugin type and omits the redundant per-entry 'vendor' (it is the map key); the published artifact (scripts/emit-model-catalog.mjs) adds 'vendor' to each entry for consumer convenience — hence 'vendor' is optional here.",
+  "type": "object",
+  "required": ["version", "lastUpdated", "vendors"],
+  "properties": {
+    "version": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "Schema major version. Breaking changes bump this and the pinned catalog-vN.json URL."
+    },
+    "lastUpdated": {
+      "type": "string",
+      "format": "date",
+      "description": "ISO-8601 date the catalog was last regenerated."
+    },
+    "schema": {
+      "type": "string",
+      "description": "URL of this JSON Schema."
+    },
+    "source": {
+      "type": "string",
+      "description": "Origin of the catalog (e.g. https://turing.viglet.org)."
+    },
+    "vendors": {
+      "type": "object",
+      "description": "Map of provider plugin type (lower-case) to its model entries.",
+      "additionalProperties": {
+        "type": "array",
+        "items": { "$ref": "#/$defs/modelEntry" }
+      }
+    }
+  },
+  "$defs": {
+    "modelEntry": {
+      "type": "object",
+      "required": ["id", "label", "kind"],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1,
+          "description": "The exact id sent to the vendor."
+        },
+        "label": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Human-friendly display name."
+        },
+        "kind": {
+          "type": "string",
+          "enum": [
+            "CHAT",
+            "EMBEDDING",
+            "RERANK",
+            "IMAGE",
+            "TRANSCRIPTION",
+            "SPEECH",
+            "VIDEO",
+            "MODERATION",
+            "UNKNOWN"
+          ],
+          "description": "Model kind (the TurLlmModelKind taxonomy, Block BB / T750)."
+        },
+        "vendor": {
+          "type": "string",
+          "description": "Provider plugin type. Absent in the source (it is the map key); added to each entry in the published artifact."
+        },
+        "contextWindow": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Maximum context tokens, when known."
+        },
+        "embeddingDimensions": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Output vector size — only meaningful for kind = EMBEDDING."
+        },
+        "capabilities": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Capability hints such as vision, tools, reasoning, multimodal."
+        },
+        "deprecated": {
+          "type": "boolean",
+          "description": "True when the vendor has retired or superseded the id."
+        }
+      }
+    }
+  }
+}

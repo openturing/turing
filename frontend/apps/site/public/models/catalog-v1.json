@@ -1,0 +1,603 @@
+{
+  "$schema": "https://turing.viglet.org/models/catalog.schema.json",
+  "version": 1,
+  "lastUpdated": "2026-07-20",
+  "source": "https://turing.viglet.org",
+  "vendors": {
+    "openai": [
+      {
+        "id": "gpt-4.1",
+        "label": "GPT-4.1",
+        "kind": "CHAT",
+        "contextWindow": 1047576,
+        "capabilities": [
+          "vision",
+          "tools"
+        ],
+        "vendor": "openai"
+      },
+      {
+        "id": "gpt-4.1-mini",
+        "label": "GPT-4.1 mini",
+        "kind": "CHAT",
+        "contextWindow": 1047576,
+        "capabilities": [
+          "vision",
+          "tools"
+        ],
+        "vendor": "openai"
+      },
+      {
+        "id": "gpt-4.1-nano",
+        "label": "GPT-4.1 nano",
+        "kind": "CHAT",
+        "contextWindow": 1047576,
+        "capabilities": [
+          "vision",
+          "tools"
+        ],
+        "vendor": "openai"
+      },
+      {
+        "id": "gpt-4o",
+        "label": "GPT-4o",
+        "kind": "CHAT",
+        "contextWindow": 128000,
+        "capabilities": [
+          "vision",
+          "tools"
+        ],
+        "vendor": "openai"
+      },
+      {
+        "id": "gpt-4o-mini",
+        "label": "GPT-4o mini",
+        "kind": "CHAT",
+        "contextWindow": 128000,
+        "capabilities": [
+          "vision",
+          "tools"
+        ],
+        "vendor": "openai"
+      },
+      {
+        "id": "o3",
+        "label": "o3",
+        "kind": "CHAT",
+        "contextWindow": 200000,
+        "capabilities": [
+          "tools",
+          "reasoning"
+        ],
+        "vendor": "openai"
+      },
+      {
+        "id": "o4-mini",
+        "label": "o4-mini",
+        "kind": "CHAT",
+        "contextWindow": 200000,
+        "capabilities": [
+          "tools",
+          "reasoning"
+        ],
+        "vendor": "openai"
+      },
+      {
+        "id": "text-embedding-3-small",
+        "label": "text-embedding-3-small",
+        "kind": "EMBEDDING",
+        "embeddingDimensions": 1536,
+        "vendor": "openai"
+      },
+      {
+        "id": "text-embedding-3-large",
+        "label": "text-embedding-3-large",
+        "kind": "EMBEDDING",
+        "embeddingDimensions": 3072,
+        "vendor": "openai"
+      }
+    ],
+    "anthropic": [
+      {
+        "id": "claude-opus-4-1-20250805",
+        "label": "Claude Opus 4.1",
+        "kind": "CHAT",
+        "contextWindow": 200000,
+        "capabilities": [
+          "vision",
+          "tools"
+        ],
+        "vendor": "anthropic"
+      },
+      {
+        "id": "claude-sonnet-4-5-20250929",
+        "label": "Claude Sonnet 4.5",
+        "kind": "CHAT",
+        "contextWindow": 200000,
+        "capabilities": [
+          "vision",
+          "tools"
+        ],
+        "vendor": "anthropic"
+      },
+      {
+        "id": "claude-sonnet-4-20250514",
+        "label": "Claude Sonnet 4",
+        "kind": "CHAT",
+        "contextWindow": 200000,
+        "capabilities": [
+          "vision",
+          "tools"
+        ],
+        "vendor": "anthropic"
+      },
+      {
+        "id": "claude-opus-4-20250514",
+        "label": "Claude Opus 4",
+        "kind": "CHAT",
+        "contextWindow": 200000,
+        "capabilities": [
+          "vision",
+          "tools"
+        ],
+        "vendor": "anthropic"
+      },
+      {
+        "id": "claude-3-7-sonnet-20250219",
+        "label": "Claude Sonnet 3.7",
+        "kind": "CHAT",
+        "contextWindow": 200000,
+        "capabilities": [
+          "vision",
+          "tools"
+        ],
+        "vendor": "anthropic"
+      },
+      {
+        "id": "claude-3-5-haiku-20241022",
+        "label": "Claude Haiku 3.5",
+        "kind": "CHAT",
+        "contextWindow": 200000,
+        "capabilities": [
+          "vision",
+          "tools"
+        ],
+        "vendor": "anthropic"
+      }
+    ],
+    "gemini": [
+      {
+        "id": "gemini-2.5-pro",
+        "label": "Gemini 2.5 Pro",
+        "kind": "CHAT",
+        "contextWindow": 1048576,
+        "capabilities": [
+          "vision",
+          "tools"
+        ],
+        "vendor": "gemini"
+      },
+      {
+        "id": "gemini-2.5-flash",
+        "label": "Gemini 2.5 Flash",
+        "kind": "CHAT",
+        "contextWindow": 1048576,
+        "capabilities": [
+          "vision",
+          "tools"
+        ],
+        "vendor": "gemini"
+      },
+      {
+        "id": "gemini-2.0-flash",
+        "label": "Gemini 2.0 Flash",
+        "kind": "CHAT",
+        "contextWindow": 1048576,
+        "capabilities": [
+          "vision",
+          "tools"
+        ],
+        "vendor": "gemini"
+      },
+      {
+        "id": "gemini-2.0-flash-lite",
+        "label": "Gemini 2.0 Flash-Lite",
+        "kind": "CHAT",
+        "contextWindow": 1048576,
+        "capabilities": [
+          "vision"
+        ],
+        "vendor": "gemini"
+      },
+      {
+        "id": "gemini-1.5-pro",
+        "label": "Gemini 1.5 Pro",
+        "kind": "CHAT",
+        "contextWindow": 2097152,
+        "capabilities": [
+          "vision",
+          "tools"
+        ],
+        "vendor": "gemini"
+      },
+      {
+        "id": "gemini-1.5-flash",
+        "label": "Gemini 1.5 Flash",
+        "kind": "CHAT",
+        "contextWindow": 1048576,
+        "capabilities": [
+          "vision",
+          "tools"
+        ],
+        "vendor": "gemini"
+      },
+      {
+        "id": "gemini-embedding-001",
+        "label": "gemini-embedding-001",
+        "kind": "EMBEDDING",
+        "embeddingDimensions": 3072,
+        "vendor": "gemini"
+      },
+      {
+        "id": "text-embedding-004",
+        "label": "text-embedding-004",
+        "kind": "EMBEDDING",
+        "embeddingDimensions": 768,
+        "vendor": "gemini"
+      }
+    ],
+    "gemini-openai": [
+      {
+        "id": "gemini-2.5-pro",
+        "label": "Gemini 2.5 Pro",
+        "kind": "CHAT",
+        "contextWindow": 1048576,
+        "capabilities": [
+          "vision",
+          "tools"
+        ],
+        "vendor": "gemini-openai"
+      },
+      {
+        "id": "gemini-2.5-flash",
+        "label": "Gemini 2.5 Flash",
+        "kind": "CHAT",
+        "contextWindow": 1048576,
+        "capabilities": [
+          "vision",
+          "tools"
+        ],
+        "vendor": "gemini-openai"
+      },
+      {
+        "id": "gemini-2.0-flash",
+        "label": "Gemini 2.0 Flash",
+        "kind": "CHAT",
+        "contextWindow": 1048576,
+        "capabilities": [
+          "vision",
+          "tools"
+        ],
+        "vendor": "gemini-openai"
+      },
+      {
+        "id": "gemini-1.5-pro",
+        "label": "Gemini 1.5 Pro",
+        "kind": "CHAT",
+        "contextWindow": 2097152,
+        "capabilities": [
+          "vision",
+          "tools"
+        ],
+        "vendor": "gemini-openai"
+      },
+      {
+        "id": "gemini-1.5-flash",
+        "label": "Gemini 1.5 Flash",
+        "kind": "CHAT",
+        "contextWindow": 1048576,
+        "capabilities": [
+          "vision",
+          "tools"
+        ],
+        "vendor": "gemini-openai"
+      }
+    ],
+    "ollama": [
+      {
+        "id": "llama3.2",
+        "label": "Llama 3.2",
+        "kind": "CHAT",
+        "vendor": "ollama"
+      },
+      {
+        "id": "llama3.1",
+        "label": "Llama 3.1",
+        "kind": "CHAT",
+        "vendor": "ollama"
+      },
+      {
+        "id": "mistral",
+        "label": "Mistral",
+        "kind": "CHAT",
+        "vendor": "ollama"
+      },
+      {
+        "id": "qwen2.5",
+        "label": "Qwen 2.5",
+        "kind": "CHAT",
+        "vendor": "ollama"
+      },
+      {
+        "id": "gemma2",
+        "label": "Gemma 2",
+        "kind": "CHAT",
+        "vendor": "ollama"
+      },
+      {
+        "id": "phi3",
+        "label": "Phi-3",
+        "kind": "CHAT",
+        "vendor": "ollama"
+      },
+      {
+        "id": "nomic-embed-text",
+        "label": "nomic-embed-text",
+        "kind": "EMBEDDING",
+        "embeddingDimensions": 768,
+        "vendor": "ollama"
+      }
+    ],
+    "openai-compatible": [],
+    "bedrock": [
+      {
+        "id": "anthropic.claude-3-5-sonnet-20241022-v2:0",
+        "label": "Claude 3.5 Sonnet v2",
+        "kind": "CHAT",
+        "contextWindow": 200000,
+        "capabilities": [
+          "vision",
+          "tools"
+        ],
+        "vendor": "bedrock"
+      },
+      {
+        "id": "anthropic.claude-3-5-haiku-20241022-v1:0",
+        "label": "Claude 3.5 Haiku",
+        "kind": "CHAT",
+        "contextWindow": 200000,
+        "capabilities": [
+          "tools"
+        ],
+        "vendor": "bedrock"
+      },
+      {
+        "id": "amazon.titan-embed-text-v2:0",
+        "label": "Titan Text Embeddings v2",
+        "kind": "EMBEDDING",
+        "embeddingDimensions": 1024,
+        "vendor": "bedrock"
+      },
+      {
+        "id": "meta.llama3-1-70b-instruct-v1:0",
+        "label": "Llama 3.1 70B Instruct",
+        "kind": "CHAT",
+        "contextWindow": 128000,
+        "vendor": "bedrock"
+      },
+      {
+        "id": "mistral.mistral-large-2407-v1:0",
+        "label": "Mistral Large",
+        "kind": "CHAT",
+        "contextWindow": 128000,
+        "capabilities": [
+          "tools"
+        ],
+        "vendor": "bedrock"
+      }
+    ],
+    "cohere": [
+      {
+        "id": "command-a-03-2025",
+        "label": "Command A",
+        "kind": "CHAT",
+        "contextWindow": 256000,
+        "capabilities": [
+          "tools"
+        ],
+        "vendor": "cohere"
+      },
+      {
+        "id": "command-r-plus",
+        "label": "Command R+",
+        "kind": "CHAT",
+        "contextWindow": 128000,
+        "capabilities": [
+          "tools"
+        ],
+        "vendor": "cohere"
+      },
+      {
+        "id": "command-r",
+        "label": "Command R",
+        "kind": "CHAT",
+        "contextWindow": 128000,
+        "capabilities": [
+          "tools"
+        ],
+        "vendor": "cohere"
+      },
+      {
+        "id": "embed-v4.0",
+        "label": "Embed v4",
+        "kind": "EMBEDDING",
+        "embeddingDimensions": 1536,
+        "vendor": "cohere"
+      },
+      {
+        "id": "embed-multilingual-v3.0",
+        "label": "Embed Multilingual v3",
+        "kind": "EMBEDDING",
+        "embeddingDimensions": 1024,
+        "vendor": "cohere"
+      },
+      {
+        "id": "rerank-v3.5",
+        "label": "Rerank v3.5",
+        "kind": "RERANK",
+        "vendor": "cohere"
+      }
+    ],
+    "mistral": [
+      {
+        "id": "mistral-large-latest",
+        "label": "Mistral Large",
+        "kind": "CHAT",
+        "contextWindow": 128000,
+        "capabilities": [
+          "tools"
+        ],
+        "vendor": "mistral"
+      },
+      {
+        "id": "mistral-small-latest",
+        "label": "Mistral Small",
+        "kind": "CHAT",
+        "contextWindow": 128000,
+        "capabilities": [
+          "tools"
+        ],
+        "vendor": "mistral"
+      },
+      {
+        "id": "open-mistral-nemo",
+        "label": "Mistral Nemo",
+        "kind": "CHAT",
+        "contextWindow": 128000,
+        "vendor": "mistral"
+      },
+      {
+        "id": "codestral-latest",
+        "label": "Codestral",
+        "kind": "CHAT",
+        "contextWindow": 256000,
+        "capabilities": [
+          "tools"
+        ],
+        "vendor": "mistral"
+      },
+      {
+        "id": "mistral-embed",
+        "label": "Mistral Embed",
+        "kind": "EMBEDDING",
+        "embeddingDimensions": 1024,
+        "vendor": "mistral"
+      }
+    ],
+    "voyage": [
+      {
+        "id": "voyage-3-large",
+        "label": "voyage-3-large",
+        "kind": "EMBEDDING",
+        "embeddingDimensions": 1024,
+        "vendor": "voyage"
+      },
+      {
+        "id": "voyage-3",
+        "label": "voyage-3",
+        "kind": "EMBEDDING",
+        "embeddingDimensions": 1024,
+        "vendor": "voyage"
+      },
+      {
+        "id": "voyage-3-lite",
+        "label": "voyage-3-lite",
+        "kind": "EMBEDDING",
+        "embeddingDimensions": 512,
+        "vendor": "voyage"
+      },
+      {
+        "id": "voyage-code-3",
+        "label": "voyage-code-3",
+        "kind": "EMBEDDING",
+        "embeddingDimensions": 1024,
+        "vendor": "voyage"
+      },
+      {
+        "id": "voyage-multimodal-3",
+        "label": "voyage-multimodal-3",
+        "kind": "EMBEDDING",
+        "embeddingDimensions": 1024,
+        "capabilities": [
+          "multimodal"
+        ],
+        "vendor": "voyage"
+      },
+      {
+        "id": "rerank-2",
+        "label": "rerank-2",
+        "kind": "RERANK",
+        "vendor": "voyage"
+      },
+      {
+        "id": "rerank-2-lite",
+        "label": "rerank-2-lite",
+        "kind": "RERANK",
+        "vendor": "voyage"
+      }
+    ],
+    "vertex-ai": [
+      {
+        "id": "gemini-2.5-pro",
+        "label": "Gemini 2.5 Pro",
+        "kind": "CHAT",
+        "contextWindow": 1048576,
+        "capabilities": [
+          "vision",
+          "tools"
+        ],
+        "vendor": "vertex-ai"
+      },
+      {
+        "id": "gemini-2.5-flash",
+        "label": "Gemini 2.5 Flash",
+        "kind": "CHAT",
+        "contextWindow": 1048576,
+        "capabilities": [
+          "vision",
+          "tools"
+        ],
+        "vendor": "vertex-ai"
+      },
+      {
+        "id": "gemini-2.0-flash",
+        "label": "Gemini 2.0 Flash",
+        "kind": "CHAT",
+        "contextWindow": 1048576,
+        "capabilities": [
+          "vision",
+          "tools"
+        ],
+        "vendor": "vertex-ai"
+      },
+      {
+        "id": "gemini-1.5-pro",
+        "label": "Gemini 1.5 Pro",
+        "kind": "CHAT",
+        "contextWindow": 2097152,
+        "capabilities": [
+          "vision",
+          "tools"
+        ],
+        "vendor": "vertex-ai"
+      },
+      {
+        "id": "text-embedding-005",
+        "label": "text-embedding-005",
+        "kind": "EMBEDDING",
+        "embeddingDimensions": 768,
+        "vendor": "vertex-ai"
+      }
+    ]
+  }
+}

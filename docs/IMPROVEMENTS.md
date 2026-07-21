@@ -2633,16 +2633,6 @@ static JSON artifact** emitted at build time at a stable path, served with open
 CORS + cache headers. That is enough to be a real, fetchable reference endpoint;
 no dynamic backend is introduced.
 
-### LI.1 Canonical enriched catalog + schema (T759)
-
-Promote `models-catalog.json` from a picker-fallback into the **canonical source
-of truth**, enriched per entry with `kind` (T750), `vendor`, `contextWindow`,
-`embeddingDimensions` (for `kind=EMBEDDING`), `capabilities`, and a `deprecated`
-flag, wrapped in a versioned envelope (`version`, `lastUpdated`, `$schema`). A
-published JSON Schema documents the contract. A single build/emit step produces
-the artifact that **both** the site (LI.2) and the backend (LI.4) consume, so
-there is one source, not two drifting copies.
-
 ### LI.2 Public static JSON endpoint (T760)
 
 The site build emits the catalog at a stable, versioned URL — a rolling
