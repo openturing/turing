@@ -128,7 +128,7 @@
     "@storybook/addon-docs": "^10.5.1",
     "@storybook/addon-links": "^10.5.1",
     "@storybook/react-vite": "^10.5.1",
-    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/jest-dom": "^7.0.0",
     "@testing-library/react": "^16.3.0",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
