@@ -55,7 +55,6 @@
 > gated on the T752 ADR because it touches the RAG / vector-store read path. Design → §L.
 
 **Phase 2 — unify `TurEmbeddingModel` into the LLM instance (ADR 0004 accepted, T752):**
-- 💭 **T754** (deps: T753) **Local/HF ONNX as vendors** — model `TRANSFORMERS_LOCAL` + `HUGGINGFACE` as `TurLLMVendor`s over the existing local/HF embedding factories so they live on the unified entity instead of the `providerType` sentinel. → §L.3
 - 💭 **T755** (deps: T753, T754) **Data migration** — move existing `embedding_model` rows onto the unified entity (Liquibase data migration + one-time reconciliation): instance-backed rows collapse into their instance's embedding default; local/HF rows become their own unified instances. → §L.3
 - 💭 **T756** (deps: T755) **Repoint consumers** — switch the RAG context builder, the Lucene/vector store, batch re-embedding, SN-site GenAI, the default-RAG-infra startup, and the store API off `TurEmbeddingModel` onto the unified model reference. → §L.3
 - 💭 **T757** (deps: T751, T756) **Unified admin UI** — one "Models" surface with kind tabs/filter; the instance form grows an Embedding-default picker (filtered to `kind=EMBEDDING`); retire the standalone `/bento/embedding` route with a redirect. → §L.3

@@ -23,6 +23,8 @@ package com.viglet.turing.onstartup.llm;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.viglet.turing.genai.provider.llm.TurHuggingFaceEmbeddingModelFactory;
+import com.viglet.turing.genai.provider.llm.TurLocalEmbeddingModelFactory;
 import com.viglet.turing.persistence.model.llm.TurLLMVendor;
 import com.viglet.turing.persistence.repository.llm.TurLLMVendorRepository;
 
@@ -36,101 +38,59 @@ public class TurLLMVendorOnStartup {
 		this.turLLMVendorRepository = turLLMVendorRepository;
 	}
 
+	/**
+	 * Seeds the built-in LLM vendors, idempotently per vendor (T754). Was
+	 * all-or-nothing on an empty table, which meant a new vendor added later never
+	 * reached existing installs; now each vendor is created only if missing, so the
+	 * set self-heals on upgrade. Never overwrites an existing (possibly
+	 * user-edited) row.
+	 */
 	public void createDefaultRows() {
+		ensureVendor("OPENAI", "Open AI", "openai", "Open AI", "https://openai.com");
+		ensureVendor("OLLAMA", "Ollama", "ollama", "Ollama", "https://ollama.com");
+		ensureVendor("ANTHROPIC", "Anthropic (Claude)", "anthropic", "Anthropic", "https://anthropic.com");
+		ensureVendor("GEMINI", "Google Gemini (native GenAI SDK)", "gemini", "Google Gemini",
+				"https://ai.google.dev");
+		ensureVendor("GEMINI_OPENAI", "Google Gemini via OpenAI-compatible endpoint", "gemini-openai",
+				"Google Gemini (OpenAI Compatible)", "https://ai.google.dev");
+		ensureVendor("OPENAI_COMPAT",
+				"Any OpenAI-compatible endpoint (DeepSeek, xAI Grok, Groq, Cerebras, OpenRouter, "
+						+ "Together, Fireworks, local vLLM/LM-Studio) — set the base URL",
+				"openai-compatible", "OpenAI-Compatible", "https://platform.openai.com/docs/api-reference");
+		ensureVendor("BEDROCK",
+				"AWS Bedrock — Claude/Llama/Mistral/Nova/Titan on one IAM-authenticated gateway", "bedrock",
+				"AWS Bedrock", "https://aws.amazon.com/bedrock");
+		ensureVendor("VOYAGE", "Voyage AI — retrieval-specialist embeddings + rerank (no chat API)", "voyage",
+				"Voyage AI", "https://www.voyageai.com");
+		ensureVendor("COHERE", "Cohere — Command chat + Embed v4 (OpenAI-compatible endpoint)", "cohere",
+				"Cohere", "https://cohere.com");
+		ensureVendor("MISTRAL", "Mistral AI — European/GDPR-native chat + embeddings (OpenAI-compatible)",
+				"mistral", "Mistral AI", "https://mistral.ai");
+		ensureVendor("VERTEX_AI",
+				"Google Vertex AI — enterprise Gemini on GCP (IAM/VPC-SC/CMEK, regional endpoints)",
+				"vertex-ai", "Google Vertex AI", "https://cloud.google.com/vertex-ai");
+		// T754 / ADR 0004 — the two in-process ONNX embedding modes become first-class
+		// vendors (embedding-only, no cloud, no chat). The id equals the embedding
+		// factory PROVIDER_TYPE so the in-process factory resolves by vendor.
+		ensureVendor(TurLocalEmbeddingModelFactory.PROVIDER_TYPE,
+				"In-process ONNX embedding model — local .onnx + tokenizer (no cloud, no chat)",
+				"transformers-local", "Local ONNX (Transformers)", "https://onnxruntime.ai");
+		ensureVendor(TurHuggingFaceEmbeddingModelFactory.PROVIDER_TYPE,
+				"In-process ONNX embedding model from a Hugging Face repo id (no cloud, no chat)",
+				"huggingface", "Hugging Face (local ONNX)", "https://huggingface.co");
+	}
 
-		if (turLLMVendorRepository.findAll().isEmpty()) {
-			TurLLMVendor openai = new TurLLMVendor();
-			openai.setId("OPENAI");
-			openai.setDescription("Open AI");
-			openai.setPlugin("openai");
-			openai.setTitle("Open AI");
-			openai.setWebsite("https://openai.com");
-			turLLMVendorRepository.save(openai);
-
-			TurLLMVendor ollama = new TurLLMVendor();
-			ollama.setId("OLLAMA");
-			ollama.setDescription("Ollama");
-			ollama.setPlugin("ollama");
-			ollama.setTitle("Ollama");
-			ollama.setWebsite("https://ollama.com");
-			turLLMVendorRepository.save(ollama);
-
-			TurLLMVendor anthropic = new TurLLMVendor();
-			anthropic.setId("ANTHROPIC");
-			anthropic.setDescription("Anthropic (Claude)");
-			anthropic.setPlugin("anthropic");
-			anthropic.setTitle("Anthropic");
-			anthropic.setWebsite("https://anthropic.com");
-			turLLMVendorRepository.save(anthropic);
-
-			TurLLMVendor gemini = new TurLLMVendor();
-			gemini.setId("GEMINI");
-			gemini.setDescription("Google Gemini (native GenAI SDK)");
-			gemini.setPlugin("gemini");
-			gemini.setTitle("Google Gemini");
-			gemini.setWebsite("https://ai.google.dev");
-			turLLMVendorRepository.save(gemini);
-
-			TurLLMVendor geminiOpenAI = new TurLLMVendor();
-			geminiOpenAI.setId("GEMINI_OPENAI");
-			geminiOpenAI.setDescription("Google Gemini via OpenAI-compatible endpoint");
-			geminiOpenAI.setPlugin("gemini-openai");
-			geminiOpenAI.setTitle("Google Gemini (OpenAI Compatible)");
-			geminiOpenAI.setWebsite("https://ai.google.dev");
-			turLLMVendorRepository.save(geminiOpenAI);
-
-			TurLLMVendor openAiCompatible = new TurLLMVendor();
-			openAiCompatible.setId("OPENAI_COMPAT");
-			openAiCompatible.setDescription(
-					"Any OpenAI-compatible endpoint (DeepSeek, xAI Grok, Groq, Cerebras, OpenRouter, "
-							+ "Together, Fireworks, local vLLM/LM-Studio) — set the base URL");
-			openAiCompatible.setPlugin("openai-compatible");
-			openAiCompatible.setTitle("OpenAI-Compatible");
-			openAiCompatible.setWebsite("https://platform.openai.com/docs/api-reference");
-			turLLMVendorRepository.save(openAiCompatible);
-
-			TurLLMVendor bedrock = new TurLLMVendor();
-			bedrock.setId("BEDROCK");
-			bedrock.setDescription(
-					"AWS Bedrock — Claude/Llama/Mistral/Nova/Titan on one IAM-authenticated gateway");
-			bedrock.setPlugin("bedrock");
-			bedrock.setTitle("AWS Bedrock");
-			bedrock.setWebsite("https://aws.amazon.com/bedrock");
-			turLLMVendorRepository.save(bedrock);
-
-			TurLLMVendor voyage = new TurLLMVendor();
-			voyage.setId("VOYAGE");
-			voyage.setDescription("Voyage AI — retrieval-specialist embeddings + rerank (no chat API)");
-			voyage.setPlugin("voyage");
-			voyage.setTitle("Voyage AI");
-			voyage.setWebsite("https://www.voyageai.com");
-			turLLMVendorRepository.save(voyage);
-
-			TurLLMVendor cohere = new TurLLMVendor();
-			cohere.setId("COHERE");
-			cohere.setDescription("Cohere — Command chat + Embed v4 (OpenAI-compatible endpoint)");
-			cohere.setPlugin("cohere");
-			cohere.setTitle("Cohere");
-			cohere.setWebsite("https://cohere.com");
-			turLLMVendorRepository.save(cohere);
-
-			TurLLMVendor mistral = new TurLLMVendor();
-			mistral.setId("MISTRAL");
-			mistral.setDescription("Mistral AI — European/GDPR-native chat + embeddings (OpenAI-compatible)");
-			mistral.setPlugin("mistral");
-			mistral.setTitle("Mistral AI");
-			mistral.setWebsite("https://mistral.ai");
-			turLLMVendorRepository.save(mistral);
-
-			TurLLMVendor vertexAi = new TurLLMVendor();
-			vertexAi.setId("VERTEX_AI");
-			vertexAi.setDescription(
-					"Google Vertex AI — enterprise Gemini on GCP (IAM/VPC-SC/CMEK, regional endpoints)");
-			vertexAi.setPlugin("vertex-ai");
-			vertexAi.setTitle("Google Vertex AI");
-			vertexAi.setWebsite("https://cloud.google.com/vertex-ai");
-			turLLMVendorRepository.save(vertexAi);
-
+	/** Creates the vendor only when its id is not already present (idempotent). */
+	private void ensureVendor(String id, String description, String plugin, String title, String website) {
+		if (turLLMVendorRepository.existsById(id)) {
+			return;
 		}
+		TurLLMVendor vendor = new TurLLMVendor();
+		vendor.setId(id);
+		vendor.setDescription(description);
+		vendor.setPlugin(plugin);
+		vendor.setTitle(title);
+		vendor.setWebsite(website);
+		turLLMVendorRepository.save(vendor);
 	}
 }
