@@ -24,20 +24,27 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import org.junit.jupiter.api.Test;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import io.github.openviglet.modelscatalog.ModelCatalogClient;
 
 /**
- * Verifies {@link TurLlmModelCatalog} parses the canonical <em>envelope</em>
- * catalog ({@code {version, lastUpdated, vendors:{...}}}) served by the public
- * endpoint, honouring the per-entry {@code kind}. The catalog is remote-only (no
- * bundled resource): with the remote fetch disabled the served map stays empty.
+ * Verifies {@link TurLlmModelCatalog} maps the canonical <em>envelope</em> catalog
+ * ({@code {version, lastUpdated, vendors:{...}}}) served by the public endpoint —
+ * fetched through the {@code models-catalog-client} library — into the vendor→models
+ * map, honouring each entry's {@code kind} (or the heuristic when absent). The catalog
+ * is remote-only (no bundled resource): with the remote fetch disabled the served map
+ * stays empty, and a failed/empty refresh keeps the last-good map.
  */
 class TurLlmModelCatalogTest {
 
     private final TurLlmModelCatalog catalog = new TurLlmModelCatalog();
 
+    /** A catalog client whose transport returns the given envelope JSON for any URL. */
+    private static ModelCatalogClient clientServing(String envelopeJson) {
+        return ModelCatalogClient.builder().fetcher(url -> envelopeJson).build();
+    }
+
     @Test
-    void parseCatalogParsesEnvelopeWithKinds() throws Exception {
+    void refreshMapsEnvelopeHonouringKinds() {
         String envelope = """
                 {
                   "version": 1,
@@ -53,20 +60,19 @@ class TurLlmModelCatalogTest {
                   }
                 }
                 """;
-        var parsed = catalog.parseCatalog(new ObjectMapper().readTree(envelope));
-        assertThat(parsed.get("openai")).extracting(TurLlmModelOption::id)
+        catalog.refreshFrom(clientServing(envelope));
+        assertThat(catalog.staticModels("openai")).extracting(TurLlmModelOption::id)
                 .containsExactly("gpt-4o", "text-embedding-3-small");
-        assertThat(parsed.get("openai"))
-                .allSatisfy(o -> assertThat(o.kind()).isNotNull())
+        assertThat(catalog.staticModels("openai"))
                 .anyMatch(o -> o.kind() == TurLlmModelKind.CHAT)
                 .anyMatch(o -> o.kind() == TurLlmModelKind.EMBEDDING);
-        assertThat(parsed.get("cohere")).anyMatch(o -> o.kind() == TurLlmModelKind.RERANK);
+        assertThat(catalog.staticModels("cohere")).anyMatch(o -> o.kind() == TurLlmModelKind.RERANK);
     }
 
     @Test
-    void parseCatalogHandlesRemotePublishedShape() throws Exception {
-        // The public endpoint serves the envelope with per-entry `vendor` + enriched
-        // fields; only id/label/kind are consumed, extras ignored.
+    void refreshHandlesRemotePublishedShapeWithEnrichedFields() {
+        // The public endpoint serves per-entry `vendor` + enriched fields; only
+        // id/label/kind are consumed, the extras are ignored.
         String remote = """
                 {
                   "version": 1,
@@ -81,19 +87,42 @@ class TurLlmModelCatalogTest {
                   }
                 }
                 """;
-        var parsed = catalog.parseCatalog(new ObjectMapper().readTree(remote));
-        assertThat(parsed.get("openai")).extracting(TurLlmModelOption::id)
+        catalog.refreshFrom(clientServing(remote));
+        assertThat(catalog.staticModels("openai")).extracting(TurLlmModelOption::id)
                 .containsExactly("gpt-4o", "text-embedding-3-small");
-        assertThat(parsed.get("openai")).anyMatch(o -> o.kind() == TurLlmModelKind.EMBEDDING);
+        assertThat(catalog.staticModels("openai")).anyMatch(o -> o.kind() == TurLlmModelKind.EMBEDDING);
     }
 
     @Test
-    void parseCatalogToleratesLegacyFlatShape() throws Exception {
-        String legacy = """
-                { "openai": [ { "id": "gpt-4o", "label": "GPT-4o" } ] }
+    void refreshFallsBackToHeuristicWhenKindAbsent() {
+        // No explicit kind → the id/label heuristic classifies (embedding id → EMBEDDING).
+        String envelope = """
+                {
+                  "version": 1,
+                  "vendors": {
+                    "openai": [
+                      { "id": "gpt-4o", "label": "GPT-4o" },
+                      { "id": "text-embedding-3-large", "label": "text-embedding-3-large" }
+                    ]
+                  }
+                }
                 """;
-        var parsed = catalog.parseCatalog(new ObjectMapper().readTree(legacy));
-        assertThat(parsed.get("openai")).extracting(TurLlmModelOption::id).containsExactly("gpt-4o");
+        catalog.refreshFrom(clientServing(envelope));
+        assertThat(catalog.staticModels("openai"))
+                .anyMatch(o -> o.id().equals("gpt-4o") && o.kind() == TurLlmModelKind.CHAT)
+                .anyMatch(o -> o.id().equals("text-embedding-3-large") && o.kind() == TurLlmModelKind.EMBEDDING);
+    }
+
+    @Test
+    void refreshKeepsLastGoodOnEmptyResult() {
+        catalog.refreshFrom(clientServing("""
+                { "version": 1, "vendors": { "openai": [ { "id": "gpt-4o", "label": "GPT-4o" } ] } }
+                """));
+        // A subsequent empty envelope must not wipe the last-good map.
+        catalog.refreshFrom(clientServing("""
+                { "version": 1, "vendors": {} }
+                """));
+        assertThat(catalog.staticModels("openai")).extracting(TurLlmModelOption::id).containsExactly("gpt-4o");
     }
 
     @Test

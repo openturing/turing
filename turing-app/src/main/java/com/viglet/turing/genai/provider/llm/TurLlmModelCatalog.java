@@ -8,14 +8,13 @@ import java.util.Locale;
 import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
-import org.springframework.web.client.RestClient;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import io.github.openviglet.modelscatalog.Kind;
+import io.github.openviglet.modelscatalog.ModelCatalogClient;
+import io.github.openviglet.modelscatalog.ModelEntry;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -26,9 +25,13 @@ import lombok.extern.slf4j.Slf4j;
  * models" endpoint), the discovery service serves these instead.
  *
  * <p>The catalog lives in its own repository — <b>{@code openviglet/models-catalog}</b>
- * — which publishes it as a public, CORS-open JSON endpoint. Turing fetches it
- * from {@code turing.models-catalog.url} (default the published rolling endpoint)
- * on a TTL, so a running instance picks up new models without a redeploy.
+ * — which publishes it as a public, CORS-open JSON endpoint. Turing consumes it
+ * through the official {@code io.github.openviglet:models-catalog-client} library
+ * (zero runtime dependencies — JDK {@code HttpClient} + a tiny built-in JSON reader)
+ * rather than a hand-rolled HTTP+JSON fetch, so URL selection, {@code vendors}-map
+ * flattening and the typed {@link ModelEntry}/{@link Kind} model come from the shared
+ * client. Fetches from {@code turing.models-catalog.url} (default the published rolling
+ * endpoint) on a TTL, so a running instance picks up new models without a redeploy.
  *
  * <p>There is <b>no bundled offline fallback</b>: the catalog is remote-only. The
  * effective map is empty until the first successful refresh, after which it holds
@@ -44,14 +47,15 @@ import lombok.extern.slf4j.Slf4j;
 @Component
 public class TurLlmModelCatalog {
 
-    private final ObjectMapper objectMapper = new ObjectMapper();
-
     /**
      * The effective catalog served to callers. Empty until the first successful
      * remote refresh; thereafter it holds the last-good remote map (a failed fetch
      * keeps the current map, never an empty one from a failed request).
      */
     private volatile Map<String, List<TurLlmModelOption>> catalog = Map.of();
+
+    /** Lazily built from the configured base URL; overridable for tests. */
+    private volatile ModelCatalogClient client;
 
     @Value("${turing.models-catalog.url:https://openviglet.github.io/models-catalog/catalog.json}")
     private String remoteUrl;
@@ -72,18 +76,19 @@ public class TurLlmModelCatalog {
         if (!remoteEnabled || !StringUtils.hasText(remoteUrl)) {
             return;
         }
+        refreshFrom(client());
+    }
+
+    /**
+     * Refreshes the served map from the given client — force-fetches the catalog,
+     * maps it to the vendor→models shape, and swaps it in. Best-effort: on any
+     * failure (offline, unreachable, malformed) or an empty result, the current
+     * (last-good) map is kept, never replaced with an empty one.
+     */
+    void refreshFrom(ModelCatalogClient modelCatalogClient) {
         try {
-            SimpleClientHttpRequestFactory rf = new SimpleClientHttpRequestFactory();
-            rf.setConnectTimeout(Duration.ofSeconds(3));
-            rf.setReadTimeout(Duration.ofSeconds(5));
-            String body = RestClient.builder().requestFactory(rf).build()
-                    .get().uri(remoteUrl)
-                    .retrieve()
-                    .body(String.class);
-            if (!StringUtils.hasText(body)) {
-                return;
-            }
-            Map<String, List<TurLlmModelOption>> parsed = parseCatalog(objectMapper.readTree(body));
+            List<ModelEntry> entries = modelCatalogClient.refresh().entries();
+            Map<String, List<TurLlmModelOption>> parsed = toCatalogMap(entries);
             if (!parsed.isEmpty()) {
                 this.catalog = parsed;
                 log.info("Refreshed LLM model catalog from {} ({} providers)", remoteUrl, parsed.size());
@@ -96,31 +101,62 @@ public class TurLlmModelCatalog {
     }
 
     /**
-     * Parses a catalog document into the vendor→models map. Accepts the canonical
-     * versioned envelope ({@code {version, lastUpdated, vendors:{...}}}) — as served
-     * by the public endpoint — and tolerates the legacy flat shape
-     * ({@code {vendor:[...]}}) where the root is the map.
+     * Maps the client's flattened {@link ModelEntry} list into the vendor→models map
+     * the picker serves. Only id/label/kind are consumed (extras ignored); an entry's
+     * {@link Kind} is honoured when known, otherwise the id/label heuristic classifies
+     * it. Vendors preserve first-seen order; blank ids are skipped.
      */
-    Map<String, List<TurLlmModelOption>> parseCatalog(JsonNode root) {
-        Map<String, List<TurLlmModelOption>> parsed = new LinkedHashMap<>();
-        JsonNode vendors = root.has("vendors") ? root.get("vendors") : root;
-        vendors.fields().forEachRemaining(entry -> {
-            JsonNode value = entry.getValue();
-            if (value.isArray()) {
-                List<TurLlmModelOption> models = new ArrayList<>();
-                value.forEach(node -> {
-                    String id = node.path("id").asText(null);
-                    if (id != null && !id.isBlank()) {
-                        String label = node.path("label").asText(id);
-                        String kindOverride = node.path("kind").asText(null);
-                        models.add(new TurLlmModelOption(id, label,
-                                TurLlmModelKind.parseOrClassify(kindOverride, id, label)));
-                    }
-                });
-                parsed.put(entry.getKey().toLowerCase(Locale.ROOT), List.copyOf(models));
+    Map<String, List<TurLlmModelOption>> toCatalogMap(List<ModelEntry> entries) {
+        Map<String, List<TurLlmModelOption>> byVendor = new LinkedHashMap<>();
+        for (ModelEntry entry : entries) {
+            String id = entry.id();
+            if (id == null || id.isBlank()) {
+                continue;
             }
-        });
-        return Map.copyOf(parsed);
+            String vendor = entry.vendor() == null ? "" : entry.vendor().toLowerCase(Locale.ROOT);
+            String label = entry.label() != null ? entry.label() : id;
+            Kind kind = entry.kind();
+            String override = (kind == null || kind == Kind.UNKNOWN) ? null : kind.name();
+            byVendor.computeIfAbsent(vendor, v -> new ArrayList<>())
+                    .add(new TurLlmModelOption(id, label,
+                            TurLlmModelKind.parseOrClassify(override, id, label)));
+        }
+        Map<String, List<TurLlmModelOption>> out = new LinkedHashMap<>();
+        byVendor.forEach((vendor, models) -> out.put(vendor, List.copyOf(models)));
+        return Map.copyOf(out);
+    }
+
+    /** The catalog client, built once from the configured base URL. */
+    ModelCatalogClient client() {
+        ModelCatalogClient current = this.client;
+        if (current == null) {
+            current = ModelCatalogClient.builder()
+                    .baseUrl(catalogBaseUrl())
+                    .timeout(Duration.ofSeconds(5))
+                    .build();
+            this.client = current;
+        }
+        return current;
+    }
+
+    /** Inject a client (built with a fake fetcher) for tests. */
+    void useClient(ModelCatalogClient modelCatalogClient) {
+        this.client = modelCatalogClient;
+    }
+
+    /**
+     * The catalog client wants the endpoint <em>base</em> (it appends the file it
+     * needs). {@code turing.models-catalog.url} may be configured either as that base
+     * or as a full URL to a specific {@code *.json} file (its historical default);
+     * a trailing JSON filename is stripped so both forms work.
+     */
+    String catalogBaseUrl() {
+        String url = remoteUrl.trim();
+        int slash = url.lastIndexOf('/');
+        if (slash > "https://".length() && url.substring(slash + 1).endsWith(".json")) {
+            return url.substring(0, slash);
+        }
+        return url;
     }
 
     /** Curated models for a plugin type, or empty when none are available yet. */

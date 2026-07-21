@@ -1,7 +1,7 @@
-# Last task number — `T774` · next block letter — `BE`
+# Last task number — `T775` · next block letter — `BE`
 
 > **Single source of truth for the next free task number.** The next new task is
-> `T772`; after assigning it, bump the number above and the log line below.
+> `T776`; after assigning it, bump the number above and the log line below.
 >
 > **Next block letter — `BE`** (Block **BD** = Multi-source model-catalog
 > regeneration pipeline — a local, zero-dep, procedural pipeline that regenerates
@@ -90,6 +90,7 @@ number" looked free but wasn't. Grepping three files (`ROADMAP.md`,
 
 ## Log (most recent first)
 
+- **T775 SHIPPED** (Block BC §LI — TurLlmModelCatalog consumes the openviglet/models-catalog endpoint via the official `io.github.openviglet:models-catalog-client` 1.0.2 library instead of a hand-rolled RestClient+Jackson fetch; maps typed ModelEntry/Kind, same remote-only/last-good semantics; drops legacy-flat parse tolerance; dep added to turing-app; 6 units green) — 2026-07-21.
 - **T770 SHIPPED** (Block BD §LII.5 — catalog:regen orchestrator: regen.mjs fetch→merge→validate→report + --apply/--offline/--only/--date; overrides.json seed; sources/out gitignored; docs/references/model-catalog-pipeline.md; 10 node:test units. CLOSES Block BD committed scope T764-T770; only 💭 T771 remains) — 2026-07-21.
 - **T769 SHIPPED** (Block BD §LII.4 — validation + diff review gate: validateEnvelope schema-constraint check + diffReport per-vendor add/remove/change w/ per-field source attribution + conflicts; proposed envelope+report to out/, canonical written only on --apply) — 2026-07-21.
 - **T768 SHIPPED** (Block BD §LII.4 — merge/reconciliation: precedence pin>live>override>committed>litellm, per-field provenance+conflicts+confidence, carry-forward safety + positive-evidence removal + anchoring rule + overrides.json __pin; proposed envelope only) — 2026-07-21.
