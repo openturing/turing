@@ -101,6 +101,34 @@ public class TurLLMInstance implements Serializable, VigletTenantOwnedInfra {
 	@Column
 	private String modelNames;
 
+	/**
+	 * Unified model entity, phase 2 (T753 / ADR 0004). {@code modelName} above is
+	 * the CHAT default; these are the per-kind defaults + embedding-serving fields
+	 * folded from {@code TurEmbeddingModel}. All nullable — populated only for
+	 * embedding/rerank-capable instances; a chat-only instance leaves them null.
+	 * Consumers are repointed onto these in T756; nothing reads them yet.
+	 *
+	 * @since 2026.3.4
+	 */
+	@Column
+	private String embeddingModelName;
+
+	@Column
+	private String rerankModelName;
+
+	@Column(length = 500)
+	private String embeddingModelPath;
+
+	@Column(length = 500)
+	private String embeddingTokenizerPath;
+
+	@Column
+	private Integer embeddingBatchSize;
+
+	/** Detected embedding output dimensions — preserved on migration for the T627 guard. */
+	@Column
+	private Integer embeddingDimensions;
+
 	@Column
 	private Double temperature;
 

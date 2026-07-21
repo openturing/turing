@@ -1,0 +1,132 @@
+databaseChangeLog:
+  # Unified model entity, phase 2 (Block BB / T753, ADR 0004) — additive columns
+  # on llm_instance so one instance can carry a DEFAULT MODEL PER KIND plus the
+  # embedding-serving fields folded from embedding_model. All nullable (populated
+  # only for embedding/rerank-capable instances); chat-only rows are unchanged.
+  # The embedding_model table is left intact until the T755 data migration.
+  - changeSet:
+      id: v2026.3.1.112-add-llm_instance-embeddingModelName
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - tableExists:
+            tableName: llm_instance
+        - not:
+            - columnExists:
+                tableName: llm_instance
+                columnName: embeddingModelName
+      changes:
+        - addColumn:
+            tableName: llm_instance
+            columns:
+              - column:
+                  name: embeddingModelName
+                  type: varchar(255)
+                  constraints:
+                    nullable: true
+                  remarks: "Embedding default — the model id served for kind=EMBEDDING."
+  - changeSet:
+      id: v2026.3.1.112-add-llm_instance-rerankModelName
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - tableExists:
+            tableName: llm_instance
+        - not:
+            - columnExists:
+                tableName: llm_instance
+                columnName: rerankModelName
+      changes:
+        - addColumn:
+            tableName: llm_instance
+            columns:
+              - column:
+                  name: rerankModelName
+                  type: varchar(255)
+                  constraints:
+                    nullable: true
+                  remarks: "Rerank default — the model id served for kind=RERANK."
+  - changeSet:
+      id: v2026.3.1.112-add-llm_instance-embeddingModelPath
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - tableExists:
+            tableName: llm_instance
+        - not:
+            - columnExists:
+                tableName: llm_instance
+                columnName: embeddingModelPath
+      changes:
+        - addColumn:
+            tableName: llm_instance
+            columns:
+              - column:
+                  name: embeddingModelPath
+                  type: varchar(500)
+                  constraints:
+                    nullable: true
+                  remarks: "In-process ONNX (TRANSFORMERS_LOCAL) embedding model path."
+  - changeSet:
+      id: v2026.3.1.112-add-llm_instance-embeddingTokenizerPath
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - tableExists:
+            tableName: llm_instance
+        - not:
+            - columnExists:
+                tableName: llm_instance
+                columnName: embeddingTokenizerPath
+      changes:
+        - addColumn:
+            tableName: llm_instance
+            columns:
+              - column:
+                  name: embeddingTokenizerPath
+                  type: varchar(500)
+                  constraints:
+                    nullable: true
+                  remarks: "In-process ONNX embedding tokenizer path."
+  - changeSet:
+      id: v2026.3.1.112-add-llm_instance-embeddingBatchSize
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - tableExists:
+            tableName: llm_instance
+        - not:
+            - columnExists:
+                tableName: llm_instance
+                columnName: embeddingBatchSize
+      changes:
+        - addColumn:
+            tableName: llm_instance
+            columns:
+              - column:
+                  name: embeddingBatchSize
+                  type: int
+                  constraints:
+                    nullable: true
+                  remarks: "Embedding batch size (in-process ONNX)."
+  - changeSet:
+      id: v2026.3.1.112-add-llm_instance-embeddingDimensions
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - tableExists:
+            tableName: llm_instance
+        - not:
+            - columnExists:
+                tableName: llm_instance
+                columnName: embeddingDimensions
+      changes:
+        - addColumn:
+            tableName: llm_instance
+            columns:
+              - column:
+                  name: embeddingDimensions
+                  type: int
+                  constraints:
+                    nullable: true
+                  remarks: "Detected embedding output dimensions (preserved on migration for the T627 guard)."
