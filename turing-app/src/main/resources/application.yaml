@@ -21,6 +21,17 @@ turing:
   # the Administrator group). Set to `false` only for a deliberately trusted
   # single-user deployment — a startup WARNING is logged when you do.
   permissions: true
+  # T762 / Block BC — the LLM-instance model picker's fallback catalog is served
+  # primarily from the public curated catalog API (turing.viglet.org — the market
+  # reference) and falls back to the bundled models-catalog.json when the endpoint
+  # is unreachable (offline / air-gapped). The remote fetch is best-effort, runs
+  # off the boot path on a TTL, and never blocks startup. Set remote-enabled=false
+  # to stay fully offline (bundled catalog only).
+  models-catalog:
+    url: ${TURING_MODELS_CATALOG_URL:https://turing.viglet.org/models/catalog.json}
+    remote-enabled: ${TURING_MODELS_CATALOG_REMOTE_ENABLED:true}
+    refresh-initial-delay-ms: ${TURING_MODELS_CATALOG_REFRESH_INITIAL_DELAY_MS:8000}
+    refresh-interval-ms: ${TURING_MODELS_CATALOG_REFRESH_INTERVAL_MS:21600000}
   tenancy:
     enabled: false
     # T334 / §XIV.8.1 — shared secret for trusted server-to-server callers. When

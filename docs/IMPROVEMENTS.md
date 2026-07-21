@@ -2612,38 +2612,3 @@ proving an existing RAG index still resolves its embedding model after the move.
 consolidation, not a change to how embeddings are computed. The in-process ONNX
 Whisper non-goal (ex-T694) is unaffected. The platform stays single-default per
 kind; serving multiple embedding models simultaneously is out of scope.
-
-## LI. Public curated model catalog API (Block BC)
-
-**The bet.** Block BB's `models-catalog.json` is already a hand-curated map of
-which model ids exist per vendor and (T750) what kind each is. Nobody in the
-market publishes a *vendor-neutral, kind-aware* catalog as an open endpoint —
-LiteLLM's `model_prices_and_context_window.json` is the closest thing and it is
-pricing-first, buried in a repo. Publishing Turing's curated catalog as a
-**public, versioned JSON API at `turing.viglet.org`** — open, CORS-enabled,
-documented — lets any tool consume it as a reference and makes `turing.viglet.org`
-the canonical place people look up "is `text-embedding-3-large` an embedding
-model? what's its dimension?". It is a low-cost discoverability/authority play
-(ties into the Block O GEO strategy) that also removes a real product wart: the
-catalog no longer has to ship inside the jar to be current.
-
-**Why the site can serve it.** `frontend/apps/site` is a static Vite build
-(`build:site` → `_site`). A "public API" for a static host is a **versioned
-static JSON artifact** emitted at build time at a stable path, served with open
-CORS + cache headers. That is enough to be a real, fetchable reference endpoint;
-no dynamic backend is introduced.
-
-### LI.4 Turing consumes the public catalog (T762)
-
-`TurLlmModelCatalog` fetches the public JSON (new config var
-`turing.models-catalog.url`, cached with ETag/TTL, defensive) as the **primary**
-source and falls back to the bundled `models-catalog.json` only when the endpoint
-is unreachable (offline installs, air-gapped). The live per-vendor `/v1/models`
-listing path and the T750 metadata-first classification are unchanged; this only
-swaps where the *fallback catalog* comes from. Keeping the bundled copy means no
-new hard network dependency.
-
-**Non-goals.** Not a pricing database (LiteLLM already owns that; we can *link*
-prices later but the first cut is identity + kind + capability). No dynamic
-per-request backend on the marketing site — the endpoint is a build-time static
-artifact. No change to live vendor listing or to how models are actually invoked.

@@ -16,21 +16,6 @@
 | ⏳ | Partial — direction is right, more work remains |
 | 🛠 | In progress |
 
-## Block BC — Public curated model catalog API (turing.viglet.org as market reference)
-
-> Turn Block BB's curated `models-catalog.json` into a **public, versioned model
-> catalog** published at `turing.viglet.org` — an open, CORS-enabled JSON endpoint
-> that any tool can consume as a **market reference** (the community-registry role
-> LiteLLM's `model_prices_and_context_window.json` plays), plus a human-browsable
-> `/models` page. The catalog is enriched with the T750 `kind`, vendor, context
-> window, embedding dimensions and capabilities. **Turing itself consumes this
-> public API** (remote fetch + cache) as the primary catalog source, with the
-> bundled `models-catalog.json` as the offline fallback — so the product and the
-> market read the same reference data. The live per-vendor `/v1/models` path
-> (Block BB metadata-first classification) is unchanged. Design → §LI.
-
-- 📋 **T762** (deps: T760) **Turing consumes the public catalog** — `TurLlmModelCatalog` fetches the public JSON (config var `turing.models-catalog.url`, cached with ETag/TTL) as the primary source and falls back to the bundled `models-catalog.json` when offline/unreachable; the live-vendor listing path stays as-is. → §LI.4
-
 ## Block BB — Unified model entity & visual model-type selection
 
 > Two connected goals building directly on Block BA (multi-model LLM instance,

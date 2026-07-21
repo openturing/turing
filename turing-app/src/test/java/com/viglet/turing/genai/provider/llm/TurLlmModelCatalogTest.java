@@ -27,6 +27,8 @@ import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 /**
  * Verifies {@link TurLlmModelCatalog} parses the T759 canonical <em>envelope</em>
  * catalog ({@code {version, lastUpdated, vendors:{...}}}) from the real bundled
@@ -68,5 +70,47 @@ class TurLlmModelCatalogTest {
     @Test
     void unknownVendorYieldsEmpty() {
         assertThat(catalog.staticModels("does-not-exist")).isEmpty();
+    }
+
+    @Test
+    void parseCatalogHandlesRemotePublishedShape() throws Exception {
+        // The public endpoint (T760) serves the envelope with per-entry `vendor`
+        // + enriched fields; only id/label/kind are consumed, extras ignored.
+        String remote = """
+                {
+                  "version": 1,
+                  "lastUpdated": "2026-07-20",
+                  "vendors": {
+                    "openai": [
+                      { "id": "gpt-4o", "label": "GPT-4o", "kind": "CHAT", "vendor": "openai",
+                        "contextWindow": 128000, "capabilities": ["vision"] },
+                      { "id": "text-embedding-3-small", "label": "text-embedding-3-small",
+                        "kind": "EMBEDDING", "vendor": "openai", "embeddingDimensions": 1536 }
+                    ]
+                  }
+                }
+                """;
+        var parsed = catalog.parseCatalog(new ObjectMapper().readTree(remote));
+        assertThat(parsed.get("openai")).extracting(TurLlmModelOption::id)
+                .containsExactly("gpt-4o", "text-embedding-3-small");
+        assertThat(parsed.get("openai")).anyMatch(o -> o.kind() == TurLlmModelKind.EMBEDDING);
+    }
+
+    @Test
+    void parseCatalogToleratesLegacyFlatShape() throws Exception {
+        String legacy = """
+                { "openai": [ { "id": "gpt-4o", "label": "GPT-4o" } ] }
+                """;
+        var parsed = catalog.parseCatalog(new ObjectMapper().readTree(legacy));
+        assertThat(parsed.get("openai")).extracting(TurLlmModelOption::id).containsExactly("gpt-4o");
+    }
+
+    @Test
+    void remoteRefreshDisabledIsNoOpKeepingBundled() {
+        // In a plain unit (no Spring) remoteEnabled defaults to false → no network,
+        // and the bundled catalog loaded in @BeforeEach is preserved.
+        List<TurLlmModelOption> before = catalog.staticModels("openai");
+        catalog.refreshFromRemote();
+        assertThat(catalog.staticModels("openai")).isEqualTo(before).isNotEmpty();
     }
 }
