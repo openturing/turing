@@ -16,6 +16,10 @@ export interface TurLLMInstance {
    * where only `modelName` applies.
    */
   modelNames?: string;
+  /** Per-kind default models (T757 / ADR 0004): the embedding + rerank defaults
+   * this instance serves. Optional — a chat-only instance leaves them blank. */
+  embeddingModelName?: string;
+  rerankModelName?: string;
   temperature: number;
   topK: number;
   topP: number;

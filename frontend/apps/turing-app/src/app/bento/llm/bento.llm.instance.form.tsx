@@ -12,6 +12,7 @@ import { LLMInstanceCapabilitiesForm } from "@/components/llm/llm.instance.capab
 import { useLlmInstanceCapabilities } from "@/api/queries/llm-capability.queries"
 import { Input } from "@/components/ui/input"
 import { LlmModelMultiSelect } from "@/components/ui/llm-model-multi-select"
+import { ModelCombobox } from "@/components/ui/model-combobox"
 import { ModelVerifyButton } from "@/components/ui/model-verify-button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
@@ -20,7 +21,7 @@ import type { TurLLMInstance } from "@/models/llm/llm-instance.model.ts"
 import type { TurLLMVendor } from "@/models/llm/llm-vendor.model"
 import { TurLLMInstanceService } from "@/services/llm/llm.service"
 import { TurLLMVendorService } from "@/services/llm/llm-vendor.service"
-import { IconAdjustments, IconBrain, IconSettings, IconSparkles, IconStack2, IconToggleLeft } from "@tabler/icons-react"
+import { IconAdjustments, IconBrain, IconSettings, IconSparkles, IconStack2, IconToggleLeft, IconVector } from "@tabler/icons-react"
 import { useEffect, useMemo, useState } from "react"
 import { useForm } from "react-hook-form"
 import { useTranslation } from "react-i18next"
@@ -134,6 +135,7 @@ export const BentoLLMInstanceForm: React.FC<Props> = ({ value, isNew, staged, on
   // Legacy instances have only `modelName` — seed the selection from it.
   const watchedModelName = form.watch("modelName")
   const watchedModelNames = form.watch("modelNames")
+  const watchedEmbeddingModelName = form.watch("embeddingModelName")
   const selectedModels = useMemo(() => {
     const list = (watchedModelNames ?? "")
       .split(",")
@@ -262,6 +264,7 @@ export const BentoLLMInstanceForm: React.FC<Props> = ({ value, isNew, staged, on
     // Reset the multi-model list so it reseeds from the new vendor's preset
     // model below (never mixing models across vendors).
     form.setValue("modelNames", "", { shouldDirty: true })
+    form.setValue("embeddingModelName", "", { shouldDirty: true })
 
     if (vendorId === "OLLAMA") {
       form.setValue("url", "http://localhost:11434", { shouldDirty: true })
@@ -731,6 +734,35 @@ export const BentoLLMInstanceForm: React.FC<Props> = ({ value, isNew, staged, on
                 {t("forms.llm.modelsRequired", { defaultValue: "Select at least one model." })}
               </p>
             )}
+          </div>
+        </BentoFormSection>
+
+        {/* Embedding default (T757 / ADR 0004) — the embedding model this instance
+            serves for RAG / vector search. Optional: a chat-only instance leaves it
+            blank. Unifies the retired standalone embedding-model surface. */}
+        <BentoFormSection
+          icon={IconVector}
+          tone="emerald"
+          title={t("forms.llm.embeddingDefaultTitle", { defaultValue: "Embedding default" })}
+          description={t("forms.llm.embeddingDefaultDesc", {
+            defaultValue:
+              "Optionally set the embedding model this instance serves — used by RAG and vector search. Leave blank for a chat-only instance.",
+          })}
+        >
+          <div className="w-full">
+            <FormLabel>{t("forms.llm.embeddingModelName", { defaultValue: "Embedding model" })}</FormLabel>
+            <ModelCombobox
+              value={watchedEmbeddingModelName ?? ""}
+              onChange={(v) => form.setValue("embeddingModelName", v, { shouldDirty: true })}
+              options={modelList?.models ?? []}
+              isLoading={modelsLoading}
+              source={modelList?.source}
+              onOpen={() => refetchModels()}
+              expectedKind="EMBEDDING"
+              placeholder={t("forms.llm.embeddingModelPlaceholder", {
+                defaultValue: "Select an embedding model (optional)",
+              })}
+            />
           </div>
         </BentoFormSection>
 

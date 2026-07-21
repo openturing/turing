@@ -162,6 +162,9 @@ public class TurLLMInstanceAPI {
             turLLMInstanceEdit.setEnabled(turLLMInstance.getEnabled());
             turLLMInstanceEdit.setModelName(turLLMInstance.getModelName());
             turLLMInstanceEdit.setModelNames(turLLMInstance.getModelNames());
+            // T757 / ADR 0004 — per-kind default models on the unified instance.
+            turLLMInstanceEdit.setEmbeddingModelName(turLLMInstance.getEmbeddingModelName());
+            turLLMInstanceEdit.setRerankModelName(turLLMInstance.getRerankModelName());
             turLLMInstanceEdit.setTemperature(turLLMInstance.getTemperature());
             turLLMInstanceEdit.setTopK(turLLMInstance.getTopK());
             turLLMInstanceEdit.setTopP(turLLMInstance.getTopP());
