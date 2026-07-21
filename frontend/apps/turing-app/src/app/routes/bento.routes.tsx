@@ -41,8 +41,6 @@ const BentoStoreInstanceListPage = lazy(() => import("../bento/store/bento.store
 const BentoStoreInstancePage = lazy(() => import("../bento/store/bento.store.instance.page"));
 const BentoStoreSystemInfoPage = lazy(() => import("../bento/store/bento.store.system-info.page"));
 const BentoStoreCollectionImportPage = lazy(() => import("../bento/store/bento.store.instance.collection.import.page"));
-const BentoEmbeddingModelListPage = lazy(() => import("../bento/embedding/bento.embedding.list.page"));
-const BentoEmbeddingModelPage = lazy(() => import("../bento/embedding/bento.embedding.page"));
 const BentoTokenInstanceListPage = lazy(() => import("../bento/token/bento.token.instance.list.page"));
 const BentoTokenInstancePage = lazy(() => import("../bento/token/bento.token.instance.page"));
 const BentoGatewayPage = lazy(() => import("../bento/gateway/bento.gateway.page"));
@@ -224,9 +222,12 @@ export const BentoRoutes = (
     <Route path="store/instance/:id" element={<BentoStoreInstancePage />} />
     <Route path="store/instance/:id/system-info" element={<BentoStoreSystemInfoPage />} />
     <Route path="store/instance/:id/collections/:collectionName/import" element={<BentoStoreCollectionImportPage />} />
-    <Route path="embedding" element={<Navigate to={ROUTES.BENTO_EMBEDDING_MODEL_INSTANCE} replace />} />
-    <Route path="embedding/instance" element={<BentoEmbeddingModelListPage />} />
-    <Route path="embedding/instance/:id" element={<BentoEmbeddingModelPage />} />
+    {/* T774 — the standalone embedding-model surface is retired; embeddings now
+        live on the unified LLM instance (cloud default T757, in-process ONNX T773).
+        All /bento/embedding paths redirect to the unified LLM instance surface. */}
+    <Route path="embedding" element={<Navigate to={ROUTES.BENTO_LLM_INSTANCE} replace />} />
+    <Route path="embedding/instance" element={<Navigate to={ROUTES.BENTO_LLM_INSTANCE} replace />} />
+    <Route path="embedding/instance/:id" element={<Navigate to={ROUTES.BENTO_LLM_INSTANCE} replace />} />
     <Route path="token" element={<Navigate to={ROUTES.BENTO_TOKEN_INSTANCE} replace />} />
     <Route path="token/instance" element={<BentoTokenInstanceListPage />} />
     <Route path="token/instance/:id" element={<BentoTokenInstancePage />} />

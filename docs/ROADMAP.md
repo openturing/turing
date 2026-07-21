@@ -40,24 +40,6 @@
 - 📋 **T770** (deps: T769) **Orchestrator command + pipeline docs** — one `pnpm catalog:regen` (fetch → merge → validate → report) + `--apply`; `docs/references/model-catalog-pipeline.md` documenting the trusted source per vendor, env keys, offline/cache behaviour, and the review workflow. → §LII.5
 - 💭 **T771** (deps: T770) **Extended sources + optional CI refresh** — later self-hosted/aggregator sources (Ollama library + `ollama list`, Bedrock `ListFoundationModels`, HuggingFace for local ONNX) behind the T765 adapter contract, plus an opt-in manual-dispatch GitHub Actions workflow that runs the pipeline and **opens a PR** with the regenerated catalog (never auto-merges — the review gate stays human). → §LII.5
 
-## Block BB — Unified model entity & visual model-type selection
-
-> Two connected goals building directly on Block BA (multi-model LLM instance,
-> shipped T749): **(1)** make model selection fully **visual** — every model in the
-> picker shows *what kind* it is (chat, embedding, rerank, image, transcription,
-> speech, video, moderation) so an operator never has to remember a model id or
-> guess whether an id is a chat vs an embedding model; **(2)** collapse the separate
-> `TurEmbeddingModel` entity into the unified LLM instance — an embedding model is
-> just a model of `kind=EMBEDDING`, and `TurEmbeddingModel` already points at a
-> `TurLLMInstance` for its cloud case (T626), so one entity can serve chat +
-> embedding + rerank models with per-kind defaults. Phase 1 (T750–T751) is additive
-> and **shipped** (see [CHANGELOG.md](CHANGELOG.md)); the unification (T752–T758) is
-> gated on the T752 ADR because it touches the RAG / vector-store read path. Design → §L.
-
-**Phase 2 — unify `TurEmbeddingModel` into the LLM instance (ADR 0004 accepted, T752):**
-> **`/bento/embedding` retirement — split into T772–T774** (was one T772). The unified list (T757) already makes embedding-capable instances selectable everywhere; retiring the standalone surface without losing in-process-ONNX creation is done in three safe steps:
-- 💭 **T774** (deps: T773) **Retire `/bento/embedding` with a redirect** — once ONNX creation lives in the unified form, redirect `/bento/embedding/**` → `/bento/llm/instance`, drop the standalone list/detail pages + nav item, keep the console-redirect alias. → §L.3
-
 ## Block W — Agent↔UI transparency & client tools (AG-UI parity)
 
 > Closed the two AG-UI parity gaps for Turing's own agent runtime (live tool-call
