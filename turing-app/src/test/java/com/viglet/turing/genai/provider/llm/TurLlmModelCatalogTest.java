@@ -22,68 +22,59 @@ package com.viglet.turing.genai.provider.llm;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import java.util.List;
-
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 /**
- * Verifies {@link TurLlmModelCatalog} parses the T759 canonical <em>envelope</em>
- * catalog ({@code {version, lastUpdated, vendors:{...}}}) from the real bundled
- * resource, honouring the per-entry {@code kind}.
+ * Verifies {@link TurLlmModelCatalog} parses the canonical <em>envelope</em>
+ * catalog ({@code {version, lastUpdated, vendors:{...}}}) served by the public
+ * endpoint, honouring the per-entry {@code kind}. The catalog is remote-only (no
+ * bundled resource): with the remote fetch disabled the served map stays empty.
  */
 class TurLlmModelCatalogTest {
 
     private final TurLlmModelCatalog catalog = new TurLlmModelCatalog();
 
-    @BeforeEach
-    void load() {
-        catalog.load();
-    }
-
     @Test
-    void loadsVendorsFromTheEnvelope() {
-        List<TurLlmModelOption> openai = catalog.staticModels("openai");
-        assertThat(openai).isNotEmpty();
-        assertThat(openai).extracting(TurLlmModelOption::id).contains("gpt-4o");
-    }
-
-    @Test
-    void everyEntryCarriesAKind() {
-        assertThat(catalog.staticModels("openai"))
-                .allSatisfy(o -> assertThat(o.kind()).isNotNull());
-    }
-
-    @Test
-    void honoursTheExplicitKindPerEntry() {
-        // openai has both chat and embedding kinds in the catalog
-        assertThat(catalog.staticModels("openai"))
-                .anyMatch(o -> o.kind() == TurLlmModelKind.EMBEDDING)
-                .anyMatch(o -> o.kind() == TurLlmModelKind.CHAT);
-        // cohere carries a rerank model
-        assertThat(catalog.staticModels("cohere"))
-                .anyMatch(o -> o.kind() == TurLlmModelKind.RERANK);
-    }
-
-    @Test
-    void unknownVendorYieldsEmpty() {
-        assertThat(catalog.staticModels("does-not-exist")).isEmpty();
+    void parseCatalogParsesEnvelopeWithKinds() throws Exception {
+        String envelope = """
+                {
+                  "version": 1,
+                  "lastUpdated": "2026-07-21",
+                  "vendors": {
+                    "openai": [
+                      { "id": "gpt-4o", "label": "GPT-4o", "kind": "CHAT" },
+                      { "id": "text-embedding-3-small", "label": "text-embedding-3-small", "kind": "EMBEDDING" }
+                    ],
+                    "cohere": [
+                      { "id": "rerank-v3.5", "label": "Rerank v3.5", "kind": "RERANK" }
+                    ]
+                  }
+                }
+                """;
+        var parsed = catalog.parseCatalog(new ObjectMapper().readTree(envelope));
+        assertThat(parsed.get("openai")).extracting(TurLlmModelOption::id)
+                .containsExactly("gpt-4o", "text-embedding-3-small");
+        assertThat(parsed.get("openai"))
+                .allSatisfy(o -> assertThat(o.kind()).isNotNull())
+                .anyMatch(o -> o.kind() == TurLlmModelKind.CHAT)
+                .anyMatch(o -> o.kind() == TurLlmModelKind.EMBEDDING);
+        assertThat(parsed.get("cohere")).anyMatch(o -> o.kind() == TurLlmModelKind.RERANK);
     }
 
     @Test
     void parseCatalogHandlesRemotePublishedShape() throws Exception {
-        // The public endpoint (T760) serves the envelope with per-entry `vendor`
-        // + enriched fields; only id/label/kind are consumed, extras ignored.
+        // The public endpoint serves the envelope with per-entry `vendor` + enriched
+        // fields; only id/label/kind are consumed, extras ignored.
         String remote = """
                 {
                   "version": 1,
-                  "lastUpdated": "2026-07-20",
+                  "lastUpdated": "2026-07-21",
                   "vendors": {
                     "openai": [
                       { "id": "gpt-4o", "label": "GPT-4o", "kind": "CHAT", "vendor": "openai",
-                        "contextWindow": 128000, "capabilities": ["vision"] },
+                        "contextWindow": 128000, "capabilities": ["vision"], "sources": ["litellm"] },
                       { "id": "text-embedding-3-small", "label": "text-embedding-3-small",
                         "kind": "EMBEDDING", "vendor": "openai", "embeddingDimensions": 1536 }
                     ]
@@ -106,11 +97,18 @@ class TurLlmModelCatalogTest {
     }
 
     @Test
-    void remoteRefreshDisabledIsNoOpKeepingBundled() {
+    void staticModelsIsEmptyBeforeAnyRefresh() {
+        // Remote-only: nothing is served until the first successful remote fetch.
+        assertThat(catalog.staticModels("openai")).isEmpty();
+        assertThat(catalog.staticModels("does-not-exist")).isEmpty();
+        assertThat(catalog.staticModels(null)).isEmpty();
+    }
+
+    @Test
+    void remoteRefreshDisabledIsNoOp() {
         // In a plain unit (no Spring) remoteEnabled defaults to false → no network,
-        // and the bundled catalog loaded in @BeforeEach is preserved.
-        List<TurLlmModelOption> before = catalog.staticModels("openai");
+        // the served map stays empty, and the call does not throw.
         catalog.refreshFromRemote();
-        assertThat(catalog.staticModels("openai")).isEqualTo(before).isNotEmpty();
+        assertThat(catalog.staticModels("openai")).isEmpty();
     }
 }

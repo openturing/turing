@@ -20,13 +20,13 @@ slot. Relation `type` values: `BT` broader · `NT` narrower · `RT` related ·
 inverse pairs. Formal contract: `turing-app/src/main/resources/kb/turing-thesaurus-1.0.xsd`.
 See [ADR 0003](../adr/0003-knowledge-base-microthesaurus.md).
 
-## `model-catalog-api.md`
+## `model-catalog-api.md` / `model-catalog-pipeline.md`
 
-The **designed contract** for the public curated model catalog API (Block BC,
-IMPROVEMENTS §LI) — a vendor-neutral, kind-aware model catalog published as an
-open, versioned, CORS-enabled JSON endpoint at `turing.viglet.org` so the market
-can consume it as a reference, and Turing itself consumes it (T762) with the
-bundled `models-catalog.json` as offline fallback. **Planned — not yet live**;
-the doc is the reviewable contract for the endpoint, envelope, `ModelEntry`
-schema (`kind` = Block BB `TurLlmModelKind`), CORS/versioning, and usage. See
-STRATEGY §X.5 for positioning.
+**Moved 2026-07-21** — the public model catalog API (Block BC) and its
+regeneration pipeline (Block BD) now live in the dedicated
+[`openviglet/models-catalog`](https://github.com/openviglet/models-catalog) repo.
+These two files are now short pointer stubs. Turing consumes the published endpoint
+remotely (`turing.models-catalog.url`, default
+`https://openviglet.github.io/models-catalog/catalog.json`; remote-only, no bundled
+copy). The full contract + maintainer workflow live in that repo's
+`docs/references/{api,pipeline}.md`.

@@ -6,7 +6,6 @@ import { ComparePage } from "@/pages/compare";
 import { AemPage } from "@/pages/aem";
 import { PersonaPage } from "@/pages/persona";
 import { SecurityPage } from "@/pages/security";
-import { ModelsPage } from "@/pages/models";
 import { FEATURE_DETAILS } from "@/lib/site-content";
 
 /** Standalone (non-feature) routes with their own page component. */
@@ -15,7 +14,6 @@ export const COMPARE_PATH = "/compare";
 export const AEM_PATH = "/aem-search";
 export const PERSONA_PATH = "/persona";
 export const SECURITY_PATH = "/security";
-export const MODELS_PATH = "/models";
 
 /**
  * Resolve a pathname to a feature slug, or null for the landing page.
@@ -62,7 +60,6 @@ export default function App({ path = "/" }: Readonly<{ path?: string }>) {
   if (/^\/aem-search\/?$/.test(path)) return <AemPage />;
   if (/^\/persona\/?$/.test(path)) return <PersonaPage />;
   if (/^\/security\/?$/.test(path)) return <SecurityPage />;
-  if (/^\/models\/?$/.test(path)) return <ModelsPage />;
   const slug = matchRoute(path);
   if (slug) return <FeaturePage detail={FEATURE_DETAILS[slug]} />;
   return <LandingPage />;

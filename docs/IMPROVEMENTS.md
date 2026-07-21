@@ -2541,28 +2541,12 @@ cache + guardrails + RAG-as-a-header, `turing-agent:` / `turing-sn:` /
 per-key observability, a `/bento/gateway` admin, and a traffic → eval/distillation
 bridge — all opt-in behind `turing.gateway.enabled` (default off).
 
-## LII. Multi-source model-catalog regeneration pipeline (Block BD)
+## LI/LII. Model catalog API + regeneration pipeline (moved out)
 
-> **T764–T770 shipped** (see CHANGELOG Block BD; built reference in
-> `docs/references/model-catalog-pipeline.md`). The pipeline
-> (`frontend/apps/site/scripts/catalog/`) regenerates the canonical
-> `models-catalog.json` from live vendor APIs + the LiteLLM registry + a curated
-> `overrides.json`, propose-and-review (`--apply` only). Only the deferred
-> extended-sources bet remains:
-
-### LII.5 Extended sources & optional CI refresh (T771, 💭)
-
-Add later self-hosted/aggregator sources behind the shipped `SourceAdapter`
-contract — the **Ollama** library + local `ollama list`, **Bedrock**
-`ListFoundationModels`, **HuggingFace** for local ONNX embedding models — so the
-non-cloud vendor rows (`ollama`, `bedrock`, `vertex-ai`) stop depending on LiteLLM
-alone for anchoring. Plus an **opt-in manual-dispatch GitHub Actions workflow**
-that runs the pipeline with whatever keys are in CI secrets and **opens a PR** with
-the regenerated catalog + diff report as the PR body. The human review gate is
-never removed — CI proposes, a human merges (the T387/T667 discipline the shipped
-pipeline already enforces locally).
-
-**Non-goals.** No pricing (STRATEGY §X.5 — enrichment is non-pricing only). No
-runtime dependency on the pipeline (local maintenance tool; the product still
-reads the bundled/published catalog). No auto-overwrite / no CI auto-merge — the
-review gate is mandatory. No envelope-shape break — `version` stays 1 (additive).
+> **Migrated 2026-07-21 to [`openviglet/models-catalog`](https://github.com/openviglet/models-catalog).**
+> The public model catalog API (Block BC / former §LI) and its multi-source
+> regeneration pipeline (Block BD / former §LII) now live in their own repo, with
+> their own roadmap, design rationale and reference docs
+> (`docs/references/api.md` + `pipeline.md` there). Turing consumes the published
+> endpoint remotely (`turing.models-catalog.url`). The shipped Turing history stays
+> in CHANGELOG Blocks BC/BD; design/backlog for the catalog now lives in that repo.

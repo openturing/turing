@@ -8,7 +8,6 @@ import java.util.Locale;
 import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.core.io.ClassPathResource;
 import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
@@ -18,7 +17,6 @@ import org.springframework.web.client.RestClient;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -27,21 +25,17 @@ import lombok.extern.slf4j.Slf4j;
  * returns nothing (no API key yet, offline, or a provider without a "list
  * models" endpoint), the discovery service serves these instead.
  *
- * <p>Two sources, most-authoritative first (T762):
- * <ol>
- *   <li>the <b>public catalog API</b> ({@code turing.models-catalog.url}, default
- *       {@code https://turing.viglet.org/models/catalog.json}) — the market
- *       reference (Block BC), refreshed on a TTL so a running instance picks up
- *       new models without a redeploy;</li>
- *   <li>the <b>bundled</b> {@code llm/models-catalog.json} — always loaded at
- *       startup, the offline fallback used until (or unless) the remote fetch
- *       succeeds, so air-gapped installs and boot-time never depend on the
- *       network.</li>
- * </ol>
+ * <p>The catalog lives in its own repository — <b>{@code openviglet/models-catalog}</b>
+ * — which publishes it as a public, CORS-open JSON endpoint. Turing fetches it
+ * from {@code turing.models-catalog.url} (default the published rolling endpoint)
+ * on a TTL, so a running instance picks up new models without a redeploy.
  *
- * <p>The remote fetch is best-effort and never fatal: any failure keeps the
- * current (bundled or last-good-remote) map. The refresh runs on a scheduler,
- * off the boot path, so startup stays instant.
+ * <p>There is <b>no bundled offline fallback</b>: the catalog is remote-only. The
+ * effective map is empty until the first successful refresh, after which it holds
+ * the last-good remote result (a failed fetch keeps the current map, never an
+ * empty one). The refresh runs on a scheduler, off the boot path, so startup
+ * never waits on the network; with {@code remote-enabled=false} the catalog stays
+ * empty and callers fall back to live vendor listing only.
  *
  * @author Alexandre Oliveira
  * @since 2026.3.4
@@ -50,41 +44,26 @@ import lombok.extern.slf4j.Slf4j;
 @Component
 public class TurLlmModelCatalog {
 
-    private static final String CATALOG_RESOURCE = "llm/models-catalog.json";
-
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     /**
-     * The effective catalog served to callers. Set to the bundled resource at
-     * startup (the offline fallback) and overwritten by the remote refresh only
-     * when it succeeds with a non-empty result — so it always holds the last-good
-     * map (bundled or remote), never an empty one from a failed fetch.
+     * The effective catalog served to callers. Empty until the first successful
+     * remote refresh; thereafter it holds the last-good remote map (a failed fetch
+     * keeps the current map, never an empty one from a failed request).
      */
     private volatile Map<String, List<TurLlmModelOption>> catalog = Map.of();
 
-    @Value("${turing.models-catalog.url:https://turing.viglet.org/models/catalog.json}")
+    @Value("${turing.models-catalog.url:https://openviglet.github.io/models-catalog/catalog.json}")
     private String remoteUrl;
 
     @Value("${turing.models-catalog.remote-enabled:true}")
     private boolean remoteEnabled;
 
-    @PostConstruct
-    void load() {
-        Map<String, List<TurLlmModelOption>> parsed = Map.of();
-        try {
-            JsonNode root = objectMapper.readTree(new ClassPathResource(CATALOG_RESOURCE).getInputStream());
-            parsed = parseCatalog(root);
-        } catch (Exception e) {
-            log.warn("Could not load bundled LLM model catalog '{}': {}", CATALOG_RESOURCE, e.getMessage());
-        }
-        this.catalog = parsed;
-        log.info("Loaded bundled LLM model catalog for {} providers", catalog.size());
-    }
-
     /**
-     * Refreshes the effective catalog from the public endpoint on a TTL (T762).
-     * Best-effort: on any failure the current map is kept. Runs off the boot path
-     * (an initial delay) so startup never waits on the network.
+     * Refreshes the effective catalog from the public endpoint on a TTL. This is
+     * the only source (remote-only). Best-effort: on any failure the current map
+     * is kept. Runs off the boot path (an initial delay) so startup never waits on
+     * the network.
      */
     @Scheduled(
             initialDelayString = "${turing.models-catalog.refresh-initial-delay-ms:8000}",
@@ -110,17 +89,17 @@ public class TurLlmModelCatalog {
                 log.info("Refreshed LLM model catalog from {} ({} providers)", remoteUrl, parsed.size());
             }
         } catch (Exception e) {
-            // Offline / unreachable / malformed — keep the current (bundled or last-good) catalog.
+            // Offline / unreachable / malformed — keep the current (last-good) catalog.
             log.debug("Remote LLM model catalog refresh from {} failed, keeping current: {}",
                     remoteUrl, e.getMessage());
         }
     }
 
     /**
-     * Parses a catalog document into the vendor→models map. Accepts the T759
-     * versioned envelope ({@code {version, lastUpdated, vendors:{...}}}) — as
-     * served by both the bundled resource and the public endpoint — and tolerates
-     * the legacy flat shape ({@code {vendor:[...]}}) where the root is the map.
+     * Parses a catalog document into the vendor→models map. Accepts the canonical
+     * versioned envelope ({@code {version, lastUpdated, vendors:{...}}}) — as served
+     * by the public endpoint — and tolerates the legacy flat shape
+     * ({@code {vendor:[...]}}) where the root is the map.
      */
     Map<String, List<TurLlmModelOption>> parseCatalog(JsonNode root) {
         Map<String, List<TurLlmModelOption>> parsed = new LinkedHashMap<>();
@@ -144,7 +123,7 @@ public class TurLlmModelCatalog {
         return Map.copyOf(parsed);
     }
 
-    /** Curated models for a plugin type, or empty when none are bundled. */
+    /** Curated models for a plugin type, or empty when none are available yet. */
     public List<TurLlmModelOption> staticModels(String pluginType) {
         if (pluginType == null) {
             return List.of();

@@ -16,29 +16,17 @@
 | ⏳ | Partial — direction is right, more work remains |
 | 🛠 | In progress |
 
-## Block BD — Multi-source model-catalog regeneration pipeline (local, procedural)
+## Block BC/BD — Model catalog API (moved to a dedicated repo)
 
-> The public catalog (Block BC, shipped) is currently a **hand-curated**
-> `models-catalog.json`. Block BD builds a **local, procedural pipeline** that
-> regenerates that single source of truth from **multiple trustworthy sources per
-> vendor** — the live per-vendor listing APIs (OpenAI/Anthropic/Gemini/Cohere/
-> Mistral, keyed by env API keys) cross-referenced with the LiteLLM community
-> registry — so every model gets meticulous, provenance-tracked detail (context
-> window, max output tokens, modalities, capabilities, lifecycle) instead of a
-> guessed hand entry. The pipeline is **propose-and-review, never auto-overwrite**:
-> it emits a *proposed* catalog + a diff report vs. the committed file and only
-> writes `models-catalog.json` on an explicit `--apply`, so a noisy upstream can't
-> silently poison the public reference (T387/T667 discipline). Zero-dep Node,
-> mirroring `emit-model-catalog.mjs`. Design → §LII.
-
-> **T764–T770 shipped** (see [CHANGELOG.md](CHANGELOG.md) → Block BD) — schema
-> enrichment + provenance, zero-dep scaffold + offline source-cache, per-vendor
-> live-API fetchers + LiteLLM cross-source, merge/reconciliation with
-> `overrides.json` precedence, validation + diff review gate (`--apply` only), and
-> the `pnpm catalog:regen` orchestrator + `docs/references/model-catalog-pipeline.md`.
-> Only the deferred extended-sources bet remains:
-
-- 💭 **T771** (deps: T770) **Extended sources + optional CI refresh** — later self-hosted/aggregator sources (Ollama library + `ollama list`, Bedrock `ListFoundationModels`, HuggingFace for local ONNX) behind the T765 adapter contract, plus an opt-in manual-dispatch GitHub Actions workflow that runs the pipeline and **opens a PR** with the regenerated catalog (never auto-merges — the review gate stays human). → §LII.5
+> **Migrated 2026-07-21 to [`openviglet/models-catalog`](https://github.com/openviglet/models-catalog).**
+> The public model catalog API (Block BC) and its multi-source regeneration
+> pipeline (Block BD) now live in their own repo, which owns the canonical
+> `models-catalog.json`, publishes the CORS-open JSON endpoint via GitHub Pages
+> (`https://openviglet.github.io/models-catalog/catalog.json`), and carries its own
+> roadmap/backlog (extended sources, custom domain). Turing consumes the published
+> endpoint remotely (`turing.models-catalog.url`, remote-only — no bundled copy).
+> The shipped Turing history stays in [CHANGELOG.md](CHANGELOG.md) → Blocks BC/BD;
+> new catalog work happens in the dedicated repo, not here.
 
 ## Block W — Agent↔UI transparency & client tools (AG-UI parity)
 
