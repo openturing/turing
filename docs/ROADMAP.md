@@ -55,7 +55,9 @@
 > gated on the T752 ADR because it touches the RAG / vector-store read path. Design → §L.
 
 **Phase 2 — unify `TurEmbeddingModel` into the LLM instance (ADR 0004 accepted, T752):**
-- 💭 **T772** (deps: T757) **Retire `/bento/embedding` + absorb ONNX embedding creation** — the unified list (T757) already makes embedding-capable instances selectable everywhere; the last step is to add local/HF **ONNX embedding creation** (model/tokenizer paths, HF variants, dimension check) to the unified instance form so the standalone `/bento/embedding` surface can be retired with a redirect without losing in-process-ONNX creation. Needs form UX design. → §L.3
+> **`/bento/embedding` retirement — split into T772–T774** (was one T772). The unified list (T757) already makes embedding-capable instances selectable everywhere; retiring the standalone surface without losing in-process-ONNX creation is done in three safe steps:
+- 📋 **T773** (deps: T772) **Instance-form ONNX embedding creation UI** — when the selected vendor is `TRANSFORMERS_LOCAL` / `HUGGINGFACE`, the unified instance form shows the ONNX embedding fields (local: model/tokenizer paths; HF: repo id + variant + dimension check) instead of the chat-model + cloud-embedding sections, and the "≥1 chat model" save gate is relaxed for these embedding-only instances. All gated behind `isOnnxVendor` so the chat path is untouched. → §L.3
+- 💭 **T774** (deps: T773) **Retire `/bento/embedding` with a redirect** — once ONNX creation lives in the unified form, redirect `/bento/embedding/**` → `/bento/llm/instance`, drop the standalone list/detail pages + nav item, keep the console-redirect alias. → §L.3
 
 ## Block W — Agent↔UI transparency & client tools (AG-UI parity)
 

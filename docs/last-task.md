@@ -1,4 +1,4 @@
-# Last task number — `T772` · next block letter — `BE`
+# Last task number — `T774` · next block letter — `BE`
 
 > **Single source of truth for the next free task number.** The next new task is
 > `T772`; after assigning it, bump the number above and the log line below.
@@ -91,7 +91,8 @@ number" looked free but wasn't. Grepping three files (`ROADMAP.md`,
 ## Log (most recent first)
 
 - **T758 SHIPPED** (Block BB §L.3 — exchange+API/SDK compat: GET /api/embedding-model/{id} unified (legacy row wins, else instance-backed fallback); old embedding exports still import via intact embedding_model (non-destructive) + agents still reference embedding_model = byte-compat; SDK/shared-types no-op (no embedding/instance types exposed); test 6. CLOSES Block BB Phase 2 T752-T758) — 2026-07-20.
-- **T772 CREATED** (💭, Block BB §L.3 — retire /bento/embedding + absorb ONNX (local/HF) embedding creation into the unified instance form so the standalone surface can redirect without losing in-process-ONNX creation; needs form UX design) — 2026-07-20.
+- **T772 SHIPPED** (Block BB §L.3 — round-trip ONNX embedding-serving fields embeddingModelPath/embeddingTokenizerPath/embeddingBatchSize on TurLLMInstanceAPI; backend prereq for form-based ONNX embedding creation) — 2026-07-20.
+- **T773-T774 CREATED** (📋/💭, Block BB §L.3 — split of the /bento/embedding retirement: T773 instance-form ONNX embedding creation UI (conditional local paths / HF repo id, relax chat-model gate, hide cloud sections; gated behind isOnnxVendor so chat path untouched); T774 retire /bento/embedding with redirect + nav removal) — 2026-07-20.
 - **T757 SHIPPED** (Block BB §L.3 — unified model admin: (1) embedding-default picker on LLM instance form (ModelCombobox kind=EMBEDDING → embeddingModelName + rerankModelName round-trip); (2) GET /api/embedding-model returns union of embedding-capable llm_instances (id-preserved) + un-shadowed legacy rows so all pickers see unified options; test 3; /bento/embedding retirement carved to T772) — 2026-07-20.
 - **T756 SHIPPED** (Block BB §L.3 — repoint embedding resolution unified-first: TurRagContextBuilder.resolveEmbeddingEntity/resolveEmbeddingModelById adapts embedding-capable llm_instance into TurEmbeddingModel shape (id-preserved) + legacy fallback; repointed build() chokepoint (SN GenAI + vector stores), batch re-embedding, store API; agent embedding REFERENCE + default-RAG create stay legacy (migrate T757/T758), resolve unified-first by id; test 5 + smoke IT) — 2026-07-20.
 - **T755 SHIPPED** (Block BB §L.3 — embedding_model→llm_instance data migration per ADR 0004: TurEmbeddingModelUnificationService.reconcile() id-preserving non-destructive (cloud copies parent conn, local/HF ONNX vendor+paths, embeddingModelName default); idempotent startup runner wired into TurOnStartup ALWAYS-RUN section (outside FIRST_TIME so existing installs get it + T754 vendor self-heal); embedding_model kept until T756; test 4 + smoke IT migrates live) — 2026-07-20.

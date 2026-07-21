@@ -165,6 +165,11 @@ public class TurLLMInstanceAPI {
             // T757 / ADR 0004 — per-kind default models on the unified instance.
             turLLMInstanceEdit.setEmbeddingModelName(turLLMInstance.getEmbeddingModelName());
             turLLMInstanceEdit.setRerankModelName(turLLMInstance.getRerankModelName());
+            // T772 — in-process ONNX (local/HF) embedding-serving fields, so an ONNX
+            // embedding instance can be created/edited from the unified form.
+            turLLMInstanceEdit.setEmbeddingModelPath(turLLMInstance.getEmbeddingModelPath());
+            turLLMInstanceEdit.setEmbeddingTokenizerPath(turLLMInstance.getEmbeddingTokenizerPath());
+            turLLMInstanceEdit.setEmbeddingBatchSize(turLLMInstance.getEmbeddingBatchSize());
             turLLMInstanceEdit.setTemperature(turLLMInstance.getTemperature());
             turLLMInstanceEdit.setTopK(turLLMInstance.getTopK());
             turLLMInstanceEdit.setTopP(turLLMInstance.getTopP());
