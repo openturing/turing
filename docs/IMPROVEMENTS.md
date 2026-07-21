@@ -2633,14 +2633,6 @@ static JSON artifact** emitted at build time at a stable path, served with open
 CORS + cache headers. That is enough to be a real, fetchable reference endpoint;
 no dynamic backend is introduced.
 
-### LI.2 Public static JSON endpoint (T760)
-
-The site build emits the catalog at a stable, versioned URL — a rolling
-`/models/catalog.json` plus a pinned `/models/catalog-v1.json` so external
-consumers can lock a schema version. Served CORS-open (`Access-Control-Allow-Origin:
-*`) with sensible cache headers. The URL + schema are documented as the public
-contract.
-
 ### LI.3 Public `/models` reference page (T761)
 
 A human-browsable site page listing every curated model grouped by vendor, each

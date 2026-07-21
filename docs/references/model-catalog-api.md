@@ -1,11 +1,13 @@
 # Turing Public Model Catalog API — contract reference
 
-> **Status: PLANNED (Block BC — not yet live).** This documents the *designed*
-> contract for the public curated model catalog so it can be reviewed and cited
-> while Block BC is built. The endpoint below **does not resolve yet**; do not
-> point production code at it until Block BC ships (track ROADMAP Block BC /
-> IMPROVEMENTS §LI). The authoritative source while unshipped is the bundled
-> `turing-app/src/main/resources/llm/models-catalog.json` (Block BB).
+> **Status: BUILT & WIRED (T759 + T760) — goes live on the next site deploy.**
+> The catalog artifacts are generated from the canonical source and emitted into
+> the site build (`emit-model-catalog.mjs` runs in `turing-site`'s `build`), so
+> they ship to `turing.viglet.org/models/*` on the next **Publish GitHub Pages**
+> run (a manual `workflow_dispatch`). Until that deploy runs the URLs may 404.
+> The browsable `/models` page (T761) and Turing consuming this endpoint (T762)
+> are still pending. The offline fallback stays the bundled
+> `turing-app/src/main/resources/llm/models-catalog.json`.
 
 ## What it is
 
@@ -20,19 +22,24 @@ pricing, but identity/kind-first and browsable).
 It is **free, unauthenticated, and read-only.** First cut is *identity + kind +
 capability* — **not pricing** (see STRATEGY §X.5).
 
-## Endpoints (planned)
+## Endpoints
 
 | URL | Meaning |
 |---|---|
 | `https://turing.viglet.org/models/catalog.json` | Rolling latest — the current schema version. |
 | `https://turing.viglet.org/models/catalog-v1.json` | Pinned to schema **v1** — safe for external consumers to lock. |
 | `https://turing.viglet.org/models/catalog.schema.json` | The JSON Schema (Draft 2020-12) describing the envelope + entry. |
-| `https://turing.viglet.org/models` | Human-browsable reference page (T761). |
+| `https://turing.viglet.org/models` | Human-browsable reference page (T761, pending). |
 
-Served with `Access-Control-Allow-Origin: *` and a cache header (e.g.
-`Cache-Control: public, max-age=3600`); consumers should honour ETag/`max-age`.
-Breaking schema changes bump the pinned path (`catalog-v2.json`); `catalog.json`
-always tracks the newest.
+**Serving.** The site is hosted on **GitHub Pages** (custom domain
+`turing.viglet.org`). GitHub Pages serves every asset with
+`Access-Control-Allow-Origin: *`, so the endpoint is **CORS-open by default** —
+no header config is needed (and GitHub Pages does not support custom headers).
+Cache is host-managed (GitHub Pages sends its own `Cache-Control`, ~10 min);
+consumers should honour it. Breaking schema changes bump the pinned path
+(`catalog-v2.json`); `catalog.json` always tracks the newest. The files are
+regenerated deterministically from the canonical source on every site build, so
+they never drift from `models-catalog.json`.
 
 ## Envelope
 

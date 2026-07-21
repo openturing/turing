@@ -7,8 +7,9 @@
   "scripts": {
     "dev": "vite",
     "preview": "vite preview",
-    "build": "tsc -b && vite build && vite build --ssr src/entry-server.tsx --outDir dist-ssr && node scripts/prerender.mjs && node scripts/og-image.mjs",
-    "build:client": "vite build",
+    "emit:models": "node scripts/emit-model-catalog.mjs",
+    "build": "node scripts/emit-model-catalog.mjs && tsc -b && vite build && vite build --ssr src/entry-server.tsx --outDir dist-ssr && node scripts/prerender.mjs && node scripts/og-image.mjs",
+    "build:client": "node scripts/emit-model-catalog.mjs && vite build",
     "build:ssr": "vite build --ssr src/entry-server.tsx --outDir dist-ssr",
     "prerender": "node scripts/prerender.mjs",
     "lint": "tsc -b --noEmit"

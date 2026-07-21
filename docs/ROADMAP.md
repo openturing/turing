@@ -29,7 +29,6 @@
 > market read the same reference data. The live per-vendor `/v1/models` path
 > (Block BB metadata-first classification) is unchanged. Design → §LI.
 
-- 📋 **T760** (deps: T759) **Public static JSON endpoint on `turing.viglet.org`** — the `frontend/apps/site` build emits the catalog at a stable, versioned URL (`/models/catalog.json` + pinned `/models/catalog-v1.json`), CORS-open with cache headers, so external tools can fetch it as a reference. → §LI.2
 - 📋 **T761** (deps: T759) **Public browsable `/models` reference page** — a site page listing every curated model grouped by vendor with colour-coded kind badges + search/type filter (mirrors the Block BB admin picker visuals); the human-facing face of the reference API. → §LI.3
 - 📋 **T762** (deps: T760) **Turing consumes the public catalog** — `TurLlmModelCatalog` fetches the public JSON (config var `turing.models-catalog.url`, cached with ETag/TTL) as the primary source and falls back to the bundled `models-catalog.json` when offline/unreachable; the live-vendor listing path stays as-is. → §LI.4
 
