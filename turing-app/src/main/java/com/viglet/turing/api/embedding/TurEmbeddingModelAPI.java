@@ -14,7 +14,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import org.springframework.data.domain.Sort;
 
 import com.viglet.turing.api.exception.TurNotFoundException;
 import com.viglet.turing.genai.provider.llm.TurEmbeddingDimensionService;
@@ -26,7 +25,9 @@ import com.viglet.turing.genai.verify.TurModelVerifyService;
 import com.viglet.turing.persistence.dto.embedding.TurEmbeddingModelDto;
 import com.viglet.turing.persistence.mapper.embedding.TurEmbeddingModelMapper;
 import com.viglet.turing.persistence.model.embedding.TurEmbeddingModel;
+import com.viglet.turing.persistence.model.llm.TurLLMInstance;
 import com.viglet.turing.persistence.repository.embedding.TurEmbeddingModelRepository;
+import com.viglet.turing.persistence.repository.llm.TurLLMInstanceRepository;
 import com.viglet.turing.tenant.TurInfraTenantScope;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -43,6 +44,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 @Tag(name = "Embedding Model", description = "Embedding Model API")
 public class TurEmbeddingModelAPI {
     private final TurEmbeddingModelRepository turEmbeddingModelRepository;
+    private final TurLLMInstanceRepository turLLMInstanceRepository;
     private final TurEmbeddingModelMapper turEmbeddingModelMapper;
     private final TurInfraTenantScope tenantScope;
     private final TurHuggingFaceModelDiscoveryService huggingFaceModelDiscoveryService;
@@ -52,6 +54,7 @@ public class TurEmbeddingModelAPI {
     private final TurModelVerifyService modelVerifyService;
 
     public TurEmbeddingModelAPI(TurEmbeddingModelRepository turEmbeddingModelRepository,
+            TurLLMInstanceRepository turLLMInstanceRepository,
             TurEmbeddingModelMapper turEmbeddingModelMapper,
             TurInfraTenantScope tenantScope,
             TurHuggingFaceModelDiscoveryService huggingFaceModelDiscoveryService,
@@ -60,6 +63,7 @@ public class TurEmbeddingModelAPI {
             TurHuggingFaceRepoResolver huggingFaceRepoResolver,
             TurModelVerifyService modelVerifyService) {
         this.turEmbeddingModelRepository = turEmbeddingModelRepository;
+        this.turLLMInstanceRepository = turLLMInstanceRepository;
         this.turEmbeddingModelMapper = turEmbeddingModelMapper;
         this.tenantScope = tenantScope;
         this.huggingFaceModelDiscoveryService = huggingFaceModelDiscoveryService;
@@ -138,13 +142,63 @@ public class TurEmbeddingModelAPI {
     @GetMapping
     @Secured({"ROLE_ADMIN", "EMBEDDING_VIEW"})
     public List<TurEmbeddingModelDto> turEmbeddingModelList() {
-        java.util.Comparator<TurEmbeddingModel> byModelName = java.util.Comparator.comparing(
-                TurEmbeddingModel::getModelName,
-                java.util.Comparator.nullsLast(String.CASE_INSENSITIVE_ORDER));
-        return turEmbeddingModelMapper.toDtoList(tenantScope.visibleList(
-                () -> this.turEmbeddingModelRepository.findAll(Sort.by(Sort.Order.asc("modelName").ignoreCase())),
-                tenantId -> this.turEmbeddingModelRepository.findVisibleToTenant(tenantId)
-                        .stream().sorted(byModelName).toList()));
+        // T757 / ADR 0004 — unified list: embedding-capable llm_instances (the
+        // T755-migrated ones + instances given an embedding default via the LLM
+        // form) mapped to the embedding-model shape, unioned with any legacy
+        // embedding_model row not yet shadowed by an instance of the same id. This
+        // is the single source every embedding picker (SN GenAI / store / agent /
+        // default-embedding settings) reads, so they all see unified options.
+        List<TurLLMInstance> instances = tenantScope.visibleList(
+                turLLMInstanceRepository::findAll,
+                turLLMInstanceRepository::findVisibleToTenant);
+        List<TurEmbeddingModel> unified = new java.util.ArrayList<>();
+        java.util.Set<String> instanceIds = new java.util.HashSet<>();
+        for (TurLLMInstance inst : instances) {
+            if (isEmbeddingCapable(inst)) {
+                unified.add(instanceToEmbeddingModel(inst));
+                instanceIds.add(inst.getId());
+            }
+        }
+        List<TurEmbeddingModel> legacy = tenantScope.visibleList(
+                turEmbeddingModelRepository::findAll,
+                turEmbeddingModelRepository::findVisibleToTenant);
+        for (TurEmbeddingModel em : legacy) {
+            if (!instanceIds.contains(em.getId())) {
+                unified.add(em);
+            }
+        }
+        unified.sort(java.util.Comparator.comparing(TurEmbeddingModel::getModelName,
+                java.util.Comparator.nullsLast(String.CASE_INSENSITIVE_ORDER)));
+        return turEmbeddingModelMapper.toDtoList(unified);
+    }
+
+    /** An instance serves embeddings when it carries an embedding default or ONNX path. */
+    private static boolean isEmbeddingCapable(TurLLMInstance inst) {
+        return org.springframework.util.StringUtils.hasText(inst.getEmbeddingModelName())
+                || org.springframework.util.StringUtils.hasText(inst.getEmbeddingModelPath());
+    }
+
+    /**
+     * Maps an embedding-capable {@link TurLLMInstance} to the embedding-model shape
+     * the pickers consume (id preserved). The connection is <b>not</b> attached
+     * here — resolution re-derives it from the instance via
+     * {@code TurRagContextBuilder.resolveEmbeddingEntity}.
+     */
+    private static TurEmbeddingModel instanceToEmbeddingModel(TurLLMInstance inst) {
+        TurEmbeddingModel em = new TurEmbeddingModel();
+        em.setId(inst.getId());
+        em.setTenantId(inst.getTenantId());
+        em.setModelName(org.springframework.util.StringUtils.hasText(inst.getEmbeddingModelName())
+                ? inst.getEmbeddingModelName() : inst.getTitle());
+        em.setModelReference(inst.getEmbeddingModelName());
+        em.setProviderType(inst.getTurLLMVendor() != null ? inst.getTurLLMVendor().getId() : null);
+        em.setEnabled(inst.getEnabled());
+        em.setDescription(inst.getDescription());
+        em.setIcon(inst.getIcon());
+        em.setModelPath(inst.getEmbeddingModelPath());
+        em.setTokenizerPath(inst.getEmbeddingTokenizerPath());
+        em.setBatchSize(inst.getEmbeddingBatchSize());
+        return em;
     }
 
     @Operation(summary = "Embedding Model structure")

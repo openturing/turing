@@ -1,4 +1,4 @@
-# Last task number — `T771` · next block letter — `BE`
+# Last task number — `T772` · next block letter — `BE`
 
 > **Single source of truth for the next free task number.** The next new task is
 > `T772`; after assigning it, bump the number above and the log line below.
@@ -90,7 +90,8 @@ number" looked free but wasn't. Grepping three files (`ROADMAP.md`,
 
 ## Log (most recent first)
 
-- **T757 PARTIAL** (Block BB §L.3 — embedding-default picker on LLM instance form: ModelCombobox kind=EMBEDDING → embeddingModelName + rerankModelName round-trip via TurLLMInstanceAPI; TS model + i18n en/pt; makes instance embedding-capable for T756 bridge. REMAINING: repoint RAG-config embedding selectors onto instances + retire /bento/embedding redirect) — 2026-07-20.
+- **T772 CREATED** (💭, Block BB §L.3 — retire /bento/embedding + absorb ONNX (local/HF) embedding creation into the unified instance form so the standalone surface can redirect without losing in-process-ONNX creation; needs form UX design) — 2026-07-20.
+- **T757 SHIPPED** (Block BB §L.3 — unified model admin: (1) embedding-default picker on LLM instance form (ModelCombobox kind=EMBEDDING → embeddingModelName + rerankModelName round-trip); (2) GET /api/embedding-model returns union of embedding-capable llm_instances (id-preserved) + un-shadowed legacy rows so all pickers see unified options; test 3; /bento/embedding retirement carved to T772) — 2026-07-20.
 - **T756 SHIPPED** (Block BB §L.3 — repoint embedding resolution unified-first: TurRagContextBuilder.resolveEmbeddingEntity/resolveEmbeddingModelById adapts embedding-capable llm_instance into TurEmbeddingModel shape (id-preserved) + legacy fallback; repointed build() chokepoint (SN GenAI + vector stores), batch re-embedding, store API; agent embedding REFERENCE + default-RAG create stay legacy (migrate T757/T758), resolve unified-first by id; test 5 + smoke IT) — 2026-07-20.
 - **T755 SHIPPED** (Block BB §L.3 — embedding_model→llm_instance data migration per ADR 0004: TurEmbeddingModelUnificationService.reconcile() id-preserving non-destructive (cloud copies parent conn, local/HF ONNX vendor+paths, embeddingModelName default); idempotent startup runner wired into TurOnStartup ALWAYS-RUN section (outside FIRST_TIME so existing installs get it + T754 vendor self-heal); embedding_model kept until T756; test 4 + smoke IT migrates live) — 2026-07-20.
 - **T754 SHIPPED** (Block BB §L.3 — ONNX modes as vendors per ADR 0004: TurLLMVendorOnStartup seeds TRANSFORMERS_LOCAL + HUGGINGFACE vendors (embedding-only; id = factory PROVIDER_TYPE constant); also fixed all-or-nothing seeder → idempotent ensureVendor per-vendor so new vendors reach existing installs; test 13 seeded + skip-existing) — 2026-07-20.

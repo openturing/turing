@@ -55,7 +55,7 @@
 > gated on the T752 ADR because it touches the RAG / vector-store read path. Design → §L.
 
 **Phase 2 — unify `TurEmbeddingModel` into the LLM instance (ADR 0004 accepted, T752):**
-- ⏳ **T757** (deps: T751, T756) **Unified admin UI** — ⏳ **shipped:** the LLM-instance form grew an **Embedding-default picker** (`ModelCombobox` filtered to `kind=EMBEDDING`, reusing the T751 pickers) writing the new `embeddingModelName`, plus `rerankModelName`, round-tripped through `TurLLMInstanceAPI`. **Remaining:** repoint the RAG-config embedding selectors (SN-site GenAI / store / agent) to list embedding-capable **instances** instead of `embedding_model` rows, then retire the standalone `/bento/embedding` route with a redirect. → §L.3
+- 💭 **T772** (deps: T757) **Retire `/bento/embedding` + absorb ONNX embedding creation** — the unified list (T757) already makes embedding-capable instances selectable everywhere; the last step is to add local/HF **ONNX embedding creation** (model/tokenizer paths, HF variants, dimension check) to the unified instance form so the standalone `/bento/embedding` surface can be retired with a redirect without losing in-process-ONNX creation. Needs form UX design. → §L.3
 - 💭 **T758** (deps: T756) **Exchange + API/SDK compat** — keep old embedding exports importable, alias the embedding endpoints onto the unified entity, and update the SDK / shared-types so external callers aren't broken. → §L.3
 
 ## Block W — Agent↔UI transparency & client tools (AG-UI parity)
