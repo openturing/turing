@@ -55,7 +55,6 @@
 > gated on the T752 ADR because it touches the RAG / vector-store read path. Design → §L.
 
 **Phase 2 — unify `TurEmbeddingModel` into the LLM instance (ADR 0004 accepted, T752):**
-- 💭 **T756** (deps: T755) **Repoint consumers** — switch the RAG context builder, the Lucene/vector store, batch re-embedding, SN-site GenAI, the default-RAG-infra startup, and the store API off `TurEmbeddingModel` onto the unified model reference. → §L.3
 - 💭 **T757** (deps: T751, T756) **Unified admin UI** — one "Models" surface with kind tabs/filter; the instance form grows an Embedding-default picker (filtered to `kind=EMBEDDING`); retire the standalone `/bento/embedding` route with a redirect. → §L.3
 - 💭 **T758** (deps: T756) **Exchange + API/SDK compat** — keep old embedding exports importable, alias the embedding endpoints onto the unified entity, and update the SDK / shared-types so external callers aren't broken. → §L.3
 

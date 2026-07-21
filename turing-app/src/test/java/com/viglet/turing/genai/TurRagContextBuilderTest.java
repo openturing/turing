@@ -60,6 +60,8 @@ class TurRagContextBuilderTest {
     @Mock
     private TurEmbeddingModelRepository embeddingModelRepository;
     @Mock
+    private com.viglet.turing.persistence.repository.llm.TurLLMInstanceRepository instanceRepository;
+    @Mock
     private TurStoreInstanceRepository storeInstanceRepository;
 
     @InjectMocks

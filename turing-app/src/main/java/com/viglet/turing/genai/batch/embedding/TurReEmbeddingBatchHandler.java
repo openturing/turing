@@ -27,7 +27,6 @@ import com.viglet.turing.genai.provider.store.TurStoreExportRecord;
 import com.viglet.turing.persistence.model.batch.TurBatchJob;
 import com.viglet.turing.persistence.model.embedding.TurEmbeddingModel;
 import com.viglet.turing.persistence.model.store.TurStoreInstance;
-import com.viglet.turing.persistence.repository.embedding.TurEmbeddingModelRepository;
 import com.viglet.turing.persistence.repository.store.TurStoreInstanceRepository;
 import com.viglet.turing.system.security.TurSecretCryptoService;
 
@@ -52,18 +51,15 @@ import lombok.extern.slf4j.Slf4j;
 public class TurReEmbeddingBatchHandler implements TurBatchEmbeddingCompletionHandler {
 
     private final TurStoreInstanceRepository storeInstanceRepository;
-    private final TurEmbeddingModelRepository embeddingModelRepository;
     private final TurGenAiStoreProviderFactory storeProviderFactory;
     private final TurSecretCryptoService secretCryptoService;
     private final TurRagContextBuilder ragContextBuilder;
 
     public TurReEmbeddingBatchHandler(TurStoreInstanceRepository storeInstanceRepository,
-            TurEmbeddingModelRepository embeddingModelRepository,
             TurGenAiStoreProviderFactory storeProviderFactory,
             TurSecretCryptoService secretCryptoService,
             TurRagContextBuilder ragContextBuilder) {
         this.storeInstanceRepository = storeInstanceRepository;
-        this.embeddingModelRepository = embeddingModelRepository;
         this.storeProviderFactory = storeProviderFactory;
         this.secretCryptoService = secretCryptoService;
         this.ragContextBuilder = ragContextBuilder;
@@ -128,7 +124,8 @@ public class TurReEmbeddingBatchHandler implements TurBatchEmbeddingCompletionHa
         if (!StringUtils.hasText(embeddingModelId)) {
             return null;
         }
-        TurEmbeddingModel embModel = embeddingModelRepository.findById(embeddingModelId).orElse(null);
+        // T756 — unified entity first (falls back to the legacy embedding_model row).
+        TurEmbeddingModel embModel = ragContextBuilder.resolveEmbeddingEntity(embeddingModelId);
         if (embModel == null) {
             return null;
         }

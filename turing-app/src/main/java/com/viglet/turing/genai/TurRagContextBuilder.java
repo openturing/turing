@@ -26,6 +26,7 @@ import com.viglet.turing.persistence.model.embedding.TurEmbeddingModel;
 import com.viglet.turing.persistence.model.llm.TurLLMInstance;
 import com.viglet.turing.persistence.model.store.TurStoreInstance;
 import com.viglet.turing.persistence.repository.embedding.TurEmbeddingModelRepository;
+import com.viglet.turing.persistence.repository.llm.TurLLMInstanceRepository;
 import com.viglet.turing.persistence.repository.store.TurStoreInstanceRepository;
 import com.viglet.turing.system.TurGlobalSettingsService;
 import com.viglet.turing.system.security.TurSecretCryptoService;
@@ -58,6 +59,7 @@ public class TurRagContextBuilder {
     private final TurSecretCryptoService secretCryptoService;
     private final TurGlobalSettingsService globalSettingsService;
     private final TurEmbeddingModelRepository embeddingModelRepository;
+    private final TurLLMInstanceRepository instanceRepository;
     private final TurStoreInstanceRepository storeInstanceRepository;
 
     public TurRagContextBuilder(TurLlmModelFactory llmModelFactory,
@@ -67,6 +69,7 @@ public class TurRagContextBuilder {
             TurSecretCryptoService secretCryptoService,
             TurGlobalSettingsService globalSettingsService,
             TurEmbeddingModelRepository embeddingModelRepository,
+            TurLLMInstanceRepository instanceRepository,
             TurStoreInstanceRepository storeInstanceRepository) {
         this.llmModelFactory = llmModelFactory;
         this.localEmbeddingModelFactory = localEmbeddingModelFactory;
@@ -75,6 +78,7 @@ public class TurRagContextBuilder {
         this.secretCryptoService = secretCryptoService;
         this.globalSettingsService = globalSettingsService;
         this.embeddingModelRepository = embeddingModelRepository;
+        this.instanceRepository = instanceRepository;
         this.storeInstanceRepository = storeInstanceRepository;
     }
 
@@ -131,6 +135,68 @@ public class TurRagContextBuilder {
     }
 
     /**
+     * Resolves an embedding model by id, <b>unified entity first</b> (T756 / ADR
+     * 0004). The T755 migration made every embedding model an {@code llm_instance}
+     * with the same id, so an embedding-capable instance is preferred and adapted
+     * into the {@link TurEmbeddingModel} shape {@link #resolveEmbeddingModel} already
+     * understands; when none is found it falls back to the legacy
+     * {@code embedding_model} row (non-destructive — that table is still present).
+     * Returns {@code null} when neither resolves.
+     */
+    public TurEmbeddingModel resolveEmbeddingEntity(String id) {
+        if (!StringUtils.hasText(id)) {
+            return null;
+        }
+        TurEmbeddingModel unified = instanceRepository.findById(id)
+                .filter(TurRagContextBuilder::isEmbeddingCapable)
+                .map(TurRagContextBuilder::toEmbeddingModel)
+                .orElse(null);
+        if (unified != null) {
+            return unified;
+        }
+        return embeddingModelRepository.findById(id).orElse(null);
+    }
+
+    /** Convenience: {@link #resolveEmbeddingEntity} + {@link #resolveEmbeddingModel}. */
+    public EmbeddingModel resolveEmbeddingModelById(String id) {
+        TurEmbeddingModel embModel = resolveEmbeddingEntity(id);
+        return embModel == null ? null : resolveEmbeddingModel(embModel);
+    }
+
+    /** An instance serves embeddings when it carries an embedding default (cloud) or ONNX path (local/HF). */
+    static boolean isEmbeddingCapable(TurLLMInstance inst) {
+        return StringUtils.hasText(inst.getEmbeddingModelName())
+                || StringUtils.hasText(inst.getEmbeddingModelPath());
+    }
+
+    /**
+     * Adapts a unified {@link TurLLMInstance} into the transient
+     * {@link TurEmbeddingModel} the resolver consumes, so no downstream logic
+     * changes. For a cloud instance the instance IS its own connection (url / key
+     * / vendor), so it becomes the adapter's {@code turLLMInstance}; an in-process
+     * (local/HF) instance has no parent — its ONNX paths carry the model.
+     */
+    private static TurEmbeddingModel toEmbeddingModel(TurLLMInstance inst) {
+        String vendorId = inst.getTurLLMVendor() != null ? inst.getTurLLMVendor().getId() : null;
+        boolean inProcess =
+                TurLocalEmbeddingModelFactory.PROVIDER_TYPE.equalsIgnoreCase(vendorId)
+                        || TurHuggingFaceEmbeddingModelFactory.PROVIDER_TYPE.equalsIgnoreCase(vendorId);
+
+        TurEmbeddingModel em = new TurEmbeddingModel();
+        em.setId(inst.getId());
+        em.setTenantId(inst.getTenantId());
+        em.setModelName(inst.getEmbeddingModelName());
+        em.setModelReference(inst.getEmbeddingModelName());
+        em.setProviderType(vendorId);
+        em.setEnabled(inst.getEnabled());
+        em.setModelPath(inst.getEmbeddingModelPath());
+        em.setTokenizerPath(inst.getEmbeddingTokenizerPath());
+        em.setBatchSize(inst.getEmbeddingBatchSize());
+        em.setTurLLMInstance(inProcess ? null : inst);
+        return em;
+    }
+
+    /**
      * Builds the full RAG infrastructure (EmbeddingModel + VectorStore) from explicit IDs.
      */
     public Optional<RagInfrastructure> build(String embeddingModelId, String storeInstanceId) {
@@ -146,7 +212,7 @@ public class TurRagContextBuilder {
             return Optional.empty();
         }
 
-        TurEmbeddingModel embModel = embeddingModelRepository.findById(embeddingModelId).orElse(null);
+        TurEmbeddingModel embModel = resolveEmbeddingEntity(embeddingModelId);
         if (embModel == null) {
             log.warn("Embedding Model not found: {}", embeddingModelId);
             return Optional.empty();

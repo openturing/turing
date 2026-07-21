@@ -63,7 +63,6 @@ import com.viglet.turing.persistence.mapper.store.TurStoreInstanceMapper;
 import com.viglet.turing.persistence.model.embedding.TurEmbeddingModel;
 import com.viglet.turing.persistence.model.store.TurStoreInstance;
 import com.viglet.turing.persistence.model.store.TurStoreVendor;
-import com.viglet.turing.persistence.repository.embedding.TurEmbeddingModelRepository;
 import com.viglet.turing.persistence.repository.store.TurStoreInstanceRepository;
 import com.viglet.turing.spring.utils.TurPersistenceUtils;
 import com.viglet.turing.system.TurGlobalSettingsService;
@@ -85,7 +84,6 @@ public class TurStoreInstanceAPI {
     private final TurStoreInstanceMapper turStoreInstanceMapper;
     private final TurSecretCryptoService turSecretCryptoService;
     private final TurGenAiStoreProviderFactory storeProviderFactory;
-    private final TurEmbeddingModelRepository embeddingModelRepository;
     private final TurGlobalSettingsService globalSettingsService;
     private final TurRagContextBuilder ragContextBuilder;
     private final TurInfraTenantScope tenantScope;
@@ -96,7 +94,6 @@ public class TurStoreInstanceAPI {
             TurStoreInstanceMapper turStoreInstanceMapper,
             TurSecretCryptoService turSecretCryptoService,
             TurGenAiStoreProviderFactory storeProviderFactory,
-            TurEmbeddingModelRepository embeddingModelRepository,
             TurGlobalSettingsService globalSettingsService,
             TurRagContextBuilder ragContextBuilder,
             TurInfraTenantScope tenantScope,
@@ -105,7 +102,6 @@ public class TurStoreInstanceAPI {
         this.turStoreInstanceMapper = turStoreInstanceMapper;
         this.turSecretCryptoService = turSecretCryptoService;
         this.storeProviderFactory = storeProviderFactory;
-        this.embeddingModelRepository = embeddingModelRepository;
         this.globalSettingsService = globalSettingsService;
         this.ragContextBuilder = ragContextBuilder;
         this.tenantScope = tenantScope;
@@ -317,7 +313,10 @@ public class TurStoreInstanceAPI {
             @RequestParam("embeddingModelId") String embeddingModelId) {
         TurStoreInstance instance = turStoreInstanceRepository.findById(id)
                 .filter(tenantScope::isVisibleToTenant).orElse(null);
-        TurEmbeddingModel embeddingModel = embeddingModelRepository.findById(embeddingModelId)
+        // T756 — resolve the embedding entity unified-first (legacy fallback); the
+        // adapter carries tenantId so the visibility filter still applies.
+        TurEmbeddingModel embeddingModel = java.util.Optional
+                .ofNullable(ragContextBuilder.resolveEmbeddingEntity(embeddingModelId))
                 .filter(tenantScope::isVisibleToTenant).orElse(null);
         if (instance == null || embeddingModel == null) {
             return ResponseEntity.badRequest().build();
@@ -345,7 +344,9 @@ public class TurStoreInstanceAPI {
         if (!StringUtils.hasText(resolvedId)) {
             return null;
         }
-        TurEmbeddingModel embModel = embeddingModelRepository.findById(resolvedId)
+        // T756 — unified-first resolution (legacy fallback); adapter keeps tenantId.
+        TurEmbeddingModel embModel = java.util.Optional
+                .ofNullable(ragContextBuilder.resolveEmbeddingEntity(resolvedId))
                 .filter(tenantScope::isVisibleToTenant).orElse(null);
         if (embModel == null) {
             return null;
