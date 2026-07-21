@@ -29,6 +29,7 @@ import org.springframework.transaction.annotation.Transactional;
 import com.viglet.turing.onstartup.auth.TurGroupOnStartup;
 import com.viglet.turing.onstartup.auth.TurRoleOnStartup;
 import com.viglet.turing.onstartup.auth.TurUserOnStartup;
+import com.viglet.turing.onstartup.llm.TurEmbeddingModelUnificationService;
 import com.viglet.turing.onstartup.llm.TurLLMVendorOnStartup;
 import com.viglet.turing.onstartup.se.TurSEVendorOnStartup;
 import com.viglet.turing.onstartup.store.TurStoreVendorOnStartup;
@@ -53,6 +54,7 @@ public class TurOnStartup implements ApplicationRunner {
 	private final TurUserOnStartup turUserOnStartup;
 	private final TurGroupOnStartup turGroupOnStartup;
 	private final TurRoleOnStartup turRoleOnStartup;
+	private final TurEmbeddingModelUnificationService turEmbeddingModelUnificationService;
 
 	public TurOnStartup(TurConfigVarRepository turConfigVarRepository,
 			TurLocaleOnStartup turLocaleOnStartup,
@@ -61,7 +63,8 @@ public class TurOnStartup implements ApplicationRunner {
 			TurConfigVarOnStartup turConfigVarOnStartup,
 			TurUserOnStartup turUserOnStartup,
 			TurGroupOnStartup turGroupOnStartup,
-			TurRoleOnStartup turRoleOnStartup) {
+			TurRoleOnStartup turRoleOnStartup,
+			TurEmbeddingModelUnificationService turEmbeddingModelUnificationService) {
 		this.turConfigVarRepository = turConfigVarRepository;
 		this.turLocaleOnStartup = turLocaleOnStartup;
 		this.turSEVendorOnStartup = turSEVendorOnStartup;
@@ -71,6 +74,7 @@ public class TurOnStartup implements ApplicationRunner {
 		this.turUserOnStartup = turUserOnStartup;
 		this.turGroupOnStartup = turGroupOnStartup;
 		this.turRoleOnStartup = turRoleOnStartup;
+		this.turEmbeddingModelUnificationService = turEmbeddingModelUnificationService;
 	}
 
 	@Override
@@ -90,6 +94,14 @@ public class TurOnStartup implements ApplicationRunner {
 			log.info("First Time Configuration completed. Set the admin password via the web interface.");
 		}
 
+		// Always-run, idempotent reconciliations — must reach EXISTING installs too
+		// (the FIRST_TIME block above runs only on a fresh database). Both are no-ops
+		// once applied.
+		// T754 — self-heal newly-added built-in LLM vendors (e.g. the ONNX embedding
+		// vendors) on upgraded installs. T755 — unify legacy embedding models onto
+		// llm_instance (id-preserving, non-destructive; embedding_model kept).
+		turLLMVendorOnStartup.createDefaultRows();
+		turEmbeddingModelUnificationService.reconcile();
 	}
 
 }
