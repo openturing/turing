@@ -1,13 +1,13 @@
 # Turing Public Model Catalog API — contract reference
 
-> **Status: BUILT & WIRED (T759 + T760) — goes live on the next site deploy.**
-> The catalog artifacts are generated from the canonical source and emitted into
-> the site build (`emit-model-catalog.mjs` runs in `turing-site`'s `build`), so
-> they ship to `turing.viglet.org/models/*` on the next **Publish GitHub Pages**
-> run (a manual `workflow_dispatch`). Until that deploy runs the URLs may 404.
-> The browsable `/models` page (T761) and Turing consuming this endpoint (T762)
-> are still pending. The offline fallback stays the bundled
-> `turing-app/src/main/resources/llm/models-catalog.json`.
+> **Status: LIVE (T759 + T760 + T761) — verified 2026-07-20.**
+> `https://turing.viglet.org/models/catalog.json` is serving (schema v1,
+> CORS-open) and the browsable reference page is live at
+> `https://turing.viglet.org/models` (T761). The artifacts are generated from the
+> canonical source and emitted into the `turing-site` build
+> (`emit-model-catalog.mjs`), redeployed via **Publish GitHub Pages**. Still
+> pending: Turing itself consuming this endpoint (T762) — the offline fallback
+> stays the bundled `turing-app/src/main/resources/llm/models-catalog.json`.
 
 ## What it is
 

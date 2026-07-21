@@ -56,6 +56,12 @@ export const routes: PrerenderRoute[] = [
     description:
       "Your content and users' queries never leave your network. Viglet Turing ES is self-hosted and open source: data residency by construction, SSO, encrypted secrets, any LLM (including fully local), and an auditable Apache 2.0 codebase — instead of trusting a SaaS vendor's compliance badges.",
   },
+  {
+    path: "/models",
+    title: "Model Catalog — Open LLM / Embedding Reference | Viglet Turing ES",
+    description:
+      "An open, vendor-neutral catalog of LLM, embedding, rerank and media models — each tagged with its kind, context window, embedding dimensions and capabilities. Browse it or consume the CORS-open JSON API as a market reference.",
+  },
 ];
 
 /** Render a route's app shell to an HTML string for the prerender step. */

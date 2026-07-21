@@ -119,6 +119,11 @@ overrides:
   # No dependency actually requires Babel 8 — everything declares ^7.x.
   "@babel/core": ">=7.29.6 <8"
   "js-yaml@3": ">=3.15.0"
+  # adm-zip <0.6.0: a crafted ZIP triggers a 4GB memory allocation
+  # (GHSA-xcpc-8h2w-3j85). Transitive only via @module-federation/dts-plugin
+  # (build-time .d.ts extraction for Module Federation) — never runs at
+  # app runtime. 0.6.0 is API-compatible; force the patched line.
+  "adm-zip": ">=0.6.0"
 
 # T654 / §XXXVII.16 — audit gate exclusions. xlsx (SheetJS) has NO npm fix (npm
 # is frozen at 0.18.5; fixes ship only on the vendor CDN, which pnpm's

@@ -2633,13 +2633,6 @@ static JSON artifact** emitted at build time at a stable path, served with open
 CORS + cache headers. That is enough to be a real, fetchable reference endpoint;
 no dynamic backend is introduced.
 
-### LI.3 Public `/models` reference page (T761)
-
-A human-browsable site page listing every curated model grouped by vendor, each
-with the colour-coded kind badge and a search/type filter that mirror the Block
-BB admin picker — the face of the reference API and a shareable link for "which
-models does Turing know about".
-
 ### LI.4 Turing consumes the public catalog (T762)
 
 `TurLlmModelCatalog` fetches the public JSON (new config var
