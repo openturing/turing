@@ -25,6 +25,9 @@ const KINDS = new Set([
   "TRANSCRIPTION", "SPEECH", "VIDEO", "MODERATION", "UNKNOWN",
 ]);
 
+// Additive lifecycle stages (Block BD / T764). Optional; absent for hand entries.
+const STATUSES = new Set(["PREVIEW", "GA", "DEPRECATED", "RETIRED"]);
+
 function fail(msg) {
   console.error(`emit-model-catalog: ${msg}`);
   process.exit(1);
@@ -46,6 +49,12 @@ for (const [vendor, entries] of Object.entries(root.vendors)) {
     if (!e.id || typeof e.id !== "string") fail(`${where} missing string \`id\``);
     if (!e.label || typeof e.label !== "string") fail(`${where} (${e.id}) missing \`label\``);
     if (!KINDS.has(e.kind)) fail(`${where} (${e.id}) has invalid kind "${e.kind}"`);
+    // Additive fields (Block BD / T764) — optional; validate only when present.
+    if (e.status !== undefined && !STATUSES.has(e.status)) fail(`${where} (${e.id}) has invalid status "${e.status}"`);
+    if (e.maxOutputTokens !== undefined && !(Number.isInteger(e.maxOutputTokens) && e.maxOutputTokens >= 1)) fail(`${where} (${e.id}) has invalid maxOutputTokens`);
+    if (e.aliases !== undefined && !Array.isArray(e.aliases)) fail(`${where} (${e.id}) \`aliases\` must be an array`);
+    if (e.sources !== undefined && !Array.isArray(e.sources)) fail(`${where} (${e.id}) \`sources\` must be an array`);
+    if (e.modalities !== undefined && (typeof e.modalities !== "object" || e.modalities === null || Array.isArray(e.modalities))) fail(`${where} (${e.id}) \`modalities\` must be an object`);
     count++;
     return { ...e, vendor };
   });

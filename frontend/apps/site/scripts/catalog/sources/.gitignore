@@ -1,0 +1,4 @@
+# Raw per-source snapshot cache (Block BD / T765) — regenerated on every fetch,
+# may contain vendor-specific ids and fetch timestamps. Not committed; the
+# pipeline replays whatever is present here with --offline.
+*.json

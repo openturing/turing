@@ -8,6 +8,8 @@
     "dev": "vite",
     "preview": "vite preview",
     "emit:models": "node scripts/emit-model-catalog.mjs",
+    "catalog:regen": "node scripts/catalog/regen.mjs",
+    "catalog:test": "node --test scripts/catalog/regen.test.mjs",
     "build": "node scripts/emit-model-catalog.mjs && tsc -b && vite build && vite build --ssr src/entry-server.tsx --outDir dist-ssr && node scripts/prerender.mjs && node scripts/og-image.mjs",
     "build:client": "node scripts/emit-model-catalog.mjs && vite build",
     "build:ssr": "vite build --ssr src/entry-server.tsx --outDir dist-ssr",

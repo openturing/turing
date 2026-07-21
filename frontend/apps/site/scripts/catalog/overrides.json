@@ -1,0 +1,11 @@
+{
+  "_comment": "Curated, human-verified pins for the model-catalog regeneration pipeline (Block BD / T768). Keyed by catalog vendor (lower-case). Each entry MUST carry `id`; any other ModelEntry field it sets is merged with precedence ABOVE LiteLLM and (normally) BELOW the live vendor API. Add `\"__pin\": true` to force a field to win over EVERYTHING — use only for facts you have personally verified and never want a noisy source to clobber. Fields you omit here are still filled by the automated sources. This file only ENRICHES ids that a vendor API / the committed catalog already vouches for (the anchoring rule); it cannot introduce a brand-new id on its own. Keep entries minimal — a pin is a claim you are standing behind.",
+  "openai": [
+    { "id": "text-embedding-3-small", "label": "text-embedding-3-small", "embeddingDimensions": 1536, "__pin": true },
+    { "id": "text-embedding-3-large", "label": "text-embedding-3-large", "embeddingDimensions": 3072, "__pin": true }
+  ],
+  "anthropic": [],
+  "gemini": [],
+  "cohere": [],
+  "mistral": []
+}

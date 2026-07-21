@@ -31,13 +31,13 @@
 > silently poison the public reference (T387/T667 discipline). Zero-dep Node,
 > mirroring `emit-model-catalog.mjs`. Design → §LII.
 
-- 📋 **T764** (deps: —) **Schema enrichment + provenance (additive, still v1)** — extend `models-catalog.schema.json` with backward-compatible **optional** fields the pipeline populates: `maxOutputTokens`, `modalities` (input/output), `knowledgeCutoff`, `releaseDate`, `aliases`, `status` (PREVIEW/GA/DEPRECATED/RETIRED), and per-entry `sources`/`lastVerified` provenance; keep envelope `version: 1` (additive → consumers ignore unknowns), update the emit validator + `docs/references/model-catalog-api.md`. → §LII.1
-- 📋 **T765** (deps: T764) **Pipeline scaffold + source-cache layer** — `scripts/catalog/` zero-dep Node orchestrator + a `SourceAdapter` contract; each source fetch is cached as a raw snapshot under `scripts/catalog/sources/<vendor>-<source>.json` with fetch timestamp + provenance, replayable offline; a missing API key **skips** that source gracefully (never fails the run). → §LII.2
-- 📋 **T766** (deps: T765) **Per-vendor live-API fetchers** — normalize each vendor's own listing endpoint into `ModelEntry` drafts: OpenAI `/v1/models`, Anthropic `/v1/models`, Gemini `models.list` (rich: `inputTokenLimit`/`outputTokenLimit`/`supportedGenerationMethods`), Cohere `/models` (endpoints → kind), Mistral `/v1/models`; keyed by env vars, skipped when absent. → §LII.3
-- 📋 **T767** (deps: T765) **LiteLLM registry cross-source** — ingest LiteLLM `model_prices_and_context_window.json` as a vendor-agnostic enrichment source for `contextWindow` / `maxOutputTokens` / `modalities` / capability hints where the live vendor API is silent; **strictly non-pricing** fields only (STRATEGY §X.5). → §LII.3
-- 📋 **T768** (deps: T766, T767) **Merge + reconciliation engine** — deterministic merge with source precedence (live vendor API > curated `overrides.json` pin > LiteLLM registry), per-field provenance, conflict detection + confidence, stable ordering; a top-precedence human-curated `overrides.json` layer so verified facts are never clobbered by noisy sources; produces a **proposed** envelope, never writes the canonical file. → §LII.4
-- 📋 **T769** (deps: T768) **Validation + review gate** — validate the proposed catalog against the schema (reuse the emit validator), emit a human-readable **diff report** vs. the committed `models-catalog.json` (added/removed/changed per vendor+field with source attribution), and write the canonical file (bumping `lastUpdated`) **only** on explicit `--apply`. → §LII.4
-- 📋 **T770** (deps: T769) **Orchestrator command + pipeline docs** — one `pnpm catalog:regen` (fetch → merge → validate → report) + `--apply`; `docs/references/model-catalog-pipeline.md` documenting the trusted source per vendor, env keys, offline/cache behaviour, and the review workflow. → §LII.5
+> **T764–T770 shipped** (see [CHANGELOG.md](CHANGELOG.md) → Block BD) — schema
+> enrichment + provenance, zero-dep scaffold + offline source-cache, per-vendor
+> live-API fetchers + LiteLLM cross-source, merge/reconciliation with
+> `overrides.json` precedence, validation + diff review gate (`--apply` only), and
+> the `pnpm catalog:regen` orchestrator + `docs/references/model-catalog-pipeline.md`.
+> Only the deferred extended-sources bet remains:
+
 - 💭 **T771** (deps: T770) **Extended sources + optional CI refresh** — later self-hosted/aggregator sources (Ollama library + `ollama list`, Bedrock `ListFoundationModels`, HuggingFace for local ONNX) behind the T765 adapter contract, plus an opt-in manual-dispatch GitHub Actions workflow that runs the pipeline and **opens a PR** with the regenerated catalog (never auto-merges — the review gate stays human). → §LII.5
 
 ## Block W — Agent↔UI transparency & client tools (AG-UI parity)

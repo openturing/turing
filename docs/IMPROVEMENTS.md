@@ -2543,93 +2543,26 @@ bridge — all opt-in behind `turing.gateway.enabled` (default off).
 
 ## LII. Multi-source model-catalog regeneration pipeline (Block BD)
 
-**The problem.** Block BC (shipped) made `models-catalog.json` a *public reference*
-other tools consume — but it is still **hand-curated**, so it is only as accurate
-and as current as whoever last edited it by hand. Entries are sparse (mostly `id`
-+ `label` + `kind` + a guessed `contextWindow`), fields drift out of date
-silently, and there is no record of *where* any value came from. For a public
-authority asset, "trust me, I typed it" is the weak link.
+> **T764–T770 shipped** (see CHANGELOG Block BD; built reference in
+> `docs/references/model-catalog-pipeline.md`). The pipeline
+> (`frontend/apps/site/scripts/catalog/`) regenerates the canonical
+> `models-catalog.json` from live vendor APIs + the LiteLLM registry + a curated
+> `overrides.json`, propose-and-review (`--apply` only). Only the deferred
+> extended-sources bet remains:
 
-**The bet.** Build a **local, procedural pipeline** that regenerates the canonical
-`models-catalog.json` from **multiple trustworthy sources per vendor**, so each
-model carries meticulous, provenance-tracked detail instead of a hand guess. The
-pipeline is zero-dependency Node (mirroring `emit-model-catalog.mjs`) and runs
-locally on demand — it is a maintenance tool, not a runtime dependency. The
-published artifact and the way Turing consumes the catalog are unchanged; only
-*how the source file gets its content* improves.
+### LII.5 Extended sources & optional CI refresh (T771, 💭)
 
-**Source trust model (first cut).** The highest-trust source for a vendor is that
-vendor's **own live listing API** — authoritative for which ids exist right now
-and (Gemini especially) carrying rich metadata (`inputTokenLimit`,
-`outputTokenLimit`, `supportedGenerationMethods`). Those are cross-referenced with
-the **LiteLLM community registry** (`model_prices_and_context_window.json`) to
-fill fields a vendor API omits (context window, max output tokens, modalities,
-capability hints) — **non-pricing fields only**, per STRATEGY §X.5. A curated,
-top-precedence `overrides.json` lets a human pin a verified fact so a noisy source
-can never clobber it. Extended/self-hosted sources (Ollama, Bedrock, HuggingFace)
-are deliberately deferred (T771) behind the same adapter contract.
+Add later self-hosted/aggregator sources behind the shipped `SourceAdapter`
+contract — the **Ollama** library + local `ollama list`, **Bedrock**
+`ListFoundationModels`, **HuggingFace** for local ONNX embedding models — so the
+non-cloud vendor rows (`ollama`, `bedrock`, `vertex-ai`) stop depending on LiteLLM
+alone for anchoring. Plus an **opt-in manual-dispatch GitHub Actions workflow**
+that runs the pipeline with whatever keys are in CI secrets and **opens a PR** with
+the regenerated catalog + diff report as the PR body. The human review gate is
+never removed — CI proposes, a human merges (the T387/T667 discipline the shipped
+pipeline already enforces locally).
 
-**The hard rule — propose, never auto-overwrite.** The public catalog is an
-authority asset; a bad upstream fetch must not silently poison it. So the pipeline
-follows the same never-auto-apply discipline as LLM-derived data elsewhere
-(T387 manifest derivation, T667/T675 synonym/hierarchy mining): it emits a
-*proposed* envelope + a human-readable **diff report** against the committed file
-and only writes `models-catalog.json` on an explicit `--apply`. The review gate
-stays human even if a CI workflow (T771) runs the fetch — CI opens a PR, it never
-merges.
-
-### LII.1 Schema enrichment + provenance (T764)
-
-Extend `models-catalog.schema.json` with **optional, backward-compatible** fields
-the richer sources can populate — `maxOutputTokens`, `modalities` (input/output
-arrays), `knowledgeCutoff`, `releaseDate`, `aliases`, `status`
-(PREVIEW/GA/DEPRECATED/RETIRED), and per-entry provenance (`sources`,
-`lastVerified`). The envelope stays `version: 1`: the additions are optional and
-consumers ignore unknown fields, so no pinned-consumer break (the emit script's
-`additionalProperties: false` is *ours* to update). This is the foundation the
-pipeline writes into; the public contract doc is updated in the same task.
-
-### LII.2 Pipeline scaffold + source-cache layer (T765)
-
-`scripts/catalog/` gets a zero-dep orchestrator and a small `SourceAdapter`
-contract (`fetch()` → raw JSON, `normalize(raw)` → `ModelEntry[]`). Every fetch is
-written to a raw snapshot cache under `scripts/catalog/sources/<vendor>-<source>.json`
-with a fetch timestamp + provenance, so runs are reproducible offline and a
-merge/normalize bug can be re-run without re-hitting the network. A missing API
-key **skips** that source with a warning — the pipeline never hard-fails because
-one credential is absent.
-
-### LII.3 Fetchers — vendor APIs + LiteLLM (T766, T767)
-
-Per-vendor adapters normalize each vendor's own listing endpoint (OpenAI,
-Anthropic, Gemini, Cohere, Mistral) into `ModelEntry` drafts, mapping the vendor's
-native kind signals (Cohere `endpoints`, Gemini `supportedGenerationMethods`) onto
-the `TurLlmModelKind` taxonomy. The LiteLLM adapter ingests
-`model_prices_and_context_window.json` as a vendor-agnostic enrichment layer for
-the numeric/capability fields vendor APIs leave blank — pricing keys are dropped.
-
-### LII.4 Merge + validation gate (T768, T769)
-
-The merge engine folds all normalized drafts per model id with explicit source
-precedence (live vendor API > `overrides.json` > LiteLLM), records per-field
-provenance and flags conflicts, and orders output deterministically. It builds a
-*proposed* envelope only. The validation gate then runs the proposed catalog
-through the schema validator and emits a per-vendor/per-field diff report against
-the committed file; `--apply` is the only path that overwrites the canonical file
-(and bumps `lastUpdated`).
-
-### LII.5 Orchestrator, docs & extended sources (T770, T771)
-
-A single `pnpm catalog:regen` chains fetch → merge → validate → report, with
-`--apply` to commit the result; `docs/references/model-catalog-pipeline.md`
-documents the trusted source per vendor, the env keys, the offline/cache
-behaviour, and the review workflow. T771 (💭) later adds self-hosted/aggregator
-sources (Ollama, Bedrock, HuggingFace) behind the same adapter contract and an
-opt-in manual-dispatch CI workflow that opens a PR — the human review gate is
-never removed.
-
-**Non-goals.** No pricing (STRATEGY §X.5 stands — enrichment is non-pricing
-fields only). No runtime dependency on the pipeline — it is a local maintenance
-tool; the product still reads the bundled/published catalog. No auto-overwrite of
-the canonical file and no auto-merge in CI — the review gate is mandatory. No new
-public endpoint or envelope-shape break — `version` stays 1 (additive only).
+**Non-goals.** No pricing (STRATEGY §X.5 — enrichment is non-pricing only). No
+runtime dependency on the pipeline (local maintenance tool; the product still
+reads the bundled/published catalog). No auto-overwrite / no CI auto-merge — the
+review gate is mandatory. No envelope-shape break — `version` stays 1 (additive).

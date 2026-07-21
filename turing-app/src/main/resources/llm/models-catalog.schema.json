@@ -86,6 +86,66 @@
         "deprecated": {
           "type": "boolean",
           "description": "True when the vendor has retired or superseded the id."
+        },
+        "maxOutputTokens": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Maximum tokens the model can emit in a single response, when known. Additive (Block BD / T764)."
+        },
+        "modalities": {
+          "$ref": "#/$defs/modalities",
+          "description": "Supported input/output modalities, when known. Additive (Block BD / T764)."
+        },
+        "knowledgeCutoff": {
+          "type": "string",
+          "description": "Training-data knowledge cutoff, ISO-8601 date or year-month (e.g. 2025-03 or 2025-03-01). Additive (Block BD / T764)."
+        },
+        "releaseDate": {
+          "type": "string",
+          "format": "date",
+          "description": "ISO-8601 date the model id became available. Additive (Block BD / T764)."
+        },
+        "aliases": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "description": "Alternate ids that resolve to this model (e.g. dated snapshots, -latest pointers). Additive (Block BD / T764)."
+        },
+        "status": {
+          "type": "string",
+          "enum": ["PREVIEW", "GA", "DEPRECATED", "RETIRED"],
+          "description": "Lifecycle stage. GA = generally available; RETIRED = no longer served. Prefer this over the boolean `deprecated` when the exact stage is known. Additive (Block BD / T764)."
+        },
+        "sources": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "description": "Provenance — the source ids (e.g. openai-api, litellm, overrides) that contributed fields to this entry, recorded by the regeneration pipeline (Block BD / T765). Additive (Block BD / T764)."
+        },
+        "lastVerified": {
+          "type": "string",
+          "format": "date",
+          "description": "ISO-8601 date this entry was last confirmed against its sources by the regeneration pipeline. Additive (Block BD / T764)."
+        }
+      }
+    },
+    "modalities": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "input": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": ["text", "image", "audio", "video", "pdf"]
+          },
+          "description": "Accepted input modalities."
+        },
+        "output": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": ["text", "image", "audio", "video", "embedding"]
+          },
+          "description": "Produced output modalities."
         }
       }
     }

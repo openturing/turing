@@ -70,6 +70,19 @@ they never drift from `models-catalog.json`.
 | `embeddingDimensions` | integer | — | Output vector size — only for `kind = EMBEDDING`. |
 | `capabilities` | string[] | — | Hints such as `vision`, `tools`, `json_mode`, `streaming`. |
 | `deprecated` | boolean | — | `true` when the vendor has retired/superseded the id. |
+| `maxOutputTokens` | integer | — | Max tokens emittable in one response, when known. *(Block BD / T764)* |
+| `modalities` | object | — | `{ input: string[], output: string[] }` — supported I/O modalities (`text`·`image`·`audio`·`video`·`pdf` in; `…`·`embedding` out). *(T764)* |
+| `knowledgeCutoff` | string | — | Training knowledge cutoff (ISO date or `YYYY-MM`). *(T764)* |
+| `releaseDate` | string | — | ISO-8601 date the id became available. *(T764)* |
+| `aliases` | string[] | — | Alternate ids that resolve to this model (dated snapshots, `-latest`). *(T764)* |
+| `status` | enum | — | `PREVIEW` · `GA` · `DEPRECATED` · `RETIRED` — lifecycle stage; prefer over `deprecated` when the exact stage is known. *(T764)* |
+| `sources` | string[] | — | Provenance — source ids that contributed fields (e.g. `openai-api`, `litellm`, `overrides`). Set by the regeneration pipeline (Block BD). *(T764)* |
+| `lastVerified` | string | — | ISO-8601 date the entry was last confirmed against its sources by the pipeline. *(T764)* |
+
+> **Envelope stays `version: 1`.** The T764 fields are all **optional and
+> additive** — existing consumers ignore unknown keys, so no pinned-consumer break.
+> They are populated by the Block BD regeneration pipeline
+> (`docs/references/model-catalog-pipeline.md`); hand entries may omit them.
 
 ```jsonc
 // example entry
