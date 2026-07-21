@@ -2543,10 +2543,10 @@ bridge — all opt-in behind `turing.gateway.enabled` (default off).
 
 ## LI/LII. Model catalog API + regeneration pipeline (moved out)
 
-> **Migrated 2026-07-21 to [`openviglet/models-catalog`](https://github.com/openviglet/models-catalog).**
+> **Migrated 2026-07-21 to [`openviglet/model-catalog`](https://github.com/openviglet/model-catalog).**
 > The public model catalog API (Block BC / former §LI) and its multi-source
 > regeneration pipeline (Block BD / former §LII) now live in their own repo, with
 > their own roadmap, design rationale and reference docs
 > (`docs/references/api.md` + `pipeline.md` there). Turing consumes the published
-> endpoint remotely (`turing.models-catalog.url`). The shipped Turing history stays
+> endpoint remotely (`turing.model-catalog.url`). The shipped Turing history stays
 > in CHANGELOG Blocks BC/BD; design/backlog for the catalog now lives in that repo.

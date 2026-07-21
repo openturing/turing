@@ -86,7 +86,7 @@ public enum TurLlmModelKind {
 
     /**
      * Resolves a catalog entry's kind: honours an explicit {@code kind} override
-     * from {@code models-catalog.json} when it names a valid enum constant,
+     * from {@code model-catalog.json} when it names a valid enum constant,
      * otherwise falls back to the {@link #classify(String, String) heuristic}.
      *
      * @param override the raw {@code kind} text from the catalog (may be {@code null})

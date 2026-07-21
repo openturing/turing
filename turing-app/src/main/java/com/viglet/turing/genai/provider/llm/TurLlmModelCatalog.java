@@ -12,9 +12,9 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 
-import io.github.openviglet.modelscatalog.Kind;
-import io.github.openviglet.modelscatalog.ModelCatalogClient;
-import io.github.openviglet.modelscatalog.ModelEntry;
+import io.github.openviglet.modelcatalog.Kind;
+import io.github.openviglet.modelcatalog.ModelCatalogClient;
+import io.github.openviglet.modelcatalog.ModelEntry;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -24,13 +24,13 @@ import lombok.extern.slf4j.Slf4j;
  * returns nothing (no API key yet, offline, or a provider without a "list
  * models" endpoint), the discovery service serves these instead.
  *
- * <p>The catalog lives in its own repository — <b>{@code openviglet/models-catalog}</b>
+ * <p>The catalog lives in its own repository — <b>{@code openviglet/model-catalog}</b>
  * — which publishes it as a public, CORS-open JSON endpoint. Turing consumes it
- * through the official {@code io.github.openviglet:models-catalog-client} library
+ * through the official {@code io.github.openviglet:model-catalog-client} library
  * (zero runtime dependencies — JDK {@code HttpClient} + a tiny built-in JSON reader)
  * rather than a hand-rolled HTTP+JSON fetch, so URL selection, {@code vendors}-map
  * flattening and the typed {@link ModelEntry}/{@link Kind} model come from the shared
- * client. Fetches from {@code turing.models-catalog.url} (default the published rolling
+ * client. Fetches from {@code turing.model-catalog.url} (default the published rolling
  * endpoint) on a TTL, so a running instance picks up new models without a redeploy.
  *
  * <p>There is <b>no bundled offline fallback</b>: the catalog is remote-only. The
@@ -57,10 +57,10 @@ public class TurLlmModelCatalog {
     /** Lazily built from the configured base URL; overridable for tests. */
     private volatile ModelCatalogClient client;
 
-    @Value("${turing.models-catalog.url:https://openviglet.github.io/models-catalog/catalog.json}")
+    @Value("${turing.model-catalog.url:https://openviglet.github.io/model-catalog/catalog.json}")
     private String remoteUrl;
 
-    @Value("${turing.models-catalog.remote-enabled:true}")
+    @Value("${turing.model-catalog.remote-enabled:true}")
     private boolean remoteEnabled;
 
     /**
@@ -70,8 +70,8 @@ public class TurLlmModelCatalog {
      * the network.
      */
     @Scheduled(
-            initialDelayString = "${turing.models-catalog.refresh-initial-delay-ms:8000}",
-            fixedDelayString = "${turing.models-catalog.refresh-interval-ms:21600000}")
+            initialDelayString = "${turing.model-catalog.refresh-initial-delay-ms:8000}",
+            fixedDelayString = "${turing.model-catalog.refresh-interval-ms:21600000}")
     void refreshFromRemote() {
         if (!remoteEnabled || !StringUtils.hasText(remoteUrl)) {
             return;
@@ -146,7 +146,7 @@ public class TurLlmModelCatalog {
 
     /**
      * The catalog client wants the endpoint <em>base</em> (it appends the file it
-     * needs). {@code turing.models-catalog.url} may be configured either as that base
+     * needs). {@code turing.model-catalog.url} may be configured either as that base
      * or as a full URL to a specific {@code *.json} file (its historical default);
      * a trailing JSON filename is stripped so both forms work.
      */

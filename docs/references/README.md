@@ -24,9 +24,9 @@ See [ADR 0003](../adr/0003-knowledge-base-microthesaurus.md).
 
 **Moved 2026-07-21** — the public model catalog API (Block BC) and its
 regeneration pipeline (Block BD) now live in the dedicated
-[`openviglet/models-catalog`](https://github.com/openviglet/models-catalog) repo.
+[`openviglet/model-catalog`](https://github.com/openviglet/model-catalog) repo.
 These two files are now short pointer stubs. Turing consumes the published endpoint
-remotely (`turing.models-catalog.url`, default
-`https://openviglet.github.io/models-catalog/catalog.json`; remote-only, no bundled
+remotely (`turing.model-catalog.url`, default
+`https://openviglet.github.io/model-catalog/catalog.json`; remote-only, no bundled
 copy). The full contract + maintainer workflow live in that repo's
 `docs/references/{api,pipeline}.md`.

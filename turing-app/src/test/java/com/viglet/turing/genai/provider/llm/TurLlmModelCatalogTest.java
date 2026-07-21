@@ -24,12 +24,12 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import org.junit.jupiter.api.Test;
 
-import io.github.openviglet.modelscatalog.ModelCatalogClient;
+import io.github.openviglet.modelcatalog.ModelCatalogClient;
 
 /**
  * Verifies {@link TurLlmModelCatalog} maps the canonical <em>envelope</em> catalog
  * ({@code {version, lastUpdated, vendors:{...}}}) served by the public endpoint —
- * fetched through the {@code models-catalog-client} library — into the vendor→models
+ * fetched through the {@code model-catalog-client} library — into the vendor→models
  * map, honouring each entry's {@code kind} (or the heuristic when absent). The catalog
  * is remote-only (no bundled resource): with the remote fetch disabled the served map
  * stays empty, and a failed/empty refresh keeps the last-good map.

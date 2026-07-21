@@ -18,13 +18,13 @@
 
 ## Block BC/BD — Model catalog API (moved to a dedicated repo)
 
-> **Migrated 2026-07-21 to [`openviglet/models-catalog`](https://github.com/openviglet/models-catalog).**
+> **Migrated 2026-07-21 to [`openviglet/model-catalog`](https://github.com/openviglet/model-catalog).**
 > The public model catalog API (Block BC) and its multi-source regeneration
 > pipeline (Block BD) now live in their own repo, which owns the canonical
-> `models-catalog.json`, publishes the CORS-open JSON endpoint via GitHub Pages
-> (`https://openviglet.github.io/models-catalog/catalog.json`), and carries its own
+> `model-catalog.json`, publishes the CORS-open JSON endpoint via GitHub Pages
+> (`https://openviglet.github.io/model-catalog/catalog.json`), and carries its own
 > roadmap/backlog (extended sources, custom domain). Turing consumes the published
-> endpoint remotely (`turing.models-catalog.url`, remote-only — no bundled copy).
+> endpoint remotely (`turing.model-catalog.url`, remote-only — no bundled copy).
 > The shipped Turing history stays in [CHANGELOG.md](CHANGELOG.md) → Blocks BC/BD;
 > new catalog work happens in the dedicated repo, not here.
 

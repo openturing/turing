@@ -22,15 +22,15 @@ turing:
   # single-user deployment — a startup WARNING is logged when you do.
   permissions: true
   # The LLM-instance model picker's fallback catalog is served from the public
-  # catalog API published by the dedicated openviglet/models-catalog repo. It is
+  # catalog API published by the dedicated openviglet/model-catalog repo. It is
   # remote-only (no bundled copy): the fetch is best-effort, runs off the boot path
   # on a TTL, and never blocks startup. Until the first successful fetch (or with
   # remote-enabled=false) the picker falls back to live vendor listing only.
-  models-catalog:
-    url: ${TURING_MODELS_CATALOG_URL:https://openviglet.github.io/models-catalog/catalog.json}
-    remote-enabled: ${TURING_MODELS_CATALOG_REMOTE_ENABLED:true}
-    refresh-initial-delay-ms: ${TURING_MODELS_CATALOG_REFRESH_INITIAL_DELAY_MS:8000}
-    refresh-interval-ms: ${TURING_MODELS_CATALOG_REFRESH_INTERVAL_MS:21600000}
+  model-catalog:
+    url: ${TURING_MODEL_CATALOG_URL:https://openviglet.github.io/model-catalog/catalog.json}
+    remote-enabled: ${TURING_MODEL_CATALOG_REMOTE_ENABLED:true}
+    refresh-initial-delay-ms: ${TURING_MODEL_CATALOG_REFRESH_INITIAL_DELAY_MS:8000}
+    refresh-interval-ms: ${TURING_MODEL_CATALOG_REFRESH_INTERVAL_MS:21600000}
   tenancy:
     enabled: false
     # T334 / §XIV.8.1 — shared secret for trusted server-to-server callers. When
