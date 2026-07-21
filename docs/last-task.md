@@ -1,9 +1,16 @@
-# Last task number — `T763` · next block letter — `BD`
+# Last task number — `T771` · next block letter — `BE`
 
 > **Single source of truth for the next free task number.** The next new task is
-> `T764`; after assigning it, bump the number above and the log line below.
+> `T772`; after assigning it, bump the number above and the log line below.
 >
-> **Next block letter — `BD`** (Block **BC** = Public curated model catalog API —
+> **Next block letter — `BE`** (Block **BD** = Multi-source model-catalog
+> regeneration pipeline — a local, zero-dep, procedural pipeline that regenerates
+> the canonical `models-catalog.json` from multiple trustworthy sources per vendor
+> (live vendor listing APIs + LiteLLM registry) with provenance + richer optional
+> fields; propose-and-review (`--apply` only), never auto-overwrite; schema
+> enrichment (T764) + scaffold/cache (T765) + fetchers (T766-T767) + merge (T768)
+> + validation gate (T769) + orchestrator/docs (T770) + extended sources/CI PR
+> (💭 T771), created 2026-07-20; Block **BC** = Public curated model catalog API —
 > turing.viglet.org publishes Block BB's enriched `models-catalog.json` as a
 > versioned, CORS-open static JSON endpoint (market reference, LiteLLM-registry
 > role) + a browsable `/models` page; Turing consumes the public API (remote fetch
@@ -83,6 +90,7 @@ number" looked free but wasn't. Grepping three files (`ROADMAP.md`,
 
 ## Log (most recent first)
 
+- **T764-T771 CREATED** (📋/💭, Block BD §LII — Multi-source model-catalog regeneration pipeline: schema enrichment + provenance additive-v1 (T764); zero-dep scaffold + offline source-cache (T765); per-vendor live-API fetchers OpenAI/Anthropic/Gemini/Cohere/Mistral (T766) + LiteLLM registry non-pricing enrichment (T767); merge + reconciliation w/ overrides.json precedence (T768); validation + diff review gate, --apply only (T769); pnpm catalog:regen orchestrator + pipeline docs (T770); extended sources Ollama/Bedrock/HF + opt-in CI PR (💭 T771)) — 2026-07-20.
 - **T762 SHIPPED** (Block BC §LI.4 — Turing consumes public catalog: TurLlmModelCatalog @Scheduled best-effort remote refresh from turing.models-catalog.url (default turing.viglet.org/models/catalog.json) on TTL, swaps in only on non-empty success; bundled models-catalog.json = startup offline fallback; shared parseCatalog(JsonNode); config turing.models-catalog.* env-overridable + documented; ITs pin remote-enabled=false; TurLlmModelCatalogTest 7. CLOSES Block BC T759-T763) — 2026-07-20.
 - **T761 SHIPPED** (Block BC §LI.3 — public /models reference page on turing-site: models.tsx + model-catalog.ts import public/models/catalog.json at build (prerendered/crawlable); vendor groups + kind badges + ctx/dim/capability chips + search + type filter + Public-API callout + Dataset JSON-LD; route in App.tsx + entry-server; LIVE at turing.viglet.org/models; endpoint verified serving v1) — 2026-07-20.
 - **T760 SHIPPED** (Block BC §LI.2 — public JSON endpoint on turing.viglet.org: emit-model-catalog.mjs wired into turing-site build (before vite build) + emit:models script → public/models/catalog.json+catalog-v1.json+schema shipped to _site; GitHub Pages serves Access-Control-Allow-Origin:* by default (CORS-open, host-managed cache); contract doc → BUILT&WIRED; live on next Pages deploy) — 2026-07-20.
