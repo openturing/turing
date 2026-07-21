@@ -130,4 +130,40 @@ class TurEmbeddingModelListUnificationTest {
 
         assertThat(unified).extracting(TurEmbeddingModel::getId).containsExactly("L1");
     }
+
+    private TurEmbeddingModel captureGet(String id) {
+        ArgumentCaptor<TurEmbeddingModel> captor = ArgumentCaptor.forClass(TurEmbeddingModel.class);
+        when(turEmbeddingModelMapper.toDto(captor.capture())).thenReturn(new TurEmbeddingModelDto());
+        api.turEmbeddingModelGet(id);
+        return captor.getValue();
+    }
+
+    @Test
+    void getByIdReturnsLegacyRowWhenPresent() {
+        when(tenantScope.isVisibleToTenant(any())).thenReturn(true);
+        when(turEmbeddingModelRepository.findById("L1"))
+                .thenReturn(java.util.Optional.of(legacy("L1", "legacy-embed")));
+
+        assertThat(captureGet("L1").getId()).isEqualTo("L1");
+    }
+
+    @Test
+    void getByIdFallsBackToInstanceBackedEmbedding() {
+        when(tenantScope.isVisibleToTenant(any())).thenReturn(true);
+        when(turEmbeddingModelRepository.findById("i1")).thenReturn(java.util.Optional.empty());
+        when(turLLMInstanceRepository.findById("i1"))
+                .thenReturn(java.util.Optional.of(instance("i1", "text-embedding-3-small")));
+
+        TurEmbeddingModel got = captureGet("i1");
+        assertThat(got.getId()).isEqualTo("i1");
+        assertThat(got.getModelReference()).isEqualTo("text-embedding-3-small");
+    }
+
+    @Test
+    void getByIdReturnsEmptyWhenNeitherExists() {
+        when(turEmbeddingModelRepository.findById("gone")).thenReturn(java.util.Optional.empty());
+        when(turLLMInstanceRepository.findById("gone")).thenReturn(java.util.Optional.empty());
+
+        assertThat(captureGet("gone").getId()).isNull();
+    }
 }

@@ -56,7 +56,6 @@
 
 **Phase 2 — unify `TurEmbeddingModel` into the LLM instance (ADR 0004 accepted, T752):**
 - 💭 **T772** (deps: T757) **Retire `/bento/embedding` + absorb ONNX embedding creation** — the unified list (T757) already makes embedding-capable instances selectable everywhere; the last step is to add local/HF **ONNX embedding creation** (model/tokenizer paths, HF variants, dimension check) to the unified instance form so the standalone `/bento/embedding` surface can be retired with a redirect without losing in-process-ONNX creation. Needs form UX design. → §L.3
-- 💭 **T758** (deps: T756) **Exchange + API/SDK compat** — keep old embedding exports importable, alias the embedding endpoints onto the unified entity, and update the SDK / shared-types so external callers aren't broken. → §L.3
 
 ## Block W — Agent↔UI transparency & client tools (AG-UI parity)
 

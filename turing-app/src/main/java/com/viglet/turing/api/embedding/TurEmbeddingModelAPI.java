@@ -212,8 +212,18 @@ public class TurEmbeddingModelAPI {
     @GetMapping("/{id}")
     @Secured({"ROLE_ADMIN", "EMBEDDING_VIEW"})
     public TurEmbeddingModelDto turEmbeddingModelGet(@PathVariable String id) {
-        return turEmbeddingModelMapper
-                .toDto(this.turEmbeddingModelRepository.findById(id).filter(tenantScope::isVisibleToTenant).orElse(new TurEmbeddingModel()));
+        // T758 — legacy embedding_model row first (so the standalone editor keeps
+        // editing the real row), falling back to an embedding-capable llm_instance
+        // mapped to the embedding shape, so an instance-backed embedding id is
+        // fetchable by external callers too (endpoint aliased onto the unified entity).
+        TurEmbeddingModel found = this.turEmbeddingModelRepository.findById(id)
+                .filter(tenantScope::isVisibleToTenant)
+                .orElseGet(() -> this.turLLMInstanceRepository.findById(id)
+                        .filter(tenantScope::isVisibleToTenant)
+                        .filter(TurEmbeddingModelAPI::isEmbeddingCapable)
+                        .map(TurEmbeddingModelAPI::instanceToEmbeddingModel)
+                        .orElse(new TurEmbeddingModel()));
+        return turEmbeddingModelMapper.toDto(found);
     }
 
     @Operation(summary = "Update an Embedding Model")
