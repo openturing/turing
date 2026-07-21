@@ -136,6 +136,11 @@ export const BentoLLMInstanceForm: React.FC<Props> = ({ value, isNew, staged, on
   const watchedModelName = form.watch("modelName")
   const watchedModelNames = form.watch("modelNames")
   const watchedEmbeddingModelName = form.watch("embeddingModelName")
+  // T773 — in-process ONNX embedding vendors (T754). When one is selected the form
+  // shows ONNX embedding fields instead of the chat-model + cloud-embedding sections.
+  const isLocalOnnxVendor = selectedVendorId === "TRANSFORMERS_LOCAL"
+  const isHfOnnxVendor = selectedVendorId === "HUGGINGFACE"
+  const isOnnxVendor = isLocalOnnxVendor || isHfOnnxVendor
   const selectedModels = useMemo(() => {
     const list = (watchedModelNames ?? "")
       .split(",")
@@ -389,9 +394,24 @@ export const BentoLLMInstanceForm: React.FC<Props> = ({ value, isNew, staged, on
       return
     }
 
-    // At least one model with a default is required (the default → modelName is
-    // the single model the rest of the platform consumes).
-    if (!llmInstance.modelName?.trim()) {
+    // T773 — an in-process ONNX embedding instance has no chat model; it needs an
+    // embedding source instead (HF repo id, or local .onnx + tokenizer paths).
+    if (isOnnxVendor) {
+      const hasOnnxEmbedding = isHfOnnxVendor
+        ? Boolean(llmInstance.embeddingModelName?.trim())
+        : Boolean(llmInstance.embeddingModelPath?.trim()) &&
+          Boolean(llmInstance.embeddingTokenizerPath?.trim())
+      if (!hasOnnxEmbedding) {
+        toast.error(
+          t("forms.llm.onnxEmbeddingRequired", {
+            defaultValue: "Provide the embedding source (a Hugging Face repo id, or the ONNX model + tokenizer paths).",
+          }),
+        )
+        return
+      }
+    } else if (!llmInstance.modelName?.trim()) {
+      // At least one chat model with a default is required (the default → modelName
+      // is the single model the rest of the platform consumes).
       toast.error(t("forms.llm.modelsRequired", { defaultValue: "Select at least one model." }))
       return
     }
@@ -702,69 +722,162 @@ export const BentoLLMInstanceForm: React.FC<Props> = ({ value, isNew, staged, on
           </div>
         </BentoFormSection>
 
-        {/* Models Section — one or more models with a single default. */}
-        <BentoFormSection
-          icon={IconStack2}
-          tone="violet"
-          title={t("forms.llm.modelsTitle", { defaultValue: "Models" })}
-          description={t("forms.llm.modelsDesc", {
-            defaultValue:
-              "Select one or more models for this instance and mark one as the default — the default is the model used across the platform.",
-          })}
-        >
-          <div className="w-full">
-            <FormLabel>{t("forms.llm.modelsLabel", { defaultValue: "Available models" })}</FormLabel>
-            <p className="mb-2 text-sm text-muted-foreground">
-              {t("forms.llm.modelsHelp", {
-                defaultValue: "Star a model to make it the default. The default must be one of the selected models.",
+        {/* Cloud/chat sections — hidden for in-process ONNX embedding vendors (T773). */}
+        {!isOnnxVendor && (
+          <>
+            {/* Models Section — one or more models with a single default. */}
+            <BentoFormSection
+              icon={IconStack2}
+              tone="violet"
+              title={t("forms.llm.modelsTitle", { defaultValue: "Models" })}
+              description={t("forms.llm.modelsDesc", {
+                defaultValue:
+                  "Select one or more models for this instance and mark one as the default — the default is the model used across the platform.",
               })}
-            </p>
-            <LlmModelMultiSelect
-              selected={selectedModels}
-              defaultModel={defaultModel}
-              onChange={handleModelsChange}
-              options={modelList?.models ?? []}
-              isLoading={modelsLoading}
-              source={modelList?.source}
-              onOpen={() => refetchModels()}
-              expectedKind="CHAT"
-            />
-            {selectedModels.length === 0 && (
-              <p className="mt-2 text-sm font-medium text-destructive">
-                {t("forms.llm.modelsRequired", { defaultValue: "Select at least one model." })}
-              </p>
-            )}
-          </div>
-        </BentoFormSection>
+            >
+              <div className="w-full">
+                <FormLabel>{t("forms.llm.modelsLabel", { defaultValue: "Available models" })}</FormLabel>
+                <p className="mb-2 text-sm text-muted-foreground">
+                  {t("forms.llm.modelsHelp", {
+                    defaultValue: "Star a model to make it the default. The default must be one of the selected models.",
+                  })}
+                </p>
+                <LlmModelMultiSelect
+                  selected={selectedModels}
+                  defaultModel={defaultModel}
+                  onChange={handleModelsChange}
+                  options={modelList?.models ?? []}
+                  isLoading={modelsLoading}
+                  source={modelList?.source}
+                  onOpen={() => refetchModels()}
+                  expectedKind="CHAT"
+                />
+                {selectedModels.length === 0 && (
+                  <p className="mt-2 text-sm font-medium text-destructive">
+                    {t("forms.llm.modelsRequired", { defaultValue: "Select at least one model." })}
+                  </p>
+                )}
+              </div>
+            </BentoFormSection>
 
-        {/* Embedding default (T757 / ADR 0004) — the embedding model this instance
-            serves for RAG / vector search. Optional: a chat-only instance leaves it
-            blank. Unifies the retired standalone embedding-model surface. */}
-        <BentoFormSection
-          icon={IconVector}
-          tone="emerald"
-          title={t("forms.llm.embeddingDefaultTitle", { defaultValue: "Embedding default" })}
-          description={t("forms.llm.embeddingDefaultDesc", {
-            defaultValue:
-              "Optionally set the embedding model this instance serves — used by RAG and vector search. Leave blank for a chat-only instance.",
-          })}
-        >
-          <div className="w-full">
-            <FormLabel>{t("forms.llm.embeddingModelName", { defaultValue: "Embedding model" })}</FormLabel>
-            <ModelCombobox
-              value={watchedEmbeddingModelName ?? ""}
-              onChange={(v) => form.setValue("embeddingModelName", v, { shouldDirty: true })}
-              options={modelList?.models ?? []}
-              isLoading={modelsLoading}
-              source={modelList?.source}
-              onOpen={() => refetchModels()}
-              expectedKind="EMBEDDING"
-              placeholder={t("forms.llm.embeddingModelPlaceholder", {
-                defaultValue: "Select an embedding model (optional)",
+            {/* Embedding default (T757 / ADR 0004) — the embedding model this instance
+                serves for RAG / vector search. Optional: a chat-only instance leaves it
+                blank. Unifies the retired standalone embedding-model surface. */}
+            <BentoFormSection
+              icon={IconVector}
+              tone="emerald"
+              title={t("forms.llm.embeddingDefaultTitle", { defaultValue: "Embedding default" })}
+              description={t("forms.llm.embeddingDefaultDesc", {
+                defaultValue:
+                  "Optionally set the embedding model this instance serves — used by RAG and vector search. Leave blank for a chat-only instance.",
               })}
-            />
-          </div>
-        </BentoFormSection>
+            >
+              <div className="w-full">
+                <FormLabel>{t("forms.llm.embeddingModelName", { defaultValue: "Embedding model" })}</FormLabel>
+                <ModelCombobox
+                  value={watchedEmbeddingModelName ?? ""}
+                  onChange={(v) => form.setValue("embeddingModelName", v, { shouldDirty: true })}
+                  options={modelList?.models ?? []}
+                  isLoading={modelsLoading}
+                  source={modelList?.source}
+                  onOpen={() => refetchModels()}
+                  expectedKind="EMBEDDING"
+                  placeholder={t("forms.llm.embeddingModelPlaceholder", {
+                    defaultValue: "Select an embedding model (optional)",
+                  })}
+                />
+              </div>
+            </BentoFormSection>
+          </>
+        )}
+
+        {/* In-process ONNX embedding creation (T773) — local .onnx + tokenizer, or a
+            Hugging Face repo id. Shown only for the TRANSFORMERS_LOCAL / HUGGINGFACE
+            vendors; this is the unified home for what /bento/embedding used to create. */}
+        {isOnnxVendor && (
+          <BentoFormSection
+            icon={IconVector}
+            tone="emerald"
+            title={t("forms.llm.onnxEmbeddingTitle", { defaultValue: "ONNX embedding model" })}
+            description={t("forms.llm.onnxEmbeddingDesc", {
+              defaultValue:
+                "This in-process vendor serves a single local embedding model (no cloud, no chat). Point it at a Hugging Face repo id, or the ONNX model + tokenizer files.",
+            })}
+          >
+            <div className="grid w-full gap-4">
+              {isHfOnnxVendor && (
+                <FormField
+                  control={form.control}
+                  name="embeddingModelName"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>{t("forms.llm.hfRepoId", { defaultValue: "Hugging Face repo id" })}</FormLabel>
+                      <FormControl>
+                        <Input
+                          {...field}
+                          value={field.value ?? ""}
+                          placeholder="e.g. sentence-transformers/all-MiniLM-L6-v2"
+                          type="text"
+                          className="w-full"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              )}
+              {isLocalOnnxVendor && (
+                <>
+                  <FormField
+                    control={form.control}
+                    name="embeddingModelPath"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>{t("forms.llm.onnxModelPath", { defaultValue: "ONNX model path (.onnx)" })}</FormLabel>
+                        <FormControl>
+                          <Input {...field} value={field.value ?? ""} placeholder="/models/model.onnx" type="text" className="w-full" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="embeddingTokenizerPath"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>{t("forms.llm.onnxTokenizerPath", { defaultValue: "Tokenizer path (tokenizer.json)" })}</FormLabel>
+                        <FormControl>
+                          <Input {...field} value={field.value ?? ""} placeholder="/models/tokenizer.json" type="text" className="w-full" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </>
+              )}
+              <FormField
+                control={form.control}
+                name="embeddingBatchSize"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{t("forms.llm.onnxBatchSize", { defaultValue: "Batch size (optional)" })}</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="number"
+                        className="w-full"
+                        value={field.value ?? ""}
+                        onChange={(e) => field.onChange(e.target.value === "" ? undefined : Number(e.target.value))}
+                        placeholder="16"
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+          </BentoFormSection>
+        )}
 
         {/* Generation Section */}
         <BentoFormSection

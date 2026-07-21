@@ -20,6 +20,11 @@ export interface TurLLMInstance {
    * this instance serves. Optional — a chat-only instance leaves them blank. */
   embeddingModelName?: string;
   rerankModelName?: string;
+  /** In-process ONNX embedding serving fields (T772/T773) — set only for the
+   * TRANSFORMERS_LOCAL (paths) / HUGGINGFACE (repo id via embeddingModelName) vendors. */
+  embeddingModelPath?: string;
+  embeddingTokenizerPath?: string;
+  embeddingBatchSize?: number;
   temperature: number;
   topK: number;
   topP: number;
