@@ -1,0 +1,25 @@
+{
+  "modelAdvisor": {
+    "title": "Consultor de Modelos",
+    "subtitle": "Descreva o que você precisa e obtenha uma lista ranqueada de modelos do catálogo — crie uma instância com um clique.",
+    "launch": "Encontrar um modelo",
+    "capabilities": "Capacidades necessárias",
+    "cap": {
+      "tools": "Chamada de ferramentas",
+      "vision": "Visão (entrada de imagem)",
+      "reasoning": "Raciocínio"
+    },
+    "minContext": "Janela de contexto mínima (tokens)",
+    "maxPrice": "Preço máximo de entrada ($ / 1M)",
+    "minIntelligence": "Índice de inteligência mínimo",
+    "minTier": "Tier mínimo",
+    "anyTier": "Qualquer tier",
+    "find": "Encontrar modelos",
+    "noResults": "Nenhum modelo do catálogo atende a essas restrições. Afrouxe um filtro e tente novamente.",
+    "createInstance": "Criar instância",
+    "configure": "Configurar…",
+    "created": "Instância criada para {{model}}",
+    "createFailed": "Falha ao criar a instância",
+    "failed": "Falha ao obter recomendações"
+  }
+}

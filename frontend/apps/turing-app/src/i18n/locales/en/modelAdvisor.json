@@ -1,0 +1,25 @@
+{
+  "modelAdvisor": {
+    "title": "Model Advisor",
+    "subtitle": "Describe what you need and get a ranked shortlist of catalog models — one-click into a new instance.",
+    "launch": "Find a model",
+    "capabilities": "Required capabilities",
+    "cap": {
+      "tools": "Tool calling",
+      "vision": "Vision (image input)",
+      "reasoning": "Reasoning"
+    },
+    "minContext": "Min context window (tokens)",
+    "maxPrice": "Max input price ($ / 1M)",
+    "minIntelligence": "Min intelligence index",
+    "minTier": "Min tier",
+    "anyTier": "Any tier",
+    "find": "Find models",
+    "noResults": "No catalog models match these constraints. Loosen a filter and try again.",
+    "createInstance": "Create instance",
+    "configure": "Configure…",
+    "created": "Created instance for {{model}}",
+    "createFailed": "Failed to create the instance",
+    "failed": "Failed to fetch recommendations"
+  }
+}

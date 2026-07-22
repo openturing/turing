@@ -9,7 +9,7 @@ import type {
   TurLlmCatalogChangeNotification,
   TurLlmDeprecatedModelUsage,
 } from "@/models/llm/llm-instance.model.ts";
-import { IconAlertTriangle, IconCpu2, IconInfoCircle } from "@tabler/icons-react";
+import { IconAlertTriangle, IconCpu2, IconInfoCircle, IconWand } from "@tabler/icons-react";
 import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 
@@ -96,6 +96,13 @@ export default function BentoLLMInstanceListPage() {
       subtitle={t("llm.blankDescription")}
       headerAction={
         <div className="flex w-full flex-col gap-3">
+          <Link
+            to={ROUTES.BENTO_LLM_ADVISOR}
+            className="bento-tile bento-tile-clickable inline-flex w-fit items-center gap-1.5 rounded-full border border-border/60 bg-card/60 px-3.5 py-1.5 text-sm backdrop-blur transition-colors hover:text-foreground"
+          >
+            <IconWand size={16} />
+            {t("modelAdvisor.launch")}
+          </Link>
           <DeprecationBanner usages={deprecations ?? []} />
           <ChangeFeedBanner changes={catalogChanges ?? []} />
         </div>

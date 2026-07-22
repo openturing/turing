@@ -35,6 +35,7 @@ import enThesaurus from "./locales/en/thesaurus.json";
 import enIntent from "./locales/en/intent.json";
 import enAnalyticsIntent from "./locales/en/analyticsIntent.json";
 import enLlm from "./locales/en/llm.json";
+import enModelAdvisor from "./locales/en/modelAdvisor.json";
 import enLogging from "./locales/en/logging.json";
 import enMarketplace from "./locales/en/marketplace.json";
 import enMcp from "./locales/en/mcp.json";
@@ -87,6 +88,7 @@ import ptThesaurus from "./locales/pt/thesaurus.json";
 import ptIntent from "./locales/pt/intent.json";
 import ptAnalyticsIntent from "./locales/pt/analyticsIntent.json";
 import ptLlm from "./locales/pt/llm.json";
+import ptModelAdvisor from "./locales/pt/modelAdvisor.json";
 import ptLogging from "./locales/pt/logging.json";
 import ptMarketplace from "./locales/pt/marketplace.json";
 import ptMcp from "./locales/pt/mcp.json";
@@ -109,7 +111,7 @@ import ptBento from "./locales/pt/bento.json";
 
 const en = {
   ...enCommon, ...enTheme, ...enLogin, ...enSetup, ...enDialog, ...enChat, ...enChatFlow,
-  ...enSidebar, ...enNav, ...enHome, ...enDashboard, ...enSn, ...enLlm, ...enSe,
+  ...enSidebar, ...enNav, ...enHome, ...enDashboard, ...enSn, ...enLlm, ...enModelAdvisor, ...enSe,
   ...enStore, ...enIntegration, ...enMcp, ...enCustomTool, ...enEmbeddingModel,
   ...enAiAgent, ...enAiAuthoring, ...enIntent, ...enAnalyticsIntent, ...enApiToken, ...enAdmin, ...enAccount,
   ...enExchange, ...enGraphql, ...enLogging, ...enTokenUsage, ...enParkedConversations, ...enCostGovernance,
@@ -120,7 +122,7 @@ const en = {
 
 const pt = {
   ...ptCommon, ...ptTheme, ...ptLogin, ...ptSetup, ...ptDialog, ...ptChat, ...ptChatFlow,
-  ...ptSidebar, ...ptNav, ...ptHome, ...ptDashboard, ...ptSn, ...ptLlm, ...ptSe,
+  ...ptSidebar, ...ptNav, ...ptHome, ...ptDashboard, ...ptSn, ...ptLlm, ...ptModelAdvisor, ...ptSe,
   ...ptStore, ...ptIntegration, ...ptMcp, ...ptCustomTool, ...ptEmbeddingModel,
   ...ptAiAgent, ...ptAiAuthoring, ...ptIntent, ...ptAnalyticsIntent, ...ptApiToken, ...ptAdmin, ...ptAccount,
   ...ptExchange, ...ptGraphql, ...ptLogging, ...ptTokenUsage, ...ptParkedConversations, ...ptCostGovernance,

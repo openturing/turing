@@ -75,6 +75,7 @@ export const ROUTES = {
   BENTO_AI_AGENT_INSTANCE: "/bento/ai-agent/instance",
   BENTO_LLM: "/bento/llm",
   BENTO_LLM_INSTANCE: "/bento/llm/instance",
+  BENTO_LLM_ADVISOR: "/bento/llm/advisor",
   // Block AG Phase 1 — BYO-infra & simple CRUD surfaces.
   BENTO_SE: "/bento/se",
   BENTO_SE_INSTANCE: "/bento/se/instance",

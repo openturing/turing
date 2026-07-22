@@ -4,6 +4,10 @@ import type {
   TurLlmCatalogChangeNotification,
   TurLlmDeprecatedModelUsage,
 } from "@/models/llm/llm-instance.model.ts";
+import type {
+  TurLlmAdvisorQuery,
+  TurLlmModelRecommendation,
+} from "@/models/llm/llm-model-advisor.model.ts";
 import type { TurModelVerifyResult } from "@/models/verify.model.ts";
 
 export class TurLLMInstanceService {
@@ -55,6 +59,15 @@ export class TurLLMInstanceService {
   async changeFeed(): Promise<TurLlmCatalogChangeNotification[]> {
     const response = await axios.get<TurLlmCatalogChangeNotification[]>(
       "/v2/llm/model-lifecycle/change-feed",
+    );
+    return response.data ?? [];
+  }
+
+  /** T785 — rank catalog models that satisfy the given constraints. */
+  async recommendModels(query: TurLlmAdvisorQuery): Promise<TurLlmModelRecommendation[]> {
+    const response = await axios.post<TurLlmModelRecommendation[]>(
+      "/v2/llm/model-advisor/recommend",
+      query,
     );
     return response.data ?? [];
   }
