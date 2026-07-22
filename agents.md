@@ -39,6 +39,34 @@
 - Root Maven POM is multi-module
 - The legacy `turing-react/` directory is a stub (only contains `node/`); it has been migrated to the monorepo above
 
+### Worktrees & the `latest` alias
+
+This repo is checked out as **git worktrees**, one directory per version, e.g.:
+
+- `D:\Git\viglet\turing\2026.3` — branch `2026.3` (current default working branch)
+- `D:\Git\viglet\turing\2026.2` — branch `2026.2`
+
+`D:\Git\viglet\turing\latest` is a **directory junction** that always points at
+the version currently being worked on (today `2026.3`). It is the default target
+for cross-project tasks (e.g. from dumont/shio) when no version is named; name a
+specific version only for the exception.
+
+**To repoint `latest` to a new version** (e.g. after starting `2026.4`), run in
+PowerShell:
+
+```powershell
+# 1. create the new version's worktree if it doesn't exist yet
+git -C D:\Git\viglet\turing\2026.3 worktree add ..\2026.4 2026.4
+
+# 2. repoint the latest junction (Remove-Item on a junction deletes only the
+#    link, never the target's files)
+Remove-Item D:\Git\viglet\turing\latest -Force
+New-Item -ItemType Junction -Path D:\Git\viglet\turing\latest -Target D:\Git\viglet\turing\2026.4
+```
+
+Verify with `git -C D:\Git\viglet\turing\latest rev-parse --abbrev-ref HEAD`
+(should print the new branch) and `git worktree list`.
+
 ### Key Paths
 
 - Backend source: `turing-app/src/main/java/com/viglet/turing/`
