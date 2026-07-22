@@ -11,9 +11,11 @@ package com.viglet.turing.service.llm.price;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.util.List;
 import java.util.Optional;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -24,7 +26,9 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.viglet.turing.persistence.model.llm.TurLLMPrice;
+import com.viglet.turing.persistence.model.llm.TurLLMPriceSource;
 import com.viglet.turing.persistence.repository.llm.TurLLMPriceRepository;
+import com.viglet.turing.service.llm.price.TurLLMPriceService.CatalogPrice;
 
 /**
  * T289 / §XVI.1 — unit tests for the cost computation and upsert behaviour of
@@ -111,5 +115,100 @@ class TurLLMPriceServiceTest {
         assertThat(saved.getOutputPricePerMillion()).isEqualTo(12.0);
         assertThat(saved.getCurrency()).isEqualTo("USD");
         assertThat(saved.getUpdatedAt()).isNotNull();
+    }
+
+    @Test
+    void saveMarksRowManualByDefault() {
+        // T777: an operator save (no explicit source) is MANUAL so the catalog
+        // reconciler can never overwrite it.
+        when(priceRepository.findByVendorIdAndModelName("openai", "gpt-4o"))
+                .thenReturn(Optional.empty());
+        when(priceRepository.save(any(TurLLMPrice.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        TurLLMPrice update = new TurLLMPrice();
+        update.setVendorId("openai");
+        update.setModelName("gpt-4o");
+        update.setInputPricePerMillion(2.5);
+        update.setOutputPricePerMillion(10.0);
+
+        service.save(update);
+
+        ArgumentCaptor<TurLLMPrice> captor = ArgumentCaptor.forClass(TurLLMPrice.class);
+        verify(priceRepository).save(captor.capture());
+        assertThat(captor.getValue().getSource()).isEqualTo(TurLLMPriceSource.MANUAL);
+    }
+
+    @Test
+    void reconcileCatalogCreatesCatalogRowWhenMissing() {
+        // T777: a priced catalog model with no row is auto-seeded as CATALOG.
+        when(priceRepository.findByVendorIdAndModelName("openai", "gpt-4o"))
+                .thenReturn(Optional.empty());
+        when(priceRepository.save(any(TurLLMPrice.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        int written = service.reconcileCatalogPrices(List.of(
+                new CatalogPrice("openai", "gpt-4o", 2.5, 10.0, "USD", true, "litellm", "2026-07-20")));
+
+        assertThat(written).isEqualTo(1);
+        ArgumentCaptor<TurLLMPrice> captor = ArgumentCaptor.forClass(TurLLMPrice.class);
+        verify(priceRepository).save(captor.capture());
+        TurLLMPrice saved = captor.getValue();
+        assertThat(saved.getSource()).isEqualTo(TurLLMPriceSource.CATALOG);
+        assertThat(saved.getInputPricePerMillion()).isEqualTo(2.5);
+        assertThat(saved.getOutputPricePerMillion()).isEqualTo(10.0);
+        assertThat(saved.isIndicative()).isTrue();
+        assertThat(saved.getPriceProvenance()).isEqualTo("litellm");
+        assertThat(saved.getLastVerified()).isEqualTo("2026-07-20");
+    }
+
+    @Test
+    void reconcileCatalogNeverOverwritesManualRow() {
+        // T777: an operator's negotiated (MANUAL) rate always wins.
+        TurLLMPrice manual = new TurLLMPrice();
+        manual.setVendorId("openai");
+        manual.setModelName("gpt-4o");
+        manual.setInputPricePerMillion(1.0);
+        manual.setSource(TurLLMPriceSource.MANUAL);
+        when(priceRepository.findByVendorIdAndModelName("openai", "gpt-4o"))
+                .thenReturn(Optional.of(manual));
+
+        int written = service.reconcileCatalogPrices(List.of(
+                new CatalogPrice("openai", "gpt-4o", 2.5, 10.0, "USD", true, "litellm", "2026-07-20")));
+
+        assertThat(written).isZero();
+        verify(priceRepository, never()).save(any(TurLLMPrice.class));
+        assertThat(manual.getInputPricePerMillion()).isEqualTo(1.0);
+    }
+
+    @Test
+    void reconcileCatalogRefreshesExistingCatalogRow() {
+        // T777: a row the reconciler itself owns (CATALOG) is refreshed in place.
+        TurLLMPrice existing = new TurLLMPrice();
+        existing.setId("price-1");
+        existing.setVendorId("openai");
+        existing.setModelName("gpt-4o");
+        existing.setInputPricePerMillion(2.5);
+        existing.setSource(TurLLMPriceSource.CATALOG);
+        when(priceRepository.findByVendorIdAndModelName("openai", "gpt-4o"))
+                .thenReturn(Optional.of(existing));
+        when(priceRepository.save(any(TurLLMPrice.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        int written = service.reconcileCatalogPrices(List.of(
+                new CatalogPrice("openai", "gpt-4o", 3.0, 12.0, "USD", true, "litellm", "2026-07-21")));
+
+        assertThat(written).isEqualTo(1);
+        ArgumentCaptor<TurLLMPrice> captor = ArgumentCaptor.forClass(TurLLMPrice.class);
+        verify(priceRepository).save(captor.capture());
+        assertThat(captor.getValue().getId()).isEqualTo("price-1");
+        assertThat(captor.getValue().getInputPricePerMillion()).isEqualTo(3.0);
+    }
+
+    @Test
+    void reconcileCatalogSkipsBlankVendorOrModel() {
+        int written = service.reconcileCatalogPrices(List.of(
+                new CatalogPrice("", "gpt-4o", 2.5, 10.0, "USD", false, null, null),
+                new CatalogPrice("openai", " ", 2.5, 10.0, "USD", false, null, null)));
+
+        assertThat(written).isZero();
+        verify(priceRepository, never()).save(any(TurLLMPrice.class));
     }
 }

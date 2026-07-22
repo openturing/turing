@@ -209,7 +209,7 @@
 
 **Phase 1 — Widen the funnel + auto-pricing (headline):**
 - ✅ **T776** SHIPPED — Carry rich `ModelEntry` metadata through the catalog boundary (`TurLlmModelMetadata` on `TurLlmModelOption`). Foundational; see CHANGELOG. → §LIII.1
-- 📋 **T777** (deps: T776) **Auto-seed & refresh `TurLLMPrice` from catalog pricing** — a `@Scheduled` reconciler populates the manual `tur_llm_price` table from catalog `pricing{inputPer1M,outputPer1M,currency,indicative,source,lastVerified}` with a `source` discriminator (CATALOG vs MANUAL); operator-edited/negotiated rows always win and are never overwritten. Fixes the "$0 cost for unpriced models" gap so `TurLLMPriceService.computeCost` / `TurLLMTokenUsage.costUsd` populate automatically. → §LIII.1
+- ✅ **T777** SHIPPED — Auto-seed & refresh `TurLLMPrice` from catalog pricing (`TurLLMPriceCatalogReconciler`; `CATALOG`/`MANUAL` source, manual always wins). Closes the "$0 unpriced model" gap; see CHANGELOG. → §LIII.1
 - 📋 **T778** (deps: T777) **Price provenance & staleness in the cost UI** — surface per-model price source (catalog/manual), the `indicative` flag, `lastVerified`, and a "verify at vendor" link (from `providers()` `apiPricingUrl`) on the cost-governance price table + model picker; warn when a used model has no price row or a stale/indicative one. → §LIII.1
 
 **Phase 2 — Enriched selection & correctness:**

@@ -170,4 +170,14 @@ public class TurLlmModelCatalog {
         }
         return catalog.getOrDefault(pluginType.toLowerCase(Locale.ROOT), List.of());
     }
+
+    /**
+     * The full effective catalog as an immutable vendor→models map — the source
+     * the catalog price reconciler (T777) and other cross-vendor consumers read
+     * to walk every known model and its {@link TurLlmModelMetadata}. Empty until
+     * the first successful remote refresh.
+     */
+    public Map<String, List<TurLlmModelOption>> allModels() {
+        return catalog;
+    }
 }

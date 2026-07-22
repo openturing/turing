@@ -31,6 +31,14 @@ turing:
     remote-enabled: ${TURING_MODEL_CATALOG_REMOTE_ENABLED:true}
     refresh-initial-delay-ms: ${TURING_MODEL_CATALOG_REFRESH_INITIAL_DELAY_MS:8000}
     refresh-interval-ms: ${TURING_MODEL_CATALOG_REFRESH_INTERVAL_MS:21600000}
+    # T777 / §LIII.1 — auto-seed & refresh the per-model price table (tur_llm_price)
+    # from the catalog's indicative pricing on a TTL. Only CATALOG-sourced rows are
+    # written; an operator's MANUAL (negotiated / hand-edited) rate is never
+    # overwritten. Set enabled=false to keep the price table manual-only.
+    price-sync:
+      enabled: ${TURING_MODEL_CATALOG_PRICE_SYNC_ENABLED:true}
+      initial-delay-ms: ${TURING_MODEL_CATALOG_PRICE_SYNC_INITIAL_DELAY_MS:15000}
+      interval-ms: ${TURING_MODEL_CATALOG_PRICE_SYNC_INTERVAL_MS:21600000}
   tenancy:
     enabled: false
     # T334 / §XIV.8.1 — shared secret for trusted server-to-server callers. When

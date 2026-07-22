@@ -17,6 +17,8 @@ import com.viglet.core.jpa.VigletAssignableUuidGenerator;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
@@ -74,6 +76,41 @@ public class TurLLMPrice implements Serializable {
     /** ISO-4217 currency the rates are quoted in. Always {@code USD} today. */
     @Column(name = "currency", nullable = false, length = 3)
     private String currency = "USD";
+
+    /**
+     * Provenance of this row (T777). {@link TurLLMPriceSource#MANUAL} rows are
+     * operator-entered / negotiated and always win — the catalog price reconciler
+     * never overwrites them; {@link TurLLMPriceSource#CATALOG} rows are seeded and
+     * refreshed automatically from the public model catalog. Defaults to
+     * {@code MANUAL} so any pre-existing (seeded / hand-edited) row is preserved.
+     */
+    @Enumerated(EnumType.STRING)
+    @Column(name = "source", nullable = false, length = 10)
+    private TurLLMPriceSource source = TurLLMPriceSource.MANUAL;
+
+    /**
+     * Whether the rate is an <em>indicative</em> (published list) price rather than
+     * a verified/negotiated one (T777/T778). Set from the catalog {@code pricing.indicative};
+     * {@code false} for operator-entered rows.
+     */
+    @Column(name = "indicative", nullable = false)
+    private boolean indicative = false;
+
+    /**
+     * The catalog's own pricing provenance string when {@link #source} is
+     * {@code CATALOG} (e.g. {@code litellm}, a vendor pricing page) — surfaced by
+     * the cost UI (T778). {@code null} for manual rows.
+     */
+    @Column(name = "price_provenance", length = 100)
+    private String priceProvenance;
+
+    /**
+     * When the catalog price was last verified (the catalog {@code pricing.lastVerified},
+     * an ISO date string) — surfaced by the cost UI to flag staleness (T778).
+     * {@code null} for manual rows.
+     */
+    @Column(name = "last_verified", length = 40)
+    private String lastVerified;
 
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;

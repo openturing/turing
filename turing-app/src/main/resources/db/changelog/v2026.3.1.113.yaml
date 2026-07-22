@@ -1,0 +1,99 @@
+databaseChangeLog:
+  # T777 / §LIII.1 (Block BE) — catalog-driven pricing provenance.
+  #
+  # Adds provenance columns to tur_llm_price so the scheduled catalog price
+  # reconciler can auto-seed / refresh rates from the public model catalog while
+  # never overwriting an operator's manual / negotiated rate:
+  #   - source          MANUAL (default, preserves every pre-existing row) | CATALOG
+  #   - indicative       published list price vs verified/negotiated
+  #   - price_provenance catalog pricing.source (e.g. litellm) for CATALOG rows
+  #   - last_verified    catalog pricing.lastVerified (ISO date) for staleness UI
+  #
+  # Portable lowercase types (varchar / boolean); idempotent via columnExists +
+  # onFail:MARK_RAN so a reused local H2 file never fails on a duplicate column.
+
+  - changeSet:
+      id: v2026.3.1.113-add-tur_llm_price-source
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - tableExists:
+            tableName: tur_llm_price
+        - not:
+            - columnExists:
+                tableName: tur_llm_price
+                columnName: source
+      changes:
+        - addColumn:
+            tableName: tur_llm_price
+            columns:
+              - column:
+                  name: source
+                  type: varchar(10)
+                  defaultValue: MANUAL
+                  constraints:
+                    nullable: false
+                  remarks: "T777/§LIII.1 price provenance: MANUAL (operator/negotiated, always wins) | CATALOG (auto-seeded)."
+
+  - changeSet:
+      id: v2026.3.1.113-add-tur_llm_price-indicative
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - tableExists:
+            tableName: tur_llm_price
+        - not:
+            - columnExists:
+                tableName: tur_llm_price
+                columnName: indicative
+      changes:
+        - addColumn:
+            tableName: tur_llm_price
+            columns:
+              - column:
+                  name: indicative
+                  type: boolean
+                  defaultValueBoolean: false
+                  constraints:
+                    nullable: false
+                  remarks: "T777/§LIII.1 indicative (published list) price vs verified/negotiated."
+
+  - changeSet:
+      id: v2026.3.1.113-add-tur_llm_price-price_provenance
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - tableExists:
+            tableName: tur_llm_price
+        - not:
+            - columnExists:
+                tableName: tur_llm_price
+                columnName: price_provenance
+      changes:
+        - addColumn:
+            tableName: tur_llm_price
+            columns:
+              - column:
+                  name: price_provenance
+                  type: varchar(100)
+                  remarks: "T777/§LIII.1 catalog pricing.source (e.g. litellm) for CATALOG rows; null for manual."
+
+  - changeSet:
+      id: v2026.3.1.113-add-tur_llm_price-last_verified
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - tableExists:
+            tableName: tur_llm_price
+        - not:
+            - columnExists:
+                tableName: tur_llm_price
+                columnName: last_verified
+      changes:
+        - addColumn:
+            tableName: tur_llm_price
+            columns:
+              - column:
+                  name: last_verified
+                  type: varchar(40)
+                  remarks: "T777/§LIII.1 catalog pricing.lastVerified (ISO date) for the staleness UI; null for manual."
