@@ -2550,3 +2550,83 @@ bridge — all opt-in behind `turing.gateway.enabled` (default off).
 > (`docs/references/api.md` + `pipeline.md` there). Turing consumes the published
 > endpoint remotely (`turing.model-catalog.url`). The shipped Turing history stays
 > in CHANGELOG Blocks BC/BD; design/backlog for the catalog now lives in that repo.
+
+## LIII. Catalog-driven model intelligence (Block BE)
+
+**The gap.** Turing depends on `io.github.openviglet:model-catalog-client` and
+fetches a full `ModelEntry` per model — `pricing{inputPer1M,outputPer1M,currency,
+indicative,source,lastVerified}`, `contextWindow`, `maxOutputTokens`,
+`embeddingDimensions`, `capabilities`, `modalities{input,output}`,
+`benchmarks{intelligenceIndex,arenaElo,scores}`, `performance{throughputTps,
+latencyTtftSec}`, `knowledgeCutoff`, `releaseDate`, `deprecated`/`status`, plus the
+client's `Classifier.classify` tier (Frontier/High/Mid/Light) and the
+`providers()`/`plans()`/`changes()` registries. But `TurLlmModelCatalog.toCatalogMap`
+collapses each entry to `id/label/kind` (its Javadoc admits "extras ignored"), so
+every downstream feature re-enters the same facts by hand: prices live in a manual
+`TurLLMPrice` table (unknown model → `$0`), `TurLLMInstance.contextWindow` is typed
+in and barely enforced, modality/vision support is a hand-toggled native-capability
+matrix, and nothing warns when an operator selects a model the vendor has already
+deprecated. The data is already on the wire and thrown away at one method.
+
+This block widens that funnel once and then turns the recovered data into product.
+
+### LIII.1 Widen the funnel + auto-pricing (T776–T778)
+
+`TurLlmModelOption` (and its frontend twin + `toCatalogMap`) is the lossy
+three-field carrier; **T776** widens it to preserve the rich `ModelEntry` fields
+(and the `Classifier` tier/tags) so the picker and services stop re-deriving what
+the catalog states — including trusting catalog `kind` instead of the heuristic
+classifier. **T777** is the headline the whole block hangs off: a scheduled
+reconciler seeds/refreshes `TurLLMPrice` from catalog `pricing` with a
+CATALOG-vs-MANUAL `source` column so token cost (`TurLLMTokenUsage.costUsd`,
+`TurLLMPriceService.computeCost`, the cost dashboard, gateway per-key spend, budget
+gates) is populated automatically for well-known models, while a customer's
+negotiated/manual rate always wins and is never overwritten. Because catalog prices
+are explicitly `indicative`, **T778** makes provenance honest in the UI: price
+source, `lastVerified`, the indicative flag, and a "verify at vendor" deep link
+(`providers()` `apiPricingUrl`), with a warning when a billed model is unpriced or
+stale.
+
+### LIII.2 Enriched selection & correctness (T779–T782)
+
+Users pick models blind today. **T779** puts the recovered metadata where the
+choice is made — price, limits, capability/modality, benchmark rank, TTFT, cutoff
+and tier as badges/tooltips in the combobox, sortable by price/context/intelligence.
+**T780** stops the manual re-entry of `contextWindow`/`maxOutputTokens`/
+`embeddingDimensions` by pre-filling them from the catalog (override kept, hand
+values validated). **T781** uses `capabilities`/`modalities` to gate features that
+otherwise fail at runtime — no tool calling on a model without `tools`, no image
+upload on a text-only model — and seeds the native-capability matrix defaults from
+the catalog rather than hand-toggling. **T782** closes the lifecycle blind spot: a
+scan flags configured models the vendor has `deprecated`/`RETIRED` and proposes a
+GA replacement with matching capabilities.
+
+### LIII.3 Intelligence, budgeting & optimization (T783–T786)
+
+With prices trustworthy, cost becomes a first-class planning input. **T783** shows a
+projected cost before an expensive run (eval dataset, research study, batch
+re-embed). **T784** turns pricing/benchmarks/performance/tier into router policy on
+the Block AZ gateway — cheapest-that-qualifies, highest-intelligence, or
+lowest-latency selection instead of round-robin only. **T785** is the onboarding
+lever: describe the constraints ("needs vision, ≥128k context, ≤ $X/1M, ≥ High
+tier") and get a ranked recommendation with one-click instance creation, over
+`fetchByCapability`/`fetchByModality`. **T786** runs the loop backwards — from
+observed per-agent usage it proposes a cheaper/faster model that still covers what
+the agent actually uses, with projected savings.
+
+### LIII.4 Freshness & trust (T787–T789)
+
+**T787** surfaces `knowledgeCutoff`/`releaseDate` so both operators and end users
+know how stale an answer may be (optionally self-disclosed in the system prompt).
+**T788** consumes the client `changes()` feed so admins are told when a model they
+depend on is deprecated, repriced, or superseded — the catalog becomes a live
+signal, not a startup snapshot. **T789** (💭) rounds it out with `providers()`
+authoritative pricing links and an optional `plans()` consumer-plan reference.
+
+**Library note (optional, not a blocker).** The 1.0.4 client already exposes
+everything above; `providers()`/`plans()`/`changes()`/`aliases()`/`stats()`/
+`coverage()` currently return untyped `Map<String,Object>`. The only refinement
+worth filing in `openviglet/model-catalog` (`clients/java`) is *typed* records for
+those registries plus an alias-resolution convenience (`get`/lookup that honors
+`aliases.json` + `ModelEntry.aliases()`, so a stored alias id still resolves). Both
+are ergonomic upgrades Turing can work around with raw-map reads until then.

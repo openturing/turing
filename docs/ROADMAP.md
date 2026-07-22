@@ -192,6 +192,43 @@
 > service. JS-rendered SPAs now extract text via the headless fallback. Block AY
 > is fully shipped.
 
+## Block BE — Catalog-driven model intelligence (§LIII)
+
+> The `io.github.openviglet:model-catalog-client` (1.0.4+) already fetches a
+> **rich** `ModelEntry` per model — `pricing`, `contextWindow`, `maxOutputTokens`,
+> `embeddingDimensions`, `capabilities`, `modalities`, `benchmarks`, `performance`,
+> `knowledgeCutoff`, `releaseDate`, `deprecated`/`status`, plus a `Classifier`
+> tier (Frontier/High/Mid/Light) and `providers()`/`plans()`/`changes()`
+> registries — but `TurLlmModelCatalog.toCatalogMap` collapses every entry to
+> `id/label/kind` and Turing re-enters everything by hand (`TurLLMPrice`,
+> `TurLLMInstance.contextWindow`, the native-capability matrix). **Widen the funnel
+> once (T776), then light up cost, selection UX, correctness, optimization and
+> freshness on top.** Full design in [IMPROVEMENTS.md](IMPROVEMENTS.md) §LIII.
+> Feasible against the current client — no library changes required (one optional
+> refinement is noted in §LIII.4).
+
+**Phase 1 — Widen the funnel + auto-pricing (headline):**
+- 📋 **T776** (deps: —) **Carry rich `ModelEntry` metadata through the catalog boundary** — extend `TurLlmModelOption` (+ frontend `llm-model-option.model.ts` + `TurLlmModelCatalog.toCatalogMap`) beyond `id/label/kind` to carry pricing, context/output limits, embedding dims, capabilities, modalities, benchmarks, performance, knowledge cutoff, release date, `deprecated`/`status`, and the `Classifier` tier/tags already fetched by the client; trust catalog `kind` directly instead of re-classifying heuristically. Foundational — every other BE task reads from this. → §LIII.1
+- 📋 **T777** (deps: T776) **Auto-seed & refresh `TurLLMPrice` from catalog pricing** — a `@Scheduled` reconciler populates the manual `tur_llm_price` table from catalog `pricing{inputPer1M,outputPer1M,currency,indicative,source,lastVerified}` with a `source` discriminator (CATALOG vs MANUAL); operator-edited/negotiated rows always win and are never overwritten. Fixes the "$0 cost for unpriced models" gap so `TurLLMPriceService.computeCost` / `TurLLMTokenUsage.costUsd` populate automatically. → §LIII.1
+- 📋 **T778** (deps: T777) **Price provenance & staleness in the cost UI** — surface per-model price source (catalog/manual), the `indicative` flag, `lastVerified`, and a "verify at vendor" link (from `providers()` `apiPricingUrl`) on the cost-governance price table + model picker; warn when a used model has no price row or a stale/indicative one. → §LIII.1
+
+**Phase 2 — Enriched selection & correctness:**
+- 📋 **T779** (deps: T776) **Enriched model picker** — `model-combobox.tsx` / `llm-model-multi-select.tsx` rows show pricing (in/out per 1M), context window, max output, capability chips (vision/tools/reasoning), modality icons, intelligence index / arena Elo, throughput & TTFT, knowledge cutoff, and a tier badge (Frontier/High/Mid/Light); sortable/filterable by price, context, or intelligence. → §LIII.2
+- 📋 **T780** (deps: T776) **Auto-fill instance metadata from catalog** — selecting a model pre-fills `TurLLMInstance.contextWindow`, `maxOutputTokens`, and `embeddingDimensions` (today manual / runtime-detected) with an operator override, and validates hand-entered values against the catalog. → §LIII.2
+- 📋 **T781** (deps: T776) **Capability/modality-aware feature gating** — before enabling tool calling, image/file upload (`fileUploadEnabled`), or reasoning on an instance/agent, validate against catalog `capabilities`/`modalities` and seed the native-capability matrix (`TurLLMInstanceCapability`) defaults from it; warn/disable in UI to prevent runtime failures (e.g. an image sent to a text-only model). → §LIII.2
+- 📋 **T782** (deps: T776) **Model lifecycle / deprecation warnings** — a `@Scheduled` scan flags instances/agents whose configured model has `deprecated=true` or `status=DEPRECATED/RETIRED`; admin banner + picker badge + a "suggested replacement" (same vendor, GA, matching capabilities, similar-or-lower price). → §LIII.2
+
+**Phase 3 — Intelligence, budgeting & optimization:**
+- 💭 **T783** (deps: T776) **Pre-flight cost estimate** — estimate USD cost before running an eval dataset, a research study, or a batch (re)embedding job from token estimates × catalog pricing, with a projected-cost confirm gate wired into `TurChatCostBudgetGate`. → §LIII.3
+- 💭 **T784** (deps: T777) **Cost/quality/latency-aware gateway routing** — extend the Block AZ router (T745) with `cost`, `quality`, and `latency` strategies driven by catalog pricing/benchmarks/performance/tier: "cheapest model that supports tools + ≥200k context", "highest intelligence index", "lowest TTFT". → §LIII.3
+- 💭 **T785** (deps: T776) **Model advisor ("find me a model")** — a constraint-driven recommender: given required capabilities/modalities, minimum context, a budget ceiling, and a minimum tier/intelligence, rank catalog models (via `fetchByCapability`/`fetchByModality` + pricing + benchmarks) and one-click create an instance. Onboarding + governance lever. → §LIII.3
+- 💭 **T786** (deps: T777, T784) **Right-sizing / savings suggestions** — analyze real per-agent usage (capabilities actually exercised, prompt sizes) and suggest a cheaper or faster catalog model that still meets the observed needs, with projected monthly savings. → §LIII.3
+
+**Phase 4 — Freshness & trust:**
+- 💭 **T787** (deps: T776) **Surface knowledge cutoff** — show `knowledgeCutoff`/`releaseDate` in the agent/chat UI, with an optional per-agent toggle to inject "your knowledge cutoff is <date>" into the system prompt so answers self-disclose staleness. → §LIII.4
+- 💭 **T788** (deps: T776) **Catalog change-feed notifications** — consume the client `changes()` feed to notify admins when a model they use is deprecated, repriced beyond a threshold, or superseded; dashboard widget + optional email. → §LIII.4
+- 💭 **T789** (deps: T778) **Consumer-plan & provider-pricing reference** — use `providers()` for the authoritative "verify" links behind T778 and optionally surface a `plans()`-backed consumer-plan reference (Claude Pro / ChatGPT Plus…) in admin help. → §LIII.4
+
 ## Non-goals (do NOT add as tasks)
 
 Binding constraints — see [IMPROVEMENTS.md](IMPROVEMENTS.md) §I.6 (What NOT to

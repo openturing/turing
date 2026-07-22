@@ -1,9 +1,18 @@
-# Last task number — `T775` · next block letter — `BE`
+# Last task number — `T789` · next block letter — `BF`
 
 > **Single source of truth for the next free task number.** The next new task is
-> `T776`; after assigning it, bump the number above and the log line below.
+> `T790`; after assigning it, bump the number above and the log line below.
 >
-> **Next block letter — `BE`** (Block **BD** = Multi-source model-catalog
+> **Next block letter — `BF`** (Block **BE** = Catalog-driven model intelligence —
+> widen the `model-catalog-client` `ModelEntry` past `id/label/kind` at
+> `TurLlmModelCatalog.toCatalogMap` (T776), then auto-seed `TurLLMPrice` from
+> catalog pricing (T777) + price provenance/staleness UI (T778); enriched picker
+> (T779), auto-fill instance limits (T780), capability/modality gating (T781),
+> deprecation warnings (T782); pre-flight cost estimate (T783), cost/quality/latency
+> gateway routing (T784), model advisor (T785), right-sizing suggestions (T786);
+> knowledge-cutoff surfacing (T787), change-feed notifications (T788), consumer-plan/
+> provider-pricing reference (💭 T789); §LIII, created 2026-07-22; Block **BD** =
+> Multi-source model-catalog
 > regeneration pipeline — a local, zero-dep, procedural pipeline that regenerates
 > the canonical `model-catalog.json` from multiple trustworthy sources per vendor
 > (live vendor listing APIs + LiteLLM registry) with provenance + richer optional
@@ -90,6 +99,7 @@ number" looked free but wasn't. Grepping three files (`ROADMAP.md`,
 
 ## Log (most recent first)
 
+- **T776-T789 CREATED** (📋/💭, Block BE §LIII — Catalog-driven model intelligence: widen `TurLlmModelOption`/`toCatalogMap` past id/label/kind to carry the rich `ModelEntry` fields + `Classifier` tier (T776); auto-seed/refresh `TurLLMPrice` from catalog pricing, CATALOG-vs-MANUAL source, manual wins (T777) + price provenance/staleness/verify-link UI (T778); enriched model picker w/ price/limits/capability/benchmark/tier badges (T779), auto-fill instance contextWindow/maxOutputTokens/embeddingDimensions (T780), capability/modality feature gating + seed native-capability matrix (T781), deprecation/lifecycle warnings + suggested replacement (T782); pre-flight cost estimate for eval/research/batch-embed (T783), cost/quality/latency-aware gateway routing over Block AZ (T784), constraint-driven model advisor (T785), right-sizing/savings suggestions (T786); knowledge-cutoff surfacing + optional prompt injection (T787), change-feed deprecation/reprice notifications (T788), consumer-plan/provider-pricing reference (💭 T789); feasible against model-catalog-client 1.0.4, one optional typed-registry+alias library refinement noted) — 2026-07-22.
 - **T775 SHIPPED** (Block BC §LI — TurLlmModelCatalog consumes the openviglet/model-catalog endpoint via the official `io.github.openviglet:model-catalog-client` 1.0.2 library instead of a hand-rolled RestClient+Jackson fetch; maps typed ModelEntry/Kind, same remote-only/last-good semantics; drops legacy-flat parse tolerance; dep added to turing-app; 6 units green) — 2026-07-21.
 - **T770 SHIPPED** (Block BD §LII.5 — catalog:regen orchestrator: regen.mjs fetch→merge→validate→report + --apply/--offline/--only/--date; overrides.json seed; sources/out gitignored; docs/references/model-catalog-pipeline.md; 10 node:test units. CLOSES Block BD committed scope T764-T770; only 💭 T771 remains) — 2026-07-21.
 - **T769 SHIPPED** (Block BD §LII.4 — validation + diff review gate: validateEnvelope schema-constraint check + diffReport per-vendor add/remove/change w/ per-field source attribution + conflicts; proposed envelope+report to out/, canonical written only on --apply) — 2026-07-21.
