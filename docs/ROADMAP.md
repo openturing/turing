@@ -220,7 +220,7 @@
 
 **Phase 3 — Intelligence, budgeting & optimization:**
 - ✅ **T783** SHIPPED — Pre-flight batch cost estimate: `TurLLMBatchCostEstimator` prices a batch (itemCount × per-item tokens × catalog rate) → projected total + `overBudget` flag; `POST /api/v2/llm/cost/preflight-batch`. Backend primitive the eval/research/embed runners call to gate an expensive run; per-runner UI confirm is follow-on. See CHANGELOG. → §LIII.3
-- 💭 **T784** (deps: T777) **Cost/quality/latency-aware gateway routing** — extend the Block AZ router (T745) with `cost`, `quality`, and `latency` strategies driven by catalog pricing/benchmarks/performance/tier: "cheapest model that supports tools + ≥200k context", "highest intelligence index", "lowest TTFT". → §LIII.3
+- ✅ **T784** SHIPPED — Cost/quality/latency gateway routing: `TurGatewayRouterService` gains `cost`/`quality`/`ttft` strategies (`turing-router:cost/id1,id2`) that order the declared deployments by catalog input price / intelligence index / TTFT (missing-metric sinks last), alongside the T745 rr/latency/failover. See CHANGELOG. → §LIII.3
 - 💭 **T785** (deps: T776) **Model advisor ("find me a model")** — a constraint-driven recommender: given required capabilities/modalities, minimum context, a budget ceiling, and a minimum tier/intelligence, rank catalog models (via `fetchByCapability`/`fetchByModality` + pricing + benchmarks) and one-click create an instance. Onboarding + governance lever. → §LIII.3
 - 💭 **T786** (deps: T777, T784) **Right-sizing / savings suggestions** — analyze real per-agent usage (capabilities actually exercised, prompt sizes) and suggest a cheaper or faster catalog model that still meets the observed needs, with projected monthly savings. → §LIII.3
 

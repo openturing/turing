@@ -16,8 +16,13 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 
+import com.viglet.turing.genai.provider.llm.TurLlmModelCatalog;
+import com.viglet.turing.genai.provider.llm.TurLlmModelMetadata;
+import com.viglet.turing.genai.provider.llm.TurLlmModelOption;
 import com.viglet.turing.persistence.model.llm.TurLLMInstance;
+import com.viglet.turing.persistence.model.llm.TurLLMVendor;
 import com.viglet.turing.persistence.repository.llm.TurLLMInstanceRepository;
 
 import lombok.extern.slf4j.Slf4j;
@@ -45,17 +50,27 @@ public class TurGatewayRouterService {
 
     public static final String PREFIX = "turing-router:";
 
-    /** Load-balancing strategy across the router's deployments. */
+    /**
+     * Ordering strategy across the router's deployments. {@code ROUND_ROBIN},
+     * {@code LATENCY} (observed EWMA) and {@code FAILOVER} are the T745 originals;
+     * {@code COST}, {@code QUALITY} and {@code TTFT} (T784) order by the catalog's
+     * indicative pricing / intelligence index / time-to-first-token so a client can
+     * ask for "cheapest", "highest intelligence" or "lowest TTFT" across its
+     * declared deployments.
+     */
     public enum Strategy {
-        ROUND_ROBIN, LATENCY, FAILOVER
+        ROUND_ROBIN, LATENCY, FAILOVER, COST, QUALITY, TTFT
     }
 
     private final TurLLMInstanceRepository llmInstanceRepository;
+    private final TurLlmModelCatalog modelCatalog;
     private final ConcurrentHashMap<String, AtomicInteger> roundRobin = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<String, Double> latencyEwmaMs = new ConcurrentHashMap<>();
 
-    public TurGatewayRouterService(TurLLMInstanceRepository llmInstanceRepository) {
+    public TurGatewayRouterService(TurLLMInstanceRepository llmInstanceRepository,
+            TurLlmModelCatalog modelCatalog) {
         this.llmInstanceRepository = llmInstanceRepository;
+        this.modelCatalog = modelCatalog;
     }
 
     public boolean isRouter(String model) {
@@ -105,6 +120,9 @@ public class TurGatewayRouterService {
             case FAILOVER -> targets;
             case LATENCY -> sortByLatency(targets);
             case ROUND_ROBIN -> rotate(model, targets);
+            case COST -> sortByCatalog(targets, this::inputPrice, false);
+            case QUALITY -> sortByCatalog(targets, this::intelligence, true);
+            case TTFT -> sortByCatalog(targets, this::ttft, false);
         };
     }
 
@@ -122,8 +140,80 @@ public class TurGatewayRouterService {
         return switch (token.trim().toLowerCase(Locale.ROOT)) {
             case "latency", "least-latency", "least-busy" -> Strategy.LATENCY;
             case "failover", "fallback" -> Strategy.FAILOVER;
+            case "cost", "cheapest", "price" -> Strategy.COST;
+            case "quality", "intelligence", "best" -> Strategy.QUALITY;
+            case "ttft", "fastest", "first-token" -> Strategy.TTFT;
             default -> Strategy.ROUND_ROBIN;
         };
+    }
+
+    // ---- Catalog-driven strategies (T784) --------------------------------
+
+    /**
+     * Orders the candidates by a catalog metric. Instances whose model has no
+     * catalog value for the metric always sort <em>last</em> (so a missing figure
+     * never wins a "cheapest"/"fastest" pick), and ties keep their declared order.
+     *
+     * @param metric     extracts the metric for an instance, or {@code null} when unknown
+     * @param descending {@code true} to prefer the highest value (QUALITY), else lowest
+     */
+    private List<TurLLMInstance> sortByCatalog(List<TurLLMInstance> targets,
+            java.util.function.Function<TurLLMInstance, Double> metric, boolean descending) {
+        List<TurLLMInstance> ordered = new ArrayList<>(targets);
+        ordered.sort((a, b) -> {
+            Double va = metric.apply(a);
+            Double vb = metric.apply(b);
+            if (va == null && vb == null) {
+                return 0;
+            }
+            if (va == null) {
+                return 1;
+            }
+            if (vb == null) {
+                return -1;
+            }
+            return descending ? Double.compare(vb, va) : Double.compare(va, vb);
+        });
+        return ordered;
+    }
+
+    private Double inputPrice(TurLLMInstance instance) {
+        TurLlmModelMetadata meta = metadataFor(instance);
+        return meta == null || meta.pricing() == null ? null : meta.pricing().inputPer1M();
+    }
+
+    private Double intelligence(TurLLMInstance instance) {
+        TurLlmModelMetadata meta = metadataFor(instance);
+        return meta == null || meta.benchmarks() == null ? null : meta.benchmarks().intelligenceIndex();
+    }
+
+    private Double ttft(TurLLMInstance instance) {
+        TurLlmModelMetadata meta = metadataFor(instance);
+        return meta == null || meta.performance() == null ? null : meta.performance().latencyTtftSec();
+    }
+
+    /** Catalog metadata for an instance's configured model, or {@code null} when unknown. */
+    private TurLlmModelMetadata metadataFor(TurLLMInstance instance) {
+        if (instance == null || modelCatalog == null || !StringUtils.hasText(instance.getModelName())) {
+            return null;
+        }
+        String slug = vendorSlug(instance.getTurLLMVendor());
+        if (slug == null) {
+            return null;
+        }
+        return modelCatalog.allModels().getOrDefault(slug, List.of()).stream()
+                .filter(o -> instance.getModelName().equals(o.id()))
+                .map(TurLlmModelOption::metadata)
+                .findFirst()
+                .orElse(null);
+    }
+
+    private static String vendorSlug(TurLLMVendor vendor) {
+        if (vendor == null) {
+            return null;
+        }
+        String slug = StringUtils.hasText(vendor.getPlugin()) ? vendor.getPlugin() : vendor.getId();
+        return StringUtils.hasText(slug) ? slug.toLowerCase(Locale.ROOT) : null;
     }
 
     private List<TurLLMInstance> rotate(String model, List<TurLLMInstance> targets) {
