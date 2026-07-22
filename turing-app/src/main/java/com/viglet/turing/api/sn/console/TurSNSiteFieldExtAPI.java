@@ -38,6 +38,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.security.access.annotation.Secured;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
@@ -114,6 +115,7 @@ public class TurSNSiteFieldExtAPI {
     @Operation(summary = "Semantic Navigation Site Field Ext List")
     @Transactional
     @GetMapping
+    @Secured({ "ROLE_ADMIN", "SN_VIEW" })
     public List<TurSNSiteFieldExtDto> turSNSiteFieldExtList(@PathVariable String snSiteId) {
         return turSNSiteRepository.findById(snSiteId)
                 .map(turSNSite -> {
@@ -135,6 +137,7 @@ public class TurSNSiteFieldExtAPI {
 
     @Operation(summary = "Show a Semantic Navigation Site Field Ext")
     @GetMapping("/{id}")
+    @Secured({ "ROLE_ADMIN", "SN_VIEW" })
     public TurSNSiteFieldExtDto turSNSiteFieldExtGet(@PathVariable String snSiteId, @PathVariable String id) {
         TurSNSiteFieldExt turSNSiteFieldExt = turSNSiteFieldExtRepository.findById(id)
                 .orElse(TurSNSiteFieldExt.builder().build());
@@ -145,6 +148,7 @@ public class TurSNSiteFieldExtAPI {
 
     @Operation(summary = "Semantic Navigation Site Field Ext structure")
     @GetMapping("structure")
+    @Secured({ "ROLE_ADMIN", "SN_VIEW" })
     public TurSNSiteFieldExtDto turSNSiteFieldExtStructure(@PathVariable String snSiteId) {
         return turSNSiteRepository.findById(snSiteId)
                 .map(turSNSite -> {
@@ -158,6 +162,7 @@ public class TurSNSiteFieldExtAPI {
     @Operation(summary = "Create a Semantic Navigation Site Field Ext")
     @PostMapping
     @Transactional
+    @Secured({ "ROLE_ADMIN", "SN_EDIT" })
     public TurSNSiteFieldExtDto turSNSiteFieldExtAdd(@PathVariable String snSiteId,
             @RequestBody TurSNSiteFieldExtDto turSNSiteFieldExtDto) {
         TurSNSiteFieldExt turSNSiteFieldExt = turSNSiteFieldExtMapper.toEntity(turSNSiteFieldExtDto);
@@ -167,6 +172,7 @@ public class TurSNSiteFieldExtAPI {
     @Operation(summary = "Update a Semantic Navigation Site Field Ext")
     @PutMapping("/{id}")
     @Transactional
+    @Secured({ "ROLE_ADMIN", "SN_EDIT" })
     public TurSNSiteFieldExtDto turSNSiteFieldExtUpdate(@PathVariable String snSiteId, @PathVariable String id,
             @RequestBody TurSNSiteFieldExtDto payloadDto) {
         TurSNSiteFieldExt payload = turSNSiteFieldExtMapper.toEntity(payloadDto);
@@ -185,6 +191,7 @@ public class TurSNSiteFieldExtAPI {
     @Transactional
     @Operation(summary = "Delete a Semantic Navigation Site Field Ext")
     @DeleteMapping("/{id}")
+    @Secured({ "ROLE_ADMIN", "SN_EDIT" })
     public boolean turSNSiteFieldExtDelete(@PathVariable String snSiteId, @PathVariable String id) {
         return this.turSNSiteFieldExtRepository.findById(id).map(turSNSiteFieldExt -> {
             turSNSiteRepository.findByIdNoCache(snSiteId)

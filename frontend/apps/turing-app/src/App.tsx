@@ -25,6 +25,7 @@ import {
   MarketplaceRoutes,
   McpServerRoutes,
   PersonaRoutes,
+  ProfileRoutes,
   CustomToolRoutes,
   SERoutes,
   SNRoutes,
@@ -70,6 +71,7 @@ function App() {
                 {CustomToolRoutes}
                 {AIAgentRoutes}
                 {PersonaRoutes}
+                {ProfileRoutes}
                 {IntegrationRoutes}
                 {LoggingRoutes}
                 {ExchangeRoutes}

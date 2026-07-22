@@ -9,10 +9,12 @@ import type {
 import type { TurSNSiteCustomSort } from "@/models/sn/sn-site-custom-sort.model"
 import type { TurSNSiteLocale } from "@/models/sn/sn-site-locale.model"
 import type { TurSNSiteFacetOrdering } from "@/models/sn/sn-site-facet-ordering.model"
+import type { TurProfile } from "@/models/profile/profile.model"
 import { TurSNSiteSearchRuleService } from "@/services/sn/sn.site.search.rule.service"
 import { TurSNSiteCustomSortService } from "@/services/sn/sn.site.custom.sort.service"
 import { TurSNSiteLocaleService } from "@/services/sn/sn.site.locale.service"
 import { TurSNFacetedFieldService } from "@/services/sn/sn.faceted.field.service"
+import { TurSNFacetProfileService } from "@/services/sn/sn.facet.profile.service"
 import React, { useEffect, useState } from "react"
 import { IconDeviceFloppy, IconGavel, IconX } from "@tabler/icons-react"
 import { GradientButton } from "@/components/ui/gradient-button"
@@ -29,6 +31,7 @@ const turSNSiteSearchRuleService = new TurSNSiteSearchRuleService();
 const turSNSiteCustomSortService = new TurSNSiteCustomSortService();
 const turSNSiteLocaleService = new TurSNSiteLocaleService();
 const turSNFacetedFieldService = new TurSNFacetedFieldService();
+const turSNFacetProfileService = new TurSNFacetProfileService();
 
 interface Props {
     snSiteId: string;
@@ -48,6 +51,7 @@ export const SNSiteSearchRuleForm: React.FC<Props> = ({ snSiteId, value, isNew, 
     const [customSorts, setCustomSorts] = useState<TurSNSiteCustomSort[]>([]);
     const [siteLocales, setSiteLocales] = useState<TurSNSiteLocale[]>([]);
     const [facets, setFacets] = useState<TurSNSiteFacetOrdering[]>([]);
+    const [profiles, setProfiles] = useState<TurProfile[]>([]);
 
     useEffect(() => {
         form.reset(value);
@@ -58,6 +62,7 @@ export const SNSiteSearchRuleForm: React.FC<Props> = ({ snSiteId, value, isNew, 
         turSNSiteCustomSortService.query(snSiteId).then(setCustomSorts).catch(console.error);
         turSNSiteLocaleService.query(snSiteId).then(setSiteLocales).catch(console.error);
         turSNFacetedFieldService.query(snSiteId).then(setFacets).catch(console.error);
+        turSNFacetProfileService.query(snSiteId).then(setProfiles).catch(console.error);
     }, [snSiteId]);
 
     async function onSubmit(data: TurSNSiteSearchRule) {
@@ -117,6 +122,7 @@ export const SNSiteSearchRuleForm: React.FC<Props> = ({ snSiteId, value, isNew, 
                     fieldOptions={fieldOptions}
                     customSorts={customSorts}
                     facets={facets}
+                    profiles={profiles}
                 />
             </form>
         </Form>

@@ -1,7 +1,15 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" translate="no">
   <head>
     <meta charset="UTF-8" />
+    <!--
+      Disable browser machine-translation (Google Translate): it rewrites text
+      nodes into <font> wrappers, which breaks React DOM reconciliation with
+      "Failed to execute 'removeChild'/'insertBefore' on 'Node': ... not a child
+      of this node". The app already ships pt/en via its own i18n, so browser
+      translation is both unnecessary and harmful here.
+    -->
+    <meta name="google" content="notranslate" />
     <link rel="icon" type="image/x-icon" href="/favicon.ico">
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Turing ES Administration Console</title>

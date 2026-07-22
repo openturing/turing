@@ -1,55 +1,17 @@
+import type { TurProfile } from "@/models/profile/profile.model.ts";
 import type { TurSNSiteFacetOrdering } from "@/models/sn/sn-site-facet-ordering.model.ts";
-import type { TurSNSiteFacetProfile } from "@/models/sn/sn-site-facet-profile.model.ts";
 import axios from "axios";
 
-export interface TurSNSiteFacetProfilePayload {
-  name: string;
-  description?: string;
-}
-
+/**
+ * Facet-ordering configuration of a site (spec 002). Profiles themselves are global
+ * and managed under {@link TurProfileService} (Management); here the site only
+ * selects a global profile and configures its facet ordering for this site.
+ */
 export class TurSNFacetProfileService {
-  async query(siteId: string): Promise<TurSNSiteFacetProfile[]> {
-    const response = await axios.get<TurSNSiteFacetProfile[]>(
-      `/sn/${siteId}/facet/profile`,
-    );
+  /** Global profiles available to select on this site. */
+  async query(siteId: string): Promise<TurProfile[]> {
+    const response = await axios.get<TurProfile[]>(`/sn/${siteId}/facet/profile`);
     return response.data;
-  }
-
-  async create(
-    siteId: string,
-    payload: TurSNSiteFacetProfilePayload,
-  ): Promise<TurSNSiteFacetProfile> {
-    const response = await axios.post<TurSNSiteFacetProfile>(
-      `/sn/${siteId}/facet/profile`,
-      payload,
-    );
-    return response.data;
-  }
-
-  async update(
-    siteId: string,
-    profileId: string,
-    payload: TurSNSiteFacetProfilePayload,
-  ): Promise<TurSNSiteFacetProfile> {
-    const response = await axios.put<TurSNSiteFacetProfile>(
-      `/sn/${siteId}/facet/profile/${profileId}`,
-      payload,
-    );
-    return response.data;
-  }
-
-  async setDefault(
-    siteId: string,
-    profileId: string,
-  ): Promise<TurSNSiteFacetProfile[]> {
-    const response = await axios.put<TurSNSiteFacetProfile[]>(
-      `/sn/${siteId}/facet/profile/${profileId}/default`,
-    );
-    return response.data;
-  }
-
-  async remove(siteId: string, profileId: string): Promise<void> {
-    await axios.delete(`/sn/${siteId}/facet/profile/${profileId}`);
   }
 
   async queryOrdering(

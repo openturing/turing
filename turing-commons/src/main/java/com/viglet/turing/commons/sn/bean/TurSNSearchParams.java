@@ -26,6 +26,6 @@ public class TurSNSearchParams {
     private List<String> fl;
     private String group;
     private Integer nfpr = 1;
-    private String facetProfile;
+    private String profile;
 
 }

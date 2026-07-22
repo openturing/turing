@@ -61,7 +61,9 @@ import com.viglet.turing.commons.sn.bean.TurSNSitePostParamsBean;
 import com.viglet.turing.commons.sn.search.TurSNFilterQueryOperator;
 import com.viglet.turing.commons.sn.search.TurSNSiteSearchContext;
 import com.viglet.turing.commons.utils.TurCommonsUtils;
+import com.viglet.turing.api.sn.bean.TurSNSiteFieldProfileConfigDto.FacetConfig;
 import com.viglet.turing.persistence.dto.sn.field.TurSNSiteFieldExtDto;
+import com.viglet.turing.persistence.model.profile.TurProfile;
 import com.viglet.turing.persistence.model.sn.TurSNSite;
 import com.viglet.turing.persistence.model.sn.TurSNSiteFacetRangeEnum;
 import com.viglet.turing.persistence.model.sn.TurSNSiteFacetSortEnum;
@@ -75,11 +77,13 @@ import com.viglet.turing.persistence.model.sn.ranking.TurSNRankingExpression;
 import com.viglet.turing.persistence.model.sn.sort.TurSNSiteCustomSort;
 import com.viglet.turing.persistence.model.sn.sort.TurSNSiteCustomSortItem;
 import com.viglet.turing.persistence.model.sn.sort.TurSNSiteCustomSortOrderEnum;
+import com.viglet.turing.persistence.repository.profile.TurProfileRepository;
 import com.viglet.turing.persistence.repository.sn.field.TurSNSiteCustomFacetRepository;
 import com.viglet.turing.persistence.repository.sn.sort.TurSNSiteCustomSortRepository;
 import com.viglet.turing.persistence.repository.sn.field.TurSNSiteFieldExtRepository;
 import com.viglet.turing.persistence.repository.sn.ranking.TurSNRankingConditionRepository;
 import com.viglet.turing.persistence.repository.sn.ranking.TurSNRankingExpressionRepository;
+import com.viglet.turing.profile.TurProfileFieldConfigService;
 import com.viglet.turing.sn.TurSNFieldType;
 import com.viglet.turing.sn.TurSNUtils;
 import com.viglet.turing.sn.searchrule.TurSNSearchRuleEvaluator;
@@ -108,6 +112,8 @@ public class TurSolrQueryBuilder {
     private final TurSNTargetingRules turSNTargetingRules;
     private final TurSNSearchRuleEvaluator turSNSearchRuleEvaluator;
     private final TurSNSiteSearchSnapshotService snapshotService;
+    private final TurProfileRepository turProfileRepository;
+    private final TurProfileFieldConfigService turProfileFieldConfigService;
 
     public TurSolrQueryBuilder(TurSNSiteFieldExtRepository turSNSiteFieldExtRepository,
             TurSNSiteCustomFacetRepository turSNSiteCustomFacetRepository,
@@ -116,7 +122,9 @@ public class TurSolrQueryBuilder {
             TurSNRankingConditionRepository turSNRankingConditionRepository,
             TurSNTargetingRules turSNTargetingRules,
             TurSNSearchRuleEvaluator turSNSearchRuleEvaluator,
-            TurSNSiteSearchSnapshotService snapshotService) {
+            TurSNSiteSearchSnapshotService snapshotService,
+            TurProfileRepository turProfileRepository,
+            TurProfileFieldConfigService turProfileFieldConfigService) {
         this.turSNSiteFieldExtRepository = turSNSiteFieldExtRepository;
         this.turSNSiteCustomFacetRepository = turSNSiteCustomFacetRepository;
         this.turSNSiteCustomSortRepository = turSNSiteCustomSortRepository;
@@ -125,6 +133,8 @@ public class TurSolrQueryBuilder {
         this.turSNTargetingRules = turSNTargetingRules;
         this.turSNSearchRuleEvaluator = turSNSearchRuleEvaluator;
         this.snapshotService = snapshotService;
+        this.turProfileRepository = turProfileRepository;
+        this.turProfileFieldConfigService = turProfileFieldConfigService;
     }
 
     @NotNull
@@ -719,7 +729,7 @@ public class TurSolrQueryBuilder {
 
     public List<TurSNSiteFieldExt> prepareQueryFacet(TurSNSite turSNSite, SolrQuery query,
             TurSNFilterParams turSNFilterParams, TurSEParameters turSEParameters) {
-        List<TurSNSiteFieldExt> enabledFacets = getEnabledFacets(turSNSite);
+        List<TurSNSiteFieldExt> enabledFacets = resolveEnabledFacets(turSNSite, turSEParameters);
         Set<String> removedFacets = turSEParameters != null ? turSEParameters.getRemovedFacets() : null;
         Set<String> addedFacets = turSEParameters != null ? turSEParameters.getAddedFacets() : null;
         if (removedFacets != null && !removedFacets.isEmpty()) {
@@ -801,21 +811,88 @@ public class TurSolrQueryBuilder {
     }
 
     private List<TurSNSiteFieldExt> getEnabledFacets(TurSNSite turSNSite) {
-        Optional<TurSNSiteSearchSnapshot> snapOpt = snapshotForSite(turSNSite);
-        List<TurSNSiteFieldExt> enabledFields = snapOpt
-                .map(TurSNSiteSearchSnapshot::enabledFields)
-                .orElseGet(() -> turSNSiteFieldExtRepository
-                        .findByTurSNSiteAndEnabled(turSNSite, 1));
-        Set<String> fieldIdsWithCustomFacets = snapOpt
+        List<TurSNSiteFieldExt> enabledFields = getEnabledFields(turSNSite);
+        Set<String> fieldIdsWithCustomFacets = fieldIdsWithCustomFacets(turSNSite, enabledFields);
+        return enabledFields.stream()
+                .filter(field -> isFacetEnabled(field)
+                        || fieldIdsWithCustomFacets.contains(field.getId()))
+                .toList();
+    }
+
+    private Set<String> fieldIdsWithCustomFacets(TurSNSite turSNSite,
+            List<TurSNSiteFieldExt> enabledFields) {
+        return snapshotForSite(turSNSite)
                 .map(TurSNSiteSearchSnapshot::fieldIdsWithCustomFacets)
                 .orElseGet(() -> turSNSiteCustomFacetRepository
                         .findByFieldExtsWithDetails(enabledFields).stream()
                         .map(cf -> cf.getTurSNSiteFieldExt().getId())
                         .collect(Collectors.toSet()));
+    }
+
+    /**
+     * Facet candidates for the search, applying the per-profile field-facet config (spec 003) when a
+     * non-default profile is resolved from {@code profile}. The candidate set is recomputed from the
+     * <b>effective</b> facet flag (override ∪ global), so a profile can both enable a field that is a
+     * facet only under it and hide one that is a facet globally; each field carries its effective facet
+     * settings (sort/type/range/…). Without a profile — or with the default, which mirrors the global —
+     * falls back to the unchanged global path ({@link #getEnabledFacets}).
+     */
+    private List<TurSNSiteFieldExt> resolveEnabledFacets(TurSNSite turSNSite,
+            TurSEParameters turSEParameters) {
+        TurProfile profile = resolveAppliedProfile(turSEParameters);
+        if (profile == null || profile.isDefaultProfile()) {
+            return getEnabledFacets(turSNSite);
+        }
+        List<TurSNSiteFieldExt> enabledFields = getEnabledFields(turSNSite);
+        Set<String> fieldIdsWithCustomFacets = fieldIdsWithCustomFacets(turSNSite, enabledFields);
+        Map<String, FacetConfig> effective = turProfileFieldConfigService
+                .resolveEffective(profile, enabledFields);
         return enabledFields.stream()
+                .map(field -> applyProfileFacetConfig(field, effective.get(field.getId())))
                 .filter(field -> isFacetEnabled(field)
                         || fieldIdsWithCustomFacets.contains(field.getId()))
                 .toList();
+    }
+
+    /**
+     * Resolves the profile applied to the search from the {@code profile} name. Returns {@code null}
+     * for a blank/unknown profile — the caller then uses the global path, which is exactly the default
+     * profile's behaviour (the default has no overrides and mirrors the global config, DT-6/D3), so no
+     * default lookup is needed and the no-profile hot path stays free of extra queries (FR-07).
+     */
+    private TurProfile resolveAppliedProfile(TurSEParameters turSEParameters) {
+        if (turProfileRepository == null || turProfileFieldConfigService == null
+                || turSEParameters == null) {
+            return null;
+        }
+        String profileName = turSEParameters.getProfile();
+        if (profileName == null || profileName.isBlank()) {
+            return null;
+        }
+        return turProfileRepository.findByNameIgnoreCase(profileName.trim()).orElse(null);
+    }
+
+    /**
+     * Returns a copy of the field with the profile's effective facet settings applied, without mutating
+     * the (possibly cached/snapshot) original. Only facet attributes are overlaid — schema/index stay
+     * global.
+     */
+    private static TurSNSiteFieldExt applyProfileFacetConfig(TurSNSiteFieldExt field,
+            FacetConfig config) {
+        if (config == null) {
+            return field;
+        }
+        return field.toBuilder()
+                .facet(config.facet() != null ? config.facet() : field.getFacet())
+                .facetName(config.facetName())
+                .facetSort(config.facetSort() != null ? config.facetSort() : field.getFacetSort())
+                .facetType(config.facetType() != null ? config.facetType() : field.getFacetType())
+                .facetItemType(config.facetItemType() != null ? config.facetItemType()
+                        : field.getFacetItemType())
+                .facetRange(config.facetRange() != null ? config.facetRange() : field.getFacetRange())
+                .secondaryFacet(config.secondaryFacet())
+                .showAllFacetItems(config.showAllFacetItems())
+                .build();
     }
 
     private static boolean isFacetEnabled(TurSNSiteFieldExt turSNSiteFieldExt) {

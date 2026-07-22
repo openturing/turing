@@ -32,6 +32,7 @@ import enMarketplace from "./locales/en/marketplace.json";
 import enMcp from "./locales/en/mcp.json";
 import enNav from "./locales/en/nav.json";
 import enPersona from "./locales/en/persona.json";
+import enProfile from "./locales/en/profile.json";
 import enPage from "./locales/en/page.json";
 import enSe from "./locales/en/se.json";
 import enAnn from "./locales/en/ann.json";
@@ -72,6 +73,7 @@ import ptMarketplace from "./locales/pt/marketplace.json";
 import ptMcp from "./locales/pt/mcp.json";
 import ptNav from "./locales/pt/nav.json";
 import ptPersona from "./locales/pt/persona.json";
+import ptProfile from "./locales/pt/profile.json";
 import ptPage from "./locales/pt/page.json";
 import ptSe from "./locales/pt/se.json";
 import ptAnn from "./locales/pt/ann.json";
@@ -90,7 +92,7 @@ const en = {
   ...enAiAgent, ...enAiAuthoring, ...enIntent, ...enApiToken, ...enAdmin, ...enAccount,
   ...enExchange, ...enGraphql, ...enLogging, ...enTokenUsage,
   ...enSystemInfo, ...enGlobalSettings, ...enForms, ...enSearch, ...enAnn,
-  ...enPage, ...enGit, ...enMarketplace, ...enPersona,
+  ...enPage, ...enGit, ...enMarketplace, ...enPersona, ...enProfile,
 };
 
 const pt = {
@@ -100,7 +102,7 @@ const pt = {
   ...ptAiAgent, ...ptAiAuthoring, ...ptIntent, ...ptApiToken, ...ptAdmin, ...ptAccount,
   ...ptExchange, ...ptGraphql, ...ptLogging, ...ptTokenUsage,
   ...ptSystemInfo, ...ptGlobalSettings, ...ptForms, ...ptSearch, ...ptAnn,
-  ...ptPage, ...ptGit, ...ptMarketplace, ...ptPersona,
+  ...ptPage, ...ptGit, ...ptMarketplace, ...ptPersona, ...ptProfile,
 };
 
 /**

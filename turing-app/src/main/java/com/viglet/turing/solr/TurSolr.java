@@ -12,6 +12,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.apache.commons.lang3.StringUtils;
@@ -40,6 +41,7 @@ import com.viglet.turing.commons.se.result.spellcheck.TurSESpellCheckResult;
 import com.viglet.turing.commons.sn.search.TurSNSiteSearchContext;
 import com.viglet.turing.commons.utils.TurCommonsUtils;
 import com.viglet.turing.persistence.model.sn.TurSNSite;
+import com.viglet.turing.persistence.repository.profile.TurProfileRepository;
 import com.viglet.turing.persistence.repository.sn.TurSNSiteRepository;
 import com.viglet.turing.persistence.repository.sn.field.TurSNSiteCustomFacetRepository;
 import com.viglet.turing.persistence.repository.sn.sort.TurSNSiteCustomSortRepository;
@@ -49,6 +51,7 @@ import com.viglet.turing.persistence.repository.sn.ranking.TurSNRankingExpressio
 import com.viglet.turing.se.result.TurSEResult;
 import com.viglet.turing.se.result.TurSEResults;
 import com.viglet.turing.observability.TurSearchPipelineObservation;
+import com.viglet.turing.profile.TurProfileFieldConfigService;
 import com.viglet.turing.sn.TurSNFieldProcess;
 import com.viglet.turing.sn.TurSNUtils;
 import com.viglet.turing.sn.searchrule.TurSNSearchRuleEvaluator;
@@ -70,6 +73,13 @@ public class TurSolr {
     private static final Pattern SPELL_CHECK_SPECIAL_CHARS =
             Pattern.compile("[+\\-!(){}\\[\\]^~*?:\\\\/&|]");
 
+    /**
+     * Extracts the field name from a Solr {@code undefined field: "name"} rejection message.
+     * Handles both quoted ({@code undefined field: "catedras"}) and unquoted variants.
+     */
+    private static final Pattern UNDEFINED_FIELD =
+            Pattern.compile("undefined field:?\\s*\"?([^\"\\s]+)\"?");
+
     private final TurSNSiteRepository turSNSiteRepository;
     private final boolean isCommitEnabled;
     private final TurSolrDocumentHandler turSolrDocumentHandler;
@@ -88,7 +98,9 @@ public class TurSolr {
             TurDecimalFieldNormalizer turDecimalFieldNormalizer,
             TurSNSearchRuleEvaluator turSNSearchRuleEvaluator,
             TurSNSiteSearchSnapshotService snapshotService,
-            TurSearchPipelineObservation pipelineObservation) {
+            TurSearchPipelineObservation pipelineObservation,
+            TurProfileRepository turProfileRepository,
+            TurProfileFieldConfigService turProfileFieldConfigService) {
         this.isCommitEnabled = isCommitEnabled;
         this.turSNSiteRepository = turSNSiteRepository;
         this.turSolrDocumentHandler = new TurSolrDocumentHandler(commitWithin, turSNSiteFieldUtils,
@@ -96,7 +108,8 @@ public class TurSolr {
         this.turSolrQueryBuilder = new TurSolrQueryBuilder(turSNSiteFieldExtRepository,
                 turSNSiteCustomFacetRepository, turSNSiteCustomSortRepository,
                 turSNRankingExpressionRepository, turSNRankingConditionRepository, turSNTargetingRules,
-                turSNSearchRuleEvaluator, snapshotService);
+                turSNSearchRuleEvaluator, snapshotService, turProfileRepository,
+                turProfileFieldConfigService);
         this.turSolrResultProcessor = new TurSolrResultProcessor(turSNFieldProcess,
                 turSNSiteFieldExtRepository, turSNSiteCustomFacetRepository, pipelineObservation);
     }
@@ -294,17 +307,74 @@ public class TurSolr {
 
     public static Optional<QueryResponse> executeSolrQuery(TurSolrInstance turSolrInstance, SolrQuery query) {
         String core = turSolrInstance.getCore();
-        try {
-            QueryResponse response = turSolrInstance.getSolrClient().query(core, query);
-            return Optional.ofNullable(response);
-        } catch (SolrServerException | IOException e) {
-            logSolrException(query, e, false);
-        } catch (SolrException e) {
-            // RemoteSolrException (server-side rejection, e.g. undefined field) is unchecked
-            // and would otherwise escape the resilience wrapper as an unhandled exception.
-            logSolrException(query, e, true);
+        // A facet on a field that does not exist in this core's schema makes Solr reject the
+        // WHOLE query (documents included). That happens on partially-indexed cores, where a
+        // configured facet field was never created because no document ever carried it. Instead
+        // of failing the entire search, strip the offending facet field and retry. The retry
+        // budget is bounded by the number of facet fields, so it can never loop unbounded.
+        int maxAttempts = 1 + Optional.ofNullable(query.getFacetFields()).map(f -> f.length).orElse(0);
+        for (int attempt = 0; attempt < maxAttempts; attempt++) {
+            try {
+                QueryResponse response = turSolrInstance.getSolrClient().query(core, query);
+                return Optional.ofNullable(response);
+            } catch (SolrServerException | IOException e) {
+                logSolrException(query, e, false);
+                return Optional.empty();
+            } catch (SolrException e) {
+                // RemoteSolrException (server-side rejection, e.g. undefined field) is unchecked
+                // and would otherwise escape the resilience wrapper as an unhandled exception.
+                String removedFacet = removeUndefinedFacetField(query, e);
+                if (removedFacet == null) {
+                    // The undefined field is not a facet field we can strip (e.g. it is in q/fq/hl),
+                    // so retrying would not help — log and give up as before.
+                    logSolrException(query, e, true);
+                    return Optional.empty();
+                }
+                log.warn("Skipping undefined facet field '{}' in Solr core '{}' and retrying query.",
+                        removedFacet, core);
+            }
         }
         return Optional.empty();
+    }
+
+    /**
+     * When Solr rejects a query for an {@code undefined field}, removes that field from the
+     * query's {@code facet.field} list so the caller can retry. Returns the removed field name,
+     * or {@code null} when the undefined field is not a stripable facet field (the caller must
+     * then stop retrying). Facet field entries may carry a leading Solr local-params block
+     * (e.g. {@code {!ex=tag}catedras}); the bare field name is compared against Solr's message.
+     */
+    private static String removeUndefinedFacetField(SolrQuery query, SolrException e) {
+        String field = parseUndefinedField(e.getMessage());
+        if (field == null) {
+            return null;
+        }
+        String[] facetFields = query.getFacetFields();
+        if (facetFields == null) {
+            return null;
+        }
+        boolean removed = false;
+        for (String facetField : facetFields) {
+            if (bareFacetField(facetField).equals(field)) {
+                query.removeFacetField(facetField);
+                removed = true;
+            }
+        }
+        return removed ? field : null;
+    }
+
+    private static String parseUndefinedField(String message) {
+        if (message == null) {
+            return null;
+        }
+        Matcher matcher = UNDEFINED_FIELD.matcher(message);
+        return matcher.find() ? matcher.group(1) : null;
+    }
+
+    private static String bareFacetField(String facetField) {
+        // Strip a leading local-params block, e.g. "{!ex=tag}catedras" -> "catedras".
+        int close = facetField.lastIndexOf('}');
+        return close >= 0 ? facetField.substring(close + 1) : facetField;
     }
 
     private static void logSolrException(SolrQuery query, Exception e, boolean isRemote) {

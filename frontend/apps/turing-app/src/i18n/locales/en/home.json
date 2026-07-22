@@ -88,6 +88,10 @@
         "title": "Pages",
         "description": "Deploy and manage SPA sites served from MinIO storage."
       },
+      "profiles": {
+        "title": "Profiles",
+        "description": "Create reusable generic profiles, selected and configured per feature (e.g. facet ordering)."
+      },
       "assets": {
         "title": "Assets",
         "description": "Browse and manage files stored in the MinIO object storage."

@@ -63,7 +63,13 @@ class TurSNFieldProcessTest {
         private com.viglet.turing.persistence.repository.sn.field.TurSNSiteCustomFacetRepository turSNSiteCustomFacetRepository;
 
         @Mock
-        private com.viglet.turing.persistence.repository.sn.field.TurSNSiteFacetProfileRepository turSNSiteFacetProfileRepository;
+        private com.viglet.turing.persistence.repository.profile.TurProfileRepository turProfileRepository;
+
+        @Mock
+        private com.viglet.turing.persistence.repository.profile.TurProfileFacetOrderingRepository turProfileFacetOrderingRepository;
+
+        @Mock
+        private com.viglet.turing.profile.TurProfileFieldConfigService turProfileFieldConfigService;
 
         private TurSNFieldProcess turSNFieldProcess;
 
@@ -74,7 +80,9 @@ class TurSNFieldProcessTest {
                                 turSNSiteFieldExtRepository,
                                 new com.viglet.turing.sn.facet.TurSNFacetDefinitionFactory(
                                                 turSNSiteCustomFacetRepository),
-                                turSNSiteFacetProfileRepository);
+                                turProfileRepository,
+                                turProfileFacetOrderingRepository,
+                                turProfileFieldConfigService);
         }
 
         @Test

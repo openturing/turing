@@ -52,7 +52,28 @@
       "description": "Campos personalizados do mecanismo de busca.",
       "newField": "Novo Campo",
       "deleted": "O campo foi excluído",
-      "notDeleted": "O campo não foi excluído"
+      "notDeleted": "O campo não foi excluído",
+      "profile": {
+        "label": "Perfil",
+        "select": "Selecione um perfil",
+        "default": "Padrão",
+        "manage": "Gerenciar perfis",
+        "loading": "Carregando configuração...",
+        "loadError": "Erro ao carregar a configuração do perfil",
+        "saveError": "Não foi possível salvar a configuração",
+        "hint": "Configurações de faceta por perfil. Campos sem sobrescrita herdam a configuração global. Configurações de schema (tipo, habilitado, multivalorado) são sempre globais.",
+        "facetName": "Nome da faceta",
+        "sort": "Ordenação",
+        "facetType": "Tipo",
+        "itemType": "Itens",
+        "range": "Range",
+        "secondary": "Secundária",
+        "showAll": "Mostrar todos",
+        "state": "Estado",
+        "custom": "Personalizado",
+        "inherited": "Herdado",
+        "clear": "Voltar ao global"
+      }
     },
     "facets": {
       "title": "Facetas",
@@ -68,6 +89,7 @@
       "profile": {
         "label": "Perfil de ordenação",
         "select": "Selecione um perfil",
+        "manage": "Gerenciar perfis",
         "default": "Padrão",
         "new": "Novo perfil",
         "rename": "Renomear",
@@ -172,8 +194,10 @@
         "REMOVE_FACETS": "Ocultar Facetas",
         "SET_ROWS": "Definir Resultados (rows)",
         "ADD_FILTER_QUERY": "Adicionar Filtro (fq)",
-        "SET_BOOST_QUERY": "Definir Boost (bq)"
+        "SET_BOOST_QUERY": "Definir Boost (bq)",
+        "SET_PROFILE": "Definir Perfil"
       },
+      "selectProfile": "Selecione um perfil",
       "noFacets": "Nenhuma faceta configurada para este site.",
       "noNonFacetFields": "Todos os campos já são facetas.",
       "logicOperatorValues": {

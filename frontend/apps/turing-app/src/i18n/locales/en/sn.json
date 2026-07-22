@@ -52,7 +52,28 @@
       "description": "Custom Search Engine Fields.",
       "newField": "New Field",
       "deleted": "The field was deleted",
-      "notDeleted": "The field was not deleted"
+      "notDeleted": "The field was not deleted",
+      "profile": {
+        "label": "Profile",
+        "select": "Select a profile",
+        "default": "Default",
+        "manage": "Manage profiles",
+        "loading": "Loading configuration...",
+        "loadError": "Error loading the profile configuration",
+        "saveError": "Could not save the configuration",
+        "hint": "Facet settings per profile. Fields not overridden inherit the global configuration. Schema settings (type, enabled, multi-valued) are always global.",
+        "facetName": "Facet name",
+        "sort": "Sort",
+        "facetType": "Type",
+        "itemType": "Items",
+        "range": "Range",
+        "secondary": "Secondary",
+        "showAll": "Show all",
+        "state": "State",
+        "custom": "Custom",
+        "inherited": "Inherited",
+        "clear": "Reset to global"
+      }
     },
     "facets": {
       "title": "Facets",
@@ -68,6 +89,7 @@
       "profile": {
         "label": "Ordering profile",
         "select": "Select a profile",
+        "manage": "Manage profiles",
         "default": "Default",
         "new": "New profile",
         "rename": "Rename",
@@ -172,8 +194,10 @@
         "REMOVE_FACETS": "Hide Facets",
         "SET_ROWS": "Set Rows (rows)",
         "ADD_FILTER_QUERY": "Add Filter (fq)",
-        "SET_BOOST_QUERY": "Set Boost Query (bq)"
+        "SET_BOOST_QUERY": "Set Boost Query (bq)",
+        "SET_PROFILE": "Set Profile"
       },
+      "selectProfile": "Select a profile",
       "noFacets": "No facets configured for this site.",
       "noNonFacetFields": "All fields are already facets.",
       "logicOperatorValues": {

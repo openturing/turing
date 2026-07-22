@@ -1,5 +1,9 @@
 # 001 — Perfis de Ordenação de Facetas
 
+> ⚠️ **A ser substituído pelo [`002-perfis-genericos-gerenciamento`](../002-perfis-genericos-gerenciamento/README.md)**
+> — que torna o perfil **global e genérico** (criado em "Gerenciamento", não em "Facetas"). O 001
+> permanece como referência do modelo per-site e da base migrada.
+
 Sistema de **perfis** para a configuração de ordenação de facetas do Semantic Navigation:
 múltiplas ordenações nomeadas por site, selecionáveis na busca via parâmetro `facetProfile`,
 com fallback para o perfil padrão **"Geral"** (que herda a ordenação atual via migração).

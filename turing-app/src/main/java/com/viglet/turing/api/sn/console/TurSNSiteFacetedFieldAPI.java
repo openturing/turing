@@ -24,36 +24,32 @@ package com.viglet.turing.api.sn.console;
 import java.util.List;
 
 import org.springframework.cache.annotation.CacheEvict;
-import org.springframework.http.HttpStatus;
-import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.security.access.annotation.Secured;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.viglet.turing.api.profile.bean.TurProfileDto;
 import com.viglet.turing.api.sn.bean.TurSNSiteFacetOrderingDto;
-import com.viglet.turing.api.sn.bean.TurSNSiteFacetProfileDto;
-import com.viglet.turing.api.sn.bean.TurSNSiteFacetProfileRequest;
-import com.viglet.turing.sn.facet.TurSNSiteFacetProfileService;
+import com.viglet.turing.profile.TurProfileFacetOrderingService;
+import com.viglet.turing.profile.TurProfileService;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * Semantic Navigation Faceted Field ordering and facet ordering profiles.
+ * Semantic Navigation Faceted Field ordering (spec 002).
  * <p>
- * The legacy endpoints ({@code GET /} and {@code PUT /ordering}) operate on the
- * site's default profile, preserving backward compatibility. The
- * {@code /profile} sub-resources manage named profiles and their orderings.
- * <p>
- * All facet-position persistence (including the LazyInitialization-safe custom
- * facet loading and the {@code @CacheEvict}-triggering per-item save) lives in
- * {@link TurSNSiteFacetProfileService}.
+ * Profiles are <b>global</b> and managed under {@code /api/profile}
+ * ("Management" section); here the site only <b>selects</b> a profile and
+ * configures its facet ordering for this site — one configuration per
+ * (profile × site). The legacy endpoints ({@code GET /} and
+ * {@code PUT /ordering}) operate on the default profile's ordering for the
+ * site, preserving backward compatibility.
  *
  * @author Alexandre Oliveira
  * @since 0.3.9
@@ -66,81 +62,60 @@ public class TurSNSiteFacetedFieldAPI {
 
     private static final String FACET_ORDER_CACHE = "findByTurSNSiteAndFacetAndEnabledOrderByFacetPosition";
 
-    private final TurSNSiteFacetProfileService turSNSiteFacetProfileService;
+    private final TurProfileService turProfileService;
+    private final TurProfileFacetOrderingService turProfileFacetOrderingService;
 
-    public TurSNSiteFacetedFieldAPI(TurSNSiteFacetProfileService turSNSiteFacetProfileService) {
-        this.turSNSiteFacetProfileService = turSNSiteFacetProfileService;
+    public TurSNSiteFacetedFieldAPI(TurProfileService turProfileService,
+            TurProfileFacetOrderingService turProfileFacetOrderingService) {
+        this.turProfileService = turProfileService;
+        this.turProfileFacetOrderingService = turProfileFacetOrderingService;
     }
 
     // ---------------------------------------------------- default profile (legacy)
 
     @Operation(summary = "Semantic Navigation Site Faceted Field List (default profile)")
     @GetMapping
+    @Secured({ "ROLE_ADMIN", "SN_VIEW" })
     public List<TurSNSiteFacetOrderingDto> turSNSiteFacetdFieldExtList(@PathVariable String snSiteId) {
-        return turSNSiteFacetProfileService.getDefaultOrdering(snSiteId);
+        return turProfileFacetOrderingService.getDefaultOrdering(snSiteId);
     }
 
     @Operation(summary = "Update the Faceted Field Ordering of the default profile")
     @PutMapping("/ordering")
     @CacheEvict(value = { FACET_ORDER_CACHE }, allEntries = true)
+    @Secured({ "ROLE_ADMIN", "SN_EDIT" })
     public List<TurSNSiteFacetOrderingDto> turSNSiteFieldUpdate(@PathVariable String snSiteId,
             @RequestBody List<TurSNSiteFacetOrderingDto> turSNSiteFacetOrderings) {
-        return turSNSiteFacetProfileService.saveDefaultOrdering(snSiteId, turSNSiteFacetOrderings);
+        return turProfileFacetOrderingService.saveDefaultOrdering(snSiteId, turSNSiteFacetOrderings);
     }
 
-    // ------------------------------------------------------------- profiles (CRUD)
+    // ------------------------------------------- global profiles (selection only)
 
-    @Operation(summary = "List facet ordering profiles")
+    @Operation(summary = "List the global profiles available for selection on this site")
     @GetMapping("/profile")
-    public List<TurSNSiteFacetProfileDto> profileList(@PathVariable String snSiteId) {
-        return turSNSiteFacetProfileService.list(snSiteId);
+    @Secured({ "ROLE_ADMIN", "SN_VIEW" })
+    public List<TurProfileDto> profileList(@PathVariable String snSiteId) {
+        return turProfileService.list();
     }
 
-    @Operation(summary = "Create a facet ordering profile")
-    @PostMapping("/profile")
-    @ResponseStatus(HttpStatus.CREATED)
-    public TurSNSiteFacetProfileDto profileCreate(@PathVariable String snSiteId,
-            @RequestBody TurSNSiteFacetProfileRequest profile) {
-        return turSNSiteFacetProfileService.create(snSiteId, profile);
-    }
+    // -------------------------------------------- ordering per (profile × site)
 
-    @Operation(summary = "Update a facet ordering profile")
-    @PutMapping("/profile/{profileId}")
-    public TurSNSiteFacetProfileDto profileUpdate(@PathVariable String snSiteId,
-            @PathVariable String profileId, @RequestBody TurSNSiteFacetProfileRequest profile) {
-        return turSNSiteFacetProfileService.update(snSiteId, profileId, profile);
-    }
-
-    @Operation(summary = "Mark a facet ordering profile as the default")
-    @PutMapping("/profile/{profileId}/default")
-    @CacheEvict(value = { FACET_ORDER_CACHE }, allEntries = true)
-    public List<TurSNSiteFacetProfileDto> profileSetDefault(@PathVariable String snSiteId,
-            @PathVariable String profileId) {
-        return turSNSiteFacetProfileService.setDefault(snSiteId, profileId);
-    }
-
-    @Operation(summary = "Delete a facet ordering profile")
-    @DeleteMapping("/profile/{profileId}")
-    @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void profileDelete(@PathVariable String snSiteId, @PathVariable String profileId) {
-        turSNSiteFacetProfileService.delete(snSiteId, profileId);
-    }
-
-    // -------------------------------------------------------- ordering per profile
-
-    @Operation(summary = "List the facet ordering of a profile")
+    @Operation(summary = "List the facet ordering of a profile for this site")
     @GetMapping("/profile/{profileId}/ordering")
+    @Secured({ "ROLE_ADMIN", "SN_VIEW" })
     public List<TurSNSiteFacetOrderingDto> profileOrdering(@PathVariable String snSiteId,
             @PathVariable String profileId) {
-        return turSNSiteFacetProfileService.getOrdering(snSiteId, profileId);
+        return turProfileFacetOrderingService.getOrdering(snSiteId, profileId);
     }
 
-    @Operation(summary = "Update the facet ordering of a profile")
+    @Operation(summary = "Update the facet ordering of a profile for this site")
     @PutMapping("/profile/{profileId}/ordering")
     @CacheEvict(value = { FACET_ORDER_CACHE }, allEntries = true)
+    @Secured({ "ROLE_ADMIN", "SN_EDIT" })
     public List<TurSNSiteFacetOrderingDto> profileOrderingUpdate(@PathVariable String snSiteId,
             @PathVariable String profileId,
             @RequestBody List<TurSNSiteFacetOrderingDto> turSNSiteFacetOrderings) {
-        return turSNSiteFacetProfileService.saveOrdering(snSiteId, profileId, turSNSiteFacetOrderings);
+        return turProfileFacetOrderingService.saveOrdering(snSiteId, profileId,
+                turSNSiteFacetOrderings);
     }
 }

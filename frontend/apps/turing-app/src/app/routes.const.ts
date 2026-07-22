@@ -39,6 +39,8 @@ export const ROUTES = {
   AI_AGENT_INSTANCE: `${consolePath}/ai-agent/instance`,
   PERSONA_ROOT: `${consolePath}/persona`,
   PERSONA_INSTANCE: `${consolePath}/persona/instance`,
+  PROFILE_ROOT: `${consolePath}/profile`,
+  PROFILE_INSTANCE: `${consolePath}/profile/instance`,
   ASSET_ROOT: `${consolePath}/asset`,
   PAGE_ROOT: `${consolePath}/page`,
   EMBEDDING_MODEL_ROOT: `${consolePath}/embedding-model`,

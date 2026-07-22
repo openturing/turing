@@ -40,6 +40,7 @@ import type {
 import type { TurSNStatusFields } from "@/models/sn/sn-field-status.model"
 import type { TurSNSiteField } from "@/models/sn/sn-site-field.model.ts"
 import { TurSNFieldService } from "@/services/sn/sn.field.service"
+import { TurSNFieldProfileService } from "@/services/sn/sn.field.profile.service"
 import { toast } from "@viglet/viglet-design-system"
 import { IconAlertTriangle, IconArrowsUpDown, IconChevronDown, IconCircleCheck, IconColumns3Filled, IconLoader2 } from "@tabler/icons-react"
 import type { PropsWithChildren } from "react"
@@ -210,7 +211,13 @@ const buildColumns = (
     isSavingField: (fieldId: string) => boolean,
     onRepair: (payload: TurSNFieldRepairPayload) => Promise<void>,
     isRepairingField: (fieldId: string) => boolean,
-    t: (key: string, opts?: Record<string, unknown>) => string
+    t: (key: string, opts?: Record<string, unknown>) => string,
+    // spec 003: under a non-default profile only "Faceta" is editable (per-profile override);
+    // the other (schema) toggles stay visible but disabled. Faceta reflects the profile's
+    // effective value (profileFacetByName), falling back to the global value.
+    isDefaultProfile: boolean,
+    profileFacetByName: Map<string, boolean>,
+    onProfileFacetToggle: (field: TurSNSiteField, checked: boolean) => void
 ): ColumnDef<TurSNSiteField>[] => [
         {
             accessorKey: "name",
@@ -267,7 +274,7 @@ const buildColumns = (
                             onCheckedChange={(checked) =>
                                 onToggle(fieldId, "multiValued", checked)
                             }
-                            disabled={isSavingField(fieldId)}
+                            disabled={!isDefaultProfile || isSavingField(fieldId)}
                         />
                     </div>
                 )
@@ -286,7 +293,7 @@ const buildColumns = (
                             onCheckedChange={(checked) =>
                                 onToggle(fieldId, "mlt", checked)
                             }
-                            disabled={isSavingField(fieldId)}
+                            disabled={!isDefaultProfile || isSavingField(fieldId)}
                         />
                     </div>
                 )
@@ -296,14 +303,20 @@ const buildColumns = (
             accessorKey: "facet",
             header: () => <div className="text-right">{t("forms.fieldGrid.facet")}</div>,
             cell: ({ row }) => {
-                const facet = row.original.facet;
                 const fieldId = row.original.id;
+                // Faceta is the only per-profile setting: under a non-default profile the toggle
+                // reflects the profile's effective facet and writes an override.
+                const facetChecked = isDefaultProfile
+                    ? row.original.facet == 1
+                    : (profileFacetByName.get(row.original.name) ?? row.original.facet == 1);
                 return (
                     <div className="text-right font-medium">
                         <GradientSwitch
-                            checked={facet == 1}
+                            checked={facetChecked}
                             onCheckedChange={(checked) =>
-                                onToggle(fieldId, "facet", checked)
+                                isDefaultProfile
+                                    ? onToggle(fieldId, "facet", checked)
+                                    : onProfileFacetToggle(row.original, checked)
                             }
                             disabled={isSavingField(fieldId)}
                         />
@@ -324,7 +337,7 @@ const buildColumns = (
                             onCheckedChange={(checked) =>
                                 onToggle(fieldId, "hl", checked)
                             }
-                            disabled={isSavingField(fieldId)}
+                            disabled={!isDefaultProfile || isSavingField(fieldId)}
                         />
                     </div>
                 )
@@ -343,7 +356,7 @@ const buildColumns = (
                             onCheckedChange={(checked) =>
                                 onToggle(fieldId, "enabled", checked)
                             }
-                            disabled={isSavingField(fieldId)}
+                            disabled={!isDefaultProfile || isSavingField(fieldId)}
                         />
                     </div>
                 )
@@ -366,15 +379,21 @@ const buildColumns = (
     ]
 
 const turSNFieldService = new TurSNFieldService();
+const turSNFieldProfileService = new TurSNFieldProfileService();
 interface Props {
     statusFields: TurSNStatusFields | null;
     id: string;
     data: TurSNSiteField[];
     setSnField: React.Dispatch<React.SetStateAction<TurSNSiteField[]>>;
     onRefreshStatus?: () => Promise<void> | void;
+    /** Selected profile (spec 003). When non-default, only "Faceta" is editable, per-profile. */
+    profileId?: string;
+    isDefaultProfile?: boolean;
 }
-export const SNSiteFieldGridList: React.FC<PropsWithChildren<Props>> = ({ statusFields, id, data, setSnField, onRefreshStatus, children }) => {
+export const SNSiteFieldGridList: React.FC<PropsWithChildren<Props>> = ({ statusFields, id, data, setSnField, onRefreshStatus, children, profileId, isDefaultProfile = true }) => {
     const { t } = useTranslation();
+    // Per-profile effective facet by field name (spec 003), loaded for non-default profiles.
+    const [profileFacet, setProfileFacet] = React.useState<Map<string, { fieldExtId: string; facet: boolean }>>(new Map());
     const [sorting, setSorting] = React.useState<SortingState>([])
     const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
         []
@@ -418,6 +437,77 @@ export const SNSiteFieldGridList: React.FC<PropsWithChildren<Props>> = ({ status
     const isSavingField = React.useCallback(
         (fieldId: string) => savingFieldIds.has(fieldId),
         [savingFieldIds]
+    );
+
+    // Load the per-profile effective facet (by field name) for a non-default profile.
+    React.useEffect(() => {
+        if (isDefaultProfile || !profileId) {
+            setProfileFacet(new Map());
+            return;
+        }
+        let cancelled = false;
+        turSNFieldProfileService
+            .query(id, profileId)
+            .then((configs) => {
+                if (cancelled) return;
+                const map = new Map<string, { fieldExtId: string; facet: boolean }>();
+                configs.forEach((config) =>
+                    map.set(config.name, {
+                        fieldExtId: config.fieldExtId,
+                        facet: config.effective.facet === 1,
+                    }),
+                );
+                setProfileFacet(map);
+            })
+            .catch(() => {
+                if (!cancelled) toast.error(t("sn.fields.profile.loadError"));
+            });
+        return () => {
+            cancelled = true;
+        };
+    }, [id, profileId, isDefaultProfile, t]);
+
+    const profileFacetByName = React.useMemo(() => {
+        const map = new Map<string, boolean>();
+        profileFacet.forEach((value, name) => map.set(name, value.facet));
+        return map;
+    }, [profileFacet]);
+
+    const handleProfileFacetToggle = React.useCallback(
+        (field: TurSNSiteField, checked: boolean) => {
+            const fieldExtId = profileFacet.get(field.name)?.fieldExtId;
+            if (!profileId || !fieldExtId) return;
+            // Optimistic; only the facet flag is overridden per profile, the rest inherits global.
+            setProfileFacet((prev) => {
+                const next = new Map(prev);
+                const entry = next.get(field.name);
+                if (entry) next.set(field.name, { ...entry, facet: checked });
+                return next;
+            });
+            setFieldSaving(field.id, true);
+            turSNFieldProfileService
+                .saveOverride(id, profileId, fieldExtId, {
+                    facet: checked ? 1 : 0,
+                    facetName: null,
+                    facetSort: null,
+                    facetType: null,
+                    facetItemType: null,
+                    facetRange: null,
+                    secondaryFacet: null,
+                    showAllFacetItems: null,
+                })
+                .catch(() => {
+                    setProfileFacet((prev) => {
+                        const next = new Map(prev);
+                        const entry = next.get(field.name);
+                        if (entry) next.set(field.name, { ...entry, facet: !checked });
+                        return next;
+                    });
+                    toast.error(t("sn.fields.profile.saveError"));
+                })
+                .finally(() => setFieldSaving(field.id, false));
+        },
+        [id, profileId, profileFacet, setFieldSaving, t],
     );
 
     const handleToggle = React.useCallback(
@@ -493,8 +583,10 @@ export const SNSiteFieldGridList: React.FC<PropsWithChildren<Props>> = ({ status
     );
 
     const columns = React.useMemo(
-        () => buildColumns(statusFieldMap, handleToggle, isSavingField, handleRepair, isRepairingField, t),
-        [statusFieldMap, handleToggle, isSavingField, handleRepair, isRepairingField, t]
+        () => buildColumns(statusFieldMap, handleToggle, isSavingField, handleRepair, isRepairingField, t,
+            isDefaultProfile, profileFacetByName, handleProfileFacetToggle),
+        [statusFieldMap, handleToggle, isSavingField, handleRepair, isRepairingField, t,
+            isDefaultProfile, profileFacetByName, handleProfileFacetToggle]
     );
 
     const table = useReactTable({

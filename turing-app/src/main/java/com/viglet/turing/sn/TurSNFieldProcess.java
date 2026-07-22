@@ -10,12 +10,16 @@ import java.util.Optional;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Component;
 
+import com.viglet.turing.persistence.model.profile.TurProfile;
+import com.viglet.turing.persistence.model.profile.TurProfileFacetOrdering;
 import com.viglet.turing.persistence.model.sn.TurSNSite;
-import com.viglet.turing.persistence.model.sn.field.TurSNSiteFacetProfile;
 import com.viglet.turing.persistence.model.sn.field.TurSNSiteFieldExt;
+import com.viglet.turing.api.sn.bean.TurSNSiteFieldProfileConfigDto.FacetConfig;
+import com.viglet.turing.persistence.repository.profile.TurProfileFacetOrderingRepository;
+import com.viglet.turing.persistence.repository.profile.TurProfileRepository;
 import com.viglet.turing.persistence.repository.sn.TurSNSiteRepository;
-import com.viglet.turing.persistence.repository.sn.field.TurSNSiteFacetProfileRepository;
 import com.viglet.turing.persistence.repository.sn.field.TurSNSiteFieldExtRepository;
+import com.viglet.turing.profile.TurProfileFieldConfigService;
 import com.viglet.turing.sn.facet.TurSNFacetDefinition;
 import com.viglet.turing.sn.facet.TurSNFacetDefinitionFactory;
 
@@ -28,26 +32,50 @@ public class TurSNFieldProcess {
         private final TurSNSiteRepository turSNSiteRepository;
         private final TurSNSiteFieldExtRepository turSNSiteFieldExtRepository;
         private final TurSNFacetDefinitionFactory turSNFacetDefinitionFactory;
-        private final TurSNSiteFacetProfileRepository turSNSiteFacetProfileRepository;
+        private final TurProfileRepository turProfileRepository;
+        private final TurProfileFacetOrderingRepository turProfileFacetOrderingRepository;
+        private final TurProfileFieldConfigService turProfileFieldConfigService;
 
         public TurSNFieldProcess(TurSNSiteRepository turSNSiteRepository,
                         TurSNSiteFieldExtRepository turSNSiteFieldExtRepository,
                         TurSNFacetDefinitionFactory turSNFacetDefinitionFactory,
-                        TurSNSiteFacetProfileRepository turSNSiteFacetProfileRepository) {
+                        TurProfileRepository turProfileRepository,
+                        TurProfileFacetOrderingRepository turProfileFacetOrderingRepository,
+                        TurProfileFieldConfigService turProfileFieldConfigService) {
                 this.turSNSiteRepository = turSNSiteRepository;
                 this.turSNSiteFieldExtRepository = turSNSiteFieldExtRepository;
                 this.turSNFacetDefinitionFactory = turSNFacetDefinitionFactory;
-                this.turSNSiteFacetProfileRepository = turSNSiteFacetProfileRepository;
+                this.turProfileRepository = turProfileRepository;
+                this.turProfileFacetOrderingRepository = turProfileFacetOrderingRepository;
+                this.turProfileFieldConfigService = turProfileFieldConfigService;
         }
 
         @NotNull
         public Optional<List<TurSNFacetDefinition>> getTurSNSiteFacetOrdering(String snSiteId) {
+                return getTurSNSiteFacetOrdering(snSiteId, (TurProfile) null);
+        }
+
+        /**
+         * Facet definitions of a site for a given profile (spec 003): the per-profile field-facet
+         * config is overlaid before the definitions are built, so a facet turned off for the profile
+         * (in "Campos") disappears from "Facetas" for that profile — and one turned on appears —
+         * keeping "Campos" and "Facetas" interlinked. A {@code null}/default profile uses the global
+         * config (unchanged behaviour).
+         *
+         * @since 2026.2.7
+         */
+        @NotNull
+        public Optional<List<TurSNFacetDefinition>> getTurSNSiteFacetOrdering(String snSiteId,
+                        TurProfile profile) {
                 return turSNSiteRepository.findById(snSiteId)
                                 .map(turSNSite -> {
                                         List<TurSNSiteFieldExt> enabledFields = turSNSiteFieldExtRepository
                                                         .findByTurSNSiteAndEnabled(turSNSite, 1);
 
-                                        return turSNFacetDefinitionFactory.fromFields(enabledFields, null).stream()
+                                        return turSNFacetDefinitionFactory
+                                                        .fromFields(applyProfileFacetOverlay(enabledFields, profile),
+                                                                        null)
+                                                        .stream()
                                                         .sorted(Comparator.comparing(TurSNFacetDefinition::getPosition)
                                                                         .thenComparing(TurSNFacetDefinition::getLabel,
                                                                                         Comparator.nullsLast(
@@ -56,18 +84,56 @@ public class TurSNFieldProcess {
                                 });
         }
 
+        /**
+         * Overlays a profile's effective facet config onto copies of the fields (never mutating the
+         * originals). No-op for a {@code null}/default profile (its config mirrors the global).
+         */
+        private List<TurSNSiteFieldExt> applyProfileFacetOverlay(List<TurSNSiteFieldExt> fields,
+                        TurProfile profile) {
+                if (profile == null || profile.isDefaultProfile() || turProfileFieldConfigService == null) {
+                        return fields;
+                }
+                Map<String, FacetConfig> effective = turProfileFieldConfigService
+                                .resolveEffective(profile, fields);
+                return fields.stream()
+                                .map(field -> overlayFacetConfig(field, effective.get(field.getId())))
+                                .toList();
+        }
+
+        private static TurSNSiteFieldExt overlayFacetConfig(TurSNSiteFieldExt field,
+                        FacetConfig config) {
+                if (config == null) {
+                        return field;
+                }
+                return field.toBuilder()
+                                .facet(config.facet() != null ? config.facet() : field.getFacet())
+                                .facetName(config.facetName())
+                                .facetSort(config.facetSort() != null ? config.facetSort()
+                                                : field.getFacetSort())
+                                .facetType(config.facetType() != null ? config.facetType()
+                                                : field.getFacetType())
+                                .facetItemType(config.facetItemType() != null ? config.facetItemType()
+                                                : field.getFacetItemType())
+                                .facetRange(config.facetRange() != null ? config.facetRange()
+                                                : field.getFacetRange())
+                                .secondaryFacet(config.secondaryFacet())
+                                .showAllFacetItems(config.showAllFacetItems())
+                                .build();
+        }
+
         @NotNull
         public Optional<List<TurSNSiteFieldExt>> getTurSNSiteFieldOrdering(String snSiteId) {
                 return getTurSNSiteFieldOrdering(snSiteId, null);
         }
 
         /**
-         * Facet ordering resolved by a facet profile (by name or id). When the
-         * profile is absent/blank or not found, the site's default profile is used;
-         * if there is no profile at all, the legacy {@code facetPosition} is applied.
+         * Facet ordering resolved by a global profile (by name or id) and the
+         * searched site. When the profile is absent/blank/not found, or has no
+         * configuration for the site, the default profile's configuration for the
+         * site is used; if there is none, the legacy {@code facetPosition} applies.
          *
          * @param snSiteId     the SN site id
-         * @param facetProfile the requested profile name or id (may be {@code null})
+         * @param facetProfile the requested (global) profile name or id (may be {@code null})
          * @since 2026.2.7
          */
         @NotNull
@@ -101,26 +167,28 @@ public class TurSNFieldProcess {
         }
 
         private Map<String, Integer> resolveProfilePositions(TurSNSite site, String facetProfile) {
-                Optional<TurSNSiteFacetProfile> profile = Optional.empty();
+                Optional<TurProfile> profile = Optional.empty();
                 if (facetProfile != null && !facetProfile.isBlank()) {
                         String key = facetProfile.trim();
-                        profile = turSNSiteFacetProfileRepository.findByTurSNSiteAndNameIgnoreCase(site, key);
+                        profile = turProfileRepository.findByNameIgnoreCase(key);
                         if (profile.isEmpty()) {
-                                profile = turSNSiteFacetProfileRepository.findById(key)
-                                                .filter(candidate -> candidate.getTurSNSite() != null
-                                                                && candidate.getTurSNSite().getId()
-                                                                                .equals(site.getId()));
+                                profile = turProfileRepository.findById(key);
                         }
                 }
-                if (profile.isEmpty()) {
-                        profile = turSNSiteFacetProfileRepository.findByTurSNSiteAndDefaultProfileTrue(site);
+                // The requested profile's ordering for this site, else the default profile's.
+                Optional<TurProfileFacetOrdering> ordering = profile.flatMap(
+                                p -> turProfileFacetOrderingRepository.findByTurProfileAndTurSNSiteWithItems(p, site));
+                if (ordering.isEmpty()) {
+                        ordering = turProfileRepository.findByDefaultProfileTrue().flatMap(
+                                        def -> turProfileFacetOrderingRepository
+                                                        .findByTurProfileAndTurSNSiteWithItems(def, site));
                 }
-                return profile.map(TurSNFieldProcess::positionsByFacetId).orElseGet(Collections::emptyMap);
+                return ordering.map(TurSNFieldProcess::positionsByFacetId).orElseGet(Collections::emptyMap);
         }
 
-        private static Map<String, Integer> positionsByFacetId(TurSNSiteFacetProfile profile) {
+        private static Map<String, Integer> positionsByFacetId(TurProfileFacetOrdering ordering) {
                 Map<String, Integer> positions = new HashMap<>();
-                profile.getItems().forEach(item -> {
+                ordering.getItems().forEach(item -> {
                         String facetId = item.getTurSNSiteFieldExt() != null
                                         ? item.getTurSNSiteFieldExt().getId()
                                         : item.getTurSNSiteCustomFacet() != null

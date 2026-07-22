@@ -1,0 +1,27 @@
+{
+  "profile": {
+    "title": "Perfis",
+    "description": "Perfis genéricos e reutilizáveis. Selecione e configure-os em cada recurso (ex.: ordenação de facetas).",
+    "default": "Padrão",
+    "new": "Novo perfil",
+    "edit": "Editar",
+    "rename": "Renomear",
+    "delete": "Excluir",
+    "setDefault": "Definir como padrão",
+    "createTitle": "Novo perfil",
+    "editTitle": "Editar perfil",
+    "namePlaceholder": "Nome do perfil",
+    "descriptionPlaceholder": "Descrição (opcional)",
+    "save": "Salvar",
+    "cancel": "Cancelar",
+    "created": "Perfil \"{{name}}\" criado",
+    "updated": "Perfil atualizado",
+    "removed": "Perfil excluído",
+    "defaultSet": "Perfil padrão atualizado",
+    "confirmDelete": "Excluir o perfil \"{{name}}\"?",
+    "cannotRenameDefault": "O perfil padrão não pode ser renomeado (a descrição pode).",
+    "loadError": "Erro ao carregar perfis",
+    "saveError": "Não foi possível salvar o perfil",
+    "deleteError": "Não foi possível excluir o perfil"
+  }
+}

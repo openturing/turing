@@ -12,5 +12,7 @@ public enum TurSNSiteSearchRuleActionTypeEnum {
     REMOVE_FACETS,
     SET_ROWS,
     ADD_FILTER_QUERY,
-    SET_BOOST_QUERY
+    SET_BOOST_QUERY,
+    /** Sets the facet profile (by name) applied to the result — see {@code TurProfile}. */
+    SET_PROFILE
 }

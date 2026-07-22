@@ -48,17 +48,17 @@ export function SearchHeader({
 }: Readonly<SearchHeaderProps>) {
   const { t } = useTranslation();
 
-  // Facet ordering profile (preview control): committed to the `facetProfile` search
+  // Facet ordering profile (preview control): committed to the `profile` search
   // param on Enter/blur. Empty value clears it, so the backend uses the default profile.
-  const [profileInput, setProfileInput] = useState(store.params.facetProfile ?? "");
+  const [profileInput, setProfileInput] = useState(store.params.profile ?? "");
   useEffect(() => {
-    setProfileInput(store.params.facetProfile ?? "");
-  }, [store.params.facetProfile]);
+    setProfileInput(store.params.profile ?? "");
+  }, [store.params.profile]);
 
   const commitProfile = () => {
     const value = profileInput.trim();
-    if (value === (store.params.facetProfile ?? "")) return;
-    store.updateParams({ facetProfile: value || undefined });
+    if (value === (store.params.profile ?? "")) return;
+    store.updateParams({ profile: value || undefined });
   };
 
   return (
@@ -155,7 +155,7 @@ export function SearchHeader({
           )}
 
           {/* Facet Profile (preview control) */}
-          <div className="relative items-center shrink-0 hidden md:flex" title={t("search.facetProfileHint")}>
+          <div className="relative items-center shrink-0 hidden md:flex" title={t("search.profileHint")}>
             <IconFilter className="absolute left-2.5 size-3.5 text-muted-foreground pointer-events-none" />
             <input
               value={profileInput}
@@ -168,9 +168,9 @@ export function SearchHeader({
               }}
               onBlur={commitProfile}
               type="text"
-              aria-label={t("search.facetProfile")}
+              aria-label={t("search.profile")}
               className="h-9 w-40 pl-8 pr-3 rounded-lg border border-border bg-muted/50 text-sm placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500/50 transition-all"
-              placeholder={t("search.facetProfilePlaceholder")}
+              placeholder={t("search.profilePlaceholder")}
               autoComplete="off"
             />
           </div>

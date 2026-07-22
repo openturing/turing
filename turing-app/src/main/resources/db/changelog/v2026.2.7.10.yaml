@@ -1,0 +1,77 @@
+databaseChangeLog:
+  # Per-profile field facet config (spec 002, "Campos"). One row per (profile x field);
+  # every override column is nullable (null = inherit the field's global value).
+
+  - changeSet:
+      id: v2026.2.7.10-create-tur-profile-field-config-table
+      author: arthur-nascimento
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - tableExists:
+                tableName: tur_profile_field_config
+      changes:
+        - createTable:
+            tableName: tur_profile_field_config
+            columns:
+              - column:
+                  name: id
+                  type: VARCHAR(255)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: profile_id
+                  type: VARCHAR(255)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: field_ext_id
+                  type: VARCHAR(255)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: facet
+                  type: INT
+              - column:
+                  name: facet_name
+                  type: VARCHAR(50)
+              - column:
+                  name: facet_sort
+                  type: VARCHAR(50)
+              - column:
+                  name: facet_type
+                  type: VARCHAR(50)
+              - column:
+                  name: facet_item_type
+                  type: VARCHAR(50)
+              - column:
+                  name: facet_range
+                  type: VARCHAR(50)
+              - column:
+                  name: secondary_facet
+                  type: boolean
+              - column:
+                  name: show_all_facet_items
+                  type: boolean
+        - addPrimaryKey:
+            tableName: tur_profile_field_config
+            columnNames: id
+            constraintName: pk_tur_profile_field_config
+        - addForeignKeyConstraint:
+            baseTableName: tur_profile_field_config
+            baseColumnNames: profile_id
+            referencedTableName: tur_profile
+            referencedColumnNames: id
+            constraintName: fk_tur_profile_field_config_profile
+            onDelete: CASCADE
+        - addForeignKeyConstraint:
+            baseTableName: tur_profile_field_config
+            baseColumnNames: field_ext_id
+            referencedTableName: sn_site_field_ext
+            referencedColumnNames: id
+            constraintName: fk_tur_profile_field_config_field_ext
+            onDelete: CASCADE
+        - addUniqueConstraint:
+            tableName: tur_profile_field_config
+            columnNames: profile_id, field_ext_id
+            constraintName: uq_tur_profile_field_config_profile_field
