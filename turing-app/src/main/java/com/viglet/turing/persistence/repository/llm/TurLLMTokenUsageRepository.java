@@ -183,4 +183,28 @@ public interface TurLLMTokenUsageRepository extends JpaRepository<TurLLMTokenUsa
             WHERE u.keyId = :keyId AND u.createdAt >= :start
             """)
     double sumCostByKeySince(@Param("keyId") String keyId, @Param("start") LocalDateTime start);
+
+    /**
+     * T786 / §LIII.3 — per-(agent, model) usage roll-up for the right-sizing
+     * advisor: the observed spend + input/output token totals + request count each
+     * agent ran on each model in the window, so the advisor can derive average
+     * prompt sizes and compare the current model's rate against cheaper catalog
+     * alternatives. Columns: agentId, vendorId, modelName, SUM(costUsd),
+     * SUM(inputTokens), SUM(outputTokens), COUNT.
+     */
+    @Query("""
+            SELECT u.agentId AS agentId,
+                   u.vendorId AS vendorId,
+                   u.modelName AS modelName,
+                   SUM(u.costUsd) AS costUsd,
+                   SUM(u.inputTokens) AS inputTokens,
+                   SUM(u.outputTokens) AS outputTokens,
+                   COUNT(u) AS requestCount
+            FROM TurLLMTokenUsage u
+            WHERE u.createdAt >= :start AND u.createdAt < :end AND u.agentId IS NOT NULL
+            GROUP BY u.agentId, u.vendorId, u.modelName
+            ORDER BY costUsd DESC
+            """)
+    List<Object[]> findUsageByAgentAndModel(@Param("start") LocalDateTime start,
+            @Param("end") LocalDateTime end);
 }

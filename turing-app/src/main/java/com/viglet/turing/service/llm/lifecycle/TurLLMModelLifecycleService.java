@@ -127,7 +127,7 @@ public class TurLLMModelLifecycleService {
     }
 
     /** True when the catalog marks the model deprecated or DEPRECATED/RETIRED. */
-    static boolean isEndOfLife(TurLlmModelMetadata meta) {
+    public static boolean isEndOfLife(TurLlmModelMetadata meta) {
         if (meta == null) {
             return false;
         }
