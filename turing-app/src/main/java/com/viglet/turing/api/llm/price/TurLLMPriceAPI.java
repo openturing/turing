@@ -20,6 +20,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.viglet.turing.genai.provider.llm.TurCatalogPlans;
 import com.viglet.turing.genai.provider.llm.TurLlmModelCatalog;
 import com.viglet.turing.persistence.model.llm.TurLLMPrice;
 import com.viglet.turing.service.llm.price.TurLLMPriceService;
@@ -63,6 +64,16 @@ public class TurLLMPriceAPI {
     @GetMapping("/provider-links")
     public Map<String, String> providerLinks() {
         return modelCatalog.providerPricingUrls();
+    }
+
+    /**
+     * T789 — indicative consumer subscription plans per vendor (Claude Pro,
+     * ChatGPT Plus…) from the public catalog's {@code plans()} registry, for the
+     * admin-help pricing reference. Reference only — always verify at the vendor.
+     */
+    @GetMapping("/consumer-plans")
+    public Map<String, List<TurCatalogPlans.TurCatalogPlan>> consumerPlans() {
+        return modelCatalog.consumerPlans().byVendor();
     }
 
     @PostMapping

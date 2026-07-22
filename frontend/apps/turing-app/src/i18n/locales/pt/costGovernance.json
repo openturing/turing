@@ -69,6 +69,11 @@
       "unpricedDescription": "Estes modelos foram cobrados como $0 porque nenhuma linha de preço corresponde a eles. Adicione um preço (ou deixe o catálogo preencher) para que o custo seja contabilizado.",
       "indicativeUsedTitle": "Modelos usados com preços indicativos do catálogo",
       "indicativeUsedDescription": "Estes modelos cobrados usam preços de tabela publicados do catálogo, não taxas verificadas. Confirme no fornecedor se os valores de custo precisam ser exatos."
+    },
+    "consumerPlans": {
+      "title": "Referência de planos ao consumidor",
+      "description": "Planos de assinatura ao consumidor indicativos (Claude Pro, ChatGPT Plus…) do catálogo público de modelos. Apenas referência — preços de tabela dos EUA, podem estar desatualizados; sempre verifique no fornecedor.",
+      "free": "Gratuito"
     }
   }
 }

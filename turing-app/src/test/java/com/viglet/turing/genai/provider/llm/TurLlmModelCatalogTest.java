@@ -264,6 +264,38 @@ class TurLlmModelCatalogTest {
     }
 
     @Test
+    void refreshParsesConsumerPlans() {
+        // T789: the plans() registry (plans.json) is parsed per-vendor.
+        String plansJson = """
+                {
+                  "version": 1,
+                  "plans": {
+                    "anthropic": [
+                      { "id": "claude-pro", "name": "Claude Pro", "product": "Claude", "tier": "pro",
+                        "priceMonthlyUSD": 20, "annualMonthlyUSD": 17, "currency": "USD",
+                        "url": "https://claude.com/pricing", "indicative": true }
+                    ]
+                  }
+                }
+                """;
+        catalog.refreshConsumerPlans(clientServing(plansJson));
+        assertThat(catalog.consumerPlans().byVendor()).containsKey("anthropic");
+        assertThat(catalog.consumerPlans().byVendor().get("anthropic")).singleElement().satisfies(p -> {
+            assertThat(p.id()).isEqualTo("claude-pro");
+            assertThat(p.priceMonthlyUsd()).isEqualTo(20.0);
+            assertThat(p.annualMonthlyUsd()).isEqualTo(17.0);
+            assertThat(p.url()).isEqualTo("https://claude.com/pricing");
+        });
+    }
+
+    @Test
+    void consumerPlansToleratesGarbageShapes() {
+        assertThat(catalog.toConsumerPlans(null)).isSameAs(com.viglet.turing.genai.provider.llm.TurCatalogPlans.EMPTY);
+        assertThat(catalog.toConsumerPlans(java.util.Map.of("plans", "not-a-map")))
+                .isSameAs(com.viglet.turing.genai.provider.llm.TurCatalogPlans.EMPTY);
+    }
+
+    @Test
     void remoteRefreshDisabledIsNoOp() {
         // In a plain unit (no Spring) remoteEnabled defaults to false → no network,
         // the served map stays empty, and the call does not throw.

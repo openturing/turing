@@ -3,6 +3,7 @@ import type {
   TurAgentBudgetStatus,
   TurCostReport,
   TurDailyCostPoint,
+  TurLLMConsumerPlan,
   TurLLMPrice,
 } from "@/models/cost-governance/cost-governance.model";
 
@@ -53,6 +54,15 @@ export class TurCostGovernanceService {
    */
   async getProviderLinks(): Promise<Record<string, string>> {
     const response = await axios.get<Record<string, string>>("/v2/llm/price/provider-links");
+    return response.data ?? {};
+  }
+
+  /**
+   * T789 — indicative consumer subscription plans per vendor from the public
+   * catalog's plans reference (admin help). Reference only — verify at vendor.
+   */
+  async getConsumerPlans(): Promise<Record<string, TurLLMConsumerPlan[]>> {
+    const response = await axios.get<Record<string, TurLLMConsumerPlan[]>>("/v2/llm/price/consumer-plans");
     return response.data ?? {};
   }
 }

@@ -19,6 +19,7 @@ import {
 import type {
     TurCostReport,
     TurDailyCostPoint,
+    TurLLMConsumerPlan,
     TurLLMPrice,
 } from "@/models/cost-governance/cost-governance.model";
 import { TurCostGovernanceService } from "@/services/cost-governance/cost-governance.service";
@@ -354,6 +355,7 @@ export default function CostGovernancePage() {
     const [points, setPoints] = useState<TurDailyCostPoint[]>([]);
     const [prices, setPrices] = useState<TurLLMPrice[]>([]);
     const [providerLinks, setProviderLinks] = useState<Record<string, string>>({});
+    const [consumerPlans, setConsumerPlans] = useState<Record<string, TurLLMConsumerPlan[]>>({});
     const [loading, setLoading] = useState(true);
 
     const load = useCallback((f: string, t: string) => {
@@ -381,6 +383,7 @@ export default function CostGovernancePage() {
     useEffect(() => {
         loadPrices();
         service.getProviderLinks().then(setProviderLinks).catch(() => setProviderLinks({}));
+        service.getConsumerPlans().then(setConsumerPlans).catch(() => setConsumerPlans({}));
     }, [loadPrices]);
 
     const avgPerRequest = useMemo(() => {
@@ -550,7 +553,48 @@ export default function CostGovernancePage() {
                         onChanged={() => { loadPrices(); load(from, to); }} />
                 </CardContent>
             </Card>
+
+            {/* T789 — consumer subscription plan reference (admin help) */}
+            <ConsumerPlansCard plans={consumerPlans} />
         </div>
+    );
+}
+
+/** T789 — indicative consumer-plan reference grouped by vendor (reference only). */
+function ConsumerPlansCard({ plans }: Readonly<{ plans: Record<string, TurLLMConsumerPlan[]> }>) {
+    const { t } = useTranslation();
+    const vendors = Object.keys(plans).filter((v) => (plans[v]?.length ?? 0) > 0).sort((a, b) => a.localeCompare(b));
+    if (vendors.length === 0) return null;
+    return (
+        <Card>
+            <CardHeader>
+                <CardTitle>{t("costGovernance.consumerPlans.title")}</CardTitle>
+                <CardDescription>{t("costGovernance.consumerPlans.description")}</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+                {vendors.map((vendor) => (
+                    <div key={vendor}>
+                        <p className="mb-1.5 text-sm font-medium capitalize">{vendor}</p>
+                        <div className="flex flex-wrap gap-2">
+                            {plans[vendor].map((plan) => (
+                                <a key={plan.id} href={plan.url ?? undefined} target="_blank" rel="noreferrer"
+                                    className="group flex items-center gap-2 rounded-lg border border-border/60 bg-card/40 px-3 py-1.5 text-sm hover:border-border">
+                                    <span className="font-medium">{plan.name ?? plan.id}</span>
+                                    {plan.priceMonthlyUsd != null && (
+                                        <span className="text-muted-foreground">
+                                            {plan.priceMonthlyUsd === 0
+                                                ? t("costGovernance.consumerPlans.free")
+                                                : `$${plan.priceMonthlyUsd}/mo`}
+                                        </span>
+                                    )}
+                                    {plan.url && <IconExternalLink className="size-3.5 text-muted-foreground" />}
+                                </a>
+                            ))}
+                        </div>
+                    </div>
+                ))}
+            </CardContent>
+        </Card>
     );
 }
 

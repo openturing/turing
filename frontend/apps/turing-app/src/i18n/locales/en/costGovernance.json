@@ -69,6 +69,11 @@
       "unpricedDescription": "These models were billed at $0 because no price row matches them. Add a price (or let the catalog seed one) so their cost is tracked.",
       "indicativeUsedTitle": "Used models on indicative catalog prices",
       "indicativeUsedDescription": "These billed models use published list prices from the catalog, not verified rates. Confirm them at the vendor if the cost figures must be exact."
+    },
+    "consumerPlans": {
+      "title": "Consumer plan reference",
+      "description": "Indicative consumer subscription plans (Claude Pro, ChatGPT Plus…) from the public model catalog. Reference only — US list prices, may be stale; always verify at the vendor.",
+      "free": "Free"
     }
   }
 }

@@ -70,6 +70,13 @@ public class TurLlmModelCatalog {
      */
     private volatile TurCatalogChanges catalogChanges = TurCatalogChanges.EMPTY;
 
+    /**
+     * Last-good parsed consumer-plan reference (T789) from {@code plans.json}.
+     * {@link TurCatalogPlans#EMPTY} until the first successful refresh; a failed
+     * fetch keeps the last-good value.
+     */
+    private volatile TurCatalogPlans consumerPlans = TurCatalogPlans.EMPTY;
+
     /** Lazily built from the configured base URL; overridable for tests. */
     private volatile ModelCatalogClient client;
 
@@ -116,6 +123,70 @@ public class TurLlmModelCatalog {
         }
         refreshProviderLinks(modelCatalogClient);
         refreshCatalogChanges(modelCatalogClient);
+        refreshConsumerPlans(modelCatalogClient);
+    }
+
+    /**
+     * Best-effort refresh of the consumer-plan reference (T789) from the client
+     * {@code plans()} registry ({@code plans.json}). On any failure or an empty
+     * result the last-good value is kept.
+     */
+    void refreshConsumerPlans(ModelCatalogClient modelCatalogClient) {
+        try {
+            TurCatalogPlans parsed = toConsumerPlans(modelCatalogClient.plans());
+            if (!parsed.byVendor().isEmpty()) {
+                this.consumerPlans = parsed;
+            }
+        } catch (Exception e) {
+            log.debug("Consumer-plan reference refresh failed, keeping current: {}", e.getMessage());
+        }
+    }
+
+    /**
+     * Maps the raw {@code plans.json} object (untyped in the 1.0.5 client) to
+     * {@link TurCatalogPlans} ({@code {plans:{vendor:[...]}}}). Tolerant of the
+     * untyped shape: missing/oddly-typed nodes are skipped, never thrown.
+     */
+    @SuppressWarnings("unchecked")
+    TurCatalogPlans toConsumerPlans(Map<String, Object> raw) {
+        if (raw == null || !(raw.get("plans") instanceof Map<?, ?> plansNode)) {
+            return TurCatalogPlans.EMPTY;
+        }
+        Map<String, List<TurCatalogPlans.TurCatalogPlan>> byVendor = new LinkedHashMap<>();
+        for (Map.Entry<?, ?> vendorEntry : plansNode.entrySet()) {
+            if (!(vendorEntry.getKey() instanceof String vendor)
+                    || !(vendorEntry.getValue() instanceof List<?> list)) {
+                continue;
+            }
+            List<TurCatalogPlans.TurCatalogPlan> plans = new ArrayList<>();
+            for (Object item : list) {
+                if (item instanceof Map<?, ?> planMap) {
+                    plans.add(toPlan(vendor, (Map<String, Object>) planMap));
+                }
+            }
+            if (!plans.isEmpty()) {
+                byVendor.put(vendor, List.copyOf(plans));
+            }
+        }
+        return byVendor.isEmpty() ? TurCatalogPlans.EMPTY : new TurCatalogPlans(Map.copyOf(byVendor));
+    }
+
+    private TurCatalogPlans.TurCatalogPlan toPlan(String vendor, Map<String, Object> m) {
+        return new TurCatalogPlans.TurCatalogPlan(
+                vendor,
+                str(m.get("id")),
+                str(m.get("name")),
+                str(m.get("product")),
+                str(m.get("tier")),
+                dbl(m.get("priceMonthlyUSD")),
+                dbl(m.get("annualMonthlyUSD")),
+                str(m.get("currency")),
+                str(m.get("url")),
+                m.get("indicative") instanceof Boolean b ? b : null);
+    }
+
+    private static Double dbl(Object value) {
+        return value instanceof Number n ? n.doubleValue() : null;
     }
 
     /**
@@ -314,5 +385,14 @@ public class TurLlmModelCatalog {
      */
     public TurCatalogChanges catalogChanges() {
         return catalogChanges;
+    }
+
+    /**
+     * The last-good consumer-plan reference (T789) — indicative consumer
+     * subscription plans per vendor. {@link TurCatalogPlans#EMPTY} until the first
+     * successful refresh.
+     */
+    public TurCatalogPlans consumerPlans() {
+        return consumerPlans;
     }
 }

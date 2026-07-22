@@ -75,6 +75,23 @@ export interface TurAgentBudgetStatus {
 /** Provenance of a price row (T777/T778). */
 export type TurLLMPriceSource = "CATALOG" | "MANUAL";
 
+/**
+ * T789 — an indicative consumer subscription plan (Claude Pro, ChatGPT Plus…)
+ * from the public catalog's plans reference. Reference only — verify at vendor.
+ */
+export interface TurLLMConsumerPlan {
+  vendor: string;
+  id: string;
+  name?: string | null;
+  product?: string | null;
+  tier?: string | null;
+  priceMonthlyUsd?: number | null;
+  annualMonthlyUsd?: number | null;
+  currency?: string | null;
+  url?: string | null;
+  indicative?: boolean | null;
+}
+
 /** Row in the admin-editable per-model price table ({@code tur_llm_price}). */
 export interface TurLLMPrice {
   id?: string;
