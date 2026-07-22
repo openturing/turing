@@ -19,6 +19,24 @@ const MIXED: TurLlmModelOption[] = [
   { id: "text-embedding-3-small", label: "text-embedding-3-small", kind: "EMBEDDING" },
 ];
 
+// Catalog-enriched options exercise the T779 metadata line + sort control.
+const ENRICHED: TurLlmModelOption[] = [
+  {
+    id: "expensive", label: "Expensive", kind: "CHAT",
+    metadata: {
+      contextWindow: 128000, pricing: { inputPer1M: 10, outputPer1M: 30 },
+      benchmarks: { intelligenceIndex: 80 }, tier: "Frontier",
+    },
+  },
+  {
+    id: "cheap", label: "Cheap", kind: "CHAT",
+    metadata: {
+      contextWindow: 32000, pricing: { inputPer1M: 0.5, outputPer1M: 1.5 },
+      benchmarks: { intelligenceIndex: 40 }, tier: "Light",
+    },
+  },
+];
+
 function Harness({
   initial = [] as string[],
   initialDefault = "",
@@ -121,5 +139,32 @@ describe("LlmModelMultiSelect", () => {
     // Chat is pre-selected, so only the chat option shows on open.
     expect(screen.getByText("GPT-4o")).toBeInTheDocument();
     expect(screen.queryByText("text-embedding-3-small")).not.toBeInTheDocument();
+  });
+
+  it("shows catalog metadata (T779) on enriched options and hides the sort control without metadata", () => {
+    const { rerender } = render(<Harness options={ENRICHED} />);
+    fireEvent.click(screen.getByLabelText("Add model"));
+    // Compact meta line renders literal chips (context / price).
+    expect(screen.getByText(/128K ctx/)).toBeInTheDocument();
+    expect(screen.getByText(/\$10\/\$30/)).toBeInTheDocument();
+    // Frontier tier badge is present.
+    expect(screen.getByText("Frontier")).toBeInTheDocument();
+    // Sort control appears when options carry metadata.
+    expect(screen.getByRole("combobox")).toBeInTheDocument();
+
+    // A metadata-free list hides the sort control entirely.
+    rerender(<Harness options={OPTIONS} />);
+    expect(screen.queryByRole("combobox")).not.toBeInTheDocument();
+  });
+
+  it("sorts the list by cheapest when the price sort is chosen (T779)", () => {
+    render(<Harness options={ENRICHED} />);
+    fireEvent.click(screen.getByLabelText("Add model"));
+    fireEvent.change(screen.getByRole("combobox"), { target: { value: "price" } });
+    // The two option rows in the dropdown, in DOM order.
+    const labels = screen
+      .getAllByText(/^(Cheap|Expensive)$/)
+      .map((el) => el.textContent);
+    expect(labels[0]).toBe("Cheap");
   });
 });

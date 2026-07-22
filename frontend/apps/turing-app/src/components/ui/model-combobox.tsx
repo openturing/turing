@@ -8,6 +8,13 @@ import type {
 } from "@/models/llm/llm-model-option.model.ts"
 import { ModelKindBadge, resolveModelKind } from "@/components/ui/model-kind-badge"
 import { ModelKindFilter, type ModelKindFilterValue } from "@/components/ui/model-kind-filter"
+import {
+  ModelMetaLine,
+  ModelSortSelect,
+  ModelTierBadge,
+  sortModelOptions,
+  type ModelSortValue,
+} from "@/components/ui/model-meta"
 import { cn } from "@/lib/utils"
 import { IconCheck, IconChevronDown, IconLoader2 } from "@tabler/icons-react"
 import { useMemo, useState } from "react"
@@ -52,6 +59,7 @@ export function ModelCombobox({
   const [open, setOpen] = useState(false)
   const [query, setQuery] = useState("")
   const [kindFilter, setKindFilter] = useState<ModelKindFilterValue>(expectedKind ?? "ALL")
+  const [sort, setSort] = useState<ModelSortValue>("relevance")
 
   // Fall back to "ALL" when the chosen kind isn't present, so the list never empties.
   const effectiveFilter = useMemo<ModelKindFilterValue>(() => {
@@ -61,12 +69,13 @@ export function ModelCombobox({
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase()
-    return options.filter((o) => {
+    const matched = options.filter((o) => {
       if (effectiveFilter !== "ALL" && resolveModelKind(o) !== effectiveFilter) return false
       if (!q) return true
       return o.id.toLowerCase().includes(q) || o.label.toLowerCase().includes(q)
     })
-  }, [options, query, effectiveFilter])
+    return sortModelOptions(matched, sort)
+  }, [options, query, effectiveFilter, sort])
 
   const typed = query.trim()
   const hasExactMatch = options.some((o) => o.id === typed)
@@ -104,6 +113,9 @@ export function ModelCombobox({
               {value ? selectedLabel : placeholder ?? t("forms.llm.modelNamePlaceholder")}
             </span>
             {value && selectedOption && <ModelKindBadge kind={resolveModelKind(selectedOption)} />}
+            {value && selectedOption?.metadata?.tier && (
+              <ModelTierBadge tier={selectedOption.metadata.tier} />
+            )}
           </span>
           <IconChevronDown className="ml-2 size-4 shrink-0 opacity-50" />
         </button>
@@ -127,6 +139,7 @@ export function ModelCombobox({
             }}
           />
           <ModelKindFilter options={options} value={effectiveFilter} onChange={setKindFilter} />
+          <ModelSortSelect options={options} value={sort} onChange={setSort} />
         </div>
 
         <div className="max-h-64 overflow-y-auto p-1">
@@ -161,13 +174,17 @@ export function ModelCombobox({
                 <IconCheck
                   className={cn("size-4 shrink-0", option.id === value ? "opacity-100" : "opacity-0")}
                 />
-                <span className="flex min-w-0 flex-1 flex-col">
+                <span className="flex min-w-0 flex-1 flex-col gap-0.5">
                   <span className="truncate">{option.label}</span>
                   {option.label !== option.id && (
                     <span className="text-muted-foreground truncate text-xs">{option.id}</span>
                   )}
+                  <ModelMetaLine metadata={option.metadata} />
                 </span>
-                <ModelKindBadge kind={resolveModelKind(option)} />
+                <span className="flex shrink-0 flex-col items-end gap-0.5">
+                  <ModelKindBadge kind={resolveModelKind(option)} />
+                  <ModelTierBadge tier={option.metadata?.tier} />
+                </span>
               </button>
             ))}
 

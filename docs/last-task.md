@@ -1,9 +1,17 @@
-# Last task number — `T789` · next block letter — `BF`
+# Last task number — `T795` · next block letter — `BG`
 
 > **Single source of truth for the next free task number.** The next new task is
-> `T790`; after assigning it, bump the number above and the log line below.
+> `T796`; after assigning it, bump the number above and the log line below.
 >
-> **Next block letter — `BF`** (Block **BE** = Catalog-driven model intelligence —
+> **Next block letter — `BG`** (Block **BF** = Vectorless (Structured-Data) RAG —
+> name/surface the already-shipped T392 catalog-copilot retrieval path as an
+> explicit knowledge-base mode (T790), a scheduled JSON-feed pull ingester
+> `TurStructuredFeedIngestService` over the T739 `TurUrlFetcher` → `/api/sn/import`
+> (T791), a `use-turing-copilot` react-sdk hook + widget bound to
+> `/api/sn/{site}/copilot` (T792), a small-dataset stuff-all mode (T793), the
+> model-catalog dogfood KB on `turing-demo.viglet.org` (T794) and vectorless RAG
+> over the Block AZ gateway (💭 T795); §LIV, created 2026-07-22; Block **BE** =
+> Catalog-driven model intelligence —
 > widen the `model-catalog-client` `ModelEntry` past `id/label/kind` at
 > `TurLlmModelCatalog.toCatalogMap` (T776), then auto-seed `TurLLMPrice` from
 > catalog pricing (T777) + price provenance/staleness UI (T778); enriched picker
@@ -99,6 +107,8 @@ number" looked free but wasn't. Grepping three files (`ROADMAP.md`,
 
 ## Log (most recent first)
 
+- **T779 SHIPPED** (Block BE §LIII.2 — enriched model picker: shared components/ui/model-meta.tsx ModelMetaLine (price/context/max-out/II/TTFT/cutoff + vision/tools/reasoning chips, title tooltips) + ModelTierBadge (Frontier/High/Mid/Light) on every model-combobox + llm-model-multi-select row/trigger/selected-row; ModelSortSelect sort relevance/price/context/intelligence via sortModelOptions (missing-metric last, stable); catalog-metadata-only so live-vendor rows show nothing + sort hidden when no metadata; i18n en/pt; picker test +2, 10 green; tsc clean) — 2026-07-22.
+- **T790-T795 CREATED** (📋/💭, Block BF §LIV — Vectorless (Structured-Data) RAG: name/surface the already-shipped T392 `TurCatalogCopilotService` vectorless-cited retrieval path (NL→filter over declared `TurSNSiteFieldExt` schema → DSL search, no embeddings → cited `[n]`) as an explicit KB mode + readiness path + docs (T790); scheduled JSON-feed pull ingester `TurStructuredFeedIngestService` via T739 `TurUrlFetcher` → `/api/sn/import` declaring the field schema from the model-catalog `query-manifest.json` (T791); `use-turing-copilot` react-sdk hook + embeddable widget bound to `/api/sn/{site}/copilot` rendering `TurCatalogCitation[]` (T792); small-dataset stuff-all mode over a context bundle (T793); dogfood the public model-catalog as the first vectorless KB on turing-demo.viglet.org (T794); vectorless RAG over the Block AZ OpenAI-compatible gateway `turing-copilot:<site>` (💭 T795); the two real gaps are the pull ingester + the copilot widget/hook, everything else exists) — 2026-07-22.
 - **T778 SHIPPED** (Block BE §LIII.1 — cost-governance price table gains Source (Catalog/Manual+Indicative) + Verified (lastVerified + Stale>180d) columns, per-row verify-at-vendor link via new GET /api/v2/llm/price/provider-links backed by TurLlmModelCatalog.providerPricingUrls() reading providers.json catalogVendor->apiPricingUrl; used-but-unpriced + indicative-used warning callouts; TurLLMPrice frontend model + getProviderLinks + i18n en/pt; editing CATALOG row via API flips to MANUAL; picker price surfacing deferred to T779; TurLlmModelCatalogTest +2) — 2026-07-22.
 - **T777 SHIPPED** (Block BE §LIII.1 — scheduled TurLLMPriceCatalogReconciler auto-seeds/refreshes tur_llm_price from catalog indicative pricing; new TurLLMPriceSource CATALOG|MANUAL + indicative/price_provenance/last_verified columns (Liquibase v2026.3.1.113, default MANUAL preserves existing rows); reconcileCatalogPrices never overwrites MANUAL, operator saves stamped MANUAL; closes $0-unpriced-model gap; allModels() accessor; price-sync config in application.yaml; TurLLMPriceServiceTest +5, new reconciler test x4) — 2026-07-22.
 - **T776 SHIPPED** (Block BE §LIII.1 — TurLlmModelMetadata carrier preserves the full model-catalog-client ModelEntry (pricing/limits/capabilities/modalities/benchmarks/performance/cutoff/status) + Classifier tier/tags through toCatalogMap as an optional 4th component of TurLlmModelOption; nullable everywhere, live-vendor listings carry null; frontend model.ts mirrored; catalog kind trusted directly; TurLlmModelCatalogTest +3) — 2026-07-22.

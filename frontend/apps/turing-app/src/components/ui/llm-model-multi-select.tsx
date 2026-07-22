@@ -3,11 +3,19 @@ import { Input } from "@/components/ui/input"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import type {
   TurLlmModelKind,
+  TurLlmModelMetadata,
   TurLlmModelOption,
   TurLlmModelSource,
 } from "@/models/llm/llm-model-option.model.ts"
 import { ModelKindBadge, resolveModelKind } from "@/components/ui/model-kind-badge"
 import { ModelKindFilter, type ModelKindFilterValue } from "@/components/ui/model-kind-filter"
+import {
+  ModelMetaLine,
+  ModelSortSelect,
+  ModelTierBadge,
+  sortModelOptions,
+  type ModelSortValue,
+} from "@/components/ui/model-meta"
 import { cn } from "@/lib/utils"
 import {
   IconCheck,
@@ -67,6 +75,7 @@ export function LlmModelMultiSelect({
   const [open, setOpen] = useState(false)
   const [query, setQuery] = useState("")
   const [kindFilter, setKindFilter] = useState<ModelKindFilterValue>(expectedKind ?? "ALL")
+  const [sort, setSort] = useState<ModelSortValue>("relevance")
 
   const labelFor = (modelId: string) =>
     options.find((o) => o.id === modelId)?.label ?? modelId
@@ -75,6 +84,9 @@ export function LlmModelMultiSelect({
     const opt = options.find((o) => o.id === modelId)
     return opt ? resolveModelKind(opt) : "UNKNOWN"
   }
+
+  const metaFor = (modelId: string): TurLlmModelMetadata | null =>
+    options.find((o) => o.id === modelId)?.metadata ?? null
 
   // If the chosen kind isn't present in the current options, fall back to "ALL"
   // so the list is never silently empty (e.g. an all-chat vendor on a chat surface).
@@ -85,12 +97,13 @@ export function LlmModelMultiSelect({
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase()
-    return options.filter((o) => {
+    const matched = options.filter((o) => {
       if (effectiveFilter !== "ALL" && resolveModelKind(o) !== effectiveFilter) return false
       if (!q) return true
       return o.id.toLowerCase().includes(q) || o.label.toLowerCase().includes(q)
     })
-  }, [options, query, effectiveFilter])
+    return sortModelOptions(matched, sort)
+  }, [options, query, effectiveFilter, sort])
 
   const typed = query.trim()
   const hasExactMatch = options.some((o) => o.id === typed) || selected.includes(typed)
@@ -174,6 +187,7 @@ export function LlmModelMultiSelect({
               value={effectiveFilter}
               onChange={setKindFilter}
             />
+            <ModelSortSelect options={options} value={sort} onChange={setSort} />
           </div>
 
           <div className="max-h-64 overflow-y-auto p-1">
@@ -210,13 +224,17 @@ export function LlmModelMultiSelect({
                     <IconCheck
                       className={cn("size-4 shrink-0", isSel ? "opacity-100 text-primary" : "opacity-0")}
                     />
-                    <span className="flex min-w-0 flex-1 flex-col">
+                    <span className="flex min-w-0 flex-1 flex-col gap-0.5">
                       <span className="truncate">{option.label}</span>
                       {option.label !== option.id && (
                         <span className="text-muted-foreground truncate text-xs">{option.id}</span>
                       )}
+                      <ModelMetaLine metadata={option.metadata} />
                     </span>
-                    <ModelKindBadge kind={resolveModelKind(option)} />
+                    <span className="flex shrink-0 flex-col items-end gap-0.5">
+                      <ModelKindBadge kind={resolveModelKind(option)} />
+                      <ModelTierBadge tier={option.metadata?.tier} />
+                    </span>
                   </button>
                 )
               })}
@@ -276,13 +294,15 @@ export function LlmModelMultiSelect({
                   {isDefault ? <IconStarFilled className="size-4" /> : <IconStar className="size-4" />}
                 </button>
 
-                <span className="flex min-w-0 flex-1 flex-col">
+                <span className="flex min-w-0 flex-1 flex-col gap-0.5">
                   <span className="truncate text-sm font-medium">{label}</span>
                   {label !== modelId && (
                     <span className="text-muted-foreground truncate text-xs">{modelId}</span>
                   )}
+                  <ModelMetaLine metadata={metaFor(modelId)} />
                 </span>
 
+                <ModelTierBadge tier={metaFor(modelId)?.tier} />
                 <ModelKindBadge kind={kindFor(modelId)} />
 
                 {isDefault && (
