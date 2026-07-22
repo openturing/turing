@@ -66,6 +66,8 @@ export interface TurAIAgent {
   ragEnabled: boolean;
   /** Opt-in: augments the system prompt with the ```html / ```d2 live-preview rendering guidance so the agent can emit interactive blocks (games, demos, Chart.js, diagrams). Default false. */
   richContentEnabled?: boolean;
+  /** T787 — inject the model's knowledge cutoff into the system prompt. */
+  discloseKnowledgeCutoff?: boolean;
   /** T187: opt-in "Live answers" hybrid mode. On a native OpenAI/Anthropic turn the agent fuses the indexed knowledge base + web_search + web_fetch + code_execution into ONE cited answer (injects [KB-n] grounding + a fusion-guidance prompt; the web/code tools come from the agent's selected native capabilities). Default false. */
   liveAnswersEnabled?: boolean;
   /** T189: opt-in real-time multilingual call-center augmentation. Enables `POST /call-center/assist`, which translates a transcribed customer utterance into the operator's language, answers it with citations from the index, and translates the answer back. Default false (endpoint returns 403). */

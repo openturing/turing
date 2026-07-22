@@ -1,0 +1,30 @@
+databaseChangeLog:
+  # T787 / §LIII.4 (Block BE) — per-agent knowledge-cutoff disclosure toggle.
+  #
+  # When on, the system prompt discloses the configured model's catalog
+  # knowledgeCutoff so answers self-disclose staleness. Default false → existing
+  # agents behave unchanged. Portable lowercase boolean; idempotent via
+  # columnExists + onFail:MARK_RAN so a reused local H2 file never fails.
+
+  - changeSet:
+      id: v2026.3.1.114-add-ai_agent-disclose_knowledge_cutoff
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - tableExists:
+            tableName: ai_agent
+        - not:
+            - columnExists:
+                tableName: ai_agent
+                columnName: disclose_knowledge_cutoff
+      changes:
+        - addColumn:
+            tableName: ai_agent
+            columns:
+              - column:
+                  name: disclose_knowledge_cutoff
+                  type: boolean
+                  defaultValueBoolean: false
+                  constraints:
+                    nullable: false
+                  remarks: "T787/§LIII.4 opt-in: inject the model's knowledge cutoff into the system prompt."

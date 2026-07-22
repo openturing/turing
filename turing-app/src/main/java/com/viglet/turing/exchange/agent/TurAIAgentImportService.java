@@ -414,6 +414,7 @@ public class TurAIAgentImportService {
         // boolean: a pre-T632 export that omits it deserializes to false, which
         // matches the entity default, so old bundles are unaffected.
         agent.setRichContentEnabled(a.isRichContentEnabled());
+        agent.setDiscloseKnowledgeCutoff(a.isDiscloseKnowledgeCutoff());
         agent.setChatMemoryEnabled(a.isChatMemoryEnabled());
         agent.setChatMemoryFlushIntervalMinutes(a.getChatMemoryFlushIntervalMinutes());
         agent.setChatMemoryMaxMessages(a.getChatMemoryMaxMessages());

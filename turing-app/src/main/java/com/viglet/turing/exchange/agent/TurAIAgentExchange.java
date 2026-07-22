@@ -55,6 +55,8 @@ public class TurAIAgentExchange {
     // public demo ships its agent with this on). Primitive default (false)
     // matches the entity default for pre-T632 exports that omit the field.
     private boolean richContentEnabled;
+    // T787 — carry the knowledge-cutoff disclosure toggle across export/import.
+    private boolean discloseKnowledgeCutoff;
     private boolean chatMemoryEnabled;
     private int chatMemoryFlushIntervalMinutes;
     private int chatMemoryMaxMessages;
@@ -115,6 +117,7 @@ public class TurAIAgentExchange {
         e.ragEnabled = agent.isRagEnabled();
         e.groundingMode = agent.getGroundingMode();
         e.richContentEnabled = agent.isRichContentEnabled();
+        e.discloseKnowledgeCutoff = agent.isDiscloseKnowledgeCutoff();
         e.chatMemoryEnabled = agent.isChatMemoryEnabled();
         e.chatMemoryFlushIntervalMinutes = agent.getChatMemoryFlushIntervalMinutes();
         e.chatMemoryMaxMessages = agent.getChatMemoryMaxMessages();

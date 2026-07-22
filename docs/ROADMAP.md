@@ -225,7 +225,7 @@
 - ✅ **T786** SHIPPED — Right-sizing / savings: `TurLLMRightsizingService` reads per-(agent,model) usage (dominant model, avg in/out tokens, monthly spend), finds the cheapest same-vendor catalog model that still fits (holds the observed turn ×1.5, covers the current model's capabilities, not deprecated, strictly cheaper), and reports projected monthly savings; `GET /api/v2/llm/cost/rightsizing`. Exercised-capabilities approximated by the current model's declared caps (not metered per-turn). See CHANGELOG. Closes Phase 3. → §LIII.3
 
 **Phase 4 — Freshness & trust:**
-- 💭 **T787** (deps: T776) **Surface knowledge cutoff** — show `knowledgeCutoff`/`releaseDate` in the agent/chat UI, with an optional per-agent toggle to inject "your knowledge cutoff is <date>" into the system prompt so answers self-disclose staleness. → §LIII.4
+- ✅ **T787** SHIPPED — Surface knowledge cutoff: the picker already shows `knowledgeCutoff` (T779); added a per-agent `discloseKnowledgeCutoff` toggle whose `TurKnowledgeCutoffPromptContributor` injects "Your knowledge cutoff is <date>" (from the configured model's catalog cutoff) into the system prompt. Liquibase v2026.3.1.114; carried through agent export/import. See CHANGELOG. → §LIII.4
 - 💭 **T788** (deps: T776) **Catalog change-feed notifications** — consume the client `changes()` feed to notify admins when a model they use is deprecated, repriced beyond a threshold, or superseded; dashboard widget + optional email. → §LIII.4
 - 💭 **T789** (deps: T778) **Consumer-plan & provider-pricing reference** — use `providers()` for the authoritative "verify" links behind T778 and optionally surface a `plans()`-backed consumer-plan reference (Claude Pro / ChatGPT Plus…) in admin help. → §LIII.4
 

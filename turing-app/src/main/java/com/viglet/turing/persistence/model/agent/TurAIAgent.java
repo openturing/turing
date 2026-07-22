@@ -86,6 +86,18 @@ public class TurAIAgent implements Serializable {
     private boolean richContentEnabled = false;
 
     /**
+     * T787 / §LIII.4 — per-agent opt-in to disclose the model's knowledge cutoff.
+     * When on, the assembled system prompt gains a line stating the configured
+     * model's catalog {@code knowledgeCutoff} ("Your knowledge cutoff is &lt;date&gt;")
+     * so answers self-disclose how stale their knowledge may be. Off by default —
+     * a no-op segment for existing agents.
+     *
+     * @since 2026.3.4
+     */
+    @Column(name = "disclose_knowledge_cutoff", nullable = false)
+    private boolean discloseKnowledgeCutoff = false;
+
+    /**
      * T442 / §XXIII.1 — per-agent opt-in for "answer-as-an-app": built-in
      * generative-UI client tools ({@code comparison_table}, {@code spec_card},
      * {@code configurator}) that let the model assemble a live mini-app from a

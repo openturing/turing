@@ -222,6 +222,7 @@ public class TurAIAgentAPI {
             // Field-by-field copy like the other toggles — omitting it would
             // silently drop the switch on save.
             agentEdit.setRichContentEnabled(turAIAgent.isRichContentEnabled());
+            agentEdit.setDiscloseKnowledgeCutoff(turAIAgent.isDiscloseKnowledgeCutoff());
             // T442 — answer-as-an-app generative-UI client tools (opt-in).
             agentEdit.setAnswerAsAppEnabled(turAIAgent.isAnswerAsAppEnabled());
             // T443 — co-browse: agent drives the host page's real search UI (opt-in).

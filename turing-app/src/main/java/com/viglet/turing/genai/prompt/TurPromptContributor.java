@@ -43,6 +43,8 @@ public interface TurPromptContributor {
     int ORDER_MCP = 300;
     /** Opt-in capability guidance (render / answer-as-app / co-browse / memory / action-widget). */
     int ORDER_CAPABILITY = 400;
+    /** T787 — opt-in knowledge-cutoff disclosure line, right after the capability blocks. */
+    int ORDER_KNOWLEDGE_CUTOFF = 450;
     /** Skill progressive-disclosure catalog. */
     int ORDER_SKILL = 500;
     /** Active chat-flow node addendum — last body segment. */

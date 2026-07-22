@@ -173,6 +173,7 @@ export const AIAgentSettingsForm: React.FC<Props> = ({ value, isNew, chrome = "c
       enabled: value.enabled ?? 1,
       ragEnabled: value.ragEnabled ?? false,
       richContentEnabled: value.richContentEnabled ?? false,
+      discloseKnowledgeCutoff: value.discloseKnowledgeCutoff ?? false,
       liveAnswersEnabled: value.liveAnswersEnabled ?? false,
       callCenterEnabled: value.callCenterEnabled ?? false,
       connectorSetupEnabled: value.connectorSetupEnabled ?? false,
@@ -586,6 +587,31 @@ export const AIAgentSettingsForm: React.FC<Props> = ({ value, isNew, chrome = "c
                       <FormItemTwoColumns.Label>{t("forms.agentSettings.enableRichContent")}</FormItemTwoColumns.Label>
                       <FormItemTwoColumns.Description>
                         {t("forms.agentSettings.enableRichContentDesc")}
+                      </FormItemTwoColumns.Description>
+                    </FormItemTwoColumns.Left>
+                    <FormItemTwoColumns.Right>
+                      <FormControl>
+                        <GradientSwitch
+                          checked={!!field.value}
+                          onCheckedChange={(checked) => field.onChange(checked)}
+                        />
+                      </FormControl>
+                    </FormItemTwoColumns.Right>
+                  </FormItemTwoColumns>
+                )}
+              />
+        </Section>
+
+          <Section variant="blue" tone="blue" icon={IconHistory} title={t("forms.agentSettings.knowledgeCutoff")} description={t("forms.agentSettings.knowledgeCutoffDesc")}>
+              <FormField
+                control={form.control}
+                name="discloseKnowledgeCutoff"
+                render={({ field }) => (
+                  <FormItemTwoColumns>
+                    <FormItemTwoColumns.Left>
+                      <FormItemTwoColumns.Label>{t("forms.agentSettings.discloseKnowledgeCutoff")}</FormItemTwoColumns.Label>
+                      <FormItemTwoColumns.Description>
+                        {t("forms.agentSettings.discloseKnowledgeCutoffDesc")}
                       </FormItemTwoColumns.Description>
                     </FormItemTwoColumns.Left>
                     <FormItemTwoColumns.Right>
