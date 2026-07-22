@@ -63,6 +63,13 @@ public class TurLlmModelCatalog {
      */
     private volatile Map<String, String> providerPricingUrls = Map.of();
 
+    /**
+     * Last-good parsed catalog change feed (T788) — the added/removed/changed
+     * deltas from {@code changes.json}. {@link TurCatalogChanges#EMPTY} until the
+     * first successful refresh; a failed fetch keeps the last-good value.
+     */
+    private volatile TurCatalogChanges catalogChanges = TurCatalogChanges.EMPTY;
+
     /** Lazily built from the configured base URL; overridable for tests. */
     private volatile ModelCatalogClient client;
 
@@ -108,6 +115,61 @@ public class TurLlmModelCatalog {
                     remoteUrl, e.getMessage());
         }
         refreshProviderLinks(modelCatalogClient);
+        refreshCatalogChanges(modelCatalogClient);
+    }
+
+    /**
+     * Best-effort refresh of the catalog change feed (T788) from the client
+     * {@code changes()} registry ({@code changes.json}). On any failure or a feed
+     * with no entries the last-good value is kept.
+     */
+    void refreshCatalogChanges(ModelCatalogClient modelCatalogClient) {
+        try {
+            TurCatalogChanges parsed = toCatalogChanges(modelCatalogClient.changes());
+            if (!parsed.added().isEmpty() || !parsed.removed().isEmpty() || !parsed.changed().isEmpty()) {
+                this.catalogChanges = parsed;
+            }
+        } catch (Exception e) {
+            log.debug("Catalog change-feed refresh failed, keeping current: {}", e.getMessage());
+        }
+    }
+
+    /**
+     * Maps the raw {@code changes.json} object (untyped in the 1.0.5 client) to
+     * {@link TurCatalogChanges}. Tolerant of the untyped shape: a missing/oddly
+     * typed list yields an empty list rather than throwing.
+     */
+    TurCatalogChanges toCatalogChanges(Map<String, Object> raw) {
+        if (raw == null) {
+            return TurCatalogChanges.EMPTY;
+        }
+        return new TurCatalogChanges(
+                changeEntries(raw.get("added")),
+                changeEntries(raw.get("removed")),
+                changeEntries(raw.get("changed")));
+    }
+
+    @SuppressWarnings("unchecked")
+    private List<TurCatalogChanges.TurCatalogChangeEntry> changeEntries(Object listValue) {
+        if (!(listValue instanceof List<?> list)) {
+            return List.of();
+        }
+        List<TurCatalogChanges.TurCatalogChangeEntry> out = new ArrayList<>();
+        for (Object item : list) {
+            if (item instanceof Map<?, ?> entry) {
+                Map<String, Object> m = (Map<String, Object>) entry;
+                String id = str(m.get("id"));
+                if (id != null && !id.isBlank()) {
+                    out.add(new TurCatalogChanges.TurCatalogChangeEntry(
+                            str(m.get("vendor")), id, str(m.get("kind")), str(m.get("label")), str(m.get("detail"))));
+                }
+            }
+        }
+        return List.copyOf(out);
+    }
+
+    private static String str(Object value) {
+        return value instanceof String s ? s : null;
     }
 
     /**
@@ -243,5 +305,14 @@ public class TurLlmModelCatalog {
      */
     public Map<String, String> providerPricingUrls() {
         return providerPricingUrls;
+    }
+
+    /**
+     * The last-good parsed catalog change feed (T788) — added/removed/changed
+     * model deltas since the previous catalog snapshot. {@link TurCatalogChanges#EMPTY}
+     * until the first successful refresh.
+     */
+    public TurCatalogChanges catalogChanges() {
+        return catalogChanges;
     }
 }

@@ -16,6 +16,8 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.viglet.turing.service.llm.lifecycle.TurLLMCatalogChangeService;
+import com.viglet.turing.service.llm.lifecycle.TurLLMCatalogChangeService.ChangeNotification;
 import com.viglet.turing.service.llm.lifecycle.TurLLMModelLifecycleService;
 import com.viglet.turing.service.llm.lifecycle.TurLLMModelLifecycleService.DeprecatedModelUsage;
 
@@ -37,9 +39,12 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 public class TurLLMModelLifecycleAPI {
 
     private final TurLLMModelLifecycleService lifecycleService;
+    private final TurLLMCatalogChangeService changeService;
 
-    public TurLLMModelLifecycleAPI(TurLLMModelLifecycleService lifecycleService) {
+    public TurLLMModelLifecycleAPI(TurLLMModelLifecycleService lifecycleService,
+            TurLLMCatalogChangeService changeService) {
         this.lifecycleService = lifecycleService;
+        this.changeService = changeService;
     }
 
     @Secured({"ROLE_ADMIN", "LLM_VIEW", "LLM_CREATE", "LLM_EDIT"})
@@ -47,5 +52,12 @@ public class TurLLMModelLifecycleAPI {
     @GetMapping("/deprecations")
     public List<DeprecatedModelUsage> deprecations() {
         return lifecycleService.findDeprecatedModelsInUse();
+    }
+
+    @Secured({"ROLE_ADMIN", "LLM_VIEW", "LLM_CREATE", "LLM_EDIT"})
+    @Operation(summary = "Catalog change-feed notifications for configured (in-use) models")
+    @GetMapping("/change-feed")
+    public List<ChangeNotification> changeFeed() {
+        return changeService.notificationsForUsedModels();
     }
 }

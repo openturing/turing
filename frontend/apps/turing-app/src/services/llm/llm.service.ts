@@ -1,6 +1,7 @@
 import axios from "axios";
 import type {
   TurLLMInstance,
+  TurLlmCatalogChangeNotification,
   TurLlmDeprecatedModelUsage,
 } from "@/models/llm/llm-instance.model.ts";
 import type { TurModelVerifyResult } from "@/models/verify.model.ts";
@@ -46,6 +47,14 @@ export class TurLLMInstanceService {
   async deprecations(): Promise<TurLlmDeprecatedModelUsage[]> {
     const response = await axios.get<TurLlmDeprecatedModelUsage[]>(
       "/v2/llm/model-lifecycle/deprecations",
+    );
+    return response.data ?? [];
+  }
+
+  /** T788 — catalog change-feed notifications for configured (in-use) models. */
+  async changeFeed(): Promise<TurLlmCatalogChangeNotification[]> {
+    const response = await axios.get<TurLlmCatalogChangeNotification[]>(
+      "/v2/llm/model-lifecycle/change-feed",
     );
     return response.data ?? [];
   }

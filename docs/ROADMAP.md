@@ -226,7 +226,7 @@
 
 **Phase 4 — Freshness & trust:**
 - ✅ **T787** SHIPPED — Surface knowledge cutoff: the picker already shows `knowledgeCutoff` (T779); added a per-agent `discloseKnowledgeCutoff` toggle whose `TurKnowledgeCutoffPromptContributor` injects "Your knowledge cutoff is <date>" (from the configured model's catalog cutoff) into the system prompt. Liquibase v2026.3.1.114; carried through agent export/import. See CHANGELOG. → §LIII.4
-- 💭 **T788** (deps: T776) **Catalog change-feed notifications** — consume the client `changes()` feed to notify admins when a model they use is deprecated, repriced beyond a threshold, or superseded; dashboard widget + optional email. → §LIII.4
+- ✅ **T788** SHIPPED — Catalog change-feed notifications: `TurLlmModelCatalog` parses/stores the client `changes()` feed (`changes.json` added/removed/changed) on refresh; `TurLLMCatalogChangeService` cross-references it against in-use instance models → REMOVED / SUPERSEDED (same-vendor addition) / CHANGED notifications; `GET /api/v2/llm/model-lifecycle/change-feed` + an info banner on the instance list. Optional email deferred. See CHANGELOG. → §LIII.4
 - 💭 **T789** (deps: T778) **Consumer-plan & provider-pricing reference** — use `providers()` for the authoritative "verify" links behind T778 and optionally surface a `plans()`-backed consumer-plan reference (Claude Pro / ChatGPT Plus…) in admin help. → §LIII.4
 
 ## Block BF — Vectorless (Structured-Data) RAG: name it, feed it, integrate it (§LIV)

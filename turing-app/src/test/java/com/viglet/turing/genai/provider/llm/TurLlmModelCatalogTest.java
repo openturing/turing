@@ -240,6 +240,30 @@ class TurLlmModelCatalogTest {
     }
 
     @Test
+    void refreshParsesCatalogChangeFeed() {
+        // T788: the changes() registry (changes.json) is parsed into added/removed.
+        String changesJson = """
+                {
+                  "version": 1,
+                  "counts": { "added": 1, "removed": 1, "changed": 0 },
+                  "added": [ { "vendor": "anthropic", "id": "claude-haiku-4-5", "kind": "CHAT", "label": "Claude Haiku 4.5" } ],
+                  "removed": [ { "vendor": "anthropic", "id": "claude-3-5-haiku", "kind": "CHAT", "label": "Claude Haiku 3.5" } ],
+                  "changed": []
+                }
+                """;
+        catalog.refreshCatalogChanges(clientServing(changesJson));
+        assertThat(catalog.catalogChanges().added()).extracting(e -> e.id()).containsExactly("claude-haiku-4-5");
+        assertThat(catalog.catalogChanges().removed()).extracting(e -> e.id()).containsExactly("claude-3-5-haiku");
+        assertThat(catalog.catalogChanges().changed()).isEmpty();
+    }
+
+    @Test
+    void catalogChangesToleratesGarbageShapes() {
+        assertThat(catalog.toCatalogChanges(null)).isSameAs(com.viglet.turing.genai.provider.llm.TurCatalogChanges.EMPTY);
+        assertThat(catalog.toCatalogChanges(java.util.Map.of("added", "not-a-list")).added()).isEmpty();
+    }
+
+    @Test
     void remoteRefreshDisabledIsNoOp() {
         // In a plain unit (no Spring) remoteEnabled defaults to false → no network,
         // the served map stays empty, and the call does not throw.

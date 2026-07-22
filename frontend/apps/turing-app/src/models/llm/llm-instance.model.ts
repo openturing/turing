@@ -69,3 +69,13 @@ export interface TurLlmDeprecatedModelUsage {
   replacementModelId?: string | null;
   replacementLabel?: string | null;
 }
+
+/** T788 — a catalog change-feed notification for an in-use model. */
+export interface TurLlmCatalogChangeNotification {
+  type: "REMOVED" | "SUPERSEDED" | "CHANGED";
+  vendorId: string;
+  modelId: string;
+  label?: string | null;
+  detail?: string | null;
+  replacementCandidates: string[];
+}

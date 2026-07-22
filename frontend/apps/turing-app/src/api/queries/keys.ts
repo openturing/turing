@@ -69,6 +69,7 @@ export const queryKeys = {
     list: () => [...queryKeys.llmInstances.all(), 'list'] as const,
     detail: (id: string) => [...queryKeys.llmInstances.all(), 'detail', id] as const,
     deprecations: () => [...queryKeys.llmInstances.all(), 'deprecations'] as const,
+    changeFeed: () => [...queryKeys.llmInstances.all(), 'change-feed'] as const,
   },
   llmInstanceCapabilities: {
     all: () => ['llm-instance-capabilities'] as const,

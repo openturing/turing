@@ -14,6 +14,16 @@
       "retired": "aposentado",
       "deprecated": "descontinuado"
     },
+    "changeFeed": {
+      "title": "Mudanças no catálogo para seus modelos",
+      "description": "O catálogo público de modelos mudou desde o último snapshot. Estas atualizações afetam modelos que você configurou.",
+      "replacedBy": "possível substituto: {{models}}",
+      "type": {
+        "REMOVED": "removido",
+        "SUPERSEDED": "substituído",
+        "CHANGED": "alterado"
+      }
+    },
     "sidebar": {
       "general": "Geral",
       "model": "Configurações do Modelo",

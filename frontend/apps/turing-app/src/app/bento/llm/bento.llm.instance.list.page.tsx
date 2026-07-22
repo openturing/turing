@@ -1,8 +1,15 @@
-import { useLlmDeprecations, useLlmInstances } from "@/api/queries/llm-instance.queries";
+import {
+  useLlmCatalogChanges,
+  useLlmDeprecations,
+  useLlmInstances,
+} from "@/api/queries/llm-instance.queries";
 import { ROUTES } from "@/app/routes.const";
 import { BentoEntityTile, BentoListPage } from "@/components/bento";
-import type { TurLlmDeprecatedModelUsage } from "@/models/llm/llm-instance.model.ts";
-import { IconAlertTriangle, IconCpu2 } from "@tabler/icons-react";
+import type {
+  TurLlmCatalogChangeNotification,
+  TurLlmDeprecatedModelUsage,
+} from "@/models/llm/llm-instance.model.ts";
+import { IconAlertTriangle, IconCpu2, IconInfoCircle } from "@tabler/icons-react";
 import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 
@@ -38,10 +45,42 @@ function DeprecationBanner({ usages }: Readonly<{ usages: TurLlmDeprecatedModelU
   );
 }
 
+/** T788 — info banner listing catalog change-feed notifications for in-use models. */
+function ChangeFeedBanner({ changes }: Readonly<{ changes: TurLlmCatalogChangeNotification[] }>) {
+  const { t } = useTranslation();
+  if (changes.length === 0) return null;
+  return (
+    <div className="flex w-full gap-3 rounded-lg border border-blue-500/40 bg-blue-500/5 p-4 text-blue-700 dark:text-blue-400">
+      <IconInfoCircle className="mt-0.5 size-5 shrink-0" />
+      <div className="min-w-0 space-y-1">
+        <p className="font-medium">{t("llm.changeFeed.title")}</p>
+        <p className="text-muted-foreground text-sm">{t("llm.changeFeed.description")}</p>
+        <ul className="space-y-1 pt-1 text-sm">
+          {changes.map((c) => (
+            <li key={`${c.vendorId}:${c.modelId}`} className="flex flex-wrap items-center gap-x-2">
+              <span className="font-mono">{c.vendorId}/{c.modelId}</span>
+              <span className="rounded-full border border-blue-500/40 px-1.5 py-0.5 text-[11px]">
+                {t(`llm.changeFeed.type.${c.type}`)}
+              </span>
+              {c.replacementCandidates.length > 0 && (
+                <span className="text-muted-foreground">
+                  {t("llm.changeFeed.replacedBy", { models: c.replacementCandidates.join(", ") })}
+                </span>
+              )}
+              {c.detail && <span className="text-muted-foreground">{c.detail}</span>}
+            </li>
+          ))}
+        </ul>
+      </div>
+    </div>
+  );
+}
+
 export default function BentoLLMInstanceListPage() {
   const { t } = useTranslation();
   const { data: llms, isError } = useLlmInstances();
   const { data: deprecations } = useLlmDeprecations();
+  const { data: catalogChanges } = useLlmCatalogChanges();
   const error = isError ? t("common.connectionError", { resource: t("llm.title") }) : null;
 
   return (
@@ -55,7 +94,12 @@ export default function BentoLLMInstanceListPage() {
       tone="indigo"
       title={t("llm.title")}
       subtitle={t("llm.blankDescription")}
-      headerAction={<DeprecationBanner usages={deprecations ?? []} />}
+      headerAction={
+        <div className="flex w-full flex-col gap-3">
+          <DeprecationBanner usages={deprecations ?? []} />
+          <ChangeFeedBanner changes={catalogChanges ?? []} />
+        </div>
+      }
       newRoute={`${ROUTES.BENTO_LLM_INSTANCE}/new`}
       newLabel={t("llm.newLanguageModel")}
       newSubtitle="OpenAI · Ollama · Anthropic · Gemini"
