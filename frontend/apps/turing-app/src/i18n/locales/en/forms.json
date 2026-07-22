@@ -123,6 +123,8 @@
       "contextWindowDesc": "Max prompt tokens the model accepts. Auto-filled from the catalog when you pick a model; override if needed.",
       "catalogHint": "Catalog: {{value}}",
       "catalogExceeds": "Exceeds the catalog maximum ({{value}}) for this model — it may fail at runtime.",
+      "toolsUnsupportedWarning": "The selected model isn't listed as supporting tool calling in the catalog — tools may be ignored or error at runtime.",
+      "fileUploadUnsupportedWarning": "The selected model isn't listed as accepting image/file input in the catalog — uploads may fail or be ignored.",
       "modelSortLabel": "Sort",
       "modelSort_relevance": "Relevance",
       "modelSort_price": "Cheapest",

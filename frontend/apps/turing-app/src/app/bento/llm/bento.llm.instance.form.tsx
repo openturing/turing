@@ -19,6 +19,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { useLlmModels } from "@/api/queries/llm-model.queries"
 import type { TurLLMInstance } from "@/models/llm/llm-instance.model.ts"
 import type { TurLlmModelMetadata } from "@/models/llm/llm-model-option.model.ts"
+import { catalogSupportsFileInput, catalogSupportsTools } from "@/components/ui/model-meta"
 import type { TurLLMVendor } from "@/models/llm/llm-vendor.model"
 import { TurLLMInstanceService } from "@/services/llm/llm.service"
 import { TurLLMVendorService } from "@/services/llm/llm-vendor.service"
@@ -111,6 +112,22 @@ const USES_NUM_PREDICT = (vendorId?: string) => vendorId === "OLLAMA"
 const VENDORS_WITHOUT_ENDPOINT = new Set(["VERTEX_AI", "BEDROCK", "VOYAGE"])
 const VENDOR_NEEDS_ENDPOINT = (vendorId?: string) =>
   Boolean(vendorId) && !VENDORS_WITHOUT_ENDPOINT.has(vendorId as string)
+
+/**
+ * T781 — amber warning under a capability toggle: shown only when the toggle is
+ * ON and the catalog has positive evidence the selected model does NOT support
+ * it (would fail at runtime). Silent when unknown or supported, so it never
+ * second-guesses a model the catalog doesn't describe.
+ */
+const CatalogCapabilityWarning: React.FC<{ active: boolean; supported?: boolean; messageKey: string }> = ({
+  active,
+  supported,
+  messageKey,
+}) => {
+  const { t } = useTranslation()
+  if (!active || supported !== false) return null
+  return <p className="mt-1 text-xs text-amber-600 dark:text-amber-400">{t(messageKey)}</p>
+}
 
 /**
  * T780 — inline hint under a numeric limit field: shows the catalog's value for
@@ -1194,6 +1211,11 @@ export const BentoLLMInstanceForm: React.FC<Props> = ({ value, isNew, staged, on
                     />
                   </FormControl>
                 </FormItemTwoColumns.Right>
+                <CatalogCapabilityWarning
+                  active={field.value === true}
+                  supported={catalogSupportsTools(defaultModelMeta)}
+                  messageKey="forms.llm.toolsUnsupportedWarning"
+                />
                 <FormMessage />
               </FormItemTwoColumns>
             )}
@@ -1217,6 +1239,11 @@ export const BentoLLMInstanceForm: React.FC<Props> = ({ value, isNew, staged, on
                     />
                   </FormControl>
                 </FormItemTwoColumns.Right>
+                <CatalogCapabilityWarning
+                  active={field.value === true}
+                  supported={catalogSupportsFileInput(defaultModelMeta)}
+                  messageKey="forms.llm.fileUploadUnsupportedWarning"
+                />
                 <FormMessage />
               </FormItemTwoColumns>
             )}

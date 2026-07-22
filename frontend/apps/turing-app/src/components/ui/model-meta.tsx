@@ -186,6 +186,33 @@ export function ModelSortSelect({ options, value, onChange, className }: Readonl
   )
 }
 
+// T781 — catalog `modalities.input` slugs that mean the model accepts a
+// file/image on input, so file-upload can safely be enabled.
+const FILE_INPUT_MODALITIES = new Set(["image", "file", "pdf", "document", "audio", "video"])
+
+/**
+ * T781 — does the catalog say the model supports tool calling? `undefined` when
+ * unknown (no metadata, or the entry lists no capabilities) so callers can avoid
+ * warning on a guess — only on positive evidence the model lacks it.
+ */
+export function catalogSupportsTools(meta?: TurLlmModelMetadata | null): boolean | undefined {
+  if (!meta?.capabilities?.length) return undefined
+  return meta.capabilities.some((c) => c.toLowerCase() === "tools")
+}
+
+/**
+ * T781 — does the catalog say the model can accept file/image input (the `vision`
+ * capability or a file-like input modality)? `undefined` when the entry carries
+ * neither capabilities nor modalities (unknown → no warning).
+ */
+export function catalogSupportsFileInput(meta?: TurLlmModelMetadata | null): boolean | undefined {
+  if (!meta) return undefined
+  const caps = (meta.capabilities ?? []).map((c) => c.toLowerCase())
+  const inputs = (meta.modalities?.input ?? []).map((m) => m.toLowerCase())
+  if (caps.length === 0 && inputs.length === 0) return undefined
+  return caps.includes("vision") || inputs.some((m) => FILE_INPUT_MODALITIES.has(m))
+}
+
 /** Numeric key a sort reads from an option, or `undefined` when unknown. */
 function sortKey(option: TurLlmModelOption, sort: ModelSortValue): number | undefined {
   const m = option.metadata
