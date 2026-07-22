@@ -123,6 +123,7 @@
       "contextWindowDesc": "Máximo de tokens de prompt que o modelo aceita. Preenchido automaticamente pelo catálogo ao escolher um modelo; ajuste se necessário.",
       "catalogHint": "Catálogo: {{value}}",
       "catalogExceeds": "Excede o máximo do catálogo ({{value}}) para este modelo — pode falhar em execução.",
+      "modelDeprecatedBadge": "Descontinuado",
       "toolsUnsupportedWarning": "O modelo selecionado não consta como compatível com chamada de ferramentas no catálogo — ferramentas podem ser ignoradas ou falhar em execução.",
       "fileUploadUnsupportedWarning": "O modelo selecionado não consta como aceitando entrada de imagem/arquivo no catálogo — uploads podem falhar ou ser ignorados.",
       "modelSortLabel": "Ordenar",

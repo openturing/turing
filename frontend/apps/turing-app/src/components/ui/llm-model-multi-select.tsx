@@ -10,6 +10,7 @@ import type {
 import { ModelKindBadge, resolveModelKind } from "@/components/ui/model-kind-badge"
 import { ModelKindFilter, type ModelKindFilterValue } from "@/components/ui/model-kind-filter"
 import {
+  ModelDeprecatedBadge,
   ModelMetaLine,
   ModelSortSelect,
   ModelTierBadge,
@@ -234,6 +235,7 @@ export function LlmModelMultiSelect({
                     <span className="flex shrink-0 flex-col items-end gap-0.5">
                       <ModelKindBadge kind={resolveModelKind(option)} />
                       <ModelTierBadge tier={option.metadata?.tier} />
+                      <ModelDeprecatedBadge metadata={option.metadata} />
                     </span>
                   </button>
                 )
@@ -302,6 +304,7 @@ export function LlmModelMultiSelect({
                   <ModelMetaLine metadata={metaFor(modelId)} />
                 </span>
 
+                <ModelDeprecatedBadge metadata={metaFor(modelId)} />
                 <ModelTierBadge tier={metaFor(modelId)?.tier} />
                 <ModelKindBadge kind={kindFor(modelId)} />
 

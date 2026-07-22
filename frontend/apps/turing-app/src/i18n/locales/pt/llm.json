@@ -5,6 +5,15 @@
     "blankDescription": "Crie uma nova instância e use em navegação semântica e chatbot.",
     "newInstance": "Nova instância de modelo de linguagem",
     "newLanguageModel": "Novo Modelo de Linguagem",
+    "deprecation": {
+      "title": "Modelos descontinuados em uso",
+      "description": "O catálogo público de modelos marca estes modelos configurados como descontinuados ou aposentados. Troque pelo substituto sugerido para evitar falhas em execução.",
+      "item": "{{instance}} usa {{model}}",
+      "suggested": "sugerido: {{model}}",
+      "noReplacement": "nenhum substituto direto encontrado — revise manualmente",
+      "retired": "aposentado",
+      "deprecated": "descontinuado"
+    },
     "sidebar": {
       "general": "Geral",
       "model": "Configurações do Modelo",

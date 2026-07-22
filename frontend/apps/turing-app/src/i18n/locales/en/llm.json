@@ -5,6 +5,15 @@
     "blankDescription": "Create a new instance and use it in semantic navigation and chatbot.",
     "newInstance": "New language model instance",
     "newLanguageModel": "New Language Model",
+    "deprecation": {
+      "title": "Deprecated models in use",
+      "description": "The public model catalog marks these configured models as deprecated or retired. Switch to the suggested replacement to avoid runtime failures.",
+      "item": "{{instance}} uses {{model}}",
+      "suggested": "suggested: {{model}}",
+      "noReplacement": "no direct replacement found — review manually",
+      "retired": "retired",
+      "deprecated": "deprecated"
+    },
     "sidebar": {
       "general": "General",
       "model": "Model Settings",

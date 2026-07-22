@@ -1,5 +1,8 @@
 import axios from "axios";
-import type { TurLLMInstance } from "@/models/llm/llm-instance.model.ts";
+import type {
+  TurLLMInstance,
+  TurLlmDeprecatedModelUsage,
+} from "@/models/llm/llm-instance.model.ts";
 import type { TurModelVerifyResult } from "@/models/verify.model.ts";
 
 export class TurLLMInstanceService {
@@ -34,5 +37,16 @@ export class TurLLMInstanceService {
   async verify(id: string): Promise<TurModelVerifyResult> {
     const response = await axios.post<TurModelVerifyResult>(`/llm/${id}/verify`);
     return response.data;
+  }
+
+  /**
+   * T782 — instances whose configured model the public catalog marks
+   * deprecated/retired, each with a suggested GA replacement when one exists.
+   */
+  async deprecations(): Promise<TurLlmDeprecatedModelUsage[]> {
+    const response = await axios.get<TurLlmDeprecatedModelUsage[]>(
+      "/v2/llm/model-lifecycle/deprecations",
+    );
+    return response.data ?? [];
   }
 }

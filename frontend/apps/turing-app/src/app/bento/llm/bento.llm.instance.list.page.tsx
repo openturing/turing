@@ -1,12 +1,47 @@
-import { useLlmInstances } from "@/api/queries/llm-instance.queries";
+import { useLlmDeprecations, useLlmInstances } from "@/api/queries/llm-instance.queries";
 import { ROUTES } from "@/app/routes.const";
 import { BentoEntityTile, BentoListPage } from "@/components/bento";
-import { IconCpu2 } from "@tabler/icons-react";
+import type { TurLlmDeprecatedModelUsage } from "@/models/llm/llm-instance.model.ts";
+import { IconAlertTriangle, IconCpu2 } from "@tabler/icons-react";
+import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
+
+/** T782 — amber banner listing instances configured with a deprecated model. */
+function DeprecationBanner({ usages }: Readonly<{ usages: TurLlmDeprecatedModelUsage[] }>) {
+  const { t } = useTranslation();
+  if (usages.length === 0) return null;
+  return (
+    <div className="flex w-full gap-3 rounded-lg border border-amber-500/40 bg-amber-500/5 p-4 text-amber-700 dark:text-amber-400">
+      <IconAlertTriangle className="mt-0.5 size-5 shrink-0" />
+      <div className="min-w-0 space-y-1">
+        <p className="font-medium">{t("llm.deprecation.title")}</p>
+        <p className="text-muted-foreground text-sm">{t("llm.deprecation.description")}</p>
+        <ul className="space-y-1 pt-1 text-sm">
+          {usages.map((u) => (
+            <li key={u.instanceId} className="flex flex-wrap items-center gap-x-2">
+              <Link to={`${ROUTES.BENTO_LLM_INSTANCE}/${u.instanceId}`} className="font-medium underline">
+                {t("llm.deprecation.item", { instance: u.instanceTitle, model: u.modelName })}
+              </Link>
+              <span className="rounded-full border border-amber-500/40 px-1.5 py-0.5 text-[11px]">
+                {u.deprecated ? t("llm.deprecation.deprecated") : t("llm.deprecation.retired")}
+              </span>
+              <span className="text-muted-foreground">
+                {u.replacementLabel
+                  ? t("llm.deprecation.suggested", { model: u.replacementLabel })
+                  : t("llm.deprecation.noReplacement")}
+              </span>
+            </li>
+          ))}
+        </ul>
+      </div>
+    </div>
+  );
+}
 
 export default function BentoLLMInstanceListPage() {
   const { t } = useTranslation();
   const { data: llms, isError } = useLlmInstances();
+  const { data: deprecations } = useLlmDeprecations();
   const error = isError ? t("common.connectionError", { resource: t("llm.title") }) : null;
 
   return (
@@ -20,6 +55,7 @@ export default function BentoLLMInstanceListPage() {
       tone="indigo"
       title={t("llm.title")}
       subtitle={t("llm.blankDescription")}
+      headerAction={<DeprecationBanner usages={deprecations ?? []} />}
       newRoute={`${ROUTES.BENTO_LLM_INSTANCE}/new`}
       newLabel={t("llm.newLanguageModel")}
       newSubtitle="OpenAI · Ollama · Anthropic · Gemini"

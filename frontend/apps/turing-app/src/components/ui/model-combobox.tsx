@@ -9,6 +9,7 @@ import type {
 import { ModelKindBadge, resolveModelKind } from "@/components/ui/model-kind-badge"
 import { ModelKindFilter, type ModelKindFilterValue } from "@/components/ui/model-kind-filter"
 import {
+  ModelDeprecatedBadge,
   ModelMetaLine,
   ModelSortSelect,
   ModelTierBadge,
@@ -184,6 +185,7 @@ export function ModelCombobox({
                 <span className="flex shrink-0 flex-col items-end gap-0.5">
                   <ModelKindBadge kind={resolveModelKind(option)} />
                   <ModelTierBadge tier={option.metadata?.tier} />
+                  <ModelDeprecatedBadge metadata={option.metadata} />
                 </span>
               </button>
             ))}

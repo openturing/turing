@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   catalogSupportsFileInput,
   catalogSupportsTools,
+  isDeprecatedModel,
   sortModelOptions,
 } from "../model-meta";
 import type { TurLlmModelOption } from "@/models/llm/llm-model-option.model.ts";
@@ -66,5 +67,18 @@ describe("catalogSupportsFileInput (T781)", () => {
 
   it("is false when info is present but no image/file signal", () => {
     expect(catalogSupportsFileInput({ capabilities: ["tools"], modalities: { input: ["text"] } })).toBe(false);
+  });
+});
+
+describe("isDeprecatedModel (T782)", () => {
+  it("is false for a live model", () => {
+    expect(isDeprecatedModel(null)).toBe(false);
+    expect(isDeprecatedModel({ status: "GA" })).toBe(false);
+  });
+
+  it("is true via the deprecated flag or a DEPRECATED/RETIRED status", () => {
+    expect(isDeprecatedModel({ deprecated: true })).toBe(true);
+    expect(isDeprecatedModel({ status: "deprecated" })).toBe(true);
+    expect(isDeprecatedModel({ status: "RETIRED" })).toBe(true);
   });
 });

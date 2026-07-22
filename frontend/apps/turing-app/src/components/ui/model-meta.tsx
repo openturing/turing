@@ -56,6 +56,28 @@ const CAPABILITY_ICON: Record<string, { icon: typeof IconEye; labelKey: string }
   reasoning: { icon: IconBulb, labelKey: "forms.llm.modelCapReasoning" },
 }
 
+/**
+ * T782 — is the model end-of-life per the catalog (`deprecated` flag, or
+ * `status` DEPRECATED/RETIRED)? Used to badge it in the picker.
+ */
+export function isDeprecatedModel(metadata?: TurLlmModelMetadata | null): boolean {
+  if (!metadata) return false
+  if (metadata.deprecated) return true
+  const status = metadata.status?.trim().toUpperCase()
+  return status === "DEPRECATED" || status === "RETIRED"
+}
+
+/** T782 — amber "Deprecated" pill for an end-of-life model in the picker. */
+export function ModelDeprecatedBadge({ metadata }: Readonly<{ metadata?: TurLlmModelMetadata | null }>) {
+  const { t } = useTranslation()
+  if (!isDeprecatedModel(metadata)) return null
+  return (
+    <span className="inline-flex shrink-0 items-center rounded-full bg-amber-100 px-1.5 py-0.5 text-[10px] font-medium text-amber-700 dark:bg-amber-500/15 dark:text-amber-300">
+      {t("forms.llm.modelDeprecatedBadge", { defaultValue: "Deprecated" })}
+    </span>
+  )
+}
+
 /** Coloured tier pill (Frontier / High / Mid / Light); nothing when tier absent. */
 export function ModelTierBadge({ tier, className }: Readonly<{ tier?: string | null; className?: string }>) {
   if (!tier) return null

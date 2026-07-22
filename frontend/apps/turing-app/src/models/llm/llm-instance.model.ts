@@ -53,3 +53,19 @@ export interface TurLLMInstance {
   /** T372 — null for the shared GLOBAL BYO-infra pool (read-only when tenancy is on). */
   tenantId?: string | null;
 }
+
+/**
+ * T782 — an LLM instance whose configured model the public catalog marks
+ * deprecated/retired, with a suggested GA replacement when one exists. Mirrors
+ * `TurLLMModelLifecycleService.DeprecatedModelUsage`.
+ */
+export interface TurLlmDeprecatedModelUsage {
+  instanceId: string;
+  instanceTitle: string;
+  vendorId: string;
+  modelName: string;
+  status?: string | null;
+  deprecated: boolean;
+  replacementModelId?: string | null;
+  replacementLabel?: string | null;
+}
