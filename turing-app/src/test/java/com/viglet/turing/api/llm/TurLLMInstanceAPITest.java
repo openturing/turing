@@ -182,6 +182,53 @@ class TurLLMInstanceAPITest {
         }
 
         @Test
+        void testTurLLMInstanceUpdate_persistsContextWindowAndEmbeddingDimensions() throws Exception {
+                // T780 — catalog-auto-filled limits must survive the update path.
+                TurLLMInstance existingInstance = new TurLLMInstance();
+                existingInstance.setId("1");
+                when(turLLMInstanceRepository.findById("1")).thenReturn(Optional.of(existingInstance));
+
+                String payload = """
+                                {
+                                  "title": "T",
+                                  "modelName": "gpt-4o",
+                                  "contextWindow": 128000,
+                                  "embeddingDimensions": 1536,
+                                  "turLLMVendor": { "id": "OPENAI" }
+                                }
+                                """;
+                mockMvc.perform(put("/api/llm/1")
+                                .contentType(MediaType.APPLICATION_JSON).content(payload))
+                                .andExpect(status().isOk());
+
+                ArgumentCaptor<TurLLMInstance> captor = ArgumentCaptor.forClass(TurLLMInstance.class);
+                verify(turLLMInstanceRepository).save(captor.capture());
+                org.assertj.core.api.Assertions.assertThat(captor.getValue().getContextWindow()).isEqualTo(128000);
+                org.assertj.core.api.Assertions.assertThat(captor.getValue().getEmbeddingDimensions()).isEqualTo(1536);
+        }
+
+        @Test
+        void testTurLLMInstanceUpdate_preservesDetectedEmbeddingDimensionsWhenOmitted() throws Exception {
+                // T780/T627 — a payload that omits embeddingDimensions must NOT wipe the
+                // runtime-detected value on the existing row.
+                TurLLMInstance existingInstance = new TurLLMInstance();
+                existingInstance.setId("1");
+                existingInstance.setEmbeddingDimensions(3072);
+                when(turLLMInstanceRepository.findById("1")).thenReturn(Optional.of(existingInstance));
+
+                String payload = """
+                                { "title": "T", "modelName": "gpt-4o", "turLLMVendor": { "id": "OPENAI" } }
+                                """;
+                mockMvc.perform(put("/api/llm/1")
+                                .contentType(MediaType.APPLICATION_JSON).content(payload))
+                                .andExpect(status().isOk());
+
+                ArgumentCaptor<TurLLMInstance> captor = ArgumentCaptor.forClass(TurLLMInstance.class);
+                verify(turLLMInstanceRepository).save(captor.capture());
+                org.assertj.core.api.Assertions.assertThat(captor.getValue().getEmbeddingDimensions()).isEqualTo(3072);
+        }
+
+        @Test
         void testTurLLMInstanceUpdate_NotFound() throws Exception {
                 TurLLMInstance updatedInstance = new TurLLMInstance();
                 updatedInstance.setTitle("New Title");

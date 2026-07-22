@@ -18,6 +18,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea"
 import { useLlmModels } from "@/api/queries/llm-model.queries"
 import type { TurLLMInstance } from "@/models/llm/llm-instance.model.ts"
+import type { TurLlmModelMetadata } from "@/models/llm/llm-model-option.model.ts"
 import type { TurLLMVendor } from "@/models/llm/llm-vendor.model"
 import { TurLLMInstanceService } from "@/services/llm/llm.service"
 import { TurLLMVendorService } from "@/services/llm/llm-vendor.service"
@@ -111,6 +112,28 @@ const VENDORS_WITHOUT_ENDPOINT = new Set(["VERTEX_AI", "BEDROCK", "VOYAGE"])
 const VENDOR_NEEDS_ENDPOINT = (vendorId?: string) =>
   Boolean(vendorId) && !VENDORS_WITHOUT_ENDPOINT.has(vendorId as string)
 
+/**
+ * T780 — inline hint under a numeric limit field: shows the catalog's value for
+ * the selected model, and warns (amber) when the hand-entered value exceeds that
+ * catalog maximum (a likely mis-entry that would fail at runtime). Renders nothing
+ * when the catalog has no value for this model.
+ */
+const CatalogLimitHint: React.FC<{ entered?: number | null; catalogValue?: number | null }> = ({
+  entered,
+  catalogValue,
+}) => {
+  const { t } = useTranslation()
+  if (catalogValue == null) return null
+  const exceeds = entered != null && entered > catalogValue
+  return (
+    <p className={`mt-1 text-xs ${exceeds ? "text-amber-600 dark:text-amber-400" : "text-muted-foreground"}`}>
+      {exceeds
+        ? t("forms.llm.catalogExceeds", { value: catalogValue.toLocaleString() })
+        : t("forms.llm.catalogHint", { value: catalogValue.toLocaleString() })}
+    </p>
+  )
+}
+
 export const BentoLLMInstanceForm: React.FC<Props> = ({ value, isNew, staged, onStateChange }) => {
   const { t } = useTranslation()
   const form = useForm<TurLLMInstance>({ defaultValues: value })
@@ -156,6 +179,7 @@ export const BentoLLMInstanceForm: React.FC<Props> = ({ value, isNew, staged, on
   const handleModelsChange = (next: string[], nextDefault: string) => {
     form.setValue("modelNames", next.join(","), { shouldDirty: true })
     form.setValue("modelName", nextDefault, { shouldDirty: true })
+    autoFillFromCatalog(nextDefault)
   }
 
   const createMutation = useCreateLlmInstance()
@@ -196,6 +220,46 @@ export const BentoLLMInstanceForm: React.FC<Props> = ({ value, isNew, staged, on
     providerOptionsJson: value.providerOptionsJson,
     enabled: Boolean(selectedVendorId),
   })
+
+  // T780 — id → catalog metadata for the models currently offered by the picker,
+  // so selecting a model can pre-fill its known limits and the form can validate
+  // hand-entered values against the catalog.
+  const modelMetaById = useMemo(() => {
+    const map = new Map<string, TurLlmModelMetadata>()
+    for (const option of modelList?.models ?? []) {
+      if (option.metadata) map.set(option.id, option.metadata)
+    }
+    return map
+  }, [modelList])
+
+  const defaultModelMeta = modelMetaById.get(defaultModel)
+
+  /**
+   * T780 — on model selection, pre-fill the instance's context window and max
+   * output tokens from the catalog, but only when the operator hasn't set them
+   * (never clobber an explicit override). The operator can still edit or clear
+   * the pre-filled value afterwards.
+   */
+  const autoFillFromCatalog = (modelId: string) => {
+    const meta = modelMetaById.get(modelId)
+    if (!meta) return
+    if (meta.contextWindow != null && form.getValues("contextWindow") == null) {
+      form.setValue("contextWindow", meta.contextWindow, { shouldDirty: true })
+    }
+    if (meta.maxOutputTokens != null && !maxTokensInput.trim()) {
+      setMaxTokensInput(String(meta.maxOutputTokens))
+      setOptionsDirty(true)
+    }
+  }
+
+  /** T780 — pre-fill embedding dimensions from the catalog on embedding-model pick. */
+  const handleEmbeddingModelChange = (modelId: string) => {
+    form.setValue("embeddingModelName", modelId, { shouldDirty: true })
+    const meta = modelMetaById.get(modelId)
+    if (meta?.embeddingDimensions != null && form.getValues("embeddingDimensions") == null) {
+      form.setValue("embeddingDimensions", meta.embeddingDimensions, { shouldDirty: true })
+    }
+  }
 
   useEffect(() => {
     turLLMVendorService.query().then(setVendors)
@@ -776,7 +840,7 @@ export const BentoLLMInstanceForm: React.FC<Props> = ({ value, isNew, staged, on
                 <FormLabel>{t("forms.llm.embeddingModelName", { defaultValue: "Embedding model" })}</FormLabel>
                 <ModelCombobox
                   value={watchedEmbeddingModelName ?? ""}
-                  onChange={(v) => form.setValue("embeddingModelName", v, { shouldDirty: true })}
+                  onChange={handleEmbeddingModelChange}
                   options={modelList?.models ?? []}
                   isLoading={modelsLoading}
                   source={modelList?.source}
@@ -961,7 +1025,43 @@ export const BentoLLMInstanceForm: React.FC<Props> = ({ value, isNew, staged, on
                 value={maxTokensInput}
                 onChange={(event) => setMaxTokensInput(event.target.value)}
               />
+              <CatalogLimitHint
+                entered={parseNumber(maxTokensInput)}
+                catalogValue={defaultModelMeta?.maxOutputTokens}
+              />
             </div>
+          )}
+
+          {selectedVendorId && !isOnnxVendor && (
+            <FormField
+              control={form.control}
+              name="contextWindow"
+              render={({ field }) => (
+                <FormItem className="w-full">
+                  <FormLabel>{t("forms.llm.contextWindow", { defaultValue: "Context window" })}</FormLabel>
+                  <p className="text-sm text-muted-foreground">
+                    {t("forms.llm.contextWindowDesc", {
+                      defaultValue:
+                        "Max prompt tokens the model accepts. Auto-filled from the catalog when you pick a model; override if needed.",
+                    })}
+                  </p>
+                  <FormControl>
+                    <Input
+                      placeholder="e.g., 128000"
+                      type="number"
+                      className="w-full"
+                      value={field.value ?? ""}
+                      onChange={(e) => field.onChange(e.target.value === "" ? undefined : Number(e.target.value))}
+                    />
+                  </FormControl>
+                  <CatalogLimitHint
+                    entered={field.value ?? undefined}
+                    catalogValue={defaultModelMeta?.contextWindow}
+                  />
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
           )}
 
           {selectedVendorId === "OLLAMA" && (

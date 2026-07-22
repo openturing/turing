@@ -25,6 +25,8 @@ export interface TurLLMInstance {
   embeddingModelPath?: string;
   embeddingTokenizerPath?: string;
   embeddingBatchSize?: number;
+  /** Embedding output dimensions — detected/preserved (T627), auto-filled from the catalog (T780). */
+  embeddingDimensions?: number;
   temperature: number;
   topK: number;
   topP: number;

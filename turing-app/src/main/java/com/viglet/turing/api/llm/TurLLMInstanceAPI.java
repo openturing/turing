@@ -181,6 +181,13 @@ public class TurLLMInstanceAPI {
             turLLMInstanceEdit.setSupportedCapabilities(turLLMInstance.getSupportedCapabilities());
             turLLMInstanceEdit.setTimeout(turLLMInstance.getTimeout());
             turLLMInstanceEdit.setMaxRetries(turLLMInstance.getMaxRetries());
+            // T780 — context window is now editable/auto-filled from the catalog.
+            turLLMInstanceEdit.setContextWindow(turLLMInstance.getContextWindow());
+            // T780 — embedding dimensions may be auto-filled from the catalog, but a
+            // payload that omits it must preserve the runtime-detected value (T627).
+            if (turLLMInstance.getEmbeddingDimensions() != null) {
+                turLLMInstanceEdit.setEmbeddingDimensions(turLLMInstance.getEmbeddingDimensions());
+            }
             turLLMInstanceEdit.setProviderOptionsJson(turLLMInstance.getProviderOptionsJson());
             turLLMInstanceEdit.setToolsEnabled(turLLMInstance.isToolsEnabled());
             turLLMInstanceEdit.setFileUploadEnabled(turLLMInstance.isFileUploadEnabled());
