@@ -94,6 +94,80 @@ class TurLlmModelCatalogTest {
     }
 
     @Test
+    void refreshCarriesRichCatalogMetadata() {
+        // T776: the rich ModelEntry fields must survive the catalog boundary as
+        // TurLlmModelMetadata instead of being collapsed to id/label/kind.
+        String remote = """
+                {
+                  "version": 1,
+                  "lastUpdated": "2026-07-21",
+                  "vendors": {
+                    "openai": [
+                      { "id": "gpt-4o", "label": "GPT-4o", "kind": "CHAT", "vendor": "openai",
+                        "contextWindow": 128000, "maxOutputTokens": 16384,
+                        "capabilities": ["tools", "vision"],
+                        "modalities": { "input": ["text", "image"], "output": ["text"] },
+                        "pricing": { "inputPer1M": 2.5, "outputPer1M": 10.0, "currency": "USD",
+                                     "indicative": true, "source": "litellm", "lastVerified": "2026-07-20" },
+                        "benchmarks": { "intelligenceIndex": 72.5, "arenaElo": 1310.0 },
+                        "performance": { "throughputTps": 95.0, "latencyTtftSec": 0.42 },
+                        "knowledgeCutoff": "2024-10", "releaseDate": "2024-05-13",
+                        "status": "GA" },
+                      { "id": "text-embedding-3-small", "label": "text-embedding-3-small",
+                        "kind": "EMBEDDING", "vendor": "openai", "embeddingDimensions": 1536 }
+                    ]
+                  }
+                }
+                """;
+        catalog.refreshFrom(clientServing(remote));
+
+        TurLlmModelOption chat = catalog.staticModels("openai").stream()
+                .filter(o -> o.id().equals("gpt-4o")).findFirst().orElseThrow();
+        assertThat(chat.metadata()).isNotNull();
+        assertThat(chat.metadata().contextWindow()).isEqualTo(128000);
+        assertThat(chat.metadata().maxOutputTokens()).isEqualTo(16384);
+        assertThat(chat.metadata().capabilities()).containsExactly("tools", "vision");
+        assertThat(chat.metadata().modalities().input()).containsExactly("text", "image");
+        assertThat(chat.metadata().pricing().inputPer1M()).isEqualTo(2.5);
+        assertThat(chat.metadata().pricing().outputPer1M()).isEqualTo(10.0);
+        assertThat(chat.metadata().pricing().indicative()).isTrue();
+        assertThat(chat.metadata().benchmarks().intelligenceIndex()).isEqualTo(72.5);
+        assertThat(chat.metadata().performance().latencyTtftSec()).isEqualTo(0.42);
+        assertThat(chat.metadata().knowledgeCutoff()).isEqualTo("2024-10");
+        assertThat(chat.metadata().tier()).isNotBlank();
+
+        TurLlmModelOption embed = catalog.staticModels("openai").stream()
+                .filter(o -> o.id().equals("text-embedding-3-small")).findFirst().orElseThrow();
+        assertThat(embed.metadata()).isNotNull();
+        assertThat(embed.metadata().embeddingDimensions()).isEqualTo(1536);
+        assertThat(embed.metadata().pricing()).isNull();
+    }
+
+    @Test
+    void refreshCarriesClassifierTagsForBareEntry() {
+        // A bare id/label/kind entry still gains the client Classifier's tags (it
+        // always tags at least the kind), but invents no numeric facts: pricing,
+        // context window and tier (which needs benchmarks) stay null.
+        catalog.refreshFrom(clientServing("""
+                { "version": 1, "vendors": { "openai": [ { "id": "gpt-4o", "label": "GPT-4o", "kind": "CHAT" } ] } }
+                """));
+        assertThat(catalog.staticModels("openai")).singleElement().satisfies(o -> {
+            assertThat(o.metadata()).isNotNull();
+            assertThat(o.metadata().tags()).isNotEmpty();
+            assertThat(o.metadata().contextWindow()).isNull();
+            assertThat(o.metadata().pricing()).isNull();
+        });
+    }
+
+    @Test
+    void liveVendorOptionHasNullMetadata() {
+        // A model surfaced by a live vendor listing (no catalog entry) carries no
+        // metadata — absence must never be mistaken for a catalog default.
+        assertThat(new TurLlmModelOption("gpt-4o", "GPT-4o").metadata()).isNull();
+        assertThat(new TurLlmModelOption("gpt-4o", "GPT-4o", TurLlmModelKind.CHAT).metadata()).isNull();
+    }
+
+    @Test
     void refreshFallsBackToHeuristicWhenKindAbsent() {
         // No explicit kind → the id/label heuristic classifies (embedding id → EMBEDDING).
         String envelope = """

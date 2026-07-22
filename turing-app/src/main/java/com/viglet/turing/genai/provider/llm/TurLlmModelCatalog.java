@@ -102,9 +102,12 @@ public class TurLlmModelCatalog {
 
     /**
      * Maps the client's flattened {@link ModelEntry} list into the vendor→models map
-     * the picker serves. Only id/label/kind are consumed (extras ignored); an entry's
-     * {@link Kind} is honoured when known, otherwise the id/label heuristic classifies
-     * it. Vendors preserve first-seen order; blank ids are skipped.
+     * the picker serves. The catalog {@link Kind} is <b>trusted directly</b> when known
+     * (only a {@code null}/{@link Kind#UNKNOWN UNKNOWN} kind falls back to the id/label
+     * heuristic), and the rich {@link ModelEntry} fields (pricing, limits, capabilities,
+     * modalities, benchmarks, performance, cutoff, tier…) are carried through as
+     * {@link TurLlmModelMetadata} (T776) instead of being discarded. Vendors preserve
+     * first-seen order; blank ids are skipped.
      */
     Map<String, List<TurLlmModelOption>> toCatalogMap(List<ModelEntry> entries) {
         Map<String, List<TurLlmModelOption>> byVendor = new LinkedHashMap<>();
@@ -119,7 +122,8 @@ public class TurLlmModelCatalog {
             String override = (kind == null || kind == Kind.UNKNOWN) ? null : kind.name();
             byVendor.computeIfAbsent(vendor, v -> new ArrayList<>())
                     .add(new TurLlmModelOption(id, label,
-                            TurLlmModelKind.parseOrClassify(override, id, label)));
+                            TurLlmModelKind.parseOrClassify(override, id, label),
+                            TurLlmModelMetadata.fromCatalog(entry)));
         }
         Map<String, List<TurLlmModelOption>> out = new LinkedHashMap<>();
         byVendor.forEach((vendor, models) -> out.put(vendor, List.copyOf(models)));
