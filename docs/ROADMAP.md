@@ -194,7 +194,7 @@
 
 ## Block BE — Catalog-driven model intelligence (§LIII)
 
-> The `io.github.openviglet:model-catalog-client` (1.0.4+) already fetches a
+> The `io.github.openviglet:model-catalog-client` (1.0.5+) already fetches a
 > **rich** `ModelEntry` per model — `pricing`, `contextWindow`, `maxOutputTokens`,
 > `embeddingDimensions`, `capabilities`, `modalities`, `benchmarks`, `performance`,
 > `knowledgeCutoff`, `releaseDate`, `deprecated`/`status`, plus a `Classifier`
@@ -204,7 +204,7 @@
 > `TurLLMInstance.contextWindow`, the native-capability matrix). **Widen the funnel
 > once (T776), then light up cost, selection UX, correctness, optimization and
 > freshness on top.** Full design in [IMPROVEMENTS.md](IMPROVEMENTS.md) §LIII.
-> Feasible against the current client — no library changes required (one optional
+> Feasible against the current client (1.0.5) — no library changes required (one optional
 > refinement is noted in §LIII.4).
 
 **Phase 1 — Widen the funnel + auto-pricing (headline):**

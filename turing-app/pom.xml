@@ -46,7 +46,7 @@
         <dependency>
             <groupId>io.github.openviglet</groupId>
             <artifactId>model-catalog-client</artifactId>
-            <version>1.0.3</version>
+            <version>1.0.5</version>
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>

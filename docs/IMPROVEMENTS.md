@@ -2623,7 +2623,7 @@ depend on is deprecated, repriced, or superseded — the catalog becomes a live
 signal, not a startup snapshot. **T789** (💭) rounds it out with `providers()`
 authoritative pricing links and an optional `plans()` consumer-plan reference.
 
-**Library note (optional, not a blocker).** The 1.0.4 client already exposes
+**Library note (optional, not a blocker).** The 1.0.5 client already exposes
 everything above; `providers()`/`plans()`/`changes()`/`aliases()`/`stats()`/
 `coverage()` currently return untyped `Map<String,Object>`. The only refinement
 worth filing in `openviglet/model-catalog` (`clients/java`) is *typed* records for
