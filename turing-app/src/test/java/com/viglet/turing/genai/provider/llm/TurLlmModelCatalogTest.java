@@ -208,6 +208,38 @@ class TurLlmModelCatalogTest {
     }
 
     @Test
+    void refreshPopulatesProviderPricingLinks() {
+        // T778: the providers() registry (providers.json) yields the per-vendor
+        // "verify at vendor" pricing links, keyed by lower-cased catalog vendor.
+        String providersJson = """
+                {
+                  "version": 1,
+                  "providers": [
+                    { "id": "openai", "name": "OpenAI", "catalogVendor": "openai",
+                      "apiPricingUrl": "https://openai.com/api/pricing/" },
+                    { "id": "anthropic", "name": "Anthropic", "catalogVendor": "anthropic",
+                      "apiPricingUrl": "https://claude.com/pricing" },
+                    { "id": "no-url", "catalogVendor": "acme" }
+                  ]
+                }
+                """;
+        catalog.refreshProviderLinks(clientServing(providersJson));
+        assertThat(catalog.providerPricingUrls())
+                .containsEntry("openai", "https://openai.com/api/pricing/")
+                .containsEntry("anthropic", "https://claude.com/pricing")
+                .doesNotContainKey("acme");
+    }
+
+    @Test
+    void providerPricingUrlsToleratesGarbageShapes() {
+        // Untyped 1.0.5 client: anything that is not the expected list-of-maps is
+        // skipped, never thrown.
+        assertThat(catalog.toProviderPricingUrls(null)).isEmpty();
+        assertThat(catalog.toProviderPricingUrls(java.util.Map.of("providers", "not-a-list"))).isEmpty();
+        assertThat(catalog.toProviderPricingUrls(java.util.Map.of("other", 1))).isEmpty();
+    }
+
+    @Test
     void remoteRefreshDisabledIsNoOp() {
         // In a plain unit (no Spring) remoteEnabled defaults to false → no network,
         // the served map stays empty, and the call does not throw.

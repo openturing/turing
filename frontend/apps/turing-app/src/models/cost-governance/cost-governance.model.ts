@@ -72,6 +72,9 @@ export interface TurAgentBudgetStatus {
   downgradeConfigured: boolean;
 }
 
+/** Provenance of a price row (T777/T778). */
+export type TurLLMPriceSource = "CATALOG" | "MANUAL";
+
 /** Row in the admin-editable per-model price table ({@code tur_llm_price}). */
 export interface TurLLMPrice {
   id?: string;
@@ -81,4 +84,15 @@ export interface TurLLMPrice {
   outputPricePerMillion: number;
   currency?: string;
   updatedAt?: string;
+  /**
+   * T777/T778 — provenance: `MANUAL` (operator-entered / negotiated, always wins)
+   * or `CATALOG` (auto-seeded from the public model catalog).
+   */
+  source?: TurLLMPriceSource;
+  /** T778 — whether the rate is an indicative (published list) price. */
+  indicative?: boolean;
+  /** T778 — catalog pricing provenance (e.g. `litellm`) for CATALOG rows. */
+  priceProvenance?: string;
+  /** T778 — catalog `lastVerified` ISO date, for the staleness warning. */
+  lastVerified?: string;
 }

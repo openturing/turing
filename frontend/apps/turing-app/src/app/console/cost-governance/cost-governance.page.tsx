@@ -7,6 +7,7 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import {
     Table,
     TableBody,
@@ -22,8 +23,10 @@ import type {
 } from "@/models/cost-governance/cost-governance.model";
 import { TurCostGovernanceService } from "@/services/cost-governance/cost-governance.service";
 import {
+    IconAlertTriangle,
     IconCoin,
     IconCpu2,
+    IconExternalLink,
     IconFileText,
     IconLogin2,
     IconLogout2,
@@ -65,6 +68,17 @@ function formatTokens(n: number): string {
     if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
     if (n >= 1_000) return `${(n / 1_000).toFixed(1)}K`;
     return n.toLocaleString();
+}
+
+/** T778 — a catalog price not re-verified in this many days is flagged stale. */
+const PRICE_STALE_DAYS = 180;
+
+/** True when an ISO date string is older than {@link PRICE_STALE_DAYS} days. */
+function isPriceStale(lastVerified?: string): boolean {
+    if (!lastVerified) return false;
+    const when = Date.parse(lastVerified);
+    if (Number.isNaN(when)) return false;
+    return (Date.now() - when) / 86_400_000 > PRICE_STALE_DAYS;
 }
 
 interface SummaryCardProps {
@@ -117,8 +131,66 @@ function CostChart({ points }: Readonly<{ points: TurDailyCostPoint[] }>) {
     );
 }
 
+/** T778 — source badge (catalog/manual + indicative) and a verify-at-vendor link. */
+function PriceSourceCell({ price, link }: Readonly<{ price: TurLLMPrice; link?: string }>) {
+    const { t } = useTranslation();
+    const isCatalog = price.source === "CATALOG";
+    const catalogTip = price.priceProvenance
+        ? t("costGovernance.priceTable.sourceCatalogTooltip", { provenance: price.priceProvenance })
+        : t("costGovernance.priceTable.sourceCatalogTooltipNoProvenance");
+    return (
+        <div className="flex flex-wrap items-center gap-1.5">
+            {isCatalog ? (
+                <Badge variant="secondary" title={catalogTip}>
+                    {t("costGovernance.priceTable.sourceCatalog")}
+                </Badge>
+            ) : (
+                <Badge variant="outline" title={t("costGovernance.priceTable.sourceManualTooltip")}>
+                    {t("costGovernance.priceTable.sourceManual")}
+                </Badge>
+            )}
+            {price.indicative && (
+                <Badge variant="outline" title={t("costGovernance.priceTable.indicativeTooltip")}>
+                    {t("costGovernance.priceTable.indicative")}
+                </Badge>
+            )}
+            {link && (
+                <a href={link} target="_blank" rel="noreferrer"
+                    className="text-muted-foreground hover:text-foreground inline-flex"
+                    title={t("costGovernance.priceTable.verify")}>
+                    <IconExternalLink className="size-4" />
+                </a>
+            )}
+        </div>
+    );
+}
+
+/** T778 — last-verified date with a staleness warning for old catalog prices. */
+function PriceVerifiedCell({ price }: Readonly<{ price: TurLLMPrice }>) {
+    const { t } = useTranslation();
+    if (!price.lastVerified) {
+        return <span className="text-muted-foreground">{t("costGovernance.priceTable.neverVerified")}</span>;
+    }
+    const stale = isPriceStale(price.lastVerified);
+    return (
+        <div className="flex items-center gap-1.5">
+            <span className={stale ? "text-muted-foreground" : ""}>{price.lastVerified}</span>
+            {stale && (
+                <Badge variant="destructive"
+                    title={t("costGovernance.priceTable.staleTooltip", { days: PRICE_STALE_DAYS })}>
+                    {t("costGovernance.priceTable.stale")}
+                </Badge>
+            )}
+        </div>
+    );
+}
+
 /** Inline editor for one or more price rows + an add-model form. */
-function PriceEditor({ prices, onChanged }: Readonly<{ prices: TurLLMPrice[]; onChanged: () => void }>) {
+function PriceEditor({ prices, providerLinks, onChanged }: Readonly<{
+    prices: TurLLMPrice[];
+    providerLinks: Record<string, string>;
+    onChanged: () => void;
+}>) {
     const { t } = useTranslation();
     const [draft, setDraft] = useState<Record<string, { input: string; output: string }>>({});
     const [newRow, setNewRow] = useState({ vendorId: "", modelName: "", input: "", output: "" });
@@ -201,6 +273,8 @@ function PriceEditor({ prices, onChanged }: Readonly<{ prices: TurLLMPrice[]; on
                     <TableHead>{t("costGovernance.priceTable.model")}</TableHead>
                     <TableHead className="text-right">{t("costGovernance.priceTable.inputPrice")}</TableHead>
                     <TableHead className="text-right">{t("costGovernance.priceTable.outputPrice")}</TableHead>
+                    <TableHead>{t("costGovernance.priceTable.source")}</TableHead>
+                    <TableHead>{t("costGovernance.priceTable.verified")}</TableHead>
                     <TableHead className="text-right">{t("costGovernance.priceTable.actions")}</TableHead>
                 </TableRow>
             </TableHeader>
@@ -220,6 +294,12 @@ function PriceEditor({ prices, onChanged }: Readonly<{ prices: TurLLMPrice[]; on
                                 <Input type="number" step="0.01" min={0} value={d.output}
                                     className="w-28 text-right ml-auto"
                                     onChange={(e) => setDraftFor(p.id ?? "", "output", e.target.value)} />
+                            </TableCell>
+                            <TableCell>
+                                <PriceSourceCell price={p} link={providerLinks[p.vendorId?.toLowerCase()]} />
+                            </TableCell>
+                            <TableCell>
+                                <PriceVerifiedCell price={p} />
                             </TableCell>
                             <TableCell className="text-right">
                                 <div className="flex justify-end gap-2">
@@ -253,6 +333,8 @@ function PriceEditor({ prices, onChanged }: Readonly<{ prices: TurLLMPrice[]; on
                             className="w-28 text-right ml-auto"
                             onChange={(e) => setNewRow((r) => ({ ...r, output: e.target.value }))} />
                     </TableCell>
+                    <TableCell />
+                    <TableCell />
                     <TableCell className="text-right">
                         <Button size="sm" onClick={addRow}>
                             <IconPlus className="size-4 mr-1" /> {t("costGovernance.priceTable.add")}
@@ -271,6 +353,7 @@ export default function CostGovernancePage() {
     const [report, setReport] = useState<TurCostReport | null>(null);
     const [points, setPoints] = useState<TurDailyCostPoint[]>([]);
     const [prices, setPrices] = useState<TurLLMPrice[]>([]);
+    const [providerLinks, setProviderLinks] = useState<Record<string, string>>({});
     const [loading, setLoading] = useState(true);
 
     const load = useCallback((f: string, t: string) => {
@@ -297,12 +380,36 @@ export default function CostGovernancePage() {
 
     useEffect(() => {
         loadPrices();
+        service.getProviderLinks().then(setProviderLinks).catch(() => setProviderLinks({}));
     }, [loadPrices]);
 
     const avgPerRequest = useMemo(() => {
         if (!report || report.totalRequests === 0) return 0;
         return report.totalCostUsd / report.totalRequests;
     }, [report]);
+
+    // T778 — cross-check the billed models against the price table so operators
+    // see which used models were billed at $0 (no price row) or on an indicative
+    // (published, unverified) catalog rate.
+    const priceByKey = useMemo(() => {
+        const map = new Map<string, TurLLMPrice>();
+        for (const p of prices) {
+            map.set(`${p.vendorId?.toLowerCase()}:${p.modelName}`, p);
+        }
+        return map;
+    }, [prices]);
+
+    const usedUnpriced = useMemo(
+        () => (report?.byModel ?? []).filter(
+            (row) => !priceByKey.has(`${row.vendorId?.toLowerCase()}:${row.modelName}`)),
+        [report, priceByKey],
+    );
+
+    const usedIndicative = useMemo(
+        () => (report?.byModel ?? []).filter(
+            (row) => priceByKey.get(`${row.vendorId?.toLowerCase()}:${row.modelName}`)?.indicative),
+        [report, priceByKey],
+    );
 
     return (
         <div className="space-y-6 px-4 lg:px-6">
@@ -414,6 +521,22 @@ export default function CostGovernancePage() {
                 </>
             )}
 
+            {/* T778 — provenance / freshness warnings for billed models */}
+            {usedUnpriced.length > 0 && (
+                <PriceWarningCallout
+                    tone="destructive"
+                    title={t("costGovernance.priceTable.unpricedTitle")}
+                    description={t("costGovernance.priceTable.unpricedDescription")}
+                    models={usedUnpriced.map((r) => `${r.vendorId}/${r.modelName}`)} />
+            )}
+            {usedIndicative.length > 0 && (
+                <PriceWarningCallout
+                    tone="warning"
+                    title={t("costGovernance.priceTable.indicativeUsedTitle")}
+                    description={t("costGovernance.priceTable.indicativeUsedDescription")}
+                    models={usedIndicative.map((r) => `${r.vendorId}/${r.modelName}`)} />
+            )}
+
             {/* Price table editor */}
             <Card>
                 <CardHeader>
@@ -423,9 +546,36 @@ export default function CostGovernancePage() {
                     </CardDescription>
                 </CardHeader>
                 <CardContent>
-                    <PriceEditor prices={prices} onChanged={() => { loadPrices(); load(from, to); }} />
+                    <PriceEditor prices={prices} providerLinks={providerLinks}
+                        onChanged={() => { loadPrices(); load(from, to); }} />
                 </CardContent>
             </Card>
+        </div>
+    );
+}
+
+/** T778 — a small inline callout listing billed models that need attention. */
+function PriceWarningCallout({ tone, title, description, models }: Readonly<{
+    tone: "destructive" | "warning";
+    title: string;
+    description: string;
+    models: string[];
+}>) {
+    const toneClass = tone === "destructive"
+        ? "border-destructive/40 bg-destructive/5 text-destructive"
+        : "border-amber-500/40 bg-amber-500/5 text-amber-700 dark:text-amber-400";
+    return (
+        <div className={`flex gap-3 rounded-lg border p-4 ${toneClass}`}>
+            <IconAlertTriangle className="mt-0.5 size-5 shrink-0" />
+            <div className="space-y-1">
+                <p className="font-medium">{title}</p>
+                <p className="text-muted-foreground text-sm">{description}</p>
+                <div className="flex flex-wrap gap-1.5 pt-1">
+                    {models.map((m) => (
+                        <Badge key={m} variant="outline" className="font-mono text-xs">{m}</Badge>
+                    ))}
+                </div>
+            </div>
         </div>
     );
 }

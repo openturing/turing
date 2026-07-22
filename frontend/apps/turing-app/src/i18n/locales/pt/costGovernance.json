@@ -51,7 +51,24 @@
       "added": "Preço adicionado para {{model}}",
       "addFailed": "Falha ao adicionar preço",
       "removed": "Preço removido para {{model}}",
-      "removeFailed": "Falha ao remover preço"
+      "removeFailed": "Falha ao remover preço",
+      "source": "Origem",
+      "verified": "Verificado",
+      "sourceCatalog": "Catálogo",
+      "sourceManual": "Manual",
+      "sourceCatalogTooltip": "Preenchido automaticamente pelo catálogo público de modelos ({{provenance}}). Ao editar, vira uma taxa manual.",
+      "sourceCatalogTooltipNoProvenance": "Preenchido automaticamente pelo catálogo público de modelos. Ao editar, vira uma taxa manual.",
+      "sourceManualTooltip": "Taxa informada pelo operador ou negociada. O reconciliador do catálogo nunca a sobrescreve.",
+      "indicative": "Indicativo",
+      "indicativeTooltip": "Preço de tabela publicado, não é uma taxa verificada ou negociada — confirme no fornecedor.",
+      "stale": "Desatualizado",
+      "staleTooltip": "Última verificação há mais de {{days}} dias — confirme a taxa atual no fornecedor.",
+      "verify": "Verificar no fornecedor",
+      "neverVerified": "—",
+      "unpricedTitle": "Modelos usados sem preço configurado",
+      "unpricedDescription": "Estes modelos foram cobrados como $0 porque nenhuma linha de preço corresponde a eles. Adicione um preço (ou deixe o catálogo preencher) para que o custo seja contabilizado.",
+      "indicativeUsedTitle": "Modelos usados com preços indicativos do catálogo",
+      "indicativeUsedDescription": "Estes modelos cobrados usam preços de tabela publicados do catálogo, não taxas verificadas. Confirme no fornecedor se os valores de custo precisam ser exatos."
     }
   }
 }

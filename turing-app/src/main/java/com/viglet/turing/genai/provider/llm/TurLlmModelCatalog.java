@@ -54,6 +54,15 @@ public class TurLlmModelCatalog {
      */
     private volatile Map<String, List<TurLlmModelOption>> catalog = Map.of();
 
+    /**
+     * Per-vendor official pricing pages (T778), keyed by catalog vendor slug —
+     * the authoritative "verify at vendor" links behind the indicative catalog
+     * prices. Sourced from the client {@code providers()} registry
+     * ({@code providers.json}) on the same refresh. Empty until the first
+     * successful refresh; a failed fetch keeps the last-good map.
+     */
+    private volatile Map<String, String> providerPricingUrls = Map.of();
+
     /** Lazily built from the configured base URL; overridable for tests. */
     private volatile ModelCatalogClient client;
 
@@ -98,6 +107,53 @@ public class TurLlmModelCatalog {
             log.debug("Remote LLM model catalog refresh from {} failed, keeping current: {}",
                     remoteUrl, e.getMessage());
         }
+        refreshProviderLinks(modelCatalogClient);
+    }
+
+    /**
+     * Best-effort refresh of the per-vendor official pricing pages (T778) from the
+     * client {@code providers()} registry. The registry is
+     * {@code {providers:[{catalogVendor, apiPricingUrl, ...}]}}; each provider with
+     * both a {@code catalogVendor} and an {@code apiPricingUrl} contributes one
+     * entry. On any failure or an empty result the last-good map is kept.
+     */
+    void refreshProviderLinks(ModelCatalogClient modelCatalogClient) {
+        try {
+            Map<String, String> parsed = toProviderPricingUrls(modelCatalogClient.providers());
+            if (!parsed.isEmpty()) {
+                this.providerPricingUrls = parsed;
+            }
+        } catch (Exception e) {
+            log.debug("Provider pricing-links refresh failed, keeping current: {}", e.getMessage());
+        }
+    }
+
+    /**
+     * Maps the raw {@code providers.json} object (untyped in the 1.0.5 client) to a
+     * {@code catalogVendor → apiPricingUrl} map. Tolerant of the untyped shape:
+     * anything that is not the expected list-of-maps is skipped, never thrown.
+     */
+    @SuppressWarnings("unchecked")
+    Map<String, String> toProviderPricingUrls(Map<String, Object> raw) {
+        if (raw == null) {
+            return Map.of();
+        }
+        Object providers = raw.get("providers");
+        if (!(providers instanceof List<?> list)) {
+            return Map.of();
+        }
+        Map<String, String> out = new LinkedHashMap<>();
+        for (Object item : list) {
+            if (!(item instanceof Map<?, ?> provider)) {
+                continue;
+            }
+            Object vendor = ((Map<String, Object>) provider).get("catalogVendor");
+            Object url = ((Map<String, Object>) provider).get("apiPricingUrl");
+            if (vendor instanceof String v && !v.isBlank() && url instanceof String u && !u.isBlank()) {
+                out.put(v.toLowerCase(Locale.ROOT), u);
+            }
+        }
+        return Map.copyOf(out);
     }
 
     /**
@@ -179,5 +235,13 @@ public class TurLlmModelCatalog {
      */
     public Map<String, List<TurLlmModelOption>> allModels() {
         return catalog;
+    }
+
+    /**
+     * Per-vendor official "verify at vendor" pricing-page URLs (T778), keyed by
+     * lower-cased catalog vendor slug. Empty until the first successful refresh.
+     */
+    public Map<String, String> providerPricingUrls() {
+        return providerPricingUrls;
     }
 }

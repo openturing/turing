@@ -46,4 +46,13 @@ export class TurCostGovernanceService {
   async deletePrice(id: string): Promise<void> {
     await axios.delete(`/v2/llm/price/${id}`);
   }
+
+  /**
+   * T778 — per-vendor official "verify at vendor" pricing-page links, keyed by
+   * lower-cased vendor slug, from the public catalog's providers registry.
+   */
+  async getProviderLinks(): Promise<Record<string, string>> {
+    const response = await axios.get<Record<string, string>>("/v2/llm/price/provider-links");
+    return response.data ?? {};
+  }
 }

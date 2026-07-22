@@ -10,6 +10,7 @@
 package com.viglet.turing.api.llm.price;
 
 import java.util.List;
+import java.util.Map;
 
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -19,6 +20,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.viglet.turing.genai.provider.llm.TurLlmModelCatalog;
 import com.viglet.turing.persistence.model.llm.TurLLMPrice;
 import com.viglet.turing.service.llm.price.TurLLMPriceService;
 
@@ -39,14 +41,28 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 public class TurLLMPriceAPI {
 
     private final TurLLMPriceService priceService;
+    private final TurLlmModelCatalog modelCatalog;
 
-    public TurLLMPriceAPI(TurLLMPriceService priceService) {
+    public TurLLMPriceAPI(TurLLMPriceService priceService, TurLlmModelCatalog modelCatalog) {
         this.priceService = priceService;
+        this.modelCatalog = modelCatalog;
     }
 
     @GetMapping
     public List<TurLLMPrice> list() {
         return priceService.findAll();
+    }
+
+    /**
+     * T778 — per-vendor official "verify at vendor" pricing-page links, keyed by
+     * lower-cased vendor slug, from the public model catalog's {@code providers()}
+     * registry. Empty until the catalog has refreshed. The cost UI links each
+     * price row (especially indicative catalog rows) to its vendor page so an
+     * operator can confirm the rate.
+     */
+    @GetMapping("/provider-links")
+    public Map<String, String> providerLinks() {
+        return modelCatalog.providerPricingUrls();
     }
 
     @PostMapping

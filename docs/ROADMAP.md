@@ -210,7 +210,7 @@
 **Phase 1 — Widen the funnel + auto-pricing (headline):**
 - ✅ **T776** SHIPPED — Carry rich `ModelEntry` metadata through the catalog boundary (`TurLlmModelMetadata` on `TurLlmModelOption`). Foundational; see CHANGELOG. → §LIII.1
 - ✅ **T777** SHIPPED — Auto-seed & refresh `TurLLMPrice` from catalog pricing (`TurLLMPriceCatalogReconciler`; `CATALOG`/`MANUAL` source, manual always wins). Closes the "$0 unpriced model" gap; see CHANGELOG. → §LIII.1
-- 📋 **T778** (deps: T777) **Price provenance & staleness in the cost UI** — surface per-model price source (catalog/manual), the `indicative` flag, `lastVerified`, and a "verify at vendor" link (from `providers()` `apiPricingUrl`) on the cost-governance price table + model picker; warn when a used model has no price row or a stale/indicative one. → §LIII.1
+- ✅ **T778** SHIPPED — Price provenance & staleness in the cost UI (Source/Indicative/Verified badges, verify-at-vendor links via `provider-links`, used-but-unpriced / indicative warnings). Picker price surfacing folded into T779. See CHANGELOG. → §LIII.1
 
 **Phase 2 — Enriched selection & correctness:**
 - 📋 **T779** (deps: T776) **Enriched model picker** — `model-combobox.tsx` / `llm-model-multi-select.tsx` rows show pricing (in/out per 1M), context window, max output, capability chips (vision/tools/reasoning), modality icons, intelligence index / arena Elo, throughput & TTFT, knowledge cutoff, and a tier badge (Frontier/High/Mid/Light); sortable/filterable by price, context, or intelligence. → §LIII.2

@@ -51,7 +51,24 @@
       "added": "Added price for {{model}}",
       "addFailed": "Failed to add price",
       "removed": "Removed price for {{model}}",
-      "removeFailed": "Failed to remove price"
+      "removeFailed": "Failed to remove price",
+      "source": "Source",
+      "verified": "Verified",
+      "sourceCatalog": "Catalog",
+      "sourceManual": "Manual",
+      "sourceCatalogTooltip": "Auto-seeded from the public model catalog ({{provenance}}). Editing it makes it a manual rate.",
+      "sourceCatalogTooltipNoProvenance": "Auto-seeded from the public model catalog. Editing it makes it a manual rate.",
+      "sourceManualTooltip": "Operator-entered or negotiated rate. The catalog reconciler never overwrites it.",
+      "indicative": "Indicative",
+      "indicativeTooltip": "Published list price, not a verified or negotiated rate — confirm at the vendor.",
+      "stale": "Stale",
+      "staleTooltip": "Last verified over {{days}} days ago — confirm the current rate at the vendor.",
+      "verify": "Verify at vendor",
+      "neverVerified": "—",
+      "unpricedTitle": "Models used without a configured price",
+      "unpricedDescription": "These models were billed at $0 because no price row matches them. Add a price (or let the catalog seed one) so their cost is tracked.",
+      "indicativeUsedTitle": "Used models on indicative catalog prices",
+      "indicativeUsedDescription": "These billed models use published list prices from the catalog, not verified rates. Confirm them at the vendor if the cost figures must be exact."
     }
   }
 }
