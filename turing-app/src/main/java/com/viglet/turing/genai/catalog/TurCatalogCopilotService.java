@@ -97,19 +97,22 @@ public class TurCatalogCopilotService {
     private final TurSNSiteFieldExtRepository turSNSiteFieldExtRepository;
     private final TurSNHybridRankingService hybridRankingService;
     private final TurDefaultChatModelResolver chatModelResolver;
+    private final com.viglet.turing.properties.TurCatalogCopilotProperty copilotProperty;
 
     public TurCatalogCopilotService(TurNLFacetParser parser,
             TurDslSearchService dslSearchService,
             TurSNSiteRepository turSNSiteRepository,
             TurSNSiteFieldExtRepository turSNSiteFieldExtRepository,
             TurSNHybridRankingService hybridRankingService,
-            TurDefaultChatModelResolver chatModelResolver) {
+            TurDefaultChatModelResolver chatModelResolver,
+            com.viglet.turing.properties.TurCatalogCopilotProperty copilotProperty) {
         this.parser = parser;
         this.dslSearchService = dslSearchService;
         this.turSNSiteRepository = turSNSiteRepository;
         this.turSNSiteFieldExtRepository = turSNSiteFieldExtRepository;
         this.hybridRankingService = hybridRankingService;
         this.chatModelResolver = chatModelResolver;
+        this.copilotProperty = copilotProperty;
     }
 
     /** True when a usable default LLM is configured (the copilot can answer). */
@@ -141,7 +144,11 @@ public class TurCatalogCopilotService {
             return TurCatalogCopilotResult.error("No user message to answer");
         }
 
-        Retrieval retrieval = retrieve(siteName, locale, latestUser);
+        // T793 / §LIV.4 — stuff-all: when the whole catalog fits the token budget,
+        // skip NL→DSL retrieval and ground the LLM on every row (still cited).
+        // Falls back to filtered retrieval when the corpus is too large / empty.
+        Retrieval retrieval = stuffAllRetrieve(siteName, locale)
+                .orElseGet(() -> retrieve(siteName, locale, latestUser));
         if (!retrieval.siteFound()) {
             return TurCatalogCopilotResult.error("Catalog site not found: " + siteName);
         }
@@ -234,9 +241,21 @@ public class TurCatalogCopilotService {
 
         List<TurDslSearchResponse.Hit> ordered = applyHybridRanking(site, searchLocale, query, hits);
 
+        Projection projection = project(ordered, MAX_RESULTS);
+        return new Retrieval(projection.citations(), projection.contextBlocks(),
+                totalHits, summarize(request), true);
+    }
+
+    /**
+     * Projects up to {@code max} hits (in the given order) into 1-based citations
+     * and per-result grounding context blocks. Shared by the filtered
+     * {@link #retrieve} path ({@code max = MAX_RESULTS}) and the T793 stuff-all
+     * path ({@code max =} all hits).
+     */
+    private Projection project(List<TurDslSearchResponse.Hit> ordered, int max) {
         List<TurCatalogCitation> citations = new ArrayList<>();
         List<String> contextBlocks = new ArrayList<>();
-        int limit = Math.min(MAX_RESULTS, ordered.size());
+        int limit = Math.min(max, ordered.size());
         for (int i = 0; i < limit; i++) {
             TurDslSearchResponse.Hit hit = ordered.get(i);
             int rank = i + 1;
@@ -248,7 +267,73 @@ public class TurCatalogCopilotService {
                     hit.explanation()));
             contextBlocks.add(contextBlock(rank, title, url, source));
         }
-        return new Retrieval(citations, contextBlocks, totalHits, summarize(request), true);
+        return new Projection(citations, contextBlocks);
+    }
+
+    /**
+     * T793 / §LIV.4 (Block BF) — <strong>stuff-all</strong> retrieval: when the
+     * whole catalog fits within the configured token budget (and document cap),
+     * skip the NL→DSL parse entirely and ground the LLM on <em>every</em> row via
+     * a {@code match_all} query — the extreme-vectorless path where a small catalog
+     * fits in one prompt. Returns {@link Optional#empty()} (so the caller falls
+     * back to filtered {@link #retrieve}) when disabled, when the site/index is
+     * empty, when the index holds more rows than were fetched (partial → not "all"),
+     * or when the assembled context exceeds the budget. Never throws.
+     */
+    Optional<Retrieval> stuffAllRetrieve(String siteName, String locale) {
+        if (!copilotProperty.isStuffAllEnabled()) {
+            return Optional.empty();
+        }
+        Optional<TurSNSite> siteOpt = turSNSiteRepository.findByNameIgnoreCase(siteName);
+        if (siteOpt.isEmpty()) {
+            return Optional.empty();
+        }
+        String searchLocale = StringUtils.hasText(locale) ? locale : "en";
+        int maxDocs = Math.max(1, copilotProperty.getStuffAllMaxDocs());
+        Optional<TurDslSearchResponse> responseOpt =
+                dslSearchService.search(siteName, searchLocale, matchAllRequest(maxDocs));
+        if (responseOpt.isEmpty() || responseOpt.get().hits() == null
+                || responseOpt.get().hits().hits() == null
+                || responseOpt.get().hits().hits().isEmpty()) {
+            return Optional.empty();
+        }
+        TurDslSearchResponse response = responseOpt.get();
+        List<TurDslSearchResponse.Hit> hits = response.hits().hits();
+        long totalHits = response.hits().total() != null ? response.hits().total().value() : hits.size();
+        // Only stuff when we actually hold the entire catalog — a partial page
+        // (index bigger than the fetch cap) must use filtered retrieval instead.
+        if (totalHits > hits.size()) {
+            return Optional.empty();
+        }
+        Projection projection = project(hits, hits.size());
+        int estimatedTokens = estimateTokens(projection.contextBlocks());
+        if (estimatedTokens > copilotProperty.getStuffAllTokenBudget()) {
+            log.debug("[CatalogCopilot] stuff-all for '{}' over budget (~{} > {} tokens) — filtered fallback",
+                    siteName, estimatedTokens, copilotProperty.getStuffAllTokenBudget());
+            return Optional.empty();
+        }
+        log.debug("[CatalogCopilot] stuff-all for '{}': grounding on all {} rows (~{} tokens)",
+                siteName, hits.size(), estimatedTokens);
+        return Optional.of(new Retrieval(projection.citations(), projection.contextBlocks(),
+                totalHits, "", true));
+    }
+
+    private TurDslQueryRequest matchAllRequest(int size) {
+        String body = "{\"query\":{\"match_all\":{}},\"size\":%d}".formatted(size);
+        return OBJECT_MAPPER.readValue(body, TurDslQueryRequest.class);
+    }
+
+    /** Rough token estimate (chars/4) of the assembled grounding context. */
+    private static int estimateTokens(List<String> contextBlocks) {
+        int chars = 0;
+        for (String block : contextBlocks) {
+            chars += block == null ? 0 : block.length();
+        }
+        return chars / 4;
+    }
+
+    /** Citations + per-result context blocks projected from a hit page. */
+    private record Projection(List<TurCatalogCitation> citations, List<String> contextBlocks) {
     }
 
     private TurDslQueryRequest parseOrFallback(String siteName, String locale, String query,

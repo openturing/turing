@@ -217,6 +217,15 @@ turing:
     # a no-op even when enabled. Each source GETs a remote JSON / NDJSON feed via
     # the T739 URL-fetch guard, optionally converges the SN-site field schema from
     # a field manifest, imports the records, and de-indexes vanished ids.
+    # T793 / §LIV.4 (Block BF) — Vectorless (Structured-Data) RAG copilot
+    # stuff-all mode: when the whole catalog fits the token budget (and doc cap),
+    # the copilot skips NL→DSL retrieval and grounds the LLM on every row (still
+    # cited). Self-gating by size — above either bound it falls back to filtered
+    # retrieval — so it is safe to leave on.
+    copilot:
+      stuff-all-enabled: true
+      stuff-all-token-budget: 40000
+      stuff-all-max-docs: 1000
     structured-feed:
       enabled: false
       # Delay before the first run and fixed delay between runs (ms).

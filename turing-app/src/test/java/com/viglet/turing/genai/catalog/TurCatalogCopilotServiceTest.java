@@ -72,6 +72,10 @@ class TurCatalogCopilotServiceTest {
     private TurSNHybridRankingService hybridRankingService;
     @Mock
     private TurDefaultChatModelResolver chatModelResolver;
+    // T793 / §LIV.4 — stuff-all config. Mock default isStuffAllEnabled()=false keeps
+    // the existing (filtered) tests on the NL→DSL path unchanged.
+    @Mock
+    private com.viglet.turing.properties.TurCatalogCopilotProperty copilotProperty;
 
     @InjectMocks
     private TurCatalogCopilotService service;
@@ -107,6 +111,59 @@ class TurCatalogCopilotServiceTest {
                 .contains("modality=online")
                 .contains("price")
                 .contains("20000");
+    }
+
+    @Test
+    void stuffAllGroundsOnAllRowsWhenWithinBudget() {
+        // T793 — the whole catalog fits the budget → skip NL→DSL, ground on all rows.
+        TurSNSite site = new TurSNSite();
+        site.setName("catalog");
+        ChatModel chatModel = modelReturning("Both options [1][2].");
+        when(chatModelResolver.resolve()).thenReturn(Optional.of(chatModel));
+        when(turSNSiteRepository.findByNameIgnoreCase("catalog")).thenReturn(Optional.of(site));
+        when(copilotProperty.isStuffAllEnabled()).thenReturn(true);
+        when(copilotProperty.getStuffAllMaxDocs()).thenReturn(1000);
+        when(copilotProperty.getStuffAllTokenBudget()).thenReturn(40_000);
+        when(dslSearchService.search(eq("catalog"), eq("en"), any(TurDslQueryRequest.class)))
+                .thenReturn(Optional.of(twoHitResponse()));
+
+        TurCatalogCopilotResult result = service.answer("catalog", "en",
+                List.of(new ChatTurn("user", "what do you have?")));
+
+        assertThat(result.available()).isTrue();
+        assertThat(result.citations()).hasSize(2);
+        assertThat(result.totalHits()).isEqualTo(2L);
+        // Stuff-all applies no query filters, so the grounded summary is blank —
+        // distinguishing it from the filtered path (which carries filter clauses).
+        assertThat(result.groundedQuerySummary()).isNullOrEmpty();
+    }
+
+    @Test
+    void stuffAllFallsBackToFilteredRetrievalWhenOverBudget() {
+        // T793 — tiny budget forces the fallback to the normal NL→DSL retrieval.
+        TurSNSite site = new TurSNSite();
+        site.setName("catalog");
+        ChatModel chatModel = modelReturning("Filtered [1].");
+        when(chatModelResolver.resolve()).thenReturn(Optional.of(chatModel));
+        when(turSNSiteRepository.findByNameIgnoreCase("catalog")).thenReturn(Optional.of(site));
+        when(copilotProperty.isStuffAllEnabled()).thenReturn(true);
+        when(copilotProperty.getStuffAllMaxDocs()).thenReturn(1000);
+        when(copilotProperty.getStuffAllTokenBudget()).thenReturn(1); // ~0 → always over budget
+        when(turSNSiteFieldExtRepository.findByTurSNSiteAndEnabled(site, 1)).thenReturn(List.of(
+                field("modality", TurSEFieldType.STRING, true),
+                field("price", TurSEFieldType.INT, true)));
+        when(parser.isAvailable()).thenReturn(true);
+        when(parser.parse(any())).thenReturn(groundedQuery());
+        when(hybridRankingService.isEnabled(site)).thenReturn(false);
+        when(dslSearchService.search(eq("catalog"), eq("en"), any(TurDslQueryRequest.class)))
+                .thenReturn(Optional.of(twoHitResponse()));
+
+        TurCatalogCopilotResult result = service.answer("catalog", "en",
+                List.of(new ChatTurn("user", "online data masters under 20k")));
+
+        assertThat(result.available()).isTrue();
+        // Filtered fallback ran → the grounded summary carries the parsed clauses.
+        assertThat(result.groundedQuerySummary()).contains("modality=online");
     }
 
     @Test

@@ -93,6 +93,24 @@ configured (i.e. whether the copilot can answer).
   degrades to lexical order, and an LLM failure still returns the matched
   citations so the client can render results without a synthesized answer.
 
+## Stuff-all mode (small catalogs)
+
+For a catalog small enough to fit in one prompt (a few hundred rows), the copilot
+can skip retrieval entirely and ground the LLM on **every** row — the
+extreme-vectorless path. It is **self-gating by size**: enabled by default, it
+only activates when the whole index fits within a token budget and document cap,
+and otherwise falls back to the normal filtered NL→DSL retrieval. Answers stay
+cited and fail-open either way. Configure under `turing.genai.copilot`:
+
+```yaml
+turing:
+  genai:
+    copilot:
+      stuff-all-enabled: true       # default
+      stuff-all-token-budget: 40000 # ~a few hundred rows
+      stuff-all-max-docs: 1000
+```
+
 ## Live example
 
 The public [`openviglet/model-catalog`](https://openviglet.github.io/model-catalog/)
