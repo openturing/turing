@@ -24,6 +24,15 @@
 
 - 💭 **T441** (deps: T436, T438) **Canonical AG-UI protocol adapter** — optional endpoint that re-encodes Turing's stream into the canonical AG-UI event schema (`RUN_STARTED`, `TEXT_MESSAGE_*`, `TOOL_CALL_*`, `STATE_SNAPSHOT`/`STATE_DELTA`, …) so CopilotKit's off-the-shelf React/Angular clients connect with zero Turing-SDK code. Distribution play, not core parity — promote from 💭 only if a named integration asks. → §XXII.6
 
+## Block BF follow-ups — Vectorless RAG copilot answer quality (§LIV)
+
+> Block BF shipped the vectorless/structured-data catalog copilot (T790–T798, see
+> [CHANGELOG.md](CHANGELOG.md)). These are answer-quality bugs found dogfooding the
+> live `turing-demo` model-catalog copilot — the retrieval works, but the LLM
+> mis-reads the grounded fields. Design context in [IMPROVEMENTS.md](IMPROVEMENTS.md) §LIV.
+
+- 📋 **T799** (deps: T793, T797) **Rank by the named metric, not the biggest number** — BUG: asked *"which model is the most intelligent?"*, the copilot answered **GPT-OSS-120B** citing an "intelligence index" of **93.4** — but 93.4 is that model's **math** sub-score; its real `benchmarks_intelligenceIndex` is **23.8** (below Claude Fable 5's **59.9**). The stuff-all context block (`TurCatalogCopilotService.contextBlock`) prints flattened fields as raw `key: value` (`benchmarks_scores_math_value: 93.4` sitting next to `benchmarks_intelligenceIndex: 23.8`), so the LLM grabbed the largest number. Fix: **(a)** label each grounded value by its *declared field description* (`TurSNSiteFieldExt.description`, fed from the source's field manifest — model-catalog **T70** sharpened those so `intelligenceIndex` reads as THE overall metric and each domain score as "…sub-score only, NOT the overall index") instead of the cryptic flat key; **(b)** add a system-prompt rule that a "best / most X" question ranks by the field that *names* X and never treats a per-domain sub-score as the overall metric. Transport-agnostic (endpoint + T795 gateway + `catalog_search` tool). Sibling of the shipped T798. → §LIV
+
 ## Block J follow-ups — Cloud SaaS hardening (T334–T373)
 
 > Surfaced wiring Block J (multi-tenancy, shipped — see [CHANGELOG.md](CHANGELOG.md)

@@ -1,7 +1,7 @@
-# Last task number — `T798` · next block letter — `BG`
+# Last task number — `T799` · next block letter — `BG`
 
 > **Single source of truth for the next free task number.** The next new task is
-> `T799`; after assigning it, bump the number above and the log line below.
+> `T800`; after assigning it, bump the number above and the log line below.
 >
 > **Next block letter — `BG`** (Block **BF** = Vectorless (Structured-Data) RAG —
 > name/surface the already-shipped T392 catalog-copilot retrieval path as an
@@ -107,6 +107,7 @@ number" looked free but wasn't. Grepping three files (`ROADMAP.md`,
 
 ## Log (most recent first)
 
+- **T799 CREATED** (📋, Block BF §LIV — copilot answer quality: it answered "most intelligent = GPT-OSS-120B (93.4)" but 93.4 is that model's MATH sub-score, real intelligenceIndex 23.8 < Fable 5's 59.9; contextBlock prints flat keys (benchmarks_scores_math_value beside benchmarks_intelligenceIndex) so the LLM grabs the biggest number. Fix: label grounded values by declared field description (TurSNSiteFieldExt.description) + prompt rule to rank by the named metric, not a domain sub-score; deps T793,T797) — 2026-07-23.
 - **T798 SHIPPED** (Block BF §LIV.9 — ground returned copilot citations to the answer's [n] markers) — 2026-07-23.
 - **T795 SHIPPED** (Block BF §LIV.6 — vectorless RAG over the OpenAI-compatible gateway: TurGatewayModelRouter +turing-copilot:<site> route (isCopilot/copilotAnswer, in isNative) → TurCatalogCopilotService.answer + cited Sources footer (id/title+link, survives OpenAI wire); header form x-turing-copilot-site routes any model → TurGatewayOptions +copilotSite (back-compat 4-arg ctor + from overload keep pre-T795 callers/tests green) read in TurOpenAiCompatibleGatewayAPI; routedAnswer branches prefix|header (blocking+stream); no embedding/store; TurGatewayModelRouterTest +3 = 19 gateway tests green, compile clean. CLOSES Block BF — T790-T797 all shipped) — 2026-07-23.
 - **T794 SHIPPED** (Block BF §LIV.5 — dogfood model-catalog as first vectorless KB on turing-demo; NO new Turing code, composes T790-T793+T796-T797: model-catalog repo Block M T59-T60 emit query-manifest.json+catalog.ndjson+context.txt; Viglet Cloud docker/docker-compose.yml wires turing-demo by env turing.genai.structured-feed (1 source, provision:true, no se-instance-id→Lucene, flatten-nested:true) so T796 auto-provisions model-catalog site+schema+Vectorless mode on boot, T791 pulls ~250 rows, copilot answers whole via T793 stuff-all at POST /api/sn/model-catalog/copilot (nginx /api/sn/ allowlist); cross-repo commits each in own repo [cloud 8bdfbab, model-catalog 423b63c]; Turing side = docs only) — 2026-07-23.
