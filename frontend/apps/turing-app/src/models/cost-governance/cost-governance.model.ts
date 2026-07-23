@@ -75,6 +75,28 @@ export interface TurAgentBudgetStatus {
 /** Provenance of a price row (T777/T778). */
 export type TurLLMPriceSource = "CATALOG" | "MANUAL";
 
+/** T783 — request for a batch-run pre-flight cost estimate. */
+export interface TurBatchCostRequest {
+  vendorId: string;
+  modelName: string;
+  itemCount: number;
+  inputTokensPerItem: number;
+  outputTokensPerItem: number;
+  budgetUsd?: number | null;
+}
+
+/** T783 — projected cost of a batch run. Mirrors `TurLLMBatchCostEstimator.BatchCostEstimate`. */
+export interface TurBatchCostEstimate {
+  itemCount: number;
+  inputTokensPerItem: number;
+  outputTokensPerItem: number;
+  perItemCostUsd: number;
+  totalCostUsd: number;
+  priced: boolean;
+  budgetUsd?: number | null;
+  overBudget: boolean;
+}
+
 /**
  * T789 — an indicative consumer subscription plan (Claude Pro, ChatGPT Plus…)
  * from the public catalog's plans reference. Reference only — verify at vendor.

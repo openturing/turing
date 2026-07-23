@@ -8,6 +8,8 @@ import {
 } from "@/api/queries/persona-research.queries";
 import { useAiAgents } from "@/api/queries/ai-agent.queries";
 import { useLlmInstances } from "@/api/queries/llm-instance.queries";
+import { BatchCostConfirmDialog } from "@/components/llm/batch-cost-confirm-dialog";
+import type { TurBatchCostRequest } from "@/models/cost-governance/cost-governance.model";
 import { usePersonas } from "@/api/queries/persona.queries";
 import { ROUTES } from "@/app/routes.const";
 import { BentoActionsMenu, BentoFormSection, BentoHero } from "@/components/bento";
@@ -466,6 +468,24 @@ function StudyWorkspace({ studyId }: Readonly<{ studyId: string }>) {
 
   const canRun = personas.length > 0 && !running && !dirty;
 
+  // T783 — pre-flight cost gate before an expensive study run. Estimate itemCount
+  // as personas × the max interview turns, priced against the interview lane's
+  // (or default) model. Vendor id lower-cased to match the catalog price table.
+  const [costConfirmOpen, setCostConfirmOpen] = useState(false);
+  const batchParams = useMemo<TurBatchCostRequest | null>(() => {
+    const runId = interviewLlm || defaultLlm;
+    const inst = (llmInstances ?? []).find((i) => i.id === runId);
+    const vendorId = inst?.turLLMVendor?.id;
+    if (!inst || !vendorId || !inst.modelName || personas.length === 0) return null;
+    return {
+      vendorId: vendorId.toLowerCase(),
+      modelName: inst.modelName,
+      itemCount: personas.length * Math.max(1, maxQuestions),
+      inputTokensPerItem: 1500,
+      outputTokensPerItem: 400,
+    };
+  }, [llmInstances, interviewLlm, defaultLlm, personas.length, maxQuestions]);
+
   return (
     <>
       <BentoHero
@@ -480,7 +500,11 @@ function StudyWorkspace({ studyId }: Readonly<{ studyId: string }>) {
         subtitle={goal || description || t("persona.research.defaultSubtitle")}
         trailing={
           <div className="flex items-center gap-2">
-            <Button onClick={runStudy} disabled={!canRun} className="gap-2">
+            <Button
+              onClick={() => (batchParams ? setCostConfirmOpen(true) : runStudy())}
+              disabled={!canRun}
+              className="gap-2"
+            >
               {running ? <IconLoader2 className="size-4 animate-spin" /> : <IconPlayerPlayFilled className="size-4" />}
               {runLabel}
             </Button>
@@ -741,6 +765,13 @@ function StudyWorkspace({ studyId }: Readonly<{ studyId: string }>) {
           everRun={everRun}
         />
       </div>
+
+      <BatchCostConfirmDialog
+        open={costConfirmOpen}
+        params={batchParams}
+        onProceed={() => { setCostConfirmOpen(false); runStudy(); }}
+        onCancel={() => setCostConfirmOpen(false)}
+      />
     </>
   );
 }

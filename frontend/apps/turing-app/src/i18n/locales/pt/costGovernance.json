@@ -75,5 +75,16 @@
       "description": "Planos de assinatura ao consumidor indicativos (Claude Pro, ChatGPT Plus…) do catálogo público de modelos. Apenas referência — preços de tabela dos EUA, podem estar desatualizados; sempre verifique no fornecedor.",
       "free": "Gratuito"
     }
+  },
+  "batchCost": {
+    "title": "Custo estimado",
+    "description": "Esta execução fará muitas chamadas ao modelo. Veja o custo projetado com base no preço atual do catálogo antes de confirmar.",
+    "estimating": "Estimando…",
+    "projectedTotal": "Total projetado",
+    "breakdown": "{{items}} itens × {{perItem}} cada",
+    "unpriced": "Este modelo não tem preço configurado — a projeção é $0 e a execução não é cobrada pelo Turing.",
+    "overBudget": "Excede o orçamento ({{budget}}).",
+    "proceed": "Executar mesmo assim",
+    "cancel": "Cancelar"
   }
 }

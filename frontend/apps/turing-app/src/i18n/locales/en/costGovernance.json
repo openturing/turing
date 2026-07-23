@@ -75,5 +75,16 @@
       "description": "Indicative consumer subscription plans (Claude Pro, ChatGPT Plus…) from the public model catalog. Reference only — US list prices, may be stale; always verify at the vendor.",
       "free": "Free"
     }
+  },
+  "batchCost": {
+    "title": "Estimated cost",
+    "description": "This run will make many model calls. Here is the projected cost against the current catalog pricing before you commit.",
+    "estimating": "Estimating…",
+    "projectedTotal": "Projected total",
+    "breakdown": "{{items}} items × {{perItem}} each",
+    "unpriced": "This model has no configured price — the projection is $0 and the run isn't billed by Turing.",
+    "overBudget": "Exceeds the budget ({{budget}}).",
+    "proceed": "Run anyway",
+    "cancel": "Cancel"
   }
 }

@@ -1,6 +1,8 @@
 import axios from "axios";
 import type {
   TurAgentBudgetStatus,
+  TurBatchCostEstimate,
+  TurBatchCostRequest,
   TurCostReport,
   TurDailyCostPoint,
   TurLLMConsumerPlan,
@@ -64,5 +66,11 @@ export class TurCostGovernanceService {
   async getConsumerPlans(): Promise<Record<string, TurLLMConsumerPlan[]>> {
     const response = await axios.get<Record<string, TurLLMConsumerPlan[]>>("/v2/llm/price/consumer-plans");
     return response.data ?? {};
+  }
+
+  /** T783 — quote the projected cost of a batch run before it spends. */
+  async preflightBatch(request: TurBatchCostRequest): Promise<TurBatchCostEstimate> {
+    const response = await axios.post<TurBatchCostEstimate>("/v2/llm/cost/preflight-batch", request);
+    return response.data;
   }
 }
