@@ -18,8 +18,12 @@ import java.util.Map;
  * single index hit out to the client so a "talk to the catalog" answer can be
  * traced back to the document it came from.
  *
- * <p>The {@code rank} is the 1-based position in the (objectively ranked) result
- * list — the same number the answer text cites as {@code [n]}. The optional
+ * <p>The {@code rank} is the citation's 1-based footnote number — its order of
+ * first appearance in the answer, the same number the (renumbered) answer text
+ * cites as {@code [n]} (T800 / §LIV.10). It is <em>not</em> the row's position in
+ * the underlying result list: in the T793 stuff-all path the LLM grounds on the
+ * whole catalog, so the raw ranks run into the hundreds and are compacted to
+ * {@code 1..k} before they reach the client. The optional
  * {@code rankingExplanation} carries the T389 objective-ranking breakdown
  * (lexical / semantic / fused rank, RRF score) when the site runs a hybrid
  * ranking mode, so the ranking stays auditable; it is {@code null} on the legacy

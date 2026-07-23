@@ -167,10 +167,11 @@ class TurCatalogCopilotServiceTest {
     }
 
     @Test
-    void stuffAllReturnsOnlyTheCitationsTheAnswerCites() {
-        // T798 / §LIV.9 — stuff-all grounds the LLM on all 12 rows, but the answer
-        // only names [3] and [7]; the returned citations must shrink to just those
-        // two (mapped rank→citation), never the whole grounding bundle.
+    void stuffAllReturnsOnlyTheCitationsTheAnswerCitesRenumbered() {
+        // T798 / §LIV.9 + T800 / §LIV.10 — stuff-all grounds the LLM on all 12 rows,
+        // but the answer only names [3] and [7]; the returned citations must shrink
+        // to just those two (never the whole grounding bundle) AND be renumbered to
+        // compact answer-order footnotes, with the answer text rewritten to match.
         TurSNSite site = new TurSNSite();
         site.setName("catalog");
         ChatModel chatModel = modelReturning("Consider the third [3] or the seventh [7] option.");
@@ -188,9 +189,15 @@ class TurCatalogCopilotServiceTest {
         assertThat(result.available()).isTrue();
         // Grounded on all 12 rows...
         assertThat(result.totalHits()).isEqualTo(12L);
-        // ...but only the two cited rows are returned as citations, in answer order.
+        // ...but only the two cited rows are returned, renumbered 1..k in answer
+        // order — the raw ranks 3 and 7 become footnotes 1 and 2.
         assertThat(result.citations()).extracting(TurCatalogCitation::rank)
-                .containsExactly(3, 7);
+                .containsExactly(1, 2);
+        assertThat(result.citations()).extracting(TurCatalogCitation::title)
+                .containsExactly("Model 3", "Model 7");
+        // ...and the answer's markers are rewritten to the compact footnotes.
+        assertThat(result.answer())
+                .isEqualTo("Consider the third [1] or the seventh [2] option.");
     }
 
     @Test

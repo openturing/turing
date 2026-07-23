@@ -166,61 +166,119 @@ public class TurCatalogCopilotService {
         }
 
         try {
-            String answer = callLlm(chatModelOpt.get(), siteName, retrieval, messages);
-            // T798 / §LIV.9 — the LLM grounds on the whole retrieval bundle (all
-            // rows in stuff-all mode), but the citations returned to the client must
-            // reflect only what the answer actually cites, not the grounding set.
-            List<TurCatalogCitation> grounded = groundCitations(answer, retrieval.citations());
-            return TurCatalogCopilotResult.ok(answer, grounded,
+            String raw = callLlm(chatModelOpt.get(), siteName, retrieval, messages);
+            // T798 / §LIV.9 + T800 / §LIV.10 — the LLM grounds on the whole retrieval
+            // bundle (all rows in stuff-all mode), but the citations returned to the
+            // client must reflect only what the answer actually cites, AND be
+            // renumbered to compact answer-order footnotes (the raw ranks are
+            // positions in the full catalog — [201], [230] — meaningless to a reader).
+            GroundedAnswer grounded = groundCitations(raw, retrieval.citations());
+            return TurCatalogCopilotResult.ok(grounded.answer(), grounded.citations(),
                     retrieval.groundedSummary(), retrieval.totalHits());
         } catch (RuntimeException e) {
             log.warn("[CatalogCopilot] answer LLM call failed for site '{}': {} — returning citations only",
                     siteName, e.getMessage());
             // No answer text to ground against — still bound the returned list to a
             // top-k slice so a failed stuff-all answer never floods the client.
-            return TurCatalogCopilotResult.degraded(groundCitations(null, retrieval.citations()),
+            return TurCatalogCopilotResult.degraded(groundCitations(null, retrieval.citations()).citations(),
                     retrieval.groundedSummary(), retrieval.totalHits(),
                     "Answer generation failed: " + e.getMessage());
         }
     }
 
     /**
-     * T798 / §LIV.9 — grounds the <em>returned</em> citations to what the answer
-     * actually cites. Parses the distinct {@code [n]} markers the LLM emitted (the
-     * system prompt mandates one per claim) and keeps only those citations, mapped
-     * rank→citation in answer order. This matters most for the T793 stuff-all path,
-     * which grounds the LLM on every catalog row: without this, {@code answer()}
-     * would return the whole catalog as "Cited models" instead of the handful the
-     * answer names. The filtered {@link #retrieve} path is already capped at
-     * {@link #MAX_RESULTS}, but inherits the same tightening for free.
+     * T798 / §LIV.9 + T800 / §LIV.10 — grounds the <em>returned</em> citations to
+     * what the answer actually cites, and renumbers both the citations and the
+     * answer's {@code [n]} markers to compact, answer-order footnotes ({@code 1..k}).
+     *
+     * <p>Grounding (T798): the distinct {@code [n]} markers the LLM emitted (the
+     * system prompt mandates one per claim) select which citations are returned —
+     * only those the answer names, not the whole grounding set. This matters most
+     * for the T793 stuff-all path, which grounds the LLM on every catalog row:
+     * without it, {@code answer()} would return the whole catalog as "Cited models".
+     *
+     * <p>Renumbering (T800): in stuff-all mode a raw rank is the row's position in
+     * the entire catalog — the LLM cites {@code [201]}, {@code [230]}, which leak
+     * into the rendered prose as meaningless big numbers. So each cited rank is
+     * remapped to its 1-based order of first appearance, the answer text is
+     * rewritten to those footnotes ({@code [201]→[1]}), and the citations are
+     * returned in matching footnote order with {@code rank = footnote}. The client
+     * then renders {@code [1] [2] …} as links to the correspondingly-numbered chips.
      *
      * <p>Fail-open: when no {@code [n]} is parseable (or none of the parsed ranks
      * match a citation), degrade to the filtered top-k slice — never back to all
-     * rows — with the prose still shown. A {@link #MAX_RETURNED_CITATIONS} backstop
-     * bounds the list regardless.
+     * rows — renumbered {@code 1..k}, with the (marker-less) prose left untouched. A
+     * {@link #MAX_RETURNED_CITATIONS} backstop bounds the list regardless.
      */
-    private List<TurCatalogCitation> groundCitations(String answer, List<TurCatalogCitation> all) {
+    private GroundedAnswer groundCitations(String answer, List<TurCatalogCitation> all) {
         if (all == null || all.isEmpty()) {
-            return List.of();
+            return new GroundedAnswer(answer, List.of());
         }
-        Set<Integer> citedRanks = parseCitedRanks(answer);
-        if (!citedRanks.isEmpty()) {
-            List<TurCatalogCitation> grounded = new ArrayList<>();
-            for (TurCatalogCitation citation : all) {
-                if (citedRanks.contains(citation.rank())) {
-                    grounded.add(citation);
-                    if (grounded.size() >= MAX_RETURNED_CITATIONS) {
-                        break;
-                    }
-                }
-            }
-            if (!grounded.isEmpty()) {
-                return grounded;
-            }
+        Map<Integer, TurCatalogCitation> byRank = new LinkedHashMap<>();
+        for (TurCatalogCitation citation : all) {
+            byRank.putIfAbsent(citation.rank(), citation);
         }
-        // Fail-open: no usable markers — bounded top-k, never the whole grounding set.
+        // Cited ranks in order of first appearance (parseCitedRanks preserves it),
+        // kept only when they actually back a citation, capped by the backstop.
+        Map<Integer, Integer> remap = new LinkedHashMap<>(); // raw rank -> compact footnote
+        List<TurCatalogCitation> grounded = new ArrayList<>();
+        for (int rawRank : parseCitedRanks(answer)) {
+            if (!byRank.containsKey(rawRank) || grounded.size() >= MAX_RETURNED_CITATIONS) {
+                continue;
+            }
+            int footnote = grounded.size() + 1;
+            remap.put(rawRank, footnote);
+            grounded.add(renumber(byRank.get(rawRank), footnote));
+        }
+        if (!grounded.isEmpty()) {
+            return new GroundedAnswer(rewriteMarkers(answer, remap), List.copyOf(grounded));
+        }
+        // Fail-open: no usable markers — bounded top-k, renumbered 1..k, prose as-is.
         int cap = Math.min(MAX_RESULTS, all.size());
-        return List.copyOf(all.subList(0, cap));
+        List<TurCatalogCitation> slice = new ArrayList<>(cap);
+        for (int i = 0; i < cap; i++) {
+            slice.add(renumber(all.get(i), i + 1));
+        }
+        return new GroundedAnswer(answer, List.copyOf(slice));
+    }
+
+    /** A citation with its {@code rank} set to {@code footnote} (identity when equal). */
+    private static TurCatalogCitation renumber(TurCatalogCitation c, int footnote) {
+        return c.rank() == footnote ? c
+                : new TurCatalogCitation(footnote, c.id(), c.title(), c.url(), c.score(),
+                        c.rankingExplanation());
+    }
+
+    /**
+     * Rewrites every {@code [n]} marker in the answer to its compact footnote from
+     * {@code remap}; a marker with no mapping (an out-of-range or dangling rank the
+     * LLM emitted for a row it wasn't given) is dropped so no orphan number reaches
+     * the reader. Returns the text unchanged when there is nothing to rewrite.
+     */
+    private static String rewriteMarkers(String answer, Map<Integer, Integer> remap) {
+        if (!StringUtils.hasText(answer)) {
+            return answer;
+        }
+        Matcher matcher = CITATION_MARKER.matcher(answer);
+        StringBuilder sb = new StringBuilder(answer.length());
+        while (matcher.find()) {
+            Integer footnote = null;
+            try {
+                footnote = remap.get(Integer.parseInt(matcher.group(1)));
+            } catch (NumberFormatException ignored) {
+                // marker out of int range — treat as unmapped (dropped)
+            }
+            matcher.appendReplacement(sb, footnote != null ? "[" + footnote + "]" : "");
+        }
+        matcher.appendTail(sb);
+        return sb.toString();
+    }
+
+    /**
+     * The answer text with its {@code [n]} markers renumbered to compact footnotes,
+     * paired with the cited citations in matching footnote order ({@code rank = n}).
+     */
+    private record GroundedAnswer(String answer, List<TurCatalogCitation> citations) {
     }
 
     /** Extracts the distinct 1-based ranks referenced as {@code [n]} in the answer. */
@@ -272,7 +330,11 @@ public class TurCatalogCopilotService {
                 - Use ONLY the information in CATALOG RESULTS. Never invent items, \
                   prices, attributes, or links that are not present below.
                 - Cite every claim with the bracketed number of the result it comes \
-                  from, e.g. [1], [2]. Cite multiple when relevant ([1][3]).
+                  from, e.g. [1], [2]. Cite multiple when relevant ([1][3]). The \
+                  bracketed number is the ONLY citation form: never write source \
+                  names, vendors, ranks, ids or labels such as "[Source: X]", \
+                  "(Vendor)" or "[42]" as prose — the client renders each [n] as a \
+                  footnote linking to the cited model, so a stray label is noise.
                 - If the CATALOG RESULTS do not contain a relevant answer, say so \
                   plainly and suggest how the user could refine the search. Do not \
                   guess.
