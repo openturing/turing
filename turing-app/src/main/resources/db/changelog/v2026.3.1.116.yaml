@@ -1,0 +1,20 @@
+databaseChangeLog:
+  # --- T796: llm_instance.url becomes optional ---
+  # Every LLM provider resolves a vendor default base URL when the configured
+  # url is blank (resolveBaseUrl(...) in the Tur*LlmProvider classes), so an
+  # instance with no url is valid. The one-click "Model Advisor" create (T785)
+  # persists such instances and previously hit a NOT NULL constraint violation.
+  # Idempotent: MARK_RAN when the column is absent (never reached in practice).
+  - changeSet:
+      id: 2026.3.1.116-1
+      author: alexandre
+      preConditions:
+        - onFail: MARK_RAN
+        - columnExists:
+            tableName: llm_instance
+            columnName: url
+      changes:
+        - dropNotNullConstraint:
+            tableName: llm_instance
+            columnName: url
+            columnDataType: varchar(255)

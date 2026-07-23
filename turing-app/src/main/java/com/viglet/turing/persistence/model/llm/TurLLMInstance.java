@@ -78,7 +78,11 @@ public class TurLLMInstance implements Serializable, VigletTenantOwnedInfra {
 	@Column(nullable = false)
 	private int enabled;
 
-	@Column(nullable = false)
+	// T796 — url is optional: every provider's resolveBaseUrl(...) falls back to
+	// a vendor default when the configured url is blank (e.g. OpenAI/Anthropic
+	// hosted endpoints), so instances created without a url (Model Advisor
+	// one-click create) are valid.
+	@Column
 	private String url;
 
 	@ManyToOne
