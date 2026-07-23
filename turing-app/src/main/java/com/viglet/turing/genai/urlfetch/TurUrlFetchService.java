@@ -93,6 +93,56 @@ public class TurUrlFetchService {
     }
 
     /**
+     * T791 / §LIV.2 (Block BF) — fetch a URL's <strong>raw</strong> body as text,
+     * <em>without</em> the Tika text-extraction the {@link #fetch(String)} path runs.
+     * A structured JSON / NDJSON feed must be deserialized verbatim; running it
+     * through Tika would strip the JSON syntax and mangle the records. This reuses
+     * the exact same T739 security posture — the {@code isAllowedRemoteUrlString}
+     * SSRF/allowlist guard and the resolved request timeout — but returns the HTTP
+     * response body as-is.
+     *
+     * <p>Never throws: returns {@code null} on a blank/blocked/malformed URL, a
+     * non-2xx response, or any transport error, so a scheduled ingester records the
+     * source as failed rather than aborting its batch.
+     */
+    public String fetchRaw(String urlString) {
+        if (StringUtils.isBlank(urlString) || !TurFileUtils.isAllowedRemoteUrlString(urlString)) {
+            log.warn("[UrlFetch] raw fetch blocked or blank URL: {}", urlString);
+            return null;
+        }
+        URI uri;
+        try {
+            uri = URI.create(urlString);
+        } catch (IllegalArgumentException e) {
+            log.warn("[UrlFetch] raw fetch malformed URL {}: {}", urlString, e.getMessage());
+            return null;
+        }
+        int timeoutSeconds = Math.max(1, configResolver.resolve().timeoutSeconds());
+        try {
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(uri)
+                    .timeout(Duration.ofSeconds(timeoutSeconds))
+                    .header("Accept", "application/json, application/x-ndjson, text/plain, */*")
+                    .GET()
+                    .build();
+            HttpResponse<String> response = probeClient.send(request,
+                    HttpResponse.BodyHandlers.ofString());
+            if (response.statusCode() / 100 == 2) {
+                return response.body();
+            }
+            log.warn("[UrlFetch] raw fetch of {} returned HTTP {}", urlString, response.statusCode());
+            return null;
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            log.warn("[UrlFetch] raw fetch of {} interrupted", urlString);
+            return null;
+        } catch (Exception e) {
+            log.warn("[UrlFetch] raw fetch of {} failed: {}", urlString, e.getMessage());
+            return null;
+        }
+    }
+
+    /**
      * Route an already-guarded URL to the backend selected by {@code config.mode()}.
      * Package-private so the mode/AUTO logic can be unit-tested without network
      * access or the SSRF guard.

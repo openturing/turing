@@ -211,6 +211,27 @@ turing:
       # the embedding API without saturating typical rate limits. Set to 1 to
       # force sequential indexing (useful for debugging or rate-limited APIs).
       parallel: 4
+    # T791 / §LIV.2 (Block BF) — scheduled structured-feed pull ingester, the
+    # "pull" side of ingestion for a Vectorless (Structured-Data) RAG knowledge
+    # base (TurStructuredFeedIngestService). Off by default; with no sources it is
+    # a no-op even when enabled. Each source GETs a remote JSON / NDJSON feed via
+    # the T739 URL-fetch guard, optionally converges the SN-site field schema from
+    # a field manifest, imports the records, and de-indexes vanished ids.
+    structured-feed:
+      enabled: false
+      # Delay before the first run and fixed delay between runs (ms).
+      initial-delay-ms: 30000
+      interval-ms: 3600000
+      # Safety cap on records mapped per source per run (0 = unlimited).
+      max-records-per-source: 0
+      # sources:
+      #   - id: model-catalog
+      #     site-name: model-catalog
+      #     feed-url: https://openviglet.github.io/model-catalog/catalog.ndjson
+      #     manifest-url: https://openviglet.github.io/model-catalog/query-manifest.json
+      #     id-field: id
+      #     locale: en_US
+      #     # records-field: vendors   # only for a JSON-object envelope feed
     embedding:
       # In-process ONNX embedding runtime (TRANSFORMERS_LOCAL + HUGGINGFACE
       # providers). T656 owns remote artifact acquisition (TurOnnxModelDownloader)
