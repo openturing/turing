@@ -993,6 +993,66 @@ export async function postSemanticChat(
 }
 
 /**
+ * T792 / §LIV.3 (Block BF) — one cited catalog result from the Vectorless
+ * (Structured-Data) RAG copilot. Wire shape of the backend
+ * {@code TurCatalogCitation}: {@code rank} is the 1-based position the answer
+ * text cites as {@code [n]}, {@code url} links the source when present.
+ */
+export interface TurCatalogCitation {
+  readonly rank: number;
+  readonly id: string;
+  readonly title?: string | null;
+  readonly url?: string | null;
+  readonly score?: number | null;
+  readonly rankingExplanation?: Record<string, unknown> | null;
+}
+
+/**
+ * T792 / §LIV.3 (Block BF) — response of {@code POST /api/sn/{site}/copilot}
+ * (the backend {@code TurCatalogCopilotResult}): a grounded {@code answer} plus
+ * the {@code citations} it is built from. {@code available} is {@code false}
+ * (with {@code error}) when the copilot cannot run (no default LLM). Even when
+ * the answer step fails, {@code citations} may be populated so the client can
+ * still render the matched results.
+ */
+export interface TurCatalogCopilotResult {
+  readonly available: boolean;
+  readonly answer?: string | null;
+  readonly citations: TurCatalogCitation[];
+  readonly groundedQuerySummary?: string | null;
+  readonly totalHits: number;
+  readonly error?: string | null;
+}
+
+/**
+ * T792 / §LIV.3 (Block BF) — answer a (possibly multi-turn) catalog conversation
+ * grounded in the site's index via the vectorless copilot. Non-streaming JSON
+ * POST; CSRF + baseURL are inherited from the host's axios instance.
+ */
+export async function postCopilot(
+  site: string,
+  messages: TurChatConversationMessage[],
+  locale?: string,
+): Promise<TurCatalogCopilotResult> {
+  const { data } = await axios.post<TurCatalogCopilotResult>(
+    `/sn/${site}/copilot`,
+    { messages, locale },
+  );
+  return data;
+}
+
+/**
+ * T792 / §LIV.3 (Block BF) — whether the vectorless copilot can answer for this
+ * site (a default LLM is configured). Backs the widget's readiness gate.
+ */
+export async function fetchCopilotAvailable(site: string): Promise<boolean> {
+  const { data } = await axios.get<{ available?: boolean }>(
+    `/sn/${site}/copilot/available`,
+  );
+  return Boolean(data?.available);
+}
+
+/**
  * Drops every chat-flow runtime state for {@code conversationId} on the
  * site's agent.
  *

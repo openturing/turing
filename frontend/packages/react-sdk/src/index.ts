@@ -143,6 +143,15 @@ export type {
   UseTuringProactiveCopilotOptions,
   UseTuringProactiveCopilotReturn,
 } from "./hooks/use-turing-proactive-copilot";
+// T792 / §LIV.3 (Block BF) — Vectorless (Structured-Data) RAG copilot.
+export { useTuringCopilot } from "./hooks/use-turing-copilot";
+export type {
+  UseTuringCopilotOptions,
+  UseTuringCopilotReturn,
+  CopilotMessage,
+  CopilotStatus,
+} from "./hooks/use-turing-copilot";
+export type { TurCatalogCitation, TurCatalogCopilotResult } from "./core/api";
 export { useTuringUserMemory } from "./hooks/use-turing-user-memory";
 export type {
   TuringUserMemory,
@@ -321,6 +330,8 @@ export type {
 export { TuringSearchField } from "./ui/TuringSearchField";
 export { TuringWorkspacePanel } from "./ui/TuringWorkspacePanel";
 export type { TuringWorkspacePanelProps } from "./ui/TuringWorkspacePanel";
+export { TuringCopilot } from "./ui/TuringCopilot";
+export type { TuringCopilotProps, TuringCopilotClassNames } from "./ui/TuringCopilot";
 
 // ── Headless UI (re-exported from @viglet/turing-react-ui) ──
 // Single import surface for the admin console: it can pull the design-agnostic
