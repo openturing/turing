@@ -64,6 +64,8 @@ public class TurGatewayModelRouter {
     public static final String AGENT_PREFIX = "turing-agent:";
     public static final String SN_PREFIX = "turing-sn:";
     public static final String LOCAL_PREFIX = "turing-local:";
+    /** T795 — vectorless (structured-data) RAG copilot over an SN site. */
+    public static final String COPILOT_PREFIX = "turing-copilot:";
     private static final String EMBEDDED_PLUGIN = "embedded-jlama";
     private static final String TOKEN = "token";
     private static final String ROLE_ASSISTANT = "assistant";
@@ -74,19 +76,22 @@ public class TurGatewayModelRouter {
     private final TurSNSearchProcess snSearchProcess;
     private final TurGenAiContextFactory contextFactory;
     private final TurSNGenAi snGenAi;
+    private final com.viglet.turing.genai.catalog.TurCatalogCopilotService catalogCopilotService;
 
     public TurGatewayModelRouter(TurAIAgentRepository agentRepository,
             TurLLMInstanceRepository llmInstanceRepository,
             TurAgentChatExecutor agentChatExecutor,
             TurSNSearchProcess snSearchProcess,
             TurGenAiContextFactory contextFactory,
-            TurSNGenAi snGenAi) {
+            TurSNGenAi snGenAi,
+            com.viglet.turing.genai.catalog.TurCatalogCopilotService catalogCopilotService) {
         this.agentRepository = agentRepository;
         this.llmInstanceRepository = llmInstanceRepository;
         this.agentChatExecutor = agentChatExecutor;
         this.snSearchProcess = snSearchProcess;
         this.contextFactory = contextFactory;
         this.snGenAi = snGenAi;
+        this.catalogCopilotService = catalogCopilotService;
     }
 
     // ---- Prefix detection -------------------------------------------------
@@ -103,9 +108,13 @@ public class TurGatewayModelRouter {
         return model != null && model.startsWith(LOCAL_PREFIX);
     }
 
+    public boolean isCopilot(String model) {
+        return model != null && model.startsWith(COPILOT_PREFIX);
+    }
+
     /** True for any {@code turing-*} model that routes into the stack (not plain passthrough). */
     public boolean isNative(String model) {
-        return isAgent(model) || isSn(model);
+        return isAgent(model) || isSn(model) || isCopilot(model);
     }
 
     // ---- turing-agent -----------------------------------------------------
@@ -152,6 +161,60 @@ public class TurGatewayModelRouter {
                         .toList();
         TurChatMessage answer = snGenAi.assistantConversation(context, history);
         return (answer == null || answer.getText() == null) ? "" : answer.getText();
+    }
+
+    // ---- turing-copilot (T795) -------------------------------------------
+
+    /**
+     * T795 / §LIV.6 — a blocking Vectorless (Structured-Data) RAG answer over an SN
+     * site via {@link com.viglet.turing.genai.catalog.TurCatalogCopilotService}: the
+     * question is grounded on the site's declared field schema (no embeddings), and
+     * the default LLM answers strictly from the cited rows. The cited sources are
+     * appended as a plain-text "Sources" footer so an OpenAI-style client keeps the
+     * citations even though the wire format carries no side channel. Works from the
+     * {@code turing-copilot:<site>} model route or the {@code x-turing-copilot-site}
+     * header (the caller passes the resolved site name).
+     */
+    public String copilotAnswer(String siteName, List<WireMessage> messages) {
+        if (!StringUtils.hasText(siteName)) {
+            throw new IllegalArgumentException("turing-copilot requires a site name");
+        }
+        List<com.viglet.turing.genai.catalog.TurCatalogCopilotService.ChatTurn> turns =
+                messages == null ? List.of()
+                        : messages.stream()
+                                .map(m -> new com.viglet.turing.genai.catalog.TurCatalogCopilotService.ChatTurn(
+                                        m.role(), m.content()))
+                                .toList();
+        var result = catalogCopilotService.answer(siteName, null, turns);
+        if (!result.available()) {
+            throw new IllegalStateException(result.error() != null ? result.error()
+                    : "Vectorless copilot is not available for SN site: " + siteName);
+        }
+        StringBuilder out = new StringBuilder();
+        if (StringUtils.hasText(result.answer())) {
+            out.append(result.answer());
+        }
+        appendSources(out, result.citations());
+        return out.toString();
+    }
+
+    /** Renders the cited catalog rows as a plain-text footer (id/title + link). */
+    private static void appendSources(StringBuilder out,
+            List<com.viglet.turing.genai.catalog.TurCatalogCitation> citations) {
+        if (citations == null || citations.isEmpty()) {
+            return;
+        }
+        if (out.length() > 0) {
+            out.append("\n\n");
+        }
+        out.append("Sources:");
+        for (var c : citations) {
+            out.append("\n[").append(c.rank()).append("] ")
+                    .append(c.title() != null ? c.title() : c.id());
+            if (StringUtils.hasText(c.url())) {
+                out.append(" — ").append(c.url());
+            }
+        }
     }
 
     // ---- turing-local -----------------------------------------------------

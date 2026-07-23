@@ -69,10 +69,11 @@ public class TurOpenAiCompatibleGatewayAPI {
             @RequestHeader(name = "x-turing-cache", required = false) String cacheHeader,
             @RequestHeader(name = "x-turing-guardrails", required = false) String guardrailsHeader,
             @RequestHeader(name = "x-turing-rag-site", required = false) String ragSiteHeader,
-            @RequestHeader(name = "x-turing-tools", required = false) String toolsHeader) {
+            @RequestHeader(name = "x-turing-tools", required = false) String toolsHeader,
+            @RequestHeader(name = "x-turing-copilot-site", required = false) String copilotSiteHeader) {
         String username = resolveUsername();
         TurGatewayOptions options = TurGatewayOptions.from(cacheHeader, guardrailsHeader, ragSiteHeader,
-                toolsHeader);
+                toolsHeader, copilotSiteHeader);
         try {
             if (Boolean.TRUE.equals(request.stream())) {
                 return ResponseEntity.ok()

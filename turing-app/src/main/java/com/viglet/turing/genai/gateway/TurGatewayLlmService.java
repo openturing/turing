@@ -187,13 +187,25 @@ public class TurGatewayLlmService {
         return (context == null || context.isBlank()) ? null : RAG_PREAMBLE + context + "\n</context>";
     }
 
-    /** T744 — a {@code turing-agent:} / {@code turing-sn:} answer, or {@code null} for passthrough. */
-    private String routedAnswer(String model, List<WireMessage> messages) {
+    /**
+     * T744 / T795 — a {@code turing-agent:} / {@code turing-sn:} / {@code turing-copilot:}
+     * answer (the last also reachable via the {@code x-turing-copilot-site} header),
+     * or {@code null} for passthrough.
+     */
+    private String routedAnswer(String model, List<WireMessage> messages, TurGatewayOptions options) {
         if (modelRouter.isAgent(model)) {
             return modelRouter.agentAnswer(model, messages);
         }
         if (modelRouter.isSn(model)) {
             return modelRouter.snAnswer(model, messages);
+        }
+        if (modelRouter.isCopilot(model)) {
+            return modelRouter.copilotAnswer(model.substring(TurGatewayModelRouter.COPILOT_PREFIX.length()).trim(),
+                    messages);
+        }
+        // T795 — header form: x-turing-copilot-site routes any model to the copilot.
+        if (options != null && options.copilotSite() != null) {
+            return modelRouter.copilotAnswer(options.copilotSite(), messages);
         }
         return null;
     }
@@ -348,7 +360,7 @@ public class TurGatewayLlmService {
         }
 
         // T744 — turing-agent: / turing-sn: route into the Turing stack.
-        String routed = routedAnswer(request.model(), request.messages());
+        String routed = routedAnswer(request.model(), request.messages(), options);
         if (routed != null) {
             guardOutput(options, routed);
             if (cacheKey != null) {
@@ -434,7 +446,7 @@ public class TurGatewayLlmService {
         }
 
         // T744 — native routing produces a blocking answer, replayed as one chunk.
-        String routed = routedAnswer(request.model(), request.messages());
+        String routed = routedAnswer(request.model(), request.messages(), options);
         if (routed != null) {
             if (cacheKey != null) {
                 responseCache.put(cacheKey, routed);

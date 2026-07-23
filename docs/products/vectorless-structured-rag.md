@@ -93,6 +93,25 @@ configured (i.e. whether the copilot can answer).
   degrades to lexical order, and an LLM failure still returns the matched
   citations so the client can render results without a synthesized answer.
 
+## Over the OpenAI-compatible gateway (zero SDK)
+
+Any OpenAI-style client can get grounded, cited structured answers with **no
+Turing SDK** through the Block AZ gateway — either a `turing-copilot:<site>` model
+name or an `x-turing-copilot-site: <site>` header routes the request to the
+vectorless copilot. The cited rows come back as a plain-text **Sources** footer so
+the answer stays traceable over the OpenAI wire format.
+
+```bash
+curl -sX POST https://<host>/v1/chat/completions \
+  -H "authorization: Bearer sk-turing-…" \
+  -H "content-type: application/json" \
+  -d '{"model":"turing-copilot:model-catalog",
+       "messages":[{"role":"user","content":"cheapest embedding model with >= 1M context?"}]}'
+```
+
+This is the cleanest "separate backend" integration for an external static site —
+a natural extension of the `turing-sn:<site>` / RAG-as-a-header routing.
+
 ## Stuff-all mode (small catalogs)
 
 For a catalog small enough to fit in one prompt (a few hundred rows), the copilot
