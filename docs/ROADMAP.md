@@ -106,38 +106,11 @@
 
 ## Block AZ — Governed LLM Gateway (OpenAI-compatible governed egress) (§XLIX)
 
-> Turn Turing's internal LLM layer inside-out: expose an **OpenAI-compatible
-> inbound API** (`/v1/chat/completions`, `/v1/embeddings`, `/v1/models`) so any
-> existing app points its `base_url` at Turing with **zero code change** — the
-> LiteLLM baseline. But the endpoint is a *thin façade* over the whole stack, so
-> the same call transparently gains RAG, guardrails, semantic cache, tools,
-> budget-aware routing and audit. The reuse is the moat: ~85–95% of the
-> governance half already exists (`TurGenAiLlmProviderFactory`, `TurLLMTokenUsage`
-> + cost aggregations, `TurChatCostBudgetGate`, `TurSecretCryptoService`,
-> `@TenantId`, `TurLlmCacheService`, `TurModerationService`), and the
-> differentiators reuse `TurAgentChatExecutor`, `TurSNGenAi`, the F.15 capability
-> matrix and the Block AJ eval/distillation path. **Strategic stance:** not a
-> commodity-proxy play (that market is crowded and infra-shaped); this is a
-> *governed enterprise gateway* for orgs already running Turing. All opt-in behind
-> `turing.gateway.enabled` (default off); nothing changes for non-gateway paths.
-> Design in [IMPROVEMENTS.md](IMPROVEMENTS.md) §XLIX.
-
-**Phase 1 — inbound seam + passthrough parity:**
-- ✅ **T740** shipped — see CHANGELOG.
-- ✅ **T741** shipped — see CHANGELOG.
-
-**Phase 2 — reuse the governance half:**
-- ✅ **T742** shipped — see CHANGELOG.
-- ✅ **T743** shipped — see CHANGELOG.
-
-**Phase 3 — the intelligence differentiators (the moat LiteLLM can't copy):**
-- ✅ **T744** shipped — see CHANGELOG.
-- ✅ **T745** shipped — see CHANGELOG.
-- ✅ **T746** shipped — see CHANGELOG. **Block AZ fully shipped (T740–T748).**
-
-**Phase 4 — surfacing + admin:**
-- ✅ **T747** shipped — see CHANGELOG.
-- ✅ **T748** shipped — see CHANGELOG. **Block AZ committed scope complete (T740–T744, T747, T748); only 💭 T745/T746 remain.**
+> **Fully shipped (T740–T748)** — the OpenAI-compatible inbound gateway
+> (`/v1/chat/completions`, `/v1/embeddings`, `/v1/models`) as a thin façade over
+> the whole governed stack (RAG, guardrails, semantic cache, tools, budget-aware
+> routing, audit), all opt-in behind `turing.gateway.enabled`. See
+> [CHANGELOG.md](CHANGELOG.md) → Block AZ.
 
 ## Block AV — POST-native search & link-free response contract (§XLV)
 
@@ -194,64 +167,23 @@
 
 ## Block BE — Catalog-driven model intelligence (§LIII)
 
-> The `io.github.openviglet:model-catalog-client` (1.0.5+) already fetches a
-> **rich** `ModelEntry` per model — `pricing`, `contextWindow`, `maxOutputTokens`,
-> `embeddingDimensions`, `capabilities`, `modalities`, `benchmarks`, `performance`,
-> `knowledgeCutoff`, `releaseDate`, `deprecated`/`status`, plus a `Classifier`
-> tier (Frontier/High/Mid/Light) and `providers()`/`plans()`/`changes()`
-> registries — but `TurLlmModelCatalog.toCatalogMap` collapses every entry to
-> `id/label/kind` and Turing re-enters everything by hand (`TurLLMPrice`,
-> `TurLLMInstance.contextWindow`, the native-capability matrix). **Widen the funnel
-> once (T776), then light up cost, selection UX, correctness, optimization and
-> freshness on top.** Full design in [IMPROVEMENTS.md](IMPROVEMENTS.md) §LIII.
-> Feasible against the current client (1.0.5) — no library changes required (one optional
-> refinement is noted in §LIII.4).
-
-**Phase 1 — Widen the funnel + auto-pricing (headline):**
-- ✅ **T776** SHIPPED — Carry rich `ModelEntry` metadata through the catalog boundary (`TurLlmModelMetadata` on `TurLlmModelOption`). Foundational; see CHANGELOG. → §LIII.1
-- ✅ **T777** SHIPPED — Auto-seed & refresh `TurLLMPrice` from catalog pricing (`TurLLMPriceCatalogReconciler`; `CATALOG`/`MANUAL` source, manual always wins). Closes the "$0 unpriced model" gap; see CHANGELOG. → §LIII.1
-- ✅ **T778** SHIPPED — Price provenance & staleness in the cost UI (Source/Indicative/Verified badges, verify-at-vendor links via `provider-links`, used-but-unpriced / indicative warnings). Picker price surfacing folded into T779. See CHANGELOG. → §LIII.1
-
-**Phase 2 — Enriched selection & correctness:**
-- ✅ **T779** SHIPPED — Enriched model picker: shared `model-meta.tsx` renders a compact price/context/max-out/intelligence/TTFT/cutoff + capability chips line and a tier badge on every `model-combobox` / `llm-model-multi-select` row, plus a sort control (relevance/cheapest/largest-context/most-intelligent). See CHANGELOG. → §LIII.2
-- ✅ **T780** SHIPPED — Auto-fill instance metadata from catalog: selecting a model pre-fills `contextWindow` / max output tokens / `embeddingDimensions` (fill-when-empty, operator override kept) + `CatalogLimitHint` warns when a hand-entered value exceeds the catalog max. New Context-window field; update API now persists `contextWindow` (+ guarded `embeddingDimensions`). See CHANGELOG. → §LIII.2
-- ✅ **T781** SHIPPED — Capability/modality-aware feature gating: the instance form warns (amber) when `toolsEnabled`/`fileUploadEnabled` is on but the selected model's catalog `capabilities`/`modalities` don't support it (`catalogSupportsTools`/`catalogSupportsFileInput`, silent when unknown). Native-capability-matrix seeding intentionally not folded in (F.15 matrix = provider-native tools, a distinct concept from catalog capability flags). See CHANGELOG. → §LIII.2
-- ✅ **T782** SHIPPED — Model lifecycle / deprecation warnings: `TurLLMModelLifecycleService` flags instances on `deprecated`/`DEPRECATED`/`RETIRED` models + suggests a GA replacement (same vendor+kind, covers capabilities, ≤ price, best intelligence); `@Scheduled` warn-log scan + `GET /api/v2/llm/model-lifecycle/deprecations`; admin banner on the instance list + `ModelDeprecatedBadge` in both pickers. See CHANGELOG. → §LIII.2
-
-**Phase 3 — Intelligence, budgeting & optimization:**
-- ✅ **T783** SHIPPED — Pre-flight batch cost estimate: `TurLLMBatchCostEstimator` prices a batch (itemCount × per-item tokens × catalog rate) → projected total + `overBudget` flag; `POST /api/v2/llm/cost/preflight-batch`. **Confirm UI shipped** — reusable `BatchCostConfirmDialog` ("this run will cost ~$X — proceed?"), wired into the research-study runner (personas × turns); reusable by the eval/embed runners. See CHANGELOG. → §LIII.3
-- ✅ **T784** SHIPPED — Cost/quality/latency gateway routing: `TurGatewayRouterService` gains `cost`/`quality`/`ttft` strategies (`turing-router:cost/id1,id2`) that order the declared deployments by catalog input price / intelligence index / TTFT (missing-metric sinks last), alongside the T745 rr/latency/failover. See CHANGELOG. → §LIII.3
-- ✅ **T785** SHIPPED — Model advisor: `TurLLMModelAdvisorService` filters catalog models by required capabilities/modalities + min context + budget ceiling + min tier/intelligence and ranks survivors (intelligence desc → cheaper → larger context); `POST /api/v2/llm/model-advisor/recommend`. **Advisor wizard UI shipped** — bento `/bento/llm/advisor` page (constraints → ranked shortlist) with one-click instance create + a "Find a model" launcher on the LLM-instance list. See CHANGELOG. → §LIII.3
-- ✅ **T786** SHIPPED — Right-sizing / savings: `TurLLMRightsizingService` reads per-(agent,model) usage (dominant model, avg in/out tokens, monthly spend), finds the cheapest same-vendor catalog model that still fits (holds the observed turn ×1.5, covers the current model's capabilities, not deprecated, strictly cheaper), and reports projected monthly savings; `GET /api/v2/llm/cost/rightsizing`. Exercised-capabilities approximated by the current model's declared caps (not metered per-turn). See CHANGELOG. Closes Phase 3. → §LIII.3
-
-**Phase 4 — Freshness & trust:**
-- ✅ **T787** SHIPPED — Surface knowledge cutoff: the picker already shows `knowledgeCutoff` (T779); added a per-agent `discloseKnowledgeCutoff` toggle whose `TurKnowledgeCutoffPromptContributor` injects "Your knowledge cutoff is <date>" (from the configured model's catalog cutoff) into the system prompt. Liquibase v2026.3.1.114; carried through agent export/import. See CHANGELOG. → §LIII.4
-- ✅ **T788** SHIPPED — Catalog change-feed notifications: `TurLlmModelCatalog` parses/stores the client `changes()` feed (`changes.json` added/removed/changed) on refresh; `TurLLMCatalogChangeService` cross-references it against in-use instance models → REMOVED / SUPERSEDED (same-vendor addition) / CHANGED notifications; `GET /api/v2/llm/model-lifecycle/change-feed` + an info banner on the instance list. **Optional email shipped** — `TurLLMCatalogChangeEmailService` (opt-in `change-feed.email-enabled`, daily `@Scheduled`+`@SchedulerLock`, deduped) emails the Global-Settings recipient. See CHANGELOG. → §LIII.4
-- ✅ **T789** SHIPPED — Consumer-plan & provider-pricing reference: provider verify links already ship (T778); `TurLlmModelCatalog` now parses the client `plans()` registry (`plans.json`) into `TurCatalogPlans`; `GET /api/v2/llm/price/consumer-plans` + a "Consumer plan reference" card on the cost-governance page (indicative Claude Pro / ChatGPT Plus… plans, vendor-grouped, verify-at-vendor links). **Closes Block BE.** See CHANGELOG. → §LIII.4
+> **Fully shipped (T776–T789)** — widened the `model-catalog-client` `ModelEntry`
+> past `id/label/kind` (rich metadata carrier), auto-seeded/provenance-tracked
+> `TurLLMPrice` from catalog pricing, enriched model picker + auto-fill instance
+> limits + capability/deprecation gating, pre-flight batch cost estimate,
+> cost/quality/latency gateway routing, model advisor + right-sizing, per-agent
+> knowledge-cutoff disclosure, catalog change-feed notifications + consumer-plan
+> reference. See [CHANGELOG.md](CHANGELOG.md) → Block BE.
 
 ## Block BF — Vectorless (Structured-Data) RAG: name it, feed it, integrate it (§LIV)
 
-> Turing already ships a fully **vectorless**, grounded, cited "talk to a structured
-> catalog" engine — the T392 `TurCatalogCopilotService` (§XX.12): NL→filter over a
-> **declared** field schema (`TurLlmNLFacetParser`, T385) → structured DSL search
-> (`TurDslSearchService`, Solr/ES/Lucene, **no embeddings**) → objective re-rank
-> (`TurSNHybridRankingService`) → LLM answers strictly from cited rows (`[n]` →
-> `TurCatalogCitation`), needing only a default LLM (no embedding model / no vector
-> store). But the word "vectorless" appears nowhere, the capability isn't
-> discoverable, it can't **pull** a remote JSON feed, and it has no frontend
-> widget/SDK hook. This block makes vectorless RAG an explicit, integration-friendly
-> capability and closes the two real gaps — dogfooded with the public
-> `openviglet/model-catalog` on `turing-demo.viglet.org`. Design in
-> [IMPROVEMENTS.md](IMPROVEMENTS.md) §LIV.
-
-- ✅ **T790** (deps: —) **Name & surface "Vectorless (Structured-Data) RAG"** — promote the T392 copilot retrieval path to a first-class, explicitly-named knowledge-base *mode*: a Vector / Vectorless-Structured / Hybrid selector on the SN-site AI form, a `ChatDisabledReason` readiness path that recognizes vectorless needs only a default LLM (not `MISSING_EMBEDDING`/`MISSING_STORE`), and an end-user docs page. No new retrieval code — discoverability + config surface over an engine that already exists. → §LIV.1
-- ✅ **T791** (deps: —) **Scheduled JSON-feed source (pull ingester)** — a `TurStructuredFeedIngestService` that GETs a remote JSON feed (array or catalog envelope; natively consumes `catalog.ndjson`) on a TTL via the T739 `TurUrlFetcher`, declares/refreshes the SN-site field schema (`TurSNSiteFieldExt`) from a field manifest (the model catalog's `query-manifest.json`), maps records → `TurSNJobItems`, and POSTs to the existing `/api/sn/import` pipeline (de-indexing vanished ids). Fills the one genuine ingestion gap (today content must be pushed by an external connector). → §LIV.2
-- ✅ **T792** (deps: T790) **Copilot React widget + react-sdk hook** — a `use-turing-copilot` react-sdk hook + a thin, embeddable Q&A component bound to `POST /api/sn/{siteName}/copilot`, rendering the answer + `TurCatalogCitation[]` as linked sources (mirrors `ai-mode-chat.tsx` for the vectorless/copilot path, multi-turn like `TurCatalogCopilotResult`). Closes the frontend gap so the admin app and external sites can embed vectorless Q&A with citations. → §LIV.3
-- ✅ **T793** (deps: T790) **Stuff-all mode for small datasets** — a per-source copilot option that, below a token threshold, skips DSL retrieval and grounds the LLM on the whole context bundle (e.g. the model catalog's `context.txt`, ≤ ~40k tokens) — the extreme-vectorless path for tiny catalogs, still cited + fail-open; retrieval stays the default above the threshold. → §LIV.4
-- ✅ **T794** (deps: T790, T791, T792) **Dogfood: model-catalog as the first vectorless KB on `turing-demo.viglet.org`** — provision an SN site + field schema from the model catalog's `query-manifest.json`, wire the T791 feed to the published `openviglet.github.io/model-catalog` endpoint, enable Vectorless RAG, expose the copilot; the live demo answers "cheapest embedding model with ≥1M context?" with cited model links. The reference integration for the model-catalog "Ask the catalog" widget (that repo's Block M). → §LIV.5
-- ✅ **T795** (deps: T790) **Vectorless RAG over the OpenAI-compatible gateway** — extend the Block AZ gateway (§XLIX) so a `turing-copilot:<site>` model route (or `x-turing-copilot-site` header) invokes the vectorless copilot path, letting any OpenAI-style client get grounded, cited structured answers with zero Turing-SDK code — the cleanest "separate backend" integration for an external static site; a natural extension of the T744 `turing-sn:<site>` / RAG-as-a-header routing. → §LIV.6
-- ✅ **T797** (deps: T791) **Structured-feed nested-object flattening** — a *generic*, opt-in per-source flag on the T791 ingester that flattens nested JSON objects in a feed record into queryable/citable flat fields (`{pricing:{inputPer1M:5}}` → `pricing_inputPer1M`), recursively, with arrays of scalars preserved as multi-valued. Today `scalarOf` silently drops every nested object, so a real-world feed's decision fields (pricing, benchmarks, limits nested under objects) never become searchable. Product-generic: any nested JSON feed benefits; no per-integration code. → §LIV.7
-- ✅ **T796** (deps: T790, T791) **Startup auto-provisioning of a config-driven vectorless KB** — a *generic* opt-in that lets a structured-feed `Source` declare `provision: true` + `seInstanceId`, so a startup `ApplicationRunner` (idempotent empty-site guard, mirroring `TurDefaultRagInfraOnStartup`) creates the SN site + converges its field schema from the source's field manifest, sets `knowledgeBaseMode = VECTORLESS_STRUCTURED`, and runs the first ingest — turning a pure-env-var deployment into a working vectorless KB with no manual admin step. Product-generic: any structured feed provisions the same way; the concrete site/endpoint live only in a deployment's env. → §LIV.8
+> **Fully shipped (T790–T798)** — named and surfaced the vectorless
+> (structured-data) RAG knowledge-base mode over the existing T392 catalog copilot,
+> a scheduled JSON-feed pull ingester (+ nested-object flattening + startup
+> auto-provisioning of a config-driven KB), a `use-turing-copilot` react-sdk
+> hook/widget, stuff-all mode for small datasets, the model-catalog dogfood KB on
+> `turing-demo.viglet.org`, vectorless RAG over the OpenAI-compatible gateway, and
+> answer-grounded citations (T798). See [CHANGELOG.md](CHANGELOG.md) → Block BF.
 
 ## Non-goals (do NOT add as tasks)
 
