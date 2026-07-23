@@ -12,6 +12,7 @@ import com.viglet.turing.commons.indexing.TurLoggingStatus;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
+import lombok.ToString;
 import lombok.extern.slf4j.Slf4j;
 import tools.jackson.databind.annotation.JsonSerialize;
 
@@ -19,6 +20,7 @@ import tools.jackson.databind.annotation.JsonSerialize;
 @Builder
 @Getter
 @Setter
+@ToString
 public class TurLoggingIndexing implements Serializable {
     private TurIndexingStatus status;
     private String source;
