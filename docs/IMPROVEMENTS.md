@@ -2726,29 +2726,3 @@ Extend the Block AZ gateway (§XLIX) so a `turing-copilot:<site>` model route (o
 OpenAI-style client get grounded, cited structured answers with zero Turing-SDK
 code. The cleanest "separate backend" integration for an external static site, and
 a natural extension of the T744 `turing-sn:<site>` / RAG-as-a-header routing.
-
-### LIV.9 Ground the returned citations to what the answer actually cites (T798)
-**Problem (observed on the `turing-demo` model-catalog copilot).** Every question
-comes back with ~all catalog rows under "Cited models" — the client renders the
-whole catalog instead of the two or three models the answer names. Root cause is in
-`TurCatalogCopilotService`: the **stuff-all** path (LIV.4 / T793) fetches the entire
-catalog via `match_all` and calls `project(hits, hits.size())`, so **every** row
-becomes a `TurCatalogCitation`; `answer()` then returns `retrieval.citations()`
-verbatim. Grounding on all rows is correct for stuff-all — but *returning* all of
-them as citations is not. The filtered `retrieve()` path caps at `MAX_RESULTS`, so
-only stuff-all floods.
-
-**Definitive fix.** Separate the *grounding set* from the *returned citations*: the
-citations handed to the client must reflect what the answer actually grounded on,
-not the retrieval bundle. After the LLM responds, parse the distinct `[n]` markers
-it emitted (the system prompt already mandates `[n]` per claim), then return only
-those citations — mapping each cited rank back to its `TurCatalogCitation` — for
-**both** the stuff-all and filtered paths. Stuff-all keeps grounding the LLM on
-every row; only the projected `citations` shrink to the referenced ones. Keep the
-`[n]`↔citation numbering consistent so the prose's markers still resolve. Fail-open:
-if no `[n]` is parseable (rare), degrade to the filtered top-k (or none) with the
-prose still shown, never back to "all rows". Transport-agnostic — the endpoint, the
-T795 gateway route and the `catalog_search` tool all inherit the fix — and it makes
-citations meaningful + deep-linkable, which is exactly what the model-catalog "Ask
-the catalog" widget (that repo's Block M) consumes. A hard safety cap on the
-returned list is a cheap backstop.

@@ -85,7 +85,7 @@ class TurCatalogCopilotServiceTest {
         TurSNSite site = new TurSNSite();
         site.setName("catalog");
 
-        ChatModel chatModel = modelReturning("The best fit is the Online Data MSc [1].");
+        ChatModel chatModel = modelReturning("The best fit is the Online Data MSc [1], then [2].");
         when(chatModelResolver.resolve()).thenReturn(Optional.of(chatModel));
         when(turSNSiteRepository.findByNameIgnoreCase("catalog")).thenReturn(Optional.of(site));
         when(turSNSiteFieldExtRepository.findByTurSNSiteAndEnabled(site, 1)).thenReturn(List.of(
@@ -167,6 +167,60 @@ class TurCatalogCopilotServiceTest {
     }
 
     @Test
+    void stuffAllReturnsOnlyTheCitationsTheAnswerCites() {
+        // T798 / §LIV.9 — stuff-all grounds the LLM on all 12 rows, but the answer
+        // only names [3] and [7]; the returned citations must shrink to just those
+        // two (mapped rank→citation), never the whole grounding bundle.
+        TurSNSite site = new TurSNSite();
+        site.setName("catalog");
+        ChatModel chatModel = modelReturning("Consider the third [3] or the seventh [7] option.");
+        when(chatModelResolver.resolve()).thenReturn(Optional.of(chatModel));
+        when(turSNSiteRepository.findByNameIgnoreCase("catalog")).thenReturn(Optional.of(site));
+        when(copilotProperty.isStuffAllEnabled()).thenReturn(true);
+        when(copilotProperty.getStuffAllMaxDocs()).thenReturn(1000);
+        when(copilotProperty.getStuffAllTokenBudget()).thenReturn(40_000);
+        when(dslSearchService.search(eq("catalog"), eq("en"), any(TurDslQueryRequest.class)))
+                .thenReturn(Optional.of(nHitResponse(12)));
+
+        TurCatalogCopilotResult result = service.answer("catalog", "en",
+                List.of(new ChatTurn("user", "what do you have?")));
+
+        assertThat(result.available()).isTrue();
+        // Grounded on all 12 rows...
+        assertThat(result.totalHits()).isEqualTo(12L);
+        // ...but only the two cited rows are returned as citations, in answer order.
+        assertThat(result.citations()).extracting(TurCatalogCitation::rank)
+                .containsExactly(3, 7);
+    }
+
+    @Test
+    void failsOpenToBoundedTopKWhenAnswerHasNoMarkers() {
+        // T798 / §LIV.9 — stuff-all grounds on 12 rows and the answer emits no [n]
+        // markers; fail-open to the filtered top-k slice (MAX_RESULTS = 8), never
+        // back to all 12 rows.
+        TurSNSite site = new TurSNSite();
+        site.setName("catalog");
+        ChatModel chatModel = modelReturning("I could not find a clear match for that request.");
+        when(chatModelResolver.resolve()).thenReturn(Optional.of(chatModel));
+        when(turSNSiteRepository.findByNameIgnoreCase("catalog")).thenReturn(Optional.of(site));
+        when(copilotProperty.isStuffAllEnabled()).thenReturn(true);
+        when(copilotProperty.getStuffAllMaxDocs()).thenReturn(1000);
+        when(copilotProperty.getStuffAllTokenBudget()).thenReturn(40_000);
+        when(dslSearchService.search(eq("catalog"), eq("en"), any(TurDslQueryRequest.class)))
+                .thenReturn(Optional.of(nHitResponse(12)));
+
+        TurCatalogCopilotResult result = service.answer("catalog", "en",
+                List.of(new ChatTurn("user", "what do you have?")));
+
+        assertThat(result.available()).isTrue();
+        assertThat(result.totalHits()).isEqualTo(12L);
+        // Bounded to the top-k slice, in rank order — not the full 12-row bundle.
+        assertThat(result.citations()).hasSize(8);
+        assertThat(result.citations().getFirst().rank()).isEqualTo(1);
+        assertThat(result.citations().getLast().rank()).isEqualTo(8);
+    }
+
+    @Test
     void returnsErrorWhenNoDefaultLlm() {
         when(chatModelResolver.resolve()).thenReturn(Optional.empty());
 
@@ -239,6 +293,21 @@ class TurCatalogCopilotServiceTest {
         TurDslSearchResponse.Hit h2 = new TurDslSearchResponse.Hit("d2", 1.2, doc2, null);
         TurDslSearchResponse.Hits hits = new TurDslSearchResponse.Hits(
                 new TurDslSearchResponse.Total(2, "eq"), 2.5, List.of(h1, h2));
+        return new TurDslSearchResponse(7L, false, hits, null);
+    }
+
+    /** A response holding {@code n} distinct hits — for the T798 grounding tests. */
+    private static TurDslSearchResponse nHitResponse(int n) {
+        List<TurDslSearchResponse.Hit> list = new java.util.ArrayList<>(n);
+        for (int i = 1; i <= n; i++) {
+            Map<String, Object> doc = new LinkedHashMap<>();
+            doc.put("title", "Model " + i);
+            doc.put("url", "https://example.edu/model-" + i);
+            doc.put("abstract", "Catalog entry number " + i + ".");
+            list.add(new TurDslSearchResponse.Hit("d" + i, (double) (n - i + 1), doc, null));
+        }
+        TurDslSearchResponse.Hits hits = new TurDslSearchResponse.Hits(
+                new TurDslSearchResponse.Total(n, "eq"), (double) n, list);
         return new TurDslSearchResponse(7L, false, hits, null);
     }
 }

@@ -11,10 +11,14 @@ package com.viglet.turing.genai.catalog;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.apache.commons.lang3.LocaleUtils;
 import org.springframework.ai.chat.messages.AssistantMessage;
@@ -88,6 +92,14 @@ public class TurCatalogCopilotService {
     private static final int MAX_RESULTS = 8;
     /** Cap on the per-result snippet length fed to the answer LLM. */
     private static final int SNIPPET_CHARS = 320;
+    /**
+     * T798 / §LIV.9 — hard safety cap on how many citations {@link #answer} returns,
+     * regardless of how many distinct {@code [n]} the answer emits. A cheap backstop
+     * so a runaway answer can never flood the client with the whole catalog.
+     */
+    private static final int MAX_RETURNED_CITATIONS = 24;
+    /** Matches a {@code [n]} citation marker in the LLM answer (1–4 digit rank). */
+    private static final Pattern CITATION_MARKER = Pattern.compile("\\[(\\d{1,4})\\]");
 
     private static final ObjectMapper OBJECT_MAPPER = JsonMapper.builder().build();
 
@@ -155,15 +167,80 @@ public class TurCatalogCopilotService {
 
         try {
             String answer = callLlm(chatModelOpt.get(), siteName, retrieval, messages);
-            return TurCatalogCopilotResult.ok(answer, retrieval.citations(),
+            // T798 / §LIV.9 — the LLM grounds on the whole retrieval bundle (all
+            // rows in stuff-all mode), but the citations returned to the client must
+            // reflect only what the answer actually cites, not the grounding set.
+            List<TurCatalogCitation> grounded = groundCitations(answer, retrieval.citations());
+            return TurCatalogCopilotResult.ok(answer, grounded,
                     retrieval.groundedSummary(), retrieval.totalHits());
         } catch (RuntimeException e) {
             log.warn("[CatalogCopilot] answer LLM call failed for site '{}': {} — returning citations only",
                     siteName, e.getMessage());
-            return TurCatalogCopilotResult.degraded(retrieval.citations(),
+            // No answer text to ground against — still bound the returned list to a
+            // top-k slice so a failed stuff-all answer never floods the client.
+            return TurCatalogCopilotResult.degraded(groundCitations(null, retrieval.citations()),
                     retrieval.groundedSummary(), retrieval.totalHits(),
                     "Answer generation failed: " + e.getMessage());
         }
+    }
+
+    /**
+     * T798 / §LIV.9 — grounds the <em>returned</em> citations to what the answer
+     * actually cites. Parses the distinct {@code [n]} markers the LLM emitted (the
+     * system prompt mandates one per claim) and keeps only those citations, mapped
+     * rank→citation in answer order. This matters most for the T793 stuff-all path,
+     * which grounds the LLM on every catalog row: without this, {@code answer()}
+     * would return the whole catalog as "Cited models" instead of the handful the
+     * answer names. The filtered {@link #retrieve} path is already capped at
+     * {@link #MAX_RESULTS}, but inherits the same tightening for free.
+     *
+     * <p>Fail-open: when no {@code [n]} is parseable (or none of the parsed ranks
+     * match a citation), degrade to the filtered top-k slice — never back to all
+     * rows — with the prose still shown. A {@link #MAX_RETURNED_CITATIONS} backstop
+     * bounds the list regardless.
+     */
+    private List<TurCatalogCitation> groundCitations(String answer, List<TurCatalogCitation> all) {
+        if (all == null || all.isEmpty()) {
+            return List.of();
+        }
+        Set<Integer> citedRanks = parseCitedRanks(answer);
+        if (!citedRanks.isEmpty()) {
+            List<TurCatalogCitation> grounded = new ArrayList<>();
+            for (TurCatalogCitation citation : all) {
+                if (citedRanks.contains(citation.rank())) {
+                    grounded.add(citation);
+                    if (grounded.size() >= MAX_RETURNED_CITATIONS) {
+                        break;
+                    }
+                }
+            }
+            if (!grounded.isEmpty()) {
+                return grounded;
+            }
+        }
+        // Fail-open: no usable markers — bounded top-k, never the whole grounding set.
+        int cap = Math.min(MAX_RESULTS, all.size());
+        return List.copyOf(all.subList(0, cap));
+    }
+
+    /** Extracts the distinct 1-based ranks referenced as {@code [n]} in the answer. */
+    private static Set<Integer> parseCitedRanks(String answer) {
+        if (!StringUtils.hasText(answer)) {
+            return Set.of();
+        }
+        Set<Integer> ranks = new LinkedHashSet<>();
+        Matcher matcher = CITATION_MARKER.matcher(answer);
+        while (matcher.find()) {
+            try {
+                int rank = Integer.parseInt(matcher.group(1));
+                if (rank >= 1) {
+                    ranks.add(rank);
+                }
+            } catch (NumberFormatException ignored) {
+                // marker out of int range — skip it
+            }
+        }
+        return ranks;
     }
 
     private String callLlm(ChatModel chatModel, String siteName, Retrieval retrieval,
