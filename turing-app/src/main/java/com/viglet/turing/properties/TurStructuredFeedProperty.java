@@ -119,5 +119,25 @@ public class TurStructuredFeedProperty {
          * nested objects so they become searchable / citable.
          */
         private boolean flattenNested = false;
+
+        /**
+         * T796 / §LIV.8 (Block BF) — auto-provision the SN site at startup when it
+         * does not yet exist: create the site (needs {@link #seInstanceId}) +
+         * converge the schema + set the site to Vectorless mode + run the first
+         * ingest, so a pure-env-var deployment yields a working vectorless KB with
+         * no manual admin step. Default {@code false} (the ingester otherwise
+         * requires the site to already exist).
+         */
+        private boolean provision = false;
+
+        /**
+         * T796 / §LIV.8 (Block BF) — the {@code TurSEInstance} id backing the SN
+         * site when {@link #provision} creates it. Required to create a new site;
+         * ignored once the site exists.
+         */
+        private String seInstanceId;
+
+        /** T796 — optional description stamped on an auto-provisioned SN site. */
+        private String description;
     }
 }

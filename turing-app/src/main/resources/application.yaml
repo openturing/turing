@@ -242,6 +242,8 @@ turing:
       #     locale: en_US
       #     # records-field: vendors   # only for a JSON-object envelope feed
       #     # flatten-nested: true     # T797 — flatten nested objects (pricing.inputPer1M -> pricing_inputPer1M)
+      #     # provision: true          # T796 — auto-create the SN site at startup + set Vectorless mode + first ingest
+      #     # se-instance-id:          # optional; blank defaults to an embedded Lucene SE instance (find-or-create)
     embedding:
       # In-process ONNX embedding runtime (TRANSFORMERS_LOCAL + HUGGINGFACE
       # providers). T656 owns remote artifact acquisition (TurOnnxModelDownloader)

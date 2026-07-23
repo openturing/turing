@@ -40,4 +40,11 @@ public interface TurSEInstanceRepository extends JpaRepository<TurSEInstance, St
      */
     @Query("select e from TurSEInstance e where e.tenantId = :tenantId or e.tenantId is null")
     java.util.List<TurSEInstance> findVisibleToTenant(@Param("tenantId") String tenantId);
+
+    /**
+     * T796 / §LIV.8 — SE instances backed by a given vendor (e.g. {@code LUCENE}),
+     * used to resolve/reuse a default embedded search engine when provisioning a
+     * vectorless KB without an explicit {@code seInstanceId}.
+     */
+    java.util.List<TurSEInstance> findByTurSEVendor_Id(String vendorId);
 }
