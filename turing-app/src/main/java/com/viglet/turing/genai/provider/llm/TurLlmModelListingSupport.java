@@ -5,6 +5,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
+import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.util.StringUtils;
 import org.springframework.web.client.RestClient;
 
@@ -27,6 +28,10 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public final class TurLlmModelListingSupport {
 
+    private static final ParameterizedTypeReference<Map<String, Object>> MAP_TYPE =
+            new ParameterizedTypeReference<>() {
+            };
+
     private TurLlmModelListingSupport() {
     }
 
@@ -45,7 +50,7 @@ public final class TurLlmModelListingSupport {
                     .uri("/models")
                     .header("Authorization", "Bearer " + apiKey)
                     .retrieve()
-                    .body(Map.class);
+                    .body(MAP_TYPE);
             return extractFromData(body);
         } catch (Exception e) {
             log.debug("Could not list models from OpenAI-style endpoint {}: {}", baseUrl, e.getMessage());
@@ -69,7 +74,7 @@ public final class TurLlmModelListingSupport {
                     .header("x-api-key", apiKey)
                     .header("anthropic-version", "2023-06-01")
                     .retrieve()
-                    .body(Map.class);
+                    .body(MAP_TYPE);
             return extractFromData(body);
         } catch (Exception e) {
             log.debug("Could not list Anthropic models: {}", e.getMessage());
@@ -93,7 +98,7 @@ public final class TurLlmModelListingSupport {
             Map<String, Object> body = RestClient.create(normalize(base)).get()
                     .uri("/models?pageSize=1000&key={key}", apiKey)
                     .retrieve()
-                    .body(Map.class);
+                    .body(MAP_TYPE);
             if (body != null && body.get("models") instanceof List<?> models) {
                 List<TurLlmModelOption> result = new ArrayList<>();
                 for (Object item : models) {
@@ -136,7 +141,7 @@ public final class TurLlmModelListingSupport {
             Map<String, Object> body = RestClient.create(normalize(baseUrl)).get()
                     .uri("/api/tags")
                     .retrieve()
-                    .body(Map.class);
+                    .body(MAP_TYPE);
             if (body != null && body.get("models") instanceof List<?> models) {
                 List<TurLlmModelOption> result = new ArrayList<>();
                 for (Object item : models) {

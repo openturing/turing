@@ -81,9 +81,9 @@ public class TurGroovyGraderEngine {
         return scriptCache.computeIfAbsent(script.hashCode(), h -> {
             GroovyShell shell = new GroovyShell();
             String source = TurCustomToolCallbackService.sanitizeGroovySource(script);
-            return shell.getClassLoader()
-                    .parseClass(source, "TurEvalGroovyGrader_" + h + ".groovy")
-                    .asSubclass(Script.class);
+            Class<?> parsed = shell.getClassLoader()
+                    .parseClass(source, "TurEvalGroovyGrader_" + h + ".groovy");
+            return parsed.asSubclass(Script.class);
         });
     }
 

@@ -390,7 +390,7 @@ public class TurAnthropicMessagesService {
                     ? calibration.temperature()
                     : instance.getTemperature();
             if (temperature != null) {
-                builder.temperature(temperature);
+                applyTemperature(builder, temperature);
             }
         }
         if (serviceTier != null) {
@@ -756,6 +756,20 @@ public class TurAnthropicMessagesService {
             }
         }
         return text.toString();
+    }
+
+    /**
+     * Apply the per-instance / persona temperature. The Anthropic SDK deprecated
+     * {@code temperature(double)} because models after Claude Opus 4.6 reject any
+     * non-1.0 temperature (HTTP 400). Turing still honours the configured
+     * temperature deliberately — for the many older Claude models, and
+     * OpenAI-compatible Anthropic proxies, that accept it — so the deprecation is
+     * suppressed here, scoped to this one call to keep the signal for any other
+     * deprecated API elsewhere.
+     */
+    @SuppressWarnings("deprecation")
+    private static void applyTemperature(MessageCreateParams.Builder builder, double temperature) {
+        builder.temperature(temperature);
     }
 
     private long resolveMaxTokens(TurLLMInstance instance) {

@@ -118,7 +118,7 @@ public class TurClientToolService {
         if (schemaNode == null || schemaNode.isNull()) {
             return null;
         }
-        return schemaNode.isTextual() ? schemaNode.asString() : schemaNode.toString();
+        return schemaNode.isString() ? schemaNode.asString() : schemaNode.toString();
     }
 
     /** Tool callbacks advertising the agent's client tools to the model. */

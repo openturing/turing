@@ -204,9 +204,23 @@ public class TurAnthropicComputerUseService {
             builder.system(systemPrompt);
         }
         if (instance.getTemperature() != null) {
-            builder.temperature(instance.getTemperature());
+            applyTemperature(builder, instance.getTemperature());
         }
         return builder.build();
+    }
+
+    /**
+     * Apply the per-instance temperature. The Anthropic SDK deprecated
+     * {@code temperature(double)} because models after Claude Opus 4.6 reject any
+     * non-1.0 temperature (HTTP 400). Turing still honours the configured
+     * temperature deliberately — for the many older Claude models, and
+     * OpenAI-compatible Anthropic proxies, that accept it — so the deprecation is
+     * suppressed here, scoped to this one call to keep the signal for any other
+     * deprecated API elsewhere.
+     */
+    @SuppressWarnings("deprecation")
+    private static void applyTemperature(MessageCreateParams.Builder builder, double temperature) {
+        builder.temperature(temperature);
     }
 
     /** Build the user turn that returns a screenshot as the tool_result image. */
