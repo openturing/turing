@@ -16,18 +16,6 @@
 | ⏳ | Partial — direction is right, more work remains |
 | 🛠 | In progress |
 
-## Block BC/BD — Model catalog API (moved to a dedicated repo)
-
-> **Migrated 2026-07-21 to [`openviglet/model-catalog`](https://github.com/openviglet/model-catalog).**
-> The public model catalog API (Block BC) and its multi-source regeneration
-> pipeline (Block BD) now live in their own repo, which owns the canonical
-> `model-catalog.json`, publishes the CORS-open JSON endpoint via GitHub Pages
-> (`https://openviglet.github.io/model-catalog/catalog.json`), and carries its own
-> roadmap/backlog (extended sources, custom domain). Turing consumes the published
-> endpoint remotely (`turing.model-catalog.url`, remote-only — no bundled copy).
-> The shipped Turing history stays in [CHANGELOG.md](CHANGELOG.md) → Blocks BC/BD;
-> new catalog work happens in the dedicated repo, not here.
-
 ## Block W — Agent↔UI transparency & client tools (AG-UI parity)
 
 > Closed the two AG-UI parity gaps for Turing's own agent runtime (live tool-call
@@ -104,14 +92,6 @@
 
 - 💭 **T704** (deps: T698, T700) **Fit trend/history + adjustment suggestions** — persist per-cell score across scheduled runs; surface drift ("this content dropped below fit for persona X since last run") and LLM-suggested persona/content adjustments, closing the bidirectional tuning loop. → §XLIII
 
-## Block AZ — Governed LLM Gateway (OpenAI-compatible governed egress) (§XLIX)
-
-> **Fully shipped (T740–T748)** — the OpenAI-compatible inbound gateway
-> (`/v1/chat/completions`, `/v1/embeddings`, `/v1/models`) as a thin façade over
-> the whole governed stack (RAG, guardrails, semantic cache, tools, budget-aware
-> routing, audit), all opt-in behind `turing.gateway.enabled`. See
-> [CHANGELOG.md](CHANGELOG.md) → Block AZ.
-
 ## Block AV — POST-native search & link-free response contract (§XLV)
 
 > The search response hands the client **pre-serialized GET query-string links**
@@ -156,34 +136,6 @@
 > across every own-hero surface. Only the speculative collapse remains:
 
 - 💭 **T738** (deps: T735) **Collapse the working manual-two-piece forms onto `BentoFormHero`** — the ~14 forms that already morph correctly by hand (11 SN forms + `ai-agent.settings.form` + `bento.global-settings` + `sn.site.custom.facet.item`) could drop their `bento-fade-out BentoSaveBar` + `BentoScrollSaveBar` boilerplate for the single component, so there is one canonical own-hero pattern. **Assessment (2026-07-13, deferred):** *not* the pure no-op it looks like. These forms render the hero as a **separate row** (`{header}` / shared `BentoAgentSubHero`) with the save bar **below** it in the body; `BentoFormHero` puts Save **inside** the hero `trailing`, so collapsing them would (1) **visibly** relocate Save into the hero — contradicting the "no visible change" premise — and (2) require the page↔form hero contract to move into each form. Worse, several (e.g. `sn.site.custom.facet.item`) save **imperatively** via `actions=` onClick, but `BentoFormHero` hardcodes `type="submit"` Save/Cancel — so it can't be dropped in without first extending its API to accept custom `actions`. Prereq if revived: add an `actions?` escape hatch to `BentoFormHero` and accept the layout change (or keep the two-piece as the sanctioned pattern for page-supplied heroes). → §XLVII
-
-## Block AY — Pluggable URL content fetcher with headless-browser fallback (§XLVIII)
-
-> **T739 shipped** (see CHANGELOG Block AY) — the `TurUrlFetcher` seam
-> (`SIMPLE`/`HEADLESS`/`AUTO`) over a `browserless/chromium` sidecar, with the
-> Global Settings "Content Ingestion" section and a `docker-compose.yaml`
-> service. JS-rendered SPAs now extract text via the headless fallback. Block AY
-> is fully shipped.
-
-## Block BE — Catalog-driven model intelligence (§LIII)
-
-> **Fully shipped (T776–T789)** — widened the `model-catalog-client` `ModelEntry`
-> past `id/label/kind` (rich metadata carrier), auto-seeded/provenance-tracked
-> `TurLLMPrice` from catalog pricing, enriched model picker + auto-fill instance
-> limits + capability/deprecation gating, pre-flight batch cost estimate,
-> cost/quality/latency gateway routing, model advisor + right-sizing, per-agent
-> knowledge-cutoff disclosure, catalog change-feed notifications + consumer-plan
-> reference. See [CHANGELOG.md](CHANGELOG.md) → Block BE.
-
-## Block BF — Vectorless (Structured-Data) RAG: name it, feed it, integrate it (§LIV)
-
-> **Fully shipped (T790–T798)** — named and surfaced the vectorless
-> (structured-data) RAG knowledge-base mode over the existing T392 catalog copilot,
-> a scheduled JSON-feed pull ingester (+ nested-object flattening + startup
-> auto-provisioning of a config-driven KB), a `use-turing-copilot` react-sdk
-> hook/widget, stuff-all mode for small datasets, the model-catalog dogfood KB on
-> `turing-demo.viglet.org`, vectorless RAG over the OpenAI-compatible gateway, and
-> answer-grounded citations (T798). See [CHANGELOG.md](CHANGELOG.md) → Block BF.
 
 ## Non-goals (do NOT add as tasks)
 
