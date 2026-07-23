@@ -115,7 +115,7 @@ class TurStructuredFeedIngestServiceTest {
                 .build().readTree(
                         "{\"id\":\"m1\",\"price\":1.5,\"ctx\":128000,\"tools\":true,"
                                 + "\"tags\":[\"a\",\"\",\"b\"],\"blank\":\"\",\"nested\":{\"x\":1}}"));
-        var attrs = service.toAttributes(node, "m1");
+        var attrs = service.toAttributes(node, "m1", false);
         assertThat(attrs.get(TurSNFieldName.ID)).isEqualTo("m1");
         assertThat(attrs.get("price")).isEqualTo(1.5);
         assertThat(((Number) attrs.get("ctx")).intValue()).isEqualTo(128000);
@@ -123,7 +123,24 @@ class TurStructuredFeedIngestServiceTest {
         assertThat(attrs).containsKey("tags");
         assertThat((List<Object>) attrs.get("tags")).containsExactly("a", "b"); // blank dropped
         assertThat(attrs).doesNotContainKey("blank");   // grounding contract
-        assertThat(attrs).doesNotContainKey("nested");  // objects skipped
+        assertThat(attrs).doesNotContainKey("nested");  // objects skipped (flatten off)
+    }
+
+    @Test
+    void toAttributes_flattensNestedObjectsWhenEnabled() {
+        var node = ((tools.jackson.databind.node.ObjectNode) tools.jackson.databind.json.JsonMapper.builder()
+                .build().readTree(
+                        "{\"id\":\"m1\",\"contextWindow\":128000,"
+                                + "\"pricing\":{\"inputPer1M\":5.0,\"currency\":\"USD\"},"
+                                + "\"modalities\":{\"input\":[\"image\",\"text\"]}}"));
+        var attrs = service.toAttributes(node, "m1", true);
+        // Nested objects become parent_child flat fields (queryable/citable).
+        assertThat(attrs.get("pricing_inputPer1M")).isEqualTo(5.0);
+        assertThat(attrs.get("pricing_currency")).isEqualTo("USD");
+        assertThat((List<Object>) attrs.get("modalities_input")).containsExactly("image", "text");
+        assertThat(((Number) attrs.get("contextWindow")).intValue()).isEqualTo(128000);
+        // The raw nested object key is never kept.
+        assertThat(attrs).doesNotContainKey("pricing");
     }
 
     // ─────────────────────────── ingest ───────────────────────────

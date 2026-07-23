@@ -197,7 +197,7 @@ public class TurStructuredFeedIngestService {
             }
             currentIds.add(id);
             jobItems.add(new TurSNJobItem(TurSNJobAction.CREATE, List.of(source.getSiteName()),
-                    locale, toAttributes(record, id)));
+                    locale, toAttributes(record, id, source.isFlattenNested())));
             mapped++;
         }
 
@@ -361,11 +361,15 @@ public class TurStructuredFeedIngestService {
     /**
      * Project a record's scalar / array fields into an attribute map. Honours the
      * T381 grounding contract: an absent, null, blank, or empty value is omitted,
-     * never materialized as an empty attribute. Nested objects are skipped (they
-     * are not indexable scalar fields). The id is always written under
+     * never materialized as an empty attribute. The id is always written under
      * {@link TurSNFieldName#ID}.
+     *
+     * <p>T797 / §LIV.7 — when {@code flatten} is {@code true}, nested objects are
+     * flattened into {@code parent_child} keys (recursively) so their fields become
+     * queryable; otherwise a nested object is dropped (legacy behaviour). Arrays of
+     * scalars are preserved as multi-valued either way.
      */
-    Map<String, Object> toAttributes(JsonNode record, String id) {
+    Map<String, Object> toAttributes(JsonNode record, String id, boolean flatten) {
         Map<String, Object> attributes = new HashMap<>();
         attributes.put(TurSNFieldName.ID, id);
         for (Map.Entry<String, JsonNode> entry : record.properties()) {
@@ -373,12 +377,27 @@ public class TurStructuredFeedIngestService {
             if (TurSNFieldName.ID.equals(key)) {
                 continue;
             }
-            Object value = scalarOf(entry.getValue());
-            if (value != null) {
-                attributes.put(key, value);
-            }
+            addField(key, entry.getValue(), attributes, flatten);
         }
         return attributes;
+    }
+
+    /**
+     * Add one field to the attribute map. In flatten mode a nested object recurses
+     * with a {@code parent_child} key prefix; otherwise objects fall through to
+     * {@link #scalarOf} (which drops them). Empty / blank values are omitted.
+     */
+    private void addField(String key, JsonNode value, Map<String, Object> attributes, boolean flatten) {
+        if (flatten && value != null && value.isObject()) {
+            for (Map.Entry<String, JsonNode> child : value.properties()) {
+                addField(key + "_" + child.getKey(), child.getValue(), attributes, true);
+            }
+            return;
+        }
+        Object scalar = scalarOf(value);
+        if (scalar != null) {
+            attributes.put(key, scalar);
+        }
     }
 
     /**

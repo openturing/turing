@@ -109,5 +109,15 @@ public class TurStructuredFeedProperty {
          * catalog's {@code vendors} map) — which is flattened. Optional.
          */
         private String recordsField;
+
+        /**
+         * T797 / §LIV.7 (Block BF) — flatten nested objects in each record into
+         * queryable flat fields ({@code {pricing:{inputPer1M:5}}} →
+         * {@code pricing_inputPer1M}), recursively; arrays of scalars stay
+         * multi-valued. Default {@code false} keeps the legacy behaviour (nested
+         * objects are dropped). Turn on for a feed whose decision fields live under
+         * nested objects so they become searchable / citable.
+         */
+        private boolean flattenNested = false;
     }
 }
