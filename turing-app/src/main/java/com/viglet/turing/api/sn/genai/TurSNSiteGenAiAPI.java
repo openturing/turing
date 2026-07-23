@@ -114,6 +114,9 @@ public class TurSNSiteGenAiAPI {
 	private final com.viglet.turing.genai.persona.TurAgentPersonaResolver turAgentPersonaResolver;
 	private final com.viglet.turing.service.llm.budget.TurChatCostBudgetGate costBudgetGate;
 	private final com.viglet.turing.properties.TurAbuseControlProperty abuseControlProperty;
+	// T790 / §LIV.1 (Block BF) — resolves whether the vectorless copilot can answer
+	// (a default LLM is configured) for the VECTORLESS_STRUCTURED readiness path.
+	private final com.viglet.turing.genai.catalog.TurCatalogCopilotService catalogCopilotService;
 
 	public TurSNSiteGenAiAPI(TurSNSearchProcess turSNSearchProcess,
 			TurSNGenAi turGenAi,
@@ -138,7 +141,8 @@ public class TurSNSiteGenAiAPI {
 			com.viglet.turing.genai.TurDefaultAgentResolver turDefaultAgentResolver,
 			com.viglet.turing.genai.persona.TurAgentPersonaResolver turAgentPersonaResolver,
 			com.viglet.turing.service.llm.budget.TurChatCostBudgetGate costBudgetGate,
-			com.viglet.turing.properties.TurAbuseControlProperty abuseControlProperty) {
+			com.viglet.turing.properties.TurAbuseControlProperty abuseControlProperty,
+			com.viglet.turing.genai.catalog.TurCatalogCopilotService catalogCopilotService) {
 		this.turSNSearchProcess = turSNSearchProcess;
 		this.turGenAi = turGenAi;
 		this.turGenAiContextFactory = turGenAiContextFactory;
@@ -163,6 +167,7 @@ public class TurSNSiteGenAiAPI {
 		this.conversationLock = conversationLock;
 		this.costBudgetGate = costBudgetGate;
 		this.abuseControlProperty = abuseControlProperty;
+		this.catalogCopilotService = catalogCopilotService;
 	}
 
 	// T648 / §XXXVII.10 — reject an over-cap anonymous upload BEFORE Tika/vision.
@@ -217,7 +222,15 @@ public class TurSNSiteGenAiAPI {
 		/** Linked agent has no embedding model instance. */
 		MISSING_EMBEDDING,
 		/** Linked agent has no vector store instance. */
-		MISSING_STORE
+		MISSING_STORE,
+		/**
+		 * T790 / §LIV.1 (Block BF) — the site runs in {@code VECTORLESS_STRUCTURED}
+		 * mode (the catalog copilot, which needs neither an embedding model nor a
+		 * vector store) but no usable <em>default LLM</em> is configured, so the
+		 * copilot cannot answer. The vectorless readiness path reports this instead
+		 * of {@code MISSING_EMBEDDING}/{@code MISSING_STORE}.
+		 */
+		MISSING_DEFAULT_LLM
 	}
 
 	/**
@@ -228,6 +241,20 @@ public class TurSNSiteGenAiAPI {
 	 * so broken credentials do not hide the AI Mode button.
 	 */
 	private ChatDisabledReason diagnoseAgentReadiness(TurSNSiteGenAi genAi) {
+		// T790 / §LIV.1 (Block BF) — Vectorless (Structured-Data) RAG: a site in
+		// VECTORLESS_STRUCTURED mode answers through the T392 catalog copilot, which
+		// grounds the default LLM on a NL→DSL search over the declared field schema
+		// (no embeddings). It needs neither an embedding model nor a vector store —
+		// so readiness is "a usable default LLM is configured", not the classic
+		// MISSING_EMBEDDING/MISSING_STORE walk. HYBRID keeps the full vector walk
+		// below (it is a superset that also runs the copilot).
+		var mode = genAi != null ? genAi.getKnowledgeBaseMode()
+				: com.viglet.turing.persistence.model.sn.genai.TurSNKnowledgeBaseMode.VECTOR;
+		if (mode == com.viglet.turing.persistence.model.sn.genai.TurSNKnowledgeBaseMode.VECTORLESS_STRUCTURED) {
+			return catalogCopilotService.isAvailable()
+					? ChatDisabledReason.NONE
+					: ChatDisabledReason.MISSING_DEFAULT_LLM;
+		}
 		// T622 — a site with no agent of its own resolves to the global Default
 		// AI Agent when one is set (fail-open); otherwise the classic reasons.
 		TurAIAgent agent = turDefaultAgentResolver.resolveEffectiveAgent(genAi);

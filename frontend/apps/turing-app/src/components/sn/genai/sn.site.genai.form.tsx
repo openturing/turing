@@ -42,7 +42,7 @@ import { postLlmChat } from "@viglet/turing-react-sdk"
 import { TurSEInstanceService } from "@/services/se/se.service"
 import { TurSNSiteService } from "@/services/sn/sn.service"
 import { TurGlobalSettingsService } from "@/services/system/global-settings.service"
-import { IconArrowsSort, IconBrain, IconCpu2, IconDeviceFloppy, IconFileDescription, IconLoader2, IconMovie, IconRefresh, IconSparkles, IconUserSearch, IconX } from "@tabler/icons-react"
+import { IconArrowsSort, IconBrain, IconCpu2, IconDatabaseSearch, IconDeviceFloppy, IconFileDescription, IconLoader2, IconMovie, IconRefresh, IconSparkles, IconUserSearch, IconX } from "@tabler/icons-react"
 import React, { useCallback, useEffect, useState } from "react"
 import { useForm } from "react-hook-form"
 import { useTranslation } from "react-i18next"
@@ -134,6 +134,10 @@ export const SNSiteGenAiForm: React.FC<Props> = ({ snSite, baseRoute = ROUTES.SN
             // TurAIAgent. Defaults match the new column defaults so an
             // existing GenAi binding loaded from a pre-T19 backend
             // (undefined) still renders the toggles in the ON state.
+            // T790 / §LIV.1 (Block BF) — knowledge-base mode. VECTOR (default)
+            // keeps the classic embedding RAG chat so a pre-T790 binding renders
+            // unchanged; VECTORLESS_STRUCTURED is the copilot (no embeddings).
+            knowledgeBaseMode: snSite.turSNSiteGenAi?.knowledgeBaseMode ?? "VECTOR",
             ragBm25Fallback: snSite.turSNSiteGenAi?.ragBm25Fallback ?? true,
             ragHybridSearch: snSite.turSNSiteGenAi?.ragHybridSearch ?? true,
             // T24b — BM25 source defaults to EMBEDDED so a pre-T24b
@@ -525,6 +529,61 @@ export const SNSiteGenAiForm: React.FC<Props> = ({ snSite, baseRoute = ROUTES.SN
                                         </span>
                                     </div>
                                 )}
+                        </SNFormSection>
+
+                        {/* T790 / §LIV.1 (Block BF) — Knowledge base mode. The
+                            explicitly-named retrieval strategy for this site's
+                            GenAI answers: VECTOR (classic embedding RAG, needs
+                            embedding model + store), VECTORLESS_STRUCTURED (the
+                            catalog copilot — NL→DSL over the declared field
+                            schema, needs only a default LLM), or HYBRID (both).
+                            Naming it makes the vectorless path discoverable. */}
+                        <SNFormSection chrome={chrome} icon={IconDatabaseSearch} tone="violet" title={t("forms.snGenai.kbModeTitle")} description={t("forms.snGenai.kbModeDesc")}>
+                                <FormField
+                                    control={form.control}
+                                    name="knowledgeBaseMode"
+                                    render={({ field }) => (
+                                        <FormItemTwoColumns>
+                                            <FormItemTwoColumns.Left>
+                                                <FormItemTwoColumns.Label>
+                                                    {t("forms.snGenai.kbMode")}
+                                                </FormItemTwoColumns.Label>
+                                                <FormItemTwoColumns.Description>
+                                                    {(field.value ?? "VECTOR") === "VECTOR"
+                                                        ? t("forms.snGenai.kbModeVectorHint")
+                                                        : (field.value === "VECTORLESS_STRUCTURED"
+                                                            ? t("forms.snGenai.kbModeVectorlessHint")
+                                                            : t("forms.snGenai.kbModeHybridHint"))}
+                                                </FormItemTwoColumns.Description>
+                                            </FormItemTwoColumns.Left>
+                                            <FormItemTwoColumns.Right>
+                                                <div className="flex flex-wrap gap-2">
+                                                    <GradientButton
+                                                        type="button"
+                                                        variant={(field.value ?? "VECTOR") === "VECTOR" ? "default" : "outline"}
+                                                        onClick={() => field.onChange("VECTOR")}
+                                                    >
+                                                        {t("forms.snGenai.kbModeVector")}
+                                                    </GradientButton>
+                                                    <GradientButton
+                                                        type="button"
+                                                        variant={field.value === "VECTORLESS_STRUCTURED" ? "default" : "outline"}
+                                                        onClick={() => field.onChange("VECTORLESS_STRUCTURED")}
+                                                    >
+                                                        {t("forms.snGenai.kbModeVectorless")}
+                                                    </GradientButton>
+                                                    <GradientButton
+                                                        type="button"
+                                                        variant={field.value === "HYBRID" ? "default" : "outline"}
+                                                        onClick={() => field.onChange("HYBRID")}
+                                                    >
+                                                        {t("forms.snGenai.kbModeHybrid")}
+                                                    </GradientButton>
+                                                </div>
+                                            </FormItemTwoColumns.Right>
+                                        </FormItemTwoColumns>
+                                    )}
+                                />
                         </SNFormSection>
 
                         {/* T19/T24 — Hybrid Retrieval card.

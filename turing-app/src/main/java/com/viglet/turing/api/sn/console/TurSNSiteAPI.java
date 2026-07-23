@@ -213,6 +213,12 @@ public class TurSNSiteAPI {
                 turSNSiteGenAi.setSnRankingMode(
                         Optional.ofNullable(genAi.getSnRankingMode())
                                 .orElse(com.viglet.turing.persistence.model.sn.genai.TurSNRankingMode.LEGACY));
+                // T790 / §LIV.1 (Block BF) — knowledge-base mode (VECTOR default,
+                // VECTORLESS_STRUCTURED = the copilot path needing only a default LLM,
+                // HYBRID = both). Names the retrieval strategy so it is discoverable.
+                turSNSiteGenAi.setKnowledgeBaseMode(
+                        Optional.ofNullable(genAi.getKnowledgeBaseMode())
+                                .orElse(com.viglet.turing.persistence.model.sn.genai.TurSNKnowledgeBaseMode.VECTOR));
                 // T472 / §XXVI.9 — index-time content-fit signal (opt-in). The
                 // master switch + target-audience persona id drive the
                 // deterministic readability scorer at index time.

@@ -60,6 +60,15 @@ class TurSNSiteGenAiAPITest {
     @Mock
     private com.viglet.turing.genai.TurDefaultAgentResolver turDefaultAgentResolver;
 
+    // T790 / §LIV.1 (Block BF) — used by the VECTORLESS_STRUCTURED readiness path.
+    @Mock
+    private com.viglet.turing.genai.catalog.TurCatalogCopilotService catalogCopilotService;
+
+    // /enabled reads configProperties.getChat().getSession() — deep-stub the chain
+    // so the endpoint builds its ChatEnabledResponse without a real config bean.
+    @Mock(answer = org.mockito.Answers.RETURNS_DEEP_STUBS)
+    private com.viglet.turing.properties.TurConfigProperties configProperties;
+
     @InjectMocks
     private TurSNSiteGenAiAPI api;
 
@@ -119,6 +128,65 @@ class TurSNSiteGenAiAPITest {
                 .andExpect(jsonPath("$.text").value("Language Model is not enabled for this site."));
 
         verify(turGenAi, never()).assistant(any(), anyString());
+    }
+
+    // ─────────────────── T790 / §LIV.1 (Block BF) — vectorless readiness ───────────────────
+
+    @Test
+    void testEnabled_VectorlessStructured_copilotAvailable_isEnabled() throws Exception {
+        TurSNSite site = new TurSNSite();
+        TurSNSiteGenAi genAi = new TurSNSiteGenAi();
+        genAi.setKnowledgeBaseMode(
+                com.viglet.turing.persistence.model.sn.genai.TurSNKnowledgeBaseMode.VECTORLESS_STRUCTURED);
+        site.setTurSNSiteGenAi(genAi);
+
+        when(turSNSearchProcess.getSNSite("site1")).thenReturn(Optional.of(site));
+        when(catalogCopilotService.isAvailable()).thenReturn(true);
+
+        mockMvc.perform(get("/api/sn/site1/chat/enabled"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.enabled").value(true))
+                .andExpect(jsonPath("$.reason").value("NONE"));
+    }
+
+    @Test
+    void testEnabled_VectorlessStructured_noDefaultLlm_reportsMissingDefaultLlm() throws Exception {
+        TurSNSite site = new TurSNSite();
+        TurSNSiteGenAi genAi = new TurSNSiteGenAi();
+        genAi.setKnowledgeBaseMode(
+                com.viglet.turing.persistence.model.sn.genai.TurSNKnowledgeBaseMode.VECTORLESS_STRUCTURED);
+        site.setTurSNSiteGenAi(genAi);
+
+        when(turSNSearchProcess.getSNSite("site1")).thenReturn(Optional.of(site));
+        when(catalogCopilotService.isAvailable()).thenReturn(false);
+
+        mockMvc.perform(get("/api/sn/site1/chat/enabled"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.enabled").value(false))
+                // Vectorless never reports MISSING_EMBEDDING / MISSING_STORE.
+                .andExpect(jsonPath("$.reason").value("MISSING_DEFAULT_LLM"));
+    }
+
+    @Test
+    void testEnabled_VectorMode_noEmbedding_stillReportsMissingEmbedding() throws Exception {
+        // VECTOR (default) keeps the classic embedding/store readiness walk: a bound,
+        // enabled, RAG-on agent with an LLM but no embedding model → MISSING_EMBEDDING.
+        TurSNSite site = new TurSNSite();
+        TurSNSiteGenAi genAi = new TurSNSiteGenAi();
+        var agent = new com.viglet.turing.persistence.model.agent.TurAIAgent();
+        agent.setEnabled(1);
+        agent.setRagEnabled(true);
+        agent.setLlmInstances(new java.util.HashSet<>(java.util.List.of(
+                new com.viglet.turing.persistence.model.llm.TurLLMInstance())));
+        genAi.setTurAIAgent(agent);
+        site.setTurSNSiteGenAi(genAi);
+
+        when(turSNSearchProcess.getSNSite("site1")).thenReturn(Optional.of(site));
+
+        mockMvc.perform(get("/api/sn/site1/chat/enabled"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.enabled").value(false))
+                .andExpect(jsonPath("$.reason").value("MISSING_EMBEDDING"));
     }
 
     @Test

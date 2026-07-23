@@ -177,6 +177,29 @@ public class TurSNSiteGenAi implements Serializable {
     private TurSNRankingMode snRankingMode = TurSNRankingMode.LEGACY;
 
     /**
+     * T790 / §LIV.1 (Block BF) — the site's <strong>knowledge-base mode</strong>:
+     * the explicitly-named retrieval strategy that grounds its GenAI answers.
+     * {@link TurSNKnowledgeBaseMode#VECTOR} (default) is the classic embedding RAG
+     * chat and needs a full embedding-model + vector-store setup;
+     * {@link TurSNKnowledgeBaseMode#VECTORLESS_STRUCTURED} is the T392 catalog
+     * copilot (NL→DSL over the declared field schema, no embeddings) and needs only
+     * a default LLM; {@link TurSNKnowledgeBaseMode#HYBRID} exposes both on the same
+     * site.
+     *
+     * <p>Default {@code VECTOR} preserves every pre-T790 site exactly — the field
+     * only changes which readiness/discoverability surface the admin sees; the
+     * copilot endpoint ({@code /api/sn/{site}/copilot}) has always worked
+     * regardless of this flag. Setting {@code VECTORLESS_STRUCTURED} lets the
+     * AI-Mode readiness check advertise the site as ready with only a default LLM
+     * (not {@code MISSING_EMBEDDING}/{@code MISSING_STORE}).
+     *
+     * @since 2026.3.4
+     */
+    @Enumerated(EnumType.STRING)
+    @Column(name = "knowledgeBaseMode", nullable = false, length = 32)
+    private TurSNKnowledgeBaseMode knowledgeBaseMode = TurSNKnowledgeBaseMode.VECTOR;
+
+    /**
      * T472 / §XXVI.9 — opt-in for the index-time content-fit signal. When
      * {@code true} (and {@link #contentFitPersonaId} resolves to an
      * {@code AUDIENCE}/{@code BOTH} persona), each document is scored at index

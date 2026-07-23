@@ -1,0 +1,33 @@
+databaseChangeLog:
+  # T790 / §LIV.1 (Block BF) — per-site knowledge-base mode.
+  #
+  # Names the retrieval strategy that grounds a site's GenAI answers:
+  # VECTOR (classic embedding RAG, default), VECTORLESS_STRUCTURED (the T392
+  # catalog copilot — NL->DSL over the declared field schema, no embeddings),
+  # or HYBRID (both). Default 'VECTOR' → every existing site behaves unchanged.
+  # camelCase column to match the sn_site_genai table convention (snRankingMode,
+  # contentFitIndexingEnabled, ...). Idempotent via columnExists + onFail:MARK_RAN
+  # so a reused local H2 file never fails.
+
+  - changeSet:
+      id: v2026.3.1.115-add-sn_site_genai-knowledgeBaseMode
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - tableExists:
+            tableName: sn_site_genai
+        - not:
+            - columnExists:
+                tableName: sn_site_genai
+                columnName: knowledgeBaseMode
+      changes:
+        - addColumn:
+            tableName: sn_site_genai
+            columns:
+              - column:
+                  name: knowledgeBaseMode
+                  type: varchar(32)
+                  defaultValue: VECTOR
+                  constraints:
+                    nullable: false
+                  remarks: "T790/§LIV.1 knowledge-base mode: VECTOR | VECTORLESS_STRUCTURED | HYBRID."

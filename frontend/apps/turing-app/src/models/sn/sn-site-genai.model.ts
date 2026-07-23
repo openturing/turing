@@ -19,6 +19,17 @@ export type TurRagBm25Source = "EMBEDDED" | "SE_INSTANCE";
  */
 export type TurSNRankingMode = "LEGACY" | "HYBRID_RRF" | "HYBRID_RRF_RERANK";
 
+/**
+ * T790 / §LIV.1 (Block BF) — the site's knowledge-base MODE: the explicitly-named
+ * retrieval strategy that grounds its GenAI answers. `VECTOR` (default) is the
+ * classic embedding RAG chat and needs a full embedding-model + vector-store
+ * setup; `VECTORLESS_STRUCTURED` is the catalog copilot (NL→DSL over the declared
+ * field schema, no embeddings) and needs only a default LLM; `HYBRID` exposes both
+ * on the same site. Naming the vectorless path makes it discoverable to an
+ * integrator who wants LLM Q&A over structured data without standing up a vector DB.
+ */
+export type TurSNKnowledgeBaseMode = "VECTOR" | "VECTORLESS_STRUCTURED" | "HYBRID";
+
 export interface TurSNSiteGenAi {
   id: string;
   /**
@@ -69,6 +80,13 @@ export interface TurSNSiteGenAi {
    * Independent of the `rag*` flags above. @since 2026.3.1
    */
   snRankingMode?: TurSNRankingMode;
+  /**
+   * T790 / §LIV.1 (Block BF) — knowledge-base mode. `VECTOR` (default) is the
+   * classic embedding RAG chat; `VECTORLESS_STRUCTURED` is the catalog copilot
+   * (NL→DSL over the declared field schema, no embeddings, needs only a default
+   * LLM); `HYBRID` exposes both. @since 2026.3.4
+   */
+  knowledgeBaseMode?: TurSNKnowledgeBaseMode;
   /**
    * T472 / §XXVI.9 — opt-in for the index-time content-fit (readability)
    * signal. When `true` and {@link contentFitPersonaId} resolves to an
