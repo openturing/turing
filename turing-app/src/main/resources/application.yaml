@@ -39,6 +39,14 @@ turing:
       enabled: ${TURING_MODEL_CATALOG_PRICE_SYNC_ENABLED:true}
       initial-delay-ms: ${TURING_MODEL_CATALOG_PRICE_SYNC_INITIAL_DELAY_MS:15000}
       interval-ms: ${TURING_MODEL_CATALOG_PRICE_SYNC_INTERVAL_MS:21600000}
+    # T788 / §LIII.4 — optional email when the catalog change feed affects a model
+    # you use (removed / superseded / changed). Opt-in (default off) so no surprise
+    # mail; the in-UI change-feed banner is always on. Deduped per notification set;
+    # sends to the recipient configured in Global Settings.
+    change-feed:
+      email-enabled: ${TURING_MODEL_CATALOG_CHANGE_FEED_EMAIL_ENABLED:false}
+      email-initial-delay-ms: ${TURING_MODEL_CATALOG_CHANGE_FEED_EMAIL_INITIAL_DELAY_MS:45000}
+      email-interval-ms: ${TURING_MODEL_CATALOG_CHANGE_FEED_EMAIL_INTERVAL_MS:86400000}
   tenancy:
     enabled: false
     # T334 / §XIV.8.1 — shared secret for trusted server-to-server callers. When
