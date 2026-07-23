@@ -61,6 +61,25 @@ public interface TurSNSiteRepository extends JpaRepository<TurSNSite, String> {
 	Optional<TurSNSite> findByIdWithGenAi(@Param("id") String id);
 
 	/**
+	 * Loads a site by name with its <em>to-one</em> GenAI graph fetched in one
+	 * query — {@code turSNSiteGenAi} and the GenAI's {@code turAIAgent}. Mirrors
+	 * {@link #findByIdWithGenAi(String)} for the RAG-gating path
+	 * ({@link com.viglet.turing.persistence.adapter.sn.TurSNSiteRepositoryAdapter#hasRagEnabledForSiteName(String)}),
+	 * which navigates {@code site → genAi → agent} to read the agent's
+	 * {@code enabled}/{@code ragEnabled} flags. Both associations are
+	 * {@code @ManyToOne}/{@code @OneToOne} LAZY, so fetching them up front keeps
+	 * the navigation valid even when the caller has no open session (e.g. the
+	 * startup structured-feed provisioning path).
+	 */
+	@Query("""
+			SELECT s FROM TurSNSite s
+			LEFT JOIN FETCH s.turSNSiteGenAi genAi
+			LEFT JOIN FETCH genAi.turAIAgent
+			WHERE s.name = :name
+			""")
+	Optional<TurSNSite> findByNameWithGenAi(@Param("name") String name);
+
+	/**
 	 * Returns every site eagerly loaded with its locales, intended for the
 	 * listing endpoint. Uses {@code LEFT JOIN FETCH} to avoid the N+1 pattern
 	 * that occurs when {@code TurSNSite.turSNSiteLocales} is mapped after the

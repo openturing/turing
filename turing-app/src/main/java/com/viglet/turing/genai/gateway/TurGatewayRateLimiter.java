@@ -20,7 +20,7 @@ import com.viglet.turing.spring.security.abuse.TurFixedWindowRateLimiter;
  * Gateway, reusing the dependency-free fixed-window counter
  * ({@link TurFixedWindowRateLimiter}) that backs the anonymous-abuse filter.
  *
- * <p>Each key gets its own limiter, sized from {@link TurGatewayKey#getRateLimitPerMinute()}
+ * <p>Each key gets its own limiter, sized from {@code TurGatewayKey.getRateLimitPerMinute()}
  * over a 60s window; a key with no (or {@code <=0}) limit is unlimited. A limiter
  * is rebuilt when a key's configured limit changes, so an admin edit takes effect
  * without a restart.</p>
