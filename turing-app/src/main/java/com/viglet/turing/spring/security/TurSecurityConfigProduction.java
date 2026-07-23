@@ -238,6 +238,13 @@ public class TurSecurityConfigProduction {
                                                 mvc.matcher("/api/sn/*/query/**"),
                                                 mvc.matcher("/api/sn/*/chat"),
                                                 mvc.matcher("/api/sn/*/chat/**"),
+                                                // T392 — grounded catalog copilot (LLM-cost surface;
+                                                // nginx-rate-limited on the demo host). Anonymous like
+                                                // chat so the model-catalog "Ask the catalog" widget
+                                                // can call it keyless; API_KEY-mode sites still gated
+                                                // by TurSNSiteApiKeyGateFilter.
+                                                mvc.matcher("/api/sn/*/copilot"),
+                                                mvc.matcher("/api/sn/*/copilot/**"),
                                                 // T634 — anonymous persona content-fit (LLM-cost
                                                 // surface; nginx-rate-limited on the demo host).
                                                 mvc.matcher("/api/sn/*/persona/*/content-fit"),
@@ -311,6 +318,13 @@ public class TurSecurityConfigProduction {
                                                                 mvc.matcher("/api/sn/*/query/**"),
                                                                 mvc.matcher("/api/sn/*/chat"),
                                                                 mvc.matcher("/api/sn/*/chat/**"),
+                                                                // T392 — grounded catalog copilot
+                                                                // (LLM-cost surface; nginx-rate-limited).
+                                                                // Anonymous like chat for the model-catalog
+                                                                // "Ask the catalog" widget; API_KEY sites
+                                                                // still gated by TurSNSiteApiKeyGateFilter.
+                                                                mvc.matcher("/api/sn/*/copilot"),
+                                                                mvc.matcher("/api/sn/*/copilot/**"),
                                                                 // T634 — anonymous persona content-fit
                                                                 // (LLM-cost surface; nginx-rate-limited).
                                                                 mvc.matcher("/api/sn/*/persona/*/content-fit"),

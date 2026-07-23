@@ -62,12 +62,14 @@ public class TurSNSiteApiKeyGateFilter extends OncePerRequestFilter {
 
     /**
      * Public SN endpoints keyed by site NAME: {@code /api/sn/{site}/(ac|search|
-     * _search|click|query|chat)...}. Mirrors the {@code permitAll} matchers in
-     * the security config. Admin endpoints (resolved by id, or {@code names} /
-     * {@code console}) never match a real site name and so are never gated.
+     * _search|click|query|chat|copilot)...}. Mirrors the {@code permitAll} matchers
+     * in the security config. {@code copilot} (T392) is an LLM-cost surface gated
+     * exactly like {@code chat}: an API_KEY-mode site requires a key, PUBLIC sites
+     * are open. Admin endpoints (resolved by id, or {@code names} / {@code console})
+     * never match a real site name and so are never gated.
      */
     private static final Pattern PUBLIC_SN_PATH = Pattern.compile(
-            "^/api/sn/([^/]+)/(?:ac|search|_search|click|query|chat)(?:/.*)?$");
+            "^/api/sn/([^/]+)/(?:ac|search|_search|click|query|chat|copilot)(?:/.*)?$");
 
     /** Spell-check carries an extra locale segment: {@code /api/sn/{site}/{locale}/spell-check}. */
     private static final Pattern SPELL_CHECK_PATH = Pattern.compile(
