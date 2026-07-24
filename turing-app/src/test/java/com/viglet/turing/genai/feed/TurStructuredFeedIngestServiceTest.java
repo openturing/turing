@@ -167,9 +167,71 @@ class TurStructuredFeedIngestServiceTest {
         assertThat(result.imported()).isEqualTo(2);
         assertThat(result.deIndexed()).isZero();
         TurSNJobItems sent = captureSend();
-        assertThat(sent.getTuringDocuments()).hasSize(2);
-        assertThat(sent.getTuringDocuments()).allMatch(i -> i.getTurSNJobAction() == TurSNJobAction.CREATE);
-        assertThat(sent.getTuringDocuments()).allMatch(i -> i.getId() != null);
+        // T806 — the chunk carries the 2 CREATEs plus one terminal COMMIT.
+        assertThat(sent.getTuringDocuments())
+                .filteredOn(i -> i.getTurSNJobAction() == TurSNJobAction.CREATE).hasSize(2)
+                .allMatch(i -> i.getId() != null);
+        assertThat(sent.getTuringDocuments())
+                .anyMatch(i -> i.getTurSNJobAction() == TurSNJobAction.COMMIT);
+    }
+
+    @Test
+    void ingestSource_splitsIntoBoundedChunksEachWithTerminalCommit() {
+        // T806 / §LV.4 — a feed larger than batch-size is split into bounded
+        // chunks, each sent as its own bulk import ending in a COMMIT.
+        property.setBatchSize(2);
+        TurSNSite site = new TurSNSite();
+        site.setName("catalog");
+        when(turSNSiteRepository.findByNameIgnoreCase("catalog")).thenReturn(Optional.of(site));
+        when(urlFetchService.fetchRaw("https://example.com/catalog.json")).thenReturn(
+                "[{\"id\":\"a\"},{\"id\":\"b\"},{\"id\":\"c\"},{\"id\":\"d\"},{\"id\":\"e\"}]");
+
+        var result = service.ingestSource(source());
+
+        assertThat(result.success()).isTrue();
+        assertThat(result.imported()).isEqualTo(5);
+        // 5 records / batch-size 2 → 3 chunks → 3 sends.
+        ArgumentCaptor<TurSNJobItems> captor = ArgumentCaptor.forClass(TurSNJobItems.class);
+        verify(turSNImportAPI, times(3)).send(captor.capture());
+        // Every chunk ends in exactly one COMMIT; the CREATEs total 5 across chunks.
+        int creates = 0;
+        for (TurSNJobItems chunk : captor.getAllValues()) {
+            assertThat(chunk.getTuringDocuments())
+                    .filteredOn(i -> i.getTurSNJobAction() == TurSNJobAction.COMMIT).hasSize(1);
+            creates += (int) chunk.getTuringDocuments().stream()
+                    .filter(i -> i.getTurSNJobAction() == TurSNJobAction.CREATE).count();
+        }
+        assertThat(creates).isEqualTo(5);
+    }
+
+    @Test
+    void ingestSource_oneBadChunkNeverAbortsTheRest() {
+        // T806 — per-chunk fail-open: the first chunk throwing does not stop later chunks.
+        property.setBatchSize(2);
+        TurSNSite site = new TurSNSite();
+        site.setName("catalog");
+        when(turSNSiteRepository.findByNameIgnoreCase("catalog")).thenReturn(Optional.of(site));
+        when(urlFetchService.fetchRaw("https://example.com/catalog.json")).thenReturn(
+                "[{\"id\":\"a\"},{\"id\":\"b\"},{\"id\":\"c\"},{\"id\":\"d\"}]");
+        org.mockito.Mockito.doThrow(new RuntimeException("boom"))
+                .doNothing()
+                .when(turSNImportAPI).send(any());
+
+        var result = service.ingestSource(source());
+
+        assertThat(result.success()).isTrue();
+        // 4 records / 2 → 2 chunks; both are attempted even though the first throws.
+        verify(turSNImportAPI, times(2)).send(any());
+    }
+
+    @Test
+    void partition_splitsAndHandlesEdgeCases() {
+        assertThat(TurStructuredFeedIngestService.partition(java.util.List.of(), 3)).isEmpty();
+        assertThat(TurStructuredFeedIngestService.partition(java.util.List.of(1, 2, 3, 4, 5), 2))
+                .hasSize(3);
+        // Non-positive size → a single chunk (legacy unbounded behaviour).
+        assertThat(TurStructuredFeedIngestService.partition(java.util.List.of(1, 2, 3), 0))
+                .hasSize(1);
     }
 
     @Test

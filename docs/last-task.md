@@ -126,6 +126,7 @@ number" looked free but wasn't. Grepping three files (`ROADMAP.md`,
 
 ## Log (most recent first)
 
+- **T806 SHIPPED** (Block BG §LV.4 — chunk `TurStructuredFeedIngestService.ingestSource` into bounded bulk imports via `turing.genai.structured-feed.batch-size` (default 200), each chunk its own import + terminal COMMIT + per-chunk fail-open; full-run de-index diff) — 2026-07-24.
 - **T804 SHIPPED** (Block BG §LV.2 — true bulk `indexDocuments` override for the embedded Lucene plugin: one IndexWriter session + single commit across the batch via shared `buildDocument`/`indexingBatch`; upsert-by-id preserved; throws → T803 per-doc fallback) — 2026-07-24.
 - **T803 SHIPPED** (Block BG §LV.1 — batch the `indexing.queue` consumer through the existing `indexDocuments(...)` bulk API + one commit/group; single-doc groups stay on the per-item path; per-item fallback on failure) — 2026-07-24.
 - **T805 SHIPPED** (Block BG §LV.3 — hoist field-schema convergence to once-per-batch: converge the union of specs, O(docs×fields)→O(distinct-fields); folds into the T803 batch) — 2026-07-24.

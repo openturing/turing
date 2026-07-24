@@ -68,6 +68,17 @@ public class TurStructuredFeedProperty {
      */
     private int maxRecordsPerSource = 0;
 
+    /**
+     * T806 / §LV.4 (Block BG) — chunk size for the bounded bulk import: the
+     * ingester splits a source's mapped records into groups of this many job
+     * items and sends each group as its own bulk import (followed by a terminal
+     * {@code COMMIT}), instead of one huge JMS message consumed in one long
+     * transaction. Keeps message size and consumer-transaction size bounded for
+     * catalog-scale feeds and gives per-chunk progress. {@code 0} (or negative) =
+     * send everything in a single chunk (legacy behaviour). Default {@code 200}.
+     */
+    private int batchSize = 200;
+
     /** The feeds to pull. Empty (default) → the ingester does nothing. */
     private List<Source> sources = new ArrayList<>();
 

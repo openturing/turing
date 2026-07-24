@@ -180,7 +180,7 @@ public class TurStructuredFeedIngestService {
         Locale locale = safeLocale(source.getLocale());
         String idField = StringUtils.defaultIfBlank(source.getIdField(), TurSNFieldName.ID);
         int cap = property.getMaxRecordsPerSource();
-        TurSNJobItems jobItems = new TurSNJobItems();
+        List<TurSNJobItem> items = new ArrayList<>();
         Set<String> currentIds = new LinkedHashSet<>();
         int mapped = 0;
         int skipped = 0;
@@ -196,18 +196,70 @@ public class TurStructuredFeedIngestService {
                 continue;
             }
             currentIds.add(id);
-            jobItems.add(new TurSNJobItem(TurSNJobAction.CREATE, List.of(source.getSiteName()),
+            items.add(new TurSNJobItem(TurSNJobAction.CREATE, List.of(source.getSiteName()),
                     locale, toAttributes(record, id, source.isFlattenNested())));
             mapped++;
         }
 
-        // 4. De-index ids that vanished since the previous run.
-        int deIndexed = appendDeletions(jobItems, sourceId, source.getSiteName(), locale, currentIds);
+        // 4. De-index ids that vanished since the previous run (diff over the full
+        //    run — chunking below never changes which ids are reconciled).
+        List<TurSNJobItem> deletions = buildDeletions(sourceId, source.getSiteName(), locale, currentIds);
+        items.addAll(deletions);
 
-        // 5. Import through the existing pipeline.
-        turSNImportAPI.send(jobItems);
+        // 5. T806 / §LV.4 — import in bounded chunks, each its own bulk import + a
+        //    terminal COMMIT, with per-chunk progress logging and per-chunk
+        //    fail-open (one bad chunk never aborts the rest).
+        dispatchInChunks(source.getSiteName(), locale, items, sourceId);
         lastSeenIds.put(sourceId, currentIds);
-        return new IngestResult(true, mapped, deIndexed, skipped, fieldsDeclared, null);
+        return new IngestResult(true, mapped, deletions.size(), skipped, fieldsDeclared, null);
+    }
+
+    /**
+     * T806 / §LV.4 — splits {@code items} into {@code batchSize}-sized chunks and
+     * sends each as its own bulk import, appending a terminal {@code COMMIT} so the
+     * chunk's writes are flushed before the next chunk. Per-chunk fail-open: a
+     * failing chunk is logged and skipped, never aborting the remaining chunks.
+     */
+    private void dispatchInChunks(String siteName, Locale locale, List<TurSNJobItem> items,
+            String sourceId) {
+        if (items.isEmpty()) {
+            return;
+        }
+        List<List<TurSNJobItem>> chunks = partition(items, property.getBatchSize());
+        int total = chunks.size();
+        for (int i = 0; i < total; i++) {
+            List<TurSNJobItem> chunk = chunks.get(i);
+            try {
+                TurSNJobItems jobItems = new TurSNJobItems();
+                chunk.forEach(jobItems::add);
+                jobItems.add(new TurSNJobItem(TurSNJobAction.COMMIT, List.of(siteName), locale));
+                turSNImportAPI.send(jobItems);
+                log.info("[StructuredFeed] source '{}' chunk {}/{} sent ({} items)",
+                        sourceId, i + 1, total, chunk.size());
+            } catch (RuntimeException e) {
+                log.warn("[StructuredFeed] source '{}' chunk {}/{} failed ({} items): {}",
+                        sourceId, i + 1, total, chunk.size(), e.getMessage());
+            }
+        }
+    }
+
+    /**
+     * Partitions {@code list} into consecutive sublists of at most {@code size}
+     * elements. A non-positive {@code size} yields a single chunk (legacy
+     * unbounded behaviour). The returned sublists are views over {@code list}.
+     */
+    static <T> List<List<T>> partition(List<T> list, int size) {
+        if (list.isEmpty()) {
+            return List.of();
+        }
+        if (size <= 0) {
+            return List.of(list);
+        }
+        List<List<T>> parts = new ArrayList<>();
+        for (int i = 0; i < list.size(); i += size) {
+            parts.add(list.subList(i, Math.min(i + size, list.size())));
+        }
+        return parts;
     }
 
     // ─────────────────────────── Schema convergence ───────────────────────────
@@ -434,23 +486,22 @@ public class TurStructuredFeedIngestService {
 
     // ─────────────────────────── De-index ───────────────────────────
 
-    private int appendDeletions(TurSNJobItems jobItems, String sourceId, String siteName,
+    private List<TurSNJobItem> buildDeletions(String sourceId, String siteName,
             Locale locale, Set<String> currentIds) {
         Set<String> previous = lastSeenIds.get(sourceId);
         if (previous == null || previous.isEmpty()) {
-            return 0;
+            return List.of();
         }
-        int deleted = 0;
+        List<TurSNJobItem> deletions = new ArrayList<>();
         for (String previousId : previous) {
             if (!currentIds.contains(previousId)) {
                 Map<String, Object> attributes = new HashMap<>();
                 attributes.put(TurSNFieldName.ID, previousId);
-                jobItems.add(new TurSNJobItem(TurSNJobAction.DELETE, List.of(siteName),
+                deletions.add(new TurSNJobItem(TurSNJobAction.DELETE, List.of(siteName),
                         locale, attributes));
-                deleted++;
             }
         }
-        return deleted;
+        return deletions;
     }
 
     private static String text(JsonNode node) {
