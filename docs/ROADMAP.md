@@ -24,26 +24,23 @@
 
 - 💭 **T441** (deps: T436, T438) **Canonical AG-UI protocol adapter** — optional endpoint that re-encodes Turing's stream into the canonical AG-UI event schema (`RUN_STARTED`, `TEXT_MESSAGE_*`, `TOOL_CALL_*`, `STATE_SNAPSHOT`/`STATE_DELTA`, …) so CopilotKit's off-the-shelf React/Angular clients connect with zero Turing-SDK code. Distribution play, not core parity — promote from 💭 only if a named integration asks. → §XXII.6
 
-## Block BG — Batch / bulk structured-feed indexing (§LV)
+## Block BH — SN result & facet rendering robustness for feed/crawl-indexed sites (§LVI)
 
-> Dogfooding the `openviglet/model-catalog` vectorless KB on Viglet Cloud (Block BF,
-> T794) surfaced a throughput problem: importing the 800+ models into the SN site
-> takes a long time because the indexing path is **one document at a time**. The
-> JMS consumer `TurSNProcessQueue.processIndexingQueue` iterates each `TurSNJobItem`
-> and calls `TurSearchEnginePlugin.indexDocument(...)` per doc — even though a bulk
-> `indexDocuments(...)` API already exists (since 2026.2.7) but is **unused** by the
-> import path — and re-runs schema convergence (`createMissingFields` → `ensureField`)
-> per document. For a **vectorless** site (T801 — no embeddings, pure lexical index)
-> this is all avoidable overhead. This block makes catalog-scale indexing fast:
-> batch the consumer, give the embedded Lucene engine a real bulk override, hoist
-> schema convergence out of the per-doc loop, and chunk the feed ingester. Design in
-> [IMPROVEMENTS.md](IMPROVEMENTS.md) §LV.
+> Same dogfood, next surface: with `openviglet/model-catalog` indexing as a vectorless
+> feed (Block BF, T794) the SN search shows the **correct result count** but every
+> result's **title/description renders blank** and every **facet renders with no group
+> label**. The data is indexed and searchable — it just displays empty, silently. Root
+> cause: the search response does a pure **name-lookup with no fallback**
+> (`queryContext.defaultFields` → `doc.fields[name]`), the structured-feed documents
+> carry the feed's own field names (`label`/`vendor`/`kind`, **no** `title`/`abstract`),
+> and the T796 auto-provisioner never wires the site's `defaultXField` mapping or facet
+> labels to those fields. The immediate unblock is deployment configuration; this block
+> closes the *silent* robustness gap so a feed/crawl-indexed site renders readably out
+> of the box. Design in [IMPROVEMENTS.md](IMPROVEMENTS.md) §LVI.
 
-- 📋 **T803** (deps: —) **Batch the indexing-queue consumer through the existing `indexDocuments(...)` bulk API** — the core win, zero public-API change. In `TurSNProcessQueue.processIndexingQueue`, group consecutive `CREATE` job items by `(siteName, locale)` and route each group through the already-present-but-unused `TurSearchEnginePlugin.indexDocuments(site, locale, List<attributes>)` (one round-trip for Solr/ES) plus a single trailing `commit(...)` per group, instead of the current per-item `index()` → `indexDocument()` + implicit per-doc flush. Preserve the per-document enrichers (`TurSNMergeProvidersProcess`, content-fit/Gemini-media/microthesaurus, `removeDuplicateTerms`, T381 grounding) by pre-building the attribute maps, then bulk-indexing. `DELETE`/`COMMIT`/spotlight and the T335 `ensureCoreExists` dedup stay untouched. Keep a per-item fallback so a mixed batch degrades gracefully. → §LV.1
-- 📋 **T804** (deps: T803) **True bulk `indexDocuments` override for the embedded Lucene plugin** — Solr/ES already override the batch API (coalesced update request); the embedded Lucene SE plugin still inherits the per-doc default loop, and Lucene is the **default zero-config engine** the dogfood runs on (T796). Implement a real batched write — a single `IndexWriter.addDocuments(...)` (or one writer session across the batch) + one `commit()` at the end — so an 800-doc catalog pays one flush, not 800. Fail-open to the per-doc path on any element error. → §LV.2
-- 📋 **T805** (deps: T803) **Hoist field-schema convergence out of the per-document loop** — `createMissingFields` runs `turSNFieldProvisioner.ensureField(...)` for every attribute spec of **every** job item, so an 800-model import performs the same `fieldExists`/DB check hundreds of times per field. Converge the **union** of the batch's `TurSNJobAttributeSpec`s once per `(site)` before the bulk index (dedup by field name), reusing the idempotent `TurSNFieldProvisioner`. Cuts the schema-check cost from O(docs×fields) to O(distinct-fields). Folds naturally into the T803 batching. → §LV.3
-- 📋 **T806** (deps: T791, T803) **Chunk the structured-feed ingester into bounded bulk imports** — `TurStructuredFeedIngestService.ingestSource` today accumulates **all** records into one `TurSNJobItems` and sends a single JMS message / one consumer transaction (a huge message + one long `@Transactional` for 800+ rows). Split the mapped records into configurable chunks (`turing.genai.structured-feed.batch-size`, default e.g. 200), send each chunk as its own bulk import followed by a terminal `COMMIT`, with per-chunk progress logging and fail-open (one bad chunk never aborts the rest); de-index diff still computed over the full run. Keeps memory + transaction size bounded for catalog-scale feeds. → §LV.4
-- 💭 **T807** (deps: T803, T804) **Optional direct bulk-index fast path bypassing JMS for vectorless reindexes** — for a **RAG-disabled / vectorless** site (`hasRagEnabledForSiteName == false`, T801) the JMS round-trip buys nothing (no async embedding to offload). An opt-in bulk endpoint (`POST /api/sn/import/bulk`, or a flag on the existing import) could write documents straight to the SE plugin via `indexDocuments(...)` in bounded batches with a single trailing commit, skipping the per-message queue + per-item transaction entirely for very large reindexes. Backpressure-bounded and gated (default off) so the queue stays the default, ordered path. Promote from 💭 only if T803–T806 don't already close the throughput gap. → §LV.5
+- 📋 **T808** (deps: —) **Default-field resolution fallback in the search query context** — `TurSNQueryContextBuilder.defaultFields` reads the site's `defaultTitleField`/`defaultDescriptionField`/`defaultTextField`/`defaultURLField`/`defaultImageField`/`defaultDateField` verbatim; when a column is blank (sites created via `TurSNSiteImport.createSNSiteFromExchange` or the T796 auto-provisioner, neither of which runs `TurSNTemplate.defaultSNUI`) the client receives a null field name and renders `""`. Fall back to the canonical `TurSNFieldName` constants (`title`/`abstract`/`text`/`url`/`image`/`publication_date`) when a column is blank, so a site missing its default-field mapping still names the conventional fields. Safety net only — a feed field *name mismatch* (`label` ≠ `title`) is fixed by T810. → §LVI.1
+- 📋 **T809** (deps: —) **Facet group-label fallback to the field name** — `TurSNFacetRenderer.searchFacetBean` (and `facetLocalesFor` in `TurSNSearchProcess`) sets the group label from the locale-matched `TurSNSiteFieldExtFacet` row else `fieldExtDto.getFacetName()`; for auto-provisioned crawl/feed facet fields both are null (`TurSNFieldProvisioner.saveSiteFieldExt` sets `facetName=null`, `saveFacetLocales` creates zero rows), so the header renders blank. Add a last-resort fallback to a humanized field name when both are null (facet *value* labels already fall back to the raw value). Locale labels still win when configured. → §LVI.2
+- 📋 **T810** (deps: T796, T808) **Auto-provisioning wires default fields + facet labels from the feed manifest** — extend `TurStructuredFeedProvisioningOnStartup` (T796) so a structured-feed source / `VigletFieldManifest` can declare the title/description/text/url/image/date field mapping + per-field facet labels, and apply them at provision time (set `TurSNSite.defaultXField` + each faceted field's `TurSNSiteFieldExt.facetName`/locale rows). The zero-config dogfood fix: the model-catalog site provisions with `defaultTitleField = label` (+ a chosen description field) and readable facet labels, rendering correctly on first boot. The concrete mapping lives in the deployment manifest/env (viglet/cloud) — Turing only gains the ability to honor it. → §LVI.3
 
 ## Block J follow-ups — Cloud SaaS hardening (T334–T373)
 

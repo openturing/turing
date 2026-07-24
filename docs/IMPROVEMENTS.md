@@ -2727,74 +2727,71 @@ OpenAI-style client get grounded, cited structured answers with zero Turing-SDK
 code. The cleanest "separate backend" integration for an external static site, and
 a natural extension of the T744 `turing-sn:<site>` / RAG-as-a-header routing.
 
-## LV. Batch / bulk structured-feed indexing (Block BG)
+## LVI. SN result & facet rendering robustness for feed/crawl-indexed sites (Block BH)
 
-**The problem, from dogfooding.** Wiring the public `openviglet/model-catalog` as a
-vectorless KB on Viglet Cloud (§LIV.5, T794) works, but indexing its 800+ models
-into the SN site is **slow** — and the slowness is structural, not the search
-engine's fault. The import path is document-at-a-time end to end:
+**The problem, from the same dogfood.** With the `openviglet/model-catalog` wired as
+a vectorless KB (§LIV.5, T794) and indexing working, the SN search UI shows the
+**correct result count** but every result's **title/description renders blank** and
+every **facet renders with no group label**. Nothing errors — the data is indexed and
+searchable; it just displays empty. The cause is that the search response layer does a
+pure **name-lookup with no fallback**, and the T796 auto-provisioner never wires the
+site's default-field columns or facet labels to the feed's actual field names:
 
-- `TurSNProcessQueue.processIndexingQueue` (the `indexing.queue` JMS consumer)
-  iterates each `TurSNJobItem` and calls
-  `TurSearchEnginePlugin.indexDocument(site, locale, attributes)` **once per doc**.
-- A **bulk API already exists** — `TurSearchEnginePlugin.indexDocuments(...)` (since
-  2026.2.7, Solr/ES override it to coalesce N docs into one update request) — but
-  **nothing in the import path calls it**; the consumer only ever uses the single-doc
-  method.
-- `createMissingFields` calls `turSNFieldProvisioner.ensureField(...)` for every
-  attribute spec of **every** job item, so schema convergence is re-checked O(docs ×
-  fields) times instead of once per distinct field.
-- The T791 `TurStructuredFeedIngestService` accumulates **all** records into one
-  `TurSNJobItems` and sends a single JMS message consumed in one long
-  `@Transactional` — a large message + a large transaction for catalog-scale feeds.
+- The response hands the client a `queryContext.defaultFields` name-map built straight
+  from the site columns (`TurSNQueryContextBuilder.defaultFields`,
+  `turSNSite.getDefaultTitleField()/getDefaultDescriptionField()/…`), and the client
+  reads `doc.fields[defaultFields.title]`. If the column is null, or names a field the
+  document doesn't have, the client renders `""` (`frontend/packages/sdk/src/resolve.ts`).
+- A structured-feed document carries the feed's own field names — the model-catalog
+  feed indexes `label`, `vendor`, `kind`, `contextWindow`, … — and has **no** `title`
+  or `abstract` field, so the template defaults (`title`/`abstract`) point at fields
+  that don't exist → both blank. `TurStructuredFeedProvisioningOnStartup` (T796)
+  provisions the site with a minimal manifest and lets ingest converge the schema, but
+  never sets the `defaultXField` mapping to the feed's real fields.
+- A facet group-header label resolves to the locale-matched `TurSNSiteFieldExtFacet`
+  row, else `fieldExtDto.getFacetName()` (`TurSNFacetRenderer.searchFacetBean`). An
+  auto-provisioned facet field has `facetName = null` **and** zero locale-label rows
+  (`TurSNFieldProvisioner.saveSiteFieldExt`/`saveFacetLocales` — the crawl/feed
+  `TurSNJobAttributeSpec` carried no facet labels), so the header resolves to null and
+  renders blank. There is no last-resort fallback to the field name.
 
-For a **vectorless** site (T801: no embedding model, no vector store, pure lexical
-index) none of this per-doc overhead buys anything — there is no async embedding to
-offload, so the whole pipeline is a candidate for straightforward batching. This
-block turns catalog-scale indexing from "wait a while" into a single bulk pass.
+The immediate unblock for the live dogfood is deployment configuration (point the SN
+site's default fields at the feed's fields and give facet fields labels), but the
+reason it broke **silently** is a real Turing robustness gap: the renderer has no
+sensible defaults and the auto-provisioner leaves the mapping empty. This block closes
+that so a feed/crawl-indexed site renders readably out of the box.
 
-### LV.1 Batch the indexing-queue consumer (T803)
-The highest-leverage, lowest-risk change: in `processIndexingQueue`, group
-consecutive `CREATE` items by `(siteName, locale)`, pre-build each document's
-attribute map through the existing enrichment chain (`mergeDocuments`,
-content-fit/Gemini-media/microthesaurus enrichers, `removeDuplicateTerms`, the T381
-grounding drop), then push the whole group via `indexDocuments(...)` + one
-`commit(...)`. No public API changes, no new entity — it just *uses* the batch
-method that already exists. `DELETE`/`COMMIT`/spotlight items and the T335
-per-batch `ensureCoreExists` dedup are untouched; a mixed or partially-failing batch
-falls back to per-item indexing so ordering/robustness are preserved.
+### LVI.1 Default-field resolution fallback (T808)
+In `TurSNQueryContextBuilder.defaultFields`, when a site's `defaultTitleField` /
+`defaultDescriptionField` / `defaultTextField` / `defaultURLField` /
+`defaultImageField` / `defaultDateField` column is blank, fall back to the canonical
+`TurSNFieldName` constant (`title` / `abstract` / `text` / `url` / `image` /
+`publication_date`) instead of emitting a null field name. This is the safety net for
+sites provisioned by a path that never ran `TurSNTemplate.defaultSNUI` — the exchange
+import/restore path (`TurSNSiteImport.createSNSiteFromExchange` copies the columns
+verbatim, null if the source had them null) and the T796 auto-provisioner. It does not
+by itself fix a *name mismatch* (feed field `label` ≠ `title` — that's LVI.3), but it
+guarantees the response always names the conventional fields rather than `null`.
 
-### LV.2 True Lucene bulk override (T804)
-Solr and Elasticsearch already override `indexDocuments(...)`; the embedded Lucene
-plugin (`TurLuceneStoreProvider`/the Lucene SE plugin) inherits the default loop
-that indexes — and flushes — per document. Lucene is the **default zero-config
-engine** the T796 auto-provisioned vectorless KB runs on, so this is the engine that
-matters for the model-catalog dogfood. Give it a real batched write: one
-`IndexWriter` session with `addDocuments(...)` across the batch and a single
-`commit()` at the end, so 800 docs pay one flush. Fail-open to the per-doc path if a
-single element errors, so one malformed record can't sink the batch.
+### LVI.2 Facet group-label fallback to the field name (T809)
+In `TurSNFacetRenderer.searchFacetBean` (and the parallel `facetLocalesFor` in
+`TurSNSearchProcess`), when neither a locale-matched facet label nor `facetName` is
+present, fall back to a **humanized field name** (e.g. `pricing_inputPer1M` →
+"Pricing Input Per 1M", or at minimum the raw field name) so an auto-provisioned
+crawl/feed facet field never renders a blank header. Facet *value* labels already fall
+back to the raw attribute value (lines ~280-283), so this closes the remaining
+label-less case — the group header. Locale-scoped labels still win when configured;
+this is strictly a last resort.
 
-### LV.3 Hoist schema convergence out of the per-doc loop (T805)
-Collect the **union** of the batch's `TurSNJobAttributeSpec`s (dedup by field name)
-and converge them once per site *before* the bulk index, instead of calling
-`ensureField` inside every item's `index()`. The provisioner is already idempotent
-(T382), so this is purely about not paying the check hundreds of times. Folds into
-the T803 batching as its schema-prep step.
-
-### LV.4 Chunk the feed ingester (T806)
-`TurStructuredFeedIngestService.ingestSource` should split its mapped records into
-bounded chunks (`turing.genai.structured-feed.batch-size`, default ~200) and send
-each chunk as its own bulk import followed by a terminal `COMMIT`, with per-chunk
-progress logging and per-chunk fail-open. This keeps the JMS message size and the
-consumer transaction bounded for an 800+-row feed, and gives visible progress
-instead of one silent long pass. The de-index diff (`lastSeenIds`) is still computed
-over the full run so vanished-id reconciliation is unchanged.
-
-### LV.5 Direct bulk-index fast path, bypassing JMS (💭 T807)
-For a strictly **vectorless / RAG-disabled** site the JMS hop is pure overhead (its
-reason for existing is to offload async embedding, which vectorless sites don't do).
-An opt-in bulk endpoint (`POST /api/sn/import/bulk`, or a flag) could write straight
-to the SE plugin via `indexDocuments(...)` in bounded batches with a single trailing
-commit, skipping the per-message queue and per-item transaction for very large
-reindexes. Gated and default-off so the ordered queue stays the norm; only worth
-building if T803–T806 leave a measurable gap.
+### LVI.3 Auto-provisioning wires default fields + facet labels from the feed manifest (T810)
+Extend `TurStructuredFeedProvisioningOnStartup` (T796) so the structured-feed source /
+`VigletFieldManifest` can declare which feed fields map to title/description/text/url/
+image/date and carry per-field facet labels, and have provisioning apply them —
+setting `TurSNSite.defaultTitleField`/`defaultDescriptionField`/… and each faceted
+field's `TurSNSiteFieldExt.facetName` + locale label rows. This is the direct,
+zero-config fix for the dogfood: the model-catalog site provisions with
+`defaultTitleField = label` (and a chosen description/text field) and readable facet
+labels, so it renders correctly on first boot without post-deploy admin steps. The
+concrete mapping lives in the deployment's manifest/env (viglet/cloud), never in
+Turing — Turing only gains the ability to honor it. Builds on LVI.1's fallback (a site
+that declares nothing still gets the canonical defaults).

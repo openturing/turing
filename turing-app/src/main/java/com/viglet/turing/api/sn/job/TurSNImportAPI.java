@@ -65,19 +65,42 @@ public class TurSNImportAPI {
     private final TurSNSiteRepositoryPort turSNSiteRepositoryPort;
     private final TurSNGenAi turGenAi;
     private final com.viglet.turing.tenant.TurJmsTenantPropagation turJmsTenantPropagation;
+    private final TurSNBulkImportService turSNBulkImportService;
 
     public TurSNImportAPI(JmsMessagingTemplate jmsMessagingTemplate,
             TurSNSiteRepositoryPort turSNSiteRepositoryPort,
             TurSNGenAi turGenAi,
-            com.viglet.turing.tenant.TurJmsTenantPropagation turJmsTenantPropagation) {
+            com.viglet.turing.tenant.TurJmsTenantPropagation turJmsTenantPropagation,
+            TurSNBulkImportService turSNBulkImportService) {
         this.jmsMessagingTemplate = jmsMessagingTemplate;
         this.turSNSiteRepositoryPort = turSNSiteRepositoryPort;
         this.turGenAi = turGenAi;
         this.turJmsTenantPropagation = turJmsTenantPropagation;
+        this.turSNBulkImportService = turSNBulkImportService;
     }
 
     @PostMapping
     public boolean turSNImportBroker(@RequestBody TurSNJobItems turSNJobItems) {
+        send(turSNJobItems);
+        return true;
+    }
+
+    /**
+     * T807 / §LV.5 (Block BG) — opt-in direct bulk-index endpoint for very large
+     * <em>vectorless</em> reindexes. When the {@code turing.sn.import.bulk-direct}
+     * fast path is enabled and every targeted site is RAG-disabled, the documents
+     * are written straight to the search engine (in bounded chunks, reusing the
+     * T803 batching) and the JMS queue is skipped. Otherwise it transparently
+     * falls back to the ordered queue — so an ineligible request is never
+     * rejected, just routed the default way.
+     */
+    @PostMapping("bulk")
+    public boolean turSNImportBulkBroker(@RequestBody TurSNJobItems turSNJobItems) {
+        if (turSNBulkImportService.isEligible(turSNJobItems)) {
+            int processed = turSNBulkImportService.importDirect(turSNJobItems);
+            log.info("[T807] direct bulk import wrote {} items, bypassing the indexing queue", processed);
+            return true;
+        }
         send(turSNJobItems);
         return true;
     }
