@@ -55,6 +55,21 @@ public class TurGenAiContextFactory {
             return TurGenAiContext.disabled();
         }
 
+        // T790 / §LIV.1 (Block BF) — a site explicitly set to VECTORLESS_STRUCTURED
+        // opts out of embeddings entirely. Return a disabled context so NEITHER the
+        // batch reindex (reindexVectorStore → reindexLocale) NOR the per-document
+        // real-time index path (TurSNGenAi.addDocument) ever embeds — regardless of
+        // whether the effective agent (the site's own, or the global Default AI Agent
+        // T622 fallback) has RAG enabled. This makes the per-site opt-out explicit and
+        // fully decoupled from the default-agent fallback. VECTOR and HYBRID still
+        // embed (needsVectorSetup() == true).
+        if (turSNSiteGenAi != null && turSNSiteGenAi.getKnowledgeBaseMode() != null
+                && !turSNSiteGenAi.getKnowledgeBaseMode().needsVectorSetup()) {
+            log.debug("Vector context skipped: SN site GenAI knowledge-base mode is VECTORLESS_STRUCTURED "
+                    + "(no embeddings), even though the effective agent has RAG enabled.");
+            return TurGenAiContext.disabled();
+        }
+
         TurLLMInstance llmInstance = pickLlmInstance(agent);
         if (llmInstance == null) {
             log.warn("RAG enabled on agent without any LLM instance. agentId={}", agent.getId());

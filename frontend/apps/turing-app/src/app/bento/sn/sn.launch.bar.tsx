@@ -75,10 +75,17 @@ export function SnLaunchBar({ site }: Readonly<{ site: TurSNSite }>) {
 
   // ANN is available when the site's OWN agent is RAG-ready, or — when the site
   // declares no agent — the global Default AI Agent is (T622 fallback, surfaced
-  // by /api/features). Mirrors the backend gate in TurDefaultAgentResolver.
+  // by /api/features). Mirrors the backend gate in TurDefaultAgentResolver.isRagReady.
+  // T790 — a site explicitly in VECTORLESS_STRUCTURED has no vectors by design, so
+  // ANN is never available there, regardless of the (own or default) agent's RAG
+  // flag. Folded in as the single gate so the tile tracks the runtime exactly.
   const ownAgent = site.turSNSiteGenAi?.turAIAgent;
   const ownAgentReady = ownAgent?.enabled === 1 && ownAgent?.ragEnabled === true;
-  const annEnabled = ownAgentReady || (!ownAgent && Boolean(features?.defaultAiAgentRagEnabled));
+  const vectorModeActive =
+    site.turSNSiteGenAi?.knowledgeBaseMode !== "VECTORLESS_STRUCTURED";
+  const annEnabled =
+    vectorModeActive &&
+    (ownAgentReady || (!ownAgent && Boolean(features?.defaultAiAgentRagEnabled)));
 
   const { search, ann } = buildSnSearchLaunchers(
     {

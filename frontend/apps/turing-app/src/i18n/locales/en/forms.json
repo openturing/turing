@@ -585,6 +585,8 @@
       "kbModeVectorHint": "Classic RAG: content is chunked, embedded and stored in a vector store; chat retrieves top-K chunks by similarity. Requires an embedding model + vector store on the bound agent.",
       "kbModeVectorlessHint": "Vectorless (Structured-Data) RAG: the catalog copilot parses questions into a search over your declared field schema (facets / ranges), then the LLM answers strictly from the cited rows. No embedding model or vector store — only a default LLM. Ideal for a product catalog, price list, spec sheet or model registry.",
       "kbModeHybridHint": "Both surfaces on one site: the vector RAG chat for prose questions and the vectorless copilot for structured attribute questions. Requires the full vector setup.",
+      "kbModeVectorlessCalloutTitle": "Embedding indexing is OFF for this site",
+      "kbModeVectorlessCalloutDesc": "In Vectorless (Structured) mode this site never generates embeddings. No documents are embedded into the vector store and no RAG reindex runs — even if this site's AI Agent (or the global Default AI Agent it falls back to) has RAG enabled. Answers come from the structured copilot (POST /api/sn/{site}/copilot) over your declared field schema. Switch to Vector or Hybrid to re-enable embedding indexing.",
       "snRankingTitle": "Hybrid Ranking (Public Search)",
       "snRankingDesc": "How the public catalog search ranks results. Independent of the RAG card above — this reorders the faceted public results, not the chat knowledge-base retrieval.",
       "snRankingMode": "Ranking mode",

@@ -363,6 +363,17 @@ public class TurSNSiteContentExchangeService {
             return 0;
         }
         var genAi = turSNSite.getTurSNSiteGenAi();
+        // T790 / §LIV.1 (Block BF) — a site explicitly set to VECTORLESS_STRUCTURED
+        // opts out of embeddings; skip the reindex outright (no worker-pool spin-up,
+        // no per-doc deletes) regardless of the effective agent's RAG flag.
+        if (genAi != null && genAi.getKnowledgeBaseMode() != null
+                && !genAi.getKnowledgeBaseMode().needsVectorSetup()) {
+            log.info("RAG reindex skipped for site '{}': knowledge-base mode is VECTORLESS_STRUCTURED (no embeddings)",
+                    turSNSite.getName());
+            progressMap.put(taskId, new ContentExchangeProgress(
+                    0, 0, "", COMPLETED, System.currentTimeMillis()));
+            return 0;
+        }
         // T622 — honour the global default-agent fallback so a search-only seed
         // site (no per-site agent) still reindexes into the default agent's store.
         var agent = turDefaultAgentResolver.resolveEffectiveAgent(genAi);

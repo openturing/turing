@@ -111,7 +111,25 @@ public class TurDefaultAgentResolver {
      * @since 2026.3.4
      */
     public boolean isRagReady(TurSNSiteGenAi turSNSiteGenAi) {
-        return isAgentRagReady(resolveEffectiveAgent(turSNSiteGenAi));
+        // T790 / §LIV.1 (Block BF) — a site explicitly in VECTORLESS_STRUCTURED has
+        // no vectors by design, so every vector-dependent surface gated by this
+        // method (ANN search API + controller, the launch-bar live-search chip via
+        // /api/features) must report "not ready" — even when the effective agent
+        // (own or the Default AI Agent fallback) has RAG enabled. VECTOR/HYBRID
+        // still qualify.
+        return modeNeedsVectors(turSNSiteGenAi) && isAgentRagReady(resolveEffectiveAgent(turSNSiteGenAi));
+    }
+
+    /**
+     * Whether the site's knowledge-base mode requires the vector setup. A
+     * {@code null} binding (or a binding with no explicit mode) defaults to
+     * {@code VECTOR}, preserving the pre-T790 behaviour.
+     *
+     * @since 2026.3.4
+     */
+    private static boolean modeNeedsVectors(TurSNSiteGenAi turSNSiteGenAi) {
+        return turSNSiteGenAi == null || turSNSiteGenAi.getKnowledgeBaseMode() == null
+                || turSNSiteGenAi.getKnowledgeBaseMode().needsVectorSetup();
     }
 
     /**

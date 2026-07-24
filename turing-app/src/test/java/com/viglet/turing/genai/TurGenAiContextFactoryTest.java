@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import java.util.HashSet;
@@ -88,6 +89,68 @@ class TurGenAiContextFactoryTest {
         turSNSiteGenAi.setTurAIAgent(agent);
         TurGenAiContext context = factory.build(turSNSiteGenAi);
         assertFalse(context.isEnabled());
+    }
+
+    @Test
+    void testBuild_disabled_whenVectorlessStructured_evenWithRagReadyAgent() {
+        // T790 — a fully RAG-ready agent, but the site is explicitly in
+        // VECTORLESS_STRUCTURED mode: the factory must return a disabled context
+        // (no embeddings), so neither the batch reindex nor the per-doc index path
+        // ever embeds. The gate short-circuits before any LLM/store lookup.
+        TurAIAgent agent = new TurAIAgent();
+        agent.setEnabled(1);
+        agent.setRagEnabled(true);
+        turSNSiteGenAi.setTurAIAgent(agent);
+        turSNSiteGenAi.setKnowledgeBaseMode(
+                com.viglet.turing.persistence.model.sn.genai.TurSNKnowledgeBaseMode.VECTORLESS_STRUCTURED);
+
+        TurGenAiContext context = factory.build(turSNSiteGenAi);
+
+        assertFalse(context.isEnabled());
+        // Never reached the secret decrypt / chat-model creation stage.
+        verifyNoInteractions(turSecretCryptoService, llmModelFactory, turRagContextBuilder);
+    }
+
+    @Test
+    void testBuild_enabled_whenHybridMode() {
+        // HYBRID still requires (and builds) the vector setup — needsVectorSetup()==true.
+        TurAIAgent agent = new TurAIAgent();
+        agent.setEnabled(1);
+        agent.setRagEnabled(true);
+        agent.setSystemPrompt("agent prompt");
+
+        TurLLMInstance llmInstance = new TurLLMInstance();
+        llmInstance.setApiKeyEncrypted("llm-encrypted");
+        llmInstance.setEnabled(1);
+        Set<TurLLMInstance> llms = new HashSet<>();
+        llms.add(llmInstance);
+        agent.setLlmInstances(llms);
+
+        TurStoreInstance storeInstance = new TurStoreInstance();
+        storeInstance.setId("store-1");
+        agent.setTurStoreInstance(storeInstance);
+
+        TurEmbeddingModel embeddingModel = new TurEmbeddingModel();
+        embeddingModel.setId("emb-1");
+        agent.setTurEmbeddingModelInstance(embeddingModel);
+
+        turSNSiteGenAi.setTurAIAgent(agent);
+        turSNSiteGenAi.setKnowledgeBaseMode(
+                com.viglet.turing.persistence.model.sn.genai.TurSNKnowledgeBaseMode.HYBRID);
+
+        when(turSecretCryptoService.decrypt("llm-encrypted")).thenReturn("llm-decrypted");
+        ChatModel chatModel = mock(ChatModel.class);
+        when(llmModelFactory.createChatModel(llmInstance, "llm-decrypted")).thenReturn(chatModel);
+        EmbeddingModel springEmbeddingModel = mock(EmbeddingModel.class);
+        VectorStore vectorStore = mock(VectorStore.class);
+        var ragInfra = new TurRagContextBuilder.RagInfrastructure(
+                vectorStore, springEmbeddingModel, null, null, null, "turing");
+        when(turRagContextBuilder.build("emb-1", "store-1", null))
+                .thenReturn(Optional.of(ragInfra));
+
+        TurGenAiContext context = factory.build(turSNSiteGenAi);
+
+        assertTrue(context.isEnabled());
     }
 
     @Test

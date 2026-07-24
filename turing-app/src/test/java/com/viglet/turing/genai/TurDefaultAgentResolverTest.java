@@ -150,6 +150,45 @@ class TurDefaultAgentResolverTest {
     }
 
     @Test
+    void isRagReadyFalseWhenVectorlessStructuredEvenWithRagReadyOwnAgent() {
+        // T790 — the site's own agent is RAG-ready, but the site explicitly opts out
+        // of vectors via VECTORLESS_STRUCTURED: no vector-dependent surface is ready.
+        TurSNSiteGenAi genAi = new TurSNSiteGenAi();
+        genAi.setTurAIAgent(ragReadyAgent());
+        genAi.setKnowledgeBaseMode(
+                com.viglet.turing.persistence.model.sn.genai.TurSNKnowledgeBaseMode.VECTORLESS_STRUCTURED);
+
+        assertFalse(resolver.isRagReady(genAi));
+        // Short-circuits on the mode before ever resolving/looking up an agent.
+        verifyNoInteractions(globalSettingsService, turAIAgentRepository);
+    }
+
+    @Test
+    void isRagReadyFalseWhenVectorlessStructuredEvenWithRagReadyDefaultAgent() {
+        // The exact scenario reported: a search-only seed site (no own agent) would
+        // inherit the RAG-ready Default AI Agent — but VECTORLESS_STRUCTURED overrides
+        // that, so it never becomes RAG-ready (and never embeds). Mode is checked
+        // first, so the default lookup is short-circuited.
+        TurSNSiteGenAi genAi = new TurSNSiteGenAi();
+        genAi.setKnowledgeBaseMode(
+                com.viglet.turing.persistence.model.sn.genai.TurSNKnowledgeBaseMode.VECTORLESS_STRUCTURED);
+
+        assertFalse(resolver.isRagReady(genAi));
+        verifyNoInteractions(globalSettingsService, turAIAgentRepository);
+    }
+
+    @Test
+    void isRagReadyTrueWhenHybridModeAndRagReadyOwnAgent() {
+        // HYBRID needs the vector setup, so a RAG-ready agent still qualifies.
+        TurSNSiteGenAi genAi = new TurSNSiteGenAi();
+        genAi.setTurAIAgent(ragReadyAgent());
+        genAi.setKnowledgeBaseMode(
+                com.viglet.turing.persistence.model.sn.genai.TurSNKnowledgeBaseMode.HYBRID);
+
+        assertTrue(resolver.isRagReady(genAi));
+    }
+
+    @Test
     void isDefaultRagReadyTrueWhenDefaultAgentRagReady() {
         when(globalSettingsService.getDefaultAiAgentId()).thenReturn("def-1");
         when(turAIAgentRepository.findById("def-1")).thenReturn(Optional.of(ragReadyAgent()));

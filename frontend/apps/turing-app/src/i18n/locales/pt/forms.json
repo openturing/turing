@@ -585,6 +585,8 @@
       "kbModeVectorHint": "RAG clássico: o conteúdo é fragmentado, transformado em embeddings e armazenado em um vector store; o chat recupera os top-K trechos por similaridade. Requer um modelo de embedding + vector store no agente vinculado.",
       "kbModeVectorlessHint": "RAG Sem Vetores (Dados Estruturados): o copiloto de catálogo interpreta as perguntas como uma busca sobre o esquema de campos declarado (facetas / intervalos) e o LLM responde estritamente a partir das linhas citadas. Sem modelo de embedding ou vector store — apenas um LLM padrão. Ideal para catálogo de produtos, tabela de preços, ficha técnica ou registro de modelos.",
       "kbModeHybridHint": "Ambas as superfícies em um site: o chat RAG vetorial para perguntas em prosa e o copiloto sem vetores para perguntas sobre atributos estruturados. Requer a configuração vetorial completa.",
+      "kbModeVectorlessCalloutTitle": "A indexação de embeddings está DESLIGADA para este site",
+      "kbModeVectorlessCalloutDesc": "No modo Sem Vetores (Estruturado) este site nunca gera embeddings. Nenhum documento é embeddado no vector store e nenhum reindex RAG é executado — mesmo que o AI Agent deste site (ou o Default AI Agent global usado como fallback) esteja com RAG habilitado. As respostas vêm do copiloto estruturado (POST /api/sn/{site}/copilot) sobre o esquema de campos declarado. Mude para Vetorial ou Híbrido para reativar a indexação de embeddings.",
       "snRankingTitle": "Ranking Híbrido (Busca Pública)",
       "snRankingDesc": "Como a busca pública do catálogo ordena os resultados. Independente do card RAG acima — isto reordena os resultados públicos facetados, não a recuperação do conhecimento do chat.",
       "snRankingMode": "Modo de ranking",

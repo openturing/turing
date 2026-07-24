@@ -179,7 +179,13 @@ export const SNSiteGenAiForm: React.FC<Props> = ({ snSite, baseRoute = ROUTES.SN
     }, [loadRagCores]);
 
     const selectedAgent = form.watch("turAIAgent");
-    const ragEnabled = !!selectedAgent && selectedAgent.ragEnabled === true;
+    // T790 — single source of truth for "vector RAG is active on this site". A
+    // VECTORLESS_STRUCTURED site never embeds, so every vector-RAG control (reindex,
+    // hybrid-retrieval tuning, ANN) is off regardless of the agent's RAG flag. Fold
+    // the mode in here — mirrors the backend TurGenAiContextFactory /
+    // TurDefaultAgentResolver.isRagReady gate — so consumers don't each re-check it.
+    const vectorModeActive = form.watch("knowledgeBaseMode") !== "VECTORLESS_STRUCTURED";
+    const ragEnabled = !!selectedAgent && selectedAgent.ragEnabled === true && vectorModeActive;
     // T622 — when the site picks no agent of its own, chat/RAG/ANN fall back to
     // the global Default AI Agent. Surface which agent that is so the admin sees
     // the site is not actually "off".
@@ -519,6 +525,9 @@ export const SNSiteGenAiForm: React.FC<Props> = ({ snSite, baseRoute = ROUTES.SN
                                         )}
                                     </div>
                                 )}
+                                {/* ragEnabled already folds in the knowledge-base mode
+                                    (T790), so a VECTORLESS_STRUCTURED site hides the
+                                    reindex button — the backend reindex early-returns anyway. */}
                                 {ragEnabled && (
                                     <div className="flex items-center gap-3 pt-4 border-t border-border/40">
                                         <GradientButton
@@ -610,6 +619,20 @@ export const SNSiteGenAiForm: React.FC<Props> = ({ snSite, baseRoute = ROUTES.SN
                                         </FormItemTwoColumns>
                                     )}
                                 />
+                                {/* T790 — make the implicit consequence explicit: in
+                                    VECTORLESS_STRUCTURED the site never embeds, even when
+                                    the (own or default) agent has RAG on. Backend gate:
+                                    TurGenAiContextFactory + TurDefaultAgentResolver.isRagReady
+                                    + reindexVectorStore early-return. */}
+                                {form.watch("knowledgeBaseMode") === "VECTORLESS_STRUCTURED" && (
+                                    <div className="rounded-lg border border-amber-500/40 bg-amber-500/5 px-4 py-3 mt-2 text-xs text-muted-foreground space-y-1">
+                                        <div className="flex items-center gap-2 text-foreground">
+                                            <IconDatabaseSearch className="size-4 text-amber-600 dark:text-amber-400 shrink-0" />
+                                            <strong>{t("forms.snGenai.kbModeVectorlessCalloutTitle")}</strong>
+                                        </div>
+                                        <div>{t("forms.snGenai.kbModeVectorlessCalloutDesc")}</div>
+                                    </div>
+                                )}
                         </SNFormSection>
 
                         {/* T19/T24 — Hybrid Retrieval card.
