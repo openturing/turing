@@ -41,6 +41,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.viglet.turing.api.sn.search.TurSNSiteSearchService;
+import com.viglet.turing.genai.TurDefaultAgentResolver;
 import com.viglet.turing.genai.TurGenAiContext;
 import com.viglet.turing.genai.TurGenAiContextFactory;
 import com.viglet.turing.genai.TurRagFilters;
@@ -76,15 +77,18 @@ public class TurAnnSearchAPI {
     private final TurGenAiContextFactory turGenAiContextFactory;
     private final TurSNSiteLocaleRepository turSNSiteLocaleRepository;
     private final TurSNSiteSearchService turSNSiteSearchService;
+    private final TurDefaultAgentResolver turDefaultAgentResolver;
 
     public TurAnnSearchAPI(TurSNSearchProcess turSNSearchProcess,
             TurGenAiContextFactory turGenAiContextFactory,
             TurSNSiteLocaleRepository turSNSiteLocaleRepository,
-            TurSNSiteSearchService turSNSiteSearchService) {
+            TurSNSiteSearchService turSNSiteSearchService,
+            TurDefaultAgentResolver turDefaultAgentResolver) {
         this.turSNSearchProcess = turSNSearchProcess;
         this.turGenAiContextFactory = turGenAiContextFactory;
         this.turSNSiteLocaleRepository = turSNSiteLocaleRepository;
         this.turSNSiteSearchService = turSNSiteSearchService;
+        this.turDefaultAgentResolver = turDefaultAgentResolver;
     }
 
     public record TurAnnSearchRequest(
@@ -130,8 +134,10 @@ public class TurAnnSearchAPI {
             return ResponseEntity.notFound().build();
         }
         var genAi = site.getTurSNSiteGenAi();
-        var agent = genAi == null ? null : genAi.getTurAIAgent();
-        if (agent == null || agent.getEnabled() != 1 || !agent.isRagEnabled()) {
+        // T622 — honor the Default AI Agent fallback: a site with no agent of
+        // its own is still ANN-ready when a RAG-enabled global default exists
+        // (the context factory already resolves the same effective agent).
+        if (!turDefaultAgentResolver.isRagReady(genAi)) {
             // 403 (not 404) so the frontend can distinguish "RAG disabled" from
             // "endpoint missing / app not restarted yet".
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build();

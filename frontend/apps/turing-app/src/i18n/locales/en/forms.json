@@ -551,6 +551,8 @@
       "aiAgent": "AI Agent",
       "aiAgentDesc": "Pick the AI Agent that powers this site's GenAI features. The agent owns the LLM, embedding model, vector store and the RAG flag — they are no longer set per site.",
       "noAiAgent": "No AI Agent",
+      "usingDefaultAgent": "Using the Default AI Agent: {{agent}}",
+      "usingDefaultAgentDesc": "This site has no agent of its own, so its GenAI features (chat, AI Mode and ANN search) run on the global Default AI Agent configured in Settings.",
       "ragEnabledOnAgent": "Enabled on the agent",
       "ragDisabledOnAgent": "Disabled on the agent — enable RAG on the agent to use the AI Mode and ANN search on this site.",
       "reindexAll": "Reindex All",

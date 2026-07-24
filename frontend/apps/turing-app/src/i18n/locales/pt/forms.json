@@ -551,6 +551,8 @@
       "aiAgent": "Agente de IA",
       "aiAgentDesc": "Escolha o Agente de IA que vai operar os recursos de GenAI deste site. O agente concentra LLM, modelo de embedding, vector store e o flag de RAG — esses ajustes não ficam mais por site.",
       "noAiAgent": "Nenhum Agente de IA",
+      "usingDefaultAgent": "Usando o Agente de IA Padrão: {{agent}}",
+      "usingDefaultAgentDesc": "Este site não tem um agente próprio, então seus recursos de GenAI (chat, AI Mode e busca ANN) usam o Agente de IA Padrão global configurado em Configurações.",
       "ragEnabledOnAgent": "Habilitado no agente",
       "ragDisabledOnAgent": "Desabilitado no agente — habilite o RAG no agente para usar o AI Mode e a busca ANN neste site.",
       "reindexAll": "Reindexar tudo",

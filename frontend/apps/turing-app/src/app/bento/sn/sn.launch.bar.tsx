@@ -1,3 +1,4 @@
+import { useFeatures } from "@/api/queries/features.queries";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import {
   buildSnSearchLaunchers,
@@ -70,10 +71,21 @@ function LauncherTile({
  */
 export function SnLaunchBar({ site }: Readonly<{ site: TurSNSite }>) {
   const { t } = useTranslation();
+  const { data: features } = useFeatures();
+
+  // ANN is available when the site's OWN agent is RAG-ready, or — when the site
+  // declares no agent — the global Default AI Agent is (T622 fallback, surfaced
+  // by /api/features). Mirrors the backend gate in TurDefaultAgentResolver.
+  const ownAgent = site.turSNSiteGenAi?.turAIAgent;
+  const ownAgentReady = ownAgent?.enabled === 1 && ownAgent?.ragEnabled === true;
+  const annEnabled = ownAgentReady || (!ownAgent && Boolean(features?.defaultAiAgentRagEnabled));
+
   const { search, ann } = buildSnSearchLaunchers(
     {
       name: site.name,
-      genAiEnabled: Boolean(site.turSNSiteGenAi?.turAIAgent),
+      annEnabled,
+      storageEnabled: features?.storageEnabled ?? false,
+      searchTemplate: site.searchTemplate,
       locales: site.turSNSiteLocales ?? [],
     },
     (key) => t(key),

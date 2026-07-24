@@ -20,8 +20,10 @@
  */
 package com.viglet.turing.genai;
 
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
@@ -94,5 +96,71 @@ class TurDefaultAgentResolverTest {
         when(turAIAgentRepository.findById("gone")).thenReturn(Optional.empty());
 
         assertNull(resolver.resolveEffectiveAgent(null));
+    }
+
+    private static TurAIAgent ragReadyAgent() {
+        TurAIAgent agent = new TurAIAgent();
+        agent.setEnabled(1);
+        agent.setRagEnabled(true);
+        return agent;
+    }
+
+    @Test
+    void isRagReadyTrueForRagReadyOwnAgent() {
+        TurSNSiteGenAi genAi = new TurSNSiteGenAi();
+        genAi.setTurAIAgent(ragReadyAgent());
+
+        assertTrue(resolver.isRagReady(genAi));
+        verifyNoInteractions(globalSettingsService, turAIAgentRepository);
+    }
+
+    @Test
+    void isRagReadyFalseWhenOwnAgentDisabled() {
+        TurAIAgent agent = ragReadyAgent();
+        agent.setEnabled(0);
+        TurSNSiteGenAi genAi = new TurSNSiteGenAi();
+        genAi.setTurAIAgent(agent);
+
+        assertFalse(resolver.isRagReady(genAi));
+    }
+
+    @Test
+    void isRagReadyFalseWhenOwnAgentRagOff() {
+        TurAIAgent agent = ragReadyAgent();
+        agent.setRagEnabled(false);
+        TurSNSiteGenAi genAi = new TurSNSiteGenAi();
+        genAi.setTurAIAgent(agent);
+
+        assertFalse(resolver.isRagReady(genAi));
+    }
+
+    @Test
+    void isRagReadyFallsBackToRagReadyDefaultAgent() {
+        when(globalSettingsService.getDefaultAiAgentId()).thenReturn("def-1");
+        when(turAIAgentRepository.findById("def-1")).thenReturn(Optional.of(ragReadyAgent()));
+
+        assertTrue(resolver.isRagReady(new TurSNSiteGenAi()));
+    }
+
+    @Test
+    void isRagReadyFalseWhenNoOwnAgentAndNoDefault() {
+        when(globalSettingsService.getDefaultAiAgentId()).thenReturn("");
+
+        assertFalse(resolver.isRagReady(null));
+    }
+
+    @Test
+    void isDefaultRagReadyTrueWhenDefaultAgentRagReady() {
+        when(globalSettingsService.getDefaultAiAgentId()).thenReturn("def-1");
+        when(turAIAgentRepository.findById("def-1")).thenReturn(Optional.of(ragReadyAgent()));
+
+        assertTrue(resolver.isDefaultRagReady());
+    }
+
+    @Test
+    void isDefaultRagReadyFalseWhenNoDefaultConfigured() {
+        when(globalSettingsService.getDefaultAiAgentId()).thenReturn("");
+
+        assertFalse(resolver.isDefaultRagReady());
     }
 }

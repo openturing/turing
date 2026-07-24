@@ -93,6 +93,9 @@ export const SNSiteGenAiForm: React.FC<Props> = ({ snSite, baseRoute = ROUTES.SN
     const [ragCores, setRagCores] = useState<TurRagBm25CoreStatus[]>([]);
     const [isProvisioning, setIsProvisioning] = useState(false);
     const [defaultLlmId, setDefaultLlmId] = useState<string>("");
+    // T622 — global Default AI Agent id, so this form can explain that a site
+    // with no agent of its own still runs on that default (fail-open fallback).
+    const [defaultAiAgentId, setDefaultAiAgentId] = useState<string>("");
     const [isGenerating, setIsGenerating] = useState(false);
     const [showOverwriteDialog, setShowOverwriteDialog] = useState(false);
     const [isReindexing, setIsReindexing] = useState(false);
@@ -119,6 +122,7 @@ export const SNSiteGenAiForm: React.FC<Props> = ({ snSite, baseRoute = ROUTES.SN
             .catch((err) => console.error("Failed to load SE instances", err));
         turGlobalSettingsService.query().then((settings) => {
             setDefaultLlmId(settings.defaultLlmId ?? "");
+            setDefaultAiAgentId(settings.defaultAiAgentId ?? "");
         });
         turEmbeddingModelService
             .query()
@@ -176,6 +180,14 @@ export const SNSiteGenAiForm: React.FC<Props> = ({ snSite, baseRoute = ROUTES.SN
 
     const selectedAgent = form.watch("turAIAgent");
     const ragEnabled = !!selectedAgent && selectedAgent.ragEnabled === true;
+    // T622 — when the site picks no agent of its own, chat/RAG/ANN fall back to
+    // the global Default AI Agent. Surface which agent that is so the admin sees
+    // the site is not actually "off".
+    const defaultAgent = defaultAiAgentId
+        ? aiAgents.find((a) => a.id === defaultAiAgentId)
+        : undefined;
+    const usingDefaultAgent = !selectedAgent && !!defaultAgent;
+    const defaultAgentRagEnabled = defaultAgent?.ragEnabled === true;
     // Reindex is gated on the *persisted* agent, not the form preview: the
     // backend rejects (403) until the chosen agent is saved on this site.
     // We also block while the form is dirty so the user can't click reindex
@@ -465,6 +477,20 @@ export const SNSiteGenAiForm: React.FC<Props> = ({ snSite, baseRoute = ROUTES.SN
                                         </FormItemTwoColumns>
                                     )}
                                 />
+                                {usingDefaultAgent && (
+                                    <div className="rounded-lg border border-violet-500/30 bg-violet-500/5 px-4 py-3 mt-2 text-xs text-muted-foreground space-y-1">
+                                        <div className="text-foreground">
+                                            <strong>{t("forms.snGenai.usingDefaultAgent", { agent: defaultAgent?.title })}</strong>
+                                        </div>
+                                        <div>{t("forms.snGenai.usingDefaultAgentDesc")}</div>
+                                        <div>
+                                            <strong>RAG:</strong>{" "}
+                                            {defaultAgentRagEnabled
+                                                ? t("forms.snGenai.ragEnabledOnAgent")
+                                                : t("forms.snGenai.ragDisabledOnAgent")}
+                                        </div>
+                                    </div>
+                                )}
                                 {selectedAgent && (
                                     <div className="rounded-lg bg-muted/40 px-4 py-3 mt-2 text-xs text-muted-foreground space-y-1">
                                         <div>

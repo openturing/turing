@@ -97,4 +97,36 @@ public class TurDefaultAgentResolver {
         }
         return agent;
     }
+
+    /**
+     * Single reusable "is RAG/ANN effectively available for this site" gate,
+     * shared by every SN-site feature that needs one (ANN page + search API,
+     * the launch-bar chip via {@code /api/features}, etc.) so they never drift
+     * apart. Honors the T622 fallback: the site's own agent when present,
+     * otherwise the global Default AI Agent.
+     *
+     * @param turSNSiteGenAi the site's GenAI binding (may be {@code null})
+     * @return {@code true} when the effective agent exists, is enabled and has
+     *         RAG turned on
+     * @since 2026.3.4
+     */
+    public boolean isRagReady(TurSNSiteGenAi turSNSiteGenAi) {
+        return isAgentRagReady(resolveEffectiveAgent(turSNSiteGenAi));
+    }
+
+    /**
+     * Whether the global Default AI Agent (ignoring any per-site binding) is by
+     * itself RAG-ready. Lets a per-site UI decide, without a site in hand,
+     * whether a site that declares <em>no</em> agent of its own would still get
+     * RAG/ANN through the default fallback.
+     *
+     * @since 2026.3.4
+     */
+    public boolean isDefaultRagReady() {
+        return isAgentRagReady(resolveDefaultAgent());
+    }
+
+    private boolean isAgentRagReady(TurAIAgent agent) {
+        return agent != null && agent.getEnabled() == 1 && agent.isRagEnabled();
+    }
 }

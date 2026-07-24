@@ -15,6 +15,12 @@ export interface FeaturesResponse {
   tenancyEnabled: boolean
   /** T372 — current caller holds ROLE_PLATFORM_ADMIN. */
   platformAdmin: boolean
+  /**
+   * T622 — a global Default AI Agent is configured and RAG-ready. SN sites with
+   * no agent of their own fall back to it, so the ANN Search launcher can be
+   * offered even when the site itself declares no agent.
+   */
+  defaultAiAgentRagEnabled: boolean
 }
 
 export class TurFeaturesService {

@@ -32,7 +32,9 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 
-import com.viglet.turing.domain.sn.TurSNSiteRepositoryPort;
+import com.viglet.turing.genai.TurDefaultAgentResolver;
+import com.viglet.turing.persistence.model.sn.TurSNSite;
+import com.viglet.turing.sn.TurSNSearchProcess;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -54,15 +56,22 @@ public class TurAnnSearchController {
 
     private static final ClassPathResource DEFAULT_INDEX = new ClassPathResource("/public/index.html");
 
-    private final TurSNSiteRepositoryPort turSNSiteRepositoryPort;
+    private final TurSNSearchProcess turSNSearchProcess;
+    private final TurDefaultAgentResolver turDefaultAgentResolver;
 
-    public TurAnnSearchController(TurSNSiteRepositoryPort turSNSiteRepositoryPort) {
-        this.turSNSiteRepositoryPort = turSNSiteRepositoryPort;
+    public TurAnnSearchController(TurSNSearchProcess turSNSearchProcess,
+            TurDefaultAgentResolver turDefaultAgentResolver) {
+        this.turSNSearchProcess = turSNSearchProcess;
+        this.turDefaultAgentResolver = turDefaultAgentResolver;
     }
 
     @GetMapping("/{siteName}")
     public ResponseEntity<Object> serve(@PathVariable String siteName) {
-        if (!turSNSiteRepositoryPort.hasRagEnabledForSiteName(siteName)) {
+        // T622 — gate by the effective agent (site's own, else the global
+        // Default AI Agent) so the page loads for zero-config / default-agent
+        // sites, matching the search API and the admin launch-bar chip.
+        TurSNSite site = turSNSearchProcess.getSNSite(siteName).orElse(null);
+        if (site == null || !turDefaultAgentResolver.isRagReady(site.getTurSNSiteGenAi())) {
             log.debug("ANN page requested for site '{}' but RAG is not enabled", siteName);
             return ResponseEntity.notFound().build();
         }

@@ -1,5 +1,6 @@
 package com.viglet.turing.api.system;
 
+import com.viglet.turing.genai.TurDefaultAgentResolver;
 import com.viglet.turing.properties.TurConfigProperties;
 import com.viglet.turing.service.git.TurGitServerService;
 import com.viglet.turing.service.storage.TurStorageService;
@@ -31,6 +32,7 @@ public class TurFeaturesAPI {
     private final TurSolrInstanceSource solrInstanceSource;
     private final TurTenantContext tenantContext;
     private final TurPlatformAdminService platformAdminService;
+    private final TurDefaultAgentResolver defaultAgentResolver;
     private final String loggingEngine;
 
     public TurFeaturesAPI(TurStorageService storageService, TurGlobalSettingsService globalSettingsService,
@@ -38,6 +40,7 @@ public class TurFeaturesAPI {
                           TurSolrInstanceSource solrInstanceSource,
                           TurTenantContext tenantContext,
                           TurPlatformAdminService platformAdminService,
+                          TurDefaultAgentResolver defaultAgentResolver,
                           @Value("${turing.logging.engine:none}") String loggingEngine) {
         this.storageService = storageService;
         this.globalSettingsService = globalSettingsService;
@@ -46,6 +49,7 @@ public class TurFeaturesAPI {
         this.solrInstanceSource = solrInstanceSource;
         this.tenantContext = tenantContext;
         this.platformAdminService = platformAdminService;
+        this.defaultAgentResolver = defaultAgentResolver;
         this.loggingEngine = loggingEngine;
     }
 
@@ -53,6 +57,7 @@ public class TurFeaturesAPI {
                                    boolean marketplaceEnabled, boolean seInstanceReadOnly,
                                    boolean skillsEnabled,
                                    boolean tenancyEnabled, boolean platformAdmin,
+                                   boolean defaultAiAgentRagEnabled,
                                    String loggingEngine) {}
 
     @GetMapping
@@ -74,6 +79,10 @@ public class TurFeaturesAPI {
                 // platform admin (mirrors the backend assertWritable rule).
                 tenantContext.isTenancyEnabled(),
                 platformAdminService.isPlatformAdmin(),
+                // T622 — a global Default AI Agent that is RAG-ready lets SN
+                // sites with no agent of their own still offer ANN search; the
+                // admin launch-bar chip reads this to decide visibility.
+                defaultAgentResolver.isDefaultRagReady(),
                 loggingEngine);
     }
 }
