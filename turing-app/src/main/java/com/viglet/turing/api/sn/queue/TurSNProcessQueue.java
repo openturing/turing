@@ -213,13 +213,13 @@ public class TurSNProcessQueue {
         try {
             indexed = plugin.indexDocuments(turSNSite, locale, documents);
         } catch (RuntimeException e) {
-            log.warn("[T803] bulk index of {} docs on site '{}' failed ({}) — falling back to per-item",
+            log.warn("Bulk index of {} docs on site '{}' failed ({}) — falling back to per-item",
                     items.size(), siteName, e.getMessage());
             items.forEach(item -> processJobItemForSite(siteName, item, ensuredCores));
             return;
         }
         if (indexed < documents.size()) {
-            log.warn("[T803] bulk index reported {}/{} docs on site '{}' — falling back to per-item",
+            log.warn("Bulk index reported {}/{} docs on site '{}' — falling back to per-item",
                     indexed, documents.size(), siteName);
             items.forEach(item -> processJobItemForSite(siteName, item, ensuredCores));
             return;
@@ -232,7 +232,7 @@ public class TurSNProcessQueue {
             processQueueInfo(turSNSite, items.get(i));
             TurLoggingUtils.setSuccessStatus(items.get(i), TurIndexingStatus.FINISHED);
         }
-        log.info("[T803] Bulk-indexed {} documents into '{}' ({}) in a single pass",
+        log.info("Bulk-indexed {} documents into '{}' ({}) in a single pass",
                 documents.size(), siteName, locale);
     }
 

@@ -121,10 +121,10 @@ public class TurSNBulkImportService {
                 chunk.forEach(chunkItems::add);
                 turSNProcessQueue.processIndexingQueue(chunkItems);
                 processed += chunk.size();
-                log.info("[T807] direct bulk import chunk {}/{} processed ({} items)",
+                log.info("Direct bulk import chunk {}/{} processed ({} items)",
                         i + 1, total, chunk.size());
             } catch (RuntimeException e) {
-                log.warn("[T807] direct bulk import chunk {}/{} failed ({} items): {}",
+                log.warn("Direct bulk import chunk {}/{} failed ({} items): {}",
                         i + 1, total, chunk.size(), e.getMessage());
             }
         }

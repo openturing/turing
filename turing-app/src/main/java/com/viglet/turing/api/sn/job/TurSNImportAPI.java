@@ -98,7 +98,7 @@ public class TurSNImportAPI {
     public boolean turSNImportBulkBroker(@RequestBody TurSNJobItems turSNJobItems) {
         if (turSNBulkImportService.isEligible(turSNJobItems)) {
             int processed = turSNBulkImportService.importDirect(turSNJobItems);
-            log.info("[T807] direct bulk import wrote {} items, bypassing the indexing queue", processed);
+            log.info("Direct bulk import wrote {} items, bypassing the indexing queue", processed);
             return true;
         }
         send(turSNJobItems);
