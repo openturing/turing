@@ -3,6 +3,7 @@ package com.viglet.turing.api.sn.queue;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyMap;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
@@ -161,6 +162,102 @@ class TurSNProcessQueueTest {
         processQueue.processIndexingQueue(jobItems);
 
         verify(plugin, times(1)).commit(site, Locale.US);
+    }
+
+    private TurSNJobItem createItem(String id) {
+        TurSNJobItem item = new TurSNJobItem();
+        item.setTurSNJobAction(TurSNJobAction.CREATE);
+        item.setSiteNames(Collections.singletonList("site1"));
+        item.setLocale(Locale.US);
+        item.setSpecs(new ArrayList<>());
+        Map<String, Object> attrs = new HashMap<>();
+        attrs.put(TurSNFieldName.ID, id);
+        item.setAttributes(attrs);
+        return item;
+    }
+
+    @Test
+    void testReceiveIndexingQueue_BatchesConsecutiveCreates() {
+        // T803 / §LV.1 — two consecutive CREATEs for the same (site, locale) go
+        // through the bulk indexDocuments(...) API once + one commit, never the
+        // per-doc indexDocument(...).
+        TurSNJobItems jobItems = new TurSNJobItems();
+        jobItems.add(createItem("1"));
+        jobItems.add(createItem("2"));
+
+        TurSNSite site = new TurSNSite();
+        site.setName("site1"); // no SE instance → ensureCoreExists is a no-op
+
+        TurSearchEnginePlugin plugin = mock(TurSearchEnginePlugin.class);
+        when(turSNSiteRepository.findByNameIgnoreCase("site1")).thenReturn(Optional.of(site));
+        when(turSNSpotlightProcess.isSpotlightJob(any())).thenReturn(false);
+        when(turSNMergeProvidersProcess.mergeDocuments(eq(site), anyMap(), eq(Locale.US)))
+                .thenAnswer(invocation -> invocation.getArgument(1));
+        when(pluginFactory.getPluginForSite(site)).thenReturn(plugin);
+        when(plugin.indexDocuments(eq(site), eq(Locale.US), anyList())).thenReturn(2);
+
+        processQueue.processIndexingQueue(jobItems);
+
+        verify(plugin, times(1)).indexDocuments(eq(site), eq(Locale.US), anyList());
+        verify(plugin, times(1)).commit(site, Locale.US);
+        verify(plugin, never()).indexDocument(any(), any(), anyMap());
+        // T383 — vectors still side-written per doc (no-op mock here).
+        verify(turSNHybridRankingService, times(2)).indexDocument(eq(site), eq(Locale.US), anyMap());
+    }
+
+    @Test
+    void testReceiveIndexingQueue_BatchConvergesFieldUnionOnce() {
+        // T805 / §LV.3 — the union of the batch's specs is converged once per
+        // field, not once per document.
+        TurSNJobItem item1 = createItem("1");
+        TurSNJobItem item2 = createItem("2");
+        TurSNJobAttributeSpec spec = TurSNJobAttributeSpec.builder()
+                .name("kind").type(TurSEFieldType.STRING).build();
+        item1.setSpecs(List.of(spec));
+        item2.setSpecs(List.of(spec)); // same field on both docs
+        TurSNJobItems jobItems = new TurSNJobItems();
+        jobItems.add(item1);
+        jobItems.add(item2);
+
+        TurSNSite site = new TurSNSite();
+        site.setName("site1");
+
+        TurSearchEnginePlugin plugin = mock(TurSearchEnginePlugin.class);
+        when(turSNSiteRepository.findByNameIgnoreCase("site1")).thenReturn(Optional.of(site));
+        when(turSNSpotlightProcess.isSpotlightJob(any())).thenReturn(false);
+        when(turSNMergeProvidersProcess.mergeDocuments(eq(site), anyMap(), eq(Locale.US)))
+                .thenAnswer(invocation -> invocation.getArgument(1));
+        when(pluginFactory.getPluginForSite(site)).thenReturn(plugin);
+        when(plugin.indexDocuments(eq(site), eq(Locale.US), anyList())).thenReturn(2);
+
+        processQueue.processIndexingQueue(jobItems);
+
+        verify(turSNFieldProvisioner, times(1)).ensureField(site, spec);
+    }
+
+    @Test
+    void testReceiveIndexingQueue_BatchFallsBackToPerItemOnFailure() {
+        // T803 — a failing bulk index degrades gracefully to per-item indexing.
+        TurSNJobItems jobItems = new TurSNJobItems();
+        jobItems.add(createItem("1"));
+        jobItems.add(createItem("2"));
+
+        TurSNSite site = new TurSNSite();
+        site.setName("site1");
+
+        TurSearchEnginePlugin plugin = mock(TurSearchEnginePlugin.class);
+        when(turSNSiteRepository.findByNameIgnoreCase("site1")).thenReturn(Optional.of(site));
+        when(turSNSpotlightProcess.isSpotlightJob(any())).thenReturn(false);
+        when(turSNMergeProvidersProcess.mergeDocuments(eq(site), anyMap(), eq(Locale.US)))
+                .thenAnswer(invocation -> invocation.getArgument(1));
+        when(pluginFactory.getPluginForSite(site)).thenReturn(plugin);
+        when(plugin.indexDocuments(eq(site), eq(Locale.US), anyList()))
+                .thenThrow(new RuntimeException("boom"));
+        when(plugin.indexDocument(eq(site), eq(Locale.US), anyMap())).thenReturn(true);
+
+        processQueue.processIndexingQueue(jobItems);
+
+        verify(plugin, times(2)).indexDocument(eq(site), eq(Locale.US), anyMap());
     }
 
     @Test

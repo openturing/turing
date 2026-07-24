@@ -20,6 +20,7 @@ package com.viglet.turing.api.sn.queue;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -123,15 +124,141 @@ public class TurSNProcessQueue {
 
     @Transactional
     public void processIndexingQueue(TurSNJobItems turSNJobItems) {
+        if (turSNJobItems == null) {
+            log.debug("turSNJob empty or siteId empty");
+            return;
+        }
         receiveQueueLog(turSNJobItems);
         // T335 / §XIV.8.2 — track the cores already verified in this batch so a
         // bulk index pays at most one on-demand provisioning check per distinct
         // core, not one per document.
         Set<String> ensuredCores = new HashSet<>();
-        Optional.of(turSNJobItems).ifPresentOrElse(jobItems -> jobItems.forEach(
-                turSNJobItem -> turSNJobItem.getSiteNames().forEach(
-                        siteName -> processJobItemForSite(siteName, turSNJobItem, ensuredCores))),
-                () -> log.debug("turSNJob empty or siteId empty"));
+        // T803 / §LV.1 — group consecutive CREATE (non-spotlight) items by
+        // (site, locale) and route each group through the existing bulk
+        // indexDocuments(...) API. DELETE / COMMIT / spotlight items flush the
+        // open batches first — so ordering relative to the CREATEs is preserved —
+        // and are then processed per item exactly as before.
+        Map<TurSNBatchKey, List<TurSNJobItem>> batches = new LinkedHashMap<>();
+        for (TurSNJobItem turSNJobItem : turSNJobItems) {
+            if (isBatchableCreate(turSNJobItem)) {
+                turSNJobItem.getSiteNames()
+                        .forEach(siteName -> batches
+                                .computeIfAbsent(new TurSNBatchKey(siteName, turSNJobItem.getLocale()),
+                                        key -> new ArrayList<>())
+                                .add(turSNJobItem));
+            } else {
+                flushBatches(batches, ensuredCores);
+                turSNJobItem.getSiteNames().forEach(
+                        siteName -> processJobItemForSite(siteName, turSNJobItem, ensuredCores));
+            }
+        }
+        flushBatches(batches, ensuredCores);
+    }
+
+    /**
+     * A CREATE job item that is not an (unmanaged) spotlight is eligible for the
+     * T803 bulk path. Spotlight CREATE / DELETE / COMMIT keep the per-item path.
+     */
+    private boolean isBatchableCreate(TurSNJobItem turSNJobItem) {
+        return turSNJobItem.getTurSNJobAction() == TurSNJobAction.CREATE
+                && !turSNSpotlightProcess.isSpotlightJob(turSNJobItem);
+    }
+
+    /** Flushes every accumulated (site, locale) CREATE group, then clears the map. */
+    private void flushBatches(Map<TurSNBatchKey, List<TurSNJobItem>> batches, Set<String> ensuredCores) {
+        if (batches.isEmpty()) {
+            return;
+        }
+        batches.forEach((key, items) -> flushGroup(key.siteName(), key.locale(), items, ensuredCores));
+        batches.clear();
+    }
+
+    /**
+     * T803 / §LV.1 — indexes a group of consecutive CREATE items for one
+     * (site, locale) in a single bulk pass: one {@code indexDocuments(...)} call
+     * plus one trailing {@code commit(...)}, after converging the union of the
+     * group's field specs once (T805) and pre-building each document's attribute
+     * map through the per-document enrichment chain. A single-document group
+     * stays on the proven per-item path (it is already one round-trip). On any
+     * bulk failure — or a partial result — the whole group degrades gracefully to
+     * per-item indexing so ordering and robustness are preserved.
+     */
+    private void flushGroup(String siteName, Locale locale, List<TurSNJobItem> items,
+            Set<String> ensuredCores) {
+        if (items.isEmpty()) {
+            return;
+        }
+        if (items.size() == 1) {
+            processJobItemForSite(siteName, items.getFirst(), ensuredCores);
+            return;
+        }
+        var siteOpt = turSNSiteRepository.findByNameIgnoreCase(siteName);
+        if (siteOpt.isEmpty()) {
+            log.warn("receiveIndexingQueue: site '{}' not found in DB — skipping batch of {} docs",
+                    siteName, items.size());
+            return;
+        }
+        TurSNSite turSNSite = siteOpt.get();
+        ensureCoreExists(turSNSite, locale, ensuredCores);
+        // T805 / §LV.3 — converge the union of the batch's field specs once, not
+        // once per document (the provisioner is idempotent, so this cuts the
+        // schema-check cost from O(docs × fields) to O(distinct fields)).
+        convergeFields(turSNSite, items);
+        List<Map<String, Object>> documents = new ArrayList<>(items.size());
+        for (TurSNJobItem item : items) {
+            documents.add(buildIndexAttributes(turSNSite, item));
+        }
+        TurSearchEnginePlugin plugin = pluginFactory.getPluginForSite(turSNSite);
+        int indexed;
+        try {
+            indexed = plugin.indexDocuments(turSNSite, locale, documents);
+        } catch (RuntimeException e) {
+            log.warn("[T803] bulk index of {} docs on site '{}' failed ({}) — falling back to per-item",
+                    items.size(), siteName, e.getMessage());
+            items.forEach(item -> processJobItemForSite(siteName, item, ensuredCores));
+            return;
+        }
+        if (indexed < documents.size()) {
+            log.warn("[T803] bulk index reported {}/{} docs on site '{}' — falling back to per-item",
+                    indexed, documents.size(), siteName);
+            items.forEach(item -> processJobItemForSite(siteName, item, ensuredCores));
+            return;
+        }
+        plugin.commit(turSNSite, locale);
+        for (int i = 0; i < items.size(); i++) {
+            // T383 — side-write the document embedding for HYBRID_RRF sites (no-op
+            // for vectorless / legacy sites, the case this block optimizes).
+            turSNHybridRankingService.indexDocument(turSNSite, locale, documents.get(i));
+            processQueueInfo(turSNSite, items.get(i));
+            TurLoggingUtils.setSuccessStatus(items.get(i), TurIndexingStatus.FINISHED);
+        }
+        log.info("[T803] Bulk-indexed {} documents into '{}' ({}) in a single pass",
+                documents.size(), siteName, locale);
+    }
+
+    /**
+     * T805 / §LV.3 — converges the union of every {@link TurSNJobAttributeSpec}
+     * carried by the batch (deduplicated by field name) exactly once per site,
+     * reusing the idempotent {@link TurSNFieldProvisioner}.
+     */
+    private void convergeFields(TurSNSite turSNSite, List<TurSNJobItem> items) {
+        Map<String, TurSNJobAttributeSpec> union = new LinkedHashMap<>();
+        for (TurSNJobItem item : items) {
+            List<TurSNJobAttributeSpec> specs = item.getSpecs();
+            if (specs == null) {
+                continue;
+            }
+            for (TurSNJobAttributeSpec spec : specs) {
+                if (spec != null && spec.getName() != null) {
+                    union.putIfAbsent(spec.getName(), spec);
+                }
+            }
+        }
+        union.values().forEach(spec -> turSNFieldProvisioner.ensureField(turSNSite, spec));
+    }
+
+    /** Composite key for the T803 per-(site, locale) CREATE batching. */
+    private record TurSNBatchKey(String siteName, Locale locale) {
     }
 
     private void processJobItemForSite(String siteName, TurSNJobItem turSNJobItem,
@@ -253,9 +380,28 @@ public class TurSNProcessQueue {
     }
 
     private boolean index(TurSNJobItem turSNJobItem, TurSNSite turSNSite) {
-        Map<String, Object> attributes = this.removeDuplicateTerms(turSNMergeProvidersProcess.mergeDocuments(turSNSite,
-                getConsolidateResults(turSNJobItem), turSNJobItem.getLocale()));
         createMissingFields(turSNSite, turSNJobItem.getSpecs());
+        Map<String, Object> attributes = buildIndexAttributes(turSNSite, turSNJobItem);
+        boolean indexed = pluginFactory.getPluginForSite(turSNSite)
+                .indexDocument(turSNSite, turSNJobItem.getLocale(), attributes);
+        if (indexed) {
+            // T383 — side-write the document embedding for HYBRID_RRF sites (no-op otherwise).
+            turSNHybridRankingService.indexDocument(turSNSite, turSNJobItem.getLocale(), attributes);
+        }
+        return indexed;
+    }
+
+    /**
+     * Builds the final indexable attribute map for one job item: consolidation +
+     * merge + duplicate-term removal, then the per-document enrichers. Shared by
+     * the single-document {@link #index} path and the T803 bulk path so a batched
+     * document is enriched identically to a single one. Field-schema convergence
+     * ({@code createMissingFields} / {@link #convergeFields}) is deliberately
+     * <em>not</em> done here — the bulk path hoists it out of the per-doc loop.
+     */
+    private Map<String, Object> buildIndexAttributes(TurSNSite turSNSite, TurSNJobItem turSNJobItem) {
+        Map<String, Object> attributes = this.removeDuplicateTerms(turSNMergeProvidersProcess
+                .mergeDocuments(turSNSite, getConsolidateResults(turSNJobItem), turSNJobItem.getLocale()));
         // T472 / §XXVI.9 — attach the index-time audience content-fit score (opt-in,
         // no-op otherwise). Provisions its own field; never throws.
         turSNContentFitIndexer.enrich(turSNSite, attributes);
@@ -265,13 +411,7 @@ public class TurSNProcessQueue {
         // T672 / §XL — expand the document with the hierarchical path of each
         // controlled-vocabulary term it mentions (opt-in; no-op otherwise). Never throws.
         turSNMicrothesaurusIndexer.enrich(turSNSite, turSNJobItem.getLocale(), attributes);
-        boolean indexed = pluginFactory.getPluginForSite(turSNSite)
-                .indexDocument(turSNSite, turSNJobItem.getLocale(), attributes);
-        if (indexed) {
-            // T383 — side-write the document embedding for HYBRID_RRF sites (no-op otherwise).
-            turSNHybridRankingService.indexDocument(turSNSite, turSNJobItem.getLocale(), attributes);
-        }
-        return indexed;
+        return attributes;
     }
 
     /**

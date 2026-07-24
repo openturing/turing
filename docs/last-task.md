@@ -1,9 +1,19 @@
-# Last task number — `T807` · next block letter — `BH`
+# Last task number — `T810` · next block letter — `BI`
 
 > **Single source of truth for the next free task number.** The next new task is
-> `T808`; after assigning it, bump the number above and the log line below.
+> `T811`; after assigning it, bump the number above and the log line below.
 >
-> **Next block letter — `BH`** (Block **BG** = Batch / bulk structured-feed
+> **Next block letter — `BI`** (Block **BH** = SN result & facet rendering
+> robustness for feed/crawl-indexed sites — the model-catalog vectorless dogfood
+> (T794) renders correct result counts but blank title/description + label-less
+> facets because the search response does a pure field-name lookup with no fallback
+> and T796 auto-provisioning never wires the site's `defaultXField` mapping or facet
+> labels to the feed's field names: default-field resolution fallback to the
+> canonical `TurSNFieldName` constants when a column is blank (T808); facet
+> group-label fallback to a humanized field name when locale label + `facetName` are
+> both null (T809); auto-provisioning wires default fields + facet labels from the
+> feed manifest so the dogfood renders zero-config (T810); §LVI, created 2026-07-24;
+> Block **BG** = Batch / bulk structured-feed
 > indexing — dogfooding the 800+-model catalog KB (T794) exposed a document-at-a-time
 > import path: batch the `indexing.queue` consumer through the already-existing-but-
 > unused `TurSearchEnginePlugin.indexDocuments(...)` + one commit per group (T803);
@@ -116,6 +126,9 @@ number" looked free but wasn't. Grepping three files (`ROADMAP.md`,
 
 ## Log (most recent first)
 
+- **T803 SHIPPED** (Block BG §LV.1 — batch the `indexing.queue` consumer through the existing `indexDocuments(...)` bulk API + one commit/group; single-doc groups stay on the per-item path; per-item fallback on failure) — 2026-07-24.
+- **T805 SHIPPED** (Block BG §LV.3 — hoist field-schema convergence to once-per-batch: converge the union of specs, O(docs×fields)→O(distinct-fields); folds into the T803 batch) — 2026-07-24.
+- **T808-T810 CREATED** (📋, Block BH §LVI — SN result & facet rendering robustness for feed/crawl-indexed sites, from the model-catalog vectorless dogfood (T794) rendering correct result counts but blank title/description + label-less facets: T808 default-field resolution fallback to the canonical `TurSNFieldName` constants in `TurSNQueryContextBuilder.defaultFields` when a site `defaultXField` column is blank (import/T796 paths that skip `TurSNTemplate.defaultSNUI`); T809 facet group-label fallback to a humanized field name in `TurSNFacetRenderer.searchFacetBean`/`facetLocalesFor` when locale label + `facetName` both null; T810 extend `TurStructuredFeedProvisioningOnStartup` (T796) so a feed source/`VigletFieldManifest` declares title/description/text/url/image + facet-label mappings applied to `TurSNSite.defaultXField` + `TurSNSiteFieldExt.facetName`/locale rows, dogfood renders zero-config; deployment mapping lives in viglet/cloud env) — 2026-07-24.
 - **T803-T807 CREATED** (📋/💭, Block BG §LV — batch/bulk structured-feed indexing, from dogfooding the 800+-model catalog KB (T794) whose import is document-at-a-time: T803 batch the `indexing.queue` consumer (`TurSNProcessQueue`) by grouping CREATE items per (site,locale) through the already-existing-but-unused `TurSearchEnginePlugin.indexDocuments(...)` + one commit/group, preserving enrichers + DELETE/COMMIT/spotlight + T335 dedup, per-item fallback; T804 true bulk `indexDocuments` override for the embedded Lucene plugin (Solr/ES already override; Lucene = zero-config dogfood engine T796) via one IndexWriter session + single commit; T805 hoist `createMissingFields`/`ensureField` schema convergence to once-per-batch (union of specs, O(docs×fields)→O(distinct-fields)); T806 chunk `TurStructuredFeedIngestService.ingestSource` into bounded bulk imports (`turing.genai.structured-feed.batch-size`) with per-chunk COMMIT + progress + fail-open, full-run de-index diff; 💭 T807 opt-in direct bulk-index fast path bypassing JMS for vectorless/RAG-disabled sites, gated default-off) — 2026-07-24.
 - **T802 SHIPPED** (Block BF §LIV — structured-query planner matches facet values case-insensitively + honours numeric sort intent: (a) Lucene executor matches STRING term/terms filters case-insensitively (double-quoted RegExp literal + RegExp.CASE_INSENSITIVE, field-type-aware; id + non-STRING stay exact TermQuery) so lowercase kind=embedding matches indexed EMBEDDING; (b) TurLlmNLFacetParser renders schema WITH field descriptions + HARD RULE mapping superlative/comparative phrasing to sort asc|desc (never a bogus term filter); TurDslLuceneExecutorTest +2 = 71 green. CLOSES Block BF) — 2026-07-24.
 - **T799 SHIPPED** (Block BF §LIV — rank by the named metric, not the biggest number: contextBlock labels each grounded value by its declared TurSNSiteFieldExt.description (flat key kept as anchor) via fieldDescriptions(schema) threaded into project/contextBlock for both filtered + stuff-all paths, + system-prompt rule to rank by the labelled metric and never treat a per-domain sub-score as the headline index; TurCatalogCopilotServiceTest +1 = 9 green) — 2026-07-24.
