@@ -164,6 +164,46 @@ class TurLuceneSearchEnginePluginTest {
         verify(turLucene).indexing(instance, site, attrs);
     }
 
+    // ---- indexDocuments (T804 bulk override) ---------------------------------
+
+    @Test
+    void shouldBulkIndexDocumentsInOnePass() {
+        // T804 / §LV.2 — the batch override delegates to TurLucene.indexingBatch
+        // (one writer session + one commit), not per-doc indexing().
+        TurLuceneInstance instance = mock(TurLuceneInstance.class);
+        TurSNSite site = new TurSNSite();
+        site.setName("site-lc");
+        List<Map<String, Object>> docs = List.of(Map.of("id", "1"), Map.of("id", "2"), Map.of("id", "3"));
+
+        when(turLuceneInstanceProcess.initLuceneInstance("site-lc", Locale.ENGLISH))
+                .thenReturn(Optional.of(instance));
+        when(turLucene.indexingBatch(instance, site, docs)).thenReturn(3);
+
+        int indexed = plugin.indexDocuments(site, Locale.ENGLISH, docs);
+
+        assertEquals(3, indexed);
+        verify(turLucene).indexingBatch(instance, site, docs);
+    }
+
+    @Test
+    void shouldReturnZeroForEmptyBulkIndex() {
+        TurSNSite site = new TurSNSite();
+        site.setName("site-lc");
+        assertEquals(0, plugin.indexDocuments(site, Locale.ENGLISH, List.of()));
+    }
+
+    @Test
+    void shouldReturnZeroWhenBulkInstanceUnavailable() {
+        TurSNSite site = new TurSNSite();
+        site.setName("site-lc");
+        when(turLuceneInstanceProcess.initLuceneInstance("site-lc", Locale.ENGLISH))
+                .thenReturn(Optional.empty());
+
+        int indexed = plugin.indexDocuments(site, Locale.ENGLISH, List.of(Map.of("id", "1")));
+
+        assertEquals(0, indexed);
+    }
+
     @Test
     void shouldReturnFalseWhenIndexDocumentInstanceUnavailable() {
         TurSNSite site = new TurSNSite();

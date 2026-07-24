@@ -121,6 +121,15 @@ public class TurLucene {
         turLuceneDocumentHandler.indexing(instance, turSNSite, attributes);
     }
 
+    /**
+     * T804 / §LV.2 — bulk indexing: one writer session + one commit across all
+     * documents. Delegates to {@link TurLuceneDocumentHandler#indexingBatch}.
+     */
+    public int indexingBatch(TurLuceneInstance instance, TurSNSite turSNSite,
+            List<Map<String, Object>> documents) {
+        return turLuceneDocumentHandler.indexingBatch(instance, turSNSite, documents);
+    }
+
     public void deIndexing(TurLuceneInstance instance, String id) {
         turLuceneDocumentHandler.deIndexing(instance, id);
     }

@@ -346,6 +346,28 @@ public class TurLuceneSearchEnginePlugin implements TurSearchEnginePlugin {
                 || message.contains("cannot change field");
     }
 
+    /**
+     * T804 / §LV.2 — real bulk override for the embedded Lucene engine: pushes the
+     * whole batch through one {@code IndexWriter} session with a single trailing
+     * {@code commit()} (see {@link com.viglet.turing.lucene.TurLuceneDocumentHandler#indexingBatch}),
+     * so a catalog-scale import pays one flush rather than one per document. Any
+     * failure throws so {@code TurSNProcessQueue} degrades to the per-document
+     * path, which carries the schema-conflict / stale-writer self-healing retries.
+     *
+     * @return the number of documents written to the index
+     * @since 2026.3.4
+     */
+    @Override
+    public int indexDocuments(TurSNSite turSNSite, Locale locale,
+            List<Map<String, Object>> documents) {
+        if (documents == null || documents.isEmpty()) {
+            return 0;
+        }
+        return turLuceneInstanceProcess.initLuceneInstance(turSNSite.getName(), locale)
+                .map(luceneInstance -> turLucene.indexingBatch(luceneInstance, turSNSite, documents))
+                .orElse(0);
+    }
+
     @Override
     public boolean deIndex(TurSNSite turSNSite, Locale locale, String id) {
         return turLuceneInstanceProcess.initLuceneInstance(turSNSite.getName(), locale)
