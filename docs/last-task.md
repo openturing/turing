@@ -1,9 +1,18 @@
-# Last task number — `T802` · next block letter — `BG`
+# Last task number — `T807` · next block letter — `BH`
 
 > **Single source of truth for the next free task number.** The next new task is
-> `T803`; after assigning it, bump the number above and the log line below.
+> `T808`; after assigning it, bump the number above and the log line below.
 >
-> **Next block letter — `BG`** (Block **BF** = Vectorless (Structured-Data) RAG —
+> **Next block letter — `BH`** (Block **BG** = Batch / bulk structured-feed
+> indexing — dogfooding the 800+-model catalog KB (T794) exposed a document-at-a-time
+> import path: batch the `indexing.queue` consumer through the already-existing-but-
+> unused `TurSearchEnginePlugin.indexDocuments(...)` + one commit per group (T803);
+> a true bulk `indexDocuments` override for the embedded Lucene plugin — the
+> zero-config dogfood engine (T804); hoist `createMissingFields` schema convergence
+> to once-per-batch (T805); chunk `TurStructuredFeedIngestService` into bounded
+> bulk imports with per-chunk commit + progress (T806); and an opt-in direct
+> bulk-index fast path bypassing JMS for vectorless sites (💭 T807); §LV, created
+> 2026-07-24; Block **BF** = Vectorless (Structured-Data) RAG —
 > name/surface the already-shipped T392 catalog-copilot retrieval path as an
 > explicit knowledge-base mode (T790), a scheduled JSON-feed pull ingester
 > `TurStructuredFeedIngestService` over the T739 `TurUrlFetcher` → `/api/sn/import`
@@ -107,6 +116,7 @@ number" looked free but wasn't. Grepping three files (`ROADMAP.md`,
 
 ## Log (most recent first)
 
+- **T803-T807 CREATED** (📋/💭, Block BG §LV — batch/bulk structured-feed indexing, from dogfooding the 800+-model catalog KB (T794) whose import is document-at-a-time: T803 batch the `indexing.queue` consumer (`TurSNProcessQueue`) by grouping CREATE items per (site,locale) through the already-existing-but-unused `TurSearchEnginePlugin.indexDocuments(...)` + one commit/group, preserving enrichers + DELETE/COMMIT/spotlight + T335 dedup, per-item fallback; T804 true bulk `indexDocuments` override for the embedded Lucene plugin (Solr/ES already override; Lucene = zero-config dogfood engine T796) via one IndexWriter session + single commit; T805 hoist `createMissingFields`/`ensureField` schema convergence to once-per-batch (union of specs, O(docs×fields)→O(distinct-fields)); T806 chunk `TurStructuredFeedIngestService.ingestSource` into bounded bulk imports (`turing.genai.structured-feed.batch-size`) with per-chunk COMMIT + progress + fail-open, full-run de-index diff; 💭 T807 opt-in direct bulk-index fast path bypassing JMS for vectorless/RAG-disabled sites, gated default-off) — 2026-07-24.
 - **T799 SHIPPED** (Block BF §LIV — rank by the named metric, not the biggest number: contextBlock labels each grounded value by its declared TurSNSiteFieldExt.description (flat key kept as anchor) via fieldDescriptions(schema) threaded into project/contextBlock for both filtered + stuff-all paths, + system-prompt rule to rank by the labelled metric and never treat a per-domain sub-score as the headline index; TurCatalogCopilotServiceTest +1 = 9 green) — 2026-07-24.
 - **T802 CREATED** (📋, Block BF §LIV — model-catalog copilot returns the empty "no matching results" fallback (HTTP 200, totalHits:0, no error) for most questions: the NL→structured-query planner lowercases facet values but SN facet matching is case-sensitive, so `kind=embedding`→0 hits while `kind=EMBEDDING`→28; vendor/capabilities work only because their data values are already lowercase, kind is uppercase. Also superlative price questions ("cheapest/lowest price/most affordable") don't map to a sort. Fix: snap enum filter values to the manifest's declared case via TurSNSiteFieldExt.enum (or case-insensitive STRING-facet match) + map superlative numeric phrasing to sort=<field> asc|desc (e.g. cheapest→pricing_inputPer1M asc). Sibling of T799, retrieval side; deps T793,T797) — 2026-07-24.
 - **T801 SHIPPED** (Block BF §LIV.11 — VECTORLESS_STRUCTURED truly suppresses embeddings on every path (was advisory): gate in TurGenAiContextFactory (covers batch reindex + per-doc addDocument), folded into TurDefaultAgentResolver.isRagReady (ANN API + /api/features chip) + reindexVectorStore early-return + TurSNHybridRankingService.isEnabled (public search stays lexical); decoupled from the default-agent fallback; fixes the model-catalog LazyInitializationException origin; frontend amber "embedding OFF" callout + ragEnabled/annEnabled fold the mode in; +7 tests, 53 green) — 2026-07-24.

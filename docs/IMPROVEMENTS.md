@@ -2726,3 +2726,75 @@ Extend the Block AZ gateway (§XLIX) so a `turing-copilot:<site>` model route (o
 OpenAI-style client get grounded, cited structured answers with zero Turing-SDK
 code. The cleanest "separate backend" integration for an external static site, and
 a natural extension of the T744 `turing-sn:<site>` / RAG-as-a-header routing.
+
+## LV. Batch / bulk structured-feed indexing (Block BG)
+
+**The problem, from dogfooding.** Wiring the public `openviglet/model-catalog` as a
+vectorless KB on Viglet Cloud (§LIV.5, T794) works, but indexing its 800+ models
+into the SN site is **slow** — and the slowness is structural, not the search
+engine's fault. The import path is document-at-a-time end to end:
+
+- `TurSNProcessQueue.processIndexingQueue` (the `indexing.queue` JMS consumer)
+  iterates each `TurSNJobItem` and calls
+  `TurSearchEnginePlugin.indexDocument(site, locale, attributes)` **once per doc**.
+- A **bulk API already exists** — `TurSearchEnginePlugin.indexDocuments(...)` (since
+  2026.2.7, Solr/ES override it to coalesce N docs into one update request) — but
+  **nothing in the import path calls it**; the consumer only ever uses the single-doc
+  method.
+- `createMissingFields` calls `turSNFieldProvisioner.ensureField(...)` for every
+  attribute spec of **every** job item, so schema convergence is re-checked O(docs ×
+  fields) times instead of once per distinct field.
+- The T791 `TurStructuredFeedIngestService` accumulates **all** records into one
+  `TurSNJobItems` and sends a single JMS message consumed in one long
+  `@Transactional` — a large message + a large transaction for catalog-scale feeds.
+
+For a **vectorless** site (T801: no embedding model, no vector store, pure lexical
+index) none of this per-doc overhead buys anything — there is no async embedding to
+offload, so the whole pipeline is a candidate for straightforward batching. This
+block turns catalog-scale indexing from "wait a while" into a single bulk pass.
+
+### LV.1 Batch the indexing-queue consumer (T803)
+The highest-leverage, lowest-risk change: in `processIndexingQueue`, group
+consecutive `CREATE` items by `(siteName, locale)`, pre-build each document's
+attribute map through the existing enrichment chain (`mergeDocuments`,
+content-fit/Gemini-media/microthesaurus enrichers, `removeDuplicateTerms`, the T381
+grounding drop), then push the whole group via `indexDocuments(...)` + one
+`commit(...)`. No public API changes, no new entity — it just *uses* the batch
+method that already exists. `DELETE`/`COMMIT`/spotlight items and the T335
+per-batch `ensureCoreExists` dedup are untouched; a mixed or partially-failing batch
+falls back to per-item indexing so ordering/robustness are preserved.
+
+### LV.2 True Lucene bulk override (T804)
+Solr and Elasticsearch already override `indexDocuments(...)`; the embedded Lucene
+plugin (`TurLuceneStoreProvider`/the Lucene SE plugin) inherits the default loop
+that indexes — and flushes — per document. Lucene is the **default zero-config
+engine** the T796 auto-provisioned vectorless KB runs on, so this is the engine that
+matters for the model-catalog dogfood. Give it a real batched write: one
+`IndexWriter` session with `addDocuments(...)` across the batch and a single
+`commit()` at the end, so 800 docs pay one flush. Fail-open to the per-doc path if a
+single element errors, so one malformed record can't sink the batch.
+
+### LV.3 Hoist schema convergence out of the per-doc loop (T805)
+Collect the **union** of the batch's `TurSNJobAttributeSpec`s (dedup by field name)
+and converge them once per site *before* the bulk index, instead of calling
+`ensureField` inside every item's `index()`. The provisioner is already idempotent
+(T382), so this is purely about not paying the check hundreds of times. Folds into
+the T803 batching as its schema-prep step.
+
+### LV.4 Chunk the feed ingester (T806)
+`TurStructuredFeedIngestService.ingestSource` should split its mapped records into
+bounded chunks (`turing.genai.structured-feed.batch-size`, default ~200) and send
+each chunk as its own bulk import followed by a terminal `COMMIT`, with per-chunk
+progress logging and per-chunk fail-open. This keeps the JMS message size and the
+consumer transaction bounded for an 800+-row feed, and gives visible progress
+instead of one silent long pass. The de-index diff (`lastSeenIds`) is still computed
+over the full run so vanished-id reconciliation is unchanged.
+
+### LV.5 Direct bulk-index fast path, bypassing JMS (💭 T807)
+For a strictly **vectorless / RAG-disabled** site the JMS hop is pure overhead (its
+reason for existing is to offload async embedding, which vectorless sites don't do).
+An opt-in bulk endpoint (`POST /api/sn/import/bulk`, or a flag) could write straight
+to the SE plugin via `indexDocuments(...)` in bounded batches with a single trailing
+commit, skipping the per-message queue and per-item transaction for very large
+reindexes. Gated and default-off so the ordered queue stays the norm; only worth
+building if T803–T806 leave a measurable gap.
