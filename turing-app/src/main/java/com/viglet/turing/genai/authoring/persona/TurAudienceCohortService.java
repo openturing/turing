@@ -12,6 +12,7 @@ package com.viglet.turing.genai.authoring.persona;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import java.util.Objects;
 
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
@@ -117,7 +118,7 @@ public class TurAudienceCohortService {
         SummaryResult result = llmSummaryService.generate(
                 "audience-cohort:" + hash, data, SYSTEM_PROMPT, regenerate);
         if (!result.success() || StringUtils.isBlank(result.content())) {
-            return CohortResult.failed(StringUtils.defaultString(result.error(),
+            return CohortResult.failed(Objects.toString(result.error(),
                     "Could not synthesize the cohort (no default LLM?)."));
         }
         List<CohortEntry> entries = parse(result.content());

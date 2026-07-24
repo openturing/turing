@@ -110,7 +110,7 @@ public class TurSkillUiService {
                 }
                 JsonNode schemaNode = node.get("schema");
                 String schema = schemaNode == null || schemaNode.isNull() ? null
-                        : (schemaNode.isTextual() ? schemaNode.asString() : schemaNode.toString());
+                        : (schemaNode.isString() ? schemaNode.asString() : schemaNode.toString());
                 out.add(new TurSkillUiComponent(skill.getId(), skill.getName(), name.trim(),
                         toolName(skill.getName(), name), text(node, "description"), schema));
             }

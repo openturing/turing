@@ -135,7 +135,7 @@ public final class TurOpenAiBatchJsonl {
     }
 
     private static String errorMessage(JsonNode error) {
-        if (error.isTextual()) {
+        if (error.isString()) {
             return error.asString();
         }
         String message = error.path("message").asString(null);

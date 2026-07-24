@@ -10,6 +10,7 @@
 package com.viglet.turing.genai.feed;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.InstanceOfAssertFactories.list;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
@@ -17,7 +18,6 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import java.util.List;
 import java.util.Optional;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -121,7 +121,7 @@ class TurStructuredFeedIngestServiceTest {
         assertThat(((Number) attrs.get("ctx")).intValue()).isEqualTo(128000);
         assertThat(attrs.get("tools")).isEqualTo(Boolean.TRUE);
         assertThat(attrs).containsKey("tags");
-        assertThat((List<Object>) attrs.get("tags")).containsExactly("a", "b"); // blank dropped
+        assertThat(attrs.get("tags")).asInstanceOf(list(Object.class)).containsExactly("a", "b"); // blank dropped
         assertThat(attrs).doesNotContainKey("blank");   // grounding contract
         assertThat(attrs).doesNotContainKey("nested");  // objects skipped (flatten off)
     }
@@ -137,7 +137,7 @@ class TurStructuredFeedIngestServiceTest {
         // Nested objects become parent_child flat fields (queryable/citable).
         assertThat(attrs.get("pricing_inputPer1M")).isEqualTo(5.0);
         assertThat(attrs.get("pricing_currency")).isEqualTo("USD");
-        assertThat((List<Object>) attrs.get("modalities_input")).containsExactly("image", "text");
+        assertThat(attrs.get("modalities_input")).asInstanceOf(list(Object.class)).containsExactly("image", "text");
         assertThat(((Number) attrs.get("contextWindow")).intValue()).isEqualTo(128000);
         // The raw nested object key is never kept.
         assertThat(attrs).doesNotContainKey("pricing");

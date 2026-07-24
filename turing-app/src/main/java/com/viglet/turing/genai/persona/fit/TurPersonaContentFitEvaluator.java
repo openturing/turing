@@ -11,6 +11,7 @@ package com.viglet.turing.genai.persona.fit;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
@@ -144,7 +145,7 @@ public class TurPersonaContentFitEvaluator {
             }
             if (haystack.contains(normalize(m.span()))) {
                 grounded.add(new TurContentFitMisfit(m.span().strip(),
-                        StringUtils.defaultString(m.reason(), "tone"), m.suggestion()));
+                        Objects.toString(m.reason(), "tone"), m.suggestion()));
             } else {
                 log.debug("[ContentFit] dropping ungrounded misfit span: {}", m.span());
             }

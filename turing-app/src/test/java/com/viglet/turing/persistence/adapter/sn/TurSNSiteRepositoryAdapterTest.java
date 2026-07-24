@@ -106,7 +106,7 @@ class TurSNSiteRepositoryAdapterTest {
         TurSNSiteGenAi genAi = new TurSNSiteGenAi();
         genAi.setTurAIAgent(agent);
         entity.setTurSNSiteGenAi(genAi);
-        when(turSNSiteRepository.findByName("site")).thenReturn(Optional.of(entity));
+        when(turSNSiteRepository.findByNameWithGenAi("site")).thenReturn(Optional.of(entity));
 
         assertThat(adapter.hasRagEnabledForSiteName("site")).isTrue();
     }
@@ -120,7 +120,7 @@ class TurSNSiteRepositoryAdapterTest {
         TurSNSiteGenAi genAi = new TurSNSiteGenAi();
         genAi.setTurAIAgent(agent);
         entity.setTurSNSiteGenAi(genAi);
-        when(turSNSiteRepository.findByName("site")).thenReturn(Optional.of(entity));
+        when(turSNSiteRepository.findByNameWithGenAi("site")).thenReturn(Optional.of(entity));
 
         assertThat(adapter.hasRagEnabledForSiteName("site")).isFalse();
     }
@@ -134,7 +134,7 @@ class TurSNSiteRepositoryAdapterTest {
         TurSNSiteGenAi genAi = new TurSNSiteGenAi();
         genAi.setTurAIAgent(agent);
         entity.setTurSNSiteGenAi(genAi);
-        when(turSNSiteRepository.findByName("site")).thenReturn(Optional.of(entity));
+        when(turSNSiteRepository.findByNameWithGenAi("site")).thenReturn(Optional.of(entity));
 
         assertThat(adapter.hasRagEnabledForSiteName("site")).isFalse();
     }
@@ -145,7 +145,7 @@ class TurSNSiteRepositoryAdapterTest {
         TurSNSiteGenAi genAi = new TurSNSiteGenAi();
         genAi.setTurAIAgent(null);
         entity.setTurSNSiteGenAi(genAi);
-        when(turSNSiteRepository.findByName("site")).thenReturn(Optional.of(entity));
+        when(turSNSiteRepository.findByNameWithGenAi("site")).thenReturn(Optional.of(entity));
 
         assertThat(adapter.hasRagEnabledForSiteName("site")).isFalse();
     }
@@ -154,14 +154,14 @@ class TurSNSiteRepositoryAdapterTest {
     void hasRagEnabledIsFalseWhenGenAiNull() {
         TurSNSite entity = buildSite();
         entity.setTurSNSiteGenAi(null);
-        when(turSNSiteRepository.findByName("site")).thenReturn(Optional.of(entity));
+        when(turSNSiteRepository.findByNameWithGenAi("site")).thenReturn(Optional.of(entity));
 
         assertThat(adapter.hasRagEnabledForSiteName("site")).isFalse();
     }
 
     @Test
     void hasRagEnabledIsFalseWhenSiteMissing() {
-        when(turSNSiteRepository.findByName("missing")).thenReturn(Optional.empty());
+        when(turSNSiteRepository.findByNameWithGenAi("missing")).thenReturn(Optional.empty());
 
         assertThat(adapter.hasRagEnabledForSiteName("missing")).isFalse();
     }

@@ -11,6 +11,7 @@ package com.viglet.turing.genai.research;
 
 import java.util.List;
 import java.util.Locale;
+import java.util.Objects;
 
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
@@ -104,7 +105,7 @@ public class TurResearchAssistantService {
         SummaryResult result = llmSummaryService.generate(
                 "research-assistant:" + hash, brief.trim(), SYSTEM_PROMPT, regenerate);
         if (!result.success() || StringUtils.isBlank(result.content())) {
-            return ProposalResult.failed(StringUtils.defaultString(result.error(),
+            return ProposalResult.failed(Objects.toString(result.error(),
                     "Could not draft a study (no default LLM?)."));
         }
         ProposalDto dto = parse(result.content());

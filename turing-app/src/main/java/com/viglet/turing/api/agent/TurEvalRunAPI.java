@@ -78,7 +78,7 @@ public class TurEvalRunAPI {
         TurAgentEvalReportDto report =
                 runnerService.runDataset(request.agentId(), dataset.getId(), graderStackId);
         if (report.error() != null) {
-            throw new ResponseStatusException(HttpStatus.UNPROCESSABLE_ENTITY, report.error());
+            throw new ResponseStatusException(HttpStatus.UNPROCESSABLE_CONTENT, report.error());
         }
 
         boolean gatePassed = report.passed()

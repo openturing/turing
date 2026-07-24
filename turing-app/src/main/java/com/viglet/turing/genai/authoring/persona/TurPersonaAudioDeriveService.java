@@ -10,6 +10,7 @@
 package com.viglet.turing.genai.authoring.persona;
 
 import java.util.Locale;
+import java.util.Objects;
 
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
@@ -184,7 +185,7 @@ public class TurPersonaAudioDeriveService {
         TurTranscriptionResult transcription =
                 transcriptionService.transcribe(audio, mimeType, languageHint);
         if (!transcription.success() || StringUtils.isBlank(transcription.text())) {
-            return new DraftResult(false, StringUtils.defaultString(transcription.error(),
+            return new DraftResult(false, Objects.toString(transcription.error(),
                     "Could not transcribe the audio."), null, null);
         }
         return draftFromTranscript(transcription.text());
@@ -208,7 +209,7 @@ public class TurPersonaAudioDeriveService {
         SummaryResult classify = llmSummaryService.generate(
                 "persona-from-audio:classify:" + hash, clipped, CLASSIFY_PROMPT, false);
         if (!classify.success() || StringUtils.isBlank(classify.content())) {
-            return new DraftResult(false, StringUtils.defaultString(classify.error(),
+            return new DraftResult(false, Objects.toString(classify.error(),
                     "Could not analyse the transcript."), transcript, null);
         }
         log.info("[PersonaFromAudio] transcript {} chars, classify JSON: {}",

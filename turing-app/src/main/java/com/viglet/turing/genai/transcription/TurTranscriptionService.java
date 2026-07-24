@@ -14,6 +14,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -188,7 +189,7 @@ public class TurTranscriptionService {
             TurTranscriptionResult r = results.get(i);
             if (r == null || !r.success() || StringUtils.isBlank(r.text())) {
                 return TurTranscriptionResult.fail("Chunk " + (i + 1) + "/" + results.size()
-                        + " failed: " + (r == null ? "no result" : StringUtils.defaultString(r.error(),
+                        + " failed: " + (r == null ? "no result" : Objects.toString(r.error(),
                                 "empty transcript")));
             }
         }
