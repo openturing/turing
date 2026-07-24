@@ -117,6 +117,31 @@ class TurSNHybridRankingServiceTest {
     }
 
     @Test
+    void vectorlessStructuredSiteIsNeverEnabledEvenWithHybridMode() {
+        // T790 — even with HYBRID_RRF ranking and the platform defaults present, a
+        // VECTORLESS_STRUCTURED site has no vectors: hybrid ranking must stay off so
+        // the catalog runs the pure lexical path (and never touches the embedder).
+        TurSNSite site = siteWithMode(TurSNRankingMode.HYBRID_RRF);
+        site.getTurSNSiteGenAi().setKnowledgeBaseMode(
+                com.viglet.turing.persistence.model.sn.genai.TurSNKnowledgeBaseMode.VECTORLESS_STRUCTURED);
+
+        assertThat(service.isEnabled(site)).isFalse();
+    }
+
+    @Test
+    void fuseOnVectorlessStructuredSiteReturnsPageUntouchedAndNeverBuildsInfra() {
+        TurSNSite site = siteWithMode(TurSNRankingMode.HYBRID_RRF);
+        site.getTurSNSiteGenAi().setKnowledgeBaseMode(
+                com.viglet.turing.persistence.model.sn.genai.TurSNKnowledgeBaseMode.VECTORLESS_STRUCTURED);
+
+        List<TurSEResult> page = List.of(result("A"), result("B"));
+        List<TurSEResult> fused = service.fuse(site, Locale.ENGLISH, "query", page);
+
+        assertThat(fused).isSameAs(page);
+        verify(ragContextBuilder, never()).build(anyString(), anyString(), anyString());
+    }
+
+    @Test
     void hybridModeWithoutDefaultEmbeddingModelIsNotEnabled() {
         when(globalSettingsService.getDefaultEmbeddingModelId()).thenReturn("");
         assertThat(service.isEnabled(siteWithMode(TurSNRankingMode.HYBRID_RRF))).isFalse();

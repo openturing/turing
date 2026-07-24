@@ -116,6 +116,18 @@ public class TurSNHybridRankingService {
         if (turSNSite == null) {
             return false;
         }
+        // T790 — a site explicitly in VECTORLESS_STRUCTURED has no vector collection
+        // by design, so the public hybrid ranking (BM25 ⊕ vector via RRF) can never
+        // apply. Short-circuit to the pure lexical path here: this is the single gate
+        // every embedding-dependent entry point (fuse / indexDocument / deIndex /
+        // findScoredNeighbors) shares, so a vectorless catalog stays on the simplest
+        // possible search path — no embedding work, and one less place the vector
+        // machinery can fail on a site that opted out.
+        TurSNSiteGenAi genAi = turSNSite.getTurSNSiteGenAi();
+        if (genAi != null && genAi.getKnowledgeBaseMode() != null
+                && !genAi.getKnowledgeBaseMode().needsVectorSetup()) {
+            return false;
+        }
         TurSNRankingMode mode = modeOf(turSNSite);
         if (!mode.isHybrid()) {
             return false;
