@@ -101,8 +101,13 @@ public class TurSNSiteSearchSnapshotService {
         // Reaching this method means the cache lookup missed — Spring's @Cacheable
         // proxy short-circuits hits before invoking the method.
         pipelineObservation.recordSnapshotOutcome(TurMeterNames.OUTCOME_MISS);
+        // findByNameIgnoreCaseWithGenAi (not the plain findByNameIgnoreCase) so the
+        // to-one turSNSiteGenAi graph is initialized while the session is open. The
+        // snapshot caches the entity, so the T383 hybrid-ranking path that reads
+        // turSNSiteGenAi on a cache hit would otherwise hit a detached LAZY proxy
+        // (LazyInitializationException).
         return pipelineObservation.record(TurMeterNames.STAGE_SNAPSHOT_BUILD,
-                () -> turSNSiteRepository.findByNameIgnoreCase(siteName)
+                () -> turSNSiteRepository.findByNameIgnoreCaseWithGenAi(siteName)
                         .map(site -> build(site, locale)));
     }
 

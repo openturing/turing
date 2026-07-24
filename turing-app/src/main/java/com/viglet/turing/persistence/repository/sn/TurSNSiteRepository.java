@@ -80,6 +80,26 @@ public interface TurSNSiteRepository extends JpaRepository<TurSNSite, String> {
 	Optional<TurSNSite> findByNameWithGenAi(@Param("name") String name);
 
 	/**
+	 * Case-insensitive twin of {@link #findByNameWithGenAi(String)} used to build
+	 * the cached SN search read-model ({@code TurSNSiteSearchSnapshot}). The
+	 * snapshot holds the {@link TurSNSite} entity across the cache boundary, so any
+	 * association the search hot path dereferences must be initialized while the
+	 * session is open — otherwise a cache hit navigates a detached LAZY proxy and
+	 * throws {@code LazyInitializationException}. The T383 hybrid-ranking path reads
+	 * {@code turSNSiteGenAi.snRankingMode} / {@code embeddingModelId}, so the
+	 * {@code @OneToOne} GenAI (and its {@code turAIAgent}) are fetched up front.
+	 * Matches {@link #findByNameIgnoreCase(String)}'s case handling so the snapshot
+	 * cache key ({@code lower(siteName)}) and this lookup agree.
+	 */
+	@Query("""
+			SELECT s FROM TurSNSite s
+			LEFT JOIN FETCH s.turSNSiteGenAi genAi
+			LEFT JOIN FETCH genAi.turAIAgent
+			WHERE LOWER(s.name) = LOWER(:name)
+			""")
+	Optional<TurSNSite> findByNameIgnoreCaseWithGenAi(@Param("name") String name);
+
+	/**
 	 * Returns every site eagerly loaded with its locales, intended for the
 	 * listing endpoint. Uses {@code LEFT JOIN FETCH} to avoid the N+1 pattern
 	 * that occurs when {@code TurSNSite.turSNSiteLocales} is mapped after the
