@@ -2795,3 +2795,79 @@ labels, so it renders correctly on first boot without post-deploy admin steps. T
 concrete mapping lives in the deployment's manifest/env (viglet/cloud), never in
 Turing — Turing only gains the ability to honor it. Builds on LVI.1's fallback (a site
 that declares nothing still gets the canonical defaults).
+
+## LVII. Deterministic (LLM-independent) query planning for the copilot (Block BI)
+
+**The problem, from dogfooding the model-catalog copilot.** The vectorless copilot
+(`POST /api/sn/{site}/copilot`, §LIV) turns prose into a structured query via a
+**100%-LLM** NL→DSL planner (`TurLlmNLFacetParser`). Live evidence on the 800+-model
+catalog:
+
+```
+"chat models"                                → kind=CHAT      → 759 ✅
+"chat models sorted by intelligence index"   → (empty query)  → 0   ❌ lost the filter
+"which chat model scores highest on the …?"  → (empty query)  → 0   ❌
+"embedding models"                           → kind=EMBEDDING → 28  ✅
+"embedding models by price"                  → kind=EMBEDDING → 28  ✅ (no sort)
+"which embedding model has the lowest price?"→ (empty query)  → 0   ❌ lost the filter
+```
+
+Two coupled failures: (1) the planner never emits a `sort` for a numeric field, and
+(2) a superlative/interrogative phrasing makes the model emit an **empty query**,
+discarding even the valid facet — `totalHits:0`, blank `groundedQuerySummary`. T802(b)
+tried to fix this with **prompt text only** ("cheapest → sort asc…"); on the cheap
+default model that guidance is unreliable (consistent with the `gpt-4o-mini`
+structured-output fragility noted in `agents.md`).
+
+**This is not an indexing/search bug.** `TurDslLuceneExecutor.buildSort` →
+`sortFieldFor` already emits a correctly-typed `SortField` per declared
+`TurSEFieldType` (INT/LONG/FLOAT/DOUBLE/CURRENCY) with a relevance-order fallback, and
+numeric fields carry `NumericDocValues`. A `sort` clause, once emitted, executes
+correctly. The fragility is entirely in **query planning** — so the fix is to stop
+delegating the ranking dimension to the LLM and to keep the prompt generic.
+
+### LVII.1 Deterministic ranking-intent planner (T811)
+Add a pure `TurNLRankingPlanner` (no LLM, no DB, exhaustively unit-testable):
+
+- **Detect intent + direction** from the raw NL query with a small lexicon —
+  `most/highest/largest/biggest/best/top/greatest/maximum` → `desc`;
+  `cheapest/lowest/smallest/least/minimum/fastest/shortest` → `asc`; plus the explicit
+  `sorted by <x>` / `order by <x>` (default `desc` unless paired with an asc adjective).
+- **Resolve the target field** to a *numeric* declared field by scoring query tokens
+  against each field's `name` + `description` tokens, with a compact **generic**
+  adjective→noun synonym seed to bridge the adjective/noun gap (`cheap/expensive/price`
+  → a field whose name/description mentions price/pricing/cost; `intelligent/smart` →
+  "intelligence"; `fast/quick/latency/throughput` → performance/latency; `big/long` →
+  context window / tokens). No catalog-specific vocabulary — everything keys off the
+  declared schema's own words.
+
+Wire into `TurCatalogCopilotService.retrieve()`: when an intent resolves, **strip the
+ranking clause** from the text handed to `parseOrFallback` (the LLM then sees a clean
+faceting task — "chat models" — and keeps `kind=CHAT`), then **inject the deterministic
+`sort`** into the parsed request (never overriding a `sort` the LLM already produced)
+and **guarantee a top-k `size`** so a sort-only (`match_all`) query returns a bounded
+ranked page rather than an unbounded scan. Additive and fail-open: no intent → the path
+is byte-for-byte unchanged; a resolution miss → no sort, faceting as before. Covered by
+the fake-parser seam in `TurCatalogCopilotServiceTest`, so the whole
+strip→facet→inject→top-k contract is pinned without an LLM.
+
+### LVII.2 Genericize the copilot + NL→facet system prompts (T812)
+With ranking handled procedurally, remove the catalog-flavoured superlative examples
+that leaked model-catalog framing into `TurLlmNLFacetParser.systemPrompt` (the
+`cheapest/lowest price/most affordable/highest <metric>` sort rule) and
+`TurCatalogCopilotService.systemPrompt`. Keep only domain-neutral rules: only reference
+declared fields, omit what cannot be grounded, cite every claim as `[n]`, and — the one
+ranking rule that stays because it is about *reading the grounded context*, not
+planning — "rank by the labelled metric, never the biggest number" (the §LIV.T799
+sub-score trap). The prompt no longer carries the sort-mapping burden, so the copilot
+generalizes to any catalog schema.
+
+### LVII.3 Model-catalog NL→facet eval sample + local regression harness (T813)
+Add `model-catalog.nl-facet-eval.json` under `src/test/resources/nl-facet-eval/`: the
+catalog's declared schema (`kind`, `vendor`, `modality`, `benchmarks_intelligenceIndex`,
+`pricing_inputPer1M`, `contextWindow`, …) plus the live-failing cases with golden
+`sort`/`filter` expectations. `TurNLFacetEvalIT` already provisions a **real embedded
+Lucene index** from such a pack and runs the cases against a **real LLM** (gated by
+`OPENAI_API_KEY`), so `mvn verify -Pnl-facet-eval -pl turing-app` becomes a repeatable
+local simulation of the exact reported bug — with the always-on deterministic
+planner/scorer unit cases guarding CI where no LLM runs.

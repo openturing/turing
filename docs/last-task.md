@@ -1,9 +1,20 @@
-# Last task number — `T810` · next block letter — `BI`
+# Last task number — `T813` · next block letter — `BJ`
 
 > **Single source of truth for the next free task number.** The next new task is
-> `T811`; after assigning it, bump the number above and the log line below.
+> `T814`; after assigning it, bump the number above and the log line below.
 >
-> **Next block letter — `BI`** (Block **BH** = SN result & facet rendering
+> **Next block letter — `BJ`** (Block **BI** = Deterministic (LLM-independent)
+> query planning for the copilot — dogfooding the model-catalog copilot (T794)
+> exposed that NL→DSL planning is 100% LLM and T802(b)'s superlative→sort rule was
+> prompt-only, so a superlative/interrogative phrasing returns an empty query and
+> drops the valid facet (totalHits:0); the engine side is sound (`buildSort` already
+> sorts numeric fields). Fix procedurally: a pure `TurNLRankingPlanner` detects
+> superlative/comparative/`sorted by` intent + resolves the numeric field from the
+> declared schema, strips the ranking clause before the LLM faceting call, injects
+> the sort + a top-k size (T811); genericize the copilot + parser prompts now that
+> ranking is procedural (T812); add a `model-catalog.nl-facet-eval.json` sample so
+> the bug is reproducible locally via `TurNLFacetEvalIT` + always-on unit cases
+> (T813); §LVII, created 2026-07-24; Block **BH** = SN result & facet rendering
 > robustness for feed/crawl-indexed sites — the model-catalog vectorless dogfood
 > (T794) renders correct result counts but blank title/description + label-less
 > facets because the search response does a pure field-name lookup with no fallback
@@ -126,6 +137,7 @@ number" looked free but wasn't. Grepping three files (`ROADMAP.md`,
 
 ## Log (most recent first)
 
+- **T811-T813 CREATED** (📋, Block BI §LVII — deterministic (LLM-independent) query planning for the model-catalog copilot: dogfooding T794 showed NL→DSL planning is 100% LLM and T802(b)'s superlative→sort was prompt-only, so a superlative/interrogative phrasing ("highest intelligence index", "lowest price embedding") returns an empty query and drops the valid `kind` facet → totalHits:0; engine side sound (`TurDslLuceneExecutor.buildSort` sorts numeric fields). T811 pure `TurNLRankingPlanner` detects superlative/comparative/`sorted by` intent + direction, resolves the numeric field from the declared schema (name+description tokens + generic adjective→noun seed), wired into `TurCatalogCopilotService.retrieve()` to strip the ranking clause before the LLM faceting call + inject sort + guarantee top-k size, additive/fail-open, unit-tested via fake parser; T812 genericize the copilot + `TurLlmNLFacetParser` system prompts (drop catalog-flavoured superlative examples, keep neutral grounding/citation + rank-by-labelled-metric); T813 `model-catalog.nl-facet-eval.json` sample so the bug reproduces locally via `TurNLFacetEvalIT` (real Lucene + real LLM, `-Pnl-facet-eval`) + always-on unit cases) — 2026-07-24.
 - **T807 SHIPPED** (Block BG §LV.5 — opt-in direct bulk-index fast path bypassing JMS for vectorless/RAG-disabled sites: new `TurSNBulkImportService` + `POST /api/sn/import/bulk`, gated `turing.sn.import.bulk-direct.enabled` default-off, vectorless-only else falls back to the queue; calls `processIndexingQueue` in bounded chunks. CLOSES Block BG) — 2026-07-24.
 - **T806 SHIPPED** (Block BG §LV.4 — chunk `TurStructuredFeedIngestService.ingestSource` into bounded bulk imports via `turing.genai.structured-feed.batch-size` (default 200), each chunk its own import + terminal COMMIT + per-chunk fail-open; full-run de-index diff) — 2026-07-24.
 - **T804 SHIPPED** (Block BG §LV.2 — true bulk `indexDocuments` override for the embedded Lucene plugin: one IndexWriter session + single commit across the batch via shared `buildDocument`/`indexingBatch`; upsert-by-id preserved; throws → T803 per-doc fallback) — 2026-07-24.
