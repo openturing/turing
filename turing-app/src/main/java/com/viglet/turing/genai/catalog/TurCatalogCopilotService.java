@@ -329,6 +329,13 @@ public class TurCatalogCopilotService {
                 HARD RULES:
                 - Use ONLY the information in CATALOG RESULTS. Never invent items, \
                   prices, attributes, or links that are not present below.
+                - When the user asks for the "best", "top", "highest/lowest", \
+                  "most/least X" or "cheapest" by some quality, rank by the field \
+                  whose LABEL names that quality as the overall metric. Never treat \
+                  a per-domain or sub-score value as the overall metric just because \
+                  its number is larger — a single-domain sub-score (e.g. one \
+                  benchmark) is NOT the headline index. Each value below is labelled \
+                  by what it means; rank by the labelled metric, not the biggest number.
                 - Cite every claim with the bracketed number of the result it comes \
                   from, e.g. [1], [2]. Cite multiple when relevant ([1][3]). The \
                   bracketed number is the ONLY citation form: never write source \
@@ -380,7 +387,7 @@ public class TurCatalogCopilotService {
 
         List<TurDslSearchResponse.Hit> ordered = applyHybridRanking(site, searchLocale, query, hits);
 
-        Projection projection = project(ordered, MAX_RESULTS);
+        Projection projection = project(ordered, MAX_RESULTS, fieldDescriptions(schema));
         return new Retrieval(projection.citations(), projection.contextBlocks(),
                 totalHits, summarize(request), true);
     }
@@ -391,7 +398,8 @@ public class TurCatalogCopilotService {
      * {@link #retrieve} path ({@code max = MAX_RESULTS}) and the T793 stuff-all
      * path ({@code max =} all hits).
      */
-    private Projection project(List<TurDslSearchResponse.Hit> ordered, int max) {
+    private Projection project(List<TurDslSearchResponse.Hit> ordered, int max,
+            Map<String, String> fieldDescriptions) {
         List<TurCatalogCitation> citations = new ArrayList<>();
         List<String> contextBlocks = new ArrayList<>();
         int limit = Math.min(max, ordered.size());
@@ -404,9 +412,33 @@ public class TurCatalogCopilotService {
             citations.add(new TurCatalogCitation(rank, hit.id(), title,
                     StringUtils.hasText(url) ? url : null, hit.score(),
                     hit.explanation()));
-            contextBlocks.add(contextBlock(rank, title, url, source));
+            contextBlocks.add(contextBlock(rank, title, url, source, fieldDescriptions));
         }
         return new Projection(citations, contextBlocks);
+    }
+
+    /**
+     * T799 / §LIV — the flat-key → declared-description map fed to
+     * {@link #contextBlock}. The stuff-all context printed each attribute as its
+     * cryptic flattened key ({@code benchmarks_scores_math_value: 93.4} sitting
+     * next to {@code benchmarks_intelligenceIndex: 23.8}), so the LLM grabbed the
+     * biggest number and mistook a per-domain sub-score for the overall metric.
+     * Labelling each value by the field's declared {@code description} (sharpened
+     * upstream so the headline index reads as THE metric and each domain score as
+     * "sub-score only") lets the model rank by what a field <em>means</em>, not by
+     * a cryptic name. Only fields with a non-blank description are mapped; the rest
+     * fall back to the raw key.
+     */
+    private static Map<String, String> fieldDescriptions(List<TurNLFacetField> schema) {
+        Map<String, String> descriptions = new LinkedHashMap<>();
+        if (schema != null) {
+            for (TurNLFacetField field : schema) {
+                if (field != null && field.name() != null && StringUtils.hasText(field.description())) {
+                    descriptions.put(field.name(), field.description().trim());
+                }
+            }
+        }
+        return descriptions;
     }
 
     /**
@@ -444,7 +476,9 @@ public class TurCatalogCopilotService {
         if (totalHits > hits.size()) {
             return Optional.empty();
         }
-        Projection projection = project(hits, hits.size());
+        // T799 / §LIV — resolve the declared schema so stuff-all context blocks
+        // label each value by its field description, not its cryptic flat key.
+        Projection projection = project(hits, hits.size(), fieldDescriptions(resolveSchema(siteOpt.get())));
         int estimatedTokens = estimateTokens(projection.contextBlocks());
         if (estimatedTokens > copilotProperty.getStuffAllTokenBudget()) {
             log.debug("[CatalogCopilot] stuff-all for '{}' over budget (~{} > {} tokens) — filtered fallback",
@@ -581,7 +615,8 @@ public class TurCatalogCopilotService {
         return new TurNLFacetField(ext.getName(), type, ext.getFacet() == 1, ext.getDescription());
     }
 
-    private String contextBlock(int rank, String title, String url, Map<String, Object> source) {
+    private String contextBlock(int rank, String title, String url, Map<String, Object> source,
+            Map<String, String> fieldDescriptions) {
         StringBuilder sb = new StringBuilder();
         sb.append("[").append(rank).append("] ").append(title);
         if (StringUtils.hasText(url)) {
@@ -593,6 +628,10 @@ public class TurCatalogCopilotService {
             sb.append("\n").append(truncate(snippet));
         }
         // Append remaining short, non-text fields (facets/attributes) for grounding.
+        // T799 / §LIV — label each value by its declared field description when one
+        // exists (so the LLM ranks by what a field MEANS, e.g. "overall intelligence
+        // index" vs "math sub-score"), keeping the raw key as a parenthetical anchor;
+        // fall back to the bare key for fields without a description.
         for (Map.Entry<String, Object> entry : source.entrySet()) {
             String key = entry.getKey();
             if (isReservedField(key) || entry.getValue() == null) {
@@ -600,7 +639,9 @@ public class TurCatalogCopilotService {
             }
             String value = str(entry.getValue());
             if (StringUtils.hasText(value) && value.length() <= 80) {
-                sb.append("\n").append(key).append(": ").append(value);
+                String description = fieldDescriptions.get(key);
+                String label = StringUtils.hasText(description) ? description + " (" + key + ")" : key;
+                sb.append("\n").append(label).append(": ").append(value);
             }
         }
         return sb.toString();

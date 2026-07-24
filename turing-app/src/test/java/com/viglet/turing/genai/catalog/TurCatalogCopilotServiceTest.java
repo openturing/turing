@@ -13,6 +13,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.util.LinkedHashMap;
@@ -22,10 +23,13 @@ import java.util.Optional;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.ai.chat.messages.AssistantMessage;
+import org.springframework.ai.chat.messages.Message;
+import org.springframework.ai.chat.messages.SystemMessage;
 import org.springframework.ai.chat.model.ChatModel;
 import org.springframework.ai.chat.model.ChatResponse;
 import org.springframework.ai.chat.model.Generation;
@@ -228,6 +232,47 @@ class TurCatalogCopilotServiceTest {
     }
 
     @Test
+    void contextLabelsValuesByFieldDescriptionAndPromptsRankByNamedMetric() {
+        // T799 / §LIV — the grounding context must label each attribute by its
+        // declared field description (so the LLM ranks by the OVERALL metric, not
+        // the biggest number), and the system prompt must carry the named-metric
+        // ranking rule.
+        TurSNSite site = new TurSNSite();
+        site.setName("catalog");
+        ChatModel chatModel = modelReturning("The most intelligent is [1].");
+        when(chatModelResolver.resolve()).thenReturn(Optional.of(chatModel));
+        when(turSNSiteRepository.findByNameIgnoreCase("catalog")).thenReturn(Optional.of(site));
+        when(turSNSiteFieldExtRepository.findByTurSNSiteAndEnabled(site, 1)).thenReturn(List.of(
+                fieldWithDescription("benchmarks_intelligenceIndex", TurSEFieldType.FLOAT,
+                        "Overall intelligence index — the single headline metric"),
+                fieldWithDescription("benchmarks_scores_math_value", TurSEFieldType.FLOAT,
+                        "Math domain sub-score only, NOT the overall index")));
+        when(parser.isAvailable()).thenReturn(true);
+        when(parser.parse(any())).thenReturn(groundedQuery());
+        when(hybridRankingService.isEnabled(site)).thenReturn(false);
+        when(dslSearchService.search(eq("catalog"), eq("en"), any(TurDslQueryRequest.class)))
+                .thenReturn(Optional.of(scoredResponse()));
+
+        service.answer("catalog", "en",
+                List.of(new ChatTurn("user", "which model is the most intelligent?")));
+
+        ArgumentCaptor<Prompt> promptCaptor = ArgumentCaptor.forClass(Prompt.class);
+        verify(chatModel).call(promptCaptor.capture());
+        String systemText = promptCaptor.getValue().getInstructions().stream()
+                .filter(SystemMessage.class::isInstance)
+                .map(Message::getText)
+                .findFirst().orElse("");
+
+        // (a) values labelled by their declared description (with the flat key anchor),
+        // and (b) the system prompt carries the rank-by-named-metric rule.
+        assertThat(systemText)
+                .contains("Overall intelligence index — the single headline metric (benchmarks_intelligenceIndex): 23.8")
+                .contains("Math domain sub-score only, NOT the overall index (benchmarks_scores_math_value): 93.4")
+                .contains("headline index")
+                .contains("not the biggest number");
+    }
+
+    @Test
     void returnsErrorWhenNoDefaultLlm() {
         when(chatModelResolver.resolve()).thenReturn(Optional.empty());
 
@@ -272,6 +317,26 @@ class TurCatalogCopilotServiceTest {
         ext.setType(type);
         ext.setFacet(facet ? 1 : 0);
         return ext;
+    }
+
+    private static TurSNSiteFieldExt fieldWithDescription(String name, TurSEFieldType type,
+            String description) {
+        TurSNSiteFieldExt ext = field(name, type, true);
+        ext.setDescription(description);
+        return ext;
+    }
+
+    /** One hit whose math sub-score (93.4) dwarfs its overall index (23.8) — the T799 trap. */
+    private static TurDslSearchResponse scoredResponse() {
+        Map<String, Object> doc = new LinkedHashMap<>();
+        doc.put("title", "GPT-OSS-120B");
+        doc.put("url", "https://example.ai/gpt-oss-120b");
+        doc.put("benchmarks_intelligenceIndex", "23.8");
+        doc.put("benchmarks_scores_math_value", "93.4");
+        TurDslSearchResponse.Hit h1 = new TurDslSearchResponse.Hit("m1", 1.0, doc, null);
+        TurDslSearchResponse.Hits hits = new TurDslSearchResponse.Hits(
+                new TurDslSearchResponse.Total(1, "eq"), 1.0, List.of(h1));
+        return new TurDslSearchResponse(7L, false, hits, null);
     }
 
     private static TurDslQueryRequest groundedQuery() {
