@@ -11,13 +11,27 @@ package com.viglet.turing.sn.dsl;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.lucene.analysis.standard.StandardAnalyzer;
+import org.apache.lucene.document.Document;
+import org.apache.lucene.document.Field;
+import org.apache.lucene.document.StringField;
+import org.apache.lucene.index.DirectoryReader;
+import org.apache.lucene.index.IndexWriter;
+import org.apache.lucene.index.IndexWriterConfig;
+import org.apache.lucene.search.IndexSearcher;
+import org.apache.lucene.search.Query;
+import org.apache.lucene.search.RegexpQuery;
 import org.apache.lucene.search.Sort;
 import org.apache.lucene.search.SortField;
 import org.apache.lucene.search.SortedSetSortField;
+import org.apache.lucene.search.TermQuery;
 import org.apache.lucene.search.TermRangeQuery;
+import org.apache.lucene.store.ByteBuffersDirectory;
+import org.apache.lucene.store.Directory;
 import org.junit.jupiter.api.Test;
 
 import com.viglet.turing.commons.se.field.TurSEFieldType;
@@ -112,6 +126,57 @@ class TurDslLuceneExecutorTest {
         SortField desc = sortField(TurSEFieldType.CURRENCY, "tuition", "desc");
         assertThat(asc.getReverse()).isFalse();
         assertThat(desc.getReverse()).isTrue();
+    }
+
+    // ─────────────── T802: case-insensitive STRING facet term matching ───────────────
+
+    @Test
+    void stringTermIsCaseInsensitiveButIdStaysExact() {
+        // STRING facet fields translate to a case-insensitive RegexpQuery; id keeps
+        // its exact TermQuery so unique-id lookups are unaffected.
+        assertThat(executor.translateQuery(new TurDslQuery.Term("kind", "embedding"),
+                Map.of("kind", TurSEFieldType.STRING))).isInstanceOf(RegexpQuery.class);
+        assertThat(executor.translateQuery(new TurDslQuery.Term("id", "abc"),
+                Map.of("id", TurSEFieldType.STRING))).isInstanceOf(TermQuery.class);
+        // No declared type → conservative exact TermQuery (interface entry point).
+        assertThat(executor.translateQuery(new TurDslQuery.Term("kind", "embedding")))
+                .isInstanceOf(TermQuery.class);
+    }
+
+    @Test
+    void caseInsensitiveStringTermActuallyMatchesUppercaseIndexedValue() throws IOException {
+        // The real bug: the planner emits kind=embedding but the value is indexed as
+        // EMBEDDING. Prove the translated query matches against a live index.
+        try (Directory dir = new ByteBuffersDirectory()) {
+            try (IndexWriter writer = new IndexWriter(dir, new IndexWriterConfig(new StandardAnalyzer()))) {
+                writer.addDocument(docOf("m1", "EMBEDDING", "openai"));
+                writer.addDocument(docOf("m2", "CHAT", "openai"));
+            }
+            try (DirectoryReader reader = DirectoryReader.open(dir)) {
+                IndexSearcher searcher = new IndexSearcher(reader);
+                Map<String, TurSEFieldType> types = Map.of(
+                        "kind", TurSEFieldType.STRING, "vendor", TurSEFieldType.STRING);
+
+                // lowercase query → matches the uppercase-indexed enum value.
+                Query lower = executor.translateQuery(new TurDslQuery.Term("kind", "embedding"), types);
+                assertThat(searcher.count(lower)).isEqualTo(1);
+                // uppercase query against lowercase-indexed data also matches.
+                Query upper = executor.translateQuery(new TurDslQuery.Term("vendor", "OPENAI"), types);
+                assertThat(searcher.count(upper)).isEqualTo(2);
+                // a terms filter is case-insensitive per value too.
+                Query terms = executor.translateQuery(
+                        new TurDslQuery.Terms("kind", List.of("embedding", "chat")), types);
+                assertThat(searcher.count(terms)).isEqualTo(2);
+            }
+        }
+    }
+
+    private static Document docOf(String id, String kind, String vendor) {
+        Document doc = new Document();
+        doc.add(new StringField("id", id, Field.Store.YES));
+        doc.add(new StringField("kind", kind, Field.Store.YES));
+        doc.add(new StringField("vendor", vendor, Field.Store.YES));
+        return doc;
     }
 
     private SortField sortField(TurSEFieldType type, String field) {

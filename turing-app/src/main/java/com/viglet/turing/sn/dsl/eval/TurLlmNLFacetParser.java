@@ -116,10 +116,20 @@ public class TurLlmNLFacetParser implements TurNLFacetParser {
                   ("under N" -> lte; "over N" -> gte; "between A and B" -> gte+lte).
                 - For free-text intent that is not a facet, use \
                   {"match":{"_text_":"<words>"}}.
-                - Add "sort" only when the query asks to order results \
-                  (e.g. "cheapest" -> [{"<priceField>":"asc"}]).
+                - A superlative / comparative question ("cheapest", "lowest \
+                  price", "most affordable", "highest <metric>", "best <metric>", \
+                  "fastest") is a SORT, never a filter. Emit \
+                  "sort":[{"<numericField>":"asc|desc"}] on the numeric field whose \
+                  meaning matches the phrase — ascending for a minimum ("cheapest", \
+                  "lowest", "smallest", "fastest"), descending for a maximum \
+                  ("most expensive", "highest", "largest", "best"). NEVER put the \
+                  superlative adjective itself into a term/match filter (there is no \
+                  facet value "cheapest") — that returns zero results. Use the field \
+                  description to pick the right numeric field.
+                - Facet/term values are matched case-insensitively, so casing need \
+                  not be exact; still prefer the value as written in the query.
 
-                SCHEMA (field: type [facet]):
+                SCHEMA (field: type [facet] - description):
                 %s
                 """.formatted(renderSchema(schema));
     }
@@ -145,7 +155,11 @@ public class TurLlmNLFacetParser implements TurNLFacetParser {
                 continue;
             }
             String type = f.type() != null ? f.type().name().toLowerCase() : "text";
-            lines.add("- %s: %s%s".formatted(f.name(), type, f.facet() ? " [facet]" : ""));
+            // T802 — surface the declared field description so the model can map a
+            // superlative ("cheapest") to the right numeric field and understand
+            // what each facet means, not just its name.
+            String description = StringUtils.hasText(f.description()) ? " - " + f.description().trim() : "";
+            lines.add("- %s: %s%s%s".formatted(f.name(), type, f.facet() ? " [facet]" : "", description));
         }
         return String.join("\n", lines);
     }

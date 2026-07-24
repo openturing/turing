@@ -18,6 +18,8 @@ import org.apache.lucene.queryparser.classic.QueryParser;
 import org.apache.lucene.search.*;
 import org.apache.lucene.search.RegexpQuery;
 import org.apache.lucene.search.uhighlight.UnifiedHighlighter;
+import org.apache.lucene.util.automaton.Operations;
+import org.apache.lucene.util.automaton.RegExp;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
@@ -196,9 +198,9 @@ public class TurDslLuceneExecutor implements TurDslSearchEngineExecutor<Query, T
             case TurDslQuery.MultiMatch q -> translateMultiMatch(q);
 
             case TurDslQuery.Term(var field, var value) ->
-                    new TermQuery(new Term(field, value.toString()));
+                    translateTerm(field, value, fieldTypes.get(field));
 
-            case TurDslQuery.Terms q -> translateTerms(q);
+            case TurDslQuery.Terms q -> translateTerms(q, fieldTypes);
 
             case TurDslQuery.Bool q -> translateBool(q, fieldTypes);
 
@@ -332,13 +334,43 @@ public class TurDslLuceneExecutor implements TurDslSearchEngineExecutor<Query, T
         }
     }
 
-    private Query translateTerms(TurDslQuery.Terms q) {
+    private Query translateTerms(TurDslQuery.Terms q, Map<String, TurSEFieldType> fieldTypes) {
+        TurSEFieldType type = fieldTypes.get(q.field());
         BooleanQuery.Builder builder = new BooleanQuery.Builder();
         for (Object v : q.values()) {
-            builder.add(new TermQuery(new Term(q.field(), v.toString())),
-                    BooleanClause.Occur.SHOULD);
+            builder.add(translateTerm(q.field(), v, type), BooleanClause.Occur.SHOULD);
         }
         return builder.build();
+    }
+
+    /**
+     * Translates a single {@code term} filter. STRING facet values are matched
+     * <strong>case-insensitively</strong> (T802): the values are indexed with their
+     * declared case (e.g. {@code kind=EMBEDDING}), but the NL→facet planner routinely
+     * emits them lowercased ({@code kind=embedding}), so an exact {@link TermQuery}
+     * silently misses and the copilot returns "no matching results". Every other
+     * type — and the {@code id} field, whose exact-match semantics must be preserved
+     * — keeps the exact {@link TermQuery}.
+     */
+    private static Query translateTerm(String field, Object value, TurSEFieldType type) {
+        String text = value.toString();
+        if (type == TurSEFieldType.STRING && !"id".equals(field)) {
+            return caseInsensitiveTermQuery(field, text);
+        }
+        return new TermQuery(new Term(field, text));
+    }
+
+    /**
+     * A case-insensitive exact-value match for a STRING field. The value is wrapped
+     * in a double-quoted Lucene {@link RegExp} literal (so no character is treated as
+     * a regex metacharacter — {@code RegExp.NONE} disables optional syntax) and
+     * matched with {@link RegExp#CASE_INSENSITIVE}, which folds case at match time
+     * without needing the field to be lower-cased at index time.
+     */
+    private static Query caseInsensitiveTermQuery(String field, String value) {
+        String literal = "\"" + value.replace("\"", "") + "\"";
+        return new RegexpQuery(new Term(field, literal), RegExp.NONE,
+                RegExp.CASE_INSENSITIVE, Operations.DEFAULT_DETERMINIZE_WORK_LIMIT);
     }
 
     private Query translateBool(TurDslQuery.Bool q, Map<String, TurSEFieldType> fieldTypes) {

@@ -24,15 +24,6 @@
 
 - 💭 **T441** (deps: T436, T438) **Canonical AG-UI protocol adapter** — optional endpoint that re-encodes Turing's stream into the canonical AG-UI event schema (`RUN_STARTED`, `TEXT_MESSAGE_*`, `TOOL_CALL_*`, `STATE_SNAPSHOT`/`STATE_DELTA`, …) so CopilotKit's off-the-shelf React/Angular clients connect with zero Turing-SDK code. Distribution play, not core parity — promote from 💭 only if a named integration asks. → §XXII.6
 
-## Block BF follow-ups — Vectorless RAG copilot answer quality (§LIV)
-
-> Block BF shipped the vectorless/structured-data catalog copilot (T790–T798, see
-> [CHANGELOG.md](CHANGELOG.md)). These are answer-quality bugs found dogfooding the
-> live `turing-demo` model-catalog copilot — the retrieval works, but the LLM
-> mis-reads the grounded fields. Design context in [IMPROVEMENTS.md](IMPROVEMENTS.md) §LIV.
-
-- 📋 **T802** (deps: T793, T797) **Structured-query planner must match facet values case-insensitively (+ honour numeric sort intent)** — BUG: the model-catalog copilot returns the empty *"no matching results"* fallback (HTTP 200, `totalHits:0`, so it looks fine — no error) for most natural questions, because the NL→structured-query planner emits facet values in **lowercase** while SN facet matching is **case-sensitive**. Proof from the live `turing-demo` copilot: *"embedding models"* → planner emits `kind=embedding` → **0 hits**; the same query forced to `kind=EMBEDDING` (the catalog's actual uppercase enum value) → **28 hits**. `vendor=openai` (123) and `capabilities=vision` (350) work *only* because those values are already lowercase in the data — `kind` (`CHAT`/`EMBEDDING`/`RERANK`/…) is uppercase, so every kind-scoped question silently retrieves nothing. Second gap: superlative/price questions (*"cheapest"*, *"lowest price"*, *"most affordable"*) don't map to a sort at all → also 0 hits. Fix: **(a)** when the planner emits a filter for an enum/facet field, snap the value to the manifest enum's declared case (case-insensitive match against `TurSNSiteFieldExt.enum`) — or make SN `STRING`-facet filtering case-insensitive; **(b)** map superlative/comparative phrasing on a `sortable` numeric field to `sort=<field> asc|desc` (e.g. *"cheapest"* → `pricing_inputPer1M asc`). Transport-agnostic (endpoint + T795 gateway + `catalog_search` tool). Sibling of T799 — same copilot, retrieval/query-planning side rather than answer-reading side. → §LIV
-
 ## Block BG — Batch / bulk structured-feed indexing (§LV)
 
 > Dogfooding the `openviglet/model-catalog` vectorless KB on Viglet Cloud (Block BF,
