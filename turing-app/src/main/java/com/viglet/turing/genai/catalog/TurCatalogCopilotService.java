@@ -426,6 +426,27 @@ public class TurCatalogCopilotService {
      */
     private Projection project(List<TurDslSearchResponse.Hit> ordered, int max,
             Map<String, String> fieldDescriptions) {
+        return projectWith(ordered, max,
+                (rank, title, url, source) -> contextBlock(rank, title, url, source, fieldDescriptions));
+    }
+
+    /**
+     * T822 / §LX.1 — the <strong>compact</strong> projection for stuff-all: one lean
+     * line per row ({@code [rank] title | key: value | …}) over only the declared
+     * <em>key</em> fields ({@code keyFields}), with no snippet and no per-field
+     * descriptions. It is ~10× smaller than {@link #project} per row, so a catalog too
+     * large for the verbose projection can still be grounded whole. Citations are
+     * identical (the client chips are unaffected); only the LLM grounding text shrinks.
+     */
+    private Projection projectCompact(List<TurDslSearchResponse.Hit> ordered, int max,
+            Set<String> keyFields) {
+        return projectWith(ordered, max,
+                (rank, title, url, source) -> compactContextBlock(rank, title, source, keyFields));
+    }
+
+    /** Shared projection loop: 1-based citations + per-row blocks from {@code builder}. */
+    private Projection projectWith(List<TurDslSearchResponse.Hit> ordered, int max,
+            ContextBlockBuilder builder) {
         List<TurCatalogCitation> citations = new ArrayList<>();
         List<String> contextBlocks = new ArrayList<>();
         int limit = Math.min(max, ordered.size());
@@ -438,9 +459,57 @@ public class TurCatalogCopilotService {
             citations.add(new TurCatalogCitation(rank, hit.id(), title,
                     StringUtils.hasText(url) ? url : null, hit.score(),
                     hit.explanation()));
-            contextBlocks.add(contextBlock(rank, title, url, source, fieldDescriptions));
+            contextBlocks.add(builder.build(rank, title, url, source));
         }
         return new Projection(citations, contextBlocks);
+    }
+
+    /** Builds one row's grounding context block (verbose or compact). */
+    @FunctionalInterface
+    private interface ContextBlockBuilder {
+        String build(int rank, String title, String url, Map<String, Object> source);
+    }
+
+    /**
+     * T822 / §LX.1 — the declared <em>key</em> field names for the compact projection:
+     * the numeric (sortable) and facet fields — the ones a reader ranks or filters on —
+     * derived from the manifest's {@code sortable}/{@code facet} flags
+     * ({@link TurNLFacetField#numeric()} / {@link TurNLFacetField#facet()}). Free-text
+     * and other descriptive fields are dropped from the compact line.
+     */
+    private static Set<String> compactKeyFields(List<TurNLFacetField> schema) {
+        Set<String> keys = new LinkedHashSet<>();
+        if (schema != null) {
+            for (TurNLFacetField field : schema) {
+                if (field != null && field.name() != null && (field.numeric() || field.facet())) {
+                    keys.add(field.name());
+                }
+            }
+        }
+        return keys;
+    }
+
+    /**
+     * T822 / §LX.1 — one compact line for a row: {@code [rank] title} followed by each
+     * present key field as {@code | key: value} (values capped like the verbose block).
+     * No snippet, no descriptions — the flat key is self-descriptive enough
+     * ({@code pricing_inputPer1M}, {@code contextWindow}) for whole-catalog reasoning.
+     */
+    private String compactContextBlock(int rank, String title, Map<String, Object> source,
+            Set<String> keyFields) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("[").append(rank).append("] ").append(title);
+        for (String key : keyFields) {
+            Object raw = source.get(key);
+            if (raw == null) {
+                continue;
+            }
+            String value = str(raw);
+            if (StringUtils.hasText(value) && value.length() <= 80) {
+                sb.append(" | ").append(key).append(": ").append(value);
+            }
+        }
+        return sb.toString();
     }
 
     /**
@@ -508,22 +577,39 @@ public class TurCatalogCopilotService {
         }
         // T799 / §LIV — resolve the declared schema so stuff-all context blocks
         // label each value by its field description, not its cryptic flat key.
-        Projection projection = project(hits, hits.size(), fieldDescriptions(resolveSchema(siteOpt.get())));
-        int estimatedTokens = estimateTokens(projection.contextBlocks());
+        List<TurNLFacetField> schema = resolveSchema(siteOpt.get());
         int budget = copilotProperty.getStuffAllTokenBudget();
-        if (estimatedTokens > budget) {
-            // T823 / §LX.2 — the silent fallback that made the copilot "lose intelligence"
-            // when the catalog grew; log it at INFO with the numbers so it is diagnosable.
-            log.info("[CatalogCopilot] site '{}' stuff-all OVER BUDGET: ~{} tokens > {} (rows={}) "
-                    + "-> FILTERED retrieval (raise turing.genai.copilot.stuffAllTokenBudget "
-                    + "or ship the compact projection, Block BL/T822)",
-                    siteName, estimatedTokens, budget, hits.size());
-            return Optional.empty();
+
+        // T793 — try the full (verbose, described) projection first: richest grounding.
+        Projection full = project(hits, hits.size(), fieldDescriptions(schema));
+        int fullTokens = estimateTokens(full.contextBlocks());
+        if (fullTokens <= budget) {
+            log.info("[CatalogCopilot] site '{}' STUFF_ALL (full): grounding on all {} rows "
+                    + "(~{} tokens, budget {})", siteName, hits.size(), fullTokens, budget);
+            return Optional.of(new Retrieval(full.citations(), full.contextBlocks(),
+                    totalHits, "", true));
         }
-        log.info("[CatalogCopilot] site '{}' STUFF_ALL: grounding on all {} rows (~{} tokens, budget {})",
-                siteName, hits.size(), estimatedTokens, budget);
-        return Optional.of(new Retrieval(projection.citations(), projection.contextBlocks(),
-                totalHits, "", true));
+
+        // T822 / §LX.1 — full is over budget; retry a COMPACT projection (key fields
+        // only, no snippet / no descriptions, ~10× smaller per row) so a large catalog
+        // still gets grounded whole instead of silently dropping to filtered retrieval.
+        Projection compact = projectCompact(hits, hits.size(), compactKeyFields(schema));
+        int compactTokens = estimateTokens(compact.contextBlocks());
+        if (compactTokens <= budget) {
+            log.info("[CatalogCopilot] site '{}' STUFF_ALL (compact): grounding on all {} rows "
+                    + "(~{} tokens, budget {}; full was ~{})",
+                    siteName, hits.size(), compactTokens, budget, fullTokens);
+            return Optional.of(new Retrieval(compact.citations(), compact.contextBlocks(),
+                    totalHits, "", true));
+        }
+
+        // T823 / §LX.2 — even the compact whole-catalog exceeds the budget → filtered.
+        // Log it at INFO with the numbers so the fallback is diagnosable (was silent).
+        log.info("[CatalogCopilot] site '{}' stuff-all OVER BUDGET even compact: ~{} tokens > {} "
+                + "(rows={}, full ~{}) -> FILTERED retrieval (raise "
+                + "turing.genai.copilot.stuffAllTokenBudget)",
+                siteName, compactTokens, budget, hits.size(), fullTokens);
+        return Optional.empty();
     }
 
     private TurDslQueryRequest matchAllRequest(int size) {

@@ -149,6 +149,39 @@ class TurCatalogCopilotServiceTest {
     }
 
     @Test
+    void stuffAllUsesCompactProjectionWhenFullExceedsBudget() {
+        // T822 / §LX.1 — the full (described) projection blows a tiny budget, but the
+        // compact projection (key fields only, no descriptions) fits, so stuff-all
+        // still grounds on ALL rows instead of dropping to filtered retrieval.
+        TurSNSite site = new TurSNSite();
+        site.setName("catalog");
+        ChatModel chatModel = modelReturning("Cheapest option is [1].");
+        when(chatModelResolver.resolve()).thenReturn(Optional.of(chatModel));
+        when(turSNSiteRepository.findByNameIgnoreCase("catalog")).thenReturn(Optional.of(site));
+        when(copilotProperty.isStuffAllEnabled()).thenReturn(true);
+        when(copilotProperty.getStuffAllMaxDocs()).thenReturn(1000);
+        // Budget sits between the verbose block (~120 tokens, long description) and the
+        // compact block (~6 tokens): full is over, compact is under.
+        when(copilotProperty.getStuffAllTokenBudget()).thenReturn(50);
+        when(turSNSiteFieldExtRepository.findByTurSNSiteAndEnabled(site, 1)).thenReturn(List.of(
+                fieldWithDescription("price", TurSEFieldType.INT,
+                        "A deliberately very long declared field description ".repeat(12))));
+        when(dslSearchService.search(eq("catalog"), eq("en"), any(TurDslQueryRequest.class)))
+                .thenReturn(Optional.of(pricedResponse()));
+
+        TurCatalogCopilotResult result = service.answer("catalog", "en",
+                List.of(new ChatTurn("user", "cheap option?")));
+
+        assertThat(result.available()).isTrue();
+        assertThat(result.citations()).hasSize(1);
+        assertThat(result.totalHits()).isEqualTo(1L);
+        // Compact stuff-all handled it — the NL parser was never consulted...
+        verify(parser, never()).parse(any());
+        // ...and the stuff-all path leaves the grounded summary blank (vs filtered).
+        assertThat(result.groundedQuerySummary()).isNullOrEmpty();
+    }
+
+    @Test
     void stuffAllFallsBackToFilteredRetrievalWhenOverBudget() {
         // T793 — tiny budget forces the fallback to the normal NL→DSL retrieval.
         TurSNSite site = new TurSNSite();
@@ -411,6 +444,17 @@ class TurCatalogCopilotServiceTest {
         return MAPPER.readValue("""
                 {"query":{"bool":{"filter":[{"term":{"kind":"chat"}}]}}}""",
                 TurDslQueryRequest.class);
+    }
+
+    /** One hit with a title + a single numeric key field — for the T822 compact test. */
+    private static TurDslSearchResponse pricedResponse() {
+        Map<String, Object> doc = new LinkedHashMap<>();
+        doc.put("title", "Cheap Model");
+        doc.put("price", "10");
+        TurDslSearchResponse.Hit h = new TurDslSearchResponse.Hit("m1", 1.0, doc, null);
+        TurDslSearchResponse.Hits hits = new TurDslSearchResponse.Hits(
+                new TurDslSearchResponse.Total(1, "eq"), 1.0, List.of(h));
+        return new TurDslSearchResponse(7L, false, hits, null);
     }
 
     private static TurDslQueryRequest groundedQuery() {

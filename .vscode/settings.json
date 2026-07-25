@@ -35,6 +35,9 @@
   "java.test.defaultConfig": "run",
   "markdown.validate.enabled": true,
 
+  // Identify this worktree in the window title / taskbar
+  "window.title": "🔵 Turing 2026.3 ${separator} ${dirty}${activeEditorShort} ${separator} ${appName}",
+
   // Royal blue status bar so this worktree is easy to spot
   "workbench.colorCustomizations": {
     "statusBar.background": "#4169E1",
