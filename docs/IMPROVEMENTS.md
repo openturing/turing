@@ -2826,17 +2826,6 @@ numeric fields carry `NumericDocValues`. A `sort` clause, once emitted, executes
 correctly. The fragility is entirely in **query planning** — so the fix is to stop
 delegating the ranking dimension to the LLM and to keep the prompt generic.
 
-### LVII.2 Genericize the copilot + NL→facet system prompts (T812)
-With ranking handled procedurally, remove the catalog-flavoured superlative examples
-that leaked model-catalog framing into `TurLlmNLFacetParser.systemPrompt` (the
-`cheapest/lowest price/most affordable/highest <metric>` sort rule) and
-`TurCatalogCopilotService.systemPrompt`. Keep only domain-neutral rules: only reference
-declared fields, omit what cannot be grounded, cite every claim as `[n]`, and — the one
-ranking rule that stays because it is about *reading the grounded context*, not
-planning — "rank by the labelled metric, never the biggest number" (the §LIV.T799
-sub-score trap). The prompt no longer carries the sort-mapping burden, so the copilot
-generalizes to any catalog schema.
-
 ### LVII.3 Model-catalog NL→facet eval sample + local regression harness (T813)
 Add `model-catalog.nl-facet-eval.json` under `src/test/resources/nl-facet-eval/`: the
 catalog's declared schema (`kind`, `vendor`, `modality`, `benchmarks_intelligenceIndex`,

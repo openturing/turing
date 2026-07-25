@@ -116,16 +116,13 @@ public class TurLlmNLFacetParser implements TurNLFacetParser {
                   ("under N" -> lte; "over N" -> gte; "between A and B" -> gte+lte).
                 - For free-text intent that is not a facet, use \
                   {"match":{"_text_":"<words>"}}.
-                - A superlative / comparative question ("cheapest", "lowest \
-                  price", "most affordable", "highest <metric>", "best <metric>", \
-                  "fastest") is a SORT, never a filter. Emit \
-                  "sort":[{"<numericField>":"asc|desc"}] on the numeric field whose \
-                  meaning matches the phrase — ascending for a minimum ("cheapest", \
-                  "lowest", "smallest", "fastest"), descending for a maximum \
-                  ("most expensive", "highest", "largest", "best"). NEVER put the \
-                  superlative adjective itself into a term/match filter (there is no \
-                  facet value "cheapest") — that returns zero results. Use the field \
-                  description to pick the right numeric field.
+                - A superlative or comparative ("the lowest / highest / most / \
+                  least <quality>", "the best by <quality>") expresses a SORT, not \
+                  a filter. Emit "sort":[{"<numericField>":"asc|desc"}] on the \
+                  numeric field whose DESCRIPTION matches that quality — ascending \
+                  for a minimum, descending for a maximum. NEVER put the superlative \
+                  word itself into a term/match filter: there is no facet value for \
+                  it, so that returns zero results.
                 - Facet/term values are matched case-insensitively, so casing need \
                   not be exact; still prefer the value as written in the query.
 

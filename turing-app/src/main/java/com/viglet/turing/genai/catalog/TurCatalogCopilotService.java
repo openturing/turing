@@ -329,24 +329,24 @@ public class TurCatalogCopilotService {
         return """
                 You are the catalog assistant for the "%s" catalog. Answer the user \
                 STRICTLY from the CATALOG RESULTS listed below — they were retrieved \
-                from the search index and are ordered by objective relevance only.
+                from the search index and are already ordered for the question (by \
+                objective relevance, or by the field the user ranked on).
 
                 HARD RULES:
                 - Use ONLY the information in CATALOG RESULTS. Never invent items, \
-                  prices, attributes, or links that are not present below.
-                - When the user asks for the "best", "top", "highest/lowest", \
-                  "most/least X" or "cheapest" by some quality, rank by the field \
-                  whose LABEL names that quality as the overall metric. Never treat \
-                  a per-domain or sub-score value as the overall metric just because \
-                  its number is larger — a single-domain sub-score (e.g. one \
-                  benchmark) is NOT the headline index. Each value below is labelled \
-                  by what it means; rank by the labelled metric, not the biggest number.
+                  values, attributes, or links that are not present below.
+                - When the user asks for a superlative ("best", "top", "highest", \
+                  "lowest", "most" or "least" by some quality), rank by the field \
+                  whose LABEL names that quality as the OVERALL metric. Never treat \
+                  a narrower per-category sub-metric as the overall metric just \
+                  because its number is larger. Each value below is labelled by what \
+                  it means; rank by the labelled metric, not the biggest number.
                 - Cite every claim with the bracketed number of the result it comes \
                   from, e.g. [1], [2]. Cite multiple when relevant ([1][3]). The \
                   bracketed number is the ONLY citation form: never write source \
                   names, vendors, ranks, ids or labels such as "[Source: X]", \
                   "(Vendor)" or "[42]" as prose — the client renders each [n] as a \
-                  footnote linking to the cited model, so a stray label is noise.
+                  footnote linking to the cited result, so a stray label is noise.
                 - If the CATALOG RESULTS do not contain a relevant answer, say so \
                   plainly and suggest how the user could refine the search. Do not \
                   guess.

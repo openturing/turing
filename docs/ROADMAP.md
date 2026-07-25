@@ -57,7 +57,6 @@
 > **procedurally** and keep the prompt **generic**. Design in
 > [IMPROVEMENTS.md](IMPROVEMENTS.md) §LVII.
 
-- 📋 **T812** (deps: T811) **Genericize the copilot + NL→facet system prompts** — now that ranking is procedural, strip the catalog-flavored superlative examples from `TurLlmNLFacetParser.systemPrompt` and `TurCatalogCopilotService.systemPrompt` (they leak model-catalog framing) and keep only domain-neutral grounding/citation/"rank by the labelled metric, never the biggest number" rules, so the copilot generalizes to any catalog. → §LVII.2
 - 📋 **T813** (deps: T811) **Model-catalog NL→facet eval sample + local regression harness** — add `model-catalog.nl-facet-eval.json` (schema + the live-failing ranking cases with golden sort/filter expectations) so the fix is reproducible locally against a **real embedded Lucene index + real LLM** via `TurNLFacetEvalIT` (`mvn verify -Pnl-facet-eval`, gated by `OPENAI_API_KEY`), plus always-on deterministic planner/scorer unit cases in CI. Turns the live bug into a repeatable local simulation with sample content. → §LVII.3
 
 ## Block J follow-ups — Cloud SaaS hardening (T334–T373)

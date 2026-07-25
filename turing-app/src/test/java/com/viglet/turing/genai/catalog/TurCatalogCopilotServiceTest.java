@@ -274,7 +274,7 @@ class TurCatalogCopilotServiceTest {
         assertThat(systemText)
                 .contains("Overall intelligence index — the single headline metric (benchmarks_intelligenceIndex): 23.8")
                 .contains("Math domain sub-score only, NOT the overall index (benchmarks_scores_math_value): 93.4")
-                .contains("headline index")
+                .contains("OVERALL metric")
                 .contains("not the biggest number");
     }
 
