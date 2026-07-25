@@ -311,4 +311,44 @@ public class TurSNSiteGenAi implements Serializable {
      */
     @Column(name = "embeddingModelId", length = 40)
     private String embeddingModelId;
+
+    /**
+     * T818 / §LIX.1 (Block BK) — the copilot's <strong>query-planning
+     * strategy</strong>: how a natural-language catalog question is turned into a
+     * structured DSL query.
+     * {@link TurCopilotPlanningStrategy#DETERMINISTIC} is today's path (T811
+     * ranking overlay + one LLM facet parse);
+     * {@link TurCopilotPlanningStrategy#LLM_ASSISTED} is the T819 multi-pass
+     * <em>parse → judge → refine</em> planner (i18n-native, N× LLM calls);
+     * {@link TurCopilotPlanningStrategy#HYBRID} runs the deterministic fast-path
+     * and escalates to the LLM passes only when retrieval comes back
+     * empty/degenerate (T820).
+     *
+     * <p><b>Nullable on purpose:</b> {@code null} means "inherit the global
+     * {@code turing.genai.copilot.planning.strategy} default" (itself
+     * {@code DETERMINISTIC}), so a deployment can flip every site at once from
+     * configuration while a single site can still pin its own strategy. Existing
+     * sites read {@code null} and behave exactly as before.
+     *
+     * @since 2026.3.4
+     */
+    @Enumerated(EnumType.STRING)
+    @Column(name = "copilotPlanningStrategy", length = 32)
+    private TurCopilotPlanningStrategy copilotPlanningStrategy;
+
+    /**
+     * T819 / §LIX.2 (Block BK) — the copilot's <strong>analysis depth</strong>:
+     * how many LLM passes beyond the initial parse the planner may spend
+     * ({@code 0} = parse only, {@code 1} = + judge, {@code 2} = + refine). Only
+     * consulted when the resolved {@link #copilotPlanningStrategy} uses LLM passes
+     * ({@code LLM_ASSISTED} / {@code HYBRID}).
+     *
+     * <p>{@code null} inherits the global
+     * {@code turing.genai.copilot.planning.max-passes} property, so depth can be
+     * tuned deployment-wide or pinned per site.
+     *
+     * @since 2026.3.4
+     */
+    @Column(name = "copilotPlanningMaxPasses")
+    private Integer copilotPlanningMaxPasses;
 }

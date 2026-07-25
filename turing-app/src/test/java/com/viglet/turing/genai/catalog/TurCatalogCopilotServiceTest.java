@@ -11,7 +11,9 @@ package com.viglet.turing.genai.catalog;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -22,6 +24,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -38,6 +41,8 @@ import org.springframework.ai.chat.prompt.Prompt;
 
 import com.viglet.turing.commons.se.field.TurSEFieldType;
 import com.viglet.turing.genai.catalog.TurCatalogCopilotService.ChatTurn;
+import com.viglet.turing.genai.catalog.planning.TurCopilotQueryPlannerFactory;
+import com.viglet.turing.genai.catalog.planning.TurDeterministicCopilotQueryPlanner;
 import com.viglet.turing.persistence.model.sn.TurSNSite;
 import com.viglet.turing.persistence.model.sn.field.TurSNSiteFieldExt;
 import com.viglet.turing.persistence.repository.sn.TurSNSiteRepository;
@@ -67,11 +72,13 @@ class TurCatalogCopilotServiceTest {
 
     @Mock
     private TurNLFacetParser parser;
-    // T811 — the ranking planner is a pure component; use the real one (via @Spy) so
-    // detect()/strip()/field-resolution actually run in these tests.
-    @org.mockito.Spy
-    private com.viglet.turing.sn.dsl.eval.TurNLRankingPlanner rankingPlanner =
-            new com.viglet.turing.sn.dsl.eval.TurNLRankingPlanner();
+    // T818 / §LIX.1 (Block BK) — planning is a seam now. These tests assert the
+    // copilot's compose-and-cite pipeline, so they run the REAL default (DETERMINISTIC)
+    // planner over a stubbed factory: the T811 ranking overlay + stripped-query parse
+    // behaviour they cover is unchanged, and the strategies themselves are covered by
+    // the planner tests in genai.catalog.planning.
+    @Mock
+    private TurCopilotQueryPlannerFactory plannerFactory;
     @Mock
     private TurDslSearchService dslSearchService;
     @Mock
@@ -89,6 +96,23 @@ class TurCatalogCopilotServiceTest {
 
     @InjectMocks
     private TurCatalogCopilotService service;
+
+    /**
+     * T818 / §LIX.1 — resolve every site to the REAL {@code DETERMINISTIC} planner over
+     * the same mocked parser, so these tests keep asserting the pre-block planning
+     * behaviour (T811 ranking overlay + stripped-query parse) end to end.
+     *
+     * <p>{@code lenient()} because the T793 stuff-all tests answer without ever reaching
+     * the planning seam.
+     */
+    @BeforeEach
+    void resolveDeterministicPlanner() {
+        lenient().when(plannerFactory.resolve(anyString())).thenReturn(
+                new TurCopilotQueryPlannerFactory.Resolution(
+                        new TurDeterministicCopilotQueryPlanner(parser,
+                                new com.viglet.turing.sn.dsl.eval.TurNLRankingPlanner()),
+                        2));
+    }
 
     @Test
     void answersGroundedWithCitationsAndAppliedFilters() {

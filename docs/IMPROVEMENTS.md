@@ -2798,11 +2798,12 @@ that declares nothing still gets the canonical defaults).
 
 ## LVIII. Configurable, per-language NL ranking lexicon (Lucene analysis) (Block BJ)
 
-> **On hold pending §LIX.** The LLM-assisted planning strategy (Block BK) handles
-> languages natively, which may make a per-language *deterministic* lexicon
-> unnecessary. This section remains the design for the deterministic i18n path; build
-> it only if deterministic multilingual ranking is wanted *alongside* the LLM path
-> (a cheap, CI-testable fast-path for non-English).
+> **On hold — §LIX has shipped.** `LLM_ASSISTED`/`HYBRID` (Block BK) handle other
+> languages natively, so a per-language *deterministic* lexicon is no longer needed
+> for i18n. This section remains the design for the deterministic multilingual path;
+> build it only if that is wanted *alongside* the LLM path — the free, CI-testable
+> `DETERMINISTIC` planner is also what `HYBRID` runs first, so a non-English lexicon
+> would reduce how often `HYBRID` has to pay for an escalation.
 
 **The problem.** T811's `TurNLRankingPlanner` made ranking deterministic, but it did so
 with a **hardcoded English word list** baked into the class: `ASC_WORDS`/`DESC_WORDS`
@@ -2856,48 +2857,23 @@ site's own index analyzers so ranking tokenization matches how the field was ind
 
 ## LIX. Configurable copilot query-planning strategy (deterministic / LLM-assisted / hybrid) (Block BK)
 
-**The idea.** The copilot turns prose into a structured query in one LLM parse call,
-with the T811 deterministic overlay bolted on for ranking. An alternative — surfaced in
-design discussion — is to lean *into* the LLM but **decompose** the work into narrow,
-verifiable steps instead of one "produce the whole DSL" call (which is what fails on a
-weak model): **parse → judge → refine**. A judge pass is exactly what catches the bug's
-failure mode (the parse came back empty, dropped the `kind` facet, or missed the sort)
-and repairs it. The **depth of analysis is a parameter** (parse-only → +judge →
-+refine), so a deployment dials cost against quality.
+> **T818–T820 shipped**, plus T821's admin-surface half — see [CHANGELOG.md](CHANGELOG.md)
+> → Block BK. The planning strategy is now a per-site choosable enum
+> (`DETERMINISTIC` default | `LLM_ASSISTED` | `HYBRID`) behind a
+> `TurCopilotQueryPlanner` seam. Only the design below remains unbuilt.
 
-**Why it's not either/or with the deterministic planner.** The two approaches sit on
-different axes:
+**LIX.4 (T821, 💭) Comparative eval.** The strategies now differ on three axes an
+operator has to trade off — answer quality, latency, and LLM calls per turn — and
+nothing measures them per catalog. Extend the NL→facet eval pack to run each strategy
+over the same cases and report score + elapsed + total LLM passes side by side, so a
+deployment can see what switching would buy *its* catalog before switching.
 
-- The **LLM multi-pass** path understands languages *natively* — "modelo mais barato",
-  "ordenar por preço" work with no per-language resource, which is why it puts Block BJ
-  (§LVIII) on hold. But it costs N× LLM calls per turn (latency + tokens) and is
-  non-deterministic / not CI-testable without an LLM.
-- The **deterministic** path (T811) is instant, free, and CI-testable, but English-only
-  and needs the Block BJ lexicon work to scale to other languages.
-
-So the design is a **configurable strategy**, opt-in per agent/site — idiomatic here
-(choosable enum, `DETERMINISTIC` default = today's behaviour, so no existing site is
-re-validated; cf. the project's opt-in-flag convention):
-
-- **LIX.1 (T818) The seam.** A `TurCopilotPlanningStrategy` enum
-  (`DETERMINISTIC` | `LLM_ASSISTED` | `HYBRID`) and a `TurCopilotQueryPlanner` interface
-  that `retrieve()` delegates to; the current parse-plus-T811-overlay becomes the
-  `DETERMINISTIC` implementation. Zero behaviour change at the default.
-- **LIX.2 (T819) The LLM multi-pass.** `LLM_ASSISTED` = parse → a `TurLlmJudge`-style
-  validation (dropped facet? wrong/missing sort? ungrounded field?) → refine, bounded by
-  `turing.genai.copilot.planning.max-passes`. Provider tool calling / schema, never raw
-  JSON (per the `gpt-4o-mini` structured-output caution in `agents.md`). This is where
-  i18n and hard-question quality come from.
-- **LIX.3 (T820) HYBRID — the recommended default to aim for.** Run the cheap
-  deterministic fast-path first; escalate to the LLM judge/refine **only** when the
-  result is empty or suspect (degenerate query, or zero hits when a superlative/facet
-  was clearly present). Common questions stay instant and free; the LLM budget is spent
-  only to rescue a failure — capturing most of the multi-pass quality at a fraction of
-  the cost.
-- **LIX.4 (T821, 💭) Admin + eval.** Expose the strategy + depth in the agent/site
-  admin, and extend the NL→facet eval pack to score each strategy so the
-  quality/latency/cost trade-off is measurable per catalog before switching.
-
-**Invariants.** Fail-open throughout: an LLM/judge failure degrades to the deterministic
-result (or to the citations-only path already there), never to an error. The default
-strategy is `DETERMINISTIC`, so the block is purely additive.
+Two constraints the design has to respect. First, dependency direction: the planning
+package (`genai.catalog.planning`) already depends on `sn.dsl.eval`, so the comparison
+runner belongs on the planning side, not inside `TurNLFacetEvalService` — otherwise the
+two packages form a cycle. Second, honesty about `HYBRID`: its escalation only fires on
+*live retrieval* (zero hits / a degenerate plan), which an eval pack has no way to
+produce, so a plan-only comparison necessarily scores `HYBRID` identically to
+`DETERMINISTIC`. The report must state that rather than let the numbers imply the two
+are equivalent in production — or the runner must execute against a live index, which
+makes it an IT rather than a CI-cheap scorer.

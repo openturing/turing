@@ -42,7 +42,7 @@ import { postLlmChat } from "@viglet/turing-react-sdk"
 import { TurSEInstanceService } from "@/services/se/se.service"
 import { TurSNSiteService } from "@/services/sn/sn.service"
 import { TurGlobalSettingsService } from "@/services/system/global-settings.service"
-import { IconArrowsSort, IconBrain, IconCpu2, IconDatabaseSearch, IconDeviceFloppy, IconFileDescription, IconLoader2, IconMovie, IconRefresh, IconSparkles, IconUserSearch, IconX } from "@tabler/icons-react"
+import { IconArrowsSort, IconBrain, IconCpu2, IconDatabaseSearch, IconDeviceFloppy, IconFileDescription, IconLoader2, IconMovie, IconRefresh, IconRouteAltLeft, IconSparkles, IconUserSearch, IconX } from "@tabler/icons-react"
 import React, { useCallback, useEffect, useState } from "react"
 import { useForm } from "react-hook-form"
 import { useTranslation } from "react-i18next"
@@ -142,6 +142,12 @@ export const SNSiteGenAiForm: React.FC<Props> = ({ snSite, baseRoute = ROUTES.SN
             // keeps the classic embedding RAG chat so a pre-T790 binding renders
             // unchanged; VECTORLESS_STRUCTURED is the copilot (no embeddings).
             knowledgeBaseMode: snSite.turSNSiteGenAi?.knowledgeBaseMode ?? "VECTOR",
+            // T818/T819 (Block BK) — copilot query-planning strategy + analysis depth.
+            // null means "inherit the deployment default" (DETERMINISTIC = today's
+            // behaviour), so a pre-BK binding renders the "Default" pill selected and
+            // saving the form does not pin anything.
+            copilotPlanningStrategy: snSite.turSNSiteGenAi?.copilotPlanningStrategy ?? null,
+            copilotPlanningMaxPasses: snSite.turSNSiteGenAi?.copilotPlanningMaxPasses ?? null,
             ragBm25Fallback: snSite.turSNSiteGenAi?.ragBm25Fallback ?? true,
             ragHybridSearch: snSite.turSNSiteGenAi?.ragHybridSearch ?? true,
             // T24b — BM25 source defaults to EMBEDDED so a pre-T24b
@@ -185,6 +191,13 @@ export const SNSiteGenAiForm: React.FC<Props> = ({ snSite, baseRoute = ROUTES.SN
     // the mode in here — mirrors the backend TurGenAiContextFactory /
     // TurDefaultAgentResolver.isRagReady gate — so consumers don't each re-check it.
     const vectorModeActive = form.watch("knowledgeBaseMode") !== "VECTORLESS_STRUCTURED";
+    // T818/T819 (Block BK) — only the LLM planning strategies spend judge/refine
+    // passes, so the analysis-depth control and the cost callout key off this.
+    // "Default" (null) is excluded on purpose: its effective strategy lives in
+    // configuration, so this form cannot know whether passes will be spent.
+    const copilotPlanningStrategy = form.watch("copilotPlanningStrategy");
+    const copilotPlanningUsesLlm =
+        copilotPlanningStrategy === "LLM_ASSISTED" || copilotPlanningStrategy === "HYBRID";
     const ragEnabled = !!selectedAgent && selectedAgent.ragEnabled === true && vectorModeActive;
     // T622 — when the site picks no agent of its own, chat/RAG/ANN fall back to
     // the global Default AI Agent. Surface which agent that is so the admin sees
@@ -631,6 +644,136 @@ export const SNSiteGenAiForm: React.FC<Props> = ({ snSite, baseRoute = ROUTES.SN
                                             <strong>{t("forms.snGenai.kbModeVectorlessCalloutTitle")}</strong>
                                         </div>
                                         <div>{t("forms.snGenai.kbModeVectorlessCalloutDesc")}</div>
+                                    </div>
+                                )}
+                        </SNFormSection>
+
+                        {/* T818–T821 / §LIX (Block BK) — Copilot Query Planning.
+                            Picks HOW the copilot turns a question into a structured
+                            query: DETERMINISTIC (today — deterministic ranking overlay
+                            + one LLM facet parse), LLM_ASSISTED (multi-pass
+                            parse→judge→refine, i18n-native, N× LLM calls) or HYBRID
+                            (fast-path, escalating to the LLM only on an empty /
+                            degenerate result). "Default" pins nothing and inherits
+                            turing.genai.copilot.planning.*. Only meaningful once the
+                            copilot is reachable — i.e. a vectorless/hybrid KB mode. */}
+                        <SNFormSection chrome={chrome} icon={IconRouteAltLeft} tone="violet" title={t("forms.snGenai.copilotPlanningTitle")} description={t("forms.snGenai.copilotPlanningDesc")}>
+                                <FormField
+                                    control={form.control}
+                                    name="copilotPlanningStrategy"
+                                    render={({ field }) => (
+                                        <FormItemTwoColumns>
+                                            <FormItemTwoColumns.Left>
+                                                <FormItemTwoColumns.Label>
+                                                    {t("forms.snGenai.copilotPlanningStrategy")}
+                                                </FormItemTwoColumns.Label>
+                                                <FormItemTwoColumns.Description>
+                                                    {field.value === "LLM_ASSISTED"
+                                                        ? t("forms.snGenai.copilotPlanningLlmHint")
+                                                        : field.value === "HYBRID"
+                                                            ? t("forms.snGenai.copilotPlanningHybridHint")
+                                                            : field.value === "DETERMINISTIC"
+                                                                ? t("forms.snGenai.copilotPlanningDeterministicHint")
+                                                                : t("forms.snGenai.copilotPlanningDefaultHint")}
+                                                </FormItemTwoColumns.Description>
+                                            </FormItemTwoColumns.Left>
+                                            <FormItemTwoColumns.Right>
+                                                <div className="flex flex-wrap gap-2">
+                                                    <GradientButton
+                                                        type="button"
+                                                        variant={!field.value ? "default" : "outline"}
+                                                        onClick={() => field.onChange(null)}
+                                                    >
+                                                        {t("forms.snGenai.copilotPlanningDefault")}
+                                                    </GradientButton>
+                                                    <GradientButton
+                                                        type="button"
+                                                        variant={field.value === "DETERMINISTIC" ? "default" : "outline"}
+                                                        onClick={() => field.onChange("DETERMINISTIC")}
+                                                    >
+                                                        {t("forms.snGenai.copilotPlanningDeterministic")}
+                                                    </GradientButton>
+                                                    <GradientButton
+                                                        type="button"
+                                                        variant={field.value === "LLM_ASSISTED" ? "default" : "outline"}
+                                                        onClick={() => field.onChange("LLM_ASSISTED")}
+                                                    >
+                                                        {t("forms.snGenai.copilotPlanningLlm")}
+                                                    </GradientButton>
+                                                    <GradientButton
+                                                        type="button"
+                                                        variant={field.value === "HYBRID" ? "default" : "outline"}
+                                                        onClick={() => field.onChange("HYBRID")}
+                                                    >
+                                                        {t("forms.snGenai.copilotPlanningHybrid")}
+                                                    </GradientButton>
+                                                </div>
+                                            </FormItemTwoColumns.Right>
+                                        </FormItemTwoColumns>
+                                    )}
+                                />
+
+                                {/* T819 — analysis depth. Only the LLM strategies spend
+                                    passes, so the control is disabled on DETERMINISTIC
+                                    (and on "Default", whose effective strategy lives in
+                                    configuration, not here). */}
+                                <FormField
+                                    control={form.control}
+                                    name="copilotPlanningMaxPasses"
+                                    render={({ field }) => (
+                                        <FormItemTwoColumns>
+                                            <FormItemTwoColumns.Left>
+                                                <FormItemTwoColumns.Label>
+                                                    {t("forms.snGenai.copilotPlanningDepth")}
+                                                </FormItemTwoColumns.Label>
+                                                <FormItemTwoColumns.Description>
+                                                    {t("forms.snGenai.copilotPlanningDepthDesc")}
+                                                </FormItemTwoColumns.Description>
+                                            </FormItemTwoColumns.Left>
+                                            <FormItemTwoColumns.Right>
+                                                <Select
+                                                    value={
+                                                        field.value === null || field.value === undefined
+                                                            ? NONE_VALUE
+                                                            : String(field.value)
+                                                    }
+                                                    onValueChange={(val) =>
+                                                        field.onChange(val === NONE_VALUE ? null : Number(val))
+                                                    }
+                                                    disabled={!copilotPlanningUsesLlm}
+                                                >
+                                                    <SelectTrigger className="w-full">
+                                                        <SelectValue placeholder={t("forms.snGenai.copilotPlanningDepthInherit")} />
+                                                    </SelectTrigger>
+                                                    <SelectContent>
+                                                        <SelectItem value={NONE_VALUE}>
+                                                            {t("forms.snGenai.copilotPlanningDepthInherit")}
+                                                        </SelectItem>
+                                                        <SelectItem value="0">
+                                                            {t("forms.snGenai.copilotPlanningDepth0")}
+                                                        </SelectItem>
+                                                        <SelectItem value="1">
+                                                            {t("forms.snGenai.copilotPlanningDepth1")}
+                                                        </SelectItem>
+                                                        <SelectItem value="2">
+                                                            {t("forms.snGenai.copilotPlanningDepth2")}
+                                                        </SelectItem>
+                                                    </SelectContent>
+                                                </Select>
+                                            </FormItemTwoColumns.Right>
+                                        </FormItemTwoColumns>
+                                    )}
+                                />
+
+                                {/* Cost callout — an LLM strategy multiplies the per-turn
+                                    LLM calls, which is the whole trade-off of the block. */}
+                                {copilotPlanningUsesLlm && (
+                                    <div className="rounded-lg border border-amber-500/40 bg-amber-500/5 px-4 py-3 mt-2 text-xs text-muted-foreground space-y-1">
+                                        <div className="flex items-center gap-2 text-foreground">
+                                            <IconRouteAltLeft className="size-4 text-amber-600 dark:text-amber-400 shrink-0" />
+                                            <strong>{t("forms.snGenai.copilotPlanningCostTitle")}</strong>
+                                        </div>
+                                        <div>{t("forms.snGenai.copilotPlanningCostDesc")}</div>
                                     </div>
                                 )}
                         </SNFormSection>

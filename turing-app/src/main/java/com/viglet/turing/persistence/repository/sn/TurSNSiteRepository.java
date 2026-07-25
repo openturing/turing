@@ -39,6 +39,23 @@ public interface TurSNSiteRepository extends JpaRepository<TurSNSite, String> {
 	Optional<TurSNSite> findByNameIgnoreCase(String name);
 
 	/**
+	 * T818 / §LIX.1 (Block BK) — returns just the site's GenAI binding, so the
+	 * catalog copilot can read its plain planning columns
+	 * ({@code copilotPlanningStrategy} / {@code copilotPlanningMaxPasses}) without
+	 * loading the site and navigating a LAZY {@code @OneToOne} outside a session (the
+	 * copilot retrieval path is not transactional). Deliberately selects the GenAI
+	 * entity directly rather than the site: nothing here dereferences the GenAI's own
+	 * LAZY associations, so no fetch join is needed.
+	 */
+	@Query("""
+			SELECT genAi FROM TurSNSite s
+			JOIN s.turSNSiteGenAi genAi
+			WHERE LOWER(s.name) = LOWER(:name)
+			""")
+	Optional<com.viglet.turing.persistence.model.sn.genai.TurSNSiteGenAi> findGenAiByNameIgnoreCase(
+			@Param("name") String name);
+
+	/**
 	 * Loads a site with its <em>to-one</em> GenAI graph fetched in one query —
 	 * {@code turSEInstance}, {@code turSNSiteGenAi}, and the GenAI's
 	 * {@code turAIAgent} + {@code ragSeInstance}. Intended for the admin

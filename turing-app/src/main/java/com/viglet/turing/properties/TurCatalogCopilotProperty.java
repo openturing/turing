@@ -12,6 +12,8 @@ package com.viglet.turing.properties;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.stereotype.Component;
 
+import com.viglet.turing.persistence.model.sn.genai.TurCopilotPlanningStrategy;
+
 import lombok.Getter;
 import lombok.Setter;
 
@@ -56,4 +58,41 @@ public class TurCatalogCopilotProperty {
      * filtered retrieval. Default 1 000.
      */
     private int stuffAllMaxDocs = 1_000;
+
+    /**
+     * T818–T820 / §LIX (Block BK) — NL→query planning strategy defaults, bound
+     * under {@code turing.genai.copilot.planning.*}. A site may pin its own values
+     * on {@code TurSNSiteGenAi}; these are the deployment-wide fallbacks.
+     */
+    private final Planning planning = new Planning();
+
+    /**
+     * T818–T820 / §LIX (Block BK) — the deployment-wide planning defaults every SN
+     * site inherits when it pins nothing of its own.
+     *
+     * @author Alexandre Oliveira
+     * @since 2026.3.4
+     */
+    @Getter
+    @Setter
+    public static class Planning {
+
+        /**
+         * The default planning strategy for sites that pin none
+         * ({@code turing.genai.copilot.planning.strategy}). Default
+         * {@link TurCopilotPlanningStrategy#DETERMINISTIC} — today's behaviour, so
+         * the block is purely additive.
+         */
+        private TurCopilotPlanningStrategy strategy = TurCopilotPlanningStrategy.DETERMINISTIC;
+
+        /**
+         * Analysis depth for the LLM-assisted planner
+         * ({@code turing.genai.copilot.planning.max-passes}): how many LLM passes
+         * beyond the initial parse may run — {@code 0} = parse only, {@code 1} =
+         * + judge, {@code 2} = + refine. Values are clamped to {@code [0, 2]}.
+         * Default {@code 2} (the full parse → judge → refine loop), which only
+         * takes effect on a site that actually opts into an LLM strategy.
+         */
+        private int maxPasses = 2;
+    }
 }

@@ -44,12 +44,14 @@
 
 ## Block BJ — Configurable, per-language NL ranking lexicon (Lucene analysis) (§LVIII)
 
-> ⏸ **ON HOLD pending Block BK.** The LLM-assisted planning strategy (Block BK,
-> §LIX) handles languages natively, so a per-language *deterministic* lexicon may be
-> unnecessary. Keep this block as the design for the deterministic i18n path; only
-> promote its tasks from 💭 if the team wants deterministic multilingual ranking
-> *in addition to* the LLM path (e.g. as the cheap CI-testable fast-path for
-> non-English). Revisit after Block BK ships.
+> ⏸ **ON HOLD — Block BK has shipped.** `LLM_ASSISTED`/`HYBRID` (Block BK, §LIX)
+> now handle other languages natively, so a per-language *deterministic* lexicon is
+> no longer needed for i18n. Keep this block as the design for the deterministic
+> multilingual path; only promote its tasks from 💭 if a deployment wants
+> deterministic multilingual ranking *in addition to* the LLM path — i.e. it needs
+> non-English ranking on the free, CI-testable `DETERMINISTIC` fast-path (which is
+> also what `HYBRID` runs first, so a non-English lexicon would reduce how often
+> `HYBRID` has to escalate).
 >
 > The T811 ranking planner works, but its knowledge — the ascending/descending
 > superlative words, the adjective→concept synonyms, the stopwords — is a **hardcoded
@@ -70,25 +72,15 @@
 
 ## Block BK — Configurable copilot query-planning strategy (deterministic / LLM-assisted / hybrid) (§LIX)
 
-> The copilot's NL→query planning is today a single LLM parse + the T811 deterministic
-> ranking overlay. This block makes the **strategy itself** an opt-in, per-agent/site
-> choice and adds a **multi-pass LLM** path — the pattern in the original design
-> discussion: *parse → judge → refine* instead of one "produce the whole DSL" call
-> (which is what fails). An LLM judge pass catches the exact failure the bug showed
-> (query came back empty / dropped a filter / missed the sort) and repairs it, and the
-> **analysis depth is parametrizable** (parse-only → +judge → +refine). Because the LLM
-> path understands languages natively, it delivers i18n *for free* (putting Block BJ on
-> hold), at the cost of latency/tokens and determinism — so a **HYBRID** mode keeps the
-> cheap deterministic fast-path and only escalates to the LLM when a query comes back
-> empty/suspect. Opt-in choosable enum, `DETERMINISTIC` default = today's behaviour,
-> zero re-validation of existing sites. Reuses the endorsed `TurLlmJudge` path (per the
-> `gpt-4o-mini` structured-output caution: tool calling / schema, not raw JSON). Stays
-> fail-open. Design in [IMPROVEMENTS.md](IMPROVEMENTS.md) §LIX.
+> ⏳ **T818–T820 SHIPPED** (see [CHANGELOG.md](CHANGELOG.md) → Block BK), along with
+> T821's admin-surface half. The copilot's NL→query planning is now a per-site
+> choosable strategy — `DETERMINISTIC` (default, today's behaviour) | `LLM_ASSISTED`
+> (multi-pass *parse → judge → refine*, i18n-native) | `HYBRID` (deterministic
+> fast-path, escalating to the LLM only on an empty/degenerate result) — pinned on
+> `TurSNSiteGenAi` or inherited from `turing.genai.copilot.planning.*`, and surfaced in
+> the SN GenAI admin form. Only the comparative-eval half of T821 is still open.
 
-- 📋 **T818** (deps: T811) **Planning-strategy seam + `TurCopilotPlanningStrategy` enum** — introduce an opt-in per-agent/site `TurCopilotPlanningStrategy` (`DETERMINISTIC` | `LLM_ASSISTED` | `HYBRID`; default `DETERMINISTIC`) and a `TurCopilotQueryPlanner` interface that `TurCatalogCopilotService.retrieve()` delegates to; today's parse-plus-T811-overlay logic becomes the `DETERMINISTIC` implementation. Zero behaviour change at the default. Foundation for the rest of the block. → §LIX.1
-- 📋 **T819** (deps: T818) **LLM multi-pass planner (parse → judge → refine)** — implement `LLM_ASSISTED`: an LLM parse followed by a `TurLlmJudge`-style validation pass that checks the parsed query against the question (dropped facet? missing/incorrect sort? ungrounded field?) and a refine pass that repairs it, with a parametrizable analysis depth (`turing.genai.copilot.planning.max-passes`: 0 = parse-only, 1 = +judge, 2 = +refine). Provider tool calling / schema, not raw JSON. Delivers i18n + complex-question quality without a per-language lexicon. → §LIX.2
-- 📋 **T820** (deps: T818, T819) **HYBRID escalation** — implement `HYBRID`: run the deterministic fast-path (T811) first and escalate to the LLM judge/refine (T819) **only** when retrieval is empty or suspect (empty/degenerate query, zero hits while a superlative/facet was clearly present). Cheap in the common case, LLM cost paid only to rescue a failure — the best latency/quality trade-off. → §LIX.3
-- 💭 **T821** (deps: T820) **Strategy admin surface + comparative eval** — surface the strategy + analysis depth in the agent/site admin, and extend the NL→facet eval pack to score each strategy so the quality/latency/cost trade-off is measurable per catalog before switching. → §LIX.4
+- 💭 **T821** (deps: T820) **Comparative strategy eval** (admin-surface half shipped) — extend the NL→facet eval pack to score each planning strategy so the quality/latency/cost trade-off is measurable per catalog before switching. Note the honest limit to design around: HYBRID's escalation only fires on live retrieval, so a plan-only comparison scores it identically to `DETERMINISTIC` and must say so rather than imply parity. → §LIX.4
 
 ## Block J follow-ups — Cloud SaaS hardening (T334–T373)
 

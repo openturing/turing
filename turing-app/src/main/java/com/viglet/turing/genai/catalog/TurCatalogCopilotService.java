@@ -32,6 +32,10 @@ import org.springframework.util.StringUtils;
 
 import com.viglet.turing.commons.se.field.TurSEFieldType;
 import com.viglet.turing.commons.sn.field.TurSNFieldName;
+import com.viglet.turing.genai.catalog.planning.TurCopilotQueryPlan;
+import com.viglet.turing.genai.catalog.planning.TurCopilotQueryPlanner;
+import com.viglet.turing.genai.catalog.planning.TurCopilotQueryPlanner.PlanRequest;
+import com.viglet.turing.genai.catalog.planning.TurCopilotQueryPlannerFactory;
 import com.viglet.turing.persistence.model.sn.TurSNSite;
 import com.viglet.turing.persistence.model.sn.field.TurSNSiteFieldExt;
 import com.viglet.turing.persistence.repository.sn.TurSNSiteRepository;
@@ -43,10 +47,6 @@ import com.viglet.turing.sn.dsl.TurDslSearchResponse;
 import com.viglet.turing.sn.dsl.TurDslSearchService;
 import com.viglet.turing.sn.dsl.eval.TurNLFacetField;
 import com.viglet.turing.sn.dsl.eval.TurNLFacetParser;
-import com.viglet.turing.sn.dsl.eval.TurNLFacetParser.ParseRequest;
-import com.viglet.turing.sn.dsl.eval.TurNLFacetParser.TurNLFacetParseException;
-import com.viglet.turing.sn.dsl.eval.TurNLRankingPlanner;
-import com.viglet.turing.sn.dsl.eval.TurNLRankingPlanner.RankingIntent;
 import com.viglet.turing.sn.ranking.TurSNHybridRankingService;
 import com.viglet.turing.system.TurDefaultChatModelResolver;
 
@@ -61,10 +61,15 @@ import tools.jackson.databind.json.JsonMapper;
  * <p>It composes the three Block&nbsp;R primitives into a "talk to the catalog"
  * assistant:
  * <ol>
- *   <li><b>NL→facet (T385)</b> — the user's prose is parsed into a grounded
- *       {@link TurDslQueryRequest} over the site's <em>declared</em> field schema
- *       by {@link TurNLFacetParser} (it may only reference declared fields; it
- *       omits what it cannot ground).</li>
+ *   <li><b>NL→query planning (T385, T818)</b> — the user's prose is turned into a
+ *       grounded {@link TurDslQueryRequest} over the site's <em>declared</em> field
+ *       schema by the site's chosen {@link TurCopilotQueryPlanner} (it may only
+ *       reference declared fields; it omits what it cannot ground). The strategy is
+ *       a per-site option — {@code DETERMINISTIC} (the T811 ranking overlay plus a
+ *       single {@link TurNLFacetParser} facet parse, the default),
+ *       {@code LLM_ASSISTED} (multi-pass parse→judge→refine) or {@code HYBRID}
+ *       (fast-path with LLM escalation) — resolved by
+ *       {@link TurCopilotQueryPlannerFactory}.</li>
  *   <li><b>Hybrid SN search (T383)</b> — the grounded query is executed against
  *       the live index via {@link TurDslSearchService}; when the site runs a
  *       hybrid ranking mode the result page is reordered by
@@ -90,8 +95,12 @@ import tools.jackson.databind.json.JsonMapper;
 @Service
 public class TurCatalogCopilotService {
 
-    /** Maximum number of catalog results used as grounding context / citations. */
-    private static final int MAX_RESULTS = 8;
+    /**
+     * Maximum number of catalog results used as grounding context / citations. Shared
+     * with the planning seam's {@code DEFAULT_TOP_K} so the page a plan retrieves and
+     * the page the LLM is grounded on can never drift apart.
+     */
+    private static final int MAX_RESULTS = TurCopilotQueryPlanner.DEFAULT_TOP_K;
     /** Cap on the per-result snippet length fed to the answer LLM. */
     private static final int SNIPPET_CHARS = 320;
     /**
@@ -106,7 +115,7 @@ public class TurCatalogCopilotService {
     private static final ObjectMapper OBJECT_MAPPER = JsonMapper.builder().build();
 
     private final TurNLFacetParser parser;
-    private final TurNLRankingPlanner rankingPlanner;
+    private final TurCopilotQueryPlannerFactory plannerFactory;
     private final TurDslSearchService dslSearchService;
     private final TurSNSiteRepository turSNSiteRepository;
     private final TurSNSiteFieldExtRepository turSNSiteFieldExtRepository;
@@ -115,7 +124,7 @@ public class TurCatalogCopilotService {
     private final com.viglet.turing.properties.TurCatalogCopilotProperty copilotProperty;
 
     public TurCatalogCopilotService(TurNLFacetParser parser,
-            TurNLRankingPlanner rankingPlanner,
+            TurCopilotQueryPlannerFactory plannerFactory,
             TurDslSearchService dslSearchService,
             TurSNSiteRepository turSNSiteRepository,
             TurSNSiteFieldExtRepository turSNSiteFieldExtRepository,
@@ -123,7 +132,7 @@ public class TurCatalogCopilotService {
             TurDefaultChatModelResolver chatModelResolver,
             com.viglet.turing.properties.TurCatalogCopilotProperty copilotProperty) {
         this.parser = parser;
-        this.rankingPlanner = rankingPlanner;
+        this.plannerFactory = plannerFactory;
         this.dslSearchService = dslSearchService;
         this.turSNSiteRepository = turSNSiteRepository;
         this.turSNSiteFieldExtRepository = turSNSiteFieldExtRepository;
@@ -378,26 +387,33 @@ public class TurCatalogCopilotService {
         List<TurNLFacetField> schema = resolveSchema(site);
         String searchLocale = StringUtils.hasText(locale) ? locale : "en";
 
-        // T811 / §LVII.1 — resolve any superlative / "sorted by" ranking intent
-        // deterministically (the LLM is unreliable at it) and hand the LLM only the
-        // faceting part of the question (the stripped query), so the facet filter
-        // survives; then inject the resolved sort + a top-k size.
-        RankingIntent intent = rankingPlanner.detect(query, schema);
-        TurDslQueryRequest request = (intent.hasSort() && !StringUtils.hasText(intent.strippedQuery()))
-                ? matchAllRequest(MAX_RESULTS)
-                : parseOrFallback(siteName, locale, intent.strippedQuery(), schema);
-        if (intent.hasSort()) {
-            request = withRankingSort(request, intent.field(), intent.order());
-        }
-        // T823 / §LX.2 — the filtered path was opaque: log the deterministic ranking
-        // intent AND the exact structured query executed, so a "no results" answer is
-        // traceable to the query that produced it.
-        log.info("[CatalogCopilot] site '{}' FILTERED mode: rankingIntent={}, query={}",
-                siteName,
-                intent.hasSort() ? (intent.field() + " " + intent.order()) : "none",
-                toJson(request));
+        // T818 / §LIX.1 (Block BK) — planning is a seam now: the site's resolved
+        // strategy (DETERMINISTIC = today's T811 overlay + LLM facet parse |
+        // LLM_ASSISTED = parse→judge→refine | HYBRID = fast-path + escalation) owns
+        // turning the prose into a structured query.
+        TurCopilotQueryPlannerFactory.Resolution resolution = plannerFactory.resolve(siteName);
+        TurCopilotQueryPlanner planner = resolution.planner();
+        PlanRequest planRequest =
+                new PlanRequest(siteName, searchLocale, query, schema, resolution.maxPasses());
+        TurCopilotQueryPlan plan = planner.plan(planRequest);
+        // T823 / §LX.2 — the filtered path was opaque: log the plan (strategy, LLM
+        // passes, notes) AND the exact structured query executed, so a "no results"
+        // answer is traceable to the query that produced it.
+        logPlan(siteName, plan);
         Optional<TurDslSearchResponse> responseOpt =
-                dslSearchService.search(siteName, searchLocale, request);
+                dslSearchService.search(siteName, searchLocale, plan.request());
+
+        // T820 / §LIX.3 — second chance: a strategy may escalate once, having seen how
+        // many hits its plan actually produced (HYBRID rescues an empty/degenerate one).
+        Optional<TurCopilotQueryPlan> escalated =
+                planner.replan(planRequest, plan, totalHitsOf(responseOpt));
+        if (escalated.isPresent()) {
+            plan = escalated.get();
+            logPlan(siteName, plan);
+            responseOpt = dslSearchService.search(siteName, searchLocale, plan.request());
+        }
+
+        TurDslQueryRequest request = plan.request();
         if (responseOpt.isEmpty() || responseOpt.get().hits() == null
                 || responseOpt.get().hits().hits() == null) {
             log.info("[CatalogCopilot] site '{}' FILTERED returned NO hits (filters: {})",
@@ -416,6 +432,22 @@ public class TurCatalogCopilotService {
         Projection projection = project(ordered, MAX_RESULTS, fieldDescriptions(schema));
         return new Retrieval(projection.citations(), projection.contextBlocks(),
                 totalHits, summarize(request), true);
+    }
+
+    /** T823 / §LX.2 + T818 — one INFO line per executed plan (strategy, cost, query). */
+    private void logPlan(String siteName, TurCopilotQueryPlan plan) {
+        log.info("[CatalogCopilot] site '{}' FILTERED mode: strategy={}, llmPasses={}, plan={}, query={}",
+                siteName, plan.strategy(), plan.llmPasses(), plan.notes(), toJson(plan.request()));
+    }
+
+    /** The total hit count a response carries, or {@code 0} when it holds none. */
+    private static long totalHitsOf(Optional<TurDslSearchResponse> responseOpt) {
+        if (responseOpt.isEmpty() || responseOpt.get().hits() == null
+                || responseOpt.get().hits().hits() == null) {
+            return 0L;
+        }
+        TurDslSearchResponse.Hits hits = responseOpt.get().hits();
+        return hits.total() != null ? hits.total().value() : hits.hits().size();
     }
 
     /**
@@ -612,32 +644,13 @@ public class TurCatalogCopilotService {
         return Optional.empty();
     }
 
-    private TurDslQueryRequest matchAllRequest(int size) {
-        String body = "{\"query\":{\"match_all\":{}},\"size\":%d}".formatted(size);
-        return OBJECT_MAPPER.readValue(body, TurDslQueryRequest.class);
-    }
-
     /**
-     * T811 / §LVII.1 — injects the deterministic ranking sort into a parsed request
-     * and guarantees a top-k {@code size} (so a sort-only {@code match_all} query
-     * returns a bounded ranked page, not an unbounded scan). A {@code sort} the LLM
-     * already produced is respected (never overridden); a null query degrades to
-     * {@code match_all} so a sort-only request still executes. The
-     * {@link TurDslQueryRequest} record is immutable, so this copies it field-for-field
-     * with the two changed slots.
+     * T818 / §LIX.1 — the bounded {@code match_all} the stuff-all path uses; the
+     * planning-side bodies now live in
+     * {@link com.viglet.turing.genai.catalog.planning.TurCopilotQueryBodies}.
      */
-    private static TurDslQueryRequest withRankingSort(TurDslQueryRequest r, String field, String order) {
-        TurDslQuery query = r.query() != null ? r.query() : new TurDslQuery.MatchAll();
-        List<Object> sort = (r.sort() != null && !r.sort().isEmpty())
-                ? r.sort()
-                : List.of(Map.of(field, order));
-        Integer size = r.size() != null ? r.size() : MAX_RESULTS;
-        return new TurDslQueryRequest(query, r.from(), size, sort, r.source(), r.highlight(),
-                r.aggs(), r.postFilter(), r.minScore(), r.searchAfter(), r.collapse(), r.suggest(),
-                r.rescore(), r.timeout(), r.explain(), r.scriptFields(), r.indicesBoost(),
-                r.trackTotalHits(), r.storedFields(), r.scroll(), r.profile(), r.pit(),
-                r.docvalueFields(), r.version(), r.seqNoPrimaryTerm(), r.preference(), r.routing(),
-                r.searchType(), r.terminateAfter());
+    private TurDslQueryRequest matchAllRequest(int size) {
+        return com.viglet.turing.genai.catalog.planning.TurCopilotQueryBodies.matchAll(size);
     }
 
     /** Rough token estimate (chars/4) of the assembled grounding context. */
@@ -651,27 +664,6 @@ public class TurCatalogCopilotService {
 
     /** Citations + per-result context blocks projected from a hit page. */
     private record Projection(List<TurCatalogCitation> citations, List<String> contextBlocks) {
-    }
-
-    private TurDslQueryRequest parseOrFallback(String siteName, String locale, String query,
-            List<TurNLFacetField> schema) {
-        if (parser.isAvailable() && !schema.isEmpty()) {
-            try {
-                return parser.parse(new ParseRequest(siteName, locale, query, schema));
-            } catch (TurNLFacetParseException e) {
-                log.warn("[CatalogCopilot] NL→facet parse failed for '{}': {} — falling back to free-text",
-                        siteName, e.getMessage());
-            }
-        }
-        return freeTextRequest(query);
-    }
-
-    /** A plain full-text query body used when the parser is unavailable or fails. */
-    private TurDslQueryRequest freeTextRequest(String query) {
-        String safe = query == null ? "" : query.replace("\"", " ").replace("\\", " ");
-        String body = "{\"query\":{\"match\":{\"_text_\":\"%s\"}},\"size\":%d}"
-                .formatted(safe, MAX_RESULTS);
-        return OBJECT_MAPPER.readValue(body, TurDslQueryRequest.class);
     }
 
     /**

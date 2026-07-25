@@ -30,6 +30,26 @@ export type TurSNRankingMode = "LEGACY" | "HYBRID_RRF" | "HYBRID_RRF_RERANK";
  */
 export type TurSNKnowledgeBaseMode = "VECTOR" | "VECTORLESS_STRUCTURED" | "HYBRID";
 
+/**
+ * T818 / §LIX.1 (Block BK) — the catalog copilot's query-planning STRATEGY: how a
+ * natural-language question becomes a structured DSL query.
+ *
+ * - `DETERMINISTIC` — today's path: the deterministic ranking planner resolves any
+ *   superlative / "sorted by" intent, then a single LLM facet parse handles the rest.
+ *   Instant and cheap, but the ranking lexicon is English-only.
+ * - `LLM_ASSISTED` — multi-pass parse → judge → refine. Understands other languages
+ *   natively and repairs a dropped facet / missing sort, at N× LLM calls per turn.
+ * - `HYBRID` — the deterministic fast-path, escalating to the LLM passes only when
+ *   retrieval comes back empty or the plan is degenerate.
+ *
+ * `null`/absent inherits the deployment default
+ * (`turing.genai.copilot.planning.strategy`, itself `DETERMINISTIC`).
+ */
+export type TurCopilotPlanningStrategy =
+  | "DETERMINISTIC"
+  | "LLM_ASSISTED"
+  | "HYBRID";
+
 export interface TurSNSiteGenAi {
   id: string;
   /**
@@ -87,6 +107,19 @@ export interface TurSNSiteGenAi {
    * LLM); `HYBRID` exposes both. @since 2026.3.4
    */
   knowledgeBaseMode?: TurSNKnowledgeBaseMode;
+  /**
+   * T818 / §LIX.1 (Block BK) — the copilot's query-planning strategy. `null`
+   * inherits the deployment default (`DETERMINISTIC` = today's behaviour), so an
+   * existing site is unchanged. @since 2026.3.4
+   */
+  copilotPlanningStrategy?: TurCopilotPlanningStrategy | null;
+  /**
+   * T819 / §LIX.2 (Block BK) — analysis depth for the LLM planning strategies: how
+   * many LLM passes beyond the initial parse may run (0 = parse only, 1 = + judge,
+   * 2 = + refine). `null` inherits `turing.genai.copilot.planning.max-passes`.
+   * Ignored when the resolved strategy is `DETERMINISTIC`. @since 2026.3.4
+   */
+  copilotPlanningMaxPasses?: number | null;
   /**
    * T472 / §XXVI.9 — opt-in for the index-time content-fit (readability)
    * signal. When `true` and {@link contentFitPersonaId} resolves to an

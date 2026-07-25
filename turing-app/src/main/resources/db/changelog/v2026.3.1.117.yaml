@@ -1,0 +1,43 @@
+databaseChangeLog:
+  # --- T818/T819 (Block BK): per-site copilot query-planning strategy + depth ---
+  # Both columns are NULLABLE on purpose: null = "inherit the global
+  # turing.genai.copilot.planning.* defaults" (strategy DETERMINISTIC = today's
+  # behaviour), so every existing site keeps its current planning path and no
+  # revalidation is needed.
+  - changeSet:
+      id: 2026.3.1.117-1
+      author: alexandre
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - columnExists:
+                tableName: sn_site_genai
+                columnName: copilotPlanningStrategy
+      changes:
+        - addColumn:
+            tableName: sn_site_genai
+            columns:
+              - column:
+                  name: copilotPlanningStrategy
+                  type: varchar(32)
+                  constraints:
+                    nullable: true
+
+  - changeSet:
+      id: 2026.3.1.117-2
+      author: alexandre
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - columnExists:
+                tableName: sn_site_genai
+                columnName: copilotPlanningMaxPasses
+      changes:
+        - addColumn:
+            tableName: sn_site_genai
+            columns:
+              - column:
+                  name: copilotPlanningMaxPasses
+                  type: int
+                  constraints:
+                    nullable: true
