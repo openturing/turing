@@ -389,16 +389,27 @@ public class TurCatalogCopilotService {
         if (intent.hasSort()) {
             request = withRankingSort(request, intent.field(), intent.order());
         }
+        // T823 / §LX.2 — the filtered path was opaque: log the deterministic ranking
+        // intent AND the exact structured query executed, so a "no results" answer is
+        // traceable to the query that produced it.
+        log.info("[CatalogCopilot] site '{}' FILTERED mode: rankingIntent={}, query={}",
+                siteName,
+                intent.hasSort() ? (intent.field() + " " + intent.order()) : "none",
+                toJson(request));
         Optional<TurDslSearchResponse> responseOpt =
                 dslSearchService.search(siteName, searchLocale, request);
         if (responseOpt.isEmpty() || responseOpt.get().hits() == null
                 || responseOpt.get().hits().hits() == null) {
+            log.info("[CatalogCopilot] site '{}' FILTERED returned NO hits (filters: {})",
+                    siteName, blankToNone(summarize(request)));
             return new Retrieval(List.of(), List.of(), 0L, summarize(request), true);
         }
 
         TurDslSearchResponse response = responseOpt.get();
         List<TurDslSearchResponse.Hit> hits = response.hits().hits();
         long totalHits = response.hits().total() != null ? response.hits().total().value() : hits.size();
+        log.info("[CatalogCopilot] site '{}' FILTERED returned {} hits (filters: {})",
+                siteName, totalHits, blankToNone(summarize(request)));
 
         List<TurDslSearchResponse.Hit> ordered = applyHybridRanking(site, searchLocale, query, hits);
 
@@ -489,19 +500,28 @@ public class TurCatalogCopilotService {
         // Only stuff when we actually hold the entire catalog — a partial page
         // (index bigger than the fetch cap) must use filtered retrieval instead.
         if (totalHits > hits.size()) {
+            // T823 / §LX.2 — make the decision visible at INFO (was silent).
+            log.info("[CatalogCopilot] site '{}' stuff-all SKIPPED: index has {} rows > fetched {} "
+                    + "(stuffAllMaxDocs={}) -> FILTERED retrieval",
+                    siteName, totalHits, hits.size(), maxDocs);
             return Optional.empty();
         }
         // T799 / §LIV — resolve the declared schema so stuff-all context blocks
         // label each value by its field description, not its cryptic flat key.
         Projection projection = project(hits, hits.size(), fieldDescriptions(resolveSchema(siteOpt.get())));
         int estimatedTokens = estimateTokens(projection.contextBlocks());
-        if (estimatedTokens > copilotProperty.getStuffAllTokenBudget()) {
-            log.debug("[CatalogCopilot] stuff-all for '{}' over budget (~{} > {} tokens) — filtered fallback",
-                    siteName, estimatedTokens, copilotProperty.getStuffAllTokenBudget());
+        int budget = copilotProperty.getStuffAllTokenBudget();
+        if (estimatedTokens > budget) {
+            // T823 / §LX.2 — the silent fallback that made the copilot "lose intelligence"
+            // when the catalog grew; log it at INFO with the numbers so it is diagnosable.
+            log.info("[CatalogCopilot] site '{}' stuff-all OVER BUDGET: ~{} tokens > {} (rows={}) "
+                    + "-> FILTERED retrieval (raise turing.genai.copilot.stuffAllTokenBudget "
+                    + "or ship the compact projection, Block BL/T822)",
+                    siteName, estimatedTokens, budget, hits.size());
             return Optional.empty();
         }
-        log.debug("[CatalogCopilot] stuff-all for '{}': grounding on all {} rows (~{} tokens)",
-                siteName, hits.size(), estimatedTokens);
+        log.info("[CatalogCopilot] site '{}' STUFF_ALL: grounding on all {} rows (~{} tokens, budget {})",
+                siteName, hits.size(), estimatedTokens, budget);
         return Optional.of(new Retrieval(projection.citations(), projection.contextBlocks(),
                 totalHits, "", true));
     }
@@ -766,6 +786,20 @@ public class TurCatalogCopilotService {
 
     private static String str(Object value) {
         return value == null ? "" : value.toString();
+    }
+
+    /** Serializes a DSL request for logging; never throws (returns a marker on failure). */
+    private static String toJson(TurDslQueryRequest request) {
+        try {
+            return OBJECT_MAPPER.writeValueAsString(request);
+        } catch (RuntimeException e) {
+            return "(unserializable: " + e.getMessage() + ")";
+        }
+    }
+
+    /** {@code "(none)"} for a blank filter summary, so an empty-filter log reads clearly. */
+    private static String blankToNone(String summary) {
+        return StringUtils.hasText(summary) ? summary : "(none)";
     }
 
     private static String firstNonBlank(String... candidates) {

@@ -2936,13 +2936,14 @@ catalog**. Simply raising the budget works but is expensive (~120k tokens/call, 
   descriptions (~10× smaller). Make stuff-all **size-adaptive**: try the full projection;
   if over budget, retry compact; only if even the compact whole-catalog exceeds budget
   fall back to filtered retrieval. A catalog of thousands of rows then keeps the
-  reason-over-everything behaviour at a fraction of the tokens. (An immediate, non-code
-  mitigation exists — raise `turing.genai.copilot.stuffAllTokenBudget` /
-  `stuffAllMaxDocs` via env — but it is a stopgap, not the scalable answer.)
-- **LX.2 (T823, 💭) Observability + key-field config.** The fallback is silent today —
-  `log` which mode actually ran (full stuff-all / compact / filtered) and the estimated
-  token count so an operator sees a catalog cross the threshold; and derive the compact
-  key-field set from the manifest (`sortable`/`facet` flags) rather than hardcoding it.
+  reason-over-everything behaviour at a fraction of the tokens. The compact key-field
+  set is derived from the manifest (`sortable`/`facet` flags) rather than hardcoded. (An
+  immediate, non-code mitigation exists — raise
+  `turing.genai.copilot.stuffAllTokenBudget` / `stuffAllMaxDocs` via env — but it is a
+  stopgap, not the scalable answer.)
+
+(Retrieval-mode observability — logging which mode ran and, in the filtered path, the
+exact query — shipped as T823; see CHANGELOG Block BL.)
 
 **Relation to Block BK.** Advisory questions ("help me choose") are not facet retrieval —
 they need the LLM reasoning over candidates. Compact stuff-all (this block) and the

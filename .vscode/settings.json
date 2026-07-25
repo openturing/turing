@@ -33,5 +33,15 @@
   "java.compile.nullAnalysis.mode": "automatic",
   "java.debug.settings.onBuildFailureProceed": true,
   "java.test.defaultConfig": "run",
-  "markdown.validate.enabled": true
+  "markdown.validate.enabled": true,
+
+  // Royal blue status bar so this worktree is easy to spot
+  "workbench.colorCustomizations": {
+    "statusBar.background": "#4169E1",
+    "statusBar.foreground": "#FFFFFF",
+    "statusBar.border": "#27408B",
+    "statusBarItem.hoverBackground": "#27408B",
+    "statusBarItem.remoteBackground": "#27408B",
+    "statusBarItem.remoteForeground": "#FFFFFF"
+  }
 }
