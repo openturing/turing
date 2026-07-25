@@ -45,6 +45,8 @@ import com.viglet.turing.sn.dsl.eval.TurNLFacetField;
 import com.viglet.turing.sn.dsl.eval.TurNLFacetParser;
 import com.viglet.turing.sn.dsl.eval.TurNLFacetParser.ParseRequest;
 import com.viglet.turing.sn.dsl.eval.TurNLFacetParser.TurNLFacetParseException;
+import com.viglet.turing.sn.dsl.eval.TurNLRankingPlanner;
+import com.viglet.turing.sn.dsl.eval.TurNLRankingPlanner.RankingIntent;
 import com.viglet.turing.sn.ranking.TurSNHybridRankingService;
 import com.viglet.turing.system.TurDefaultChatModelResolver;
 
@@ -104,6 +106,7 @@ public class TurCatalogCopilotService {
     private static final ObjectMapper OBJECT_MAPPER = JsonMapper.builder().build();
 
     private final TurNLFacetParser parser;
+    private final TurNLRankingPlanner rankingPlanner;
     private final TurDslSearchService dslSearchService;
     private final TurSNSiteRepository turSNSiteRepository;
     private final TurSNSiteFieldExtRepository turSNSiteFieldExtRepository;
@@ -112,6 +115,7 @@ public class TurCatalogCopilotService {
     private final com.viglet.turing.properties.TurCatalogCopilotProperty copilotProperty;
 
     public TurCatalogCopilotService(TurNLFacetParser parser,
+            TurNLRankingPlanner rankingPlanner,
             TurDslSearchService dslSearchService,
             TurSNSiteRepository turSNSiteRepository,
             TurSNSiteFieldExtRepository turSNSiteFieldExtRepository,
@@ -119,6 +123,7 @@ public class TurCatalogCopilotService {
             TurDefaultChatModelResolver chatModelResolver,
             com.viglet.turing.properties.TurCatalogCopilotProperty copilotProperty) {
         this.parser = parser;
+        this.rankingPlanner = rankingPlanner;
         this.dslSearchService = dslSearchService;
         this.turSNSiteRepository = turSNSiteRepository;
         this.turSNSiteFieldExtRepository = turSNSiteFieldExtRepository;
@@ -373,7 +378,17 @@ public class TurCatalogCopilotService {
         List<TurNLFacetField> schema = resolveSchema(site);
         String searchLocale = StringUtils.hasText(locale) ? locale : "en";
 
-        TurDslQueryRequest request = parseOrFallback(siteName, locale, query, schema);
+        // T811 / §LVII.1 — resolve any superlative / "sorted by" ranking intent
+        // deterministically (the LLM is unreliable at it) and hand the LLM only the
+        // faceting part of the question (the stripped query), so the facet filter
+        // survives; then inject the resolved sort + a top-k size.
+        RankingIntent intent = rankingPlanner.detect(query, schema);
+        TurDslQueryRequest request = (intent.hasSort() && !StringUtils.hasText(intent.strippedQuery()))
+                ? matchAllRequest(MAX_RESULTS)
+                : parseOrFallback(siteName, locale, intent.strippedQuery(), schema);
+        if (intent.hasSort()) {
+            request = withRankingSort(request, intent.field(), intent.order());
+        }
         Optional<TurDslSearchResponse> responseOpt =
                 dslSearchService.search(siteName, searchLocale, request);
         if (responseOpt.isEmpty() || responseOpt.get().hits() == null
@@ -494,6 +509,29 @@ public class TurCatalogCopilotService {
     private TurDslQueryRequest matchAllRequest(int size) {
         String body = "{\"query\":{\"match_all\":{}},\"size\":%d}".formatted(size);
         return OBJECT_MAPPER.readValue(body, TurDslQueryRequest.class);
+    }
+
+    /**
+     * T811 / §LVII.1 — injects the deterministic ranking sort into a parsed request
+     * and guarantees a top-k {@code size} (so a sort-only {@code match_all} query
+     * returns a bounded ranked page, not an unbounded scan). A {@code sort} the LLM
+     * already produced is respected (never overridden); a null query degrades to
+     * {@code match_all} so a sort-only request still executes. The
+     * {@link TurDslQueryRequest} record is immutable, so this copies it field-for-field
+     * with the two changed slots.
+     */
+    private static TurDslQueryRequest withRankingSort(TurDslQueryRequest r, String field, String order) {
+        TurDslQuery query = r.query() != null ? r.query() : new TurDslQuery.MatchAll();
+        List<Object> sort = (r.sort() != null && !r.sort().isEmpty())
+                ? r.sort()
+                : List.of(Map.of(field, order));
+        Integer size = r.size() != null ? r.size() : MAX_RESULTS;
+        return new TurDslQueryRequest(query, r.from(), size, sort, r.source(), r.highlight(),
+                r.aggs(), r.postFilter(), r.minScore(), r.searchAfter(), r.collapse(), r.suggest(),
+                r.rescore(), r.timeout(), r.explain(), r.scriptFields(), r.indicesBoost(),
+                r.trackTotalHits(), r.storedFields(), r.scroll(), r.profile(), r.pit(),
+                r.docvalueFields(), r.version(), r.seqNoPrimaryTerm(), r.preference(), r.routing(),
+                r.searchType(), r.terminateAfter());
     }
 
     /** Rough token estimate (chars/4) of the assembled grounding context. */

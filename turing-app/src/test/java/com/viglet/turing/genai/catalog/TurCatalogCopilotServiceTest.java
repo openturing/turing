@@ -13,6 +13,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -66,6 +67,11 @@ class TurCatalogCopilotServiceTest {
 
     @Mock
     private TurNLFacetParser parser;
+    // T811 — the ranking planner is a pure component; use the real one (via @Spy) so
+    // detect()/strip()/field-resolution actually run in these tests.
+    @org.mockito.Spy
+    private com.viglet.turing.sn.dsl.eval.TurNLRankingPlanner rankingPlanner =
+            new com.viglet.turing.sn.dsl.eval.TurNLRankingPlanner();
     @Mock
     private TurDslSearchService dslSearchService;
     @Mock
@@ -273,6 +279,67 @@ class TurCatalogCopilotServiceTest {
     }
 
     @Test
+    void superlativeInjectsNumericSortAndKeepsFacetViaStrippedQuery() {
+        // T811 / §LVII.1 — "chat models sorted by intelligence index" must (a) reach
+        // the LLM with the ranking clause stripped (so it keeps kind=CHAT) and (b)
+        // execute with a deterministic numeric sort + a top-k size.
+        TurSNSite site = new TurSNSite();
+        site.setName("catalog");
+        ChatModel chatModel = modelReturning("Top pick is [1].");
+        when(chatModelResolver.resolve()).thenReturn(Optional.of(chatModel));
+        when(turSNSiteRepository.findByNameIgnoreCase("catalog")).thenReturn(Optional.of(site));
+        when(turSNSiteFieldExtRepository.findByTurSNSiteAndEnabled(site, 1)).thenReturn(List.of(
+                field("kind", TurSEFieldType.STRING, true),
+                fieldWithDescription("benchmarks_intelligenceIndex", TurSEFieldType.FLOAT,
+                        "Overall intelligence index")));
+        when(parser.isAvailable()).thenReturn(true);
+        ArgumentCaptor<TurNLFacetParser.ParseRequest> parseCaptor =
+                ArgumentCaptor.forClass(TurNLFacetParser.ParseRequest.class);
+        when(parser.parse(parseCaptor.capture())).thenReturn(kindChatQuery());
+        ArgumentCaptor<TurDslQueryRequest> reqCaptor = ArgumentCaptor.forClass(TurDslQueryRequest.class);
+        when(dslSearchService.search(eq("catalog"), eq("en"), reqCaptor.capture()))
+                .thenReturn(Optional.of(twoHitResponse()));
+
+        service.answer("catalog", "en",
+                List.of(new ChatTurn("user", "chat models sorted by intelligence index")));
+
+        assertThat(parseCaptor.getValue().query())
+                .doesNotContainIgnoringCase("sorted by")
+                .containsIgnoringCase("chat");
+        TurDslQueryRequest executed = reqCaptor.getValue();
+        assertThat(executed.sort()).isNotNull().hasSize(1);
+        assertThat(executed.sort().getFirst()).isEqualTo(Map.of("benchmarks_intelligenceIndex", "desc"));
+        assertThat(executed.size()).isNotNull();
+    }
+
+    @Test
+    void sortOnlySuperlativeRunsMatchAllWithSortAndTopK() {
+        // T811 / §LVII.1 — "which model has the lowest price?" strips to a blank facet
+        // query, so retrieval must skip the LLM parse and run match_all + sort(asc) + size.
+        TurSNSite site = new TurSNSite();
+        site.setName("catalog");
+        ChatModel chatModel = modelReturning("Cheapest is [1].");
+        when(chatModelResolver.resolve()).thenReturn(Optional.of(chatModel));
+        when(turSNSiteRepository.findByNameIgnoreCase("catalog")).thenReturn(Optional.of(site));
+        when(turSNSiteFieldExtRepository.findByTurSNSiteAndEnabled(site, 1)).thenReturn(List.of(
+                fieldWithDescription("pricing_inputPer1M", TurSEFieldType.DOUBLE,
+                        "Input price per 1M tokens (USD)")));
+        ArgumentCaptor<TurDslQueryRequest> reqCaptor = ArgumentCaptor.forClass(TurDslQueryRequest.class);
+        when(dslSearchService.search(eq("catalog"), eq("en"), reqCaptor.capture()))
+                .thenReturn(Optional.of(twoHitResponse()));
+
+        service.answer("catalog", "en",
+                List.of(new ChatTurn("user", "which model has the lowest price?")));
+
+        // The LLM parser is never consulted (nothing to facet after stripping).
+        verify(parser, never()).parse(any());
+        TurDslQueryRequest executed = reqCaptor.getValue();
+        assertThat(executed.sort()).isNotNull().hasSize(1);
+        assertThat(executed.sort().getFirst()).isEqualTo(Map.of("pricing_inputPer1M", "asc"));
+        assertThat(executed.size()).isNotNull();
+    }
+
+    @Test
     void returnsErrorWhenNoDefaultLlm() {
         when(chatModelResolver.resolve()).thenReturn(Optional.empty());
 
@@ -337,6 +404,13 @@ class TurCatalogCopilotServiceTest {
         TurDslSearchResponse.Hits hits = new TurDslSearchResponse.Hits(
                 new TurDslSearchResponse.Total(1, "eq"), 1.0, List.of(h1));
         return new TurDslSearchResponse(7L, false, hits, null);
+    }
+
+    /** A facet-only query (kind=chat, no sort) — the LLM's output after ranking is stripped. */
+    private static TurDslQueryRequest kindChatQuery() {
+        return MAPPER.readValue("""
+                {"query":{"bool":{"filter":[{"term":{"kind":"chat"}}]}}}""",
+                TurDslQueryRequest.class);
     }
 
     private static TurDslQueryRequest groundedQuery() {

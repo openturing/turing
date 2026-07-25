@@ -2826,31 +2826,6 @@ numeric fields carry `NumericDocValues`. A `sort` clause, once emitted, executes
 correctly. The fragility is entirely in **query planning** — so the fix is to stop
 delegating the ranking dimension to the LLM and to keep the prompt generic.
 
-### LVII.1 Deterministic ranking-intent planner (T811)
-Add a pure `TurNLRankingPlanner` (no LLM, no DB, exhaustively unit-testable):
-
-- **Detect intent + direction** from the raw NL query with a small lexicon —
-  `most/highest/largest/biggest/best/top/greatest/maximum` → `desc`;
-  `cheapest/lowest/smallest/least/minimum/fastest/shortest` → `asc`; plus the explicit
-  `sorted by <x>` / `order by <x>` (default `desc` unless paired with an asc adjective).
-- **Resolve the target field** to a *numeric* declared field by scoring query tokens
-  against each field's `name` + `description` tokens, with a compact **generic**
-  adjective→noun synonym seed to bridge the adjective/noun gap (`cheap/expensive/price`
-  → a field whose name/description mentions price/pricing/cost; `intelligent/smart` →
-  "intelligence"; `fast/quick/latency/throughput` → performance/latency; `big/long` →
-  context window / tokens). No catalog-specific vocabulary — everything keys off the
-  declared schema's own words.
-
-Wire into `TurCatalogCopilotService.retrieve()`: when an intent resolves, **strip the
-ranking clause** from the text handed to `parseOrFallback` (the LLM then sees a clean
-faceting task — "chat models" — and keeps `kind=CHAT`), then **inject the deterministic
-`sort`** into the parsed request (never overriding a `sort` the LLM already produced)
-and **guarantee a top-k `size`** so a sort-only (`match_all`) query returns a bounded
-ranked page rather than an unbounded scan. Additive and fail-open: no intent → the path
-is byte-for-byte unchanged; a resolution miss → no sort, faceting as before. Covered by
-the fake-parser seam in `TurCatalogCopilotServiceTest`, so the whole
-strip→facet→inject→top-k contract is pinned without an LLM.
-
 ### LVII.2 Genericize the copilot + NL→facet system prompts (T812)
 With ranking handled procedurally, remove the catalog-flavoured superlative examples
 that leaked model-catalog framing into `TurLlmNLFacetParser.systemPrompt` (the
