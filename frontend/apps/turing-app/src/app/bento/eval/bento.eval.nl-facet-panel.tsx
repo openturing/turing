@@ -1,15 +1,18 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
+  IconAlertTriangle,
   IconCircleCheck,
   IconCircleX,
   IconFilterSearch,
   IconPlayerPlay,
+  IconScale,
   IconTrash,
   IconUpload,
 } from "@tabler/icons-react";
 
 import {
+  useComparePlanningForNLFacetDataset,
   useDeleteNLFacetDataset,
   useImportNLFacetDataset,
   useNLFacetDatasets,
@@ -18,6 +21,7 @@ import {
 } from "@/api/queries/sn-nl-facet-eval.queries";
 import type { TurEvalDataset } from "@/models/eval/eval-studio.model";
 import type {
+  TurCopilotPlanningComparison,
   TurNLFacetEvalPack,
   TurNLFacetEvalReport,
 } from "@/models/sn/sn-nl-facet-eval.model";
@@ -36,12 +40,16 @@ export function BentoEvalNLFacetPanel() {
   const { data: datasets, isError } = useNLFacetDatasets();
   const importDataset = useImportNLFacetDataset();
   const runDataset = useRunNLFacetDataset();
+  const comparePlanning = useComparePlanningForNLFacetDataset();
   const deleteDataset = useDeleteNLFacetDataset();
 
   const [packJson, setPackJson] = useState("");
   const [importError, setImportError] = useState<string | null>(null);
   const [reportByDataset, setReportByDataset] = useState<
     Record<string, TurNLFacetEvalReport>
+  >({});
+  const [comparisonByDataset, setComparisonByDataset] = useState<
+    Record<string, TurCopilotPlanningComparison>
   >({});
 
   const onImport = () => {
@@ -68,6 +76,13 @@ export function BentoEvalNLFacetPanel() {
     runDataset.mutate(id, {
       onSuccess: (report) =>
         setReportByDataset((prev) => ({ ...prev, [id]: report })),
+    });
+  };
+
+  const onComparePlanning = (id: string) => {
+    comparePlanning.mutate(id, {
+      onSuccess: (comparison) =>
+        setComparisonByDataset((prev) => ({ ...prev, [id]: comparison })),
     });
   };
 
@@ -147,8 +162,13 @@ export function BentoEvalNLFacetPanel() {
               key={dataset.id}
               dataset={dataset}
               report={reportByDataset[dataset.id]}
+              comparison={comparisonByDataset[dataset.id]}
               running={runDataset.isPending && runDataset.variables === dataset.id}
+              comparing={
+                comparePlanning.isPending && comparePlanning.variables === dataset.id
+              }
               onRun={() => onRun(dataset.id)}
+              onComparePlanning={() => onComparePlanning(dataset.id)}
               onDelete={() => deleteDataset.mutate(dataset.id)}
             />
           ))}
@@ -161,14 +181,20 @@ export function BentoEvalNLFacetPanel() {
 function NLFacetDatasetCard({
   dataset,
   report,
+  comparison,
   running,
+  comparing,
   onRun,
+  onComparePlanning,
   onDelete,
 }: Readonly<{
   dataset: TurEvalDataset;
   report?: TurNLFacetEvalReport;
+  comparison?: TurCopilotPlanningComparison;
   running: boolean;
+  comparing: boolean;
   onRun: () => void;
+  onComparePlanning: () => void;
   onDelete: () => void;
 }>) {
   const { t } = useTranslation();
@@ -197,6 +223,21 @@ function NLFacetDatasetCard({
             {running
               ? t("evalStudio.nlFacet.running", { defaultValue: "Running…" })
               : t("evalStudio.nlFacet.run", { defaultValue: "Run" })}
+          </button>
+          <button
+            type="button"
+            onClick={onComparePlanning}
+            disabled={comparing}
+            title={t("evalStudio.nlFacet.compareHint", {
+              defaultValue:
+                "Runs the pack through every copilot planning strategy — expensive: an LLM-assisted row costs up to three LLM calls per case.",
+            })}
+            className="bento-tile bento-tile-clickable inline-flex items-center gap-1.5 rounded-full border border-border/60 bg-card/60 px-3 py-1 text-sm backdrop-blur disabled:opacity-50"
+          >
+            <IconScale size={15} />
+            {comparing
+              ? t("evalStudio.nlFacet.comparing", { defaultValue: "Comparing…" })
+              : t("evalStudio.nlFacet.compare", { defaultValue: "Compare planners" })}
           </button>
           <button
             type="button"
@@ -260,6 +301,110 @@ function NLFacetDatasetCard({
             ))}
           </ul>
         </div>
+      )}
+
+      {comparison && <PlanningComparison comparison={comparison} />}
+    </div>
+  );
+}
+
+/**
+ * T821 / §LIX.4 — the copilot planning strategies side by side on the three axes
+ * an operator trades off: answer quality, latency and LLM calls.
+ *
+ * The caveats are rendered as prominently as the table on purpose. The run is
+ * plan-only, so HYBRID's row is its deterministic fast-path — showing the numbers
+ * without that sentence would read as "HYBRID buys you nothing", which is exactly
+ * the wrong conclusion.
+ */
+function PlanningComparison({
+  comparison,
+}: Readonly<{ comparison: TurCopilotPlanningComparison }>) {
+  const { t } = useTranslation();
+
+  if (comparison.error) {
+    return (
+      <p className="mt-4 text-sm text-rose-600 dark:text-rose-400">
+        {comparison.error}
+      </p>
+    );
+  }
+
+  return (
+    <div className="mt-4 space-y-3">
+      <div className="flex items-center gap-2 text-sm font-medium">
+        <IconScale size={16} className="text-muted-foreground" />
+        {t("evalStudio.nlFacet.comparisonTitle", {
+          defaultValue: "Planning strategies compared",
+        })}
+        <span className="text-xs font-normal text-muted-foreground">
+          {t("evalStudio.nlFacet.comparisonMeta", {
+            defaultValue: "{{cases}} cases · depth {{depth}}",
+            cases: comparison.caseCount,
+            depth: comparison.maxPasses,
+          })}
+        </span>
+      </div>
+
+      <div className="overflow-x-auto">
+        <table className="w-full min-w-[32rem] text-sm">
+          <thead>
+            <tr className="text-left text-xs uppercase tracking-wide text-muted-foreground">
+              <th className="py-1 pr-3 font-medium">
+                {t("evalStudio.nlFacet.colStrategy", { defaultValue: "Strategy" })}
+              </th>
+              <th className="py-1 pr-3 font-medium">
+                {t("evalStudio.nlFacet.colScore", { defaultValue: "Score" })}
+              </th>
+              <th className="py-1 pr-3 font-medium">
+                {t("evalStudio.nlFacet.colPassed", { defaultValue: "Passed" })}
+              </th>
+              <th className="py-1 pr-3 font-medium">
+                {t("evalStudio.nlFacet.colLlmPasses", { defaultValue: "LLM calls" })}
+              </th>
+              <th className="py-1 font-medium">
+                {t("evalStudio.nlFacet.colElapsed", { defaultValue: "Elapsed" })}
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            {comparison.strategies.map((outcome) => (
+              <tr
+                key={outcome.strategy}
+                className="border-t border-border/40 align-top"
+              >
+                <td className="py-2 pr-3">
+                  <span className="font-medium">{outcome.strategy}</span>
+                  <span className="block text-xs text-muted-foreground">
+                    {outcome.note}
+                  </span>
+                </td>
+                <td className="py-2 pr-3 tabular-nums">
+                  {Math.round(outcome.score * 100)}%
+                </td>
+                <td className="py-2 pr-3 tabular-nums">
+                  {outcome.passedCount}/{comparison.caseCount}
+                </td>
+                <td className="py-2 pr-3 tabular-nums">{outcome.llmPasses}</td>
+                <td className="py-2 tabular-nums">{outcome.elapsedMillis} ms</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      {comparison.caveats.length > 0 && (
+        <ul className="space-y-1 rounded-xl border border-amber-500/40 bg-amber-500/5 p-3">
+          {comparison.caveats.map((caveat) => (
+            <li
+              key={caveat}
+              className="flex items-start gap-2 text-xs text-amber-700 dark:text-amber-300"
+            >
+              <IconAlertTriangle size={14} className="mt-0.5 shrink-0" />
+              <span>{caveat}</span>
+            </li>
+          ))}
+        </ul>
       )}
     </div>
   );

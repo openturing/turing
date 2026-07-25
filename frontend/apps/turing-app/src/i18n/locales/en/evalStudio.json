@@ -76,6 +76,16 @@
       "timeline": "Score timeline"
     },
     "nlFacet": {
+      "colElapsed": "Elapsed",
+      "colLlmPasses": "LLM calls",
+      "colPassed": "Passed",
+      "colScore": "Score",
+      "colStrategy": "Strategy",
+      "compare": "Compare planners",
+      "compareHint": "Runs the pack through every copilot planning strategy — expensive: an LLM-assisted row costs up to three LLM calls per case.",
+      "comparing": "Comparing…",
+      "comparisonMeta": "{{cases}} cases · depth {{depth}}",
+      "comparisonTitle": "Planning strategies compared",
       "empty": "No NL→facet datasets yet",
       "emptyHint": "Import a pack above to save it as a reusable dataset.",
       "importButton": "Import dataset",

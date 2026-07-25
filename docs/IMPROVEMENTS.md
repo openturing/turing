@@ -2855,25 +2855,3 @@ degrades to no-sort exactly as today. The engine (`TurDslLuceneExecutor.buildSor
 untouched. A possible future alignment (out of scope here) is to reuse the target SN
 site's own index analyzers so ranking tokenization matches how the field was indexed.
 
-## LIX. Configurable copilot query-planning strategy (deterministic / LLM-assisted / hybrid) (Block BK)
-
-> **T818–T820 shipped**, plus T821's admin-surface half — see [CHANGELOG.md](CHANGELOG.md)
-> → Block BK. The planning strategy is now a per-site choosable enum
-> (`DETERMINISTIC` default | `LLM_ASSISTED` | `HYBRID`) behind a
-> `TurCopilotQueryPlanner` seam. Only the design below remains unbuilt.
-
-**LIX.4 (T821, 💭) Comparative eval.** The strategies now differ on three axes an
-operator has to trade off — answer quality, latency, and LLM calls per turn — and
-nothing measures them per catalog. Extend the NL→facet eval pack to run each strategy
-over the same cases and report score + elapsed + total LLM passes side by side, so a
-deployment can see what switching would buy *its* catalog before switching.
-
-Two constraints the design has to respect. First, dependency direction: the planning
-package (`genai.catalog.planning`) already depends on `sn.dsl.eval`, so the comparison
-runner belongs on the planning side, not inside `TurNLFacetEvalService` — otherwise the
-two packages form a cycle. Second, honesty about `HYBRID`: its escalation only fires on
-*live retrieval* (zero hits / a degenerate plan), which an eval pack has no way to
-produce, so a plan-only comparison necessarily scores `HYBRID` identically to
-`DETERMINISTIC`. The report must state that rather than let the numbers imply the two
-are equivalent in production — or the runner must execute against a live index, which
-makes it an IT rather than a CI-cheap scorer.

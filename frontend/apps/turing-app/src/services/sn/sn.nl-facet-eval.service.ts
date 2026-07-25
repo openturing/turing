@@ -1,5 +1,7 @@
 import type { TurEvalDataset } from "@/models/eval/eval-studio.model.ts";
 import type {
+  TurCopilotPlanningComparison,
+  TurCopilotPlanningComparisonRequest,
   TurNLFacetEvalPack,
   TurNLFacetEvalReport,
 } from "@/models/sn/sn-nl-facet-eval.model.ts";
@@ -64,5 +66,29 @@ export class TurSNNLFacetEvalService {
   /** T601 — delete a saved NL→facet dataset. */
   async deleteDataset(id: string): Promise<void> {
     await axios.delete(`/sn/nl-facet-eval/dataset/${id}`);
+  }
+
+  /**
+   * T821 — run an ad-hoc pack through every copilot planning strategy and get the
+   * quality / latency / LLM-cost comparison back.
+   */
+  async comparePlanning(
+    request: TurCopilotPlanningComparisonRequest,
+  ): Promise<TurCopilotPlanningComparison> {
+    const response = await axios.post<TurCopilotPlanningComparison>(
+      "/sn/nl-facet-eval/planning-comparison",
+      request,
+    );
+    return response.data;
+  }
+
+  /** T821 — the same comparison over a saved NL→facet dataset. */
+  async comparePlanningForDataset(
+    id: string,
+  ): Promise<TurCopilotPlanningComparison> {
+    const response = await axios.post<TurCopilotPlanningComparison>(
+      `/sn/nl-facet-eval/dataset/${id}/planning-comparison`,
+    );
+    return response.data;
   }
 }

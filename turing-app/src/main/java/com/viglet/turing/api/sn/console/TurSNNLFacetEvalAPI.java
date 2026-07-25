@@ -33,6 +33,9 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.viglet.turing.genai.catalog.planning.TurCopilotPlanningComparison;
+import com.viglet.turing.genai.catalog.planning.TurCopilotPlanningComparisonRequest;
+import com.viglet.turing.genai.catalog.planning.TurCopilotPlanningComparisonService;
 import com.viglet.turing.persistence.dto.agent.TurEvalDatasetDto;
 import com.viglet.turing.sn.dsl.eval.TurNLFacetDatasetService;
 import com.viglet.turing.sn.dsl.eval.TurNLFacetEvalPack;
@@ -67,6 +70,7 @@ public class TurSNNLFacetEvalAPI {
 
     private final TurNLFacetEvalService evalService;
     private final TurNLFacetDatasetService datasetService;
+    private final TurCopilotPlanningComparisonService planningComparisonService;
 
     @Operation(summary = "True when a usable default LLM is configured (the eval can run)")
     @GetMapping("/available")
@@ -118,5 +122,25 @@ public class TurSNNLFacetEvalAPI {
     public ResponseEntity<Void> deleteDataset(@PathVariable String id) {
         datasetService.delete(id);
         return ResponseEntity.noContent().build();
+    }
+
+    // ─────────── T821 — comparative copilot planning-strategy eval ───────────
+
+    @Operation(summary = "Run an NL→facet pack through every copilot planning strategy and "
+            + "compare quality, latency and LLM cost side by side")
+    @PostMapping("/planning-comparison")
+    @Secured({"ROLE_ADMIN", "SN_ACCESS"})
+    public ResponseEntity<TurCopilotPlanningComparison> comparePlanning(
+            @RequestBody TurCopilotPlanningComparisonRequest request) {
+        return ResponseEntity.ok(planningComparisonService.compare(request));
+    }
+
+    @Operation(summary = "Run a saved NL→facet dataset through every copilot planning strategy")
+    @PostMapping("/dataset/{id}/planning-comparison")
+    @Secured({"ROLE_ADMIN", "SN_ACCESS"})
+    public ResponseEntity<TurCopilotPlanningComparison> comparePlanningForDataset(
+            @PathVariable String id) {
+        return ResponseEntity.ok(planningComparisonService.compare(
+                TurCopilotPlanningComparisonRequest.of(datasetService.toPack(id))));
     }
 }

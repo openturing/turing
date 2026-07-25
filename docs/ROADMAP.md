@@ -70,18 +70,6 @@
 - 💭 **T816** (deps: T814, T815) **Per-language lexicons + locale resolution** — resolve the lexicon + analyzer by the copilot's request/site locale (registry locale→bundle, fallback `en`); ship `pt` (and `es`) bundles ("mais barato"/"menor"→asc, "mais inteligente"/"maior"→desc, "ordenar por"/"ordenado por" triggers); add `turing.genai.copilot.ranking.lexicon-dir` so a deployment can point at an external lexicon dir and add/tune languages without a rebuild. → §LVIII.3
 - 💭 **T817** (deps: T816) **Per-site / admin-editable ranking lexicon overrides** — let an SN site (or global settings) extend the direction/synonym lexicon with domain-specific terms, editable in admin and persisted, merged over the resource defaults. Promote from 💭 only if a deployment needs domain-specific ranking vocabulary beyond the shipped bundles. → §LVIII.4
 
-## Block BK — Configurable copilot query-planning strategy (deterministic / LLM-assisted / hybrid) (§LIX)
-
-> ⏳ **T818–T820 SHIPPED** (see [CHANGELOG.md](CHANGELOG.md) → Block BK), along with
-> T821's admin-surface half. The copilot's NL→query planning is now a per-site
-> choosable strategy — `DETERMINISTIC` (default, today's behaviour) | `LLM_ASSISTED`
-> (multi-pass *parse → judge → refine*, i18n-native) | `HYBRID` (deterministic
-> fast-path, escalating to the LLM only on an empty/degenerate result) — pinned on
-> `TurSNSiteGenAi` or inherited from `turing.genai.copilot.planning.*`, and surfaced in
-> the SN GenAI admin form. Only the comparative-eval half of T821 is still open.
-
-- 💭 **T821** (deps: T820) **Comparative strategy eval** (admin-surface half shipped) — extend the NL→facet eval pack to score each planning strategy so the quality/latency/cost trade-off is measurable per catalog before switching. Note the honest limit to design around: HYBRID's escalation only fires on live retrieval, so a plan-only comparison scores it identically to `DETERMINISTIC` and must say so rather than imply parity. → §LIX.4
-
 ## Block J follow-ups — Cloud SaaS hardening (T334–T373)
 
 > Surfaced wiring Block J (multi-tenancy, shipped — see [CHANGELOG.md](CHANGELOG.md)

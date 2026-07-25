@@ -14,11 +14,13 @@
 > whole-catalog reasoning ~10x cheaper; 💭 T823 mode observability + manifest-derived
 > key-field set. Pairs with Block BK for advisory questions; §LX, created 2026-07-24;
 > Block **BK** = Configurable copilot query-planning
-> strategy (T818–T820 SHIPPED 2026-07-25, plus T821's admin surface) — the NL→query
+> strategy (T818–T821 SHIPPED 2026-07-25, block CLOSED) — the NL→query
 > strategy is now a per-site choosable enum (`DETERMINISTIC` default = today |
 > `LLM_ASSISTED` parse→judge→refine, i18n-native | `HYBRID` fast-path + escalation on
 > an empty/degenerate result) behind a `TurCopilotQueryPlanner` seam, depth via
-> `turing.genai.copilot.planning.max-passes`; only T821's comparative eval is 💭.
+> `turing.genai.copilot.planning.max-passes`, admin picker on the SN GenAI form, and a
+> plan-only comparative eval (`TurCopilotPlanningComparisonService`) scoring every
+> strategy on quality/latency/LLM cost per catalog.
 > Block BJ stays on hold — the LLM path handles languages; §LIX, created 2026-07-24;
 > Block **BJ** =
 > Configurable, per-language NL ranking
@@ -170,7 +172,7 @@ number" looked free but wasn't. Grepping three files (`ROADMAP.md`,
 - **T818 SHIPPED** (Block BK §LIX.1 — planning-strategy seam: new `genai.catalog.planning` package with `TurCopilotQueryPlanner` (`plan` + optional `replan(hits)`), `TurCopilotQueryPlan`, `TurCopilotQueryBodies`, `TurDeterministicCopilotQueryPlanner` (today's behaviour verbatim) + `TurCopilotQueryPlannerFactory`; nullable per-site `TurSNSiteGenAi.copilotPlanningStrategy`/`copilotPlanningMaxPasses` (Liquibase v2026.3.1.117) inherit `turing.genai.copilot.planning.*`; per-site read via new `findGenAiByNameIgnoreCase` projection to avoid LAZY nav off-session; 22 unit + 4 IT green, zero default behaviour change) — 2026-07-25.
 - **T819 SHIPPED** (Block BK §LIX.2 — LLM multi-pass planner: `TurLlmAssistedCopilotQueryPlanner` parse (full question, i18n-native) → `TurCopilotPlanJudge.judge` → `refine`, depth-gated by `turing.genai.copilot.planning.max-passes` (0/1/2, clamped); both passes schema-bound via OpenAI json_schema → Anthropic forced tool → converter-format chat; the LLM only names constraints and `TurCopilotPlanCompiler` compiles them deterministically, dropping undeclared fields / non-numeric ranges / invalid sorts so grounding holds by construction; depth-1 still applies the judged sort; fail-open at every step; 39 unit green) — 2026-07-25.
 - **T820 SHIPPED** (Block BK §LIX.3 — HYBRID escalation: `TurHybridCopilotQueryPlanner` runs the deterministic fast-path then escalates via `replan` only on zero hits or a degenerate plan on a specific question (`TurCopilotPlanValidator.isDegenerate`/`isSpecific`), so a broad "what do you have?" never pays; escalation itself fail-open (degenerate or zero-pass escalated plan discarded); every executed plan now logs strategy/llmPasses/notes/query at INFO; 8 unit green) — 2026-07-25.
-- **T821 PARTIAL** (Block BK §LIX.4 — admin-surface half shipped: *Copilot Query Planning* card in the SN GenAI form — four-way strategy picker with Default=inherit + per-choice cost/quality/i18n hints, analysis-depth selector gated on an LLM strategy, extra-LLM-call callout; TS model fields + en/pt i18n; 6 frontend tests on the payload contract. Comparative eval still 💭 — see ROADMAP note on HYBRID's plan-only limit) — 2026-07-25.
+- **T821 SHIPPED** (Block BK §LIX.4 — admin surface + comparative strategy eval; CLOSES Block BK) — 2026-07-25.
 
 - **T822 SHIPPED** (Block BL §LX.1 — compact, size-adaptive stuff-all projection: `stuffAllRetrieve` now tries the full verbose projection, else a new COMPACT projection (`[rank] title | key: value` over numeric/facet key fields only, no snippet/descriptions, ~10x smaller/row), else filtered; `project` refactored to shared `projectWith(ContextBlockBuilder)` feeding verbose `contextBlock` + new `compactContextBlock`; key fields from `TurNLFacetField.numeric()/facet()`; INFO log tags full/compact/over-budget; restores whole-catalog reasoning for advisory questions on large catalogs; `TurCatalogCopilotServiceTest` +1 = 12 green. CLOSES Block BL) — 2026-07-24.
 - **T823 SHIPPED** (Block BL §LX.2 — copilot retrieval-mode observability: every request logs its decision at INFO in `TurCatalogCopilotService` — `STUFF_ALL: grounding on all N rows (~X tokens, budget Y)`, or the fallback reason `stuff-all OVER BUDGET: ~X > Y (rows=N) -> FILTERED` / `SKIPPED: index N > fetched M`; filtered path logs `rankingIntent=… , query=<full DSL JSON>` before search + `returned N hits` after. `toJson`/`blankToNone` helpers; 11 green. Key-field-from-manifest part folded into T822) — 2026-07-24.

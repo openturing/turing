@@ -123,7 +123,16 @@ public class TurNLFacetEvalService {
 
     // ─────────────────────────── Schema resolution ───────────────────────────
 
-    private List<TurNLFacetField> resolveSchema(TurNLFacetEvalPack pack) {
+    /**
+     * The declared field schema a pack's cases are parsed against: the pack's own
+     * {@code fields} when it is self-contained, otherwise the live SN site named by
+     * {@code index}. Empty when neither yields anything.
+     *
+     * <p>Public since T821 so the planning-strategy comparison
+     * ({@code TurCopilotPlanningComparisonService}) resolves the schema exactly the
+     * way a plain eval run does, instead of duplicating the rule.
+     */
+    public List<TurNLFacetField> resolveSchema(TurNLFacetEvalPack pack) {
         if (!pack.fields().isEmpty()) {
             return pack.fields();
         }

@@ -1,6 +1,8 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { TurEvalDataset } from '@/models/eval/eval-studio.model';
 import type {
+  TurCopilotPlanningComparison,
+  TurCopilotPlanningComparisonRequest,
   TurNLFacetEvalPack,
   TurNLFacetEvalReport,
 } from '@/models/sn/sn-nl-facet-eval.model.ts';
@@ -50,6 +52,28 @@ export function useImportNLFacetDataset() {
 export function useRunNLFacetDataset() {
   return useMutation<TurNLFacetEvalReport, Error, string>({
     mutationFn: (id) => service.runDataset(id),
+  });
+}
+
+/**
+ * T821 — run an ad-hoc pack through every copilot planning strategy. Expensive:
+ * an LLM_ASSISTED row costs up to three LLM calls per case, so this is a
+ * mutation the operator triggers explicitly, never a background query.
+ */
+export function useComparePlanningStrategies() {
+  return useMutation<
+    TurCopilotPlanningComparison,
+    Error,
+    TurCopilotPlanningComparisonRequest
+  >({
+    mutationFn: (request) => service.comparePlanning(request),
+  });
+}
+
+/** T821 — the same comparison over a saved NL→facet dataset. */
+export function useComparePlanningForNLFacetDataset() {
+  return useMutation<TurCopilotPlanningComparison, Error, string>({
+    mutationFn: (id) => service.comparePlanningForDataset(id),
   });
 }
 

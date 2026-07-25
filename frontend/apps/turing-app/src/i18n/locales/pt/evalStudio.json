@@ -76,6 +76,16 @@
       "timeline": "Linha do tempo de pontuação"
     },
     "nlFacet": {
+      "colElapsed": "Tempo",
+      "colLlmPasses": "Chamadas de LLM",
+      "colPassed": "Aprovados",
+      "colScore": "Pontuação",
+      "colStrategy": "Estratégia",
+      "compare": "Comparar planejadores",
+      "compareHint": "Executa o pacote em todas as estratégias de planejamento do copiloto — caro: uma linha assistida por LLM custa até três chamadas de LLM por caso.",
+      "comparing": "Comparando…",
+      "comparisonMeta": "{{cases}} casos · profundidade {{depth}}",
+      "comparisonTitle": "Estratégias de planejamento comparadas",
       "empty": "Ainda não há conjuntos de dados NL→facet",
       "emptyHint": "Importe um pacote acima para salvá-lo como um conjunto de dados reutilizável.",
       "importButton": "Importar conjunto de dados",

@@ -8,6 +8,8 @@
  * wizard (T391) uses it as the "validate the schema is queryable" step.
  */
 
+import type { TurCopilotPlanningStrategy } from "@/models/sn/sn-site-genai.model.ts";
+
 /** A facet/term equality the parser must emit. */
 export type TurNLFacetExpectedFilter = {
   field: string;
@@ -81,5 +83,47 @@ export type TurNLFacetEvalReport = {
   passedCount: number;
   score: number;
   results: TurNLFacetEvalCaseResult[];
+  error?: string | null;
+};
+
+/* ── T821 / §LIX.4 — comparative copilot planning-strategy eval ── */
+
+/** Request body for `POST /api/sn/nl-facet-eval/planning-comparison`. */
+export type TurCopilotPlanningComparisonRequest = {
+  pack: TurNLFacetEvalPack;
+  /** Empty ⇒ compare every strategy. */
+  strategies?: TurCopilotPlanningStrategy[];
+  /** Analysis depth for the LLM strategies; null ⇒ the configured default. */
+  maxPasses?: number | null;
+};
+
+/** How one planning strategy scored on the pack: quality, cost and latency. */
+export type TurCopilotPlanningStrategyOutcome = {
+  strategy: TurCopilotPlanningStrategy;
+  passed: boolean;
+  passedCount: number;
+  /** Mean per-case score (0..1) — the quality axis. */
+  score: number;
+  /** Total LLM calls across every case — the cost axis. */
+  llmPasses: number;
+  /** Wall-clock to plan every case — the latency axis. */
+  elapsedMillis: number;
+  /** How to read this row (depth used, HYBRID's plan-only equivalence…). */
+  note: string;
+  results: TurNLFacetEvalCaseResult[];
+};
+
+/**
+ * The side-by-side planning-strategy comparison. `caveats` is not decoration —
+ * the run is plan-only, so `HYBRID` scores identically to `DETERMINISTIC` by
+ * construction (its escalation needs a live retrieval result). Always render the
+ * caveats next to the numbers.
+ */
+export type TurCopilotPlanningComparison = {
+  packName: string;
+  caseCount: number;
+  maxPasses: number;
+  strategies: TurCopilotPlanningStrategyOutcome[];
+  caveats: string[];
   error?: string | null;
 };

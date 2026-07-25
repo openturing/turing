@@ -25,6 +25,7 @@ const useNLFacetDatasets = vi.fn();
 const useImportNLFacetDataset = vi.fn();
 const useRunNLFacetDataset = vi.fn();
 const useDeleteNLFacetDataset = vi.fn();
+const useComparePlanningForNLFacetDataset = vi.fn();
 
 vi.mock("@/api/queries/sn-nl-facet-eval.queries", () => ({
   useNLFacetEvalAvailable: () => useNLFacetEvalAvailable(),
@@ -32,6 +33,7 @@ vi.mock("@/api/queries/sn-nl-facet-eval.queries", () => ({
   useImportNLFacetDataset: () => useImportNLFacetDataset(),
   useRunNLFacetDataset: () => useRunNLFacetDataset(),
   useDeleteNLFacetDataset: () => useDeleteNLFacetDataset(),
+  useComparePlanningForNLFacetDataset: () => useComparePlanningForNLFacetDataset(),
 }));
 
 vi.mock("@/api/queries/eval-studio.queries", () => ({
@@ -139,6 +141,11 @@ describe("BentoEvalPage", () => {
     useImportNLFacetDataset.mockReturnValue({ mutate: vi.fn(), isPending: false });
     useRunNLFacetDataset.mockReturnValue({ mutate: vi.fn(), isPending: false, variables: undefined });
     useDeleteNLFacetDataset.mockReturnValue({ mutate: vi.fn(), isPending: false });
+    useComparePlanningForNLFacetDataset.mockReturnValue({
+      mutate: vi.fn(),
+      isPending: false,
+      variables: undefined,
+    });
   });
 
   it("renders the Eval Studio hero and the datasets tab by default", () => {
@@ -260,6 +267,73 @@ describe("BentoEvalPage", () => {
     // The per-case breakdown renders once the run resolves (the summary line
     // uses i18n interpolation, which the test mock does not expand).
     expect(screen.getByText("cheap online")).toBeInTheDocument();
+  });
+
+  it("compares the planning strategies side by side and shows the plan-only caveats", () => {
+    useNLFacetDatasets.mockReturnValue({
+      data: [{ id: "nf1", name: "catalog pack", version: 1, rowCount: 3 }],
+      isError: false,
+    });
+    const hybridCaveat =
+      "HYBRID scores identically to DETERMINISTIC by construction: its escalation only fires on live retrieval.";
+    useComparePlanningForNLFacetDataset.mockReturnValue({
+      mutate: (_id: string, opts?: { onSuccess?: (c: unknown) => void }) =>
+        opts?.onSuccess?.({
+          packName: "catalog pack",
+          caseCount: 3,
+          maxPasses: 2,
+          strategies: [
+            {
+              strategy: "DETERMINISTIC",
+              passed: true,
+              passedCount: 3,
+              score: 1,
+              llmPasses: 3,
+              elapsedMillis: 120,
+              note: "single facet parse (depth does not apply)",
+              results: [],
+            },
+            {
+              strategy: "LLM_ASSISTED",
+              passed: false,
+              passedCount: 2,
+              score: 0.75,
+              llmPasses: 9,
+              elapsedMillis: 940,
+              note: "depth 2 — parse + judge + refine",
+              results: [],
+            },
+            {
+              strategy: "HYBRID",
+              passed: true,
+              passedCount: 3,
+              score: 1,
+              llmPasses: 3,
+              elapsedMillis: 118,
+              note: "fast-path only: identical to DETERMINISTIC here",
+              results: [],
+            },
+          ],
+          caveats: [hybridCaveat],
+          error: null,
+        }),
+      isPending: false,
+      variables: undefined,
+    });
+
+    renderPage();
+    fireEvent.click(screen.getByText("NL→Facet"));
+    fireEvent.click(screen.getByText("Compare planners"));
+
+    // All three strategies on the three axes the operator trades off…
+    expect(screen.getByText("DETERMINISTIC")).toBeInTheDocument();
+    expect(screen.getByText("LLM_ASSISTED")).toBeInTheDocument();
+    expect(screen.getByText("HYBRID")).toBeInTheDocument();
+    expect(screen.getByText("75%")).toBeInTheDocument();
+    expect(screen.getByText("9")).toBeInTheDocument();
+    expect(screen.getByText("940 ms")).toBeInTheDocument();
+    // …and the honesty about what a plan-only run cannot measure.
+    expect(screen.getByText(hybridCaveat)).toBeInTheDocument();
   });
 
   it("switches to the runs tab and shows the run-history empty state", () => {
