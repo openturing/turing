@@ -44,6 +44,13 @@
 
 ## Block BJ — Configurable, per-language NL ranking lexicon (Lucene analysis) (§LVIII)
 
+> ⏸ **ON HOLD pending Block BK.** The LLM-assisted planning strategy (Block BK,
+> §LIX) handles languages natively, so a per-language *deterministic* lexicon may be
+> unnecessary. Keep this block as the design for the deterministic i18n path; only
+> promote its tasks from 💭 if the team wants deterministic multilingual ranking
+> *in addition to* the LLM path (e.g. as the cheap CI-testable fast-path for
+> non-English). Revisit after Block BK ships.
+>
 > The T811 ranking planner works, but its knowledge — the ascending/descending
 > superlative words, the adjective→concept synonyms, the stopwords — is a **hardcoded
 > English word list in `TurNLRankingPlanner`**. That doesn't scale: it can't be tuned
@@ -56,10 +63,32 @@
 > deterministic + fail-open (never reintroduces the LLM). Design in
 > [IMPROVEMENTS.md](IMPROVEMENTS.md) §LVIII.
 
-- 📋 **T814** (deps: T811) **Externalize the ranking lexicon** — move `ASC_WORDS`/`DESC_WORDS`/`SYNONYMS`/`STOPWORDS` out of `TurNLRankingPlanner` into a resource-backed `TurRankingLexicon` (default `en` bundle under `resources/`) loaded by a `TurRankingLexiconProvider`; the planner consumes the lexicon with no hardcoded sets. English parity — no behaviour change — but now data-driven. Foundation for the rest of the block. → §LVIII.1
-- 📋 **T815** (deps: T814) **Lucene analysis backbone** — replace the hand-rolled `tokenize`/`expand`/stopword logic with a per-locale Lucene `Analyzer` (StandardTokenizer + LowerCaseFilter + per-language `StopFilter` + Snowball stemmer + `SynonymGraphFilter` built from the T814 synonym map), applied to BOTH the query and each declared field's name + description so inflected/variant forms collapse (cheapest/cheaper/cheap; "mais barato"/"barato") without enumerating them. Reuses `org.apache.lucene.analysis.*` (already on the classpath); no new dependency. → §LVIII.2
-- 📋 **T816** (deps: T814, T815) **Per-language lexicons + locale resolution** — resolve the lexicon + analyzer by the copilot's request/site locale (registry locale→bundle, fallback `en`); ship `pt` (and `es`) bundles ("mais barato"/"menor"→asc, "mais inteligente"/"maior"→desc, "ordenar por"/"ordenado por" triggers); add `turing.genai.copilot.ranking.lexicon-dir` so a deployment can point at an external lexicon dir and add/tune languages without a rebuild. → §LVIII.3
+- 💭 **T814** (deps: T811) **Externalize the ranking lexicon** — move `ASC_WORDS`/`DESC_WORDS`/`SYNONYMS`/`STOPWORDS` out of `TurNLRankingPlanner` into a resource-backed `TurRankingLexicon` (default `en` bundle under `resources/`) loaded by a `TurRankingLexiconProvider`; the planner consumes the lexicon with no hardcoded sets. English parity — no behaviour change — but now data-driven. Foundation for the rest of the block. → §LVIII.1
+- 💭 **T815** (deps: T814) **Lucene analysis backbone** — replace the hand-rolled `tokenize`/`expand`/stopword logic with a per-locale Lucene `Analyzer` (StandardTokenizer + LowerCaseFilter + per-language `StopFilter` + Snowball stemmer + `SynonymGraphFilter` built from the T814 synonym map), applied to BOTH the query and each declared field's name + description so inflected/variant forms collapse (cheapest/cheaper/cheap; "mais barato"/"barato") without enumerating them. Reuses `org.apache.lucene.analysis.*` (already on the classpath); no new dependency. → §LVIII.2
+- 💭 **T816** (deps: T814, T815) **Per-language lexicons + locale resolution** — resolve the lexicon + analyzer by the copilot's request/site locale (registry locale→bundle, fallback `en`); ship `pt` (and `es`) bundles ("mais barato"/"menor"→asc, "mais inteligente"/"maior"→desc, "ordenar por"/"ordenado por" triggers); add `turing.genai.copilot.ranking.lexicon-dir` so a deployment can point at an external lexicon dir and add/tune languages without a rebuild. → §LVIII.3
 - 💭 **T817** (deps: T816) **Per-site / admin-editable ranking lexicon overrides** — let an SN site (or global settings) extend the direction/synonym lexicon with domain-specific terms, editable in admin and persisted, merged over the resource defaults. Promote from 💭 only if a deployment needs domain-specific ranking vocabulary beyond the shipped bundles. → §LVIII.4
+
+## Block BK — Configurable copilot query-planning strategy (deterministic / LLM-assisted / hybrid) (§LIX)
+
+> The copilot's NL→query planning is today a single LLM parse + the T811 deterministic
+> ranking overlay. This block makes the **strategy itself** an opt-in, per-agent/site
+> choice and adds a **multi-pass LLM** path — the pattern in the original design
+> discussion: *parse → judge → refine* instead of one "produce the whole DSL" call
+> (which is what fails). An LLM judge pass catches the exact failure the bug showed
+> (query came back empty / dropped a filter / missed the sort) and repairs it, and the
+> **analysis depth is parametrizable** (parse-only → +judge → +refine). Because the LLM
+> path understands languages natively, it delivers i18n *for free* (putting Block BJ on
+> hold), at the cost of latency/tokens and determinism — so a **HYBRID** mode keeps the
+> cheap deterministic fast-path and only escalates to the LLM when a query comes back
+> empty/suspect. Opt-in choosable enum, `DETERMINISTIC` default = today's behaviour,
+> zero re-validation of existing sites. Reuses the endorsed `TurLlmJudge` path (per the
+> `gpt-4o-mini` structured-output caution: tool calling / schema, not raw JSON). Stays
+> fail-open. Design in [IMPROVEMENTS.md](IMPROVEMENTS.md) §LIX.
+
+- 📋 **T818** (deps: T811) **Planning-strategy seam + `TurCopilotPlanningStrategy` enum** — introduce an opt-in per-agent/site `TurCopilotPlanningStrategy` (`DETERMINISTIC` | `LLM_ASSISTED` | `HYBRID`; default `DETERMINISTIC`) and a `TurCopilotQueryPlanner` interface that `TurCatalogCopilotService.retrieve()` delegates to; today's parse-plus-T811-overlay logic becomes the `DETERMINISTIC` implementation. Zero behaviour change at the default. Foundation for the rest of the block. → §LIX.1
+- 📋 **T819** (deps: T818) **LLM multi-pass planner (parse → judge → refine)** — implement `LLM_ASSISTED`: an LLM parse followed by a `TurLlmJudge`-style validation pass that checks the parsed query against the question (dropped facet? missing/incorrect sort? ungrounded field?) and a refine pass that repairs it, with a parametrizable analysis depth (`turing.genai.copilot.planning.max-passes`: 0 = parse-only, 1 = +judge, 2 = +refine). Provider tool calling / schema, not raw JSON. Delivers i18n + complex-question quality without a per-language lexicon. → §LIX.2
+- 📋 **T820** (deps: T818, T819) **HYBRID escalation** — implement `HYBRID`: run the deterministic fast-path (T811) first and escalate to the LLM judge/refine (T819) **only** when retrieval is empty or suspect (empty/degenerate query, zero hits while a superlative/facet was clearly present). Cheap in the common case, LLM cost paid only to rescue a failure — the best latency/quality trade-off. → §LIX.3
+- 💭 **T821** (deps: T820) **Strategy admin surface + comparative eval** — surface the strategy + analysis depth in the agent/site admin, and extend the NL→facet eval pack to score each strategy so the quality/latency/cost trade-off is measurable per catalog before switching. → §LIX.4
 
 ## Block J follow-ups — Cloud SaaS hardening (T334–T373)
 

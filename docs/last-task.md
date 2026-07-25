@@ -1,9 +1,18 @@
-# Last task number — `T817` · next block letter — `BK`
+# Last task number — `T821` · next block letter — `BL`
 
 > **Single source of truth for the next free task number.** The next new task is
-> `T818`; after assigning it, bump the number above and the log line below.
+> `T822`; after assigning it, bump the number above and the log line below.
 >
-> **Next block letter — `BK`** (Block **BJ** = Configurable, per-language NL ranking
+> **Next block letter — `BL`** (Block **BK** = Configurable copilot query-planning
+> strategy — make the NL→query strategy an opt-in per-agent/site choosable enum
+> (`DETERMINISTIC` default = today | `LLM_ASSISTED` | `HYBRID`) via a
+> `TurCopilotQueryPlanner` seam (T818); add an LLM multi-pass planner parse→judge→refine
+> with parametrizable depth (`turing.genai.copilot.planning.max-passes`) reusing
+> `TurLlmJudge`, delivering i18n natively (T819); HYBRID runs the deterministic
+> fast-path and escalates to the LLM only when the query is empty/suspect (T820);
+> 💭 admin surface + comparative eval (T821); fail-open, additive; puts Block BJ on hold
+> since the LLM path handles languages; §LIX, created 2026-07-24; Block **BJ** =
+> Configurable, per-language NL ranking
 > lexicon (Lucene analysis) — T811's ranking planner hardcodes an English word list
 > (ASC/DESC superlatives, adjective→concept synonyms, stopwords) in
 > `TurNLRankingPlanner`; make it data-driven + per-language and reuse Lucene's analysis
@@ -149,6 +158,7 @@ number" looked free but wasn't. Grepping three files (`ROADMAP.md`,
 
 ## Log (most recent first)
 
+- **T818-T821 CREATED** (📋/💭, Block BK §LIX — configurable copilot query-planning strategy, from the design idea of using multiple LLM calls (parse→judge→refine) instead of one DSL call: T818 `TurCopilotPlanningStrategy` opt-in enum (DETERMINISTIC default=today | LLM_ASSISTED | HYBRID) + `TurCopilotQueryPlanner` seam `retrieve()` delegates to; T819 LLM multi-pass planner parse → `TurLlmJudge` validation (dropped facet/missing sort/ungrounded) → refine, depth via `turing.genai.copilot.planning.max-passes`, tool-calling/schema not raw JSON, i18n native; T820 HYBRID runs deterministic fast-path + escalates to LLM only when query empty/suspect; 💭 T821 admin surface + comparative eval. Fail-open/additive; LLM path handling languages puts Block BJ 💭 on hold) — 2026-07-24.
 - **T814-T817 CREATED** (📋/💭, Block BJ §LVIII — configurable, per-language NL ranking lexicon: T811's `TurNLRankingPlanner` hardcodes an English ASC/DESC/synonym/stopword list, which doesn't scale (not tunable per deployment, English-only — "mais barato"/"ordenar por" get no sort). T814 externalize the sets into a `TurRankingLexicon` resource bundle + `TurRankingLexiconProvider`, en parity; T815 replace the hand-rolled tokenize/expand/stopword logic with a per-locale Lucene `Analyzer` (StandardTokenizer+LowerCase+per-lang StopFilter+Snowball stemmer+`SynonymGraphFilter` from the T814 map) applied to query + field name/description so inflections collapse; T816 resolve lexicon+analyzer by copilot locale (registry, fallback en) + `pt`/`es` bundles + `turing.genai.copilot.ranking.lexicon-dir` external override; 💭 T817 per-site/admin editable lexicon overrides. Reuses Lucene analysis (already a dep); stays deterministic/fail-open, no LLM) — 2026-07-24.
 - **T813 SHIPPED** (Block BI §LVII.3 — model-catalog NL→facet eval sample + regression harness: `model-catalog.nl-facet-eval.json` (schema + live-failing ranking cases with golden sort/filter) + always-on `TurNLRankingPlannerSampleTest` asserting the planner resolves every golden sort AND the facet token survives the strip, no LLM/index; pack doubles as a `-Pnl-facet-eval` live fixture; 8 cases green. CLOSES Block BI) — 2026-07-24.
 - **T812 SHIPPED** (Block BI §LVII.2 — genericize the copilot + NL→facet system prompts now that ranking is procedural: `TurLlmNLFacetParser` sort rule dropped its domain example list for a schema-driven abstract rule (sort on the numeric field whose DESCRIPTION matches the quality); `TurCatalogCopilotService` prompt keeps the T799 rank-by-labelled-metric guardrail but neutralised (no "cheapest"/"headline index"/"benchmark"), notes results are pre-ordered, cites "result" not "model"; no behaviour change, 21 green) — 2026-07-24.

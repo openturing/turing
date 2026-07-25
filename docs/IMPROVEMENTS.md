@@ -2798,6 +2798,12 @@ that declares nothing still gets the canonical defaults).
 
 ## LVIII. Configurable, per-language NL ranking lexicon (Lucene analysis) (Block BJ)
 
+> **On hold pending §LIX.** The LLM-assisted planning strategy (Block BK) handles
+> languages natively, which may make a per-language *deterministic* lexicon
+> unnecessary. This section remains the design for the deterministic i18n path; build
+> it only if deterministic multilingual ranking is wanted *alongside* the LLM path
+> (a cheap, CI-testable fast-path for non-English).
+
 **The problem.** T811's `TurNLRankingPlanner` made ranking deterministic, but it did so
 with a **hardcoded English word list** baked into the class: `ASC_WORDS`/`DESC_WORDS`
 (the superlative→direction lexicon), `SYNONYMS` (adjective→concept-noun bridges like
@@ -2847,3 +2853,51 @@ reintroduced; an unresolved locale falls back to `en`; a lexicon/analyzer failur
 degrades to no-sort exactly as today. The engine (`TurDslLuceneExecutor.buildSort`) is
 untouched. A possible future alignment (out of scope here) is to reuse the target SN
 site's own index analyzers so ranking tokenization matches how the field was indexed.
+
+## LIX. Configurable copilot query-planning strategy (deterministic / LLM-assisted / hybrid) (Block BK)
+
+**The idea.** The copilot turns prose into a structured query in one LLM parse call,
+with the T811 deterministic overlay bolted on for ranking. An alternative — surfaced in
+design discussion — is to lean *into* the LLM but **decompose** the work into narrow,
+verifiable steps instead of one "produce the whole DSL" call (which is what fails on a
+weak model): **parse → judge → refine**. A judge pass is exactly what catches the bug's
+failure mode (the parse came back empty, dropped the `kind` facet, or missed the sort)
+and repairs it. The **depth of analysis is a parameter** (parse-only → +judge →
++refine), so a deployment dials cost against quality.
+
+**Why it's not either/or with the deterministic planner.** The two approaches sit on
+different axes:
+
+- The **LLM multi-pass** path understands languages *natively* — "modelo mais barato",
+  "ordenar por preço" work with no per-language resource, which is why it puts Block BJ
+  (§LVIII) on hold. But it costs N× LLM calls per turn (latency + tokens) and is
+  non-deterministic / not CI-testable without an LLM.
+- The **deterministic** path (T811) is instant, free, and CI-testable, but English-only
+  and needs the Block BJ lexicon work to scale to other languages.
+
+So the design is a **configurable strategy**, opt-in per agent/site — idiomatic here
+(choosable enum, `DETERMINISTIC` default = today's behaviour, so no existing site is
+re-validated; cf. the project's opt-in-flag convention):
+
+- **LIX.1 (T818) The seam.** A `TurCopilotPlanningStrategy` enum
+  (`DETERMINISTIC` | `LLM_ASSISTED` | `HYBRID`) and a `TurCopilotQueryPlanner` interface
+  that `retrieve()` delegates to; the current parse-plus-T811-overlay becomes the
+  `DETERMINISTIC` implementation. Zero behaviour change at the default.
+- **LIX.2 (T819) The LLM multi-pass.** `LLM_ASSISTED` = parse → a `TurLlmJudge`-style
+  validation (dropped facet? wrong/missing sort? ungrounded field?) → refine, bounded by
+  `turing.genai.copilot.planning.max-passes`. Provider tool calling / schema, never raw
+  JSON (per the `gpt-4o-mini` structured-output caution in `agents.md`). This is where
+  i18n and hard-question quality come from.
+- **LIX.3 (T820) HYBRID — the recommended default to aim for.** Run the cheap
+  deterministic fast-path first; escalate to the LLM judge/refine **only** when the
+  result is empty or suspect (degenerate query, or zero hits when a superlative/facet
+  was clearly present). Common questions stay instant and free; the LLM budget is spent
+  only to rescue a failure — capturing most of the multi-pass quality at a fraction of
+  the cost.
+- **LIX.4 (T821, 💭) Admin + eval.** Expose the strategy + depth in the agent/site
+  admin, and extend the NL→facet eval pack to score each strategy so the
+  quality/latency/cost trade-off is measurable per catalog before switching.
+
+**Invariants.** Fail-open throughout: an LLM/judge failure degrades to the deterministic
+result (or to the citations-only path already there), never to an error. The default
+strategy is `DETERMINISTIC`, so the block is purely additive.
