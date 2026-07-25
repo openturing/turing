@@ -1,0 +1,79 @@
+{
+  "name": "model-catalog",
+  "index": "model-catalog",
+  "locale": "en",
+  "fields": [
+    { "name": "title", "type": "TEXT", "facet": false, "description": "Model name" },
+    { "name": "kind", "type": "STRING", "facet": true, "description": "chat | embedding | image | audio" },
+    { "name": "vendor", "type": "STRING", "facet": true, "description": "Provider (openai, anthropic, google, mistral, ...)" },
+    { "name": "modality", "type": "STRING", "facet": true, "description": "Supported input modalities (text, vision, audio)" },
+    { "name": "benchmarks_intelligenceIndex", "type": "FLOAT", "facet": false, "description": "Overall intelligence index — the single headline quality metric" },
+    { "name": "benchmarks_scores_math_value", "type": "FLOAT", "facet": false, "description": "Math domain sub-score only, NOT the overall intelligence index" },
+    { "name": "pricing_inputPer1M", "type": "DOUBLE", "facet": false, "description": "Input price per 1M tokens (USD)" },
+    { "name": "pricing_outputPer1M", "type": "DOUBLE", "facet": false, "description": "Output price per 1M tokens (USD)" },
+    { "name": "contextWindow", "type": "INT", "facet": false, "description": "Maximum context window in tokens" },
+    { "name": "maxOutputTokens", "type": "INT", "facet": false, "description": "Maximum output tokens" }
+  ],
+  "cases": [
+    {
+      "name": "chat models (facet only, no ranking)",
+      "query": "chat models",
+      "expect": {
+        "filters": [ { "field": "kind", "value": "chat" } ]
+      }
+    },
+    {
+      "name": "chat models sorted by intelligence index",
+      "query": "chat models sorted by intelligence index",
+      "expect": {
+        "filters": [ { "field": "kind", "value": "chat" } ],
+        "sort": { "field": "benchmarks_intelligenceIndex", "order": "desc" }
+      }
+    },
+    {
+      "name": "which chat model scores highest on the intelligence index",
+      "query": "Which chat model scores highest on the intelligence index?",
+      "expect": {
+        "filters": [ { "field": "kind", "value": "chat" } ],
+        "sort": { "field": "benchmarks_intelligenceIndex", "order": "desc" }
+      }
+    },
+    {
+      "name": "embedding models by price (facet only)",
+      "query": "embedding models by price",
+      "expect": {
+        "filters": [ { "field": "kind", "value": "embedding" } ]
+      }
+    },
+    {
+      "name": "which embedding model has the lowest price",
+      "query": "Which embedding model has the lowest price?",
+      "expect": {
+        "filters": [ { "field": "kind", "value": "embedding" } ],
+        "sort": { "field": "pricing_inputPer1M", "order": "asc" }
+      }
+    },
+    {
+      "name": "cheapest chat models",
+      "query": "cheapest chat models",
+      "expect": {
+        "filters": [ { "field": "kind", "value": "chat" } ],
+        "sort": { "field": "pricing_inputPer1M", "order": "asc" }
+      }
+    },
+    {
+      "name": "model with the biggest context window",
+      "query": "model with the biggest context window",
+      "expect": {
+        "sort": { "field": "contextWindow", "order": "desc" }
+      }
+    },
+    {
+      "name": "most intelligent model (headline metric, not a sub-score)",
+      "query": "the most intelligent model",
+      "expect": {
+        "sort": { "field": "benchmarks_intelligenceIndex", "order": "desc" }
+      }
+    }
+  ]
+}

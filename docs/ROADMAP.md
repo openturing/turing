@@ -42,23 +42,6 @@
 - 📋 **T809** (deps: —) **Facet group-label fallback to the field name** — `TurSNFacetRenderer.searchFacetBean` (and `facetLocalesFor` in `TurSNSearchProcess`) sets the group label from the locale-matched `TurSNSiteFieldExtFacet` row else `fieldExtDto.getFacetName()`; for auto-provisioned crawl/feed facet fields both are null (`TurSNFieldProvisioner.saveSiteFieldExt` sets `facetName=null`, `saveFacetLocales` creates zero rows), so the header renders blank. Add a last-resort fallback to a humanized field name when both are null (facet *value* labels already fall back to the raw value). Locale labels still win when configured. → §LVI.2
 - 📋 **T810** (deps: T796, T808) **Auto-provisioning wires default fields + facet labels from the feed manifest** — extend `TurStructuredFeedProvisioningOnStartup` (T796) so a structured-feed source / `VigletFieldManifest` can declare the title/description/text/url/image/date field mapping + per-field facet labels, and apply them at provision time (set `TurSNSite.defaultXField` + each faceted field's `TurSNSiteFieldExt.facetName`/locale rows). The zero-config dogfood fix: the model-catalog site provisions with `defaultTitleField = label` (+ a chosen description field) and readable facet labels, rendering correctly on first boot. The concrete mapping lives in the deployment manifest/env (viglet/cloud) — Turing only gains the ability to honor it. → §LVI.3
 
-## Block BI — Deterministic (LLM-independent) query planning for the copilot (§LVII)
-
-> Dogfooding the model-catalog copilot (Block BF, T794) exposed a conceptual
-> fragility, not an indexing/search bug: **NL→DSL query planning is 100% LLM**, and
-> T802(b)'s "superlative→sort" rule was shipped as *prompt text only*. On a cheap
-> default model that fails — a superlative/interrogative phrasing ("which chat model
-> scores **highest** on the intelligence index?", "which embedding has the **lowest**
-> price?") makes the model return an **empty query**, dropping even the valid
-> `kind=CHAT`/`kind=EMBEDDING` facet, so retrieval returns `totalHits:0`. The engine
-> side is sound — `TurDslLuceneExecutor.buildSort` already sorts numeric fields
-> correctly with a relevance fallback; nothing about creation/indexing/search needs
-> rework. The fix is to stop trusting the LLM for the ranking dimension: handle it
-> **procedurally** and keep the prompt **generic**. Design in
-> [IMPROVEMENTS.md](IMPROVEMENTS.md) §LVII.
-
-- 📋 **T813** (deps: T811) **Model-catalog NL→facet eval sample + local regression harness** — add `model-catalog.nl-facet-eval.json` (schema + the live-failing ranking cases with golden sort/filter expectations) so the fix is reproducible locally against a **real embedded Lucene index + real LLM** via `TurNLFacetEvalIT` (`mvn verify -Pnl-facet-eval`, gated by `OPENAI_API_KEY`), plus always-on deterministic planner/scorer unit cases in CI. Turns the live bug into a repeatable local simulation with sample content. → §LVII.3
-
 ## Block J follow-ups — Cloud SaaS hardening (T334–T373)
 
 > Surfaced wiring Block J (multi-tenancy, shipped — see [CHANGELOG.md](CHANGELOG.md)
