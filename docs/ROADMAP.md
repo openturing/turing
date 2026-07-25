@@ -90,6 +90,24 @@
 - 📋 **T820** (deps: T818, T819) **HYBRID escalation** — implement `HYBRID`: run the deterministic fast-path (T811) first and escalate to the LLM judge/refine (T819) **only** when retrieval is empty or suspect (empty/degenerate query, zero hits while a superlative/facet was clearly present). Cheap in the common case, LLM cost paid only to rescue a failure — the best latency/quality trade-off. → §LIX.3
 - 💭 **T821** (deps: T820) **Strategy admin surface + comparative eval** — surface the strategy + analysis depth in the agent/site admin, and extend the NL→facet eval pack to score each strategy so the quality/latency/cost trade-off is measurable per catalog before switching. → §LIX.4
 
+## Block BL — Stuff-all at catalog scale: compact, size-adaptive projection (§LX)
+
+> Dogfooding the model-catalog copilot at scale (T794, catalog grown 200 → 800+
+> models) surfaced a **silent quality cliff**. The T793 stuff-all path — which makes
+> the copilot answer open/advisory questions brilliantly by grounding the LLM on the
+> **whole catalog** ("a cheap chat model for my site" → a real recommendation) — only
+> activates while the catalog fits `stuffAllTokenBudget` (40k tokens). Its per-row
+> context block is verbose (title + snippet ≤320 chars + **every** field labelled with
+> its T799 description), so past a few hundred rows the catalog blows the budget and
+> the copilot **silently falls back** to filtered NL→DSL retrieval — brittle for
+> non-facet questions (the vague question yields a bogus `pricing_currency` filter → no
+> results). The copilot didn't get dumber; it quietly left stuff-all. Fix: make the
+> whole-catalog context **cheap enough to scale**. Design in
+> [IMPROVEMENTS.md](IMPROVEMENTS.md) §LX.
+
+- 📋 **T822** (deps: T793) **Compact, size-adaptive stuff-all projection** — add a lean per-row projection for stuff-all (one line per row: label + kind/vendor + the declared numeric/facet *key* fields, no snippet, no per-field descriptions) and make stuff-all **size-adaptive**: try the full projection, else retry the compact one, and only fall back to filtered retrieval when even the compact whole-catalog exceeds `stuffAllTokenBudget`. Restores whole-catalog reasoning for advisory questions on catalogs of thousands of rows at ~10× lower per-row token cost, instead of silently dropping to brittle filtering. Pairs with Block BK (advisory questions want the LLM reasoning over candidates, not a facet filter). → §LX.1
+- 💭 **T823** (deps: T822) **Stuff-all mode observability + key-field config** — log which retrieval mode actually ran (full stuff-all / compact stuff-all / filtered) + the estimated token count, so an operator can see when a catalog crossed a budget threshold (today it is silent); and let the compact key-field set be derived from the manifest (`sortable`/`facet` flags) or configured, instead of hardcoded. → §LX.2
+
 ## Block J follow-ups — Cloud SaaS hardening (T334–T373)
 
 > Surfaced wiring Block J (multi-tenancy, shipped — see [CHANGELOG.md](CHANGELOG.md)

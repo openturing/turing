@@ -2901,3 +2901,50 @@ re-validated; cf. the project's opt-in-flag convention):
 **Invariants.** Fail-open throughout: an LLM/judge failure degrades to the deterministic
 result (or to the citations-only path already there), never to an error. The default
 strategy is `DETERMINISTIC`, so the block is purely additive.
+
+## LX. Stuff-all at catalog scale — compact, size-adaptive projection (Block BL)
+
+**The regression, from the live dogfood.** The model-catalog copilot answered open,
+advisory questions strikingly well — "quero criar um chat para meu site, qual modelo
+barato?" returned a real, reasoned shortlist. Then the catalog grew from ~200 to 800+
+models and the same question started returning "no matching results" (with a nonsense
+`pricing_currency in [usd, brl]` filter). Nothing in the *answering* logic changed — the
+cause is a **silent mode switch**:
+
+- The T793 **stuff-all** path grounds the LLM on the *entire* catalog when it fits
+  `stuffAllTokenBudget` (default 40 000 tokens). That is why advisory questions worked:
+  the model saw every row and could *reason* ("for a cheap chat model, consider …"), not
+  just filter. The demo's compose even notes it: *"catalog is ~250 rows, so the copilot
+  answers over the WHOLE catalog"*.
+- The per-row context block is **verbose**: title + a snippet up to 320 chars + *every*
+  short field labelled with its full T799 description. At ~250 rows that fit 40k tokens;
+  at 800+ it is ~100–120k tokens, so stuff-all **silently falls back** to filtered
+  NL→DSL retrieval. Filtered retrieval is fine for facet questions but brittle for
+  advisory ones — the vague question has no clean facet, so the LLM planner invents a
+  bad filter and returns nothing.
+
+So the copilot didn't lose intelligence; it **quietly stopped grounding on the whole
+catalog**. Simply raising the budget works but is expensive (~120k tokens/call, near the
+`gpt-4o-mini` 128k context ceiling) — it doesn't scale.
+
+**The fix — make the whole-catalog context cheap.**
+
+- **LX.1 (T822) Compact, size-adaptive projection.** Most of the per-row cost is the
+  snippet and the description-labelled fields — useful for *citation* grounding, wasteful
+  for *whole-catalog reasoning*. Add a **compact** projection: one lean line per row —
+  `label` + `kind`/`vendor` + the declared numeric/facet *key* fields — no snippet, no
+  descriptions (~10× smaller). Make stuff-all **size-adaptive**: try the full projection;
+  if over budget, retry compact; only if even the compact whole-catalog exceeds budget
+  fall back to filtered retrieval. A catalog of thousands of rows then keeps the
+  reason-over-everything behaviour at a fraction of the tokens. (An immediate, non-code
+  mitigation exists — raise `turing.genai.copilot.stuffAllTokenBudget` /
+  `stuffAllMaxDocs` via env — but it is a stopgap, not the scalable answer.)
+- **LX.2 (T823, 💭) Observability + key-field config.** The fallback is silent today —
+  `log` which mode actually ran (full stuff-all / compact / filtered) and the estimated
+  token count so an operator sees a catalog cross the threshold; and derive the compact
+  key-field set from the manifest (`sortable`/`facet` flags) rather than hardcoding it.
+
+**Relation to Block BK.** Advisory questions ("help me choose") are not facet retrieval —
+they need the LLM reasoning over candidates. Compact stuff-all (this block) and the
+LLM-assisted/HYBRID strategy (§LIX) are the two halves of answering them well at scale;
+both stay fail-open and default to today's behaviour.

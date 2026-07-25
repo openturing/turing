@@ -1,9 +1,19 @@
-# Last task number — `T821` · next block letter — `BL`
+# Last task number — `T823` · next block letter — `BM`
 
 > **Single source of truth for the next free task number.** The next new task is
-> `T822`; after assigning it, bump the number above and the log line below.
+> `T824`; after assigning it, bump the number above and the log line below.
 >
-> **Next block letter — `BL`** (Block **BK** = Configurable copilot query-planning
+> **Next block letter — `BM`** (Block **BL** = Stuff-all at catalog scale (compact
+> projection) — dogfooding the model-catalog copilot with the catalog grown 200→800+
+> models exposed a silent quality cliff: the T793 stuff-all path (grounds the LLM on
+> the WHOLE catalog → great advisory answers) only fits `stuffAllTokenBudget` (40k) at
+> a few hundred verbose rows, so at 800+ it silently falls back to brittle filtered
+> retrieval (vague questions → bogus filter → no results). T822 add a compact per-row
+> projection (label + kind/vendor + key numeric/facet fields, no snippet/descriptions)
+> + size-adaptive stuff-all (full → compact → filtered) so large catalogs keep
+> whole-catalog reasoning ~10x cheaper; 💭 T823 mode observability + manifest-derived
+> key-field set. Pairs with Block BK for advisory questions; §LX, created 2026-07-24;
+> Block **BK** = Configurable copilot query-planning
 > strategy — make the NL→query strategy an opt-in per-agent/site choosable enum
 > (`DETERMINISTIC` default = today | `LLM_ASSISTED` | `HYBRID`) via a
 > `TurCopilotQueryPlanner` seam (T818); add an LLM multi-pass planner parse→judge→refine
@@ -158,6 +168,7 @@ number" looked free but wasn't. Grepping three files (`ROADMAP.md`,
 
 ## Log (most recent first)
 
+- **T822-T823 CREATED** (📋/💭, Block BL §LX — stuff-all at catalog scale, from the live regression where the model-catalog copilot lost its advisory intelligence after the catalog grew 200→800+ models: the T793 stuff-all path grounds the LLM on the WHOLE catalog (why open questions like "a cheap chat model for my site" worked) but its verbose per-row block (title+snippet+every field labelled with T799 description) only fits `stuffAllTokenBudget` (40k) at ~250 rows, so at 800+ it silently falls back to brittle filtered retrieval (vague question → bogus `pricing_currency` filter → no results). NOT the T812 prompt change; the copilot just left stuff-all. T822 compact per-row projection (label + kind/vendor + key numeric/facet fields, no snippet/descriptions) + size-adaptive stuff-all (full→compact→filtered) restores whole-catalog reasoning ~10x cheaper; 💭 T823 mode observability (log full/compact/filtered + est tokens) + manifest-derived key-field set. Immediate stopgap = raise `TURING_GENAI_COPILOT_STUFFALLTOKENBUDGET`) — 2026-07-24.
 - **T818-T821 CREATED** (📋/💭, Block BK §LIX — configurable copilot query-planning strategy, from the design idea of using multiple LLM calls (parse→judge→refine) instead of one DSL call: T818 `TurCopilotPlanningStrategy` opt-in enum (DETERMINISTIC default=today | LLM_ASSISTED | HYBRID) + `TurCopilotQueryPlanner` seam `retrieve()` delegates to; T819 LLM multi-pass planner parse → `TurLlmJudge` validation (dropped facet/missing sort/ungrounded) → refine, depth via `turing.genai.copilot.planning.max-passes`, tool-calling/schema not raw JSON, i18n native; T820 HYBRID runs deterministic fast-path + escalates to LLM only when query empty/suspect; 💭 T821 admin surface + comparative eval. Fail-open/additive; LLM path handling languages puts Block BJ 💭 on hold) — 2026-07-24.
 - **T814-T817 CREATED** (📋/💭, Block BJ §LVIII — configurable, per-language NL ranking lexicon: T811's `TurNLRankingPlanner` hardcodes an English ASC/DESC/synonym/stopword list, which doesn't scale (not tunable per deployment, English-only — "mais barato"/"ordenar por" get no sort). T814 externalize the sets into a `TurRankingLexicon` resource bundle + `TurRankingLexiconProvider`, en parity; T815 replace the hand-rolled tokenize/expand/stopword logic with a per-locale Lucene `Analyzer` (StandardTokenizer+LowerCase+per-lang StopFilter+Snowball stemmer+`SynonymGraphFilter` from the T814 map) applied to query + field name/description so inflections collapse; T816 resolve lexicon+analyzer by copilot locale (registry, fallback en) + `pt`/`es` bundles + `turing.genai.copilot.ranking.lexicon-dir` external override; 💭 T817 per-site/admin editable lexicon overrides. Reuses Lucene analysis (already a dep); stays deterministic/fail-open, no LLM) — 2026-07-24.
 - **T813 SHIPPED** (Block BI §LVII.3 — model-catalog NL→facet eval sample + regression harness: `model-catalog.nl-facet-eval.json` (schema + live-failing ranking cases with golden sort/filter) + always-on `TurNLRankingPlannerSampleTest` asserting the planner resolves every golden sort AND the facet token survives the strip, no LLM/index; pack doubles as a `-Pnl-facet-eval` live fixture; 8 cases green. CLOSES Block BI) — 2026-07-24.
