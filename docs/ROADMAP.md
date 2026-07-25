@@ -42,6 +42,25 @@
 - 📋 **T809** (deps: —) **Facet group-label fallback to the field name** — `TurSNFacetRenderer.searchFacetBean` (and `facetLocalesFor` in `TurSNSearchProcess`) sets the group label from the locale-matched `TurSNSiteFieldExtFacet` row else `fieldExtDto.getFacetName()`; for auto-provisioned crawl/feed facet fields both are null (`TurSNFieldProvisioner.saveSiteFieldExt` sets `facetName=null`, `saveFacetLocales` creates zero rows), so the header renders blank. Add a last-resort fallback to a humanized field name when both are null (facet *value* labels already fall back to the raw value). Locale labels still win when configured. → §LVI.2
 - 📋 **T810** (deps: T796, T808) **Auto-provisioning wires default fields + facet labels from the feed manifest** — extend `TurStructuredFeedProvisioningOnStartup` (T796) so a structured-feed source / `VigletFieldManifest` can declare the title/description/text/url/image/date field mapping + per-field facet labels, and apply them at provision time (set `TurSNSite.defaultXField` + each faceted field's `TurSNSiteFieldExt.facetName`/locale rows). The zero-config dogfood fix: the model-catalog site provisions with `defaultTitleField = label` (+ a chosen description field) and readable facet labels, rendering correctly on first boot. The concrete mapping lives in the deployment manifest/env (viglet/cloud) — Turing only gains the ability to honor it. → §LVI.3
 
+## Block BJ — Configurable, per-language NL ranking lexicon (Lucene analysis) (§LVIII)
+
+> The T811 ranking planner works, but its knowledge — the ascending/descending
+> superlative words, the adjective→concept synonyms, the stopwords — is a **hardcoded
+> English word list in `TurNLRankingPlanner`**. That doesn't scale: it can't be tuned
+> per deployment/domain and it only understands English (a `pt` user asking "modelo
+> mais barato" or "ordenar por preço" gets no sort). Make the lexicon **data-driven
+> and per-language**, and replace the hand-rolled tokenizer/stemmer with **Lucene's
+> analysis chain** (already a dependency: per-language stemmers, stopword sets,
+> `SynonymGraphFilter`) so adding a language or a domain vocabulary is a **resource,
+> not code**, and inflected forms collapse without enumerating every variant. Stays
+> deterministic + fail-open (never reintroduces the LLM). Design in
+> [IMPROVEMENTS.md](IMPROVEMENTS.md) §LVIII.
+
+- 📋 **T814** (deps: T811) **Externalize the ranking lexicon** — move `ASC_WORDS`/`DESC_WORDS`/`SYNONYMS`/`STOPWORDS` out of `TurNLRankingPlanner` into a resource-backed `TurRankingLexicon` (default `en` bundle under `resources/`) loaded by a `TurRankingLexiconProvider`; the planner consumes the lexicon with no hardcoded sets. English parity — no behaviour change — but now data-driven. Foundation for the rest of the block. → §LVIII.1
+- 📋 **T815** (deps: T814) **Lucene analysis backbone** — replace the hand-rolled `tokenize`/`expand`/stopword logic with a per-locale Lucene `Analyzer` (StandardTokenizer + LowerCaseFilter + per-language `StopFilter` + Snowball stemmer + `SynonymGraphFilter` built from the T814 synonym map), applied to BOTH the query and each declared field's name + description so inflected/variant forms collapse (cheapest/cheaper/cheap; "mais barato"/"barato") without enumerating them. Reuses `org.apache.lucene.analysis.*` (already on the classpath); no new dependency. → §LVIII.2
+- 📋 **T816** (deps: T814, T815) **Per-language lexicons + locale resolution** — resolve the lexicon + analyzer by the copilot's request/site locale (registry locale→bundle, fallback `en`); ship `pt` (and `es`) bundles ("mais barato"/"menor"→asc, "mais inteligente"/"maior"→desc, "ordenar por"/"ordenado por" triggers); add `turing.genai.copilot.ranking.lexicon-dir` so a deployment can point at an external lexicon dir and add/tune languages without a rebuild. → §LVIII.3
+- 💭 **T817** (deps: T816) **Per-site / admin-editable ranking lexicon overrides** — let an SN site (or global settings) extend the direction/synonym lexicon with domain-specific terms, editable in admin and persisted, merged over the resource defaults. Promote from 💭 only if a deployment needs domain-specific ranking vocabulary beyond the shipped bundles. → §LVIII.4
+
 ## Block J follow-ups — Cloud SaaS hardening (T334–T373)
 
 > Surfaced wiring Block J (multi-tenancy, shipped — see [CHANGELOG.md](CHANGELOG.md)

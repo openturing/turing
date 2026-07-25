@@ -2795,3 +2795,55 @@ labels, so it renders correctly on first boot without post-deploy admin steps. T
 concrete mapping lives in the deployment's manifest/env (viglet/cloud), never in
 Turing — Turing only gains the ability to honor it. Builds on LVI.1's fallback (a site
 that declares nothing still gets the canonical defaults).
+
+## LVIII. Configurable, per-language NL ranking lexicon (Lucene analysis) (Block BJ)
+
+**The problem.** T811's `TurNLRankingPlanner` made ranking deterministic, but it did so
+with a **hardcoded English word list** baked into the class: `ASC_WORDS`/`DESC_WORDS`
+(the superlative→direction lexicon), `SYNONYMS` (adjective→concept-noun bridges like
+`cheapest`→price), and `STOPWORDS`. Two limits follow:
+
+- **Not configurable** — a deployment or a specific catalog can't add its own ranking
+  vocabulary (a domain word, a house synonym) without editing Java and rebuilding.
+- **English-only** — the words are English. A `pt_BR` user asking "modelo *mais
+  barato*", "*maior* janela de contexto" or "*ordenar por* preço" gets no sort,
+  because none of those tokens are in the sets. The copilot already knows the request
+  locale (it is passed through `retrieve`), so the lexicon should follow it.
+
+Enumerating every language × every inflection in Java would be unmaintainable
+("barato/baratíssimo/mais barato", "cheap/cheaper/cheapest"). This is exactly the
+problem **Lucene's analysis pipeline already solves** — and Lucene is already a Turing
+dependency (embedded vector store + the Lucene SE plugin), so reusing it adds no weight.
+
+**The design — data-driven lexicon + Lucene analysis, resolved per locale.**
+
+- **LVIII.1 (T814) Externalize.** Lift the four hardcoded sets into a resource-backed
+  `TurRankingLexicon` (a default `en` bundle under `resources/`) served by a
+  `TurRankingLexiconProvider`. `TurNLRankingPlanner` consumes the lexicon instead of
+  static fields — English parity, zero behaviour change, but now the vocabulary is
+  data. This is the seam everything else hangs off.
+- **LVIII.2 (T815) Lucene analysis backbone.** Replace the hand-rolled
+  `tokenize`/`expand`/stopword code with a per-locale Lucene `Analyzer`:
+  `StandardTokenizer` → `LowerCaseFilter` → per-language `StopFilter` (Lucene ships the
+  stopword sets) → a Snowball/`*Stemmer` for the language → `SynonymGraphFilter` built
+  from the T814 synonym map. Crucially the **same analyzer runs over both the query and
+  each declared field's name + description**, so a query lemma matches a field lemma
+  after stemming — "cheapest"/"cheaper"/"cheap" and "barato"/"baratíssimo" all collapse
+  to one stem, and the synonym filter (not a hand map) does the adjective→concept
+  bridge. New inflections stop being a maintenance burden.
+- **LVIII.3 (T816) Per-language + external override.** A registry resolves the lexicon
+  and analyzer by the copilot's request/site locale, falling back to `en`; ship `pt`
+  (and `es`) bundles. `turing.genai.copilot.ranking.lexicon-dir` lets a deployment mount
+  an external lexicon directory so a new language or a tuned synonym set ships as a
+  config file, not a rebuild. Adding a language becomes: a stopword set (Lucene has it),
+  a stemmer (Lucene has it), and a small direction+synonym resource.
+- **LVIII.4 (T817, 💭) Per-site / admin overrides.** Optionally let a site or global
+  settings extend the direction/synonym lexicon with domain terms, editable in admin and
+  merged over the resource defaults — promote only if a deployment needs vocabulary
+  beyond the shipped bundles.
+
+**Invariants preserved.** The planner stays **deterministic and fail-open** — no LLM is
+reintroduced; an unresolved locale falls back to `en`; a lexicon/analyzer failure
+degrades to no-sort exactly as today. The engine (`TurDslLuceneExecutor.buildSort`) is
+untouched. A possible future alignment (out of scope here) is to reuse the target SN
+site's own index analyzers so ranking tokenization matches how the field was indexed.

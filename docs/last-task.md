@@ -1,9 +1,21 @@
-# Last task number — `T813` · next block letter — `BJ`
+# Last task number — `T817` · next block letter — `BK`
 
 > **Single source of truth for the next free task number.** The next new task is
-> `T814`; after assigning it, bump the number above and the log line below.
+> `T818`; after assigning it, bump the number above and the log line below.
 >
-> **Next block letter — `BJ`** (Block **BI** = Deterministic (LLM-independent)
+> **Next block letter — `BK`** (Block **BJ** = Configurable, per-language NL ranking
+> lexicon (Lucene analysis) — T811's ranking planner hardcodes an English word list
+> (ASC/DESC superlatives, adjective→concept synonyms, stopwords) in
+> `TurNLRankingPlanner`; make it data-driven + per-language and reuse Lucene's analysis
+> chain (per-language stemmers/stopwords + `SynonymGraphFilter`, already a dep) so a
+> new language/domain is a resource not code: externalize the lexicon to a
+> `TurRankingLexicon` resource bundle + provider, en parity (T814); swap the
+> hand-rolled tokenizer/stemmer for a per-locale Lucene `Analyzer` applied to query +
+> field name/description so inflections collapse (T815); resolve lexicon+analyzer by
+> the copilot locale with `pt`/`es` bundles + `turing.genai.copilot.ranking.lexicon-dir`
+> external override (T816); 💭 per-site/admin lexicon overrides (T817); stays
+> deterministic/fail-open, no LLM; §LVIII, created 2026-07-24; Block **BI** =
+> Deterministic (LLM-independent)
 > query planning for the copilot — dogfooding the model-catalog copilot (T794)
 > exposed that NL→DSL planning is 100% LLM and T802(b)'s superlative→sort rule was
 > prompt-only, so a superlative/interrogative phrasing returns an empty query and
@@ -137,6 +149,7 @@ number" looked free but wasn't. Grepping three files (`ROADMAP.md`,
 
 ## Log (most recent first)
 
+- **T814-T817 CREATED** (📋/💭, Block BJ §LVIII — configurable, per-language NL ranking lexicon: T811's `TurNLRankingPlanner` hardcodes an English ASC/DESC/synonym/stopword list, which doesn't scale (not tunable per deployment, English-only — "mais barato"/"ordenar por" get no sort). T814 externalize the sets into a `TurRankingLexicon` resource bundle + `TurRankingLexiconProvider`, en parity; T815 replace the hand-rolled tokenize/expand/stopword logic with a per-locale Lucene `Analyzer` (StandardTokenizer+LowerCase+per-lang StopFilter+Snowball stemmer+`SynonymGraphFilter` from the T814 map) applied to query + field name/description so inflections collapse; T816 resolve lexicon+analyzer by copilot locale (registry, fallback en) + `pt`/`es` bundles + `turing.genai.copilot.ranking.lexicon-dir` external override; 💭 T817 per-site/admin editable lexicon overrides. Reuses Lucene analysis (already a dep); stays deterministic/fail-open, no LLM) — 2026-07-24.
 - **T813 SHIPPED** (Block BI §LVII.3 — model-catalog NL→facet eval sample + regression harness: `model-catalog.nl-facet-eval.json` (schema + live-failing ranking cases with golden sort/filter) + always-on `TurNLRankingPlannerSampleTest` asserting the planner resolves every golden sort AND the facet token survives the strip, no LLM/index; pack doubles as a `-Pnl-facet-eval` live fixture; 8 cases green. CLOSES Block BI) — 2026-07-24.
 - **T812 SHIPPED** (Block BI §LVII.2 — genericize the copilot + NL→facet system prompts now that ranking is procedural: `TurLlmNLFacetParser` sort rule dropped its domain example list for a schema-driven abstract rule (sort on the numeric field whose DESCRIPTION matches the quality); `TurCatalogCopilotService` prompt keeps the T799 rank-by-labelled-metric guardrail but neutralised (no "cheapest"/"headline index"/"benchmark"), notes results are pre-ordered, cites "result" not "model"; no behaviour change, 21 green) — 2026-07-24.
 - **T811 SHIPPED** (Block BI §LVII.1 — deterministic ranking-intent planner: pure `TurNLRankingPlanner` (no LLM/DB) detects superlative/comparative/`sorted by` intent + direction and resolves the numeric field from the declared schema (name+description tokens, camelCase-split, + generic adjective→noun synonym seed); `TurCatalogCopilotService.retrieve()` strips the ranking clause before the LLM faceting call so the facet survives, then injects the sort + guarantees a top-k size (sort-only stripped-to-stopwords → match_all); additive/fail-open, engine buildSort unchanged; `TurNLRankingPlannerTest` 10 + copilot +2 = 21 green) — 2026-07-24.
