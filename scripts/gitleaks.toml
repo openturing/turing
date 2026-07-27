@@ -23,3 +23,12 @@ regexes = [
   '''^CONSTRAINT_[A-Z0-9]+$''',
   '''^FK[a-z0-9]{20,}$''',
 ]
+
+# Allowlist by path. The social-preview card inlines the Turing brand mark as a
+# base64 data URI, which is a ~11 KB high-entropy string the generic-api-key rule
+# can flag. It is an image, not a credential — and a false positive here fails
+# the release publish closed. Keep this list to specific files, never a whole
+# directory.
+paths = [
+  '''^\.github/social-preview\.svg$''',
+]

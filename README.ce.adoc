@@ -19,6 +19,8 @@ image:https://img.shields.io/badge/React-19-61DAFB?style=flat-square&logo=react&
 image:https://img.shields.io/badge/docs-docs.viglet.org-brightgreen?style=flat-square&logo=readthedocs&logoColor=white[Documentation,link="https://docs.viglet.org/turing/"]
 image:https://img.shields.io/badge/discussions-join-8b5cf6?style=flat-square&logo=github[Discussions,link="https://github.com/openviglet/turing-ce/discussions"]
 
+image::.github/screenshot-console.png[Viglet Turing ES admin console,align="center"]
+
 toc::[]
 
 == Try it in 60 seconds
