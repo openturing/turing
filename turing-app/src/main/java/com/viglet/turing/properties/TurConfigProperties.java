@@ -24,7 +24,7 @@ public class TurConfigProperties {
 	private String keycloakAdminId;
 	private String allowedOrigins;
 	/**
-	 * Client Silos isolation (Viglet Cloud C051). When set (e.g. {@code vilt}),
+	 * Client Silos isolation (Viglet Cloud C051). When set (e.g. {@code acme}),
 	 * this instance is a dedicated per-client silo and only admits tokens whose
 	 * {@code viglet_client} claim equals this value — a login/token for any other
 	 * client (or with no client claim) is rejected. Blank/unset (the default) =

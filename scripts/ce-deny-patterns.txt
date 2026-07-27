@@ -48,3 +48,12 @@ AIza[0-9A-Za-z_-]{35}
 # Keep entries word-bounded to avoid over-matching, e.g.:
 # \bAcme[ -]?Corp\b
 # (add real customer/tenant names here on the private repo only)
+
+# Catalog-aggregator reference project (was leaking via javadoc + CHANGELOG —
+# cleaned 2026-07-27; pattern keeps it out for good):
+\b[Cc]ursarei\b
+
+# Consultancy/tenant name as a STANDALONE word. The trailing ($|[^-]) guard
+# deliberately does NOT match the legitimate public support-contact domain
+# vilt-group.com (SUPPORT.md / CHANGELOG mention it by design):
+\b[Vv][Ii][Ll][Tt]\b($|[^-])

@@ -33,6 +33,9 @@
 # Env:
 #   CE_REMOTE         Default remote (overridden by --remote).
 #   CE_BRANCH         Force the target branch (overridden by --branch).
+#   CE_NOTES_OUT      Path to write the extracted CHANGELOG section to, so CI can
+#                     reuse it verbatim as the GitHub Release body (T364). The
+#                     same text is embedded in the squash-commit message.
 #   GH_PKG_TOKEN      Used by CI (T360); not consumed here — auth is via the
 #                     remote URL / ambient git credentials.
 # ---------------------------------------------------------------------------
@@ -84,7 +87,56 @@ else
   VERSION="$(git show "$REF:pom.xml" | grep -m1 -oP '(?<=<version>)[^<]+' || true)"
 fi
 [[ -n "${VERSION:-}" ]] || die "could not resolve version label for ref $REF"
-COMMIT_MSG="Release v${VERSION}"
+
+# --------------------------------------------------------------------------
+# 0b. Build the human-readable release notes (T364)
+#
+# The public repo carries ONE squashed commit per release. Without a body that
+# commit ("Release vX.Y.Z") destroys every trace of WHAT changed — the log reads
+# as an abandoned drop-site, `--generate-notes` on the GitHub Release has no
+# commits to summarise, and an outside contributor has no way to see whether
+# their merged PR shipped. So the release section of the public CHANGELOG.md is
+# lifted into the commit body AND exported for the GitHub Release notes.
+# --------------------------------------------------------------------------
+RELEASE_NOTES=""
+if git cat-file -e "$REF:CHANGELOG.md" 2>/dev/null; then
+  CHANGELOG_TMP="$(mktemp)"
+  git show "$REF:CHANGELOG.md" > "$CHANGELOG_TMP"
+  # Shared with publish.yml so the commit body and the GitHub Release match.
+  RELEASE_NOTES="$(bash "$SCRIPT_DIR/changelog-section.sh" "$VERSION" "$CHANGELOG_TMP" || true)"
+  rm -f "$CHANGELOG_TMP"
+fi
+
+if [[ -z "${RELEASE_NOTES//[[:space:]]/}" ]]; then
+  warn "CHANGELOG.md has no section for $VERSION (or ${VERSION%.*}) — the release commit will have no change list. Add one before publishing."
+  RELEASE_NOTES="See https://docs.viglet.org/turing/ for documentation."
+fi
+
+COMMIT_MSG="$(cat <<EOF
+Release v${VERSION}
+
+${RELEASE_NOTES}
+
+---
+Published from the Viglet Turing ES internal repository as a reviewed source
+snapshot. Development history is squashed into this single commit by design;
+issues and pull requests are handled here on turing-ce and ship in a following
+release. See CONTRIBUTING.md.
+EOF
+)"
+
+# Export the notes so CI can attach them verbatim to the GitHub Release
+# (publish.yml: gh release create --notes-file). Optional: unset in local runs.
+if [[ -n "${CE_NOTES_OUT:-}" ]]; then
+  printf '%s\n' "$RELEASE_NOTES" > "$CE_NOTES_OUT"
+  log "Release notes written to $CE_NOTES_OUT"
+fi
+
+# Append a section to the GitHub Actions job summary when running in CI.
+summary() {
+  [[ -n "${GITHUB_STEP_SUMMARY:-}" ]] || return 0
+  printf '%s\n' "$*" >> "$GITHUB_STEP_SUMMARY"
+}
 
 # Target branch on turing-ce: mirror the source BRANCH name (e.g. a run on
 # `2026.3` publishes to a `2026.3` branch on turing-ce). Explicit --branch /
@@ -135,6 +187,26 @@ fi
 # Prune now-empty directories left behind by the deletions.
 find "$SRC_TREE" -mindepth 1 -type d -empty -delete 2>/dev/null || true
 log "Denylist removed $removed path(s)"
+
+summary "## CE snapshot — v${VERSION}"
+summary ""
+summary "| | |"
+summary "|---|---|"
+summary "| Source ref | \`${REF}\` (\`${REF_SHA}\`) |"
+summary "| Target | \`openviglet/turing-ce\` branch \`${TARGET_BRANCH}\` |"
+summary "| Mode | $($DO_PUSH && echo '**push**' || echo 'dry run') |"
+summary "| Paths stripped by \`ce-exclude.txt\` | ${removed} |"
+summary ""
+if [[ -n "$DENIED" ]]; then
+  summary "<details><summary>Stripped paths (${removed})</summary>"
+  summary ""
+  summary '```'
+  summary "$DENIED"
+  summary '```'
+  summary ""
+  summary "</details>"
+  summary ""
+fi
 
 # Public README: a curated README.ce.adoc replaces the internal README.adoc
 # (§XIX.2 / T359). The internal one is already excluded by the denylist.
@@ -284,7 +356,15 @@ git -c user.name="${GIT_AUTHOR_NAME:-Viglet Release}" \
     commit -q -m "$COMMIT_MSG"
 
 FILE_COUNT="$(git ls-files | wc -l | tr -d ' ')"
-log "Snapshot committed: \"$COMMIT_MSG\" ($FILE_COUNT files)"
+log "Snapshot committed: \"Release v${VERSION}\" ($FILE_COUNT files)"
+
+summary "✅ Secret scan clean · **${FILE_COUNT}** files in the public tree."
+summary ""
+summary "<details><summary>Release notes that will ship with this snapshot</summary>"
+summary ""
+summary "$RELEASE_NOTES"
+summary ""
+summary "</details>"
 
 if $DO_PUSH; then
   log "Pushing to $REMOTE ($TARGET_BRANCH)"

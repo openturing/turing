@@ -51,7 +51,7 @@ import lombok.extern.slf4j.Slf4j;
  * <p>{@code POST /api/sn/manifest} takes a single declarative
  * {@link VigletFieldManifest} (site + locales + ordered field specs) and converges
  * the SN site and its field schema to it in one idempotent call — re-posting the
- * same manifest is a no-op. This is how a structured connector (Dumont, cursarei)
+ * same manifest is a no-op. This is how a structured connector (e.g. Dumont)
  * stands up its schema as code instead of hand-clicking the console.</p>
  *
  * <p>Schema-as-code (T386 / §XX.6): {@code POST /api/sn/manifest/plan} returns the

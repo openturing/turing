@@ -76,7 +76,17 @@ jobs:
           ./scripts/package-dist.sh --skip-build
           export TAG_NAME=v$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)
           echo "TAG_NAME=${TAG_NAME}"
-          gh release create ${TAG_NAME} --repo ${RELEASE_REPO} --generate-notes
+          # turing-ce carries ONE squashed commit per release, so --generate-notes
+          # has nothing to summarise and produced an empty Release body. Use the
+          # curated CHANGELOG section instead — same text publish-ce.sh puts in
+          # the snapshot commit, so the commit and the Release always agree.
+          if scripts/changelog-section.sh "${TAG_NAME#v}" CHANGELOG.md > /tmp/release-notes.md; then
+            gh release create ${TAG_NAME} --repo ${RELEASE_REPO} \
+              --title "${TAG_NAME}" --notes-file /tmp/release-notes.md
+          else
+            echo "::warning::No CHANGELOG.md section for ${TAG_NAME#v} — falling back to generated notes."
+            gh release create ${TAG_NAME} --repo ${RELEASE_REPO} --generate-notes
+          fi
           gh release upload ${TAG_NAME} turing-app/target/viglet-turing.jar --repo ${RELEASE_REPO} --clobber
           gh release upload ${TAG_NAME} turing-utils/target/turing-utils.zip --repo ${RELEASE_REPO} --clobber
           gh release upload ${TAG_NAME} target/turing-install.zip --repo ${RELEASE_REPO} --clobber

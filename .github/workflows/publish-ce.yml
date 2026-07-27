@@ -103,4 +103,18 @@ jobs:
           PUB_REF: ${{ steps.cfg.outputs.ref }}
           PUB_BRANCH: ${{ steps.cfg.outputs.branch }}
           PUB_PUSH: ${{ steps.cfg.outputs.push }}
+          # Extracted CHANGELOG section — becomes the squash-commit body and is
+          # uploaded below so publish.yml can reuse it as the Release body (T364).
+          CE_NOTES_OUT: ${{ runner.temp }}/ce-release-notes.md
         run: bash scripts/publish-ce.sh --ref "$PUB_REF" --branch "$PUB_BRANCH" $PUB_PUSH
+
+      # Makes the notes reviewable before/after a dry run, and reusable by the
+      # release job — the whole point being that a squashed public history still
+      # tells contributors exactly what shipped.
+      - name: Upload release notes artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ce-release-notes
+          path: ${{ runner.temp }}/ce-release-notes.md
+          if-no-files-found: warn

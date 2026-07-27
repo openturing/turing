@@ -21,7 +21,6 @@
 # Default-deny ALL of docs/**, then re-include only the user-facing docs below.
 # A new internal doc added later is therefore private by default until allowed.
 docs/**
-!docs/CHANGELOG.md
 !docs/RAG_HYBRID_CONFIG.md
 !docs/MULTI_TENANCY.md
 !docs/chat-flow/
@@ -34,6 +33,13 @@ docs/STRATEGY.md
 docs/IMPROVEMENTS.md
 docs/ROADMAP.md
 docs/products/**
+
+# docs/CHANGELOG.md is the INTERNAL shipped-ledger: T-numbers, block structure,
+# and §-references into ROADMAP/IMPROVEMENTS/STRATEGY (which are denied above),
+# so publishing it both leaks the roadmap shape and produces dead links. The
+# public repo ships the user-facing root CHANGELOG.md instead — that is also the
+# file publish-ce.sh lifts the release notes from.
+docs/CHANGELOG.md
 
 # ── Internal AI-agent & contributor instructions ─────────────────────────────
 # These embed the roadmap, paid-feature plans, and doc-maintenance rules.
