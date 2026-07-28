@@ -69,18 +69,50 @@ public class TurPersonaContentFitEvaluator {
         this.llmSummaryService = llmSummaryService;
     }
 
-    /** Evaluate one notebook source against the persona. */
+    /** Evaluate one notebook source against the persona, on the default LLM. */
     public TurContentFitResult evaluate(TurPersona persona, TurPersonaSource source,
             boolean regenerate) {
+        return evaluate(persona, source, regenerate, null);
+    }
+
+    /**
+     * Evaluate one notebook source against the persona, optionally on a specific
+     * LLM instance (T825).
+     */
+    public TurContentFitResult evaluate(TurPersona persona, TurPersonaSource source,
+            boolean regenerate, String llmInstanceId) {
         String text = source == null ? null : source.getCachedText();
         String sourceId = source == null ? null : source.getId();
         String sourceName = source == null ? null : source.getSourceName();
-        return evaluateText(persona, text, sourceId, sourceName, regenerate);
+        return evaluateText(persona, text, sourceId, sourceName, regenerate, llmInstanceId);
     }
 
-    /** Evaluate a raw piece of text against the persona's audience facet. */
+    /**
+     * Evaluate a raw piece of text against the persona's audience facet, on the
+     * default LLM.
+     */
     public TurContentFitResult evaluateText(TurPersona persona, String text,
             String sourceId, String sourceName, boolean regenerate) {
+        return evaluateText(persona, text, sourceId, sourceName, regenerate, null);
+    }
+
+    /**
+     * T825 / §LXI.1 (Block BN) — evaluate a raw piece of text against the persona's
+     * audience facet on a caller-chosen LLM instance.
+     *
+     * <p>{@code llmInstanceId} rides the T728 override seam
+     * ({@link TurLlmSummaryService#generate(String, String, String, boolean, String)}):
+     * a Persona Match project passes its own instance so the <em>score</em> honours
+     * the project's model picker, not just the T704 adjustment suggestions. Blank /
+     * missing / disabled fails open to the platform default, exactly as before.
+     *
+     * <p>The override is folded into the cache key so switching models misses the
+     * cache instead of returning the previous model's verdict. It is appended only
+     * when actually set, which keeps the key byte-for-byte identical for every
+     * default-LLM caller — no existing cached verdict is invalidated by this change.
+     */
+    public TurContentFitResult evaluateText(TurPersona persona, String text,
+            String sourceId, String sourceName, boolean regenerate, String llmInstanceId) {
         TurPersonaAudience audience = persona == null ? null : persona.getAudience();
         TurReadabilityResult readability = readabilityScorer.score(text, audience);
         double readabilityScore = readability.fitScore();
@@ -94,11 +126,10 @@ public class TurPersonaContentFitEvaluator {
 
         String clipped = text.length() > MAX_SOURCE_CHARS
                 ? text.substring(0, MAX_SOURCE_CHARS) : text;
-        String cacheKey = "persona-fit:" + (persona == null ? "?" : persona.getId())
-                + ":" + sourceId + ":" + Integer.toHexString(clipped.hashCode());
+        String cacheKey = cacheKey(persona, sourceId, clipped, llmInstanceId);
 
         SummaryResult llm = llmSummaryService.generate(cacheKey, clipped,
-                buildSystemPrompt(persona, audience), regenerate);
+                buildSystemPrompt(persona, audience), regenerate, llmInstanceId);
 
         if (!llm.success() || StringUtils.isBlank(llm.content())) {
             // LLM unavailable / errored → degrade to the deterministic score.
@@ -128,6 +159,20 @@ public class TurPersonaContentFitEvaluator {
                 StringUtils.defaultString(verdict.summary()), fits, misfits,
                 readabilityScore, readability.metrics(), true, null,
                 llm.canRegenerate(), sourceId, sourceName);
+    }
+
+    // ---- cache key ---------------------------------------------------------
+
+    /**
+     * {@code persona-fit:<personaId>:<sourceId>:<contentHash>}, plus the LLM
+     * instance when one was chosen — so a model change is a cache miss (T825)
+     * while a default-LLM caller keeps the key it has always used.
+     */
+    private String cacheKey(TurPersona persona, String sourceId, String clipped,
+            String llmInstanceId) {
+        String base = "persona-fit:" + (persona == null ? "?" : persona.getId())
+                + ":" + sourceId + ":" + Integer.toHexString(clipped.hashCode());
+        return StringUtils.isBlank(llmInstanceId) ? base : base + ":" + llmInstanceId.trim();
     }
 
     // ---- grounding ---------------------------------------------------------

@@ -2775,33 +2775,11 @@ site's own index analyzers so ranking tokenization matches how the field was ind
 > Motivated by building T704 (Block AT's closer). The loop the original Persona
 > Match ask described — *"adjust the persona to the content and the content to the
 > persona, continuously"* — now has its memory (per-cell history), its signal
-> (drift) and its advice (adjustment suggestions). What it does not yet have is a
-> way to be **trusted** (the score ignores the project's chosen model), **calibrated**
+> (drift) and its advice (adjustment suggestions), and since T825 the score honours
+> the project's chosen model. What it still lacks is a way to be **calibrated**
 > (the fit bar is the platform's, not the project's), **noticed** (drift is invisible
-> unless a human opens the studio) or **enforced** (nothing gates on it). This block
-> is those four, plus the verdict-parsing debt both LLM calls carry.
-
-### LXI.1 The per-project model picker only half-works (T825)
-
-A Persona Match project has an **LLM Instance** field, and T704's
-`TurPersonaMatchAdjustmentService` honours it through
-`TurLlmSummaryService.generate(cacheKey, data, prompt, regenerate, llmInstanceIdOverride)`
-— the T728 override seam. But the **score itself** does not:
-`TurPersonaContentFitEvaluator` calls the four-argument overload, so every fit
-verdict in the matrix is produced by the *global default* LLM regardless of what
-the project selected. The observable result is incoherent: change the project's
-model, and the suggestions change while the numbers they are reasoning about do
-not.
-
-The fix is small and additive — an optional instance id threaded through
-`evaluate`/`evaluateText` — but has one hard requirement: **the resolved instance
-must go into the evaluator's cache key**. The key today is
-`persona-fit:<personaId>:<sourceId>:<contentHash>`; without the instance, switching
-models would return the previous model's cached verdict, which is worse than the
-bug being fixed (T728 states the same rule for the research synthesis lane). Every
-other caller passes `null` and resolves the default exactly as now, so the Block AA
-notebook, the SN content-fit endpoint, persona-suggest and T727 concept-fit need no
-revalidation.
+> unless a human opens the studio) or **enforced** (nothing gates on it) — plus the
+> verdict-parsing debt both LLM calls carry.
 
 ### LXI.2 A hardcoded 75 decides what "below fit" means (T826)
 

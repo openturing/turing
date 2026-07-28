@@ -10,12 +10,18 @@
 package com.viglet.turing.genai.persona.fit;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Spy;
@@ -84,7 +90,7 @@ class TurPersonaContentFitEvaluatorTest {
                    {"span": "this phrase is not in the text", "reason": "tone", "suggestion": "x"}
                  ]}
                 """;
-        when(llmSummaryService.generate(anyString(), anyString(), anyString(), anyBoolean()))
+        when(llmSummaryService.generate(anyString(), anyString(), anyString(), anyBoolean(), any()))
                 .thenReturn(new SummaryResult(true, null, verdict, true));
 
         TurContentFitResult result = evaluator.evaluate(audiencePersona(), source(SOURCE), false);
@@ -104,7 +110,7 @@ class TurPersonaContentFitEvaluatorTest {
         String verdict = """
                 {"fitScore": 90, "summary": "ok", "fits": [], "misfits": []}
                 """;
-        when(llmSummaryService.generate(anyString(), anyString(), anyString(), anyBoolean()))
+        when(llmSummaryService.generate(anyString(), anyString(), anyString(), anyBoolean(), any()))
                 .thenReturn(new SummaryResult(true, null, verdict, true));
 
         TurContentFitResult result = evaluator.evaluate(audiencePersona(), source(SOURCE), false);
@@ -116,7 +122,7 @@ class TurPersonaContentFitEvaluatorTest {
 
     @Test
     void degradesToReadabilityWhenLlmUnavailable() {
-        when(llmSummaryService.generate(anyString(), anyString(), anyString(), anyBoolean()))
+        when(llmSummaryService.generate(anyString(), anyString(), anyString(), anyBoolean(), any()))
                 .thenReturn(new SummaryResult(false, "No default LLM configured.", null, false));
 
         TurContentFitResult result = evaluator.evaluate(audiencePersona(), source(SOURCE), false);
@@ -128,7 +134,7 @@ class TurPersonaContentFitEvaluatorTest {
 
     @Test
     void unparseableVerdictDegradesGracefully() {
-        when(llmSummaryService.generate(anyString(), anyString(), anyString(), anyBoolean()))
+        when(llmSummaryService.generate(anyString(), anyString(), anyString(), anyBoolean(), any()))
                 .thenReturn(new SummaryResult(true, null, "sorry, I cannot do that", true));
 
         TurContentFitResult result = evaluator.evaluate(audiencePersona(), source(SOURCE), false);
@@ -143,5 +149,68 @@ class TurPersonaContentFitEvaluatorTest {
 
         assertThat(result.llmUsed()).isFalse();
         assertThat(result.error()).contains("no extracted text");
+    }
+
+    // ---- T825 / §LXI.1 — the caller's LLM instance drives the score ---------
+
+    private static final String OK_VERDICT =
+            "{\"fitScore\": 70, \"summary\": \"ok\", \"fits\": [], \"misfits\": []}";
+
+    @Test
+    void passesTheChosenLlmInstanceThroughToTheSummaryService() {
+        when(llmSummaryService.generate(anyString(), anyString(), anyString(), anyBoolean(), any()))
+                .thenReturn(new SummaryResult(true, null, OK_VERDICT, true));
+
+        evaluator.evaluate(audiencePersona(), source(SOURCE), false, "llm-fast");
+
+        verify(llmSummaryService).generate(anyString(), anyString(), anyString(), eq(false),
+                eq("llm-fast"));
+    }
+
+    @Test
+    void foldsTheChosenLlmInstanceIntoTheCacheKey() {
+        when(llmSummaryService.generate(anyString(), anyString(), anyString(), anyBoolean(), any()))
+                .thenReturn(new SummaryResult(true, null, OK_VERDICT, true));
+
+        evaluator.evaluate(audiencePersona(), source(SOURCE), false, "llm-a");
+        evaluator.evaluate(audiencePersona(), source(SOURCE), false, "llm-b");
+
+        ArgumentCaptor<String> keys = ArgumentCaptor.forClass(String.class);
+        verify(llmSummaryService, times(2)).generate(keys.capture(),
+                anyString(), anyString(), anyBoolean(), any());
+        // Same persona + source + content, different model → different key, so a
+        // lane change never serves the previous model's verdict.
+        assertThat(keys.getAllValues().get(0)).endsWith(":llm-a");
+        assertThat(keys.getAllValues().get(1)).endsWith(":llm-b");
+        assertThat(keys.getAllValues().get(0)).isNotEqualTo(keys.getAllValues().get(1));
+    }
+
+    @Test
+    void defaultLlmCallerKeepsTheLegacyCacheKeyAndPassesNoOverride() {
+        when(llmSummaryService.generate(anyString(), anyString(), anyString(), anyBoolean(), any()))
+                .thenReturn(new SummaryResult(true, null, OK_VERDICT, true));
+
+        evaluator.evaluate(audiencePersona(), source(SOURCE), false);
+
+        ArgumentCaptor<String> key = ArgumentCaptor.forClass(String.class);
+        verify(llmSummaryService).generate(key.capture(), anyString(), anyString(), eq(false),
+                isNull());
+        // No instance segment — byte-for-byte the pre-T825 key, so no cached
+        // verdict is invalidated for the four default-LLM call sites.
+        assertThat(key.getValue()).startsWith("persona-fit:p1:s1:");
+        assertThat(key.getValue().chars().filter(c -> c == ':').count()).isEqualTo(3);
+    }
+
+    @Test
+    void blankOrWhitespaceInstanceIsTreatedAsNoOverride() {
+        when(llmSummaryService.generate(anyString(), anyString(), anyString(), anyBoolean(), any()))
+                .thenReturn(new SummaryResult(true, null, OK_VERDICT, true));
+
+        evaluator.evaluate(audiencePersona(), source(SOURCE), false, "   ");
+
+        ArgumentCaptor<String> key = ArgumentCaptor.forClass(String.class);
+        verify(llmSummaryService).generate(key.capture(), anyString(), anyString(), anyBoolean(),
+                any());
+        assertThat(key.getValue().chars().filter(c -> c == ':').count()).isEqualTo(3);
     }
 }

@@ -60,6 +60,10 @@ import tools.jackson.databind.json.JsonMapper;
  * resolve correctly off the request thread. All DB writes happen back on the
  * calling thread (repository {@code saveAll}) — the pool only computes.
  *
+ * <p>T825: every cell is evaluated on the project's own <strong>LLM instance</strong>
+ * when it names one, so the matrix numbers and the T704 adjustment suggestions
+ * reason on the same model (a project with no instance keeps the platform default).
+ *
  * <p>T704: because a run overwrites the cell in place, every run also appends one
  * point per cell to {@link TurPersonaMatchHistoryService the fit history} — reused
  * cells included, so a run's average covers the whole matrix — and carries the
@@ -179,12 +183,15 @@ public class TurPersonaMatchAnalysisService {
             return List.of();
         }
         String tenant = tenantContext.getCurrentTenant();
+        // T825: the project's own LLM instance drives the fit score, not just the
+        // T704 adjustment suggestions (null = platform default, as before).
+        String llmInstanceId = project.getLlmInstanceId();
         ExecutorService pool = Executors.newFixedThreadPool(Math.min(PARALLELISM, total));
         try {
             ExecutorCompletionService<Computed> ecs = new ExecutorCompletionService<>(pool);
             for (Pair task : tasks) {
                 ecs.submit(() -> tenantContext.runAs(tenant,
-                        () -> computeOrReuse(task, force, existing)));
+                        () -> computeOrReuse(task, force, existing, llmInstanceId)));
             }
             List<Computed> results = new ArrayList<>(total);
             for (int i = 0; i < total; i++) {
@@ -216,7 +223,7 @@ public class TurPersonaMatchAnalysisService {
     }
 
     private Computed computeOrReuse(Pair task, boolean force,
-            Map<String, TurPersonaMatchCell> existing) {
+            Map<String, TurPersonaMatchCell> existing, String llmInstanceId) {
         TurPersonaMatchSource source = task.source();
         TurPersona persona = task.persona();
         String hash = StringUtils.defaultIfBlank(source.getContentHash(),
@@ -228,7 +235,7 @@ public class TurPersonaMatchAnalysisService {
         }
 
         TurContentFitResult r = evaluator.evaluateText(persona, source.getCachedText(),
-                source.getId(), source.getSourceName(), force);
+                source.getId(), source.getSourceName(), force, llmInstanceId);
         // T704: the score being replaced becomes this cell's "previous" for drift.
         Double previous = prior == null ? null : prior.getFitScore();
         TurPersonaMatchCellDto dto = new TurPersonaMatchCellDto(source.getId(), persona.getId(),
