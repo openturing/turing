@@ -266,6 +266,82 @@ export function buildTrendMap(trend?: MatchTrend): Map<string, MatchTrendPoint[]
   return map;
 }
 
+/**
+ * T830 — the per-run average series for each **content** or each **persona**,
+ * aggregated from the same `/trend` payload the project chart already reads (no new
+ * endpoint). Answers the question that sits between the project average and a
+ * single pair's sparkline: *is this content getting worse for its audiences?* /
+ * *is this persona drifting away from the portfolio?*
+ *
+ * Points are grouped by run instant, so a run that only re-evaluated some cells
+ * still yields one point per run — the average of whatever that run recorded.
+ * `llmUsed` is true when any cell used the LLM; `reused` only when every cell was
+ * reused (matching how the backend summarises a run).
+ */
+export function buildTargetTrends(
+  trend: MatchTrend | undefined,
+  by: "source" | "persona",
+): Map<string, MatchTrendPoint[]> {
+  interface Bucket {
+    fit: number;
+    readability: number;
+    count: number;
+    llmUsed: boolean;
+    reused: boolean;
+  }
+  // targetId -> runInstant -> bucket
+  const buckets = new Map<string, Map<string, Bucket>>();
+  for (const series of trend?.cells ?? []) {
+    const targetId = by === "source" ? series.sourceId : series.personaId;
+    const perRun = buckets.get(targetId) ?? new Map<string, Bucket>();
+    buckets.set(targetId, perRun);
+    for (const point of series.points) {
+      const bucket = perRun.get(point.evaluatedAt);
+      if (bucket) {
+        bucket.fit += point.fitScore;
+        bucket.readability += point.readabilityScore;
+        bucket.count += 1;
+        bucket.llmUsed = bucket.llmUsed || point.llmUsed;
+        bucket.reused = bucket.reused && point.reused;
+      } else {
+        perRun.set(point.evaluatedAt, {
+          fit: point.fitScore,
+          readability: point.readabilityScore,
+          count: 1,
+          llmUsed: point.llmUsed,
+          reused: point.reused,
+        });
+      }
+    }
+  }
+
+  const result = new Map<string, MatchTrendPoint[]>();
+  for (const [targetId, perRun] of buckets) {
+    const points = [...perRun.entries()]
+      .sort(([a], [b]) => a.localeCompare(b)) // ISO-8601 sorts lexicographically
+      .map(([evaluatedAt, b]) => ({
+        evaluatedAt,
+        fitScore: Math.round((b.fit / b.count) * 100) / 100,
+        readabilityScore: Math.round((b.readability / b.count) * 100) / 100,
+        llmUsed: b.llmUsed,
+        reused: b.reused,
+      }));
+    result.set(targetId, points);
+  }
+  return result;
+}
+
+/**
+ * T830 — the movement between the last two points of a series, or `null` when
+ * there is nothing to compare against yet (a first run).
+ */
+export function seriesDelta(points?: MatchTrendPoint[]): number | null {
+  if (!points || points.length < 2) return null;
+  const last = points[points.length - 1]!;
+  const previous = points[points.length - 2]!;
+  return Math.round((last.fitScore - previous.fitScore) * 10) / 10;
+}
+
 // ---------------------------------------------------------------------------
 // Matrix map + report lenses (pure).
 // ---------------------------------------------------------------------------

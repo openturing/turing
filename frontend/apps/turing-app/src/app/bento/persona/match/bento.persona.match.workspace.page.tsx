@@ -35,6 +35,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   buildMatrixMap,
+  buildTargetTrends,
   buildTrendMap,
   cellKey,
   driftTone,
@@ -46,6 +47,7 @@ import {
   rankByContent,
   rankByPersona,
   SCHEDULES,
+  seriesDelta,
   type MatchCell,
   type MatchMisfit,
   type MatchPersonaKind,
@@ -99,6 +101,8 @@ interface ReportRow {
   summary?: string | null;
   fits: string[];
   misfits: MatchMisfit[];
+  /** T830 — the score this pair held at the previous run (null on a first run). */
+  previousScore?: number | null;
 }
 interface ReportGroup {
   head: string;
@@ -149,9 +153,21 @@ function buildRowHtml(r: ReportRow, labels: ReportLabels, threshold: number): st
          .join("")}`
     : `<p class="none">${escapeHtml(labels.nothingToAdjust)}</p>`;
 
+  // T830 — an exported report that shows only a snapshot cannot say "this dropped
+  // 11 points since last week". Movement is language-neutral, so no i18n needed.
+  const delta =
+    typeof r.previousScore === "number" ? Math.round((r.score - r.previousScore) * 10) / 10 : null;
+  const moveHtml =
+    delta === null
+      ? ""
+      : `<span class="move" style="color:${delta < 0 ? "#e11d48" : "#059669"}">${Math.round(
+          r.previousScore as number,
+        )}% → ${Math.round(r.score)}% (${delta > 0 ? "+" : ""}${delta})</span>`;
+
   return `<article class="item">
     <div class="item-head">
       <span class="item-label">${escapeHtml(r.label)}</span>
+      ${moveHtml}
       <span class="item-score" style="color:${color}">${Math.round(r.score)}%</span>
     </div>
     <span class="bar"><span class="fill" style="width:${r.score}%;background:${color}"></span></span>
@@ -197,6 +213,7 @@ function buildReportHtml(
     .item { border: 1px solid #e2e8f0; border-radius: 12px; padding: 12px 14px; margin: 8px 0; page-break-inside: avoid; }
     .item-head { display: flex; align-items: baseline; gap: 10px; }
     .item-label { flex: 1; font-size: 13px; font-weight: 600; }
+    .move { font-size: 11px; font-weight: 600; white-space: nowrap; }
     .item-score { font-size: 16px; font-weight: 800; }
     .bar { display: block; height: 7px; background: #e2e8f0; border-radius: 999px; overflow: hidden; margin: 6px 0 0; }
     .fill { display: block; height: 100%; border-radius: 999px; }
@@ -223,6 +240,18 @@ function buildReportHtml(
     ${groupsHtml}
     <footer>${escapeHtml(footer)}</footer>
   </body></html>`;
+}
+
+/**
+ * T830 — " · 78% → 71% (-7)" for an exported group heading, empty when the target
+ * has only one run on record. Numeric and language-neutral, so it needs no i18n.
+ */
+function groupMovement(points?: MatchTrendPoint[]): string {
+  const delta = seriesDelta(points);
+  if (delta === null || !points || points.length < 2) return "";
+  const previous = Math.round(points[points.length - 2]!.fitScore);
+  const current = Math.round(points[points.length - 1]!.fitScore);
+  return ` · ${previous}% → ${current}% (${delta > 0 ? "+" : ""}${delta})`;
 }
 
 function openPrintWindow(html: string): void {
@@ -406,6 +435,10 @@ function ProjectWorkspace({ projectId }: Readonly<{ projectId: string }>) {
     [everRun, total, sources, personas, matrix],
   );
   const trendMap = useMemo(() => buildTrendMap(trendData), [trendData]);
+  // T830 — per-content and per-persona average-per-run series, aggregated from the
+  // same /trend payload the project chart reads (no extra request).
+  const contentTrends = useMemo(() => buildTargetTrends(trendData, "source"), [trendData]);
+  const personaTrends = useMemo(() => buildTargetTrends(trendData, "persona"), [trendData]);
   const byContent = useMemo(() => rankByContent(sources, personas, matrix), [sources, personas, matrix]);
   const byPersona = useMemo(() => rankByPersona(sources, personas, matrix), [sources, personas, matrix]);
   const selectedPersonaIds = useMemo(() => personas.map((p) => p.id), [personas]);
@@ -567,7 +600,10 @@ function ProjectWorkspace({ projectId }: Readonly<{ projectId: string }>) {
       if (kind === "content") {
         const groups: ReportGroup[] = byContent.map((g) => ({
           head: g.source.name,
-          sub: `${t(`persona.match.sourceType.${g.source.type}`)} · ${t("persona.match.reportAvgFit", { avg: g.avg })}`,
+          sub:
+            `${t(`persona.match.sourceType.${g.source.type}`)} · ` +
+            `${t("persona.match.reportAvgFit", { avg: g.avg })}` +
+            groupMovement(contentTrends.get(g.source.id)),
           rows: g.ranked.map((r) => ({
             label: r.persona.name,
             score: r.cell.fitScore,
@@ -575,6 +611,7 @@ function ProjectWorkspace({ projectId }: Readonly<{ projectId: string }>) {
             summary: r.cell.summary,
             fits: r.cell.fits,
             misfits: r.cell.misfits,
+            previousScore: r.cell.previousFitScore,
           })),
         }));
         openPrintWindow(
@@ -591,7 +628,10 @@ function ProjectWorkspace({ projectId }: Readonly<{ projectId: string }>) {
       } else {
         const groups: ReportGroup[] = byPersona.map((g) => ({
           head: g.persona.name,
-          sub: `${t(`persona.match.kind.${g.persona.kind}`)} · ${t("persona.match.reportAvgFit", { avg: g.avg })}`,
+          sub:
+            `${t(`persona.match.kind.${g.persona.kind}`)} · ` +
+            `${t("persona.match.reportAvgFit", { avg: g.avg })}` +
+            groupMovement(personaTrends.get(g.persona.id)),
           rows: g.ranked.map((r) => ({
             label: r.source.name,
             score: r.cell.fitScore,
@@ -599,6 +639,7 @@ function ProjectWorkspace({ projectId }: Readonly<{ projectId: string }>) {
             summary: r.cell.summary,
             fits: r.cell.fits,
             misfits: r.cell.misfits,
+            previousScore: r.cell.previousFitScore,
           })),
         }));
         openPrintWindow(
@@ -614,7 +655,7 @@ function ProjectWorkspace({ projectId }: Readonly<{ projectId: string }>) {
         );
       }
     },
-    [byContent, byPersona, name, t, fitThreshold],
+    [byContent, byPersona, name, t, fitThreshold, contentTrends, personaTrends],
   );
 
   const removeProject = useCallback(() => {
@@ -961,6 +1002,7 @@ function ProjectWorkspace({ projectId }: Readonly<{ projectId: string }>) {
                         subtitle={`${t(`persona.match.sourceType.${source.type}`)} · ${t("persona.match.avgFitInline", { avg })}`}
                         icon={SOURCE_TYPE_ICON[source.type]}
                         threshold={fitThreshold}
+                        series={contentTrends.get(source.id)}
                         rows={ranked.map((r) => ({
                           label: r.persona.name,
                           score: r.cell.fitScore,
@@ -980,6 +1022,7 @@ function ProjectWorkspace({ projectId }: Readonly<{ projectId: string }>) {
                         subtitle={`${t(`persona.match.kind.${persona.kind}`)} · ${t("persona.match.avgFitInline", { avg })}`}
                         icon={IconUserCircle}
                         threshold={fitThreshold}
+                        series={personaTrends.get(persona.id)}
                         rows={ranked.map((r) => ({
                           label: r.source.name,
                           score: r.cell.fitScore,
@@ -1257,12 +1300,39 @@ interface RankRow {
   onClick: () => void;
 }
 
+/**
+ * T830 / §LXI.6 — one target's movement across runs: the average-per-run sparkline
+ * plus the delta between the last two runs. Silent until a target has two runs on
+ * record, so a fresh project shows no empty chart.
+ */
+function TargetTrend({ series }: Readonly<{ series?: MatchTrendPoint[] }>) {
+  const { t } = useTranslation();
+  const points = series ?? [];
+  const delta = seriesDelta(points);
+  if (delta === null) {
+    return null;
+  }
+  const tone = driftTone(delta);
+  return (
+    <span
+      className={`flex shrink-0 items-center gap-1.5 rounded-lg border px-1.5 py-1 ${tone.border} ${tone.soft}`}
+      title={`${t("persona.match.sinceLastRun")} · ${t("persona.match.runsOnRecord", {
+        count: points.length,
+      })}`}
+    >
+      <Sparkline points={points} />
+      <span className={`text-xs font-semibold ${tone.text}`}>{formatDelta(delta)}</span>
+    </span>
+  );
+}
+
 function RankPanel({
   title,
   subtitle,
   icon: Icon,
   rows,
   threshold,
+  series,
 }: Readonly<{
   title: string;
   subtitle: string;
@@ -1270,6 +1340,8 @@ function RankPanel({
   rows: RankRow[];
   /** T826 — the project's good-fit bar driving the bar colours. */
   threshold: number;
+  /** T830 — this target's average-per-run fit series (undefined before any run). */
+  series?: MatchTrendPoint[];
 }>) {
   return (
     <div className="bento-tile bento-glass flex flex-col gap-3 rounded-2xl p-4">
@@ -1277,12 +1349,14 @@ function RankPanel({
         <span className="grid size-8 shrink-0 place-items-center rounded-lg bg-violet-500/10 text-violet-600 dark:text-violet-300">
           <Icon size={16} />
         </span>
-        <div className="min-w-0">
+        <div className="min-w-0 flex-1">
           <div className="truncate text-sm font-semibold" title={title}>
             {title}
           </div>
           <div className="text-xs text-muted-foreground">{subtitle}</div>
         </div>
+        {/* T830 — is THIS target getting better or worse across runs? */}
+        <TargetTrend series={series} />
       </div>
       <div className="flex flex-col gap-1.5">
         {rows.map((row) => {

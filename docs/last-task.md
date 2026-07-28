@@ -4,10 +4,12 @@
 > `T832`; after assigning it, bump the number above and the log line below.
 >
 > **Next block letter — `BO`** (Block **BN** = Content-fit tuning loop — the T704
-> follow-ups that make the Persona Match loop trustworthy (the fit evaluator ignores the
-> project's LLM instance), calibrated (a hardcoded 75 decides "below fit"), noticed
-> (scheduled drift alerts nobody) and enforced (`turing match` CI gate); T825-T831,
-> created 2026-07-28; Block **BM** = Headless admin bootstrap — the
+> follow-ups that made the Persona Match loop trustworthy (T825 the project's LLM now
+> drives the fit score), calibrated (T826 per-project `fitThreshold` replaces the
+> hardcoded 75), noticed (T827 drift webhook after a scheduled run), enforced (T828
+> `turing match` CI gate), schema-bound (T829 provider-side verdicts + degradation
+> counters) and reportable per target (T830). **T825-T830 SHIPPED, block CLOSED**;
+> only 💭 T831 (apply a persona adjustment) remains unpromoted. Created 2026-07-28; Block **BM** = Headless admin bootstrap — the
 > `TURING_ADMIN_PASSWORD` env var both READMEs documented was read by nothing, so every
 > `docker run` / CI deploy hit the interactive first-access setup screen. T824 makes it
 > real via `turing.admin.password` + a shared `TurAdminPasswordService`; set-once
@@ -179,6 +181,7 @@ number" looked free but wasn't. Grepping three files (`ROADMAP.md`,
 
 ## Log (most recent first)
 
+- **T830 SHIPPED** (Block BN §LXI.6 — per-content/per-persona average-per-run series on each RankPanel via `buildTargetTrends` + `±` delta and previous score in both PDF lenses; **CLOSES Block BN**, only 💭 T831 left) — 2026-07-28.
 - **T829 SHIPPED** (Block BN §LXI.5 — fit + adjustment verdicts bound to OpenAI `json_schema`/Anthropic forced tool via `TurStructuredCompletionPort` + `generateStructured`; `TurVerdictSource` + `/verdict-health` counters make degradations visible) — 2026-07-28.
 - **T828 SHIPPED** (Block BN §LXI.4 — `turing match list|run|drift` in `@viglet/turing-cli`; `run` exits non-zero below the fit bar or on a regression with `--fail-on-drop`) — 2026-07-28.
 - **T827 SHIPPED** (Block BN §LXI.3 — opt-in per-project drift webhook fired after a *scheduled* run that crossed a pair below the bar or slid the average past a margin; fail-soft) — 2026-07-28.

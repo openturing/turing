@@ -2782,23 +2782,9 @@ site's own index analyzers so ranking tokenization matches how the field was ind
 > to open the studio, since T828 a pipeline can fail a build on it
 > (`turing match run … --min-fit --fail-on-drop`), and since T829 both verdicts are
 > bound to a provider-enforced schema with their degradations counted instead of
-> silent. What remains is the reporting lens (T830) and the 💭 apply action (T831).
-
-### LXI.6 Trend exists per project and per pair, but not per target (T830)
-
-T704 renders one chart (the project average per run) and one sparkline (a single
-pair, in the drill-in). The question an editor actually asks sits between them: *is
-this content getting worse for its audiences?* / *is this persona drifting away
-from the portfolio?* The data is already on the wire — `/trend` returns every
-cell's series — so this is an aggregation in the frontend, not an endpoint: average
-the cells of each content (and of each persona) per run and draw the small series on
-the corresponding `RankPanel`.
-
-The PDF exports have the matching hole: both lenses print a snapshot with no
-movement at all, so the artifact an operator circulates cannot say "this dropped 11
-points since last week". Adding the previous score plus the `±` delta to each
-exported row is a few lines in `buildRowHtml` and makes the report honest about
-time.
+> silent, and since T830 both the studio and the exported PDFs report movement per
+> content and per persona rather than only for the project as a whole. What remains
+> is the 💭 apply action (T831).
 
 ### LXI.7 Advice that must be retyped (T831 — 💭)
 
