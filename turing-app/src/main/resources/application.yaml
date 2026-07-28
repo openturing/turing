@@ -13,6 +13,14 @@ turing:
   # real value here. Rotation: docs/operations/crypto-key-rotation.md
   ai.crypto.key: ${TURING_AI_CRYPTO_KEY:}
   allowedOrigins: http://localhost:4200,http://localhost:5173
+  admin:
+    # Headless bootstrap of the local `admin` password (docker run / CI), so a fresh
+    # container is usable without going through the first-access setup screen.
+    # Applied on startup ONLY while the password is still unset — it never
+    # overwrites a password already configured, so restarts are a no-op. Minimum 6
+    # characters (shorter values are ignored with a warning and the setup screen is
+    # kept). Blank/unset (the default) = interactive setup, as before.
+    password: ${TURING_ADMIN_PASSWORD:}
   # T642 / §XXXVII.4 — when false, ANY authenticated principal is granted
   # ROLE_ADMIN + every privilege (see TurCustomUserDetailsService /
   # TurAuthTokenHeaderFilter), which nullifies all ~240 method-level checks and

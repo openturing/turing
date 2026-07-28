@@ -23,6 +23,7 @@ import com.viglet.turing.onstartup.store.TurStoreVendorOnStartup;
 import com.viglet.turing.onstartup.system.TurConfigVarOnStartup;
 import com.viglet.turing.onstartup.system.TurLocaleOnStartup;
 import com.viglet.turing.persistence.repository.system.TurConfigVarRepository;
+import com.viglet.turing.service.auth.TurAdminPasswordService;
 
 @ExtendWith(MockitoExtension.class)
 class TurOnStartupTest {
@@ -47,6 +48,8 @@ class TurOnStartupTest {
     private TurRoleOnStartup turRoleOnStartup;
     @Mock
     private TurEmbeddingModelUnificationService turEmbeddingModelUnificationService;
+    @Mock
+    private TurAdminPasswordService turAdminPasswordService;
 
     @InjectMocks
     private TurOnStartup turOnStartup;
@@ -67,6 +70,7 @@ class TurOnStartupTest {
         // LLM vendor seeding runs in the first-time block AND the always-run section.
         verify(turLLMVendorOnStartup, times(2)).createDefaultRows();
         verify(turEmbeddingModelUnificationService).reconcile();
+        verify(turAdminPasswordService).bootstrapFromConfiguration();
     }
 
     @Test
@@ -80,8 +84,10 @@ class TurOnStartupTest {
         verifyNoInteractions(turLocaleOnStartup, turSEVendorOnStartup, turStoreVendorOnStartup,
                 turConfigVarOnStartup, turUserOnStartup, turGroupOnStartup, turRoleOnStartup);
         // ...but the idempotent reconciliations run every boot so existing installs
-        // pick up new vendors + the embedding-model unification.
+        // pick up new vendors + the embedding-model unification, and an install that
+        // never completed the setup screen still gets the headless admin password.
         verify(turLLMVendorOnStartup).createDefaultRows();
         verify(turEmbeddingModelUnificationService).reconcile();
+        verify(turAdminPasswordService).bootstrapFromConfiguration();
     }
 }

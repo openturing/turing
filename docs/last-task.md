@@ -1,9 +1,14 @@
-# Last task number — `T823` · next block letter — `BM`
+# Last task number — `T824` · next block letter — `BN`
 
 > **Single source of truth for the next free task number.** The next new task is
-> `T824`; after assigning it, bump the number above and the log line below.
+> `T825`; after assigning it, bump the number above and the log line below.
 >
-> **Next block letter — `BM`** (Block **BL** = Stuff-all at catalog scale (compact
+> **Next block letter — `BN`** (Block **BM** = Headless admin bootstrap — the
+> `TURING_ADMIN_PASSWORD` env var both READMEs documented was read by nothing, so every
+> `docker run` / CI deploy hit the interactive first-access setup screen. T824 makes it
+> real via `turing.admin.password` + a shared `TurAdminPasswordService`; set-once
+> (never overwrites an operator's password) and boot-safe. Block CLOSED, created
+> 2026-07-28; Block **BL** = Stuff-all at catalog scale (compact
 > projection) — dogfooding the model-catalog copilot with the catalog grown 200→800+
 > models exposed a silent quality cliff: the T793 stuff-all path (grounds the LLM on
 > the WHOLE catalog → great advisory answers) only fits `stuffAllTokenBudget` (40k) at
@@ -168,6 +173,8 @@ number" looked free but wasn't. Grepping three files (`ROADMAP.md`,
    lists fully-shipped blocks), then bump the letter after creating the block.
 
 ## Log (most recent first)
+
+- **T824 SHIPPED** (Block BM — headless admin bootstrap: `TURING_ADMIN_PASSWORD` is now really read; CLOSES Block BM) — 2026-07-28.
 
 - **T818 SHIPPED** (Block BK §LIX.1 — planning-strategy seam: new `genai.catalog.planning` package with `TurCopilotQueryPlanner` (`plan` + optional `replan(hits)`), `TurCopilotQueryPlan`, `TurCopilotQueryBodies`, `TurDeterministicCopilotQueryPlanner` (today's behaviour verbatim) + `TurCopilotQueryPlannerFactory`; nullable per-site `TurSNSiteGenAi.copilotPlanningStrategy`/`copilotPlanningMaxPasses` (Liquibase v2026.3.1.117) inherit `turing.genai.copilot.planning.*`; per-site read via new `findGenAiByNameIgnoreCase` projection to avoid LAZY nav off-session; 22 unit + 4 IT green, zero default behaviour change) — 2026-07-25.
 - **T819 SHIPPED** (Block BK §LIX.2 — LLM multi-pass planner: `TurLlmAssistedCopilotQueryPlanner` parse (full question, i18n-native) → `TurCopilotPlanJudge.judge` → `refine`, depth-gated by `turing.genai.copilot.planning.max-passes` (0/1/2, clamped); both passes schema-bound via OpenAI json_schema → Anthropic forced tool → converter-format chat; the LLM only names constraints and `TurCopilotPlanCompiler` compiles them deterministically, dropping undeclared fields / non-numeric ranges / invalid sorts so grounding holds by construction; depth-1 still applies the judged sort; fail-open at every step; 39 unit green) — 2026-07-25.

@@ -36,6 +36,7 @@ import com.viglet.turing.onstartup.store.TurStoreVendorOnStartup;
 import com.viglet.turing.onstartup.system.TurConfigVarOnStartup;
 import com.viglet.turing.onstartup.system.TurLocaleOnStartup;
 import com.viglet.turing.persistence.repository.system.TurConfigVarRepository;
+import com.viglet.turing.service.auth.TurAdminPasswordService;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -55,6 +56,7 @@ public class TurOnStartup implements ApplicationRunner {
 	private final TurGroupOnStartup turGroupOnStartup;
 	private final TurRoleOnStartup turRoleOnStartup;
 	private final TurEmbeddingModelUnificationService turEmbeddingModelUnificationService;
+	private final TurAdminPasswordService turAdminPasswordService;
 
 	public TurOnStartup(TurConfigVarRepository turConfigVarRepository,
 			TurLocaleOnStartup turLocaleOnStartup,
@@ -64,7 +66,8 @@ public class TurOnStartup implements ApplicationRunner {
 			TurUserOnStartup turUserOnStartup,
 			TurGroupOnStartup turGroupOnStartup,
 			TurRoleOnStartup turRoleOnStartup,
-			TurEmbeddingModelUnificationService turEmbeddingModelUnificationService) {
+			TurEmbeddingModelUnificationService turEmbeddingModelUnificationService,
+			TurAdminPasswordService turAdminPasswordService) {
 		this.turConfigVarRepository = turConfigVarRepository;
 		this.turLocaleOnStartup = turLocaleOnStartup;
 		this.turSEVendorOnStartup = turSEVendorOnStartup;
@@ -75,6 +78,7 @@ public class TurOnStartup implements ApplicationRunner {
 		this.turGroupOnStartup = turGroupOnStartup;
 		this.turRoleOnStartup = turRoleOnStartup;
 		this.turEmbeddingModelUnificationService = turEmbeddingModelUnificationService;
+		this.turAdminPasswordService = turAdminPasswordService;
 	}
 
 	@Override
@@ -93,6 +97,12 @@ public class TurOnStartup implements ApplicationRunner {
 
 			log.info("First Time Configuration completed. Set the admin password via the web interface.");
 		}
+
+		// Headless admin bootstrap (TURING_ADMIN_PASSWORD) — outside the FIRST_TIME
+		// block on purpose: an install seeded before the env var was supplied (or one
+		// whose setup screen was never completed) still gets a usable admin login. A
+		// no-op once the password is set, so restarts never overwrite it.
+		turAdminPasswordService.bootstrapFromConfiguration();
 
 		// Always-run, idempotent reconciliations — must reach EXISTING installs too
 		// (the FIRST_TIME block above runs only on a fresh database). Both are no-ops

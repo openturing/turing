@@ -41,6 +41,7 @@ public class TurConfigProperties {
 	 * Env: {@code TURING_ADMIN_EMAILS}.
 	 */
 	private String adminEmails;
+	private TurAdminProperty admin = new TurAdminProperty();
 	private TurSolrProperty solr;
 	private TurStorageProperty storage;
 	private TurGitProperty git;

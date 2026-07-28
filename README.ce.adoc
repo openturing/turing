@@ -27,11 +27,14 @@ toc::[]
 
 [source,bash]
 ----
-docker run -p 2700:2700 -e TURING_ADMIN_PASSWORD=admin \
+docker run -p 2700:2700 -e TURING_ADMIN_PASSWORD=turing123 \
   ghcr.io/openviglet/turing-ce:latest
 ----
 
-Then open **http://localhost:2700/console** and log in with `admin` / `admin`.
+Then open **http://localhost:2700/console** and log in with `admin` /
+`turing123`. `TURING_ADMIN_PASSWORD` (minimum 6 characters) is applied on the
+first boot only, and never overwrites a password you already set — omit it and
+the console asks you to choose one on first access instead.
 No external search engine, no vector database and no API key required to start —
 Turing ships an embedded Lucene index and works fully offline until you decide to
 plug in Solr, Elasticsearch or an LLM.

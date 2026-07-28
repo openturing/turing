@@ -35,10 +35,13 @@ https://viglet.org/turing/[Viglet Turing ES] is an open-source platform that com
 [source,bash]
 ----
 docker pull openviglet/turing:latest
-docker run -p 2700:2700 openviglet/turing:latest
+docker run -p 2700:2700 -e TURING_ADMIN_PASSWORD=turing123 openviglet/turing:latest
 ----
 
-Open http://localhost:2700/console — set admin password via `TURING_ADMIN_PASSWORD` env var on first run.
+Open http://localhost:2700/console and log in as `admin`. `TURING_ADMIN_PASSWORD`
+(minimum 6 characters) seeds the password on the first boot and never overwrites
+one that is already set; omit it and the console prompts for a password on first
+access.
 
 === Docker Compose
 

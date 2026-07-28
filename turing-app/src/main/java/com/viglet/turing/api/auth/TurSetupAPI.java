@@ -1,23 +1,21 @@
 package com.viglet.turing.api.auth;
 
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.viglet.turing.persistence.model.auth.TurUser;
-import com.viglet.turing.persistence.repository.auth.TurUserRepository;
+import com.viglet.turing.service.auth.TurAdminPasswordService;
 
 import io.swagger.v3.oas.annotations.tags.Tag;
 
 /**
  * First-access setup endpoint. Allows setting the admin password when it has
  * not been configured yet. Once the admin password is set, all endpoints in
- * this controller return 403 Forbidden.
+ * this controller return 403 Forbidden — including when it was set headlessly
+ * from {@code TURING_ADMIN_PASSWORD} on startup.
  *
  * @author Alexandre Oliveira
  * @since 2026.2.1
@@ -27,15 +25,10 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 @Tag(name = "Setup", description = "First-access setup")
 public class TurSetupAPI {
 
-    private static final String ADMIN = "admin";
-    private static final int PASSWORD_MINIMUM_SIZE = 6;
+    private final TurAdminPasswordService turAdminPasswordService;
 
-    private final TurUserRepository turUserRepository;
-    private final PasswordEncoder passwordEncoder;
-
-    public TurSetupAPI(TurUserRepository turUserRepository, PasswordEncoder passwordEncoder) {
-        this.turUserRepository = turUserRepository;
-        this.passwordEncoder = passwordEncoder;
+    public TurSetupAPI(TurAdminPasswordService turAdminPasswordService) {
+        this.turAdminPasswordService = turAdminPasswordService;
     }
 
     public record SetupStatus(boolean required) {}
@@ -44,37 +37,15 @@ public class TurSetupAPI {
 
     @GetMapping
     public ResponseEntity<SetupStatus> status() {
-        return ResponseEntity.ok(new SetupStatus(isSetupRequired()));
+        return ResponseEntity.ok(new SetupStatus(turAdminPasswordService.isSetupRequired()));
     }
 
     @PostMapping
     public ResponseEntity<Void> setAdminPassword(@RequestBody SetupRequest request) {
-        if (!isSetupRequired()) {
+        if (!turAdminPasswordService.isSetupRequired()) {
             return ResponseEntity.status(403).build();
         }
-        if (!StringUtils.hasText(request.password())
-                || request.password().trim().length() < PASSWORD_MINIMUM_SIZE) {
-            return ResponseEntity.badRequest().build();
-        }
-        TurUser admin = turUserRepository.findByUsername(ADMIN);
-        if (admin == null) {
-            admin = TurUser.builder()
-                    .username(ADMIN)
-                    .firstName("Admin")
-                    .lastName("Administrator")
-                    .email("admin@localhost.local")
-                    .realm("default")
-                    .enabled(1)
-                    .lastLogin(java.time.Instant.now())
-                    .build();
-        }
-        admin.setPassword(passwordEncoder.encode(request.password().trim()));
-        turUserRepository.save(admin);
+        turAdminPasswordService.setPassword(request.password());
         return ResponseEntity.ok().build();
-    }
-
-    private boolean isSetupRequired() {
-        TurUser admin = turUserRepository.findByUsername(ADMIN);
-        return admin == null || !StringUtils.hasText(admin.getPassword());
     }
 }
