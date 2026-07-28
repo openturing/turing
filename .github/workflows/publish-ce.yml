@@ -113,7 +113,7 @@ jobs:
       # tells contributors exactly what shipped.
       - name: Upload release notes artifact
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: ce-release-notes
           path: ${{ runner.temp }}/ce-release-notes.md
