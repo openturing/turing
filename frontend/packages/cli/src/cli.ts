@@ -21,6 +21,8 @@
  *   <li>{@code eval record <conversationId>} — freeze a conversation as a fixture.</li>
  *   <li>{@code research list|run|insights|rollup …} — define/run a Synthetic User
  *       Research study and fetch its insights from code/CI (Block AW / T734).</li>
+ *   <li>{@code match list|run|drift …} — run a Persona Match project and gate CI on
+ *       content fit ({@code --min-fit}, {@code --fail-on-drop}) (Block BN / T828).</li>
  * </ul>
  *
  * <p>Zero runtime dependencies — Node 22+ built-ins only. Connection details
@@ -50,6 +52,7 @@ import { discoverSuiteFiles, runEvalFiles } from "./commands/eval.js";
 import { parseInitArgs, runInit } from "./commands/init.js";
 import { runLogs } from "./commands/logs.js";
 import { runCompare, runMigrate, type MigrateEngine } from "./commands/migrate.js";
+import { runMatch } from "./commands/match.js";
 import { runResearch } from "./commands/research.js";
 
 const log = (line: string) => console.log(line);
@@ -120,6 +123,9 @@ async function main(argv: string[]): Promise<void> {
       return;
     case "research":
       await researchCommand(rest);
+      return;
+    case "match":
+      await matchCommand(rest);
       return;
     case "version":
     case "--version":
@@ -306,6 +312,15 @@ async function researchCommand(rest: string[]): Promise<void> {
   if (code !== 0) process.exitCode = code;
 }
 
+/** T828 — content-fit as a CI gate; a non-zero code fails the build. */
+async function matchCommand(rest: string[]): Promise<void> {
+  const { flags, positionals, extra } = extractConnectionFlags(rest);
+  const connected = await connect(flags, process.cwd());
+  await connected.client.authenticate();
+  const code = await runMatch(connected.client, positionals, extra, log);
+  if (code !== 0) process.exitCode = code;
+}
+
 async function evalRecord(rest: string[]): Promise<void> {
   const { flags, positionals, extra } = extractConnectionFlags(rest);
   const conversationId = positionals[0];
@@ -350,6 +365,9 @@ function printHelp(): void {
       "  turing research run <studyId> [--force] [connection flags]",
       "  turing research insights <studyId> [connection flags]",
       "  turing research rollup <studyId> [<studyId>...] [connection flags]",
+      "  turing match list [connection flags]",
+      "  turing match run <projectIdOrName> [--min-fit <n>] [--fail-on-drop] [--force] [connection flags]",
+      "  turing match drift <projectIdOrName> [connection flags]",
       "",
       "Connection flags (override turing.config.json + env):",
       "  --url <u> --env <name> --token <t> --username <u> --password <p> --agent <id>",

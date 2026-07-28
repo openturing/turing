@@ -3,7 +3,8 @@
 > `turing` — the [Viglet Turing ES](https://turing.viglet.org) developer CLI.
 
 Scaffold an agent project, run a full local stack, deploy agents/flows/tools/skills
-to any environment, tail live chat events, and run YAML eval suites in CI.
+to any environment, tail live chat events, run YAML eval suites in CI, and gate a
+build on content fit.
 
 Zero runtime dependencies (ships as compiled ESM, `tsc`-only). Requires **Node ≥ 26**.
 
@@ -141,6 +142,38 @@ turing migrate compare \
 comments ignored). The report shows, per query and in aggregate, the set overlap
 (Jaccard), how much of the source's top-N Turing reproduced (source recall), and
 how often the #1 result matches. Source flags are the same as `turing migrate`.
+
+### `turing match list|run|drift … [connection flags]`
+
+Content-fit as a **CI gate** (Block BN / T828). A Persona Match project scores every
+`(content × persona)` pair; this runs it from a pipeline and fails the build when the
+content is not serving its audience.
+
+```bash
+# see the projects and the fit bar each one uses
+turing match list
+
+# run the analysis and fail the build on a content below the bar
+turing match run "Docs portfolio" --fail-on-drop
+
+# override the bar for this pipeline only (the project's own bar is the default)
+turing match run p1 --min-fit 80
+```
+
+`match run` streams the run's progress, then exits **non-zero** when either rule
+trips, printing the offending pairs so the CI log is actionable:
+
+- **below the fit bar** — `--min-fit N`, defaulting to the project's own
+  `fitThreshold` (T826), so CI and the studio agree unless you say otherwise;
+- **regressed since the previous run** — only with `--fail-on-drop`, read off the
+  same T704 drift report the studio and the drift webhook use.
+
+`match drift <project>` prints that drift report without triggering a run.
+
+> **Caveat worth knowing before you gate on it:** the fit score is partly LLM-judged
+> and therefore **not bit-reproducible** — expect a point or two of run-to-run
+> jitter. That is why the *threshold* is the gate rather than an exact score match;
+> set `--min-fit` with a little headroom.
 
 ## Eval suites
 

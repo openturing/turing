@@ -2779,27 +2779,9 @@ site's own index analyzers so ranking tokenization matches how the field was ind
 > project's chosen model, since T826 the "good fit" bar is the project's own number
 > rather than a literal duplicated across the stack, and since T827 a scheduled run
 > that regresses a project can say so over a webhook instead of waiting for someone
-> to open the studio. What it still lacks is a way to be **enforced** (nothing gates
-> on it) — plus the verdict-parsing debt both LLM calls carry.
-
-### LXI.4 Content quality has no gate (T828)
-
-Turing already gates *agent* quality in CI: T599's eval runner fails a build on
-regression, driven from `@viglet/turing-cli`'s `eval` command. Content-fit has the
-same shape — a deterministic-plus-LLM score over versioned artifacts — and none of
-the enforcement. A docs repo that merges a page rewritten for the wrong reading
-level finds out at the next scheduled run, in a UI, days later.
-
-`turing match run <project> --min-fit N --fail-on-drop` closes that: trigger the
-project's analysis, stream progress, then exit non-zero when any content lands
-below the threshold (`--min-fit`, defaulting to the T826 project value) or
-regressed against the previous run (`--fail-on-drop`, reading the T704 drift), and
-print the offending `(content × persona)` pairs so the failure is actionable in a
-CI log. It reuses the existing `TuringClient` and the run/drift endpoints — no new
-backend surface — which is why it is a small task despite being the block's most
-visible outcome. Note the honest caveat to document: an LLM-scored gate is not
-bit-reproducible, which is why the *threshold* is the gate and not an exact score
-match (the same reason T385 keeps the NL→facet eval scorer LLM-free).
+> to open the studio, and since T828 a pipeline can fail a build on it
+> (`turing match run … --min-fit --fail-on-drop`). What remains is the
+> verdict-parsing debt both LLM calls carry.
 
 ### LXI.5 Both verdicts are parsed out of prose (T829)
 
