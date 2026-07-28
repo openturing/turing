@@ -2839,3 +2839,148 @@ degrades to no-sort exactly as today. The engine (`TurDslLuceneExecutor.buildSor
 untouched. A possible future alignment (out of scope here) is to reuse the target SN
 site's own index analyzers so ranking tokenization matches how the field was indexed.
 
+## LXI. Content-fit tuning loop — model-aware, enforceable, and it tells you (Block BN)
+
+> Motivated by building T704 (Block AT's closer). The loop the original Persona
+> Match ask described — *"adjust the persona to the content and the content to the
+> persona, continuously"* — now has its memory (per-cell history), its signal
+> (drift) and its advice (adjustment suggestions). What it does not yet have is a
+> way to be **trusted** (the score ignores the project's chosen model), **calibrated**
+> (the fit bar is the platform's, not the project's), **noticed** (drift is invisible
+> unless a human opens the studio) or **enforced** (nothing gates on it). This block
+> is those four, plus the verdict-parsing debt both LLM calls carry.
+
+### LXI.1 The per-project model picker only half-works (T825)
+
+A Persona Match project has an **LLM Instance** field, and T704's
+`TurPersonaMatchAdjustmentService` honours it through
+`TurLlmSummaryService.generate(cacheKey, data, prompt, regenerate, llmInstanceIdOverride)`
+— the T728 override seam. But the **score itself** does not:
+`TurPersonaContentFitEvaluator` calls the four-argument overload, so every fit
+verdict in the matrix is produced by the *global default* LLM regardless of what
+the project selected. The observable result is incoherent: change the project's
+model, and the suggestions change while the numbers they are reasoning about do
+not.
+
+The fix is small and additive — an optional instance id threaded through
+`evaluate`/`evaluateText` — but has one hard requirement: **the resolved instance
+must go into the evaluator's cache key**. The key today is
+`persona-fit:<personaId>:<sourceId>:<contentHash>`; without the instance, switching
+models would return the previous model's cached verdict, which is worse than the
+bug being fixed (T728 states the same rule for the research synthesis lane). Every
+other caller passes `null` and resolves the default exactly as now, so the Block AA
+notebook, the SN content-fit endpoint, persona-suggest and T727 concept-fit need no
+revalidation.
+
+### LXI.2 A hardcoded 75 decides what "below fit" means (T826)
+
+`GOOD_FIT_THRESHOLD = 75.0` lives in `TurPersonaMatchHistoryService` and is
+mirrored by the `fitTone` colour bands in `persona-match.model.ts`. It decides the
+heatmap's green/amber/red, `crossedBelowFit`, and — once T827/T828 exist — who gets
+alerted and which builds fail. That is a lot of product resting on one literal
+duplicated across the stack.
+
+Different portfolios have genuinely different bars: internal engineering notes for
+an expert audience are fine at 60, a first-contact onboarding page for a beginner
+audience is not fine at 74. So the threshold becomes a nullable per-project
+`fitThreshold` (null = inherit a global default that keeps 75), read once and
+handed to the frontend on the project DTO so the bands, the legend, the drift flags
+and the future gate all agree. Deliberately *not* per-cell or per-persona: a
+project is the unit an operator reasons about, and a per-pair bar would make the
+heatmap unreadable.
+
+### LXI.3 Drift nobody sees is not a signal (T827)
+
+T700 runs a DAILY project at 03:30 and T704 now records exactly what regressed —
+into a table. If no human opens `/bento/persona/match/:id` the next morning, a
+content that fell out of fit for its audience simply stays that way. The whole
+point of scheduling was continuous tuning, and continuous tuning needs an
+interrupt.
+
+Constraints shape the design. `turing-app` has **no mail dependency** and this
+block will not add one (an SMTP config surface is its own product decision), so the
+alert is a **webhook**: opt-in per project, fired after a *scheduled* run only
+(manual runs are already watched by the person who clicked), when at least one pair
+crossed below the T826 threshold or the project average dropped more than a
+configured margin. The payload is the drift report the API already returns, so
+there is no second serialization to keep in sync. `TurChatWebhookDispatcher` (T62)
+already solved the hard parts — encrypted `authHeader` at rest, bounded timeout,
+fail-soft dispatch — and is the pattern to follow rather than reinvent: an alert
+that can fail a scheduled analysis would be a regression, so dispatch failures are
+logged and swallowed exactly as there.
+
+### LXI.4 Content quality has no gate (T828)
+
+Turing already gates *agent* quality in CI: T599's eval runner fails a build on
+regression, driven from `@viglet/turing-cli`'s `eval` command. Content-fit has the
+same shape — a deterministic-plus-LLM score over versioned artifacts — and none of
+the enforcement. A docs repo that merges a page rewritten for the wrong reading
+level finds out at the next scheduled run, in a UI, days later.
+
+`turing match run <project> --min-fit N --fail-on-drop` closes that: trigger the
+project's analysis, stream progress, then exit non-zero when any content lands
+below the threshold (`--min-fit`, defaulting to the T826 project value) or
+regressed against the previous run (`--fail-on-drop`, reading the T704 drift), and
+print the offending `(content × persona)` pairs so the failure is actionable in a
+CI log. It reuses the existing `TuringClient` and the run/drift endpoints — no new
+backend surface — which is why it is a small task despite being the block's most
+visible outcome. Note the honest caveat to document: an LLM-scored gate is not
+bit-reproducible, which is why the *threshold* is the gate and not an exact score
+match (the same reason T385 keeps the NL→facet eval scorer LLM-free).
+
+### LXI.5 Both verdicts are parsed out of prose (T829)
+
+`TurPersonaContentFitEvaluator.extractJson` finds the first `{` and the last `}` in
+the model's reply and hands the slice to a lenient mapper;
+`TurPersonaMatchAdjustmentService.readVerdict` does the same. ROADMAP Non-goals are
+explicit that *"structured output (LLM → JSON) is not a path — use provider-side
+tool-calling schemas"*, and the repo's own operational memory records weaker models
+truncating JSON, dropping commas and mixing fences even with schema guidance in the
+prompt. The consequence here is quiet: a malformed fit verdict degrades to
+readability-only with a `debug` log, so the matrix shows a plausible number that
+simply never consulted the LLM, and a malformed adjustment verdict falls back to the
+deterministic list that T704 built precisely for the no-LLM case.
+
+T819 already solved this for query planning — provider-side schema (OpenAI
+`json_schema`, Anthropic forced tool, converter-format chat elsewhere) with
+deterministic compilation of whatever came back, fail-open at every step. Both
+persona verdicts should go through the same surface, keeping the brace-scan parse as
+the *last* fallback rather than the only path. Second half of the task, and the part
+that makes the first half legible: **count the degradations** and surface them, so
+"heuristic only" in the UI can distinguish "no LLM is configured" from "the LLM
+answered and we could not read it".
+
+### LXI.6 Trend exists per project and per pair, but not per target (T830)
+
+T704 renders one chart (the project average per run) and one sparkline (a single
+pair, in the drill-in). The question an editor actually asks sits between them: *is
+this content getting worse for its audiences?* / *is this persona drifting away
+from the portfolio?* The data is already on the wire — `/trend` returns every
+cell's series — so this is an aggregation in the frontend, not an endpoint: average
+the cells of each content (and of each persona) per run and draw the small series on
+the corresponding `RankPanel`.
+
+The PDF exports have the matching hole: both lenses print a snapshot with no
+movement at all, so the artifact an operator circulates cannot say "this dropped 11
+points since last week". Adding the previous score plus the `±` delta to each
+exported row is a few lines in `buildRowHtml` and makes the report honest about
+time.
+
+### LXI.7 Advice that must be retyped (T831 — 💭)
+
+T704 is advisory by construction, and that invariant is right for content: Turing
+does not own the CMS a page lives in, so "apply" there would mean writing into
+someone else's system. But **persona** adjustments target a Turing entity, and
+today an operator who agrees with "the reading level is set too high" leaves the
+studio, opens the persona form, and retypes it — with no record that the change came
+from a fit suggestion, which makes the next run's drift unattributable.
+
+The bet is an opt-in *Apply* on PERSONA items only, presented as a **field-level
+diff** over the audience facet (`readingLevel`, `domainExpertise`,
+`vocabularyCeiling`, `comprehensionNotes`) that the operator confirms field by field
+— never a bulk accept, never automatic, because an LLM suggestion rewriting an
+audience definition unattended is exactly the failure mode the advisory-only rule
+exists to prevent. Stamping the applied suggestion is what turns the loop from
+"scores that move" into "changes with causes". Kept at 💭 until the trust surfaces
+(T825, T829) are in: applying a suggestion derived from a verdict produced by an
+unknown model is not something to build first.

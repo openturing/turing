@@ -1,9 +1,13 @@
-# Last task number — `T824` · next block letter — `BN`
+# Last task number — `T831` · next block letter — `BO`
 
 > **Single source of truth for the next free task number.** The next new task is
-> `T825`; after assigning it, bump the number above and the log line below.
+> `T832`; after assigning it, bump the number above and the log line below.
 >
-> **Next block letter — `BN`** (Block **BM** = Headless admin bootstrap — the
+> **Next block letter — `BO`** (Block **BN** = Content-fit tuning loop — the T704
+> follow-ups that make the Persona Match loop trustworthy (the fit evaluator ignores the
+> project's LLM instance), calibrated (a hardcoded 75 decides "below fit"), noticed
+> (scheduled drift alerts nobody) and enforced (`turing match` CI gate); T825-T831,
+> created 2026-07-28; Block **BM** = Headless admin bootstrap — the
 > `TURING_ADMIN_PASSWORD` env var both READMEs documented was read by nothing, so every
 > `docker run` / CI deploy hit the interactive first-access setup screen. T824 makes it
 > real via `turing.admin.password` + a shared `TurAdminPasswordService`; set-once
@@ -174,6 +178,7 @@ number" looked free but wasn't. Grepping three files (`ROADMAP.md`,
 
 ## Log (most recent first)
 
+- **T825-T831 CREATED** (📋/💭, Block BN §LXI — content-fit tuning loop: per-project LLM honored by the evaluator, per-project fit threshold, drift webhook alerts, `turing match` CI gate, provider-side verdict schema, per-target trend + export deltas, human-confirmed persona apply) — 2026-07-28.
 - **T704 SHIPPED** (Block AT §XLIII — Persona Match fit trend/history + drift + adjustment suggestions; CLOSES Block AT) — 2026-07-28.
 - **T824 SHIPPED** (Block BM — headless admin bootstrap: `TURING_ADMIN_PASSWORD` is now really read; CLOSES Block BM) — 2026-07-28.
 
