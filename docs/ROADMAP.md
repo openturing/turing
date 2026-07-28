@@ -68,11 +68,11 @@
 > which the Non-goals say is not the path. Design in
 > [IMPROVEMENTS.md](IMPROVEMENTS.md) §LXI.
 >
-> **(1) through (4) are fixed** — T825–T828 shipped, see
+> **(1) through (5) are fixed** — T825–T829 shipped, see
 > [CHANGELOG.md](CHANGELOG.md) Block BN. The loop is model-aware, calibrated,
-> noticed and enforceable; what remains is the verdict-parsing debt (5).
+> noticed, enforceable and its verdicts are provider-schema-bound. Only the
+> reporting lens (T830) and the 💭 apply action (T831) remain.
 
-- 📋 **T829** (deps: T704, T825) **Provider-side schema for the fit + adjustment verdicts** — both `TurPersonaContentFitEvaluator` and `TurPersonaMatchAdjustmentService` parse a JSON object out of prose (brace-scan + lenient mapper), the exact recipe the Non-goals rule out and the one that truncates on weaker models; a malformed verdict silently degrades to readability-only, so quality loss is invisible. Route both through the provider's own structured-output surface (the `TurCopilotPlanValidator`/T819 approach: OpenAI `json_schema`, Anthropic forced tool, converter-format chat elsewhere) keeping the prompt-JSON parse as the last fallback, and count degradations so the studio can say the verdict was heuristic-only *because the schema call failed*. → §LXI.5
 - 📋 **T830** (deps: T704) **Per-target trend lens + drift in the exports** — the studio charts only the project average, so "is *this* content getting worse for *this* audience?" needs the drill-in one pair at a time; and the by-content/by-persona PDF exports carry no time axis at all. Add an average-per-run series per content and per persona (aggregated from the existing `/trend` payload — no new endpoint) rendered as a small chart on each `RankPanel`, and put the `±` delta + previous score into both PDF lenses so an exported report shows movement, not just a snapshot. → §LXI.6
 - 💭 **T831** (deps: T704) **Apply a persona adjustment (human-confirmed)** — T704 is advisory by design, so every accepted suggestion is still retyped by hand into the persona form. For **PERSONA** items only, add an opt-in *Apply* action that renders the suggestion as a field-level diff over the audience facet (`readingLevel` / `domainExpertise` / `vocabularyCeiling` / `comprehensionNotes`) and writes it only after the operator confirms each field, stamping what was applied so the next run's drift is attributable. CONTENT items stay advisory forever — Turing does not own the CMS the content lives in. → §LXI.7
 

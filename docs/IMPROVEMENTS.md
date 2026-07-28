@@ -2779,31 +2779,10 @@ site's own index analyzers so ranking tokenization matches how the field was ind
 > project's chosen model, since T826 the "good fit" bar is the project's own number
 > rather than a literal duplicated across the stack, and since T827 a scheduled run
 > that regresses a project can say so over a webhook instead of waiting for someone
-> to open the studio, and since T828 a pipeline can fail a build on it
-> (`turing match run … --min-fit --fail-on-drop`). What remains is the
-> verdict-parsing debt both LLM calls carry.
-
-### LXI.5 Both verdicts are parsed out of prose (T829)
-
-`TurPersonaContentFitEvaluator.extractJson` finds the first `{` and the last `}` in
-the model's reply and hands the slice to a lenient mapper;
-`TurPersonaMatchAdjustmentService.readVerdict` does the same. ROADMAP Non-goals are
-explicit that *"structured output (LLM → JSON) is not a path — use provider-side
-tool-calling schemas"*, and the repo's own operational memory records weaker models
-truncating JSON, dropping commas and mixing fences even with schema guidance in the
-prompt. The consequence here is quiet: a malformed fit verdict degrades to
-readability-only with a `debug` log, so the matrix shows a plausible number that
-simply never consulted the LLM, and a malformed adjustment verdict falls back to the
-deterministic list that T704 built precisely for the no-LLM case.
-
-T819 already solved this for query planning — provider-side schema (OpenAI
-`json_schema`, Anthropic forced tool, converter-format chat elsewhere) with
-deterministic compilation of whatever came back, fail-open at every step. Both
-persona verdicts should go through the same surface, keeping the brace-scan parse as
-the *last* fallback rather than the only path. Second half of the task, and the part
-that makes the first half legible: **count the degradations** and surface them, so
-"heuristic only" in the UI can distinguish "no LLM is configured" from "the LLM
-answered and we could not read it".
+> to open the studio, since T828 a pipeline can fail a build on it
+> (`turing match run … --min-fit --fail-on-drop`), and since T829 both verdicts are
+> bound to a provider-enforced schema with their degradations counted instead of
+> silent. What remains is the reporting lens (T830) and the 💭 apply action (T831).
 
 ### LXI.6 Trend exists per project and per pair, but not per target (T830)
 

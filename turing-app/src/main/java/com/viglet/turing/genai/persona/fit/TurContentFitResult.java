@@ -12,6 +12,7 @@ package com.viglet.turing.genai.persona.fit;
 import java.util.List;
 
 import com.viglet.turing.genai.persona.readability.TurReadabilityMetrics;
+import com.viglet.turing.system.TurVerdictSource;
 
 /**
  * The content-fit verdict for one source against an audience persona
@@ -35,5 +36,26 @@ public record TurContentFitResult(
         String error,
         boolean canRegenerate,
         String sourceId,
-        String sourceName) {
+        String sourceName,
+        /**
+         * T829 — how this verdict was obtained, so the UI can distinguish "no LLM is
+         * configured" ({@link TurVerdictSource#UNAVAILABLE}) from "the model answered
+         * and we could not read it" ({@link TurVerdictSource#UNREADABLE}). Both used
+         * to render as a bare "heuristic only".
+         */
+        TurVerdictSource verdictSource) {
+
+    /**
+     * Pre-T829 form, kept so the existing callers and fixtures compile unchanged:
+     * the verdict source is inferred from {@code llmUsed} (an LLM-backed result went
+     * through the legacy prompt-JSON path; anything else had no verdict at all).
+     */
+    public TurContentFitResult(double fitScore, String summary, List<String> fits,
+            List<TurContentFitMisfit> misfits, double readabilityScore,
+            TurReadabilityMetrics metrics, boolean llmUsed, String error,
+            boolean canRegenerate, String sourceId, String sourceName) {
+        this(fitScore, summary, fits, misfits, readabilityScore, metrics, llmUsed, error,
+                canRegenerate, sourceId, sourceName,
+                llmUsed ? TurVerdictSource.PROMPT_JSON : TurVerdictSource.UNAVAILABLE);
+    }
 }

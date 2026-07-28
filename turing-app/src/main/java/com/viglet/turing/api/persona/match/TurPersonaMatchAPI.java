@@ -27,6 +27,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.viglet.turing.api.exception.TurNotFoundException;
+import com.viglet.turing.genai.persona.fit.TurPersonaVerdictHealth;
 import com.viglet.turing.genai.persona.match.TurPersonaMatchAdjustmentService;
 import com.viglet.turing.genai.persona.match.TurPersonaMatchAnalysisService;
 import com.viglet.turing.genai.persona.match.TurPersonaMatchEventBus;
@@ -79,19 +80,22 @@ public class TurPersonaMatchAPI {
     private final TurPersonaMatchAdjustmentService adjustmentService;
     private final TurPersonaMatchEventBus eventBus;
     private final TurTenantContext tenantContext;
+    private final TurPersonaVerdictHealth verdictHealth;
 
     public TurPersonaMatchAPI(TurPersonaMatchService service,
             TurPersonaMatchAnalysisService analysisService,
             TurPersonaMatchHistoryService historyService,
             TurPersonaMatchAdjustmentService adjustmentService,
             TurPersonaMatchEventBus eventBus,
-            TurTenantContext tenantContext) {
+            TurTenantContext tenantContext,
+            TurPersonaVerdictHealth verdictHealth) {
         this.service = service;
         this.analysisService = analysisService;
         this.historyService = historyService;
         this.adjustmentService = adjustmentService;
         this.eventBus = eventBus;
         this.tenantContext = tenantContext;
+        this.verdictHealth = verdictHealth;
     }
 
     /** 404 for a project id that does not resolve, before doing any work. */
@@ -216,6 +220,12 @@ public class TurPersonaMatchAPI {
     public TurPersonaMatchDriftDto drift(@PathVariable String id) {
         requireProject(id);
         return historyService.drift(id);
+    }
+
+    @Operation(summary = "How the persona verdicts are actually being produced (T829)")
+    @GetMapping("/verdict-health")
+    public TurPersonaVerdictHealth.Snapshot verdictHealth() {
+        return verdictHealth.snapshot();
     }
 
     @Operation(summary = "Suggested persona/content adjustments closing the tuning loop")

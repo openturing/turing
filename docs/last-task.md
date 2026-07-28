@@ -179,6 +179,7 @@ number" looked free but wasn't. Grepping three files (`ROADMAP.md`,
 
 ## Log (most recent first)
 
+- **T829 SHIPPED** (Block BN §LXI.5 — fit + adjustment verdicts bound to OpenAI `json_schema`/Anthropic forced tool via `TurStructuredCompletionPort` + `generateStructured`; `TurVerdictSource` + `/verdict-health` counters make degradations visible) — 2026-07-28.
 - **T828 SHIPPED** (Block BN §LXI.4 — `turing match list|run|drift` in `@viglet/turing-cli`; `run` exits non-zero below the fit bar or on a regression with `--fail-on-drop`) — 2026-07-28.
 - **T827 SHIPPED** (Block BN §LXI.3 — opt-in per-project drift webhook fired after a *scheduled* run that crossed a pair below the bar or slid the average past a margin; fail-soft) — 2026-07-28.
 - **T826 SHIPPED** (Block BN §LXI.2 — per-project `fitThreshold` + `TurPersonaMatchThresholdService`; drift flags, heatmap bands, legend and PDFs all read the project's bar) — 2026-07-28.

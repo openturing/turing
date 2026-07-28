@@ -130,6 +130,7 @@
       "EXTRACTED": "Extraído",
       "FAILED": "Falhou"
     },
+    "verdictUnreadable": "O modelo respondeu, mas o veredito não pôde ser lido, então esta nota usa apenas legibilidade. Verifique o suporte a saída estruturada do modelo.",
     "misfitReason": {
       "too-complex": "muito complexo",
       "jargon": "jargão",

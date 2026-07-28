@@ -130,6 +130,7 @@
       "EXTRACTED": "Extracted",
       "FAILED": "Failed"
     },
+    "verdictUnreadable": "The model answered but its verdict could not be read, so this score is readability-only. Check the model's structured-output support.",
     "misfitReason": {
       "too-complex": "too complex",
       "jargon": "jargon",

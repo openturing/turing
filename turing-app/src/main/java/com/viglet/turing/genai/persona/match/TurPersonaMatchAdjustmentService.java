@@ -20,13 +20,15 @@ import java.util.Optional;
 import java.util.Set;
 
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.ai.converter.BeanOutputConverter;
 import org.springframework.stereotype.Service;
 
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.viglet.turing.genai.persona.fit.TurContentFitMisfit;
+import com.viglet.turing.genai.persona.fit.TurPersonaVerdictHealth;
 import com.viglet.turing.genai.persona.match.dto.TurPersonaMatchAdjustmentDto;
 import com.viglet.turing.genai.persona.match.dto.TurPersonaMatchAdjustmentDto.Item;
 import com.viglet.turing.genai.persona.match.dto.TurPersonaMatchAdjustmentDto.Target;
+import com.viglet.turing.genai.persona.match.dto.TurPersonaMatchAdjustmentVerdict;
 import com.viglet.turing.genai.persona.match.dto.TurPersonaMatchDriftDto;
 import com.viglet.turing.persistence.model.persona.TurPersona;
 import com.viglet.turing.persistence.model.persona.match.TurPersonaMatchProject;
@@ -36,7 +38,9 @@ import com.viglet.turing.persistence.repository.persona.match.TurPersonaMatchPer
 import com.viglet.turing.persistence.repository.persona.match.TurPersonaMatchProjectRepository;
 import com.viglet.turing.persistence.repository.persona.match.TurPersonaMatchSourceRepository;
 import com.viglet.turing.system.TurLlmSummaryService;
-import com.viglet.turing.system.TurLlmSummaryService.SummaryResult;
+import com.viglet.turing.system.TurLlmSummaryService.StructuredResult;
+import com.viglet.turing.system.TurLlmSummaryService.StructuredSpec;
+import com.viglet.turing.system.TurVerdictSource;
 
 import lombok.extern.slf4j.Slf4j;
 import tools.jackson.databind.DeserializationFeature;
@@ -78,6 +82,11 @@ public class TurPersonaMatchAdjustmentService {
             .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
             .build();
 
+    /** T829 — the verdict shape as a provider-enforceable schema, derived once. */
+    private static final BeanOutputConverter<TurPersonaMatchAdjustmentVerdict> VERDICT_CONVERTER =
+            new BeanOutputConverter<>(TurPersonaMatchAdjustmentVerdict.class);
+    private static final String VERDICT_SCHEMA_NAME = "persona_match_adjustments";
+
     private final TurPersonaMatchProjectRepository projectRepository;
     private final TurPersonaMatchSourceRepository sourceRepository;
     private final TurPersonaMatchPersonaRepository personaJoinRepository;
@@ -85,6 +94,7 @@ public class TurPersonaMatchAdjustmentService {
     private final TurPersonaMatchAnalysisService analysisService;
     private final TurPersonaMatchHistoryService historyService;
     private final TurLlmSummaryService llmSummaryService;
+    private final TurPersonaVerdictHealth verdictHealth;
 
     public TurPersonaMatchAdjustmentService(TurPersonaMatchProjectRepository projectRepository,
             TurPersonaMatchSourceRepository sourceRepository,
@@ -92,7 +102,8 @@ public class TurPersonaMatchAdjustmentService {
             TurPersonaRepository personaRepository,
             TurPersonaMatchAnalysisService analysisService,
             TurPersonaMatchHistoryService historyService,
-            TurLlmSummaryService llmSummaryService) {
+            TurLlmSummaryService llmSummaryService,
+            TurPersonaVerdictHealth verdictHealth) {
         this.projectRepository = projectRepository;
         this.sourceRepository = sourceRepository;
         this.personaJoinRepository = personaJoinRepository;
@@ -100,6 +111,7 @@ public class TurPersonaMatchAdjustmentService {
         this.analysisService = analysisService;
         this.historyService = historyService;
         this.llmSummaryService = llmSummaryService;
+        this.verdictHealth = verdictHealth;
     }
 
     /**
@@ -123,22 +135,52 @@ public class TurPersonaMatchAdjustmentService {
             return empty(projectId, "Project has no content/persona pair to tune.");
         }
 
-        SummaryResult llm = llmSummaryService.generate(cacheKey(project, context),
-                context.digest(), systemPrompt(), regenerate, project.getLlmInstanceId());
+        // T829: the verdict shape is enforced by the provider where one offers it; the
+        // prompt-JSON contract is now only the fallback for providers without one.
+        StructuredResult llm = llmSummaryService.generateStructured(cacheKey(project, context),
+                context.digest(), systemPrompt(), regenerate, project.getLlmInstanceId(),
+                verdictSpec());
         if (llm.success() && StringUtils.isNotBlank(llm.content())) {
             List<Item> items = parse(llm.content(), context);
             if (!items.isEmpty()) {
+                verdictHealth.record(llm.source());
                 return new TurPersonaMatchAdjustmentDto(projectId, true, null, Instant.now(),
                         items);
             }
+            // The model answered and nothing usable came out of it — counted as a
+            // distinct degradation, not lumped in with "no LLM configured".
+            verdictHealth.record(TurVerdictSource.UNREADABLE);
             log.debug("[PersonaMatch] adjustment verdict unusable — falling back to "
                     + "deterministic suggestions for project={}", projectId);
             return new TurPersonaMatchAdjustmentDto(projectId, false,
                     "Could not parse the LLM adjustment verdict.", Instant.now(),
                     fallback(context));
         }
+        verdictHealth.record(TurVerdictSource.UNAVAILABLE);
         return new TurPersonaMatchAdjustmentDto(projectId, false, llm.error(), Instant.now(),
                 fallback(context));
+    }
+
+    /**
+     * The schema this service binds the verdict to. The converter's format
+     * instruction rides along for the plain-chat fallback only.
+     */
+    private static StructuredSpec verdictSpec() {
+        return new StructuredSpec(VERDICT_SCHEMA_NAME, verdictSchema(),
+                VERDICT_CONVERTER.getFormat());
+    }
+
+    private static Map<String, Object> verdictSchema() {
+        try {
+            @SuppressWarnings("unchecked")
+            Map<String, Object> schema = MAPPER.readValue(VERDICT_CONVERTER.getJsonSchema(),
+                    Map.class);
+            return schema;
+        } catch (RuntimeException e) {
+            log.debug("[PersonaMatch] could not derive the adjustment JSON schema: {}",
+                    e.getMessage());
+            return Map.of();
+        }
     }
 
     // ---- context -----------------------------------------------------------
@@ -255,14 +297,14 @@ public class TurPersonaMatchAdjustmentService {
     // ---- parsing -----------------------------------------------------------
 
     private List<Item> parse(String raw, Context context) {
-        Verdict verdict = readVerdict(raw);
+        TurPersonaMatchAdjustmentVerdict verdict = readVerdict(raw);
         if (verdict == null || verdict.items() == null) {
             return List.of();
         }
         List<Item> items = new ArrayList<>();
         int contentCount = 0;
         int personaCount = 0;
-        for (ItemDto dto : verdict.items()) {
+        for (TurPersonaMatchAdjustmentVerdict.Item dto : verdict.items()) {
             Item item = toItem(dto, context);
             if (item == null) {
                 continue;
@@ -279,7 +321,7 @@ public class TurPersonaMatchAdjustmentService {
     }
 
     /** Null for anything ungrounded — an unknown target id or no actionable action. */
-    private Item toItem(ItemDto dto, Context context) {
+    private Item toItem(TurPersonaMatchAdjustmentVerdict.Item dto, Context context) {
         if (dto == null || StringUtils.isBlank(dto.targetId())) {
             return null;
         }
@@ -313,14 +355,20 @@ public class TurPersonaMatchAdjustmentService {
         }
     }
 
-    private Verdict readVerdict(String raw) {
+    /**
+     * Decodes the verdict. With the T829 provider schema in play this is a clean
+     * JSON object; the brace-scan still rescues the prompt-JSON fallback rather than
+     * being the only path.
+     */
+    private TurPersonaMatchAdjustmentVerdict readVerdict(String raw) {
         int start = raw == null ? -1 : raw.indexOf('{');
         int end = raw == null ? -1 : raw.lastIndexOf('}');
         if (start < 0 || end <= start) {
             return null;
         }
         try {
-            return MAPPER.readValue(raw.substring(start, end + 1), Verdict.class);
+            return MAPPER.readValue(raw.substring(start, end + 1),
+                    TurPersonaMatchAdjustmentVerdict.class);
         } catch (RuntimeException e) {
             log.warn("[PersonaMatch] could not parse adjustment verdict: {}", e.getMessage());
             return null;
@@ -499,12 +547,4 @@ public class TurPersonaMatchAdjustmentService {
         }
     }
 
-    @JsonIgnoreProperties(ignoreUnknown = true)
-    private record Verdict(List<ItemDto> items) {
-    }
-
-    @JsonIgnoreProperties(ignoreUnknown = true)
-    private record ItemDto(String target, String targetId, String rationale,
-            List<String> actions) {
-    }
 }

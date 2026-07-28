@@ -50,6 +50,13 @@ export function ContentFitDetails({
           {result.error}
         </p>
       )}
+      {/* T829 — the model answered but its verdict could not be read: a quality
+          problem, not the missing configuration a bare "heuristic only" implies. */}
+      {result.verdictSource === "UNREADABLE" && (
+        <p className="mt-1 text-xs text-amber-600 dark:text-amber-400">
+          {t("persona.verdictUnreadable")}
+        </p>
+      )}
       {result.fits?.length > 0 && (
         <ul className="mt-2 flex flex-col gap-1">
           {result.fits.map((f, i) => (

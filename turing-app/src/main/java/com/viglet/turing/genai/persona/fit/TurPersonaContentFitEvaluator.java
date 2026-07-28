@@ -11,19 +11,22 @@ package com.viglet.turing.genai.persona.fit;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.ai.converter.BeanOutputConverter;
 import org.springframework.stereotype.Service;
 
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.viglet.turing.genai.persona.readability.TurReadabilityResult;
 import com.viglet.turing.genai.persona.readability.TurReadabilityScorer;
 import com.viglet.turing.persistence.model.persona.TurPersona;
 import com.viglet.turing.persistence.model.persona.TurPersonaAudience;
 import com.viglet.turing.persistence.model.persona.TurPersonaSource;
 import com.viglet.turing.system.TurLlmSummaryService;
-import com.viglet.turing.system.TurLlmSummaryService.SummaryResult;
+import com.viglet.turing.system.TurLlmSummaryService.StructuredResult;
+import com.viglet.turing.system.TurLlmSummaryService.StructuredSpec;
+import com.viglet.turing.system.TurVerdictSource;
 
 import lombok.extern.slf4j.Slf4j;
 import tools.jackson.databind.DeserializationFeature;
@@ -60,13 +63,24 @@ public class TurPersonaContentFitEvaluator {
             .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
             .build();
 
+    /**
+     * T829 — the verdict's shape as a provider-enforceable JSON Schema, derived once
+     * from {@link TurPersonaFitVerdict} (the converter is immutable and thread-safe).
+     */
+    private static final BeanOutputConverter<TurPersonaFitVerdict> VERDICT_CONVERTER =
+            new BeanOutputConverter<>(TurPersonaFitVerdict.class);
+    /** Stable schema name; providers surface it in logs (Anthropic as the tool name). */
+    private static final String VERDICT_SCHEMA_NAME = "persona_fit_verdict";
+
     private final TurReadabilityScorer readabilityScorer;
     private final TurLlmSummaryService llmSummaryService;
+    private final TurPersonaVerdictHealth verdictHealth;
 
     public TurPersonaContentFitEvaluator(TurReadabilityScorer readabilityScorer,
-            TurLlmSummaryService llmSummaryService) {
+            TurLlmSummaryService llmSummaryService, TurPersonaVerdictHealth verdictHealth) {
         this.readabilityScorer = readabilityScorer;
         this.llmSummaryService = llmSummaryService;
+        this.verdictHealth = verdictHealth;
     }
 
     /** Evaluate one notebook source against the persona, on the default LLM. */
@@ -121,33 +135,42 @@ public class TurPersonaContentFitEvaluator {
             return new TurContentFitResult(readabilityScore, "No text to evaluate.",
                     List.of(), List.of(), readabilityScore, readability.metrics(),
                     false, "Source has no extracted text yet.", false,
-                    sourceId, sourceName);
+                    sourceId, sourceName, TurVerdictSource.UNAVAILABLE);
         }
 
         String clipped = text.length() > MAX_SOURCE_CHARS
                 ? text.substring(0, MAX_SOURCE_CHARS) : text;
         String cacheKey = cacheKey(persona, sourceId, clipped, llmInstanceId);
 
-        SummaryResult llm = llmSummaryService.generate(cacheKey, clipped,
-                buildSystemPrompt(persona, audience), regenerate, llmInstanceId);
+        // T829: the verdict's shape is enforced by the provider (OpenAI json_schema /
+        // Anthropic forced tool) where one exists; the prompt-JSON contract survives
+        // only as the last fallback for providers without a structured surface.
+        StructuredResult llm = llmSummaryService.generateStructured(cacheKey, clipped,
+                buildSystemPrompt(persona, audience), regenerate, llmInstanceId, verdictSpec());
 
         if (!llm.success() || StringUtils.isBlank(llm.content())) {
             // LLM unavailable / errored → degrade to the deterministic score.
+            verdictHealth.record(TurVerdictSource.UNAVAILABLE);
             return new TurContentFitResult(readabilityScore,
                     "Deterministic readability score only (LLM unavailable).",
                     List.of(), List.of(), readabilityScore, readability.metrics(),
-                    false, llm.error(), llm.canRegenerate(), sourceId, sourceName);
+                    false, llm.error(), llm.canRegenerate(), sourceId, sourceName,
+                    TurVerdictSource.UNAVAILABLE);
         }
 
-        LlmVerdict verdict = parse(llm.content());
+        TurPersonaFitVerdict verdict = parse(llm.content());
         if (verdict == null) {
+            // The model answered and we could not read it — a different failure from
+            // "no LLM configured", and the one T829 makes visible instead of silent.
+            verdictHealth.record(TurVerdictSource.UNREADABLE);
             return new TurContentFitResult(readabilityScore,
                     "Deterministic readability score only (could not parse LLM verdict).",
                     List.of(), List.of(), readabilityScore, readability.metrics(),
                     false, "Could not parse LLM verdict.", llm.canRegenerate(),
-                    sourceId, sourceName);
+                    sourceId, sourceName, TurVerdictSource.UNREADABLE);
         }
 
+        verdictHealth.record(llm.source());
         List<TurContentFitMisfit> misfits = groundMisfits(verdict.misfits(), text);
         List<String> fits = verdict.fits() == null ? List.of() : verdict.fits();
         double llmScore = clamp(verdict.fitScore() == null ? readabilityScore
@@ -158,7 +181,30 @@ public class TurPersonaContentFitEvaluator {
         return new TurContentFitResult(fused,
                 StringUtils.defaultString(verdict.summary()), fits, misfits,
                 readabilityScore, readability.metrics(), true, null,
-                llm.canRegenerate(), sourceId, sourceName);
+                llm.canRegenerate(), sourceId, sourceName, llm.source());
+    }
+
+    /**
+     * The schema this evaluator binds the reply to. The format instruction is only
+     * appended by the summary service on the plain-chat fallback, where nothing else
+     * constrains the shape.
+     */
+    private static StructuredSpec verdictSpec() {
+        return new StructuredSpec(VERDICT_SCHEMA_NAME, verdictSchema(),
+                VERDICT_CONVERTER.getFormat());
+    }
+
+    private static Map<String, Object> verdictSchema() {
+        try {
+            @SuppressWarnings("unchecked")
+            Map<String, Object> schema = MAPPER.readValue(VERDICT_CONVERTER.getJsonSchema(),
+                    Map.class);
+            return schema;
+        } catch (RuntimeException e) {
+            // Without a schema the provider leg is simply skipped (fail-open).
+            log.debug("[ContentFit] could not derive the verdict JSON schema: {}", e.getMessage());
+            return Map.of();
+        }
     }
 
     // ---- cache key ---------------------------------------------------------
@@ -178,13 +224,14 @@ public class TurPersonaContentFitEvaluator {
     // ---- grounding ---------------------------------------------------------
 
     /** Drop any flagged span not present verbatim in the source (T385 hard-fail). */
-    private List<TurContentFitMisfit> groundMisfits(List<MisfitDto> raw, String source) {
+    private List<TurContentFitMisfit> groundMisfits(List<TurPersonaFitVerdict.Misfit> raw,
+            String source) {
         if (raw == null || raw.isEmpty()) {
             return List.of();
         }
         String haystack = normalize(source);
         List<TurContentFitMisfit> grounded = new ArrayList<>();
-        for (MisfitDto m : raw) {
+        for (TurPersonaFitVerdict.Misfit m : raw) {
             if (m == null || StringUtils.isBlank(m.span())) {
                 continue;
             }
@@ -264,13 +311,18 @@ public class TurPersonaContentFitEvaluator {
 
     // ---- parsing -----------------------------------------------------------
 
-    private LlmVerdict parse(String raw) {
+    /**
+     * Decodes the verdict. With the T829 provider schema in play this receives a
+     * clean JSON object; the brace-scan is what still rescues the prompt-JSON
+     * fallback (fences, prose around the object) rather than being the only path.
+     */
+    private TurPersonaFitVerdict parse(String raw) {
         String json = extractJson(raw);
         if (json == null) {
             return null;
         }
         try {
-            return MAPPER.readValue(json, LlmVerdict.class);
+            return MAPPER.readValue(json, TurPersonaFitVerdict.class);
         } catch (RuntimeException e) {
             log.warn("[ContentFit] could not parse LLM verdict: {}", e.getMessage());
             return null;
@@ -297,12 +349,4 @@ public class TurPersonaContentFitEvaluator {
         return Math.round(v * 100.0) / 100.0;
     }
 
-    @JsonIgnoreProperties(ignoreUnknown = true)
-    private record LlmVerdict(Integer fitScore, String summary, List<String> fits,
-            List<MisfitDto> misfits) {
-    }
-
-    @JsonIgnoreProperties(ignoreUnknown = true)
-    private record MisfitDto(String span, String reason, String suggestion) {
-    }
 }

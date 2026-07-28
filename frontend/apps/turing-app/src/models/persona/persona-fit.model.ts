@@ -30,7 +30,21 @@ export interface TurContentFitResult {
   canRegenerate: boolean;
   sourceId?: string | null;
   sourceName?: string | null;
+  /** T829 — how the verdict was obtained (absent on pre-T829 payloads). */
+  verdictSource?: TurVerdictSource | null;
 }
+
+/**
+ * T829 — mirrors the backend `TurVerdictSource`. The one that matters to a reader
+ * is `UNREADABLE`: the model *did* answer, so a readability-only score is a
+ * quality problem rather than the missing-configuration that `UNAVAILABLE` means.
+ */
+export type TurVerdictSource =
+  | "PROVIDER_SCHEMA"
+  | "PROMPT_JSON"
+  | "CACHE"
+  | "UNAVAILABLE"
+  | "UNREADABLE";
 
 export interface TurPersonaFitReport {
   personaId: string;
