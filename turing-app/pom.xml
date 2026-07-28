@@ -561,7 +561,7 @@
         <dependency>
             <groupId>com.openai</groupId>
             <artifactId>openai-java-client-okhttp</artifactId>
-            <version>4.43.0</version>
+            <version>4.45.0</version>
         </dependency>
         <dependency>
             <groupId>org.springframework.ai</groupId>
@@ -577,7 +577,7 @@
         <dependency>
             <groupId>com.anthropic</groupId>
             <artifactId>anthropic-java-client-okhttp</artifactId>
-            <version>2.49.0</version>
+            <version>2.52.0</version>
         </dependency>
         <dependency>
             <groupId>org.springframework.ai</groupId>
@@ -604,7 +604,7 @@
         <dependency>
             <groupId>software.amazon.awssdk</groupId>
             <artifactId>bedrockagentruntime</artifactId>
-            <version>2.48.4</version>
+            <version>2.49.4</version>
         </dependency>
         <dependency>
             <groupId>org.springframework.ai</groupId>
