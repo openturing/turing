@@ -1,0 +1,72 @@
+databaseChangeLog:
+  # T827 / §LXI.3 (Block BN) — per-project drift alert webhook.
+  #
+  #   ai_persona_match_project.driftWebhookUrl        — POST target for the drift
+  #                                                     report after a SCHEDULED run.
+  #                                                     NULL/blank = alert off (default).
+  #   ai_persona_match_project.driftWebhookAuthHeader — Authorization header value,
+  #                                                     ENCRYPTED at rest (T62 rule);
+  #                                                     never returned by the API.
+  #   ai_persona_match_project.driftWebhookAvgDrop    — also alert when the project
+  #                                                     average fell by more than this
+  #                                                     many points. NULL = crossings only.
+  #
+  # Column names match the JPA field names (camelCase). Portable lowercase types.
+  # Idempotent (MARK_RAN).
+
+  - changeSet:
+      id: v2026.3.1.120-project-driftWebhookUrl
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - columnExists:
+                tableName: ai_persona_match_project
+                columnName: driftWebhookUrl
+      changes:
+        - addColumn:
+            tableName: ai_persona_match_project
+            columns:
+              - column:
+                  name: driftWebhookUrl
+                  type: varchar(1000)
+                  constraints:
+                    nullable: true
+
+  - changeSet:
+      id: v2026.3.1.120-project-driftWebhookAuthHeader
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - columnExists:
+                tableName: ai_persona_match_project
+                columnName: driftWebhookAuthHeader
+      changes:
+        - addColumn:
+            tableName: ai_persona_match_project
+            columns:
+              - column:
+                  name: driftWebhookAuthHeader
+                  type: varchar(500)
+                  constraints:
+                    nullable: true
+
+  - changeSet:
+      id: v2026.3.1.120-project-driftWebhookAvgDrop
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - columnExists:
+                tableName: ai_persona_match_project
+                columnName: driftWebhookAvgDrop
+      changes:
+        - addColumn:
+            tableName: ai_persona_match_project
+            columns:
+              - column:
+                  name: driftWebhookAvgDrop
+                  type: double
+                  constraints:
+                    nullable: true

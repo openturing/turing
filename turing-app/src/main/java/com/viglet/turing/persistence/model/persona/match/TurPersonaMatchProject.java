@@ -84,6 +84,36 @@ public class TurPersonaMatchProject implements Serializable {
     @Column(name = "fitThreshold")
     private Double fitThreshold;
 
+    /**
+     * T827 / §LXI.3 (Block BN) — where to POST the drift report after a
+     * <em>scheduled</em> re-analysis that pushed a pair below
+     * {@link #fitThreshold} (or dropped the project average past
+     * {@link #driftWebhookAvgDrop}). Blank = the alert is off, which is the
+     * default: a 03:30 regression is only worth an interrupt if the operator
+     * asked for one. Webhook-only on purpose — {@code turing-app} carries no mail
+     * dependency.
+     */
+    @Column(name = "driftWebhookUrl", length = 1000)
+    private String driftWebhookUrl;
+
+    /**
+     * T827 — {@code Authorization} header value for the drift webhook,
+     * <strong>encrypted at rest</strong> via {@code TurSecretCryptoService} (the
+     * T62 webhook rule). Write-only from the admin's point of view: never
+     * returned by the API.
+     */
+    @Column(name = "driftWebhookAuthHeader", length = 500)
+    private String driftWebhookAuthHeader;
+
+    /**
+     * T827 — also alert when the project average fell by more than this many fit
+     * points between the last two runs, even if no single pair crossed the bar
+     * (a broad, shallow slide is exactly what a per-pair flag misses).
+     * {@code null} = crossings only.
+     */
+    @Column(name = "driftWebhookAvgDrop")
+    private Double driftWebhookAvgDrop;
+
     @Enumerated(EnumType.STRING)
     @Column(name = "schedule", nullable = false, length = 16)
     private TurPersonaMatchSchedule schedule = TurPersonaMatchSchedule.MANUAL;

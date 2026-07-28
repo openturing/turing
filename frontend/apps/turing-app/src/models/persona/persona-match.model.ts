@@ -67,6 +67,12 @@ export interface MatchProjectSummary {
   fitThreshold: number | null;
   /** T826 — the bar actually in force (project's, else the platform default). */
   effectiveFitThreshold: number;
+  /** T827 — drift-alert webhook target; null/blank = the alert is off. */
+  driftWebhookUrl: string | null;
+  /** T827 — read-only: an Authorization secret is stored (never returned). */
+  driftWebhookAuthConfigured: boolean;
+  /** T827 — also alert on an average drop bigger than this; null = crossings only. */
+  driftWebhookAvgDrop: number | null;
   lastRunAt: string | null;
   sourceCount: number;
   personaCount: number;
@@ -92,6 +98,11 @@ export interface MatchProjectRequest {
   llmInstanceId?: string | null;
   /** T826 — null/omitted keeps inheriting the platform default. */
   fitThreshold?: number | null;
+  /** T827 — null/blank turns the drift alert off (and clears its secret). */
+  driftWebhookUrl?: string | null;
+  /** T827 — write-only; omit/blank to keep the stored secret. */
+  driftWebhookAuthHeader?: string | null;
+  driftWebhookAvgDrop?: number | null;
 }
 
 export interface MatchSourceRequest {

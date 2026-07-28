@@ -50,6 +50,7 @@ public class TurPersonaMatchScheduleJob {
     private final TurPersonaMatchSourceRepository sourceRepository;
     private final TurPersonaMatchSourceService sourceService;
     private final TurPersonaMatchAnalysisService analysisService;
+    private final TurPersonaMatchDriftAlertService driftAlertService;
 
     @Value("${turing.persona-match.schedule.enabled:true}")
     private boolean enabled;
@@ -57,11 +58,13 @@ public class TurPersonaMatchScheduleJob {
     public TurPersonaMatchScheduleJob(TurPersonaMatchProjectRepository projectRepository,
             TurPersonaMatchSourceRepository sourceRepository,
             TurPersonaMatchSourceService sourceService,
-            TurPersonaMatchAnalysisService analysisService) {
+            TurPersonaMatchAnalysisService analysisService,
+            TurPersonaMatchDriftAlertService driftAlertService) {
         this.projectRepository = projectRepository;
         this.sourceRepository = sourceRepository;
         this.sourceService = sourceService;
         this.analysisService = analysisService;
+        this.driftAlertService = driftAlertService;
     }
 
     @Scheduled(cron = "${turing.persona-match.schedule.daily-cron:0 30 3 * * *}")
@@ -91,6 +94,9 @@ public class TurPersonaMatchScheduleJob {
             try {
                 reExtractSources(project.getId());
                 analysisService.run(project.getId(), false);
+                // T827: this run's regressions are only a signal if someone hears
+                // about them. Opt-in per project, and fail-soft — see the service.
+                driftAlertService.alertAfterScheduledRun(project);
             } catch (RuntimeException e) {
                 log.warn("[PersonaMatch] scheduled re-analysis failed for project={}: {}",
                         project.getId(), e.getMessage());

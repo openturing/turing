@@ -72,6 +72,7 @@ public class TurPersonaMatchService {
     private final TurPersonaMatchAnalysisService analysisService;
     private final TurPersonaMatchHistoryService historyService;
     private final TurPersonaMatchThresholdService thresholdService;
+    private final TurPersonaMatchDriftAlertService driftAlertService;
 
     public TurPersonaMatchService(TurPersonaMatchProjectRepository projectRepository,
             TurPersonaMatchSourceRepository sourceRepository,
@@ -82,7 +83,8 @@ public class TurPersonaMatchService {
             TurPersonaMatchSourceService sourceService,
             TurPersonaMatchAnalysisService analysisService,
             TurPersonaMatchHistoryService historyService,
-            TurPersonaMatchThresholdService thresholdService) {
+            TurPersonaMatchThresholdService thresholdService,
+            TurPersonaMatchDriftAlertService driftAlertService) {
         this.projectRepository = projectRepository;
         this.sourceRepository = sourceRepository;
         this.personaJoinRepository = personaJoinRepository;
@@ -93,6 +95,7 @@ public class TurPersonaMatchService {
         this.analysisService = analysisService;
         this.historyService = historyService;
         this.thresholdService = thresholdService;
+        this.driftAlertService = driftAlertService;
     }
 
     // ---- project CRUD ------------------------------------------------------
@@ -145,6 +148,28 @@ public class TurPersonaMatchService {
         // T826: an absent or nonsensical bar means "inherit the deployment default"
         // rather than colouring the whole matrix by a bogus number.
         project.setFitThreshold(thresholdService.sanitize(dto.fitThreshold()));
+        applyDriftWebhook(project, dto);
+    }
+
+    /**
+     * T827 — the drift-alert webhook. The {@code Authorization} value is a
+     * write-only secret: a blank field on an update keeps the stored ciphertext
+     * (the admin edited the form without re-typing it), and clearing the URL
+     * clears the secret with it so a disabled alert leaves nothing behind.
+     */
+    private void applyDriftWebhook(TurPersonaMatchProject project,
+            TurPersonaMatchProjectDto dto) {
+        String url = StringUtils.trimToNull(dto.driftWebhookUrl());
+        project.setDriftWebhookUrl(url);
+        if (url == null) {
+            project.setDriftWebhookAuthHeader(null);
+            project.setDriftWebhookAvgDrop(null);
+            return;
+        }
+        project.setDriftWebhookAuthHeader(driftAlertService.resolveAuthCipher(
+                dto.driftWebhookAuthHeader(), true, project.getDriftWebhookAuthHeader()));
+        Double margin = dto.driftWebhookAvgDrop();
+        project.setDriftWebhookAvgDrop(margin != null && margin > 0 ? margin : null);
     }
 
     private TurPersonaMatchSchedule parseSchedule(String raw) {
@@ -309,7 +334,9 @@ public class TurPersonaMatchService {
         return new TurPersonaMatchProjectDto(p.getId(), p.getName(), p.getDescription(),
                 p.isEnabled(), p.getSchedule().name(), p.getLlmInstanceId(), llmName(p),
                 p.getFitThreshold(), thresholdService.forProject(p),
-                p.getLastRunAt(), (int) sourceRepository.countByProject_Id(p.getId()),
+                p.getDriftWebhookUrl(), null,
+                StringUtils.isNotBlank(p.getDriftWebhookAuthHeader()),
+                p.getDriftWebhookAvgDrop(), p.getLastRunAt(), (int) sourceRepository.countByProject_Id(p.getId()),
                 personaJoinRepository.findByProject_Id(p.getId()).size(), null, null);
     }
 
@@ -319,7 +346,9 @@ public class TurPersonaMatchService {
         return new TurPersonaMatchProjectDto(p.getId(), p.getName(), p.getDescription(),
                 p.isEnabled(), p.getSchedule().name(), p.getLlmInstanceId(), llmName(p),
                 p.getFitThreshold(), thresholdService.forProject(p),
-                p.getLastRunAt(), sources.size(), personas.size(), sources, personas);
+                p.getDriftWebhookUrl(), null,
+                StringUtils.isNotBlank(p.getDriftWebhookAuthHeader()),
+                p.getDriftWebhookAvgDrop(), p.getLastRunAt(), sources.size(), personas.size(), sources, personas);
     }
 
     private String llmName(TurPersonaMatchProject p) {

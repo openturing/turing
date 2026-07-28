@@ -2776,31 +2776,11 @@ site's own index analyzers so ranking tokenization matches how the field was ind
 > Match ask described — *"adjust the persona to the content and the content to the
 > persona, continuously"* — now has its memory (per-cell history), its signal
 > (drift) and its advice (adjustment suggestions); since T825 the score honours the
-> project's chosen model, and since T826 the "good fit" bar is the project's own
-> number rather than a literal duplicated across the stack. What it still lacks is a
-> way to be **noticed** (drift is invisible unless a human opens the studio) or
-> **enforced** (nothing gates on it) — plus the verdict-parsing debt both LLM calls
-> carry.
-
-### LXI.3 Drift nobody sees is not a signal (T827)
-
-T700 runs a DAILY project at 03:30 and T704 now records exactly what regressed —
-into a table. If no human opens `/bento/persona/match/:id` the next morning, a
-content that fell out of fit for its audience simply stays that way. The whole
-point of scheduling was continuous tuning, and continuous tuning needs an
-interrupt.
-
-Constraints shape the design. `turing-app` has **no mail dependency** and this
-block will not add one (an SMTP config surface is its own product decision), so the
-alert is a **webhook**: opt-in per project, fired after a *scheduled* run only
-(manual runs are already watched by the person who clicked), when at least one pair
-crossed below the T826 threshold or the project average dropped more than a
-configured margin. The payload is the drift report the API already returns, so
-there is no second serialization to keep in sync. `TurChatWebhookDispatcher` (T62)
-already solved the hard parts — encrypted `authHeader` at rest, bounded timeout,
-fail-soft dispatch — and is the pattern to follow rather than reinvent: an alert
-that can fail a scheduled analysis would be a regression, so dispatch failures are
-logged and swallowed exactly as there.
+> project's chosen model, since T826 the "good fit" bar is the project's own number
+> rather than a literal duplicated across the stack, and since T827 a scheduled run
+> that regresses a project can say so over a webhook instead of waiting for someone
+> to open the studio. What it still lacks is a way to be **enforced** (nothing gates
+> on it) — plus the verdict-parsing debt both LLM calls carry.
 
 ### LXI.4 Content quality has no gate (T828)
 

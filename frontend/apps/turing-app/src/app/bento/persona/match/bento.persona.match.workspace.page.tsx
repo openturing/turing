@@ -50,6 +50,7 @@ import {
   type MatchMisfit,
   type MatchPersonaKind,
   type MatchPersonaRef,
+  type MatchProject,
   type MatchProjectRequest,
   type MatchSchedule,
   type MatchSource,
@@ -58,6 +59,7 @@ import {
 } from "@/models/persona/persona-match.model";
 import { useQueryClient } from "@tanstack/react-query";
 import {
+  IconBellRinging,
   IconBulb,
   IconCalendarRepeat,
   IconCheck,
@@ -428,6 +430,17 @@ function ProjectWorkspace({ projectId }: Readonly<{ projectId: string }>) {
           patch.llmInstanceId !== undefined ? patch.llmInstanceId : project.llmInstanceId,
         fitThreshold:
           patch.fitThreshold !== undefined ? patch.fitThreshold : project.fitThreshold,
+        // T827: the webhook config must ride along on EVERY save — the backend
+        // reads the whole DTO, so omitting the URL here would silently disable
+        // the drift alert the next time the operator renames the project.
+        driftWebhookUrl:
+          patch.driftWebhookUrl !== undefined ? patch.driftWebhookUrl : project.driftWebhookUrl,
+        // Omitted/blank = keep the stored secret (never sent back to the browser).
+        driftWebhookAuthHeader: patch.driftWebhookAuthHeader,
+        driftWebhookAvgDrop:
+          patch.driftWebhookAvgDrop !== undefined
+            ? patch.driftWebhookAvgDrop
+            : project.driftWebhookAvgDrop,
       });
     },
     [project, updateProject, name, description],
@@ -871,6 +884,8 @@ function ProjectWorkspace({ projectId }: Readonly<{ projectId: string }>) {
           </div>
         </BentoFormSection>
 
+        {project && <DriftAlertSection project={project} onSave={saveProject} />}
+
         {/* --- Results --- */}
         <BentoFormSection
           icon={IconSparkles}
@@ -995,6 +1010,132 @@ function ProjectWorkspace({ projectId }: Readonly<{ projectId: string }>) {
 }
 
 // ---------------------------------------------------------------------------
+
+/**
+ * T827 / §LXI.3 — the opt-in drift alert. A scheduled re-analysis that pushes a
+ * pair below the project's fit bar (or slides the project average past the
+ * margin) POSTs the T704 drift report here; an empty URL means the alert is off,
+ * which is the default. The `Authorization` value is write-only: it is encrypted
+ * server-side and never sent back, so the field stays empty and only saves when
+ * the operator actually types a new secret.
+ */
+function DriftAlertSection({
+  project,
+  onSave,
+}: Readonly<{
+  project: MatchProject;
+  onSave: (patch: Partial<MatchProjectRequest>) => void;
+}>) {
+  const { t } = useTranslation();
+  const [url, setUrl] = useState(project.driftWebhookUrl ?? "");
+  const [auth, setAuth] = useState("");
+  const [avgDrop, setAvgDrop] = useState(
+    project.driftWebhookAvgDrop === null ? "" : String(project.driftWebhookAvgDrop),
+  );
+
+  useEffect(() => {
+    setUrl(project.driftWebhookUrl ?? "");
+    setAvgDrop(
+      project.driftWebhookAvgDrop === null ? "" : String(project.driftWebhookAvgDrop),
+    );
+    setAuth("");
+  }, [project]);
+
+  const enabled = Boolean(url.trim());
+
+  const commitUrl = () => {
+    const next = url.trim() || null;
+    if (next !== (project.driftWebhookUrl ?? null)) {
+      onSave({ driftWebhookUrl: next });
+    }
+  };
+
+  const commitAuth = () => {
+    if (auth.trim()) {
+      onSave({ driftWebhookAuthHeader: auth.trim() });
+      setAuth("");
+    }
+  };
+
+  const commitAvgDrop = () => {
+    const raw = avgDrop.trim();
+    const parsed = Number(raw);
+    const valid = raw !== "" && Number.isFinite(parsed) && parsed > 0 && parsed <= 100;
+    if (!valid && raw !== "") {
+      // Out of range — snap back to what is stored rather than saving nonsense.
+      setAvgDrop(
+        project.driftWebhookAvgDrop === null ? "" : String(project.driftWebhookAvgDrop),
+      );
+      return;
+    }
+    const next = valid ? parsed : null;
+    if (next !== (project.driftWebhookAvgDrop ?? null)) {
+      onSave({ driftWebhookAvgDrop: next });
+    }
+  };
+
+  return (
+    <BentoFormSection
+      icon={IconBellRinging}
+      tone="rose"
+      title={t("persona.match.driftAlertTitle")}
+      description={t("persona.match.driftAlertDesc")}
+    >
+      <div className="grid gap-4 sm:grid-cols-2">
+        <label className="flex flex-col gap-1.5 sm:col-span-2">
+          <span className="text-sm font-medium">{t("persona.match.driftWebhookUrlLabel")}</span>
+          <Input
+            type="url"
+            value={url}
+            placeholder="https://ops.example.com/hooks/persona-drift"
+            onChange={(e) => setUrl(e.target.value)}
+            onBlur={commitUrl}
+          />
+          <span className="text-xs text-muted-foreground">
+            {t("persona.match.driftWebhookUrlHint")}
+          </span>
+        </label>
+        <label className="flex flex-col gap-1.5">
+          <span className="text-sm font-medium">{t("persona.match.driftWebhookAuthLabel")}</span>
+          <Input
+            type="password"
+            autoComplete="off"
+            value={auth}
+            disabled={!enabled}
+            placeholder={
+              project.driftWebhookAuthConfigured
+                ? t("persona.match.driftWebhookAuthStored")
+                : "Bearer …"
+            }
+            onChange={(e) => setAuth(e.target.value)}
+            onBlur={commitAuth}
+          />
+          <span className="text-xs text-muted-foreground">
+            {t("persona.match.driftWebhookAuthHint")}
+          </span>
+        </label>
+        <label className="flex flex-col gap-1.5">
+          <span className="text-sm font-medium">
+            {t("persona.match.driftWebhookAvgDropLabel")}
+          </span>
+          <Input
+            type="number"
+            min={0}
+            max={100}
+            value={avgDrop}
+            disabled={!enabled}
+            placeholder={t("persona.match.driftWebhookAvgDropPlaceholder")}
+            onChange={(e) => setAvgDrop(e.target.value)}
+            onBlur={commitAvgDrop}
+          />
+          <span className="text-xs text-muted-foreground">
+            {t("persona.match.driftWebhookAvgDropHint")}
+          </span>
+        </label>
+      </div>
+    </BentoFormSection>
+  );
+}
 
 function FitBadge({
   score,

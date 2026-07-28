@@ -17,9 +17,10 @@ import java.util.List;
  * both for the list ({@code sources}/{@code personas} omitted, counts present)
  * and the detail view (collections populated). Doubles as the create/update
  * request body — only {@code name}, {@code description}, {@code enabled},
- * {@code schedule}, {@code llmInstanceId} and {@code fitThreshold} are read on
- * write ({@code effectiveFitThreshold} is derived, read-only). Matches the
- * frontend {@code MatchProject}.
+ * {@code schedule}, {@code llmInstanceId}, {@code fitThreshold} and the three
+ * {@code driftWebhook*} fields are read on write ({@code effectiveFitThreshold}
+ * and {@code driftWebhookAuthConfigured} are derived, read-only; the auth header
+ * is write-only and never returned). Matches the frontend {@code MatchProject}.
  *
  * @author Alexandre Oliveira
  * @since 2026.3.4
@@ -43,6 +44,24 @@ public record TurPersonaMatchProjectDto(
          * without knowing the server's configuration. Derived; ignored on write.
          */
         double effectiveFitThreshold,
+        /**
+         * T827 — where to POST the drift report after a scheduled run that
+         * regressed the project; blank = the alert is off (default).
+         */
+        String driftWebhookUrl,
+        /**
+         * T827 — plaintext {@code Authorization} value, <strong>write-only</strong>:
+         * encrypted on save and always {@code null} on read. Leave blank on an
+         * update to keep the stored secret (see {@code driftWebhookAuthConfigured}).
+         */
+        String driftWebhookAuthHeader,
+        /** T827 — read-only: whether a secret is stored, so the form can say so. */
+        boolean driftWebhookAuthConfigured,
+        /**
+         * T827 — also alert when the project average dropped by more than this many
+         * fit points; {@code null} = alert on threshold crossings only.
+         */
+        Double driftWebhookAvgDrop,
         Instant lastRunAt,
         int sourceCount,
         int personaCount,
