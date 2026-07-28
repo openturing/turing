@@ -10,6 +10,7 @@
 package com.viglet.turing.genai.feed;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.entry;
 import static org.assertj.core.api.InstanceOfAssertFactories.list;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
@@ -18,7 +19,9 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -31,6 +34,7 @@ import org.mockito.quality.Strictness;
 
 import com.viglet.turing.api.sn.job.TurSNImportAPI;
 import com.viglet.turing.client.sn.job.TurSNJobAction;
+import com.viglet.turing.client.sn.job.TurSNJobAttributeSpec;
 import com.viglet.turing.client.sn.job.TurSNJobItems;
 import com.viglet.turing.commons.sn.field.TurSNFieldName;
 import com.viglet.turing.genai.urlfetch.TurUrlFetchService;
@@ -277,5 +281,43 @@ class TurStructuredFeedIngestServiceTest {
         assertThat(result.success()).isTrue();
         assertThat(result.fieldsDeclared()).isEqualTo(2);
         verify(fieldProvisioner, times(2)).ensureField(eq(site), any());
+    }
+
+    /**
+     * T810 / §LVI.3 (Block BH) — a manifest may name its facets, either with a plain
+     * string (the default label) or a locale map; an unparseable locale key is dropped
+     * rather than allowed to abort field creation.
+     */
+    @Test
+    void ingestSource_carriesFacetLabelsFromTheManifest() {
+        TurSNSite site = new TurSNSite();
+        site.setName("catalog");
+        Source s = source();
+        s.setManifestUrl("https://example.com/query-manifest.json");
+        when(turSNSiteRepository.findByNameIgnoreCase("catalog")).thenReturn(Optional.of(site));
+        when(urlFetchService.fetchRaw("https://example.com/query-manifest.json")).thenReturn(
+                "{\"fields\":["
+                        + "{\"name\":\"kind\",\"type\":\"STRING\",\"facet\":true,"
+                        + "\"facetName\":\"Model Type\"},"
+                        + "{\"name\":\"vendor\",\"type\":\"STRING\",\"facet\":true,"
+                        + "\"facetLabel\":{\"default\":\"Vendor\",\"pt_BR\":\"Fornecedor\","
+                        + "\"not-a-locale\":\"dropped\"}},"
+                        + "{\"name\":\"price\",\"type\":\"DOUBLE\"}]}");
+        when(urlFetchService.fetchRaw("https://example.com/catalog.json"))
+                .thenReturn("[{\"id\":\"a\",\"kind\":\"CHAT\",\"price\":1.0}]");
+        when(fieldProvisioner.ensureField(eq(site), any())).thenReturn(true);
+
+        service.ingestSource(s);
+
+        ArgumentCaptor<TurSNJobAttributeSpec> specs =
+                ArgumentCaptor.forClass(TurSNJobAttributeSpec.class);
+        verify(fieldProvisioner, times(3)).ensureField(eq(site), specs.capture());
+        Map<String, Map<String, String>> labelsByField = specs.getAllValues().stream()
+                .collect(Collectors.toMap(TurSNJobAttributeSpec::getName,
+                        TurSNJobAttributeSpec::getFacetName));
+        assertThat(labelsByField.get("kind")).containsExactly(entry("default", "Model Type"));
+        assertThat(labelsByField.get("vendor"))
+                .containsOnly(entry("default", "Vendor"), entry("pt_BR", "Fornecedor"));
+        assertThat(labelsByField.get("price")).isEmpty();
     }
 }

@@ -2711,53 +2711,6 @@ OpenAI-style client get grounded, cited structured answers with zero Turing-SDK
 code. The cleanest "separate backend" integration for an external static site, and
 a natural extension of the T744 `turing-sn:<site>` / RAG-as-a-header routing.
 
-## LVI. SN result & facet rendering robustness for feed/crawl-indexed sites (Block BH)
-
-**The problem, from the same dogfood.** With the `openviglet/model-catalog` wired as
-a vectorless KB (§LIV.5, T794) and indexing working, the SN search UI shows the
-**correct result count** but every result's **title/description renders blank** and
-every **facet renders with no group label**. Nothing errors — the data is indexed and
-searchable; it just displays empty. The cause is that the search response layer does a
-pure **name-lookup with no fallback**, and the T796 auto-provisioner never wires the
-site's default-field columns or facet labels to the feed's actual field names:
-
-- The response hands the client a `queryContext.defaultFields` name-map built straight
-  from the site columns (`TurSNQueryContextBuilder.defaultFields`,
-  `turSNSite.getDefaultTitleField()/getDefaultDescriptionField()/…`), and the client
-  reads `doc.fields[defaultFields.title]`. If the column is null, or names a field the
-  document doesn't have, the client renders `""` (`frontend/packages/sdk/src/resolve.ts`).
-- A structured-feed document carries the feed's own field names — the model-catalog
-  feed indexes `label`, `vendor`, `kind`, `contextWindow`, … — and has **no** `title`
-  or `abstract` field, so the template defaults (`title`/`abstract`) point at fields
-  that don't exist → both blank. `TurStructuredFeedProvisioningOnStartup` (T796)
-  provisions the site with a minimal manifest and lets ingest converge the schema, but
-  never sets the `defaultXField` mapping to the feed's real fields.
-- A facet group-header label resolves to the locale-matched `TurSNSiteFieldExtFacet`
-  row, else `fieldExtDto.getFacetName()` (`TurSNFacetRenderer.searchFacetBean`). An
-  auto-provisioned facet field has `facetName = null` **and** zero locale-label rows
-  (`TurSNFieldProvisioner.saveSiteFieldExt`/`saveFacetLocales` — the crawl/feed
-  `TurSNJobAttributeSpec` carried no facet labels), so the header resolves to null and
-  renders blank. There is no last-resort fallback to the field name.
-
-The immediate unblock for the live dogfood is deployment configuration (point the SN
-site's default fields at the feed's fields and give facet fields labels), but the
-reason it broke **silently** is a real Turing robustness gap: the renderer has no
-sensible defaults and the auto-provisioner leaves the mapping empty. This block closes
-that so a feed/crawl-indexed site renders readably out of the box.
-
-### LVI.3 Auto-provisioning wires default fields + facet labels from the feed manifest (T810)
-Extend `TurStructuredFeedProvisioningOnStartup` (T796) so the structured-feed source /
-`VigletFieldManifest` can declare which feed fields map to title/description/text/url/
-image/date and carry per-field facet labels, and have provisioning apply them —
-setting `TurSNSite.defaultTitleField`/`defaultDescriptionField`/… and each faceted
-field's `TurSNSiteFieldExt.facetName` + locale label rows. This is the direct,
-zero-config fix for the dogfood: the model-catalog site provisions with
-`defaultTitleField = label` (and a chosen description/text field) and readable facet
-labels, so it renders correctly on first boot without post-deploy admin steps. The
-concrete mapping lives in the deployment's manifest/env (viglet/cloud), never in
-Turing — Turing only gains the ability to honor it. Builds on LVI.1's fallback (a site
-that declares nothing still gets the canonical defaults).
-
 ## LVIII. Configurable, per-language NL ranking lexicon (Lucene analysis) (Block BJ)
 
 > **On hold — §LIX has shipped.** `LLM_ASSISTED`/`HYBRID` (Block BK) handle other

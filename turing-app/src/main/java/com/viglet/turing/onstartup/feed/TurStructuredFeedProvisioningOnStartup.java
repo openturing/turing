@@ -20,7 +20,11 @@
  */
 package com.viglet.turing.onstartup.feed;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.function.Consumer;
+import java.util.function.Supplier;
 
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
@@ -39,6 +43,7 @@ import com.viglet.turing.persistence.model.sn.genai.TurSNSiteGenAi;
 import com.viglet.turing.persistence.repository.se.TurSEInstanceRepository;
 import com.viglet.turing.persistence.repository.se.TurSEVendorRepository;
 import com.viglet.turing.persistence.repository.sn.TurSNSiteRepository;
+import com.viglet.turing.persistence.repository.sn.field.TurSNSiteFieldExtRepository;
 import com.viglet.turing.persistence.repository.sn.genai.TurSNSiteGenAiRepository;
 import com.viglet.turing.properties.TurStructuredFeedProperty;
 import com.viglet.turing.properties.TurStructuredFeedProperty.Source;
@@ -59,6 +64,15 @@ import lombok.extern.slf4j.Slf4j;
  * source's manifest and importing the feed). On a site that already exists it only
  * re-asserts the Vectorless mode (idempotent) and leaves ongoing refresh to the
  * scheduled {@link TurStructuredFeedIngestService}.
+ *
+ * <p><b>T810 / §LVI.3 (Block BH) — rendering wiring.</b> Provisioning also applies
+ * the source's declared render mapping: which feed field is the title / description /
+ * text / url / image / date ({@code TurSNSite.defaultXField}) and the facet group
+ * labels ({@code TurSNSiteFieldExt.facetName}). A structured feed carries its own
+ * field names (no {@code title}/{@code abstract}), so without this an indexed,
+ * searchable site rendered blank titles and label-less facets. Both are applied only
+ * where the value is still blank, so re-running is a no-op and an operator's admin
+ * edit is never overwritten.
  *
  * <p><b>Product-generic:</b> nothing here is tied to any specific catalog — the
  * concrete site name, feed URL, manifest and SE instance all come from
@@ -91,6 +105,7 @@ public class TurStructuredFeedProvisioningOnStartup implements ApplicationRunner
     private final TurSNSiteGenAiRepository turSNSiteGenAiRepository;
     private final TurSEInstanceRepository turSEInstanceRepository;
     private final TurSEVendorRepository turSEVendorRepository;
+    private final TurSNSiteFieldExtRepository turSNSiteFieldExtRepository;
     private final TurStructuredFeedIngestService ingestService;
 
     public TurStructuredFeedProvisioningOnStartup(TurStructuredFeedProperty property,
@@ -99,6 +114,7 @@ public class TurStructuredFeedProvisioningOnStartup implements ApplicationRunner
             TurSNSiteGenAiRepository turSNSiteGenAiRepository,
             TurSEInstanceRepository turSEInstanceRepository,
             TurSEVendorRepository turSEVendorRepository,
+            TurSNSiteFieldExtRepository turSNSiteFieldExtRepository,
             TurStructuredFeedIngestService ingestService) {
         this.property = property;
         this.manifestService = manifestService;
@@ -106,6 +122,7 @@ public class TurStructuredFeedProvisioningOnStartup implements ApplicationRunner
         this.turSNSiteGenAiRepository = turSNSiteGenAiRepository;
         this.turSEInstanceRepository = turSEInstanceRepository;
         this.turSEVendorRepository = turSEVendorRepository;
+        this.turSNSiteFieldExtRepository = turSNSiteFieldExtRepository;
         this.ingestService = ingestService;
     }
 
@@ -162,6 +179,10 @@ public class TurStructuredFeedProvisioningOnStartup implements ApplicationRunner
 
         setVectorlessMode(source.getSiteName());
 
+        // T810 — wire the render mapping before the first ingest so the very first
+        // search after boot renders titles/descriptions instead of blanks.
+        applyDefaultFields(source);
+
         // Seed the KB immediately only when we just created it; an already-existing
         // site is kept fresh by the scheduled ingester on its normal interval.
         if (!exists) {
@@ -169,6 +190,104 @@ public class TurStructuredFeedProvisioningOnStartup implements ApplicationRunner
             log.info("[StructuredFeed] initial ingest for provisioned source '{}' → {}",
                     source.getId(), ingest);
         }
+
+        // T810 — facet labels need the field rows, which the ingest above creates
+        // from the manifest; on an already-existing site they are already there.
+        applyFacetLabels(source);
+    }
+
+    /**
+     * T810 / §LVI.3 (Block BH) — applies the source's declared render mapping to the
+     * SN site's {@code defaultXField} columns, so a structured feed carrying its own
+     * field names ({@code label} rather than {@code title}) renders readably with no
+     * post-deploy admin step.
+     *
+     * <p>Only fills columns that are still <strong>blank</strong>: re-running is a
+     * no-op and an operator's admin edit is never overwritten. A source that declares
+     * nothing leaves every column null and relies on the T808 canonical fallback.
+     */
+    private void applyDefaultFields(Source source) {
+        turSNSiteRepository.findByNameIgnoreCase(source.getSiteName()).ifPresent(site -> {
+            List<String> applied = new ArrayList<>();
+            for (DefaultFieldWiring wiring : defaultFieldWirings(site, source)) {
+                String configured = trimmed(wiring.configured());
+                if (configured != null && !StringUtils.hasText(wiring.current().get())) {
+                    wiring.apply().accept(configured);
+                    applied.add(wiring.label() + "=" + configured);
+                }
+            }
+            if (!applied.isEmpty()) {
+                turSNSiteRepository.save(site);
+                log.info("[StructuredFeed] wired default fields on site '{}' for source '{}': {}",
+                        source.getSiteName(), source.getId(), String.join(", ", applied));
+            }
+        });
+    }
+
+    /**
+     * The six site render columns paired with the source's declared feed field for
+     * each — one place to keep the mapping, so a new column is a single line.
+     */
+    private static List<DefaultFieldWiring> defaultFieldWirings(TurSNSite site, Source source) {
+        return List.of(
+                new DefaultFieldWiring("title", site::getDefaultTitleField,
+                        site::setDefaultTitleField, source.getDefaultTitleField()),
+                new DefaultFieldWiring("description", site::getDefaultDescriptionField,
+                        site::setDefaultDescriptionField, source.getDefaultDescriptionField()),
+                new DefaultFieldWiring("text", site::getDefaultTextField,
+                        site::setDefaultTextField, source.getDefaultTextField()),
+                new DefaultFieldWiring("url", site::getDefaultURLField,
+                        site::setDefaultURLField, source.getDefaultUrlField()),
+                new DefaultFieldWiring("image", site::getDefaultImageField,
+                        site::setDefaultImageField, source.getDefaultImageField()),
+                new DefaultFieldWiring("date", site::getDefaultDateField,
+                        site::setDefaultDateField, source.getDefaultDateField()));
+    }
+
+    /**
+     * T810 / §LVI.3 (Block BH) — stamps the source's declared facet group labels on
+     * the site's field rows ({@code TurSNSiteFieldExt.facetName}), so an
+     * auto-provisioned facet renders a real header instead of the humanized field
+     * name T809 falls back to. Only fills labels that are still blank, and never
+     * turns a non-faceted field into a facet — that stays the manifest's call.
+     */
+    private void applyFacetLabels(Source source) {
+        Map<String, String> facetLabels = source.getFacetLabels();
+        if (facetLabels == null || facetLabels.isEmpty()) {
+            return;
+        }
+        turSNSiteRepository.findByNameIgnoreCase(source.getSiteName()).ifPresent(site -> {
+            List<String> applied = new ArrayList<>();
+            facetLabels.forEach((fieldName, label) -> {
+                String value = trimmed(label);
+                if (!StringUtils.hasText(fieldName) || value == null) {
+                    return;
+                }
+                turSNSiteFieldExtRepository.findByTurSNSiteAndName(site, fieldName.trim()).stream()
+                        .filter(ext -> !StringUtils.hasText(ext.getFacetName()))
+                        .forEach(ext -> {
+                            ext.setFacetName(value);
+                            turSNSiteFieldExtRepository.save(ext);
+                            applied.add(fieldName.trim() + "=" + value);
+                        });
+            });
+            if (!applied.isEmpty()) {
+                log.info("[StructuredFeed] wired facet labels on site '{}' for source '{}': {}",
+                        source.getSiteName(), source.getId(), String.join(", ", applied));
+            }
+        });
+    }
+
+    private static String trimmed(String value) {
+        return StringUtils.hasText(value) ? value.trim() : null;
+    }
+
+    /**
+     * One site render column: its log label, current value, setter and the feed field
+     * the source declared for it.
+     */
+    private record DefaultFieldWiring(String label, Supplier<String> current,
+            Consumer<String> apply, String configured) {
     }
 
     /**

@@ -64,7 +64,8 @@
 > canonical `TurSNFieldName` constants when a column is blank (T808); facet
 > group-label fallback to a humanized field name when locale label + `facetName` are
 > both null (T809); auto-provisioning wires default fields + facet labels from the
-> feed manifest so the dogfood renders zero-config (T810); §LVI, created 2026-07-24;
+> feed manifest so the dogfood renders zero-config (T810); T808-T810 SHIPPED 2026-07-28,
+> block CLOSED; §LVI, created 2026-07-24;
 > Block **BG** = Batch / bulk structured-feed
 > indexing — dogfooding the 800+-model catalog KB (T794) exposed a document-at-a-time
 > import path: batch the `indexing.queue` consumer through the already-existing-but-
@@ -178,6 +179,7 @@ number" looked free but wasn't. Grepping three files (`ROADMAP.md`,
 
 ## Log (most recent first)
 
+- **T810 SHIPPED** (Block BH §LVI.3 — structured-feed provisioning wires the site's default fields + facet labels from config/manifest; CLOSES Block BH) — 2026-07-28.
 - **T809 SHIPPED** (Block BH §LVI.2 — facet group headers fall back to a humanized field name via the new `TurSNFieldLabel`) — 2026-07-28.
 - **T808 SHIPPED** (Block BH §LVI.1 — search query-context default fields fall back to the canonical `TurSNFieldName` constants when a site column is blank) — 2026-07-28.
 - **T825-T831 CREATED** (📋/💭, Block BN §LXI — content-fit tuning loop: per-project LLM honored by the evaluator, per-project fit threshold, drift webhook alerts, `turing match` CI gate, provider-side verdict schema, per-target trend + export deltas, human-confirmed persona apply) — 2026-07-28.

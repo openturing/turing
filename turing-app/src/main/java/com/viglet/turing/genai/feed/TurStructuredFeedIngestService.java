@@ -11,6 +11,7 @@ package com.viglet.turing.genai.feed;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
@@ -295,6 +296,7 @@ public class TurStructuredFeedIngestService {
                     .multiValued(field.path("multiValued").asBoolean(false))
                     .mandatory(field.path("mandatory").asBoolean(false))
                     .description(text(field.get("description")))
+                    .facetName(facetLabels(field))
                     .build();
             try {
                 if (fieldProvisioner.ensureField(site, spec)) {
@@ -306,6 +308,57 @@ public class TurStructuredFeedIngestService {
             }
         }
         return declared;
+    }
+
+    /**
+     * T810 / §LVI.3 (Block BH) — reads a field's facet group label(s) from the
+     * manifest, so a feed can name its own facets instead of leaving them label-less
+     * (T809 then only has to humanize what nobody declared). Accepted shapes:
+     * {@code "facetName": "Model Type"} (default, non-localized label) or
+     * {@code "facetName": {"default": "Model Type", "pt_BR": "Tipo de Modelo"}}.
+     * {@code facetLabel} is honoured as an alias. Remote data, so an unparseable
+     * locale key is skipped rather than allowed to abort field creation.
+     *
+     * @return the label map consumed by {@code TurSNFieldProvisioner} — empty when
+     *         the field declares none.
+     */
+    private static Map<String, String> facetLabels(JsonNode field) {
+        JsonNode node = field.get("facetName");
+        if (node == null || node.isNull()) {
+            node = field.get("facetLabel");
+        }
+        if (node == null || node.isNull()) {
+            return Map.of();
+        }
+        if (!node.isObject()) {
+            String label = text(node);
+            return StringUtils.isBlank(label) ? Map.of()
+                    : Map.of(TurSNFieldProvisioner.DEFAULT, label);
+        }
+        Map<String, String> labels = new LinkedHashMap<>();
+        for (Map.Entry<String, JsonNode> entry : node.properties()) {
+            String label = text(entry.getValue());
+            if (StringUtils.isNotBlank(label) && isLabelKey(entry.getKey())) {
+                labels.put(entry.getKey(), label);
+            }
+        }
+        return labels;
+    }
+
+    /**
+     * A facet-label map key is either the reserved {@code default} key or a parseable
+     * locale — anything else would blow up locale-row creation, so it is dropped.
+     */
+    private static boolean isLabelKey(String key) {
+        if (TurSNFieldProvisioner.DEFAULT.equals(key)) {
+            return true;
+        }
+        try {
+            return LocaleUtils.toLocale(key) != null;
+        } catch (IllegalArgumentException e) {
+            log.warn("[StructuredFeed] ignoring facet label with unparseable locale key '{}'", key);
+            return false;
+        }
     }
 
     private static TurSEFieldType parseFieldType(String raw) {

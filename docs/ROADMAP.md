@@ -24,22 +24,6 @@
 
 - 💭 **T441** (deps: T436, T438) **Canonical AG-UI protocol adapter** — optional endpoint that re-encodes Turing's stream into the canonical AG-UI event schema (`RUN_STARTED`, `TEXT_MESSAGE_*`, `TOOL_CALL_*`, `STATE_SNAPSHOT`/`STATE_DELTA`, …) so CopilotKit's off-the-shelf React/Angular clients connect with zero Turing-SDK code. Distribution play, not core parity — promote from 💭 only if a named integration asks. → §XXII.6
 
-## Block BH — SN result & facet rendering robustness for feed/crawl-indexed sites (§LVI)
-
-> Same dogfood, next surface: with `openviglet/model-catalog` indexing as a vectorless
-> feed (Block BF, T794) the SN search shows the **correct result count** but every
-> result's **title/description renders blank** and every **facet renders with no group
-> label**. The data is indexed and searchable — it just displays empty, silently. Root
-> cause: the search response does a pure **name-lookup with no fallback**
-> (`queryContext.defaultFields` → `doc.fields[name]`), the structured-feed documents
-> carry the feed's own field names (`label`/`vendor`/`kind`, **no** `title`/`abstract`),
-> and the T796 auto-provisioner never wires the site's `defaultXField` mapping or facet
-> labels to those fields. The immediate unblock is deployment configuration; this block
-> closes the *silent* robustness gap so a feed/crawl-indexed site renders readably out
-> of the box. Design in [IMPROVEMENTS.md](IMPROVEMENTS.md) §LVI.
-
-- 📋 **T810** (deps: T796, T808) **Auto-provisioning wires default fields + facet labels from the feed manifest** — extend `TurStructuredFeedProvisioningOnStartup` (T796) so a structured-feed source / `VigletFieldManifest` can declare the title/description/text/url/image/date field mapping + per-field facet labels, and apply them at provision time (set `TurSNSite.defaultXField` + each faceted field's `TurSNSiteFieldExt.facetName`/locale rows). The zero-config dogfood fix: the model-catalog site provisions with `defaultTitleField = label` (+ a chosen description field) and readable facet labels, rendering correctly on first boot. The concrete mapping lives in the deployment manifest/env (viglet/cloud) — Turing only gains the ability to honor it. → §LVI.3
-
 ## Block BJ — Configurable, per-language NL ranking lexicon (Lucene analysis) (§LVIII)
 
 > ⏸ **ON HOLD — Block BK has shipped.** `LLM_ASSISTED`/`HYBRID` (Block BK, §LIX)

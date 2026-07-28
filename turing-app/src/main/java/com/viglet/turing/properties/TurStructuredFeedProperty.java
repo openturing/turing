@@ -10,7 +10,9 @@
 package com.viglet.turing.properties;
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.stereotype.Component;
@@ -150,5 +152,42 @@ public class TurStructuredFeedProperty {
 
         /** T796 — optional description stamped on an auto-provisioned SN site. */
         private String description;
+
+        /**
+         * T810 / §LVI.3 (Block BH) — which feed field renders as each result's
+         * title / description / text / url / image / date. A structured feed carries
+         * its own field names ({@code label}, {@code vendor}, …) and has no
+         * {@code title}/{@code abstract}, so without this mapping every result
+         * renders blank even though the data is indexed. Applied at provision time
+         * to the SN site's {@code defaultXField} columns, and only to columns that
+         * are still blank — an operator's admin edit is never overwritten. Optional;
+         * a source that declares nothing falls back to the canonical field names
+         * (T808).
+         */
+        private String defaultTitleField;
+
+        /** T810 — feed field rendered as each result's description. */
+        private String defaultDescriptionField;
+
+        /** T810 — feed field rendered as each result's body text. */
+        private String defaultTextField;
+
+        /** T810 — feed field rendered as each result's link. */
+        private String defaultUrlField;
+
+        /** T810 — feed field rendered as each result's image. */
+        private String defaultImageField;
+
+        /** T810 — feed field rendered as each result's date. */
+        private String defaultDateField;
+
+        /**
+         * T810 / §LVI.3 (Block BH) — facet group labels by field name
+         * ({@code kind: "Model Type"}). A field the feed auto-created has no label,
+         * so its facet header falls back to a humanized field name (T809); this
+         * makes the label declarable in the deployment's config instead. Applied
+         * only to fields whose label is still blank.
+         */
+        private Map<String, String> facetLabels = new LinkedHashMap<>();
     }
 }
