@@ -2775,28 +2775,12 @@ site's own index analyzers so ranking tokenization matches how the field was ind
 > Motivated by building T704 (Block AT's closer). The loop the original Persona
 > Match ask described — *"adjust the persona to the content and the content to the
 > persona, continuously"* — now has its memory (per-cell history), its signal
-> (drift) and its advice (adjustment suggestions), and since T825 the score honours
-> the project's chosen model. What it still lacks is a way to be **calibrated**
-> (the fit bar is the platform's, not the project's), **noticed** (drift is invisible
-> unless a human opens the studio) or **enforced** (nothing gates on it) — plus the
-> verdict-parsing debt both LLM calls carry.
-
-### LXI.2 A hardcoded 75 decides what "below fit" means (T826)
-
-`GOOD_FIT_THRESHOLD = 75.0` lives in `TurPersonaMatchHistoryService` and is
-mirrored by the `fitTone` colour bands in `persona-match.model.ts`. It decides the
-heatmap's green/amber/red, `crossedBelowFit`, and — once T827/T828 exist — who gets
-alerted and which builds fail. That is a lot of product resting on one literal
-duplicated across the stack.
-
-Different portfolios have genuinely different bars: internal engineering notes for
-an expert audience are fine at 60, a first-contact onboarding page for a beginner
-audience is not fine at 74. So the threshold becomes a nullable per-project
-`fitThreshold` (null = inherit a global default that keeps 75), read once and
-handed to the frontend on the project DTO so the bands, the legend, the drift flags
-and the future gate all agree. Deliberately *not* per-cell or per-persona: a
-project is the unit an operator reasons about, and a per-pair bar would make the
-heatmap unreadable.
+> (drift) and its advice (adjustment suggestions); since T825 the score honours the
+> project's chosen model, and since T826 the "good fit" bar is the project's own
+> number rather than a literal duplicated across the stack. What it still lacks is a
+> way to be **noticed** (drift is invisible unless a human opens the studio) or
+> **enforced** (nothing gates on it) — plus the verdict-parsing debt both LLM calls
+> carry.
 
 ### LXI.3 Drift nobody sees is not a signal (T827)
 

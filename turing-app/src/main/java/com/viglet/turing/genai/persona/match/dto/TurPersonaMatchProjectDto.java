@@ -17,7 +17,8 @@ import java.util.List;
  * both for the list ({@code sources}/{@code personas} omitted, counts present)
  * and the detail view (collections populated). Doubles as the create/update
  * request body — only {@code name}, {@code description}, {@code enabled},
- * {@code schedule} and {@code llmInstanceId} are read on write. Matches the
+ * {@code schedule}, {@code llmInstanceId} and {@code fitThreshold} are read on
+ * write ({@code effectiveFitThreshold} is derived, read-only). Matches the
  * frontend {@code MatchProject}.
  *
  * @author Alexandre Oliveira
@@ -31,6 +32,17 @@ public record TurPersonaMatchProjectDto(
         String schedule,
         String llmInstanceId,
         String llmName,
+        /**
+         * T826 — the project's own good-fit bar, or {@code null} to inherit the
+         * deployment default. This is the write field (what the form edits).
+         */
+        Double fitThreshold,
+        /**
+         * T826 — the bar actually in force (the project's, else the deployment
+         * default), so the studio can colour the heatmap and label the legend
+         * without knowing the server's configuration. Derived; ignored on write.
+         */
+        double effectiveFitThreshold,
         Instant lastRunAt,
         int sourceCount,
         int personaCount,

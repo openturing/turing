@@ -1,0 +1,32 @@
+databaseChangeLog:
+  # T826 / §LXI.2 (Block BN) — per-project good-fit threshold.
+  #
+  #   ai_persona_match_project.fitThreshold — NULLABLE score (0-100) at/above which
+  #                                           a (content, persona) pair counts as a
+  #                                           good fit. NULL = inherit the global
+  #                                           default (turing.persona-match
+  #                                           .fit-threshold, 75), so every existing
+  #                                           project keeps today's behaviour and the
+  #                                           hardcoded 75 has one source of truth.
+  #
+  # Column name matches the JPA field name (camelCase). Portable lowercase type.
+  # Idempotent (MARK_RAN).
+
+  - changeSet:
+      id: v2026.3.1.119-project-fitThreshold
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - columnExists:
+                tableName: ai_persona_match_project
+                columnName: fitThreshold
+      changes:
+        - addColumn:
+            tableName: ai_persona_match_project
+            columns:
+              - column:
+                  name: fitThreshold
+                  type: double
+                  constraints:
+                    nullable: true

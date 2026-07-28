@@ -71,6 +71,7 @@ public class TurPersonaMatchService {
     private final TurPersonaMatchSourceService sourceService;
     private final TurPersonaMatchAnalysisService analysisService;
     private final TurPersonaMatchHistoryService historyService;
+    private final TurPersonaMatchThresholdService thresholdService;
 
     public TurPersonaMatchService(TurPersonaMatchProjectRepository projectRepository,
             TurPersonaMatchSourceRepository sourceRepository,
@@ -80,7 +81,8 @@ public class TurPersonaMatchService {
             TurLLMInstanceRepository llmInstanceRepository,
             TurPersonaMatchSourceService sourceService,
             TurPersonaMatchAnalysisService analysisService,
-            TurPersonaMatchHistoryService historyService) {
+            TurPersonaMatchHistoryService historyService,
+            TurPersonaMatchThresholdService thresholdService) {
         this.projectRepository = projectRepository;
         this.sourceRepository = sourceRepository;
         this.personaJoinRepository = personaJoinRepository;
@@ -90,6 +92,7 @@ public class TurPersonaMatchService {
         this.sourceService = sourceService;
         this.analysisService = analysisService;
         this.historyService = historyService;
+        this.thresholdService = thresholdService;
     }
 
     // ---- project CRUD ------------------------------------------------------
@@ -139,6 +142,9 @@ public class TurPersonaMatchService {
         project.setEnabled(dto.enabled());
         project.setSchedule(parseSchedule(dto.schedule()));
         project.setLlmInstanceId(StringUtils.trimToNull(dto.llmInstanceId()));
+        // T826: an absent or nonsensical bar means "inherit the deployment default"
+        // rather than colouring the whole matrix by a bogus number.
+        project.setFitThreshold(thresholdService.sanitize(dto.fitThreshold()));
     }
 
     private TurPersonaMatchSchedule parseSchedule(String raw) {
@@ -302,6 +308,7 @@ public class TurPersonaMatchService {
     private TurPersonaMatchProjectDto toSummary(TurPersonaMatchProject p) {
         return new TurPersonaMatchProjectDto(p.getId(), p.getName(), p.getDescription(),
                 p.isEnabled(), p.getSchedule().name(), p.getLlmInstanceId(), llmName(p),
+                p.getFitThreshold(), thresholdService.forProject(p),
                 p.getLastRunAt(), (int) sourceRepository.countByProject_Id(p.getId()),
                 personaJoinRepository.findByProject_Id(p.getId()).size(), null, null);
     }
@@ -311,6 +318,7 @@ public class TurPersonaMatchService {
         List<TurPersonaMatchPersonaRefDto> personas = personas(p.getId());
         return new TurPersonaMatchProjectDto(p.getId(), p.getName(), p.getDescription(),
                 p.isEnabled(), p.getSchedule().name(), p.getLlmInstanceId(), llmName(p),
+                p.getFitThreshold(), thresholdService.forProject(p),
                 p.getLastRunAt(), sources.size(), personas.size(), sources, personas);
     }
 

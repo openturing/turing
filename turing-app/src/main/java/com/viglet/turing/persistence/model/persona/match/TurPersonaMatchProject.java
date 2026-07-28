@@ -72,6 +72,18 @@ public class TurPersonaMatchProject implements Serializable {
     @Column(name = "llmInstanceId", length = 40)
     private String llmInstanceId;
 
+    /**
+     * T826 / §LXI.2 (Block BN) — the score at/above which a
+     * {@code (content, persona)} pair counts as a <em>good fit</em> for this
+     * project: what drives the heatmap bands, the drift "crossed below" flag and
+     * (once T827/T828 land) the alert and the CI gate. {@code null} = inherit the
+     * global default, so a portfolio with a genuinely different bar (expert notes
+     * at 60, first-contact onboarding at 85) sets its own without the platform
+     * imposing one.
+     */
+    @Column(name = "fitThreshold")
+    private Double fitThreshold;
+
     @Enumerated(EnumType.STRING)
     @Column(name = "schedule", nullable = false, length = 16)
     private TurPersonaMatchSchedule schedule = TurPersonaMatchSchedule.MANUAL;

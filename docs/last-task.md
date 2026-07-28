@@ -179,6 +179,7 @@ number" looked free but wasn't. Grepping three files (`ROADMAP.md`,
 
 ## Log (most recent first)
 
+- **T826 SHIPPED** (Block BN §LXI.2 — per-project `fitThreshold` + `TurPersonaMatchThresholdService`; drift flags, heatmap bands, legend and PDFs all read the project's bar) — 2026-07-28.
 - **T825 SHIPPED** (Block BN §LXI.1 — the Persona Match project's LLM instance now drives `TurPersonaContentFitEvaluator`, folded into its cache key) — 2026-07-28.
 - **T810 SHIPPED** (Block BH §LVI.3 — structured-feed provisioning wires the site's default fields + facet labels from config/manifest; CLOSES Block BH) — 2026-07-28.
 - **T809 SHIPPED** (Block BH §LVI.2 — facet group headers fall back to a humanized field name via the new `TurSNFieldLabel`) — 2026-07-28.

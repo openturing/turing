@@ -63,6 +63,10 @@ export interface MatchProjectSummary {
   schedule: MatchSchedule;
   llmInstanceId: string | null;
   llmName: string | null;
+  /** T826 — the project's own good-fit bar; null = inherit the platform default. */
+  fitThreshold: number | null;
+  /** T826 — the bar actually in force (project's, else the platform default). */
+  effectiveFitThreshold: number;
   lastRunAt: string | null;
   sourceCount: number;
   personaCount: number;
@@ -86,6 +90,8 @@ export interface MatchProjectRequest {
   enabled: boolean;
   schedule: MatchSchedule;
   llmInstanceId?: string | null;
+  /** T826 — null/omitted keeps inheriting the platform default. */
+  fitThreshold?: number | null;
 }
 
 export interface MatchSourceRequest {
@@ -152,6 +158,8 @@ export interface MatchDrift {
   currentRunAt: string | null;
   previousAvg: number;
   currentAvg: number;
+  /** T826 — the good-fit bar this report was computed against. */
+  fitThreshold: number;
   regressedCount: number;
   improvedCount: number;
   entries: MatchDriftEntry[];
@@ -178,8 +186,24 @@ export interface MatchAdjustments {
   items: MatchAdjustmentItem[];
 }
 
-/** Fit at/above this counts as a good fit — mirrors the backend threshold. */
+/**
+ * Fit at/above this counts as a good fit when nothing else says otherwise —
+ * mirrors the backend's `TurPersonaMatchThresholdService.DEFAULT_FIT_THRESHOLD`.
+ *
+ * T826: prefer a project's `effectiveFitThreshold` wherever one is in hand; this
+ * constant is only the fallback for a surface that has no project loaded yet.
+ */
 export const GOOD_FIT_THRESHOLD = 75;
+
+/**
+ * The amber/red boundary for a given good-fit bar. Kept proportional to the bar
+ * (two thirds of it) so the classic 75 → 50 bands are unchanged at the default
+ * and a project that lowers its bar to 60 gets a proportionally lower "poor fit"
+ * line (40) instead of an amber band squeezed into 10 points.
+ */
+export function mediumFitFloor(threshold: number = GOOD_FIT_THRESHOLD): number {
+  return (threshold * 2) / 3;
+}
 
 /** Colour + i18n key for a movement in fit points. */
 export interface DriftTone {
@@ -257,8 +281,16 @@ export interface FitTone {
   level: FitLevel;
 }
 
-export function fitTone(score: number): FitTone {
-  if (score >= 75) {
+/**
+ * Colour band for a fit score against the project's good-fit bar (T826). The
+ * `threshold` argument defaults to the platform bar, so a caller with no project
+ * in hand keeps the pre-T826 75/50 bands.
+ */
+export function fitTone(
+  score: number,
+  threshold: number = GOOD_FIT_THRESHOLD,
+): FitTone {
+  if (score >= threshold) {
     return {
       fill: "bg-emerald-500",
       soft: "bg-emerald-500/10",
@@ -267,7 +299,7 @@ export function fitTone(score: number): FitTone {
       level: "high",
     };
   }
-  if (score >= 50) {
+  if (score >= mediumFitFloor(threshold)) {
     return {
       fill: "bg-amber-500",
       soft: "bg-amber-500/10",

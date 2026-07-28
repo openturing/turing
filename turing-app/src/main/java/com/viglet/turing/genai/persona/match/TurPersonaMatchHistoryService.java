@@ -50,21 +50,18 @@ import lombok.extern.slf4j.Slf4j;
 @Service
 public class TurPersonaMatchHistoryService {
 
-    /**
-     * Fit at/above this is a "good fit" (mirrors the studio's emerald band), so
-     * crossing it downwards is what makes drift worth surfacing.
-     */
-    public static final double GOOD_FIT_THRESHOLD = 75.0;
-
     private final TurPersonaMatchCellHistoryRepository historyRepository;
+    private final TurPersonaMatchThresholdService thresholdService;
 
     /** Points kept per cell; older points are trimmed after each run. */
     @Value("${turing.persona-match.history.max-points:24}")
     private int maxPoints = 24;
 
     public TurPersonaMatchHistoryService(
-            TurPersonaMatchCellHistoryRepository historyRepository) {
+            TurPersonaMatchCellHistoryRepository historyRepository,
+            TurPersonaMatchThresholdService thresholdService) {
         this.historyRepository = historyRepository;
+        this.thresholdService = thresholdService;
     }
 
     // ---- write -------------------------------------------------------------
@@ -186,15 +183,21 @@ public class TurPersonaMatchHistoryService {
      * How every cell moved between the project's last two runs, sharpest
      * regression first. A project with fewer than two runs on record yields an
      * empty report rather than an error — drift is simply not knowable yet.
+     *
+     * <p>T826: the "crossed below/above fit" flags are decided by the
+     * <em>project's</em> good-fit threshold (inheriting the deployment default when
+     * it names none), and the report echoes the bar it used so the studio, the T827
+     * alert and the T828 gate all speak about the same number.
      */
     public TurPersonaMatchDriftDto drift(String projectId) {
+        double threshold = thresholdService.forProject(projectId);
         List<TurPersonaMatchCellHistory> all =
                 historyRepository.findByProjectIdOrderByEvaluatedAtAsc(projectId);
         List<Instant> runs = all.stream().map(TurPersonaMatchCellHistory::getEvaluatedAt)
                 .distinct().sorted().toList();
         if (runs.size() < 2) {
             return new TurPersonaMatchDriftDto(projectId, runs.size(), null,
-                    runs.isEmpty() ? null : runs.getLast(), 0, 0, 0, 0, List.of());
+                    runs.isEmpty() ? null : runs.getLast(), 0, 0, threshold, 0, 0, List.of());
         }
         Instant previousRun = runs.get(runs.size() - 2);
         Instant currentRun = runs.getLast();
@@ -208,7 +211,7 @@ public class TurPersonaMatchHistoryService {
             if (before == null) {
                 continue; // a cell added after the previous run has nothing to drift from
             }
-            entries.add(toEntry(before, e.getValue()));
+            entries.add(toEntry(before, e.getValue(), threshold));
         }
         entries.sort(Comparator.comparingDouble(TurPersonaMatchDriftDto.Entry::delta)
                 .thenComparing(TurPersonaMatchDriftDto.Entry::sourceId));
@@ -219,16 +222,16 @@ public class TurPersonaMatchHistoryService {
         return new TurPersonaMatchDriftDto(projectId, runs.size(), previousRun, currentRun,
                 avg(previous.values(), TurPersonaMatchCellHistory::getFitScore),
                 avg(current.values(), TurPersonaMatchCellHistory::getFitScore),
-                regressed, improved, entries);
+                threshold, regressed, improved, entries);
     }
 
     private TurPersonaMatchDriftDto.Entry toEntry(TurPersonaMatchCellHistory before,
-            TurPersonaMatchCellHistory after) {
+            TurPersonaMatchCellHistory after, double threshold) {
         double delta = round(after.getFitScore() - before.getFitScore());
-        boolean crossedBelow = before.getFitScore() >= GOOD_FIT_THRESHOLD
-                && after.getFitScore() < GOOD_FIT_THRESHOLD;
-        boolean crossedAbove = before.getFitScore() < GOOD_FIT_THRESHOLD
-                && after.getFitScore() >= GOOD_FIT_THRESHOLD;
+        boolean crossedBelow = before.getFitScore() >= threshold
+                && after.getFitScore() < threshold;
+        boolean crossedAbove = before.getFitScore() < threshold
+                && after.getFitScore() >= threshold;
         boolean contentChanged =
                 !Objects.equals(before.getContentHash(), after.getContentHash());
         return new TurPersonaMatchDriftDto.Entry(after.getSourceId(), after.getPersonaId(),

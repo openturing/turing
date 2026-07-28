@@ -102,6 +102,7 @@ export function MatchTuningSection({
               entries={regressions}
               sourceNames={sourceNames}
               personaNames={personaNames}
+              threshold={drift?.fitThreshold}
             />
             <DriftList
               title={t("persona.match.improvements")}
@@ -109,6 +110,7 @@ export function MatchTuningSection({
               entries={[...improvements].reverse()}
               sourceNames={sourceNames}
               personaNames={personaNames}
+              threshold={drift?.fitThreshold}
             />
           </div>
         </>
@@ -208,12 +210,15 @@ function DriftList({
   entries,
   sourceNames,
   personaNames,
+  threshold,
 }: Readonly<{
   title: string;
   emptyText: string;
   entries: MatchDriftEntry[];
   sourceNames: Map<string, string>;
   personaNames: Map<string, string>;
+  /** T826 — the project's good-fit bar the crossing flags were computed against. */
+  threshold?: number;
 }>) {
   const { t } = useTranslation();
   return (
@@ -254,7 +259,13 @@ function DriftList({
                 {entry.crossedBelowFit && (
                   <span
                     className="shrink-0 text-amber-600 dark:text-amber-300"
-                    title={t("persona.match.crossedBelowFit")}
+                    title={
+                      threshold === undefined
+                        ? t("persona.match.crossedBelowFit")
+                        : t("persona.match.crossedBelowFitAt", {
+                            threshold: Math.round(threshold),
+                          })
+                    }
                   >
                     <IconAlertTriangle size={15} />
                   </span>

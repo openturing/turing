@@ -40,6 +40,8 @@ import {
   driftTone,
   fitTone,
   formatDelta,
+  GOOD_FIT_THRESHOLD,
+  mediumFitFloor,
   projectAvgFit,
   rankByContent,
   rankByPersona,
@@ -116,14 +118,15 @@ function escapeHtml(value: string): string {
     .replaceAll('"', "&quot;");
 }
 
-function fitHex(score: number): string {
-  if (score >= 75) return "#10b981";
-  if (score >= 50) return "#f59e0b";
+/** Print-safe mirror of `fitTone`, driven by the project's good-fit bar (T826). */
+function fitHex(score: number, threshold: number): string {
+  if (score >= threshold) return "#10b981";
+  if (score >= mediumFitFloor(threshold)) return "#f59e0b";
   return "#f43f5e";
 }
 
-function buildRowHtml(r: ReportRow, labels: ReportLabels): string {
-  const color = fitHex(r.score);
+function buildRowHtml(r: ReportRow, labels: ReportLabels, threshold: number): string {
+  const color = fitHex(r.score, threshold);
   const summaryHtml = r.summary
     ? `<p class="summary">${escapeHtml(r.summary)}</p>`
     : "";
@@ -164,10 +167,11 @@ function buildReportHtml(
   brand: string,
   footer: string,
   labels: ReportLabels,
+  threshold: number,
 ): string {
   const groupsHtml = groups
     .map((g) => {
-      const rowsHtml = g.rows.map((r) => buildRowHtml(r, labels)).join("");
+      const rowsHtml = g.rows.map((r) => buildRowHtml(r, labels, threshold)).join("");
       return `<section class="group">
         <h2>${escapeHtml(g.head)}</h2>
         <p class="sub">${escapeHtml(g.sub)}</p>
@@ -365,15 +369,24 @@ function ProjectWorkspace({ projectId }: Readonly<{ projectId: string }>) {
 
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
+  /** T826 — raw text so the field can be emptied back to "inherit the default". */
+  const [thresholdInput, setThresholdInput] = useState("");
 
   const sources = useMemo(() => project?.sources ?? [], [project]);
   const personas = useMemo(() => project?.personas ?? [], [project]);
   const everRun = Boolean(project?.lastRunAt);
+  /**
+   * T826 — the project's good-fit bar drives every band, badge, legend and PDF
+   * colour on this page. `effectiveFitThreshold` already folds in the platform
+   * default server-side; the constant only covers the first render.
+   */
+  const fitThreshold = project?.effectiveFitThreshold ?? GOOD_FIT_THRESHOLD;
 
   useEffect(() => {
     if (!project) return;
     setName(project.name);
     setDescription(project.description ?? "");
+    setThresholdInput(project.fitThreshold === null ? "" : String(project.fitThreshold));
   }, [project]);
 
   useEffect(() => {
@@ -403,12 +416,18 @@ function ProjectWorkspace({ projectId }: Readonly<{ projectId: string }>) {
   const saveProject = useCallback(
     (patch: Partial<MatchProjectRequest>) => {
       if (!project) return;
+      // `!== undefined` (not `??`): both llmInstanceId and fitThreshold use null
+      // as a meaningful value — "inherit the platform default" — so a nullish
+      // fallback would silently refuse to clear either one.
       updateProject.mutate({
         name: patch.name ?? name,
         description: patch.description ?? description,
         enabled: project.enabled,
         schedule: patch.schedule ?? project.schedule,
-        llmInstanceId: patch.llmInstanceId ?? project.llmInstanceId,
+        llmInstanceId:
+          patch.llmInstanceId !== undefined ? patch.llmInstanceId : project.llmInstanceId,
+        fitThreshold:
+          patch.fitThreshold !== undefined ? patch.fitThreshold : project.fitThreshold,
       });
     },
     [project, updateProject, name, description],
@@ -553,6 +572,7 @@ function ProjectWorkspace({ projectId }: Readonly<{ projectId: string }>) {
             brand,
             footer,
             labels,
+            fitThreshold,
           ),
         );
       } else {
@@ -576,11 +596,12 @@ function ProjectWorkspace({ projectId }: Readonly<{ projectId: string }>) {
             brand,
             footer,
             labels,
+            fitThreshold,
           ),
         );
       }
     },
-    [byContent, byPersona, name, t],
+    [byContent, byPersona, name, t, fitThreshold],
   );
 
   const removeProject = useCallback(() => {
@@ -608,7 +629,9 @@ function ProjectWorkspace({ projectId }: Readonly<{ projectId: string }>) {
         subtitle={description || t("persona.match.defaultSubtitle")}
         trailing={
           <div className="flex items-center gap-2">
-            {avgFit !== null && <FitBadge score={avgFit} prefix={t("persona.match.avgFit")} />}
+            {avgFit !== null && (
+              <FitBadge score={avgFit} threshold={fitThreshold} prefix={t("persona.match.avgFit")} />
+            )}
             <Button onClick={runAnalysis} disabled={!canRun} className="gap-2">
               {running ? <IconLoader2 className="size-4 animate-spin" /> : <IconPlayerPlayFilled className="size-4" />}
               {runLabel}
@@ -810,6 +833,41 @@ function ProjectWorkspace({ projectId }: Readonly<{ projectId: string }>) {
                 </SelectContent>
               </Select>
             </label>
+            {/* T826 — the project's own good-fit bar; empty = platform default. */}
+            <label className="flex flex-col gap-1.5">
+              <span className="text-sm font-medium">{t("persona.match.fitThresholdLabel")}</span>
+              <Input
+                type="number"
+                min={1}
+                max={100}
+                value={thresholdInput}
+                placeholder={t("persona.match.fitThresholdPlaceholder", {
+                  value: Math.round(project?.effectiveFitThreshold ?? GOOD_FIT_THRESHOLD),
+                })}
+                onChange={(e) => setThresholdInput(e.target.value)}
+                onBlur={() => {
+                  const raw = thresholdInput.trim();
+                  const parsed = raw === "" ? null : Number(raw);
+                  const next =
+                    parsed !== null && Number.isFinite(parsed) && parsed >= 1 && parsed <= 100
+                      ? parsed
+                      : null;
+                  if (next === null && raw !== "") {
+                    // Out of range — snap the field back to what is in force.
+                    setThresholdInput(
+                      project?.fitThreshold === null ? "" : String(project?.fitThreshold ?? ""),
+                    );
+                    return;
+                  }
+                  if (next !== (project?.fitThreshold ?? null)) {
+                    saveProject({ fitThreshold: next });
+                  }
+                }}
+              />
+              <span className="text-xs text-muted-foreground">
+                {t("persona.match.fitThresholdHint")}
+              </span>
+            </label>
           </div>
         </BentoFormSection>
 
@@ -868,8 +926,15 @@ function ProjectWorkspace({ projectId }: Readonly<{ projectId: string }>) {
                 </TabsList>
 
                 <TabsContent value="matrix" className="mt-4">
-                  <Heatmap sources={sources} personas={personas} matrix={matrix} revealed={revealed} onPick={setActiveCell} />
-                  <FitLegend />
+                  <Heatmap
+                    sources={sources}
+                    personas={personas}
+                    matrix={matrix}
+                    revealed={revealed}
+                    threshold={fitThreshold}
+                    onPick={setActiveCell}
+                  />
+                  <FitLegend threshold={fitThreshold} />
                 </TabsContent>
 
                 <TabsContent value="byContent" className="mt-4">
@@ -880,6 +945,7 @@ function ProjectWorkspace({ projectId }: Readonly<{ projectId: string }>) {
                         title={source.name}
                         subtitle={`${t(`persona.match.sourceType.${source.type}`)} · ${t("persona.match.avgFitInline", { avg })}`}
                         icon={SOURCE_TYPE_ICON[source.type]}
+                        threshold={fitThreshold}
                         rows={ranked.map((r) => ({
                           label: r.persona.name,
                           score: r.cell.fitScore,
@@ -898,6 +964,7 @@ function ProjectWorkspace({ projectId }: Readonly<{ projectId: string }>) {
                         title={persona.name}
                         subtitle={`${t(`persona.match.kind.${persona.kind}`)} · ${t("persona.match.avgFitInline", { avg })}`}
                         icon={IconUserCircle}
+                        threshold={fitThreshold}
                         rows={ranked.map((r) => ({
                           label: r.source.name,
                           score: r.cell.fitScore,
@@ -919,6 +986,7 @@ function ProjectWorkspace({ projectId }: Readonly<{ projectId: string }>) {
       <CellSheet
         active={activeCell}
         series={activeCell ? trendMap.get(cellKey(activeCell.source.id, activeCell.persona.id)) : undefined}
+        threshold={fitThreshold}
         onClose={() => setActiveCell(null)}
       />
       <SnDocumentPicker open={pickerOpen} onOpenChange={setPickerOpen} onPick={pickDoc} />
@@ -928,8 +996,12 @@ function ProjectWorkspace({ projectId }: Readonly<{ projectId: string }>) {
 
 // ---------------------------------------------------------------------------
 
-function FitBadge({ score, prefix }: Readonly<{ score: number; prefix?: string }>) {
-  const tone = fitTone(score);
+function FitBadge({
+  score,
+  threshold,
+  prefix,
+}: Readonly<{ score: number; threshold: number; prefix?: string }>) {
+  const tone = fitTone(score, threshold);
   return (
     <span className={`rounded-full border px-2.5 py-1 text-sm font-medium ${tone.border} ${tone.soft} ${tone.text}`}>
       {prefix ? `${prefix} ` : ""}
@@ -938,18 +1010,29 @@ function FitBadge({ score, prefix }: Readonly<{ score: number; prefix?: string }
   );
 }
 
-function FitLegend() {
+/**
+ * T826 — the legend now states the numbers it is colouring by, because they are
+ * the project's choice rather than a platform constant.
+ */
+function FitLegend({ threshold }: Readonly<{ threshold: number }>) {
   const { t } = useTranslation();
+  const high = Math.round(threshold);
+  const medium = Math.round(mediumFitFloor(threshold));
   return (
     <div className="mt-3 flex flex-wrap items-center gap-4 text-xs text-muted-foreground">
       <span className="inline-flex items-center gap-1.5">
         <span className="size-3 rounded bg-emerald-500" /> {t("persona.match.legendHigh")}
+        <span className="tabular-nums opacity-70">(≥{high}%)</span>
       </span>
       <span className="inline-flex items-center gap-1.5">
         <span className="size-3 rounded bg-amber-500" /> {t("persona.match.legendMedium")}
+        <span className="tabular-nums opacity-70">
+          ({medium}–{high}%)
+        </span>
       </span>
       <span className="inline-flex items-center gap-1.5">
         <span className="size-3 rounded bg-rose-500" /> {t("persona.match.legendLow")}
+        <span className="tabular-nums opacity-70">(&lt;{medium}%)</span>
       </span>
     </div>
   );
@@ -960,10 +1043,12 @@ interface HeatmapProps {
   personas: MatchPersonaRef[];
   matrix: Map<string, MatchCell>;
   revealed: Set<string>;
+  /** T826 — the project's good-fit bar driving the colour bands. */
+  threshold: number;
   onPick: (active: ActiveCell) => void;
 }
 
-function Heatmap({ sources, personas, matrix, revealed, onPick }: Readonly<HeatmapProps>) {
+function Heatmap({ sources, personas, matrix, revealed, threshold, onPick }: Readonly<HeatmapProps>) {
   const gridTemplate = {
     gridTemplateColumns: `minmax(150px, 1.4fr) repeat(${personas.length}, minmax(56px, 1fr))`,
   };
@@ -992,7 +1077,7 @@ function Heatmap({ sources, personas, matrix, revealed, onPick }: Readonly<Heatm
                 if (!revealed.has(key) || !cell) {
                   return <div key={persona.id} className="h-12 animate-pulse rounded-xl bg-muted/60" />;
                 }
-                const tone = fitTone(cell.fitScore);
+                const tone = fitTone(cell.fitScore, threshold);
                 // T704 — how this pair moved since the previous run.
                 const delta =
                   typeof cell.previousFitScore === "number"
@@ -1036,7 +1121,15 @@ function RankPanel({
   subtitle,
   icon: Icon,
   rows,
-}: Readonly<{ title: string; subtitle: string; icon: typeof IconLink; rows: RankRow[] }>) {
+  threshold,
+}: Readonly<{
+  title: string;
+  subtitle: string;
+  icon: typeof IconLink;
+  rows: RankRow[];
+  /** T826 — the project's good-fit bar driving the bar colours. */
+  threshold: number;
+}>) {
   return (
     <div className="bento-tile bento-glass flex flex-col gap-3 rounded-2xl p-4">
       <div className="flex items-center gap-2">
@@ -1052,7 +1145,7 @@ function RankPanel({
       </div>
       <div className="flex flex-col gap-1.5">
         {rows.map((row) => {
-          const tone = fitTone(row.score);
+          const tone = fitTone(row.score, threshold);
           return (
             <button
               key={row.label}
@@ -1140,16 +1233,19 @@ function Sparkline({ points }: Readonly<{ points: MatchTrendPoint[] }>) {
 function CellSheet({
   active,
   series,
+  threshold,
   onClose,
 }: Readonly<{
   active: ActiveCell | null;
   /** T704 — this pair's fit history, oldest first (undefined before any run). */
   series?: MatchTrendPoint[];
+  /** T826 — the project's good-fit bar, so the drill-in agrees with the heatmap. */
+  threshold: number;
   onClose: () => void;
 }>) {
   const { t } = useTranslation();
   const cell = active?.cell;
-  const tone = cell ? fitTone(cell.fitScore) : null;
+  const tone = cell ? fitTone(cell.fitScore, threshold) : null;
   return (
     <Sheet open={active !== null} onOpenChange={(open) => !open && onClose()}>
       <SheetContent side="right" className="flex w-full flex-col gap-0 overflow-y-auto sm:max-w-md">
