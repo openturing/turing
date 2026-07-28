@@ -34,6 +34,7 @@ import com.viglet.turing.commons.sn.bean.TurSNFilterParams;
 import com.viglet.turing.commons.sn.bean.TurSNSiteSearchFacetBean;
 import com.viglet.turing.commons.sn.bean.TurSNSiteSearchFacetItemBean;
 import com.viglet.turing.commons.sn.bean.TurSNSiteSearchFacetLabelBean;
+import com.viglet.turing.commons.sn.field.TurSNFieldLabel;
 import com.viglet.turing.commons.sn.search.TurSNSiteSearchContext;
 import com.viglet.turing.commons.utils.TurCommonsUtils;
 import com.viglet.turing.persistence.dto.sn.field.TurSNSiteFieldExtDto;
@@ -314,17 +315,10 @@ public class TurSNFacetRenderer {
     private static TurSNSiteSearchFacetBean searchFacetBean(TurSNSiteSearchContext context,
             TurSNSiteFieldExtDto fieldExtDto,
             List<TurSNSiteSearchFacetItemBean> items) {
-        TurSNSiteFieldExtFacetDto facetDto = fieldExtDto.getFacetLocales().stream()
-                .filter(o -> o.getLocale().toString().equals(context.getLocale().toString()))
-                .findFirst()
-                .orElse(TurSNSiteFieldExtFacetDto.builder()
-                        .locale(context.getLocale())
-                        .label(fieldExtDto.getFacetName())
-                        .build());
         return new TurSNSiteSearchFacetBean()
                 .setLabel(new TurSNSiteSearchFacetLabelBean()
                         .setLang(context.getLocale().toString())
-                        .setText(facetDto.getLabel()))
+                        .setText(groupLabel(context, fieldExtDto)))
                 .setName(fieldExtDto.getName())
                 .setDescription(fieldExtDto.getDescription())
                 .setType(fieldExtDto.getType())
@@ -334,6 +328,29 @@ public class TurSNFacetRenderer {
                         fieldExtDto.getName()).toString())
                 .setSelectedFilterQueries(TurSNUtils.filterQueryByFieldName(context.getUri(),
                         fieldExtDto.getName()));
+    }
+
+    /**
+     * T809 / §LVI.2 (Block BH) — resolves a facet group header: the locale-matched
+     * {@code TurSNSiteFieldExtFacet} label, else the field's {@code facetName},
+     * else a humanized field name. A field created by an auto-create path (crawl /
+     * structured feed) has no locale rows <em>and</em> a null {@code facetName}, so
+     * without the last-resort fallback the header rendered blank next to a fully
+     * populated facet. Configured labels always win; facet <em>value</em> labels
+     * already fall back to the raw attribute value.
+     */
+    private static String groupLabel(TurSNSiteSearchContext context,
+            TurSNSiteFieldExtDto fieldExtDto) {
+        String localeLabel = Optional.ofNullable(fieldExtDto.getFacetLocales())
+                .orElse(Collections.emptySet()).stream()
+                .filter(facet -> facet.getLocale() != null && facet.getLocale().toString()
+                        .equals(context.getLocale().toString()))
+                .map(TurSNSiteFieldExtFacetDto::getLabel)
+                .filter(label -> label != null && !label.isBlank())
+                .findFirst()
+                .orElse(null);
+        return localeLabel != null ? localeLabel
+                : TurSNFieldLabel.orHumanized(fieldExtDto.getFacetName(), fieldExtDto.getName());
     }
 
     @NotNull

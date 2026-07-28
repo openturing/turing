@@ -45,6 +45,7 @@ import com.viglet.turing.commons.sn.bean.TurSNSiteSearchGroupBean;
 import com.viglet.turing.commons.sn.bean.TurSNSiteSearchWidgetBean;
 import com.viglet.turing.commons.sn.bean.TurSNSiteSpotlightDocumentBean;
 import com.viglet.turing.commons.sn.bean.spellcheck.TurSNSiteSpellCheckBean;
+import com.viglet.turing.commons.sn.field.TurSNFieldLabel;
 import com.viglet.turing.commons.sn.search.TurSNParamType;
 import com.viglet.turing.commons.sn.search.TurSNSiteSearchContext;
 import com.viglet.turing.commons.utils.TurCommonsUtils;
@@ -286,14 +287,27 @@ public class TurSNSearchProcess {
                                 facetMap);
         }
 
+        /**
+         * T809 / §LVI.2 (Block BH) — the facet-label rows a facet definition is built
+         * from. A configured label wins; when the field has no label row carrying text
+         * (auto-created crawl/structured-feed fields have none) the synthetic row falls
+         * back to {@code facetName}, then to a humanized field name, so the group header
+         * never renders blank.
+         */
         @NotNull
         private HashSet<TurSNSiteFieldExtFacet> facetLocalesFor(TurSNSiteSearchSnapshot snap,
                         TurSNSiteFieldExt field, Locale locale) {
                 Set<TurSNSiteFieldExtFacet> labels = snap.facetLabelsByFieldId()
                                 .getOrDefault(field.getId(), Collections.emptySet());
-                return new HashSet<>(Collections.singletonList(labels.stream().findFirst()
+                return new HashSet<>(Collections.singletonList(labels.stream()
+                                .filter(label -> label.getLabel() != null
+                                                && !label.getLabel().isBlank())
+                                .findFirst()
                                 .orElse(TurSNSiteFieldExtFacet.builder().locale(locale)
-                                                .label(field.getFacetName()).build())));
+                                                .label(TurSNFieldLabel.orHumanized(
+                                                                field.getFacetName(),
+                                                                field.getName()))
+                                                .build())));
         }
 
         private TurSNSiteSearchBean getSearchBeanForResults(TurSNSiteSearchContext context,

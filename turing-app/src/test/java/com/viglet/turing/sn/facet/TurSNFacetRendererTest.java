@@ -19,6 +19,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -36,6 +37,7 @@ import com.viglet.turing.commons.sn.bean.TurSNSearchParams;
 import com.viglet.turing.commons.sn.search.TurSNSiteSearchContext;
 import com.viglet.turing.persistence.dto.sn.field.TurSNSiteFieldExtDto;
 import com.viglet.turing.persistence.model.sn.TurSNSite;
+import com.viglet.turing.persistence.model.sn.field.TurSNSiteFieldExtFacet;
 import com.viglet.turing.plugins.se.TurSearchEnginePluginFactory;
 import com.viglet.turing.se.facet.TurSEFacetResult;
 import com.viglet.turing.se.facet.TurSEFacetResultAttr;
@@ -173,7 +175,81 @@ class TurSNFacetRendererTest {
         assertThat(result.getFirst().getFacets().getFirst().getLabel()).isEqualTo("books");
     }
 
+    /**
+     * T809 / §LVI.2 — an auto-provisioned crawl/feed facet field has no locale label
+     * rows <em>and</em> a null {@code facetName}, which used to render a blank group
+     * header next to a fully populated facet.
+     */
+    @Test
+    void responseFacet_groupLabelFallsBackToHumanizedFieldNameWhenNothingIsConfigured() {
+        List<TurSNSiteSearchFacetBean> result = renderFacet(
+                labelledFacetMap("contextWindow", null, null));
+
+        assertThat(result).hasSize(1);
+        assertThat(result.getFirst().getLabel().getText()).isEqualTo("Context Window");
+    }
+
+    @Test
+    void responseFacet_groupLabelUsesFacetNameWhenThereIsNoLocaleLabel() {
+        List<TurSNSiteSearchFacetBean> result = renderFacet(
+                labelledFacetMap("kind", "Model Type", null));
+
+        assertThat(result.getFirst().getLabel().getText()).isEqualTo("Model Type");
+    }
+
+    @Test
+    void responseFacet_groupLabelPrefersTheLocaleMatchedLabel() {
+        List<TurSNSiteSearchFacetBean> result = renderFacet(
+                labelledFacetMap("kind", "Model Type", "Kind (en_US)"));
+
+        assertThat(result.getFirst().getLabel().getText()).isEqualTo("Kind (en_US)");
+    }
+
+    @Test
+    void responseFacet_groupLabelSkipsABlankLocaleLabel() {
+        List<TurSNSiteSearchFacetBean> result = renderFacet(
+                labelledFacetMap("kind", "Model Type", "  "));
+
+        assertThat(result.getFirst().getLabel().getText()).isEqualTo("Model Type");
+    }
+
+    @Test
+    void responseFacet_groupLabelFallsBackToHumanizedNameWhenBothLabelSourcesAreBlank() {
+        List<TurSNSiteSearchFacetBean> result = renderFacet(
+                labelledFacetMap("pricing_inputPer1M", "  ", null));
+
+        assertThat(result.getFirst().getLabel().getText()).isEqualTo("Pricing Input Per 1M");
+    }
+
     // ---- helpers ---------------------------------------------------------
+
+    /** Renders the main facets for the single facet field declared in {@code facetMap}. */
+    private List<TurSNSiteSearchFacetBean> renderFacet(
+            Map<String, TurSNSiteFieldExtDto> facetMap) {
+        String fieldName = facetMap.keySet().iterator().next();
+        lenient().when(turSolrQueryBuilder.getFqFields(any(TurSNFilterParams.class)))
+                .thenReturn(Collections.emptyList());
+        return renderer.responseFacet(context(), site, List.of(), facetMap,
+                resultsWithFacet(fieldName, "CHAT", 3));
+    }
+
+    /**
+     * A one-field facet map with an explicit {@code facetName} (the non-localized
+     * label) and, when {@code localeLabel} is non-null, one {@code en_US} label row.
+     */
+    private Map<String, TurSNSiteFieldExtDto> labelledFacetMap(String name, String facetName,
+            String localeLabel) {
+        TurSNSiteFieldExtDto dto = new TurSNSiteFieldExtDto();
+        dto.setName(name);
+        dto.setFacetName(facetName);
+        dto.setSecondaryFacet(false);
+        dto.setFacetLocales(localeLabel == null ? Collections.emptySet()
+                : Set.of(TurSNSiteFieldExtFacet.builder().locale(Locale.US).label(localeLabel)
+                        .build()));
+        Map<String, TurSNSiteFieldExtDto> map = new HashMap<>();
+        map.put(name, dto);
+        return map;
+    }
 
     private TurSNSiteSearchContext context() {
         TurSNSearchParams searchParams = new TurSNSearchParams();

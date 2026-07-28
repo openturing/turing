@@ -2745,16 +2745,6 @@ reason it broke **silently** is a real Turing robustness gap: the renderer has n
 sensible defaults and the auto-provisioner leaves the mapping empty. This block closes
 that so a feed/crawl-indexed site renders readably out of the box.
 
-### LVI.2 Facet group-label fallback to the field name (T809)
-In `TurSNFacetRenderer.searchFacetBean` (and the parallel `facetLocalesFor` in
-`TurSNSearchProcess`), when neither a locale-matched facet label nor `facetName` is
-present, fall back to a **humanized field name** (e.g. `pricing_inputPer1M` →
-"Pricing Input Per 1M", or at minimum the raw field name) so an auto-provisioned
-crawl/feed facet field never renders a blank header. Facet *value* labels already fall
-back to the raw attribute value (lines ~280-283), so this closes the remaining
-label-less case — the group header. Locale-scoped labels still win when configured;
-this is strictly a last resort.
-
 ### LVI.3 Auto-provisioning wires default fields + facet labels from the feed manifest (T810)
 Extend `TurStructuredFeedProvisioningOnStartup` (T796) so the structured-feed source /
 `VigletFieldManifest` can declare which feed fields map to title/description/text/url/
