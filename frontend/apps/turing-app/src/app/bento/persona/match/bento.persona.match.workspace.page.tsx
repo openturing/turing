@@ -5,6 +5,7 @@ import {
   useDeleteMatchProject,
   useMatchMatrix,
   useMatchProject,
+  useMatchTrend,
   useUpdateMatchProject,
 } from "@/api/queries/persona-match.queries";
 import { useLlmInstances } from "@/api/queries/llm-instance.queries";
@@ -34,8 +35,11 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   buildMatrixMap,
+  buildTrendMap,
   cellKey,
+  driftTone,
   fitTone,
+  formatDelta,
   projectAvgFit,
   rankByContent,
   rankByPersona,
@@ -48,6 +52,7 @@ import {
   type MatchSchedule,
   type MatchSource,
   type MatchSourceType,
+  type MatchTrendPoint,
 } from "@/models/persona/persona-match.model";
 import { useQueryClient } from "@tanstack/react-query";
 import {
@@ -72,6 +77,7 @@ import {
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate, useParams } from "react-router-dom";
+import { MatchTuningSection } from "./match-tuning.section";
 
 const SOURCE_TYPE_ICON: Record<MatchSourceType, typeof IconLink> = {
   URL: IconLink,
@@ -335,6 +341,7 @@ function ProjectWorkspace({ projectId }: Readonly<{ projectId: string }>) {
 
   const { data: project } = useMatchProject(projectId);
   const { data: matrixData } = useMatchMatrix(projectId);
+  const { data: trendData } = useMatchTrend(projectId);
   const { data: personaPool } = usePersonas();
   const { data: llmInstances } = useLlmInstances();
 
@@ -383,6 +390,7 @@ function ProjectWorkspace({ projectId }: Readonly<{ projectId: string }>) {
     () => (everRun && total > 0 ? projectAvgFit(sources, personas, matrix) : null),
     [everRun, total, sources, personas, matrix],
   );
+  const trendMap = useMemo(() => buildTrendMap(trendData), [trendData]);
   const byContent = useMemo(() => rankByContent(sources, personas, matrix), [sources, personas, matrix]);
   const byPersona = useMemo(() => rankByPersona(sources, personas, matrix), [sources, personas, matrix]);
   const selectedPersonaIds = useMemo(() => personas.map((p) => p.id), [personas]);
@@ -903,9 +911,16 @@ function ProjectWorkspace({ projectId }: Readonly<{ projectId: string }>) {
             </div>
           )}
         </BentoFormSection>
+        {everRun && (
+          <MatchTuningSection projectId={projectId} sources={sources} personas={personas} />
+        )}
       </div>
 
-      <CellSheet active={activeCell} onClose={() => setActiveCell(null)} />
+      <CellSheet
+        active={activeCell}
+        series={activeCell ? trendMap.get(cellKey(activeCell.source.id, activeCell.persona.id)) : undefined}
+        onClose={() => setActiveCell(null)}
+      />
       <SnDocumentPicker open={pickerOpen} onOpenChange={setPickerOpen} onPick={pickDoc} />
     </>
   );
@@ -978,15 +993,27 @@ function Heatmap({ sources, personas, matrix, revealed, onPick }: Readonly<Heatm
                   return <div key={persona.id} className="h-12 animate-pulse rounded-xl bg-muted/60" />;
                 }
                 const tone = fitTone(cell.fitScore);
+                // T704 — how this pair moved since the previous run.
+                const delta =
+                  typeof cell.previousFitScore === "number"
+                    ? cell.fitScore - cell.previousFitScore
+                    : null;
                 return (
                   <button
                     key={persona.id}
                     type="button"
                     onClick={() => onPick({ source, persona, cell })}
-                    title={`${source.name} × ${persona.name}: ${Math.round(cell.fitScore)}%`}
-                    className={`grid h-12 place-items-center rounded-xl text-sm font-semibold text-white shadow-sm transition-transform hover:scale-[1.06] focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 ${tone.fill}`}
+                    title={`${source.name} × ${persona.name}: ${Math.round(cell.fitScore)}%${
+                      delta === null ? "" : ` (${formatDelta(delta)})`
+                    }`}
+                    className={`relative grid h-12 place-items-center rounded-xl text-sm font-semibold text-white shadow-sm transition-transform hover:scale-[1.06] focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 ${tone.fill}`}
                   >
                     {Math.round(cell.fitScore)}
+                    {delta !== null && Math.abs(delta) >= 1 && (
+                      <span className="absolute right-1 top-0.5 text-[9px] font-bold leading-none opacity-90">
+                        {formatDelta(delta)}
+                      </span>
+                    )}
                   </button>
                 );
               })}
@@ -1048,7 +1075,78 @@ function RankPanel({
   );
 }
 
-function CellSheet({ active, onClose }: Readonly<{ active: ActiveCell | null; onClose: () => void }>) {
+
+/**
+ * T704 — the drill-in's fit history: the movement since the previous run plus a
+ * dependency-free sparkline of the whole series. Silent when a pair has only ever
+ * been measured once.
+ */
+function CellHistory({
+  cell,
+  series,
+}: Readonly<{ cell: MatchCell; series?: MatchTrendPoint[] }>) {
+  const { t } = useTranslation();
+  const points = series ?? [];
+  const delta =
+    typeof cell.previousFitScore === "number" ? cell.fitScore - cell.previousFitScore : null;
+  if (delta === null && points.length < 2) {
+    return null;
+  }
+  const tone = driftTone(delta ?? 0);
+  return (
+    <div className={`flex items-center gap-3 rounded-xl border px-3 py-2.5 ${tone.border} ${tone.soft}`}>
+      <div className="min-w-0 flex-1">
+        <p className="text-xs font-medium">{t("persona.match.sinceLastRun")}</p>
+        <p className="text-xs text-muted-foreground">
+          {delta === null
+            ? t("persona.match.runsOnRecord", { count: points.length })
+            : t("persona.match.driftLine", {
+                previous: Math.round(cell.previousFitScore as number),
+                current: Math.round(cell.fitScore),
+              })}
+        </p>
+      </div>
+      {points.length >= 2 && <Sparkline points={points} />}
+      {delta !== null && (
+        <span className={`shrink-0 text-sm font-semibold ${tone.text}`}>{formatDelta(delta)}</span>
+      )}
+    </div>
+  );
+}
+
+/** Inline SVG polyline over a 0–100 fit series — no chart library needed here. */
+function Sparkline({ points }: Readonly<{ points: MatchTrendPoint[] }>) {
+  const width = 84;
+  const height = 26;
+  const step = points.length > 1 ? width / (points.length - 1) : width;
+  const path = points
+    .map((p, i) => `${i * step},${height - (Math.min(100, Math.max(0, p.fitScore)) / 100) * height}`)
+    .join(" ");
+  return (
+    <svg width={width} height={height} viewBox={`0 0 ${width} ${height}`} aria-hidden="true" className="shrink-0">
+      <polyline
+        points={path}
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.75"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        className="text-indigo-500 dark:text-indigo-300"
+      />
+    </svg>
+  );
+}
+
+function CellSheet({
+  active,
+  series,
+  onClose,
+}: Readonly<{
+  active: ActiveCell | null;
+  /** T704 — this pair's fit history, oldest first (undefined before any run). */
+  series?: MatchTrendPoint[];
+  onClose: () => void;
+}>) {
   const { t } = useTranslation();
   const cell = active?.cell;
   const tone = cell ? fitTone(cell.fitScore) : null;
@@ -1085,6 +1183,8 @@ function CellSheet({ active, onClose }: Readonly<{ active: ActiveCell | null; on
                   </div>
                 </div>
               </div>
+
+              <CellHistory cell={cell} series={series} />
 
               {cell.summary && <p className="text-sm text-muted-foreground">{cell.summary}</p>}
 

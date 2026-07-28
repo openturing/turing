@@ -50,6 +50,8 @@ export interface MatchCell {
   summary?: string | null;
   fits: string[];
   misfits: MatchMisfit[];
+  /** T704 — the score this pair held before the last run; null on a first run. */
+  previousFitScore?: number | null;
 }
 
 /** Project summary (list) — `sources`/`personas` omitted, counts present. */
@@ -102,6 +104,131 @@ export interface MatchRunEvent {
   cell?: MatchCell | null;
   lastRunAt?: string | null;
   error?: string | null;
+}
+
+// ---------------------------------------------------------------------------
+// T704 — fit trend/history, drift and adjustment suggestions.
+// ---------------------------------------------------------------------------
+
+/** One measurement in a fit series. `reused` = the run skipped re-evaluation. */
+export interface MatchTrendPoint {
+  evaluatedAt: string;
+  fitScore: number;
+  readabilityScore: number;
+  llmUsed: boolean;
+  reused: boolean;
+}
+
+export interface MatchCellSeries {
+  sourceId: string;
+  personaId: string;
+  points: MatchTrendPoint[];
+}
+
+export interface MatchTrend {
+  projectId: string;
+  runCount: number;
+  /** Project-wide average per run, oldest first. */
+  average: MatchTrendPoint[];
+  cells: MatchCellSeries[];
+}
+
+/** How one (content × persona) pair moved between the last two runs. */
+export interface MatchDriftEntry {
+  sourceId: string;
+  personaId: string;
+  previousFit: number;
+  currentFit: number;
+  delta: number;
+  crossedBelowFit: boolean;
+  crossedAboveFit: boolean;
+  contentChanged: boolean;
+}
+
+export interface MatchDrift {
+  projectId: string;
+  runCount: number;
+  previousRunAt: string | null;
+  currentRunAt: string | null;
+  previousAvg: number;
+  currentAvg: number;
+  regressedCount: number;
+  improvedCount: number;
+  entries: MatchDriftEntry[];
+}
+
+export type MatchAdjustmentTarget = "CONTENT" | "PERSONA";
+
+export interface MatchAdjustmentItem {
+  target: MatchAdjustmentTarget;
+  targetId: string;
+  targetName: string | null;
+  avgFit: number;
+  delta?: number | null;
+  rationale?: string | null;
+  actions: string[];
+}
+
+export interface MatchAdjustments {
+  projectId: string;
+  /** false = the deterministic fallback answered (no LLM, or unparsable verdict). */
+  llmUsed: boolean;
+  error?: string | null;
+  generatedAt: string;
+  items: MatchAdjustmentItem[];
+}
+
+/** Fit at/above this counts as a good fit — mirrors the backend threshold. */
+export const GOOD_FIT_THRESHOLD = 75;
+
+/** Colour + i18n key for a movement in fit points. */
+export interface DriftTone {
+  text: string;
+  soft: string;
+  border: string;
+  /** `persona.match.driftDirection.<direction>`. */
+  direction: "up" | "down" | "flat";
+}
+
+export function driftTone(delta: number): DriftTone {
+  if (delta >= 1) {
+    return {
+      text: "text-emerald-700 dark:text-emerald-300",
+      soft: "bg-emerald-500/10",
+      border: "border-emerald-500/30",
+      direction: "up",
+    };
+  }
+  if (delta <= -1) {
+    return {
+      text: "text-rose-700 dark:text-rose-300",
+      soft: "bg-rose-500/10",
+      border: "border-rose-500/30",
+      direction: "down",
+    };
+  }
+  return {
+    text: "text-muted-foreground",
+    soft: "bg-muted/50",
+    border: "border-border/60",
+    direction: "flat",
+  };
+}
+
+/** Signed, one-decimal delta label ("+4.2" / "-11" / "0"). */
+export function formatDelta(delta: number): string {
+  const rounded = Math.round(delta * 10) / 10;
+  if (rounded === 0) return "0";
+  return `${rounded > 0 ? "+" : ""}${rounded}`;
+}
+
+/** A cell's series keyed like the matrix map, for the drill-in sparkline. */
+export function buildTrendMap(trend?: MatchTrend): Map<string, MatchTrendPoint[]> {
+  const map = new Map<string, MatchTrendPoint[]>();
+  (trend?.cells ?? []).forEach((series) =>
+    map.set(cellKey(series.sourceId, series.personaId), series.points),
+  );
+  return map;
 }
 
 // ---------------------------------------------------------------------------

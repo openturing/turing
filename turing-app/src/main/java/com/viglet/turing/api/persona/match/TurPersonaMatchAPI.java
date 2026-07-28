@@ -27,16 +27,21 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.viglet.turing.api.exception.TurNotFoundException;
+import com.viglet.turing.genai.persona.match.TurPersonaMatchAdjustmentService;
 import com.viglet.turing.genai.persona.match.TurPersonaMatchAnalysisService;
 import com.viglet.turing.genai.persona.match.TurPersonaMatchEventBus;
+import com.viglet.turing.genai.persona.match.TurPersonaMatchHistoryService;
 import com.viglet.turing.genai.persona.match.TurPersonaMatchMatrixDto;
 import com.viglet.turing.genai.persona.match.TurPersonaMatchRunEvent;
 import com.viglet.turing.genai.persona.match.TurPersonaMatchService;
+import com.viglet.turing.genai.persona.match.dto.TurPersonaMatchAdjustmentDto;
+import com.viglet.turing.genai.persona.match.dto.TurPersonaMatchDriftDto;
 import com.viglet.turing.genai.persona.match.dto.TurPersonaMatchPersonaRefDto;
 import com.viglet.turing.genai.persona.match.dto.TurPersonaMatchProjectDto;
 import com.viglet.turing.genai.persona.match.dto.TurPersonaMatchReportDto;
 import com.viglet.turing.genai.persona.match.dto.TurPersonaMatchSourceDto;
 import com.viglet.turing.genai.persona.match.dto.TurPersonaMatchSourceRequest;
+import com.viglet.turing.genai.persona.match.dto.TurPersonaMatchTrendDto;
 import com.viglet.turing.tenant.TurTenantContext;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -53,6 +58,11 @@ import reactor.core.scheduler.Schedulers;
  * persisted matrix, and the N×N run — both blocking and as a live SSE stream
  * that fills the studio heatmap as cells complete.
  *
+ * <p>T704 adds the tuning-loop reads on top: {@code /trend} (per-cell fit history
+ * across runs + the run-average series), {@code /drift} (how fit moved between the
+ * last two runs) and {@code /adjustments} (LLM-suggested persona/content edits —
+ * a POST because it may spend tokens).
+ *
  * @author Alexandre Oliveira
  * @since 2026.3.4
  */
@@ -61,19 +71,34 @@ import reactor.core.scheduler.Schedulers;
 @Tag(name = "Persona Match", description = "N×N persona↔content fit projects")
 public class TurPersonaMatchAPI {
 
+    private static final String PROJECT = "Persona Match project";
+
     private final TurPersonaMatchService service;
     private final TurPersonaMatchAnalysisService analysisService;
+    private final TurPersonaMatchHistoryService historyService;
+    private final TurPersonaMatchAdjustmentService adjustmentService;
     private final TurPersonaMatchEventBus eventBus;
     private final TurTenantContext tenantContext;
 
     public TurPersonaMatchAPI(TurPersonaMatchService service,
             TurPersonaMatchAnalysisService analysisService,
+            TurPersonaMatchHistoryService historyService,
+            TurPersonaMatchAdjustmentService adjustmentService,
             TurPersonaMatchEventBus eventBus,
             TurTenantContext tenantContext) {
         this.service = service;
         this.analysisService = analysisService;
+        this.historyService = historyService;
+        this.adjustmentService = adjustmentService;
         this.eventBus = eventBus;
         this.tenantContext = tenantContext;
+    }
+
+    /** 404 for a project id that does not resolve, before doing any work. */
+    private void requireProject(String id) {
+        if (service.get(id).isEmpty()) {
+            throw TurNotFoundException.of(PROJECT, id);
+        }
     }
 
     // ---- project CRUD ------------------------------------------------------
@@ -87,7 +112,7 @@ public class TurPersonaMatchAPI {
     @Operation(summary = "Show a project (with contents + personas)")
     @GetMapping("/{id}")
     public TurPersonaMatchProjectDto get(@PathVariable String id) {
-        return service.get(id).orElseThrow(() -> TurNotFoundException.of("Persona Match project", id));
+        return service.get(id).orElseThrow(() -> TurNotFoundException.of(PROJECT, id));
     }
 
     @Operation(summary = "Create a project")
@@ -101,7 +126,7 @@ public class TurPersonaMatchAPI {
     public TurPersonaMatchProjectDto update(@PathVariable String id,
             @RequestBody TurPersonaMatchProjectDto dto) {
         return service.update(id, dto)
-                .orElseThrow(() -> TurNotFoundException.of("Persona Match project", id));
+                .orElseThrow(() -> TurNotFoundException.of(PROJECT, id));
     }
 
     @Operation(summary = "Delete a project")
@@ -138,7 +163,7 @@ public class TurPersonaMatchAPI {
     public TurPersonaMatchSourceDto addSource(@PathVariable String id,
             @RequestBody TurPersonaMatchSourceRequest req) {
         return service.addSource(id, req)
-                .orElseThrow(() -> TurNotFoundException.of("Persona Match project", id));
+                .orElseThrow(() -> TurNotFoundException.of(PROJECT, id));
     }
 
     @Operation(summary = "Upload a file content (auto-extracts)")
@@ -146,7 +171,7 @@ public class TurPersonaMatchAPI {
     public TurPersonaMatchSourceDto uploadSource(@PathVariable String id,
             @RequestPart("file") MultipartFile file) {
         return service.uploadSource(id, file)
-                .orElseThrow(() -> TurNotFoundException.of("Persona Match project", id));
+                .orElseThrow(() -> TurNotFoundException.of(PROJECT, id));
     }
 
     @Operation(summary = "Re-extract a content's text")
@@ -177,15 +202,37 @@ public class TurPersonaMatchAPI {
         return service.report(id);
     }
 
+    // ---- trend / drift / adjustments (T704) --------------------------------
+
+    @Operation(summary = "Per-cell fit history across runs, plus the run-average series")
+    @GetMapping("/{id}/trend")
+    public TurPersonaMatchTrendDto trend(@PathVariable String id) {
+        requireProject(id);
+        return historyService.trend(id);
+    }
+
+    @Operation(summary = "How fit moved between the last two runs (sharpest regression first)")
+    @GetMapping("/{id}/drift")
+    public TurPersonaMatchDriftDto drift(@PathVariable String id) {
+        requireProject(id);
+        return historyService.drift(id);
+    }
+
+    @Operation(summary = "Suggested persona/content adjustments closing the tuning loop")
+    @PostMapping("/{id}/adjustments")
+    public TurPersonaMatchAdjustmentDto adjustments(@PathVariable String id,
+            @RequestParam(defaultValue = "false") boolean regenerate) {
+        requireProject(id);
+        return adjustmentService.suggest(id, regenerate);
+    }
+
     // ---- run ---------------------------------------------------------------
 
     @Operation(summary = "Run the N×N analysis (blocking) and return the matrix")
     @PostMapping("/{id}/run")
     public TurPersonaMatchMatrixDto run(@PathVariable String id,
             @RequestParam(defaultValue = "false") boolean force) {
-        if (service.get(id).isEmpty()) {
-            throw TurNotFoundException.of("Persona Match project", id);
-        }
+        requireProject(id);
         return analysisService.run(id, force);
     }
 
@@ -193,9 +240,7 @@ public class TurPersonaMatchAPI {
     @PostMapping(value = "/{id}/run/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     public Flux<ServerSentEvent<TurPersonaMatchRunEvent>> runStream(@PathVariable String id,
             @RequestParam(defaultValue = "false") boolean force) {
-        if (service.get(id).isEmpty()) {
-            throw TurNotFoundException.of("Persona Match project", id);
-        }
+        requireProject(id);
         String tenant = tenantContext.getCurrentTenant();
 
         Flux<ServerSentEvent<TurPersonaMatchRunEvent>> data = eventBus.subscribe(id)

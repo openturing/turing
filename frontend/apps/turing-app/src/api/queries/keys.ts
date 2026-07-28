@@ -112,6 +112,11 @@ export const queryKeys = {
       [...queryKeys.personaMatch.all(), 'detail', id] as const,
     matrix: (id: string) =>
       [...queryKeys.personaMatch.all(), 'matrix', id] as const,
+    // T704 — fit trend/history + drift between the last two runs.
+    trend: (id: string) =>
+      [...queryKeys.personaMatch.all(), 'trend', id] as const,
+    drift: (id: string) =>
+      [...queryKeys.personaMatch.all(), 'drift', id] as const,
   },
   // Block AU (T706) — Persona Dialogue: saved multi-project dialogues.
   personaDialogue: {

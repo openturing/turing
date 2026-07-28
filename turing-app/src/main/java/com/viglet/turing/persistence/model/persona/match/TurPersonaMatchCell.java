@@ -100,4 +100,16 @@ public class TurPersonaMatchCell implements Serializable {
 
     @Column(name = "evaluated_at")
     private Instant evaluatedAt;
+
+    /**
+     * T704 — the fit score this cell held before the last recomputation, so the
+     * matrix can show drift without joining the history series. {@code null}
+     * until a cell has been recomputed at least once.
+     */
+    @Column(name = "previous_fit_score")
+    private Double previousFitScore;
+
+    /** T704 — when {@link #previousFitScore} was measured. */
+    @Column(name = "previous_evaluated_at")
+    private Instant previousEvaluatedAt;
 }

@@ -117,27 +117,6 @@
 - 💭 **T480** (deps: T477) **Hosted "try it free" path via Viglet Cloud** — dual-path CTA (self-host docs + hosted sandbox) so visitors who won't install still reach first value. → §XXVII.3
 - 💭 **T481** (deps: real design partners) **Social-proof surface** — adopters/logos, testimonials, quantified case studies (Dify model). Never fabricated. → §XXVII.3
 
-## Block AT — Persona Match: N×N persona↔content fit projects (§XLIII)
-
-> Reframes content-fit from the per-persona validation notebook (Block AA,
-> `/bento/persona/validate/:id` — **1 persona × N contents**) into a reusable,
-> scheduled **analysis project** holding **N contents × N personas** with a full
-> fit matrix. Moves the surface up to `/bento/persona/`, beside Persona Dialogue.
-> The motivating ask: create groups/projects of contents, pick many personas, and
-> get a bidirectional report — *per content:* which persona each content best
-> serves; *per persona:* which content each persona best serves — re-run on a
-> schedule so personas and content stay tuned to each other. Reuses the Block AA
-> evaluator (`TurPersonaContentFitEvaluator`, deterministic readability ⊕ grounded
-> LLM judge) unchanged; the new work is the aggregate, the matrix, the scheduler,
-> and the studio UI. Design in [IMPROVEMENTS.md](IMPROVEMENTS.md) §XLIII.
-
-> **T696–T703 shipped** (see CHANGELOG Block AT) — domain model + project-scoped
-> extraction + N×N runner (SSE) + CRUD/report API + scheduled re-analysis + the
-> bento studio (list/workspace/heatmap/reports) + validate-route retirement. Only
-> the trend/history bet remains:
-
-- 💭 **T704** (deps: T698, T700) **Fit trend/history + adjustment suggestions** — persist per-cell score across scheduled runs; surface drift ("this content dropped below fit for persona X since last run") and LLM-suggested persona/content adjustments, closing the bidirectional tuning loop. → §XLIII
-
 ## Block AV — POST-native search & link-free response contract (§XLV)
 
 > The search response hands the client **pre-serialized GET query-string links**

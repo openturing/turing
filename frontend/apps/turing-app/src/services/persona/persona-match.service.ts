@@ -1,6 +1,8 @@
 import axios from "axios";
 import { getCsrfToken } from "@/lib/axios";
 import type {
+  MatchAdjustments,
+  MatchDrift,
   MatchMatrix,
   MatchPersonaRef,
   MatchProject,
@@ -9,6 +11,7 @@ import type {
   MatchRunEvent,
   MatchSource,
   MatchSourceRequest,
+  MatchTrend,
 } from "@/models/persona/persona-match.model";
 
 /** SSE callbacks for a streaming N×N analysis run. */
@@ -90,6 +93,29 @@ export class TurPersonaMatchService {
 
   async matrix(id: string): Promise<MatchMatrix> {
     const response = await axios.get<MatchMatrix>(`/persona-match/${id}/matrix`);
+    return response.data;
+  }
+
+  /** T704 — per-cell fit history across runs + the run-average series. */
+  async trend(id: string): Promise<MatchTrend> {
+    const response = await axios.get<MatchTrend>(`/persona-match/${id}/trend`);
+    return response.data;
+  }
+
+  /** T704 — how fit moved between the last two runs. */
+  async drift(id: string): Promise<MatchDrift> {
+    const response = await axios.get<MatchDrift>(`/persona-match/${id}/drift`);
+    return response.data;
+  }
+
+  /**
+   * T704 — suggested persona/content adjustments. A POST because it may spend
+   * tokens; `regenerate` bypasses the LLM cache for a fresh set.
+   */
+  async adjustments(id: string, regenerate = false): Promise<MatchAdjustments> {
+    const response = await axios.post<MatchAdjustments>(
+      `/persona-match/${id}/adjustments?regenerate=${regenerate}`,
+    );
     return response.data;
   }
 

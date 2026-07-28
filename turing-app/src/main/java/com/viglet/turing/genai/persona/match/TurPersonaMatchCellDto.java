@@ -19,6 +19,10 @@ import com.viglet.turing.genai.persona.fit.TurContentFitMisfit;
  * frontend {@code MatchCell} shape. Carried both in the live SSE run stream and
  * the persisted matrix report.
  *
+ * <p>T704 adds {@code previousFitScore}: the score this pair held before the last
+ * recomputation, so the heatmap can badge drift without a second request. It is
+ * {@code null} for a cell that has only ever been computed once.
+ *
  * @author Alexandre Oliveira
  * @since 2026.3.4
  */
@@ -30,5 +34,6 @@ public record TurPersonaMatchCellDto(
         boolean llmUsed,
         String summary,
         List<String> fits,
-        List<TurContentFitMisfit> misfits) {
+        List<TurContentFitMisfit> misfits,
+        Double previousFitScore) {
 }

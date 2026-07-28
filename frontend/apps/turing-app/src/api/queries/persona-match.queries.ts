@@ -1,9 +1,12 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type {
+  MatchAdjustments,
+  MatchDrift,
   MatchMatrix,
   MatchProject,
   MatchProjectRequest,
   MatchProjectSummary,
+  MatchTrend,
 } from "@/models/persona/persona-match.model";
 import { TurPersonaMatchService } from "@/services/persona/persona-match.service";
 import { queryKeys } from "./keys";
@@ -32,6 +35,34 @@ export function useMatchMatrix(id: string | undefined) {
     queryKey: id ? queryKeys.personaMatch.matrix(id) : ["persona-match", "matrix", "pending"],
     queryFn: () => service.matrix(id as string),
     enabled: Boolean(id) && id !== "new",
+  });
+}
+
+/** T704 — the per-cell fit series + run-average trend. */
+export function useMatchTrend(id: string | undefined) {
+  return useQuery<MatchTrend>({
+    queryKey: id ? queryKeys.personaMatch.trend(id) : ["persona-match", "trend", "pending"],
+    queryFn: () => service.trend(id as string),
+    enabled: Boolean(id) && id !== "new",
+  });
+}
+
+/** T704 — how fit moved between the last two runs. */
+export function useMatchDrift(id: string | undefined) {
+  return useQuery<MatchDrift>({
+    queryKey: id ? queryKeys.personaMatch.drift(id) : ["persona-match", "drift", "pending"],
+    queryFn: () => service.drift(id as string),
+    enabled: Boolean(id) && id !== "new",
+  });
+}
+
+/**
+ * T704 — LLM-suggested persona/content adjustments. A mutation rather than a
+ * query because it is an explicit, possibly token-spending action.
+ */
+export function useMatchAdjustments(id: string | undefined) {
+  return useMutation<MatchAdjustments, Error, boolean | undefined>({
+    mutationFn: (regenerate) => service.adjustments(id as string, regenerate ?? false),
   });
 }
 
@@ -73,5 +104,7 @@ export function invalidateMatchProject(
 ) {
   queryClient.invalidateQueries({ queryKey: queryKeys.personaMatch.detail(id) });
   queryClient.invalidateQueries({ queryKey: queryKeys.personaMatch.matrix(id) });
+  queryClient.invalidateQueries({ queryKey: queryKeys.personaMatch.trend(id) });
+  queryClient.invalidateQueries({ queryKey: queryKeys.personaMatch.drift(id) });
   queryClient.invalidateQueries({ queryKey: queryKeys.personaMatch.list() });
 }

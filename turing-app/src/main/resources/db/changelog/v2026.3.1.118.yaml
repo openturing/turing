@@ -1,0 +1,139 @@
+databaseChangeLog:
+  # T704 / §XLIII (Block AT) — Persona Match fit trend/history + drift.
+  #
+  #   ai_persona_match_cell_history — append-only per-cell score series. One row
+  #                                   per (project, source, persona) per run, so
+  #                                   drift and the trend chart have a memory the
+  #                                   in-place cell overwrite destroys. Trimmed to
+  #                                   turing.persona-match.history.max-points.
+  #   ai_persona_match_cell         — two NULLABLE drift columns so the matrix can
+  #                                   render "moved since last run" without
+  #                                   joining the series. Null = never recomputed
+  #                                   yet, i.e. every pre-T704 cell keeps working.
+  #
+  # Column names match the JPA field names; FK-less on purpose (the series is read
+  # in bulk and pruned explicitly alongside the cells). Portable lowercase types.
+  # Idempotent (MARK_RAN).
+
+  - changeSet:
+      id: v2026.3.1.118-create-ai_persona_match_cell_history
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - tableExists:
+                tableName: ai_persona_match_cell_history
+      changes:
+        - createTable:
+            tableName: ai_persona_match_cell_history
+            columns:
+              - column:
+                  name: id
+                  type: varchar(40)
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: project_id
+                  type: varchar(40)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: source_id
+                  type: varchar(40)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: persona_id
+                  type: varchar(40)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: fit_score
+                  type: double
+                  defaultValueNumeric: 0
+                  constraints:
+                    nullable: false
+              - column:
+                  name: readability_score
+                  type: double
+                  defaultValueNumeric: 0
+                  constraints:
+                    nullable: false
+              - column:
+                  name: llm_used
+                  type: boolean
+                  defaultValueBoolean: false
+                  constraints:
+                    nullable: false
+              - column:
+                  name: reused
+                  type: boolean
+                  defaultValueBoolean: false
+                  constraints:
+                    nullable: false
+              - column:
+                  name: content_hash
+                  type: varchar(40)
+              - column:
+                  name: evaluated_at
+                  type: timestamp
+                  constraints:
+                    nullable: false
+              - column:
+                  name: tenantId
+                  type: varchar(40)
+        - createIndex:
+            tableName: ai_persona_match_cell_history
+            indexName: idx_persona_match_hist_project
+            columns:
+              - column:
+                  name: project_id
+        - createIndex:
+            tableName: ai_persona_match_cell_history
+            indexName: idx_persona_match_hist_cell
+            columns:
+              - column:
+                  name: project_id
+              - column:
+                  name: source_id
+              - column:
+                  name: persona_id
+
+  - changeSet:
+      id: v2026.3.1.118-cell-previous_fit_score
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - columnExists:
+                tableName: ai_persona_match_cell
+                columnName: previous_fit_score
+      changes:
+        - addColumn:
+            tableName: ai_persona_match_cell
+            columns:
+              - column:
+                  name: previous_fit_score
+                  type: double
+                  constraints:
+                    nullable: true
+
+  - changeSet:
+      id: v2026.3.1.118-cell-previous_evaluated_at
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - columnExists:
+                tableName: ai_persona_match_cell
+                columnName: previous_evaluated_at
+      changes:
+        - addColumn:
+            tableName: ai_persona_match_cell
+            columns:
+              - column:
+                  name: previous_evaluated_at
+                  type: timestamp
+                  constraints:
+                    nullable: true

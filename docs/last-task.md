@@ -174,6 +174,7 @@ number" looked free but wasn't. Grepping three files (`ROADMAP.md`,
 
 ## Log (most recent first)
 
+- **T704 SHIPPED** (Block AT §XLIII — Persona Match fit trend/history + drift + adjustment suggestions; CLOSES Block AT) — 2026-07-28.
 - **T824 SHIPPED** (Block BM — headless admin bootstrap: `TURING_ADMIN_PASSWORD` is now really read; CLOSES Block BM) — 2026-07-28.
 
 - **T818 SHIPPED** (Block BK §LIX.1 — planning-strategy seam: new `genai.catalog.planning` package with `TurCopilotQueryPlanner` (`plan` + optional `replan(hits)`), `TurCopilotQueryPlan`, `TurCopilotQueryBodies`, `TurDeterministicCopilotQueryPlanner` (today's behaviour verbatim) + `TurCopilotQueryPlannerFactory`; nullable per-site `TurSNSiteGenAi.copilotPlanningStrategy`/`copilotPlanningMaxPasses` (Liquibase v2026.3.1.117) inherit `turing.genai.copilot.planning.*`; per-site read via new `findGenAiByNameIgnoreCase` projection to avoid LAZY nav off-session; 22 unit + 4 IT green, zero default behaviour change) — 2026-07-25.

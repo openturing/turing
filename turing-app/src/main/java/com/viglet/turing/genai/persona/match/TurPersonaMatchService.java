@@ -70,6 +70,7 @@ public class TurPersonaMatchService {
     private final TurLLMInstanceRepository llmInstanceRepository;
     private final TurPersonaMatchSourceService sourceService;
     private final TurPersonaMatchAnalysisService analysisService;
+    private final TurPersonaMatchHistoryService historyService;
 
     public TurPersonaMatchService(TurPersonaMatchProjectRepository projectRepository,
             TurPersonaMatchSourceRepository sourceRepository,
@@ -78,7 +79,8 @@ public class TurPersonaMatchService {
             TurPersonaRepository personaRepository,
             TurLLMInstanceRepository llmInstanceRepository,
             TurPersonaMatchSourceService sourceService,
-            TurPersonaMatchAnalysisService analysisService) {
+            TurPersonaMatchAnalysisService analysisService,
+            TurPersonaMatchHistoryService historyService) {
         this.projectRepository = projectRepository;
         this.sourceRepository = sourceRepository;
         this.personaJoinRepository = personaJoinRepository;
@@ -87,6 +89,7 @@ public class TurPersonaMatchService {
         this.llmInstanceRepository = llmInstanceRepository;
         this.sourceService = sourceService;
         this.analysisService = analysisService;
+        this.historyService = historyService;
     }
 
     // ---- project CRUD ------------------------------------------------------
@@ -124,8 +127,9 @@ public class TurPersonaMatchService {
         if (!projectRepository.existsById(id)) {
             return false;
         }
-        cellRepository.deleteByProjectId(id); // cells have no FK cascade
-        projectRepository.deleteById(id);     // sources + joins cascade via FK
+        cellRepository.deleteByProjectId(id);  // cells have no FK cascade
+        historyService.deleteByProject(id);    // nor does the T704 fit history
+        projectRepository.deleteById(id);      // sources + joins cascade via FK
         return true;
     }
 
@@ -177,9 +181,11 @@ public class TurPersonaMatchService {
                 .map(TurPersonaMatchPersona::getPersonaId)
                 .collect(Collectors.toSet());
 
-        // Prune cells for personas being removed.
-        current.stream().filter(id -> !valid.contains(id))
-                .forEach(id -> cellRepository.deleteByProjectIdAndPersonaId(projectId, id));
+        // Prune cells (and their T704 series) for personas being removed.
+        current.stream().filter(id -> !valid.contains(id)).forEach(id -> {
+            cellRepository.deleteByProjectIdAndPersonaId(projectId, id);
+            historyService.deleteByPersona(projectId, id);
+        });
 
         personaJoinRepository.deleteByProjectId(projectId);
         for (String personaId : valid) {
@@ -243,6 +249,7 @@ public class TurPersonaMatchService {
                 .filter(s -> s.getProject() != null && projectId.equals(s.getProject().getId()))
                 .map(source -> {
                     cellRepository.deleteByProjectIdAndSourceId(projectId, sourceId);
+                    historyService.deleteBySource(projectId, sourceId);
                     sourceRepository.delete(source);
                     return true;
                 })

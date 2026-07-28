@@ -60,6 +60,11 @@ import tools.jackson.databind.json.JsonMapper;
  * resolve correctly off the request thread. All DB writes happen back on the
  * calling thread (repository {@code saveAll}) — the pool only computes.
  *
+ * <p>T704: because a run overwrites the cell in place, every run also appends one
+ * point per cell to {@link TurPersonaMatchHistoryService the fit history} — reused
+ * cells included, so a run's average covers the whole matrix — and carries the
+ * pre-run score forward into {@code previousFitScore} for the drift badge.
+ *
  * @author Alexandre Oliveira
  * @since 2026.3.4
  */
@@ -82,6 +87,7 @@ public class TurPersonaMatchAnalysisService {
     private final TurPersonaRepository personaRepository;
     private final TurPersonaContentFitEvaluator evaluator;
     private final TurPersonaMatchEventBus eventBus;
+    private final TurPersonaMatchHistoryService historyService;
     private final TurTenantContext tenantContext;
 
     public TurPersonaMatchAnalysisService(TurPersonaMatchProjectRepository projectRepository,
@@ -91,6 +97,7 @@ public class TurPersonaMatchAnalysisService {
             TurPersonaRepository personaRepository,
             TurPersonaContentFitEvaluator evaluator,
             TurPersonaMatchEventBus eventBus,
+            TurPersonaMatchHistoryService historyService,
             TurTenantContext tenantContext) {
         this.projectRepository = projectRepository;
         this.sourceRepository = sourceRepository;
@@ -99,6 +106,7 @@ public class TurPersonaMatchAnalysisService {
         this.personaRepository = personaRepository;
         this.evaluator = evaluator;
         this.eventBus = eventBus;
+        this.historyService = historyService;
         this.tenantContext = tenantContext;
     }
 
@@ -221,9 +229,11 @@ public class TurPersonaMatchAnalysisService {
 
         TurContentFitResult r = evaluator.evaluateText(persona, source.getCachedText(),
                 source.getId(), source.getSourceName(), force);
+        // T704: the score being replaced becomes this cell's "previous" for drift.
+        Double previous = prior == null ? null : prior.getFitScore();
         TurPersonaMatchCellDto dto = new TurPersonaMatchCellDto(source.getId(), persona.getId(),
                 r.fitScore(), r.readabilityScore(), r.llmUsed(), r.summary(),
-                nullSafe(r.fits()), r.misfits() == null ? List.of() : r.misfits());
+                nullSafe(r.fits()), r.misfits() == null ? List.of() : r.misfits(), previous);
         return new Computed(source.getId(), persona.getId(), dto, hash, false);
     }
 
@@ -245,6 +255,9 @@ public class TurPersonaMatchAnalysisService {
                 .toList();
         if (!orphans.isEmpty()) {
             cellRepository.deleteAll(orphans);
+            // T704: the series of a pair that left the project goes with it.
+            orphans.forEach(o -> historyService.deleteByCell(project.getId(), o.getSourceId(),
+                    o.getPersonaId()));
         }
 
         List<TurPersonaMatchCell> toSave = new ArrayList<>();
@@ -255,6 +268,9 @@ public class TurPersonaMatchAnalysisService {
             }
             TurPersonaMatchCell cell = existing.getOrDefault(key(c.sourceId(), c.personaId()),
                     new TurPersonaMatchCell());
+            // T704: carry the score being replaced forward before overwriting it.
+            cell.setPreviousFitScore(c.dto().previousFitScore());
+            cell.setPreviousEvaluatedAt(cell.getEvaluatedAt());
             cell.setProjectId(project.getId());
             cell.setSourceId(c.sourceId());
             cell.setPersonaId(c.personaId());
@@ -271,6 +287,14 @@ public class TurPersonaMatchAnalysisService {
         if (!toSave.isEmpty()) {
             cellRepository.saveAll(toSave);
         }
+
+        // T704: one history point per cell of this run — reused ones included, so a
+        // run's average is over the whole matrix and every series stays continuous.
+        historyService.record(project.getId(), computed.stream()
+                .map(c -> new TurPersonaMatchHistoryService.RecordedCell(c.sourceId(),
+                        c.personaId(), c.dto().fitScore(), c.dto().readability(),
+                        c.dto().llmUsed(), c.reused(), c.hash()))
+                .toList(), now);
 
         project.setLastRunAt(now);
         project.setModificationDate(now);
@@ -292,7 +316,8 @@ public class TurPersonaMatchAnalysisService {
     private TurPersonaMatchCellDto toDto(TurPersonaMatchCell cell) {
         return new TurPersonaMatchCellDto(cell.getSourceId(), cell.getPersonaId(),
                 cell.getFitScore(), cell.getReadabilityScore(), cell.isLlmUsed(),
-                cell.getSummary(), readFits(cell.getFitsJson()), readMisfits(cell.getMisfitsJson()));
+                cell.getSummary(), readFits(cell.getFitsJson()), readMisfits(cell.getMisfitsJson()),
+                cell.getPreviousFitScore());
     }
 
     // ---- json helpers ------------------------------------------------------
