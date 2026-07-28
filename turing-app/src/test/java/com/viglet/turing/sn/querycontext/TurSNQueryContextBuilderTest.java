@@ -13,6 +13,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import com.viglet.turing.commons.sn.bean.TurSNSiteSearchQueryContextBean;
+import com.viglet.turing.commons.sn.field.TurSNFieldName;
 import com.viglet.turing.persistence.model.sn.TurSNSite;
 import com.viglet.turing.persistence.model.sn.field.TurSNSiteFacetFieldEnum;
 import com.viglet.turing.se.result.TurSEResults;
@@ -135,5 +136,37 @@ class TurSNQueryContextBuilderTest {
         assertThat(ctx.getDefaultFields().getText()).isEqualTo("text");
         assertThat(ctx.getDefaultFields().getTitle()).isEqualTo("title");
         assertThat(ctx.getDefaultFields().getUrl()).isEqualTo("url");
+    }
+
+    /**
+     * T808 / §LVI.1 — a site provisioned by a path that never ran
+     * {@code TurSNTemplate.defaultSNUI} (exchange import, structured-feed
+     * auto-provisioner) has every column null; the response must still name the
+     * canonical fields so the client does not render {@code ""}.
+     */
+    @Test
+    void buildFallsBackToCanonicalFieldNamesWhenSiteColumnsAreNull() {
+        TurSNSiteSearchQueryContextBean ctx = builder.build(site, results(0, 0, 10, 1, 0),
+                Locale.US);
+
+        assertThat(ctx.getDefaultFields().getTitle()).isEqualTo(TurSNFieldName.TITLE);
+        assertThat(ctx.getDefaultFields().getDescription()).isEqualTo(TurSNFieldName.ABSTRACT);
+        assertThat(ctx.getDefaultFields().getText()).isEqualTo(TurSNFieldName.TEXT);
+        assertThat(ctx.getDefaultFields().getUrl()).isEqualTo(TurSNFieldName.URL);
+        assertThat(ctx.getDefaultFields().getImage()).isEqualTo(TurSNFieldName.IMAGE);
+        assertThat(ctx.getDefaultFields().getDate())
+                .isEqualTo(TurSNFieldName.PUBLICATION_DATE);
+    }
+
+    @Test
+    void buildFallsBackPerColumnKeepingTheConfiguredOnes() {
+        site.setDefaultTitleField("label");
+        site.setDefaultDescriptionField("   ");
+
+        TurSNSiteSearchQueryContextBean ctx = builder.build(site, results(0, 0, 10, 1, 0),
+                Locale.US);
+
+        assertThat(ctx.getDefaultFields().getTitle()).isEqualTo("label");
+        assertThat(ctx.getDefaultFields().getDescription()).isEqualTo(TurSNFieldName.ABSTRACT);
     }
 }

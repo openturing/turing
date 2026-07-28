@@ -2745,18 +2745,6 @@ reason it broke **silently** is a real Turing robustness gap: the renderer has n
 sensible defaults and the auto-provisioner leaves the mapping empty. This block closes
 that so a feed/crawl-indexed site renders readably out of the box.
 
-### LVI.1 Default-field resolution fallback (T808)
-In `TurSNQueryContextBuilder.defaultFields`, when a site's `defaultTitleField` /
-`defaultDescriptionField` / `defaultTextField` / `defaultURLField` /
-`defaultImageField` / `defaultDateField` column is blank, fall back to the canonical
-`TurSNFieldName` constant (`title` / `abstract` / `text` / `url` / `image` /
-`publication_date`) instead of emitting a null field name. This is the safety net for
-sites provisioned by a path that never ran `TurSNTemplate.defaultSNUI` — the exchange
-import/restore path (`TurSNSiteImport.createSNSiteFromExchange` copies the columns
-verbatim, null if the source had them null) and the T796 auto-provisioner. It does not
-by itself fix a *name mismatch* (feed field `label` ≠ `title` — that's LVI.3), but it
-guarantees the response always names the conventional fields rather than `null`.
-
 ### LVI.2 Facet group-label fallback to the field name (T809)
 In `TurSNFacetRenderer.searchFacetBean` (and the parallel `facetLocalesFor` in
 `TurSNSearchProcess`), when neither a locale-matched facet label nor `facetName` is

@@ -178,6 +178,7 @@ number" looked free but wasn't. Grepping three files (`ROADMAP.md`,
 
 ## Log (most recent first)
 
+- **T808 SHIPPED** (Block BH §LVI.1 — search query-context default fields fall back to the canonical `TurSNFieldName` constants when a site column is blank) — 2026-07-28.
 - **T825-T831 CREATED** (📋/💭, Block BN §LXI — content-fit tuning loop: per-project LLM honored by the evaluator, per-project fit threshold, drift webhook alerts, `turing match` CI gate, provider-side verdict schema, per-target trend + export deltas, human-confirmed persona apply) — 2026-07-28.
 - **T704 SHIPPED** (Block AT §XLIII — Persona Match fit trend/history + drift + adjustment suggestions; CLOSES Block AT) — 2026-07-28.
 - **T824 SHIPPED** (Block BM — headless admin bootstrap: `TURING_ADMIN_PASSWORD` is now really read; CLOSES Block BM) — 2026-07-28.

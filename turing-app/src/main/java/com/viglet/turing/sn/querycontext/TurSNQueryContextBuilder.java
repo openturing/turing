@@ -23,6 +23,7 @@ import org.springframework.stereotype.Component;
 import com.viglet.turing.commons.sn.bean.TurSNSiteSearchDefaultFieldsBean;
 import com.viglet.turing.commons.sn.bean.TurSNSiteSearchQueryContextBean;
 import com.viglet.turing.commons.sn.bean.TurSNSiteSearchQueryContextQueryBean;
+import com.viglet.turing.commons.sn.field.TurSNFieldName;
 import com.viglet.turing.persistence.model.sn.TurSNSite;
 import com.viglet.turing.persistence.model.sn.field.TurSNSiteFacetFieldEnum;
 import com.viglet.turing.se.result.TurSEResults;
@@ -70,13 +71,29 @@ public class TurSNQueryContextBuilder {
         return value != null ? value.toString() : TurSNSiteFacetFieldEnum.AND.toString();
     }
 
+    /**
+     * T808 / §LVI.1 (Block BH) — the client reads
+     * {@code doc.fields[queryContext.defaultFields.title]}, so a blank site column
+     * hands it a {@code null} field name and every result renders {@code ""}. Sites
+     * created by a path that never runs {@code TurSNTemplate.defaultSNUI} (the
+     * exchange import/restore and the T796 structured-feed auto-provisioner) have
+     * those columns null, so fall back to the canonical {@link TurSNFieldName}
+     * constants: the response then always names the conventional fields instead of
+     * nothing. A configured column always wins.
+     */
     private static TurSNSiteSearchDefaultFieldsBean defaultFields(TurSNSite turSNSite) {
         return new TurSNSiteSearchDefaultFieldsBean()
-                .setDate(turSNSite.getDefaultDateField())
-                .setDescription(turSNSite.getDefaultDescriptionField())
-                .setImage(turSNSite.getDefaultImageField())
-                .setText(turSNSite.getDefaultTextField())
-                .setTitle(turSNSite.getDefaultTitleField())
-                .setUrl(turSNSite.getDefaultURLField());
+                .setDate(orCanonical(turSNSite.getDefaultDateField(),
+                        TurSNFieldName.PUBLICATION_DATE))
+                .setDescription(orCanonical(turSNSite.getDefaultDescriptionField(),
+                        TurSNFieldName.ABSTRACT))
+                .setImage(orCanonical(turSNSite.getDefaultImageField(), TurSNFieldName.IMAGE))
+                .setText(orCanonical(turSNSite.getDefaultTextField(), TurSNFieldName.TEXT))
+                .setTitle(orCanonical(turSNSite.getDefaultTitleField(), TurSNFieldName.TITLE))
+                .setUrl(orCanonical(turSNSite.getDefaultURLField(), TurSNFieldName.URL));
+    }
+
+    private static String orCanonical(String configured, String canonical) {
+        return configured != null && !configured.isBlank() ? configured : canonical;
     }
 }
