@@ -49,18 +49,18 @@
         <gpg.keyname>30AA85DC937DA16691466FE2A0CCF43371503F2D</gpg.keyname>
         <gpg.passphrase>${env.GPG_PASSPHRASE}</gpg.passphrase>
         <!-- Versions not managed by Spring Boot BOM -->
-        <elasticsearch.version>9.4.3</elasticsearch.version>
+        <elasticsearch.version>9.4.4</elasticsearch.version>
         <imageio.version>1.4.0</imageio.version>
         <lucene.version>10.5.0</lucene.version>
         <mapstruct.version>1.6.3</mapstruct.version>
         <minio.version>9.0.3</minio.version>
-        <mongodb.version>5.9.0</mongodb.version>
+        <mongodb.version>5.9.1</mongodb.version>
         <okhttp.version>5.4.0</okhttp.version>
         <resilience4j.version>2.4.0</resilience4j.version>
         <shedlock.version>7.7.0</shedlock.version>
         <testcontainers.version>2.0.5</testcontainers.version>
-        <tika.version>3.3.1</tika.version>
-        <jgit.version>7.7.0.202606012155-r</jgit.version>
+        <tika.version>3.3.2</tika.version>
+        <jgit.version>7.7.1.202607240634-r</jgit.version>
     </properties>
     <build>
         <plugins>
@@ -98,7 +98,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-jar-plugin</artifactId>
-                <version>3.5.0</version>
+                <version>3.5.1</version>
                 <configuration>
                     <archive>
                         <manifestEntries>
@@ -438,7 +438,7 @@
             <dependency>
                 <groupId>org.xerial</groupId>
                 <artifactId>sqlite-jdbc</artifactId>
-                <version>3.53.2.0</version>
+                <version>3.53.2.1</version>
             </dependency>
             <dependency>
                 <groupId>org.jsoup</groupId>
@@ -488,7 +488,7 @@
             <dependency>
                 <groupId>com.itextpdf</groupId>
                 <artifactId>itext-core</artifactId>
-                <version>9.7.0</version>
+                <version>9.7.1</version>
                 <type>pom</type>
             </dependency>
             <dependency>
