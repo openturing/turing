@@ -52,13 +52,20 @@ public class TurOpenAiCompatibleTranscriptionProvider implements TurTranscriptio
 
     @Override
     public TurTranscriptionResult transcribe(byte[] audio, String mimeType, String languageHint) {
+        return transcribe(audio, mimeType, languageHint, TurTranscriptionHints.none());
+    }
+
+    @Override
+    public TurTranscriptionResult transcribe(byte[] audio, String mimeType, String languageHint,
+            TurTranscriptionHints hints) {
         TurTranscriptionConfig config = configResolver.resolve();
         if (StringUtils.isBlank(config.endpoint())) {
             return TurTranscriptionResult.fail(
                     "OPENAI_COMPATIBLE transcription requires a dedicated endpoint "
                             + "(set turing.transcription.endpoint or the Transcription endpoint in Global Settings).");
         }
-        return client.transcribe(config.endpoint(), config.apiKey(), config.model(),
-                config.maxUploadBytes(), audio, mimeType, languageHint);
+        return client.transcribe(
+                config.targetFor(config.endpoint(), config.apiKey(), getType()),
+                audio, mimeType, languageHint, config.hints().merge(hints));
     }
 }

@@ -62,7 +62,7 @@ class TurTranscriptionProviderFactoryTest {
         TurTranscriptionProvider none = provider(TurTranscriptionProviderType.NONE);
         TurTranscriptionConfigResolver resolver = mock(TurTranscriptionConfigResolver.class);
         when(resolver.resolve()).thenReturn(new TurTranscriptionConfig(
-                TurTranscriptionProviderType.NONE, "", "", "", 26_214_400L));
+                TurTranscriptionProviderType.NONE, "", "", "", 26_214_400L, TurTranscriptionHints.none()));
 
         var factory = new TurTranscriptionProviderFactory(List.of(openai, none), resolver);
 

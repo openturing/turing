@@ -33,6 +33,22 @@ public interface TurTranscriptionProvider {
      */
     TurTranscriptionResult transcribe(byte[] audio, String mimeType, String languageHint);
 
+    /**
+     * T847 / §LXIII.2 — transcribe with optional per-request context hints layered
+     * over the globally configured ones.
+     *
+     * <p>Defaults to the hint-less call, so a third-party {@code @Primary} provider
+     * written against the original seam keeps working unchanged — hints a backend
+     * cannot use are meant to be dropped silently, and "cannot use any" is a valid
+     * case of that.
+     *
+     * @param hints per-request hints; {@code null}/empty means "global only"
+     */
+    default TurTranscriptionResult transcribe(byte[] audio, String mimeType, String languageHint,
+            TurTranscriptionHints hints) {
+        return transcribe(audio, mimeType, languageHint);
+    }
+
     /** True when a transcription backend is configured and usable. */
     boolean isAvailable();
 

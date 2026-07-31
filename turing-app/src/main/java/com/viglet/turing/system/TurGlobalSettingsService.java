@@ -576,13 +576,49 @@ public class TurGlobalSettingsService {
         return configVars.setString(TurConfigVarOnStartup.TRANSCRIPTION_ENDPOINT, endpoint);
     }
 
-    /** T687 — transcription model name; blank uses the backend default (e.g. {@code whisper-1}). */
+    /**
+     * T687 — transcription model name. Blank uses the <b>backend's</b> default
+     * (T846): {@code gpt-transcribe} for {@code OPENAI}, {@code whisper-1} for
+     * {@code OPENAI_COMPATIBLE}.
+     */
     public String getTranscriptionModel() {
         return configVars.getString(TurConfigVarOnStartup.TRANSCRIPTION_MODEL, "");
     }
 
     public String updateTranscriptionModel(String model) {
         return configVars.setString(TurConfigVarOnStartup.TRANSCRIPTION_MODEL, model);
+    }
+
+    /** T847 — free-form transcription context sent as the {@code prompt} hint; {@code ""} when unset. */
+    public String getTranscriptionPrompt() {
+        return configVars.getString(TurConfigVarOnStartup.TRANSCRIPTION_PROMPT, "");
+    }
+
+    public String updateTranscriptionPrompt(String prompt) {
+        return configVars.setString(TurConfigVarOnStartup.TRANSCRIPTION_PROMPT, prompt);
+    }
+
+    /**
+     * T847 — comma-separated domain vocabulary sent as the {@code keywords} hint to
+     * backends that accept one; {@code ""} when unset.
+     */
+    public String getTranscriptionKeywords() {
+        return configVars.getString(TurConfigVarOnStartup.TRANSCRIPTION_KEYWORDS, "");
+    }
+
+    public String updateTranscriptionKeywords(String keywords) {
+        return configVars.setString(TurConfigVarOnStartup.TRANSCRIPTION_KEYWORDS, keywords);
+    }
+
+    /** T847 — whether the keyword hint is topped up from the Thesaurus (Block AQ). Opt-in. */
+    public boolean isTranscriptionKeywordsFromThesaurus() {
+        return configVars.getBoolean(
+                TurConfigVarOnStartup.TRANSCRIPTION_KEYWORDS_FROM_THESAURUS, false);
+    }
+
+    public boolean updateTranscriptionKeywordsFromThesaurus(boolean enabled) {
+        return configVars.setBoolean(
+                TurConfigVarOnStartup.TRANSCRIPTION_KEYWORDS_FROM_THESAURUS, enabled);
     }
 
     /**

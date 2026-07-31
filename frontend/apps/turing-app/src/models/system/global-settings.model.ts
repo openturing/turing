@@ -153,8 +153,17 @@ export interface TurGlobalSettings {
   transcriptionStrategy?: TurTranscriptionProviderType;
   /** T687 — dedicated OpenAI-compatible `/audio/transcriptions` endpoint (OPENAI_COMPATIBLE). */
   transcriptionEndpoint?: string;
-  /** T687 — transcription model name; blank uses the backend default (e.g. `whisper-1`). */
+  /**
+   * T687 — transcription model name. Blank uses the **backend's** default (T846):
+   * `gpt-transcribe` for `OPENAI`, `whisper-1` for `OPENAI_COMPATIBLE`.
+   */
   transcriptionModel?: string;
+  /** T847 — free-form transcription context sent as the `prompt` hint. */
+  transcriptionPrompt?: string;
+  /** T847 — comma-separated domain vocabulary sent as the `keywords` hint. */
+  transcriptionKeywords?: string;
+  /** T847 — opt-in: top the keyword hint up from the Thesaurus (Block AQ). */
+  transcriptionKeywordsFromThesaurus?: boolean;
   /** T687 — per-request upload limit in bytes; audio above this is chunked (T688/T689). */
   transcriptionMaxUploadBytes?: number;
   /**

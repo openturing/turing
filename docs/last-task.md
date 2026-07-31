@@ -204,6 +204,9 @@ number" looked free but wasn't. Grepping three files (`ROADMAP.md`,
 
 ## Log (most recent first)
 
+- **T850 SHIPPED** (Block BP §LXIII.5 — `gpt-transcribe`/`gpt-live-transcribe` added to models-catalog (GA) + `gpt-4o-transcribe`/`gpt-realtime-whisper` DEPRECATED; `whisper-1` placeholders/copy retired in Global Settings, i18n and docs-turing; **CLOSES Block BP's planned tasks**) — 2026-07-31.
+- **T847 SHIPPED** (Block BP §LXIII.2 — `TurTranscriptionHints` (`prompt` + bounded `keywords`) on the config + provider seam, global and per request, with the opt-in Thesaurus keyword source) — 2026-07-31.
+- **T846 SHIPPED** (Block BP §LXIII.1 — `TurTranscriptionModelFamily` + `TurTranscriptionTarget` make the wire contract model-aware; per-backend default `gpt-transcribe`/`whisper-1`; `confidence = null` where no segments exist) — 2026-07-31.
 - **T848 SHIPPED** (Block BP §LXIII.3 — `TurRealtimeVoiceSession.inputTranscriptionModel` resolved server-side (default `gpt-live-transcribe`); the SDK echoes it instead of hardcoding `whisper-1`, fail-open) — 2026-07-31.
 - **T846–T851 CREATED** (📋/💭, Block BP §LXIII — next-generation OpenAI transcription models `gpt-transcribe` / `gpt-live-transcribe`; vendor-deprecation framing in STRATEGY §XVI) — 2026-07-31.
 - **T832–T845 CREATED** (📋/💭, Block BO §LXII — answer-first search, the steerable/auditable answer engine (positioning §XV). **Renumbered on merge**: drafted on a parallel branch as Block BN / T825–T838, which collided with the already-shipped Block BN (content-fit tuning loop, T825–T830) — the exact hazard this file exists to prevent. The shipped numbers won; the planned block moved to Block **BO** / T832–T845 / §LXII) — 2026-07-31.

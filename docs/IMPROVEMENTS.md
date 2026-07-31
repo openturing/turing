@@ -3000,26 +3000,6 @@ at roughly half Whisper's word error rate on real-world audio (accents, numbers,
 noise). `whisper-1` remains available and remains the right pick for timestamps,
 translation and subtitles — so this block is **additive**, never a migration.
 
-**Why it is not just "type a new model name".** The shipped seam already exposes a
-free-text model field (Global Settings → Transcription, `turing.transcription.model`),
-so an operator *can* enter `gpt-transcribe` today — and get a worse result than
-whisper, because the wire contract in `TurOpenAiTranscriptionClient` is whisper-shaped
-in three places:
-
-1. `DEFAULT_MODEL = "whisper-1"` is shared by the cloud `OPENAI` provider and the
-   self-hosted `OPENAI_COMPATIBLE` one. Those want *different* defaults: the vendor's
-   current recommendation vs. what a faster-whisper-server actually serves.
-2. `response_format` is always `verbose_json`, because T693 derives its 0–1 confidence
-   from `segments[].avg_logprob`. The new models return no segments — best case the
-   confidence-based local→cloud fallback silently stops firing, worst case the request
-   is rejected outright.
-3. The language hint is sent as singular `language`; `gpt-transcribe` /
-   `gpt-live-transcribe` read **`languages`** (plural). Today's hint would be dropped.
-
-And the realtime path pins the model **client-side**: `use-turing-realtime-voice` sends
-`input_audio_transcription: { model: "whisper-1" }`, so the voice kiosk cannot move to
-the live model without an SDK release.
-
 **What already ships (do not rebuild).** The 25 MiB cap is unchanged, so
 `TurFfmpegAudioChunker` (T688) and the chunk-aware orchestration (T689) stay exactly as
 they are. Async jobs + SSE (T692), per-backend metrics and the AUDIO-slot wiring (T693)
@@ -3028,38 +3008,11 @@ id to `TRANSCRIPTION`, so the type-aware model picker needs no change. The catal
 pipeline (T776/T777/T782) already turns a catalog row into seeded prices and
 deprecation warnings.
 
-#### LXIII.1 Model-aware wire contract (T846)
-Resolve the default and the request shape from the **model family**, not a constant:
-`OPENAI` → `gpt-transcribe`, `OPENAI_COMPATIBLE` → `whisper-1`; whisper family keeps
-`verbose_json` + `language`, `gpt-*transcribe` gets `json` + `languages`. Confidence
-becomes an explicit per-family capability: a model that returns no segment logprobs
-yields `confidence = null`, which T693 already interprets as "no signal" (the fallback
-degrades rather than inventing a score). Keep it one client — the wire contract is
-still shared, only its dialect is now selected.
-
-#### LXIII.2 Context hints — `prompt` + `keywords` (T847)
-Widen `TurTranscriptionConfig` and the `TurTranscriptionProvider` seam with optional
-free-form context and a keyword list, resolvable globally (env/Global Settings) and
-per request, silently ignored by a backend that doesn't support them. This is the half
-that is *product*, not parity: Turing already owns a curated domain vocabulary — the
-Thesaurus (Block AQ) and the declared field manifest — so the same terms the search
-engine expands can be handed to the ASR, which is exactly what stops product names,
-model ids and jargon from being transcribed phonetically. Keep the sourcing opt-in and
-bounded (a keyword list is a hint, not a dictionary dump).
-
 #### LXIII.4 Streamed file transcription (T849)
 `gpt-transcribe` supports `stream=true` for a completed file, emitting transcript
 events as it processes. The job surface (T692) already streams — swapping chunk-index
 progress for partial text is a provider + event-mapping change, not a new transport.
 Stays 💭 until a UI renders partial text; the current progress events are honest.
-
-#### LXIII.5 Catalog entries + operator-facing defaults (T850)
-Add both models to the `openviglet/models-catalog` source (kind, pricing, status) and
-mark `gpt-4o-transcribe` / `gpt-realtime-whisper` deprecated there; the shipped
-pipeline then seeds prices (T777) and warns operators still pinning a retired model
-(T782) with no Turing-side code. Then retire the `whisper-1` placeholder text: Global
-Settings transcription section, `globalSettings.json` (en/pt), the
-`TurLlmModelKind.TRANSCRIPTION` javadoc example, and `docs-turing/transcription.md`.
 
 #### LXIII.6 Speaker diarization (T851)
 `diarized_json` returns per-speaker segments. The value is attributable turns for

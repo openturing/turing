@@ -28,6 +28,13 @@ import lombok.extern.slf4j.Slf4j;
  * the connection source differs, the wire contract is identical. Fail-soft:
  * every error comes back as a {@link TurTranscriptionResult#fail}.
  *
+ * <p>T846 / §LXIII.1 — it stays <b>one</b> client, but the request is no longer
+ * whisper-shaped by construction: the {@link TurTranscriptionTarget} carries the
+ * caller's own default model and the {@link TurTranscriptionModelFamily} derived
+ * from the effective model picks {@code response_format}
+ * ({@code verbose_json} vs {@code json}), the language field ({@code language} vs
+ * {@code languages}) and whether a confidence can honestly be derived at all.
+ *
  * @author Alexandre Oliveira
  * @since 2026.3.4
  */
@@ -35,31 +42,29 @@ import lombok.extern.slf4j.Slf4j;
 @Component
 public class TurOpenAiTranscriptionClient {
 
-    static final String DEFAULT_MODEL = "whisper-1";
     private static final String TRANSCRIPTIONS_PATH = "/audio/transcriptions";
     private static final double BYTES_PER_MB = 1024.0 * 1024.0;
 
     /**
-     * POST {@code audio} to {@code baseUrl}{@code /audio/transcriptions}.
+     * POST {@code audio} to {@code target.baseUrl()}{@code /audio/transcriptions}.
      *
-     * @param baseUrl      OpenAI-compatible base URL (must be non-blank)
-     * @param apiKey       bearer token; when blank no {@code Authorization} header
-     *                     is sent (self-hosted servers often require none)
-     * @param model        transcription model (blank → {@value #DEFAULT_MODEL})
-     * @param maxBytes     per-request upload limit (backstop; the orchestrator
-     *                     chunks below this before calling)
+     * @param target       endpoint, credential, model + per-request upload limit
      * @param audio        the audio bytes for this request
      * @param mimeType     audio MIME type (may be null)
      * @param languageHint optional ISO-639 hint (may be null)
+     * @param hints        T847 context hints; {@code null} is treated as
+     *                     {@link TurTranscriptionHints#none()} and any hint the
+     *                     model family does not accept is dropped silently
      */
-    public TurTranscriptionResult transcribe(String baseUrl, String apiKey, String model,
-            long maxBytes, byte[] audio, String mimeType, String languageHint) {
+    public TurTranscriptionResult transcribe(TurTranscriptionTarget target, byte[] audio,
+            String mimeType, String languageHint, TurTranscriptionHints hints) {
         if (audio == null || audio.length == 0) {
             return TurTranscriptionResult.fail("Empty audio.");
         }
-        if (StringUtils.isBlank(baseUrl)) {
+        if (target == null || StringUtils.isBlank(target.baseUrl())) {
             return TurTranscriptionResult.fail("No transcription endpoint configured.");
         }
+        long maxBytes = target.maxBytes();
         if (maxBytes > 0 && audio.length > maxBytes) {
             return TurTranscriptionResult.fail(
                     "Audio is %.1f MB, above the %.0f MB per-request limit of the transcription backend. "
@@ -67,32 +72,18 @@ public class TurOpenAiTranscriptionClient {
                             + "Shorten it or re-encode at a lower bitrate / mono (e.g. 64 kbps MP3), "
                             + "or install ffmpeg so large audio is chunked automatically.");
         }
+        TurTranscriptionModelFamily family = target.family();
         try {
-            MultipartBodyBuilder body = new MultipartBodyBuilder();
-            String filename = "audio." + extensionFor(mimeType);
-            body.part("file", new ByteArrayResource(audio) {
-                @Override
-                public String getFilename() {
-                    return filename;
-                }
-            }).contentType(resolveMediaType(mimeType));
-            body.part("model", StringUtils.defaultIfBlank(model, DEFAULT_MODEL));
-            // verbose_json is a strict superset of json (still carries top-level
-            // text/language) and adds per-segment avg_logprob, from which T693
-            // derives an optional 0–1 confidence for the local→cloud fallback. A
-            // backend that ignores the param simply yields no segments → null.
-            body.part("response_format", "verbose_json");
-            if (StringUtils.isNotBlank(languageHint)) {
-                body.part("language", languageHint.trim());
-            }
+            MultipartBodyBuilder body = buildBody(target, family, audio, mimeType, languageHint,
+                    hints == null ? TurTranscriptionHints.none() : hints);
 
-            RestClient client = RestClient.builder().baseUrl(baseUrl).build();
+            RestClient client = RestClient.builder().baseUrl(target.baseUrl()).build();
             @SuppressWarnings("unchecked")
             Map<String, Object> response = client.post()
                     .uri(TRANSCRIPTIONS_PATH)
                     .headers(headers -> {
-                        if (StringUtils.isNotBlank(apiKey)) {
-                            headers.add("Authorization", "Bearer " + apiKey);
+                        if (StringUtils.isNotBlank(target.apiKey())) {
+                            headers.add("Authorization", "Bearer " + target.apiKey());
                         }
                     })
                     .contentType(MediaType.MULTIPART_FORM_DATA)
@@ -105,11 +96,52 @@ public class TurOpenAiTranscriptionClient {
             }
             Object lang = response.get("language");
             return TurTranscriptionResult.ok(text, lang instanceof String s ? s : languageHint,
-                    confidenceFromSegments(response.get("segments")));
+                    confidenceFor(family, response.get("segments")));
         } catch (RuntimeException e) {
-            log.warn("[Transcription] failed: {}", e.getMessage());
+            log.warn("[Transcription] failed on model '{}' ({}): {}",
+                    target.effectiveModel(), family, e.getMessage());
             return TurTranscriptionResult.fail("Transcription failed: " + e.getMessage());
         }
+    }
+
+    /** The multipart body in the dialect {@code family} speaks. */
+    private MultipartBodyBuilder buildBody(TurTranscriptionTarget target,
+            TurTranscriptionModelFamily family, byte[] audio, String mimeType,
+            String languageHint, TurTranscriptionHints hints) {
+        MultipartBodyBuilder body = new MultipartBodyBuilder();
+        String filename = "audio." + extensionFor(mimeType);
+        body.part("file", new ByteArrayResource(audio) {
+            @Override
+            public String getFilename() {
+                return filename;
+            }
+        }).contentType(resolveMediaType(mimeType));
+        body.part("model", target.effectiveModel());
+        // T846 — verbose_json is a strict superset of json (still carries top-level
+        // text/language) and adds per-segment avg_logprob, from which T693 derives an
+        // optional 0–1 confidence. Only the whisper family serves it; the gpt-*transcribe
+        // families reject it, so they get plain json and a null confidence instead.
+        body.part("response_format", family.responseFormat());
+        if (StringUtils.isNotBlank(languageHint)) {
+            body.part(family.languageParameter(), languageHint.trim());
+        }
+        // T847 — context hints, each dropped silently when the family can't take it.
+        if (hints.prompt() != null) {
+            body.part("prompt", hints.prompt());
+        }
+        if (family.supportsKeywords() && !hints.keywords().isEmpty()) {
+            hints.keywords().forEach(keyword -> body.part("keywords", keyword));
+        }
+        return body;
+    }
+
+    /**
+     * T846 — a family that returns no segment logprobs yields {@code null} rather
+     * than a fabricated score; T693 already reads {@code null} as "no confidence
+     * signal", so the local→cloud fallback degrades instead of lying.
+     */
+    static Double confidenceFor(TurTranscriptionModelFamily family, Object segments) {
+        return family.supportsSegmentConfidence() ? confidenceFromSegments(segments) : null;
     }
 
     /**

@@ -36,10 +36,13 @@ class TurTranscriptionConfigResolverTest {
     @Mock
     private TurGlobalSettingsService globalSettings;
 
+    @Mock
+    private TurTranscriptionKeywordSource keywordSource;
+
     private TurTranscriptionConfigResolver resolver(TurTranscriptionProperty props) {
         TurConfigProperties config = new TurConfigProperties();
         config.setTranscription(props);
-        return new TurTranscriptionConfigResolver(globalSettings, config);
+        return new TurTranscriptionConfigResolver(globalSettings, keywordSource, config);
     }
 
     private void stubDbDefaults() {
@@ -49,6 +52,14 @@ class TurTranscriptionConfigResolverTest {
         lenient().when(globalSettings.getTranscriptionModel()).thenReturn("db-model");
         lenient().when(globalSettings.getTranscriptionApiKey()).thenReturn("db-key");
         lenient().when(globalSettings.getTranscriptionMaxUploadBytes()).thenReturn(26_214_400L);
+        stubDbHintDefaults();
+    }
+
+    /** T847 — hints are resolved on every call, so every path needs them stubbed. */
+    private void stubDbHintDefaults() {
+        lenient().when(globalSettings.getTranscriptionPrompt()).thenReturn("");
+        lenient().when(globalSettings.getTranscriptionKeywords()).thenReturn("");
+        lenient().when(globalSettings.isTranscriptionKeywordsFromThesaurus()).thenReturn(false);
     }
 
     @Test
@@ -89,6 +100,7 @@ class TurTranscriptionConfigResolverTest {
         when(globalSettings.getTranscriptionModel()).thenReturn("");
         when(globalSettings.getTranscriptionApiKey()).thenReturn("");
         when(globalSettings.getTranscriptionMaxUploadBytes()).thenReturn(26_214_400L);
+        stubDbHintDefaults();
 
         TurTranscriptionProperty props = new TurTranscriptionProperty();
         props.setMaxUploadBytes(0L); // non-positive → ignore, use DB
@@ -97,5 +109,57 @@ class TurTranscriptionConfigResolverTest {
 
         assertThat(config.maxUploadBytes()).isEqualTo(26_214_400L);
         assertThat(config.endpoint()).isEmpty();
+    }
+
+    // ---- T847 / §LXIII.2 — context hints -------------------------------
+
+    /** An install that configured nothing gets no hints at all — never a fabricated one. */
+    @Test
+    void noHintsConfiguredYieldsEmptyHints() {
+        stubDbDefaults();
+        assertThat(resolver(new TurTranscriptionProperty()).resolve().hints().isEmpty()).isTrue();
+    }
+
+    @Test
+    void globalSettingsKeywordsAreSplitOnCommas() {
+        stubDbDefaults();
+        when(globalSettings.getTranscriptionPrompt()).thenReturn("Support call about search.");
+        when(globalSettings.getTranscriptionKeywords()).thenReturn("Turing, Solr ,, Lucene");
+
+        TurTranscriptionHints hints = resolver(new TurTranscriptionProperty()).resolve().hints();
+
+        assertThat(hints.prompt()).isEqualTo("Support call about search.");
+        assertThat(hints.keywords()).containsExactly("Turing", "Solr", "Lucene");
+    }
+
+    @Test
+    void envPropKeywordsWinOverGlobalSettings() {
+        stubDbDefaults();
+        lenient().when(globalSettings.getTranscriptionKeywords()).thenReturn("db-term");
+        TurTranscriptionProperty props = new TurTranscriptionProperty();
+        props.setKeywords(java.util.List.of("env-term"));
+
+        assertThat(resolver(props).resolve().hints().keywords()).containsExactly("env-term");
+    }
+
+    /** The Thesaurus source is opt-in — off by default, never queried. */
+    @Test
+    void thesaurusSourceIsNotQueriedWhenDisabled() {
+        stubDbDefaults();
+        resolver(new TurTranscriptionProperty()).resolve();
+        org.mockito.Mockito.verifyNoInteractions(keywordSource);
+    }
+
+    /** Opt-in on: explicit keywords come first, the Thesaurus tops the rest up. */
+    @Test
+    void thesaurusTopsUpAfterTheOperatorsOwnKeywords() {
+        stubDbDefaults();
+        when(globalSettings.getTranscriptionKeywords()).thenReturn("Turing");
+        when(globalSettings.isTranscriptionKeywordsFromThesaurus()).thenReturn(true);
+        when(keywordSource.keywords(TurTranscriptionHints.MAX_KEYWORDS - 1))
+                .thenReturn(java.util.List.of("Semantic Navigation", "Microthesaurus"));
+
+        assertThat(resolver(new TurTranscriptionProperty()).resolve().hints().keywords())
+                .containsExactly("Turing", "Semantic Navigation", "Microthesaurus");
     }
 }

@@ -18,6 +18,7 @@ package com.viglet.turing.persistence.repository.kb;
 
 import java.util.List;
 
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -55,4 +56,17 @@ public interface TurThesaurusTermRepository extends JpaRepository<TurThesaurusTe
             """)
     List<TurThesaurusTerm> findEnabledWithVariations(
             @Param("microthesaurus") TurMicrothesaurus microthesaurus);
+
+    /**
+     * T847 / §LXIII.2 — enabled preferred-term labels, broadest descriptors first
+     * (roots before narrower terms, then sibling order), for the bounded
+     * transcription keyword hint. A label projection rather than the entity: the
+     * ASR only ever needs the surface string, and the caller always truncates.
+     */
+    @Query("""
+            SELECT t.label FROM TurThesaurusTerm t
+            WHERE t.enabled = true
+            ORDER BY CASE WHEN t.parentTermId IS NULL THEN 0 ELSE 1 END, t.termOrder, t.label
+            """)
+    List<String> findEnabledLabelsBroadestFirst(Pageable pageable);
 }

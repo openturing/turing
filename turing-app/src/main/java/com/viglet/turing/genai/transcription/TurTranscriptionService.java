@@ -105,8 +105,20 @@ public class TurTranscriptionService {
      */
     public TurTranscriptionResult transcribe(byte[] audio, String mimeType, String languageHint,
             TurTranscriptionProgressListener listener) {
+        return transcribe(audio, mimeType, languageHint, listener, TurTranscriptionHints.none());
+    }
+
+    /**
+     * T847 / §LXIII.2 — chunk-aware transcription with per-request context hints
+     * layered over the globally configured ones. The same hints go to every chunk
+     * and to the confidence fallback, so a stitched transcript stays internally
+     * consistent.
+     */
+    public TurTranscriptionResult transcribe(byte[] audio, String mimeType, String languageHint,
+            TurTranscriptionProgressListener listener, TurTranscriptionHints hints) {
         TurTranscriptionProgressListener progress =
                 listener == null ? TurTranscriptionProgressListener.NOOP : listener;
+        TurTranscriptionHints context = hints == null ? TurTranscriptionHints.none() : hints;
         if (audio == null || audio.length == 0) {
             return TurTranscriptionResult.fail("Empty audio.");
         }
@@ -114,8 +126,9 @@ public class TurTranscriptionService {
         TurTranscriptionProviderType activeType = config.type();
         TurTranscriptionProvider provider = providerFactory.resolveActive();
 
-        TurTranscriptionResult primary = timedTranscribe(
-                activeType, provider, config.maxUploadBytes(), audio, mimeType, languageHint, progress);
+        Ask ask = new Ask(audio, mimeType, languageHint, context);
+        TurTranscriptionResult primary =
+                timedTranscribe(activeType, provider, config.maxUploadBytes(), ask, progress);
 
         if (!shouldFallback(primary, activeType)) {
             return primary;
@@ -128,8 +141,18 @@ public class TurTranscriptionService {
         log.info("[Transcription] {} result {} — escalating to fallback {}", activeType,
                 primary.success() ? "confidence " + primary.confidence() : "failed", fbType);
         TurTranscriptionResult fbResult = timedTranscribe(fbType, fallback,
-                fallbackMaxBytes(fbType, config.maxUploadBytes()), audio, mimeType, languageHint, progress);
+                fallbackMaxBytes(fbType, config.maxUploadBytes()), ask, progress);
         return fbResult.success() ? fbResult : primary;
+    }
+
+    /** One transcription ask: the audio and everything that describes how to read it. */
+    private record Ask(byte[] audio, String mimeType, String languageHint,
+            TurTranscriptionHints hints) {
+
+        /** The same ask against a different chunk of the original audio. */
+        Ask forChunk(TurAudioChunk chunk) {
+            return new Ask(chunk.audio(), chunk.mimeType(), languageHint, hints);
+        }
     }
 
     /** True when the confidence fallback is enabled and this result warrants escalation. */
@@ -158,33 +181,31 @@ public class TurTranscriptionService {
 
     /** Transcribe (chunk + stitch) on one provider, recording a per-backend metric. */
     private TurTranscriptionResult timedTranscribe(TurTranscriptionProviderType backend,
-            TurTranscriptionProvider provider, long maxBytes,
-            byte[] audio, String mimeType, String languageHint,
+            TurTranscriptionProvider provider, long maxBytes, Ask ask,
             TurTranscriptionProgressListener progress) {
         long start = System.currentTimeMillis();
-        TurTranscriptionResult result =
-                transcribeWith(provider, maxBytes, audio, mimeType, languageHint, progress);
-        metrics.record(backend, System.currentTimeMillis() - start, result.success(), audio.length);
+        TurTranscriptionResult result = transcribeWith(provider, maxBytes, ask, progress);
+        metrics.record(backend, System.currentTimeMillis() - start, result.success(),
+                ask.audio().length);
         return result;
     }
 
     /** The chunk-or-passthrough + stitch pipeline for a single provider. */
     private TurTranscriptionResult transcribeWith(TurTranscriptionProvider provider, long maxBytes,
-            byte[] audio, String mimeType, String languageHint,
-            TurTranscriptionProgressListener progress) {
-        List<TurAudioChunk> chunks = audioChunker.chunk(audio, mimeType, maxBytes);
+            Ask ask, TurTranscriptionProgressListener progress) {
+        String languageHint = ask.languageHint();
+        List<TurAudioChunk> chunks = audioChunker.chunk(ask.audio(), ask.mimeType(), maxBytes);
         if (chunks.isEmpty()) {
             return TurTranscriptionResult.fail("Empty audio.");
         }
         if (chunks.size() == 1) {
             progress.onProgress(0, 1);
-            TurAudioChunk only = chunks.get(0);
-            TurTranscriptionResult single = provider.transcribe(only.audio(), only.mimeType(), languageHint);
+            TurTranscriptionResult single = transcribeChunk(provider, ask.forChunk(chunks.get(0)));
             progress.onProgress(1, 1);
             return single;
         }
 
-        List<TurTranscriptionResult> results = transcribeChunks(provider, chunks, languageHint, progress);
+        List<TurTranscriptionResult> results = transcribeChunks(provider, chunks, ask, progress);
         for (int i = 0; i < results.size(); i++) {
             TurTranscriptionResult r = results.get(i);
             if (r == null || !r.success() || StringUtils.isBlank(r.text())) {
@@ -216,9 +237,19 @@ public class TurTranscriptionService {
         return n == 0 ? null : sum / n;
     }
 
+    /**
+     * One provider call. T847 — hint-less asks keep using the original 3-arg seam
+     * so a third-party provider that only implements it is never bypassed.
+     */
+    private TurTranscriptionResult transcribeChunk(TurTranscriptionProvider provider, Ask ask) {
+        return ask.hints().isEmpty()
+                ? provider.transcribe(ask.audio(), ask.mimeType(), ask.languageHint())
+                : provider.transcribe(ask.audio(), ask.mimeType(), ask.languageHint(), ask.hints());
+    }
+
     /** Transcribe chunks bounded-parallel, preserving order, reporting progress. */
     private List<TurTranscriptionResult> transcribeChunks(TurTranscriptionProvider provider,
-            List<TurAudioChunk> chunks, String languageHint,
+            List<TurAudioChunk> chunks, Ask ask,
             TurTranscriptionProgressListener progress) {
         int total = chunks.size();
         progress.onProgress(0, total);
@@ -230,7 +261,7 @@ public class TurTranscriptionService {
             for (TurAudioChunk chunk : chunks) {
                 Callable<TurTranscriptionResult> task = () -> {
                     try {
-                        return provider.transcribe(chunk.audio(), chunk.mimeType(), languageHint);
+                        return transcribeChunk(provider, ask.forChunk(chunk));
                     } finally {
                         progress.onProgress(done.incrementAndGet(), total);
                     }

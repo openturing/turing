@@ -39,6 +39,30 @@ public enum TurTranscriptionProviderType {
     NONE;
 
     /**
+     * T846 / §LXIII.1 — the vendor's current recommendation for the cloud path:
+     * cheaper than {@code whisper-1} and roughly half its word error rate.
+     */
+    public static final String OPENAI_DEFAULT_MODEL = "gpt-transcribe";
+
+    /**
+     * T846 / §LXIII.1 — a self-hosted OpenAI-compatible server (faster-whisper-server,
+     * whisper.cpp, vLLM-whisper) serves <b>whisper</b>, not an OpenAI-hosted id, so the
+     * local path keeps the legacy default. This is also why the default cannot be one
+     * shared constant.
+     */
+    public static final String OPENAI_COMPATIBLE_DEFAULT_MODEL = "whisper-1";
+
+    /**
+     * T846 / §LXIII.1 — the model used when neither Global Settings nor
+     * {@code turing.transcription.model} names one. Per-strategy on purpose: the
+     * cloud backend follows the vendor's current recommendation, the self-hosted
+     * one follows what such servers actually serve.
+     */
+    public String defaultModel() {
+        return this == OPENAI_COMPATIBLE ? OPENAI_COMPATIBLE_DEFAULT_MODEL : OPENAI_DEFAULT_MODEL;
+    }
+
+    /**
      * Lenient parse used wherever a stored/config string is turned into a type.
      * Unknown, blank, or {@code null} values fall back to {@link #OPENAI} (the
      * legacy default), so a corrupt config row can never break transcription in a

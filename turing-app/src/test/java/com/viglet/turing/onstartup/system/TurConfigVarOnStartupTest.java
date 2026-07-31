@@ -35,7 +35,7 @@ class TurConfigVarOnStartupTest {
         when(turConfigVarRepository.findById(anyString())).thenReturn(Optional.empty());
         turConfigVarOnStartup.createDefaultRows();
         ArgumentCaptor<TurConfigVar> captor = ArgumentCaptor.forClass(TurConfigVar.class);
-        verify(turConfigVarRepository, times(50)).save(captor.capture());
+        verify(turConfigVarRepository, times(53)).save(captor.capture());
         return captor.getAllValues();
     }
 
@@ -104,13 +104,23 @@ class TurConfigVarOnStartupTest {
         expectVar(savedVars, "GLOBAL_RAG_SN_RERANK_API_KEY", GLOBAL, "");
     }
 
+    /** T847 / §LXIII.2 — transcription context hints bootstrap unset and opt-out. */
+    @Test
+    void shouldSaveTranscriptionHintDefaults() {
+        List<TurConfigVar> savedVars = savedDefaults();
+        expectVar(savedVars, "GLOBAL_TRANSCRIPTION_MODEL", GLOBAL, "");
+        expectVar(savedVars, "GLOBAL_TRANSCRIPTION_PROMPT", GLOBAL, "");
+        expectVar(savedVars, "GLOBAL_TRANSCRIPTION_KEYWORDS", GLOBAL, "");
+        expectVar(savedVars, "GLOBAL_TRANSCRIPTION_KEYWORDS_FROM_THESAURUS", GLOBAL, "false");
+    }
+
     @Test
     void shouldNotCreateConfigVarWhenAlreadyExists() {
         // Mock returns a fresh TurConfigVar (blank value) for every row.
         // ensureConfigVar leaves these alone (existing row → no save), but
         // ensureSecretConfigVar AUTO-HEALS blank values for the HMAC
         // secret. So save is called exactly once — for the secret heal —
-        // and the other 49 rows are skipped.
+        // and the other 52 rows are skipped.
         when(turConfigVarRepository.findById(anyString()))
                 .thenReturn(Optional.of(new TurConfigVar()));
 

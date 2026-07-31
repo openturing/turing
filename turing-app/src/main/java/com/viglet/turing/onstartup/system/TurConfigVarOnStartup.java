@@ -195,8 +195,30 @@ public class TurConfigVarOnStartup {
 	public static final String TRANSCRIPTION_STRATEGY_DEFAULT_VALUE = "OPENAI";
 	/** T687 — dedicated OpenAI-compatible {@code /audio/transcriptions} base URL; blank falls back to the default LLM instance URL. */
 	public static final String TRANSCRIPTION_ENDPOINT = "GLOBAL_TRANSCRIPTION_ENDPOINT";
-	/** T687 — transcription model name; blank uses the backend default (e.g. {@code whisper-1}). */
+	/**
+	 * T687 — transcription model name. Blank uses the <b>backend's</b> default
+	 * (T846): {@code gpt-transcribe} for {@code OPENAI}, {@code whisper-1} for
+	 * {@code OPENAI_COMPATIBLE}.
+	 */
 	public static final String TRANSCRIPTION_MODEL = "GLOBAL_TRANSCRIPTION_MODEL";
+	/**
+	 * T847 / §LXIII.2 — free-form transcription context handed to the backend as
+	 * the {@code prompt} hint (domain, speakers, expected style). Blank = none.
+	 */
+	public static final String TRANSCRIPTION_PROMPT = "GLOBAL_TRANSCRIPTION_PROMPT";
+	/**
+	 * T847 / §LXIII.2 — comma-separated domain vocabulary handed to backends that
+	 * accept a {@code keywords} hint (the {@code gpt-transcribe} family). Blank =
+	 * none. Capped at {@code TurTranscriptionHints#MAX_KEYWORDS}.
+	 */
+	public static final String TRANSCRIPTION_KEYWORDS = "GLOBAL_TRANSCRIPTION_KEYWORDS";
+	/**
+	 * T847 / §LXIII.2 — {@code true} to top the keyword hint up from the Thesaurus
+	 * (Block AQ), so the vocabulary the search engine expands also reaches the ASR.
+	 * Opt-in; defaults to {@code false}.
+	 */
+	public static final String TRANSCRIPTION_KEYWORDS_FROM_THESAURUS =
+			"GLOBAL_TRANSCRIPTION_KEYWORDS_FROM_THESAURUS";
 	/** T687 — transcription API key, stored encrypted; blank falls back to the default LLM instance key. */
 	public static final String TRANSCRIPTION_API_KEY = "GLOBAL_TRANSCRIPTION_API_KEY";
 	/**
@@ -288,6 +310,9 @@ public class TurConfigVarOnStartup {
 		ensureConfigVar(TRANSCRIPTION_STRATEGY, GLOBAL_PATH, TRANSCRIPTION_STRATEGY_DEFAULT_VALUE);
 		ensureConfigVar(TRANSCRIPTION_ENDPOINT, GLOBAL_PATH, "");
 		ensureConfigVar(TRANSCRIPTION_MODEL, GLOBAL_PATH, "");
+		ensureConfigVar(TRANSCRIPTION_PROMPT, GLOBAL_PATH, "");
+		ensureConfigVar(TRANSCRIPTION_KEYWORDS, GLOBAL_PATH, "");
+		ensureConfigVar(TRANSCRIPTION_KEYWORDS_FROM_THESAURUS, GLOBAL_PATH, FALSE_VALUE);
 		ensureConfigVar(TRANSCRIPTION_API_KEY, GLOBAL_PATH, "");
 		ensureConfigVar(TRANSCRIPTION_MAX_UPLOAD_BYTES, GLOBAL_PATH,
 				TRANSCRIPTION_MAX_UPLOAD_BYTES_DEFAULT_VALUE);

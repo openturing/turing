@@ -29,7 +29,7 @@ public enum TurLlmModelKind {
     RERANK,
     /** Text → image (DALL·E / gpt-image / Imagen / Titan Image). */
     IMAGE,
-    /** Audio → text (Whisper / gpt-4o-transcribe). */
+    /** Audio → text (gpt-transcribe / gpt-live-transcribe / whisper-1). */
     TRANSCRIPTION,
     /** Text → audio / TTS (tts-1 / gpt-4o-mini-tts). */
     SPEECH,

@@ -9,6 +9,10 @@
  */
 package com.viglet.turing.genai.transcription;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Component;
 
@@ -25,6 +29,10 @@ import com.viglet.turing.system.TurGlobalSettingsService;
  * than reading the settings or properties directly, so the precedence lives in
  * exactly one place.
  *
+ * <p>T847 / §LXIII.2 — it also resolves the global context hints
+ * ({@code prompt} + {@code keywords}), including the opt-in Thesaurus top-up, so
+ * a caller never has to assemble a vocabulary itself.
+ *
  * @author Alexandre Oliveira
  * @since 2026.3.4
  */
@@ -32,11 +40,14 @@ import com.viglet.turing.system.TurGlobalSettingsService;
 public class TurTranscriptionConfigResolver {
 
     private final TurGlobalSettingsService globalSettingsService;
+    private final TurTranscriptionKeywordSource keywordSource;
     private final TurTranscriptionProperty properties;
 
     public TurTranscriptionConfigResolver(TurGlobalSettingsService globalSettingsService,
+            TurTranscriptionKeywordSource keywordSource,
             TurConfigProperties configProperties) {
         this.globalSettingsService = globalSettingsService;
+        this.keywordSource = keywordSource;
         this.properties = configProperties.getTranscription() != null
                 ? configProperties.getTranscription()
                 : new TurTranscriptionProperty();
@@ -57,7 +68,52 @@ public class TurTranscriptionConfigResolver {
         long maxUploadBytes = properties.getMaxUploadBytes() != null && properties.getMaxUploadBytes() > 0
                 ? properties.getMaxUploadBytes()
                 : globalSettingsService.getTranscriptionMaxUploadBytes();
-        return new TurTranscriptionConfig(type, endpoint, model, apiKey, maxUploadBytes);
+        return new TurTranscriptionConfig(type, endpoint, model, apiKey, maxUploadBytes,
+                resolveHints());
+    }
+
+    /**
+     * T847 — the globally configured context: an explicitly configured prompt +
+     * keyword list, optionally topped up from the Thesaurus (Block AQ) when that
+     * opt-in is on. The explicit list always comes first, so an operator's own
+     * vocabulary is never crowded out by the automatic source once the
+     * {@link TurTranscriptionHints#MAX_KEYWORDS} cap bites.
+     */
+    private TurTranscriptionHints resolveHints() {
+        String prompt = firstNonBlank(properties.getPrompt(),
+                globalSettingsService.getTranscriptionPrompt());
+
+        List<String> keywords = new ArrayList<>(configuredKeywords());
+        if (keywordsFromThesaurus() && keywords.size() < TurTranscriptionHints.MAX_KEYWORDS) {
+            keywords.addAll(keywordSource.keywords(
+                    TurTranscriptionHints.MAX_KEYWORDS - keywords.size()));
+        }
+        return new TurTranscriptionHints(prompt, keywords);
+    }
+
+    /** Env-prop list wins whole; otherwise the comma-separated Global Settings value. */
+    private List<String> configuredKeywords() {
+        List<String> fromProps = properties.getKeywords();
+        if (fromProps != null && !fromProps.isEmpty()) {
+            return fromProps;
+        }
+        return splitKeywords(globalSettingsService.getTranscriptionKeywords());
+    }
+
+    private boolean keywordsFromThesaurus() {
+        return properties.isKeywordsFromThesaurus()
+                || globalSettingsService.isTranscriptionKeywordsFromThesaurus();
+    }
+
+    /** Comma/newline-separated operator input → a keyword list (blanks dropped downstream). */
+    static List<String> splitKeywords(String raw) {
+        if (StringUtils.isBlank(raw)) {
+            return List.of();
+        }
+        return Arrays.stream(raw.split("[,\\r\\n]"))
+                .map(String::trim)
+                .filter(StringUtils::isNotBlank)
+                .toList();
     }
 
     private static String firstNonBlank(String preferred, String fallback) {

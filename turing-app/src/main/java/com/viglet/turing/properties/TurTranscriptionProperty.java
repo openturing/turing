@@ -9,6 +9,9 @@
  */
 package com.viglet.turing.properties;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import com.viglet.turing.genai.transcription.TurTranscriptionProviderType;
 
 import lombok.Getter;
@@ -38,8 +41,35 @@ public class TurTranscriptionProperty {
     /** OpenAI-compatible base URL (e.g. {@code http://faster-whisper:8000/v1}). */
     private String endpoint;
 
-    /** Transcription model name (blank = backend default, e.g. {@code whisper-1}). */
+    /**
+     * Transcription model name. Blank = the <b>backend's</b> default (T846):
+     * {@code gpt-transcribe} for {@code OPENAI}, {@code whisper-1} for
+     * {@code OPENAI_COMPATIBLE} — see
+     * {@code TurTranscriptionProviderType#defaultModel()}.
+     */
     private String model;
+
+    /**
+     * T847 — free-form context handed to the backend as the {@code prompt} hint
+     * (domain, speaker, expected style). Blank = fall back to the Global Settings
+     * value, then to none. Truncated at
+     * {@code TurTranscriptionHints#MAX_PROMPT_CHARS}.
+     */
+    private String prompt;
+
+    /**
+     * T847 — domain vocabulary handed to backends that accept a {@code keywords}
+     * hint (currently the {@code gpt-transcribe} family). Empty = fall back to the
+     * Global Settings value. Capped at {@code TurTranscriptionHints#MAX_KEYWORDS}.
+     */
+    private List<String> keywords = new ArrayList<>();
+
+    /**
+     * T847 — opt-in: top up {@link #keywords} from the Thesaurus (Block AQ), so
+     * the vocabulary the search engine already expands is also handed to the ASR.
+     * Default {@code false} — sourcing is a decision, not a surprise.
+     */
+    private boolean keywordsFromThesaurus = false;
 
     /** Plaintext API key for the transcription endpoint (blank = fall back). */
     private String apiKey;

@@ -153,8 +153,18 @@ public class TurGlobalSettingsBean {
     private TurTranscriptionProviderType transcriptionStrategy;
     /** T687 — dedicated OpenAI-compatible {@code /audio/transcriptions} endpoint (OPENAI_COMPATIBLE). */
     private String transcriptionEndpoint;
-    /** T687 — transcription model name; blank uses the backend default (e.g. {@code whisper-1}). */
+    /**
+     * T687 — transcription model name. Blank uses the <b>backend's</b> default
+     * (T846): {@code gpt-transcribe} for {@code OPENAI}, {@code whisper-1} for
+     * {@code OPENAI_COMPATIBLE}.
+     */
     private String transcriptionModel;
+    /** T847 — free-form transcription context sent as the {@code prompt} hint. */
+    private String transcriptionPrompt;
+    /** T847 — comma-separated domain vocabulary sent as the {@code keywords} hint. */
+    private String transcriptionKeywords;
+    /** T847 — opt-in: top the keyword hint up from the Thesaurus (Block AQ). */
+    private boolean transcriptionKeywordsFromThesaurus;
     /** T687 — per-request upload limit in bytes; audio above this is chunked (T688/T689). */
     private long transcriptionMaxUploadBytes;
     /**

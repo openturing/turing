@@ -63,14 +63,21 @@ public class TurOpenAiTranscriptionProvider implements TurTranscriptionProvider 
 
     @Override
     public TurTranscriptionResult transcribe(byte[] audio, String mimeType, String languageHint) {
+        return transcribe(audio, mimeType, languageHint, TurTranscriptionHints.none());
+    }
+
+    @Override
+    public TurTranscriptionResult transcribe(byte[] audio, String mimeType, String languageHint,
+            TurTranscriptionHints hints) {
         Connection connection = resolveConnection();
         if (connection == null) {
             return TurTranscriptionResult.fail(
                     "No transcription endpoint configured (set turing.transcription.* or a default LLM).");
         }
         TurTranscriptionConfig config = configResolver.resolve();
-        return client.transcribe(connection.baseUrl(), connection.apiKey(), config.model(),
-                config.maxUploadBytes(), audio, mimeType, languageHint);
+        return client.transcribe(
+                config.targetFor(connection.baseUrl(), connection.apiKey(), getType()),
+                audio, mimeType, languageHint, config.hints().merge(hints));
     }
 
     /**

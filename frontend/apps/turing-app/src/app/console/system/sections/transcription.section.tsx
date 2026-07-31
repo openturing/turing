@@ -16,6 +16,9 @@ import {
     SelectValue,
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
+import { FormItemTwoColumns } from "@/components/ui/form-item-two-columns";
+import { GradientSwitch } from "@/components/ui/gradient-switch";
+import { Textarea } from "@/components/ui/textarea";
 import { TurGlobalSettingsService } from "@/services/system/global-settings.service";
 import { IconMicrophone } from "@tabler/icons-react";
 import { useState } from "react";
@@ -136,7 +139,11 @@ export function TranscriptionSection({ state }: { state: GlobalSettingsFormState
                                 <FormControl>
                                     <Input
                                         className="max-w-md font-mono text-sm"
-                                        placeholder="whisper-1"
+                                        placeholder={
+                                            strategy === "OPENAI_COMPATIBLE"
+                                                ? "whisper-1"
+                                                : "gpt-transcribe"
+                                        }
                                         autoComplete="off"
                                         spellCheck={false}
                                         disabled={isLoading}
@@ -174,6 +181,83 @@ export function TranscriptionSection({ state }: { state: GlobalSettingsFormState
                                 </FormControl>
                                 <FormMessage />
                             </FormItem>
+                        )}
+                    />
+                )}
+                {strategy !== "NONE" && (
+                    <FormField
+                        control={form.control}
+                        name="transcriptionPrompt"
+                        render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>{t("globalSettings.transcriptionPrompt")}</FormLabel>
+                                <FormDescription>
+                                    {t("globalSettings.transcriptionPromptDesc")}
+                                </FormDescription>
+                                <FormControl>
+                                    <Textarea
+                                        className="max-w-md text-sm"
+                                        rows={3}
+                                        placeholder={t("globalSettings.transcriptionPromptPlaceholder")}
+                                        disabled={isLoading}
+                                        {...field}
+                                        value={field.value ?? ""}
+                                    />
+                                </FormControl>
+                                <FormMessage />
+                            </FormItem>
+                        )}
+                    />
+                )}
+                {strategy !== "NONE" && (
+                    <FormField
+                        control={form.control}
+                        name="transcriptionKeywords"
+                        render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>{t("globalSettings.transcriptionKeywords")}</FormLabel>
+                                <FormDescription>
+                                    {t("globalSettings.transcriptionKeywordsDesc")}
+                                </FormDescription>
+                                <FormControl>
+                                    <Textarea
+                                        className="max-w-md text-sm"
+                                        rows={2}
+                                        placeholder={t("globalSettings.transcriptionKeywordsPlaceholder")}
+                                        disabled={isLoading}
+                                        {...field}
+                                        value={field.value ?? ""}
+                                    />
+                                </FormControl>
+                                <FormMessage />
+                            </FormItem>
+                        )}
+                    />
+                )}
+                {strategy !== "NONE" && (
+                    <FormField
+                        control={form.control}
+                        name="transcriptionKeywordsFromThesaurus"
+                        render={({ field }) => (
+                            <FormItemTwoColumns>
+                                <FormItemTwoColumns.Left>
+                                    <FormItemTwoColumns.Label>
+                                        {t("globalSettings.transcriptionKeywordsFromThesaurus")}
+                                    </FormItemTwoColumns.Label>
+                                    <FormItemTwoColumns.Description>
+                                        {t("globalSettings.transcriptionKeywordsFromThesaurusDesc")}
+                                    </FormItemTwoColumns.Description>
+                                </FormItemTwoColumns.Left>
+                                <FormItemTwoColumns.Right>
+                                    <FormControl>
+                                        <GradientSwitch
+                                            checked={field.value ?? false}
+                                            onCheckedChange={field.onChange}
+                                            disabled={isLoading}
+                                        />
+                                    </FormControl>
+                                </FormItemTwoColumns.Right>
+                            </FormItemTwoColumns>
                         )}
                     />
                 )}
