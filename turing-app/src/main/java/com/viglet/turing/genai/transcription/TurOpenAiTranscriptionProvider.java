@@ -69,6 +69,13 @@ public class TurOpenAiTranscriptionProvider implements TurTranscriptionProvider 
     @Override
     public TurTranscriptionResult transcribe(byte[] audio, String mimeType, String languageHint,
             TurTranscriptionHints hints) {
+        return transcribe(audio, mimeType, languageHint, hints,
+                TurTranscriptionPartialListener.NOOP);
+    }
+
+    @Override
+    public TurTranscriptionResult transcribe(byte[] audio, String mimeType, String languageHint,
+            TurTranscriptionHints hints, TurTranscriptionPartialListener partial) {
         Connection connection = resolveConnection();
         if (connection == null) {
             return TurTranscriptionResult.fail(
@@ -77,7 +84,7 @@ public class TurOpenAiTranscriptionProvider implements TurTranscriptionProvider 
         TurTranscriptionConfig config = configResolver.resolve();
         return client.transcribe(
                 config.targetFor(connection.baseUrl(), connection.apiKey(), getType()),
-                audio, mimeType, languageHint, config.hints().merge(hints));
+                audio, mimeType, languageHint, config.hints().merge(hints), partial);
     }
 
     /**

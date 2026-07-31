@@ -3,9 +3,9 @@ import { BentoHero } from "@/components/bento";
 import type { PersonaAudioJobStatus } from "@/models/persona/persona-audio.model.ts";
 import type { TurPersona } from "@/models/persona/persona.model.ts";
 import { TurPersonaAudioService } from "@/services/persona/persona-audio.service";
-import { IconForms, IconLoader2, IconMicrophone, IconUserCircle } from "@tabler/icons-react";
+import { IconForms, IconLoader2, IconMicrophone, IconUserCircle, IconWaveSine } from "@tabler/icons-react";
 import { toast } from "@viglet/viglet-design-system";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 
@@ -33,18 +33,31 @@ export function BentoPersonaCreateChooser({ setPersona }: Readonly<{ setPersona:
   // pool and SSE delivery order isn't guaranteed, so a late "3/7" after "4/7"
   // must not rewind the bar.
   const [percent, setPercent] = useState(0);
+  // T849 — the transcript as it arrives. Kept append-only for the same reason as
+  // `percent`: a late snapshot must never shorten what the reader already saw.
+  const [partial, setPartial] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const partialRef = useRef<HTMLParagraphElement>(null);
+
+  // Keep the newest words in view without stealing focus from the page.
+  useEffect(() => {
+    const el = partialRef.current;
+    if (el) el.scrollTop = el.scrollHeight;
+  }, [partial]);
 
   async function onAudioFile(file: File) {
     setBusy(true);
     setStatus(null);
     setPercent(0);
+    setPartial("");
     try {
       const { jobId } = await service.submitJob(file);
       await service.streamJob(jobId, {
         onStatus: (s) => {
           setStatus(s);
           setPercent((prev) => Math.max(prev, phasePercent(s)));
+          const text = s.partialTranscript ?? "";
+          setPartial((prev) => (text.length > prev.length ? text : prev));
         },
       });
       const result = await service.getJob(jobId);
@@ -66,6 +79,7 @@ export function BentoPersonaCreateChooser({ setPersona }: Readonly<{ setPersona:
       setBusy(false);
       setStatus(null);
       setPercent(0);
+      setPartial("");
       if (fileInputRef.current) fileInputRef.current.value = "";
     }
   }
@@ -157,6 +171,28 @@ export function BentoPersonaCreateChooser({ setPersona }: Readonly<{ setPersona:
           )}
         </button>
       </div>
+
+      {/*
+        T849 — a single-chunk recording has no chunk counter, so its bar can only
+        be indeterminate. When the backend streams, the arriving words ARE the
+        progress: show them instead of a bar that says nothing.
+      */}
+      {busy && partial && (
+        <section className="bento-glass mt-4 rounded-3xl p-5" aria-live="polite">
+          <div className="mb-2 flex items-center gap-2 text-sm font-medium text-muted-foreground">
+            <IconWaveSine size={16} className="animate-pulse text-fuchsia-500" />
+            {t("persona.fromAudio.liveTranscript", {
+              defaultValue: "Transcribing — what we've heard so far",
+            })}
+          </div>
+          <p
+            ref={partialRef}
+            className="max-h-40 overflow-y-auto text-sm leading-relaxed whitespace-pre-wrap text-foreground/80"
+          >
+            {partial}
+          </p>
+        </section>
+      )}
 
       <input
         ref={fileInputRef}

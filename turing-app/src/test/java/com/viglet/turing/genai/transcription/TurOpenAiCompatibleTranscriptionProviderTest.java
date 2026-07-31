@@ -74,7 +74,7 @@ class TurOpenAiCompatibleTranscriptionProviderTest {
     @Test
     void delegatesToClientWithConfiguredConnection() {
         TurOpenAiTranscriptionClient client = mock(TurOpenAiTranscriptionClient.class);
-        when(client.transcribe(any(), any(), any(), any(), any()))
+        when(client.transcribe(any(), any(), any(), any(), any(), any()))
                 .thenReturn(TurTranscriptionResult.ok("hi", "en"));
         var provider = new TurOpenAiCompatibleTranscriptionProvider(
                 resolver("http://whisper:8000/v1", "faster-whisper-small", "local-key"), client);
@@ -85,7 +85,7 @@ class TurOpenAiCompatibleTranscriptionProviderTest {
         ArgumentCaptor<TurTranscriptionTarget> target =
                 ArgumentCaptor.forClass(TurTranscriptionTarget.class);
         verify(client).transcribe(target.capture(), any(), eq("audio/mpeg"), eq("en"),
-                eq(TurTranscriptionHints.none()));
+                eq(TurTranscriptionHints.none()), any());
         assertThat(target.getValue().baseUrl()).isEqualTo("http://whisper:8000/v1");
         assertThat(target.getValue().apiKey()).isEqualTo("local-key");
         assertThat(target.getValue().effectiveModel()).isEqualTo("faster-whisper-small");
@@ -100,7 +100,7 @@ class TurOpenAiCompatibleTranscriptionProviderTest {
     @Test
     void blankModelDefaultsToWhisperOnTheSelfHostedPath() {
         TurOpenAiTranscriptionClient client = mock(TurOpenAiTranscriptionClient.class);
-        when(client.transcribe(any(), any(), any(), any(), any()))
+        when(client.transcribe(any(), any(), any(), any(), any(), any()))
                 .thenReturn(TurTranscriptionResult.ok("hi", "en"));
         var provider = new TurOpenAiCompatibleTranscriptionProvider(
                 resolver("http://whisper:8000/v1", "", ""), client);
@@ -109,7 +109,7 @@ class TurOpenAiCompatibleTranscriptionProviderTest {
 
         ArgumentCaptor<TurTranscriptionTarget> target =
                 ArgumentCaptor.forClass(TurTranscriptionTarget.class);
-        verify(client).transcribe(target.capture(), any(), any(), any(), any());
+        verify(client).transcribe(target.capture(), any(), any(), any(), any(), any());
         assertThat(target.getValue().effectiveModel()).isEqualTo("whisper-1");
         assertThat(target.getValue().family()).isEqualTo(TurTranscriptionModelFamily.WHISPER);
     }
@@ -118,7 +118,7 @@ class TurOpenAiCompatibleTranscriptionProviderTest {
     @Test
     void perRequestHintsOverrideTheGlobalOnes() {
         TurOpenAiTranscriptionClient client = mock(TurOpenAiTranscriptionClient.class);
-        when(client.transcribe(any(), any(), any(), any(), any()))
+        when(client.transcribe(any(), any(), any(), any(), any(), any()))
                 .thenReturn(TurTranscriptionResult.ok("hi", "en"));
         var provider = new TurOpenAiCompatibleTranscriptionProvider(
                 resolver("http://whisper:8000/v1", "", "",
@@ -130,7 +130,7 @@ class TurOpenAiCompatibleTranscriptionProviderTest {
 
         ArgumentCaptor<TurTranscriptionHints> hints =
                 ArgumentCaptor.forClass(TurTranscriptionHints.class);
-        verify(client).transcribe(any(), any(), any(), any(), hints.capture());
+        verify(client).transcribe(any(), any(), any(), any(), hints.capture(), any());
         // Prompt falls through from the global config; the keyword list is replaced.
         assertThat(hints.getValue().prompt()).isEqualTo("global context");
         assertThat(hints.getValue().keywords()).containsExactly("Solr");

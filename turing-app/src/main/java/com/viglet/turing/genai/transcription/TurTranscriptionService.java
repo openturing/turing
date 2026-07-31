@@ -116,9 +116,31 @@ public class TurTranscriptionService {
      */
     public TurTranscriptionResult transcribe(byte[] audio, String mimeType, String languageHint,
             TurTranscriptionProgressListener listener, TurTranscriptionHints hints) {
+        return transcribe(audio, mimeType, languageHint, listener, hints,
+                TurTranscriptionPartialListener.NOOP);
+    }
+
+    /**
+     * T849 / §LXIII.4 — chunk-aware transcription that additionally relays
+     * transcript text to {@code partial} as a streaming-capable backend produces
+     * it, so a long single-chunk job shows words arriving instead of an
+     * indeterminate bar.
+     *
+     * <p>Partials are emitted on the <b>single-chunk path only</b>: chunks are
+     * transcribed bounded-parallel, so interleaving deltas from concurrent chunks
+     * would render text out of order. A chunked recording keeps the honest
+     * chunk-index progress it already had — and single-chunk is precisely the case
+     * that has no sub-progress to show today.
+     */
+    public TurTranscriptionResult transcribe(byte[] audio, String mimeType, String languageHint,
+            TurTranscriptionProgressListener listener, TurTranscriptionHints hints,
+            TurTranscriptionPartialListener partial) {
         TurTranscriptionProgressListener progress =
                 listener == null ? TurTranscriptionProgressListener.NOOP : listener;
         TurTranscriptionHints context = hints == null ? TurTranscriptionHints.none() : hints;
+        TurTranscriptionPartialListener partialText = props.isStreamPartialText() && partial != null
+                ? partial
+                : TurTranscriptionPartialListener.NOOP;
         if (audio == null || audio.length == 0) {
             return TurTranscriptionResult.fail("Empty audio.");
         }
@@ -126,7 +148,7 @@ public class TurTranscriptionService {
         TurTranscriptionProviderType activeType = config.type();
         TurTranscriptionProvider provider = providerFactory.resolveActive();
 
-        Ask ask = new Ask(audio, mimeType, languageHint, context);
+        Ask ask = new Ask(audio, mimeType, languageHint, context, partialText);
         TurTranscriptionResult primary =
                 timedTranscribe(activeType, provider, config.maxUploadBytes(), ask, progress);
 
@@ -147,11 +169,26 @@ public class TurTranscriptionService {
 
     /** One transcription ask: the audio and everything that describes how to read it. */
     private record Ask(byte[] audio, String mimeType, String languageHint,
-            TurTranscriptionHints hints) {
+            TurTranscriptionHints hints, TurTranscriptionPartialListener partial) {
 
-        /** The same ask against a different chunk of the original audio. */
+        /**
+         * The same ask against a different chunk of the original audio, with
+         * partials <b>dropped</b> — T849 emits live text only for a single chunk,
+         * because parallel chunk deltas would arrive interleaved.
+         */
         Ask forChunk(TurAudioChunk chunk) {
-            return new Ask(chunk.audio(), chunk.mimeType(), languageHint, hints);
+            return new Ask(chunk.audio(), chunk.mimeType(), languageHint, hints,
+                    TurTranscriptionPartialListener.NOOP);
+        }
+
+        /** The same ask against the one chunk that is the whole audio — partials kept. */
+        Ask forOnlyChunk(TurAudioChunk chunk) {
+            return new Ask(chunk.audio(), chunk.mimeType(), languageHint, hints, partial);
+        }
+
+        /** True when this ask wants live text and nothing else has to be ordered. */
+        boolean wantsPartials() {
+            return partial != null && partial != TurTranscriptionPartialListener.NOOP;
         }
     }
 
@@ -200,7 +237,10 @@ public class TurTranscriptionService {
         }
         if (chunks.size() == 1) {
             progress.onProgress(0, 1);
-            TurTranscriptionResult single = transcribeChunk(provider, ask.forChunk(chunks.get(0)));
+            // T849 — the only path that keeps the partial listener: one chunk means
+            // one ordered stream of text.
+            TurTranscriptionResult single =
+                    transcribeChunk(provider, ask.forOnlyChunk(chunks.get(0)));
             progress.onProgress(1, 1);
             return single;
         }
@@ -242,6 +282,10 @@ public class TurTranscriptionService {
      * so a third-party provider that only implements it is never bypassed.
      */
     private TurTranscriptionResult transcribeChunk(TurTranscriptionProvider provider, Ask ask) {
+        if (ask.wantsPartials()) {
+            return provider.transcribe(ask.audio(), ask.mimeType(), ask.languageHint(),
+                    ask.hints(), ask.partial());
+        }
         return ask.hints().isEmpty()
                 ? provider.transcribe(ask.audio(), ask.mimeType(), ask.languageHint())
                 : provider.transcribe(ask.audio(), ask.mimeType(), ask.languageHint(), ask.hints());

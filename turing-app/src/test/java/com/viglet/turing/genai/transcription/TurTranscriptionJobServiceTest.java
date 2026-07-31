@@ -47,7 +47,7 @@ class TurTranscriptionJobServiceTest {
 
     private TurTranscriptionService svcReturning(TurTranscriptionResult result) {
         TurTranscriptionService svc = mock(TurTranscriptionService.class);
-        when(svc.transcribe(any(), any(), any())).thenReturn(result);
+        when(svc.transcribe(any(), any(), any(), any(), any(), any())).thenReturn(result);
         when(svc.isAvailable()).thenReturn(true);
         return svc;
     }
@@ -110,7 +110,7 @@ class TurTranscriptionJobServiceTest {
         CountDownLatch release = new CountDownLatch(1);
         CountDownLatch started = new CountDownLatch(1);
         TurTranscriptionService svc = mock(TurTranscriptionService.class);
-        when(svc.transcribe(any(), any(), any())).thenAnswer(inv -> {
+        when(svc.transcribe(any(), any(), any(), any(), any(), any())).thenAnswer(inv -> {
             started.countDown();
             release.await(5, TimeUnit.SECONDS);
             return TurTranscriptionResult.ok("done", "en");
@@ -152,9 +152,9 @@ class TurTranscriptionJobServiceTest {
         bus.subscribe("watch-me").subscribe(last::set);
 
         bus.publish(new TurTranscriptionJobStatus("watch-me", TurTranscriptionJobState.SUCCEEDED,
-                "done", "en", null, 1L, 2L, 3L));
+                "done", null, "en", null, 1L, 2L, 3L));
         bus.publish(new TurTranscriptionJobStatus("other", TurTranscriptionJobState.FAILED,
-                null, null, "x", 1L, 2L, 3L));
+                null, null, null, "x", 1L, 2L, 3L));
 
         assertThat(last.get()).isNotNull();
         assertThat(last.get().jobId()).isEqualTo("watch-me");

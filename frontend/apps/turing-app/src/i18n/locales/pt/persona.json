@@ -144,6 +144,7 @@
       "transcribing": "Transcrevendo…",
       "transcribingChunks": "Transcrevendo {{done}}/{{total}}…",
       "analyzing": "Analisando…",
+      "liveTranscript": "Transcrevendo — o que ouvimos até agora",
       "drafted": "Rascunho de persona pronto — revise e salve",
       "failed": "Não foi possível criar uma persona a partir do áudio"
     },

@@ -15,14 +15,20 @@ package com.viglet.turing.genai.transcription;
  * change. Carries the transcript only once {@link TurTranscriptionJobState#SUCCEEDED}
  * (never the audio bytes — those are discarded the moment the worker finishes).
  *
- * @param jobId       opaque id assigned at submit time
- * @param state       lifecycle state
- * @param transcript  stitched transcript when succeeded, else {@code null}
- * @param language    detected/aggregated language when succeeded, else {@code null}
- * @param error       failure message when failed, else {@code null}
- * @param submittedAt epoch millis the job was accepted
- * @param startedAt   epoch millis a worker picked it up, or 0 while queued
- * @param finishedAt  epoch millis it reached a terminal state, or 0 while pending
+ * <p>T849 — {@link #partialTranscript()} carries the text produced <em>so far</em>
+ * while the job is still {@code RUNNING}, for a streaming-capable backend. It is
+ * a preview, never the result: the authoritative transcript is still
+ * {@link #transcript()} on the terminal snapshot.
+ *
+ * @param jobId            opaque id assigned at submit time
+ * @param state            lifecycle state
+ * @param transcript       stitched transcript when succeeded, else {@code null}
+ * @param partialTranscript T849 — transcript so far while running, else {@code null}
+ * @param language         detected/aggregated language when succeeded, else {@code null}
+ * @param error            failure message when failed, else {@code null}
+ * @param submittedAt      epoch millis the job was accepted
+ * @param startedAt        epoch millis a worker picked it up, or 0 while queued
+ * @param finishedAt       epoch millis it reached a terminal state, or 0 while pending
  *
  * @author Alexandre Oliveira
  * @since 2026.3.4
@@ -31,6 +37,7 @@ public record TurTranscriptionJobStatus(
         String jobId,
         TurTranscriptionJobState state,
         String transcript,
+        String partialTranscript,
         String language,
         String error,
         long submittedAt,

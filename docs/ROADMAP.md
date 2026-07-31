@@ -232,7 +232,6 @@
 > vendor-deprecation framing in [STRATEGY.md](STRATEGY.md) §XVI; design in
 > [IMPROVEMENTS.md](IMPROVEMENTS.md) §LXIII.
 
-- 💭 **T849** (deps: T846) **Streamed file transcription (`stream=true`)** — `gpt-transcribe` can stream transcript events for a completed file; surface them as partial-text deltas on the existing `TurTranscriptionJobEventBus` SSE so a long job shows text arriving instead of chunk-index progress. Promote when a UI actually renders partial text — the job surface (T692) is already the right transport. → §LXIII.4
 - 💭 **T851** (deps: T846) **Speaker diarization (`diarized_json`)** — per-speaker segments for multi-speaker recordings (interviews, calls), which would give Block AW's synthetic-research interviews and any meeting-audio use case attributable turns rather than one flat transcript. Needs a `TurTranscriptionResult` shape decision (segments + speaker labels) before it is more than an idea. → §LXIII.6
 
 ## Non-goals (do NOT add as tasks)

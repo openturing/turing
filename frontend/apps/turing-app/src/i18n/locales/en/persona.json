@@ -144,6 +144,7 @@
       "transcribing": "Transcribing…",
       "transcribingChunks": "Transcribing {{done}}/{{total}}…",
       "analyzing": "Analysing…",
+      "liveTranscript": "Transcribing — what we've heard so far",
       "drafted": "Draft persona ready — review and save",
       "failed": "Could not derive a persona from the audio"
     },

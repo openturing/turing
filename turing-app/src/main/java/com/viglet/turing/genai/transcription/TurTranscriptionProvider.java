@@ -49,6 +49,23 @@ public interface TurTranscriptionProvider {
         return transcribe(audio, mimeType, languageHint);
     }
 
+    /**
+     * T849 / §LXIII.4 — as above, but relaying transcript text to {@code partial}
+     * as the backend produces it, for a backend that can stream a completed file.
+     *
+     * <p>Defaults to the non-streaming call for the same reason as the hints
+     * overload: a provider that cannot stream should simply never call the
+     * listener, and a third-party implementation written against the earlier seam
+     * must keep working untouched.
+     *
+     * @param partial receives the transcript accumulated so far; never {@code null}
+     *                — pass {@link TurTranscriptionPartialListener#NOOP} for none
+     */
+    default TurTranscriptionResult transcribe(byte[] audio, String mimeType, String languageHint,
+            TurTranscriptionHints hints, TurTranscriptionPartialListener partial) {
+        return transcribe(audio, mimeType, languageHint, hints);
+    }
+
     /** True when a transcription backend is configured and usable. */
     boolean isAvailable();
 

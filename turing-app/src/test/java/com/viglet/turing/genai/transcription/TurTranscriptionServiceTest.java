@@ -12,7 +12,11 @@ package com.viglet.turing.genai.transcription;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.util.List;
@@ -116,6 +120,90 @@ class TurTranscriptionServiceTest {
 
         assertThat(result.success()).isTrue();
         assertThat(result.text()).isEqualTo("hello");
+    }
+
+    // ---- T849 partial text ----------------------------------------------
+
+    /**
+     * A single chunk is one ordered stream, so the partial listener reaches the
+     * provider — this is the case whose UI can otherwise only show an
+     * indeterminate bar.
+     */
+    @Test
+    void singleChunkForwardsThePartialListenerToTheProvider() {
+        TurTranscriptionProvider provider = mock(TurTranscriptionProvider.class);
+        when(provider.transcribe(any(), any(), any(), any(), any()))
+                .thenReturn(TurTranscriptionResult.ok("hello", "en"));
+        TurTranscriptionProviderFactory factory = mock(TurTranscriptionProviderFactory.class);
+        when(factory.resolveActive()).thenReturn(provider);
+
+        TurAudioChunker chunker = mock(TurAudioChunker.class);
+        byte[] audio = new byte[10];
+        when(chunker.chunk(any(), any(), anyLong()))
+                .thenReturn(List.of(new TurAudioChunk(audio, "audio/mpeg", 0, 0, -1, 0)));
+
+        TurTranscriptionPartialListener partial = text -> { };
+        TurTranscriptionResult result = service(factory, chunker, resolverWithLimit(100L))
+                .transcribe(audio, "audio/mpeg", "en", TurTranscriptionProgressListener.NOOP,
+                        TurTranscriptionHints.none(), partial);
+
+        assertThat(result.success()).isTrue();
+        verify(provider).transcribe(any(), eq("audio/mpeg"), eq("en"), any(), eq(partial));
+    }
+
+    /**
+     * Chunks are transcribed bounded-parallel, so relaying their deltas would
+     * interleave text out of order — the listener must be dropped and the honest
+     * chunk-index progress kept.
+     */
+    @Test
+    void multiChunkDropsThePartialListener() {
+        TurTranscriptionProvider provider = mock(TurTranscriptionProvider.class);
+        when(provider.transcribe(any(), any(), any()))
+                .thenReturn(TurTranscriptionResult.ok("chunk text", "en"));
+        TurTranscriptionProviderFactory factory = mock(TurTranscriptionProviderFactory.class);
+        when(factory.resolveActive()).thenReturn(provider);
+
+        TurAudioChunker chunker = mock(TurAudioChunker.class);
+        when(chunker.chunk(any(), any(), anyLong())).thenReturn(List.of(
+                new TurAudioChunk(new byte[] { 0 }, "audio/mpeg", 0, 0, 10, 0),
+                new TurAudioChunk(new byte[] { 1 }, "audio/mpeg", 1, 8, 20, 2)));
+
+        service(factory, chunker, resolverWithLimit(1L))
+                .transcribe(new byte[5], "audio/mpeg", "en", TurTranscriptionProgressListener.NOOP,
+                        TurTranscriptionHints.none(), text -> { });
+
+        // Hint-less + partial-less asks stay on the original 3-arg seam.
+        verify(provider, times(2)).transcribe(any(), any(), any());
+        verify(provider, never()).transcribe(any(), any(), any(), any(), any());
+    }
+
+    /** The kill switch forces every call back onto the non-streaming seam. */
+    @Test
+    void disablingStreamPartialTextDropsTheListener() {
+        TurTranscriptionProvider provider = mock(TurTranscriptionProvider.class);
+        when(provider.transcribe(any(), any(), any()))
+                .thenReturn(TurTranscriptionResult.ok("hello", "en"));
+        TurTranscriptionProviderFactory factory = mock(TurTranscriptionProviderFactory.class);
+        when(factory.resolveActive()).thenReturn(provider);
+
+        TurAudioChunker chunker = mock(TurAudioChunker.class);
+        byte[] audio = new byte[10];
+        when(chunker.chunk(any(), any(), anyLong()))
+                .thenReturn(List.of(new TurAudioChunk(audio, "audio/mpeg", 0, 0, -1, 0)));
+
+        TurConfigProperties config = new TurConfigProperties();
+        TurTranscriptionProperty props = new TurTranscriptionProperty();
+        props.setStreamPartialText(false);
+        config.setTranscription(props);
+
+        service(factory, chunker, resolverWithLimit(100L),
+                new TurTranscriptionMetricsService(), config)
+                .transcribe(audio, "audio/mpeg", "en", TurTranscriptionProgressListener.NOOP,
+                        TurTranscriptionHints.none(), text -> { });
+
+        verify(provider).transcribe(any(), any(), any());
+        verify(provider, never()).transcribe(any(), any(), any(), any(), any());
     }
 
     @Test

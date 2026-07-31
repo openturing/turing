@@ -92,6 +92,20 @@ public enum TurTranscriptionModelFamily {
     }
 
     /**
+     * T849 / §LXIII.4 — true when the family accepts {@code stream=true} on
+     * {@code /audio/transcriptions} and emits transcript events while it works.
+     *
+     * <p>Derived rather than declared: the split is exactly whisper vs. the
+     * {@code gpt-*transcribe} models, and a self-hosted whisper server that
+     * ignored the flag would return one blocking JSON body anyway. Streaming is
+     * always attempted optimistically and falls back to the blocking call, so a
+     * wrong answer here costs a retry, never a transcript.
+     */
+    public boolean supportsStreaming() {
+        return this != WHISPER;
+    }
+
+    /**
      * Resolve the dialect from a model id. Blank/unknown → {@link #WHISPER}.
      *
      * <p>Matching is on the id shape rather than an allow-list so dated snapshots

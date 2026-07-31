@@ -9,16 +9,25 @@
  */
 package com.viglet.turing.genai.transcription;
 
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
 import java.util.Map;
 
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.core.io.ByteArrayResource;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.client.MultipartBodyBuilder;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
 
 import lombok.extern.slf4j.Slf4j;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 
 /**
  * T690 / §XLII.4 — the shared multipart POST to an OpenAI-compatible
@@ -45,6 +54,12 @@ public class TurOpenAiTranscriptionClient {
     private static final String TRANSCRIPTIONS_PATH = "/audio/transcriptions";
     private static final double BYTES_PER_MB = 1024.0 * 1024.0;
 
+    /** T849 — the two stream events that carry transcript text. */
+    private static final String STREAM_DELTA_EVENT = "transcript.text.delta";
+    private static final String STREAM_DONE_EVENT = "transcript.text.done";
+
+    private final ObjectMapper objectMapper = JsonMapper.builder().build();
+
     /**
      * POST {@code audio} to {@code target.baseUrl()}{@code /audio/transcriptions}.
      *
@@ -58,6 +73,44 @@ public class TurOpenAiTranscriptionClient {
      */
     public TurTranscriptionResult transcribe(TurTranscriptionTarget target, byte[] audio,
             String mimeType, String languageHint, TurTranscriptionHints hints) {
+        return transcribe(target, audio, mimeType, languageHint, hints,
+                TurTranscriptionPartialListener.NOOP);
+    }
+
+    /**
+     * T849 / §LXIII.4 — as above, but when {@code partial} is a real listener and
+     * the model family can stream ({@code gpt-*transcribe}), the request is sent
+     * with {@code stream=true} and transcript deltas are relayed as they arrive.
+     *
+     * <p><b>Fail-open by construction:</b> any streaming failure — an unsupported
+     * flag, a proxy that buffers the body, a malformed event — falls back to the
+     * ordinary blocking call, which produces the same final transcript. Streaming
+     * can therefore only ever cost a retry, never a result.
+     */
+    public TurTranscriptionResult transcribe(TurTranscriptionTarget target, byte[] audio,
+            String mimeType, String languageHint, TurTranscriptionHints hints,
+            TurTranscriptionPartialListener partial) {
+        TurTranscriptionResult rejected = reject(target, audio);
+        if (rejected != null) {
+            return rejected;
+        }
+        TurTranscriptionModelFamily family = target.family();
+        TurTranscriptionHints context = hints == null ? TurTranscriptionHints.none() : hints;
+
+        // T849 — stream only when the family can and someone is actually rendering
+        // the text. A null return means "streaming didn't work" → blocking call.
+        if (streamingWanted(partial, family)) {
+            TurTranscriptionResult streamed = transcribeStreaming(
+                    target, family, audio, mimeType, languageHint, context, partial);
+            if (streamed != null) {
+                return streamed;
+            }
+        }
+        return transcribeBlocking(target, family, audio, mimeType, languageHint, context);
+    }
+
+    /** The pre-flight guards, as one nullable rejection. */
+    private TurTranscriptionResult reject(TurTranscriptionTarget target, byte[] audio) {
         if (audio == null || audio.length == 0) {
             return TurTranscriptionResult.fail("Empty audio.");
         }
@@ -72,20 +125,30 @@ public class TurOpenAiTranscriptionClient {
                             + "Shorten it or re-encode at a lower bitrate / mono (e.g. 64 kbps MP3), "
                             + "or install ffmpeg so large audio is chunked automatically.");
         }
-        TurTranscriptionModelFamily family = target.family();
+        return null;
+    }
+
+    /** T849 — there is both something to stream to and a family that can stream. */
+    static boolean streamingWanted(TurTranscriptionPartialListener partial,
+            TurTranscriptionModelFamily family) {
+        return partial != null
+                && partial != TurTranscriptionPartialListener.NOOP
+                && family.supportsStreaming();
+    }
+
+    /** The original one-shot POST — unchanged behaviour for every non-streaming call. */
+    private TurTranscriptionResult transcribeBlocking(TurTranscriptionTarget target,
+            TurTranscriptionModelFamily family, byte[] audio, String mimeType,
+            String languageHint, TurTranscriptionHints hints) {
         try {
-            MultipartBodyBuilder body = buildBody(target, family, audio, mimeType, languageHint,
-                    hints == null ? TurTranscriptionHints.none() : hints);
+            MultipartBodyBuilder body =
+                    buildBody(target, family, audio, mimeType, languageHint, hints);
 
             RestClient client = RestClient.builder().baseUrl(target.baseUrl()).build();
             @SuppressWarnings("unchecked")
             Map<String, Object> response = client.post()
                     .uri(TRANSCRIPTIONS_PATH)
-                    .headers(headers -> {
-                        if (StringUtils.isNotBlank(target.apiKey())) {
-                            headers.add("Authorization", "Bearer " + target.apiKey());
-                        }
-                    })
+                    .headers(headers -> authorize(headers, target))
                     .contentType(MediaType.MULTIPART_FORM_DATA)
                     .body(body.build())
                     .retrieve()
@@ -101,6 +164,154 @@ public class TurOpenAiTranscriptionClient {
             log.warn("[Transcription] failed on model '{}' ({}): {}",
                     target.effectiveModel(), family, e.getMessage());
             return TurTranscriptionResult.fail("Transcription failed: " + e.getMessage());
+        }
+    }
+
+    /**
+     * T849 — the same multipart POST with {@code stream=true}, reading the SSE
+     * body and relaying each {@code transcript.text.delta} to {@code partial}.
+     *
+     * @return the completed result, or {@code null} when streaming could not be
+     *         used at all — the caller then retries the blocking path. Returning
+     *         {@code null} rather than a failure is the whole fail-open contract:
+     *         a buffering proxy or an older endpoint must cost a retry, not the
+     *         transcript.
+     */
+    private TurTranscriptionResult transcribeStreaming(TurTranscriptionTarget target,
+            TurTranscriptionModelFamily family, byte[] audio, String mimeType,
+            String languageHint, TurTranscriptionHints hints,
+            TurTranscriptionPartialListener partial) {
+        MultipartBodyBuilder body = buildBody(target, family, audio, mimeType, languageHint, hints);
+        body.part("stream", "true");
+        try {
+            RestClient client = RestClient.builder().baseUrl(target.baseUrl()).build();
+            return client.post()
+                    .uri(TRANSCRIPTIONS_PATH)
+                    .headers(headers -> {
+                        authorize(headers, target);
+                        headers.add("Accept", MediaType.TEXT_EVENT_STREAM_VALUE);
+                    })
+                    .contentType(MediaType.MULTIPART_FORM_DATA)
+                    .body(body.build())
+                    .exchange((request, response) -> {
+                        if (!response.getStatusCode().is2xxSuccessful()) {
+                            log.debug("[Transcription] stream rejected with HTTP {} — falling back",
+                                    response.getStatusCode());
+                            return null;
+                        }
+                        return readStream(response.getBody(), languageHint, partial);
+                    }, false);
+        } catch (RuntimeException e) {
+            log.debug("[Transcription] streaming unavailable on model '{}' ({}) — falling back: {}",
+                    target.effectiveModel(), family, e.getMessage());
+            return null;
+        }
+    }
+
+    /**
+     * Consume the SSE body, accumulating {@code transcript.text.delta} events and
+     * finishing on {@code transcript.text.done}. Returns {@code null} when the
+     * stream yielded no text at all, so the caller falls back rather than
+     * reporting an empty transcript.
+     */
+    private TurTranscriptionResult readStream(InputStream bodyStream, String languageHint,
+            TurTranscriptionPartialListener partial) throws IOException {
+        StreamAccumulator accumulator = new StreamAccumulator(languageHint);
+        try (BufferedReader reader = new BufferedReader(
+                new InputStreamReader(bodyStream, StandardCharsets.UTF_8))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                JsonNode event = parseFrame(line);
+                if (event != null) {
+                    accumulator.accept(event, text -> notifyPartial(partial, text));
+                }
+            }
+        }
+        return accumulator.result();
+    }
+
+    /**
+     * One SSE line → its parsed event, or {@code null} for a comment, a blank, the
+     * terminator, or an unparseable payload. A malformed frame is skipped rather
+     * than fatal — the next one may still be good.
+     */
+    private JsonNode parseFrame(String line) {
+        String payload = ssePayload(line);
+        if (payload == null) {
+            return null;
+        }
+        try {
+            return objectMapper.readTree(payload);
+        } catch (RuntimeException e) {
+            log.debug("[Transcription] skipping unparseable stream frame: {}", e.getMessage());
+            return null;
+        }
+    }
+
+    /** {@code data: {...}} → the JSON payload; anything else (comments, blanks) → null. */
+    static String ssePayload(String line) {
+        if (line == null || !line.startsWith("data:")) {
+            return null;
+        }
+        String payload = line.substring("data:".length()).trim();
+        return payload.isEmpty() || "[DONE]".equals(payload) ? null : payload;
+    }
+
+    /** A listener must never be able to abort a transcription that is working. */
+    private void notifyPartial(TurTranscriptionPartialListener partial, String text) {
+        try {
+            partial.onPartialText(text);
+        } catch (RuntimeException e) {
+            log.debug("[Transcription] partial-text listener threw: {}", e.getMessage());
+        }
+    }
+
+    private static void authorize(HttpHeaders headers, TurTranscriptionTarget target) {
+        if (StringUtils.isNotBlank(target.apiKey())) {
+            headers.add("Authorization", "Bearer " + target.apiKey());
+        }
+    }
+
+    /**
+     * T849 — folds the transcript stream's events into one result. Package-private
+     * so the event mapping can be tested without an HTTP round-trip.
+     */
+    static final class StreamAccumulator {
+
+        private final StringBuilder accumulated = new StringBuilder();
+        private String finalText;
+        private String language;
+
+        StreamAccumulator(String languageHint) {
+            this.language = languageHint;
+        }
+
+        /** Apply one event, notifying {@code onText} with the text so far on a delta. */
+        void accept(JsonNode event, java.util.function.Consumer<String> onText) {
+            String type = event.path("type").asString("");
+            if (STREAM_DELTA_EVENT.equals(type)) {
+                String delta = event.path("delta").asString("");
+                if (!delta.isEmpty()) {
+                    accumulated.append(delta);
+                    onText.accept(accumulated.toString());
+                }
+            } else if (STREAM_DONE_EVENT.equals(type)) {
+                finalText = event.path("text").asString(accumulated.toString());
+                String eventLanguage = event.path("language").asString("");
+                if (!eventLanguage.isBlank()) {
+                    language = eventLanguage;
+                }
+            }
+        }
+
+        /** The completed result, or {@code null} when the stream carried no text. */
+        TurTranscriptionResult result() {
+            String text = StringUtils.defaultIfBlank(finalText, accumulated.toString());
+            if (StringUtils.isBlank(text)) {
+                return null;
+            }
+            // gpt-*transcribe returns no segment logprobs, streamed or not (T846).
+            return TurTranscriptionResult.ok(text, language, null);
         }
     }
 

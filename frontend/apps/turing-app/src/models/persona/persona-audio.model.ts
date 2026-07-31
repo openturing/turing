@@ -36,5 +36,12 @@ export interface PersonaAudioJobStatus {
   totalChunks: number;
   draft?: TurPersona | null;
   transcript?: string | null;
+  /**
+   * T849 / §LXIII.4 — the words heard so far, pushed while `TRANSCRIBING` when
+   * the backend can stream a completed file. Absent on a chunked recording
+   * (parallel chunks would arrive out of order) and on backends that can't
+   * stream, so treat it as an optional enhancement over `completedChunks`.
+   */
+  partialTranscript?: string | null;
   error?: string | null;
 }

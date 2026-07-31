@@ -22,7 +22,9 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 import com.viglet.turing.genai.authoring.persona.TurPersonaAudioDeriveService.DraftResult;
+import com.viglet.turing.genai.transcription.TurPartialTextThrottle;
 import com.viglet.turing.genai.transcription.TurTranscriptionBusyException;
+import com.viglet.turing.genai.transcription.TurTranscriptionHints;
 import com.viglet.turing.genai.transcription.TurTranscriptionResult;
 import com.viglet.turing.genai.transcription.TurTranscriptionService;
 import com.viglet.turing.persistence.dto.persona.TurPersonaDto;
@@ -134,6 +136,14 @@ public class TurPersonaAudioJobService {
                                     job.jobId, completed, total);
                             eventBus.publish(job.snapshot());
                         }
+                    },
+                    TurTranscriptionHints.none(),
+                    // T849 — a single-chunk recording has no chunk counter to show;
+                    // the arriving words are the progress.
+                    text -> {
+                        if (job.setPartialTranscript(text)) {
+                            eventBus.publish(job.snapshot());
+                        }
                     });
             if (transcription == null || !transcription.success()
                     || StringUtils.isBlank(transcription.text())) {
@@ -199,11 +209,13 @@ public class TurPersonaAudioJobService {
     private static final class Job {
         private final String jobId;
         private final long submittedAt = System.currentTimeMillis();
+        private final TurPartialTextThrottle partialThrottle = new TurPartialTextThrottle();
         private TurPersonaAudioJobState state = TurPersonaAudioJobState.QUEUED;
         private int completedChunks;
         private int totalChunks;
         private TurPersonaDto draft;
         private String transcript;
+        private String partialTranscript;
         private String error;
         private long startedAt;
         private long finishedAt;
@@ -235,6 +247,19 @@ public class TurPersonaAudioJobService {
             return changed;
         }
 
+        /**
+         * T849 — record the words heard so far. Returns {@code true} only when the
+         * throttle says it is worth a fresh SSE snapshot, so a token-rate stream
+         * doesn't flood the bus.
+         */
+        synchronized boolean setPartialTranscript(String text) {
+            if (!partialThrottle.shouldPublish(text, System.currentTimeMillis())) {
+                return false;
+            }
+            this.partialTranscript = text;
+            return true;
+        }
+
         synchronized void markAnalyzing() {
             this.state = TurPersonaAudioJobState.ANALYZING;
         }
@@ -254,7 +279,7 @@ public class TurPersonaAudioJobService {
 
         synchronized TurPersonaAudioJobStatus snapshot() {
             return new TurPersonaAudioJobStatus(jobId, state, completedChunks, totalChunks,
-                    draft, transcript, error, submittedAt, startedAt, finishedAt);
+                    draft, transcript, partialTranscript, error, submittedAt, startedAt, finishedAt);
         }
     }
 }

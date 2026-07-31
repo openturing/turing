@@ -3008,12 +3008,6 @@ id to `TRANSCRIPTION`, so the type-aware model picker needs no change. The catal
 pipeline (T776/T777/T782) already turns a catalog row into seeded prices and
 deprecation warnings.
 
-#### LXIII.4 Streamed file transcription (T849)
-`gpt-transcribe` supports `stream=true` for a completed file, emitting transcript
-events as it processes. The job surface (T692) already streams — swapping chunk-index
-progress for partial text is a provider + event-mapping change, not a new transport.
-Stays 💭 until a UI renders partial text; the current progress events are honest.
-
 #### LXIII.6 Speaker diarization (T851)
 `diarized_json` returns per-speaker segments. The value is attributable turns for
 multi-speaker audio — Block AW's synthetic-research interviews, meeting/call recordings

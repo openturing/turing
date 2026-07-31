@@ -18,16 +18,23 @@ import com.viglet.turing.persistence.dto.persona.TurPersonaDto;
  * {@code transcript} it came from ride only the {@link TurPersonaAudioJobState#SUCCEEDED}
  * snapshot; the audio bytes are never echoed back.
  *
- * @param jobId           opaque id assigned at submit time
- * @param state           lifecycle state
- * @param completedChunks transcription chunks finished so far (0 until known)
- * @param totalChunks     total transcription chunks (0 until the plan is known)
- * @param draft           the drafted persona when succeeded, else {@code null}
- * @param transcript      the transcript when succeeded, else {@code null}
- * @param error           failure message when failed, else {@code null}
- * @param submittedAt     epoch millis the job was accepted
- * @param startedAt       epoch millis a worker picked it up, or 0 while queued
- * @param finishedAt      epoch millis it reached a terminal state, or 0 while pending
+ * <p>T849 — {@link #partialTranscript()} carries the words heard <em>so far</em>
+ * while still {@link TurPersonaAudioJobState#TRANSCRIBING}, when the backend can
+ * stream. It is what the UI renders to show progress on a recording that fits a
+ * single chunk and therefore has no chunk counter to show. A preview, never the
+ * result — the authoritative text still rides the terminal snapshot.
+ *
+ * @param jobId            opaque id assigned at submit time
+ * @param state            lifecycle state
+ * @param completedChunks  transcription chunks finished so far (0 until known)
+ * @param totalChunks      total transcription chunks (0 until the plan is known)
+ * @param draft            the drafted persona when succeeded, else {@code null}
+ * @param transcript       the transcript when succeeded, else {@code null}
+ * @param partialTranscript T849 — words heard so far while transcribing, else {@code null}
+ * @param error            failure message when failed, else {@code null}
+ * @param submittedAt      epoch millis the job was accepted
+ * @param startedAt        epoch millis a worker picked it up, or 0 while queued
+ * @param finishedAt       epoch millis it reached a terminal state, or 0 while pending
  *
  * @author Alexandre Oliveira
  * @since 2026.3.4
@@ -39,6 +46,7 @@ public record TurPersonaAudioJobStatus(
         int totalChunks,
         TurPersonaDto draft,
         String transcript,
+        String partialTranscript,
         String error,
         long submittedAt,
         long startedAt,

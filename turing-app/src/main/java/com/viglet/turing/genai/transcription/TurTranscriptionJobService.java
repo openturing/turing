@@ -122,8 +122,16 @@ public class TurTranscriptionJobService {
         job.markRunning();
         eventBus.publish(job.snapshot());
         try {
-            TurTranscriptionResult result =
-                    transcriptionService.transcribe(audio, mimeType, languageHint);
+            // T849 — relay arriving text, throttled, so a long single-chunk job
+            // shows the transcript building instead of a bare RUNNING state.
+            TurTranscriptionResult result = transcriptionService.transcribe(
+                    audio, mimeType, languageHint, TurTranscriptionProgressListener.NOOP,
+                    TurTranscriptionHints.none(),
+                    text -> {
+                        if (job.setPartialTranscript(text)) {
+                            eventBus.publish(job.snapshot());
+                        }
+                    });
             if (result != null && result.success()) {
                 job.markSucceeded(result.text(), result.language());
             } else {
@@ -169,8 +177,10 @@ public class TurTranscriptionJobService {
     private static final class Job {
         private final String jobId;
         private final long submittedAt = System.currentTimeMillis();
+        private final TurPartialTextThrottle partialThrottle = new TurPartialTextThrottle();
         private TurTranscriptionJobState state = TurTranscriptionJobState.QUEUED;
         private String transcript;
+        private String partialTranscript;
         private String language;
         private String error;
         private long startedAt;
@@ -183,6 +193,19 @@ public class TurTranscriptionJobService {
         synchronized void markRunning() {
             this.state = TurTranscriptionJobState.RUNNING;
             this.startedAt = System.currentTimeMillis();
+        }
+
+        /**
+         * T849 — record the transcript so far. Returns {@code true} only when the
+         * throttle says it is worth a fresh SSE snapshot, so a token-rate stream
+         * doesn't flood the bus.
+         */
+        synchronized boolean setPartialTranscript(String text) {
+            if (!partialThrottle.shouldPublish(text, System.currentTimeMillis())) {
+                return false;
+            }
+            this.partialTranscript = text;
+            return true;
         }
 
         synchronized void markSucceeded(String transcript, String language) {
@@ -199,8 +222,8 @@ public class TurTranscriptionJobService {
         }
 
         synchronized TurTranscriptionJobStatus snapshot() {
-            return new TurTranscriptionJobStatus(jobId, state, transcript, language, error,
-                    submittedAt, startedAt, finishedAt);
+            return new TurTranscriptionJobStatus(jobId, state, transcript, partialTranscript,
+                    language, error, submittedAt, startedAt, finishedAt);
         }
     }
 }

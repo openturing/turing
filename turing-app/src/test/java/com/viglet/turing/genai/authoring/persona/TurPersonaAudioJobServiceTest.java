@@ -61,7 +61,7 @@ class TurPersonaAudioJobServiceTest {
     @Test
     void runsTranscribeThenAnalyseThenSucceeds() {
         // Transcription reports 2/2 chunks via the listener, then returns text.
-        when(transcriptionService.transcribe(any(), any(), any(), any())).thenAnswer(inv -> {
+        when(transcriptionService.transcribe(any(), any(), any(), any(), any(), any())).thenAnswer(inv -> {
             TurTranscriptionProgressListener listener = inv.getArgument(3);
             listener.onProgress(0, 2);
             listener.onProgress(1, 2);
@@ -91,7 +91,7 @@ class TurPersonaAudioJobServiceTest {
 
     @Test
     void failsSoftWhenTranscriptionFails() {
-        when(transcriptionService.transcribe(any(), any(), any(), any()))
+        when(transcriptionService.transcribe(any(), any(), any(), any(), any(), any()))
                 .thenReturn(TurTranscriptionResult.fail("no STT backend"));
 
         String jobId = service.submit(new byte[] { 9 }, "audio/wav", null).jobId();

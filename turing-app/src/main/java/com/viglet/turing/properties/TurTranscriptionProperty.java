@@ -141,6 +141,17 @@ public class TurTranscriptionProperty {
     private int asyncJobRetentionSeconds = 3600;
 
     /**
+     * T849 — relay transcript text to a caller that renders it, as the backend
+     * produces it ({@code stream=true}). Only engages when the model family can
+     * stream (the {@code gpt-*transcribe} models — never whisper), the audio fits
+     * a single chunk, <b>and</b> the caller attached a partial-text listener, so
+     * the blast radius is exactly the surfaces that show live text. Any streaming
+     * failure falls back to the blocking call, which yields the same transcript.
+     * Set {@code false} to force the blocking path everywhere.
+     */
+    private boolean streamPartialText = true;
+
+    /**
      * T693 — enable the local→cloud confidence fallback. When {@code true} and the
      * active backend either fails or returns a confidence below
      * {@link #confidenceThreshold}, the transcription is retried once on
