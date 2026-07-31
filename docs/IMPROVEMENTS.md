@@ -2855,3 +2855,183 @@ degrades to no-sort exactly as today. The engine (`TurDslLuceneExecutor.buildSor
 untouched. A possible future alignment (out of scope here) is to reuse the target SN
 site's own index analyzers so ranking tokenization matches how the field was indexed.
 
+
+## LXI. Answer-first search — the steerable, auditable answer engine (Block BN)
+
+**The trigger.** A product review asked whether Turing could return search results
+"like Perplexity". The audit found that Turing already owns almost every *engine*
+piece of an answer engine — and none of the *surface*. The gap is composition and
+contract, not AI capability. Positioning bet in [STRATEGY.md](STRATEGY.md) §XV; this
+section is the build rationale.
+
+**What already ships (do not rebuild).**
+
+- **Retrieval.** `TurSNHybridRankingService` fuses the lexical (BM25) page with a
+  per-site vector pass through `TurRagRrf` (k=60) under `TurSNRankingMode`
+  (`LEGACY` / `HYBRID_RRF` / `HYBRID_RRF_RERANK`); eight rerank strategies live behind
+  the `TurRagRerankStrategy` seam; knowledge bases run `VECTOR`,
+  `VECTORLESS_STRUCTURED` or `HYBRID` (§LIV).
+- **Cited answers.** `TurCatalogCopilotResult` already returns
+  `{answer, citations[], groundedQuerySummary, totalHits}` where
+  `TurCatalogCitation.rank` is a 1-based footnote assigned by order of first
+  appearance, with the answer's `[n]` markers rewritten to match (T800). That *is*
+  the answer-engine wire shape — it is just bound to `/copilot` and non-streaming.
+- **Provenance + audit.** `TurRagSource` (`sources[]` SSE), `TurChatCitation` with
+  answer-span offsets (T152/T154), `TurCitationDriftService` + its detection job, and
+  the T516 answer-grounding guardrail.
+- **Web fusion.** `TurLiveAnswersService` (T187) already weaves the indexed KB
+  (`[KB-n]`), `web_search`, `web_fetch` and `code_execution` into one cited turn.
+- **Surface.** `AiModeChat` + `TuringSourceChips` (confidence-graded chips with a
+  per-chip "why did you say this?"), and an unused `TuringCopilot` in the react-sdk.
+
+**The four real gaps.**
+
+1. **The surface is exclusive, not fused.** `search/components/search-content.tsx`
+   renders `showAiMode ? <AiModeChat/> : <SearchResultsPanel/>`. Turning AI on costs
+   the user their results, facets and pagination. An answer engine never makes that
+   trade.
+2. **Three citation contracts.** `TurRagSource` (no rank), `TurCatalogCitation`
+   (footnote rank), `TurChatCitation` (per-sentence spans). The T800 renumbering that
+   makes `[n]` in the prose agree with the chip exists **only** on the catalog path,
+   so the main SN/RAG answer ships unnumbered chips and inert `[n]` text.
+3. **No single streaming answer endpoint.** `/copilot` is POST→JSON; the SN chat SSE
+   is a conversation, not an answer, and does not guarantee sources arrive before the
+   first token.
+4. **No follow-ups, no research trace, one retrieval pass.**
+
+**The differentiation — why this is not a Perplexity clone.** Perplexity's moat is
+web-index breadth; competing there is unwinnable and uninteresting. Turing's answer
+sits on top of a **real faceted index with an auditable ranking pipeline**, which
+buys three things Perplexity is structurally unable to offer: an answer you can
+**steer** (turn a facet, the answer re-synthesizes within that constraint), an answer
+you can **audit** (per-source lexical/semantic/fused rank and RRF score), and an
+answer that **knows when it has decayed** (citation drift). Phases 3–4 below are that
+bet; phases 1–2 are the table stakes that make it renderable.
+
+### Phase 1 — Contract & transport
+
+#### LXI.1 Unified answer-citation contract + shared footnote numbering (T825)
+Extract the T800 renumbering out of `TurCatalogCopilotService.groundCitations` into a
+shared `TurAnswerCitationNumberer` (parse the `[n]` markers actually present in the
+prose, remap raw ranks to compact answer-order footnotes `1..k`, rewrite the markers,
+return citations in footnote order) and apply it on the SN/RAG path too. Add `rank` to
+`TurRagSource` so a chip carries its footnote, and define one `TurAnswerCitation`
+projection the catalog, SN/RAG and native-citation paths all normalize onto. The
+per-sentence `TurChatCitation` answer-span data stays as an *enrichment* of that
+projection, not a fourth shape. Fail-open: prose with no usable markers keeps today's
+bounded top-k behaviour with `rank = 1..k` and untouched text.
+
+#### LXI.2 Streaming answer endpoint (T826)
+New `GET /api/sn/{siteName}/answer` (SSE) that composes retrieval → rerank →
+synthesis and emits, in guaranteed order: `sources` (so the client can paint source
+cards before a single token), then `token`s, then `citations`, `followups` and
+`trace`. Reuses `TurSNHybridRankingService`, the rerank seam and LXI.1's numberer;
+respects the site's `TurSNKnowledgeBaseMode`. **Deliberately not** an `answer` field
+on `TurSNSiteSearchBean` — the hot search path must never pay LLM latency, and the two
+surfaces have different cache lifetimes. The client fires search and answer in
+parallel and composes them.
+
+#### LXI.3 Follow-up question generation (T827)
+`TurFollowUpQuestionService`: one cheap, cached LLM call over the answer + its
+citations returning 3–5 next questions, streamed as the `followups` event. Cached on
+(query, filter state, source set) with the `TurLlmSummaryService` cache discipline so
+a repeated query costs nothing. Fail-open to no chips. Distinct from
+`use-turing-related-terms` (search-term co-occurrence) and from Gemini's
+`searchSuggestions` (Google-mandated, web-only).
+
+### Phase 2 — The fused frontend
+
+#### LXI.4 Answer-first fused search page (T828)
+Replace the exclusive toggle with composition: the answer panel renders **above**
+`SearchResultsPanel`, and the facet sidebar, pagination and result cards stay mounted
+throughout. The `_aimode` param becomes an expand/collapse preference, not a mode
+switch. Streaming answer, source cards, follow-up chips, results — one page. This is
+the single highest-leverage change in the block; everything else in Phase 2 hangs off
+it.
+
+#### LXI.5 Inline `[n]` citation anchors (T829)
+A rehype plugin for `TuringMarkdown` turning each `[n]` into a clickable superscript
+that scroll-links and highlights the matching source card / result row, with a hover
+popover carrying the cited passage. On the native-citation path the T154
+`answerStart`/`answerEnd` offsets drive an underline over the exact grounded span
+instead of a trailing marker. Depends on LXI.1 — the anchor is only correct once the
+footnote and the chip agree.
+
+#### LXI.6 `useTuringAnswer` + `TuringAnswer` in the react-sdk (T830)
+Headless hook + design-agnostic component (the `TuringCopilot`/`TuringSourceChips`
+skinning contract: every part class-nameable, no bundled styles) so an integrator gets
+the fused answer surface in one import, and so the admin search page, the showcase and
+the public-site hero all consume the same implementation rather than three forks. Also
+ports to the vanilla `@viglet/turing-sdk` as an observable answer controller.
+
+### Phase 3 — The differentiators
+
+#### LXI.7 Steerable answers — facets as answer controls (T831)
+The answer is synthesized **within the active filter set**, and the answer panel
+states so with removable constraint chips ("answering within: Vendor = Anthropic ·
+Context ≥ 200k"). Turning a facet re-runs the answer against the narrowed candidate
+set; removing one widens it. Mechanically small — the filter state already exists and
+already reaches retrieval — but it is the block's flagship claim: **a Perplexity
+answer has no filter state to turn.** It also inverts the usual failure mode of
+answer engines (a confident answer over the wrong subset) into a visible, editable
+control.
+
+#### LXI.8 "Why this answer" — auditable provenance panel (T832)
+One expandable panel per answer surfacing the T389 `rankingExplanation` already
+attached to hybrid-mode results (lexical rank, semantic rank, fused rank, RRF score),
+plus the rerank strategy used, the knowledge-base mode, the candidate count and which
+retrieved chunks were dropped before synthesis. Promotes `TuringSourceChips`' per-chip
+"why did you say this?" to an answer-level audit trail. Positions directly against
+black-box answer engines and is the feature a regulated buyer asks for first.
+
+#### LXI.9 Answer freshness & drift badge (T833)
+Wire the shipped `TurCitationDriftService` + `TurCitationDriftDetectionJob` to the
+answer surface: when a cited source changed after the answer was produced, show a
+freshness badge and a one-click re-answer. No answer engine on the market models an
+answer as something that **decays**; Turing already computes the signal and currently
+only reports it internally.
+
+#### LXI.10 Structured answers — answer as an artifact, not prose (T834)
+For comparative or enumerable questions over a faceted / `VECTORLESS_STRUCTURED`
+catalog, render the answer as a **comparison table or spec grid** built from the
+declared field manifest, each cell individually citable, with prose reduced to a
+lead-in. Reuses the shipped answer-as-app / generative-UI path
+(`TurAnswerAsAppClientTools`, `useGenerativeUI`) rather than adding a renderer.
+Requires a cheap answer-shape decision (prose | table | list) — which is exactly the
+kind of small structured call the planner seam already makes.
+
+### Phase 4 — Depth & distribution
+
+#### LXI.11 Multi-query fan-out (T835)
+Decompose one question into parallel sub-queries behind the existing
+`TurCopilotQueryPlanner` seam, bounded by
+`turing.genai.copilot.planning.max-passes`, and union the recall through `TurRagRrf`
+before rerank. Today one turn issues one retrieval; Perplexity's recall advantage on
+multi-hop questions is mostly fan-out, not model quality. Fail-open to the single-pass
+path on any planner failure, and off by default for `DETERMINISTIC` sites.
+
+#### LXI.12 Live research trace (T836)
+Frame the `tool_call` SSE events the runtime already emits as a collapsible timeline
+("searched *X* · read *N* sources · reranked with Cohere · answered"), streamed as a
+`trace` event. Pure presentation over shipped plumbing, and the cheapest way to make a
+multi-second answer feel deliberate rather than slow.
+
+#### LXI.13 Answer permalinks & shareable answer cards (T837)
+A stable URL for an answer (query + filter state + source snapshot + timestamp) that
+re-renders it read-only, with an OG card via the shipped `TurChatShareOgService`. Turns
+every good internal answer into a linkable artifact, and — for public deployments —
+into indexable content. Pairs with Block O (GEO): the answer surface becomes a
+distribution channel, not just a UI.
+
+#### LXI.14 Answer-level analytics & the self-tuning loop (T838)
+Emit answer-level signals into the existing chat analytics — citation clicked, facet
+refined after reading, follow-up taken, re-answer requested, thumbs — keyed so the
+`selftuning` miner/drafter can consume them. The steerability of LXI.7 produces an
+unusually clean relevance signal (a user narrowing a facet *after* reading an answer
+is explicit feedback that retrieval missed), which is worth capturing deliberately.
+
+**Invariants.** Every phase is additive and fail-open: `/search` is untouched and
+never gains LLM latency; a site with no default LLM renders exactly today's results
+page; a failure anywhere in the answer pipeline degrades to results-only, never to an
+error page. The `_aimode=true` deep links keep working. No new retrieval research —
+every ranking behaviour reuses the shipped hybrid/rerank pipeline.
