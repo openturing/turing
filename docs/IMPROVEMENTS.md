@@ -2984,39 +2984,3 @@ never gains LLM latency; a site with no default LLM renders exactly today's resu
 page; a failure anywhere in the answer pipeline degrades to results-only, never to an
 error page. The `_aimode=true` deep links keep working. No new retrieval research —
 every ranking behaviour reuses the shipped hybrid/rerank pipeline.
-
-## LXIII. Next-generation transcription models — `gpt-transcribe` / `gpt-live-transcribe` (Block BP)
-
-**The trigger.** OpenAI shipped two ASR models that supersede the ones Block AS
-(§XLII, shipped) was written against:
-
-| Model | Role | Replaces | Endpoint | Price |
-| --- | --- | --- | --- | --- |
-| `gpt-transcribe` | completed files, batch, streamed file transcripts, committed realtime turns | `gpt-4o-transcribe` | `/v1/audio/transcriptions` (+ realtime transcription sessions) | $0.0045/min |
-| `gpt-live-transcribe` | low-latency live transcription | `gpt-realtime-whisper` | realtime transcription sessions **only** | $0.017/min |
-
-Both take three kinds of context (`prompt`, `keywords`, `languages`) and are reported
-at roughly half Whisper's word error rate on real-world audio (accents, numbers, jargon,
-noise). `whisper-1` remains available and remains the right pick for timestamps,
-translation and subtitles — so this block is **additive**, never a migration.
-
-**What already ships (do not rebuild).** The 25 MiB cap is unchanged, so
-`TurFfmpegAudioChunker` (T688) and the chunk-aware orchestration (T689) stay exactly as
-they are. Async jobs + SSE (T692), per-backend metrics and the AUDIO-slot wiring (T693)
-are transport-agnostic. `TurLlmModelKind.classify` already resolves any `*transcribe*`
-id to `TRANSCRIPTION`, so the type-aware model picker needs no change. The catalog
-pipeline (T776/T777/T782) already turns a catalog row into seeded prices and
-deprecation warnings.
-
-#### LXIII.6 Speaker diarization (T851)
-`diarized_json` returns per-speaker segments. The value is attributable turns for
-multi-speaker audio — Block AW's synthetic-research interviews, meeting/call recordings
-— but it needs a `TurTranscriptionResult` shape decision first (today it is one flat
-text + optional confidence), and chunked audio makes speaker identity across chunk
-boundaries a real problem. Idea, not a design.
-
-**Invariants.** Additive and fail-open throughout: an install that configured
-`whisper-1` (or left the field blank on `OPENAI_COMPATIBLE`) keeps its exact behaviour;
-no chunking, job, metrics or AUDIO-slot change; no new dependency; and the retired
-in-process ONNX path (ex-T694) stays a Non-goal — the fully-local answer is still
-`OPENAI_COMPATIBLE` against a self-hosted server.

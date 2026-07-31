@@ -22,6 +22,7 @@ import static org.mockito.Mockito.when;
 import java.util.List;
 
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 
 import com.viglet.turing.properties.TurConfigProperties;
 import com.viglet.turing.properties.TurTranscriptionProperty;
@@ -204,6 +205,82 @@ class TurTranscriptionServiceTest {
 
         verify(provider).transcribe(any(), any(), any());
         verify(provider, never()).transcribe(any(), any(), any(), any(), any());
+    }
+
+    // ---- T851 diarization vs. chunking ----------------------------------
+
+    /** A single chunk is one request, so its speaker labels are internally consistent. */
+    @Test
+    void singleChunkKeepsTheDiarizationRequestAndItsSegments() {
+        TurTranscriptionProvider provider = mock(TurTranscriptionProvider.class);
+        when(provider.transcribe(any(), any(), any(), any()))
+                .thenReturn(TurTranscriptionResult.ok("A: hi B: hello", "en", null,
+                        List.of(new TurTranscriptionSegment("A", "hi", 0.0, 1.0),
+                                new TurTranscriptionSegment("B", "hello", 1.0, 2.0))));
+        TurTranscriptionProviderFactory factory = mock(TurTranscriptionProviderFactory.class);
+        when(factory.resolveActive()).thenReturn(provider);
+
+        TurAudioChunker chunker = mock(TurAudioChunker.class);
+        byte[] audio = new byte[10];
+        when(chunker.chunk(any(), any(), anyLong()))
+                .thenReturn(List.of(new TurAudioChunk(audio, "audio/mpeg", 0, 0, -1, 0)));
+
+        TurTranscriptionResult result = service(factory, chunker, resolverWithLimit(100L))
+                .transcribe(audio, "audio/mpeg", "en", TurTranscriptionProgressListener.NOOP,
+                        TurTranscriptionHints.diarized());
+
+        assertThat(result.diarized()).isTrue();
+        assertThat(result.segments()).hasSize(2);
+
+        ArgumentCaptor<TurTranscriptionHints> sent =
+                ArgumentCaptor.forClass(TurTranscriptionHints.class);
+        verify(provider).transcribe(any(), any(), any(), sent.capture());
+        assertThat(sent.getValue().diarize()).isTrue();
+    }
+
+    /**
+     * Speaker labels are scoped to one request: chunk 2's "A" is not chunk 1's
+     * "A", and no voice identity is exposed to reconcile them. Concatenating the
+     * turns would be confidently wrong, so the flat transcript is returned with no
+     * segments — and the chunks are not asked to diarize in the first place.
+     */
+    @Test
+    void multiChunkDropsDiarizationRatherThanMisattributeSpeakers() {
+        TurTranscriptionProvider provider = mock(TurTranscriptionProvider.class);
+        when(provider.transcribe(any(), any(), any(), any())).thenAnswer(inv -> {
+            byte[] b = inv.getArgument(0);
+            return b.length > 0 && b[0] == 0
+                    ? TurTranscriptionResult.ok("the quick brown fox", "en", null,
+                            List.of(new TurTranscriptionSegment("A", "the quick brown fox", null, null)))
+                    : TurTranscriptionResult.ok("brown fox jumps high", "en", null,
+                            List.of(new TurTranscriptionSegment("A", "brown fox jumps high", null, null)));
+        });
+        TurTranscriptionProviderFactory factory = mock(TurTranscriptionProviderFactory.class);
+        when(factory.resolveActive()).thenReturn(provider);
+
+        TurAudioChunker chunker = mock(TurAudioChunker.class);
+        when(chunker.chunk(any(), any(), anyLong())).thenReturn(List.of(
+                new TurAudioChunk(new byte[] { 0 }, "audio/mpeg", 0, 0, 10, 0),
+                new TurAudioChunk(new byte[] { 1 }, "audio/mpeg", 1, 8, 20, 2)));
+
+        // A keyword rides along so the assertion can distinguish "diarization was
+        // stripped" from "all context was dropped".
+        TurTranscriptionResult result = service(factory, chunker, resolverWithLimit(1L))
+                .transcribe(new byte[5], "audio/mpeg", "en", TurTranscriptionProgressListener.NOOP,
+                        new TurTranscriptionHints(null, List.of("Turing"), true));
+
+        // The transcript still stitches; the (untrustworthy) attribution is gone.
+        assertThat(result.success()).isTrue();
+        assertThat(result.text()).isEqualTo("the quick brown fox jumps high");
+        assertThat(result.diarized()).isFalse();
+
+        // Each chunk was asked WITHOUT diarization — never pay for a format we
+        // discard — but keeps the vocabulary, which is still valid per chunk.
+        ArgumentCaptor<TurTranscriptionHints> sent =
+                ArgumentCaptor.forClass(TurTranscriptionHints.class);
+        verify(provider, times(2)).transcribe(any(), any(), any(), sent.capture());
+        assertThat(sent.getAllValues()).allMatch(hints -> !hints.diarize());
+        assertThat(sent.getAllValues()).allMatch(hints -> hints.keywords().contains("Turing"));
     }
 
     @Test

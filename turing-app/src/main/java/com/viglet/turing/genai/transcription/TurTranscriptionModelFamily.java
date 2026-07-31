@@ -106,6 +106,19 @@ public enum TurTranscriptionModelFamily {
     }
 
     /**
+     * T851 / §LXIII.6 — true when the family accepts
+     * {@code response_format=diarized_json} and returns per-speaker segments.
+     *
+     * <p>Same split as streaming, and for the same reason: whisper's
+     * {@code verbose_json} segments are timing boundaries with no speaker
+     * attribution at all, so asking it to diarize would either 400 or return
+     * segments that silently mean something else.
+     */
+    public boolean supportsDiarization() {
+        return this != WHISPER;
+    }
+
+    /**
      * Resolve the dialect from a model id. Blank/unknown → {@link #WHISPER}.
      *
      * <p>Matching is on the id shape rather than an allow-list so dated snapshots

@@ -62,6 +62,7 @@ const DEFAULT_SETTINGS: TurGlobalSettings = {
     transcriptionPrompt: "",
     transcriptionKeywords: "",
     transcriptionKeywordsFromThesaurus: false,
+    transcriptionDiarizationEnabled: false,
     transcriptionMaxUploadBytes: 26214400,
     transcriptionApiKey: "",
     transcriptionApiKeySet: false,

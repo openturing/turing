@@ -88,7 +88,13 @@ public class TurTranscriptionConfigResolver {
             keywords.addAll(keywordSource.keywords(
                     TurTranscriptionHints.MAX_KEYWORDS - keywords.size()));
         }
-        return new TurTranscriptionHints(prompt, keywords);
+        return new TurTranscriptionHints(prompt, keywords, diarizationEnabled());
+    }
+
+    /** T851 — either the env prop or the UI switch turns diarization on. */
+    private boolean diarizationEnabled() {
+        return properties.isDiarizationEnabled()
+                || globalSettingsService.isTranscriptionDiarizationEnabled();
     }
 
     /** Env-prop list wins whole; otherwise the comma-separated Global Settings value. */

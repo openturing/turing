@@ -165,6 +165,8 @@ public class TurGlobalSettingsBean {
     private String transcriptionKeywords;
     /** T847 — opt-in: top the keyword hint up from the Thesaurus (Block AQ). */
     private boolean transcriptionKeywordsFromThesaurus;
+    /** T851 — opt-in: ask for per-speaker segments ({@code diarized_json}). */
+    private boolean transcriptionDiarizationEnabled;
     /** T687 — per-request upload limit in bytes; audio above this is chunked (T688/T689). */
     private long transcriptionMaxUploadBytes;
     /**

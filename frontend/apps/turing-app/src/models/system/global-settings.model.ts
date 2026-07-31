@@ -164,6 +164,8 @@ export interface TurGlobalSettings {
   transcriptionKeywords?: string;
   /** T847 — opt-in: top the keyword hint up from the Thesaurus (Block AQ). */
   transcriptionKeywordsFromThesaurus?: boolean;
+  /** T851 — opt-in: ask for per-speaker segments (`diarized_json`). */
+  transcriptionDiarizationEnabled?: boolean;
   /** T687 — per-request upload limit in bytes; audio above this is chunked (T688/T689). */
   transcriptionMaxUploadBytes?: number;
   /**

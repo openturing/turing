@@ -152,9 +152,9 @@ class TurTranscriptionJobServiceTest {
         bus.subscribe("watch-me").subscribe(last::set);
 
         bus.publish(new TurTranscriptionJobStatus("watch-me", TurTranscriptionJobState.SUCCEEDED,
-                "done", null, "en", null, 1L, 2L, 3L));
+                "done", null, java.util.List.of(), "en", null, 1L, 2L, 3L));
         bus.publish(new TurTranscriptionJobStatus("other", TurTranscriptionJobState.FAILED,
-                null, null, null, "x", 1L, 2L, 3L));
+                null, null, java.util.List.of(), null, "x", 1L, 2L, 3L));
 
         assertThat(last.get()).isNotNull();
         assertThat(last.get().jobId()).isEqualTo("watch-me");

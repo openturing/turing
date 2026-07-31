@@ -264,6 +264,33 @@ export function TranscriptionSection({ state }: { state: GlobalSettingsFormState
                 {strategy !== "NONE" && (
                     <FormField
                         control={form.control}
+                        name="transcriptionDiarizationEnabled"
+                        render={({ field }) => (
+                            <FormItemTwoColumns>
+                                <FormItemTwoColumns.Left>
+                                    <FormItemTwoColumns.Label>
+                                        {t("globalSettings.transcriptionDiarization")}
+                                    </FormItemTwoColumns.Label>
+                                    <FormItemTwoColumns.Description>
+                                        {t("globalSettings.transcriptionDiarizationDesc")}
+                                    </FormItemTwoColumns.Description>
+                                </FormItemTwoColumns.Left>
+                                <FormItemTwoColumns.Right>
+                                    <FormControl>
+                                        <GradientSwitch
+                                            checked={field.value ?? false}
+                                            onCheckedChange={field.onChange}
+                                            disabled={isLoading}
+                                        />
+                                    </FormControl>
+                                </FormItemTwoColumns.Right>
+                            </FormItemTwoColumns>
+                        )}
+                    />
+                )}
+                {strategy !== "NONE" && (
+                    <FormField
+                        control={form.control}
                         name="transcriptionMaxUploadBytes"
                         rules={{ min: { value: 1, message: t("globalSettings.transcriptionMaxUploadBytesInvalid") } }}
                         render={({ field }) => (

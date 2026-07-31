@@ -150,6 +150,8 @@
     "transcriptionKeywordsPlaceholder": "Viglet Turing ES, Solr, Navegação Semântica, RRF",
     "transcriptionKeywordsFromThesaurus": "Incluir termos do Thesaurus",
     "transcriptionKeywordsFromThesaurusDesc": "Complementa a lista de palavras-chave com o seu Thesaurus, para que o vocabulário que o motor de busca já expande também chegue ao transcritor. Suas palavras-chave vêm sempre primeiro.",
+    "transcriptionDiarization": "Identificar quem fala",
+    "transcriptionDiarizationDesc": "Retorna a transcrição como turnos atribuíveis (quem disse o quê, e quando) em vez de um texto corrido. Exige um modelo gpt-transcribe, custa mais e vale para gravações que cabem em uma única requisição — uma gravação mais longa é dividida em partes cujos rótulos de falante não podem ser reconciliados, então ela mantém o texto corrido.",
     "transcriptionApiKey": "Chave de API",
     "transcriptionApiKeyDesc": "Chave de API do endpoint de transcrição. Armazenada criptografada. Em branco usa a chave da instância de LLM padrão.",
     "transcriptionApiKeySetDesc": "Uma chave está configurada. Deixe em branco para mantê-la; digite um novo valor para substituí-la.",

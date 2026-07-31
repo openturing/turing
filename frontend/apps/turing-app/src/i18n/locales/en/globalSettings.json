@@ -150,6 +150,8 @@
     "transcriptionKeywordsPlaceholder": "Viglet Turing ES, Solr, Semantic Navigation, RRF",
     "transcriptionKeywordsFromThesaurus": "Add Thesaurus terms",
     "transcriptionKeywordsFromThesaurusDesc": "Top the keyword list up from your Thesaurus, so the vocabulary the search engine already expands also reaches the transcriber. Your own keywords always come first.",
+    "transcriptionDiarization": "Identify speakers",
+    "transcriptionDiarizationDesc": "Return the transcript as attributable turns (who said what, and when) instead of one flat text. Needs a gpt-transcribe model, costs more, and applies to recordings that fit a single request — a longer recording is split into chunks whose speaker labels can't be matched up, so it keeps the flat transcript.",
     "transcriptionApiKey": "API Key",
     "transcriptionApiKeyDesc": "API key for the transcription endpoint. Stored encrypted. Blank falls back to the default LLM instance's key.",
     "transcriptionApiKeySetDesc": "A key is configured. Leave blank to keep it; type a new value to replace it.",

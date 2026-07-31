@@ -219,6 +219,13 @@ public class TurConfigVarOnStartup {
 	 */
 	public static final String TRANSCRIPTION_KEYWORDS_FROM_THESAURUS =
 			"GLOBAL_TRANSCRIPTION_KEYWORDS_FROM_THESAURUS";
+	/**
+	 * T851 / §LXIII.6 — {@code true} to ask for per-speaker segments
+	 * ({@code diarized_json}). Opt-in; only a {@code gpt-*transcribe} model serves
+	 * it, and only for a recording that fits a single chunk.
+	 */
+	public static final String TRANSCRIPTION_DIARIZATION_ENABLED =
+			"GLOBAL_TRANSCRIPTION_DIARIZATION_ENABLED";
 	/** T687 — transcription API key, stored encrypted; blank falls back to the default LLM instance key. */
 	public static final String TRANSCRIPTION_API_KEY = "GLOBAL_TRANSCRIPTION_API_KEY";
 	/**
@@ -313,6 +320,7 @@ public class TurConfigVarOnStartup {
 		ensureConfigVar(TRANSCRIPTION_PROMPT, GLOBAL_PATH, "");
 		ensureConfigVar(TRANSCRIPTION_KEYWORDS, GLOBAL_PATH, "");
 		ensureConfigVar(TRANSCRIPTION_KEYWORDS_FROM_THESAURUS, GLOBAL_PATH, FALSE_VALUE);
+		ensureConfigVar(TRANSCRIPTION_DIARIZATION_ENABLED, GLOBAL_PATH, FALSE_VALUE);
 		ensureConfigVar(TRANSCRIPTION_API_KEY, GLOBAL_PATH, "");
 		ensureConfigVar(TRANSCRIPTION_MAX_UPLOAD_BYTES, GLOBAL_PATH,
 				TRANSCRIPTION_MAX_UPLOAD_BYTES_DEFAULT_VALUE);

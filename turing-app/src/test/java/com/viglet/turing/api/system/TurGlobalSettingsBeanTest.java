@@ -47,6 +47,7 @@ class TurGlobalSettingsBeanTest {
                 false,  // ragSnRerankCacheEnabled (T341)
                 null, null, null,  // transcriptionStrategy / endpoint / model (T687)
                 null, null, false,  // transcriptionPrompt / keywords / keywordsFromThesaurus (T847)
+                false,  // transcriptionDiarizationEnabled (T851)
                 0L,  // transcriptionMaxUploadBytes (T687)
                 null, false,  // transcriptionApiKey / apiKeySet (T687)
                 null, null,  // urlFetchMode / browserlessUrl (T739)

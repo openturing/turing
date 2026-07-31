@@ -133,7 +133,7 @@ public class TurTranscriptionJobService {
                         }
                     });
             if (result != null && result.success()) {
-                job.markSucceeded(result.text(), result.language());
+                job.markSucceeded(result.text(), result.language(), result.segments());
             } else {
                 job.markFailed(result == null ? "No transcription result." : result.error());
             }
@@ -181,6 +181,7 @@ public class TurTranscriptionJobService {
         private TurTranscriptionJobState state = TurTranscriptionJobState.QUEUED;
         private String transcript;
         private String partialTranscript;
+        private java.util.List<TurTranscriptionSegment> segments = java.util.List.of();
         private String language;
         private String error;
         private long startedAt;
@@ -208,10 +209,12 @@ public class TurTranscriptionJobService {
             return true;
         }
 
-        synchronized void markSucceeded(String transcript, String language) {
+        synchronized void markSucceeded(String transcript, String language,
+                java.util.List<TurTranscriptionSegment> segments) {
             this.state = TurTranscriptionJobState.SUCCEEDED;
             this.transcript = transcript;
             this.language = language;
+            this.segments = segments == null ? java.util.List.of() : segments;
             this.finishedAt = System.currentTimeMillis();
         }
 
@@ -223,7 +226,7 @@ public class TurTranscriptionJobService {
 
         synchronized TurTranscriptionJobStatus snapshot() {
             return new TurTranscriptionJobStatus(jobId, state, transcript, partialTranscript,
-                    language, error, submittedAt, startedAt, finishedAt);
+                    segments, language, error, submittedAt, startedAt, finishedAt);
         }
     }
 }

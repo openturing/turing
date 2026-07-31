@@ -621,6 +621,17 @@ public class TurGlobalSettingsService {
                 TurConfigVarOnStartup.TRANSCRIPTION_KEYWORDS_FROM_THESAURUS, enabled);
     }
 
+    /** T851 — whether transcriptions ask for per-speaker segments. Opt-in. */
+    public boolean isTranscriptionDiarizationEnabled() {
+        return configVars.getBoolean(
+                TurConfigVarOnStartup.TRANSCRIPTION_DIARIZATION_ENABLED, false);
+    }
+
+    public boolean updateTranscriptionDiarizationEnabled(boolean enabled) {
+        return configVars.setBoolean(
+                TurConfigVarOnStartup.TRANSCRIPTION_DIARIZATION_ENABLED, enabled);
+    }
+
     /**
      * T687 — per-request upload limit in bytes for the active backend. Audio
      * above this is chunked (T688/T689). Defaults to 25 MiB (26,214,400); a

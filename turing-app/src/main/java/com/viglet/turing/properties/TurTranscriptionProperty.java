@@ -141,6 +141,16 @@ public class TurTranscriptionProperty {
     private int asyncJobRetentionSeconds = 3600;
 
     /**
+     * T851 — ask for per-speaker segments ({@code diarized_json}) by default.
+     * Opt-in ({@code false}): it changes the response format, costs more, and only
+     * a {@code gpt-*transcribe} model can serve it. Applies to a recording that
+     * fits a <b>single chunk</b> — speaker labels are scoped to one request, so a
+     * chunked recording silently keeps its flat transcript rather than inventing
+     * cross-chunk identity. A caller can also turn it on per request.
+     */
+    private boolean diarizationEnabled = false;
+
+    /**
      * T849 — relay transcript text to a caller that renders it, as the backend
      * produces it ({@code stream=true}). Only engages when the model family can
      * stream (the {@code gpt-*transcribe} models — never whisper), the audio fits

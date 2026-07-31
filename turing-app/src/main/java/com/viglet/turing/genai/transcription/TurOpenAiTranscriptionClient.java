@@ -14,6 +14,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
 import org.apache.commons.lang3.StringUtils;
@@ -58,6 +60,9 @@ public class TurOpenAiTranscriptionClient {
     private static final String STREAM_DELTA_EVENT = "transcript.text.delta";
     private static final String STREAM_DONE_EVENT = "transcript.text.done";
 
+    /** T851 — the only response format that carries speaker labels. */
+    private static final String DIARIZED_RESPONSE_FORMAT = "diarized_json";
+
     private final ObjectMapper objectMapper = JsonMapper.builder().build();
 
     /**
@@ -99,7 +104,7 @@ public class TurOpenAiTranscriptionClient {
 
         // T849 — stream only when the family can and someone is actually rendering
         // the text. A null return means "streaming didn't work" → blocking call.
-        if (streamingWanted(partial, family)) {
+        if (streamingWanted(partial, family, context)) {
             TurTranscriptionResult streamed = transcribeStreaming(
                     target, family, audio, mimeType, languageHint, context, partial);
             if (streamed != null) {
@@ -128,12 +133,21 @@ public class TurOpenAiTranscriptionClient {
         return null;
     }
 
-    /** T849 — there is both something to stream to and a family that can stream. */
+    /**
+     * T849 — there is both something to stream to and a family that can stream.
+     *
+     * <p>T851 — <b>diarization wins over streaming.</b> {@code diarized_json} is
+     * not a streaming format, and the two answer different questions: streaming is
+     * a progress affordance, diarization changes the shape of the result. Losing
+     * the live text is a cosmetic downgrade; losing the speaker turns would be a
+     * silent loss of data the caller explicitly asked for.
+     */
     static boolean streamingWanted(TurTranscriptionPartialListener partial,
-            TurTranscriptionModelFamily family) {
+            TurTranscriptionModelFamily family, TurTranscriptionHints hints) {
         return partial != null
                 && partial != TurTranscriptionPartialListener.NOOP
-                && family.supportsStreaming();
+                && family.supportsStreaming()
+                && !diarizationWanted(hints, family);
     }
 
     /** The original one-shot POST — unchanged behaviour for every non-streaming call. */
@@ -154,12 +168,19 @@ public class TurOpenAiTranscriptionClient {
                     .retrieve()
                     .body(Map.class);
 
-            if (response == null || !(response.get("text") instanceof String text) || text.isBlank()) {
+            if (response == null) {
+                return TurTranscriptionResult.fail("Transcription returned no text.");
+            }
+            Object rawSegments = response.get("segments");
+            List<TurTranscriptionSegment> turns =
+                    diarizationWanted(hints, family) ? segmentsFrom(rawSegments) : List.of();
+            String text = transcriptFrom(response, turns);
+            if (StringUtils.isBlank(text)) {
                 return TurTranscriptionResult.fail("Transcription returned no text.");
             }
             Object lang = response.get("language");
             return TurTranscriptionResult.ok(text, lang instanceof String s ? s : languageHint,
-                    confidenceFor(family, response.get("segments")));
+                    confidenceFor(family, rawSegments), turns);
         } catch (RuntimeException e) {
             log.warn("[Transcription] failed on model '{}' ({}): {}",
                     target.effectiveModel(), family, e.getMessage());
@@ -332,7 +353,9 @@ public class TurOpenAiTranscriptionClient {
         // text/language) and adds per-segment avg_logprob, from which T693 derives an
         // optional 0–1 confidence. Only the whisper family serves it; the gpt-*transcribe
         // families reject it, so they get plain json and a null confidence instead.
-        body.part("response_format", family.responseFormat());
+        // T851 — an explicit diarization request upgrades that to diarized_json, which
+        // is the only format carrying speaker labels.
+        body.part("response_format", responseFormatFor(family, hints));
         if (StringUtils.isNotBlank(languageHint)) {
             body.part(family.languageParameter(), languageHint.trim());
         }
@@ -344,6 +367,73 @@ public class TurOpenAiTranscriptionClient {
             hints.keywords().forEach(keyword -> body.part("keywords", keyword));
         }
         return body;
+    }
+
+    /**
+     * T851 — the {@code response_format} to ask for: the family's own default,
+     * upgraded to {@code diarized_json} when the caller asked for speaker turns
+     * <b>and</b> the family can produce them. A diarization request against a
+     * whisper backend is silently ignored (its "segments" are timing boundaries
+     * with no speaker, so honouring it would attribute turns to nobody).
+     */
+    static String responseFormatFor(TurTranscriptionModelFamily family,
+            TurTranscriptionHints hints) {
+        return diarizationWanted(hints, family) ? DIARIZED_RESPONSE_FORMAT : family.responseFormat();
+    }
+
+    /** T851 — the caller asked for speaker turns and this family can produce them. */
+    static boolean diarizationWanted(TurTranscriptionHints hints,
+            TurTranscriptionModelFamily family) {
+        return hints != null && hints.diarize() && family.supportsDiarization();
+    }
+
+    /**
+     * The flat transcript for a response. A {@code diarized_json} body may carry
+     * no top-level {@code text} — the transcript is then the turns joined in
+     * order, so {@link TurTranscriptionResult#text()} stays authoritative
+     * regardless of the format that produced it.
+     */
+    static String transcriptFrom(Map<String, Object> response,
+            List<TurTranscriptionSegment> turns) {
+        if (response != null && response.get("text") instanceof String text && !text.isBlank()) {
+            return text;
+        }
+        return turns.stream().map(TurTranscriptionSegment::text)
+                .filter(StringUtils::isNotBlank)
+                .collect(java.util.stream.Collectors.joining(" "));
+    }
+
+    /**
+     * T851 — map a {@code diarized_json} response's {@code segments[]} to
+     * attributable turns. Anything without text is dropped: a turn that says
+     * nothing is noise in a transcript view.
+     */
+    static List<TurTranscriptionSegment> segmentsFrom(Object segments) {
+        if (!(segments instanceof List<?> list) || list.isEmpty()) {
+            return List.of();
+        }
+        List<TurTranscriptionSegment> turns = new ArrayList<>(list.size());
+        for (Object element : list) {
+            if (element instanceof Map<?, ?> segment) {
+                TurTranscriptionSegment turn = new TurTranscriptionSegment(
+                        stringOrNull(segment.get("speaker")),
+                        stringOrNull(segment.get("text")),
+                        secondsOrNull(segment.get("start")),
+                        secondsOrNull(segment.get("end")));
+                if (turn.hasText()) {
+                    turns.add(turn);
+                }
+            }
+        }
+        return List.copyOf(turns);
+    }
+
+    private static String stringOrNull(Object value) {
+        return value instanceof String s ? s : null;
+    }
+
+    private static Double secondsOrNull(Object value) {
+        return value instanceof Number n ? n.doubleValue() : null;
     }
 
     /**

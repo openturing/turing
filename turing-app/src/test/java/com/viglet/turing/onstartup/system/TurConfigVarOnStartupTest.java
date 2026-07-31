@@ -35,7 +35,7 @@ class TurConfigVarOnStartupTest {
         when(turConfigVarRepository.findById(anyString())).thenReturn(Optional.empty());
         turConfigVarOnStartup.createDefaultRows();
         ArgumentCaptor<TurConfigVar> captor = ArgumentCaptor.forClass(TurConfigVar.class);
-        verify(turConfigVarRepository, times(53)).save(captor.capture());
+        verify(turConfigVarRepository, times(54)).save(captor.capture());
         return captor.getAllValues();
     }
 
@@ -112,6 +112,7 @@ class TurConfigVarOnStartupTest {
         expectVar(savedVars, "GLOBAL_TRANSCRIPTION_PROMPT", GLOBAL, "");
         expectVar(savedVars, "GLOBAL_TRANSCRIPTION_KEYWORDS", GLOBAL, "");
         expectVar(savedVars, "GLOBAL_TRANSCRIPTION_KEYWORDS_FROM_THESAURUS", GLOBAL, "false");
+        expectVar(savedVars, "GLOBAL_TRANSCRIPTION_DIARIZATION_ENABLED", GLOBAL, "false");
     }
 
     @Test
@@ -120,7 +121,7 @@ class TurConfigVarOnStartupTest {
         // ensureConfigVar leaves these alone (existing row → no save), but
         // ensureSecretConfigVar AUTO-HEALS blank values for the HMAC
         // secret. So save is called exactly once — for the secret heal —
-        // and the other 52 rows are skipped.
+        // and the other 53 rows are skipped.
         when(turConfigVarRepository.findById(anyString()))
                 .thenReturn(Optional.of(new TurConfigVar()));
 

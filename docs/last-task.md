@@ -204,6 +204,7 @@ number" looked free but wasn't. Grepping three files (`ROADMAP.md`,
 
 ## Log (most recent first)
 
+- **T851 SHIPPED** (Block BP §LXIII.6 — promoted from 💭: `TurTranscriptionSegment` + additive `segments` on the result, opt-in `diarized_json`, single-chunk only because speaker labels are per-request; **CLOSES Block BP**) — 2026-07-31.
 - **T849 SHIPPED** (Block BP §LXIII.4 — promoted from 💭: `stream=true` file transcription relayed as `partialTranscript` on the job SSE via `TurTranscriptionPartialListener` + `TurPartialTextThrottle`, single-chunk only, rendered live in the persona-from-audio card) — 2026-07-31.
 - **T850 SHIPPED** (Block BP §LXIII.5 — `gpt-transcribe`/`gpt-live-transcribe` added to models-catalog (GA) + `gpt-4o-transcribe`/`gpt-realtime-whisper` DEPRECATED; `whisper-1` placeholders/copy retired in Global Settings, i18n and docs-turing; **CLOSES Block BP's planned tasks**) — 2026-07-31.
 - **T847 SHIPPED** (Block BP §LXIII.2 — `TurTranscriptionHints` (`prompt` + bounded `keywords`) on the config + provider seam, global and per request, with the opt-in Thesaurus keyword source) — 2026-07-31.

@@ -173,11 +173,13 @@ public class TurTranscriptionService {
 
         /**
          * The same ask against a different chunk of the original audio, with
-         * partials <b>dropped</b> — T849 emits live text only for a single chunk,
-         * because parallel chunk deltas would arrive interleaved.
+         * partials <b>dropped</b> (T849 emits live text only for a single chunk,
+         * because parallel chunk deltas would arrive interleaved) and diarization
+         * <b>dropped</b> (T851 — per-chunk speaker labels cannot be reconciled, so
+         * asking for a format we would discard only costs money).
          */
         Ask forChunk(TurAudioChunk chunk) {
-            return new Ask(chunk.audio(), chunk.mimeType(), languageHint, hints,
+            return new Ask(chunk.audio(), chunk.mimeType(), languageHint, hints.withoutDiarization(),
                     TurTranscriptionPartialListener.NOOP);
         }
 
@@ -238,11 +240,20 @@ public class TurTranscriptionService {
         if (chunks.size() == 1) {
             progress.onProgress(0, 1);
             // T849 — the only path that keeps the partial listener: one chunk means
-            // one ordered stream of text.
+            // one ordered stream of text. T851 — and the only one that can diarize.
             TurTranscriptionResult single =
                     transcribeChunk(provider, ask.forOnlyChunk(chunks.get(0)));
             progress.onProgress(1, 1);
             return single;
+        }
+        if (ask.hints().diarize()) {
+            // T851 — speaker labels are scoped to ONE request: chunk 2's "A" is not
+            // chunk 1's "A", and the vendor exposes no voice identity to reconcile
+            // them. Concatenating the turns would produce confidently wrong
+            // attribution, which is worse than none — so the transcript is still
+            // returned, without segments, and the reason is logged.
+            log.info("[Transcription] diarization skipped: audio split into {} chunks and speaker "
+                    + "labels are per-request, so cross-chunk attribution cannot be trusted", chunks.size());
         }
 
         List<TurTranscriptionResult> results = transcribeChunks(provider, chunks, ask, progress);

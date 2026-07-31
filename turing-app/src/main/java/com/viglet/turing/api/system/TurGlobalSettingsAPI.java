@@ -97,6 +97,8 @@ public class TurGlobalSettingsAPI {
                 .transcriptionKeywords(turGlobalSettingsService.getTranscriptionKeywords())
                 .transcriptionKeywordsFromThesaurus(
                         turGlobalSettingsService.isTranscriptionKeywordsFromThesaurus())
+                .transcriptionDiarizationEnabled(
+                        turGlobalSettingsService.isTranscriptionDiarizationEnabled())
                 .transcriptionMaxUploadBytes(turGlobalSettingsService.getTranscriptionMaxUploadBytes())
                 // write-only secret: never echo the key, only its set/not-set status
                 .transcriptionApiKey("")
@@ -205,6 +207,9 @@ public class TurGlobalSettingsAPI {
                 .transcriptionKeywordsFromThesaurus(turGlobalSettingsService
                         .updateTranscriptionKeywordsFromThesaurus(
                                 globalSettings.isTranscriptionKeywordsFromThesaurus()))
+                .transcriptionDiarizationEnabled(turGlobalSettingsService
+                        .updateTranscriptionDiarizationEnabled(
+                                globalSettings.isTranscriptionDiarizationEnabled()))
                 .transcriptionMaxUploadBytes(turGlobalSettingsService
                         .updateTranscriptionMaxUploadBytes(globalSettings.getTranscriptionMaxUploadBytes()))
                 // Write-only secret — persisted only when a non-blank value

@@ -121,24 +121,29 @@ class TurTranscriptionStreamTest {
     @Test
     void streamingIsSkippedWithoutARealListener() {
         assertThat(TurOpenAiTranscriptionClient.streamingWanted(
-                TurTranscriptionPartialListener.NOOP, TurTranscriptionModelFamily.GPT_TRANSCRIBE))
+                TurTranscriptionPartialListener.NOOP, TurTranscriptionModelFamily.GPT_TRANSCRIBE,
+                TurTranscriptionHints.none()))
                 .isFalse();
         assertThat(TurOpenAiTranscriptionClient.streamingWanted(
-                null, TurTranscriptionModelFamily.GPT_TRANSCRIBE)).isFalse();
+                null, TurTranscriptionModelFamily.GPT_TRANSCRIBE,
+                TurTranscriptionHints.none())).isFalse();
     }
 
     /** whisper has no streaming transcription endpoint — never attempt it. */
     @Test
     void streamingIsSkippedForTheWhisperFamily() {
         assertThat(TurOpenAiTranscriptionClient.streamingWanted(
-                text -> { }, TurTranscriptionModelFamily.WHISPER)).isFalse();
+                text -> { }, TurTranscriptionModelFamily.WHISPER,
+                TurTranscriptionHints.none())).isFalse();
     }
 
     @Test
     void streamingIsAttemptedForTheGptTranscribeFamilies() {
         assertThat(TurOpenAiTranscriptionClient.streamingWanted(
-                text -> { }, TurTranscriptionModelFamily.GPT_TRANSCRIBE)).isTrue();
+                text -> { }, TurTranscriptionModelFamily.GPT_TRANSCRIBE,
+                TurTranscriptionHints.none())).isTrue();
         assertThat(TurOpenAiTranscriptionClient.streamingWanted(
-                text -> { }, TurTranscriptionModelFamily.GPT_4O_TRANSCRIBE)).isTrue();
+                text -> { }, TurTranscriptionModelFamily.GPT_4O_TRANSCRIBE,
+                TurTranscriptionHints.none())).isTrue();
     }
 }
