@@ -753,3 +753,85 @@ the founding anti-duplication rule). A careful, defensible **comparison table**
 every other bet, so it ships now. Phases 1–2 trade real effort/infra — pull them
 forward as inbound interest or a named design-partner justifies, not
 speculatively.
+
+## XV. The answer-engine bet — steerable, auditable answers
+
+> Why Turing should ship an answer-first search surface, and why it must **not** be
+> positioned as "Perplexity for your intranet". Engineering tasks live in
+> [ROADMAP.md](ROADMAP.md) Block BN; build rationale in
+> [IMPROVEMENTS.md](IMPROVEMENTS.md) §LXI. This section is the positioning bet.
+
+### XV.1 The category has moved
+
+Users no longer accept ten blue links as the terminal output of a search box.
+Perplexity, Google AI Mode and ChatGPT search have reset the default expectation:
+**the answer is the result, and the links are the evidence.** Any enterprise search
+product that still ends at a ranked list reads as a previous generation, regardless of
+how good its retrieval is. Turing already generates cited, grounded answers — it just
+hides them behind an either/or toggle, which is the worst of both positions: it looks
+like a chatbot bolted onto a search page.
+
+### XV.2 The trap — do not compete on breadth
+
+The obvious move is "Perplexity for your own content". It is the wrong frame:
+
+- **It concedes the comparison on Perplexity's terms** — breadth, freshness, speed of
+  the public web — where a self-hosted product over a private corpus loses by
+  definition and by design.
+- **It sets the wrong buying criterion.** A buyer who is told "it's Perplexity for your
+  intranet" evaluates prose quality and nothing else, which is the one axis where a
+  frontier-model SaaS with unlimited crawl budget is strongest.
+- **It is undifferentiated.** Every enterprise-search vendor shipped an "AI answer" box
+  in the last two cycles. The box is now table stakes, not a wedge.
+
+### XV.3 The asymmetry — the answer sits on a real index
+
+Perplexity answers over an opaque web index. Turing answers over a **faceted,
+schema-declared index with an auditable ranking pipeline** — and that substrate buys
+three claims a web answer engine is structurally unable to make:
+
+1. **Steerable.** The answer has *filter state*. The user turns a facet and the answer
+   re-synthesizes inside that constraint, with the active constraints shown as
+   removable chips. Perplexity has no facets to turn — it can only be re-prompted.
+   This also converts the category's worst failure mode (a confident answer over the
+   wrong subset) from an invisible risk into a visible control.
+2. **Auditable.** Every source carries its lexical rank, semantic rank, fused rank and
+   RRF score (T389), the rerank strategy is named, and the dropped candidates are
+   inspectable. "Why this answer" is a panel, not a support ticket. This is the first
+   question a regulated buyer asks and the one a black box cannot answer.
+3. **Decay-aware.** Turing already detects citation drift on a schedule. An answer can
+   therefore be marked stale when a source it cited has changed — a notion no answer
+   engine on the market models, and one that matters far more over policy documents,
+   pricing and product catalogs than over the open web.
+
+Add the structural facts Perplexity cannot match at all: the corpus never leaves the
+customer's infrastructure, the answer can call tools and MCP servers, and the output
+can be a **rendered artifact** (comparison table, spec grid) rather than prose.
+
+### XV.4 The line
+
+> ~~An answer engine for your own content.~~ *(the trap — invites the wrong comparison)*
+
+> **Answers you can steer, audit, and trust to age.**
+> *(sub-line: enterprise search that answers — over your own content, with the facets,
+> the ranking evidence, and the freshness signal still attached.)*
+
+The proof obligation that comes with it: the answer surface must **keep the results and
+facets on screen**. Hiding them to look like a chat product would forfeit the entire
+argument — the visible index *is* the differentiator, not a legacy element to
+minimize.
+
+### XV.5 Sequencing & caution
+
+Block BN phases 1–2 (the contract, the streaming endpoint, the fused page) are table
+stakes: without them Turing looks a generation behind, so they are worth building on
+their own merit. Phases 3–4 are the bet and should be sequenced by which claim a real
+prospect actually presses on — steerability (T831) and auditability (T832) are the two
+that have carried the most weight in review conversations, and both are cheap because
+the underlying data already exists. Per §IX ("build when asked twice"), the speculative
+ones — structured answers (T834), permalinks (T837) — stay 💭 until a named deployment
+asks.
+
+A distribution note: on public deployments the answer surface is also a **GEO asset**
+(Block O, §X) — a citable, permalinked, indexable answer page is exactly the artifact
+that gets a product surfaced by other assistants.

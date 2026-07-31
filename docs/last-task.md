@@ -1,9 +1,19 @@
-# Last task number — `T824` · next block letter — `BN`
+# Last task number — `T838` · next block letter — `BO`
 
 > **Single source of truth for the next free task number.** The next new task is
-> `T825`; after assigning it, bump the number above and the log line below.
+> `T839`; after assigning it, bump the number above and the log line below.
 >
-> **Next block letter — `BN`** (Block **BM** = Headless admin bootstrap — the
+> **Next block letter — `BO`** (Block **BN** = Answer-first search: the steerable,
+> auditable answer engine — a product review asked whether Turing could return results
+> "like Perplexity"; the audit found every *engine* piece already ships (hybrid RRF + 8
+> rerank strategies, `TurCatalogCopilotResult` answer+footnote citations w/ T800 `[n]`
+> renumbering, `sources[]` SSE, T154 answer spans, citation drift, `TurLiveAnswersService`)
+> and none of the *surface*. T825–T838 across 4 phases: contract+streaming `/answer`
+> endpoint, the fused answer-first page (kills the exclusive AI-Mode toggle), then the
+> differentiators — **steerable** (facets as answer controls), **auditable**
+> (`rankingExplanation` panel) and **decay-aware** (drift badge) answers, which is the
+> positioning bet (§XV: do NOT compete with Perplexity on web breadth). All 📋/💭,
+> created 2026-07-31; Block **BM** = Headless admin bootstrap — the
 > `TURING_ADMIN_PASSWORD` env var both READMEs documented was read by nothing, so every
 > `docker run` / CI deploy hit the interactive first-access setup screen. T824 makes it
 > real via `turing.admin.password` + a shared `TurAdminPasswordService`; set-once
@@ -173,6 +183,8 @@ number" looked free but wasn't. Grepping three files (`ROADMAP.md`,
    lists fully-shipped blocks), then bump the letter after creating the block.
 
 ## Log (most recent first)
+
+- **T825–T838** — Block BN: Answer-first search, the steerable/auditable answer engine (§LXI; positioning §XV) — 2026-07-31.
 
 - **T824 SHIPPED** (Block BM — headless admin bootstrap: `TURING_ADMIN_PASSWORD` is now really read; CLOSES Block BM) — 2026-07-28.
 
