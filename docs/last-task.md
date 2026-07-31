@@ -1,9 +1,21 @@
-# Last task number — `T831` · next block letter — `BO`
+# Last task number — `T845` · next block letter — `BP`
 
 > **Single source of truth for the next free task number.** The next new task is
-> `T832`; after assigning it, bump the number above and the log line below.
+> `T846`; after assigning it, bump the number above and the log line below.
 >
-> **Next block letter — `BO`** (Block **BN** = Content-fit tuning loop — the T704
+> **Next block letter — `BP`** (Block **BO** = Answer-first search: the steerable,
+> auditable answer engine — a product review asked whether Turing could return results
+> "like Perplexity"; the audit found every *engine* piece already ships (hybrid RRF + 8
+> rerank strategies, `TurCatalogCopilotResult` answer+footnote citations w/ T800 `[n]`
+> renumbering, `sources[]` SSE, T154 answer spans, citation drift, `TurLiveAnswersService`)
+> and none of the *surface*. T832–T845 across 4 phases: contract+streaming `/answer`
+> endpoint, the fused answer-first page (kills the exclusive AI-Mode toggle), then the
+> differentiators — **steerable** (facets as answer controls), **auditable**
+> (`rankingExplanation` panel) and **decay-aware** (drift badge) answers, which is the
+> positioning bet (§XV: do NOT compete with Perplexity on web breadth). All 📋/💭,
+> created 2026-07-31 — **originally drafted as Block BN / T825–T838 on a parallel
+> branch and renumbered on merge**, because Block BN had already shipped T825–T830 in
+> code (see the 2026-07-31 log entry); Block **BN** = Content-fit tuning loop — the T704
 > follow-ups that made the Persona Match loop trustworthy (T825 the project's LLM now
 > drives the fit score), calibrated (T826 per-project `fitThreshold` replaces the
 > hardcoded 75), noticed (T827 drift webhook after a scheduled run), enforced (T828
@@ -181,6 +193,7 @@ number" looked free but wasn't. Grepping three files (`ROADMAP.md`,
 
 ## Log (most recent first)
 
+- **T832–T845 CREATED** (📋/💭, Block BO §LXII — answer-first search, the steerable/auditable answer engine (positioning §XV). **Renumbered on merge**: drafted on a parallel branch as Block BN / T825–T838, which collided with the already-shipped Block BN (content-fit tuning loop, T825–T830) — the exact hazard this file exists to prevent. The shipped numbers won; the planned block moved to Block **BO** / T832–T845 / §LXII) — 2026-07-31.
 - **T830 SHIPPED** (Block BN §LXI.6 — per-content/per-persona average-per-run series on each RankPanel via `buildTargetTrends` + `±` delta and previous score in both PDF lenses; **CLOSES Block BN**, only 💭 T831 left) — 2026-07-28.
 - **T829 SHIPPED** (Block BN §LXI.5 — fit + adjustment verdicts bound to OpenAI `json_schema`/Anthropic forced tool via `TurStructuredCompletionPort` + `generateStructured`; `TurVerdictSource` + `/verdict-health` counters make degradations visible) — 2026-07-28.
 - **T828 SHIPPED** (Block BN §LXI.4 — `turing match list|run|drift` in `@viglet/turing-cli`; `run` exits non-zero below the fit bar or on a regression with `--fail-on-drop`) — 2026-07-28.
