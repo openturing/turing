@@ -75,13 +75,21 @@ class TurOpenAiRealtimeVoiceProviderTest {
                 {"value":"ek_abc123","expires_at":1750000000,"session":{"model":"gpt-realtime"}}
                 """;
         TurRealtimeVoiceSession session = provider.parseSession(json, "gpt-realtime", "marin",
-                "https://api.openai.com/v1");
+                "https://api.openai.com/v1", "gpt-live-transcribe");
         assertThat(session.clientSecret()).isEqualTo("ek_abc123");
         assertThat(session.expiresAt()).isEqualTo(1750000000L);
         assertThat(session.model()).isEqualTo("gpt-realtime");
         assertThat(session.voice()).isEqualTo("marin");
         assertThat(session.provider()).isEqualTo("openai");
         assertThat(session.wsUrl()).isEqualTo("wss://api.openai.com/v1/realtime?model=gpt-realtime");
+        // T848 — the session carries the ASR model the browser must echo back.
+        assertThat(session.inputTranscriptionModel()).isEqualTo("gpt-live-transcribe");
+    }
+
+    /** T848 / §LXIII.3 — the vendor's current live model, not the superseded whisper id. */
+    @Test
+    void defaultInputTranscriptionModelIsTheCurrentLiveModel() {
+        assertThat(provider().defaultInputTranscriptionModel()).isEqualTo("gpt-live-transcribe");
     }
 
     @Test
@@ -91,7 +99,7 @@ class TurOpenAiRealtimeVoiceProviderTest {
                 {"client_secret":{"value":"ek_nested","expires_at":1750000123}}
                 """;
         TurRealtimeVoiceSession session = provider.parseSession(json, "gpt-realtime-mini", "cedar",
-                "https://api.openai.com/v1");
+                "https://api.openai.com/v1", "gpt-live-transcribe");
         assertThat(session.clientSecret()).isEqualTo("ek_nested");
         assertThat(session.expiresAt()).isEqualTo(1750000123L);
     }
@@ -100,7 +108,7 @@ class TurOpenAiRealtimeVoiceProviderTest {
     void parseThrowsWhenSecretMissing() {
         TurOpenAiRealtimeVoiceProvider provider = provider();
         assertThatThrownBy(() -> provider.parseSession("{\"session\":{}}", "gpt-realtime", "marin",
-                "https://api.openai.com/v1"))
+                "https://api.openai.com/v1", "gpt-live-transcribe"))
                 .isInstanceOf(TurRealtimeVoiceException.class)
                 .hasMessageContaining("client secret");
     }

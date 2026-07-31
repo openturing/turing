@@ -55,6 +55,14 @@ public class TurOpenAiRealtimeVoiceProvider implements TurRealtimeVoiceProvider 
     static final String DEFAULT_MODEL = "gpt-realtime";
     static final String DEFAULT_VOICE = "marin";
 
+    /**
+     * T848 / §LXIII.3 — the vendor's current low-latency live-transcription model.
+     * Supersedes {@code gpt-realtime-whisper}, which the SDK used to hardcode in
+     * the browser. Resolved here so an operator can change ASR without an SDK
+     * release.
+     */
+    static final String DEFAULT_INPUT_TRANSCRIPTION_MODEL = "gpt-live-transcribe";
+
     /** The GA realtime models this provider mints sessions for. */
     private static final Set<String> KNOWN_MODELS = Set.of(
             "gpt-realtime", "gpt-realtime-mini", "gpt-realtime-1.5");
@@ -79,6 +87,11 @@ public class TurOpenAiRealtimeVoiceProvider implements TurRealtimeVoiceProvider 
     @Override
     public String defaultModel() {
         return DEFAULT_MODEL;
+    }
+
+    @Override
+    public String defaultInputTranscriptionModel() {
+        return DEFAULT_INPUT_TRANSCRIPTION_MODEL;
     }
 
     @Override
@@ -108,9 +121,12 @@ public class TurOpenAiRealtimeVoiceProvider implements TurRealtimeVoiceProvider 
             throw new TurRealtimeVoiceException("Unsupported realtime model: " + model);
         }
         String voice = StringUtils.hasText(request.voice()) ? request.voice().trim() : DEFAULT_VOICE;
+        String asrModel = StringUtils.hasText(request.inputTranscriptionModel())
+                ? request.inputTranscriptionModel().trim()
+                : DEFAULT_INPUT_TRANSCRIPTION_MODEL;
 
         String endpoint = clientSecretsEndpoint(creds.baseUrl());
-        String body = buildRequestBody(model, voice, request.instructions());
+        String body = buildRequestBody(model, voice, request.instructions(), asrModel);
         HttpRequest httpRequest = HttpRequest.newBuilder()
                 .uri(URI.create(endpoint))
                 .timeout(TIMEOUT)
@@ -128,7 +144,7 @@ public class TurOpenAiRealtimeVoiceProvider implements TurRealtimeVoiceProvider 
                 throw new TurRealtimeVoiceException(
                         "OpenAI realtime session endpoint returned HTTP " + response.statusCode());
             }
-            return parseSession(response.body(), model, voice, creds.baseUrl());
+            return parseSession(response.body(), model, voice, creds.baseUrl(), asrModel);
         } catch (java.io.IOException e) {
             throw new TurRealtimeVoiceException("realtime voice session request failed: "
                     + e.getMessage(), e);
@@ -138,7 +154,8 @@ public class TurOpenAiRealtimeVoiceProvider implements TurRealtimeVoiceProvider 
         }
     }
 
-    private String buildRequestBody(String model, String voice, String instructions) {
+    private String buildRequestBody(String model, String voice, String instructions,
+            String inputTranscriptionModel) {
         ObjectNode root = objectMapper.createObjectNode();
         ObjectNode session = root.putObject("session");
         session.put("type", "realtime");
@@ -146,7 +163,14 @@ public class TurOpenAiRealtimeVoiceProvider implements TurRealtimeVoiceProvider 
         if (StringUtils.hasText(instructions)) {
             session.put("instructions", instructions);
         }
-        session.putObject("audio").putObject("output").put("voice", voice);
+        ObjectNode audio = session.putObject("audio");
+        audio.putObject("output").put("voice", voice);
+        // T848 — declare the ASR model on the session itself, so the browser only
+        // has to echo what the server already decided.
+        if (StringUtils.hasText(inputTranscriptionModel)) {
+            audio.putObject("input").putObject("transcription")
+                    .put("model", inputTranscriptionModel);
+        }
         return objectMapper.writeValueAsString(root);
     }
 
@@ -156,7 +180,7 @@ public class TurOpenAiRealtimeVoiceProvider implements TurRealtimeVoiceProvider 
      * older nested {@code {client_secret:{value, expires_at}}} envelope.
      */
     TurRealtimeVoiceSession parseSession(String responseBody, String model, String voice,
-            String baseUrl) {
+            String baseUrl, String inputTranscriptionModel) {
         JsonNode root = objectMapper.readTree(responseBody);
         JsonNode secretNode = root.has("value") ? root : root.path("client_secret");
         JsonNode valueNode = secretNode.path("value");
@@ -167,7 +191,7 @@ public class TurOpenAiRealtimeVoiceProvider implements TurRealtimeVoiceProvider 
         }
         long expiresAt = secretNode.path("expires_at").asLong(0L);
         return new TurRealtimeVoiceSession(PLUGIN_TYPE, clientSecret, expiresAt, model, voice,
-                webSocketUrl(baseUrl, model));
+                webSocketUrl(baseUrl, model), inputTranscriptionModel);
     }
 
     /** {@code https://api.openai.com/v1} → {@code https://api.openai.com/v1/realtime/client_secrets}. */

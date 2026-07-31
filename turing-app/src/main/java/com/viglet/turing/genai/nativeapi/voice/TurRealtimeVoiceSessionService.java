@@ -101,13 +101,17 @@ public class TurRealtimeVoiceSessionService {
         VoiceConfig config = parseConfig(voiceCap.get().configJson());
         String resolvedModel = firstNonBlank(model, config.model(), provider.defaultModel());
         String resolvedVoice = firstNonBlank(voice, config.voice());
+        // T848 — the ASR model is server policy: capability config, else the
+        // provider's current default. The browser never picks it.
+        String resolvedAsrModel = firstNonBlank(config.inputTranscriptionModel(),
+                provider.defaultInputTranscriptionModel());
         String instructions = StringUtils.hasText(agent.getSystemPrompt())
                 ? agent.getSystemPrompt() : null;
 
-        log.info("[Voice] minting session for agent '{}' instance '{}' model '{}'",
-                agent.getTitle(), instance.getId(), resolvedModel);
-        return provider.createSession(instance,
-                new TurRealtimeVoiceSessionRequest(resolvedModel, resolvedVoice, instructions, locale));
+        log.info("[Voice] minting session for agent '{}' instance '{}' model '{}' asr '{}'",
+                agent.getTitle(), instance.getId(), resolvedModel, resolvedAsrModel);
+        return provider.createSession(instance, new TurRealtimeVoiceSessionRequest(
+                resolvedModel, resolvedVoice, instructions, locale, resolvedAsrModel));
     }
 
     /**
@@ -180,17 +184,21 @@ public class TurRealtimeVoiceSessionService {
                 .findFirst();
     }
 
-    /** Per-capability {@code configJson} may carry preferred {@code model} / {@code voice}. */
+    /**
+     * Per-capability {@code configJson} may carry a preferred {@code model} /
+     * {@code voice} and (T848) an {@code inputTranscriptionModel}.
+     */
     private VoiceConfig parseConfig(String configJson) {
         if (!StringUtils.hasText(configJson)) {
-            return new VoiceConfig(null, null);
+            return VoiceConfig.empty();
         }
         try {
             JsonNode node = objectMapper.readTree(configJson);
-            return new VoiceConfig(textOrNull(node, "model"), textOrNull(node, "voice"));
+            return new VoiceConfig(textOrNull(node, "model"), textOrNull(node, "voice"),
+                    textOrNull(node, "inputTranscriptionModel"));
         } catch (RuntimeException e) {
             log.debug("[Voice] could not parse capability configJson: {}", e.getMessage());
-            return new VoiceConfig(null, null);
+            return VoiceConfig.empty();
         }
     }
 
@@ -208,6 +216,9 @@ public class TurRealtimeVoiceSessionService {
         return null;
     }
 
-    private record VoiceConfig(String model, String voice) {
+    private record VoiceConfig(String model, String voice, String inputTranscriptionModel) {
+        static VoiceConfig empty() {
+            return new VoiceConfig(null, null, null);
+        }
     }
 }

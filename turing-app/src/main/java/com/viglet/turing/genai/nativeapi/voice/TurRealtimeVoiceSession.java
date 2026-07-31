@@ -24,14 +24,25 @@ package com.viglet.turing.genai.nativeapi.voice;
  * realtime session), so it is safe to hand to the browser — the account key
  * itself never leaves the server.
  *
- * @param provider     plugin type that minted the session ({@code openai}).
- * @param clientSecret ephemeral token the browser sends as the Bearer credential
- *                     when opening the realtime WebSocket. Short-lived.
- * @param expiresAt    epoch-seconds at which {@link #clientSecret()} expires.
- * @param model        the resolved realtime model id the session is bound to.
- * @param voice        the resolved synthesized voice name.
- * @param wsUrl        the WebSocket URL the browser connects to (already carries
- *                     the {@code model} query parameter).
+ * <p>T848 / §LXIII.3 — {@link #inputTranscriptionModel()} carries the ASR model
+ * the browser must name in its {@code session.update}. Same reasoning as the
+ * ephemeral client secret: the browser should carry no vendor policy of its own,
+ * so an operator can move off a superseded ASR id without an SDK release. The
+ * field is <b>fail-open</b> — an older server omits it and the SDK keeps its
+ * previous behaviour.
+ *
+ * @param provider                plugin type that minted the session ({@code openai}).
+ * @param clientSecret            ephemeral token the browser sends as the Bearer
+ *                                credential when opening the realtime WebSocket.
+ *                                Short-lived.
+ * @param expiresAt               epoch-seconds at which {@link #clientSecret()} expires.
+ * @param model                   the resolved realtime model id the session is bound to.
+ * @param voice                   the resolved synthesized voice name.
+ * @param wsUrl                   the WebSocket URL the browser connects to (already
+ *                                carries the {@code model} query parameter).
+ * @param inputTranscriptionModel T848 — the input-transcription (ASR) model id the
+ *                                browser should send in {@code input_audio_transcription};
+ *                                {@code null}/blank leaves the choice to the client.
  *
  * @author Alexandre Oliveira
  * @since 2026.3.4
@@ -42,5 +53,6 @@ public record TurRealtimeVoiceSession(
         long expiresAt,
         String model,
         String voice,
-        String wsUrl) {
+        String wsUrl,
+        String inputTranscriptionModel) {
 }

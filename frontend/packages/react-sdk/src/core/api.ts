@@ -1428,6 +1428,12 @@ export interface TurVoiceSession {
   model: string;
   voice: string;
   wsUrl: string;
+  /**
+   * T848 — the input-transcription (ASR) model the server resolved for this
+   * session. Optional on purpose: an older server omits it and the client keeps
+   * its previous behaviour.
+   */
+  inputTranscriptionModel?: string;
 }
 
 /** Optional hints sent when minting a voice session; all may be omitted. */

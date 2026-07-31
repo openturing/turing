@@ -74,9 +74,11 @@ class TurRealtimeVoiceSessionServiceTest {
         when(agentRepository.findById("agent-1")).thenReturn(Optional.of(agent));
         when(providerFactory.getProvider(instance)).thenReturn(Optional.of(provider));
         when(provider.defaultModel()).thenReturn("gpt-realtime");
+        when(provider.defaultInputTranscriptionModel()).thenReturn("gpt-live-transcribe");
         stubVoiceEnabled(null);
         TurRealtimeVoiceSession minted = new TurRealtimeVoiceSession("openai", "ek_x", 1L,
-                "gpt-realtime", "marin", "wss://api.openai.com/v1/realtime?model=gpt-realtime");
+                "gpt-realtime", "marin", "wss://api.openai.com/v1/realtime?model=gpt-realtime",
+                "gpt-live-transcribe");
         when(provider.createSession(eq(instance), any())).thenReturn(minted);
 
         TurRealtimeVoiceSession result = service.createForAgent("agent-1", null, null, null, "pt-BR");
@@ -89,6 +91,28 @@ class TurRealtimeVoiceSessionServiceTest {
         assertThat(sent.model()).isEqualTo("gpt-realtime");
         assertThat(sent.instructions()).contains("Marina");
         assertThat(sent.locale()).isEqualTo("pt-BR");
+        // T848 — the ASR model is server policy; the browser never picks it.
+        assertThat(sent.inputTranscriptionModel()).isEqualTo("gpt-live-transcribe");
+    }
+
+    /** T848 — a capability config may pin a different ASR model than the provider default. */
+    @Test
+    void capabilityConfigOverridesInputTranscriptionModel() {
+        when(agentRepository.findById("agent-1")).thenReturn(Optional.of(agent));
+        when(providerFactory.getProvider(instance)).thenReturn(Optional.of(provider));
+        lenient().when(provider.defaultModel()).thenReturn("gpt-realtime");
+        lenient().when(provider.defaultInputTranscriptionModel()).thenReturn("gpt-live-transcribe");
+        stubVoiceEnabled("{\"inputTranscriptionModel\":\"whisper-1\"}");
+        when(provider.createSession(eq(instance), any()))
+                .thenReturn(new TurRealtimeVoiceSession("openai", "ek_x", 1L,
+                        "gpt-realtime", "marin", "wss://x", "whisper-1"));
+
+        service.createForAgent("agent-1", null, null, null, null);
+
+        ArgumentCaptor<TurRealtimeVoiceSessionRequest> captor =
+                ArgumentCaptor.forClass(TurRealtimeVoiceSessionRequest.class);
+        org.mockito.Mockito.verify(provider).createSession(eq(instance), captor.capture());
+        assertThat(captor.getValue().inputTranscriptionModel()).isEqualTo("whisper-1");
     }
 
     @Test
@@ -99,7 +123,7 @@ class TurRealtimeVoiceSessionServiceTest {
         stubVoiceEnabled("{\"model\":\"gpt-realtime-mini\",\"voice\":\"cedar\"}");
         when(provider.createSession(eq(instance), any()))
                 .thenReturn(new TurRealtimeVoiceSession("openai", "ek_x", 1L,
-                        "gpt-realtime-mini", "cedar", "wss://x"));
+                        "gpt-realtime-mini", "cedar", "wss://x", "gpt-live-transcribe"));
 
         service.createForAgent("agent-1", null, null, null, null);
 

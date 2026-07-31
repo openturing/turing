@@ -204,6 +204,7 @@ number" looked free but wasn't. Grepping three files (`ROADMAP.md`,
 
 ## Log (most recent first)
 
+- **T848 SHIPPED** (Block BP §LXIII.3 — `TurRealtimeVoiceSession.inputTranscriptionModel` resolved server-side (default `gpt-live-transcribe`); the SDK echoes it instead of hardcoding `whisper-1`, fail-open) — 2026-07-31.
 - **T846–T851 CREATED** (📋/💭, Block BP §LXIII — next-generation OpenAI transcription models `gpt-transcribe` / `gpt-live-transcribe`; vendor-deprecation framing in STRATEGY §XVI) — 2026-07-31.
 - **T832–T845 CREATED** (📋/💭, Block BO §LXII — answer-first search, the steerable/auditable answer engine (positioning §XV). **Renumbered on merge**: drafted on a parallel branch as Block BN / T825–T838, which collided with the already-shipped Block BN (content-fit tuning loop, T825–T830) — the exact hazard this file exists to prevent. The shipped numbers won; the planned block moved to Block **BO** / T832–T845 / §LXII) — 2026-07-31.
 - **T830 SHIPPED** (Block BN §LXI.6 — per-content/per-persona average-per-run series on each RankPanel via `buildTargetTrends` + `±` delta and previous score in both PDF lenses; **CLOSES Block BN**, only 💭 T831 left) — 2026-07-28.

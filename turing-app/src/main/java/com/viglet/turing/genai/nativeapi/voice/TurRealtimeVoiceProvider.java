@@ -49,6 +49,16 @@ public interface TurRealtimeVoiceProvider {
     String defaultModel();
 
     /**
+     * T848 / §LXIII.3 — the input-transcription (ASR) model used when the request
+     * leaves {@link TurRealtimeVoiceSessionRequest#inputTranscriptionModel()}
+     * blank. {@code null} means "this provider has no opinion" — the session then
+     * carries no ASR model and the client keeps whatever it already does.
+     */
+    default String defaultInputTranscriptionModel() {
+        return null;
+    }
+
+    /**
      * Mint a real-time voice session for {@code instance}.
      *
      * @throws com.viglet.turing.genai.nativeapi.voice.TurRealtimeVoiceException on

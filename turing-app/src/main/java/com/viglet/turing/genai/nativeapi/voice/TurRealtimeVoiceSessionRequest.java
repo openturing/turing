@@ -26,6 +26,9 @@ package com.viglet.turing.genai.nativeapi.voice;
  *                     blank → no instructions sent (the model uses its default).
  * @param locale       BCP-47 locale hint for transcription/synthesis (e.g.
  *                     {@code pt-BR}); blank → the model auto-detects.
+ * @param inputTranscriptionModel T848 / §LXIII.3 — the ASR model for the user's
+ *                     side of the conversation (e.g. {@code gpt-live-transcribe});
+ *                     blank → the provider's default live-transcription model.
  *
  * @author Alexandre Oliveira
  * @since 2026.3.4
@@ -34,5 +37,12 @@ public record TurRealtimeVoiceSessionRequest(
         String model,
         String voice,
         String instructions,
-        String locale) {
+        String locale,
+        String inputTranscriptionModel) {
+
+    /** Back-compat factory for callers that don't pin an ASR model (T848). */
+    public TurRealtimeVoiceSessionRequest(String model, String voice, String instructions,
+            String locale) {
+        this(model, voice, instructions, locale, null);
+    }
 }

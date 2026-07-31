@@ -406,11 +406,17 @@ export function useTuringRealtimeVoice(
         setStatus("connected");
         // Enable input transcription + server-side turn detection so the
         // visitor can just talk; the model decides when a turn ends.
+        //
+        // T848 — the ASR model is server policy: send back exactly what the
+        // session declared. Fail-open — an older server that omits the field
+        // leaves the legacy `whisper-1` behaviour untouched.
         ws.send(
           JSON.stringify({
             type: "session.update",
             session: {
-              input_audio_transcription: { model: "whisper-1" },
+              input_audio_transcription: {
+                model: session.inputTranscriptionModel ?? "whisper-1",
+              },
               turn_detection: { type: "server_vad" },
             },
           }),

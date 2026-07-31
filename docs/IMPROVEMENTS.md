@@ -3047,13 +3047,6 @@ engine expands can be handed to the ASR, which is exactly what stops product nam
 model ids and jargon from being transcribed phonetically. Keep the sourcing opt-in and
 bounded (a keyword list is a hint, not a dictionary dump).
 
-#### LXIII.3 Server-resolved live transcription model (T848)
-Add the input-transcription model to `TurRealtimeVoiceSession` (resolved server-side
-alongside the realtime model + voice, default `gpt-live-transcribe`) and have the SDK
-send what the session declares in its `session.update`. Same reasoning as the ephemeral
-client secret: the browser should carry no vendor policy of its own. Fail-open — an
-older server that omits the field leaves the SDK on its current behaviour.
-
 #### LXIII.4 Streamed file transcription (T849)
 `gpt-transcribe` supports `stream=true` for a completed file, emitting transcript
 events as it processes. The job surface (T692) already streams — swapping chunk-index
