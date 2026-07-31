@@ -213,6 +213,32 @@
 - 💭 **T844** (deps: T835, T838) **Answer permalinks & shareable answer cards** — a stable URL for an answer (query + filter state + source snapshot + timestamp) that re-renders it read-only, with an OG card via the shipped `TurChatShareOgService`; makes every good answer a linkable artifact and, on public deployments, indexable content. Pairs with Block O (GEO). → §LXII.13
 - 💭 **T845** (deps: T838, T843) **Answer-level analytics & the self-tuning loop** — emit citation-clicked / facet-refined-after-reading / follow-up-taken / re-answer signals into the existing chat analytics, keyed for the `selftuning` miner+drafter. T838's steerability produces an unusually clean relevance signal: narrowing a facet *after* reading an answer is explicit feedback that retrieval missed. → §LXII.14
 
+## Block BP — Next-generation transcription models (`gpt-transcribe` / `gpt-live-transcribe`) (§LXIII)
+
+> OpenAI shipped two ASR models that **replace** what Block AS was built against:
+> `gpt-transcribe` (async/batch files, replaces `gpt-4o-transcribe`, ~52% lower WER,
+> **cheaper** than `whisper-1`) and `gpt-live-transcribe` (low-latency streaming,
+> replaces `gpt-realtime-whisper`, realtime-transcription sessions only — it does
+> **not** serve `/v1/audio/transcriptions`). `whisper-1` stays available, so nothing
+> breaks; this block is additive. Three of the four items exist because the shipped
+> wire contract is **whisper-shaped**: `TurOpenAiTranscriptionClient` hardcodes
+> `DEFAULT_MODEL = "whisper-1"` for *both* strategies, always asks for
+> `response_format=verbose_json` (the new models return no `segments`/`avg_logprob`,
+> so T693's confidence fallback silently dies — or the call 400s) and sends the
+> singular `language` where the new models expect `languages`. The realtime path
+> hardcodes `input_audio_transcription: { model: "whisper-1" }` **in the browser**.
+> The upside beyond the swap is `prompt` + `keywords` context hints, which Turing can
+> feed from a surface it already owns (Thesaurus / declared site fields). Cost +
+> vendor-deprecation framing in [STRATEGY.md](STRATEGY.md) §XVI; design in
+> [IMPROVEMENTS.md](IMPROVEMENTS.md) §LXIII.
+
+- 📋 **T846** (deps: T690, T693) **Model-aware OpenAI transcription wire contract** — make `TurOpenAiTranscriptionClient` resolve its default + request shape per model family instead of per hardcoded constant: `OPENAI` defaults to `gpt-transcribe`, `OPENAI_COMPATIBLE` keeps `whisper-1` (faster-whisper-server speaks whisper), `languages` vs `language` and `json` vs `verbose_json` chosen by family, and a `gpt-*transcribe` response honestly yields `confidence = null` (T693 already treats null as "no confidence signal", so the fallback degrades instead of lying). Fixes the default being both pricier and less accurate than the vendor's current recommendation. → §LXIII.1
+- 📋 **T847** (deps: T846) **Transcription context hints — `prompt` + `keywords`** — widen `TurTranscriptionConfig` + the `TurTranscriptionProvider` seam with optional free-form context and a domain keyword list, settable globally and per request, ignored by backends that don't support them. The differentiating half: Turing can populate keywords from the Thesaurus (Block AQ) / the site's declared field manifest, so product names and jargon stop being transcribed phonetically. → §LXIII.2
+- 📋 **T848** (deps: T147, T148) **Server-resolved live transcription model for realtime voice** — carry the input-transcription model on `TurRealtimeVoiceSession` (resolved server-side, default `gpt-live-transcribe`) and have `use-turing-realtime-voice` send what the session says instead of its hardcoded `whisper-1`; the browser stops pinning a model the vendor has superseded, and an operator can change ASR without an SDK release. → §LXIII.3
+- 💭 **T849** (deps: T846) **Streamed file transcription (`stream=true`)** — `gpt-transcribe` can stream transcript events for a completed file; surface them as partial-text deltas on the existing `TurTranscriptionJobEventBus` SSE so a long job shows text arriving instead of chunk-index progress. Promote when a UI actually renders partial text — the job surface (T692) is already the right transport. → §LXIII.4
+- 📋 **T850** (deps: T846) **Catalog entries + operator-facing defaults** — add both models to the `openviglet/models-catalog` source with pricing/kind/status so the shipped pipeline does the rest (T777 seeds `TurLLMPrice`, T782 flags `gpt-4o-transcribe` / `gpt-realtime-whisper` as deprecated, the T750 classifier already resolves `*transcribe*` → `TRANSCRIPTION`), then refresh the `whisper-1` placeholders/copy in the Global Settings transcription section, i18n and `docs-turing/transcription.md`. → §LXIII.5
+- 💭 **T851** (deps: T846) **Speaker diarization (`diarized_json`)** — per-speaker segments for multi-speaker recordings (interviews, calls), which would give Block AW's synthetic-research interviews and any meeting-audio use case attributable turns rather than one flat transcript. Needs a `TurTranscriptionResult` shape decision (segments + speaker labels) before it is more than an idea. → §LXIII.6
+
 ## Non-goals (do NOT add as tasks)
 
 Binding constraints — see [IMPROVEMENTS.md](IMPROVEMENTS.md) §I.6 (What NOT to

@@ -835,3 +835,34 @@ asks.
 A distribution note: on public deployments the answer surface is also a **GEO asset**
 (Block O, §X) — a citable, permalinked, indexable answer page is exactly the artifact
 that gets a product surfaced by other assistants.
+
+## XVI. Vendor model deprecations — the transcription case (July 2026)
+
+OpenAI's `gpt-transcribe` / `gpt-live-transcribe` release (Block BP, §LXIII) is a
+useful precedent for how Turing should treat a vendor superseding a model, because it
+moved **three** dials at once and only one of them is engineering:
+
+1. **Unit cost falls.** Async transcription goes to **$0.0045/min** — below `whisper-1`
+   ($0.006/min) — while roughly halving word error rate. Live transcription is
+   $0.017/min, i.e. a real-time voice minute is now priced ~4x an offline one, which is
+   the number any voice-kiosk or call-analytics pricing conversation has to start from.
+   Turing's default should track the vendor's recommended model, not the one that
+   happened to be current when the seam was built: a stale default quietly bills the
+   customer more for a worse transcript.
+2. **Two model ids enter end-of-life.** `gpt-4o-transcribe` and `gpt-realtime-whisper`
+   are replaced. Turing already has the machinery to make that an operator's problem
+   rather than a silent one — catalog `status`/`deprecated` (T776) + the lifecycle
+   warnings (T782) — so the response is a **catalog data change**, not a code change.
+   That is the point of the catalog pipeline, and this is its first real exercise.
+3. **A capability regresses.** The new models return no segment logprobs, so the
+   confidence score T693's local→cloud fallback depends on disappears. The right answer
+   is to model capability honestly per family (`confidence = null`) rather than
+   synthesize a number — a degraded-but-truthful signal is worth more than a plausible
+   fabricated one, the same principle as the citation-drift badge in §XV.3.
+
+**The reusable rule.** When a vendor supersedes a model: update the catalog first (price
++ status), let the shipped deprecation warnings surface it, move the *default* for the
+cloud strategy only, and never move a self-hosted default — an `OPENAI_COMPATIBLE`
+deployment runs whatever its own server serves, and a vendor announcement says nothing
+about that. `whisper-1` staying available (and still the best pick for timestamps,
+translation and subtitles) is why none of this needs to be a migration.

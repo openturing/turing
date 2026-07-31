@@ -1,9 +1,20 @@
-# Last task number — `T845` · next block letter — `BP`
+# Last task number — `T851` · next block letter — `BQ`
 
 > **Single source of truth for the next free task number.** The next new task is
-> `T846`; after assigning it, bump the number above and the log line below.
+> `T852`; after assigning it, bump the number above and the log line below.
 >
-> **Next block letter — `BP`** (Block **BO** = Answer-first search: the steerable,
+> **Next block letter — `BQ`** (Block **BP** = Next-generation transcription models —
+> OpenAI's `gpt-transcribe` (async/batch, replaces `gpt-4o-transcribe`, cheaper than
+> `whisper-1`, ~52% lower WER) and `gpt-live-transcribe` (low-latency live, replaces
+> `gpt-realtime-whisper`, realtime-transcription sessions only) supersede what Block AS
+> was built against. Additive — `whisper-1` stays available. T846 model-aware wire
+> contract (per-strategy default, `languages` vs `language`, `json` vs `verbose_json`,
+> honest `confidence = null`), T847 `prompt`/`keywords` context hints fed from the
+> Thesaurus/field manifest, T848 server-resolved live model on
+> `TurRealtimeVoiceSession` (the SDK stops hardcoding `whisper-1`), T850 catalog
+> entries + deprecation of the old ids + placeholder/doc refresh; 💭 T849 streamed file
+> transcription, 💭 T851 diarization. §LXIII + STRATEGY §XVI, created 2026-07-31;
+> Block **BO** = Answer-first search: the steerable,
 > auditable answer engine — a product review asked whether Turing could return results
 > "like Perplexity"; the audit found every *engine* piece already ships (hybrid RRF + 8
 > rerank strategies, `TurCatalogCopilotResult` answer+footnote citations w/ T800 `[n]`
@@ -193,6 +204,7 @@ number" looked free but wasn't. Grepping three files (`ROADMAP.md`,
 
 ## Log (most recent first)
 
+- **T846–T851 CREATED** (📋/💭, Block BP §LXIII — next-generation OpenAI transcription models `gpt-transcribe` / `gpt-live-transcribe`; vendor-deprecation framing in STRATEGY §XVI) — 2026-07-31.
 - **T832–T845 CREATED** (📋/💭, Block BO §LXII — answer-first search, the steerable/auditable answer engine (positioning §XV). **Renumbered on merge**: drafted on a parallel branch as Block BN / T825–T838, which collided with the already-shipped Block BN (content-fit tuning loop, T825–T830) — the exact hazard this file exists to prevent. The shipped numbers won; the planned block moved to Block **BO** / T832–T845 / §LXII) — 2026-07-31.
 - **T830 SHIPPED** (Block BN §LXI.6 — per-content/per-persona average-per-run series on each RankPanel via `buildTargetTrends` + `±` delta and previous score in both PDF lenses; **CLOSES Block BN**, only 💭 T831 left) — 2026-07-28.
 - **T829 SHIPPED** (Block BN §LXI.5 — fit + adjustment verdicts bound to OpenAI `json_schema`/Anthropic forced tool via `TurStructuredCompletionPort` + `generateStructured`; `TurVerdictSource` + `/verdict-health` counters make degradations visible) — 2026-07-28.
