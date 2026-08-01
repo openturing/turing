@@ -140,4 +140,28 @@ class TurRagRrfTest {
         assertThat(fused).hasSize(1);
         assertThat(fused.get(0).getScore()).isCloseTo(2.0 / 61.0, org.assertj.core.data.Offset.offset(1e-9));
     }
+
+    // ---- fuseKeyed() N-way union (T842) ---------------------------------
+
+    @Test
+    void fuseKeyed_unionsNRankedListsRankingSharedItemsHighest() {
+        // "b" appears in both lists (and high) → it wins after fusion.
+        List<String> l1 = List.of("a", "b", "c");
+        List<String> l2 = List.of("b", "d");
+
+        List<String> fused = TurRagRrf.fuseKeyed(List.of(l1, l2), s -> s, 10);
+
+        assertThat(fused).first().isEqualTo("b");
+        assertThat(fused).containsExactlyInAnyOrder("a", "b", "c", "d");
+    }
+
+    @Test
+    void fuseKeyed_respectsTopKAndToleratesNullsAndEmpties() {
+        assertThat(TurRagRrf.fuseKeyed(null, (String s) -> s, 5)).isEmpty();
+        assertThat(TurRagRrf.fuseKeyed(List.of(), (String s) -> s, 5)).isEmpty();
+
+        List<String> fused = TurRagRrf.fuseKeyed(
+                java.util.Arrays.asList(List.of("a", "b", "c"), null), s -> s, 2);
+        assertThat(fused).containsExactly("a", "b");
+    }
 }

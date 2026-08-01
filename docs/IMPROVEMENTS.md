@@ -2865,14 +2865,6 @@ bet; phases 1–2 are the table stakes that make it renderable.
 
 ### Phase 4 — Depth & distribution
 
-#### LXII.11 Multi-query fan-out (T842)
-Decompose one question into parallel sub-queries behind the existing
-`TurCopilotQueryPlanner` seam, bounded by
-`turing.genai.copilot.planning.max-passes`, and union the recall through `TurRagRrf`
-before rerank. Today one turn issues one retrieval; Perplexity's recall advantage on
-multi-hop questions is mostly fan-out, not model quality. Fail-open to the single-pass
-path on any planner failure, and off by default for `DETERMINISTIC` sites.
-
 #### LXII.12 Live research trace (T843)
 Frame the `tool_call` SSE events the runtime already emits as a collapsible timeline
 ("searched *X* · read *N* sources · reranked with Cohere · answered"), streamed as a

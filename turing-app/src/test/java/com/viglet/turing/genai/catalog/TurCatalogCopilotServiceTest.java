@@ -93,6 +93,9 @@ class TurCatalogCopilotServiceTest {
     // the existing (filtered) tests on the NL→DSL path unchanged.
     @Mock
     private com.viglet.turing.properties.TurCatalogCopilotProperty copilotProperty;
+    // T842 — the DETERMINISTIC planner never fans out, so this stays a bare mock.
+    @Mock
+    private com.viglet.turing.genai.catalog.planning.TurQueryFanOut queryFanOut;
 
     @InjectMocks
     private TurCatalogCopilotService service;

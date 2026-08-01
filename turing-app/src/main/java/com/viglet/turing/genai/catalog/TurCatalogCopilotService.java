@@ -119,6 +119,7 @@ public class TurCatalogCopilotService {
     private final TurSNHybridRankingService hybridRankingService;
     private final TurDefaultChatModelResolver chatModelResolver;
     private final com.viglet.turing.properties.TurCatalogCopilotProperty copilotProperty;
+    private final com.viglet.turing.genai.catalog.planning.TurQueryFanOut queryFanOut;
 
     public TurCatalogCopilotService(TurNLFacetParser parser,
             TurCopilotQueryPlannerFactory plannerFactory,
@@ -127,7 +128,8 @@ public class TurCatalogCopilotService {
             TurSNSiteFieldExtRepository turSNSiteFieldExtRepository,
             TurSNHybridRankingService hybridRankingService,
             TurDefaultChatModelResolver chatModelResolver,
-            com.viglet.turing.properties.TurCatalogCopilotProperty copilotProperty) {
+            com.viglet.turing.properties.TurCatalogCopilotProperty copilotProperty,
+            com.viglet.turing.genai.catalog.planning.TurQueryFanOut queryFanOut) {
         this.parser = parser;
         this.plannerFactory = plannerFactory;
         this.dslSearchService = dslSearchService;
@@ -136,6 +138,7 @@ public class TurCatalogCopilotService {
         this.hybridRankingService = hybridRankingService;
         this.chatModelResolver = chatModelResolver;
         this.copilotProperty = copilotProperty;
+        this.queryFanOut = queryFanOut;
     }
 
     /** True when a usable default LLM is configured (the copilot can answer). */
@@ -313,6 +316,19 @@ public class TurCatalogCopilotService {
         // turning the prose into a structured query.
         TurCopilotQueryPlannerFactory.Resolution resolution = plannerFactory.resolve(siteName);
         TurCopilotQueryPlanner planner = resolution.planner();
+
+        // T842 / §LXII.11 — multi-query fan-out: a comparative / multi-hop question is
+        // decomposed into sub-queries whose recall is RRF-unioned before rerank. Off
+        // by default, never for DETERMINISTIC sites, and fail-open to single-pass.
+        if (copilotProperty.getPlanning() != null && copilotProperty.getPlanning().isFanOut()
+                && planner.strategy() != com.viglet.turing.persistence.model.sn.genai.TurCopilotPlanningStrategy.DETERMINISTIC) {
+            Optional<Retrieval> fanned =
+                    fanOutRetrieve(site, siteName, searchLocale, query, schema, resolution);
+            if (fanned.isPresent()) {
+                return fanned.get();
+            }
+        }
+
         PlanRequest planRequest =
                 new PlanRequest(siteName, searchLocale, query, schema, resolution.maxPasses());
         TurCopilotQueryPlan plan = planner.plan(planRequest);
@@ -352,6 +368,65 @@ public class TurCatalogCopilotService {
         Projection projection = project(ordered, MAX_RESULTS, fieldDescriptions(schema));
         return new Retrieval(projection.citations(), projection.contextBlocks(),
                 totalHits, summarize(request), true);
+    }
+
+    /**
+     * T842 — fan out {@code query} into bounded sub-queries, RRF-union their recall
+     * and project the fused page. Returns empty (so the caller falls back to the
+     * single-pass path) when the question doesn't decompose or the union is empty,
+     * and is fail-open on any error.
+     */
+    private Optional<Retrieval> fanOutRetrieve(TurSNSite site, String siteName, String searchLocale,
+            String query, List<TurNLFacetField> schema,
+            TurCopilotQueryPlannerFactory.Resolution resolution) {
+        try {
+            List<String> subQueries =
+                    queryFanOut.decompose(query, Math.max(2, resolution.maxPasses()));
+            if (subQueries.size() < 2) {
+                return Optional.empty();
+            }
+            List<List<TurDslSearchResponse.Hit>> perQuery = new ArrayList<>(subQueries.size());
+            for (String subQuery : subQueries) {
+                perQuery.add(searchOne(siteName, searchLocale, subQuery, schema, resolution));
+            }
+            List<TurDslSearchResponse.Hit> union =
+                    com.viglet.turing.genai.rag.TurRagRrf.fuseKeyed(perQuery,
+                            TurDslSearchResponse.Hit::id, MAX_RESULTS);
+            if (union.isEmpty()) {
+                return Optional.empty();
+            }
+            List<TurDslSearchResponse.Hit> ordered = applyHybridRanking(site, searchLocale, query, union);
+            Projection projection = project(ordered, MAX_RESULTS, fieldDescriptions(schema));
+            log.info("[CatalogCopilot] site '{}' FAN-OUT over {} sub-queries -> {} fused hits",
+                    siteName, subQueries.size(), union.size());
+            return Optional.of(new Retrieval(projection.citations(), projection.contextBlocks(),
+                    union.size(), "fan-out(" + subQueries.size() + ")", true));
+        } catch (RuntimeException e) {
+            log.warn("[CatalogCopilot] fan-out failed for site '{}', falling back to single-pass: {}",
+                    siteName, e.getMessage());
+            return Optional.empty();
+        }
+    }
+
+    /** Plan + execute one fan-out sub-query, returning its hits (fail-open empty). */
+    private List<TurDslSearchResponse.Hit> searchOne(String siteName, String searchLocale,
+            String subQuery, List<TurNLFacetField> schema,
+            TurCopilotQueryPlannerFactory.Resolution resolution) {
+        try {
+            PlanRequest request =
+                    new PlanRequest(siteName, searchLocale, subQuery, schema, resolution.maxPasses());
+            TurCopilotQueryPlan plan = resolution.planner().plan(request);
+            Optional<TurDslSearchResponse> responseOpt =
+                    dslSearchService.search(siteName, searchLocale, plan.request());
+            if (responseOpt.isEmpty() || responseOpt.get().hits() == null
+                    || responseOpt.get().hits().hits() == null) {
+                return List.of();
+            }
+            return responseOpt.get().hits().hits();
+        } catch (RuntimeException e) {
+            log.warn("[CatalogCopilot] fan-out sub-query '{}' failed: {}", subQuery, e.getMessage());
+            return List.of();
+        }
     }
 
     /** T823 / §LX.2 + T818 — one INFO line per executed plan (strategy, cost, query). */
