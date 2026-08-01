@@ -204,6 +204,7 @@ number" looked free but wasn't. Grepping three files (`ROADMAP.md`,
 
 ## Log (most recent first)
 
+- **T845 SHIPPED** (Block BO §LXII.14 — answer-level analytics & the self-tuning loop: `TurAnswerSignal` enum + `TurAnswerSignalEvent` (`tur_answer_signal`, Liquibase v2026.3.1.122) + `TurAnswerSignalService` keyed by the site's effective agent + `POST /answer/signal`; `TurSelfTuningMiner` folds relevance-misses into the failure digest; SDKs `recordAnswerSignal` + `signal()` on hook/controller; `TuringAnswer` organic emits + opt-in thumbs. **Block BO T832–T845 fully shipped**) — 2026-08-01.
 - **T844 SHIPPED** (Block BO §LXII.13 — answer permalinks & shareable cards: `TurAnswerShare` entity/repo + Liquibase `v2026.3.1.121`, `TurAnswerShareService` + `POST /answer/share` / `GET /answer/share/{id}` / `GET /answer/share/{id}/og` reusing `TurChatShareOgService`; SDKs `createAnswerShare`/`fetchAnswerShare` + `share()` on hook/controller; `TuringAnswer` opt-in `showShare`) — 2026-08-01.
 - **T843 SHIPPED** (Block BO §LXII.12 — live research trace: `TurAnswerStreamFramer` forwards `tool_call` as `trace_step` events; SDKs collect `traceSteps`; `TuringAnswer` renders a collapsible research-trace timeline) — 2026-08-01.
 - **T842 SHIPPED** (Block BO §LXII.11 — multi-query fan-out: `TurRagRrf.fuseKeyed` N-way RRF union + deterministic `TurQueryFanOut.decompose`, wired into the catalog retrieve behind `planning.fan-out` (off by default, never DETERMINISTIC, fail-open)) — 2026-08-01.

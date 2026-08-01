@@ -177,6 +177,32 @@ describe("createAnswerController (T837)", () => {
     expect(post).not.toHaveBeenCalled();
   });
 
+  it("emits an answer-level signal for the self-tuning loop (T845)", async () => {
+    const fetchRaw = vi.fn().mockResolvedValueOnce(fullAnswer());
+    const post = vi.fn().mockResolvedValueOnce(undefined);
+    const client = { fetchRaw, post } as unknown as TuringClient;
+    const controller = createAnswerController(client, { site: "site1" });
+
+    await controller.ask("cheapest model");
+    controller.signal("FACET_REFINED_AFTER_ANSWER");
+    await Promise.resolve();
+
+    expect(post).toHaveBeenCalledWith(
+      "/sn/site1/answer/signal",
+      expect.objectContaining({ signal: "FACET_REFINED_AFTER_ANSWER", query: "cheapest model" }),
+    );
+  });
+
+  it("does not emit a signal before any answer was asked (T845)", () => {
+    const post = vi.fn();
+    const client = { post } as unknown as TuringClient;
+    const controller = createAnswerController(client, { site: "site1" });
+
+    controller.signal("THUMBS_DOWN");
+
+    expect(post).not.toHaveBeenCalled();
+  });
+
   it("collects structured answer artifacts (T841)", async () => {
     const fetchRaw = vi.fn().mockResolvedValueOnce(
       sse([

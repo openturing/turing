@@ -42,6 +42,9 @@ export interface TuringAnswerClassNames {
   freshness?: string;
   reanswer?: string;
   share?: string;
+  feedback?: string;
+  thumbUp?: string;
+  thumbDown?: string;
   trace?: string;
   traceSummary?: string;
   traceStep?: string;
@@ -68,6 +71,12 @@ export interface TuringAnswerLabels {
   trace?: string;
   /** The share button. Default "Share". */
   share?: string;
+  /** Leads the thumbs feedback row. Default "Was this answer helpful?". */
+  feedback?: string;
+  /** The thumbs-up control label. Default "Yes". */
+  thumbUp?: string;
+  /** The thumbs-down control label. Default "No". */
+  thumbDown?: string;
 }
 
 export interface TuringAnswerProps extends UseTuringAnswerOptions {
@@ -99,6 +108,8 @@ export interface TuringAnswerProps extends UseTuringAnswerOptions {
   showTrace?: boolean;
   /** T844 — show a "Share" button that mints an answer permalink. Default `false`. */
   showShare?: boolean;
+  /** T845 — show a thumbs up/down feedback row that emits a signal. Default `false`. */
+  showFeedback?: boolean;
   /** T844 — called with the minted share id after a successful share. */
   onShared?: (shareId: string) => void;
   /** T844 — called when minting a share permalink fails. */
@@ -135,6 +146,7 @@ export function TuringAnswer({
   checkFreshnessOnAnswer = false,
   showTrace = true,
   showShare = false,
+  showFeedback = false,
   onShared,
   onShareError,
   showProvenance = true,
@@ -146,7 +158,7 @@ export function TuringAnswer({
   classNames,
   ...answerOptions
 }: Readonly<TuringAnswerProps>) {
-  const { answer, sources, citations, followups, artifacts, traceSteps, trace, status, error, isStreaming, staleSources, ask, checkFreshness, share } =
+  const { answer, sources, citations, followups, artifacts, traceSteps, trace, status, error, isStreaming, staleSources, ask, checkFreshness, share, signal } =
     useTuringAnswer(answerOptions);
   const completedSteps = traceSteps.filter((step) => step.phase === "end");
   const [draft, setDraft] = useState("");
@@ -177,6 +189,8 @@ export function TuringAnswer({
   };
 
   const askFollowup = (question: string) => {
+    // T845 — a taken follow-up is a signal against the answer just read.
+    signal("FOLLOW_UP_TAKEN");
     lastQueryRef.current = question;
     void ask(question, { filters });
   };
@@ -237,7 +251,11 @@ export function TuringAnswer({
               key={`${field}:${value}`}
               type="button"
               className={classNames?.constraint}
-              onClick={() => onFilterRemove?.(field, value)}
+              onClick={() => {
+                // T845 — refining a facet after reading is the clean relevance-miss signal.
+                if (status === "success") signal("FACET_REFINED_AFTER_ANSWER");
+                onFilterRemove?.(field, value);
+              }}
               aria-label={`Remove constraint ${constraintLabel(field, value)}`}
             >
               {constraintLabel(field, value)} ×
@@ -264,6 +282,18 @@ export function TuringAnswer({
         </button>
       )}
 
+      {showFeedback && status === "success" && answer && (
+        <div className={classNames?.feedback} data-turing-answer-feedback="">
+          <span>{labels?.feedback ?? "Was this answer helpful?"}</span>{" "}
+          <button type="button" className={classNames?.thumbUp} onClick={() => signal("THUMBS_UP")}>
+            {labels?.thumbUp ?? "Yes"}
+          </button>{" "}
+          <button type="button" className={classNames?.thumbDown} onClick={() => signal("THUMBS_DOWN")}>
+            {labels?.thumbDown ?? "No"}
+          </button>
+        </div>
+      )}
+
       {renderArtifact && artifacts.length > 0 && (
         <div className={classNames?.artifacts} data-turing-answer-artifacts="">
           {artifacts.map((artifact, index) => (
@@ -281,6 +311,7 @@ export function TuringAnswer({
             type="button"
             className={classNames?.reanswer}
             onClick={() => {
+              signal("RE_ANSWER_REQUESTED");
               if (lastQueryRef.current) void ask(lastQueryRef.current, { filters });
             }}
           >
@@ -332,7 +363,13 @@ export function TuringAnswer({
                 <span className={classNames?.sourceRank}>[{source.rank}]</span>
               )}{" "}
               {source.url ? (
-                <a className={classNames?.sourceLink} href={source.url} target="_blank" rel="noreferrer">
+                <a
+                  className={classNames?.sourceLink}
+                  href={source.url}
+                  target="_blank"
+                  rel="noreferrer"
+                  onClick={() => signal("CITATION_CLICKED")}
+                >
                   {source.title}
                 </a>
               ) : (

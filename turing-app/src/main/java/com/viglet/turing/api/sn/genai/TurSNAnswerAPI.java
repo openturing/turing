@@ -54,13 +54,16 @@ public class TurSNAnswerAPI {
     private final TurSNAnswerService answerService;
     private final com.viglet.turing.genai.citation.TurCitationDriftService driftService;
     private final com.viglet.turing.genai.answer.TurAnswerShareService answerShareService;
+    private final com.viglet.turing.genai.answer.TurAnswerSignalService answerSignalService;
 
     public TurSNAnswerAPI(TurSNAnswerService answerService,
             com.viglet.turing.genai.citation.TurCitationDriftService driftService,
-            com.viglet.turing.genai.answer.TurAnswerShareService answerShareService) {
+            com.viglet.turing.genai.answer.TurAnswerShareService answerShareService,
+            com.viglet.turing.genai.answer.TurAnswerSignalService answerSignalService) {
         this.answerService = answerService;
         this.driftService = driftService;
         this.answerShareService = answerShareService;
+        this.answerSignalService = answerSignalService;
     }
 
     @Operation(summary = "Stream a grounded, cited answer for a query over the site's knowledge base")
@@ -166,6 +169,33 @@ public class TurSNAnswerAPI {
     public record AnswerShareView(String id, String siteName, String query, String filtersJson,
             String answerText, String sourcesJson, String citationsJson,
             java.time.Instant answeredAt) {
+    }
+
+    // ─────────────────────────── Answer-level signals (T845) ───────────────────────────
+
+    /**
+     * T845 / §LXII.14 — record an answer-level interaction signal (citation
+     * clicked, facet refined after reading, follow-up taken, re-answer, thumbs) so
+     * the {@code selftuning} miner can consume it, keyed by the site's effective
+     * agent. Fail-open and fire-and-forget: an unknown signal or a site with no
+     * agent is a silent no-op, always {@code 204}. A safe write on a cold path
+     * (human clicks), never on the answer hot path.
+     */
+    @Operation(summary = "Record an answer-level interaction signal for the self-tuning loop")
+    @org.springframework.web.bind.annotation.PostMapping(value = "/signal",
+            consumes = MediaType.APPLICATION_JSON_VALUE)
+    public org.springframework.http.ResponseEntity<Void> recordSignal(@PathVariable String siteName,
+            @org.springframework.web.bind.annotation.RequestBody SignalRequest request) {
+        if (request != null) {
+            answerSignalService.record(siteName, request.conversationId(),
+                    com.viglet.turing.genai.answer.TurAnswerSignal.fromWire(request.signal()),
+                    request.query());
+        }
+        return org.springframework.http.ResponseEntity.noContent().build();
+    }
+
+    /** Body of {@code POST /signal}: the interaction signal name plus correlating context. */
+    public record SignalRequest(String conversationId, String signal, String query) {
     }
 
     /**

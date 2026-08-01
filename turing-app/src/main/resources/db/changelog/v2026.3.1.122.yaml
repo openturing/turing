@@ -1,0 +1,56 @@
+databaseChangeLog:
+  - changeSet:
+      id: v2026.3.1.122-create-tur_answer_signal
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - tableExists:
+                tableName: tur_answer_signal
+      changes:
+        - createTable:
+            tableName: tur_answer_signal
+            remarks: "T845/§LXII.14 answer-level interaction signal for the self-tuning loop."
+            columns:
+              - column:
+                  name: id
+                  type: varchar(40)
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: agentId
+                  type: varchar(36)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: siteName
+                  type: varchar(255)
+              - column:
+                  name: conversationId
+                  type: varchar(128)
+              - column:
+                  name: query
+                  type: longtext
+              - column:
+                  name: signal
+                  type: varchar(32)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: relevanceMiss
+                  type: boolean
+                  defaultValueBoolean: false
+                  constraints:
+                    nullable: false
+              - column:
+                  name: createdAt
+                  type: timestamp
+                  constraints:
+                    nullable: false
+        - createIndex:
+            indexName: ix_tur_answer_signal_agent
+            tableName: tur_answer_signal
+            columns:
+              - column:
+                  name: agentId

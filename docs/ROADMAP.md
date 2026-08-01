@@ -167,38 +167,6 @@
 
 - 💭 **T738** (deps: T735) **Collapse the working manual-two-piece forms onto `BentoFormHero`** — the ~14 forms that already morph correctly by hand (11 SN forms + `ai-agent.settings.form` + `bento.global-settings` + `sn.site.custom.facet.item`) could drop their `bento-fade-out BentoSaveBar` + `BentoScrollSaveBar` boilerplate for the single component, so there is one canonical own-hero pattern. **Assessment (2026-07-13, deferred):** *not* the pure no-op it looks like. These forms render the hero as a **separate row** (`{header}` / shared `BentoAgentSubHero`) with the save bar **below** it in the body; `BentoFormHero` puts Save **inside** the hero `trailing`, so collapsing them would (1) **visibly** relocate Save into the hero — contradicting the "no visible change" premise — and (2) require the page↔form hero contract to move into each form. Worse, several (e.g. `sn.site.custom.facet.item`) save **imperatively** via `actions=` onClick, but `BentoFormHero` hardcodes `type="submit"` Save/Cancel — so it can't be dropped in without first extending its API to accept custom `actions`. Prereq if revived: add an `actions?` escape hatch to `BentoFormHero` and accept the layout change (or keep the two-piece as the sanctioned pattern for page-supplied heroes). → §XLVII
 
-## Block BO — Answer-first search: the steerable, auditable answer engine (§LXII)
-
-> A product review asked whether Turing could return search results "like Perplexity".
-> The audit found Turing already owns nearly every **engine** piece — hybrid RRF +
-> 8 rerank strategies, `TurCatalogCopilotResult` (`answer` + footnote-numbered
-> `citations` + `totalHits`, with the answer's `[n]` markers rewritten to match, T800),
-> `TurRagSource` `sources[]` SSE, per-sentence `TurChatCitation` answer spans, citation
-> drift detection, and `TurLiveAnswersService` fusing KB + `web_search` + `web_fetch`
-> — and none of the **surface**. Four gaps: (1) AI Mode is *exclusive*
-> (`search-content.tsx` → `showAiMode ? <AiModeChat/> : <SearchResultsPanel/>`), so
-> turning AI on costs the user results, facets and pagination; (2) three incompatible
-> citation contracts, with the T800 footnote renumbering wired **only** to the catalog
-> path so the main RAG answer ships unnumbered chips and inert `[n]` prose; (3) no
-> single streaming answer endpoint (`/copilot` is POST→JSON); (4) no follow-ups, no
-> research trace, one retrieval pass.
->
-> **The bet is not a Perplexity clone.** Perplexity's moat is web-index breadth —
-> unwinnable and uninteresting. Turing's answer sits on a real faceted index with an
-> auditable ranking pipeline, which buys three things Perplexity structurally cannot
-> offer: an answer you can **steer** (T838), **audit** (T839), and one that knows it
-> has **decayed** (T840). Phases 1–2 are table stakes; 3–4 are the differentiation.
-> Positioning in [STRATEGY.md](STRATEGY.md) §XV; design in
-> [IMPROVEMENTS.md](IMPROVEMENTS.md) §LXII.
-
-> **Phases 1–2 (contract, transport & the fused frontend) shipped** — T832–T837,
-> see [CHANGELOG.md](CHANGELOG.md) Block BO. Phase 3 (the differentiators) is next.
-
-**Phase 3 — the differentiators (the repositioning):**
-
-**Phase 4 — depth & distribution:**
-- 💭 **T845** (deps: T838, T843) **Answer-level analytics & the self-tuning loop** — emit citation-clicked / facet-refined-after-reading / follow-up-taken / re-answer signals into the existing chat analytics, keyed for the `selftuning` miner+drafter. T838's steerability produces an unusually clean relevance signal: narrowing a facet *after* reading an answer is explicit feedback that retrieval missed. → §LXII.14
-
 ## Non-goals (do NOT add as tasks)
 
 Binding constraints — see [IMPROVEMENTS.md](IMPROVEMENTS.md) §I.6 (What NOT to

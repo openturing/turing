@@ -16,6 +16,8 @@ import java.util.Map;
 
 import org.springframework.stereotype.Component;
 
+import com.viglet.turing.persistence.model.answer.TurAnswerSignalEvent;
+import com.viglet.turing.persistence.repository.answer.TurAnswerSignalRepository;
 import com.viglet.turing.service.chatanalytics.TurChatAnalyticsStore;
 import com.viglet.turing.service.chatanalytics.TurChatSessionFilter;
 
@@ -28,6 +30,11 @@ import lombok.extern.slf4j.Slf4j;
  * fail-open. A failure = an ABANDONED/ERROR/HANDOFF outcome, NEGATIVE/FRUSTRATED
  * sentiment, or a turn with tool errors.
  *
+ * <p>T845 / §LXII.14 — the failure picture also folds in answer-level
+ * relevance-miss signals (a facet refined <em>after</em> reading the answer, a
+ * thumbs-down) recorded by the answer surface and keyed by the same agent, so the
+ * drafter learns from answer feedback, not just chat sessions.
+ *
  * @author Alexandre Oliveira
  * @since 2026.3.4
  */
@@ -38,11 +45,15 @@ public class TurSelfTuningMiner {
     private static final int WINDOW_DAYS = 7;
     private static final int MAX_SESSIONS = 200;
     private static final int MAX_SUMMARY_LINES = 20;
+    private static final int MAX_ANSWER_SIGNAL_LINES = 10;
 
     private final TurChatAnalyticsStore analyticsStore;
+    private final TurAnswerSignalRepository answerSignalRepository;
 
-    public TurSelfTuningMiner(TurChatAnalyticsStore analyticsStore) {
+    public TurSelfTuningMiner(TurChatAnalyticsStore analyticsStore,
+            TurAnswerSignalRepository answerSignalRepository) {
         this.analyticsStore = analyticsStore;
+        this.answerSignalRepository = answerSignalRepository;
     }
 
     /** A mined failure picture: how many failing sessions and a short digest. */
@@ -65,7 +76,36 @@ public class TurSelfTuningMiner {
                         .append("\n");
             }
         }
-        return new FailureSummary(failing.size(), digest.toString().trim());
+        // T845 — fold in answer-level relevance-miss signals for the same agent.
+        List<TurAnswerSignalEvent> answerMisses = findAnswerMisses(agentId);
+        int answerShown = 0;
+        for (TurAnswerSignalEvent m : answerMisses) {
+            if (answerShown++ < MAX_ANSWER_SIGNAL_LINES) {
+                digest.append("- answerSignal=").append(m.getSignal())
+                        .append(", query=").append(str(m.getQuery()))
+                        .append("\n");
+            }
+        }
+        return new FailureSummary(failing.size() + answerMisses.size(), digest.toString().trim());
+    }
+
+    /**
+     * The agent's recent answer-level relevance-miss signals (facet-refined-after-answer,
+     * thumbs-down) within the same window. Fail-open to an empty list so a repository
+     * error never breaks a tuning cycle. Ordered newest-first by the repository.
+     *
+     * @since 2026.3.4
+     */
+    public List<TurAnswerSignalEvent> findAnswerMisses(String agentId) {
+        Instant from = Instant.now().minus(Duration.ofDays(WINDOW_DAYS));
+        try {
+            return answerSignalRepository
+                    .findByAgentIdAndRelevanceMissTrueAndCreatedAtAfterOrderByCreatedAtDesc(agentId, from);
+        } catch (RuntimeException e) {
+            log.warn("[SelfTuning] answer-signal mining failed for agent={}: {} — ignoring",
+                    agentId, e.getMessage());
+            return List.of();
+        }
     }
 
     /**

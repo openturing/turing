@@ -1,5 +1,12 @@
 import type { TuringClient } from "../client";
-import { createAnswerShare, postAnswer, postAnswerFreshness, type AnswerFilters } from "../api";
+import {
+  createAnswerShare,
+  postAnswer,
+  postAnswerFreshness,
+  recordAnswerSignal,
+  type AnswerFilters,
+  type TurAnswerSignalKind,
+} from "../api";
 import { createStore, type Store } from "../store";
 import type {
   TurAnswerArtifact,
@@ -74,6 +81,12 @@ export interface AnswerController extends Store<AnswerControllerState> {
    * share id. Rejects when no completed answer is available to snapshot.
    */
   share(): Promise<string>;
+  /**
+   * T845 — emit an answer-level interaction signal (citation clicked, follow-up
+   * taken, re-answer, facet refined after reading, thumbs) into the self-tuning
+   * loop. Fire-and-forget and fail-open; a no-op before an answer has been asked.
+   */
+  signal(kind: TurAnswerSignalKind): void;
   /** Abort the in-flight answer, leaving whatever has streamed so far. */
   stop(): void;
   /** Abort and clear back to the idle state. */
@@ -108,6 +121,13 @@ function errorMessage(err: unknown): string {
   return err instanceof Error ? err.message : String(err);
 }
 
+/** A best-effort correlation id for one answer interaction's signals (T845). */
+function newConversationId(): string {
+  const c = globalThis.crypto;
+  if (c && typeof c.randomUUID === "function") return c.randomUUID();
+  return `ans-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
+}
+
 export function createAnswerController(
   client: TuringClient,
   config: TuringConfig,
@@ -123,6 +143,8 @@ export function createAnswerController(
   let lastQuery = "";
   // The last steering filter set — snapshotted into a share (T844).
   let lastFilters: AnswerFilters | undefined;
+  // Correlates the answer-level signals of one answer interaction (T845).
+  let conversationId = "";
 
   function isStale(requestId: number): boolean {
     return requestId !== latestRequestId || aborted;
@@ -138,6 +160,7 @@ export function createAnswerController(
     abortController = new AbortController();
     lastQuery = trimmed;
     lastFilters = options?.filters;
+    conversationId = newConversationId();
 
     store.setState({
       status: "loading",
@@ -232,6 +255,15 @@ export function createAnswerController(
     });
   }
 
+  function signal(kind: TurAnswerSignalKind): void {
+    if (!lastQuery) return;
+    void recordAnswerSignal(client, config.site, {
+      signal: kind,
+      conversationId: conversationId || null,
+      query: lastQuery,
+    });
+  }
+
   function stop(): void {
     aborted = true;
     latestRequestId++;
@@ -261,6 +293,7 @@ export function createAnswerController(
     ask,
     checkFreshness,
     share,
+    signal,
     stop,
     reset,
     destroy,

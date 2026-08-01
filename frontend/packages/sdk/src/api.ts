@@ -2215,6 +2215,40 @@ export async function fetchAnswerShare(
   }
 }
 
+/**
+ * T845 — the answer-level interaction signals the answer surface emits after an
+ * answer is produced, fed to the self-tuning loop. `FACET_REFINED_AFTER_ANSWER`
+ * and `THUMBS_DOWN` are relevance-misses server-side.
+ */
+export type TurAnswerSignalKind =
+  | "CITATION_CLICKED"
+  | "FOLLOW_UP_TAKEN"
+  | "RE_ANSWER_REQUESTED"
+  | "FACET_REFINED_AFTER_ANSWER"
+  | "THUMBS_UP"
+  | "THUMBS_DOWN";
+
+/**
+ * T845 — record one answer-level interaction signal (fire-and-forget, fail-open).
+ * The server keys it by the site's effective agent so the self-tuning miner can
+ * consume it; a network failure is swallowed so a signal never disturbs the UI.
+ */
+export async function recordAnswerSignal(
+  client: TuringClient,
+  site: string,
+  payload: { signal: TurAnswerSignalKind; conversationId?: string | null; query?: string | null },
+): Promise<void> {
+  try {
+    await client.post(`/sn/${encodeURIComponent(site)}/answer/signal`, {
+      signal: payload.signal,
+      conversationId: payload.conversationId ?? null,
+      query: payload.query ?? null,
+    });
+  } catch {
+    // Fail-open: a dropped signal must never surface as a UI error.
+  }
+}
+
 export function createTuringApi(client: TuringClient) {
   return {
     fetchSearch: (site: string, params: SearchParams) => fetchSearch(client, site, params),

@@ -1,5 +1,12 @@
 import { useCallback, useRef, useState } from "react";
-import { createAnswerShare, fetchAnswer, fetchAnswerFreshness, type AnswerFilters } from "../core/api";
+import {
+  createAnswerShare,
+  fetchAnswer,
+  fetchAnswerFreshness,
+  recordAnswerSignal,
+  type AnswerFilters,
+  type TurAnswerSignalKind,
+} from "../core/api";
 import type {
   TurAnswerArtifact,
   TurAnswerCitation,
@@ -67,8 +74,21 @@ export interface UseTuringAnswerReturn {
    * share id. Rejects when no completed answer is available to snapshot.
    */
   share: () => Promise<string>;
+  /**
+   * T845 — emit an answer-level interaction signal (citation clicked, follow-up
+   * taken, re-answer, facet refined after reading, thumbs) into the self-tuning
+   * loop. Fire-and-forget and fail-open; a no-op before an answer has been asked.
+   */
+  signal: (kind: TurAnswerSignalKind) => void;
   stop: () => void;
   reset: () => void;
+}
+
+/** A best-effort correlation id for one answer interaction's signals (T845). */
+function newConversationId(): string {
+  const c = globalThis.crypto;
+  if (c && typeof c.randomUUID === "function") return c.randomUUID();
+  return `ans-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
 }
 
 export function useTuringAnswer(options: UseTuringAnswerOptions = {}): UseTuringAnswerReturn {
@@ -107,6 +127,8 @@ export function useTuringAnswer(options: UseTuringAnswerOptions = {}): UseTuring
   statusRef.current = status;
   // The last steering filter set — snapshotted into a share (T844).
   const lastFiltersRef = useRef<AnswerFilters | undefined>(undefined);
+  // Correlates the answer-level signals of one answer interaction (T845).
+  const conversationIdRef = useRef("");
 
   const ask = useCallback(
     async (query: string, askOptions?: TuringAnswerAskOptions) => {
@@ -120,6 +142,7 @@ export function useTuringAnswer(options: UseTuringAnswerOptions = {}): UseTuring
       abortControllerRef.current = controller;
       lastQueryRef.current = trimmed;
       lastFiltersRef.current = askOptions?.filters;
+      conversationIdRef.current = newConversationId();
 
       setStatus("loading");
       setAnswer("");
@@ -190,6 +213,18 @@ export function useTuringAnswer(options: UseTuringAnswerOptions = {}): UseTuring
     });
   }, [siteName]);
 
+  const signal = useCallback(
+    (kind: TurAnswerSignalKind) => {
+      if (!lastQueryRef.current || !siteName) return;
+      void recordAnswerSignal(siteName, {
+        signal: kind,
+        conversationId: conversationIdRef.current || null,
+        query: lastQueryRef.current,
+      });
+    },
+    [siteName],
+  );
+
   const stop = useCallback(() => {
     abortedRef.current = true;
     requestRef.current++;
@@ -230,6 +265,7 @@ export function useTuringAnswer(options: UseTuringAnswerOptions = {}): UseTuring
     ask,
     checkFreshness,
     share,
+    signal,
     stop,
     reset,
   };
