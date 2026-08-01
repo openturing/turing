@@ -2863,13 +2863,6 @@ bet; phases 1–2 are the table stakes that make it renderable.
 
 ### Phase 3 — The differentiators
 
-#### LXII.9 Answer freshness & drift badge (T840)
-Wire the shipped `TurCitationDriftService` + `TurCitationDriftDetectionJob` to the
-answer surface: when a cited source changed after the answer was produced, show a
-freshness badge and a one-click re-answer. No answer engine on the market models an
-answer as something that **decays**; Turing already computes the signal and currently
-only reports it internally.
-
 #### LXII.10 Structured answers — answer as an artifact, not prose (T841)
 For comparative or enumerable questions over a faceted / `VECTORLESS_STRUCTURED`
 catalog, render the answer as a **comparison table or spec grid** built from the

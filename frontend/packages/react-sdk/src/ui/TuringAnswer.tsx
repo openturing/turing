@@ -37,6 +37,8 @@ export interface TuringAnswerClassNames {
   answer?: string;
   loading?: string;
   error?: string;
+  freshness?: string;
+  reanswer?: string;
   sources?: string;
   source?: string;
   sourceRank?: string;
@@ -52,6 +54,10 @@ export interface TuringAnswerLabels {
   followups?: string;
   /** Leads the constraint chip row. Default "Answering within:". */
   within?: string;
+  /** The freshness/drift badge. Default "Some sources changed since this answer.". */
+  stale?: string;
+  /** The re-answer button. Default "Re-answer". */
+  reanswer?: string;
 }
 
 export interface TuringAnswerProps extends UseTuringAnswerOptions {
@@ -70,6 +76,8 @@ export interface TuringAnswerProps extends UseTuringAnswerOptions {
   formatConstraint?: (field: string, value: string) => string;
   /** Render-override for the answer body (default: markdown + `[n]` anchors). */
   renderAnswer?: (args: { answer: string; citations: TurAnswerCitation[] }) => ReactNode;
+  /** T840 — auto re-check source freshness when the answer completes. Default `false`. */
+  checkFreshnessOnAnswer?: boolean;
   /** T839 — show the "why this answer" provenance panel. Default `true`. */
   showProvenance?: boolean;
   /** Start the provenance panel expanded. Default `false`. */
@@ -98,6 +106,7 @@ export function TuringAnswer({
   onFilterRemove,
   formatConstraint,
   renderAnswer,
+  checkFreshnessOnAnswer = false,
   showProvenance = true,
   provenanceDefaultOpen = false,
   provenanceClassNames,
@@ -107,11 +116,17 @@ export function TuringAnswer({
   classNames,
   ...answerOptions
 }: Readonly<TuringAnswerProps>) {
-  const { answer, sources, citations, followups, trace, status, error, isStreaming, ask } =
+  const { answer, sources, citations, followups, trace, status, error, isStreaming, staleSources, ask, checkFreshness } =
     useTuringAnswer(answerOptions);
   const [draft, setDraft] = useState("");
   // The last question asked — so a facet change (below) re-runs the same question.
   const lastQueryRef = useRef("");
+
+  // T840 — opt-in: re-check source freshness once the answer completes.
+  useEffect(() => {
+    if (checkFreshnessOnAnswer && status === "success") void checkFreshness();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [status, checkFreshnessOnAnswer]);
 
   const constraints = filterPairs(filters);
   const filtersKey = JSON.stringify(filters ?? {});
@@ -202,6 +217,21 @@ export function TuringAnswer({
       )}
 
       {answer && <div className={classNames?.answer}>{answerBody}</div>}
+
+      {staleSources.length > 0 && (
+        <div className={classNames?.freshness} data-turing-answer-stale="" role="status">
+          {labels?.stale ?? "Some sources changed since this answer."}{" "}
+          <button
+            type="button"
+            className={classNames?.reanswer}
+            onClick={() => {
+              if (lastQueryRef.current) void ask(lastQueryRef.current, { filters });
+            }}
+          >
+            {labels?.reanswer ?? "Re-answer"}
+          </button>
+        </div>
+      )}
 
       {showProvenance && answer && (
         <TuringAnswerProvenance

@@ -1,5 +1,5 @@
 import type { TuringClient } from "../client";
-import { postAnswer, type AnswerFilters } from "../api";
+import { postAnswer, postAnswerFreshness, type AnswerFilters } from "../api";
 import { createStore, type Store } from "../store";
 import type {
   TurAnswerCitation,
@@ -40,6 +40,10 @@ export interface AnswerControllerState {
   error: string | null;
   /** Derived convenience mirror of `status === "loading"`. */
   isStreaming: boolean;
+  /** T840 — ISO instant the answer completed (drift is measured from here). */
+  answeredAt: string | null;
+  /** T840 — cited source ids a `checkFreshness()` re-check flagged as drifted. */
+  staleSources: string[];
 }
 
 /** Per-ask overrides: the response locale and the T838 steering filter set. */
@@ -52,6 +56,12 @@ export interface AnswerAskOptions {
 export interface AnswerController extends Store<AnswerControllerState> {
   /** Stream a grounded answer for {@code query} (optionally steered by filters/locale). */
   ask(query: string, options?: AnswerAskOptions): Promise<void>;
+  /**
+   * T840 — re-check whether the current answer's cited sources have drifted since
+   * it was produced, populating {@link AnswerControllerState.staleSources}. No-op
+   * until an answer with citations has completed.
+   */
+  checkFreshness(): Promise<void>;
   /** Abort the in-flight answer, leaving whatever has streamed so far. */
   stop(): void;
   /** Abort and clear back to the idle state. */
@@ -69,6 +79,8 @@ const INITIAL: AnswerControllerState = {
   trace: null,
   error: null,
   isStreaming: false,
+  answeredAt: null,
+  staleSources: [],
 };
 
 function isAbortError(err: unknown): boolean {
@@ -93,6 +105,8 @@ export function createAnswerController(
   let latestRequestId = 0;
   let aborted = false;
   let abortController: AbortController | null = null;
+  // The last question asked — so checkFreshness can re-retrieve it (T840).
+  let lastQuery = "";
 
   function isStale(requestId: number): boolean {
     return requestId !== latestRequestId || aborted;
@@ -106,6 +120,7 @@ export function createAnswerController(
     aborted = false;
     abortController?.abort();
     abortController = new AbortController();
+    lastQuery = trimmed;
 
     store.setState({
       status: "loading",
@@ -116,6 +131,8 @@ export function createAnswerController(
       followups: [],
       trace: null,
       error: null,
+      answeredAt: null,
+      staleSources: [],
     });
 
     try {
@@ -146,10 +163,28 @@ export function createAnswerController(
         status: result.error ? "error" : "success",
         isStreaming: false,
         error: result.error ?? null,
+        answeredAt: result.error ? null : new Date().toISOString(),
       });
     } catch (err) {
       if (isStale(requestId) || isAbortError(err)) return;
       store.setState({ status: "error", isStreaming: false, error: errorMessage(err) });
+    }
+  }
+
+  async function checkFreshness(): Promise<void> {
+    const state = store.getState();
+    if (!state.answeredAt || state.citations.length === 0 || !lastQuery) return;
+    const sources = state.citations
+      .filter((c) => c.sourceId)
+      .map((c) => ({ sourceId: c.sourceId as string, citedText: c.citedText ?? undefined }));
+    if (sources.length === 0) return;
+    try {
+      const verdicts = await postAnswerFreshness(client, config.site, lastQuery, state.answeredAt, sources);
+      store.setState({
+        staleSources: verdicts.filter((v) => v.status === "STALE").map((v) => v.sourceId),
+      });
+    } catch {
+      // Fail-open: a freshness-check failure shows no badge, never an error.
     }
   }
 
@@ -180,6 +215,7 @@ export function createAnswerController(
     setState: store.setState,
     subscribe: store.subscribe,
     ask,
+    checkFreshness,
     stop,
     reset,
     destroy,

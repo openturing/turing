@@ -221,6 +221,49 @@ class TurCitationDriftServiceTest {
         verify(repository, never()).findDueForScan(any(), any(), any());
     }
 
+    // ---- checkFreshness() answer-surface re-check (T840) -----------------
+
+    @Test
+    void checkFreshness_flagsReindexedAndVanishedSourcesFreshOnesStayFresh() {
+        Instant answer = Instant.parse("2026-01-01T00:00:00Z");
+        when(ragSearchToolService.retrieveRawForCitations(anyString(), anyInt()))
+                .thenReturn(List.of(
+                        sourceDoc("doc-fresh", "the cited passage remains here", null),
+                        sourceDoc("doc-reindexed", "the cited passage remains here",
+                                Instant.parse("2026-02-01T00:00:00Z")),
+                        sourceDoc("doc-gone", "totally rewritten content", null)));
+
+        List<TurCitationDriftService.FreshnessVerdict> verdicts = service.checkFreshness("q",
+                List.of(new TurCitationDriftService.FreshnessRef("doc-fresh", "the cited passage"),
+                        new TurCitationDriftService.FreshnessRef("doc-reindexed", "the cited passage"),
+                        new TurCitationDriftService.FreshnessRef("doc-gone", "the cited passage"),
+                        new TurCitationDriftService.FreshnessRef("doc-missing", "the cited passage")),
+                answer, 5);
+
+        assertThat(verdicts).extracting(TurCitationDriftService.FreshnessVerdict::sourceId)
+                .containsExactly("doc-fresh", "doc-reindexed", "doc-gone", "doc-missing");
+        assertThat(freshnessOf(verdicts, "doc-fresh").status())
+                .isEqualTo(TurCitationDriftService.Status.FRESH);
+        assertThat(freshnessOf(verdicts, "doc-reindexed").stale()).isTrue();
+        assertThat(freshnessOf(verdicts, "doc-gone").stale()).isTrue();
+        assertThat(freshnessOf(verdicts, "doc-missing").status())
+                .isEqualTo(TurCitationDriftService.Status.UNVERIFIABLE);
+    }
+
+    @Test
+    void checkFreshness_returnsEmptyWhenDisabled() {
+        configProperties.getGenai().getCitationDrift().setEnabled(false);
+        assertThat(service.checkFreshness("q",
+                List.of(new TurCitationDriftService.FreshnessRef("s", "t")), Instant.now(), 5))
+                .isEmpty();
+        verify(ragSearchToolService, never()).retrieveRawForCitations(anyString(), anyInt());
+    }
+
+    private static TurCitationDriftService.FreshnessVerdict freshnessOf(
+            List<TurCitationDriftService.FreshnessVerdict> verdicts, String sourceId) {
+        return verdicts.stream().filter(v -> sourceId.equals(v.sourceId())).findFirst().orElseThrow();
+    }
+
     // ---- helpers --------------------------------------------------------
 
     private static TurChatCitation citation(String sourceId, String citedText) {

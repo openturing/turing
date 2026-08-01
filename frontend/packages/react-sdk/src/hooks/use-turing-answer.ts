@@ -1,5 +1,5 @@
 import { useCallback, useRef, useState } from "react";
-import { fetchAnswer, type AnswerFilters } from "../core/api";
+import { fetchAnswer, fetchAnswerFreshness, type AnswerFilters } from "../core/api";
 import type { TurAnswerCitation, TurAnswerTrace, TurChatSource } from "../core/types";
 import { useOptionalTuringContext } from "../core/use-turing-context";
 import { isAbortError } from "./streaming-chat-core";
@@ -45,7 +45,13 @@ export interface UseTuringAnswerReturn {
   status: TuringAnswerStatus;
   error: string | null;
   isStreaming: boolean;
+  /** T840 — ISO instant the answer completed (drift is measured from here). */
+  answeredAt: string | null;
+  /** T840 — cited source ids a `checkFreshness()` re-check flagged as drifted. */
+  staleSources: string[];
   ask: (query: string, options?: TuringAnswerAskOptions) => Promise<void>;
+  /** T840 — re-check the current answer's cited sources for drift. */
+  checkFreshness: () => Promise<void>;
   stop: () => void;
   reset: () => void;
 }
@@ -62,11 +68,19 @@ export function useTuringAnswer(options: UseTuringAnswerOptions = {}): UseTuring
   const [trace, setTrace] = useState<TurAnswerTrace | null>(null);
   const [status, setStatus] = useState<TuringAnswerStatus>("idle");
   const [error, setError] = useState<string | null>(null);
+  const [answeredAt, setAnsweredAt] = useState<string | null>(null);
+  const [staleSources, setStaleSources] = useState<string[]>([]);
 
   // Superseded-request guard trio (the hook mirror of the vanilla controller).
   const requestRef = useRef(0);
   const abortedRef = useRef(false);
   const abortControllerRef = useRef<AbortController | null>(null);
+  // The last question + its citations — so checkFreshness can re-retrieve (T840).
+  const lastQueryRef = useRef("");
+  const citationsRef = useRef<TurAnswerCitation[]>([]);
+  citationsRef.current = citations;
+  const answeredAtRef = useRef<string | null>(null);
+  answeredAtRef.current = answeredAt;
 
   const ask = useCallback(
     async (query: string, askOptions?: TuringAnswerAskOptions) => {
@@ -78,6 +92,7 @@ export function useTuringAnswer(options: UseTuringAnswerOptions = {}): UseTuring
       abortControllerRef.current?.abort();
       const controller = new AbortController();
       abortControllerRef.current = controller;
+      lastQueryRef.current = trimmed;
 
       setStatus("loading");
       setAnswer("");
@@ -86,6 +101,8 @@ export function useTuringAnswer(options: UseTuringAnswerOptions = {}): UseTuring
       setFollowups([]);
       setTrace(null);
       setError(null);
+      setAnsweredAt(null);
+      setStaleSources([]);
 
       const stale = () => requestId !== requestRef.current || abortedRef.current;
       try {
@@ -102,6 +119,7 @@ export function useTuringAnswer(options: UseTuringAnswerOptions = {}): UseTuring
         if (stale()) return;
         setStatus(result.error ? "error" : "success");
         if (result.error) setError(result.error);
+        else setAnsweredAt(new Date().toISOString());
       } catch (err) {
         if (stale() || isAbortError(err)) return;
         setError(err instanceof Error ? err.message : String(err));
@@ -110,6 +128,22 @@ export function useTuringAnswer(options: UseTuringAnswerOptions = {}): UseTuring
     },
     [siteName, defaultLocale],
   );
+
+  const checkFreshness = useCallback(async () => {
+    const at = answeredAtRef.current;
+    const cites = citationsRef.current;
+    if (!at || cites.length === 0 || !siteName || !lastQueryRef.current) return;
+    const refs = cites
+      .filter((c) => c.sourceId)
+      .map((c) => ({ sourceId: c.sourceId as string, citedText: c.citedText ?? undefined }));
+    if (refs.length === 0) return;
+    try {
+      const verdicts = await fetchAnswerFreshness(siteName, lastQueryRef.current, at, refs);
+      setStaleSources(verdicts.filter((v) => v.status === "STALE").map((v) => v.sourceId));
+    } catch {
+      // Fail-open: a freshness-check failure shows no badge, never an error.
+    }
+  }, [siteName]);
 
   const stop = useCallback(() => {
     abortedRef.current = true;
@@ -129,6 +163,8 @@ export function useTuringAnswer(options: UseTuringAnswerOptions = {}): UseTuring
     setTrace(null);
     setError(null);
     setStatus("idle");
+    setAnsweredAt(null);
+    setStaleSources([]);
   }, []);
 
   return {
@@ -140,7 +176,10 @@ export function useTuringAnswer(options: UseTuringAnswerOptions = {}): UseTuring
     status,
     error,
     isStreaming: status === "loading",
+    answeredAt,
+    staleSources,
     ask,
+    checkFreshness,
     stop,
     reset,
   };

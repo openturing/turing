@@ -52,9 +52,12 @@ import reactor.core.publisher.Flux;
 public class TurSNAnswerAPI {
 
     private final TurSNAnswerService answerService;
+    private final com.viglet.turing.genai.citation.TurCitationDriftService driftService;
 
-    public TurSNAnswerAPI(TurSNAnswerService answerService) {
+    public TurSNAnswerAPI(TurSNAnswerService answerService,
+            com.viglet.turing.genai.citation.TurCitationDriftService driftService) {
         this.answerService = answerService;
+        this.driftService = driftService;
     }
 
     @Operation(summary = "Stream a grounded, cited answer for a query over the site's knowledge base")
@@ -64,6 +67,41 @@ public class TurSNAnswerAPI {
             @RequestParam(value = "locale", required = false) String locale,
             @RequestParam(value = "fq", required = false) List<String> fq) {
         return answerService.answer(siteName, query, resolveLocale(locale), parseFilters(fq));
+    }
+
+    /**
+     * T840 / §LXII.9 — re-check the freshness of a produced answer's cited sources.
+     * Given the original question, the instant the answer was produced and its cited
+     * sources, returns per-source drift verdicts so the client can show a freshness
+     * badge and offer a one-click re-answer. Fail-open: an empty list (no badge) when
+     * drift detection is off or nothing re-checks. A safe read (no mutation).
+     */
+    @Operation(summary = "Re-check whether a produced answer's cited sources have drifted")
+    @org.springframework.web.bind.annotation.PostMapping(value = "/freshness",
+            consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
+    public List<com.viglet.turing.genai.citation.TurCitationDriftService.FreshnessVerdict> freshness(
+            @PathVariable String siteName,
+            @org.springframework.web.bind.annotation.RequestBody FreshnessRequest request) {
+        if (request == null || request.sources() == null || request.sources().isEmpty()) {
+            return List.of();
+        }
+        List<com.viglet.turing.genai.citation.TurCitationDriftService.FreshnessRef> refs =
+                request.sources().stream()
+                        .filter(java.util.Objects::nonNull)
+                        .map(s -> new com.viglet.turing.genai.citation.TurCitationDriftService.FreshnessRef(
+                                s.sourceId(), s.citedText()))
+                        .toList();
+        int topK = request.topK() == null ? 0 : request.topK();
+        return driftService.checkFreshness(request.q(), refs, request.answeredAt(), topK);
+    }
+
+    /** Body of {@code POST /freshness}: the question, when the answer ran, and its cited sources. */
+    public record FreshnessRequest(String q, java.time.Instant answeredAt, Integer topK,
+            List<FreshnessSource> sources) {
+    }
+
+    /** One cited source to re-check: its id and the grounded passage. */
+    public record FreshnessSource(String sourceId, String citedText) {
     }
 
     /**

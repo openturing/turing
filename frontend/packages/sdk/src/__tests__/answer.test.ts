@@ -126,6 +126,28 @@ describe("createAnswerController (T837)", () => {
     expect(url).toContain("fq=context%3A%3E%3D200000");
   });
 
+  it("re-checks the freshness of the answer's cited sources (T840)", async () => {
+    const fetchRaw = vi.fn().mockResolvedValueOnce(fullAnswer());
+    const post = vi.fn().mockResolvedValueOnce([
+      { sourceId: "a", status: "STALE", reason: "reindexed after the answer" },
+      { sourceId: "b", status: "FRESH" },
+    ]);
+    const client = { fetchRaw, post } as unknown as TuringClient;
+    const controller = createAnswerController(client, { site: "site1" });
+
+    await controller.ask("hello");
+    expect(controller.getState().answeredAt).toBeTruthy();
+
+    await controller.checkFreshness();
+
+    expect(post).toHaveBeenCalledWith(
+      "/sn/site1/answer/freshness",
+      expect.objectContaining({ q: "hello" }),
+    );
+    // Only the STALE source is flagged.
+    expect(controller.getState().staleSources).toEqual(["a"]);
+  });
+
   it("reset() clears state back to idle", async () => {
     const fetchRaw = vi.fn().mockResolvedValueOnce(fullAnswer());
     const client = { fetchRaw } as unknown as TuringClient;

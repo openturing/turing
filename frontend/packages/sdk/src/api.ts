@@ -1,6 +1,8 @@
 import type { TuringClient } from "./client";
 import type {
   TurAnswerCitation,
+  TurAnswerFreshnessSource,
+  TurAnswerFreshnessVerdict,
   TurAnswerTrace,
   TurChatCitation,
   TurChatConversationMessage,
@@ -2117,6 +2119,26 @@ export async function postAnswer(
     throw new Error(`HTTP ${response.status}: ${response.statusText}`);
   }
   return consumeAnswerStream(response, options);
+}
+
+/**
+ * T840 — re-check whether a produced answer's cited sources have drifted (a source
+ * re-indexed after the answer, or its cited passage gone). Returns the per-source
+ * verdicts, or an empty list when drift detection is off. Safe read.
+ */
+export async function postAnswerFreshness(
+  client: TuringClient,
+  site: string,
+  question: string,
+  answeredAt: string,
+  sources: TurAnswerFreshnessSource[],
+  topK?: number,
+): Promise<TurAnswerFreshnessVerdict[]> {
+  const verdicts = await client.post<TurAnswerFreshnessVerdict[]>(
+    `/sn/${encodeURIComponent(site)}/answer/freshness`,
+    { q: question, answeredAt, topK, sources },
+  );
+  return verdicts ?? [];
 }
 
 export function createTuringApi(client: TuringClient) {

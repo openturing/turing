@@ -415,6 +415,22 @@ export interface TurAnswerCitation {
   citedText?: string | null;
 }
 
+/** T840 — the drift status of one cited source re-checked against the live index. */
+export type TurAnswerFreshnessStatus = "FRESH" | "STALE" | "UNVERIFIABLE";
+
+/** T840 — one cited source to re-check for drift (its id + grounded passage). */
+export interface TurAnswerFreshnessSource {
+  sourceId: string;
+  citedText?: string | null;
+}
+
+/** T840 — per-source freshness verdict from `POST /sn/{site}/answer/freshness`. */
+export interface TurAnswerFreshnessVerdict {
+  sourceId: string;
+  status: TurAnswerFreshnessStatus;
+  reason?: string | null;
+}
+
 /**
  * T837 / §LXII.2 + T839 / §LXII.8 — the answer stream's `trace` event: the
  * auditable "why this answer" provenance the `TuringAnswerProvenance` panel shows.
