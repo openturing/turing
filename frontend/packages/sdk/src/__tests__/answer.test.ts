@@ -165,6 +165,23 @@ describe("createAnswerController (T837)", () => {
     ]);
   });
 
+  it("collects live research-trace steps (T843)", async () => {
+    const fetchRaw = vi.fn().mockResolvedValueOnce(
+      sse([
+        frame("trace_step", JSON.stringify({ callId: "t1", name: "search_knowledge_base", phase: "start" })),
+        frame("trace_step", JSON.stringify({ callId: "t1", name: "search_knowledge_base", phase: "end", status: "ok", durationMs: 42 })),
+        frame("token", "Done."),
+      ]),
+    );
+    const client = { fetchRaw } as unknown as TuringClient;
+    const controller = createAnswerController(client, { site: "site1" });
+
+    await controller.ask("what changed?");
+
+    expect(controller.getState().traceSteps.map((s) => s.phase)).toEqual(["start", "end"]);
+    expect(controller.getState().traceSteps[0].name).toBe("search_knowledge_base");
+  });
+
   it("reset() clears state back to idle", async () => {
     const fetchRaw = vi.fn().mockResolvedValueOnce(fullAnswer());
     const client = { fetchRaw } as unknown as TuringClient;

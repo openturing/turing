@@ -41,6 +41,9 @@ export interface TuringAnswerClassNames {
   error?: string;
   freshness?: string;
   reanswer?: string;
+  trace?: string;
+  traceSummary?: string;
+  traceStep?: string;
   sources?: string;
   source?: string;
   sourceRank?: string;
@@ -60,6 +63,8 @@ export interface TuringAnswerLabels {
   stale?: string;
   /** The re-answer button. Default "Re-answer". */
   reanswer?: string;
+  /** The research-trace disclosure summary. Default "Research trace". */
+  trace?: string;
 }
 
 export interface TuringAnswerProps extends UseTuringAnswerOptions {
@@ -87,6 +92,8 @@ export interface TuringAnswerProps extends UseTuringAnswerOptions {
   renderArtifact?: (artifact: TurAnswerArtifact) => ReactNode;
   /** T840 — auto re-check source freshness when the answer completes. Default `false`. */
   checkFreshnessOnAnswer?: boolean;
+  /** T843 — show the collapsible live research-trace timeline. Default `true`. */
+  showTrace?: boolean;
   /** T839 — show the "why this answer" provenance panel. Default `true`. */
   showProvenance?: boolean;
   /** Start the provenance panel expanded. Default `false`. */
@@ -117,6 +124,7 @@ export function TuringAnswer({
   renderAnswer,
   renderArtifact,
   checkFreshnessOnAnswer = false,
+  showTrace = true,
   showProvenance = true,
   provenanceDefaultOpen = false,
   provenanceClassNames,
@@ -126,8 +134,9 @@ export function TuringAnswer({
   classNames,
   ...answerOptions
 }: Readonly<TuringAnswerProps>) {
-  const { answer, sources, citations, followups, artifacts, trace, status, error, isStreaming, staleSources, ask, checkFreshness } =
+  const { answer, sources, citations, followups, artifacts, traceSteps, trace, status, error, isStreaming, staleSources, ask, checkFreshness } =
     useTuringAnswer(answerOptions);
+  const completedSteps = traceSteps.filter((step) => step.phase === "end");
   const [draft, setDraft] = useState("");
   // The last question asked — so a facet change (below) re-runs the same question.
   const lastQueryRef = useRef("");
@@ -266,6 +275,21 @@ export function TuringAnswer({
           classNames={provenanceClassNames}
           labels={provenanceLabels}
         />
+      )}
+
+      {showTrace && completedSteps.length > 0 && (
+        <details className={classNames?.trace} data-turing-answer-trace="">
+          <summary className={classNames?.traceSummary}>{labels?.trace ?? "Research trace"}</summary>
+          <ol>
+            {completedSteps.map((step) => (
+              <li key={`${step.callId}-end`} className={classNames?.traceStep}>
+                {step.name}
+                {step.durationMs != null ? ` · ${step.durationMs}ms` : ""}
+                {step.status ? ` · ${step.status}` : ""}
+              </li>
+            ))}
+          </ol>
+        </details>
       )}
 
       {sources.length > 0 && (

@@ -60,12 +60,16 @@ public final class TurAnswerStreamFramer {
     public static final String EVENT_ERROR = "error";
     /** T841 — a structured answer artifact (an answer-as-app generative-UI spec). */
     public static final String EVENT_ARTIFACT = "artifact";
+    /** T843 — one step of the live research trace (a tool-call start/end). */
+    public static final String EVENT_TRACE_STEP = "trace_step";
 
     /** Upstream {@link ChatResponse#type()} values this framer maps or drops. */
     private static final String UPSTREAM_SOURCES = "sources";
     private static final String UPSTREAM_TOKEN = "token";
     /** The agent's client-tool invocation — the answer-as-app render spec (T438/T841). */
     private static final String UPSTREAM_CLIENT_TOOL_CALL = "client_tool_call";
+    /** A runtime tool-call start/end — the raw material for the research trace (T436/T843). */
+    private static final String UPSTREAM_TOOL_CALL = "tool_call";
 
     /** Mirrors the catalog backstop so a runaway answer can't flood the client. */
     private static final int MAX_RETURNED_CITATIONS = 24;
@@ -149,6 +153,15 @@ public final class TurAnswerStreamFramer {
                     return Flux.empty();
                 }
                 return Flux.just(event(EVENT_ARTIFACT, content));
+            }
+            case UPSTREAM_TOOL_CALL -> {
+                // T843 — the runtime already emits tool-call start/end events; frame
+                // each as one step of the live research trace ("searched X · reranked
+                // · answered") so a multi-second answer feels deliberate, not slow.
+                if (content.isEmpty()) {
+                    return Flux.empty();
+                }
+                return Flux.just(event(EVENT_TRACE_STEP, content));
             }
             default -> {
                 // grounding / secondOpinion / form / tool_call — and the SN path's

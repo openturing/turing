@@ -2865,12 +2865,6 @@ bet; phases 1–2 are the table stakes that make it renderable.
 
 ### Phase 4 — Depth & distribution
 
-#### LXII.12 Live research trace (T843)
-Frame the `tool_call` SSE events the runtime already emits as a collapsible timeline
-("searched *X* · read *N* sources · reranked with Cohere · answered"), streamed as a
-`trace` event. Pure presentation over shipped plumbing, and the cheapest way to make a
-multi-second answer feel deliberate rather than slow.
-
 #### LXII.13 Answer permalinks & shareable answer cards (T844)
 A stable URL for an answer (query + filter state + source snapshot + timestamp) that
 re-renders it read-only, with an OG card via the shipped `TurChatShareOgService`. Turns

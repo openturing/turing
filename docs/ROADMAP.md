@@ -197,7 +197,6 @@
 **Phase 3 — the differentiators (the repositioning):**
 
 **Phase 4 — depth & distribution:**
-- 💭 **T843** (deps: T833, T835) **Live research trace** — frame the `tool_call` SSE events the runtime already emits as a collapsible "searched *X* · read *N* sources · reranked with Cohere · answered" timeline via a `trace` event. Pure presentation over shipped plumbing; the cheapest way to make a multi-second answer feel deliberate rather than slow. → §LXII.12
 - 💭 **T844** (deps: T835, T838) **Answer permalinks & shareable answer cards** — a stable URL for an answer (query + filter state + source snapshot + timestamp) that re-renders it read-only, with an OG card via the shipped `TurChatShareOgService`; makes every good answer a linkable artifact and, on public deployments, indexable content. Pairs with Block O (GEO). → §LXII.13
 - 💭 **T845** (deps: T838, T843) **Answer-level analytics & the self-tuning loop** — emit citation-clicked / facet-refined-after-reading / follow-up-taken / re-answer signals into the existing chat analytics, keyed for the `selftuning` miner+drafter. T838's steerability produces an unusually clean relevance signal: narrowing a facet *after* reading an answer is explicit feedback that retrieval missed. → §LXII.14
 

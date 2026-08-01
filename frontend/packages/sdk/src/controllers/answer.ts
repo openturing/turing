@@ -6,6 +6,7 @@ import type {
   TurAnswerCitation,
   TurAnswerTrace,
   TurChatSource,
+  TurChatToolCall,
   TuringConfig,
 } from "../types";
 
@@ -38,6 +39,8 @@ export interface AnswerControllerState {
   followups: string[];
   /** T841 — structured answer artifacts (answer-as-app generative-UI specs). */
   artifacts: TurAnswerArtifact[];
+  /** T843 — the live research-trace steps (tool-call start/end events). */
+  traceSteps: TurChatToolCall[];
   /** Minimal run summary. */
   trace: TurAnswerTrace | null;
   error: string | null;
@@ -80,6 +83,7 @@ const INITIAL: AnswerControllerState = {
   citations: [],
   followups: [],
   artifacts: [],
+  traceSteps: [],
   trace: null,
   error: null,
   isStreaming: false,
@@ -134,6 +138,7 @@ export function createAnswerController(
       citations: [],
       followups: [],
       artifacts: [],
+      traceSteps: [],
       trace: null,
       error: null,
       answeredAt: null,
@@ -159,6 +164,11 @@ export function createAnswerController(
         onArtifact: (artifact) => {
           if (!isStale(requestId)) {
             store.setState((prev) => ({ artifacts: [...prev.artifacts, artifact] }));
+          }
+        },
+        onTraceStep: (step) => {
+          if (!isStale(requestId)) {
+            store.setState((prev) => ({ traceSteps: [...prev.traceSteps, step] }));
           }
         },
         onTrace: (trace) => {

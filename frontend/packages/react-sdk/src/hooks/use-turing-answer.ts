@@ -5,6 +5,7 @@ import type {
   TurAnswerCitation,
   TurAnswerTrace,
   TurChatSource,
+  TurChatToolCall,
 } from "../core/types";
 import { useOptionalTuringContext } from "../core/use-turing-context";
 import { isAbortError } from "./streaming-chat-core";
@@ -48,6 +49,8 @@ export interface UseTuringAnswerReturn {
   followups: string[];
   /** T841 — structured answer artifacts (answer-as-app generative-UI specs). */
   artifacts: TurAnswerArtifact[];
+  /** T843 — the live research-trace steps (tool-call start/end events). */
+  traceSteps: TurChatToolCall[];
   trace: TurAnswerTrace | null;
   status: TuringAnswerStatus;
   error: string | null;
@@ -73,6 +76,7 @@ export function useTuringAnswer(options: UseTuringAnswerOptions = {}): UseTuring
   const [citations, setCitations] = useState<TurAnswerCitation[]>([]);
   const [followups, setFollowups] = useState<string[]>([]);
   const [artifacts, setArtifacts] = useState<TurAnswerArtifact[]>([]);
+  const [traceSteps, setTraceSteps] = useState<TurChatToolCall[]>([]);
   const [trace, setTrace] = useState<TurAnswerTrace | null>(null);
   const [status, setStatus] = useState<TuringAnswerStatus>("idle");
   const [error, setError] = useState<string | null>(null);
@@ -108,6 +112,7 @@ export function useTuringAnswer(options: UseTuringAnswerOptions = {}): UseTuring
       setCitations([]);
       setFollowups([]);
       setArtifacts([]);
+      setTraceSteps([]);
       setTrace(null);
       setError(null);
       setAnsweredAt(null);
@@ -123,6 +128,7 @@ export function useTuringAnswer(options: UseTuringAnswerOptions = {}): UseTuring
           onCitations: (c) => { if (!stale()) setCitations(c); },
           onFollowups: (f) => { if (!stale()) setFollowups(f); },
           onArtifact: (a) => { if (!stale()) setArtifacts((prev) => [...prev, a]); },
+          onTraceStep: (s) => { if (!stale()) setTraceSteps((prev) => [...prev, s]); },
           onTrace: (tr) => { if (!stale()) setTrace(tr); },
           onError: (m) => { if (!stale()) setError(m); },
         });
@@ -171,6 +177,7 @@ export function useTuringAnswer(options: UseTuringAnswerOptions = {}): UseTuring
     setCitations([]);
     setFollowups([]);
     setArtifacts([]);
+    setTraceSteps([]);
     setTrace(null);
     setError(null);
     setStatus("idle");
@@ -184,6 +191,7 @@ export function useTuringAnswer(options: UseTuringAnswerOptions = {}): UseTuring
     citations,
     followups,
     artifacts,
+    traceSteps,
     trace,
     status,
     error,

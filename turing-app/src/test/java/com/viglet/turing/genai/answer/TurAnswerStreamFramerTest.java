@@ -103,6 +103,19 @@ class TurAnswerStreamFramerTest {
     }
 
     @Test
+    void forwardsToolCallAsATraceStepEvent() {
+        String step = "{\"callId\":\"t1\",\"name\":\"search_knowledge_base\",\"phase\":\"start\"}";
+        Flux<ChatResponse> upstream = Flux.just(
+                new ChatResponse("assistant", step, "tool_call"),
+                token("Answer."));
+
+        List<ServerSentEvent<String>> events = frame(upstream);
+
+        assertThat(events).extracting(ServerSentEvent::event).contains("trace_step");
+        assertThat(byEvent(events, "trace_step").data()).isEqualTo(step);
+    }
+
+    @Test
     void traceCarriesRetrievalProvenance() {
         String sources = sourcesJson(new TurRagSource("a", "A", "ua", null, 0.9, false));
         Flux<ChatResponse> upstream = Flux.just(

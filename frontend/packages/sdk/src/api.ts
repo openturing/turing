@@ -1932,6 +1932,7 @@ export interface AnswerStreamHandlers {
   onFollowups?: (followups: string[]) => void;
   onTrace?: (trace: TurAnswerTrace) => void;
   onArtifact?: (artifact: TurAnswerArtifact) => void;
+  onTraceStep?: (step: TurChatToolCall) => void;
   onError?: (message: string) => void;
 }
 
@@ -1942,6 +1943,8 @@ export interface AnswerResult {
   citations: TurAnswerCitation[];
   followups: string[];
   artifacts: TurAnswerArtifact[];
+  /** T843 — the live research-trace steps (tool-call start/end events). */
+  traceSteps: TurChatToolCall[];
   trace?: TurAnswerTrace;
   error?: string;
 }
@@ -1967,6 +1970,7 @@ export async function consumeAnswerStream(
   let citations: TurAnswerCitation[] = [];
   let followups: string[] = [];
   let artifacts: TurAnswerArtifact[] = [];
+  let traceSteps: TurChatToolCall[] = [];
   let trace: TurAnswerTrace | undefined;
   let error: string | undefined;
 
@@ -1980,6 +1984,14 @@ export async function consumeAnswerStream(
         if (parsed && parsed.name) {
           artifacts = [...artifacts, parsed];
           handlers.onArtifact?.(parsed);
+        }
+        return;
+      }
+      case "trace_step": {
+        const parsed = parseJson<TurChatToolCall>(data);
+        if (parsed && parsed.name) {
+          traceSteps = [...traceSteps, parsed];
+          handlers.onTraceStep?.(parsed);
         }
         return;
       }
@@ -2072,7 +2084,7 @@ export async function consumeAnswerStream(
     reader.releaseLock();
   }
 
-  return { answer, sources, citations, followups, artifacts, trace, error };
+  return { answer, sources, citations, followups, artifacts, traceSteps, trace, error };
 }
 
 function parseJson<T>(data: string): T | undefined {

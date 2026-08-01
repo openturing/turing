@@ -204,6 +204,7 @@ number" looked free but wasn't. Grepping three files (`ROADMAP.md`,
 
 ## Log (most recent first)
 
+- **T843 SHIPPED** (Block BO §LXII.12 — live research trace: `TurAnswerStreamFramer` forwards `tool_call` as `trace_step` events; SDKs collect `traceSteps`; `TuringAnswer` renders a collapsible research-trace timeline) — 2026-08-01.
 - **T842 SHIPPED** (Block BO §LXII.11 — multi-query fan-out: `TurRagRrf.fuseKeyed` N-way RRF union + deterministic `TurQueryFanOut.decompose`, wired into the catalog retrieve behind `planning.fan-out` (off by default, never DETERMINISTIC, fail-open)) — 2026-08-01.
 - **T841 SHIPPED** (Block BO §LXII.10 — structured answers: `TurAnswerStreamFramer` forwards `client_tool_call` as an `artifact` event; SDKs collect `artifacts`; `TuringAnswer` renders them via a `renderArtifact` slot wired to the answer-as-app path) — 2026-08-01.
 - **T840 SHIPPED** (Block BO §LXII.9 — answer freshness/drift: `TurCitationDriftService.checkFreshness` + `POST /answer/freshness` reuse the drift `evaluate` policy; SDKs stamp `answeredAt` + `checkFreshness()`/`staleSources`; `TuringAnswer` shows a drift badge + one-click re-answer) — 2026-08-01.
