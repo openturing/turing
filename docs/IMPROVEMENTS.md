@@ -2863,14 +2863,6 @@ bet; phases 1–2 are the table stakes that make it renderable.
 
 ### Phase 3 — The differentiators
 
-#### LXII.8 "Why this answer" — auditable provenance panel (T839)
-One expandable panel per answer surfacing the T389 `rankingExplanation` already
-attached to hybrid-mode results (lexical rank, semantic rank, fused rank, RRF score),
-plus the rerank strategy used, the knowledge-base mode, the candidate count and which
-retrieved chunks were dropped before synthesis. Promotes `TuringSourceChips`' per-chip
-"why did you say this?" to an answer-level audit trail. Positions directly against
-black-box answer engines and is the feature a regulated buyer asks for first.
-
 #### LXII.9 Answer freshness & drift badge (T840)
 Wire the shipped `TurCitationDriftService` + `TurCitationDriftDetectionJob` to the
 answer surface: when a cited source changed after the answer was produced, show a

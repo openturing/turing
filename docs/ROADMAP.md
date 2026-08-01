@@ -195,7 +195,6 @@
 > see [CHANGELOG.md](CHANGELOG.md) Block BO. Phase 3 (the differentiators) is next.
 
 **Phase 3 — the differentiators (the repositioning):**
-- 📋 **T839** (deps: T835) **"Why this answer" — auditable provenance panel** — one expandable panel surfacing the T389 `rankingExplanation` already attached to hybrid results (lexical / semantic / fused rank, RRF score) plus the rerank strategy, KB mode, candidate count and dropped chunks; promotes the per-chip "why did you say this?" to an answer-level audit trail. The feature a regulated buyer asks for first. → §LXII.8
 - 💭 **T840** (deps: T835) **Answer freshness & drift badge** — wire the shipped `TurCitationDriftService` + detection job to the answer surface: a badge when a cited source changed after the answer was produced, plus one-click re-answer. Turing already computes the signal and only reports it internally; no answer engine on the market models an answer as something that decays. → §LXII.9
 - 💭 **T841** (deps: T835, T837) **Structured answers — answer as an artifact, not prose** — for comparative/enumerable questions over a faceted or `VECTORLESS_STRUCTURED` catalog, render a comparison table / spec grid from the declared field manifest with per-cell citations and prose reduced to a lead-in, reusing the shipped answer-as-app + generative-UI path (`TurAnswerAsAppClientTools`, `useGenerativeUI`) rather than adding a renderer. → §LXII.10
 

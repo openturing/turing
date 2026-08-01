@@ -87,8 +87,18 @@ public final class TurAnswerStreamFramer {
      */
     public static Flux<ServerSentEvent<String>> frame(Flux<ChatResponse> upstream,
             TurFollowUpGenerator followUpGenerator) {
+        return frame(upstream, followUpGenerator, TurAnswerProvenance.NONE);
+    }
+
+    /**
+     * Re-frames the stream, folding the T839 retrieval {@code provenance} (KB mode,
+     * rerank strategy) into the terminal {@code trace} event.
+     */
+    public static Flux<ServerSentEvent<String>> frame(Flux<ChatResponse> upstream,
+            TurFollowUpGenerator followUpGenerator, TurAnswerProvenance provenance) {
         TurFollowUpGenerator generator =
                 followUpGenerator == null ? TurFollowUpGenerator.NONE : followUpGenerator;
+        TurAnswerProvenance prov = provenance == null ? TurAnswerProvenance.NONE : provenance;
         // concatMap keeps the stream strictly ordered, so these single-subscription
         // accumulators are only ever touched from one thread at a time.
         StringBuilder answer = new StringBuilder();
@@ -96,7 +106,7 @@ public final class TurAnswerStreamFramer {
         return upstream
                 .concatMap(response -> mapEvent(response, answer, numberedSources))
                 .concatWith(Flux.defer(
-                        () -> trailingEvents(answer.toString(), numberedSources, generator)));
+                        () -> trailingEvents(answer.toString(), numberedSources, generator, prov)));
     }
 
     /** Builds the terminal {@code error} event carrying a user-facing message. */
@@ -138,7 +148,8 @@ public final class TurAnswerStreamFramer {
     }
 
     private static Flux<ServerSentEvent<String>> trailingEvents(String answerText,
-            List<TurRagSource> numberedSources, TurFollowUpGenerator followUpGenerator) {
+            List<TurRagSource> numberedSources, TurFollowUpGenerator followUpGenerator,
+            TurAnswerProvenance provenance) {
         List<TurAnswerCitation> projected = numberedSources.stream()
                 .map(TurAnswerCitation::fromRagSource)
                 .toList();
@@ -152,7 +163,8 @@ public final class TurAnswerStreamFramer {
         List<TurAnswerCitation> citations = aligned.citations();
         ServerSentEvent<String> citationsEvent = event(EVENT_CITATIONS, toJson(citations));
         ServerSentEvent<String> traceEvent = event(EVENT_TRACE,
-                toJson(new TurAnswerTraceEvent(numberedSources.size(), answerText.length())));
+                toJson(new TurAnswerTraceEvent(numberedSources.size(), answerText.length(),
+                        provenance.kbMode(), provenance.rerankStrategy(), provenance.rerankEnabled())));
         // Emit citations immediately (instant), then the follow-ups — which cost an
         // LLM call and are generated lazily here so they never delay the citations —
         // then the trace. Follow-up generation is fail-open to no chips.

@@ -1,8 +1,11 @@
 import { useEffect, useRef, useState, type FormEvent, type ReactNode } from "react";
 import {
+  TuringAnswerProvenance,
   TuringMarkdown,
   citationMarkdownComponents,
   rehypeCitationAnchors,
+  type TuringAnswerProvenanceClassNames,
+  type TuringAnswerProvenanceLabels,
 } from "@viglet/turing-react-ui";
 import type { AnswerFilters } from "../core/api";
 import type { TurAnswerCitation } from "../core/types";
@@ -67,6 +70,12 @@ export interface TuringAnswerProps extends UseTuringAnswerOptions {
   formatConstraint?: (field: string, value: string) => string;
   /** Render-override for the answer body (default: markdown + `[n]` anchors). */
   renderAnswer?: (args: { answer: string; citations: TurAnswerCitation[] }) => ReactNode;
+  /** T839 — show the "why this answer" provenance panel. Default `true`. */
+  showProvenance?: boolean;
+  /** Start the provenance panel expanded. Default `false`. */
+  provenanceDefaultOpen?: boolean;
+  provenanceClassNames?: TuringAnswerProvenanceClassNames;
+  provenanceLabels?: TuringAnswerProvenanceLabels;
   labels?: TuringAnswerLabels;
   className?: string;
   classNames?: TuringAnswerClassNames;
@@ -89,12 +98,16 @@ export function TuringAnswer({
   onFilterRemove,
   formatConstraint,
   renderAnswer,
+  showProvenance = true,
+  provenanceDefaultOpen = false,
+  provenanceClassNames,
+  provenanceLabels,
   labels,
   className,
   classNames,
   ...answerOptions
 }: Readonly<TuringAnswerProps>) {
-  const { answer, sources, citations, followups, status, error, isStreaming, ask } =
+  const { answer, sources, citations, followups, trace, status, error, isStreaming, ask } =
     useTuringAnswer(answerOptions);
   const [draft, setDraft] = useState("");
   // The last question asked — so a facet change (below) re-runs the same question.
@@ -189,6 +202,21 @@ export function TuringAnswer({
       )}
 
       {answer && <div className={classNames?.answer}>{answerBody}</div>}
+
+      {showProvenance && answer && (
+        <TuringAnswerProvenance
+          trace={trace}
+          citations={citations.map((c) => ({
+            rank: c.rank,
+            title: c.title,
+            sourceId: c.sourceId,
+            rankingExplanation: c.rankingExplanation,
+          }))}
+          defaultOpen={provenanceDefaultOpen}
+          classNames={provenanceClassNames}
+          labels={provenanceLabels}
+        />
+      )}
 
       {sources.length > 0 && (
         <ol className={classNames?.sources} aria-label={labels?.sources ?? "Sources"}>

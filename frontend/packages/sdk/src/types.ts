@@ -415,10 +415,19 @@ export interface TurAnswerCitation {
   citedText?: string | null;
 }
 
-/** T837 / §LXII.2 — the answer stream's `trace` event: a minimal run summary. */
+/**
+ * T837 / §LXII.2 + T839 / §LXII.8 — the answer stream's `trace` event: the
+ * auditable "why this answer" provenance the `TuringAnswerProvenance` panel shows.
+ */
 export interface TurAnswerTrace {
   sourceCount: number;
   answerLength: number;
+  /** The site's knowledge-base mode (VECTOR / VECTORLESS_STRUCTURED / HYBRID). */
+  kbMode?: string | null;
+  /** The rerank strategy applied before synthesis, or `null` when reranking was off. */
+  rerankStrategy?: string | null;
+  /** Whether the SN RAG reranker ran for this answer. */
+  rerankEnabled?: boolean;
 }
 
 /**

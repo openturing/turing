@@ -383,3 +383,30 @@
     box-shadow: 0 0 0 2px transparent;
   }
 }
+
+/* ─────────────── "why this answer" provenance panel (T839) ─────────────── */
+.turing-ui-theme [data-turing-answer-provenance] {
+  margin-top: 0.5rem;
+  font-size: 0.85em;
+  color: var(--turing-ui-text-muted, inherit);
+}
+
+.turing-ui-theme [data-turing-answer-provenance] > summary {
+  cursor: pointer;
+  user-select: none;
+  color: var(--turing-ui-accent);
+}
+
+.turing-ui-theme [data-turing-answer-provenance] dl {
+  margin: 0.15rem 0 0.4rem 0.75rem;
+}
+
+.turing-ui-theme [data-turing-answer-provenance] dt {
+  display: inline;
+  font-weight: 600;
+}
+
+.turing-ui-theme [data-turing-answer-provenance] dd {
+  display: inline;
+  margin: 0 0.5rem 0 0.25rem;
+}

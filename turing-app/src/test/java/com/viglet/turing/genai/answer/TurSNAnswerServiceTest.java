@@ -64,6 +64,8 @@ class TurSNAnswerServiceTest {
     private TurSNGenAi turGenAi;
     @Mock
     private TurFollowUpQuestionService followUpQuestionService;
+    @Mock
+    private com.viglet.turing.system.TurGlobalSettingsService globalSettingsService;
 
     @InjectMocks
     private TurSNAnswerService service;

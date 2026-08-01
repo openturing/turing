@@ -158,6 +158,16 @@ export type {
 export { rehypeCitationAnchors } from "./rehypeCitationAnchors";
 export type { RehypeCitationAnchorsOptions } from "./rehypeCitationAnchors";
 export { TuringCitationAnchor, citationMarkdownComponents } from "./TuringCitationAnchor";
+
+// T839 / §LXII.8 — the "why this answer" auditable provenance panel.
+export { TuringAnswerProvenance } from "./TuringAnswerProvenance";
+export type {
+  TuringAnswerProvenanceProps,
+  TuringAnswerProvenanceClassNames,
+  TuringAnswerProvenanceLabels,
+  TuringAnswerProvenanceTrace,
+  TuringAnswerProvenanceCitation,
+} from "./TuringAnswerProvenance";
 export type {
   TuringCitationAnchorProps,
   TuringCitationAnchorClassNames,

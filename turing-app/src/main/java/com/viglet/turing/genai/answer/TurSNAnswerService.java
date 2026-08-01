@@ -29,6 +29,7 @@ import com.viglet.turing.persistence.model.sn.genai.TurSNSiteGenAi;
 import com.viglet.turing.persistence.model.sn.locale.TurSNSiteLocale;
 import com.viglet.turing.persistence.repository.sn.locale.TurSNSiteLocaleRepository;
 import com.viglet.turing.sn.TurSNSearchProcess;
+import com.viglet.turing.system.TurGlobalSettingsService;
 
 import lombok.extern.slf4j.Slf4j;
 import reactor.core.publisher.Flux;
@@ -62,19 +63,22 @@ public class TurSNAnswerService {
     private final TurSNSiteLocaleRepository turSNSiteLocaleRepository;
     private final TurSNGenAi turGenAi;
     private final TurFollowUpQuestionService followUpQuestionService;
+    private final TurGlobalSettingsService globalSettingsService;
 
     public TurSNAnswerService(TurSNSearchProcess turSNSearchProcess,
             TurDefaultAgentResolver turDefaultAgentResolver,
             TurGenAiContextFactory turGenAiContextFactory,
             TurSNSiteLocaleRepository turSNSiteLocaleRepository,
             TurSNGenAi turGenAi,
-            TurFollowUpQuestionService followUpQuestionService) {
+            TurFollowUpQuestionService followUpQuestionService,
+            TurGlobalSettingsService globalSettingsService) {
         this.turSNSearchProcess = turSNSearchProcess;
         this.turDefaultAgentResolver = turDefaultAgentResolver;
         this.turGenAiContextFactory = turGenAiContextFactory;
         this.turSNSiteLocaleRepository = turSNSiteLocaleRepository;
         this.turGenAi = turGenAi;
         this.followUpQuestionService = followUpQuestionService;
+        this.globalSettingsService = globalSettingsService;
     }
 
     /**
@@ -142,6 +146,22 @@ public class TurSNAnswerService {
                 turGenAi.assistantConversationStreaming(context, agent, llmInstance, request);
         return TurAnswerStreamFramer.frame(upstream,
                 (answer, citations) -> followUpQuestionService.generate(
-                        siteName, query, answer, citations));
+                        siteName, query, answer, citations),
+                buildProvenance(genAi));
+    }
+
+    /**
+     * T839 — the "why this answer" provenance the service knows up front: the
+     * site's knowledge-base mode and the SN RAG rerank configuration.
+     */
+    private TurAnswerProvenance buildProvenance(TurSNSiteGenAi genAi) {
+        String kbMode = genAi.getKnowledgeBaseMode() != null
+                ? genAi.getKnowledgeBaseMode().name()
+                : null;
+        boolean rerankEnabled = globalSettingsService.isRagSnRerankEnabled();
+        String rerankStrategy = rerankEnabled && globalSettingsService.getRagSnRerankStrategy() != null
+                ? globalSettingsService.getRagSnRerankStrategy().name()
+                : null;
+        return new TurAnswerProvenance(kbMode, rerankStrategy, rerankEnabled);
     }
 }

@@ -89,6 +89,25 @@ class TurAnswerStreamFramerTest {
     }
 
     @Test
+    void traceCarriesRetrievalProvenance() {
+        String sources = sourcesJson(new TurRagSource("a", "A", "ua", null, 0.9, false));
+        Flux<ChatResponse> upstream = Flux.just(
+                new ChatResponse("assistant", sources, "sources"),
+                token("Answer."));
+
+        List<ServerSentEvent<String>> events = TurAnswerStreamFramer.frame(upstream,
+                TurFollowUpGenerator.NONE, new TurAnswerProvenance("HYBRID", "COHERE", true))
+                .collectList().block();
+
+        TurAnswerTraceEvent trace = MAPPER.readValue(byEvent(events, "trace").data(),
+                TurAnswerTraceEvent.class);
+        assertThat(trace.kbMode()).isEqualTo("HYBRID");
+        assertThat(trace.rerankStrategy()).isEqualTo("COHERE");
+        assertThat(trace.rerankEnabled()).isTrue();
+        assertThat(trace.sourceCount()).isEqualTo(1);
+    }
+
+    @Test
     void emitsGeneratedFollowupsBetweenCitationsAndTrace() {
         String sources = sourcesJson(new TurRagSource("a", "A", "ua", null, 0.9, false));
         Flux<ChatResponse> upstream = Flux.just(
