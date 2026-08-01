@@ -60,17 +60,20 @@ public class TurSNAnswerService {
     private final TurGenAiContextFactory turGenAiContextFactory;
     private final TurSNSiteLocaleRepository turSNSiteLocaleRepository;
     private final TurSNGenAi turGenAi;
+    private final TurFollowUpQuestionService followUpQuestionService;
 
     public TurSNAnswerService(TurSNSearchProcess turSNSearchProcess,
             TurDefaultAgentResolver turDefaultAgentResolver,
             TurGenAiContextFactory turGenAiContextFactory,
             TurSNSiteLocaleRepository turSNSiteLocaleRepository,
-            TurSNGenAi turGenAi) {
+            TurSNGenAi turGenAi,
+            TurFollowUpQuestionService followUpQuestionService) {
         this.turSNSearchProcess = turSNSearchProcess;
         this.turDefaultAgentResolver = turDefaultAgentResolver;
         this.turGenAiContextFactory = turGenAiContextFactory;
         this.turSNSiteLocaleRepository = turSNSiteLocaleRepository;
         this.turGenAi = turGenAi;
+        this.followUpQuestionService = followUpQuestionService;
     }
 
     /**
@@ -128,6 +131,8 @@ public class TurSNAnswerService {
                 null, null, null, null, locale, null);
         Flux<TurAgentChatExecutor.ChatResponse> upstream =
                 turGenAi.assistantConversationStreaming(context, agent, llmInstance, request);
-        return TurAnswerStreamFramer.frame(upstream);
+        return TurAnswerStreamFramer.frame(upstream,
+                (answer, citations) -> followUpQuestionService.generate(
+                        siteName, query, answer, citations));
     }
 }

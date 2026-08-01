@@ -2859,14 +2859,6 @@ bet; phases 1–2 are the table stakes that make it renderable.
 
 ### Phase 1 — Contract & transport
 
-#### LXII.3 Follow-up question generation (T834)
-`TurFollowUpQuestionService`: one cheap, cached LLM call over the answer + its
-citations returning 3–5 next questions, streamed as the `followups` event. Cached on
-(query, filter state, source set) with the `TurLlmSummaryService` cache discipline so
-a repeated query costs nothing. Fail-open to no chips. Distinct from
-`use-turing-related-terms` (search-term co-occurrence) and from Gemini's
-`searchSuggestions` (Google-mandated, web-only).
-
 ### Phase 2 — The fused frontend
 
 #### LXII.4 Answer-first fused search page (T835)

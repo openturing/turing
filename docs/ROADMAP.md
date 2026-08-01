@@ -191,8 +191,8 @@
 > Positioning in [STRATEGY.md](STRATEGY.md) §XV; design in
 > [IMPROVEMENTS.md](IMPROVEMENTS.md) §LXII.
 
-**Phase 1 — contract & transport:**
-- 📋 **T834** (deps: T833) **Follow-up question generation** — `TurFollowUpQuestionService`: one cheap LLM call over answer+citations returning 3–5 next questions as the `followups` event, cached on (query, filter state, source set) with the `TurLlmSummaryService` cache discipline. Distinct from `use-turing-related-terms` (term co-occurrence) and Gemini `searchSuggestions` (web-only). → §LXII.3
+> **Phase 1 (contract & transport) shipped** — T832–T834, see
+> [CHANGELOG.md](CHANGELOG.md) Block BO.
 
 **Phase 2 — the fused frontend:**
 - 📋 **T835** (deps: T833) **Answer-first fused search page** — kill the exclusive toggle: the answer panel renders **above** `SearchResultsPanel` with the facet sidebar, pagination and result cards mounted throughout; `_aimode` becomes an expand/collapse preference, not a mode switch. Highest-leverage change in the block. → §LXII.4

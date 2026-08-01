@@ -62,6 +62,8 @@ class TurSNAnswerServiceTest {
     private TurSNSiteLocaleRepository turSNSiteLocaleRepository;
     @Mock
     private TurSNGenAi turGenAi;
+    @Mock
+    private TurFollowUpQuestionService followUpQuestionService;
 
     @InjectMocks
     private TurSNAnswerService service;
@@ -113,11 +115,14 @@ class TurSNAnswerServiceTest {
                 .thenReturn(org.mockito.Mockito.mock(TurGenAiContext.class));
         when(turGenAi.assistantConversationStreaming(any(), any(), any(), any()))
                 .thenReturn(Flux.just(new ChatResponse("assistant", "Hello", "token")));
+        when(followUpQuestionService.generate(any(), any(), any(), any()))
+                .thenReturn(List.of("What next?"));
 
         List<ServerSentEvent<String>> events = collect(service.answer("site1", "hi", Locale.ENGLISH));
 
-        // Re-framed into the answer contract: the token plus trailing citations/trace.
-        assertThat(eventNames(events)).containsExactly("token", "citations", "trace");
+        // Re-framed into the answer contract: token, then citations, the generated
+        // follow-ups, and the trace.
+        assertThat(eventNames(events)).containsExactly("token", "citations", "followups", "trace");
         assertThat(events.get(0).data()).isEqualTo("Hello");
     }
 }

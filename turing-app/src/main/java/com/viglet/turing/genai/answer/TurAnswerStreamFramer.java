@@ -37,12 +37,14 @@ import tools.jackson.databind.json.JsonMapper;
  * events ({@code citations}, {@code trace}, and any inline {@code followups}) are
  * keyed by event name, so their relative order is not contractual.
  *
- * <p>This is a pure transform (no Spring, no I/O) so it can be unit-tested by
- * feeding a canned upstream {@link Flux}. It reuses the shared
- * {@link TurAnswerCitationNumberer}: incoming sources are numbered positionally
- * ({@code 1..k}) so a chip carries a footnote, and the trailing {@code citations}
- * event re-aligns those footnotes to any {@code [n]} markers the answer actually
- * emitted (fail-open to the positional numbering when the prose has none).
+ * <p>This is a pure transform (no Spring, no direct I/O) so it can be unit-tested
+ * by feeding a canned upstream {@link Flux} and a stub follow-up generator. It
+ * reuses the shared {@link TurAnswerCitationNumberer}: incoming sources are
+ * numbered positionally ({@code 1..k}) so a chip carries a footnote, and the
+ * trailing {@code citations} event re-aligns those footnotes to any {@code [n]}
+ * markers the answer actually emitted (fail-open to the positional numbering when
+ * the prose has none). The {@code followups} event is produced by the supplied
+ * {@link TurFollowUpGenerator} (T834) once the answer is complete.
  *
  * @author Alexandre Oliveira
  * @since 2026.3.4
@@ -60,7 +62,6 @@ public final class TurAnswerStreamFramer {
     /** Upstream {@link ChatResponse#type()} values this framer maps or drops. */
     private static final String UPSTREAM_SOURCES = "sources";
     private static final String UPSTREAM_TOKEN = "token";
-    private static final String UPSTREAM_OPTIONS = "options"; // follow-ups on the SN path
 
     /** Mirrors the catalog backstop so a runaway answer can't flood the client. */
     private static final int MAX_RETURNED_CITATIONS = 24;
@@ -76,18 +77,26 @@ public final class TurAnswerStreamFramer {
     /**
      * Re-frames an internal chat stream into the answer-engine SSE contract.
      *
-     * @param upstream the {@code Flux<ChatResponse>} from the SN RAG path (its
-     *                 {@code sources} event already ordered before the tokens)
+     * @param upstream          the {@code Flux<ChatResponse>} from the SN RAG path
+     *                          (its {@code sources} event already ordered before the
+     *                          tokens)
+     * @param followUpGenerator produces the {@code followups} once the answer is
+     *                          complete; use {@link TurFollowUpGenerator#NONE} for
+     *                          none
      * @return a flux of named {@link ServerSentEvent}s, never {@code null}
      */
-    public static Flux<ServerSentEvent<String>> frame(Flux<ChatResponse> upstream) {
+    public static Flux<ServerSentEvent<String>> frame(Flux<ChatResponse> upstream,
+            TurFollowUpGenerator followUpGenerator) {
+        TurFollowUpGenerator generator =
+                followUpGenerator == null ? TurFollowUpGenerator.NONE : followUpGenerator;
         // concatMap keeps the stream strictly ordered, so these single-subscription
         // accumulators are only ever touched from one thread at a time.
         StringBuilder answer = new StringBuilder();
         List<TurRagSource> numberedSources = new ArrayList<>();
         return upstream
                 .concatMap(response -> mapEvent(response, answer, numberedSources))
-                .concatWith(Flux.defer(() -> trailingEvents(answer.toString(), numberedSources)));
+                .concatWith(Flux.defer(
+                        () -> trailingEvents(answer.toString(), numberedSources, generator)));
     }
 
     /** Builds the terminal {@code error} event carrying a user-facing message. */
@@ -111,9 +120,6 @@ public final class TurAnswerStreamFramer {
                 numberedSources.addAll(numbered);
                 return Flux.just(event(EVENT_SOURCES, toJson(numbered)));
             }
-            case UPSTREAM_OPTIONS -> {
-                return Flux.just(event(EVENT_FOLLOWUPS, content));
-            }
             case UPSTREAM_TOKEN -> {
                 if (content.isEmpty()) {
                     return Flux.empty();
@@ -122,15 +128,17 @@ public final class TurAnswerStreamFramer {
                 return Flux.just(event(EVENT_TOKEN, content));
             }
             default -> {
-                // grounding / secondOpinion / form / tool_call are conversation
-                // side-channels — not part of a clean answer stream, so drop them.
+                // grounding / secondOpinion / form / tool_call — and the SN path's
+                // co-occurrence "options" follow-ups, which T834 replaces with an
+                // LLM pass over the answer — are conversation side-channels, not part
+                // of a clean answer stream, so drop them.
                 return Flux.empty();
             }
         }
     }
 
     private static Flux<ServerSentEvent<String>> trailingEvents(String answerText,
-            List<TurRagSource> numberedSources) {
+            List<TurRagSource> numberedSources, TurFollowUpGenerator followUpGenerator) {
         List<TurAnswerCitation> projected = numberedSources.stream()
                 .map(TurAnswerCitation::fromRagSource)
                 .toList();
@@ -141,11 +149,31 @@ public final class TurAnswerStreamFramer {
                 TurAnswerCitationNumberer.renumberByMarkers(answerText, projected,
                         TurAnswerCitation::rank, TurAnswerCitation::withRank,
                         MAX_RETURNED_CITATIONS, projected.size());
-        List<ServerSentEvent<String>> trailing = new ArrayList<>(2);
-        trailing.add(event(EVENT_CITATIONS, toJson(aligned.citations())));
-        trailing.add(event(EVENT_TRACE,
-                toJson(new TurAnswerTraceEvent(numberedSources.size(), answerText.length()))));
-        return Flux.fromIterable(trailing);
+        List<TurAnswerCitation> citations = aligned.citations();
+        ServerSentEvent<String> citationsEvent = event(EVENT_CITATIONS, toJson(citations));
+        ServerSentEvent<String> traceEvent = event(EVENT_TRACE,
+                toJson(new TurAnswerTraceEvent(numberedSources.size(), answerText.length())));
+        // Emit citations immediately (instant), then the follow-ups — which cost an
+        // LLM call and are generated lazily here so they never delay the citations —
+        // then the trace. Follow-up generation is fail-open to no chips.
+        return Flux.concat(
+                Flux.just(citationsEvent),
+                Flux.defer(() -> followUpEvents(answerText, citations, followUpGenerator)),
+                Flux.just(traceEvent));
+    }
+
+    private static Flux<ServerSentEvent<String>> followUpEvents(String answerText,
+            List<TurAnswerCitation> citations, TurFollowUpGenerator followUpGenerator) {
+        List<String> questions;
+        try {
+            questions = followUpGenerator.generate(answerText, citations);
+        } catch (RuntimeException e) {
+            questions = List.of();
+        }
+        if (questions == null || questions.isEmpty()) {
+            return Flux.empty();
+        }
+        return Flux.just(event(EVENT_FOLLOWUPS, toJson(questions)));
     }
 
     /** Parses the upstream sources JSON and assigns positional footnotes 1..k. */

@@ -42,7 +42,12 @@ class TurAnswerStreamFramerTest {
     }
 
     private static List<ServerSentEvent<String>> frame(Flux<ChatResponse> upstream) {
-        return TurAnswerStreamFramer.frame(upstream).collectList().block();
+        return frame(upstream, TurFollowUpGenerator.NONE);
+    }
+
+    private static List<ServerSentEvent<String>> frame(Flux<ChatResponse> upstream,
+            TurFollowUpGenerator generator) {
+        return TurAnswerStreamFramer.frame(upstream, generator).collectList().block();
     }
 
     private static ChatResponse token(String text) {
@@ -50,7 +55,7 @@ class TurAnswerStreamFramerTest {
     }
 
     @Test
-    void emitsSourcesFirstThenTokensThenTrailingCitationsAndTrace() {
+    void emitsSourcesFirstThenTokensThenTrailingCitationsAndTraceDroppingSideChannels() {
         String sources = sourcesJson(
                 new TurRagSource("a", "A", "ua", null, 0.9, false),
                 new TurRagSource("b", "B", "ub", null, 0.7, false));
@@ -59,19 +64,19 @@ class TurAnswerStreamFramerTest {
                 token("Hello "),
                 token("world"),
                 new ChatResponse("assistant", "internal", "grounding"), // dropped
-                new ChatResponse("assistant", "[\"next?\"]", "options")); // -> followups
+                new ChatResponse("assistant", "[\"co-occurrence\"]", "options")); // dropped (T834)
 
         List<ServerSentEvent<String>> events = frame(upstream);
 
+        // No follow-ups from TurFollowUpGenerator.NONE, and the upstream side-channels
+        // (grounding, the SN path's co-occurrence "options") are dropped.
         assertThat(events).extracting(ServerSentEvent::event)
-                .containsExactly("sources", "token", "token", "followups", "citations", "trace");
+                .containsExactly("sources", "token", "token", "citations", "trace");
         // sources numbered 1..k
         assertThat(ranks(events, "sources")).containsExactly(1, 2);
         // tokens carry the raw text
         assertThat(events.get(1).data()).isEqualTo("Hello ");
         assertThat(events.get(2).data()).isEqualTo("world");
-        // followups passed through verbatim
-        assertThat(byEvent(events, "followups").data()).isEqualTo("[\"next?\"]");
         // citations mirror the numbered sources
         List<TurAnswerCitation> citations = citations(events);
         assertThat(citations).extracting(TurAnswerCitation::rank).containsExactly(1, 2);
@@ -81,6 +86,40 @@ class TurAnswerStreamFramerTest {
                 TurAnswerTraceEvent.class);
         assertThat(trace.sourceCount()).isEqualTo(2);
         assertThat(trace.answerLength()).isEqualTo(11);
+    }
+
+    @Test
+    void emitsGeneratedFollowupsBetweenCitationsAndTrace() {
+        String sources = sourcesJson(new TurRagSource("a", "A", "ua", null, 0.9, false));
+        Flux<ChatResponse> upstream = Flux.just(
+                new ChatResponse("assistant", sources, "sources"),
+                token("Answer."));
+
+        List<ServerSentEvent<String>> events =
+                frame(upstream, (answer, citations) -> List.of("What about X?", "And Y?"));
+
+        assertThat(events).extracting(ServerSentEvent::event)
+                .containsExactly("sources", "token", "citations", "followups", "trace");
+        List<String> questions = MAPPER.readValue(byEvent(events, "followups").data(),
+                new TypeReference<List<String>>() {
+                });
+        assertThat(questions).containsExactly("What about X?", "And Y?");
+    }
+
+    @Test
+    void followupGeneratorFailureDegradesToNoChips() {
+        String sources = sourcesJson(new TurRagSource("a", "A", "ua", null, 0.9, false));
+        Flux<ChatResponse> upstream = Flux.just(
+                new ChatResponse("assistant", sources, "sources"),
+                token("Answer."));
+
+        List<ServerSentEvent<String>> events = frame(upstream, (answer, citations) -> {
+            throw new IllegalStateException("boom");
+        });
+
+        assertThat(events).extracting(ServerSentEvent::event).doesNotContain("followups");
+        assertThat(events).extracting(ServerSentEvent::event)
+                .containsExactly("sources", "token", "citations", "trace");
     }
 
     @Test
