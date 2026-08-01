@@ -195,7 +195,6 @@
 > [CHANGELOG.md](CHANGELOG.md) Block BO.
 
 **Phase 2 — the fused frontend:**
-- 📋 **T836** (deps: T832, T835) **Inline `[n]` citation anchors** — rehype plugin for `TuringMarkdown` turning each `[n]` into a clickable superscript that scroll-links + highlights the matching source card, with a cited-passage popover; on the native path the T154 `answerStart`/`answerEnd` offsets underline the exact grounded span. → §LXII.5
 - 📋 **T837** (deps: T833, T835) **`useTuringAnswer` + `TuringAnswer` in the react-sdk** — headless hook + design-agnostic component on the `TuringCopilot`/`TuringSourceChips` skinning contract, so the admin search page, the showcase and the public-site hero share one implementation instead of three forks; observable answer controller ported to the vanilla `@viglet/turing-sdk`. → §LXII.6
 
 **Phase 3 — the differentiators (the repositioning):**

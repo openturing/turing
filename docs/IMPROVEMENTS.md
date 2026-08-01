@@ -2861,14 +2861,6 @@ bet; phases 1–2 are the table stakes that make it renderable.
 
 ### Phase 2 — The fused frontend
 
-#### LXII.5 Inline `[n]` citation anchors (T836)
-A rehype plugin for `TuringMarkdown` turning each `[n]` into a clickable superscript
-that scroll-links and highlights the matching source card / result row, with a hover
-popover carrying the cited passage. On the native-citation path the T154
-`answerStart`/`answerEnd` offsets drive an underline over the exact grounded span
-instead of a trailing marker. Depends on LXII.1 — the anchor is only correct once the
-footnote and the chip agree.
-
 #### LXII.6 `useTuringAnswer` + `TuringAnswer` in the react-sdk (T837)
 Headless hook + design-agnostic component (the `TuringCopilot`/`TuringSourceChips`
 skinning contract: every part class-nameable, no bundled styles) so an integrator gets

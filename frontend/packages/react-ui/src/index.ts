@@ -152,6 +152,19 @@ export type {
   TuringCitedMark,
 } from "./TuringCitedAnswer";
 
+// T836 / §LXII.5 — inline `[n]` citation anchors for markdown answers: a rehype
+// plugin turning each `[n]` into a clickable superscript that scroll-links +
+// highlights the matching source card, plus the `components` map that renders it.
+export { rehypeCitationAnchors } from "./rehypeCitationAnchors";
+export type { RehypeCitationAnchorsOptions } from "./rehypeCitationAnchors";
+export { TuringCitationAnchor, citationMarkdownComponents } from "./TuringCitationAnchor";
+export type {
+  TuringCitationAnchorProps,
+  TuringCitationAnchorClassNames,
+  TuringCitationAnchorData,
+  CitationMarkdownComponentsOptions,
+} from "./TuringCitationAnchor";
+
 // Design-less search primitives migrated from `@viglet/turing-react-sdk` (T306).
 // Pure renderers (props + render-props, no hook/API coupling); their structural
 // data types are redeclared locally to keep this package zero-runtime-dep.
