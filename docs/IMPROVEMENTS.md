@@ -2859,17 +2859,6 @@ bet; phases 1–2 are the table stakes that make it renderable.
 
 ### Phase 1 — Contract & transport
 
-#### LXII.1 Unified answer-citation contract + shared footnote numbering (T832)
-Extract the T800 renumbering out of `TurCatalogCopilotService.groundCitations` into a
-shared `TurAnswerCitationNumberer` (parse the `[n]` markers actually present in the
-prose, remap raw ranks to compact answer-order footnotes `1..k`, rewrite the markers,
-return citations in footnote order) and apply it on the SN/RAG path too. Add `rank` to
-`TurRagSource` so a chip carries its footnote, and define one `TurAnswerCitation`
-projection the catalog, SN/RAG and native-citation paths all normalize onto. The
-per-sentence `TurChatCitation` answer-span data stays as an *enrichment* of that
-projection, not a fourth shape. Fail-open: prose with no usable markers keeps today's
-bounded top-k behaviour with `rank = 1..k` and untouched text.
-
 #### LXII.2 Streaming answer endpoint (T833)
 New `GET /api/sn/{siteName}/answer` (SSE) that composes retrieval → rerank →
 synthesis and emits, in guaranteed order: `sources` (so the client can paint source

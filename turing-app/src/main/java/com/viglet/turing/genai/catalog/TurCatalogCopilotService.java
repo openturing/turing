@@ -17,8 +17,6 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import org.apache.commons.lang3.LocaleUtils;
 import org.springframework.ai.chat.messages.AssistantMessage;
@@ -36,6 +34,7 @@ import com.viglet.turing.genai.catalog.planning.TurCopilotQueryPlan;
 import com.viglet.turing.genai.catalog.planning.TurCopilotQueryPlanner;
 import com.viglet.turing.genai.catalog.planning.TurCopilotQueryPlanner.PlanRequest;
 import com.viglet.turing.genai.catalog.planning.TurCopilotQueryPlannerFactory;
+import com.viglet.turing.genai.citation.TurAnswerCitationNumberer;
 import com.viglet.turing.persistence.model.sn.TurSNSite;
 import com.viglet.turing.persistence.model.sn.field.TurSNSiteFieldExt;
 import com.viglet.turing.persistence.repository.sn.TurSNSiteRepository;
@@ -109,8 +108,6 @@ public class TurCatalogCopilotService {
      * so a runaway answer can never flood the client with the whole catalog.
      */
     private static final int MAX_RETURNED_CITATIONS = 24;
-    /** Matches a {@code [n]} citation marker in the LLM answer (1–4 digit rank). */
-    private static final Pattern CITATION_MARKER = Pattern.compile("\\[(\\d{1,4})\\]");
 
     private static final ObjectMapper OBJECT_MAPPER = JsonMapper.builder().build();
 
@@ -186,7 +183,8 @@ public class TurCatalogCopilotService {
             // client must reflect only what the answer actually cites, AND be
             // renumbered to compact answer-order footnotes (the raw ranks are
             // positions in the full catalog — [201], [230] — meaningless to a reader).
-            GroundedAnswer grounded = groundCitations(raw, retrieval.citations());
+            TurAnswerCitationNumberer.Numbered<TurCatalogCitation> grounded =
+                    groundCitations(raw, retrieval.citations());
             return TurCatalogCopilotResult.ok(grounded.answer(), grounded.citations(),
                     retrieval.groundedSummary(), retrieval.totalHits());
         } catch (RuntimeException e) {
@@ -224,95 +222,17 @@ public class TurCatalogCopilotService {
      * rows — renumbered {@code 1..k}, with the (marker-less) prose left untouched. A
      * {@link #MAX_RETURNED_CITATIONS} backstop bounds the list regardless.
      */
-    private GroundedAnswer groundCitations(String answer, List<TurCatalogCitation> all) {
-        if (all == null || all.isEmpty()) {
-            return new GroundedAnswer(answer, List.of());
-        }
-        Map<Integer, TurCatalogCitation> byRank = new LinkedHashMap<>();
-        for (TurCatalogCitation citation : all) {
-            byRank.putIfAbsent(citation.rank(), citation);
-        }
-        // Cited ranks in order of first appearance (parseCitedRanks preserves it),
-        // kept only when they actually back a citation, capped by the backstop.
-        Map<Integer, Integer> remap = new LinkedHashMap<>(); // raw rank -> compact footnote
-        List<TurCatalogCitation> grounded = new ArrayList<>();
-        for (int rawRank : parseCitedRanks(answer)) {
-            if (!byRank.containsKey(rawRank) || grounded.size() >= MAX_RETURNED_CITATIONS) {
-                continue;
-            }
-            int footnote = grounded.size() + 1;
-            remap.put(rawRank, footnote);
-            grounded.add(renumber(byRank.get(rawRank), footnote));
-        }
-        if (!grounded.isEmpty()) {
-            return new GroundedAnswer(rewriteMarkers(answer, remap), List.copyOf(grounded));
-        }
-        // Fail-open: no usable markers — bounded top-k, renumbered 1..k, prose as-is.
-        int cap = Math.min(MAX_RESULTS, all.size());
-        List<TurCatalogCitation> slice = new ArrayList<>(cap);
-        for (int i = 0; i < cap; i++) {
-            slice.add(renumber(all.get(i), i + 1));
-        }
-        return new GroundedAnswer(answer, List.copyOf(slice));
-    }
-
-    /** A citation with its {@code rank} set to {@code footnote} (identity when equal). */
-    private static TurCatalogCitation renumber(TurCatalogCitation c, int footnote) {
-        return c.rank() == footnote ? c
-                : new TurCatalogCitation(footnote, c.id(), c.title(), c.url(), c.score(),
-                        c.rankingExplanation());
-    }
-
-    /**
-     * Rewrites every {@code [n]} marker in the answer to its compact footnote from
-     * {@code remap}; a marker with no mapping (an out-of-range or dangling rank the
-     * LLM emitted for a row it wasn't given) is dropped so no orphan number reaches
-     * the reader. Returns the text unchanged when there is nothing to rewrite.
-     */
-    private static String rewriteMarkers(String answer, Map<Integer, Integer> remap) {
-        if (!StringUtils.hasText(answer)) {
-            return answer;
-        }
-        Matcher matcher = CITATION_MARKER.matcher(answer);
-        StringBuilder sb = new StringBuilder(answer.length());
-        while (matcher.find()) {
-            Integer footnote = null;
-            try {
-                footnote = remap.get(Integer.parseInt(matcher.group(1)));
-            } catch (NumberFormatException ignored) {
-                // marker out of int range — treat as unmapped (dropped)
-            }
-            matcher.appendReplacement(sb, footnote != null ? "[" + footnote + "]" : "");
-        }
-        matcher.appendTail(sb);
-        return sb.toString();
-    }
-
-    /**
-     * The answer text with its {@code [n]} markers renumbered to compact footnotes,
-     * paired with the cited citations in matching footnote order ({@code rank = n}).
-     */
-    private record GroundedAnswer(String answer, List<TurCatalogCitation> citations) {
-    }
-
-    /** Extracts the distinct 1-based ranks referenced as {@code [n]} in the answer. */
-    private static Set<Integer> parseCitedRanks(String answer) {
-        if (!StringUtils.hasText(answer)) {
-            return Set.of();
-        }
-        Set<Integer> ranks = new LinkedHashSet<>();
-        Matcher matcher = CITATION_MARKER.matcher(answer);
-        while (matcher.find()) {
-            try {
-                int rank = Integer.parseInt(matcher.group(1));
-                if (rank >= 1) {
-                    ranks.add(rank);
-                }
-            } catch (NumberFormatException ignored) {
-                // marker out of int range — skip it
-            }
-        }
-        return ranks;
+    private TurAnswerCitationNumberer.Numbered<TurCatalogCitation> groundCitations(
+            String answer, List<TurCatalogCitation> all) {
+        // T832 / §LXII.1 — the renumbering itself now lives in the shared
+        // TurAnswerCitationNumberer so the SN/RAG and streaming-answer paths reuse
+        // it verbatim; the catalog path supplies only how to read/rewrite a rank.
+        return TurAnswerCitationNumberer.renumberByMarkers(answer, all,
+                TurCatalogCitation::rank,
+                (c, footnote) -> c.rank() == footnote ? c
+                        : new TurCatalogCitation(footnote, c.id(), c.title(), c.url(),
+                                c.score(), c.rankingExplanation()),
+                MAX_RETURNED_CITATIONS, MAX_RESULTS);
     }
 
     private String callLlm(ChatModel chatModel, String siteName, Retrieval retrieval,

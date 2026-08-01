@@ -734,8 +734,13 @@ public class TurChatStreamingDispatcher {
                 com.viglet.turing.genai.tool.TurCustomToolCallbackService.TOOL_CONTEXT_RAG_SOURCES);
         if (raw instanceof TurRagSourceCollector collector) {
             // Unify chunk-level provenance into one entry per source document so
-            // the chat client doesn't show the same URL once per retrieved chunk.
-            return TurRagSource.dedupeByDocument(collector.snapshot());
+            // the chat client doesn't show the same URL once per retrieved chunk,
+            // then assign each surviving source a 1-based footnote (T832 / §LXII.1)
+            // via the shared numberer so an SN/RAG chip carries the same number the
+            // answer prose will cite — the SN/RAG answer has no [n] markers to
+            // parse, so this is the positional path.
+            return com.viglet.turing.genai.citation.TurAnswerCitationNumberer.numberInOrder(
+                    TurRagSource.dedupeByDocument(collector.snapshot()), TurRagSource::withRank);
         }
         return List.of();
     }
