@@ -384,6 +384,41 @@ export interface TurChatSource {
   score?: number | null;
   /** `true` when this chunk reached the answer via the keyword (BM25) fallback only. */
   keywordOnly?: boolean;
+  /**
+   * T832/T837 — 1-based footnote assigned by the answer engine so a source chip
+   * carries the same number the answer's `[n]` markers cite. Present on the
+   * `GET /sn/{site}/answer` stream; absent on the chat `sources` event.
+   */
+  rank?: number | null;
+}
+
+/**
+ * T837 / §LXII — one entry of the answer stream's `citations` event: the unified
+ * answer-citation projection (mirrors the backend `TurAnswerCitation`). Its
+ * 1-based `rank` agrees with the source chip and the answer's `[n]` markers.
+ */
+export interface TurAnswerCitation {
+  rank: number;
+  sourceId?: string | null;
+  title?: string | null;
+  url?: string | null;
+  score?: number | null;
+  chunkIndex?: number | null;
+  keywordOnly?: boolean;
+  /** T389 lexical/semantic/fused rank breakdown, when the hybrid pipeline attached one. */
+  rankingExplanation?: Record<string, unknown> | null;
+  /** T154 enrichment — char offset where the cited claim starts in the answer. */
+  answerStart?: number | null;
+  /** T154 enrichment — char offset where the cited claim ends in the answer. */
+  answerEnd?: number | null;
+  /** T154 enrichment — the exact grounded passage, when known. */
+  citedText?: string | null;
+}
+
+/** T837 / §LXII.2 — the answer stream's `trace` event: a minimal run summary. */
+export interface TurAnswerTrace {
+  sourceCount: number;
+  answerLength: number;
 }
 
 /**

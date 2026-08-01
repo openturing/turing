@@ -2861,13 +2861,6 @@ bet; phases 1–2 are the table stakes that make it renderable.
 
 ### Phase 2 — The fused frontend
 
-#### LXII.6 `useTuringAnswer` + `TuringAnswer` in the react-sdk (T837)
-Headless hook + design-agnostic component (the `TuringCopilot`/`TuringSourceChips`
-skinning contract: every part class-nameable, no bundled styles) so an integrator gets
-the fused answer surface in one import, and so the admin search page, the showcase and
-the public-site hero all consume the same implementation rather than three forks. Also
-ports to the vanilla `@viglet/turing-sdk` as an observable answer controller.
-
 ### Phase 3 — The differentiators
 
 #### LXII.7 Steerable answers — facets as answer controls (T838)

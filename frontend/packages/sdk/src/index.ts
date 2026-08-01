@@ -30,6 +30,8 @@ export {
   postClientToolResult,
   postLlmChat,
   postSemanticChat,
+  postAnswer,
+  consumeAnswerStream,
   deleteSiteConversationState,
   deleteAgentFlowState,
   fetchIntents,
@@ -77,6 +79,9 @@ export type {
   ClientToolResultBody,
   PostLlmChatOptions,
   PostSemanticChatOptions,
+  PostAnswerOptions,
+  AnswerStreamHandlers,
+  AnswerResult,
   TurChatSessionSlots,
   TurChatSessionSlotsDelta,
   TurWorkspaceArtifact,
@@ -190,6 +195,13 @@ export type {
   ClientToolHandler,
   ClientToolRegistration,
 } from "./controllers/chat";
+// T837 / §LXII.6 — observable answer controller (the vanilla useTuringAnswer).
+export { createAnswerController } from "./controllers/answer";
+export type {
+  AnswerController,
+  AnswerControllerState,
+  AnswerStatus,
+} from "./controllers/answer";
 // T450 — embeddable action widget: default host-action client tools.
 export { createHostActions } from "./host-actions";
 export type { HostActions, HostActionsOptions } from "./host-actions";
@@ -239,6 +251,8 @@ export type {
   TurChatConversationResponse,
   TurChatStreamEvent,
   TurChatSource,
+  TurAnswerCitation,
+  TurAnswerTrace,
   TurChatCitation,
   TurChatGrounding,
   TurChatSecondOpinion,

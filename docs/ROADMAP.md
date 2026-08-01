@@ -191,11 +191,8 @@
 > Positioning in [STRATEGY.md](STRATEGY.md) §XV; design in
 > [IMPROVEMENTS.md](IMPROVEMENTS.md) §LXII.
 
-> **Phase 1 (contract & transport) shipped** — T832–T834, see
-> [CHANGELOG.md](CHANGELOG.md) Block BO.
-
-**Phase 2 — the fused frontend:**
-- 📋 **T837** (deps: T833, T835) **`useTuringAnswer` + `TuringAnswer` in the react-sdk** — headless hook + design-agnostic component on the `TuringCopilot`/`TuringSourceChips` skinning contract, so the admin search page, the showcase and the public-site hero share one implementation instead of three forks; observable answer controller ported to the vanilla `@viglet/turing-sdk`. → §LXII.6
+> **Phases 1–2 (contract, transport & the fused frontend) shipped** — T832–T837,
+> see [CHANGELOG.md](CHANGELOG.md) Block BO. Phase 3 (the differentiators) is next.
 
 **Phase 3 — the differentiators (the repositioning):**
 - 📋 **T838** (deps: T835) **Steerable answers — facets as answer controls** — synthesize the answer **within the active filter set** and say so with removable constraint chips ("answering within: Vendor = Anthropic · Context ≥ 200k"); turning a facet re-runs the answer against the narrowed candidates. Mechanically small, but it is the block's flagship claim — a Perplexity answer has no filter state to turn — and it converts the classic answer-engine failure (confident answer over the wrong subset) into a visible control. → §LXII.7

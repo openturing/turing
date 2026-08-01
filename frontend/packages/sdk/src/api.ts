@@ -1,5 +1,7 @@
 import type { TuringClient } from "./client";
 import type {
+  TurAnswerCitation,
+  TurAnswerTrace,
   TurChatCitation,
   TurChatConversationMessage,
   TurChatConversationResponse,
@@ -1917,6 +1919,187 @@ export function parseHrefToParams(href: string): SearchParams {
  * const res = await api.fetchSearch("my-site", { q: "hello" });
  * ```
  */
+// ─────────────────────────── Answer engine (T837) ───────────────────────────
+
+/** Streaming callbacks for the `GET /sn/{site}/answer` answer stream. */
+export interface AnswerStreamHandlers {
+  onSources?: (sources: TurChatSource[]) => void;
+  onToken?: (token: string) => void;
+  onCitations?: (citations: TurAnswerCitation[]) => void;
+  onFollowups?: (followups: string[]) => void;
+  onTrace?: (trace: TurAnswerTrace) => void;
+  onError?: (message: string) => void;
+}
+
+/** Final aggregate of one answer stream. */
+export interface AnswerResult {
+  answer: string;
+  sources: TurChatSource[];
+  citations: TurAnswerCitation[];
+  followups: string[];
+  trace?: TurAnswerTrace;
+  error?: string;
+}
+
+/**
+ * Consumes the answer stream's REAL named SSE frames (`event: <name>\ndata: …`)
+ * — distinct from the chat stream's data-only `{role,content,type}` frames. Data
+ * lines are accumulated per frame (joined with `\n`) so a multi-line token is
+ * preserved; `token` data is raw text, everything else is JSON.
+ */
+export async function consumeAnswerStream(
+  response: Response,
+  handlers: AnswerStreamHandlers = {},
+): Promise<AnswerResult> {
+  if (!response.body) {
+    throw new Error("Answer response has no body");
+  }
+  const reader = response.body.getReader();
+  const decoder = new TextDecoder();
+  let buffer = "";
+  let answer = "";
+  let sources: TurChatSource[] = [];
+  let citations: TurAnswerCitation[] = [];
+  let followups: string[] = [];
+  let trace: TurAnswerTrace | undefined;
+  let error: string | undefined;
+
+  let currentEvent = "";
+  let dataLines: string[] = [];
+
+  function dispatch(eventName: string, data: string): void {
+    switch (eventName) {
+      case "token": {
+        if (data) {
+          answer += data;
+          handlers.onToken?.(data);
+        }
+        return;
+      }
+      case "sources": {
+        const parsed = parseJson<TurChatSource[]>(data);
+        if (parsed) {
+          sources = parsed;
+          handlers.onSources?.(parsed);
+        }
+        return;
+      }
+      case "citations": {
+        const parsed = parseJson<TurAnswerCitation[]>(data);
+        if (parsed) {
+          citations = parsed;
+          handlers.onCitations?.(parsed);
+        }
+        return;
+      }
+      case "followups": {
+        const parsed = parseJson<string[]>(data);
+        if (parsed) {
+          followups = parsed;
+          handlers.onFollowups?.(parsed);
+        }
+        return;
+      }
+      case "trace": {
+        const parsed = parseJson<TurAnswerTrace>(data);
+        if (parsed) {
+          trace = parsed;
+          handlers.onTrace?.(parsed);
+        }
+        return;
+      }
+      case "error": {
+        const parsed = parseJson<{ message?: string }>(data);
+        error = parsed?.message ?? data;
+        handlers.onError?.(error);
+        return;
+      }
+      default:
+        // Unknown event name — ignore (forward-compatible).
+        return;
+    }
+  }
+
+  function flushFrame(): void {
+    if (dataLines.length === 0 && !currentEvent) return;
+    dispatch(currentEvent || "message", dataLines.join("\n"));
+    currentEvent = "";
+    dataLines = [];
+  }
+
+  function consumeLine(line: string): void {
+    if (line === "") {
+      flushFrame();
+      return;
+    }
+    if (line.startsWith(":")) return; // heartbeat / comment
+    if (line.startsWith("event:")) {
+      currentEvent = line.slice(6).trim();
+    } else if (line.startsWith("data:")) {
+      // SSE strips one leading space after the colon; keep the rest verbatim so
+      // a token's internal whitespace survives.
+      const raw = line.slice(5);
+      dataLines.push(raw.startsWith(" ") ? raw.slice(1) : raw);
+    }
+  }
+
+  try {
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split("\n");
+      buffer = lines.pop() ?? "";
+      for (const line of lines) consumeLine(line);
+    }
+    if (buffer) consumeLine(buffer);
+    flushFrame(); // dispatch a trailing frame with no terminating blank line
+  } finally {
+    reader.releaseLock();
+  }
+
+  return { answer, sources, citations, followups, trace, error };
+}
+
+function parseJson<T>(data: string): T | undefined {
+  if (!data) return undefined;
+  try {
+    return JSON.parse(data) as T;
+  } catch {
+    return undefined;
+  }
+}
+
+/** Options for {@link postAnswer}: the streaming callbacks plus an abort signal. */
+export interface PostAnswerOptions extends AnswerStreamHandlers {
+  signal?: AbortSignal;
+}
+
+/**
+ * Opens the streaming answer for {@code query} over {@code site}'s knowledge base
+ * (`GET /sn/{site}/answer`) and resolves with the aggregate once the stream ends.
+ * A safe GET — no CSRF token needed.
+ */
+export async function postAnswer(
+  client: TuringClient,
+  site: string,
+  query: string,
+  locale?: string,
+  options?: PostAnswerOptions,
+): Promise<AnswerResult> {
+  const params = new URLSearchParams({ q: query });
+  if (locale) params.set("locale", locale);
+  const response = await client.fetchRaw(
+    `/sn/${encodeURIComponent(site)}/answer?${params.toString()}`,
+    { method: "GET", headers: { Accept: "text/event-stream" }, signal: options?.signal },
+    false,
+  );
+  if (!response.ok) {
+    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+  }
+  return consumeAnswerStream(response, options);
+}
+
 export function createTuringApi(client: TuringClient) {
   return {
     fetchSearch: (site: string, params: SearchParams) => fetchSearch(client, site, params),
@@ -1952,6 +2135,8 @@ export function createTuringApi(client: TuringClient) {
       messages: TurChatConversationMessage[],
       options?: PostSemanticChatOptions,
     ) => postSemanticChat(client, llmInstanceId, messages, options),
+    postAnswer: (site: string, query: string, locale?: string, options?: PostAnswerOptions) =>
+      postAnswer(client, site, query, locale, options),
     deleteSiteConversationState: (site: string, conversationId: string) =>
       deleteSiteConversationState(client, site, conversationId),
     deleteAgentFlowState: (agentId: string, flowId: string, conversationId: string) =>
