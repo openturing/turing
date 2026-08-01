@@ -33,8 +33,11 @@ export function SearchContent({ siteName }: Readonly<SearchContentProps>) {
   const handleAiModeSubmit = useCallback(() => {
     const query = store.inputValue?.trim();
     if (!query || query === "*") return;
+    // T835 — the fused answer-first page fires search and answer in parallel:
+    // the results/facets/pagination refresh AND the answer panel re-asks. The
+    // query stays in the bar (results are on-screen), so we don't clear it.
+    store.submitSearch();
     aiModeChatRef.current?.ask(query);
-    store.setInputValue("");
     clearSuggestions();
   }, [store, clearSuggestions]);
 
@@ -92,41 +95,48 @@ export function SearchContent({ siteName }: Readonly<SearchContentProps>) {
       />
 
       <main className="flex-1 container mx-auto px-4 lg:px-8 py-6">
+        {/*
+         * T835 — answer-first fused page. The answer panel (AiModeChat) is no
+         * longer an exclusive mode that hides the results: it renders ABOVE a
+         * permanently-mounted results area. `_aimode` is an expand/collapse
+         * preference — expanded it shows the streaming answer + source cards +
+         * follow-up chips; collapsed it falls back to the compact AiChatCard —
+         * while the facet sidebar, pagination and result cards stay on screen.
+         */}
         {showAiMode ? (
-          <AiModeChat
-            ref={aiModeChatRef}
-            siteName={siteName}
-            locale={currentLocale}
-            initialQuery={
-              store.inputValue && store.inputValue !== "*"
-                ? store.inputValue
-                : params.q && params.q !== "*" ? params.q : undefined
-            }
-            onInitialQueryConsumed={() => store.setInputValue("")}
+          <div className="mb-6">
+            <AiModeChat
+              ref={aiModeChatRef}
+              siteName={siteName}
+              locale={currentLocale}
+              initialQuery={
+                store.inputValue && store.inputValue !== "*"
+                  ? store.inputValue
+                  : params.q && params.q !== "*" ? params.q : undefined
+              }
+            />
+          </div>
+        ) : (
+          <AiChatCard chat={chat} />
+        )}
+
+        {documents.length === 0 ? (
+          <SearchEmpty
+            query={params.q}
+            spellCheck={data.widget.spellCheck}
+            chat={chat}
+            onNavigate={store.navigate}
+            onShowAll={store.showAll}
           />
         ) : (
-          <>
-            <AiChatCard chat={chat} />
-
-            {documents.length === 0 ? (
-              <SearchEmpty
-                query={params.q}
-                spellCheck={data.widget.spellCheck}
-                chat={chat}
-                onNavigate={store.navigate}
-                onShowAll={store.showAll}
-              />
-            ) : (
-              <SearchResultsPanel
-                data={data}
-                documents={documents}
-                sortOptions={sortOptions}
-                currentSort={params.sort || "relevance"}
-                onSortChange={store.setSort}
-                onViewJson={setJsonSheetDoc}
-              />
-            )}
-          </>
+          <SearchResultsPanel
+            data={data}
+            documents={documents}
+            sortOptions={sortOptions}
+            currentSort={params.sort || "relevance"}
+            onSortChange={store.setSort}
+            onViewJson={setJsonSheetDoc}
+          />
         )}
       </main>
 

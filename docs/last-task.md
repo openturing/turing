@@ -204,6 +204,7 @@ number" looked free but wasn't. Grepping three files (`ROADMAP.md`,
 
 ## Log (most recent first)
 
+- **T835 SHIPPED** (Block BO §LXII.4 — answer-first fused search page: killed the exclusive `showAiMode` toggle so `AiModeChat` renders above a permanently-mounted `SearchResultsPanel`; `_aimode` is expand/collapse; submit fires search+answer in parallel) — 2026-08-01.
 - **T834 SHIPPED** (Block BO §LXII.3 — `TurFollowUpQuestionService`: one cached LLM pass over answer+citations → 3-5 next questions for the `followups` event, wired via a `TurFollowUpGenerator` seam, fail-open) — 2026-08-01.
 - **T833 SHIPPED** (Block BO §LXII.2 — streaming `GET /api/sn/{siteName}/answer` (SSE) reusing the SN retrieve→rerank→ground pipeline, re-framed by a pure `TurAnswerStreamFramer` into the sources→token→citations→followups→trace contract) — 2026-08-01.
 - **T832 SHIPPED** (Block BO §LXII.1 — shared `TurAnswerCitationNumberer` extracted from the catalog `groundCitations` and applied on the SN/RAG path; `rank` added to `TurRagSource`; one `TurAnswerCitation` projection all answer paths normalize onto) — 2026-08-01.

@@ -2861,14 +2861,6 @@ bet; phases 1–2 are the table stakes that make it renderable.
 
 ### Phase 2 — The fused frontend
 
-#### LXII.4 Answer-first fused search page (T835)
-Replace the exclusive toggle with composition: the answer panel renders **above**
-`SearchResultsPanel`, and the facet sidebar, pagination and result cards stay mounted
-throughout. The `_aimode` param becomes an expand/collapse preference, not a mode
-switch. Streaming answer, source cards, follow-up chips, results — one page. This is
-the single highest-leverage change in the block; everything else in Phase 2 hangs off
-it.
-
 #### LXII.5 Inline `[n]` citation anchors (T836)
 A rehype plugin for `TuringMarkdown` turning each `[n]` into a clickable superscript
 that scroll-links and highlights the matching source card / result row, with a hover
