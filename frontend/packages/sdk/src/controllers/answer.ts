@@ -1,5 +1,5 @@
 import type { TuringClient } from "../client";
-import { postAnswer } from "../api";
+import { postAnswer, type AnswerFilters } from "../api";
 import { createStore, type Store } from "../store";
 import type {
   TurAnswerCitation,
@@ -42,9 +42,16 @@ export interface AnswerControllerState {
   isStreaming: boolean;
 }
 
+/** Per-ask overrides: the response locale and the T838 steering filter set. */
+export interface AnswerAskOptions {
+  locale?: string;
+  /** T838 — synthesize the answer within this active facet filter set. */
+  filters?: AnswerFilters;
+}
+
 export interface AnswerController extends Store<AnswerControllerState> {
-  /** Stream a grounded answer for {@code query} (optionally overriding the locale). */
-  ask(query: string, locale?: string): Promise<void>;
+  /** Stream a grounded answer for {@code query} (optionally steered by filters/locale). */
+  ask(query: string, options?: AnswerAskOptions): Promise<void>;
   /** Abort the in-flight answer, leaving whatever has streamed so far. */
   stop(): void;
   /** Abort and clear back to the idle state. */
@@ -91,7 +98,7 @@ export function createAnswerController(
     return requestId !== latestRequestId || aborted;
   }
 
-  async function ask(query: string, locale?: string): Promise<void> {
+  async function ask(query: string, options?: AnswerAskOptions): Promise<void> {
     const trimmed = query?.trim();
     if (!trimmed || trimmed === "*") return;
 
@@ -112,8 +119,9 @@ export function createAnswerController(
     });
 
     try {
-      const result = await postAnswer(client, config.site, trimmed, locale ?? config.locale, {
+      const result = await postAnswer(client, config.site, trimmed, options?.locale ?? config.locale, {
         signal: abortController.signal,
+        filters: options?.filters,
         onSources: (sources) => {
           if (!isStale(requestId)) store.setState({ sources });
         },

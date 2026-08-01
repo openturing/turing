@@ -11,6 +11,7 @@ package com.viglet.turing.genai.answer;
 
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 
 import org.springframework.http.codec.ServerSentEvent;
 import org.springframework.stereotype.Service;
@@ -86,14 +87,18 @@ public class TurSNAnswerService {
      * @param siteName the SN site to answer over
      * @param query    the user's question
      * @param locale   the response/retrieval locale
+     * @param filters  T838 / §LXII.7 — the active facet filter set
+     *                 ({@code field → values}) the answer is synthesized
+     *                 <em>within</em>; {@code null}/empty answers over the whole KB
      * @return the answer event stream, never {@code null}
      */
-    public Flux<ServerSentEvent<String>> answer(String siteName, String query, Locale locale) {
+    public Flux<ServerSentEvent<String>> answer(String siteName, String query, Locale locale,
+            Map<String, List<String>> filters) {
         if (query == null || query.isBlank()) {
             return Flux.just(TurAnswerStreamFramer.errorEvent("No query provided"));
         }
         return Flux.defer(() -> turSNSearchProcess.getSNSite(siteName)
-                .map(site -> composeAnswer(site, siteName, query, locale))
+                .map(site -> composeAnswer(site, siteName, query, locale, filters))
                 .orElseGet(() -> Flux.just(
                         TurAnswerStreamFramer.errorEvent("Site not found: " + siteName))))
                 .onErrorResume(err -> {
@@ -105,7 +110,7 @@ public class TurSNAnswerService {
     }
 
     private Flux<ServerSentEvent<String>> composeAnswer(TurSNSite site, String siteName,
-            String query, Locale locale) {
+            String query, Locale locale, Map<String, List<String>> filters) {
         TurSNSiteGenAi genAi = site.getTurSNSiteGenAi();
         if (genAi == null) {
             return Flux.just(TurAnswerStreamFramer.errorEvent("AI is not enabled for site: " + siteName));
@@ -126,9 +131,13 @@ public class TurSNAnswerService {
         }
 
         TurGenAiContext context = turGenAiContextFactory.build(genAi, collectionName);
+        // T838 — steerable answers: the active facet filters reach retrieval so the
+        // answer is synthesized within the narrowed candidate set (empty = whole KB).
+        Map<String, List<String>> effectiveFilters =
+                (filters == null || filters.isEmpty()) ? null : filters;
         TurSNGenAiChatRequest request = new TurSNGenAiChatRequest(
                 List.of(new TurSNGenAi.ConversationMessage(USER_ROLE, query)),
-                null, null, null, null, locale, null);
+                effectiveFilters, null, null, null, locale, null);
         Flux<TurAgentChatExecutor.ChatResponse> upstream =
                 turGenAi.assistantConversationStreaming(context, agent, llmInstance, request);
         return TurAnswerStreamFramer.frame(upstream,

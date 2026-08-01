@@ -1751,9 +1751,27 @@ export interface AnswerResult {
   error?: string;
 }
 
-/** Options for {@link fetchAnswer}: the streaming callbacks plus an abort signal. */
+/**
+ * T838 — the active facet filters the answer is synthesized <em>within</em>
+ * (`field → values`); serialized as repeated `fq=field:value` query params.
+ */
+export type AnswerFilters = Record<string, string[]>;
+
+/** Options for {@link fetchAnswer}: the streaming callbacks, filters and signal. */
 export interface FetchAnswerOptions extends AnswerStreamHandlers {
   signal?: AbortSignal;
+  /** T838 — steerable answers: synthesize within this active filter set. */
+  filters?: AnswerFilters;
+}
+
+/** Appends the active facet filters as repeated `fq=field:value` params. */
+function appendAnswerFilterParams(params: URLSearchParams, filters?: AnswerFilters): void {
+  if (!filters) return;
+  for (const [field, values] of Object.entries(filters)) {
+    for (const value of values ?? []) {
+      if (field && value) params.append("fq", `${field}:${value}`);
+    }
+  }
 }
 
 function parseAnswerJson<T>(data: string): T | undefined {
@@ -1896,6 +1914,7 @@ export async function fetchAnswer(
   const baseURL = axios.defaults.baseURL ?? "";
   const params = new URLSearchParams({ q: query });
   if (locale) params.set("locale", locale);
+  appendAnswerFilterParams(params, options?.filters);
   const response = await fetch(`${baseURL}/sn/${encodeURIComponent(site)}/answer?${params.toString()}`, {
     method: "GET",
     headers: { Accept: "text/event-stream" },

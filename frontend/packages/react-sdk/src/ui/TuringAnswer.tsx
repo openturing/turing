@@ -1,9 +1,10 @@
-import { useState, type FormEvent, type ReactNode } from "react";
+import { useEffect, useRef, useState, type FormEvent, type ReactNode } from "react";
 import {
   TuringMarkdown,
   citationMarkdownComponents,
   rehypeCitationAnchors,
 } from "@viglet/turing-react-ui";
+import type { AnswerFilters } from "../core/api";
 import type { TurAnswerCitation } from "../core/types";
 import { useTuringAnswer, type UseTuringAnswerOptions } from "../hooks/use-turing-answer";
 
@@ -27,6 +28,9 @@ export interface TuringAnswerClassNames {
   form?: string;
   input?: string;
   submit?: string;
+  constraints?: string;
+  constraintsLabel?: string;
+  constraint?: string;
   answer?: string;
   loading?: string;
   error?: string;
@@ -43,12 +47,24 @@ export interface TuringAnswerLabels {
   loading?: string;
   sources?: string;
   followups?: string;
+  /** Leads the constraint chip row. Default "Answering within:". */
+  within?: string;
 }
 
 export interface TuringAnswerProps extends UseTuringAnswerOptions {
   /** Render a search input that calls `ask()` on submit. Default `true`. */
   showInput?: boolean;
   placeholder?: string;
+  /**
+   * T838 — the active facet filter set (`field → values`) the answer is
+   * synthesized within. Shown as removable constraint chips; changing it re-runs
+   * the current question against the narrowed candidates.
+   */
+  filters?: AnswerFilters;
+  /** Called when a constraint chip is removed, so the host can widen the set. */
+  onFilterRemove?: (field: string, value: string) => void;
+  /** Formats a constraint chip. Default `${field} = ${value}`. */
+  formatConstraint?: (field: string, value: string) => string;
   /** Render-override for the answer body (default: markdown + `[n]` anchors). */
   renderAnswer?: (args: { answer: string; citations: TurAnswerCitation[] }) => ReactNode;
   labels?: TuringAnswerLabels;
@@ -56,9 +72,22 @@ export interface TuringAnswerProps extends UseTuringAnswerOptions {
   classNames?: TuringAnswerClassNames;
 }
 
+/** Flattens a `field → values` filter map into ordered `[field, value]` pairs. */
+function filterPairs(filters?: AnswerFilters): Array<[string, string]> {
+  if (!filters) return [];
+  const pairs: Array<[string, string]> = [];
+  for (const [field, values] of Object.entries(filters)) {
+    for (const value of values ?? []) pairs.push([field, value]);
+  }
+  return pairs;
+}
+
 export function TuringAnswer({
   showInput = true,
   placeholder,
+  filters,
+  onFilterRemove,
+  formatConstraint,
   renderAnswer,
   labels,
   className,
@@ -68,13 +97,33 @@ export function TuringAnswer({
   const { answer, sources, citations, followups, status, error, isStreaming, ask } =
     useTuringAnswer(answerOptions);
   const [draft, setDraft] = useState("");
+  // The last question asked — so a facet change (below) re-runs the same question.
+  const lastQueryRef = useRef("");
+
+  const constraints = filterPairs(filters);
+  const filtersKey = JSON.stringify(filters ?? {});
+
+  // T838 — turning a facet re-synthesizes the current answer within the new set.
+  useEffect(() => {
+    if (lastQueryRef.current) void ask(lastQueryRef.current, { filters });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filtersKey]);
 
   const onSubmit = (event: FormEvent) => {
     event.preventDefault();
     const query = draft.trim();
     if (!query) return;
-    void ask(query);
+    lastQueryRef.current = query;
+    void ask(query, { filters });
   };
+
+  const askFollowup = (question: string) => {
+    lastQueryRef.current = question;
+    void ask(question, { filters });
+  };
+
+  const constraintLabel = (field: string, value: string) =>
+    formatConstraint ? formatConstraint(field, value) : `${field} = ${value}`;
 
   const answerBody = renderAnswer ? (
     renderAnswer({ answer, citations })
@@ -108,6 +157,25 @@ export function TuringAnswer({
             {labels?.submit ?? "Ask"}
           </button>
         </form>
+      )}
+
+      {constraints.length > 0 && (
+        <div className={classNames?.constraints} data-turing-answer-constraints="">
+          <span className={classNames?.constraintsLabel}>
+            {labels?.within ?? "Answering within:"}
+          </span>
+          {constraints.map(([field, value]) => (
+            <button
+              key={`${field}:${value}`}
+              type="button"
+              className={classNames?.constraint}
+              onClick={() => onFilterRemove?.(field, value)}
+              aria-label={`Remove constraint ${constraintLabel(field, value)}`}
+            >
+              {constraintLabel(field, value)} ×
+            </button>
+          ))}
+        </div>
       )}
 
       {error && (
@@ -153,7 +221,7 @@ export function TuringAnswer({
               key={question}
               type="button"
               className={classNames?.followup}
-              onClick={() => void ask(question)}
+              onClick={() => askFollowup(question)}
             >
               {question}
             </button>

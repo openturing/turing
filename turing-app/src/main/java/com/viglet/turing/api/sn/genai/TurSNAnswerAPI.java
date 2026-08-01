@@ -9,7 +9,10 @@
  */
 package com.viglet.turing.api.sn.genai;
 
+import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 
 import org.apache.commons.lang3.LocaleUtils;
 import org.springframework.http.MediaType;
@@ -58,8 +61,38 @@ public class TurSNAnswerAPI {
     @GetMapping(produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     public Flux<ServerSentEvent<String>> answer(@PathVariable String siteName,
             @RequestParam("q") String query,
-            @RequestParam(value = "locale", required = false) String locale) {
-        return answerService.answer(siteName, query, resolveLocale(locale));
+            @RequestParam(value = "locale", required = false) String locale,
+            @RequestParam(value = "fq", required = false) List<String> fq) {
+        return answerService.answer(siteName, query, resolveLocale(locale), parseFilters(fq));
+    }
+
+    /**
+     * T838 / §LXII.7 — parses the active facet filters (repeated {@code fq}
+     * params, each {@code field:value}) into the {@code field → values} map the
+     * answer engine synthesizes within. Splits on the first colon so a value may
+     * itself contain colons; a malformed entry (no colon, blank field) is skipped.
+     */
+    private static Map<String, List<String>> parseFilters(List<String> fq) {
+        if (fq == null || fq.isEmpty()) {
+            return Map.of();
+        }
+        Map<String, List<String>> filters = new LinkedHashMap<>();
+        for (String entry : fq) {
+            if (entry == null) {
+                continue;
+            }
+            int colon = entry.indexOf(':');
+            if (colon <= 0 || colon == entry.length() - 1) {
+                continue;
+            }
+            String field = entry.substring(0, colon).trim();
+            String value = entry.substring(colon + 1).trim();
+            if (field.isEmpty() || value.isEmpty()) {
+                continue;
+            }
+            filters.computeIfAbsent(field, k -> new java.util.ArrayList<>()).add(value);
+        }
+        return filters;
     }
 
     /** Parses the requested locale, defaulting to English when absent/invalid. */

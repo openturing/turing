@@ -111,6 +111,21 @@ describe("createAnswerController (T837)", () => {
     expect(controller.getState().status).toBe("idle");
   });
 
+  it("steers the answer within the active filter set (T838)", async () => {
+    const fetchRaw = vi.fn().mockResolvedValueOnce(fullAnswer());
+    const client = { fetchRaw } as unknown as TuringClient;
+    const controller = createAnswerController(client, { site: "site1" });
+
+    await controller.ask("cheapest model", {
+      filters: { vendor: ["Anthropic"], context: [">=200000"] },
+    });
+
+    // Each field:value pair rides as a repeated fq= query param.
+    const url = fetchRaw.mock.calls[0][0] as string;
+    expect(url).toContain("fq=vendor%3AAnthropic");
+    expect(url).toContain("fq=context%3A%3E%3D200000");
+  });
+
   it("reset() clears state back to idle", async () => {
     const fetchRaw = vi.fn().mockResolvedValueOnce(fullAnswer());
     const client = { fetchRaw } as unknown as TuringClient;

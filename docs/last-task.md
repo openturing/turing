@@ -204,6 +204,7 @@ number" looked free but wasn't. Grepping three files (`ROADMAP.md`,
 
 ## Log (most recent first)
 
+- **T838 SHIPPED** (Block BO §LXII.7 — steerable answers: `/answer` accepts `fq` filters and synthesizes within them; SDKs thread `filters` to `fq` params; `TuringAnswer` shows removable constraint chips + re-runs on facet change) — 2026-08-01.
 - **T837 SHIPPED** (Block BO §LXII.6 — `useTuringAnswer` hook + `TuringAnswer` component in react-sdk + `createAnswerController` in vanilla sdk, all driving the T833 `/answer` stream via a new named-event SSE parser; closes Phase 2) — 2026-08-01.
 - **T836 SHIPPED** (Block BO §LXII.5 — `rehypeCitationAnchors` + `citationMarkdownComponents` + `TuringCitationAnchor` in react-ui: `[n]` markers become clickable superscripts that scroll-link + highlight the matching source card; native-span underline was already `TuringCitedAnswer`) — 2026-08-01.
 - **T835 SHIPPED** (Block BO §LXII.4 — answer-first fused search page: killed the exclusive `showAiMode` toggle so `AiModeChat` renders above a permanently-mounted `SearchResultsPanel`; `_aimode` is expand/collapse; submit fires search+answer in parallel) — 2026-08-01.

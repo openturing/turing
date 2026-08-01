@@ -82,6 +82,7 @@ export type {
   PostAnswerOptions,
   AnswerStreamHandlers,
   AnswerResult,
+  AnswerFilters,
   TurChatSessionSlots,
   TurChatSessionSlotsDelta,
   TurWorkspaceArtifact,
@@ -200,6 +201,7 @@ export { createAnswerController } from "./controllers/answer";
 export type {
   AnswerController,
   AnswerControllerState,
+  AnswerAskOptions,
   AnswerStatus,
 } from "./controllers/answer";
 // T450 — embeddable action widget: default host-action client tools.

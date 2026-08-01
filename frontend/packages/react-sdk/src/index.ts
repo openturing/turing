@@ -63,6 +63,7 @@ export type {
   FetchAnswerOptions,
   AnswerStreamHandlers,
   AnswerResult,
+  AnswerFilters,
   ChatEnabledResponse,
   ChatDisabledReason,
   ClickTrackParams,
@@ -153,6 +154,7 @@ export { useTuringAnswer } from "./hooks/use-turing-answer";
 export type {
   UseTuringAnswerOptions,
   UseTuringAnswerReturn,
+  TuringAnswerAskOptions,
   TuringAnswerStatus,
 } from "./hooks/use-turing-answer";
 export { useTuringCopilot } from "./hooks/use-turing-copilot";

@@ -78,7 +78,7 @@ class TurSNAnswerServiceTest {
 
     @Test
     void blankQueryDegradesToASingleErrorEvent() {
-        List<ServerSentEvent<String>> events = collect(service.answer("site1", "  ", Locale.ENGLISH));
+        List<ServerSentEvent<String>> events = collect(service.answer("site1", "  ", Locale.ENGLISH, java.util.Map.of()));
 
         assertThat(eventNames(events)).containsExactly("error");
         assertThat(events.get(0).data()).contains("No query provided");
@@ -88,7 +88,7 @@ class TurSNAnswerServiceTest {
     void unknownSiteDegradesToASingleErrorEvent() {
         when(turSNSearchProcess.getSNSite("ghost")).thenReturn(Optional.empty());
 
-        List<ServerSentEvent<String>> events = collect(service.answer("ghost", "q", Locale.ENGLISH));
+        List<ServerSentEvent<String>> events = collect(service.answer("ghost", "q", Locale.ENGLISH, java.util.Map.of()));
 
         assertThat(eventNames(events)).containsExactly("error");
         assertThat(events.get(0).data()).contains("Site not found");
@@ -118,11 +118,43 @@ class TurSNAnswerServiceTest {
         when(followUpQuestionService.generate(any(), any(), any(), any()))
                 .thenReturn(List.of("What next?"));
 
-        List<ServerSentEvent<String>> events = collect(service.answer("site1", "hi", Locale.ENGLISH));
+        List<ServerSentEvent<String>> events = collect(service.answer("site1", "hi", Locale.ENGLISH, java.util.Map.of()));
 
         // Re-framed into the answer contract: token, then citations, the generated
         // follow-ups, and the trace.
         assertThat(eventNames(events)).containsExactly("token", "citations", "followups", "trace");
         assertThat(events.get(0).data()).isEqualTo("Hello");
+    }
+
+    @Test
+    void passesActiveFiltersToRetrieval() {
+        TurSNSite site = new TurSNSite();
+        TurSNSiteGenAi genAi = new TurSNSiteGenAi();
+        site.setTurSNSiteGenAi(genAi);
+        TurAIAgent agent = new TurAIAgent();
+        TurLLMInstance llm = new TurLLMInstance();
+        llm.setEnabled(1);
+        agent.setLlmInstances(java.util.Set.of(llm));
+
+        when(turSNSearchProcess.getSNSite("site1")).thenReturn(Optional.of(site));
+        when(turDefaultAgentResolver.resolveEffectiveAgent(genAi)).thenReturn(agent);
+        lenient().when(turGenAiContextFactory.build(any(), any()))
+                .thenReturn(org.mockito.Mockito.mock(TurGenAiContext.class));
+        when(turGenAi.assistantConversationStreaming(any(), any(), any(), any()))
+                .thenReturn(Flux.just(new ChatResponse("assistant", "Within Anthropic.", "token")));
+        lenient().when(followUpQuestionService.generate(any(), any(), any(), any()))
+                .thenReturn(List.of());
+
+        java.util.Map<String, List<String>> filters =
+                java.util.Map.of("vendor", List.of("Anthropic"));
+        collect(service.answer("site1", "cheapest model", Locale.ENGLISH, filters));
+
+        // T838 — the answer is synthesized within the active filter set: the filters
+        // reach retrieval via the streaming request.
+        org.mockito.ArgumentCaptor<com.viglet.turing.genai.TurSNGenAiChatRequest> captor =
+                org.mockito.ArgumentCaptor.forClass(com.viglet.turing.genai.TurSNGenAiChatRequest.class);
+        org.mockito.Mockito.verify(turGenAi)
+                .assistantConversationStreaming(any(), any(), any(), captor.capture());
+        assertThat(captor.getValue().filters()).containsEntry("vendor", List.of("Anthropic"));
     }
 }

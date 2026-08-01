@@ -2863,16 +2863,6 @@ bet; phases 1–2 are the table stakes that make it renderable.
 
 ### Phase 3 — The differentiators
 
-#### LXII.7 Steerable answers — facets as answer controls (T838)
-The answer is synthesized **within the active filter set**, and the answer panel
-states so with removable constraint chips ("answering within: Vendor = Anthropic ·
-Context ≥ 200k"). Turning a facet re-runs the answer against the narrowed candidate
-set; removing one widens it. Mechanically small — the filter state already exists and
-already reaches retrieval — but it is the block's flagship claim: **a Perplexity
-answer has no filter state to turn.** It also inverts the usual failure mode of
-answer engines (a confident answer over the wrong subset) into a visible, editable
-control.
-
 #### LXII.8 "Why this answer" — auditable provenance panel (T839)
 One expandable panel per answer surfacing the T389 `rankingExplanation` already
 attached to hybrid-mode results (lexical rank, semantic rank, fused rank, RRF score),

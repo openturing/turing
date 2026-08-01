@@ -1,5 +1,5 @@
 import { useCallback, useRef, useState } from "react";
-import { fetchAnswer } from "../core/api";
+import { fetchAnswer, type AnswerFilters } from "../core/api";
 import type { TurAnswerCitation, TurAnswerTrace, TurChatSource } from "../core/types";
 import { useOptionalTuringContext } from "../core/use-turing-context";
 import { isAbortError } from "./streaming-chat-core";
@@ -29,6 +29,13 @@ export interface UseTuringAnswerOptions {
   readonly locale?: string;
 }
 
+/** Per-ask overrides: the response locale and the T838 steering filter set. */
+export interface TuringAnswerAskOptions {
+  locale?: string;
+  /** T838 — synthesize the answer within this active facet filter set. */
+  filters?: AnswerFilters;
+}
+
 export interface UseTuringAnswerReturn {
   answer: string;
   sources: TurChatSource[];
@@ -38,7 +45,7 @@ export interface UseTuringAnswerReturn {
   status: TuringAnswerStatus;
   error: string | null;
   isStreaming: boolean;
-  ask: (query: string, locale?: string) => Promise<void>;
+  ask: (query: string, options?: TuringAnswerAskOptions) => Promise<void>;
   stop: () => void;
   reset: () => void;
 }
@@ -62,7 +69,7 @@ export function useTuringAnswer(options: UseTuringAnswerOptions = {}): UseTuring
   const abortControllerRef = useRef<AbortController | null>(null);
 
   const ask = useCallback(
-    async (query: string, localeOverride?: string) => {
+    async (query: string, askOptions?: TuringAnswerAskOptions) => {
       const trimmed = query?.trim();
       if (!trimmed || trimmed === "*" || !siteName) return;
 
@@ -82,8 +89,9 @@ export function useTuringAnswer(options: UseTuringAnswerOptions = {}): UseTuring
 
       const stale = () => requestId !== requestRef.current || abortedRef.current;
       try {
-        const result = await fetchAnswer(siteName, trimmed, localeOverride ?? defaultLocale, {
+        const result = await fetchAnswer(siteName, trimmed, askOptions?.locale ?? defaultLocale, {
           signal: controller.signal,
+          filters: askOptions?.filters,
           onSources: (s) => { if (!stale()) setSources(s); },
           onToken: (t) => { if (!stale()) setAnswer((prev) => prev + t); },
           onCitations: (c) => { if (!stale()) setCitations(c); },
