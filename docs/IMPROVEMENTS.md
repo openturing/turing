@@ -2859,16 +2859,6 @@ bet; phases 1–2 are the table stakes that make it renderable.
 
 ### Phase 1 — Contract & transport
 
-#### LXII.2 Streaming answer endpoint (T833)
-New `GET /api/sn/{siteName}/answer` (SSE) that composes retrieval → rerank →
-synthesis and emits, in guaranteed order: `sources` (so the client can paint source
-cards before a single token), then `token`s, then `citations`, `followups` and
-`trace`. Reuses `TurSNHybridRankingService`, the rerank seam and LXII.1's numberer;
-respects the site's `TurSNKnowledgeBaseMode`. **Deliberately not** an `answer` field
-on `TurSNSiteSearchBean` — the hot search path must never pay LLM latency, and the two
-surfaces have different cache lifetimes. The client fires search and answer in
-parallel and composes them.
-
 #### LXII.3 Follow-up question generation (T834)
 `TurFollowUpQuestionService`: one cheap, cached LLM call over the answer + its
 citations returning 3–5 next questions, streamed as the `followups` event. Cached on

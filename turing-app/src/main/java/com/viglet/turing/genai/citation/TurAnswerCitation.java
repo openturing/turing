@@ -77,6 +77,13 @@ public record TurAnswerCitation(
                 null, null, null, null);
     }
 
+    /** @return a copy carrying {@code footnote} as its rank (identity when equal). */
+    public TurAnswerCitation withRank(int footnote) {
+        return rank == footnote ? this
+                : new TurAnswerCitation(footnote, sourceId, title, url, score, chunkIndex,
+                        keywordOnly, rankingExplanation, answerStart, answerEnd, citedText);
+    }
+
     /** Normalizes a catalog {@link TurCatalogCitation} onto the projection. */
     public static TurAnswerCitation fromCatalogCitation(TurCatalogCitation citation) {
         return new TurAnswerCitation(

@@ -204,6 +204,7 @@ number" looked free but wasn't. Grepping three files (`ROADMAP.md`,
 
 ## Log (most recent first)
 
+- **T833 SHIPPED** (Block BO §LXII.2 — streaming `GET /api/sn/{siteName}/answer` (SSE) reusing the SN retrieve→rerank→ground pipeline, re-framed by a pure `TurAnswerStreamFramer` into the sources→token→citations→followups→trace contract) — 2026-08-01.
 - **T832 SHIPPED** (Block BO §LXII.1 — shared `TurAnswerCitationNumberer` extracted from the catalog `groundCitations` and applied on the SN/RAG path; `rank` added to `TurRagSource`; one `TurAnswerCitation` projection all answer paths normalize onto) — 2026-08-01.
 - **T851 SHIPPED** (Block BP §LXIII.6 — promoted from 💭: `TurTranscriptionSegment` + additive `segments` on the result, opt-in `diarized_json`, single-chunk only because speaker labels are per-request; **CLOSES Block BP**) — 2026-07-31.
 - **T849 SHIPPED** (Block BP §LXIII.4 — promoted from 💭: `stream=true` file transcription relayed as `partialTranscript` on the job SSE via `TurTranscriptionPartialListener` + `TurPartialTextThrottle`, single-chunk only, rendered live in the persona-from-audio card) — 2026-07-31.

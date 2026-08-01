@@ -192,7 +192,6 @@
 > [IMPROVEMENTS.md](IMPROVEMENTS.md) §LXII.
 
 **Phase 1 — contract & transport:**
-- 📋 **T833** (deps: T832) **Streaming answer endpoint `GET /api/sn/{siteName}/answer`** — SSE composing retrieval → rerank → synthesis, emitting `sources` **before** the first token, then `token`/`citations`/`followups`/`trace`; reuses `TurSNHybridRankingService` + the rerank seam + `TurSNKnowledgeBaseMode`. Deliberately **not** an `answer` field on `TurSNSiteSearchBean` — the hot search path must never pay LLM latency; the client fires search and answer in parallel. → §LXII.2
 - 📋 **T834** (deps: T833) **Follow-up question generation** — `TurFollowUpQuestionService`: one cheap LLM call over answer+citations returning 3–5 next questions as the `followups` event, cached on (query, filter state, source set) with the `TurLlmSummaryService` cache discipline. Distinct from `use-turing-related-terms` (term co-occurrence) and Gemini `searchSuggestions` (web-only). → §LXII.3
 
 **Phase 2 — the fused frontend:**
