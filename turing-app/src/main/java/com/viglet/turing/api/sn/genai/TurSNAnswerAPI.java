@@ -53,11 +53,14 @@ public class TurSNAnswerAPI {
 
     private final TurSNAnswerService answerService;
     private final com.viglet.turing.genai.citation.TurCitationDriftService driftService;
+    private final com.viglet.turing.genai.answer.TurAnswerShareService answerShareService;
 
     public TurSNAnswerAPI(TurSNAnswerService answerService,
-            com.viglet.turing.genai.citation.TurCitationDriftService driftService) {
+            com.viglet.turing.genai.citation.TurCitationDriftService driftService,
+            com.viglet.turing.genai.answer.TurAnswerShareService answerShareService) {
         this.answerService = answerService;
         this.driftService = driftService;
+        this.answerShareService = answerShareService;
     }
 
     @Operation(summary = "Stream a grounded, cited answer for a query over the site's knowledge base")
@@ -102,6 +105,67 @@ public class TurSNAnswerAPI {
 
     /** One cited source to re-check: its id and the grounded passage. */
     public record FreshnessSource(String sourceId, String citedText) {
+    }
+
+    // ─────────────────────────── Answer permalinks (T844) ───────────────────────────
+
+    /**
+     * T844 / §LXII.13 — mint a stable permalink for an answer by persisting its
+     * snapshot (query + filter state + source snapshot + answer text + timestamp).
+     * Returns the share id the client turns into a URL.
+     */
+    @Operation(summary = "Persist an answer snapshot and return its shareable permalink id")
+    @org.springframework.web.bind.annotation.PostMapping(value = "/share",
+            consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
+    public ShareResponse createShare(@PathVariable String siteName,
+            @org.springframework.web.bind.annotation.RequestBody ShareRequest request) {
+        String id = answerShareService.create(siteName, request.q(), request.filtersJson(),
+                request.answerText(), request.sourcesJson(), request.citationsJson(),
+                request.answeredAt());
+        return new ShareResponse(id);
+    }
+
+    /** T844 — read a shared answer snapshot back, so the SPA re-renders it read-only. */
+    @Operation(summary = "Read a shared answer snapshot by its permalink id")
+    @GetMapping(value = "/share/{shareId}", produces = MediaType.APPLICATION_JSON_VALUE)
+    public org.springframework.http.ResponseEntity<AnswerShareView> readShare(
+            @PathVariable String siteName, @PathVariable String shareId) {
+        return answerShareService.find(shareId)
+                .map(share -> org.springframework.http.ResponseEntity.ok(new AnswerShareView(
+                        share.getId(), share.getSiteName(), share.getQuery(), share.getFiltersJson(),
+                        share.getAnswerText(), share.getSourcesJson(), share.getCitationsJson(),
+                        share.getAnsweredAt())))
+                .orElseGet(() -> org.springframework.http.ResponseEntity.notFound().build());
+    }
+
+    /**
+     * T844 — the Open-Graph card for a shared answer (question as title, answer
+     * excerpt as description), redirecting human visitors to {@code dest}. Scrapers
+     * unfurl the meta tags; a 404 becomes an empty body.
+     */
+    @Operation(summary = "Render the Open-Graph card for a shared answer")
+    @GetMapping(value = "/share/{shareId}/og", produces = MediaType.TEXT_HTML_VALUE)
+    public org.springframework.http.ResponseEntity<String> shareOg(@PathVariable String siteName,
+            @PathVariable String shareId,
+            @RequestParam(value = "dest", required = false) String dest) {
+        return answerShareService.renderOgCard(shareId, dest)
+                .map(org.springframework.http.ResponseEntity::ok)
+                .orElseGet(() -> org.springframework.http.ResponseEntity.notFound().build());
+    }
+
+    /** Body of {@code POST /share}: the answer snapshot to persist (JSON fields opaque). */
+    public record ShareRequest(String q, String filtersJson, String answerText,
+            String sourcesJson, String citationsJson, java.time.Instant answeredAt) {
+    }
+
+    /** Response of {@code POST /share}: the minted permalink id. */
+    public record ShareResponse(String id) {
+    }
+
+    /** The shared-answer read model returned by {@code GET /share/{id}}. */
+    public record AnswerShareView(String id, String siteName, String query, String filtersJson,
+            String answerText, String sourcesJson, String citationsJson,
+            java.time.Instant answeredAt) {
     }
 
     /**

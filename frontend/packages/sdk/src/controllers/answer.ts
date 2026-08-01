@@ -1,5 +1,5 @@
 import type { TuringClient } from "../client";
-import { postAnswer, postAnswerFreshness, type AnswerFilters } from "../api";
+import { createAnswerShare, postAnswer, postAnswerFreshness, type AnswerFilters } from "../api";
 import { createStore, type Store } from "../store";
 import type {
   TurAnswerArtifact,
@@ -68,6 +68,12 @@ export interface AnswerController extends Store<AnswerControllerState> {
    * until an answer with citations has completed.
    */
   checkFreshness(): Promise<void>;
+  /**
+   * T844 — persist the current answer as a shareable permalink (query + filter
+   * state + source/citation snapshot + answer text + timestamp) and return its
+   * share id. Rejects when no completed answer is available to snapshot.
+   */
+  share(): Promise<string>;
   /** Abort the in-flight answer, leaving whatever has streamed so far. */
   stop(): void;
   /** Abort and clear back to the idle state. */
@@ -115,6 +121,8 @@ export function createAnswerController(
   let abortController: AbortController | null = null;
   // The last question asked — so checkFreshness can re-retrieve it (T840).
   let lastQuery = "";
+  // The last steering filter set — snapshotted into a share (T844).
+  let lastFilters: AnswerFilters | undefined;
 
   function isStale(requestId: number): boolean {
     return requestId !== latestRequestId || aborted;
@@ -129,6 +137,7 @@ export function createAnswerController(
     abortController?.abort();
     abortController = new AbortController();
     lastQuery = trimmed;
+    lastFilters = options?.filters;
 
     store.setState({
       status: "loading",
@@ -208,6 +217,21 @@ export function createAnswerController(
     }
   }
 
+  async function share(): Promise<string> {
+    const state = store.getState();
+    if (state.status !== "success" || !state.answer || !lastQuery) {
+      throw new Error("No completed answer to share");
+    }
+    return createAnswerShare(client, config.site, {
+      query: lastQuery,
+      filters: lastFilters,
+      answer: state.answer,
+      sources: state.sources,
+      citations: state.citations,
+      answeredAt: state.answeredAt,
+    });
+  }
+
   function stop(): void {
     aborted = true;
     latestRequestId++;
@@ -236,6 +260,7 @@ export function createAnswerController(
     subscribe: store.subscribe,
     ask,
     checkFreshness,
+    share,
     stop,
     reset,
     destroy,

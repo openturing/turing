@@ -416,6 +416,22 @@ export interface TurAnswerCitation {
 }
 
 /**
+ * T844 — the read model of a shared answer permalink (`GET /sn/{site}/answer/share/{id}`).
+ * The `*Json` fields are the opaque JSON snapshots the client serialized on share
+ * (parse them back to render the answer read-only).
+ */
+export interface TurAnswerShareView {
+  id: string;
+  siteName: string;
+  query: string;
+  filtersJson?: string | null;
+  answerText?: string | null;
+  sourcesJson?: string | null;
+  citationsJson?: string | null;
+  answeredAt?: string | null;
+}
+
+/**
  * T841 — a structured answer artifact carried by the answer stream's `artifact`
  * event: the answer-as-app generative-UI render spec (e.g. a comparison table or
  * spec grid) the agent emitted instead of prose. `name` is the answer-as-app

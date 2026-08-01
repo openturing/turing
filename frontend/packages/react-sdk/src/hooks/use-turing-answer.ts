@@ -1,5 +1,5 @@
 import { useCallback, useRef, useState } from "react";
-import { fetchAnswer, fetchAnswerFreshness, type AnswerFilters } from "../core/api";
+import { createAnswerShare, fetchAnswer, fetchAnswerFreshness, type AnswerFilters } from "../core/api";
 import type {
   TurAnswerArtifact,
   TurAnswerCitation,
@@ -62,6 +62,11 @@ export interface UseTuringAnswerReturn {
   ask: (query: string, options?: TuringAnswerAskOptions) => Promise<void>;
   /** T840 — re-check the current answer's cited sources for drift. */
   checkFreshness: () => Promise<void>;
+  /**
+   * T844 — persist the current answer as a shareable permalink and return its
+   * share id. Rejects when no completed answer is available to snapshot.
+   */
+  share: () => Promise<string>;
   stop: () => void;
   reset: () => void;
 }
@@ -93,6 +98,15 @@ export function useTuringAnswer(options: UseTuringAnswerOptions = {}): UseTuring
   citationsRef.current = citations;
   const answeredAtRef = useRef<string | null>(null);
   answeredAtRef.current = answeredAt;
+  // Mirrors for share() — the immutable snapshot fields (T844).
+  const answerRef = useRef("");
+  answerRef.current = answer;
+  const sourcesRef = useRef<TurChatSource[]>([]);
+  sourcesRef.current = sources;
+  const statusRef = useRef<TuringAnswerStatus>("idle");
+  statusRef.current = status;
+  // The last steering filter set — snapshotted into a share (T844).
+  const lastFiltersRef = useRef<AnswerFilters | undefined>(undefined);
 
   const ask = useCallback(
     async (query: string, askOptions?: TuringAnswerAskOptions) => {
@@ -105,6 +119,7 @@ export function useTuringAnswer(options: UseTuringAnswerOptions = {}): UseTuring
       const controller = new AbortController();
       abortControllerRef.current = controller;
       lastQueryRef.current = trimmed;
+      lastFiltersRef.current = askOptions?.filters;
 
       setStatus("loading");
       setAnswer("");
@@ -161,6 +176,20 @@ export function useTuringAnswer(options: UseTuringAnswerOptions = {}): UseTuring
     }
   }, [siteName]);
 
+  const share = useCallback(async () => {
+    if (statusRef.current !== "success" || !answerRef.current || !lastQueryRef.current || !siteName) {
+      throw new Error("No completed answer to share");
+    }
+    return createAnswerShare(siteName, {
+      query: lastQueryRef.current,
+      filters: lastFiltersRef.current,
+      answer: answerRef.current,
+      sources: sourcesRef.current,
+      citations: citationsRef.current,
+      answeredAt: answeredAtRef.current,
+    });
+  }, [siteName]);
+
   const stop = useCallback(() => {
     abortedRef.current = true;
     requestRef.current++;
@@ -200,6 +229,7 @@ export function useTuringAnswer(options: UseTuringAnswerOptions = {}): UseTuring
     staleSources,
     ask,
     checkFreshness,
+    share,
     stop,
     reset,
   };

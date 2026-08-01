@@ -2865,13 +2865,6 @@ bet; phases 1–2 are the table stakes that make it renderable.
 
 ### Phase 4 — Depth & distribution
 
-#### LXII.13 Answer permalinks & shareable answer cards (T844)
-A stable URL for an answer (query + filter state + source snapshot + timestamp) that
-re-renders it read-only, with an OG card via the shipped `TurChatShareOgService`. Turns
-every good internal answer into a linkable artifact, and — for public deployments —
-into indexable content. Pairs with Block O (GEO): the answer surface becomes a
-distribution channel, not just a UI.
-
 #### LXII.14 Answer-level analytics & the self-tuning loop (T845)
 Emit answer-level signals into the existing chat analytics — citation clicked, facet
 refined after reading, follow-up taken, re-answer requested, thumbs — keyed so the

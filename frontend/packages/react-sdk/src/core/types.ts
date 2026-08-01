@@ -43,6 +43,7 @@ export type {
   TurAnswerFreshnessSource,
   TurAnswerFreshnessVerdict,
   TurAnswerFreshnessStatus,
+  TurAnswerShareView,
   TurSearchSuggestions,
   TurChatToolCall,
   TurClientToolCall,

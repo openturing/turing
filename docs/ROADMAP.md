@@ -197,7 +197,6 @@
 **Phase 3 — the differentiators (the repositioning):**
 
 **Phase 4 — depth & distribution:**
-- 💭 **T844** (deps: T835, T838) **Answer permalinks & shareable answer cards** — a stable URL for an answer (query + filter state + source snapshot + timestamp) that re-renders it read-only, with an OG card via the shipped `TurChatShareOgService`; makes every good answer a linkable artifact and, on public deployments, indexable content. Pairs with Block O (GEO). → §LXII.13
 - 💭 **T845** (deps: T838, T843) **Answer-level analytics & the self-tuning loop** — emit citation-clicked / facet-refined-after-reading / follow-up-taken / re-answer signals into the existing chat analytics, keyed for the `selftuning` miner+drafter. T838's steerability produces an unusually clean relevance signal: narrowing a facet *after* reading an answer is explicit feedback that retrieval missed. → §LXII.14
 
 ## Non-goals (do NOT add as tasks)

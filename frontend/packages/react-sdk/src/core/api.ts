@@ -4,6 +4,7 @@ import type {
   TurAnswerCitation,
   TurAnswerFreshnessSource,
   TurAnswerFreshnessVerdict,
+  TurAnswerShareView,
   TurAnswerTrace,
   TurChatCitation,
   TurChatConversationMessage,
@@ -1970,4 +1971,51 @@ export async function fetchAnswerFreshness(
     { q: question, answeredAt, topK, sources },
   );
   return data ?? [];
+}
+
+/** The answer snapshot to persist as a permalink (T844). */
+export interface AnswerShareSnapshot {
+  query: string;
+  filters?: AnswerFilters;
+  answer: string;
+  sources?: unknown[];
+  citations?: unknown[];
+  answeredAt?: string | null;
+}
+
+/**
+ * T844 — persist an answer snapshot and return its stable permalink id. The
+ * sources / citations / filters are serialized to opaque JSON server-side.
+ */
+export async function createAnswerShare(
+  site: string,
+  snapshot: AnswerShareSnapshot,
+): Promise<string> {
+  const { data } = await axios.post<{ id: string }>(
+    `/sn/${encodeURIComponent(site)}/answer/share`,
+    {
+      q: snapshot.query,
+      filtersJson: snapshot.filters ? JSON.stringify(snapshot.filters) : null,
+      answerText: snapshot.answer,
+      sourcesJson: snapshot.sources ? JSON.stringify(snapshot.sources) : null,
+      citationsJson: snapshot.citations ? JSON.stringify(snapshot.citations) : null,
+      answeredAt: snapshot.answeredAt ?? null,
+    },
+  );
+  return data?.id ?? "";
+}
+
+/** T844 — read a shared answer snapshot back by its permalink id (or `null`). */
+export async function fetchAnswerShare(
+  site: string,
+  id: string,
+): Promise<TurAnswerShareView | null> {
+  try {
+    const { data } = await axios.get<TurAnswerShareView>(
+      `/sn/${encodeURIComponent(site)}/answer/share/${encodeURIComponent(id)}`,
+    );
+    return data ?? null;
+  } catch {
+    return null;
+  }
 }

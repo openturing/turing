@@ -1,0 +1,48 @@
+databaseChangeLog:
+  - changeSet:
+      id: v2026.3.1.121-create-tur_answer_share
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - tableExists:
+                tableName: tur_answer_share
+      changes:
+        - createTable:
+            tableName: tur_answer_share
+            remarks: "T844/§LXII.13 answer permalink snapshot (query + filters + sources + answer)."
+            columns:
+              - column:
+                  name: id
+                  type: varchar(40)
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: site_name
+                  type: varchar(255)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: query
+                  type: varchar(2000)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: filters_json
+                  type: longtext
+              - column:
+                  name: answer_text
+                  type: longtext
+              - column:
+                  name: sources_json
+                  type: longtext
+              - column:
+                  name: citations_json
+                  type: longtext
+              - column:
+                  name: answered_at
+                  type: timestamp
+              - column:
+                  name: creation_date
+                  type: timestamp

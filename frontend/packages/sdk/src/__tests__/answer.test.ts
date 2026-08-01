@@ -148,6 +148,35 @@ describe("createAnswerController (T837)", () => {
     expect(controller.getState().staleSources).toEqual(["a"]);
   });
 
+  it("mints a shareable permalink snapshotting the answer (T844)", async () => {
+    const fetchRaw = vi.fn().mockResolvedValueOnce(fullAnswer());
+    const post = vi.fn().mockResolvedValueOnce({ id: "share-1" });
+    const client = { fetchRaw, post } as unknown as TuringClient;
+    const controller = createAnswerController(client, { site: "site1" });
+
+    await controller.ask("cheapest model", { filters: { vendor: ["Anthropic"] } });
+    const id = await controller.share();
+
+    expect(id).toBe("share-1");
+    expect(post).toHaveBeenCalledWith(
+      "/sn/site1/answer/share",
+      expect.objectContaining({
+        q: "cheapest model",
+        answerText: "Hello world",
+        filtersJson: JSON.stringify({ vendor: ["Anthropic"] }),
+      }),
+    );
+  });
+
+  it("refuses to share before an answer has completed (T844)", async () => {
+    const post = vi.fn();
+    const client = { post } as unknown as TuringClient;
+    const controller = createAnswerController(client, { site: "site1" });
+
+    await expect(controller.share()).rejects.toThrow();
+    expect(post).not.toHaveBeenCalled();
+  });
+
   it("collects structured answer artifacts (T841)", async () => {
     const fetchRaw = vi.fn().mockResolvedValueOnce(
       sse([

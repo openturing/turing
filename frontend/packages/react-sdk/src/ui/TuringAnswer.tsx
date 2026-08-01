@@ -41,6 +41,7 @@ export interface TuringAnswerClassNames {
   error?: string;
   freshness?: string;
   reanswer?: string;
+  share?: string;
   trace?: string;
   traceSummary?: string;
   traceStep?: string;
@@ -65,6 +66,8 @@ export interface TuringAnswerLabels {
   reanswer?: string;
   /** The research-trace disclosure summary. Default "Research trace". */
   trace?: string;
+  /** The share button. Default "Share". */
+  share?: string;
 }
 
 export interface TuringAnswerProps extends UseTuringAnswerOptions {
@@ -94,6 +97,12 @@ export interface TuringAnswerProps extends UseTuringAnswerOptions {
   checkFreshnessOnAnswer?: boolean;
   /** T843 — show the collapsible live research-trace timeline. Default `true`. */
   showTrace?: boolean;
+  /** T844 — show a "Share" button that mints an answer permalink. Default `false`. */
+  showShare?: boolean;
+  /** T844 — called with the minted share id after a successful share. */
+  onShared?: (shareId: string) => void;
+  /** T844 — called when minting a share permalink fails. */
+  onShareError?: (error: unknown) => void;
   /** T839 — show the "why this answer" provenance panel. Default `true`. */
   showProvenance?: boolean;
   /** Start the provenance panel expanded. Default `false`. */
@@ -125,6 +134,9 @@ export function TuringAnswer({
   renderArtifact,
   checkFreshnessOnAnswer = false,
   showTrace = true,
+  showShare = false,
+  onShared,
+  onShareError,
   showProvenance = true,
   provenanceDefaultOpen = false,
   provenanceClassNames,
@@ -134,7 +146,7 @@ export function TuringAnswer({
   classNames,
   ...answerOptions
 }: Readonly<TuringAnswerProps>) {
-  const { answer, sources, citations, followups, artifacts, traceSteps, trace, status, error, isStreaming, staleSources, ask, checkFreshness } =
+  const { answer, sources, citations, followups, artifacts, traceSteps, trace, status, error, isStreaming, staleSources, ask, checkFreshness, share } =
     useTuringAnswer(answerOptions);
   const completedSteps = traceSteps.filter((step) => step.phase === "end");
   const [draft, setDraft] = useState("");
@@ -171,6 +183,15 @@ export function TuringAnswer({
 
   const constraintLabel = (field: string, value: string) =>
     formatConstraint ? formatConstraint(field, value) : `${field} = ${value}`;
+
+  const onShare = async () => {
+    try {
+      const shareId = await share();
+      onShared?.(shareId);
+    } catch (err) {
+      onShareError?.(err);
+    }
+  };
 
   const answerBody = renderAnswer ? (
     renderAnswer({ answer, citations })
@@ -236,6 +257,12 @@ export function TuringAnswer({
       )}
 
       {answer && <div className={classNames?.answer}>{answerBody}</div>}
+
+      {showShare && status === "success" && answer && (
+        <button type="button" className={classNames?.share} onClick={() => void onShare()}>
+          {labels?.share ?? "Share"}
+        </button>
+      )}
 
       {renderArtifact && artifacts.length > 0 && (
         <div className={classNames?.artifacts} data-turing-answer-artifacts="">
