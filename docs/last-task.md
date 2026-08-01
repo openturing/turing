@@ -1,9 +1,18 @@
-# Last task number — `T851` · next block letter — `BQ`
+# Last task number — `T855` · next block letter — `BR`
 
 > **Single source of truth for the next free task number.** The next new task is
-> `T852`; after assigning it, bump the number above and the log line below.
+> `T856`; after assigning it, bump the number above and the log line below.
 >
-> **Next block letter — `BQ`** (Block **BP** = Next-generation transcription models —
+> **Next block letter — `BR`** (Block **BQ** = The answer engine as a first-class
+> search lens — Block BO shipped the engine but gave it one surface, the visitor
+> search page's `_aimode` panel; the console's "Live search" bar still offers only
+> Open Search + ANN, whose gate is strictly narrower than the answer endpoint's (so
+> a `VECTORLESS_STRUCTURED` site shows no AI lens at all). T852 `/answer/{siteName}`
+> as a third peer route over the shipped SSE endpoint, T853 the third launcher tile
+> gated by `GET /sn/{site}/chat/enabled` (its `ChatDisabledReason` becomes a "why
+> not" tooltip), T854 operator affordances (provenance expanded, trace, rank/score,
+> JSON sheet); 💭 T855 cross-lens compare. No backend change. §LXIV, created
+> 2026-08-01; Block **BP** = Next-generation transcription models —
 > OpenAI's `gpt-transcribe` (async/batch, replaces `gpt-4o-transcribe`, cheaper than
 > `whisper-1`, ~52% lower WER) and `gpt-live-transcribe` (low-latency live, replaces
 > `gpt-realtime-whisper`, realtime-transcription sessions only) supersede what Block AS
@@ -203,6 +212,8 @@ number" looked free but wasn't. Grepping three files (`ROADMAP.md`,
    lists fully-shipped blocks), then bump the letter after creating the block.
 
 ## Log (most recent first)
+
+- **T852–T855 CREATED** (📋/💭, Block BQ §LXIV — the answer engine as a first-class search lens: `/answer/{siteName}` as a third peer route, its console launcher tile, operator affordances, 💭 cross-lens compare) — 2026-08-01.
 
 - **T845 SHIPPED** (Block BO §LXII.14 — answer-level analytics & the self-tuning loop: `TurAnswerSignal` enum + `TurAnswerSignalEvent` (`tur_answer_signal`, Liquibase v2026.3.1.122) + `TurAnswerSignalService` keyed by the site's effective agent + `POST /answer/signal`; `TurSelfTuningMiner` folds relevance-misses into the failure digest; SDKs `recordAnswerSignal` + `signal()` on hook/controller; `TuringAnswer` organic emits + opt-in thumbs. **Block BO T832–T845 fully shipped**) — 2026-08-01.
 - **T844 SHIPPED** (Block BO §LXII.13 — answer permalinks & shareable cards: `TurAnswerShare` entity/repo + Liquibase `v2026.3.1.121`, `TurAnswerShareService` + `POST /answer/share` / `GET /answer/share/{id}` / `GET /answer/share/{id}/og` reusing `TurChatShareOgService`; SDKs `createAnswerShare`/`fetchAnswerShare` + `share()` on hook/controller; `TuringAnswer` opt-in `showShare`) — 2026-08-01.

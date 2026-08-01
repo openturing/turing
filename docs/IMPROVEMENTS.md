@@ -2808,3 +2808,74 @@ unknown model is not something to build first.
 ## LXII. Answer-first search — the steerable, auditable answer engine (Block BO)
 
 _Fully shipped — Block BO (T832–T845). See [CHANGELOG.md](CHANGELOG.md) and `git log`._
+
+## LXIV. The answer engine as a first-class search lens (`/answer`) (Block BQ)
+
+**The problem — one engine, one surface, and it's the wrong audience.** Block BO
+shipped the whole answer engine: a streaming `GET /api/sn/{siteName}/answer` (T833),
+numbered citations (T832/T836), steerable filters (T838), provenance (T839),
+freshness (T840), artifacts (T841), a research trace (T843), permalinks (T844) and
+signal capture (T845). It reached exactly **one** surface — an expand/collapse panel
+inside the *public* search page (`_aimode`, T835). The admin console never got it:
+`SnLaunchBar` still renders two launcher tiles, Open Search (`/sn/{name}`) and ANN
+(`/ann/{name}`). Three gaps follow.
+
+- **The gates disagree, and the narrower one wins.** The ANN tile requires
+  `annEnabled` — an agent that is enabled *and* `ragEnabled`, *and* a site not in
+  `VECTORLESS_STRUCTURED` (T790) — re-derived in the frontend. The answer endpoint
+  requires far less: GenAI on and an effective agent with an LLM
+  (`TurSNAnswerService`), which a vectorless catalog site satisfies. So the sites
+  Block BF deliberately made *vector-free* are precisely the sites whose console
+  shows **no AI lens at all**, even though they answer.
+- **No operator view of the answer.** The visitor panel is tuned for a reader:
+  prose first, provenance collapsed, trace optional, no raw document. The operator
+  question is the opposite one — *why did it say that?* — and its evidence (KB mode,
+  rerank strategy, per-source `rankingExplanation`, the tool trace, the raw hit) is
+  exactly what the reader view hides.
+- **No way to localize a bad answer.** A wrong answer has three possible causes:
+  retrieval missed the document (recall), it was retrieved but ranked away (rerank),
+  or the evidence was right and the synthesis wasn't. `/sn` and `/ann` already expose
+  the first two lenses; without the third, the comparison can't be made in the
+  console.
+
+**The design — `/answer` as a peer route, not a query parameter.** `/ann` is the
+precedent: it exists because "raw vector hits with scores and a JSON sheet" is an
+*operator* view of retrieval that no visitor wants. `/answer` is the same move one
+layer up. Deep-linking `/sn/{name}?_aimode=true` would be cheaper, but it is a link
+into lens #1 with a panel open — it inherits the reader-tuned chrome, and it still
+leaves vectorless sites without a tile. The block adds **no backend**.
+
+- **LXIV.1 (T852) The route.** `ROUTES.ANSWER_SEARCH = "/answer"` + a lazy
+  `answer-search.page.tsx` registered next to the existing `/sn` and `/ann` routes in
+  `App.tsx`, composing `TuringAnswer` from `@viglet/turing-react-sdk` over the shipped
+  endpoint. All state that defines an answer — `q`, `_setlocale`, and the `fq` filter
+  set T838 already threads — lives in the URL, mirroring how `/ann` keeps its filters
+  in search params, so an answer an operator wants to discuss is a link (distinct from
+  T844 permalinks, which snapshot a *produced* answer; this just makes the *input*
+  reproducible).
+- **LXIV.2 (T853) The tile and its gate.** `buildSnSearchLaunchers` returns a third
+  `answer` launcher, and `SnLaunchBar` renders it. The gate is **not** a second
+  frontend derivation: use the shipped `GET /sn/{site}/chat/enabled`, whose
+  `diagnoseAgentReadiness` walk already distinguishes the vectorless path
+  (`MISSING_DEFAULT_LLM`) from the vector one (`MISSING_EMBEDDING`/`MISSING_STORE`)
+  and returns a `ChatDisabledReason`. That reason is the point: instead of a tile that
+  silently disappears, the console can say *which* condition to fix. Per-locale
+  dropdown, matching the other two launchers.
+- **LXIV.3 (T854) Operator affordances.** Turn the reader defaults inside out on this
+  page only: `showProvenance` expanded, the T843 trace shown, footnote rank + retrieval
+  score on each source card, and the `JsonSheet` raw-document view `/ann` already uses.
+  Nothing new is computed — every field already rides the `citations`/`trace` events;
+  this is presentation, which is why it is a separate, small task rather than folded
+  into T852.
+- **LXIV.4 (T855, 💭) Cross-lens compare.** Carry `q`/locale/filters across the three
+  routes so the same question can be replayed as keyword, vector and answer. The
+  diagnostic payoff (recall vs rerank vs synthesis) is real, but it is worth building
+  only once the three lenses exist and operators are observed switching between them —
+  hence 💭.
+
+**Invariants.** Purely additive and console-only: the public `/sn` page, its
+`_aimode` panel and both SDKs are untouched, so nothing a visitor sees changes. The
+answer endpoint is not modified, so Block BO's fail-open behaviour (a terminal `error`
+event, never a thrown stream) carries over unchanged. The new tile follows the existing
+launcher contract — an external link out of the bento shell, never an embedded console
+search — so the console keeps one way of launching a search surface.

@@ -75,6 +75,28 @@
 
 - 💭 **T831** (deps: T704) **Apply a persona adjustment (human-confirmed)** — T704 is advisory by design, so every accepted suggestion is still retyped by hand into the persona form. For **PERSONA** items only, add an opt-in *Apply* action that renders the suggestion as a field-level diff over the audience facet (`readingLevel` / `domainExpertise` / `vocabularyCeiling` / `comprehensionNotes`) and writes it only after the operator confirms each field, stamping what was applied so the next run's drift is attributable. CONTENT items stay advisory forever — Turing does not own the CMS the content lives in. → §LXI.7
 
+## Block BQ — The answer engine as a first-class search lens (`/answer`) (§LXIV)
+
+> Block BO built the answer engine and gave it exactly **one** surface: an
+> expand/collapse panel inside the *visitor* search page (`_aimode`, T835). The
+> console's "Live search" bar still offers two lenses — Open Search (`/sn/{name}`)
+> and ANN (`/ann/{name}`) — so the engine an operator most needs to inspect is the
+> one with no operator surface. Three consequences: (1) the ANN tile's gate is
+> strictly *narrower* than the answer endpoint's, so a `VECTORLESS_STRUCTURED` site
+> that answers perfectly well shows **no** AI lens at all in the console; (2) the
+> visitor panel deliberately foregrounds prose, while the things you need when an
+> answer is wrong — T839 provenance, T843 trace, per-citation `rankingExplanation`
+> — are collapsed or absent; (3) there is no way to run one query across keyword,
+> vector and answer to localize a bad result to **recall vs rerank vs synthesis**.
+> `/answer` becomes the third peer route, operator-flavoured the way `/ann` already
+> is. **No new backend** — Block BO shipped the whole engine. Design in
+> [IMPROVEMENTS.md](IMPROVEMENTS.md) §LXIV.
+
+- 📋 **T852** (deps: T833, T837) **`/answer/{siteName}` — the third search route** — new peer route alongside `/sn` and `/ann` (`ROUTES.ANSWER_SEARCH` + a lazy page in `App.tsx`), answer-first: an ask box over `TuringAnswer` from `@viglet/turing-react-sdk` driving the shipped `GET /api/sn/{site}/answer` (streamed prose, `[n]` anchors, source cards, follow-up chips). Query, locale and `fq` filters live in the URL so an answer is linkable and reproducible. No backend change. → §LXIV.1
+- 📋 **T853** (deps: T852) **Third launcher tile in the console, with its own gate** — `buildSnSearchLaunchers` gains an `answer` launcher next to `search`/`ann`, gated by the shipped `GET /sn/{site}/chat/enabled` readiness probe (which already handles the vectorless path) instead of the frontend-derived `annEnabled`, so a `VECTORLESS_STRUCTURED` site finally gets the AI lens ANN can never give it — and the probe's `reason` renders a precise "why not" tooltip when it's off. Per-locale dropdown like the other two tiles. → §LXIV.2
+- 📋 **T854** (deps: T852) **The operator page shows its work by default** — what separates `/answer` from the visitor panel: T839 provenance expanded (KB mode, rerank strategy, per-source `rankingExplanation`), the T843 research trace, rank + score on each source card, and the raw `JsonSheet` view `/ann` already ships. Makes "this answer is wrong" debuggable in the console instead of in the logs. → §LXIV.3
+- 💭 **T855** (deps: T852, T853) **Cross-lens compare — same query, three lenses** — a switcher that carries `q`, locale and filters between `/sn`, `/ann` and `/answer` (and, promoted further, a side-by-side view) so a bad answer is attributed to recall, rerank or synthesis in one pass. Promote only if operators actually triage this way. → §LXIV.4
+
 ## Block J follow-ups — Cloud SaaS hardening (T334–T373)
 
 > Surfaced wiring Block J (multi-tenancy, shipped — see [CHANGELOG.md](CHANGELOG.md)
