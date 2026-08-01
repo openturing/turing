@@ -195,7 +195,6 @@
 > see [CHANGELOG.md](CHANGELOG.md) Block BO. Phase 3 (the differentiators) is next.
 
 **Phase 3 — the differentiators (the repositioning):**
-- 💭 **T841** (deps: T835, T837) **Structured answers — answer as an artifact, not prose** — for comparative/enumerable questions over a faceted or `VECTORLESS_STRUCTURED` catalog, render a comparison table / spec grid from the declared field manifest with per-cell citations and prose reduced to a lead-in, reusing the shipped answer-as-app + generative-UI path (`TurAnswerAsAppClientTools`, `useGenerativeUI`) rather than adding a renderer. → §LXII.10
 
 **Phase 4 — depth & distribution:**
 - 💭 **T842** (deps: T833) **Multi-query fan-out** — decompose one question into parallel sub-queries behind the existing `TurCopilotQueryPlanner` seam, bounded by `turing.genai.copilot.planning.max-passes`, unioning recall through `TurRagRrf` before rerank. Perplexity's multi-hop recall advantage is mostly fan-out, not model quality. Fail-open to single-pass; off by default for `DETERMINISTIC` sites. → §LXII.11

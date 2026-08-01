@@ -2863,15 +2863,6 @@ bet; phases 1–2 are the table stakes that make it renderable.
 
 ### Phase 3 — The differentiators
 
-#### LXII.10 Structured answers — answer as an artifact, not prose (T841)
-For comparative or enumerable questions over a faceted / `VECTORLESS_STRUCTURED`
-catalog, render the answer as a **comparison table or spec grid** built from the
-declared field manifest, each cell individually citable, with prose reduced to a
-lead-in. Reuses the shipped answer-as-app / generative-UI path
-(`TurAnswerAsAppClientTools`, `useGenerativeUI`) rather than adding a renderer.
-Requires a cheap answer-shape decision (prose | table | list) — which is exactly the
-kind of small structured call the planner seam already makes.
-
 ### Phase 4 — Depth & distribution
 
 #### LXII.11 Multi-query fan-out (T842)

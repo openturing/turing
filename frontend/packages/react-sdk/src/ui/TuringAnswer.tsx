@@ -8,7 +8,7 @@ import {
   type TuringAnswerProvenanceLabels,
 } from "@viglet/turing-react-ui";
 import type { AnswerFilters } from "../core/api";
-import type { TurAnswerCitation } from "../core/types";
+import type { TurAnswerArtifact, TurAnswerCitation } from "../core/types";
 import { useTuringAnswer, type UseTuringAnswerOptions } from "../hooks/use-turing-answer";
 
 /**
@@ -35,6 +35,8 @@ export interface TuringAnswerClassNames {
   constraintsLabel?: string;
   constraint?: string;
   answer?: string;
+  artifacts?: string;
+  artifact?: string;
   loading?: string;
   error?: string;
   freshness?: string;
@@ -76,6 +78,13 @@ export interface TuringAnswerProps extends UseTuringAnswerOptions {
   formatConstraint?: (field: string, value: string) => string;
   /** Render-override for the answer body (default: markdown + `[n]` anchors). */
   renderAnswer?: (args: { answer: string; citations: TurAnswerCitation[] }) => ReactNode;
+  /**
+   * T841 — render a structured answer artifact (an answer-as-app comparison table
+   * / spec grid). Wire this to the generative-UI components (e.g. via
+   * `TuringGenerativeContent` / the `ANSWER_AS_APP_COMPONENTS` registry). When a
+   * structured artifact is present the prose becomes a lead-in above it.
+   */
+  renderArtifact?: (artifact: TurAnswerArtifact) => ReactNode;
   /** T840 — auto re-check source freshness when the answer completes. Default `false`. */
   checkFreshnessOnAnswer?: boolean;
   /** T839 — show the "why this answer" provenance panel. Default `true`. */
@@ -106,6 +115,7 @@ export function TuringAnswer({
   onFilterRemove,
   formatConstraint,
   renderAnswer,
+  renderArtifact,
   checkFreshnessOnAnswer = false,
   showProvenance = true,
   provenanceDefaultOpen = false,
@@ -116,7 +126,7 @@ export function TuringAnswer({
   classNames,
   ...answerOptions
 }: Readonly<TuringAnswerProps>) {
-  const { answer, sources, citations, followups, trace, status, error, isStreaming, staleSources, ask, checkFreshness } =
+  const { answer, sources, citations, followups, artifacts, trace, status, error, isStreaming, staleSources, ask, checkFreshness } =
     useTuringAnswer(answerOptions);
   const [draft, setDraft] = useState("");
   // The last question asked — so a facet change (below) re-runs the same question.
@@ -217,6 +227,16 @@ export function TuringAnswer({
       )}
 
       {answer && <div className={classNames?.answer}>{answerBody}</div>}
+
+      {renderArtifact && artifacts.length > 0 && (
+        <div className={classNames?.artifacts} data-turing-answer-artifacts="">
+          {artifacts.map((artifact, index) => (
+            <div key={artifact.callId ?? `${artifact.name}-${index}`} className={classNames?.artifact}>
+              {renderArtifact(artifact)}
+            </div>
+          ))}
+        </div>
+      )}
 
       {staleSources.length > 0 && (
         <div className={classNames?.freshness} data-turing-answer-stale="" role="status">

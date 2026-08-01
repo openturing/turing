@@ -204,6 +204,7 @@ number" looked free but wasn't. Grepping three files (`ROADMAP.md`,
 
 ## Log (most recent first)
 
+- **T841 SHIPPED** (Block BO §LXII.10 — structured answers: `TurAnswerStreamFramer` forwards `client_tool_call` as an `artifact` event; SDKs collect `artifacts`; `TuringAnswer` renders them via a `renderArtifact` slot wired to the answer-as-app path) — 2026-08-01.
 - **T840 SHIPPED** (Block BO §LXII.9 — answer freshness/drift: `TurCitationDriftService.checkFreshness` + `POST /answer/freshness` reuse the drift `evaluate` policy; SDKs stamp `answeredAt` + `checkFreshness()`/`staleSources`; `TuringAnswer` shows a drift badge + one-click re-answer) — 2026-08-01.
 - **T839 SHIPPED** (Block BO §LXII.8 — "why this answer" provenance: the `trace` event carries KB mode + rerank strategy, per-source `rankingExplanation` on `citations`; new headless `TuringAnswerProvenance` panel wired into `TuringAnswer`) — 2026-08-01.
 - **T838 SHIPPED** (Block BO §LXII.7 — steerable answers: `/answer` accepts `fq` filters and synthesizes within them; SDKs thread `filters` to `fq` params; `TuringAnswer` shows removable constraint chips + re-runs on facet change) — 2026-08-01.

@@ -255,6 +255,7 @@ export type {
   TurChatStreamEvent,
   TurChatSource,
   TurAnswerCitation,
+  TurAnswerArtifact,
   TurAnswerTrace,
   TurAnswerFreshnessSource,
   TurAnswerFreshnessVerdict,

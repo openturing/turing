@@ -58,10 +58,14 @@ public final class TurAnswerStreamFramer {
     public static final String EVENT_FOLLOWUPS = "followups";
     public static final String EVENT_TRACE = "trace";
     public static final String EVENT_ERROR = "error";
+    /** T841 — a structured answer artifact (an answer-as-app generative-UI spec). */
+    public static final String EVENT_ARTIFACT = "artifact";
 
     /** Upstream {@link ChatResponse#type()} values this framer maps or drops. */
     private static final String UPSTREAM_SOURCES = "sources";
     private static final String UPSTREAM_TOKEN = "token";
+    /** The agent's client-tool invocation — the answer-as-app render spec (T438/T841). */
+    private static final String UPSTREAM_CLIENT_TOOL_CALL = "client_tool_call";
 
     /** Mirrors the catalog backstop so a runaway answer can't flood the client. */
     private static final int MAX_RETURNED_CITATIONS = 24;
@@ -136,6 +140,15 @@ public final class TurAnswerStreamFramer {
                 }
                 answer.append(content);
                 return Flux.just(event(EVENT_TOKEN, content));
+            }
+            case UPSTREAM_CLIENT_TOOL_CALL -> {
+                // T841 — the agent rendered the answer as a structured artifact (an
+                // answer-as-app comparison table / spec grid). Forward the render spec
+                // so the client draws it and reduces the prose to a lead-in.
+                if (content.isEmpty()) {
+                    return Flux.empty();
+                }
+                return Flux.just(event(EVENT_ARTIFACT, content));
             }
             default -> {
                 // grounding / secondOpinion / form / tool_call — and the SN path's

@@ -1,6 +1,11 @@
 import { useCallback, useRef, useState } from "react";
 import { fetchAnswer, fetchAnswerFreshness, type AnswerFilters } from "../core/api";
-import type { TurAnswerCitation, TurAnswerTrace, TurChatSource } from "../core/types";
+import type {
+  TurAnswerArtifact,
+  TurAnswerCitation,
+  TurAnswerTrace,
+  TurChatSource,
+} from "../core/types";
 import { useOptionalTuringContext } from "../core/use-turing-context";
 import { isAbortError } from "./streaming-chat-core";
 
@@ -41,6 +46,8 @@ export interface UseTuringAnswerReturn {
   sources: TurChatSource[];
   citations: TurAnswerCitation[];
   followups: string[];
+  /** T841 — structured answer artifacts (answer-as-app generative-UI specs). */
+  artifacts: TurAnswerArtifact[];
   trace: TurAnswerTrace | null;
   status: TuringAnswerStatus;
   error: string | null;
@@ -65,6 +72,7 @@ export function useTuringAnswer(options: UseTuringAnswerOptions = {}): UseTuring
   const [sources, setSources] = useState<TurChatSource[]>([]);
   const [citations, setCitations] = useState<TurAnswerCitation[]>([]);
   const [followups, setFollowups] = useState<string[]>([]);
+  const [artifacts, setArtifacts] = useState<TurAnswerArtifact[]>([]);
   const [trace, setTrace] = useState<TurAnswerTrace | null>(null);
   const [status, setStatus] = useState<TuringAnswerStatus>("idle");
   const [error, setError] = useState<string | null>(null);
@@ -99,6 +107,7 @@ export function useTuringAnswer(options: UseTuringAnswerOptions = {}): UseTuring
       setSources([]);
       setCitations([]);
       setFollowups([]);
+      setArtifacts([]);
       setTrace(null);
       setError(null);
       setAnsweredAt(null);
@@ -113,6 +122,7 @@ export function useTuringAnswer(options: UseTuringAnswerOptions = {}): UseTuring
           onToken: (t) => { if (!stale()) setAnswer((prev) => prev + t); },
           onCitations: (c) => { if (!stale()) setCitations(c); },
           onFollowups: (f) => { if (!stale()) setFollowups(f); },
+          onArtifact: (a) => { if (!stale()) setArtifacts((prev) => [...prev, a]); },
           onTrace: (tr) => { if (!stale()) setTrace(tr); },
           onError: (m) => { if (!stale()) setError(m); },
         });
@@ -160,6 +170,7 @@ export function useTuringAnswer(options: UseTuringAnswerOptions = {}): UseTuring
     setSources([]);
     setCitations([]);
     setFollowups([]);
+    setArtifacts([]);
     setTrace(null);
     setError(null);
     setStatus("idle");
@@ -172,6 +183,7 @@ export function useTuringAnswer(options: UseTuringAnswerOptions = {}): UseTuring
     sources,
     citations,
     followups,
+    artifacts,
     trace,
     status,
     error,

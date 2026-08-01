@@ -2,6 +2,7 @@ import type { TuringClient } from "../client";
 import { postAnswer, postAnswerFreshness, type AnswerFilters } from "../api";
 import { createStore, type Store } from "../store";
 import type {
+  TurAnswerArtifact,
   TurAnswerCitation,
   TurAnswerTrace,
   TurChatSource,
@@ -35,6 +36,8 @@ export interface AnswerControllerState {
   citations: TurAnswerCitation[];
   /** Suggested next questions. */
   followups: string[];
+  /** T841 — structured answer artifacts (answer-as-app generative-UI specs). */
+  artifacts: TurAnswerArtifact[];
   /** Minimal run summary. */
   trace: TurAnswerTrace | null;
   error: string | null;
@@ -76,6 +79,7 @@ const INITIAL: AnswerControllerState = {
   sources: [],
   citations: [],
   followups: [],
+  artifacts: [],
   trace: null,
   error: null,
   isStreaming: false,
@@ -129,6 +133,7 @@ export function createAnswerController(
       sources: [],
       citations: [],
       followups: [],
+      artifacts: [],
       trace: null,
       error: null,
       answeredAt: null,
@@ -150,6 +155,11 @@ export function createAnswerController(
         },
         onFollowups: (followups) => {
           if (!isStale(requestId)) store.setState({ followups });
+        },
+        onArtifact: (artifact) => {
+          if (!isStale(requestId)) {
+            store.setState((prev) => ({ artifacts: [...prev.artifacts, artifact] }));
+          }
         },
         onTrace: (trace) => {
           if (!isStale(requestId)) store.setState({ trace });

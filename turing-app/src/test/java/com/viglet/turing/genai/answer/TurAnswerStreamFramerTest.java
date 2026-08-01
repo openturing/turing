@@ -89,6 +89,20 @@ class TurAnswerStreamFramerTest {
     }
 
     @Test
+    void forwardsClientToolCallAsAnArtifactEvent() {
+        String artifact = "{\"callId\":\"c1\",\"name\":\"comparison_table\",\"args\":\"{}\"}";
+        Flux<ChatResponse> upstream = Flux.just(
+                token("Here is a comparison: "),
+                new ChatResponse("assistant", artifact, "client_tool_call"));
+
+        List<ServerSentEvent<String>> events = frame(upstream);
+
+        // The structured artifact is forwarded (in order) as an `artifact` event.
+        assertThat(events).extracting(ServerSentEvent::event).contains("artifact");
+        assertThat(byEvent(events, "artifact").data()).isEqualTo(artifact);
+    }
+
+    @Test
     void traceCarriesRetrievalProvenance() {
         String sources = sourcesJson(new TurRagSource("a", "A", "ua", null, 0.9, false));
         Flux<ChatResponse> upstream = Flux.just(

@@ -148,6 +148,23 @@ describe("createAnswerController (T837)", () => {
     expect(controller.getState().staleSources).toEqual(["a"]);
   });
 
+  it("collects structured answer artifacts (T841)", async () => {
+    const fetchRaw = vi.fn().mockResolvedValueOnce(
+      sse([
+        frame("token", "Comparison: "),
+        frame("artifact", JSON.stringify({ callId: "c1", name: "comparison_table", args: "{}" })),
+      ]),
+    );
+    const client = { fetchRaw } as unknown as TuringClient;
+    const controller = createAnswerController(client, { site: "site1" });
+
+    await controller.ask("compare A and B");
+
+    expect(controller.getState().artifacts).toEqual([
+      { callId: "c1", name: "comparison_table", args: "{}" },
+    ]);
+  });
+
   it("reset() clears state back to idle", async () => {
     const fetchRaw = vi.fn().mockResolvedValueOnce(fullAnswer());
     const client = { fetchRaw } as unknown as TuringClient;

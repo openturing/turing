@@ -479,6 +479,7 @@ export type {
   TurChatSource,
   TurChatCitation,
   TurAnswerCitation,
+  TurAnswerArtifact,
   TurAnswerTrace,
   TurAnswerFreshnessSource,
   TurAnswerFreshnessVerdict,

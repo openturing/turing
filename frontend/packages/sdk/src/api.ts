@@ -1,5 +1,6 @@
 import type { TuringClient } from "./client";
 import type {
+  TurAnswerArtifact,
   TurAnswerCitation,
   TurAnswerFreshnessSource,
   TurAnswerFreshnessVerdict,
@@ -1930,6 +1931,7 @@ export interface AnswerStreamHandlers {
   onCitations?: (citations: TurAnswerCitation[]) => void;
   onFollowups?: (followups: string[]) => void;
   onTrace?: (trace: TurAnswerTrace) => void;
+  onArtifact?: (artifact: TurAnswerArtifact) => void;
   onError?: (message: string) => void;
 }
 
@@ -1939,6 +1941,7 @@ export interface AnswerResult {
   sources: TurChatSource[];
   citations: TurAnswerCitation[];
   followups: string[];
+  artifacts: TurAnswerArtifact[];
   trace?: TurAnswerTrace;
   error?: string;
 }
@@ -1963,6 +1966,7 @@ export async function consumeAnswerStream(
   let sources: TurChatSource[] = [];
   let citations: TurAnswerCitation[] = [];
   let followups: string[] = [];
+  let artifacts: TurAnswerArtifact[] = [];
   let trace: TurAnswerTrace | undefined;
   let error: string | undefined;
 
@@ -1971,6 +1975,14 @@ export async function consumeAnswerStream(
 
   function dispatch(eventName: string, data: string): void {
     switch (eventName) {
+      case "artifact": {
+        const parsed = parseJson<TurAnswerArtifact>(data);
+        if (parsed && parsed.name) {
+          artifacts = [...artifacts, parsed];
+          handlers.onArtifact?.(parsed);
+        }
+        return;
+      }
       case "token": {
         if (data) {
           answer += data;
@@ -2060,7 +2072,7 @@ export async function consumeAnswerStream(
     reader.releaseLock();
   }
 
-  return { answer, sources, citations, followups, trace, error };
+  return { answer, sources, citations, followups, artifacts, trace, error };
 }
 
 function parseJson<T>(data: string): T | undefined {
