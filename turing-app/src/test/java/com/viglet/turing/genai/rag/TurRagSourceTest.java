@@ -140,6 +140,27 @@ class TurRagSourceTest {
     }
 
     @Test
+    void fromDocumentLeavesRankUnassigned() {
+        // T832 — a freshly projected source is un-numbered; the footnote is
+        // assigned later, after dedupe, by TurAnswerCitationNumberer.
+        Document doc = Document.builder().id("chunk-1").text("body")
+                .metadata(new LinkedHashMap<>()).score(0.5).build();
+
+        assertThat(TurRagSource.fromDocument(doc).rank()).isNull();
+    }
+
+    @Test
+    void withRankSetsFootnoteAndIsIdentityWhenUnchanged() {
+        TurRagSource source = new TurRagSource("doc-1", "A", "u", 0, 0.5, false);
+
+        TurRagSource numbered = source.withRank(2);
+        assertThat(numbered.rank()).isEqualTo(2);
+        assertThat(numbered.sourceId()).isEqualTo("doc-1");
+        // Re-applying the same footnote returns the same instance (no copy).
+        assertThat(numbered.withRank(2)).isSameAs(numbered);
+    }
+
+    @Test
     void collectorSnapshotIsImmutableAndOrdered() {
         TurRagSourceCollector collector = new TurRagSourceCollector();
         assertThat(collector.isEmpty()).isTrue();

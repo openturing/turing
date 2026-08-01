@@ -17,6 +17,11 @@ export {
   postPersonaChat,
   postLlmChat,
   postSemanticChat,
+  fetchAnswer,
+  fetchAnswerFreshness,
+  createAnswerShare,
+  fetchAnswerShare,
+  recordAnswerSignal,
   deleteSiteConversationState,
   deleteAgentFlowState,
   fetchAutoComplete,
@@ -59,6 +64,12 @@ export type {
   PostPersonaChatOptions,
   PostLlmChatOptions,
   PostSemanticChatOptions,
+  FetchAnswerOptions,
+  AnswerStreamHandlers,
+  AnswerResult,
+  AnswerFilters,
+  AnswerShareSnapshot,
+  TurAnswerSignalKind,
   ChatEnabledResponse,
   ChatDisabledReason,
   ClickTrackParams,
@@ -144,6 +155,14 @@ export type {
   UseTuringProactiveCopilotReturn,
 } from "./hooks/use-turing-proactive-copilot";
 // T792 / §LIV.3 (Block BF) — Vectorless (Structured-Data) RAG copilot.
+// T837 / §LXII.6 — the answer-first surface: headless hook + fused component.
+export { useTuringAnswer } from "./hooks/use-turing-answer";
+export type {
+  UseTuringAnswerOptions,
+  UseTuringAnswerReturn,
+  TuringAnswerAskOptions,
+  TuringAnswerStatus,
+} from "./hooks/use-turing-answer";
 export { useTuringCopilot } from "./hooks/use-turing-copilot";
 export type {
   UseTuringCopilotOptions,
@@ -332,6 +351,12 @@ export { TuringWorkspacePanel } from "./ui/TuringWorkspacePanel";
 export type { TuringWorkspacePanelProps } from "./ui/TuringWorkspacePanel";
 export { TuringCopilot } from "./ui/TuringCopilot";
 export type { TuringCopilotProps, TuringCopilotClassNames } from "./ui/TuringCopilot";
+export { TuringAnswer } from "./ui/TuringAnswer";
+export type {
+  TuringAnswerProps,
+  TuringAnswerClassNames,
+  TuringAnswerLabels,
+} from "./ui/TuringAnswer";
 
 // ── Headless UI (re-exported from @viglet/turing-react-ui) ──
 // Single import surface for the admin console: it can pull the design-agnostic
@@ -458,6 +483,13 @@ export type {
   TurChatStreamEvent,
   TurChatSource,
   TurChatCitation,
+  TurAnswerCitation,
+  TurAnswerArtifact,
+  TurAnswerTrace,
+  TurAnswerFreshnessSource,
+  TurAnswerFreshnessVerdict,
+  TurAnswerFreshnessStatus,
+  TurAnswerShareView,
   TurChatGrounding,
   TurChatSecondOpinion,
   TurSearchSuggestions,

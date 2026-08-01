@@ -94,5 +94,15 @@ public class TurCatalogCopilotProperty {
          * takes effect on a site that actually opts into an LLM strategy.
          */
         private int maxPasses = 2;
+
+        /**
+         * T842 / §LXII.11 — multi-query fan-out
+         * ({@code turing.genai.copilot.planning.fan-out}). When {@code true} (and the
+         * site's strategy is not {@code DETERMINISTIC}), a comparative / multi-hop
+         * question is decomposed into up to {@link #maxPasses} sub-queries whose
+         * recall is unioned (Reciprocal Rank Fusion) before rerank. Off by default,
+         * and fail-open to the single-pass path — so the block stays additive.
+         */
+        private boolean fanOut = false;
     }
 }

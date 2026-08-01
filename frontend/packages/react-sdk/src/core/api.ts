@@ -1,5 +1,11 @@
 import axios from "axios";
 import type {
+  TurAnswerArtifact,
+  TurAnswerCitation,
+  TurAnswerFreshnessSource,
+  TurAnswerFreshnessVerdict,
+  TurAnswerShareView,
+  TurAnswerTrace,
   TurChatCitation,
   TurChatConversationMessage,
   TurChatConversationResponse,
@@ -1725,4 +1731,324 @@ export async function postSummary(params: {
     params.regenerate ? { params: { regenerate: true } } : undefined,
   );
   return data ?? { success: false, error: "empty response", content: "", canRegenerate: false };
+}
+
+// ─────────────────────────── Answer engine (T837) ───────────────────────────
+
+/** Streaming callbacks for the `GET /sn/{site}/answer` answer stream. */
+export interface AnswerStreamHandlers {
+  onSources?: (sources: TurChatSource[]) => void;
+  onToken?: (token: string) => void;
+  onCitations?: (citations: TurAnswerCitation[]) => void;
+  onFollowups?: (followups: string[]) => void;
+  onTrace?: (trace: TurAnswerTrace) => void;
+  onArtifact?: (artifact: TurAnswerArtifact) => void;
+  onTraceStep?: (step: TurChatToolCall) => void;
+  onError?: (message: string) => void;
+}
+
+/** Final aggregate of one answer stream. */
+export interface AnswerResult {
+  answer: string;
+  sources: TurChatSource[];
+  citations: TurAnswerCitation[];
+  followups: string[];
+  artifacts: TurAnswerArtifact[];
+  /** T843 — the live research-trace steps (tool-call start/end events). */
+  traceSteps: TurChatToolCall[];
+  trace?: TurAnswerTrace;
+  error?: string;
+}
+
+/**
+ * T838 — the active facet filters the answer is synthesized <em>within</em>
+ * (`field → values`); serialized as repeated `fq=field:value` query params.
+ */
+export type AnswerFilters = Record<string, string[]>;
+
+/** Options for {@link fetchAnswer}: the streaming callbacks, filters and signal. */
+export interface FetchAnswerOptions extends AnswerStreamHandlers {
+  signal?: AbortSignal;
+  /** T838 — steerable answers: synthesize within this active filter set. */
+  filters?: AnswerFilters;
+}
+
+/** Appends the active facet filters as repeated `fq=field:value` params. */
+function appendAnswerFilterParams(params: URLSearchParams, filters?: AnswerFilters): void {
+  if (!filters) return;
+  for (const [field, values] of Object.entries(filters)) {
+    for (const value of values ?? []) {
+      if (field && value) params.append("fq", `${field}:${value}`);
+    }
+  }
+}
+
+function parseAnswerJson<T>(data: string): T | undefined {
+  if (!data) return undefined;
+  try {
+    return JSON.parse(data) as T;
+  } catch {
+    return undefined;
+  }
+}
+
+/**
+ * Consumes the answer stream's REAL named SSE frames (`event: <name>\ndata: …`)
+ * — distinct from the chat stream's data-only `{role,content,type}` frames. Data
+ * lines accumulate per frame (joined with `\n`) so a multi-line token survives;
+ * `token` data is raw text, everything else is JSON.
+ */
+async function consumeAnswerStream(
+  response: Response,
+  handlers: AnswerStreamHandlers = {},
+): Promise<AnswerResult> {
+  if (!response.body) {
+    throw new Error("Answer response has no body");
+  }
+  const reader = response.body.getReader();
+  const decoder = new TextDecoder();
+  let buffer = "";
+  let answer = "";
+  let sources: TurChatSource[] = [];
+  let citations: TurAnswerCitation[] = [];
+  let followups: string[] = [];
+  let artifacts: TurAnswerArtifact[] = [];
+  let traceSteps: TurChatToolCall[] = [];
+  let trace: TurAnswerTrace | undefined;
+  let error: string | undefined;
+
+  let currentEvent = "";
+  let dataLines: string[] = [];
+
+  function dispatch(eventName: string, data: string): void {
+    switch (eventName) {
+      case "artifact": {
+        const parsed = parseAnswerJson<TurAnswerArtifact>(data);
+        if (parsed && parsed.name) {
+          artifacts = [...artifacts, parsed];
+          handlers.onArtifact?.(parsed);
+        }
+        return;
+      }
+      case "trace_step": {
+        const parsed = parseAnswerJson<TurChatToolCall>(data);
+        if (parsed && parsed.name) {
+          traceSteps = [...traceSteps, parsed];
+          handlers.onTraceStep?.(parsed);
+        }
+        return;
+      }
+      case "token": {
+        if (data) {
+          answer += data;
+          handlers.onToken?.(data);
+        }
+        return;
+      }
+      case "sources": {
+        const parsed = parseAnswerJson<TurChatSource[]>(data);
+        if (parsed) {
+          sources = parsed;
+          handlers.onSources?.(parsed);
+        }
+        return;
+      }
+      case "citations": {
+        const parsed = parseAnswerJson<TurAnswerCitation[]>(data);
+        if (parsed) {
+          citations = parsed;
+          handlers.onCitations?.(parsed);
+        }
+        return;
+      }
+      case "followups": {
+        const parsed = parseAnswerJson<string[]>(data);
+        if (parsed) {
+          followups = parsed;
+          handlers.onFollowups?.(parsed);
+        }
+        return;
+      }
+      case "trace": {
+        const parsed = parseAnswerJson<TurAnswerTrace>(data);
+        if (parsed) {
+          trace = parsed;
+          handlers.onTrace?.(parsed);
+        }
+        return;
+      }
+      case "error": {
+        const parsed = parseAnswerJson<{ message?: string }>(data);
+        error = parsed?.message ?? data;
+        handlers.onError?.(error);
+        return;
+      }
+      default:
+        return;
+    }
+  }
+
+  function flushFrame(): void {
+    if (dataLines.length === 0 && !currentEvent) return;
+    dispatch(currentEvent || "message", dataLines.join("\n"));
+    currentEvent = "";
+    dataLines = [];
+  }
+
+  function consumeLine(line: string): void {
+    if (line === "") {
+      flushFrame();
+      return;
+    }
+    if (line.startsWith(":")) return;
+    if (line.startsWith("event:")) {
+      currentEvent = line.slice(6).trim();
+    } else if (line.startsWith("data:")) {
+      const raw = line.slice(5);
+      dataLines.push(raw.startsWith(" ") ? raw.slice(1) : raw);
+    }
+  }
+
+  try {
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split("\n");
+      buffer = lines.pop() ?? "";
+      for (const line of lines) consumeLine(line);
+    }
+    if (buffer) consumeLine(buffer);
+    flushFrame();
+  } finally {
+    reader.releaseLock();
+  }
+
+  return { answer, sources, citations, followups, artifacts, traceSteps, trace, error };
+}
+
+/**
+ * Opens the streaming answer for {@code query} over {@code site}'s knowledge base
+ * (`GET /sn/{site}/answer`) and resolves with the aggregate once the stream ends.
+ * A safe GET — no CSRF token needed.
+ */
+export async function fetchAnswer(
+  site: string,
+  query: string,
+  locale?: string,
+  options?: FetchAnswerOptions,
+): Promise<AnswerResult> {
+  const baseURL = axios.defaults.baseURL ?? "";
+  const params = new URLSearchParams({ q: query });
+  if (locale) params.set("locale", locale);
+  appendAnswerFilterParams(params, options?.filters);
+  const response = await fetch(`${baseURL}/sn/${encodeURIComponent(site)}/answer?${params.toString()}`, {
+    method: "GET",
+    headers: { Accept: "text/event-stream" },
+    credentials: "include",
+    signal: options?.signal,
+  });
+  if (!response.ok) {
+    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+  }
+  return consumeAnswerStream(response, options);
+}
+
+/**
+ * T840 — re-check whether a produced answer's cited sources have drifted (a source
+ * re-indexed after the answer, or its cited passage gone). Returns the per-source
+ * verdicts, or an empty list when drift detection is off. Safe read.
+ */
+export async function fetchAnswerFreshness(
+  site: string,
+  question: string,
+  answeredAt: string,
+  sources: TurAnswerFreshnessSource[],
+  topK?: number,
+): Promise<TurAnswerFreshnessVerdict[]> {
+  const { data } = await axios.post<TurAnswerFreshnessVerdict[]>(
+    `/sn/${encodeURIComponent(site)}/answer/freshness`,
+    { q: question, answeredAt, topK, sources },
+  );
+  return data ?? [];
+}
+
+/** The answer snapshot to persist as a permalink (T844). */
+export interface AnswerShareSnapshot {
+  query: string;
+  filters?: AnswerFilters;
+  answer: string;
+  sources?: unknown[];
+  citations?: unknown[];
+  answeredAt?: string | null;
+}
+
+/**
+ * T844 — persist an answer snapshot and return its stable permalink id. The
+ * sources / citations / filters are serialized to opaque JSON server-side.
+ */
+export async function createAnswerShare(
+  site: string,
+  snapshot: AnswerShareSnapshot,
+): Promise<string> {
+  const { data } = await axios.post<{ id: string }>(
+    `/sn/${encodeURIComponent(site)}/answer/share`,
+    {
+      q: snapshot.query,
+      filtersJson: snapshot.filters ? JSON.stringify(snapshot.filters) : null,
+      answerText: snapshot.answer,
+      sourcesJson: snapshot.sources ? JSON.stringify(snapshot.sources) : null,
+      citationsJson: snapshot.citations ? JSON.stringify(snapshot.citations) : null,
+      answeredAt: snapshot.answeredAt ?? null,
+    },
+  );
+  return data?.id ?? "";
+}
+
+/** T844 — read a shared answer snapshot back by its permalink id (or `null`). */
+export async function fetchAnswerShare(
+  site: string,
+  id: string,
+): Promise<TurAnswerShareView | null> {
+  try {
+    const { data } = await axios.get<TurAnswerShareView>(
+      `/sn/${encodeURIComponent(site)}/answer/share/${encodeURIComponent(id)}`,
+    );
+    return data ?? null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * T845 — the answer-level interaction signals the answer surface emits after an
+ * answer is produced, fed to the self-tuning loop. `FACET_REFINED_AFTER_ANSWER`
+ * and `THUMBS_DOWN` are relevance-misses server-side.
+ */
+export type TurAnswerSignalKind =
+  | "CITATION_CLICKED"
+  | "FOLLOW_UP_TAKEN"
+  | "RE_ANSWER_REQUESTED"
+  | "FACET_REFINED_AFTER_ANSWER"
+  | "THUMBS_UP"
+  | "THUMBS_DOWN";
+
+/**
+ * T845 — record one answer-level interaction signal (fire-and-forget, fail-open).
+ * The server keys it by the site's effective agent so the self-tuning miner can
+ * consume it; a network failure is swallowed so a signal never disturbs the UI.
+ */
+export async function recordAnswerSignal(
+  site: string,
+  payload: { signal: TurAnswerSignalKind; conversationId?: string | null; query?: string | null },
+): Promise<void> {
+  try {
+    await axios.post(`/sn/${encodeURIComponent(site)}/answer/signal`, {
+      signal: payload.signal,
+      conversationId: payload.conversationId ?? null,
+      query: payload.query ?? null,
+    });
+  } catch {
+    // Fail-open: a dropped signal must never surface as a UI error.
+  }
 }

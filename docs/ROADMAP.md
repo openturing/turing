@@ -167,52 +167,6 @@
 
 - 💭 **T738** (deps: T735) **Collapse the working manual-two-piece forms onto `BentoFormHero`** — the ~14 forms that already morph correctly by hand (11 SN forms + `ai-agent.settings.form` + `bento.global-settings` + `sn.site.custom.facet.item`) could drop their `bento-fade-out BentoSaveBar` + `BentoScrollSaveBar` boilerplate for the single component, so there is one canonical own-hero pattern. **Assessment (2026-07-13, deferred):** *not* the pure no-op it looks like. These forms render the hero as a **separate row** (`{header}` / shared `BentoAgentSubHero`) with the save bar **below** it in the body; `BentoFormHero` puts Save **inside** the hero `trailing`, so collapsing them would (1) **visibly** relocate Save into the hero — contradicting the "no visible change" premise — and (2) require the page↔form hero contract to move into each form. Worse, several (e.g. `sn.site.custom.facet.item`) save **imperatively** via `actions=` onClick, but `BentoFormHero` hardcodes `type="submit"` Save/Cancel — so it can't be dropped in without first extending its API to accept custom `actions`. Prereq if revived: add an `actions?` escape hatch to `BentoFormHero` and accept the layout change (or keep the two-piece as the sanctioned pattern for page-supplied heroes). → §XLVII
 
-## Block BO — Answer-first search: the steerable, auditable answer engine (§LXII)
-
-> A product review asked whether Turing could return search results "like Perplexity".
-> The audit found Turing already owns nearly every **engine** piece — hybrid RRF +
-> 8 rerank strategies, `TurCatalogCopilotResult` (`answer` + footnote-numbered
-> `citations` + `totalHits`, with the answer's `[n]` markers rewritten to match, T800),
-> `TurRagSource` `sources[]` SSE, per-sentence `TurChatCitation` answer spans, citation
-> drift detection, and `TurLiveAnswersService` fusing KB + `web_search` + `web_fetch`
-> — and none of the **surface**. Four gaps: (1) AI Mode is *exclusive*
-> (`search-content.tsx` → `showAiMode ? <AiModeChat/> : <SearchResultsPanel/>`), so
-> turning AI on costs the user results, facets and pagination; (2) three incompatible
-> citation contracts, with the T800 footnote renumbering wired **only** to the catalog
-> path so the main RAG answer ships unnumbered chips and inert `[n]` prose; (3) no
-> single streaming answer endpoint (`/copilot` is POST→JSON); (4) no follow-ups, no
-> research trace, one retrieval pass.
->
-> **The bet is not a Perplexity clone.** Perplexity's moat is web-index breadth —
-> unwinnable and uninteresting. Turing's answer sits on a real faceted index with an
-> auditable ranking pipeline, which buys three things Perplexity structurally cannot
-> offer: an answer you can **steer** (T838), **audit** (T839), and one that knows it
-> has **decayed** (T840). Phases 1–2 are table stakes; 3–4 are the differentiation.
-> Positioning in [STRATEGY.md](STRATEGY.md) §XV; design in
-> [IMPROVEMENTS.md](IMPROVEMENTS.md) §LXII.
-
-**Phase 1 — contract & transport:**
-- 📋 **T832** (deps: —) **Unified answer-citation contract + shared footnote numbering** — extract the T800 renumbering from `TurCatalogCopilotService.groundCitations` into a shared `TurAnswerCitationNumberer` and apply it on the SN/RAG path too; add `rank` to `TurRagSource`; normalize catalog / SN-RAG / native-citation paths onto one `TurAnswerCitation` projection (per-sentence `TurChatCitation` spans become an enrichment, not a fourth shape). Fail-open: marker-less prose keeps today's bounded top-k. → §LXII.1
-- 📋 **T833** (deps: T832) **Streaming answer endpoint `GET /api/sn/{siteName}/answer`** — SSE composing retrieval → rerank → synthesis, emitting `sources` **before** the first token, then `token`/`citations`/`followups`/`trace`; reuses `TurSNHybridRankingService` + the rerank seam + `TurSNKnowledgeBaseMode`. Deliberately **not** an `answer` field on `TurSNSiteSearchBean` — the hot search path must never pay LLM latency; the client fires search and answer in parallel. → §LXII.2
-- 📋 **T834** (deps: T833) **Follow-up question generation** — `TurFollowUpQuestionService`: one cheap LLM call over answer+citations returning 3–5 next questions as the `followups` event, cached on (query, filter state, source set) with the `TurLlmSummaryService` cache discipline. Distinct from `use-turing-related-terms` (term co-occurrence) and Gemini `searchSuggestions` (web-only). → §LXII.3
-
-**Phase 2 — the fused frontend:**
-- 📋 **T835** (deps: T833) **Answer-first fused search page** — kill the exclusive toggle: the answer panel renders **above** `SearchResultsPanel` with the facet sidebar, pagination and result cards mounted throughout; `_aimode` becomes an expand/collapse preference, not a mode switch. Highest-leverage change in the block. → §LXII.4
-- 📋 **T836** (deps: T832, T835) **Inline `[n]` citation anchors** — rehype plugin for `TuringMarkdown` turning each `[n]` into a clickable superscript that scroll-links + highlights the matching source card, with a cited-passage popover; on the native path the T154 `answerStart`/`answerEnd` offsets underline the exact grounded span. → §LXII.5
-- 📋 **T837** (deps: T833, T835) **`useTuringAnswer` + `TuringAnswer` in the react-sdk** — headless hook + design-agnostic component on the `TuringCopilot`/`TuringSourceChips` skinning contract, so the admin search page, the showcase and the public-site hero share one implementation instead of three forks; observable answer controller ported to the vanilla `@viglet/turing-sdk`. → §LXII.6
-
-**Phase 3 — the differentiators (the repositioning):**
-- 📋 **T838** (deps: T835) **Steerable answers — facets as answer controls** — synthesize the answer **within the active filter set** and say so with removable constraint chips ("answering within: Vendor = Anthropic · Context ≥ 200k"); turning a facet re-runs the answer against the narrowed candidates. Mechanically small, but it is the block's flagship claim — a Perplexity answer has no filter state to turn — and it converts the classic answer-engine failure (confident answer over the wrong subset) into a visible control. → §LXII.7
-- 📋 **T839** (deps: T835) **"Why this answer" — auditable provenance panel** — one expandable panel surfacing the T389 `rankingExplanation` already attached to hybrid results (lexical / semantic / fused rank, RRF score) plus the rerank strategy, KB mode, candidate count and dropped chunks; promotes the per-chip "why did you say this?" to an answer-level audit trail. The feature a regulated buyer asks for first. → §LXII.8
-- 💭 **T840** (deps: T835) **Answer freshness & drift badge** — wire the shipped `TurCitationDriftService` + detection job to the answer surface: a badge when a cited source changed after the answer was produced, plus one-click re-answer. Turing already computes the signal and only reports it internally; no answer engine on the market models an answer as something that decays. → §LXII.9
-- 💭 **T841** (deps: T835, T837) **Structured answers — answer as an artifact, not prose** — for comparative/enumerable questions over a faceted or `VECTORLESS_STRUCTURED` catalog, render a comparison table / spec grid from the declared field manifest with per-cell citations and prose reduced to a lead-in, reusing the shipped answer-as-app + generative-UI path (`TurAnswerAsAppClientTools`, `useGenerativeUI`) rather than adding a renderer. → §LXII.10
-
-**Phase 4 — depth & distribution:**
-- 💭 **T842** (deps: T833) **Multi-query fan-out** — decompose one question into parallel sub-queries behind the existing `TurCopilotQueryPlanner` seam, bounded by `turing.genai.copilot.planning.max-passes`, unioning recall through `TurRagRrf` before rerank. Perplexity's multi-hop recall advantage is mostly fan-out, not model quality. Fail-open to single-pass; off by default for `DETERMINISTIC` sites. → §LXII.11
-- 💭 **T843** (deps: T833, T835) **Live research trace** — frame the `tool_call` SSE events the runtime already emits as a collapsible "searched *X* · read *N* sources · reranked with Cohere · answered" timeline via a `trace` event. Pure presentation over shipped plumbing; the cheapest way to make a multi-second answer feel deliberate rather than slow. → §LXII.12
-- 💭 **T844** (deps: T835, T838) **Answer permalinks & shareable answer cards** — a stable URL for an answer (query + filter state + source snapshot + timestamp) that re-renders it read-only, with an OG card via the shipped `TurChatShareOgService`; makes every good answer a linkable artifact and, on public deployments, indexable content. Pairs with Block O (GEO). → §LXII.13
-- 💭 **T845** (deps: T838, T843) **Answer-level analytics & the self-tuning loop** — emit citation-clicked / facet-refined-after-reading / follow-up-taken / re-answer signals into the existing chat analytics, keyed for the `selftuning` miner+drafter. T838's steerability produces an unusually clean relevance signal: narrowing a facet *after* reading an answer is explicit feedback that retrieval missed. → §LXII.14
-
 ## Non-goals (do NOT add as tasks)
 
 Binding constraints — see [IMPROVEMENTS.md](IMPROVEMENTS.md) §I.6 (What NOT to

@@ -17,8 +17,6 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import org.apache.commons.lang3.LocaleUtils;
 import org.springframework.ai.chat.messages.AssistantMessage;
@@ -36,6 +34,7 @@ import com.viglet.turing.genai.catalog.planning.TurCopilotQueryPlan;
 import com.viglet.turing.genai.catalog.planning.TurCopilotQueryPlanner;
 import com.viglet.turing.genai.catalog.planning.TurCopilotQueryPlanner.PlanRequest;
 import com.viglet.turing.genai.catalog.planning.TurCopilotQueryPlannerFactory;
+import com.viglet.turing.genai.citation.TurAnswerCitationNumberer;
 import com.viglet.turing.persistence.model.sn.TurSNSite;
 import com.viglet.turing.persistence.model.sn.field.TurSNSiteFieldExt;
 import com.viglet.turing.persistence.repository.sn.TurSNSiteRepository;
@@ -109,8 +108,6 @@ public class TurCatalogCopilotService {
      * so a runaway answer can never flood the client with the whole catalog.
      */
     private static final int MAX_RETURNED_CITATIONS = 24;
-    /** Matches a {@code [n]} citation marker in the LLM answer (1–4 digit rank). */
-    private static final Pattern CITATION_MARKER = Pattern.compile("\\[(\\d{1,4})\\]");
 
     private static final ObjectMapper OBJECT_MAPPER = JsonMapper.builder().build();
 
@@ -122,6 +119,7 @@ public class TurCatalogCopilotService {
     private final TurSNHybridRankingService hybridRankingService;
     private final TurDefaultChatModelResolver chatModelResolver;
     private final com.viglet.turing.properties.TurCatalogCopilotProperty copilotProperty;
+    private final com.viglet.turing.genai.catalog.planning.TurQueryFanOut queryFanOut;
 
     public TurCatalogCopilotService(TurNLFacetParser parser,
             TurCopilotQueryPlannerFactory plannerFactory,
@@ -130,7 +128,8 @@ public class TurCatalogCopilotService {
             TurSNSiteFieldExtRepository turSNSiteFieldExtRepository,
             TurSNHybridRankingService hybridRankingService,
             TurDefaultChatModelResolver chatModelResolver,
-            com.viglet.turing.properties.TurCatalogCopilotProperty copilotProperty) {
+            com.viglet.turing.properties.TurCatalogCopilotProperty copilotProperty,
+            com.viglet.turing.genai.catalog.planning.TurQueryFanOut queryFanOut) {
         this.parser = parser;
         this.plannerFactory = plannerFactory;
         this.dslSearchService = dslSearchService;
@@ -139,6 +138,7 @@ public class TurCatalogCopilotService {
         this.hybridRankingService = hybridRankingService;
         this.chatModelResolver = chatModelResolver;
         this.copilotProperty = copilotProperty;
+        this.queryFanOut = queryFanOut;
     }
 
     /** True when a usable default LLM is configured (the copilot can answer). */
@@ -186,7 +186,8 @@ public class TurCatalogCopilotService {
             // client must reflect only what the answer actually cites, AND be
             // renumbered to compact answer-order footnotes (the raw ranks are
             // positions in the full catalog — [201], [230] — meaningless to a reader).
-            GroundedAnswer grounded = groundCitations(raw, retrieval.citations());
+            TurAnswerCitationNumberer.Numbered<TurCatalogCitation> grounded =
+                    groundCitations(raw, retrieval.citations());
             return TurCatalogCopilotResult.ok(grounded.answer(), grounded.citations(),
                     retrieval.groundedSummary(), retrieval.totalHits());
         } catch (RuntimeException e) {
@@ -224,95 +225,17 @@ public class TurCatalogCopilotService {
      * rows — renumbered {@code 1..k}, with the (marker-less) prose left untouched. A
      * {@link #MAX_RETURNED_CITATIONS} backstop bounds the list regardless.
      */
-    private GroundedAnswer groundCitations(String answer, List<TurCatalogCitation> all) {
-        if (all == null || all.isEmpty()) {
-            return new GroundedAnswer(answer, List.of());
-        }
-        Map<Integer, TurCatalogCitation> byRank = new LinkedHashMap<>();
-        for (TurCatalogCitation citation : all) {
-            byRank.putIfAbsent(citation.rank(), citation);
-        }
-        // Cited ranks in order of first appearance (parseCitedRanks preserves it),
-        // kept only when they actually back a citation, capped by the backstop.
-        Map<Integer, Integer> remap = new LinkedHashMap<>(); // raw rank -> compact footnote
-        List<TurCatalogCitation> grounded = new ArrayList<>();
-        for (int rawRank : parseCitedRanks(answer)) {
-            if (!byRank.containsKey(rawRank) || grounded.size() >= MAX_RETURNED_CITATIONS) {
-                continue;
-            }
-            int footnote = grounded.size() + 1;
-            remap.put(rawRank, footnote);
-            grounded.add(renumber(byRank.get(rawRank), footnote));
-        }
-        if (!grounded.isEmpty()) {
-            return new GroundedAnswer(rewriteMarkers(answer, remap), List.copyOf(grounded));
-        }
-        // Fail-open: no usable markers — bounded top-k, renumbered 1..k, prose as-is.
-        int cap = Math.min(MAX_RESULTS, all.size());
-        List<TurCatalogCitation> slice = new ArrayList<>(cap);
-        for (int i = 0; i < cap; i++) {
-            slice.add(renumber(all.get(i), i + 1));
-        }
-        return new GroundedAnswer(answer, List.copyOf(slice));
-    }
-
-    /** A citation with its {@code rank} set to {@code footnote} (identity when equal). */
-    private static TurCatalogCitation renumber(TurCatalogCitation c, int footnote) {
-        return c.rank() == footnote ? c
-                : new TurCatalogCitation(footnote, c.id(), c.title(), c.url(), c.score(),
-                        c.rankingExplanation());
-    }
-
-    /**
-     * Rewrites every {@code [n]} marker in the answer to its compact footnote from
-     * {@code remap}; a marker with no mapping (an out-of-range or dangling rank the
-     * LLM emitted for a row it wasn't given) is dropped so no orphan number reaches
-     * the reader. Returns the text unchanged when there is nothing to rewrite.
-     */
-    private static String rewriteMarkers(String answer, Map<Integer, Integer> remap) {
-        if (!StringUtils.hasText(answer)) {
-            return answer;
-        }
-        Matcher matcher = CITATION_MARKER.matcher(answer);
-        StringBuilder sb = new StringBuilder(answer.length());
-        while (matcher.find()) {
-            Integer footnote = null;
-            try {
-                footnote = remap.get(Integer.parseInt(matcher.group(1)));
-            } catch (NumberFormatException ignored) {
-                // marker out of int range — treat as unmapped (dropped)
-            }
-            matcher.appendReplacement(sb, footnote != null ? "[" + footnote + "]" : "");
-        }
-        matcher.appendTail(sb);
-        return sb.toString();
-    }
-
-    /**
-     * The answer text with its {@code [n]} markers renumbered to compact footnotes,
-     * paired with the cited citations in matching footnote order ({@code rank = n}).
-     */
-    private record GroundedAnswer(String answer, List<TurCatalogCitation> citations) {
-    }
-
-    /** Extracts the distinct 1-based ranks referenced as {@code [n]} in the answer. */
-    private static Set<Integer> parseCitedRanks(String answer) {
-        if (!StringUtils.hasText(answer)) {
-            return Set.of();
-        }
-        Set<Integer> ranks = new LinkedHashSet<>();
-        Matcher matcher = CITATION_MARKER.matcher(answer);
-        while (matcher.find()) {
-            try {
-                int rank = Integer.parseInt(matcher.group(1));
-                if (rank >= 1) {
-                    ranks.add(rank);
-                }
-            } catch (NumberFormatException ignored) {
-                // marker out of int range — skip it
-            }
-        }
-        return ranks;
+    private TurAnswerCitationNumberer.Numbered<TurCatalogCitation> groundCitations(
+            String answer, List<TurCatalogCitation> all) {
+        // T832 / §LXII.1 — the renumbering itself now lives in the shared
+        // TurAnswerCitationNumberer so the SN/RAG and streaming-answer paths reuse
+        // it verbatim; the catalog path supplies only how to read/rewrite a rank.
+        return TurAnswerCitationNumberer.renumberByMarkers(answer, all,
+                TurCatalogCitation::rank,
+                (c, footnote) -> c.rank() == footnote ? c
+                        : new TurCatalogCitation(footnote, c.id(), c.title(), c.url(),
+                                c.score(), c.rankingExplanation()),
+                MAX_RETURNED_CITATIONS, MAX_RESULTS);
     }
 
     private String callLlm(ChatModel chatModel, String siteName, Retrieval retrieval,
@@ -393,6 +316,19 @@ public class TurCatalogCopilotService {
         // turning the prose into a structured query.
         TurCopilotQueryPlannerFactory.Resolution resolution = plannerFactory.resolve(siteName);
         TurCopilotQueryPlanner planner = resolution.planner();
+
+        // T842 / §LXII.11 — multi-query fan-out: a comparative / multi-hop question is
+        // decomposed into sub-queries whose recall is RRF-unioned before rerank. Off
+        // by default, never for DETERMINISTIC sites, and fail-open to single-pass.
+        if (copilotProperty.getPlanning() != null && copilotProperty.getPlanning().isFanOut()
+                && planner.strategy() != com.viglet.turing.persistence.model.sn.genai.TurCopilotPlanningStrategy.DETERMINISTIC) {
+            Optional<Retrieval> fanned =
+                    fanOutRetrieve(site, siteName, searchLocale, query, schema, resolution);
+            if (fanned.isPresent()) {
+                return fanned.get();
+            }
+        }
+
         PlanRequest planRequest =
                 new PlanRequest(siteName, searchLocale, query, schema, resolution.maxPasses());
         TurCopilotQueryPlan plan = planner.plan(planRequest);
@@ -432,6 +368,65 @@ public class TurCatalogCopilotService {
         Projection projection = project(ordered, MAX_RESULTS, fieldDescriptions(schema));
         return new Retrieval(projection.citations(), projection.contextBlocks(),
                 totalHits, summarize(request), true);
+    }
+
+    /**
+     * T842 — fan out {@code query} into bounded sub-queries, RRF-union their recall
+     * and project the fused page. Returns empty (so the caller falls back to the
+     * single-pass path) when the question doesn't decompose or the union is empty,
+     * and is fail-open on any error.
+     */
+    private Optional<Retrieval> fanOutRetrieve(TurSNSite site, String siteName, String searchLocale,
+            String query, List<TurNLFacetField> schema,
+            TurCopilotQueryPlannerFactory.Resolution resolution) {
+        try {
+            List<String> subQueries =
+                    queryFanOut.decompose(query, Math.max(2, resolution.maxPasses()));
+            if (subQueries.size() < 2) {
+                return Optional.empty();
+            }
+            List<List<TurDslSearchResponse.Hit>> perQuery = new ArrayList<>(subQueries.size());
+            for (String subQuery : subQueries) {
+                perQuery.add(searchOne(siteName, searchLocale, subQuery, schema, resolution));
+            }
+            List<TurDslSearchResponse.Hit> union =
+                    com.viglet.turing.genai.rag.TurRagRrf.fuseKeyed(perQuery,
+                            TurDslSearchResponse.Hit::id, MAX_RESULTS);
+            if (union.isEmpty()) {
+                return Optional.empty();
+            }
+            List<TurDslSearchResponse.Hit> ordered = applyHybridRanking(site, searchLocale, query, union);
+            Projection projection = project(ordered, MAX_RESULTS, fieldDescriptions(schema));
+            log.info("[CatalogCopilot] site '{}' FAN-OUT over {} sub-queries -> {} fused hits",
+                    siteName, subQueries.size(), union.size());
+            return Optional.of(new Retrieval(projection.citations(), projection.contextBlocks(),
+                    union.size(), "fan-out(" + subQueries.size() + ")", true));
+        } catch (RuntimeException e) {
+            log.warn("[CatalogCopilot] fan-out failed for site '{}', falling back to single-pass: {}",
+                    siteName, e.getMessage());
+            return Optional.empty();
+        }
+    }
+
+    /** Plan + execute one fan-out sub-query, returning its hits (fail-open empty). */
+    private List<TurDslSearchResponse.Hit> searchOne(String siteName, String searchLocale,
+            String subQuery, List<TurNLFacetField> schema,
+            TurCopilotQueryPlannerFactory.Resolution resolution) {
+        try {
+            PlanRequest request =
+                    new PlanRequest(siteName, searchLocale, subQuery, schema, resolution.maxPasses());
+            TurCopilotQueryPlan plan = resolution.planner().plan(request);
+            Optional<TurDslSearchResponse> responseOpt =
+                    dslSearchService.search(siteName, searchLocale, plan.request());
+            if (responseOpt.isEmpty() || responseOpt.get().hits() == null
+                    || responseOpt.get().hits().hits() == null) {
+                return List.of();
+            }
+            return responseOpt.get().hits().hits();
+        } catch (RuntimeException e) {
+            log.warn("[CatalogCopilot] fan-out sub-query '{}' failed: {}", subQuery, e.getMessage());
+            return List.of();
+        }
     }
 
     /** T823 / §LX.2 + T818 — one INFO line per executed plan (strategy, cost, query). */

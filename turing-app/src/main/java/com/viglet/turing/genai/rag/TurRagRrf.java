@@ -117,6 +117,56 @@ public final class TurRagRrf {
     }
 
     /**
+     * T842 / §LXII.11 — N-way Reciprocal Rank Fusion over any keyed items: unions
+     * the recall of several ranked lists (e.g. one per multi-query fan-out
+     * sub-query) into a single ranking, each item scored by the sum of
+     * {@code 1/(RRF_K + rank)} across the lists it appears in. The first-seen
+     * instance of each key wins; {@code null}/empty inputs are tolerated. Generic
+     * over the item type so it fuses either {@link Document}s (by id) or structured
+     * search hits (by their id).
+     *
+     * @param rankedLists the ranked lists to fuse (top-first within each list)
+     * @param keyOf       extracts an item's dedup key ({@code null} keys skipped)
+     * @param topK        max items to return
+     * @param <T>         the item type
+     * @return up to {@code topK} items sorted by descending fused score
+     */
+    public static <T> List<T> fuseKeyed(List<? extends List<? extends T>> rankedLists,
+            java.util.function.Function<? super T, String> keyOf, int topK) {
+        if (topK < 1 || rankedLists == null || rankedLists.isEmpty()) {
+            return List.of();
+        }
+        Map<String, Double> rrfScores = new LinkedHashMap<>();
+        Map<String, T> byKey = new LinkedHashMap<>();
+        for (List<? extends T> list : rankedLists) {
+            if (list == null) {
+                continue;
+            }
+            for (int i = 0; i < list.size(); i++) {
+                T item = list.get(i);
+                if (item == null) {
+                    continue;
+                }
+                String key = keyOf.apply(item);
+                if (key == null) {
+                    continue;
+                }
+                rrfScores.merge(key, 1.0 / (RRF_K + i + 1), Double::sum);
+                byKey.putIfAbsent(key, item);
+            }
+        }
+        if (rrfScores.isEmpty()) {
+            return List.of();
+        }
+        List<T> fused = new ArrayList<>(Math.min(topK, rrfScores.size()));
+        rrfScores.entrySet().stream()
+                .sorted(Map.Entry.<String, Double>comparingByValue().reversed())
+                .limit(topK)
+                .forEach(e -> fused.add(byKey.get(e.getKey())));
+        return fused;
+    }
+
+    /**
      * Copies {@code source} into a fresh {@link Document} carrying the
      * RRF score and the corrected keyword-only tag: removed when the
      * doc appeared in the vector pass (vector confirmed → trust), kept

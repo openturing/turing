@@ -346,3 +346,67 @@
   font-family: var(--turing-ui-font-mono);
   font-size: 0.85em;
 }
+
+/* ─────────────────── citation anchors (T836, TuringCitationAnchor) ─────────────────── */
+/* Each `[n]` in an answer becomes a clickable superscript that scroll-links to
+   its source card. The card is flagged with [data-turing-citation-target] for a
+   brief pulse while the anchor is active. */
+.turing-ui-theme .turing-citation-anchor {
+  line-height: 0;
+}
+
+.turing-ui-theme .turing-citation-anchor > button {
+  cursor: pointer;
+  padding: 0 0.1em;
+  border: none;
+  background: none;
+  color: var(--turing-ui-accent);
+  font-size: 0.75em;
+  font-weight: 600;
+  vertical-align: super;
+}
+
+.turing-ui-theme .turing-citation-anchor > button:hover {
+  color: var(--turing-ui-accent-hover);
+  text-decoration: underline;
+}
+
+[data-turing-citation-target] {
+  animation: turing-citation-pulse 1.6s ease-out;
+}
+
+@keyframes turing-citation-pulse {
+  0% {
+    box-shadow: 0 0 0 2px var(--turing-ui-accent);
+  }
+  100% {
+    box-shadow: 0 0 0 2px transparent;
+  }
+}
+
+/* ─────────────── "why this answer" provenance panel (T839) ─────────────── */
+.turing-ui-theme [data-turing-answer-provenance] {
+  margin-top: 0.5rem;
+  font-size: 0.85em;
+  color: var(--turing-ui-text-muted, inherit);
+}
+
+.turing-ui-theme [data-turing-answer-provenance] > summary {
+  cursor: pointer;
+  user-select: none;
+  color: var(--turing-ui-accent);
+}
+
+.turing-ui-theme [data-turing-answer-provenance] dl {
+  margin: 0.15rem 0 0.4rem 0.75rem;
+}
+
+.turing-ui-theme [data-turing-answer-provenance] dt {
+  display: inline;
+  font-weight: 600;
+}
+
+.turing-ui-theme [data-turing-answer-provenance] dd {
+  display: inline;
+  margin: 0 0.5rem 0 0.25rem;
+}

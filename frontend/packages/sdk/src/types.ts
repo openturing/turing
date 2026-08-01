@@ -384,6 +384,94 @@ export interface TurChatSource {
   score?: number | null;
   /** `true` when this chunk reached the answer via the keyword (BM25) fallback only. */
   keywordOnly?: boolean;
+  /**
+   * T832/T837 — 1-based footnote assigned by the answer engine so a source chip
+   * carries the same number the answer's `[n]` markers cite. Present on the
+   * `GET /sn/{site}/answer` stream; absent on the chat `sources` event.
+   */
+  rank?: number | null;
+}
+
+/**
+ * T837 / §LXII — one entry of the answer stream's `citations` event: the unified
+ * answer-citation projection (mirrors the backend `TurAnswerCitation`). Its
+ * 1-based `rank` agrees with the source chip and the answer's `[n]` markers.
+ */
+export interface TurAnswerCitation {
+  rank: number;
+  sourceId?: string | null;
+  title?: string | null;
+  url?: string | null;
+  score?: number | null;
+  chunkIndex?: number | null;
+  keywordOnly?: boolean;
+  /** T389 lexical/semantic/fused rank breakdown, when the hybrid pipeline attached one. */
+  rankingExplanation?: Record<string, unknown> | null;
+  /** T154 enrichment — char offset where the cited claim starts in the answer. */
+  answerStart?: number | null;
+  /** T154 enrichment — char offset where the cited claim ends in the answer. */
+  answerEnd?: number | null;
+  /** T154 enrichment — the exact grounded passage, when known. */
+  citedText?: string | null;
+}
+
+/**
+ * T844 — the read model of a shared answer permalink (`GET /sn/{site}/answer/share/{id}`).
+ * The `*Json` fields are the opaque JSON snapshots the client serialized on share
+ * (parse them back to render the answer read-only).
+ */
+export interface TurAnswerShareView {
+  id: string;
+  siteName: string;
+  query: string;
+  filtersJson?: string | null;
+  answerText?: string | null;
+  sourcesJson?: string | null;
+  citationsJson?: string | null;
+  answeredAt?: string | null;
+}
+
+/**
+ * T841 — a structured answer artifact carried by the answer stream's `artifact`
+ * event: the answer-as-app generative-UI render spec (e.g. a comparison table or
+ * spec grid) the agent emitted instead of prose. `name` is the answer-as-app
+ * component/tool; `args` is its raw JSON argument string (parse before rendering).
+ */
+export interface TurAnswerArtifact {
+  name: string;
+  args: string;
+  callId?: string | null;
+}
+
+/** T840 — the drift status of one cited source re-checked against the live index. */
+export type TurAnswerFreshnessStatus = "FRESH" | "STALE" | "UNVERIFIABLE";
+
+/** T840 — one cited source to re-check for drift (its id + grounded passage). */
+export interface TurAnswerFreshnessSource {
+  sourceId: string;
+  citedText?: string | null;
+}
+
+/** T840 — per-source freshness verdict from `POST /sn/{site}/answer/freshness`. */
+export interface TurAnswerFreshnessVerdict {
+  sourceId: string;
+  status: TurAnswerFreshnessStatus;
+  reason?: string | null;
+}
+
+/**
+ * T837 / §LXII.2 + T839 / §LXII.8 — the answer stream's `trace` event: the
+ * auditable "why this answer" provenance the `TuringAnswerProvenance` panel shows.
+ */
+export interface TurAnswerTrace {
+  sourceCount: number;
+  answerLength: number;
+  /** The site's knowledge-base mode (VECTOR / VECTORLESS_STRUCTURED / HYBRID). */
+  kbMode?: string | null;
+  /** The rerank strategy applied before synthesis, or `null` when reranking was off. */
+  rerankStrategy?: string | null;
+  /** Whether the SN RAG reranker ran for this answer. */
+  rerankEnabled?: boolean;
 }
 
 /**
