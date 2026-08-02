@@ -227,6 +227,8 @@ number" looked free but wasn't. Grepping three files (`ROADMAP.md`,
 
 ## Log (most recent first)
 
+- **T858 SHIPPED** (Block BR §LXV — `TurSNSearchCacheKey.of(context)` replaces the query-string key; targeting rules now in the key) — 2026-08-02.
+
 - **T857 SHIPPED** (Block BR §LXV — opt-in `includeSortOptions` inlines the sort options in the structured response; one shared source with the endpoint) — 2026-08-02.
 
 - **T856 SHIPPED** (Block BR §LXV — `responseFormat` honoured on GET through the same negotiation; case-insensitive, unknown value 400s) — 2026-08-02.

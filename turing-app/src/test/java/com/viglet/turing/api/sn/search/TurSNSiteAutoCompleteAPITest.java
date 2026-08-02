@@ -23,7 +23,6 @@ package com.viglet.turing.api.sn.search;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -125,11 +124,12 @@ class TurSNSiteAutoCompleteAPITest {
      * T712 / §XLV — the POST variant must reach the same regular-search path when
      * the body carries filter queries, and it must hand the collaborator a
      * canonical URI on the <em>GET</em> {@code /ac} path (not {@code /ac/query}),
-     * plus a cache key derived from the body rather than from the — empty — POST
-     * query string.
+     * on the GET counterpart. Since T858 the cache key is no longer passed in:
+     * the autocomplete path derives it from the context it builds, so the — empty
+     * — POST query string can never reach it.
      */
     @Test
-    void testAutoCompletePostUsesRegularSearchAndBodyDerivedCacheKey() {
+    void testAutoCompletePostUsesRegularSearchWithTheCanonicalUri() {
         TurSNAutoComplete turSNAutoComplete = mock(TurSNAutoComplete.class);
         TurSNSiteSearchService searchService = mock(TurSNSiteSearchService.class);
         TurSNSiteAutoCompleteAPI api =
@@ -141,19 +141,17 @@ class TurSNSiteAutoCompleteAPITest {
         MockHttpServletRequest request =
                 new MockHttpServletRequest("POST", "/api/sn/site/ac/query");
         when(turSNAutoComplete.autoCompleteWithRegularSearch(eq("site"),
-                any(TurSNSearchParams.class), any(URI.class), anyString()))
+                any(TurSNSearchParams.class), any(URI.class)))
                         .thenReturn(List.of("chatbot"));
 
         List<String> result = api.turSNSiteAutoCompleteQueryPost("site", searchRequest, request);
 
         assertThat(result).containsExactly("chatbot");
         ArgumentCaptor<URI> uri = ArgumentCaptor.forClass(URI.class);
-        ArgumentCaptor<String> cacheKey = ArgumentCaptor.forClass(String.class);
         verify(turSNAutoComplete).autoCompleteWithRegularSearch(eq("site"),
-                any(TurSNSearchParams.class), uri.capture(), cacheKey.capture());
+                any(TurSNSearchParams.class), uri.capture());
         assertThat(uri.getValue().getRawPath()).isEqualTo("/api/sn/site/ac");
         assertThat(uri.getValue().getRawQuery()).contains("fq[]=section:RAG%20%26%20Chat");
-        assertThat(cacheKey.getValue()).startsWith("site_").contains("q=chat");
     }
 
     /**

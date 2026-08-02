@@ -23,6 +23,7 @@ import com.viglet.turing.commons.sn.bean.TurSNSiteLocaleBean;
 import com.viglet.turing.commons.sn.bean.TurSNSitePostParamsBean;
 import com.viglet.turing.commons.sn.bean.TurSNSiteSearchBean;
 import com.viglet.turing.commons.sn.search.TurSNFilterQueryOperator;
+import com.viglet.turing.commons.sn.search.TurSNSearchCacheKey;
 import com.viglet.turing.commons.sn.search.TurSNSiteSearchContext;
 import com.viglet.turing.persistence.model.sn.locale.TurSNSiteLocale;
 import com.viglet.turing.sn.TurSNSearchProcess;
@@ -67,7 +68,7 @@ public class TurSNSiteSearchService {
 
         TurSNSiteSearchContext searchContext = getTurSNSiteSearchContext(turSNSearchParams, request, siteName);
         return searchCacheEnabled
-                ? executeSearchWithCache(request, searchContext)
+                ? executeSearchWithCache(searchContext)
                 : executeSearch(searchContext);
     }
 
@@ -80,11 +81,16 @@ public class TurSNSiteSearchService {
                 turSNSearchProcess.search(turSNSiteSearchContext), HttpStatus.OK);
     }
 
-    public ResponseEntity<TurSNSiteSearchBean> executeSearchWithCache(HttpServletRequest request,
+    /**
+     * T858 / §LXV.3 — the cache key is derived from the context's effective
+     * parameters, so it cannot depend on how the request arrived and no caller
+     * has to remember to supply one.
+     */
+    public ResponseEntity<TurSNSiteSearchBean> executeSearchWithCache(
             TurSNSiteSearchContext turSNSiteSearchContext) {
         return new ResponseEntity<>(
                 turSNSiteSearchCachedAPI.searchCached(
-                        TurSNUtils.getCacheKey(turSNSiteSearchContext.getSiteName(), request),
+                        TurSNSearchCacheKey.of(turSNSiteSearchContext),
                         turSNSiteSearchContext),
                 HttpStatus.OK);
     }
@@ -105,7 +111,7 @@ public class TurSNSiteSearchService {
                 getTurSNConfig(siteName), siteName, turSNSearchParams,
                 turSNSitePostParamsBean, request);
         if (searchCacheEnabled) {
-            return executeSearchWithCache(request, searchContext);
+            return executeSearchWithCache(searchContext);
         } else {
             return executeSearch(searchContext);
         }
@@ -126,16 +132,9 @@ public class TurSNSiteSearchService {
             String siteName) {
         TurSNSiteSearchContext searchContext =
                 publicPostSearchContext(searchRequest, turSNSearchParams, request, siteName);
-        if (!searchCacheEnabled) {
-            return executeSearch(searchContext);
-        }
-        // A POST has no query string, so TurSNUtils.getCacheKey would collapse
-        // every distinct body onto "<site>_null". Key on the canonical URI's
-        // query instead — it is a faithful, order-stable projection of the body.
-        return new ResponseEntity<>(
-                turSNSiteSearchCachedAPI.searchCached(publicPostCacheKey(siteName, searchContext),
-                        searchContext),
-                HttpStatus.OK);
+        return searchCacheEnabled
+                ? executeSearchWithCache(searchContext)
+                : executeSearch(searchContext);
     }
 
     /**
@@ -177,17 +176,6 @@ public class TurSNSiteSearchService {
         return new TurSNSiteSearchContext(siteName, getTurSNConfig(siteName),
                 new TurSEParameters(turSNSearchParams, postParams),
                 turSNSearchParams.getLocale(), canonicalUri, postParams);
-    }
-
-    /**
-     * Cache key for a public POST call — see the comment in
-     * {@link #executePublicPostSearch} for why the request's own query string
-     * cannot be used.
-     *
-     * @since 2026.3.4
-     */
-    public static String publicPostCacheKey(String siteName, TurSNSiteSearchContext context) {
-        return "%s_%s".formatted(siteName, context.getUri().getRawQuery());
     }
 
     public TurSNConfig getTurSNConfig(String siteName) {

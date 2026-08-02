@@ -67,11 +67,6 @@ public class TurSNUtils {
     }
 
     @NotNull
-    public static String getCacheKey(String siteName, HttpServletRequest request) {
-        return "%s_%s".formatted(siteName, request.getQueryString());
-    }
-
-    @NotNull
     public static TurSNSiteSearchContext getTurSNSiteSearchContext(TurSNConfig turSNConfig,
             String siteName, TurSNSearchParams turSNSearchParams, HttpServletRequest request) {
         return getTurSNSiteSearchContext(turSNConfig, siteName, turSNSearchParams, new TurSNSitePostParamsBean(),

@@ -34,6 +34,7 @@ import com.viglet.turing.commons.sn.bean.TurSNSitePostParamsBean;
 import com.viglet.turing.commons.sn.bean.TurSNSiteSearchBean;
 import com.viglet.turing.commons.sn.bean.TurSNSiteSearchResultsBean;
 import com.viglet.turing.commons.sn.field.TurSNFieldName;
+import com.viglet.turing.commons.sn.search.TurSNSearchCacheKey;
 import com.viglet.turing.commons.sn.search.TurSNSiteSearchContext;
 import com.viglet.turing.persistence.repository.sn.TurSNSiteRepository;
 import com.viglet.turing.plugins.se.TurSearchEnginePluginFactory;
@@ -70,24 +71,28 @@ public class TurSNAutoComplete {
     public List<String> autoCompleteWithRegularSearch(String siteName,
             TurSNSearchParams turSNSearchParams, HttpServletRequest request) {
         return autoCompleteWithRegularSearch(siteName, turSNSearchParams,
-                TurSNUtils.requestToURI(request), TurSNUtils.getCacheKey(siteName, request));
+                TurSNUtils.requestToURI(request));
     }
 
     /**
      * T712 / §XLV — the POST-driven flavour of
      * {@link #autoCompleteWithRegularSearch(String, TurSNSearchParams, HttpServletRequest)}.
-     * A JSON body carries no query string, so both the search URI and the cache
-     * key have to be supplied by the caller (the GET flavour derives them from the
-     * request; keying on {@code request.getQueryString()} would collapse every
-     * distinct POST body onto {@code "<site>_null"}).
+     * A JSON body carries no query string, so the search URI has to be supplied
+     * by the caller (the GET flavour derives it from the request).
      *
-     * @param uri      the canonical GET-equivalent URI for this request
-     * @param cacheKey a key that faithfully projects the request body
+     * <p>
+     * T858 / §LXV.3 — the cache key is no longer a parameter: it is derived from
+     * the context built below, <em>after</em> the autocomplete rewrite of
+     * {@code q}, so the key describes the search that actually runs and no caller
+     * can forget to pass one.
+     * </p>
+     *
+     * @param uri the canonical GET-equivalent URI for this request
      * @since 2026.3.4
      */
     @NotNull
     public List<String> autoCompleteWithRegularSearch(String siteName,
-            TurSNSearchParams turSNSearchParams, URI uri, String cacheKey) {
+            TurSNSearchParams turSNSearchParams, URI uri) {
         TurSNConfig turSNConfig = new TurSNConfig();
         turSNConfig.setHlEnabled(false);
         turSNSearchParams
@@ -99,7 +104,9 @@ public class TurSNAutoComplete {
         TurSNSiteSearchContext context = new TurSNSiteSearchContext(siteName, turSNConfig,
                 new TurSEParameters(turSNSearchParams, postParams), turSNSearchParams.getLocale(),
                 uri, postParams);
-        return Optional.ofNullable(turSNSiteSearchCachedAPI.searchCached(cacheKey, context))
+        return Optional
+                .ofNullable(turSNSiteSearchCachedAPI
+                        .searchCached(TurSNSearchCacheKey.of(context), context))
                 .map(TurSNSiteSearchBean::getResults).map(TurSNSiteSearchResultsBean::getDocument)
                 .map(documents -> {
                     List<String> termList = new ArrayList<>();

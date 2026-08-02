@@ -121,8 +121,7 @@ public class TurSNSiteAutoCompleteAPI {
                                         TurSNUtils.requestToURI(request), searchRequest,
                                         resolvedLocale);
                         return turSNAutoComplete.autoCompleteWithRegularSearch(siteName,
-                                        turSNSearchParams, canonicalUri,
-                                        "%s_%s".formatted(siteName, canonicalUri.getRawQuery()));
+                                        turSNSearchParams, canonicalUri);
                 }
                 return turSNAutoComplete.autoComplete(siteName, turSNSearchParams.getQ(),
                                 resolvedLocale, turSNSearchParams.getRows());

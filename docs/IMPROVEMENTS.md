@@ -2893,26 +2893,6 @@ search — so the console keeps one way of launching a search surface.
 > primitive that was fine for GET-only turned out to invite a bug once a second
 > transport existed.
 
-### LXV.3 The cache-key primitive invites the bug (T858)
-
-`TurSNUtils.getCacheKey(siteName, request)` is
-`"%s_%s".formatted(siteName, request.getQueryString())`. That is correct exactly
-as long as the query string *is* the request — true for GET, false for every POST
-endpoint. A POST has no query string, so the key collapses to `<site>_null` and
-one cached result is served for every distinct body.
-
-This was hit twice, independently: T707 for `/search/query` and T712 for
-`/ac/query` + `/search/list/query`. Both fixed it the same way — by passing a key
-derived from the canonical URI. Two separate encounters with the same trap is
-evidence about the primitive, not about the two authors: the signature makes the
-wrong thing the easy thing, and the next POST endpoint will hit it again.
-
-The fix is to key on `TurSNSiteSearchContext` — the effective parameters, which
-every transport already builds — and retire the `HttpServletRequest` overload.
-The key then cannot depend on how the request arrived. Note this is a *cache*
-key, so a mistake here is silent (wrong results, no error), which is precisely
-why it should not rely on the caller remembering.
-
 ### LXV.4 The Block AV backend has no end-to-end coverage (T859)
 
 Everything shipped in T707–T714 is verified by unit tests over mocks. That is

@@ -23,6 +23,7 @@ package com.viglet.turing.api.sn.search;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
@@ -41,6 +42,7 @@ import java.util.Set;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.ArgumentCaptor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.mock.web.MockHttpServletRequest;
@@ -52,6 +54,7 @@ import com.viglet.turing.commons.sn.bean.TurSNSearchParams;
 import com.viglet.turing.commons.sn.bean.TurSNSitePostParamsBean;
 import com.viglet.turing.commons.sn.bean.TurSNSiteSearchBean;
 import com.viglet.turing.commons.sn.search.TurSNFilterQueryOperator;
+import com.viglet.turing.commons.sn.search.TurSNSearchCacheKey;
 import com.viglet.turing.commons.sn.search.TurSNSiteSearchContext;
 import com.viglet.turing.persistence.model.sn.TurSNSite;
 import com.viglet.turing.persistence.model.sn.locale.TurSNSiteLocale;
@@ -114,23 +117,23 @@ class TurSNSiteSearchServiceTest {
         TurSNSiteSearchCachedAPI cacheApi = mock(TurSNSiteSearchCachedAPI.class);
         TurSNSiteSearchSnapshotService snapshots = mock(TurSNSiteSearchSnapshotService.class);
         TurSNSiteSearchService service = new TurSNSiteSearchService(searchProcess, cacheApi, snapshots);
-        HttpServletRequest request = mock(HttpServletRequest.class);
-        when(request.getQueryString()).thenReturn("q=java");
-
         TurSNConfig config = new TurSNConfig();
         TurSNSearchParams params = new TurSNSearchParams();
+        params.setQ("java");
         params.setLocale(Locale.US);
         TurSNSiteSearchContext context = new TurSNSiteSearchContext("site", config,
                 new TurSEParameters(params), Locale.US, URI.create("http://example.com"));
         TurSNSiteSearchBean expected = new TurSNSiteSearchBean();
+        // T858 — the key is derived from the context, never from the transport.
+        String key = TurSNSearchCacheKey.of(context);
 
-        when(cacheApi.searchCached("site_q=java", context)).thenReturn(expected);
+        when(cacheApi.searchCached(key, context)).thenReturn(expected);
 
-        ResponseEntity<TurSNSiteSearchBean> response = service.executeSearchWithCache(request, context);
+        ResponseEntity<TurSNSiteSearchBean> response = service.executeSearchWithCache(context);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(response.getBody()).isSameAs(expected);
-        verify(cacheApi).searchCached("site_q=java", context);
+        verify(cacheApi).searchCached(key, context);
     }
 
     @Test
@@ -200,21 +203,27 @@ class TurSNSiteSearchServiceTest {
         field.set(service, true);
 
         HttpServletRequest request = mock(HttpServletRequest.class);
-        when(request.getQueryString()).thenReturn("q=hello");
         when(request.getRequestURL()).thenReturn(new StringBuffer("http://example.com/api"));
 
         TurSNSearchParams params = new TurSNSearchParams();
+        params.setQ("hello");
         params.setLocale(Locale.US);
         when(snapshots.getSnapshot("site", null)).thenReturn(Optional.of(snapshot("site", false, List.of())));
         TurSNSiteSearchBean expected = new TurSNSiteSearchBean();
-        when(cacheApi.searchCached(eq("site_q=hello"), any(TurSNSiteSearchContext.class)))
+        when(cacheApi.searchCached(anyString(), any(TurSNSiteSearchContext.class)))
                 .thenReturn(expected);
 
         ResponseEntity<TurSNSiteSearchBean> response = service.executeGetSearch(params, request, "site");
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(response.getBody()).isSameAs(expected);
-        verify(cacheApi).searchCached(eq("site_q=hello"), any(TurSNSiteSearchContext.class));
+        // T858 — the key describes the effective parameters, not the transport:
+        // this request carries no query string at all, and the key is still
+        // specific to the search that ran.
+        ArgumentCaptor<String> key = ArgumentCaptor.forClass(String.class);
+        verify(cacheApi).searchCached(key.capture(), any(TurSNSiteSearchContext.class));
+        assertThat(key.getValue()).contains("site=site").contains("q=hello")
+                .contains("locale=en_US");
     }
 
     @Test
@@ -302,7 +311,7 @@ class TurSNSiteSearchServiceTest {
         when(searchProcess.requestTargetingRules(postParams.getTargetingRules()))
                 .thenReturn(List.of("role:\"admin\""));
         TurSNSiteSearchService spyService = org.mockito.Mockito.spy(service);
-        doReturn(expected).when(spyService).executeSearchWithCache(eq(request), any(TurSNSiteSearchContext.class));
+        doReturn(expected).when(spyService).executeSearchWithCache(any(TurSNSiteSearchContext.class));
 
         ResponseEntity<TurSNSiteSearchBean> response = spyService.executePostSearch(params, postParams, request, "site");
 
