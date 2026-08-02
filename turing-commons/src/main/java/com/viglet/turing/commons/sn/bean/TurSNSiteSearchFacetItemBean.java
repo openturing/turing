@@ -37,6 +37,22 @@ import lombok.experimental.Accessors;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class TurSNSiteSearchFacetItemBean implements Serializable {
 	private int count;
+	/**
+	 * T713 / §XLV — <strong>legacy</strong>: a pre-serialized GET URL that
+	 * re-runs the search with this item toggled.
+	 *
+	 * <p>
+	 * Kept, and not going away — it is what makes facet pages deep-linkable,
+	 * bookmarkable, SEO-crawlable and usable without JavaScript, which §XLV.5
+	 * protects as a non-goal. But it is <em>legacy for a JavaScript client</em>:
+	 * parsing this URL back into parameters is the query-string round-trip the
+	 * block exists to remove, and a value containing {@code & = + # %} or a
+	 * space only survives it because the encoder is correct. A JS client should
+	 * request {@code responseFormat: STRUCTURED} and toggle
+	 * {@link #filterQuery} using the item's own {@link #action} instead; the
+	 * shipped SDKs no longer parse this field.
+	 * </p>
+	 */
 	private String link;
 	private String label;
 	private String filterQuery;

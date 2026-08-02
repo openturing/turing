@@ -213,6 +213,8 @@ number" looked free but wasn't. Grepping three files (`ROADMAP.md`,
 
 ## Log (most recent first)
 
+- **T713 SHIPPED** (Block AV §XLV — href round-trip deprecated w/ one-time notice, NOT removed (next major); legacy javadoc on the 6 link fields; fixed co-browse facet tools broken POST-native since T710. **Block AV CLOSED**) — 2026-08-02.
+
 - **T714 SHIPPED** (Block AV §XLV — EDS block + marketing-site SearchDemo off `postNative: false`; showcase already POST-native; rest-api/javascript-sdk/react-sdk docs + COVERAGE. T713 re-sequenced after it) — 2026-08-02.
 
 - **T712 SHIPPED** (Block AV §XLV — `POST /ac/query` + `POST /search/list/query` take the same anonymous `TurSNSearchRequest`; body-derived cache key; `/api/sn/*/ac/**` permitAll) — 2026-08-02.

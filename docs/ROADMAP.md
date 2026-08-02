@@ -163,15 +163,14 @@
 > toggles from structured state. **Additive:** GET + server-rendered links stay for
 > deep-linking / SEO / no-JS. Design in [IMPROVEMENTS.md](IMPROVEMENTS.md) §XLV.
 
-> **T707–T712 + T714 shipped** — the anonymous
+> **✅ Block AV fully shipped (T707–T714).** The anonymous
 > `POST /api/sn/{site}/search/query` JSON contract, the opt-in link-free
 > `STRUCTURED` response, both JS SDKs driving them, the parity guard +
-> anonymous-demo confirmation, the `/ac` + `/list` POST variants that make the
-> whole public read surface POST-capable, and the docs/showcase/EDS migration
-> that retired the last `postNative: false` consumers. See
-> [CHANGELOG.md](CHANGELOG.md) → Block AV. Remaining:
-
-- 📋 **T713** (deps: T709, T710, T712, T714) **Deprecate embedded href/link fields behind the format flag** — mark `link`/`href`/`cleanUpFacets`/spell-check `link` legacy (kept for no-JS/HTML/SEO/deep-linking) and drop the query-string round-trip helpers (`parseHrefToParams`, `navigate(href)`) from both SDKs. Promoted from 💭 and re-sequenced **after T714**: the two consumers pinned to `postNative: false` were the only remaining callers of those helpers, so removing them was only safe once T714 migrated them. → §XLV
+> anonymous-demo confirmation, the `/ac` + `/list` POST variants, the
+> docs/showcase/EDS migration, and the href round-trip put on notice. See
+> [CHANGELOG.md](CHANGELOG.md) → Block AV. **The removal of
+> `parseHrefToParams` / `navigate(href)` / `onNavigate` is deliberately left to
+> the next major** — T713 deprecates, it does not delete.
 
 ## Non-goals (do NOT add as tasks)
 

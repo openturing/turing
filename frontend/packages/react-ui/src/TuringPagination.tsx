@@ -28,8 +28,13 @@ export interface TuringPaginationProps {
    * Navigate by href — the legacy path. Ignored when {@link onSelectPage} is
    * given.
    *
-   * @deprecated T710 — prefer {@link onSelectPage}; an href has to be parsed
-   * back into params, which is the round-trip §XLV removes.
+   * @deprecated T710 / T713 — prefer {@link onSelectPage}; an href has to be
+   * parsed back into params, which is the round-trip §XLV removes.
+   * **Scheduled for removal in the next major.** No console notice is emitted
+   * here on purpose: this component only *forwards* the href to the host, it
+   * never parses one, so the notice belongs at the parse site
+   * (`parseHrefToParams` in `@viglet/turing-sdk`) — and this package stays
+   * zero-runtime-dependency, so it cannot import that notice anyway.
    */
   onNavigate?: (href: string) => void;
   /**

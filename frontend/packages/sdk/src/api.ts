@@ -1,4 +1,5 @@
 import type { TuringClient } from "./client";
+import { warnDeprecated } from "./deprecation";
 import type {
   TurAnswerArtifact,
   TurAnswerCitation,
@@ -1962,8 +1963,29 @@ export async function postSummary(
 /**
  * Parses an href link from the Turing API (e.g. facet link, pagination link)
  * into a SearchParams object that can be used to re-execute a search.
+ *
+ * @deprecated T713 / §XLV — this is the query-string round-trip Block AV exists
+ *   to remove: the server serializes a URL, this parses it back, and the caller
+ *   re-serializes it, so a value containing `&`, `=`, `+`, `#`, `%` or a space
+ *   survives only because every hop encodes correctly. Request
+ *   `responseFormat: "STRUCTURED"` and drive the next request from
+ *   {@link applyFacetAction} / `toggleFacet` / `goToPage` / `applySpellCheck`
+ *   instead — a JSON body has no query-string grammar, so the bug class is
+ *   impossible rather than merely handled. **Scheduled for removal in the next
+ *   major.** The server-rendered links themselves are *not* deprecated: they
+ *   stay for deep-linkable, SEO-crawlable and no-JS pages.
  */
 export function parseHrefToParams(href: string): SearchParams {
+  warnDeprecated(
+    "parseHrefToParams",
+    "parseHrefToParams / navigate(href) parse a server URL back into params; removed in the " +
+      "next major. Use the STRUCTURED response: toggleFacet, goToPage, applySpellCheck.",
+  );
+  return parseHrefToParamsInternal(href);
+}
+
+/** The actual parse, with no notice — the deprecated entry points share it. */
+function parseHrefToParamsInternal(href: string): SearchParams {
   const qs = href.includes("?") ? href.split("?")[1] : href;
   const usp = new URLSearchParams(qs);
 

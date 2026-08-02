@@ -39,6 +39,13 @@ import lombok.Setter;
 public class TurSNSiteSpellCheckText implements Serializable {
 	private static final String TRUE = "1";
 	private String text;
+	/**
+	 * T713 / §XLV — <strong>legacy</strong>: a pre-serialized GET URL that re-runs
+	 * the search with this text. Kept for deep-linking / SEO / no-JS (see
+	 * §XLV.5), but legacy for a JavaScript client: request
+	 * {@code responseFormat: STRUCTURED} and put {@link #text} on the request's
+	 * {@code q} instead of parsing this URL.
+	 */
 	private String link;
 
 	@JsonCreator

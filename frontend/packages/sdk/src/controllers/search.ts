@@ -82,10 +82,15 @@ export interface SearchController extends Store<SearchControllerState> {
   /**
    * Navigate via a Turing href link (facet, pagination, spell-check).
    *
-   * @deprecated T709 — this is the query-string round-trip the block exists to
-   * remove. Use {@link SearchController.toggleFacet},
+   * @deprecated T709 / T713 — this is the query-string round-trip the block
+   * exists to remove. Use {@link SearchController.toggleFacet},
+   * {@link SearchController.clearFacet},
+   * {@link SearchController.clearAllFilters},
    * {@link SearchController.goToPage} or {@link SearchController.applySpellCheck}
-   * instead; they carry no URL. Kept for GET-mode consumers and no-JS fallbacks.
+   * instead; they carry no URL. Calling this logs a one-time console notice and
+   * it is **scheduled for removal in the next major** — as of T714 nothing in
+   * this repository calls it. The server-rendered links it consumes are *not*
+   * deprecated: render them as real anchors for deep-linking / SEO / no-JS.
    */
   navigate(href: string): Promise<void>;
   /**
@@ -148,10 +153,13 @@ export interface SearchControllerOptions {
    * {@link SearchControllerState.request}.
    *
    * <p>Set `false` for the legacy GET behaviour, where
-   * {@link SearchControllerState.data} carries the link-bearing response and
-   * {@link SearchController.navigate} is the way to move. The only reason to do
-   * so is a consumer that still reads `state.data` — nothing else differs, and
-   * `documents` / `groups` / `status` / `error` are identical in both modes.
+   * {@link SearchControllerState.data} carries the link-bearing response. The
+   * only reason to do so is a consumer that still reads `state.data` — nothing
+   * else differs, and `documents` / `groups` / `status` / `error` are identical
+   * in both modes. T713: in that mode, render the response's hrefs as real
+   * anchors (which is what they are good for — deep-linking, SEO, no-JS);
+   * {@link SearchController.navigate} still works but is deprecated and logs a
+   * notice, because parsing those hrefs back is the round-trip Block AV removes.
    */
   readonly postNative?: boolean;
 }
@@ -375,6 +383,9 @@ export function createSearchController(
       postNative
         ? patchRequest({ q: query })
         : executeSearch({ ...store.getState().params, q: query, p: "1" }),
+    // T713 — deprecated calling deprecated, on purpose: `parseHrefToParams` is
+    // where the one-time console notice lives, so routing through it keeps the
+    // warning exact (one per page) instead of duplicating it here.
     navigate: (href) => executeSearch(parseHrefToParams(href)),
     toggleFacet: (item) =>
       patchRequest({ fq: applyFacetAction(store.getState().request.fq ?? [], item) }),

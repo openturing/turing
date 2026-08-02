@@ -41,6 +41,12 @@ import java.io.Serializable;
 public class TurSNSiteSearchPaginationBean implements Serializable {
 	private TurSNPaginationType type;
 	private String text;
+	/**
+	 * T713 / §XLV — <strong>legacy</strong>: a pre-serialized GET URL for this
+	 * page. Kept for deep-linking / SEO / no-JS (see §XLV.5), but legacy for a
+	 * JavaScript client: request {@code responseFormat: STRUCTURED} and set
+	 * {@link #page} on the request instead of parsing this URL.
+	 */
 	private String href;
 	private int page;
 }

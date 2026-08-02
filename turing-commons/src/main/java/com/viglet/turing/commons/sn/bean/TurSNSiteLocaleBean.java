@@ -38,6 +38,13 @@ import java.util.Locale;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class TurSNSiteLocaleBean implements Serializable {
 	private Locale locale;
+	/**
+	 * T713 / §XLV — <strong>legacy</strong>: a pre-serialized GET URL that re-runs
+	 * the search in this locale. Kept for deep-linking / SEO / no-JS (see
+	 * §XLV.5), but legacy for a JavaScript client: request
+	 * {@code responseFormat: STRUCTURED} and set {@link #locale} on the request
+	 * instead of parsing this URL.
+	 */
 	private String link;
 
 }

@@ -100,7 +100,8 @@ interface UrlSyncOptions {
    * server-rendered href.
    *
    * <p>Set `false` for the legacy behaviour, where `store.data` carries the
-   * link-bearing response and `navigate(href)` is the way to move.
+   * link-bearing response. T713: render its hrefs as real anchors;
+   * `navigate(href)` still works but is deprecated and logs a notice.
    */
   postNative?: boolean;
 }
@@ -289,6 +290,8 @@ function UrlSyncSearchStore({
     [explicitParams, setUrl],
   );
 
+  // T713 — deprecated calling deprecated, on purpose: `parseHrefToParams` owns
+  // the one-time console notice, so the warning stays exact (one per page).
   const navigate = useCallback(
     (href: string) => setUrl(parseHrefToParams(href)),
     [setUrl],

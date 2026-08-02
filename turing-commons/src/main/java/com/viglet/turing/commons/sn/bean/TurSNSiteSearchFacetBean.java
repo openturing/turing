@@ -34,6 +34,14 @@ public class TurSNSiteSearchFacetBean implements Serializable {
     private String description;
     private TurSEFieldType type;
     private boolean multiValued;
+    /**
+     * T713 / §XLV — <strong>legacy</strong>: a pre-serialized GET URL that
+     * clears every selection of this facet. Kept for deep-linking / SEO / no-JS
+     * (see §XLV.5), but legacy for a JavaScript client: request
+     * {@code responseFormat: STRUCTURED} and remove
+     * {@code TurSNStructuredFacetBean.clearFilterQueries} from the request's
+     * {@code fq} instead of parsing this URL.
+     */
     private String cleanUpLink;
     private List<String> selectedFilterQueries;
 }

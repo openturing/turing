@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 import type { SearchStoreValue } from "../core/context";
 import type { ClientToolHandler } from "../core/types";
+import type { TurStructuredFacetItem } from "@viglet/turing-sdk";
 
 /**
  * T443 / §XXIII.2 — co-browse the search UI.
@@ -39,7 +40,32 @@ interface ToggleFacetArgs {
   value?: unknown;
 }
 
-/** Find a facet's toggle link by group name + visible value label (case-insensitive). */
+/**
+ * T713 — find a structured facet item by group name + visible value label
+ * (case-insensitive). This is the POST-native lookup and the only one that
+ * works in the default mode: `store.data` is `null` there, so the previous
+ * href-based lookup made `toggle_facet` / `clear_facets` fail outright.
+ */
+function findStructuredFacetItem(
+  store: SearchStoreValue,
+  field: string,
+  value: string,
+): TurStructuredFacetItem | undefined {
+  const groups = store.structured?.facets ?? [];
+  const group = groups.find((g) => g.name?.toLowerCase() === field.toLowerCase());
+  return group?.items.find(
+    (item) =>
+      item.label?.toLowerCase() === value.toLowerCase() ||
+      item.value?.toLowerCase() === value.toLowerCase(),
+  );
+}
+
+/**
+ * Legacy (`postNative: false`) fallback: the same lookup against the
+ * link-bearing response.
+ *
+ * @deprecated T713 — goes away with `navigate(href)` in the next major.
+ */
 function findFacetLink(
   store: SearchStoreValue,
   field: string,
@@ -64,6 +90,12 @@ export function useCoBrowseSearch(store: SearchStoreValue): UseCoBrowseReturn {
         if (typeof field !== "string" || typeof value !== "string") {
           return { success: false, message: "field and value are required" };
         }
+        // POST-native first — `store.structured` is what the default mode fills.
+        const item = findStructuredFacetItem(store, field, value);
+        if (item) {
+          store.toggleFacet(item);
+          return { success: true, field, value };
+        }
         const link = findFacetLink(store, field, value);
         if (!link) {
           return { success: false, message: `Facet not found: ${field}=${value}` };
@@ -72,8 +104,12 @@ export function useCoBrowseSearch(store: SearchStoreValue): UseCoBrowseReturn {
         return { success: true, field, value };
       },
       clear_facets: () => {
-        const cleanUp = store.data?.widget?.cleanUpFacets;
         const cleared = (store.params.fq ?? []).length;
+        if (store.structured) {
+          store.clearAllFilters();
+          return { success: true, cleared };
+        }
+        const cleanUp = store.data?.widget?.cleanUpFacets;
         if (cleanUp) {
           store.navigate(cleanUp);
         } else {

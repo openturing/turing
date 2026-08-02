@@ -60,9 +60,13 @@ export interface SearchStoreValue {
   /**
    * Navigate via a Turing API href (facet, pagination, spell check links).
    *
-   * @deprecated T710 — this is the query-string round-trip §XLV removes. Use
-   * {@link toggleFacet} / {@link goToPage} / {@link applySpellCheck}, which
-   * carry no URL. Kept for GET-mode consumers and no-JS fallbacks.
+   * @deprecated T710 / T713 — parsing a server-rendered URL back into params is
+   * the query-string round-trip §XLV removes. Use {@link toggleFacet} /
+   * {@link clearFacet} / {@link clearAllFilters} / {@link goToPage} /
+   * {@link applySpellCheck}, which carry no URL. Logs a one-time console notice
+   * and is **scheduled for removal in the next major**; as of T714 nothing in
+   * this repository calls it. The links themselves stay — render them as real
+   * anchors for deep-linking / SEO / no-JS.
    */
   navigate: (href: string) => void;
   /**

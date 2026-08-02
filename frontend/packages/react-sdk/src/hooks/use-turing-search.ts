@@ -77,7 +77,17 @@ export interface UseTuringSearchReturn {
   search: (params: SearchParams) => Promise<void>;
   /** Execute a new text query (resets page to 1) */
   searchQuery: (query: string) => Promise<void>;
-  /** Navigate via a Turing href link (facet, pagination, spell check) */
+  /**
+   * Navigate via a Turing href link (facet, pagination, spell check).
+   *
+   * @deprecated T709 / T713 — parsing a server-rendered URL back into params is
+   *   the query-string round-trip Block AV removes. Use {@link toggleFacet},
+   *   {@link clearFacet}, {@link clearAllFilters}, {@link goToPage} or
+   *   {@link applySpellCheck} instead. Calling this logs a one-time console
+   *   notice and it is **scheduled for removal in the next major** — as of T714
+   *   nothing in this repository calls it. The links themselves stay: render
+   *   them as real anchors for deep-linking / SEO / no-JS.
+   */
   navigate: (href: string) => Promise<void>;
   /** Change locale */
   changeLocale: (locale: string) => Promise<void>;
@@ -111,10 +121,11 @@ export interface UseTuringSearchOptions {
    * {@link UseTuringSearchReturn.request}.
    *
    * <p>Set `false` for the legacy GET behaviour, where
-   * {@link UseTuringSearchReturn.data} carries the link-bearing response and
-   * `navigate(href)` is the way to move. The only reason to do so is a consumer
-   * that still reads `data`; `documents` / `groups` / `status` / `error` /
-   * `params` are identical in both modes.
+   * {@link UseTuringSearchReturn.data} carries the link-bearing response. The
+   * only reason to do so is a consumer that still reads `data`; `documents` /
+   * `groups` / `status` / `error` / `params` are identical in both modes.
+   * T713: in that mode render the response's hrefs as real anchors;
+   * `navigate(href)` still works but is deprecated and logs a notice.
    */
   readonly postNative?: boolean;
 }
@@ -344,11 +355,11 @@ export function useTuringSearch(
     [patchRequest],
   );
 
+  // T713 — deprecated calling deprecated, on purpose: `parseHrefToParams` owns
+  // the one-time console notice, so routing through it keeps the warning exact
+  // (one per page) instead of duplicating it here.
   const navigate = useCallback(
-    (href: string) => {
-      const parsed = parseHrefToParams(href);
-      return executeSearch(parsed);
-    },
+    (href: string) => executeSearch(parseHrefToParams(href)),
     [executeSearch],
   );
 

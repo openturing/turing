@@ -2344,21 +2344,32 @@ anonymous demo's nginx allowlist already covers POST search (the `/api/sn/`
 location is method-agnostic) — documented there as a "do not harden to
 GET-only".
 
-**Phase 4 — breadth & retirement (T713 remaining).** **T712** shipped the POST
-variants for `/ac` and `/list`, and **T714** the docs/showcase/EDS migration —
-see CHANGELOG Block AV. Two decisions worth keeping: neither the autocomplete nor
-the select-list projection carries links, so `responseFormat` deliberately does
-not apply to them; and **T713 had to be re-sequenced after T714**, because the
-two consumers T709 pinned to `postNative: false` (the marketing-site `SearchDemo`
-and the EDS `turing-search` block) were the *only* remaining callers of
-`parseHrefToParams` / `navigate(href)` — dropping the helpers before migrating
-them would have broken the very surfaces the block is meant to prove out.
+**Phase 4 — breadth & retirement (T712–T714). Shipped; the block is closed** —
+see CHANGELOG Block AV. Four decisions worth keeping:
 
-Remaining (T713): mark the embedded `link`/`href`/`cleanUpFacets`/spell-check-`link`
-fields legacy (kept — see non-goals) and drop the query-string round-trip helpers
-from both SDKs. Note that `buildQueryString` is **not** one of them: it serializes
-the GET request itself, which the GET contract still needs; the round-trip is
-specifically *parsing a server-rendered href back into params*.
+1. Neither the autocomplete nor the select-list projection carries links, so
+   `responseFormat` deliberately does not apply to them (T712).
+2. **T713 had to be re-sequenced after T714.** The two consumers T709 pinned to
+   `postNative: false` (the marketing-site `SearchDemo` and the EDS
+   `turing-search` block) were the *only* remaining callers of
+   `parseHrefToParams` / `navigate(href)`; touching the helpers before migrating
+   them would have broken the very surfaces the block exists to prove out.
+3. **T713 deprecates, it does not delete.** Going POST-only — dropping the
+   helpers *and* `postNative: false` — was considered and rejected: it is a hard
+   break on published packages three tasks after deliberately shipping that
+   opt-out. The removal is scheduled for the next major, and only then does the
+   gzip budget the T709 changeset anticipated actually come back (a deprecation
+   notice adds bytes). Note that `buildQueryString` is **not** one of the
+   helpers on notice: it serializes the GET request itself, which the GET
+   contract still needs. The round-trip is specifically *parsing a
+   server-rendered href back into params*.
+4. Going POST-native by default silently broke something, which is worth
+   remembering as a pattern: `useCoBrowseSearch`'s `toggle_facet` /
+   `clear_facets` resolved their target out of `store.data`, which is `null`
+   POST-native, so they failed in the *default* mode from T710 until T713 found
+   it. When a default flips, audit every reader of the field the old default
+   populated — a type-check will not catch it, because `data` is legitimately
+   nullable.
 
 ### XLV.5 Non-goals & open questions
 

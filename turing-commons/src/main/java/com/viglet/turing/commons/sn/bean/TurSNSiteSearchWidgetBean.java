@@ -39,6 +39,13 @@ import lombok.experimental.Accessors;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class TurSNSiteSearchWidgetBean implements Serializable {
 	private String icon;
+	/**
+	 * T713 / §XLV — <strong>legacy</strong>: a pre-serialized GET URL that clears
+	 * every filter on the search. Kept for deep-linking / SEO / no-JS (see
+	 * §XLV.5), but legacy for a JavaScript client: request
+	 * {@code responseFormat: STRUCTURED} and clear the request's {@code fq}
+	 * (see {@link #selectedFilterQueries}) instead of parsing this URL.
+	 */
 	private String cleanUpFacets;
 	private List<String> selectedFilterQueries;
 	private List<TurSNSiteSearchFacetBean> facet;
