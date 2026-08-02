@@ -47,3 +47,11 @@ jobs:
         if: startsWith(matrix.workspace, '@viglet/')
         working-directory: frontend
         run: pnpm --filter "${{ matrix.workspace }}" run size
+
+      # T861: this job used to build and weigh the packages but never ran their
+      # tests, so `@viglet/turing-sdk` could declare a `test` script it had no
+      # runner for and nothing noticed. `--if-present` keeps the matrix entries
+      # that genuinely have no suite (the marketplace examples) passing.
+      - name: Test
+        working-directory: frontend
+        run: pnpm --filter "${{ matrix.workspace }}" run --if-present test

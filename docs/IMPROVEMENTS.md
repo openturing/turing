@@ -2900,19 +2900,6 @@ search — so the console keeps one way of launching a search surface.
 > together they mean `@viglet/turing-sdk` — the package external consumers and the
 > EDS blocks depend on — has no working quality gate.
 
-### LXVI.1 The declared test script cannot run (T861)
-
-`frontend/packages/sdk/package.json` declares `"test": "vitest run"` but lists
-only `typescript`, `vite` and `vite-plugin-dts` as devDependencies. There is no
-`vitest`, and `pnpm --filter @viglet/turing-sdk test` fails with
-`Command "vitest" not found`. Running the suite locally required borrowing
-`apps/turing-app/node_modules/.bin/vitest`.
-
-So either CI resolves the binary by hoisting (works, but by accident — a lockfile
-change can remove it) or CI is not running this package's tests at all. Both
-warrant the same fix: declare the dependency, then confirm the CI job actually
-executes it. The confirmation matters more than the dependency.
-
 ### LXVI.2 The suite is red at rest (T862)
 
 `analytics-abandonment.test.ts` (6 failures) and `analytics-conversion.test.ts`

@@ -261,6 +261,8 @@ number" looked free but wasn't. Grepping three files (`ROADMAP.md`,
 
 - **T856–T860 CREATED** (📋, Block BR §LXV — Block AV follow-through: `responseFormat` on GET, inline sort options, collision-proof cache key, end-to-end POST/structured contract IT, `EnrichedFacetItem.link` optional) — 2026-08-02.
 
+- **T861 SHIPPED** (Block BS §LXVI — `vitest` declared + standalone `vitest.config.ts`; `validate-js.yml` never ran any package's tests and now does) — 2026-08-02.
+
 - **T861–T863 CREATED** (📋, Block BS §LXVI — the JS SDK release gate: vanilla SDK owns its test runner, fix the 7 red analytics tests, size budget as a delta guard in CI) — 2026-08-02.
 
 - **T713 SHIPPED** (Block AV §XLV — href round-trip deprecated w/ one-time notice, NOT removed (next major); legacy javadoc on the 6 link fields; fixed co-browse facet tools broken POST-native since T710. **Block AV CLOSED**) — 2026-08-02.
