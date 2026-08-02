@@ -44,9 +44,9 @@ import { DialogDelete } from "@/components/dialog.delete"
 import React, { useEffect, useState } from "react"
 import { useForm } from "react-hook-form"
 import { useTranslation } from "react-i18next"
-import { Link, useNavigate } from "react-router-dom"
+import { useNavigate } from "react-router-dom"
 import { StickyPageHeader } from "../../sticky-page-header"
-import { BentoHero, BentoScrollSaveBar } from "@/components/bento"
+import { BentoFormHero } from "@/components/bento"
 import { SNFormSection, type SNFormChrome } from "@/components/sn/sn-form-section"
 
 const turSNSiteSpotlightService = new TurSNSiteSpotlightService();
@@ -243,9 +243,13 @@ export const SNSiteSpotlightForm: React.FC<Props> = ({ snSiteId, value, isNew, o
 
     const isBento = chrome === "bento";
 
+    // Destructive action — in bento it lives in the hero `trailing` (never in
+    // the save bar, which would mount the controlled dialog twice).
+    const deleteDialog = onDelete && open !== undefined && setOpen && <DialogDelete feature={t("sn.spotlight.title")} name={value?.name || t("sn.spotlight.newSpotlight")} onDelete={onDelete} open={open} setOpen={setOpen} />;
+
     const actions = (
         <>
-            {onDelete && open !== undefined && setOpen && <DialogDelete feature={t("sn.spotlight.title")} name={value?.name || t("sn.spotlight.newSpotlight")} onDelete={onDelete} open={open} setOpen={setOpen} />}
+            {deleteDialog}
             <GradientButton type="submit" size="sm">
                 <IconDeviceFloppy className="size-4" />
                 {t("forms.formActions.saveChanges")}
@@ -262,9 +266,12 @@ export const SNSiteSpotlightForm: React.FC<Props> = ({ snSiteId, value, isNew, o
         <Form {...form}>
             <form onSubmit={handleFormSubmit} className={isBento ? "space-y-5 pb-8" : "space-y-4 px-4 lg:px-6 pb-8"}>
                 {isBento ? (
-                    <>
-                    <BentoHero
-                        eyebrow={<Link to={urlBase} className="hover:text-foreground">{t("sn.spotlight.title")}</Link>}
+                    // T738: one BentoFormHero owns both halves of the morph.
+                    // `saveDisabled={false}` keeps Save always-enabled (this
+                    // form doesn't track dirty state).
+                    <BentoFormHero
+                        backTo={urlBase}
+                        backLabel={t("sn.spotlight.title")}
                         leading={
                             <span className="grid h-12 w-12 place-items-center rounded-2xl bg-linear-to-br from-emerald-500 to-teal-600 text-white shadow-md">
                                 <IconSpeakerphone size={24} />
@@ -272,10 +279,10 @@ export const SNSiteSpotlightForm: React.FC<Props> = ({ snSiteId, value, isNew, o
                         }
                         title={value?.name || t("sn.spotlight.newSpotlight")}
                         subtitle={t("sn.spotlight.description")}
-                        trailing={<div className="bento-fade-out flex shrink-0 items-center gap-2">{actions}</div>}
+                        trailing={deleteDialog}
+                        onCancel={() => navigate(urlBase)}
+                        saveDisabled={false}
                     />
-                    <BentoScrollSaveBar onCancel={() => navigate(urlBase)} />
-                    </>
                 ) : (
                     <StickyPageHeader>
                         <StickyPageHeader.Title

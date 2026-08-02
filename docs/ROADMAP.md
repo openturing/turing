@@ -172,23 +172,6 @@
 - 💭 **T713** (deps: T709, T710, T712) **Deprecate embedded href/link fields behind the format flag** — once both SDKs are POST-native, mark `link`/`href`/`cleanUpFacets`/spell-check `link` legacy (kept for no-JS/HTML/SEO/deep-linking) and drop the query-string round-trip helpers from the SDKs. → §XLV
 - 💭 **T714** (deps: T709, T710) **Docs + showcase + EDS POST-native** — update `rest-api.md`/`javascript-sdk.md`, the Atlas Store showcase and the EDS example blocks to the POST-native flow. → §XLV
 
-## Block AX — Bento header consistency: the `BentoFormHero` morph everywhere (§XLVII)
-
-> Every bento **detail form** should present the same header the LLM-instance page
-> settled on: Save/Cancel live in the hero and fade away on scroll while a fixed
-> frosted save bar fades in (the `--bento-fade` morph), and the breadcrumb eyebrow
-> leads with a `←` back-arrow. Identity-CRUD pages already get this free from
-> `BentoEntityShell`; own-hero form pages (persona editor, AI-agent sub-sections,
-> SN forms) historically hand-wired it — or, in a few cases, shipped a static
-> non-morphing save row. This block makes the own-hero pattern a **single drop-in**
-> (`BentoFormHero`) and applies it. Design in [IMPROVEMENTS.md](IMPROVEMENTS.md) §XLVII.
-
-> **T735–T737 shipped** (see CHANGELOG Block AX) — the `BentoFormHero` drop-in +
-> `backTo` breadcrumb, the 3 morph gaps closed, and the `←` back-arrow applied
-> across every own-hero surface. Only the speculative collapse remains:
-
-- 💭 **T738** (deps: T735) **Collapse the working manual-two-piece forms onto `BentoFormHero`** — the ~14 forms that already morph correctly by hand (11 SN forms + `ai-agent.settings.form` + `bento.global-settings` + `sn.site.custom.facet.item`) could drop their `bento-fade-out BentoSaveBar` + `BentoScrollSaveBar` boilerplate for the single component, so there is one canonical own-hero pattern. **Assessment (2026-07-13, deferred):** *not* the pure no-op it looks like. These forms render the hero as a **separate row** (`{header}` / shared `BentoAgentSubHero`) with the save bar **below** it in the body; `BentoFormHero` puts Save **inside** the hero `trailing`, so collapsing them would (1) **visibly** relocate Save into the hero — contradicting the "no visible change" premise — and (2) require the page↔form hero contract to move into each form. Worse, several (e.g. `sn.site.custom.facet.item`) save **imperatively** via `actions=` onClick, but `BentoFormHero` hardcodes `type="submit"` Save/Cancel — so it can't be dropped in without first extending its API to accept custom `actions`. Prereq if revived: add an `actions?` escape hatch to `BentoFormHero` and accept the layout change (or keep the two-piece as the sanctioned pattern for page-supplied heroes). → §XLVII
-
 ## Non-goals (do NOT add as tasks)
 
 Binding constraints — see [IMPROVEMENTS.md](IMPROVEMENTS.md) §I.6 (What NOT to

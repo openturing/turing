@@ -11,7 +11,7 @@ import {
   FormMessage,
 } from "@/components/ui/form"
 import { StickyPageHeader } from "@/components/sticky-page-header"
-import { BentoHero, BentoScrollSaveBar } from "@/components/bento"
+import { BentoFormHero } from "@/components/bento"
 import { SNFormSection, type SNFormChrome } from "@/components/sn/sn-form-section"
 import { FormItemTwoColumns } from "@/components/ui/form-item-two-columns"
 import { GradientSwitch } from "@/components/ui/gradient-switch"
@@ -39,7 +39,7 @@ import {
   useForm
 } from "react-hook-form"
 import { useTranslation } from "react-i18next"
-import { Link, useNavigate } from "react-router-dom"
+import { useNavigate } from "react-router-dom"
 import { toast } from "@viglet/viglet-design-system"
 
 const turLocaleService = new TurLocaleService();
@@ -238,9 +238,12 @@ export const SNSiteFacetedFieldForm: React.FC<Props> = ({ snSiteId, snField, isN
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className={isBento ? "space-y-5 pb-8" : "space-y-4 px-4 lg:px-6 pb-8"}>
             {isBento ? (
-              <>
-              <BentoHero
-                eyebrow={<Link to={urlBase} className="hover:text-foreground">{t("sn.facets.facetedField")}</Link>}
+              // T738: one BentoFormHero owns both halves of the morph.
+              // `saveDisabled={false}` keeps Save always-enabled (this form
+              // doesn't track dirty state).
+              <BentoFormHero
+                backTo={urlBase}
+                backLabel={t("sn.facets.facetedField")}
                 leading={
                   <span className="grid h-12 w-12 place-items-center rounded-2xl bg-linear-to-br from-emerald-500 to-teal-600 text-white shadow-md">
                     <IconFilter size={24} />
@@ -248,10 +251,10 @@ export const SNSiteFacetedFieldForm: React.FC<Props> = ({ snSiteId, snField, isN
                 }
                 title={snField.name || t("sn.facets.facetedField")}
                 subtitle={snField.description}
-                trailing={<div className="bento-fade-out flex shrink-0 items-center gap-2">{actions}</div>}
+                onCancel={() => navigate(urlBase)}
+                loading={isLoading}
+                saveDisabled={false}
               />
-              <BentoScrollSaveBar onCancel={() => navigate(urlBase)} loading={isLoading} />
-              </>
             ) : (
               <StickyPageHeader>
                 <StickyPageHeader.Title

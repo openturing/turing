@@ -10,7 +10,7 @@ import {
   parseIsoDateValue,
   parseRangeValue,
 } from "@/components/sn/facet/sn.site.custom.facet.form.utils";
-import { BentoSaveBar, BentoScrollSaveBar } from "@/components/bento";
+import { BentoFormHero } from "@/components/bento";
 import { StickyPageHeader } from "@/components/sticky-page-header";
 import { SectionCard } from "@/components/ui/section-card";
 import { GradientButton } from "@/components/ui/gradient-button";
@@ -24,7 +24,7 @@ import type {
 } from "@/models/sn/sn-site-custom-facet.model";
 import { TurSNSiteCustomFacetService } from "@/services/sn/sn.site.custom.facet.service";
 import { IconDeviceFloppy, IconListDetails, IconX } from "@tabler/icons-react";
-import { type ReactNode, useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate, useParams } from "react-router-dom";
 import { toast } from "@viglet/viglet-design-system";
@@ -54,11 +54,12 @@ const EMPTY_ITEM: TurSNSiteCustomFacetItem = {
 /**
  * @param baseRoute SN instance base route for back/breadcrumb navigation.
  *   Defaults to the console; Bento passes `ROUTES.BENTO_SN_INSTANCE` (T576).
- * @param header Optional header override. The console renders its own
- *   sidebar-coupled {@link StickyPageHeader}; Bento passes a `BentoHero` (T576)
- *   so the surface stays clear of `useSidebar` and gets a sticky BentoSaveBar.
+ * @param chrome Which shell chrome to render. `console` (default) uses the
+ *   sidebar-coupled {@link StickyPageHeader}; `bento` renders the canonical
+ *   {@link BentoFormHero} (T738) so the surface stays clear of `useSidebar` and
+ *   gets the standard hero → sticky-save-bar morph.
  */
-export default function SNSiteCustomFacetItemPage({ baseRoute = ROUTES.SN_INSTANCE, header }: Readonly<{ baseRoute?: string; header?: ReactNode }> = {}) {
+export default function SNSiteCustomFacetItemPage({ baseRoute = ROUTES.SN_INSTANCE, chrome = "console" }: Readonly<{ baseRoute?: string; chrome?: "console" | "bento" }> = {}) {
   const navigate = useNavigate();
   const { id, customFacetId, itemIndex } = useParams() as {
     id: string;
@@ -76,7 +77,7 @@ export default function SNSiteCustomFacetItemPage({ baseRoute = ROUTES.SN_INSTAN
 
   const isNewItem = itemIndex === "new";
   const editingIndex = isNewItem ? null : Number(itemIndex);
-  const isBento = header !== undefined;
+  const isBento = chrome === "bento";
 
   useEffect(() => {
     customFacetService
@@ -230,17 +231,24 @@ export default function SNSiteCustomFacetItemPage({ baseRoute = ROUTES.SN_INSTAN
       {customFacet && (
         <div className={isBento ? "flex flex-col gap-5 pb-8" : "space-y-4 px-4 lg:px-6 pb-8"}>
           {isBento ? (
-            <>
-              {header}
-              {/* Save/Cancel are onClick handlers (this page saves
-                  imperatively, not via a form submit), so override the bar's
-                  default submit buttons via `actions` in both the hero-anchored
-                  (fade-out) copy and the scroll-in sticky copy. */}
-              <div className="bento-fade-out">
-                <BentoSaveBar actions={facetItemActions} />
-              </div>
-              <BentoScrollSaveBar actions={facetItemActions} />
-            </>
+            /* T738: the canonical BentoFormHero owns both halves of the morph.
+               This page saves imperatively (onClick, no form submit), so it
+               passes its own `actions` — the escape hatch that replaces the
+               default `type="submit"` Save/Cancel in the hero *and* the
+               sticky bar. */
+            <BentoFormHero
+              backTo={`${baseRoute}/${id}/facet/custom/${customFacetId}`}
+              backLabel={t("sn.facets.title")}
+              leading={
+                <span className="grid h-12 w-12 place-items-center rounded-2xl bg-linear-to-br from-amber-500 to-orange-500 text-white shadow-md">
+                  <IconListDetails size={24} />
+                </span>
+              }
+              title={t("forms.snCustomFacet.facetItems")}
+              subtitle={t("forms.snCustomFacet.itemDesc")}
+              actions={facetItemActions}
+              onCancel={backToFacet}
+            />
           ) : (
             <StickyPageHeader>
               <StickyPageHeader.Title

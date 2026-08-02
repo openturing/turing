@@ -2482,35 +2482,18 @@ speculative surface:
 
 ## XLVII. Bento header consistency — the `BentoFormHero` morph everywhere (Block AX)
 
-Bento detail pages settled on one header behavior (the LLM-instance surface): on
-scroll the hero's Save/Cancel fade away and a fixed frosted save bar fades in (the
-`--bento-fade` rAF morph), and the breadcrumb eyebrow leads with a `←` back-arrow.
-Identity-CRUD pages inherit all of this from `BentoEntityShell`; **own-hero form
-pages** (the persona editor, AI-agent sub-sections, the SN forms) had to reproduce
-it by hand — a `bento-fade-out BentoSaveBar` plus a separate `BentoScrollSaveBar`
-with duplicated props — and a few pages shipped a *static* (non-morphing) save row
-instead. T735 collapses the hand-wired pair into a single `BentoFormHero`
-(hero + scroll twin from one prop set, `backTo`/`backLabel` baking in the arrow) so
-the pattern can't be half-implemented, and adopts it in the persona editor.
-
-The rest of the block is bounded cleanup, sized by a **read-only audit**
-(`scratchpad/bento-header-audit.md`), not a speculative rewrite:
-
-- **T736 — the 3 real gaps.** `bento.sn.synonym`, `bento.se.core.new` (reused
-  console page's bento `header` path), and `ai-agent.system-prompt.form` render a
-  static Save row with no fade/stick. These are genuine UX inconsistencies and are
-  the priority.
-- **T737 — the back-arrow sweep.** ~16 own-hero forms use a plain `<Link>` eyebrow
-  with no `IconArrowLeft`. The highest-leverage single edit is the shared
-  `bento.ai-agent.sub-hero`, which covers every agent sub-page at once; the SN forms
-  and `bento.persona.suggest` follow. Prefer migrating to `BentoFormHero.backTo`.
-- **T738 (💭) — optional canonicalization.** The ~14 forms that already morph
-  correctly by hand could drop their boilerplate for `BentoFormHero`. Pure
-  consistency, zero visible change — worth doing only when those files are touched
-  for another reason, to avoid churn for its own sake.
-
-**Non-goal:** no behavior/logic change to any form. This block is header structure
-only; the field logic, validation, and save mutations stay exactly as they are.
+**Fully shipped (2026-08-02) — T735–T738.** The design rationale that lived here
+has been removed now that the block is complete; see `CHANGELOG.md` -> "Block AX"
+for what shipped and `git log` for the implementation history (per the
+IMPROVEMENTS.md header rule: no shipped implementation reports). In short:
+`BentoFormHero` is the single drop-in that gives an own-hero bento form page the
+`BentoEntityShell` "hero -> sticky save bar" morph plus the `<-` `backTo`
+breadcrumb; the 3 static non-morphing save rows were fixed, the back-arrow was
+swept across every own-hero surface, and every hand-wired two-piece form was
+collapsed onto the component (with an `actions` escape hatch for pages that save
+imperatively). `BentoScrollSaveBar` is now internal to `BentoFormHero`. The
+locked conventions live in `components/bento/CONVENTIONS.md` and the
+`turing-bento-ui` skill.
 
 ## XLIX. Governed LLM Gateway — OpenAI-compatible governed egress (Block AZ)
 

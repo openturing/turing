@@ -23,10 +23,10 @@ import {
   useForm
 } from "react-hook-form"
 import { useTranslation } from "react-i18next"
-import { Link, useNavigate } from "react-router-dom"
+import { useNavigate } from "react-router-dom"
 import { toast } from "@viglet/viglet-design-system"
 import { StickyPageHeader } from "../../sticky-page-header"
-import { BentoHero, BentoScrollSaveBar } from "@/components/bento"
+import { BentoFormHero } from "@/components/bento"
 import { SNFormSection, type SNFormChrome } from "@/components/sn/sn-form-section"
 import { Slider } from "../../ui/slider"
 import { DynamicResultRankingFields } from "./dynamic-result-ranking-field"
@@ -91,9 +91,13 @@ export const SNSiteResultRankingForm: React.FC<Props> = ({ snSiteId, value, isNe
 
   const isBento = chrome === "bento";
 
+  // Destructive action — in bento it lives in the hero `trailing` (never in
+  // the save bar, which would mount the controlled dialog twice).
+  const deleteDialog = onDelete && open !== undefined && setOpen && <DialogDelete feature={t("sn.resultRanking.title")} name={value.name} onDelete={onDelete} open={open} setOpen={setOpen} />;
+
   const actions = (
     <>
-      {onDelete && open !== undefined && setOpen && <DialogDelete feature={t("sn.resultRanking.title")} name={value.name} onDelete={onDelete} open={open} setOpen={setOpen} />}
+      {deleteDialog}
       <GradientButton type="submit" size="sm">
         <IconDeviceFloppy className="size-4" />
         {t("forms.formActions.saveChanges")}
@@ -109,9 +113,12 @@ export const SNSiteResultRankingForm: React.FC<Props> = ({ snSiteId, value, isNe
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className={isBento ? "space-y-5 pb-8" : "space-y-4 px-4 lg:px-6 pb-8"}>
         {isBento ? (
-          <>
-          <BentoHero
-            eyebrow={<Link to={urlBase} className="hover:text-foreground">{t("sn.resultRanking.title")}</Link>}
+          // T738: one BentoFormHero owns both halves of the morph.
+          // `saveDisabled={false}` keeps Save always-enabled (this form doesn't
+          // track dirty state).
+          <BentoFormHero
+            backTo={urlBase}
+            backLabel={t("sn.resultRanking.title")}
             leading={
               <span className="grid h-12 w-12 place-items-center rounded-2xl bg-linear-to-br from-emerald-500 to-teal-600 text-white shadow-md">
                 <IconNumber123 size={24} />
@@ -119,10 +126,10 @@ export const SNSiteResultRankingForm: React.FC<Props> = ({ snSiteId, value, isNe
             }
             title={value.name || t("sn.resultRanking.title")}
             subtitle={t("sn.resultRanking.description")}
-            trailing={<div className="bento-fade-out flex shrink-0 items-center gap-2">{actions}</div>}
+            trailing={deleteDialog}
+            onCancel={() => navigate(urlBase)}
+            saveDisabled={false}
           />
-          <BentoScrollSaveBar onCancel={() => navigate(urlBase)} />
-          </>
         ) : (
           <StickyPageHeader>
             <StickyPageHeader.Title

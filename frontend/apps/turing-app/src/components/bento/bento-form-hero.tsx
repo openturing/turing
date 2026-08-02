@@ -18,6 +18,19 @@ export interface BentoFormHeroProps extends BentoHeroProps {
   backLabel?: ReactNode;
   /** Cancel / back navigation (both the hero button and the sticky bar). */
   onCancel: () => void;
+  /**
+   * Escape hatch replacing the default `type="submit"` Save + Cancel pair in
+   * **both** copies (the hero-anchored fade-out one and the sticky bar), for
+   * pages that save *imperatively* via `onClick` instead of a form submit —
+   * e.g. the SN custom-facet item editor. Supplying it keeps the morph and the
+   * "one component owns both halves" guarantee; `loading`, `saveDisabled`,
+   * `dirty` and `titleMissing` then only drive the sticky bar's status marker,
+   * since the buttons are yours. Prefer a real `<form>` submit when you can.
+   *
+   * Never pass a controlled delete dialog here — it would be mounted twice and
+   * open two modals at once. Destructive actions belong in {@link trailing}.
+   */
+  actions?: ReactNode;
   /** Submit in progress — spins the Save button in both places. */
   loading?: boolean;
   /** Amber "unsaved changes" marker + enables Save. */
@@ -53,6 +66,8 @@ export interface BentoFormHeroProps extends BentoHeroProps {
  * Render it as the first child **inside the `<form>`** it submits — both the
  * hero Save button and the sticky-bar Save button are plain `type="submit"`
  * controls that post the enclosing form, so the hero must live in the form.
+ * Pages that save imperatively (no form submit) pass their own
+ * {@link BentoFormHeroProps.actions} instead and can live outside a `<form>`.
  *
  * ```tsx
  * <form onSubmit={handleSubmit(onSubmit)}>
@@ -87,6 +102,7 @@ export function BentoFormHero({
   subtitle,
   trailing,
   onCancel,
+  actions,
   loading,
   dirty,
   titleMissing,
@@ -120,14 +136,18 @@ export function BentoFormHero({
              * catching clicks meant for the fixed bar.
              */}
             <div className="bento-fade-out flex shrink-0 items-center gap-2">
-              <GradientButton type="submit" size="sm" loading={loading} disabled={disabled}>
-                <IconDeviceFloppy className="size-4" />
-                {t("forms.formActions.saveChanges")}
-              </GradientButton>
-              <GradientButton type="button" variant="outline" size="sm" onClick={onCancel}>
-                <IconX className="size-4" />
-                {t("forms.formActions.cancel")}
-              </GradientButton>
+              {actions ?? (
+                <>
+                  <GradientButton type="submit" size="sm" loading={loading} disabled={disabled}>
+                    <IconDeviceFloppy className="size-4" />
+                    {t("forms.formActions.saveChanges")}
+                  </GradientButton>
+                  <GradientButton type="button" variant="outline" size="sm" onClick={onCancel}>
+                    <IconX className="size-4" />
+                    {t("forms.formActions.cancel")}
+                  </GradientButton>
+                </>
+              )}
             </div>
             {trailing}
           </>
@@ -136,6 +156,7 @@ export function BentoFormHero({
       <BentoScrollSaveBar
         title={stickyTitle}
         badges={stickyBadges}
+        actions={actions}
         onCancel={onCancel}
         loading={loading}
         disabled={disabled}

@@ -11,7 +11,7 @@ import {
   FormMessage,
 } from "@/components/ui/form"
 import { StickyPageHeader } from "@/components/sticky-page-header"
-import { BentoHero, BentoScrollSaveBar } from "@/components/bento"
+import { BentoFormHero } from "@/components/bento"
 import { SNFormSection, type SNFormChrome } from "@/components/sn/sn-form-section"
 import { FormItemTwoColumns } from "@/components/ui/form-item-two-columns"
 import { GradientSwitch } from "@/components/ui/gradient-switch"
@@ -41,7 +41,7 @@ import {
   useForm
 } from "react-hook-form"
 import { useTranslation } from "react-i18next"
-import { Link, useNavigate } from "react-router-dom"
+import { useNavigate } from "react-router-dom"
 import { toast } from "@viglet/viglet-design-system"
 const turSNFieldService = new TurSNFieldService();
 const turSNFieldTypeService = new TurSNFieldTypeService();
@@ -174,9 +174,13 @@ export const SNSiteFieldForm: React.FC<Props> = ({ snSiteId, snField, isNew, onD
 
   const isBento = chrome === "bento";
 
+  // Destructive action — in bento it lives in the hero `trailing` (never in
+  // the save bar, which would mount the controlled dialog twice).
+  const deleteDialog = onDelete && open !== undefined && setOpen && <DialogDelete feature={t("sn.fields.feature")} name={snField.name} onDelete={onDelete} open={open} setOpen={setOpen} />;
+
   const actions = (
     <>
-      {onDelete && open !== undefined && setOpen && <DialogDelete feature={t("sn.fields.feature")} name={snField.name} onDelete={onDelete} open={open} setOpen={setOpen} />}
+      {deleteDialog}
       <GradientButton type="submit" size="sm" loading={isSubmitting} disabled={isSubmitting}>
         <IconDeviceFloppy className="size-4" />
         {t("forms.formActions.saveChanges")}
@@ -217,9 +221,12 @@ export const SNSiteFieldForm: React.FC<Props> = ({ snSiteId, snField, isNew, onD
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className={isBento ? "space-y-5 pb-8" : "space-y-4 px-4 lg:px-6 pb-8"}>
             {isBento ? (
-              <>
-              <BentoHero
-                eyebrow={<Link to={urlBase} className="hover:text-foreground">{t("sn.fields.title")}</Link>}
+              // T738: one BentoFormHero owns both halves of the morph.
+              // `saveDisabled` mirrors the console Save (disabled only while
+              // submitting) — this form doesn't track dirty state.
+              <BentoFormHero
+                backTo={urlBase}
+                backLabel={t("sn.fields.title")}
                 leading={
                   <span className="grid h-12 w-12 place-items-center rounded-2xl bg-linear-to-br from-emerald-500 to-teal-600 text-white shadow-md">
                     <IconAlignBoxCenterStretch size={24} />
@@ -227,10 +234,11 @@ export const SNSiteFieldForm: React.FC<Props> = ({ snSiteId, snField, isNew, onD
                 }
                 title={snField.name || t("common.new")}
                 subtitle={t("sn.fields.description")}
-                trailing={<div className="bento-fade-out flex shrink-0 items-center gap-2">{actions}</div>}
+                trailing={deleteDialog}
+                onCancel={() => navigate(urlBase)}
+                loading={isSubmitting}
+                saveDisabled={isSubmitting}
               />
-              <BentoScrollSaveBar onCancel={() => navigate(urlBase)} loading={isSubmitting} />
-              </>
             ) : (
               <StickyPageHeader>
                 <StickyPageHeader.Title

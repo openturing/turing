@@ -28,18 +28,23 @@ The shared scaffold (`BentoEntityShell`, `BentoListPage`, `BentoEntityTile`,
   fixed bar fades in only once the hero scrolls away — so nothing is duplicated
   on screen and the stick appears exactly when the title leaves.
   - **`BentoEntityShell`** detail pages get this for free (it owns the hero).
-  - A **settings / non-shell form** (agent settings, intent settings, admin
-    user/role/group, global settings, SN sub-forms, custom-facet item) composes
-    it from shared pieces: the hero-anchored actions wrapped in `bento-fade-out`
-    (or, when the hero is external, a `bento-fade-out`-wrapped `BentoSaveBar`
-    placed right after it), followed by **`BentoScrollSaveBar`** — which renders
-    the sentinel + `bento-save-bar-spacer` + the fixed `bento-fade-in`
-    `BentoSaveBar`, all driven by the shared **`useBentoScrollFade`** hook
-    (extracted from `BentoEntityShell` so both paths share one mechanic).
-  - Keep the **destructive** action (delete dialog) in the hero/fade-out copy
-    only — never pass it to `BentoScrollSaveBar`, since a controlled dialog
-    rendered twice would open two modals at once. The sticky copy carries just
-    Save/Cancel.
+  - Every **own-hero form** (agent settings, intent settings, admin
+    user/role/group, global settings, SN sub-forms, custom-facet item) uses the
+    single drop-in **`BentoFormHero`** — it wraps `BentoHero` (injecting the
+    `bento-fade-out` Save/Cancel into `trailing`) *and* renders the
+    `BentoScrollSaveBar` twin, so the two halves can never drift apart. Render
+    it as the first child inside the `<form>` it submits. Since T738 there is no
+    hand-wired two-piece form left; do **not** reintroduce one.
+    `BentoScrollSaveBar` (sentinel + `bento-save-bar-spacer` + the fixed
+    `bento-fade-in` `BentoSaveBar`, driven by the shared `useBentoScrollFade`
+    hook extracted from `BentoEntityShell`) is now an internal of
+    `BentoFormHero`, not something a page composes itself.
+  - A page that saves **imperatively** (`onClick`, no form submit) passes its own
+    buttons via `BentoFormHero`'s `actions` prop — it replaces the default
+    `type="submit"` pair in *both* copies, keeping the morph intact.
+  - Keep the **destructive** action (delete dialog) in the hero `trailing` only —
+    never in the save bar, since a controlled dialog rendered twice would open
+    two modals at once. Both save-bar copies carry just Save/Cancel.
 
 ## 2. i18n — reuse keys, object-form defaults
 

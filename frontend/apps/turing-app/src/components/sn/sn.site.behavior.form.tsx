@@ -40,12 +40,12 @@ import {
   useForm
 } from "react-hook-form"
 import { useTranslation } from "react-i18next"
-import { Link, useNavigate } from "react-router-dom"
+import { useNavigate } from "react-router-dom"
 import { toast } from "@viglet/viglet-design-system"
 import { FormItemTwoColumns } from "../ui/form-item-two-columns"
 import { StickyPageHeader } from "../sticky-page-header"
 import { GradientSwitch } from "../ui/gradient-switch"
-import { BentoHero, BentoScrollSaveBar } from "@/components/bento"
+import { BentoFormHero } from "@/components/bento"
 import { SNFormSection, type SNFormChrome } from "@/components/sn/sn-form-section"
 
 interface Props {
@@ -114,13 +114,12 @@ export const SNSiteBehaviorForm: React.FC<Props> = ({ value, isNew, baseRoute = 
         className={isBento ? "flex flex-col gap-5" : "space-y-4 px-4 lg:px-6 pb-8"}
       >
         {isBento ? (
-          <>
-          <BentoHero
-            eyebrow={
-              <Link to={backRoute} className="transition-colors hover:text-foreground">
-                {value.name ?? t("sn.title")}
-              </Link>
-            }
+          // T738: one BentoFormHero owns both halves of the morph (hero
+          // Save/Cancel + sticky bar). `saveDisabled={false}` keeps Save
+          // always-enabled — this form doesn't track dirty state.
+          <BentoFormHero
+            backTo={backRoute}
+            backLabel={value.name ?? t("sn.title")}
             leading={
               <span className="grid h-12 w-12 place-items-center rounded-2xl bg-linear-to-br from-emerald-600 to-teal-600 text-white shadow-md">
                 <IconScale size={24} />
@@ -128,10 +127,9 @@ export const SNSiteBehaviorForm: React.FC<Props> = ({ value, isNew, baseRoute = 
             }
             title={t("sn.behavior.title")}
             subtitle={t("sn.behavior.description")}
-            trailing={<div className="bento-fade-out flex shrink-0 items-center gap-2">{actions}</div>}
+            onCancel={() => navigate(backRoute)}
+            saveDisabled={false}
           />
-          <BentoScrollSaveBar onCancel={() => navigate(backRoute)} />
-          </>
         ) : (
           <StickyPageHeader>
             <StickyPageHeader.Title

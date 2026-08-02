@@ -144,9 +144,14 @@ hero and so can't use the Shell. It wraps `BentoHero` (injecting the fade-out
 Save/Cancel into `trailing`, after any extra `trailing` you pass) **and** renders
 the `BentoScrollSaveBar` twin, so the two halves can't drift apart. Render it as
 the first child **inside the `<form>`** it submits — both Save buttons are plain
-`type="submit"`. Do **not** hand-wire a `bento-fade-out BentoSaveBar` + a separate
-`BentoScrollSaveBar` (the old two-piece dance in the SN/admin forms), and **never**
-use the console `StickySaveBar` in bento — it has no scroll morph.
+`type="submit"`. If the page saves **imperatively** (`onClick`, no form submit),
+pass your own buttons via `actions` — it replaces the default pair in *both*
+copies and lets the hero live outside a `<form>`. Do **not** hand-wire a
+`bento-fade-out BentoSaveBar` + a separate `BentoScrollSaveBar` (the old
+two-piece dance; T738 collapsed the last of them, so `BentoScrollSaveBar` has no
+consumer outside `BentoFormHero` — keep it that way), and **never** use the
+console `StickySaveBar` in bento — it has no scroll morph. Destructive actions go
+in `trailing`, never in the save bar.
 
 ```tsx
 <form onSubmit={handleSubmit(onSubmit)}>
