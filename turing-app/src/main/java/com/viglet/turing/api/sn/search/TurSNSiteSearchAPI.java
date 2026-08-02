@@ -41,6 +41,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.viglet.turing.commons.se.similar.TurSESimilarResult;
 import com.viglet.turing.commons.sn.bean.TurSNSearchLatestRequestBean;
 import com.viglet.turing.commons.sn.bean.TurSNSearchParams;
+import com.viglet.turing.commons.sn.bean.TurSNSearchRequest;
 import com.viglet.turing.commons.sn.bean.TurSNSiteLocaleBean;
 import com.viglet.turing.commons.sn.bean.TurSNSitePostParamsBean;
 import com.viglet.turing.commons.sn.bean.TurSNSiteSearchBean;
@@ -155,6 +156,48 @@ public class TurSNSiteSearchAPI {
                 }
                 return turSNSiteSearchService.executePostSearch(turSNSearchParams,
                                 turSNSitePostParamsBean, request, siteName);
+        }
+
+        /**
+         * T707 / §XLV — the public, <strong>anonymous-capable</strong>,
+         * read-only POST search contract.
+         *
+         * <p>
+         * The whole request travels as a JSON {@link TurSNSearchRequest} body, so
+         * a filter value containing {@code & = + # %} or a space cannot be
+         * mis-read as query structure — the bug class described in IMPROVEMENTS
+         * §XLV.1 becomes impossible by construction rather than merely encoded
+         * correctly.
+         * </p>
+         *
+         * <p>
+         * This is a distinct entry point from {@link #turSNSiteSearchSelectPost},
+         * which keeps its impersonation/metrics payload
+         * ({@code TurSNSitePostParamsBean}) and its authentication requirement.
+         * The GET mapping and its link-bearing response are untouched — this
+         * block is purely additive.
+         * </p>
+         *
+         * @since 2026.3.4
+         */
+        @PostMapping(value = "query", consumes = MediaType.APPLICATION_JSON_VALUE,
+                        produces = MediaType.APPLICATION_JSON_VALUE)
+        public ResponseEntity<TurSNSiteSearchBean> turSNSiteSearchQueryPost(
+                        @PathVariable String siteName,
+                        @RequestBody TurSNSearchRequest searchRequest,
+                        HttpServletRequest request) {
+                Locale locale = TurSNSearchRequestAdapter.resolveLocale(searchRequest);
+                if (locale == null) {
+                        locale = turSNSiteSearchService.resolveDefaultLocale(siteName);
+                }
+                TurSNSearchParams turSNSearchParams = TurSNSearchRequestAdapter
+                                .toSearchParams(searchRequest, locale);
+                if (!turSNSearchProcess.existsByTurSNSiteAndLanguage(siteName,
+                                turSNSearchParams.getLocale())) {
+                        return turSNSiteSearchService.notFoundResponse();
+                }
+                return turSNSiteSearchService.executePublicPostSearch(searchRequest,
+                                turSNSearchParams, request, siteName);
         }
 
         /**

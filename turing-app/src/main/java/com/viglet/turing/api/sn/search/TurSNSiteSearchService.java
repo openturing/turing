@@ -1,5 +1,6 @@
 package com.viglet.turing.api.sn.search;
 
+import java.net.URI;
 import java.security.Principal;
 import java.util.ArrayList;
 import java.util.List;
@@ -13,9 +14,11 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
+import com.viglet.turing.commons.se.TurSEParameters;
 import com.viglet.turing.commons.sn.TurSNConfig;
 import com.viglet.turing.commons.sn.bean.TurSNSearchLatestRequestBean;
 import com.viglet.turing.commons.sn.bean.TurSNSearchParams;
+import com.viglet.turing.commons.sn.bean.TurSNSearchRequest;
 import com.viglet.turing.commons.sn.bean.TurSNSiteLocaleBean;
 import com.viglet.turing.commons.sn.bean.TurSNSitePostParamsBean;
 import com.viglet.turing.commons.sn.bean.TurSNSiteSearchBean;
@@ -106,6 +109,40 @@ public class TurSNSiteSearchService {
         } else {
             return executeSearch(searchContext);
         }
+    }
+
+    /**
+     * T707 / §XLV — executes the public, anonymous-capable POST search. The JSON
+     * body replaces the query string entirely, so no filter value ever has to
+     * survive a query-string round-trip; the canonical GET URI is rebuilt only so
+     * the legacy link-bearing response keeps emitting deep-linkable hrefs.
+     *
+     * @since 2026.3.4
+     */
+    public ResponseEntity<TurSNSiteSearchBean> executePublicPostSearch(
+            TurSNSearchRequest searchRequest,
+            TurSNSearchParams turSNSearchParams,
+            HttpServletRequest request,
+            String siteName) {
+        TurSNSitePostParamsBean postParams = TurSNSearchRequestAdapter.toPostParams(searchRequest);
+        postParams.setTargetingRules(
+                turSNSearchProcess.requestTargetingRules(postParams.getTargetingRules()));
+        URI canonicalUri = TurSNSearchRequestAdapter.canonicalUri(
+                TurSNUtils.requestToURI(request), searchRequest, turSNSearchParams.getLocale());
+        TurSNSiteSearchContext searchContext = new TurSNSiteSearchContext(siteName,
+                getTurSNConfig(siteName),
+                new TurSEParameters(turSNSearchParams, postParams),
+                turSNSearchParams.getLocale(), canonicalUri, postParams);
+        if (!searchCacheEnabled) {
+            return executeSearch(searchContext);
+        }
+        // A POST has no query string, so TurSNUtils.getCacheKey would collapse
+        // every distinct body onto "<site>_null". Key on the canonical URI's
+        // query instead — it is a faithful, order-stable projection of the body.
+        return new ResponseEntity<>(
+                turSNSiteSearchCachedAPI.searchCached(
+                        "%s_%s".formatted(siteName, canonicalUri.getRawQuery()), searchContext),
+                HttpStatus.OK);
     }
 
     public TurSNConfig getTurSNConfig(String siteName) {

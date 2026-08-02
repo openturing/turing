@@ -2321,11 +2321,10 @@ without disturbing the GET response one byte.
 
 ### XLV.4 Design (phased, additive)
 
-**Phase 1 — public POST contract (T707).** A read-only `TurSNSearchRequest` JSON
-bean (`q`, `fq[]`, `fqAnd`, `fqOr`, operators, `page`, `rows`, `sort`, `locale`,
-`group`, `fieldList`, `targetingRules`) that is **anonymous-capable** and decoupled
-from the impersonation-only `TurSNSitePostParamsBean` (which stays for the
-authenticated metrics/impersonation path). GET is untouched.
+**Phase 1 — public POST contract (T707).** Shipped — see CHANGELOG Block AV.
+The endpoint is `POST /api/sn/{siteName}/search/query`; later phases build on its
+`TurSNSearchRequest` body and on `TurSNSearchRequestAdapter`, which rebuilds the
+canonical GET URI the legacy link-bearing response is rendered against.
 
 **Phase 2 — structured, link-free response (T708) behind format negotiation
 (folded into T708).** Formalize facet items as `field` + `value` + `selected`
@@ -2361,10 +2360,12 @@ blocks to the POST-native flow.
   additive** — POST + structured response is opt-in; the GET + href contract is
   frozen, not deprecated (Phase 4's "deprecate" means *flag as legacy for the JS
   SDK path*, not delete).
-- **CSRF on anonymous POST (T709/T715 territory).** A search is a read, but POST
-  triggers CSRF; the SDK must prime `/csrf` first, adding a round-trip on public
-  embeds. Open question: exempt the read-only public search POST from CSRF, or
-  accept the priming call. Decide in Phase 3; document either way.
+- **CSRF on anonymous POST — settled during T707.** `TurSecurityConfigProduction`
+  already lists `/api/sn/**` under `csrf().ignoringRequestMatchers(…)` and
+  `/api/sn/*/search/**` under `permitAll`, so the public search POST is
+  CSRF-exempt and anonymous out of the box. The SDKs therefore need **no** `/csrf`
+  priming round-trip for search (they still do for the endpoints outside that
+  matcher). Phase 3 must not add one.
 - **Response-format negotiation mechanism (T708).** Request flag vs `Accept`
   header vs `responseFormat` field — pick one; a request field is simplest and
   works over both GET and POST for A/B testing the shape.

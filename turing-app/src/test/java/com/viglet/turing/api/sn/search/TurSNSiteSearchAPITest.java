@@ -44,6 +44,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
 import com.viglet.turing.commons.sn.bean.TurSNSearchParams;
+import com.viglet.turing.commons.sn.bean.TurSNSearchRequest;
 import com.viglet.turing.commons.sn.bean.TurSNSiteLocaleBean;
 import com.viglet.turing.commons.sn.bean.TurSNSitePostParamsBean;
 import com.viglet.turing.commons.sn.bean.TurSNSiteSearchBean;
@@ -171,6 +172,58 @@ class TurSNSiteSearchAPITest {
         assertThat(response).isSameAs(expected);
         verify(service).setSearchParams(params, null, null, null, TurSNFilterQueryOperator.NONE,
                 TurSNFilterQueryOperator.NONE, Locale.CANADA);
+    }
+
+    /**
+     * T707 — the public POST contract must serve an anonymous caller (no
+     * {@link Principal}), unlike the impersonation POST above.
+     */
+    @Test
+    void testSearchQueryPostServesAnonymousCallers() {
+        TurSNSiteSearchService service = mock(TurSNSiteSearchService.class);
+        TurSNSearchProcess searchProcess = mock(TurSNSearchProcess.class);
+        TurSNSiteSearchSnapshotService snapshots = mock(TurSNSiteSearchSnapshotService.class);
+        TurSNSiteSearchAPI api = new TurSNSiteSearchAPI(service, searchProcess, snapshots,
+                mock(TurSNSimilarDocumentsService.class),
+                mock(TurSNDuplicateClusteringService.class));
+        TurSNSearchRequest searchRequest = new TurSNSearchRequest();
+        searchRequest.setLocale("en_US");
+        searchRequest.setFq(List.of("section:RAG & Chat"));
+        HttpServletRequest request = mock(HttpServletRequest.class);
+        ResponseEntity<TurSNSiteSearchBean> expected =
+                new ResponseEntity<>(new TurSNSiteSearchBean(), HttpStatus.OK);
+
+        when(searchProcess.existsByTurSNSiteAndLanguage(eq("site"), eq(Locale.US))).thenReturn(true);
+        when(service.executePublicPostSearch(eq(searchRequest), any(), eq(request), eq("site")))
+                .thenReturn(expected);
+
+        ResponseEntity<TurSNSiteSearchBean> response =
+                api.turSNSiteSearchQueryPost("site", searchRequest, request);
+
+        assertThat(response).isSameAs(expected);
+        verifyNoInteractions(snapshots);
+    }
+
+    @Test
+    void testSearchQueryPostFallsBackToTheSiteDefaultLocale() {
+        TurSNSiteSearchService service = mock(TurSNSiteSearchService.class);
+        TurSNSearchProcess searchProcess = mock(TurSNSearchProcess.class);
+        TurSNSiteSearchSnapshotService snapshots = mock(TurSNSiteSearchSnapshotService.class);
+        TurSNSiteSearchAPI api = new TurSNSiteSearchAPI(service, searchProcess, snapshots,
+                mock(TurSNSimilarDocumentsService.class),
+                mock(TurSNDuplicateClusteringService.class));
+        HttpServletRequest request = mock(HttpServletRequest.class);
+        ResponseEntity<TurSNSiteSearchBean> notFound =
+                ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+
+        when(service.resolveDefaultLocale("site")).thenReturn(Locale.CANADA);
+        when(searchProcess.existsByTurSNSiteAndLanguage("site", Locale.CANADA)).thenReturn(false);
+        org.mockito.Mockito.doReturn(notFound).when(service).notFoundResponse();
+
+        ResponseEntity<TurSNSiteSearchBean> response =
+                api.turSNSiteSearchQueryPost("site", new TurSNSearchRequest(), request);
+
+        assertThat(response).isSameAs(notFound);
     }
 
     @Test
