@@ -18,10 +18,10 @@ import {
   type SearchController,
   type SimilarController,
   type SimilarStatus,
-  type TurFacetGroup,
   type TuringAnalytics,
   type TurSimilarResult,
-  type TurSpellCheck,
+  type TurStructuredFacet,
+  type TurStructuredSpellCheck,
 } from "@viglet/turing-sdk";
 import {
   TuringResultList,
@@ -192,9 +192,8 @@ function LiveSearchDemo({
 }>) {
   const [query, setQuery] = useState("");
   const [documents, setDocuments] = useState<ResolvedDocument[]>([]);
-  const [facets, setFacets] = useState<TurFacetGroup[]>([]);
-  const [spellCheck, setSpellCheck] = useState<TurSpellCheck | null>(null);
-  const [cleanUpFacets, setCleanUpFacets] = useState<string>("");
+  const [facets, setFacets] = useState<TurStructuredFacet[]>([]);
+  const [spellCheck, setSpellCheck] = useState<TurStructuredSpellCheck | null>(null);
   const [hasFilters, setHasFilters] = useState(false);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -224,19 +223,18 @@ function LiveSearchDemo({
       { rows: "8", q: "*" },
       // T462 — emit search funnel events (query, no-results, result clicks) to
       // GA4 via the shared bus; `chat:false` keeps it a pure (no-LLM) surface.
-      // T709 — pinned to the legacy GET path because this demo still navigates
-      // via `state.data.widget` hrefs. T714 migrates it to the POST-native,
-      // link-free flow; until then this keeps it on the contract it reads.
-      { chat: false, analytics, postNative: false }
+      // T714 — POST-native (the SDK default): the facet rail and "did you mean"
+      // are rendered from the link-free structured response, so a facet value
+      // containing `&`/`=`/`+`/`#`/`%`/space never round-trips a query string.
+      { chat: false, analytics }
     );
     controllerRef.current = controller;
     const unsub = controller.subscribe((s) => {
       setDocuments(s.documents);
-      setFacets(s.data?.widget?.facet ?? []);
-      setSpellCheck(s.data?.widget?.spellCheck ?? null);
-      setCleanUpFacets(s.data?.widget?.cleanUpFacets ?? "");
-      setHasFilters((s.params.fq?.length ?? 0) > 0);
-      setTotal(s.data?.queryContext?.count ?? s.documents.length);
+      setFacets(s.structured?.facets ?? []);
+      setSpellCheck(s.structured?.spellCheck ?? null);
+      setHasFilters((s.structured?.selectedFilterQueries?.length ?? s.request.fq?.length ?? 0) > 0);
+      setTotal(s.structured?.queryContext?.count ?? s.documents.length);
       setLoading(s.status === "loading");
     });
 
@@ -274,24 +272,15 @@ function LiveSearchDemo({
     similarRef.current?.clear();
   }
 
-  // Reset every active facet filter. When the current result set is empty the
-  // response carries no facet groups (and often no cleanup link), so the facet
-  // rail — and its "Clear filters" button — would vanish, trapping the user with
-  // filters they can't remove. Prefer the engine's cleanup link when present;
-  // otherwise fall back to a fresh, unfiltered base search.
+  // Reset every active facet filter. A zero-result response carries no facet
+  // groups, which used to make the rail — and its "Clear filters" button —
+  // vanish, trapping the user with filters they couldn't remove. POST-native
+  // that hazard is gone: clearing is a change to the request the controller
+  // already holds, not a link the empty response has to have handed us.
   function clearFilters() {
     clearSimilar();
     setQuery("");
-    if (cleanUpFacets) {
-      void controllerRef.current?.navigate(cleanUpFacets);
-    } else {
-      void controllerRef.current?.search({
-        q: "*",
-        rows: "8",
-        _setlocale: LOCALE,
-        sort: "relevance",
-      });
-    }
+    void controllerRef.current?.clearAllFilters();
   }
 
   // Debounced text query (facet state is preserved on the controller between
@@ -320,12 +309,12 @@ function LiveSearchDemo({
     void controllerRef.current?.searchQuery(s);
   }
 
-  // A facet item's `link` is a Turing href that toggles that facet on the
-  // current query context; navigate re-runs the search with it (selected items
-  // carry a removal link, so this toggles both ways).
+  // A structured facet item carries its own ADD / REMOVE / REPLACE action, so
+  // `toggleFacet` toggles both ways (and honours single-select fields) without
+  // this component knowing the rule — and without parsing a URL.
   const documentsView = documents as unknown as TuringResolvedDocument[];
   const activeCount = Math.max(
-    facets.reduce((n, g) => n + g.facets.filter((f) => f.selected).length, 0),
+    facets.reduce((n, g) => n + g.items.filter((f) => f.selected).length, 0),
     hasFilters ? 1 : 0
   );
 
@@ -383,16 +372,15 @@ function LiveSearchDemo({
           <button
             type="button"
             onClick={() => {
-              const t = stripMarks(spellCheck.corrected.text);
-              setQuery(t);
+              setQuery(stripMarks(spellCheck.correctedTextValue ?? ""));
               clearSimilar();
-              const link = spellCheck.corrected.link;
-              if (link) void controllerRef.current?.navigate(link);
-              else void controllerRef.current?.searchQuery(t);
+              // The structured shape hands over the corrected *text*, not a URL
+              // to navigate — applySpellCheck puts it on `q` and re-runs.
+              void controllerRef.current?.applySpellCheck();
             }}
             className="font-semibold text-primary hover:underline"
           >
-            <Highlighted text={spellCheck.corrected.text} />
+            <Highlighted text={spellCheck.correctedTextValue ?? ""} />
           </button>
           ?
         </div>
@@ -429,21 +417,21 @@ function LiveSearchDemo({
           {facets.slice(0, MAX_FACET_GROUPS).map((group) => (
             <div key={group.name} className="flex flex-wrap items-center gap-1.5">
               <span className="mr-0.5 text-[0.65rem] font-semibold uppercase tracking-wide text-muted-foreground">
-                {group.label?.text || group.name}
+                {group.label || group.name}
               </span>
-              {group.facets.slice(0, MAX_FACET_ITEMS).map((item) => (
+              {group.items.slice(0, MAX_FACET_ITEMS).map((item) => (
                 // Checkbox affordance (not a solid pill): within one field, picking
                 // several values UNIONS them (OR), so the count is "docs with this
                 // value", not a narrower subset. The check box makes "pick any,
                 // results combine" explicit — a plain "(3)" reads like a drill-down.
                 <button
-                  key={item.label}
+                  key={item.filterQuery}
                   type="button"
                   role="checkbox"
                   aria-checked={item.selected}
                   onClick={() => {
                     clearSimilar();
-                    void controllerRef.current?.navigate(item.link);
+                    void controllerRef.current?.toggleFacet(item);
                   }}
                   className={cn(
                     "inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors",

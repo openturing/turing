@@ -2344,14 +2344,21 @@ anonymous demo's nginx allowlist already covers POST search (the `/api/sn/`
 location is method-agnostic) — documented there as a "do not harden to
 GET-only".
 
-**Phase 4 — breadth & retirement (T713–T714, 💭).** **T712** shipped the POST
-variants for `/ac` (autocomplete) and `/list` — see CHANGELOG Block AV; the one
-decision worth keeping is that neither projection carries links, so
-`responseFormat` deliberately does not apply to them. Remaining: once both SDKs
-are POST-native, mark the embedded `link`/`href`/`cleanUpFacets`/spell-check-`link`
+**Phase 4 — breadth & retirement (T713 remaining).** **T712** shipped the POST
+variants for `/ac` and `/list`, and **T714** the docs/showcase/EDS migration —
+see CHANGELOG Block AV. Two decisions worth keeping: neither the autocomplete nor
+the select-list projection carries links, so `responseFormat` deliberately does
+not apply to them; and **T713 had to be re-sequenced after T714**, because the
+two consumers T709 pinned to `postNative: false` (the marketing-site `SearchDemo`
+and the EDS `turing-search` block) were the *only* remaining callers of
+`parseHrefToParams` / `navigate(href)` — dropping the helpers before migrating
+them would have broken the very surfaces the block is meant to prove out.
+
+Remaining (T713): mark the embedded `link`/`href`/`cleanUpFacets`/spell-check-`link`
 fields legacy (kept — see non-goals) and drop the query-string round-trip helpers
-from the SDKs; migrate `rest-api.md` / `javascript-sdk.md`, the Atlas Store
-showcase and the EDS example blocks to the POST-native flow.
+from both SDKs. Note that `buildQueryString` is **not** one of them: it serializes
+the GET request itself, which the GET contract still needs; the round-trip is
+specifically *parsing a server-rendered href back into params*.
 
 ### XLV.5 Non-goals & open questions
 
