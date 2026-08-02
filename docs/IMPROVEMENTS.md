@@ -3018,3 +3018,99 @@ configuration with its nightly purge job — seven Mongo constructor parameters
 cached search never reads. The cache seam is a load-bearing primitive that T858
 just spent a task making hard to misuse; it should not be reached through a bean
 whose name says "cached API" and whose constructor says "log store".
+
+## LXIX. The quality gate stops at the package boundary (Block BV)
+
+> Block BS fixed the gate for one package. Adopting the same two changes across
+> the workspace — declare the runner, then *confirm CI runs it* — turned up the
+> same shape five more times, in packages nobody had checked because
+> `@viglet/turing-sdk` was the one that happened to be under the microscope. The
+> pattern is consistent and worth naming: **every gate here was written per
+> package, so a package added later inherits nothing.** `validate-js.yml`'s
+> matrix is a hand-maintained list; `prepublishOnly` is per package; the publish
+> workflows were copied from each other and then diverged. Nothing enumerates the
+> workspace and asserts each publishable package is covered.
+
+### LXIX.1 Two published packages are in no validation matrix (T873)
+
+`@viglet/turing-cli` and `@viglet/turing-flow-dsl` are both public npm packages
+with real suites (`node --test` over `dist/test/**`), and neither appears in
+`validate-js.yml`'s `matrix.workspace`. Nothing builds or tests them before a
+merge.
+
+Their *publish* workflows do gate on `pnpm run test`, so a break is caught — at
+release time, by whoever is trying to ship, which is the same "wrong person at
+the wrong moment" §LXVI.3 objected to for the size budget. Add both to the
+matrix; they need no new tooling, only to be listed.
+
+### LXIX.2 The admin app's 171 tests run in no workflow (T874)
+
+`turing-app` has a full vitest + RTL suite (171 tests) and it executes in **no**
+CI workflow: `validate.yml` is the Maven build, `validate-js.yml`'s matrix does
+not list `turing-app`, and `publish.yml` mentions it only to upload the jar. The
+one grep that proves it: `run test` appears in five workflow files, none of which
+resolve to the admin app.
+
+That is the largest frontend suite in the repo, and it is exactly the suite
+§LXVII.4 is about to invest in — a regression guard nobody runs is not a guard.
+
+### LXIX.3 `publish-js-sdk.yml` builds the wrong package (T875)
+
+The step is named *"Build @viglet/turing-react-sdk"* and runs:
+
+```yaml
+run: pnpm run build:sdk
+```
+
+`build:sdk` is `turbo run build --filter=@viglet/turing-sdk` — the **vanilla**
+package. `build:react-sdk` is the other script. react-sdk depends on sdk, not the
+reverse, so turbo never builds react-sdk, and the next step publishes from
+`frontend/packages/react-sdk` regardless.
+
+It has not produced a bad publish only because `npm publish` fires react-sdk's
+own `prepublishOnly` (`npm run build && npm run size`), which builds it as a side
+effect. That accident is load-bearing today, and until T863 its `size` half was
+*failing* (react-sdk measured 97.83 kB against a 90.00 kB ceiling) — so this
+workflow would have aborted at the publish step.
+
+Fix the filter, and while there, close the gate asymmetry: `publish-react-ui.yml`
+gates on size **and** test, this one gates on neither.
+
+### LXIX.4 The vanilla SDK has no publish workflow (T876)
+
+`publish-js-sdk.yml` publishes react-sdk. There is a `publish-react-ui.yml`, a
+`publish-cli.yml` and a `publish-flow-dsl.yml`. There is nothing for
+`@viglet/turing-sdk` — the package Block BS spent three tasks putting a gate
+around is released by hand.
+
+The root `release` script (`changeset publish`) covers it in principle, but no
+workflow invokes changesets for these packages, so in practice the vanilla SDK's
+only gate is whatever the publisher's laptop runs.
+
+Related drift worth fixing in the same pass: `publish-js-sdk.yml` bumps **every**
+workspace (`pnpm -r --include-workspace-root exec -- npm version patch`) on each
+react-sdk release, so packages that were not published still get a new version
+number — `package.json` versions and what is actually on npm diverge silently.
+
+### LXIX.5 The most-consumed package ships zero tests (T877)
+
+`@viglet/turing-react-sdk` has no `test` script and **no test files at all** (0,
+against 17 in the vanilla SDK and 11 in react-ui). T861's `--if-present` keeps
+the matrix green by skipping it, which is the honest behaviour for a package with
+no suite and the wrong outcome for this one: it is the package the admin app, the
+showcase and all three marketplace examples consume.
+
+Start where the risk is, not with a coverage target — the provider/store contract
+that T710 changed under its consumers (§LXVII) is the obvious first suite.
+
+### LXIX.6 A total-only baseline cannot localize a regression (T878)
+
+T863 gave react-sdk a delta guard, but `strict: false` means the baseline is a
+single `total`, because per-file baselines over ~100 `tsc` outputs would be an
+unreviewable manifest. So the guard can now say *"the package grew 4 kB"* and
+never *"which file"* — and it has already had to: the 7.8 kB that put react-sdk
+over its old ceiling is still unattributed.
+
+A middle ground exists: baseline per **directory** (`core/`, `ui/`, `hooks/`)
+rather than per file. Roughly a dozen numbers, reviewable, and enough to point at
+the change.

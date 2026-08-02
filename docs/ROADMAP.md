@@ -249,6 +249,24 @@
 - 📋 **T871** (deps: —) **`turing.search.cache.ttl.seconds` is milliseconds** — it feeds `@Scheduled(fixedRateString = …)`, whose unit is ms, and its default `86400000` is 24h. An operator who reads the name and sets `3600` for "hourly" gets a full cache sweep every **3.6 seconds**. Accept a `Duration` (or rename with back-compat) so the unit is stated rather than implied. → §LXVIII.2
 - 💭 **T872** (deps: —) **`TurSNSiteSearchCachedAPI` is two classes wearing one name** — the `@Cacheable` search seam and the MongoDB logging config + nightly purge job share a bean, so the cache primitive carries seven Mongo constructor parameters it never uses. Split them. → §LXVIII.3
 
+## Block BV — The quality gate stops at the package boundary (§LXIX)
+
+> Found while shipping Block BS. Every gate in `frontend/` is written **per
+> package** — `validate-js.yml`'s matrix is a hand-maintained list, each
+> `prepublishOnly` is its own, and the four publish workflows were copied from
+> each other and then diverged — so a package added later inherits nothing and
+> nothing enumerates the workspace to check. Applying T861's two steps (declare
+> the runner, then confirm CI runs it) to the rest of the workspace turned up the
+> same shape five more times, including one live bug. Design in
+> [IMPROVEMENTS.md](IMPROVEMENTS.md) §LXIX.
+
+- 📋 **T873** (deps: T861) **Two published packages are in no validation matrix** — `@viglet/turing-cli` and `@viglet/turing-flow-dsl` are public npm packages with real `node --test` suites, and neither is listed in `validate-js.yml`, so nothing builds or tests them before a merge; their publish workflows catch a break at release time, on whoever is shipping. Add both to the matrix. → §LXIX.1
+- 📋 **T874** (deps: T861) **The admin app's 171 tests run in no workflow** — `turing-app`'s vitest suite, the largest frontend suite in the repo, executes in no CI job at all: `validate.yml` is the Maven build and `validate-js.yml`'s matrix does not list it. The suite T868 is about to invest in is one nobody runs. → §LXIX.2
+- 📋 **T875** (deps: —) **`publish-js-sdk.yml` builds the wrong package** — the step named "Build @viglet/turing-react-sdk" runs `pnpm run build:sdk`, which filters on the *vanilla* `@viglet/turing-sdk`; react-sdk gets built only as a side effect of its own `prepublishOnly`, whose `size` half was failing until T863. Fix the filter and add the size + test gates `publish-react-ui.yml` already has. → §LXIX.3
+- 📋 **T876** (deps: T875) **The vanilla SDK has no publish workflow** — react-ui, cli and flow-dsl each have one; `@viglet/turing-sdk`, the package Block BS just built a gate around, is released by hand. Same pass: `publish-js-sdk.yml` patch-bumps *every* workspace per react-sdk release, so unpublished packages drift from what is on npm. → §LXIX.4
+- 📋 **T877** (deps: T861) **The most-consumed package ships zero tests** — `@viglet/turing-react-sdk` has no `test` script and no test files, so T861's `--if-present` correctly-but-unhelpfully skips it. Start with the provider/store contract T710 changed under its consumers, not a coverage target. → §LXIX.5
+- 💭 **T878** (deps: T863) **A total-only baseline cannot localize a regression** — react-sdk is `strict: false`, so its size baseline is one number and the guard can say "the package grew 4 kB" but never which file; the 7.8 kB that put it over its old ceiling is still unattributed. Baseline per directory (~a dozen reviewable numbers) instead of per file. → §LXIX.6
+
 ## Non-goals (do NOT add as tasks)
 
 Binding constraints — see [IMPROVEMENTS.md](IMPROVEMENTS.md) §I.6 (What NOT to

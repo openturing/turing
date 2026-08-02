@@ -1,9 +1,20 @@
-# Last task number — `T872` · next block letter — `BV`
+# Last task number — `T878` · next block letter — `BW`
 
 > **Single source of truth for the next free task number.** The next new task is
-> `T873`; after assigning it, bump the number above and the log line below.
+> `T879`; after assigning it, bump the number above and the log line below.
 >
-> **Next block letter — `BV`** (Block **BU** = The search cache is off by a
+> **Next block letter — `BW`** (Block **BV** = The quality gate stops at the
+> package boundary — every gate in `frontend/` is written per package
+> (`validate-js.yml`'s matrix is a hand-maintained list, each `prepublishOnly` is
+> its own, the four publish workflows diverged from a common copy), so applying
+> T861's two steps to the rest of the workspace found the same shape five more
+> times: `@viglet/turing-cli` + `@viglet/turing-flow-dsl` in no validation matrix
+> (T873), `turing-app`'s 171 tests in no workflow at all (T874), the live bug
+> that `publish-js-sdk.yml` builds `@viglet/turing-sdk` under a step named
+> react-sdk (T875), no publish workflow for the vanilla SDK + the all-workspace
+> patch bump (T876), zero tests in `@viglet/turing-react-sdk` (T877) and 💭 a
+> total-only size baseline that cannot localize a regression (T878). §LXIX,
+> created 2026-08-02; Block **BU** = The search cache is off by a
 > thousand and never evicted on write — three defects read out of
 > `TurSNSiteSearchCachedAPI` while deriving the T858 key, all latent because the
 > cache is opt-in: nothing in the indexing path evicts it so a reindexed document
@@ -260,6 +271,8 @@ number" looked free but wasn't. Grepping three files (`ROADMAP.md`,
 - **T856 SHIPPED** (Block BR §LXV — `responseFormat` honoured on GET through the same negotiation; case-insensitive, unknown value 400s) — 2026-08-02.
 
 - **T856–T860 CREATED** (📋, Block BR §LXV — Block AV follow-through: `responseFormat` on GET, inline sort options, collision-proof cache key, end-to-end POST/structured contract IT, `EnrichedFacetItem.link` optional) — 2026-08-02.
+
+- **T873–T878 CREATED** (📋/💭, Block BV §LXIX — the quality gate stops at the package boundary: cli+flow-dsl unvalidated, turing-app's tests in no workflow, `publish-js-sdk.yml` builds the wrong package, no vanilla-SDK publish workflow, react-sdk has zero tests, total-only size baseline) — 2026-08-02.
 
 - **T863 SHIPPED** (Block BS §LXVI — `check-size.mjs` guards a committed baseline's delta + `--update-baseline`; `validate-js.yml` runs on PRs; react-ui and react-sdk were both already over their ceilings. **Block BS CLOSED**) — 2026-08-02.
 
