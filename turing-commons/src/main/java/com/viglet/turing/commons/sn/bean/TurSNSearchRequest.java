@@ -116,4 +116,20 @@ public class TurSNSearchRequest implements Serializable {
      * @since 2026.3.4
      */
     private TurSNResponseFormat responseFormat = TurSNResponseFormat.LINKS;
+
+    /**
+     * T857 / §LXV.2 — when true, the {@link TurSNResponseFormat#STRUCTURED}
+     * response inlines the site's sort options, so a POST-native surface paints
+     * its sort control on the <em>first</em> frame instead of calling
+     * {@code GET /search/sort-options} as a second round-trip.
+     *
+     * <p>
+     * Off by default, and deliberately <strong>not echoed</strong> on the
+     * effective request: the list is a first-frame need, so re-sending the echo
+     * asks for results — not for the option list all over again.
+     * </p>
+     *
+     * @since 2026.3.4
+     */
+    private boolean includeSortOptions = false;
 }

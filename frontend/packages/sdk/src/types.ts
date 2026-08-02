@@ -201,6 +201,13 @@ export interface TurSearchRequest {
   targetingRules?: string[];
   autoCorrectionDisabled?: boolean;
   responseFormat?: TurResponseFormat;
+  /**
+   * T857 — inline the site's sort options in the `STRUCTURED` response so a
+   * sort control can be painted on the first frame, instead of also calling
+   * `GET /search/sort-options`. Off by default, and never echoed back on
+   * `request`: re-sending the echo asks for results, not for the list again.
+   */
+  includeSortOptions?: boolean;
 }
 
 /** T709 — a facet value in the link-free response. Never carries a URL. */
@@ -282,6 +289,8 @@ export interface TurStructuredSearchResponse {
   spellCheck?: TurStructuredSpellCheck;
   locales?: TurStructuredLocale[];
   spotlights?: unknown[];
+  /** T857 — present only when the request asked for `includeSortOptions`. */
+  sortOptions?: TurSortOption[];
 }
 
 /**

@@ -22,6 +22,7 @@ import com.viglet.turing.commons.sn.bean.TurSNSearchRequest;
 import com.viglet.turing.commons.sn.bean.TurSNSearchResponse;
 import com.viglet.turing.commons.sn.bean.TurSNSiteSearchQueryContextBean;
 import com.viglet.turing.commons.sn.bean.TurSNSiteSearchResultsBean;
+import com.viglet.turing.commons.sn.bean.TurSNSortOptionBean;
 import com.viglet.turing.commons.sn.bean.TurSNSiteSpotlightDocumentBean;
 
 import lombok.Getter;
@@ -42,9 +43,11 @@ import lombok.experimental.Accessors;
  * {@code request.fq}; clear everything → remove {@link #getSelectedFilterQueries()};</li>
  * <li>locale switch → set {@code request.locale};</li>
  * <li>spell-check → set {@code request.q} (+ {@code autoCorrectionDisabled});</li>
- * <li>sort → set {@code request.sort} (the available options come from
- * {@code GET /api/sn/{site}/search/sort-options}, which already serves them and
- * is not duplicated here).</li>
+ * <li>sort → set {@code request.sort}. The available options are served by
+ * {@code GET /api/sn/{site}/search/sort-options} and are <em>not</em> included
+ * by default, because the control is already rendered on every request after the
+ * first; ask for {@code includeSortOptions} to have them inlined here instead
+ * (T857).</li>
  * </ul>
  *
  * <p>
@@ -86,6 +89,16 @@ public class TurSNStructuredSearchBean implements TurSNSearchResponse, Serializa
     private TurSNStructuredSpellCheckBean spellCheck;
 
     private List<TurSNStructuredLocaleBean> locales;
+
+    /**
+     * T857 / §LXV.2 — the site's sort options, present only when the request set
+     * {@code includeSortOptions}. Same shape and same source as
+     * {@code GET /api/sn/{site}/search/sort-options}; put the chosen
+     * {@code value} on {@code request.sort}.
+     *
+     * @since 2026.3.4
+     */
+    private List<TurSNSortOptionBean> sortOptions;
 
     private List<TurSESimilarResult> similar;
 

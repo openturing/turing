@@ -47,6 +47,8 @@ import com.viglet.turing.commons.sn.bean.TurSNSearchResponse;
 import com.viglet.turing.commons.sn.bean.TurSNSiteLocaleBean;
 import com.viglet.turing.commons.sn.bean.TurSNSitePostParamsBean;
 import com.viglet.turing.commons.sn.bean.TurSNSiteSearchBean;
+import com.viglet.turing.commons.sn.bean.TurSNSortOptionBean;
+import com.viglet.turing.commons.sn.bean.structured.TurSNStructuredSearchBean;
 import com.viglet.turing.commons.sn.search.TurSNFilterQueryOperator;
 import com.viglet.turing.commons.sn.search.TurSNParamType;
 import com.viglet.turing.commons.sn.search.TurSNResponseFormat;
@@ -116,7 +118,8 @@ public class TurSNSiteSearchAPI {
          * existing caller sends by omission) keeps the response byte-identical,
          * while {@code responseFormat=STRUCTURED} returns the link-free shape over
          * this transport too — which is what §XLV.5 promised when it chose a
-         * request field over {@code Accept} negotiation.
+         * request field over {@code Accept} negotiation. T857 adds
+         * {@code includeSortOptions} on the same terms.
          */
         @GetMapping
         public ResponseEntity<TurSNSearchResponse> turSNSiteSearchSelectGet(
@@ -126,6 +129,7 @@ public class TurSNSiteSearchAPI {
                         @RequestParam(required = false, name = TurSNParamType.FILTER_QUERY_ITEM_OPERATOR, defaultValue = NONE) TurSNFilterQueryOperator fqItemOperator,
                         @RequestParam(required = false, name = TurSNParamType.LOCALE) Locale locale,
                         @RequestParam(required = false, name = TurSNParamType.RESPONSE_FORMAT) String responseFormat,
+                        @RequestParam(required = false, name = TurSNParamType.INCLUDE_SORT_OPTIONS, defaultValue = "false") boolean includeSortOptions,
                         HttpServletRequest request) {
                 // Parsed first: an unusable flag is a 400 that must not cost a search.
                 TurSNResponseFormat format = TurSNResponseFormat.of(responseFormat);
@@ -145,7 +149,7 @@ public class TurSNSiteSearchAPI {
                                 siteName), format,
                                 () -> TurSNSearchRequestAdapter.effectiveRequest(turSNSearchParams,
                                                 resolvedLocale, format),
-                                resolvedLocale);
+                                resolvedLocale, includeSortOptions, siteName);
         }
 
         @PostMapping
@@ -222,7 +226,7 @@ public class TurSNSiteSearchAPI {
                 return negotiate(response, searchRequest.getResponseFormat(),
                                 () -> TurSNSearchRequestAdapter.effectiveRequest(searchRequest,
                                                 turSNSearchParams, resolvedLocale),
-                                resolvedLocale);
+                                resolvedLocale, searchRequest.isIncludeSortOptions(), siteName);
         }
 
         /**
@@ -270,19 +274,29 @@ public class TurSNSiteSearchAPI {
          * overwhelmingly common {@code LINKS} path builds nothing.
          * </p>
          *
+         * <p>
+         * T857 / §LXV.2 — {@code includeSortOptions} inlines the site's sort
+         * options here, keeping the mapper a pure function of the response it
+         * projects (the option list is site configuration, not search output).
+         * </p>
+         *
          * @since 2026.3.4
          */
-        private static ResponseEntity<TurSNSearchResponse> negotiate(
+        private ResponseEntity<TurSNSearchResponse> negotiate(
                         ResponseEntity<TurSNSiteSearchBean> response,
                         TurSNResponseFormat responseFormat,
-                        Supplier<TurSNSearchRequest> effectiveRequest, Locale locale) {
+                        Supplier<TurSNSearchRequest> effectiveRequest, Locale locale,
+                        boolean includeSortOptions, String siteName) {
                 TurSNSiteSearchBean body = response.getBody();
                 if (responseFormat != TurSNResponseFormat.STRUCTURED || body == null) {
                         return ResponseEntity.status(response.getStatusCode()).body(body);
                 }
-                return ResponseEntity.status(response.getStatusCode())
-                                .body(TurSNStructuredResponseMapper.toStructured(body,
-                                                effectiveRequest.get(), locale));
+                TurSNStructuredSearchBean structured = TurSNStructuredResponseMapper
+                                .toStructured(body, effectiveRequest.get(), locale);
+                if (includeSortOptions) {
+                        sortOptions(siteName).ifPresent(structured::setSortOptions);
+                }
+                return ResponseEntity.status(response.getStatusCode()).body(structured);
         }
 
         /**
@@ -318,30 +332,33 @@ public class TurSNSiteSearchAPI {
          * @since 2026.1.14
          */
         @GetMapping("sort-options")
-        public ResponseEntity<List<TurSNSiteSortOptionBean>> turSNSiteSearchSortOptions(
+        public ResponseEntity<List<TurSNSortOptionBean>> turSNSiteSearchSortOptions(
                         @PathVariable String siteName) {
-                return snapshotService.getSnapshot(siteName, null)
-                                .map(snap -> {
-                                        List<TurSNSiteSortOptionBean> options = new ArrayList<>();
-                                        options.add(new TurSNSiteSortOptionBean("relevance", "Relevance"));
-                                        options.add(new TurSNSiteSortOptionBean("newest", "Newest"));
-                                        options.add(new TurSNSiteSortOptionBean("oldest", "Oldest"));
-                                        snap.customSorts()
-                                                        .forEach(cs -> options.add(new TurSNSiteSortOptionBean(
-                                                                        cs.getName(), cs.getDescription() != null
-                                                                                        ? cs.getDescription()
-                                                                                        : cs.getName())));
-                                        return ResponseEntity.ok(options);
-                                })
+                return sortOptions(siteName).map(ResponseEntity::ok)
                                 .orElse(ResponseEntity.notFound().build());
         }
 
         /**
-         * Sort option DTO returned by the sort-options endpoint.
+         * T857 / §LXV.2 — the one place the site's sort options are assembled, so
+         * the dedicated endpoint and the inlined list in the structured response
+         * can never disagree. Empty when the site is unknown.
          *
-         * @since 2026.1.14
+         * @since 2026.3.4
          */
-        public record TurSNSiteSortOptionBean(String value, String label) {}
+        private Optional<List<TurSNSortOptionBean>> sortOptions(String siteName) {
+                return snapshotService.getSnapshot(siteName, null).map(snap -> {
+                        List<TurSNSortOptionBean> options = new ArrayList<>();
+                        options.add(new TurSNSortOptionBean("relevance", "Relevance"));
+                        options.add(new TurSNSortOptionBean("newest", "Newest"));
+                        options.add(new TurSNSortOptionBean("oldest", "Oldest"));
+                        snap.customSorts()
+                                        .forEach(cs -> options.add(new TurSNSortOptionBean(
+                                                        cs.getName(), cs.getDescription() != null
+                                                                        ? cs.getDescription()
+                                                                        : cs.getName())));
+                        return options;
+                });
+        }
 
         /**
          * T384 / §XX.4 — public "documents similar to this id" endpoint. Returns

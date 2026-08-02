@@ -50,6 +50,7 @@ import com.viglet.turing.commons.sn.bean.TurSNSearchResponse;
 import com.viglet.turing.commons.sn.bean.TurSNSiteLocaleBean;
 import com.viglet.turing.commons.sn.bean.TurSNSitePostParamsBean;
 import com.viglet.turing.commons.sn.bean.TurSNSiteSearchBean;
+import com.viglet.turing.commons.sn.bean.TurSNSortOptionBean;
 import com.viglet.turing.commons.sn.bean.structured.TurSNStructuredSearchBean;
 import com.viglet.turing.commons.sn.search.TurSNFilterQueryOperator;
 import com.viglet.turing.commons.sn.search.TurSNResponseFormat;
@@ -116,7 +117,7 @@ class TurSNSiteSearchAPITest {
 
         ResponseEntity<TurSNSearchResponse> response = api.turSNSiteSearchSelectGet("site", params,
                 TurSNFilterQueryOperator.NONE, TurSNFilterQueryOperator.NONE,
-                Locale.US, null, mock(HttpServletRequest.class));
+                Locale.US, null, false, mock(HttpServletRequest.class));
 
         assertThat(response).isSameAs(notFound);
         verify(service).setSearchParams(params, null, null, null, TurSNFilterQueryOperator.NONE,
@@ -146,7 +147,7 @@ class TurSNSiteSearchAPITest {
 
         ResponseEntity<TurSNSearchResponse> response = api.turSNSiteSearchSelectGet("site", params,
                 TurSNFilterQueryOperator.NONE, TurSNFilterQueryOperator.NONE, Locale.US, null,
-                request);
+                false, request);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(response.getBody()).isSameAs(legacyBody);
@@ -175,7 +176,7 @@ class TurSNSiteSearchAPITest {
 
         ResponseEntity<TurSNSearchResponse> response = api.turSNSiteSearchSelectGet("site", params,
                 TurSNFilterQueryOperator.NONE, TurSNFilterQueryOperator.NONE, Locale.US,
-                "structured", request);
+                "structured", false, request);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(response.getBody()).isInstanceOf(TurSNStructuredSearchBean.class);
@@ -203,7 +204,7 @@ class TurSNSiteSearchAPITest {
 
         assertThatThrownBy(() -> api.turSNSiteSearchSelectGet("site", params,
                 TurSNFilterQueryOperator.NONE, TurSNFilterQueryOperator.NONE, Locale.US,
-                "compact", request)).isInstanceOf(IllegalArgumentException.class);
+                "compact", false, request)).isInstanceOf(IllegalArgumentException.class);
         verifyNoInteractions(searchProcess);
     }
 
@@ -403,6 +404,151 @@ class TurSNSiteSearchAPITest {
         assertThat(structured.getRequest().getQ()).isEqualTo("*");
     }
 
+    /**
+     * T857 / §LXV.2 — the default structured body stays lean: no sort options
+     * unless they were asked for.
+     */
+    @Test
+    void testStructuredResponseOmitsSortOptionsByDefault() {
+        TurSNSiteSearchService service = mock(TurSNSiteSearchService.class);
+        TurSNSearchProcess searchProcess = mock(TurSNSearchProcess.class);
+        TurSNSiteSearchSnapshotService snapshots = mock(TurSNSiteSearchSnapshotService.class);
+        TurSNSiteSearchAPI api = new TurSNSiteSearchAPI(service, searchProcess, snapshots,
+                mock(TurSNSimilarDocumentsService.class),
+                mock(TurSNDuplicateClusteringService.class));
+        TurSNSearchRequest searchRequest = new TurSNSearchRequest();
+        searchRequest.setLocale("en_US");
+        searchRequest.setResponseFormat(TurSNResponseFormat.STRUCTURED);
+        HttpServletRequest request = mock(HttpServletRequest.class);
+
+        when(searchProcess.existsByTurSNSiteAndLanguage(eq("site"), eq(Locale.US))).thenReturn(true);
+        when(service.executePublicPostSearch(eq(searchRequest), any(), eq(request), eq("site")))
+                .thenReturn(new ResponseEntity<>(new TurSNSiteSearchBean(), HttpStatus.OK));
+
+        TurSNStructuredSearchBean structured = (TurSNStructuredSearchBean) api
+                .turSNSiteSearchQueryPost("site", searchRequest, request).getBody();
+
+        assertThat(structured.getSortOptions()).isNull();
+        verifyNoInteractions(snapshots);
+    }
+
+    /**
+     * T857 / §LXV.2 — asking for them collapses the sort control to one
+     * round-trip, and the inlined list is the one the dedicated endpoint serves.
+     */
+    @Test
+    void testStructuredResponseInlinesSortOptionsWhenAsked() {
+        TurSNSiteSearchService service = mock(TurSNSiteSearchService.class);
+        TurSNSearchProcess searchProcess = mock(TurSNSearchProcess.class);
+        TurSNSiteSearchSnapshotService snapshots = mock(TurSNSiteSearchSnapshotService.class);
+        TurSNSiteSearchAPI api = new TurSNSiteSearchAPI(service, searchProcess, snapshots,
+                mock(TurSNSimilarDocumentsService.class),
+                mock(TurSNDuplicateClusteringService.class));
+        TurSNSearchRequest searchRequest = new TurSNSearchRequest();
+        searchRequest.setLocale("en_US");
+        searchRequest.setResponseFormat(TurSNResponseFormat.STRUCTURED);
+        searchRequest.setIncludeSortOptions(true);
+        HttpServletRequest request = mock(HttpServletRequest.class);
+
+        when(searchProcess.existsByTurSNSiteAndLanguage(eq("site"), eq(Locale.US))).thenReturn(true);
+        when(service.executePublicPostSearch(eq(searchRequest), any(), eq(request), eq("site")))
+                .thenReturn(new ResponseEntity<>(new TurSNSiteSearchBean(), HttpStatus.OK));
+        when(snapshots.getSnapshot("site", null)).thenReturn(Optional.of(snapshot("site")));
+
+        TurSNStructuredSearchBean structured = (TurSNStructuredSearchBean) api
+                .turSNSiteSearchQueryPost("site", searchRequest, request).getBody();
+
+        assertThat(structured.getSortOptions()).extracting(TurSNSortOptionBean::value)
+                .containsExactly("relevance", "newest", "oldest");
+        // The echo does not carry the flag: the list is a first-frame need, so
+        // re-sending the echoed request asks for results, not for the list again.
+        assertThat(structured.getRequest().isIncludeSortOptions()).isFalse();
+    }
+
+    /**
+     * T857 — the flag only makes sense with a structured body; a {@code LINKS}
+     * response is frozen and must stay byte-identical.
+     */
+    @Test
+    void testSortOptionsAreNotInlinedIntoTheLegacyResponse() {
+        TurSNSiteSearchService service = mock(TurSNSiteSearchService.class);
+        TurSNSearchProcess searchProcess = mock(TurSNSearchProcess.class);
+        TurSNSiteSearchSnapshotService snapshots = mock(TurSNSiteSearchSnapshotService.class);
+        TurSNSiteSearchAPI api = new TurSNSiteSearchAPI(service, searchProcess, snapshots,
+                mock(TurSNSimilarDocumentsService.class),
+                mock(TurSNDuplicateClusteringService.class));
+        TurSNSearchRequest searchRequest = new TurSNSearchRequest();
+        searchRequest.setLocale("en_US");
+        searchRequest.setIncludeSortOptions(true);
+        HttpServletRequest request = mock(HttpServletRequest.class);
+        TurSNSiteSearchBean legacyBody = new TurSNSiteSearchBean();
+
+        when(searchProcess.existsByTurSNSiteAndLanguage(eq("site"), eq(Locale.US))).thenReturn(true);
+        when(service.executePublicPostSearch(eq(searchRequest), any(), eq(request), eq("site")))
+                .thenReturn(new ResponseEntity<>(legacyBody, HttpStatus.OK));
+
+        assertThat(api.turSNSiteSearchQueryPost("site", searchRequest, request).getBody())
+                .isSameAs(legacyBody);
+        verifyNoInteractions(snapshots);
+    }
+
+    /**
+     * T857 — an unknown site cannot produce an option list; the search response
+     * still stands rather than failing over a decoration.
+     */
+    @Test
+    void testInlineSortOptionsAreOmittedWhenTheSnapshotIsMissing() {
+        TurSNSiteSearchService service = mock(TurSNSiteSearchService.class);
+        TurSNSearchProcess searchProcess = mock(TurSNSearchProcess.class);
+        TurSNSiteSearchSnapshotService snapshots = mock(TurSNSiteSearchSnapshotService.class);
+        TurSNSiteSearchAPI api = new TurSNSiteSearchAPI(service, searchProcess, snapshots,
+                mock(TurSNSimilarDocumentsService.class),
+                mock(TurSNDuplicateClusteringService.class));
+        TurSNSearchRequest searchRequest = new TurSNSearchRequest();
+        searchRequest.setLocale("en_US");
+        searchRequest.setResponseFormat(TurSNResponseFormat.STRUCTURED);
+        searchRequest.setIncludeSortOptions(true);
+        HttpServletRequest request = mock(HttpServletRequest.class);
+
+        when(searchProcess.existsByTurSNSiteAndLanguage(eq("site"), eq(Locale.US))).thenReturn(true);
+        when(service.executePublicPostSearch(eq(searchRequest), any(), eq(request), eq("site")))
+                .thenReturn(new ResponseEntity<>(new TurSNSiteSearchBean(), HttpStatus.OK));
+        when(snapshots.getSnapshot("site", null)).thenReturn(Optional.empty());
+
+        TurSNStructuredSearchBean structured = (TurSNStructuredSearchBean) api
+                .turSNSiteSearchQueryPost("site", searchRequest, request).getBody();
+
+        assertThat(structured).isNotNull();
+        assertThat(structured.getSortOptions()).isNull();
+    }
+
+    /**
+     * T857 — reachable over GET too, on the same terms as the T856 flag.
+     */
+    @Test
+    void testSearchGetInlinesSortOptionsWhenAsked() {
+        TurSNSiteSearchService service = mock(TurSNSiteSearchService.class);
+        TurSNSearchProcess searchProcess = mock(TurSNSearchProcess.class);
+        TurSNSiteSearchSnapshotService snapshots = mock(TurSNSiteSearchSnapshotService.class);
+        TurSNSiteSearchAPI api = new TurSNSiteSearchAPI(service, searchProcess, snapshots,
+                mock(TurSNSimilarDocumentsService.class),
+                mock(TurSNDuplicateClusteringService.class));
+        TurSNSearchParams params = new TurSNSearchParams();
+        HttpServletRequest request = mock(HttpServletRequest.class);
+
+        when(searchProcess.existsByTurSNSiteAndLanguage("site", params.getLocale())).thenReturn(true);
+        when(service.executeGetSearch(params, request, "site"))
+                .thenReturn(new ResponseEntity<>(new TurSNSiteSearchBean(), HttpStatus.OK));
+        when(snapshots.getSnapshot("site", null)).thenReturn(Optional.of(snapshot("site")));
+
+        TurSNStructuredSearchBean structured = (TurSNStructuredSearchBean) api
+                .turSNSiteSearchSelectGet("site", params, TurSNFilterQueryOperator.NONE,
+                        TurSNFilterQueryOperator.NONE, Locale.US, "STRUCTURED", true, request)
+                .getBody();
+
+        assertThat(structured.getSortOptions()).hasSize(3);
+    }
+
     @Test
     void testLatestReturnsUnauthorizedWhenPrincipalMissing() {
         TurSNSiteSearchService service = mock(TurSNSiteSearchService.class);
@@ -463,12 +609,12 @@ class TurSNSiteSearchAPITest {
         TurSNSiteSearchSnapshot snap = snapshot("site");
         when(snapshots.getSnapshot("site", null)).thenReturn(Optional.of(snap));
 
-        ResponseEntity<List<TurSNSiteSearchAPI.TurSNSiteSortOptionBean>> response =
+        ResponseEntity<List<TurSNSortOptionBean>> response =
                 api.turSNSiteSearchSortOptions("site");
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(response.getBody())
-                .extracting(TurSNSiteSearchAPI.TurSNSiteSortOptionBean::value)
+                .extracting(TurSNSortOptionBean::value)
                 .contains("relevance", "newest", "oldest");
     }
 
@@ -482,7 +628,7 @@ class TurSNSiteSearchAPITest {
                 mock(TurSNDuplicateClusteringService.class));
         when(snapshots.getSnapshot("site", null)).thenReturn(Optional.empty());
 
-        ResponseEntity<List<TurSNSiteSearchAPI.TurSNSiteSortOptionBean>> response =
+        ResponseEntity<List<TurSNSortOptionBean>> response =
                 api.turSNSiteSearchSortOptions("site");
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);

@@ -227,6 +227,8 @@ number" looked free but wasn't. Grepping three files (`ROADMAP.md`,
 
 ## Log (most recent first)
 
+- **T857 SHIPPED** (Block BR §LXV — opt-in `includeSortOptions` inlines the sort options in the structured response; one shared source with the endpoint) — 2026-08-02.
+
 - **T856 SHIPPED** (Block BR §LXV — `responseFormat` honoured on GET through the same negotiation; case-insensitive, unknown value 400s) — 2026-08-02.
 
 - **T856–T860 CREATED** (📋, Block BR §LXV — Block AV follow-through: `responseFormat` on GET, inline sort options, collision-proof cache key, end-to-end POST/structured contract IT, `EnrichedFacetItem.link` optional) — 2026-08-02.

@@ -2893,20 +2893,6 @@ search — so the console keeps one way of launching a search surface.
 > primitive that was fine for GET-only turned out to invite a bug once a second
 > transport existed.
 
-### LXV.2 A sort control costs two round-trips POST-native (T857)
-
-The structured response deliberately does not carry the sort option list — the
-list already has an endpoint (`GET /search/sort-options`) and duplicating it in
-every search response would be waste on the overwhelmingly common path where the
-control is already rendered. That was the right default and it should stay the
-default.
-
-But it means a POST-native surface painting its *first* frame needs two calls:
-one for results, one to populate the sort dropdown. An opt-in
-`includeSortOptions` on `TurSNSearchRequest` collapses that to one, without
-putting the list on every subsequent request. Same shape as the rest of Block
-AV: additive, off by default, and the client asks for what it needs.
-
 ### LXV.3 The cache-key primitive invites the bug (T858)
 
 `TurSNUtils.getCacheKey(siteName, request)` is
