@@ -19,6 +19,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "size": "node ../../scripts/check-size.mjs",
+    "size:update": "node ../../scripts/check-size.mjs --update-baseline",
     "prepublishOnly": "npm run build && npm run size"
   },
   "publishConfig": {
@@ -60,10 +61,17 @@
       ".cjs"
     ],
     "strict": true,
-    "total": 33500,
-    "entries": {
-      "turing-sdk.js": 17700,
-      "turing-sdk.umd.cjs": 15750
+    "delta": {
+      "entry": 512,
+      "total": 1024
+    },
+    "baseline": {
+      "measured": "2026-08-02",
+      "total": 33170,
+      "entries": {
+        "turing-sdk.js": 17543,
+        "turing-sdk.umd.cjs": 15627
+      }
     }
   }
 }

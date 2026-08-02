@@ -261,6 +261,8 @@ number" looked free but wasn't. Grepping three files (`ROADMAP.md`,
 
 - **T856–T860 CREATED** (📋, Block BR §LXV — Block AV follow-through: `responseFormat` on GET, inline sort options, collision-proof cache key, end-to-end POST/structured contract IT, `EnrichedFacetItem.link` optional) — 2026-08-02.
 
+- **T863 SHIPPED** (Block BS §LXVI — `check-size.mjs` guards a committed baseline's delta + `--update-baseline`; `validate-js.yml` runs on PRs; react-ui and react-sdk were both already over their ceilings. **Block BS CLOSED**) — 2026-08-02.
+
 - **T862 SHIPPED** (Block BS §LXVI — the 7 failures were a missing jsdom, not timer drift; per-file `@vitest-environment jsdom` keeps the SSR path testable; 217 green) — 2026-08-02.
 
 - **T861 SHIPPED** (Block BS §LXVI — `vitest` declared + standalone `vitest.config.ts`; `validate-js.yml` never ran any package's tests and now does) — 2026-08-02.

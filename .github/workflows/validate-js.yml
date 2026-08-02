@@ -2,6 +2,14 @@ name: Validate JavaScript Projects
 
 on:
   workflow_dispatch:
+  # T863: the bundle-size guard used to run only in `prepublishOnly`, so a
+  # regression was reported to whoever next tried to publish — the wrong person
+  # at the wrong moment. Running the whole job on PRs puts build + size + test
+  # in front of the author of the change instead.
+  pull_request:
+    paths:
+      - "frontend/**"
+      - ".github/workflows/validate-js.yml"
 
 jobs:
   validate:

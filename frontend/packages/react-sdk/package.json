@@ -8,6 +8,7 @@
     "build": "tsc",
     "dev": "tsc --watch",
     "size": "node ../../scripts/check-size.mjs",
+    "size:update": "node ../../scripts/check-size.mjs --update-baseline",
     "prepublishOnly": "npm run build && npm run size",
     "storybook": "storybook dev -p 6006",
     "build-storybook": "storybook build"
@@ -76,6 +77,13 @@
       "__tests__/"
     ],
     "strict": false,
-    "total": 92160
+    "delta": {
+      "entry": 512,
+      "total": 2048
+    },
+    "baseline": {
+      "measured": "2026-08-02",
+      "total": 100181
+    }
   }
 }

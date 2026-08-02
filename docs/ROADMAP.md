@@ -210,7 +210,13 @@
 > most external consumers depend on has no working quality gate. Design in
 > [IMPROVEMENTS.md](IMPROVEMENTS.md) §LXVI.
 
-- 📋 **T863** (deps: T861) **Size budget as a delta guard, run in CI** — commit a measured baseline and fail on a *delta* beyond a threshold instead of on an absolute number that rots, and run `check-size` on PRs rather than only at `prepublishOnly`, where it is discovered by whoever tries to publish. → §LXVI.3
+> **✅ Block BS fully shipped (T861–T863).** The vanilla SDK declares `vitest`
+> and has its own `vitest.config.ts`, `validate-js.yml` runs every workspace's
+> tests (it ran none before) and now triggers on PRs, the 7 red tests were a
+> missing jsdom rather than timer drift and the suite is green with the SSR path
+> newly covered, and the size budget guards a committed baseline's delta instead
+> of an absolute ceiling — which found react-ui *and* react-sdk already over
+> theirs. See [CHANGELOG.md](CHANGELOG.md) → Block BS.
 
 ## Block BT — The POST-native default left its consumers behind (§LXVII)
 

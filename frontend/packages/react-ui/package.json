@@ -105,6 +105,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "size": "node ../../scripts/check-size.mjs",
+    "size:update": "node ../../scripts/check-size.mjs --update-baseline",
     "storybook": "storybook dev -p 6007",
     "build-storybook": "storybook build",
     "prepublishOnly": "npm run build && npm run size"
@@ -158,30 +159,40 @@
   },
   "sizeBudget": {
     "strict": true,
-    "total": 34000,
-    "entries": {
-      "index.js": 1650,
-      "TuringPersonaPicker.js": 1300,
-      "TuringContentFit.js": 1900,
-      "tokens.js": 1100,
-      "TuringHtmlSandbox.js": 3200,
-      "TuringD2Diagram.js": 2400,
-      "TuringMarkdown.js": 2400,
-      "TuringRichContent.js": 2100,
-      "TuringCopyButton.js": 1800,
-      "TuringChatMessage.js": 1700,
-      "TuringSourceChips.js": 2300,
-      "TuringCodeBlock.js": 1500,
-      "TuringThinkingDots.js": 1200,
-      "TuringSearchBar.js": 900,
-      "TuringResultList.js": 700,
-      "TuringPagination.js": 900,
-      "TuringSearchFieldView.js": 1850,
-      "TuringWorkspacePanelView.js": 1400,
-      "TuringToolActivity.js": 1600,
-      "TuringGenerativeContent.js": 1050,
-      "TuringAnswerAsApp.js": 2500,
-      "TuringCitedAnswer.js": 1700
+    "delta": {
+      "entry": 512,
+      "total": 2048
+    },
+    "baseline": {
+      "measured": "2026-08-02",
+      "total": 36351,
+      "entries": {
+        "TuringAnswerAsApp.js": 2372,
+        "TuringAnswerProvenance.js": 972,
+        "TuringChatMessage.js": 1201,
+        "TuringCitationAnchor.js": 1116,
+        "TuringCitedAnswer.js": 1568,
+        "TuringCodeBlock.js": 1008,
+        "TuringContentFit.js": 1524,
+        "TuringCopyButton.js": 1295,
+        "TuringD2Diagram.js": 1898,
+        "TuringGenerativeContent.js": 927,
+        "TuringHtmlSandbox.js": 3081,
+        "TuringMarkdown.js": 2198,
+        "TuringPagination.js": 1037,
+        "TuringPersonaPicker.js": 1196,
+        "TuringResultList.js": 1027,
+        "TuringRichContent.js": 1535,
+        "TuringSearchBar.js": 881,
+        "TuringSearchFieldView.js": 1764,
+        "TuringSourceChips.js": 2180,
+        "TuringThinkingDots.js": 815,
+        "TuringToolActivity.js": 1463,
+        "TuringWorkspacePanelView.js": 1319,
+        "index.js": 1703,
+        "rehypeCitationAnchors.js": 1441,
+        "tokens.js": 830
+      }
     }
   },
   "keywords": [

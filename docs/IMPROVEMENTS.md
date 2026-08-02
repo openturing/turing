@@ -2893,31 +2893,6 @@ search — so the console keeps one way of launching a search surface.
 > primitive that was fine for GET-only turned out to invite a bug once a second
 > transport existed.
 
-## LXVI. The JS SDK release gate is not a gate (Block BS)
-
-> Three findings from working through Block AV, none about search. They are
-> individually trivial and that is the point: each one alone looks like noise, and
-> together they mean `@viglet/turing-sdk` — the package external consumers and the
-> EDS blocks depend on — has no working quality gate.
-
-### LXVI.3 The size budget rots silently (T863)
-
-`check-size.mjs` enforces absolute gzip ceilings from `package.json`. At the
-start of Block AV the bundle was **already** over: 16.22 kB against a 15.63 kB
-ceiling. Since `check-size` runs in `prepublishOnly`, publishing was blocked —
-by a stale number, not by real bloat, and discoverable only by whoever next tried
-to publish.
-
-An absolute ceiling has to be re-tuned by hand every time the package
-legitimately grows, and each re-tune is indistinguishable from silencing the
-guard. Two changes make it durable:
-
-- **Guard the delta, not the level.** Commit a measured baseline alongside the
-  budget and fail when a change adds more than a threshold. Legitimate growth
-  updates the baseline in the same PR that causes it, where a reviewer can see
-  the cost next to the feature.
-- **Run it on PRs.** A size guard that only fires at publish time reports to the
-  wrong person at the wrong moment.
 
 ## LXVII. The POST-native default left its consumers behind (Block BT)
 
