@@ -227,6 +227,8 @@ number" looked free but wasn't. Grepping three files (`ROADMAP.md`,
 
 ## Log (most recent first)
 
+- **T856 SHIPPED** (Block BR §LXV — `responseFormat` honoured on GET through the same negotiation; case-insensitive, unknown value 400s) — 2026-08-02.
+
 - **T856–T860 CREATED** (📋, Block BR §LXV — Block AV follow-through: `responseFormat` on GET, inline sort options, collision-proof cache key, end-to-end POST/structured contract IT, `EnrichedFacetItem.link` optional) — 2026-08-02.
 
 - **T861–T863 CREATED** (📋, Block BS §LXVI — the JS SDK release gate: vanilla SDK owns its test runner, fix the 7 red analytics tests, size budget as a delta guard in CI) — 2026-08-02.

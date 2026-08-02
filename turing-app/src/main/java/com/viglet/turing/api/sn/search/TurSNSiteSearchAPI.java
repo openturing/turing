@@ -25,6 +25,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
+import java.util.function.Supplier;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -109,14 +110,25 @@ public class TurSNSiteSearchAPI {
                 return new ResponseEntity<>(termList, HttpStatus.OK);
         }
 
+        /**
+         * The link-bearing GET search. Since T856 / §LXV.1 it also honours the
+         * {@code responseFormat} flag: {@code LINKS} (the default, and what every
+         * existing caller sends by omission) keeps the response byte-identical,
+         * while {@code responseFormat=STRUCTURED} returns the link-free shape over
+         * this transport too — which is what §XLV.5 promised when it chose a
+         * request field over {@code Accept} negotiation.
+         */
         @GetMapping
-        public ResponseEntity<TurSNSiteSearchBean> turSNSiteSearchSelectGet(
+        public ResponseEntity<TurSNSearchResponse> turSNSiteSearchSelectGet(
                         @PathVariable String siteName,
                         @ModelAttribute TurSNSearchParams turSNSearchParams,
                         @RequestParam(required = false, name = TurSNParamType.FILTER_QUERY_OPERATOR, defaultValue = NONE) TurSNFilterQueryOperator fqOperator,
                         @RequestParam(required = false, name = TurSNParamType.FILTER_QUERY_ITEM_OPERATOR, defaultValue = NONE) TurSNFilterQueryOperator fqItemOperator,
                         @RequestParam(required = false, name = TurSNParamType.LOCALE) Locale locale,
+                        @RequestParam(required = false, name = TurSNParamType.RESPONSE_FORMAT) String responseFormat,
                         HttpServletRequest request) {
+                // Parsed first: an unusable flag is a 400 that must not cost a search.
+                TurSNResponseFormat format = TurSNResponseFormat.of(responseFormat);
                 if (locale == null) {
                         locale = turSNSiteSearchService.resolveDefaultLocale(siteName);
                 }
@@ -128,7 +140,12 @@ public class TurSNSiteSearchAPI {
                 if (!turSNSearchProcess.existsByTurSNSiteAndLanguage(siteName, turSNSearchParams.getLocale())) {
                         return turSNSiteSearchService.notFoundResponse();
                 }
-                return turSNSiteSearchService.executeGetSearch(turSNSearchParams, request, siteName);
+                Locale resolvedLocale = locale;
+                return negotiate(turSNSiteSearchService.executeGetSearch(turSNSearchParams, request,
+                                siteName), format,
+                                () -> TurSNSearchRequestAdapter.effectiveRequest(turSNSearchParams,
+                                                resolvedLocale, format),
+                                resolvedLocale);
         }
 
         @PostMapping
@@ -201,7 +218,11 @@ public class TurSNSiteSearchAPI {
                 ResponseEntity<TurSNSiteSearchBean> response = turSNSiteSearchService
                                 .executePublicPostSearch(searchRequest, turSNSearchParams, request,
                                                 siteName);
-                return negotiate(response, searchRequest, turSNSearchParams, locale);
+                Locale resolvedLocale = locale;
+                return negotiate(response, searchRequest.getResponseFormat(),
+                                () -> TurSNSearchRequestAdapter.effectiveRequest(searchRequest,
+                                                turSNSearchParams, resolvedLocale),
+                                resolvedLocale);
         }
 
         /**
@@ -243,23 +264,25 @@ public class TurSNSiteSearchAPI {
          * switches to POST sees the response it already parses; {@code STRUCTURED}
          * projects it onto the link-free shape.
          *
+         * <p>
+         * T856 / §LXV.1 made it transport-agnostic: the GET mapping routes through
+         * this same method, and the request echo is supplied lazily so the
+         * overwhelmingly common {@code LINKS} path builds nothing.
+         * </p>
+         *
          * @since 2026.3.4
          */
         private static ResponseEntity<TurSNSearchResponse> negotiate(
                         ResponseEntity<TurSNSiteSearchBean> response,
-                        TurSNSearchRequest searchRequest,
-                        TurSNSearchParams turSNSearchParams, Locale locale) {
+                        TurSNResponseFormat responseFormat,
+                        Supplier<TurSNSearchRequest> effectiveRequest, Locale locale) {
                 TurSNSiteSearchBean body = response.getBody();
-                if (searchRequest.getResponseFormat() != TurSNResponseFormat.STRUCTURED
-                                || body == null) {
+                if (responseFormat != TurSNResponseFormat.STRUCTURED || body == null) {
                         return ResponseEntity.status(response.getStatusCode()).body(body);
                 }
                 return ResponseEntity.status(response.getStatusCode())
                                 .body(TurSNStructuredResponseMapper.toStructured(body,
-                                                TurSNSearchRequestAdapter.effectiveRequest(
-                                                                searchRequest, turSNSearchParams,
-                                                                locale),
-                                                locale));
+                                                effectiveRequest.get(), locale));
         }
 
         /**

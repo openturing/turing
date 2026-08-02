@@ -22,6 +22,7 @@
 package com.viglet.turing.api.sn.search;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
@@ -113,13 +114,97 @@ class TurSNSiteSearchAPITest {
         when(searchProcess.existsByTurSNSiteAndLanguage("site", params.getLocale())).thenReturn(false);
         org.mockito.Mockito.doReturn(notFound).when(service).notFoundResponse();
 
-        ResponseEntity<TurSNSiteSearchBean> response = api.turSNSiteSearchSelectGet("site", params,
+        ResponseEntity<TurSNSearchResponse> response = api.turSNSiteSearchSelectGet("site", params,
                 TurSNFilterQueryOperator.NONE, TurSNFilterQueryOperator.NONE,
-                Locale.US, mock(HttpServletRequest.class));
+                Locale.US, null, mock(HttpServletRequest.class));
 
         assertThat(response).isSameAs(notFound);
         verify(service).setSearchParams(params, null, null, null, TurSNFilterQueryOperator.NONE,
                 TurSNFilterQueryOperator.NONE, Locale.US);
+    }
+
+    /**
+     * T856 / §LXV.1 — the GET mapping keeps returning the legacy link-bearing bean
+     * <em>untouched</em> when the flag is absent, which is what every existing
+     * caller sends.
+     */
+    @Test
+    void testSearchGetKeepsTheLegacyBodyWhenNoResponseFormatIsAsked() {
+        TurSNSiteSearchService service = mock(TurSNSiteSearchService.class);
+        TurSNSearchProcess searchProcess = mock(TurSNSearchProcess.class);
+        TurSNSiteSearchSnapshotService snapshots = mock(TurSNSiteSearchSnapshotService.class);
+        TurSNSiteSearchAPI api = new TurSNSiteSearchAPI(service, searchProcess, snapshots,
+                mock(TurSNSimilarDocumentsService.class),
+                mock(TurSNDuplicateClusteringService.class));
+        TurSNSearchParams params = new TurSNSearchParams();
+        HttpServletRequest request = mock(HttpServletRequest.class);
+        TurSNSiteSearchBean legacyBody = new TurSNSiteSearchBean();
+
+        when(searchProcess.existsByTurSNSiteAndLanguage("site", params.getLocale())).thenReturn(true);
+        when(service.executeGetSearch(params, request, "site"))
+                .thenReturn(new ResponseEntity<>(legacyBody, HttpStatus.OK));
+
+        ResponseEntity<TurSNSearchResponse> response = api.turSNSiteSearchSelectGet("site", params,
+                TurSNFilterQueryOperator.NONE, TurSNFilterQueryOperator.NONE, Locale.US, null,
+                request);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(response.getBody()).isSameAs(legacyBody);
+    }
+
+    /**
+     * T856 / §LXV.1 — the structured shape is now reachable over GET, so the two
+     * shapes can be A/B'd against one query on either transport. The value is
+     * parsed case-insensitively because it is typed into a URL.
+     */
+    @Test
+    void testSearchGetReturnsTheStructuredShapeWhenAsked() {
+        TurSNSiteSearchService service = mock(TurSNSiteSearchService.class);
+        TurSNSearchProcess searchProcess = mock(TurSNSearchProcess.class);
+        TurSNSiteSearchSnapshotService snapshots = mock(TurSNSiteSearchSnapshotService.class);
+        TurSNSiteSearchAPI api = new TurSNSiteSearchAPI(service, searchProcess, snapshots,
+                mock(TurSNSimilarDocumentsService.class),
+                mock(TurSNDuplicateClusteringService.class));
+        TurSNSearchParams params = new TurSNSearchParams();
+        params.setQ("guitar");
+        HttpServletRequest request = mock(HttpServletRequest.class);
+
+        when(searchProcess.existsByTurSNSiteAndLanguage("site", params.getLocale())).thenReturn(true);
+        when(service.executeGetSearch(params, request, "site"))
+                .thenReturn(new ResponseEntity<>(new TurSNSiteSearchBean(), HttpStatus.OK));
+
+        ResponseEntity<TurSNSearchResponse> response = api.turSNSiteSearchSelectGet("site", params,
+                TurSNFilterQueryOperator.NONE, TurSNFilterQueryOperator.NONE, Locale.US,
+                "structured", request);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(response.getBody()).isInstanceOf(TurSNStructuredSearchBean.class);
+        TurSNStructuredSearchBean structured = (TurSNStructuredSearchBean) response.getBody();
+        assertThat(structured.getRequest().getQ()).isEqualTo("guitar");
+        assertThat(structured.getRequest().getLocale()).isEqualTo("en_US");
+        assertThat(structured.getRequest().getResponseFormat())
+                .isEqualTo(TurSNResponseFormat.STRUCTURED);
+    }
+
+    /**
+     * T856 — an unknown value is a client error, not a silent fall back to the
+     * legacy shape: a typo'd A/B URL must not quietly return the wrong body.
+     */
+    @Test
+    void testSearchGetRejectsAnUnknownResponseFormat() {
+        TurSNSiteSearchService service = mock(TurSNSiteSearchService.class);
+        TurSNSearchProcess searchProcess = mock(TurSNSearchProcess.class);
+        TurSNSiteSearchSnapshotService snapshots = mock(TurSNSiteSearchSnapshotService.class);
+        TurSNSiteSearchAPI api = new TurSNSiteSearchAPI(service, searchProcess, snapshots,
+                mock(TurSNSimilarDocumentsService.class),
+                mock(TurSNDuplicateClusteringService.class));
+        TurSNSearchParams params = new TurSNSearchParams();
+        HttpServletRequest request = mock(HttpServletRequest.class);
+
+        assertThatThrownBy(() -> api.turSNSiteSearchSelectGet("site", params,
+                TurSNFilterQueryOperator.NONE, TurSNFilterQueryOperator.NONE, Locale.US,
+                "compact", request)).isInstanceOf(IllegalArgumentException.class);
+        verifyNoInteractions(searchProcess);
     }
 
     @Test

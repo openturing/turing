@@ -2893,27 +2893,6 @@ search — so the console keeps one way of launching a search surface.
 > primitive that was fine for GET-only turned out to invite a bug once a second
 > transport existed.
 
-### LXV.1 `responseFormat` is honoured on POST only (T856)
-
-§XLV.5 chose a request field over `Accept` negotiation with an explicit
-justification: *"it works over both GET and POST, which is what A/B-ing the two
-shapes against one query requires."* The implementation reads the flag from the
-POST body only (`TurSNSiteSearchAPI.negotiate`), so the GET mapping cannot
-produce the structured shape at all. The A/B story the choice was made for does
-not exist.
-
-Two honest resolutions, and the task is to pick one rather than leave the doc and
-the code disagreeing:
-
-- **Close it** — bind `responseFormat` as a GET request param and route the GET
-  response through the same negotiation. Cheap (the mapper is a pure function
-  over an already-computed bean) and it makes the stated rationale true.
-- **Amend §XLV** — if nothing actually wants structured-over-GET, say so and
-  record that the field was chosen for uniformity of *shape*, not of transport.
-
-Prefer closing it: a server-rendered surface that wants facet *data* without
-parsing its own links is a real consumer, and the cost is one parameter.
-
 ### LXV.2 A sort control costs two round-trips POST-native (T857)
 
 The structured response deliberately does not carry the sort option list — the

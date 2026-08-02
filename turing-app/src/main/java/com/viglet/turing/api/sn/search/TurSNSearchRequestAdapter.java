@@ -27,6 +27,7 @@ import com.viglet.turing.commons.sn.bean.TurSNSearchRequest;
 import com.viglet.turing.commons.sn.bean.TurSNSitePostParamsBean;
 import com.viglet.turing.commons.sn.search.TurSNFilterQueryOperator;
 import com.viglet.turing.commons.sn.search.TurSNParamType;
+import com.viglet.turing.commons.sn.search.TurSNResponseFormat;
 import com.viglet.turing.commons.utils.TurCommonsUtils;
 
 /**
@@ -120,6 +121,30 @@ public final class TurSNSearchRequestAdapter {
      */
     public static TurSNSearchRequest effectiveRequest(TurSNSearchRequest request,
             TurSNSearchParams params, Locale locale) {
+        TurSNSearchRequest effective =
+                effectiveRequest(params, locale, request.getResponseFormat());
+        effective.setTargetingRules(orEmpty(request.getTargetingRules()));
+        effective.setAutoCorrectionDisabled(request.isAutoCorrectionDisabled());
+        return effective;
+    }
+
+    /**
+     * T856 / §LXV.1 — the same echo, rebuilt from the bound
+     * {@link TurSNSearchParams} alone, so the GET entry point can serve the
+     * structured shape too. §XLV.5 chose a request <em>field</em> over
+     * {@code Accept} negotiation precisely because it works over both transports;
+     * this is what makes that true.
+     *
+     * <p>
+     * A GET carries no targeting rules (they are a POST-body concept), so the echo
+     * leaves them empty; {@code autoCorrectionDisabled} is read back off the bound
+     * {@code nfpr} parameter, which is where the GET mapping keeps it.
+     * </p>
+     *
+     * @since 2026.3.4
+     */
+    public static TurSNSearchRequest effectiveRequest(TurSNSearchParams params, Locale locale,
+            TurSNResponseFormat responseFormat) {
         TurSNSearchRequest effective = new TurSNSearchRequest();
         effective.setQ(params.getQ());
         effective.setFq(orEmpty(params.getFq()));
@@ -133,9 +158,10 @@ public final class TurSNSearchRequestAdapter {
         effective.setGroup(params.getGroup());
         effective.setFieldList(orEmpty(params.getFl()));
         effective.setLocale(locale == null ? null : locale.toString());
-        effective.setTargetingRules(orEmpty(request.getTargetingRules()));
-        effective.setAutoCorrectionDisabled(request.isAutoCorrectionDisabled());
-        effective.setResponseFormat(request.getResponseFormat());
+        effective.setTargetingRules(new ArrayList<>());
+        effective.setAutoCorrectionDisabled(params.getNfpr() == null || params.getNfpr() == 1);
+        effective.setResponseFormat(
+                responseFormat == null ? TurSNResponseFormat.LINKS : responseFormat);
         return effective;
     }
 

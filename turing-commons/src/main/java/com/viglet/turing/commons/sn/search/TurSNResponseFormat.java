@@ -40,5 +40,22 @@ public enum TurSNResponseFormat {
      * The link-free response: every "next request" is expressed as data the client
      * applies to the echoed request, so no href is ever parsed.
      */
-    STRUCTURED
+    STRUCTURED;
+
+    /**
+     * T856 — parses the flag as it arrives on a <em>query string</em>:
+     * case-insensitively, because the GET entry point is typed by hand into a URL
+     * when A/B-ing the two shapes against one query. A blank value keeps the
+     * {@link #LINKS} default; an unknown one throws
+     * {@link IllegalArgumentException} (a 400) rather than silently degrading to
+     * the legacy shape.
+     *
+     * @since 2026.3.4
+     */
+    public static TurSNResponseFormat of(String value) {
+        if (value == null || value.isBlank()) {
+            return LINKS;
+        }
+        return valueOf(value.trim().toUpperCase(java.util.Locale.ROOT));
+    }
 }
