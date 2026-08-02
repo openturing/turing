@@ -2944,3 +2944,128 @@ guard. Two changes make it durable:
   the cost next to the feature.
 - **Run it on PRs.** A size guard that only fires at publish time reports to the
   wrong person at the wrong moment.
+
+## LXVII. The POST-native default left its consumers behind (Block BT)
+
+> T710 flipped the React SDK's search provider to POST-native **by default**.
+> POST-native it calls `setData(null)` and populates `structured` instead — a
+> deliberate choice, since the legacy body is precisely what the block set out
+> to stop shipping. What was not done is migrating the consumers that still read
+> `data`. Three of them live in `turing-app`, and they were found while shipping
+> T860 and T864, not by a test.
+
+### LXVII.1 The search page renders its error state (T865)
+
+`search.page.tsx` mounts `TuringProvider` with `urlSync` and no `postNative`
+override, so the default applies. `SearchContent` then does:
+
+```tsx
+if (store.status === "loading" && !store.data) return <SearchLoading />;
+if ((store.status === "error" || !store.data) && store.status !== "loading") {
+  return <SearchError … />;
+}
+if (!store.data) return null;
+```
+
+`data` is null on every successful POST-native search, so the third branch is
+unreachable and the second one fires: `/sn/{siteName}` shows the error state
+whatever the query does. Everything after that point is legacy-shaped too —
+`data.widget.locales`, `data.widget.icon` — and the structured response has no
+`widget` at all (locales are top-level, and there is no icon).
+
+The fix is to read `structured` first and keep `data` as the legacy fallback,
+the same shape `useTuringFacets` already uses (`structuredGroups ?? legacyGroups`).
+`documents` needs nothing: the provider resolves it identically from both.
+
+**Verify by running the page.** A test that mocks `useSearchStore` cannot
+distinguish a fixed page from a broken one — see §LXVII.4.
+
+### LXVII.2 The applied-filters row silently vanishes (T866)
+
+`FacetSidebar` reads two more legacy-only values:
+
+- `store.data?.widget?.facetToRemove` — the whole "Applied filters" chip row is
+  wrapped in `{facetToRemove?.facets && …}`, so POST-native it renders nothing
+  and the *Clear all* button goes with it;
+- `store.data?.queryContext?.facetItemType` — used to decide whether to draw
+  checkboxes, so every facet renders as if the site were single-select.
+
+Both have structured equivalents already on the wire:
+`structured.selectedFilterQueries` and the echoed `request.fqItemOperator`.
+
+### LXVII.3 A document's facet chips are inert (T867)
+
+T864 gave each chip a `filterQuery` and the result card renders it, but only the
+legacy `href` chip is clickable — the structured one is a dead badge. Clicking a
+result's tag used to filter the search; wiring the chip to `toggleFacet` (the
+same call the facet rail makes for the same value) restores it.
+
+Note this is *not* the same bug as §LXVII.1/2: T864 already made the chip
+appear. This is the missing action, and it is why the chip is worth carrying
+`selected`/`action` too (T869).
+
+### LXVII.4 Make this class of regression catchable (T868)
+
+The three bugs above are one mistake repeated three times, and the frontend
+suite is green through all of them because it mocks `useSearchStore` and hands
+the component a `data` object that production can no longer produce.
+
+That is the same failure mode as T708's link-free assertion running over a
+response with no documents (§LXV.6): **a test whose fixture cannot occur proves
+nothing about the code path that does.** The remedy is the same one T859 applied
+on the backend — assert against the real boundary. Render the search page
+against the actual `TuringProvider` with a stubbed `fetch` returning a real
+`STRUCTURED` payload, so the shape under test is the shape that ships.
+
+### LXVII.5 Document chips carry no `selected` / `action` (T869)
+
+A structured facet item carries `selected` and a `TurSNFacetItemAction`
+(`ADD`/`REMOVE`/`REPLACE`); a document's chip carries neither. So a consumer
+cannot show that a chip's filter is already applied, and cannot toggle it off —
+it can only ever add. Both fields are already computed for the facet rail; carry
+them on the chip if a surface asks for it (which T867 may well do).
+
+## LXVIII. The search cache is off by a thousand and never evicted on write (Block BU)
+
+> Read while deriving the T858 cache key from the search context. All three are
+> latent because `turing.search.cache.enabled` defaults to `false` — which is
+> also the reason they have survived: the feature is opt-in and nobody who opted
+> in has reported it.
+
+### LXVIII.1 Indexing does not evict the search cache (T870)
+
+The `searchAPI` cache has exactly one eviction: a `@Scheduled` sweep annotated
+`@CacheEvict(allEntries = true)`. Nothing in the indexing path touches it. So
+with the cache enabled, a document that is reindexed, deindexed or edited keeps
+serving its previous result — including its previous facet counts — until the
+next sweep, 24 hours later by default.
+
+This is the standard trap of caching a *derived* read with a time-based policy
+only: the cache is correct right up until the underlying data changes, which is
+the one moment anyone notices. Evict per site at the point the answer actually
+changed — index, deindex, and the commit that follows a bulk import — and keep
+the sweep as the backstop it should have been.
+
+### LXVIII.2 `turing.search.cache.ttl.seconds` is milliseconds (T871)
+
+```java
+@Scheduled(fixedRateString = "${turing.search.cache.ttl.seconds:86400000}")
+```
+
+`fixedRateString` is milliseconds unless a `timeUnit` is declared, and the
+default `86400000` is indeed 24 hours — so the *code* is right and the *name* is
+wrong by a factor of 1000. An operator who reads the property and sets `3600`
+for "sweep hourly" gets a full-cache eviction every 3.6 seconds.
+
+Take a `Duration` (`24h`, `PT1H`) so the unit is stated rather than implied, or
+rename to `…ttl.ms` and keep the old key bound for one version. The bug is the
+name, so the fix has to change the name.
+
+### LXVIII.3 `TurSNSiteSearchCachedAPI` is two classes wearing one name (T872)
+
+The bean holds the `@Cacheable` search seam **and** the MongoDB logging
+configuration with its nightly purge job — seven Mongo constructor parameters
+(`uri`, database, three collection names, purge days, enabled flag) that the
+cached search never reads. The cache seam is a load-bearing primitive that T858
+just spent a task making hard to misuse; it should not be reached through a bean
+whose name says "cached API" and whose constructor says "log store".

@@ -214,6 +214,37 @@
 - 📋 **T862** (deps: T861) **Fix the 7 red vanilla-SDK tests** — `analytics-abandonment.test.ts` (6) and `analytics-conversion.test.ts` (1) fail at baseline; the abandonment watcher's idle-timer/`pagehide` assertions look like fake-timer or jsdom-lifecycle drift. A suite that is red by default trains everyone to ignore it, which is how the other two findings survived. → §LXVI.2
 - 📋 **T863** (deps: T861) **Size budget as a delta guard, run in CI** — commit a measured baseline and fail on a *delta* beyond a threshold instead of on an absolute number that rots, and run `check-size` on PRs rather than only at `prepublishOnly`, where it is discovered by whoever tries to publish. → §LXVI.3
 
+## Block BT — The POST-native default left its consumers behind (§LXVII)
+
+> T710 made `postNative: true` the **default** for the React SDK's search
+> provider, and POST-native the provider sets `data = null` and fills
+> `structured` instead. Three consumers in `turing-app` were never migrated off
+> `store.data`, and the worst of them gates a whole page: `SearchContent`
+> returns `<SearchError>` when `data` is falsy, so `/sn/{siteName}` — the T835
+> answer-first search page — renders its error state on **every** search since
+> T710 shipped. The frontend tests do not catch it because they mock the store
+> with `data` populated: a fixture that can no longer occur in production, the
+> same blind spot that let T864's link leak through T708's empty-bean assertion.
+> Found while shipping T860/T864. Design in
+> [IMPROVEMENTS.md](IMPROVEMENTS.md) §LXVII.
+
+- 📋 **T865** (deps: T710) **The search page renders its error state POST-native** — `SearchContent` bails on `!store.data` and then reads `data.widget.locales` / `data.widget.icon`, neither of which exists in the link-free response. Drive the page off `structured` (+ the already-resolved `documents`), keeping `data` only as the legacy fallback. Verify by *running* the page, not by a test that mocks the store. → §LXVII.1
+- 📋 **T866** (deps: T865) **The applied-filters row silently vanishes** — `FacetSidebar` reads `store.data?.widget?.facetToRemove` and `store.data?.queryContext?.facetItemType`; both are null POST-native, so the "Applied filters" chips disappear and every facet renders as if the site were single-select. Drive them from `structured.selectedFilterQueries` and the echoed request. → §LXVII.2
+- 📋 **T867** (deps: T864) **A document's facet chips are inert POST-native** — T864 gave each chip a `filterQuery`, and the result card now renders it, but only the legacy `href` chip is clickable. Wire the structured chip to `toggleFacet` so clicking a result's tag filters the search again, as it did before T710. → §LXVII.3
+- 📋 **T868** (deps: T865) **Make this class of regression catchable** — the three bugs above are one mistake repeated, and no test could see any of them because the suites mock `useSearchStore` wholesale. Render the search page against the *real* provider with a stubbed `fetch`, so the POST-native response shape is what the assertions run on. → §LXVII.4
+- 💭 **T869** (deps: T864) **Document chips carry no `selected` / `action`** — a structured *facet* item says whether it is applied and whether clicking adds, removes or replaces; a document's chip says neither, so a consumer cannot render "already filtered" or toggle one off. Carry the same two fields if a surface needs them. → §LXVII.5
+
+## Block BU — The search cache is off by a thousand and never evicted on write (§LXVIII)
+
+> Read while deriving the T858 cache key. Two defects and one cohesion problem in
+> `TurSNSiteSearchCachedAPI`, all of them latent because the cache is off by
+> default (`turing.search.cache.enabled: false`) — which is also why nobody has
+> hit them. Design in [IMPROVEMENTS.md](IMPROVEMENTS.md) §LXVIII.
+
+- 📋 **T870** (deps: T858) **Indexing does not evict the search cache** — the only eviction is a scheduled `allEntries` sweep, so with the cache enabled a document that is reindexed or deindexed keeps serving its previous result until the next sweep (24h by default). Evict per site on index / deindex / commit, which is the point at which the answer actually changed. → §LXVIII.1
+- 📋 **T871** (deps: —) **`turing.search.cache.ttl.seconds` is milliseconds** — it feeds `@Scheduled(fixedRateString = …)`, whose unit is ms, and its default `86400000` is 24h. An operator who reads the name and sets `3600` for "hourly" gets a full cache sweep every **3.6 seconds**. Accept a `Duration` (or rename with back-compat) so the unit is stated rather than implied. → §LXVIII.2
+- 💭 **T872** (deps: —) **`TurSNSiteSearchCachedAPI` is two classes wearing one name** — the `@Cacheable` search seam and the MongoDB logging config + nightly purge job share a bean, so the cache primitive carries seven Mongo constructor parameters it never uses. Split them. → §LXVIII.3
+
 ## Non-goals (do NOT add as tasks)
 
 Binding constraints — see [IMPROVEMENTS.md](IMPROVEMENTS.md) §I.6 (What NOT to

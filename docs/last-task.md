@@ -1,9 +1,23 @@
-# Last task number — `T864` · next block letter — `BT`
+# Last task number — `T872` · next block letter — `BV`
 
 > **Single source of truth for the next free task number.** The next new task is
-> `T865`; after assigning it, bump the number above and the log line below.
+> `T873`; after assigning it, bump the number above and the log line below.
 >
-> **Next block letter — `BT`** (Block **BS** = The JS SDK release gate is not a
+> **Next block letter — `BV`** (Block **BU** = The search cache is off by a
+> thousand and never evicted on write — three defects read out of
+> `TurSNSiteSearchCachedAPI` while deriving the T858 key, all latent because the
+> cache is opt-in: nothing in the indexing path evicts it so a reindexed document
+> serves stale results until the daily sweep (T870), `turing.search.cache.ttl.seconds`
+> feeds `fixedRateString` and is therefore **milliseconds** (T871), and the bean
+> mixes the `@Cacheable` seam with the MongoDB log purge (💭 T872). §LXVIII,
+> created 2026-08-02; Block **BT** = The POST-native default left its consumers
+> behind — T710 made `postNative: true` the default and the provider sets
+> `data = null`, but three `turing-app` consumers still read it: `SearchContent`
+> gates the whole page on it so `/sn/{siteName}` renders its error state on every
+> search (T865), the applied-filters row and facet-item mode vanish (T866), and a
+> document's facet chips are inert (T867); plus the test-shape fix that would have
+> caught all three (T868) and 💭 `selected`/`action` on document chips (T869).
+> §LXVII, created 2026-08-02; Block **BS** = The JS SDK release gate is not a
 > gate — three findings from the Block AV work, none about search: `@viglet/turing-sdk`
 > declares `"test": "vitest run"` with no `vitest` devDependency (T861), its suite
 > is red at rest with 7 pre-existing analytics failures (T862), and its gzip budget
@@ -226,6 +240,10 @@ number" looked free but wasn't. Grepping three files (`ROADMAP.md`,
    lists fully-shipped blocks), then bump the letter after creating the block.
 
 ## Log (most recent first)
+
+- **T865–T869 CREATED** (📋/💭, Block BT §LXVII — POST-native consumers never migrated off `store.data`: search page renders SearchError, applied-filters row gone, inert document chips, provider-level test shape, chip `selected`/`action`) — 2026-08-02.
+
+- **T870–T872 CREATED** (📋/💭, Block BU §LXVIII — search cache: no eviction on index, `ttl.seconds` is milliseconds, cached-API bean mixed with MongoDB log purge) — 2026-08-02.
 
 - **T864 SHIPPED** (Block BR §LXV — structured `results` projected link-free; document facet chips carry `filterQuery`. **Block BR CLOSED**) — 2026-08-02.
 
