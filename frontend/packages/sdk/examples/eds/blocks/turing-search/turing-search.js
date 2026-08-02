@@ -6,6 +6,13 @@
  * (the self-contained ESM build output) — adjust the import path / CDN URL to
  * match your project layout.
  *
+ * T714 — the block runs **POST-native** (the SDK default): search goes out as
+ * a JSON body and comes back link-free, so facets and pagination are rendered
+ * from structured state (`item.selected`, `page.current`) and a click is a call
+ * to `toggleFacet` / `goToPage` — never a URL to parse. A facet value
+ * containing `&`, `=`, `+`, `#`, `%` or a space therefore cannot be mis-read as
+ * query structure.
+ *
  * Authoring: place a block named "turing-search" whose first row holds two
  * cells — the Turing API base URL and the SN site name:
  *
@@ -28,12 +35,7 @@ export default function decorate(block) {
   block.textContent = "";
 
   const client = createTuringClient({ baseURL });
-  // T709 — this block still renders facets/pagination from `state.data`'s
-  // href links, so it stays on the legacy GET path. T714 rewrites it against
-  // the POST-native, link-free contract.
-  const search = createSearchController(client, { site, locale: "en_US" }, undefined, {
-    postNative: false,
-  });
+  const search = createSearchController(client, { site, locale: "en_US" });
   const autocomplete = createAutoComplete(client, { site, locale: "en_US" }, 250);
 
   // ── Build the DOM skeleton. ──
@@ -45,7 +47,11 @@ export default function decorate(block) {
       <ul class="turing-search__suggestions" hidden></ul>
     </form>
     <p class="turing-search__status" aria-live="polite"></p>
-    <ul class="turing-search__results"></ul>
+    <div class="turing-search__body">
+      <aside class="turing-search__facets"></aside>
+      <ul class="turing-search__results"></ul>
+    </div>
+    <nav class="turing-search__pagination"></nav>
   `;
   block.append(root);
 
@@ -53,17 +59,25 @@ export default function decorate(block) {
   const input = root.querySelector(".turing-search__input");
   const suggestionsEl = root.querySelector(".turing-search__suggestions");
   const statusEl = root.querySelector(".turing-search__status");
+  const facetsEl = root.querySelector(".turing-search__facets");
   const resultsEl = root.querySelector(".turing-search__results");
+  const paginationEl = root.querySelector(".turing-search__pagination");
+
+  /** The structured facet item / page a rendered button stands for. */
+  const facetItemByButton = new WeakMap();
+  const pageByButton = new WeakMap();
 
   // ── Render whenever search state changes. ──
   search.subscribe((state) => {
+    // POST-native: the count lives on the structured response, not `state.data`.
+    const count = state.structured?.queryContext?.count ?? state.documents.length;
     statusEl.textContent =
       state.status === "loading"
         ? "Searching…"
         : state.status === "error"
           ? `Error: ${state.error ?? "unknown"}`
           : state.documents.length
-            ? `${state.data?.queryContext.count ?? state.documents.length} result(s)`
+            ? `${count} result(s)`
             : state.status === "success"
               ? "No results"
               : "";
@@ -80,7 +94,68 @@ export default function decorate(block) {
       li.append(link, desc);
       resultsEl.append(li);
     }
+
+    renderFacets(state.structured);
+    renderPagination(state.structured);
   });
+
+  /**
+   * Facets straight from structured state: `item.selected` drives the checkbox
+   * and `toggleFacet` applies the item's own ADD / REMOVE / REPLACE action, so
+   * single-select fields behave correctly without the block knowing the rule.
+   */
+  function renderFacets(structured) {
+    facetsEl.innerHTML = "";
+    const facets = structured?.facets ?? [];
+    if (!facets.length) return;
+
+    if (structured.selectedFilterQueries?.length) {
+      const clearAll = document.createElement("button");
+      clearAll.type = "button";
+      clearAll.className = "turing-search__clear-all";
+      clearAll.textContent = `Clear all filters (${structured.selectedFilterQueries.length})`;
+      clearAll.addEventListener("click", () => search.clearAllFilters());
+      facetsEl.append(clearAll);
+    }
+
+    for (const facet of facets) {
+      const group = document.createElement("section");
+      group.className = "turing-search__facet";
+      const title = document.createElement("h3");
+      title.textContent = facet.label || facet.name;
+      group.append(title);
+
+      const list = document.createElement("ul");
+      for (const item of facet.items) {
+        const li = document.createElement("li");
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = "turing-search__facet-item";
+        button.setAttribute("aria-pressed", String(item.selected));
+        button.textContent = `${item.label || item.value} (${item.count})`;
+        facetItemByButton.set(button, item);
+        li.append(button);
+        list.append(li);
+      }
+      group.append(list);
+      facetsEl.append(group);
+    }
+  }
+
+  /** Pagination as data: `page.page` goes on the request, there is no href. */
+  function renderPagination(structured) {
+    paginationEl.innerHTML = "";
+    for (const page of structured?.pagination ?? []) {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "turing-search__page";
+      button.textContent = page.text;
+      button.disabled = page.current;
+      button.setAttribute("aria-current", page.current ? "page" : "false");
+      pageByButton.set(button, page);
+      paginationEl.append(button);
+    }
+  }
 
   // ── Render autocomplete suggestions. ──
   autocomplete.subscribe((state) => {
@@ -107,14 +182,18 @@ export default function decorate(block) {
     search.searchQuery(input.value || "*");
   });
 
-  // ── Facet / pagination navigation: delegate Turing href links. ──
-  resultsEl.addEventListener("click", (e) => {
-    const a = e.target.closest("a[data-turing-href]");
-    if (!a) return;
-    e.preventDefault();
-    search.navigate(a.getAttribute("data-turing-href"));
+  // Facet / pagination navigation: structured state in, controller call out.
+  facetsEl.addEventListener("click", (e) => {
+    const button = e.target.closest(".turing-search__facet-item");
+    const item = button && facetItemByButton.get(button);
+    if (item) search.toggleFacet(item);
+  });
+  paginationEl.addEventListener("click", (e) => {
+    const button = e.target.closest(".turing-search__page");
+    const page = button && pageByButton.get(button);
+    if (page) search.goToPage(page.page);
   });
 
   // Initial "show all" load.
-  search.search({ q: "*", p: "1", sort: "relevance", _setlocale: "en_US" });
+  search.searchRequest({ q: "*", page: 1, sort: "relevance", locale: "en_US" });
 }

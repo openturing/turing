@@ -213,6 +213,8 @@ number" looked free but wasn't. Grepping three files (`ROADMAP.md`,
 
 ## Log (most recent first)
 
+- **T714 SHIPPED** (Block AV §XLV — EDS block + marketing-site SearchDemo off `postNative: false`; showcase already POST-native; rest-api/javascript-sdk/react-sdk docs + COVERAGE. T713 re-sequenced after it) — 2026-08-02.
+
 - **T712 SHIPPED** (Block AV §XLV — `POST /ac/query` + `POST /search/list/query` take the same anonymous `TurSNSearchRequest`; body-derived cache key; `/api/sn/*/ac/**` permitAll) — 2026-08-02.
 
 - **T711 SHIPPED** (Block AV §XLV — parity guard extended to the POST/structured contract; anonymous demo nginx already method-agnostic, documented in viglet/cloud) — 2026-08-02.
