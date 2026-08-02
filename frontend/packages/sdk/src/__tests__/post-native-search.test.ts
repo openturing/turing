@@ -1,0 +1,312 @@
+import { describe, expect, it, vi } from "vitest";
+import { applyFacetAction, postSearch, postStructuredSearch } from "../api";
+import { createSearchController } from "../controllers/search";
+import type { TuringClient } from "../client";
+import type {
+  TurSearchResponse,
+  TurStructuredFacetItem,
+  TurStructuredSearchResponse,
+} from "../types";
+
+/**
+ * T709 / §XLV — the vanilla SDK goes POST-native.
+ *
+ * The bug class this closes: a facet value containing `&` (or `= + # %`, or a
+ * space) used to make four query-string hops — server builds an href, the SDK
+ * parses it with `URLSearchParams`, re-serializes it, the server decodes it.
+ * A JSON body has no query-string grammar, so the value simply cannot be
+ * re-read as structure.
+ */
+describe("POST-native search (T709)", () => {
+  const RESERVED = "section:RAG & Chat";
+
+  function structuredResponse(
+    overrides: Partial<TurStructuredSearchResponse> = {},
+  ): TurStructuredSearchResponse {
+    return {
+      request: { q: "*", page: 1, fq: [], locale: "en_US", sort: "relevance" },
+      queryContext: {
+        count: 3,
+        defaultFields: {
+          url: "url",
+          title: "title",
+          description: "abstract",
+          date: "date",
+          image: "image",
+          text: "text",
+        },
+      } as TurStructuredSearchResponse["queryContext"],
+      results: { document: [] },
+      ...overrides,
+    };
+  }
+
+  /**
+   * Echoes the received body back as `request`, which is what the server does —
+   * a static echo would silently undo every toggle the controller makes.
+   */
+  function makeClient(response = structuredResponse()) {
+    const get = vi.fn(() => Promise.resolve(null));
+    const post = vi.fn((url: string, body: unknown) =>
+      url.includes("/search/query")
+        ? Promise.resolve({
+            ...response,
+            request: { ...response.request, ...(body as object) },
+          })
+        : Promise.resolve(undefined),
+    );
+    return { get, post } as unknown as TuringClient;
+  }
+
+  const postCalls = (c: TuringClient) => (c.post as ReturnType<typeof vi.fn>).mock.calls;
+
+  // ── api-level ──
+
+  it("posts the request as a JSON body to /search/query", async () => {
+    const c = makeClient();
+    await postSearch(c, "wknd", { q: "hello", fq: [RESERVED] });
+
+    const [url, body] = postCalls(c)[0];
+    expect(url).toBe("/sn/wknd/search/query");
+    expect(body).toMatchObject({ q: "hello", fq: [RESERVED] });
+  });
+
+  /**
+   * The payoff of the T707 finding: `/api/sn/**` is CSRF-exempt server-side, so
+   * the SDK must not pay for a `/csrf` priming round-trip on every search.
+   */
+  it("skips CSRF priming (the endpoint is CSRF-exempt)", async () => {
+    const c = makeClient();
+    await postSearch(c, "wknd", { q: "hello" });
+
+    expect(postCalls(c)[0][2]).toMatchObject({ csrf: false });
+  });
+
+  it("forces responseFormat STRUCTURED on the structured helper", async () => {
+    const c = makeClient();
+    await postStructuredSearch(c, "wknd", { q: "hello" });
+
+    expect(postCalls(c)[0][1]).toMatchObject({ responseFormat: "STRUCTURED" });
+  });
+
+  /** The reserved characters travel verbatim — no encoding hop exists. */
+  it("carries reserved characters in a filter value untouched", async () => {
+    const c = makeClient();
+    const fq = [RESERVED, "path:a=b+c#d%e", "title:Deploy & Operate"];
+    await postSearch(c, "wknd", { fq });
+
+    expect(postCalls(c)[0][1]).toMatchObject({ fq });
+  });
+
+  // ── applyFacetAction ──
+
+  const facetItem = (
+    action: TurStructuredFacetItem["action"],
+    filterQuery = RESERVED,
+  ): TurStructuredFacetItem => ({
+    field: "section",
+    value: filterQuery.split(":")[1],
+    filterQuery,
+    label: "label",
+    count: 1,
+    selected: action === "REMOVE",
+    action,
+  });
+
+  it("ADD appends the filter query", () => {
+    expect(applyFacetAction(["type:page"], facetItem("ADD"))).toEqual([
+      "type:page",
+      RESERVED,
+    ]);
+  });
+
+  it("ADD is idempotent", () => {
+    expect(applyFacetAction([RESERVED], facetItem("ADD"))).toEqual([RESERVED]);
+  });
+
+  it("REMOVE drops only that filter query", () => {
+    expect(applyFacetAction([RESERVED, "type:page"], facetItem("REMOVE"))).toEqual([
+      "type:page",
+    ]);
+  });
+
+  /** A single-select (AND facet-item mode) field swaps its own value. */
+  it("REPLACE drops the field's other selections", () => {
+    const result = applyFacetAction(
+      ["section:Old", "type:page"],
+      facetItem("REPLACE", "section:New"),
+    );
+    expect(result).toEqual(["type:page", "section:New"]);
+  });
+
+  it("does not mutate the input list", () => {
+    const input = ["type:page"];
+    applyFacetAction(input, facetItem("ADD"));
+    expect(input).toEqual(["type:page"]);
+  });
+
+  // ── controller ──
+
+  it("drives search over POST by default", async () => {
+    const c = makeClient();
+    const search = createSearchController(c, { site: "wknd", locale: "en_US" }, undefined, {
+      chat: false,
+    });
+    await search.searchQuery("boots");
+
+    expect(postCalls(c)[0][0]).toBe("/sn/wknd/search/query");
+    expect((c.get as ReturnType<typeof vi.fn>).mock.calls).toHaveLength(0);
+    expect(search.getState().structured).not.toBeNull();
+    expect(search.getState().data).toBeNull();
+  });
+
+  it("adopts the server's echoed request so the next toggle starts from truth", async () => {
+    // The server resolves defaults the client did not send (here: a site sort of
+    // `newest` and a targeting-rule-derived filter). The controller must adopt
+    // that, not keep what it guessed.
+    const resolved = structuredResponse({
+      request: { q: "boots", page: 1, fq: [RESERVED], locale: "en_US", sort: "newest" },
+    });
+    const c = {
+      get: vi.fn(() => Promise.resolve(null)),
+      post: vi.fn(() => Promise.resolve(resolved)),
+    } as unknown as TuringClient;
+    const search = createSearchController(c, { site: "wknd", locale: "en_US" }, undefined, {
+      chat: false,
+    });
+    await search.searchQuery("boots");
+
+    expect(search.getState().request.sort).toBe("newest");
+    expect(search.getState().request.fq).toEqual([RESERVED]);
+    // `params` stays in sync for consumers that still read it.
+    expect(search.getState().params.sort).toBe("newest");
+    expect(search.getState().params.fq).toEqual([RESERVED]);
+  });
+
+  it("toggleFacet sends the value in the body and resets to page 1", async () => {
+    const c = makeClient();
+    const search = createSearchController(c, { site: "wknd", locale: "en_US" }, undefined, {
+      chat: false,
+    });
+    await search.goToPage(4);
+    await search.toggleFacet(facetItem("ADD"));
+
+    const body = postCalls(c).at(-1)![1] as Record<string, unknown>;
+    expect(body.fq).toEqual([RESERVED]);
+    expect(body.page).toBe(1);
+  });
+
+  it("clearFacet subtracts that facet's filter queries", async () => {
+    const c = makeClient();
+    const search = createSearchController(c, { site: "wknd", locale: "en_US" }, undefined, {
+      chat: false,
+    });
+    await search.toggleFacet(facetItem("ADD"));
+    await search.toggleFacet(facetItem("ADD", "type:page"));
+    await search.clearFacet({
+      name: "section",
+      multiValued: true,
+      clearFilterQueries: [RESERVED],
+      items: [],
+    });
+
+    expect((postCalls(c).at(-1)![1] as Record<string, unknown>).fq).toEqual(["type:page"]);
+  });
+
+  it("clearAllFilters empties fq", async () => {
+    const c = makeClient();
+    const search = createSearchController(c, { site: "wknd", locale: "en_US" }, undefined, {
+      chat: false,
+    });
+    await search.toggleFacet(facetItem("ADD"));
+    await search.clearAllFilters();
+
+    expect((postCalls(c).at(-1)![1] as Record<string, unknown>).fq).toEqual([]);
+  });
+
+  it("goToPage keeps the filters and does not reset the page", async () => {
+    const c = makeClient();
+    const search = createSearchController(c, { site: "wknd", locale: "en_US" }, undefined, {
+      chat: false,
+    });
+    await search.toggleFacet(facetItem("ADD"));
+    await search.goToPage(3);
+
+    const body = postCalls(c).at(-1)![1] as Record<string, unknown>;
+    expect(body.page).toBe(3);
+    expect(body.fq).toEqual([RESERVED]);
+  });
+
+  it("applySpellCheck uses the suggestion, or forces the original term", async () => {
+    const c = makeClient(
+      structuredResponse({
+        spellCheck: {
+          correctedText: true,
+          usingCorrectedText: false,
+          originalText: "serch",
+          correctedTextValue: "search",
+        },
+      }),
+    );
+    const search = createSearchController(c, { site: "wknd", locale: "en_US" }, undefined, {
+      chat: false,
+    });
+    await search.searchQuery("serch");
+
+    await search.applySpellCheck();
+    let body = postCalls(c).at(-1)![1] as Record<string, unknown>;
+    expect(body.q).toBe("search");
+    expect(body.autoCorrectionDisabled).toBe(false);
+
+    await search.applySpellCheck(true);
+    body = postCalls(c).at(-1)![1] as Record<string, unknown>;
+    expect(body.q).toBe("serch");
+    expect(body.autoCorrectionDisabled).toBe(true);
+  });
+
+  it("changeLocale and changeSort travel in the body", async () => {
+    const c = makeClient();
+    const search = createSearchController(c, { site: "wknd", locale: "en_US" }, undefined, {
+      chat: false,
+    });
+    await search.changeLocale("pt_BR");
+    expect((postCalls(c).at(-1)![1] as Record<string, unknown>).locale).toBe("pt_BR");
+
+    await search.changeSort("newest");
+    expect((postCalls(c).at(-1)![1] as Record<string, unknown>).sort).toBe("newest");
+  });
+
+  // ── legacy escape hatch ──
+
+  it("postNative:false keeps the GET path and the link-bearing response", async () => {
+    const legacy: TurSearchResponse = {
+      queryContext: {
+        count: 1,
+        defaultFields: {
+          url: "url",
+          title: "title",
+          description: "abstract",
+          date: "date",
+          image: "image",
+          text: "text",
+        },
+      } as TurSearchResponse["queryContext"],
+      results: { document: [] },
+      widget: {} as TurSearchResponse["widget"],
+    };
+    const get = vi.fn(() => Promise.resolve(legacy));
+    const post = vi.fn(() => Promise.resolve(undefined));
+    const c = { get, post } as unknown as TuringClient;
+
+    const search = createSearchController(c, { site: "wknd", locale: "en_US" }, undefined, {
+      chat: false,
+      postNative: false,
+    });
+    await search.searchQuery("boots");
+
+    expect(get.mock.calls[0][0]).toContain("/sn/wknd/search?");
+    expect(post.mock.calls).toHaveLength(0);
+    expect(search.getState().data).toBe(legacy);
+    expect(search.getState().structured).toBeNull();
+  });
+});

@@ -17,12 +17,17 @@ describe("createSearchController — chat option (T484)", () => {
     };
   }
 
+  // T709 — search is POST-native by default (`POST /search/query`); chat stays
+  // a GET, which is what these assertions are actually about.
   function makeClient() {
     const get = vi.fn((url: string) => {
       if (url.includes("/chat")) return Promise.resolve({ text: "hi", enabled: true });
       return Promise.resolve(searchResponse());
     });
-    const post = vi.fn().mockResolvedValue(undefined);
+    const post = vi.fn((url: string) => {
+      if (url.includes("/search/query")) return Promise.resolve(searchResponse());
+      return Promise.resolve(undefined);
+    });
     return { get, post } as unknown as TuringClient;
   }
 
@@ -48,7 +53,11 @@ describe("createSearchController — chat option (T484)", () => {
     expect(chatCalls(c)).toHaveLength(0);
     expect(search.getState().chat).toBeNull();
     // search itself still ran
-    expect((c.get as ReturnType<typeof vi.fn>).mock.calls.some(([u]) => String(u).includes("/search"))).toBe(true);
+    expect(
+      (c.post as ReturnType<typeof vi.fn>).mock.calls.some(([u]) =>
+        String(u).includes("/search/query"),
+      ),
+    ).toBe(true);
   });
 
   it("never fetches chat for the wildcard browse query, regardless of the option", async () => {

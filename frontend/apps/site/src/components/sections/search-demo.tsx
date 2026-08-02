@@ -224,7 +224,10 @@ function LiveSearchDemo({
       { rows: "8", q: "*" },
       // T462 — emit search funnel events (query, no-results, result clicks) to
       // GA4 via the shared bus; `chat:false` keeps it a pure (no-LLM) surface.
-      { chat: false, analytics }
+      // T709 — pinned to the legacy GET path because this demo still navigates
+      // via `state.data.widget` hrefs. T714 migrates it to the POST-native,
+      // link-free flow; until then this keeps it on the contract it reads.
+      { chat: false, analytics, postNative: false }
     );
     controllerRef.current = controller;
     const unsub = controller.subscribe((s) => {

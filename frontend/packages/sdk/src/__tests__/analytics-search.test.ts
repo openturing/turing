@@ -16,13 +16,17 @@ describe("createSearchController — analytics (T462)", () => {
     };
   }
 
+  // T709 — the controller is POST-native by default, so search goes through
+  // `post` (`/search/query`) and only chat still uses `get`.
   function client(count: number): TuringClient {
     const get = vi.fn((url: string) => {
-      if (url.includes("/search")) return Promise.resolve(searchResponse(count));
       if (url.includes("/chat")) return Promise.resolve(null);
       return Promise.resolve(null);
     });
-    const post = vi.fn().mockResolvedValue(undefined);
+    const post = vi.fn((url: string) => {
+      if (url.includes("/search/query")) return Promise.resolve(searchResponse(count));
+      return Promise.resolve(undefined);
+    });
     return { get, post } as unknown as TuringClient;
   }
 

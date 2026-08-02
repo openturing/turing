@@ -165,6 +165,125 @@ export interface TurSpellCheck {
   corrected: { link: string; text: string };
 }
 
+// ── T709 / §XLV — POST-native search: request + link-free response ──
+
+/**
+ * T709 — what to do to the request's `fq` list when a facet item is clicked.
+ * Mirrors the server's `TurSNFacetItemAction`. `REPLACE` exists because a field
+ * configured for AND facet-item mode single-selects: picking a value drops the
+ * field's other selections instead of adding to them.
+ */
+export type TurFacetItemAction = "ADD" | "REMOVE" | "REPLACE";
+
+/** T709 — which response shape the server should return. */
+export type TurResponseFormat = "LINKS" | "STRUCTURED";
+
+/**
+ * T709 / §XLV — the JSON body of `POST /api/sn/{site}/search/query`.
+ *
+ * This is the object the controller mutates and re-sends. Because it travels as
+ * JSON, a filter value containing `& = + # %` or a space has no way to be
+ * re-read as query structure — the bug class the block closes.
+ */
+export interface TurSearchRequest {
+  q?: string;
+  fq?: string[];
+  fqAnd?: string[];
+  fqOr?: string[];
+  fqOperator?: "AND" | "OR" | "NONE";
+  fqItemOperator?: "AND" | "OR" | "NONE";
+  page?: number;
+  rows?: number;
+  sort?: string;
+  locale?: string;
+  group?: string;
+  fieldList?: string[];
+  targetingRules?: string[];
+  autoCorrectionDisabled?: boolean;
+  responseFormat?: TurResponseFormat;
+}
+
+/** T709 — a facet value in the link-free response. Never carries a URL. */
+export interface TurStructuredFacetItem {
+  field: string;
+  value: string;
+  filterQuery: string;
+  label: string;
+  count: number;
+  selected: boolean;
+  action: TurFacetItemAction;
+}
+
+/** T709 — a facet group in the link-free response. */
+export interface TurStructuredFacet {
+  name: string;
+  label?: string;
+  labelLang?: string;
+  description?: string;
+  type?: string;
+  multiValued: boolean;
+  selectedFilterQueries?: string[];
+  /** Remove these from `fq` to clear this facet (replaces `cleanUpLink`). */
+  clearFilterQueries?: string[];
+  items: TurStructuredFacetItem[];
+}
+
+/** T709 — one pagination control; set `page` on the request (replaces `href`). */
+export interface TurStructuredPage {
+  type: string;
+  text: string;
+  page: number;
+  current: boolean;
+}
+
+/** T709 — a searchable locale; set `locale` on the request (replaces `link`). */
+export interface TurStructuredLocale {
+  locale: string;
+  selected: boolean;
+}
+
+/** T709 — spell-check as text to put on `q`, not a URL to navigate. */
+export interface TurStructuredSpellCheck {
+  correctedText: boolean;
+  usingCorrectedText: boolean;
+  originalText?: string;
+  correctedTextValue?: string;
+}
+
+/** T709 — a result group in the link-free response. */
+export interface TurStructuredGroup {
+  name: string;
+  count: number;
+  page: number;
+  pageCount: number;
+  pageStart: number;
+  pageEnd: number;
+  limit: number;
+  results: TurSearchResults;
+  pagination?: TurStructuredPage[];
+}
+
+/**
+ * T709 / §XLV — the link-free search response
+ * (`responseFormat: "STRUCTURED"`). The contract is: take {@link request},
+ * apply one structured change, send it back.
+ */
+export interface TurStructuredSearchResponse {
+  /** The request that produced this response, every default resolved. */
+  request: TurSearchRequest;
+  queryContext: TurQueryContext;
+  results?: TurSearchResults;
+  groups?: TurStructuredGroup[];
+  pagination?: TurStructuredPage[];
+  facets?: TurStructuredFacet[];
+  secondaryFacets?: TurStructuredFacet[];
+  /** Every filter query applied — remove them all to clear the search. */
+  selectedFilterQueries?: string[];
+  spellCheck?: TurStructuredSpellCheck;
+  locales?: TurStructuredLocale[];
+  spotlights?: unknown[];
+}
+
 /**
  * T678 — one query-time "related concepts" suggestion: a controlled-vocabulary
  * `term` recognised in the query and the labels of the terms it is associatively
@@ -712,4 +831,12 @@ export interface ResolvedGroup {
   limit: number;
   documents: ResolvedDocument[];
   pagination: TurPaginationItem[];
+  /**
+   * T709 — link-free pagination for this group, present when the controller ran
+   * POST-native. `pagination` stays empty in that mode: its `href` entries only
+   * exist in the legacy response.
+   *
+   * @since 2026.3.4
+   */
+  structuredPagination?: TurStructuredPage[];
 }

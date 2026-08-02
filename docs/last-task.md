@@ -213,6 +213,8 @@ number" looked free but wasn't. Grepping three files (`ROADMAP.md`,
 
 ## Log (most recent first)
 
+- **T709 SHIPPED** (Block AV §XLV — vanilla `@viglet/turing-sdk` search controller goes POST-native over the structured contract; `postNative` opt-out) — 2026-08-02.
+
 - **T708 SHIPPED** (Block AV §XLV — opt-in link-free `STRUCTURED` response + `responseFormat` negotiation; legacy `LINKS` byte-identical) — 2026-08-02.
 
 - **T707 SHIPPED** (Block AV §XLV — public anonymous `POST /api/sn/{site}/search/query` JSON contract, decoupled from the impersonation bean) — 2026-08-02.

@@ -21,6 +21,9 @@ export type {
 // ── API (functions + bound helper) ──
 export {
   fetchSearch,
+  postSearch,
+  postStructuredSearch,
+  applyFacetAction,
   postClick,
   fetchChat,
   fetchChatEnabled,
@@ -128,7 +131,8 @@ export {
 export type { TurSessionOptions } from "./session";
 
 // ── Resolve utilities ──
-export { resolveDocuments, resolveGroups } from "./resolve";
+export { resolveDocuments, resolveGroups, resolveStructuredGroups } from "./resolve";
+export type { ResolvableSearchResponse } from "./resolve";
 
 // ── Sandbox artifact URLs (code-interpreter / workspace) ──
 export { resolveSandboxUrl, isSandboxUrl, absolutizeArtifactUrls } from "./sandbox";
@@ -251,6 +255,17 @@ export type {
   TurFacetGroup,
   TurFacetItem,
   TurSpellCheck,
+  // T709 / §XLV — POST-native search: request + link-free response.
+  TurSearchRequest,
+  TurResponseFormat,
+  TurFacetItemAction,
+  TurStructuredSearchResponse,
+  TurStructuredFacet,
+  TurStructuredFacetItem,
+  TurStructuredPage,
+  TurStructuredLocale,
+  TurStructuredSpellCheck,
+  TurStructuredGroup,
   TurRelatedTermSuggestion,
   TurLocaleItem,
   TurSortOption,

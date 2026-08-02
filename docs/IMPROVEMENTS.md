@@ -2332,15 +2332,14 @@ Block AV. The negotiation mechanism is the request field `responseFormat`
 contract is *take the echoed `request`, apply one structured change, send it
 back*. Phases 3–4 consume that contract.
 
-**Phase 3 — SDKs go 100% POST (T709 vanilla, T710 React + react-ui).** Move the
-search/autocomplete/similar controllers to POST + JSON body; drive facet /
-pagination / sort / cleanup toggles from the structured state; retire
-`parseHrefToParams` / `buildQueryString` from the hot path; react-ui facet
-components navigate via structured actions instead of `item.link`. POST is a state
-change, so the SDKs prime CSRF via `/csrf` (already the established pattern —
-`X-XSRF-TOKEN` header, cookie is HttpOnly). **T711** extends the T406 parity guard
-to the POST/structured paths and confirms the anonymous demo's nginx allowlist +
-CSRF priming cover POST search.
+**Phase 3 — SDKs go 100% POST (T709 vanilla ✔ shipped, T710 React + react-ui).**
+The vanilla SDK's search controller is POST-native (see CHANGELOG Block AV);
+T710 gives the React SDK + react-ui the same request/toggle model, with facet
+and pagination components navigating via structured actions instead of
+`item.link`. **No CSRF priming** — see the settled note below. `/ac` and
+`/similar` stay GET until T712 adds their POST variants server-side. **T711**
+extends the T406 parity guard to the POST/structured paths and confirms the
+anonymous demo's nginx allowlist covers POST search.
 
 **Phase 4 — breadth & retirement (T712–T714, 💭).** POST variants for `/ac`
 (autocomplete) and `/list`; once both SDKs are POST-native, mark the embedded

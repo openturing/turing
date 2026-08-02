@@ -28,7 +28,12 @@ export default function decorate(block) {
   block.textContent = "";
 
   const client = createTuringClient({ baseURL });
-  const search = createSearchController(client, { site, locale: "en_US" });
+  // T709 — this block still renders facets/pagination from `state.data`'s
+  // href links, so it stays on the legacy GET path. T714 rewrites it against
+  // the POST-native, link-free contract.
+  const search = createSearchController(client, { site, locale: "en_US" }, undefined, {
+    postNative: false,
+  });
   const autocomplete = createAutoComplete(client, { site, locale: "en_US" }, 250);
 
   // ── Build the DOM skeleton. ──

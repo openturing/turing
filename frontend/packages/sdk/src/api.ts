@@ -23,7 +23,10 @@ import type {
   TurLlmContextInfo,
   TurLlmInstance,
   TurLlmVendor,
+  TurSearchRequest,
   TurSearchResponse,
+  TurStructuredFacetItem,
+  TurStructuredSearchResponse,
   TurSearchSuggestions,
   TurSortOption,
   TurSpellCheck,
@@ -100,6 +103,79 @@ export function fetchSearch(
   params: SearchParams,
 ): Promise<TurSearchResponse> {
   return client.get<TurSearchResponse>(`/sn/${site}/search?${buildQueryString(params)}`);
+}
+
+/**
+ * T709 / §XLV — POST-native search: `POST /api/sn/{site}/search/query`.
+ *
+ * The whole request travels as a JSON body, so a filter value containing
+ * `& = + # %` or a space never has to survive a query string. Prefer this over
+ * {@link fetchSearch} for anything that toggles facets; the GET form stays for
+ * deep-linkable / bookmarkable / no-JS search URLs.
+ *
+ * **No CSRF priming.** The server lists `/api/sn/**` as CSRF-exempt and
+ * `/api/sn/*​/search/**` as anonymous, so this POST is sent with `csrf: false` —
+ * it costs exactly one round-trip, the same as the GET it replaces. Priming
+ * `/csrf` here would add a request for nothing.
+ *
+ * @param request the search request; set `responseFormat: "STRUCTURED"` to get
+ *                the link-free {@link TurStructuredSearchResponse} instead.
+ * @since 2026.3.4
+ */
+export function postSearch(
+  client: TuringClient,
+  site: string,
+  request: TurSearchRequest,
+): Promise<TurSearchResponse> {
+  return client.post<TurSearchResponse>(`/sn/${site}/search/query`, request, {
+    csrf: false,
+  });
+}
+
+/**
+ * T709 / §XLV — POST-native search returning the **link-free** response. Same
+ * endpoint as {@link postSearch}, with `responseFormat` forced to
+ * `"STRUCTURED"`.
+ *
+ * @since 2026.3.4
+ */
+export function postStructuredSearch(
+  client: TuringClient,
+  site: string,
+  request: TurSearchRequest,
+): Promise<TurStructuredSearchResponse> {
+  return client.post<TurStructuredSearchResponse>(
+    `/sn/${site}/search/query`,
+    { ...request, responseFormat: "STRUCTURED" },
+    { csrf: false },
+  );
+}
+
+/**
+ * T709 — applies a facet item's action to a filter-query list, returning a new
+ * list. This is the structured replacement for "parse the item's href and
+ * re-serialize it": no string is ever split on `&` or `=`.
+ *
+ * @since 2026.3.4
+ */
+export function applyFacetAction(
+  filterQueries: readonly string[],
+  item: Pick<TurStructuredFacetItem, "action" | "field" | "filterQuery">,
+): string[] {
+  switch (item.action) {
+    case "REMOVE":
+      return filterQueries.filter((fq) => fq !== item.filterQuery);
+    case "REPLACE":
+      // Single-select field: drop this field's other selections first.
+      return [
+        ...filterQueries.filter((fq) => !fq.startsWith(`${item.field}:`)),
+        item.filterQuery,
+      ];
+    default:
+      return filterQueries.includes(item.filterQuery)
+        ? [...filterQueries]
+        : [...filterQueries, item.filterQuery];
+  }
 }
 
 /**
