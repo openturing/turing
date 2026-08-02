@@ -210,7 +210,6 @@
 > most external consumers depend on has no working quality gate. Design in
 > [IMPROVEMENTS.md](IMPROVEMENTS.md) §LXVI.
 
-- 📋 **T862** (deps: T861) **Fix the 7 red vanilla-SDK tests** — `analytics-abandonment.test.ts` (6) and `analytics-conversion.test.ts` (1) fail at baseline; the abandonment watcher's idle-timer/`pagehide` assertions look like fake-timer or jsdom-lifecycle drift. A suite that is red by default trains everyone to ignore it, which is how the other two findings survived. → §LXVI.2
 - 📋 **T863** (deps: T861) **Size budget as a delta guard, run in CI** — commit a measured baseline and fail on a *delta* beyond a threshold instead of on an absolute number that rots, and run `check-size` on PRs rather than only at `prepublishOnly`, where it is discovered by whoever tries to publish. → §LXVI.3
 
 ## Block BT — The POST-native default left its consumers behind (§LXVII)

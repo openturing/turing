@@ -1,3 +1,10 @@
+/**
+ * @vitest-environment jsdom
+ *
+ * "a captured lead suppresses abandonment" dispatches a real `pagehide`, so
+ * this file needs the same browser lifecycle as `analytics-abandonment.test.ts`
+ * (T862).
+ */
 import { describe, expect, it, vi } from "vitest";
 import { createTuringAnalytics, type TuringAnalyticsEvent } from "../analytics";
 import { createChatController } from "../controllers/chat";

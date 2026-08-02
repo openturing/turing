@@ -2900,19 +2900,6 @@ search — so the console keeps one way of launching a search surface.
 > together they mean `@viglet/turing-sdk` — the package external consumers and the
 > EDS blocks depend on — has no working quality gate.
 
-### LXVI.2 The suite is red at rest (T862)
-
-`analytics-abandonment.test.ts` (6 failures) and `analytics-conversion.test.ts`
-(1) fail on a clean checkout, before and after Block AV. They are unrelated to
-search — the abandonment watcher's idle-timeout, `pagehide` and `stop()`
-assertions, which smells like fake-timer or jsdom-lifecycle drift rather than a
-product defect.
-
-The cost is not the seven tests. It is that "2 failed" is the expected output, so
-nobody reads it, so §LXVI.1 and §LXVI.3 could both sit there unnoticed. Fix them
-or, if a behaviour genuinely changed, update them — but the suite has to be green
-for the gate to mean anything.
-
 ### LXVI.3 The size budget rots silently (T863)
 
 `check-size.mjs` enforces absolute gzip ceilings from `package.json`. At the

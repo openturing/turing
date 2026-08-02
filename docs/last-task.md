@@ -261,6 +261,8 @@ number" looked free but wasn't. Grepping three files (`ROADMAP.md`,
 
 - **T856–T860 CREATED** (📋, Block BR §LXV — Block AV follow-through: `responseFormat` on GET, inline sort options, collision-proof cache key, end-to-end POST/structured contract IT, `EnrichedFacetItem.link` optional) — 2026-08-02.
 
+- **T862 SHIPPED** (Block BS §LXVI — the 7 failures were a missing jsdom, not timer drift; per-file `@vitest-environment jsdom` keeps the SSR path testable; 217 green) — 2026-08-02.
+
 - **T861 SHIPPED** (Block BS §LXVI — `vitest` declared + standalone `vitest.config.ts`; `validate-js.yml` never ran any package's tests and now does) — 2026-08-02.
 
 - **T861–T863 CREATED** (📋, Block BS §LXVI — the JS SDK release gate: vanilla SDK owns its test runner, fix the 7 red analytics tests, size budget as a delta guard in CI) — 2026-08-02.

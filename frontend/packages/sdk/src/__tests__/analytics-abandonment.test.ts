@@ -1,3 +1,13 @@
+/**
+ * @vitest-environment jsdom
+ *
+ * The watcher under test *is* browser lifecycle plumbing — it listens on
+ * `pagehide` / `beforeunload` / `visibilitychange`. Node has no `document` and
+ * its `globalThis` is not an `EventTarget`, so under the suite's default `node`
+ * environment `createAbandonmentWatcher` correctly returns its SSR no-op and
+ * every assertion here is unreachable (T862). The SSR path keeps its own
+ * coverage in `analytics-lifecycle-ssr.test.ts`, which stays on `node`.
+ */
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { createAbandonmentWatcher, type AbandonmentReason } from "../analytics-lifecycle";
 import { createTuringAnalytics, type TuringAnalyticsEvent } from "../analytics";
