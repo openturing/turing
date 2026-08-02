@@ -8,15 +8,36 @@ import type { ReactNode } from "react";
  * re-export this component with no consumer churn.
  */
 export interface TuringPaginationItemData {
-  href: string;
+  /**
+   * Pre-serialized GET link. **Optional since T710** — the link-free
+   * (`STRUCTURED`) response carries no hrefs, only {@link page}. Structurally
+   * compatible with both the SDK's `TurPaginationItem` and its
+   * `TurStructuredPage`.
+   */
+  href?: string;
   page: number;
   text: string;
   type: string;
+  /** T710 — set by the structured response for the page being shown. */
+  current?: boolean;
 }
 
 export interface TuringPaginationProps {
   items: TuringPaginationItemData[];
-  onNavigate: (href: string) => void;
+  /**
+   * Navigate by href — the legacy path. Ignored when {@link onSelectPage} is
+   * given.
+   *
+   * @deprecated T710 — prefer {@link onSelectPage}; an href has to be parsed
+   * back into params, which is the round-trip §XLV removes.
+   */
+  onNavigate?: (href: string) => void;
+  /**
+   * T710 — navigate by page number. The link-free path: takes the item's own
+   * `page`, so nothing is ever parsed out of a URL. Wins over
+   * {@link onNavigate} when both are supplied.
+   */
+  onSelectPage?: (page: number) => void;
   /** Custom render for each pagination entry. */
   itemComponent?: (props: {
     item: TuringPaginationItemData;
@@ -49,6 +70,7 @@ function camelize(text: string): string {
 export function TuringPagination({
   items,
   onNavigate,
+  onSelectPage,
   itemComponent,
   className,
 }: Readonly<TuringPaginationProps>) {
@@ -57,11 +79,15 @@ export function TuringPagination({
   return (
     <nav className={className} aria-label="Pagination">
       {items.map((item, i) => {
-        const isCurrent = item.type === "CURRENT";
+        const isCurrent = item.current ?? item.type === "CURRENT";
         const isEllipsis = item.type === "ELLIPSIS" || item.text === "...";
         const label = camelize(item.text);
         const onClick = () => {
-          if (!isCurrent && !isEllipsis && item.href) onNavigate(item.href);
+          if (isCurrent || isEllipsis) return;
+          // T710 — the link-free path wins; the href path is the fallback for
+          // consumers still on the legacy response.
+          if (onSelectPage) onSelectPage(item.page);
+          else if (item.href) onNavigate?.(item.href);
         };
 
         if (itemComponent) {

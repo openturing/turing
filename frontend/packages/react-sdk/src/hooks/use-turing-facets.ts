@@ -1,6 +1,6 @@
 import { useCallback, useMemo } from "react";
 import { useSearchStore } from "../core/use-search-store";
-import type { TurFacetGroup, TurFacetItem } from "../core/types";
+import type { TurFacetGroup, TurFacetItem, TurStructuredFacet } from "../core/types";
 
 // ── Types ──
 
@@ -73,16 +73,46 @@ export interface UseTuringFacetsReturn {
  */
 export function useTuringFacets(): UseTuringFacetsReturn {
   const store = useSearchStore();
+  const structuredFacets = store.structured?.facets;
   const rawGroups = store.data?.widget?.facet ?? [];
   const cleanUpLink = store.data?.widget?.cleanUpFacets;
 
-  const { navigate } = store;
+  const { navigate, toggleFacet, clearFacet, clearAllFilters } = store;
 
+  // T710 — POST-native, "clear all" is a filter-query subtraction, not a URL.
   const clearAll = useCallback(() => {
-    if (cleanUpLink) navigate(cleanUpLink);
-  }, [cleanUpLink, navigate]);
+    if (structuredFacets) clearAllFilters();
+    else if (cleanUpLink) navigate(cleanUpLink);
+  }, [structuredFacets, clearAllFilters, cleanUpLink, navigate]);
 
-  const facetGroups = useMemo<EnrichedFacetGroup[]>(() => {
+  /**
+   * T710 — the link-free projection. Each item keeps the same public shape
+   * ({@link EnrichedFacetItem}) so a consumer's JSX is unchanged; only what
+   * `toggle`/`clear` do underneath differs — a structured action instead of a
+   * parsed href. `link` is emptied because there is none.
+   */
+  const structuredGroups = useMemo<EnrichedFacetGroup[] | null>(() => {
+    if (!structuredFacets) return null;
+    return structuredFacets.map((group: TurStructuredFacet) => {
+      const facets: EnrichedFacetItem[] = group.items.map((item) => ({
+        count: item.count,
+        label: item.label,
+        link: "",
+        selected: item.selected,
+        toggle: () => toggleFacet(item),
+      }));
+      return {
+        name: group.name,
+        label: group.label ?? group.name,
+        multivalued: group.multiValued,
+        facets,
+        hasSelected: facets.some((f) => f.selected),
+        clear: () => clearFacet(group),
+      };
+    });
+  }, [structuredFacets, toggleFacet, clearFacet]);
+
+  const legacyGroups = useMemo<EnrichedFacetGroup[]>(() => {
     return rawGroups.map((group) => {
       const facets: EnrichedFacetItem[] = group.facets.map((facet) => ({
         ...facet,
@@ -104,6 +134,7 @@ export function useTuringFacets(): UseTuringFacetsReturn {
     });
   }, [rawGroups, navigate]);
 
+  const facetGroups = structuredGroups ?? legacyGroups;
   const hasSelected = facetGroups.some((g) => g.hasSelected);
 
   return { facetGroups, hasSelected, clearAll, raw: rawGroups };

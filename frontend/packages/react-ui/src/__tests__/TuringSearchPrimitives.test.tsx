@@ -110,4 +110,45 @@ describe("TuringPagination", () => {
     fireEvent.click(screen.getByLabelText("Page 2"));
     expect(onNavigate).toHaveBeenCalledTimes(1);
   });
+
+  // ── T710 / §XLV — link-free pagination ──
+
+  /** The structured response carries `page` + `current`, and no href at all. */
+  const structuredItems: TuringPaginationItemData[] = [
+    { type: "PREVIOUS", page: 1, text: "previous", current: false },
+    { type: "PAGE", page: 2, text: "2", current: true },
+    { type: "PAGE", page: 3, text: "3", current: false },
+  ];
+
+  it("navigates by page number when onSelectPage is given (T710)", () => {
+    const onSelectPage = vi.fn();
+    render(<TuringPagination items={structuredItems} onSelectPage={onSelectPage} />);
+    fireEvent.click(screen.getByLabelText("Page 3"));
+    expect(onSelectPage).toHaveBeenCalledWith(3);
+  });
+
+  it("honours `current` instead of the CURRENT type (T710)", () => {
+    const onSelectPage = vi.fn();
+    render(<TuringPagination items={structuredItems} onSelectPage={onSelectPage} />);
+    // Page 2 is the current one via the `current` flag, not `type: "CURRENT"`.
+    expect(screen.getByLabelText("Page 2")).toBeDisabled();
+    fireEvent.click(screen.getByLabelText("Page 2"));
+    expect(onSelectPage).not.toHaveBeenCalled();
+  });
+
+  it("prefers onSelectPage over onNavigate when both are supplied (T710)", () => {
+    const onNavigate = vi.fn();
+    const onSelectPage = vi.fn();
+    render(
+      <TuringPagination items={items} onNavigate={onNavigate} onSelectPage={onSelectPage} />,
+    );
+    fireEvent.click(screen.getByLabelText("Page 3"));
+    expect(onSelectPage).toHaveBeenCalledWith(3);
+    expect(onNavigate).not.toHaveBeenCalled();
+  });
+
+  it("renders without any navigation callback (T710)", () => {
+    render(<TuringPagination items={structuredItems} />);
+    expect(screen.getByLabelText("Page 3")).toBeInTheDocument();
+  });
 });

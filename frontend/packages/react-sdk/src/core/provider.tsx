@@ -1,6 +1,14 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { TuringContext, SearchStoreContext, type SearchStoreValue } from "./context";
-import { fetchChat, fetchSearch, parseHrefToParams, type SearchParams } from "./api";
+import {
+  applyFacetAction,
+  fetchChat,
+  fetchSearch,
+  parseHrefToParams,
+  postStructuredSearch,
+  searchParamsToRequest,
+  type SearchParams,
+} from "./api";
 import type {
   TuringConfig,
   ResolvedDocument,
@@ -8,8 +16,11 @@ import type {
   SearchStatus,
   TurChatResponse,
   TurSearchResponse,
+  TurStructuredFacet,
+  TurStructuredFacetItem,
+  TurStructuredSearchResponse,
 } from "./types";
-import { resolveDocuments, resolveGroups } from "./resolve";
+import { resolveDocuments, resolveGroups, resolveStructuredGroups } from "./resolve";
 
 // ── URL helpers ──
 
@@ -76,6 +87,22 @@ interface UrlSyncOptions {
   searchParams: URLSearchParams;
   /** Callback to update the URL (e.g. setSearchParams) */
   setSearchParams: (params: string) => void;
+  /**
+   * T710 / §XLV — fetch over `POST /sn/{site}/search/query` (JSON body,
+   * link-free `STRUCTURED` response) instead of `GET …/search`. **Defaults to
+   * `true`.**
+   *
+   * <p>URL sync is unaffected: the browser URL stays the source of truth for
+   * search state (that is the deep-linking feature §XLV.5 explicitly keeps).
+   * What changes is only the *API transport* — which is where the
+   * reserved-character bug class lived. Facet toggles now write filter queries
+   * straight into the URL from structured data instead of parsing a
+   * server-rendered href.
+   *
+   * <p>Set `false` for the legacy behaviour, where `store.data` carries the
+   * link-bearing response and `navigate(href)` is the way to move.
+   */
+  postNative?: boolean;
 }
 
 interface TuringProviderProps {
@@ -148,11 +175,12 @@ function UrlSyncSearchStore({
   readonly urlSync: UrlSyncOptions;
   readonly children: ReactNode;
 }) {
-  const { searchParams, setSearchParams } = urlSync;
+  const { searchParams, setSearchParams, postNative = true } = urlSync;
   const abortRef = useRef(0);
 
   const [status, setStatus] = useState<SearchStatus>("idle");
   const [data, setData] = useState<TurSearchResponse | null>(null);
+  const [structured, setStructured] = useState<TurStructuredSearchResponse | null>(null);
   const [chatData, setChatData] = useState<TurChatResponse | null>(null);
   const [documents, setDocuments] = useState<ResolvedDocument[]>([]);
   const [groups, setGroups] = useState<ResolvedGroup[]>([]);
@@ -203,18 +231,33 @@ function UrlSyncSearchStore({
     const q = params.q || "*";
     const shouldChat = q !== "*";
 
-    Promise.all([
-      fetchSearch(config.site, params),
-      shouldChat
-        ? fetchChat(config.site, { q, _setlocale: params._setlocale })
-        : Promise.resolve(null),
-    ])
-      .then(([searchResult, chatResult]) => {
+    const chatPromise = shouldChat
+      ? fetchChat(config.site, { q, _setlocale: params._setlocale })
+      : Promise.resolve(null);
+
+    // T710 — same lifecycle either way; only the transport and the response
+    // shape differ. The URL remains the source of truth for `params`.
+    const searchPromise = postNative
+      ? postStructuredSearch(config.site, searchParamsToRequest(params))
+          .then((result) => {
+            if (requestId !== abortRef.current) return;
+            setData(null);
+            setStructured(result);
+            setDocuments(resolveDocuments(result));
+            setGroups(resolveStructuredGroups(result));
+          })
+      : fetchSearch(config.site, params).then((result) => {
+          if (requestId !== abortRef.current) return;
+          setStructured(null);
+          setData(result);
+          setDocuments(resolveDocuments(result));
+          setGroups(resolveGroups(result));
+        });
+
+    Promise.all([searchPromise, chatPromise])
+      .then(([, chatResult]) => {
         if (requestId !== abortRef.current) return;
-        setData(searchResult);
         setChatData(chatResult);
-        setDocuments(resolveDocuments(searchResult));
-        setGroups(resolveGroups(searchResult));
         setStatus("success");
       })
       .catch((err) => {
@@ -222,7 +265,7 @@ function UrlSyncSearchStore({
         setError(err instanceof Error ? err.message : "Search failed");
         setStatus("error");
       });
-  }, [paramsKey]);
+  }, [paramsKey, postNative]);
 
   // ── URL mutation helpers (operate on explicit params only) ──
 
@@ -251,6 +294,50 @@ function UrlSyncSearchStore({
     [setUrl],
   );
 
+  // ── T710 — structured (link-free) navigation ──
+  //
+  // These write filter queries into the URL directly from the structured
+  // response. The URL stays the source of truth (deep-linking is a kept
+  // feature), but nothing is ever parsed *out* of a server-rendered href — the
+  // round-trip §XLV.1 describes is gone.
+
+  const setFilterQueries = useCallback(
+    (fq: string[]) => updateParams({ fq: fq.length ? fq : undefined, p: "1" }),
+    [updateParams],
+  );
+
+  const toggleFacet = useCallback(
+    (item: TurStructuredFacetItem) =>
+      setFilterQueries(applyFacetAction(explicitParams.fq ?? [], item)),
+    [explicitParams.fq, setFilterQueries],
+  );
+
+  const clearFacet = useCallback(
+    (facet: TurStructuredFacet) => {
+      const clear = new Set(facet.clearFilterQueries ?? facet.selectedFilterQueries ?? []);
+      setFilterQueries((explicitParams.fq ?? []).filter((fq) => !clear.has(fq)));
+    },
+    [explicitParams.fq, setFilterQueries],
+  );
+
+  const clearAllFilters = useCallback(() => setFilterQueries([]), [setFilterQueries]);
+
+  const goToPage = useCallback(
+    (page: number) => updateParams({ p: String(page) }),
+    [updateParams],
+  );
+
+  const applySpellCheck = useCallback(
+    (useOriginal = false) => {
+      const spellCheck = structured?.spellCheck;
+      const text = useOriginal ? spellCheck?.originalText : spellCheck?.correctedTextValue;
+      if (!text) return;
+      setInputValue(text);
+      updateParams({ q: text, p: "1", nfpr: useOriginal ? "1" : undefined });
+    },
+    [structured, updateParams],
+  );
+
   const submitSearch = useCallback(() => {
     updateParams({ q: inputValue || "*", p: "1" });
   }, [inputValue, updateParams]);
@@ -273,6 +360,7 @@ function UrlSyncSearchStore({
   const store: SearchStoreValue = useMemo(() => ({
     status,
     data,
+    structured,
     chat: chatData,
     documents,
     groups,
@@ -282,15 +370,21 @@ function UrlSyncSearchStore({
     setInputValue,
     submitSearch,
     navigate,
+    toggleFacet,
+    clearFacet,
+    clearAllFilters,
+    goToPage,
+    applySpellCheck,
     setLocale,
     setSort,
     showAll,
     updateParams,
     setImplicitParams,
   }), [
-    status, data, chatData, documents, groups, error, params,
+    status, data, structured, chatData, documents, groups, error, params,
     inputValue, submitSearch, navigate, setLocale, setSort, showAll,
     updateParams, setImplicitParams,
+    toggleFacet, clearFacet, clearAllFilters, goToPage, applySpellCheck,
   ]);
 
   return (

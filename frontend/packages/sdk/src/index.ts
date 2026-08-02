@@ -187,7 +187,13 @@ export type {
 } from "./analytics-lifecycle";
 
 // ── Controllers ──
-export { createSearchController } from "./controllers/search";
+export {
+  createSearchController,
+  // T710 — the SearchParams <-> TurSearchRequest bridges, shared with the React
+  // SDK so the two cannot drift on how a legacy param maps onto the POST body.
+  searchParamsToRequest,
+  requestToSearchParams,
+} from "./controllers/search";
 export type {
   SearchController,
   SearchControllerState,

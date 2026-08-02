@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { useSearchStore } from "../core/use-search-store";
-import type { TurPaginationItem } from "../core/types";
+import type { TurPaginationItem, TurStructuredPage } from "../core/types";
 
 // ── Types ──
 
@@ -17,8 +17,11 @@ export interface PaginationPage {
   isEllipsis: boolean;
   /** Navigate to this page */
   select: () => void;
-  /** Raw pagination item from API */
-  raw: TurPaginationItem;
+  /**
+   * Raw pagination item from the API. POST-native (T710) this is the link-free
+   * {@link TurStructuredPage} — same `page`/`text`/`type`, no `href`.
+   */
+  raw: TurPaginationItem | TurStructuredPage;
 }
 
 export interface UseTuringPaginationReturn {
@@ -67,14 +70,19 @@ export interface UseTuringPaginationReturn {
  */
 export function useTuringPagination(): UseTuringPaginationReturn {
   const store = useSearchStore();
-  const rawItems = store.data?.pagination ?? [];
-  const queryContext = store.data?.queryContext;
-  const { navigate } = store;
+  const structuredItems = store.structured?.pagination;
+  // T710 — POST-native the pagination and counters come from the link-free
+  // response; the legacy bean is the fallback.
+  const rawItems: (TurPaginationItem | TurStructuredPage)[] =
+    structuredItems ?? store.data?.pagination ?? [];
+  const queryContext = store.structured?.queryContext ?? store.data?.queryContext;
+  const { navigate, goToPage } = store;
 
   const pages = useMemo<PaginationPage[]>(() => {
     return rawItems.map((item) => {
-      const isCurrent = item.type === "CURRENT";
+      const isCurrent = ("current" in item && item.current) || item.type === "CURRENT";
       const isEllipsis = item.type === "ELLIPSIS" || item.text === "...";
+      const href = "href" in item ? item.href : undefined;
 
       return {
         page: item.page,
@@ -83,14 +91,16 @@ export function useTuringPagination(): UseTuringPaginationReturn {
         isCurrent,
         isEllipsis,
         select: () => {
-          if (!isCurrent && !isEllipsis && item.href) {
-            navigate(item.href);
-          }
+          if (isCurrent || isEllipsis) return;
+          // Page number first — no href to parse. The href path only runs for
+          // the legacy response.
+          if (!href) goToPage(item.page);
+          else navigate(href);
         },
         raw: item,
       };
     });
-  }, [rawItems, navigate]);
+  }, [rawItems, navigate, goToPage]);
 
   const currentPage = queryContext?.page ?? 1;
   const pageCount = queryContext?.pageCount ?? 1;

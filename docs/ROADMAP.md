@@ -163,12 +163,11 @@
 > toggles from structured state. **Additive:** GET + server-rendered links stay for
 > deep-linking / SEO / no-JS. Design in [IMPROVEMENTS.md](IMPROVEMENTS.md) §XLV.
 
-> **Phases 1–3a shipped (T707, T708, T709)** — the anonymous
+> **Phases 1–3 shipped (T707–T710)** — the anonymous
 > `POST /api/sn/{site}/search/query` JSON contract, the opt-in link-free
-> `STRUCTURED` response, and the vanilla SDK driving both. See
+> `STRUCTURED` response, and both JS SDKs driving them. See
 > [CHANGELOG.md](CHANGELOG.md) → Block AV. Remaining:
 
-- 📋 **T710** (deps: T708, T709) **React `@viglet/turing-react-sdk` + react-ui → POST-native** — same request/toggle model; react-ui facet/pagination components navigate via structured actions instead of `item.link`. → §XLV
 - 📋 **T711** (deps: T709, T710) **Parity guard + demo wiring** — extend the T406 SDK contract test to the POST/structured paths; confirm the anonymous demo's nginx allowlist + CSRF priming cover POST search (the public demo is anonymous). → §XLV
 - 💭 **T712** (deps: T708) **Autocomplete + select-list POST variants** — `/ac` and `/list` accept the same structured `TurSNSearchRequest` so the whole read surface is POST-capable. → §XLV
 - 💭 **T713** (deps: T709, T710, T712) **Deprecate embedded href/link fields behind the format flag** — once both SDKs are POST-native, mark `link`/`href`/`cleanUpFacets`/spell-check `link` legacy (kept for no-JS/HTML/SEO/deep-linking) and drop the query-string round-trip helpers from the SDKs. → §XLV

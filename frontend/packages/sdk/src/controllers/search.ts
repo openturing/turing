@@ -163,7 +163,7 @@ export interface SearchControllerOptions {
  *
  * @since 2026.3.4
  */
-function toRequest(params: SearchParams): TurSearchRequest {
+export function searchParamsToRequest(params: SearchParams): TurSearchRequest {
   return {
     q: params.q || "*",
     page: params.p ? Number(params.p) : 1,
@@ -183,7 +183,7 @@ function toRequest(params: SearchParams): TurSearchRequest {
  *
  * @since 2026.3.4
  */
-function toParams(request: TurSearchRequest): SearchParams {
+export function requestToSearchParams(request: TurSearchRequest): SearchParams {
   return {
     q: request.q || "*",
     p: String(request.page ?? 1),
@@ -231,7 +231,7 @@ export function createSearchController(
     groups: [],
     error: null,
     params: defaultParams,
-    request: toRequest(defaultParams),
+    request: searchParamsToRequest(defaultParams),
   });
 
   // T462 — stamp the cross-surface session id so search events stitch to a
@@ -266,7 +266,7 @@ export function createSearchController(
 
   async function executeSearch(searchParams: SearchParams): Promise<void> {
     if (postNative) {
-      return executeRequest(toRequest(searchParams));
+      return executeRequest(searchParamsToRequest(searchParams));
     }
     const requestId = ++latestRequestId;
     store.setState({ status: "loading", error: null, params: searchParams });
@@ -317,7 +317,7 @@ export function createSearchController(
       status: "loading",
       error: null,
       request: searchRequest,
-      params: toParams(searchRequest),
+      params: requestToSearchParams(searchRequest),
     });
 
     try {
@@ -345,7 +345,7 @@ export function createSearchController(
         // so the next toggle starts from what actually ran, not from what we
         // guessed.
         request: searchResult.request ?? searchRequest,
-        params: toParams(searchResult.request ?? searchRequest),
+        params: requestToSearchParams(searchResult.request ?? searchRequest),
       });
 
       const resultCount = searchResult?.queryContext?.count ?? documents.length;

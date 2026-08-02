@@ -2332,14 +2332,15 @@ Block AV. The negotiation mechanism is the request field `responseFormat`
 contract is *take the echoed `request`, apply one structured change, send it
 back*. Phases 3–4 consume that contract.
 
-**Phase 3 — SDKs go 100% POST (T709 vanilla ✔ shipped, T710 React + react-ui).**
-The vanilla SDK's search controller is POST-native (see CHANGELOG Block AV);
-T710 gives the React SDK + react-ui the same request/toggle model, with facet
-and pagination components navigating via structured actions instead of
-`item.link`. **No CSRF priming** — see the settled note below. `/ac` and
-`/similar` stay GET until T712 adds their POST variants server-side. **T711**
-extends the T406 parity guard to the POST/structured paths and confirms the
-anonymous demo's nginx allowlist covers POST search.
+**Phase 3 — SDKs go 100% POST (T709 vanilla, T710 React + react-ui).** Shipped
+— see CHANGELOG Block AV. One scoping decision is worth keeping: in the
+URL-synced React provider, **URL sync is not the bug**. The browser URL stays the
+source of truth for search state (deep-linking is a kept feature, see non-goals);
+what went POST-native is the API transport, which is where the
+reserved-character round-trip lived. **No CSRF priming** — see the settled note
+below. `/ac` and `/similar` stay GET until T712 adds their POST variants
+server-side. **T711** extends the T406 parity guard to the POST/structured paths
+and confirms the anonymous demo's nginx allowlist covers POST search.
 
 **Phase 4 — breadth & retirement (T712–T714, 💭).** POST variants for `/ac`
 (autocomplete) and `/list`; once both SDKs are POST-native, mark the embedded

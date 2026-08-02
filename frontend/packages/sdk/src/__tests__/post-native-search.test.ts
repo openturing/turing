@@ -1,6 +1,10 @@
 import { describe, expect, it, vi } from "vitest";
 import { applyFacetAction, postSearch, postStructuredSearch } from "../api";
-import { createSearchController } from "../controllers/search";
+import {
+  createSearchController,
+  requestToSearchParams,
+  searchParamsToRequest,
+} from "../controllers/search";
 import type { TuringClient } from "../client";
 import type {
   TurSearchResponse,
@@ -143,6 +147,60 @@ describe("POST-native search (T709)", () => {
     const input = ["type:page"];
     applyFacetAction(input, facetItem("ADD"));
     expect(input).toEqual(["type:page"]);
+  });
+
+  // ── SearchParams <-> TurSearchRequest bridges (shared with the React SDK) ──
+
+  it("maps legacy GET params onto the POST body", () => {
+    const request = searchParamsToRequest({
+      q: "boots",
+      p: "3",
+      _setlocale: "pt_BR",
+      sort: "newest",
+      fq: [RESERVED],
+      tr: ["rule-a"],
+      rows: "20",
+      group: "type",
+      nfpr: "1",
+    });
+
+    expect(request).toMatchObject({
+      q: "boots",
+      page: 3,
+      locale: "pt_BR",
+      sort: "newest",
+      fq: [RESERVED],
+      targetingRules: ["rule-a"],
+      rows: 20,
+      group: "type",
+      autoCorrectionDisabled: true,
+    });
+  });
+
+  it("round-trips through the request and back", () => {
+    const params = {
+      q: "boots",
+      p: "3",
+      _setlocale: "pt_BR",
+      sort: "newest",
+      fq: [RESERVED],
+      rows: "20",
+    };
+
+    expect(requestToSearchParams(searchParamsToRequest(params))).toMatchObject(params);
+  });
+
+  it("defaults an empty param set the same way the GET path does", () => {
+    const request = searchParamsToRequest({ q: "" });
+    expect(request.q).toBe("*");
+    expect(request.page).toBe(1);
+    expect(request.fq).toEqual([]);
+    expect(request.autoCorrectionDisabled).toBeUndefined();
+  });
+
+  it("maps nfpr=0 to autoCorrectionDisabled=false, not undefined", () => {
+    expect(searchParamsToRequest({ q: "*", nfpr: "0" }).autoCorrectionDisabled).toBe(false);
+    expect(requestToSearchParams({ autoCorrectionDisabled: false }).nfpr).toBe("0");
   });
 
   // ── controller ──

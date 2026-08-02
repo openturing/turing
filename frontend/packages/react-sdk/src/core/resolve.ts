@@ -6,4 +6,9 @@
  *
  * @since 2026.3.1
  */
-export { resolveDocuments, resolveGroups } from "@viglet/turing-sdk";
+export {
+  resolveDocuments,
+  resolveGroups,
+  // T710 — the link-free response's groups (pagination as page numbers, not hrefs).
+  resolveStructuredGroups,
+} from "@viglet/turing-sdk";

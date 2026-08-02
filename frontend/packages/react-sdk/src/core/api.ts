@@ -22,7 +22,9 @@ import type {
   TurLlmContextInfo,
   TurLlmInstance,
   TurLlmVendor,
+  TurSearchRequest,
   TurSearchResponse,
+  TurStructuredSearchResponse,
   TurSearchSuggestions,
   TurSortOption,
   TurSpellCheck,
@@ -149,6 +151,62 @@ async function get<T>(url: string): Promise<T> {
 export function fetchSearch(site: string, params: SearchParams): Promise<TurSearchResponse> {
   return get<TurSearchResponse>(`/sn/${site}/search?${buildQueryString(params)}`);
 }
+
+/**
+ * T710 / §XLV — POST-native search: {@code POST /api/sn/{site}/search/query}.
+ *
+ * The whole request travels as a JSON body, so a filter value containing
+ * {@code & = + # %} or a space never has to survive a query string. Prefer this
+ * over {@link fetchSearch} for anything that toggles facets; the GET form stays
+ * for deep-linkable / bookmarkable / no-JS search URLs.
+ *
+ * <p>The host's axios instance already carries the CSRF interceptor, and
+ * {@code /api/sn/**} is CSRF-exempt server-side (T707) — so this costs exactly
+ * one round-trip, the same as the GET it replaces.
+ *
+ * @since 2026.3.4
+ */
+export async function postSearch(
+  site: string,
+  request: TurSearchRequest,
+): Promise<TurSearchResponse> {
+  const { data } = await axios.post<TurSearchResponse>(`/sn/${site}/search/query`, request);
+  return data;
+}
+
+/**
+ * T710 / §XLV — POST-native search returning the **link-free** response. Same
+ * endpoint as {@link postSearch}, with {@code responseFormat} forced to
+ * {@code STRUCTURED}.
+ *
+ * @since 2026.3.4
+ */
+export async function postStructuredSearch(
+  site: string,
+  request: TurSearchRequest,
+): Promise<TurStructuredSearchResponse> {
+  const { data } = await axios.post<TurStructuredSearchResponse>(
+    `/sn/${site}/search/query`,
+    { ...request, responseFormat: "STRUCTURED" },
+  );
+  return data;
+}
+
+/**
+ * T710 — `applyFacetAction` and the `SearchParams` <-> `TurSearchRequest`
+ * bridges are owned by the framework-agnostic `@viglet/turing-sdk` and
+ * re-exported here. They are pure functions with no React or axios coupling, so
+ * duplicating them would only create two places for the ADD/REMOVE/REPLACE
+ * semantics to drift.
+ *
+ * @since 2026.3.4
+ */
+export {
+  applyFacetAction,
+  searchParamsToRequest,
+  requestToSearchParams,
+} from "@viglet/turing-sdk";
+
 
 /**
  * Records a click-through on a search result. Fire-and-forget by design — the

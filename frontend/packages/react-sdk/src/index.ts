@@ -7,6 +7,11 @@ export type { TuringContextValue, SearchStoreValue } from "./core/context";
 // ── API ──
 export {
   fetchSearch,
+  postSearch,
+  postStructuredSearch,
+  applyFacetAction,
+  searchParamsToRequest,
+  requestToSearchParams,
   fetchChat,
   fetchChatEnabled,
   fetchLlmInstances,
@@ -117,7 +122,7 @@ export {
 export type { TurSessionOptions } from "./core/session";
 
 // ── Resolve utilities ──
-export { resolveDocuments, resolveGroups } from "./core/resolve";
+export { resolveDocuments, resolveGroups, resolveStructuredGroups } from "./core/resolve";
 
 // ── Hooks ──
 export { useTuringSearch } from "./hooks/use-turing-search";
@@ -473,6 +478,17 @@ export type {
   TurWidget,
   TurFacetGroup,
   TurFacetItem,
+  // T710 / §XLV — POST-native search: request + link-free response.
+  TurSearchRequest,
+  TurResponseFormat,
+  TurFacetItemAction,
+  TurStructuredSearchResponse,
+  TurStructuredFacet,
+  TurStructuredFacetItem,
+  TurStructuredPage,
+  TurStructuredLocale,
+  TurStructuredSpellCheck,
+  TurStructuredGroup,
   TurSpellCheck,
   TurRelatedTermSuggestion,
   TurLocaleItem,
