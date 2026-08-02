@@ -49,6 +49,7 @@ import com.viglet.turing.testutil.AbstractTuringSpringIT;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
 import tools.jackson.databind.json.JsonMapper;
+import tools.jackson.databind.node.ArrayNode;
 import tools.jackson.databind.node.ObjectNode;
 
 /**
@@ -91,6 +92,11 @@ class TurSdkContractIT extends AbstractTuringSpringIT {
     private static final String LOCALE = "en_US";
     /** Slot the SDK reads from a fresh site with no GenAI agent configured. */
     private static final String EXPECTED_DISABLED_REASON = "NO_GENAI";
+    /** T859 — the facet field carrying the reserved-character value. */
+    private static final String RESERVED_FACET_FIELD = "creature_type";
+    /** T859 — a facet value that cannot survive a naive query-string round-trip. */
+    private static final String RESERVED_FACET_VALUE = "Ash & Ember";
+    private static final String RESERVED_DOCUMENT_ID = "myth-contract-999";
 
     @Value("${local.server.port}")
     private int port;
@@ -111,6 +117,11 @@ class TurSdkContractIT extends AbstractTuringSpringIT {
     @DynamicPropertySource
     static void uniqueJmxObjectNames(DynamicPropertyRegistry registry) {
         registry.add("spring.jmx.unique-names", () -> "true");
+        // T859 / §LXV.4 — the search cache is ON for this context on purpose: the
+        // cache-key collision T858 fixed is invisible with the cache off, and a
+        // mocked unit test cannot observe "two distinct bodies, one cached
+        // response" at all. This is the one test shape that can.
+        registry.add("turing.search.cache.enabled", () -> "true");
     }
 
     @Autowired
@@ -209,6 +220,182 @@ class TurSdkContractIT extends AbstractTuringSpringIT {
         assertTrue(count >= 1, "wildcard search ('show all') must return the indexed corpus, got " + count);
     }
 
+    // ── T859 / §LXV.4 — the whole Block AV POST surface, end to end ──
+
+    /**
+     * {@code LINKS} is the default, and the promise of T707 is that a consumer
+     * that merely switches transport sees the response it already parses. Asserted
+     * against the GET response for the <em>canonical</em> equivalent query, which
+     * is what the adapter rebuilds the hrefs from.
+     */
+    @Test
+    void postSearchQueryInLinksFormatMatchesTheGetResponse() throws Exception {
+        HttpResponse<String> getRes =
+                get("/sn/" + SITE + "/search?q=dragon&p=1&_setlocale=" + LOCALE);
+        HttpResponse<String> postRes = postJson("/sn/" + SITE + "/search/query",
+                """
+                        {"q":"dragon","locale":"%s"}""".formatted(LOCALE));
+
+        assertEquals(200, postRes.statusCode());
+        assertEquals(json.readTree(getRes.body()), json.readTree(postRes.body()),
+                "POST /search/query in LINKS format must return the GET response verbatim");
+    }
+
+    /**
+     * The load-bearing assertion of T708: the negotiated part of the structured
+     * body is <em>link-free</em>. Not "has fewer links" — none at all, so a
+     * consumer cannot accidentally keep parsing URLs.
+     *
+     * <p>
+     * {@code results} is excluded, and that exclusion is a <b>finding, not a
+     * convenience</b>: this test is the first thing to run the structured shape
+     * over a response that actually has documents, and it showed that
+     * {@code results.document[].metadata[]} still carries {@code href} —
+     * per-document facet links the mapper passes through untouched, because
+     * §XLV.3 assumed {@code results} was already link-free. Closing that is
+     * <b>T864</b>; tightening this scan to the whole body is that task's
+     * acceptance criterion.
+     * </p>
+     */
+    @Test
+    void postSearchQueryInStructuredFormatCarriesNoLinks() throws Exception {
+        HttpResponse<String> res = postJson("/sn/" + SITE + "/search/query",
+                """
+                        {"q":"*","locale":"%s","responseFormat":"STRUCTURED"}"""
+                        .formatted(LOCALE));
+        assertEquals(200, res.statusCode());
+
+        JsonNode structured = json.readTree(res.body());
+        String navigation = navigationOnly(structured);
+        for (String forbidden : List.of("\"link\"", "\"href\"", "\"cleanUpLink\"",
+                "\"cleanUpFacets\"", "/api/sn/")) {
+            assertTrue(!navigation.contains(forbidden),
+                    "STRUCTURED response must not contain " + forbidden + ": " + navigation);
+        }
+        assertEquals("*", structured.path("request").path("q").asString(),
+                "the structured response must echo the effective request");
+        assertTrue(structured.path("facets").isArray() && !structured.path("facets").isEmpty(),
+                "the sample site is faceted, so the structured response must carry facets");
+    }
+
+    /**
+     * The production bug Block AV closed, end to end: a facet value containing
+     * {@code &} is selected by putting its {@code filterQuery} on the request —
+     * no URL is built, parsed or re-encoded anywhere — and it must actually
+     * filter.
+     */
+    @Test
+    void structuredFilterQueryWithAReservedCharacterActuallyFilters() throws Exception {
+        JsonNode all = json.readTree(postJson("/sn/" + SITE + "/search/query",
+                """
+                        {"q":"*","locale":"%s","responseFormat":"STRUCTURED"}"""
+                        .formatted(LOCALE)).body());
+        int totalCount = all.path("queryContext").path("count").asInt();
+        JsonNode item = facetItem(all, RESERVED_FACET_FIELD, RESERVED_FACET_VALUE);
+        assertNotNull(item, "the reserved-character facet value must be offered by the site");
+
+        String filterQuery = item.path("filterQuery").asString();
+        assertTrue(filterQuery.contains("&"),
+                "the filterQuery must carry the raw '&', not an escaped form: " + filterQuery);
+
+        JsonNode filtered = json.readTree(postJson("/sn/" + SITE + "/search/query",
+                """
+                        {"q":"*","locale":"%s","responseFormat":"STRUCTURED","fq":["%s"]}"""
+                        .formatted(LOCALE, filterQuery)).body());
+        int filteredCount = filtered.path("queryContext").path("count").asInt();
+
+        assertEquals(item.path("count").asInt(), filteredCount,
+                "selecting the facet must return exactly the documents it counted");
+        assertTrue(filteredCount < totalCount, "the filter must actually narrow the result set");
+        assertEquals(RESERVED_DOCUMENT_ID,
+                filtered.path("results").path("document").get(0).path("fields").path("id")
+                        .asString(),
+                "the filtered result must be the reserved-character document");
+    }
+
+    /**
+     * T858 regression guard, and the exact shape a mocked unit suite cannot
+     * express: with the cache <em>enabled</em>, two distinct bodies must not
+     * share a cached response. The old key read the (absent) POST query string
+     * and collapsed both onto {@code <site>_null}.
+     */
+    @Test
+    void distinctPostBodiesDoNotShareACachedResponse() throws Exception {
+        JsonNode dragons = json.readTree(postJson("/sn/" + SITE + "/search/query",
+                """
+                        {"q":"dragon","locale":"%s"}""".formatted(LOCALE)).body());
+        JsonNode everything = json.readTree(postJson("/sn/" + SITE + "/search/query",
+                """
+                        {"q":"*","locale":"%s"}""".formatted(LOCALE)).body());
+
+        int dragonCount = dragons.path("queryContext").path("count").asInt();
+        int totalCount = everything.path("queryContext").path("count").asInt();
+        assertTrue(dragonCount > 0, "the 'dragon' query must match something");
+        assertTrue(dragonCount < totalCount,
+                "a cached response was served for a different body: 'dragon' returned "
+                        + dragonCount + " and '*' returned " + totalCount);
+    }
+
+    /** T712 — the autocomplete POST variant takes the same anonymous JSON body. */
+    @Test
+    void postAutoCompleteQueryAcceptsTheJsonBody() throws Exception {
+        HttpResponse<String> res = postJson("/sn/" + SITE + "/ac/query",
+                """
+                        {"q":"dra","locale":"%s","rows":10,"fq":["%s:%s"]}"""
+                        .formatted(LOCALE, RESERVED_FACET_FIELD, RESERVED_FACET_VALUE));
+
+        assertEquals(200, res.statusCode());
+        assertTrue(json.readTree(res.body()).isArray(),
+                "/ac/query must return a JSON array of suggestions");
+    }
+
+    /** T712 — the select-list POST variant, same body, list projection. */
+    @Test
+    void postSelectListQueryAcceptsTheJsonBody() throws Exception {
+        HttpResponse<String> res = postJson("/sn/" + SITE + "/search/list/query",
+                """
+                        {"q":"*","locale":"%s"}""".formatted(LOCALE));
+
+        assertEquals(200, res.statusCode());
+        assertTrue(json.readTree(res.body()).isArray(),
+                "/search/list/query must return a JSON array");
+    }
+
+    /** T856 — the structured shape is reachable over GET as well. */
+    @Test
+    void getSearchHonoursTheStructuredResponseFormat() throws Exception {
+        HttpResponse<String> res = get("/sn/" + SITE + "/search?q=*&_setlocale=" + LOCALE
+                + "&responseFormat=structured");
+
+        assertEquals(200, res.statusCode());
+        JsonNode structured = json.readTree(res.body());
+        assertTrue(!navigationOnly(structured).contains("\"href\""),
+                "GET with responseFormat=structured must return the link-free shape");
+        assertEquals("*", structured.path("request").path("q").asString(),
+                "the GET structured response must echo the effective request too");
+    }
+
+    /** T857 — the sort options can be inlined instead of separately fetched. */
+    @Test
+    void structuredResponseCanInlineTheSortOptions() throws Exception {
+        JsonNode lean = json.readTree(postJson("/sn/" + SITE + "/search/query",
+                """
+                        {"q":"*","locale":"%s","responseFormat":"STRUCTURED"}"""
+                        .formatted(LOCALE)).body());
+        assertTrue(lean.path("sortOptions").isMissingNode(),
+                "the default structured body must stay lean");
+
+        JsonNode withOptions = json.readTree(postJson("/sn/" + SITE + "/search/query",
+                """
+                        {"q":"*","locale":"%s","responseFormat":"STRUCTURED","includeSortOptions":true}"""
+                        .formatted(LOCALE)).body());
+        JsonNode inlined = withOptions.path("sortOptions");
+        assertTrue(inlined.isArray() && !inlined.isEmpty(),
+                "includeSortOptions must inline the sort options");
+        assertEquals(json.readTree(get("/sn/" + SITE + "/search/sort-options").body()), inlined,
+                "the inlined list must be exactly what the dedicated endpoint serves");
+    }
+
     // ── chat/enabled: ChatEnabledResponse contract ──
 
     @Test
@@ -272,13 +459,54 @@ class TurSdkContractIT extends AbstractTuringSpringIT {
     }
 
     /**
+     * T859 — posts an anonymous JSON body, exactly as the JS SDK does. No CSRF
+     * token: {@code /api/sn/**} is exempt, which is itself part of the contract
+     * the public read surface depends on.
+     */
+    private HttpResponse<String> postJson(String path, String body) throws Exception {
+        HttpRequest req = HttpRequest.newBuilder(URI.create(base() + path))
+                .header("Content-Type", "application/json")
+                .POST(BodyPublishers.ofString(body))
+                .build();
+        return http.send(req, BodyHandlers.ofString());
+    }
+
+    /**
+     * The structured body minus {@code results} — everything Block AV actually
+     * re-shaped. See {@link #postSearchQueryInStructuredFormatCarriesNoLinks} for
+     * why {@code results} is carved out (T864).
+     */
+    private String navigationOnly(JsonNode structured) {
+        ObjectNode navigation = (ObjectNode) structured.deepCopy();
+        navigation.remove("results");
+        navigation.remove("groups");
+        return navigation.toString();
+    }
+
+    /** Finds a facet item by field + value in a structured response. */
+    private static JsonNode facetItem(JsonNode structured, String field, String value) {
+        for (JsonNode facet : structured.path("facets")) {
+            if (!field.equals(facet.path("name").asString())) {
+                continue;
+            }
+            for (JsonNode item : facet.path("items")) {
+                if (value.equals(item.path("value").asString())) {
+                    return item;
+                }
+            }
+        }
+        return null;
+    }
+
+    /**
      * Builds an in-memory import zip from the committed marketplace fixtures,
      * rewriting the Lucene {@code endpointUrl} to {@code targetIndexDir} so the
      * test owns an isolated index.
      */
     private byte[] buildImportZip(Path targetIndexDir) throws IOException {
         byte[] exportJson = rewriteLuceneEndpoint(readResource("/sdk-it/export.json"), targetIndexDir);
-        byte[] contentJson = readResource("/sdk-it/mythical-creatures_content.json");
+        byte[] contentJson = addReservedCharacterDocument(
+                readResource("/sdk-it/mythical-creatures_content.json"));
 
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         try (ZipOutputStream zip = new ZipOutputStream(baos)) {
@@ -290,6 +518,33 @@ class TurSdkContractIT extends AbstractTuringSpringIT {
             zip.closeEntry();
         }
         return baos.toByteArray();
+    }
+
+    /**
+     * T859 / §LXV.4 — appends one synthetic creature whose {@code creature_type}
+     * facet value contains an {@code &}.
+     *
+     * <p>
+     * The committed fixture is a verbatim copy of the marketplace sample and has
+     * no reserved character in any facet value, so it cannot exercise the bug
+     * Block AV closed. Rather than diverge the fixture from its source, the
+     * document is added <em>in memory</em> at zip time — the same treatment
+     * {@link #rewriteLuceneEndpoint} already gives the Lucene endpoint.
+     * </p>
+     */
+    private byte[] addReservedCharacterDocument(byte[] contentJson) {
+        ObjectNode root = (ObjectNode) json.readTree(contentJson);
+        ArrayNode documents = (ArrayNode) root.path(SITE).path(LOCALE);
+        assertTrue(!documents.isEmpty(), "content fixture must carry documents");
+
+        ObjectNode creature = (ObjectNode) documents.get(0).deepCopy();
+        creature.put("id", RESERVED_DOCUMENT_ID);
+        creature.put("title", "Ash & Ember Chimera");
+        creature.put("description", "Synthetic contract-test creature.");
+        creature.put("text", "Exists only to prove a reserved character survives the round-trip.");
+        creature.set("creature_type", json.createArrayNode().add(RESERVED_FACET_VALUE));
+        documents.add(creature);
+        return json.writeValueAsBytes(root);
     }
 
     private byte[] rewriteLuceneEndpoint(byte[] exportJson, Path targetIndexDir) {

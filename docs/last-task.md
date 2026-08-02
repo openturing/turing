@@ -1,7 +1,7 @@
-# Last task number — `T863` · next block letter — `BT`
+# Last task number — `T864` · next block letter — `BT`
 
 > **Single source of truth for the next free task number.** The next new task is
-> `T864`; after assigning it, bump the number above and the log line below.
+> `T865`; after assigning it, bump the number above and the log line below.
 >
 > **Next block letter — `BT`** (Block **BS** = The JS SDK release gate is not a
 > gate — three findings from the Block AV work, none about search: `@viglet/turing-sdk`
@@ -226,6 +226,10 @@ number" looked free but wasn't. Grepping three files (`ROADMAP.md`,
    lists fully-shipped blocks), then bump the letter after creating the block.
 
 ## Log (most recent first)
+
+- **T864 CREATED** (📋, Block BR §LXV.6 — structured response still emits per-document facet links in `results.document[].metadata[]`; found by T859) — 2026-08-02.
+
+- **T859 SHIPPED** (Block BR §LXV — end-to-end contract coverage of the POST/structured surface in `TurSdkContractIT`, incl. the T858 cache guard) — 2026-08-02.
 
 - **T858 SHIPPED** (Block BR §LXV — `TurSNSearchCacheKey.of(context)` replaces the query-string key; targeting rules now in the key) — 2026-08-02.
 

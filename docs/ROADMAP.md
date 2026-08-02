@@ -190,7 +190,7 @@
 > `string` but set to `""` in structured mode, so the type lies to consumers.
 > Design in [IMPROVEMENTS.md](IMPROVEMENTS.md) §LXV.
 
-- 📋 **T859** (deps: T707, T708, T712) **End-to-end contract coverage for the POST/structured surface** — extend `TurSdkContractIT` (real Lucene marketplace site) to `POST /search/query` in both formats plus the T712 `/ac/query` and `/search/list/query`, asserting a reserved-character facet value round-trips and that a `STRUCTURED` body contains no href. The one test shape that would have caught the cache-key bug. → §LXV.4
+- 📋 **T864** (deps: T859) **The structured response still emits per-document facet links** — `results.document[].metadata[]` carries `{href, text}` (the document's facet links), passed through untouched because §XLV.3 assumed `results` was already link-free. T859's end-to-end run over a response *with documents* proved it is not, so `STRUCTURED` is link-free everywhere except the results. Project the metadata onto the same `field`/`value`/`filterQuery` shape the facets use, and tighten `TurSdkContractIT`'s no-href scan to the whole body. → §LXV.6
 - 📋 **T860** (deps: T710) **Stop `EnrichedFacetItem.link` lying** — make `link` optional on the enriched facet item and populate it only in GET mode, instead of `""` POST-native. A consumer that renders `<a href={facet.link}>` currently gets a link to the current page. → §LXV.5
 
 ## Block BS — The JS SDK release gate is not a gate (§LXVI)
