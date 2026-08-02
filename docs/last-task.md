@@ -213,6 +213,8 @@ number" looked free but wasn't. Grepping three files (`ROADMAP.md`,
 
 ## Log (most recent first)
 
+- **T708 SHIPPED** (Block AV §XLV — opt-in link-free `STRUCTURED` response + `responseFormat` negotiation; legacy `LINKS` byte-identical) — 2026-08-02.
+
 - **T707 SHIPPED** (Block AV §XLV — public anonymous `POST /api/sn/{site}/search/query` JSON contract, decoupled from the impersonation bean) — 2026-08-02.
 
 - **T738 SHIPPED** (Block AX §XLVII — collapsed the last 12 hand-wired two-piece own-hero forms (11 SN forms + custom-facet item) onto `BentoFormHero` + its new `actions` escape hatch; `BentoScrollSaveBar` now internal. **Block AX CLOSED**) — 2026-08-02.

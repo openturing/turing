@@ -2326,14 +2326,11 @@ The endpoint is `POST /api/sn/{siteName}/search/query`; later phases build on it
 `TurSNSearchRequest` body and on `TurSNSearchRequestAdapter`, which rebuilds the
 canonical GET URI the legacy link-bearing response is rendered against.
 
-**Phase 2 — structured, link-free response (T708) behind format negotiation
-(folded into T708).** Formalize facet items as `field` + `value` + `selected`
-(+`count`) and add structured **pagination** (page/type), **sort**, **cleanup**
-(clear-filters as an action, not an href) and **locale-switch** actions, so the
-client reconstructs any next request from data alone. Emit this shape only when the
-caller asks for it (a request flag / `responseFormat` / `Accept` negotiation),
-**default = legacy `LINKS`**, so existing GET consumers get a byte-identical
-response.
+**Phase 2 — structured, link-free response (T708).** Shipped — see CHANGELOG
+Block AV. The negotiation mechanism is the request field `responseFormat`
+(`LINKS` default | `STRUCTURED`); the shape is `TurSNStructuredSearchBean`, whose
+contract is *take the echoed `request`, apply one structured change, send it
+back*. Phases 3–4 consume that contract.
 
 **Phase 3 — SDKs go 100% POST (T709 vanilla, T710 React + react-ui).** Move the
 search/autocomplete/similar controllers to POST + JSON body; drive facet /
@@ -2366,9 +2363,10 @@ blocks to the POST-native flow.
   CSRF-exempt and anonymous out of the box. The SDKs therefore need **no** `/csrf`
   priming round-trip for search (they still do for the endpoints outside that
   matcher). Phase 3 must not add one.
-- **Response-format negotiation mechanism (T708).** Request flag vs `Accept`
-  header vs `responseFormat` field — pick one; a request field is simplest and
-  works over both GET and POST for A/B testing the shape.
+- **Response-format negotiation mechanism — settled in T708.** A request field
+  (`responseFormat`), not `Accept`: it works identically over GET and POST, which
+  is what A/B-ing the two shapes against one query requires, and it shows up in
+  the request log next to the response it produced.
 - The impersonation POST payload and the authenticated metrics path are **out of
   scope** — they keep their current bean and behavior.
 

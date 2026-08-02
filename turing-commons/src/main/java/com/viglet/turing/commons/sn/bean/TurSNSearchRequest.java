@@ -20,6 +20,7 @@ import java.util.List;
 import com.fasterxml.jackson.annotation.JsonAlias;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.viglet.turing.commons.sn.search.TurSNFilterQueryOperator;
+import com.viglet.turing.commons.sn.search.TurSNResponseFormat;
 
 import lombok.Getter;
 import lombok.Setter;
@@ -105,4 +106,14 @@ public class TurSNSearchRequest implements Serializable {
      * so the POST contract matches the GET default ({@code nfpr=1}).
      */
     private boolean autoCorrectionDisabled = true;
+
+    /**
+     * T708 — which response shape to return. Defaults to
+     * {@link TurSNResponseFormat#LINKS} so an existing consumer that starts POSTing
+     * gets the response it already knows; opt into
+     * {@link TurSNResponseFormat#STRUCTURED} to receive the link-free shape.
+     *
+     * @since 2026.3.4
+     */
+    private TurSNResponseFormat responseFormat = TurSNResponseFormat.LINKS;
 }

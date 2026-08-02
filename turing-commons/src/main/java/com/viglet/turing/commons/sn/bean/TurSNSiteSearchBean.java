@@ -31,7 +31,7 @@ import java.util.List;
 @Getter
 @Setter
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class TurSNSiteSearchBean implements Serializable {
+public class TurSNSiteSearchBean implements TurSNSearchResponse, Serializable {
 	private List<TurSNSiteSearchPaginationBean> pagination;
 	private TurSNSiteSearchQueryContextBean queryContext;
 	private TurSNSiteSearchResultsBean results;

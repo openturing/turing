@@ -14,6 +14,7 @@
 package com.viglet.turing.api.sn.search;
 
 import java.net.URI;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
@@ -111,6 +112,34 @@ public final class TurSNSearchRequestAdapter {
         return postParams;
     }
 
+    /**
+     * T708 — the request with every default resolved, echoed back in the
+     * structured response as the object the client mutates for its next call. It
+     * is a copy: the caller's bean is never modified.
+     *
+     * @since 2026.3.4
+     */
+    public static TurSNSearchRequest effectiveRequest(TurSNSearchRequest request,
+            TurSNSearchParams params, Locale locale) {
+        TurSNSearchRequest effective = new TurSNSearchRequest();
+        effective.setQ(params.getQ());
+        effective.setFq(orEmpty(params.getFq()));
+        effective.setFqAnd(orEmpty(params.getFqAnd()));
+        effective.setFqOr(orEmpty(params.getFqOr()));
+        effective.setFqOperator(params.getFqOp());
+        effective.setFqItemOperator(params.getFqiOp());
+        effective.setPage(params.getP());
+        effective.setRows(params.getRows());
+        effective.setSort(params.getSort());
+        effective.setGroup(params.getGroup());
+        effective.setFieldList(orEmpty(params.getFl()));
+        effective.setLocale(locale == null ? null : locale.toString());
+        effective.setTargetingRules(orEmpty(request.getTargetingRules()));
+        effective.setAutoCorrectionDisabled(request.isAutoCorrectionDisabled());
+        effective.setResponseFormat(request.getResponseFormat());
+        return effective;
+    }
+
     /** Resolves the request's locale, or {@code null} when it carries none. */
     public static Locale resolveLocale(TurSNSearchRequest request) {
         return StringUtils.isBlank(request.getLocale())
@@ -187,6 +216,10 @@ public final class TurSNSearchRequestAdapter {
 
     private static TurSNFilterQueryOperator defaultOperator(TurSNFilterQueryOperator operator) {
         return operator == null ? TurSNFilterQueryOperator.NONE : operator;
+    }
+
+    private static List<String> orEmpty(List<String> values) {
+        return values == null ? new ArrayList<>() : new ArrayList<>(values);
     }
 
     private static List<String> nullIfEmpty(List<String> values) {

@@ -42,11 +42,13 @@ import com.viglet.turing.commons.se.similar.TurSESimilarResult;
 import com.viglet.turing.commons.sn.bean.TurSNSearchLatestRequestBean;
 import com.viglet.turing.commons.sn.bean.TurSNSearchParams;
 import com.viglet.turing.commons.sn.bean.TurSNSearchRequest;
+import com.viglet.turing.commons.sn.bean.TurSNSearchResponse;
 import com.viglet.turing.commons.sn.bean.TurSNSiteLocaleBean;
 import com.viglet.turing.commons.sn.bean.TurSNSitePostParamsBean;
 import com.viglet.turing.commons.sn.bean.TurSNSiteSearchBean;
 import com.viglet.turing.commons.sn.search.TurSNFilterQueryOperator;
 import com.viglet.turing.commons.sn.search.TurSNParamType;
+import com.viglet.turing.commons.sn.search.TurSNResponseFormat;
 import com.viglet.turing.commons.sn.bean.TurSNDuplicateCluster;
 import com.viglet.turing.sn.TurSNDuplicateClusteringService;
 import com.viglet.turing.sn.TurSNSearchProcess;
@@ -182,7 +184,7 @@ public class TurSNSiteSearchAPI {
          */
         @PostMapping(value = "query", consumes = MediaType.APPLICATION_JSON_VALUE,
                         produces = MediaType.APPLICATION_JSON_VALUE)
-        public ResponseEntity<TurSNSiteSearchBean> turSNSiteSearchQueryPost(
+        public ResponseEntity<TurSNSearchResponse> turSNSiteSearchQueryPost(
                         @PathVariable String siteName,
                         @RequestBody TurSNSearchRequest searchRequest,
                         HttpServletRequest request) {
@@ -196,8 +198,35 @@ public class TurSNSiteSearchAPI {
                                 turSNSearchParams.getLocale())) {
                         return turSNSiteSearchService.notFoundResponse();
                 }
-                return turSNSiteSearchService.executePublicPostSearch(searchRequest,
-                                turSNSearchParams, request, siteName);
+                ResponseEntity<TurSNSiteSearchBean> response = turSNSiteSearchService
+                                .executePublicPostSearch(searchRequest, turSNSearchParams, request,
+                                                siteName);
+                return negotiate(response, searchRequest, turSNSearchParams, locale);
+        }
+
+        /**
+         * T708 / §XLV — applies the response-format flag. {@code LINKS} (the
+         * default) returns the legacy bean untouched, so a consumer that merely
+         * switches to POST sees the response it already parses; {@code STRUCTURED}
+         * projects it onto the link-free shape.
+         *
+         * @since 2026.3.4
+         */
+        private static ResponseEntity<TurSNSearchResponse> negotiate(
+                        ResponseEntity<TurSNSiteSearchBean> response,
+                        TurSNSearchRequest searchRequest,
+                        TurSNSearchParams turSNSearchParams, Locale locale) {
+                TurSNSiteSearchBean body = response.getBody();
+                if (searchRequest.getResponseFormat() != TurSNResponseFormat.STRUCTURED
+                                || body == null) {
+                        return ResponseEntity.status(response.getStatusCode()).body(body);
+                }
+                return ResponseEntity.status(response.getStatusCode())
+                                .body(TurSNStructuredResponseMapper.toStructured(body,
+                                                TurSNSearchRequestAdapter.effectiveRequest(
+                                                                searchRequest, turSNSearchParams,
+                                                                locale),
+                                                locale));
         }
 
         /**

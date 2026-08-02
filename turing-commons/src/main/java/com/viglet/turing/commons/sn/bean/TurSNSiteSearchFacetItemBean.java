@@ -15,7 +15,9 @@
 package com.viglet.turing.commons.sn.bean;
 
 import java.io.Serializable;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.viglet.turing.commons.sn.search.TurSNFacetItemAction;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
@@ -40,5 +42,21 @@ public class TurSNSiteSearchFacetItemBean implements Serializable {
 	private String filterQuery;
 	private boolean selected;
 
-
+	/**
+	 * T708 / §XLV — what clicking this item does to the request's filter-query
+	 * list. Resolved by the facet renderer, which is the only place that knows the
+	 * field's facet-item mode (an {@code AND} field replaces its other selections
+	 * instead of adding to them).
+	 *
+	 * <p>
+	 * {@code @JsonIgnore} on purpose: this is an in-process hand-off to the
+	 * structured-response mapper, so the legacy JSON stays byte-for-byte unchanged.
+	 * The wire form of this field is
+	 * {@code TurSNStructuredFacetItemBean.action}.
+	 * </p>
+	 *
+	 * @since 2026.3.4
+	 */
+	@JsonIgnore
+	private transient TurSNFacetItemAction action;
 }

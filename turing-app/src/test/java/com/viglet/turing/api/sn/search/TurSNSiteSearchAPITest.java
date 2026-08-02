@@ -45,10 +45,13 @@ import org.springframework.http.ResponseEntity;
 
 import com.viglet.turing.commons.sn.bean.TurSNSearchParams;
 import com.viglet.turing.commons.sn.bean.TurSNSearchRequest;
+import com.viglet.turing.commons.sn.bean.TurSNSearchResponse;
 import com.viglet.turing.commons.sn.bean.TurSNSiteLocaleBean;
 import com.viglet.turing.commons.sn.bean.TurSNSitePostParamsBean;
 import com.viglet.turing.commons.sn.bean.TurSNSiteSearchBean;
+import com.viglet.turing.commons.sn.bean.structured.TurSNStructuredSearchBean;
 import com.viglet.turing.commons.sn.search.TurSNFilterQueryOperator;
+import com.viglet.turing.commons.sn.search.TurSNResponseFormat;
 import com.viglet.turing.persistence.model.sn.TurSNSite;
 import com.viglet.turing.sn.TurSNDuplicateClusteringService;
 import com.viglet.turing.sn.TurSNSearchProcess;
@@ -197,10 +200,12 @@ class TurSNSiteSearchAPITest {
         when(service.executePublicPostSearch(eq(searchRequest), any(), eq(request), eq("site")))
                 .thenReturn(expected);
 
-        ResponseEntity<TurSNSiteSearchBean> response =
+        ResponseEntity<TurSNSearchResponse> response =
                 api.turSNSiteSearchQueryPost("site", searchRequest, request);
 
-        assertThat(response).isSameAs(expected);
+        // Default format is LINKS, so the legacy body is handed back untouched.
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(response.getBody()).isSameAs(expected.getBody());
         verifyNoInteractions(snapshots);
     }
 
@@ -220,10 +225,42 @@ class TurSNSiteSearchAPITest {
         when(searchProcess.existsByTurSNSiteAndLanguage("site", Locale.CANADA)).thenReturn(false);
         org.mockito.Mockito.doReturn(notFound).when(service).notFoundResponse();
 
-        ResponseEntity<TurSNSiteSearchBean> response =
+        ResponseEntity<TurSNSearchResponse> response =
                 api.turSNSiteSearchQueryPost("site", new TurSNSearchRequest(), request);
 
         assertThat(response).isSameAs(notFound);
+    }
+
+    /**
+     * T708 — asking for STRUCTURED swaps the response shape without touching the
+     * search itself.
+     */
+    @Test
+    void testSearchQueryPostReturnsTheStructuredShapeWhenAsked() {
+        TurSNSiteSearchService service = mock(TurSNSiteSearchService.class);
+        TurSNSearchProcess searchProcess = mock(TurSNSearchProcess.class);
+        TurSNSiteSearchSnapshotService snapshots = mock(TurSNSiteSearchSnapshotService.class);
+        TurSNSiteSearchAPI api = new TurSNSiteSearchAPI(service, searchProcess, snapshots,
+                mock(TurSNSimilarDocumentsService.class),
+                mock(TurSNDuplicateClusteringService.class));
+        TurSNSearchRequest searchRequest = new TurSNSearchRequest();
+        searchRequest.setLocale("en_US");
+        searchRequest.setResponseFormat(TurSNResponseFormat.STRUCTURED);
+        HttpServletRequest request = mock(HttpServletRequest.class);
+        TurSNSiteSearchBean legacyBody = new TurSNSiteSearchBean();
+
+        when(searchProcess.existsByTurSNSiteAndLanguage(eq("site"), eq(Locale.US))).thenReturn(true);
+        when(service.executePublicPostSearch(eq(searchRequest), any(), eq(request), eq("site")))
+                .thenReturn(new ResponseEntity<>(legacyBody, HttpStatus.OK));
+
+        ResponseEntity<TurSNSearchResponse> response =
+                api.turSNSiteSearchQueryPost("site", searchRequest, request);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(response.getBody()).isInstanceOf(TurSNStructuredSearchBean.class);
+        TurSNStructuredSearchBean structured = (TurSNStructuredSearchBean) response.getBody();
+        assertThat(structured.getRequest().getLocale()).isEqualTo("en_US");
+        assertThat(structured.getRequest().getQ()).isEqualTo("*");
     }
 
     @Test

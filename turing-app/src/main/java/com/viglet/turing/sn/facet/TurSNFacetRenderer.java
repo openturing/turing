@@ -35,6 +35,7 @@ import com.viglet.turing.commons.sn.bean.TurSNSiteSearchFacetBean;
 import com.viglet.turing.commons.sn.bean.TurSNSiteSearchFacetItemBean;
 import com.viglet.turing.commons.sn.bean.TurSNSiteSearchFacetLabelBean;
 import com.viglet.turing.commons.sn.field.TurSNFieldLabel;
+import com.viglet.turing.commons.sn.search.TurSNFacetItemAction;
 import com.viglet.turing.commons.sn.search.TurSNSiteSearchContext;
 import com.viglet.turing.commons.utils.TurCommonsUtils;
 import com.viglet.turing.persistence.dto.sn.field.TurSNSiteFieldExtDto;
@@ -153,6 +154,7 @@ public class TurSNFacetRenderer {
                                         .setLink(TurSNUtils.removeFilterQuery(context.getUri(),
                                                 facetToRemove).toString())
                                         .setFilterQuery(facetToRemove)
+                                        .setAction(TurSNFacetItemAction.REMOVE)
                                         .setSelected(true));
                             }
                         }));
@@ -287,6 +289,8 @@ public class TurSNFacetRenderer {
                         .setLabel(displayLabel)
                         .setSelected(selected)
                         .setFilterQuery(fq)
+                        .setAction(resolveAction(selected,
+                                facetResult.facetTypeAndFacetItemTypeValues))
                         .setLink(buildLink(context, selected, fq,
                                 facetResult.facetTypeAndFacetItemTypeValues, fieldExtDto)));
             }
@@ -294,6 +298,24 @@ public class TurSNFacetRenderer {
         if (!items.isEmpty()) {
             beans.add(searchFacetBean(context, fieldExtDto, items));
         }
+    }
+
+    /**
+     * T708 / §XLV — the structured equivalent of {@link #buildLink}: what the
+     * client must do to its {@code fq} list, expressed as data instead of a URL.
+     * Mirrors {@code buildLink}'s branches exactly, including the {@code AND}
+     * facet-item mode where picking a value replaces the field's other selections.
+     *
+     * @since 2026.3.4
+     */
+    private static TurSNFacetItemAction resolveAction(boolean selected,
+            String facetTypeAndFacetItemTypeValues) {
+        if (selected) {
+            return TurSNFacetItemAction.REMOVE;
+        }
+        return facetTypeAndFacetItemTypeValues.endsWith(FACET_ITEM_AND)
+                ? TurSNFacetItemAction.REPLACE
+                : TurSNFacetItemAction.ADD;
     }
 
     private static String buildLink(TurSNSiteSearchContext context, boolean selected, String fq,
