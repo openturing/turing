@@ -232,6 +232,61 @@ class TurSNSiteSearchAPITest {
     }
 
     /**
+     * T712 — the select-list POST variant serves anonymous callers over the same
+     * JSON body, and hands the request straight to the list pipeline.
+     */
+    @Test
+    void testSearchListQueryPostServesAnonymousCallers() {
+        TurSNSiteSearchService service = mock(TurSNSiteSearchService.class);
+        TurSNSearchProcess searchProcess = mock(TurSNSearchProcess.class);
+        TurSNSiteSearchSnapshotService snapshots = mock(TurSNSiteSearchSnapshotService.class);
+        TurSNSiteSearchAPI api = new TurSNSiteSearchAPI(service, searchProcess, snapshots,
+                mock(TurSNSimilarDocumentsService.class),
+                mock(TurSNDuplicateClusteringService.class));
+        TurSNSearchRequest searchRequest = new TurSNSearchRequest();
+        searchRequest.setLocale("en_US");
+        searchRequest.setFq(List.of("section:RAG & Chat"));
+        HttpServletRequest request = mock(HttpServletRequest.class);
+        ResponseEntity<List<Object>> expected =
+                new ResponseEntity<>(List.of("term"), HttpStatus.OK);
+
+        when(searchProcess.existsByTurSNSiteAndLanguage(eq("site"), eq(Locale.US))).thenReturn(true);
+        when(service.executePublicPostSearchList(eq(searchRequest), any(), eq(request), eq("site")))
+                .thenReturn(expected);
+
+        ResponseEntity<List<Object>> response =
+                api.turSNSiteSearchSelectListQueryPost("site", searchRequest, request);
+
+        assertThat(response).isSameAs(expected);
+        verifyNoInteractions(snapshots);
+    }
+
+    /**
+     * T712 — an unknown site/locale pair 404s on the list POST just like it does
+     * on the GET mapping and on {@code /search/query}.
+     */
+    @Test
+    void testSearchListQueryPostNotFoundForUnknownLocale() {
+        TurSNSiteSearchService service = mock(TurSNSiteSearchService.class);
+        TurSNSearchProcess searchProcess = mock(TurSNSearchProcess.class);
+        TurSNSiteSearchSnapshotService snapshots = mock(TurSNSiteSearchSnapshotService.class);
+        TurSNSiteSearchAPI api = new TurSNSiteSearchAPI(service, searchProcess, snapshots,
+                mock(TurSNSimilarDocumentsService.class),
+                mock(TurSNDuplicateClusteringService.class));
+        HttpServletRequest request = mock(HttpServletRequest.class);
+        ResponseEntity<List<Object>> notFound = ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+
+        when(service.resolveDefaultLocale("site")).thenReturn(Locale.CANADA);
+        when(searchProcess.existsByTurSNSiteAndLanguage("site", Locale.CANADA)).thenReturn(false);
+        org.mockito.Mockito.doReturn(notFound).when(service).notFoundResponse();
+
+        ResponseEntity<List<Object>> response =
+                api.turSNSiteSearchSelectListQueryPost("site", new TurSNSearchRequest(), request);
+
+        assertThat(response).isSameAs(notFound);
+    }
+
+    /**
      * T708 — asking for STRUCTURED swaps the response shape without touching the
      * search itself.
      */

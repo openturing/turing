@@ -2344,12 +2344,14 @@ anonymous demo's nginx allowlist already covers POST search (the `/api/sn/`
 location is method-agnostic) — documented there as a "do not harden to
 GET-only".
 
-**Phase 4 — breadth & retirement (T712–T714, 💭).** POST variants for `/ac`
-(autocomplete) and `/list`; once both SDKs are POST-native, mark the embedded
-`link`/`href`/`cleanUpFacets`/spell-check-`link` fields legacy (kept — see
-non-goals) and drop the query-string round-trip helpers from the SDKs; migrate
-`rest-api.md` / `javascript-sdk.md`, the Atlas Store showcase and the EDS example
-blocks to the POST-native flow.
+**Phase 4 — breadth & retirement (T713–T714, 💭).** **T712** shipped the POST
+variants for `/ac` (autocomplete) and `/list` — see CHANGELOG Block AV; the one
+decision worth keeping is that neither projection carries links, so
+`responseFormat` deliberately does not apply to them. Remaining: once both SDKs
+are POST-native, mark the embedded `link`/`href`/`cleanUpFacets`/spell-check-`link`
+fields legacy (kept — see non-goals) and drop the query-string round-trip helpers
+from the SDKs; migrate `rest-api.md` / `javascript-sdk.md`, the Atlas Store
+showcase and the EDS example blocks to the POST-native flow.
 
 ### XLV.5 Non-goals & open questions
 

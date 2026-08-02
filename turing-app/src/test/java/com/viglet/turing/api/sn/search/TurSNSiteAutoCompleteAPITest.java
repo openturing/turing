@@ -23,19 +23,24 @@ package com.viglet.turing.api.sn.search;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.net.URI;
 import java.util.List;
 import java.util.Locale;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.mock.web.MockHttpServletRequest;
 
 import com.viglet.turing.commons.sn.bean.TurSNSearchParams;
+import com.viglet.turing.commons.sn.bean.TurSNSearchRequest;
 import com.viglet.turing.commons.sn.search.TurSNFilterQueryOperator;
 import com.viglet.turing.sn.ac.TurSNAutoComplete;
 
@@ -53,7 +58,8 @@ class TurSNSiteAutoCompleteAPITest {
     @Test
     void testAutoCompleteUsesRegularSearchWhenFiltersPresent() {
         TurSNAutoComplete turSNAutoComplete = mock(TurSNAutoComplete.class);
-        TurSNSiteAutoCompleteAPI api = new TurSNSiteAutoCompleteAPI(turSNAutoComplete);
+        TurSNSiteAutoCompleteAPI api = new TurSNSiteAutoCompleteAPI(turSNAutoComplete,
+                mock(TurSNSiteSearchService.class));
         TurSNSearchParams params = new TurSNSearchParams();
         params.setQ("hello");
         params.setRows(5);
@@ -76,7 +82,8 @@ class TurSNSiteAutoCompleteAPITest {
     @Test
     void testAutoCompleteDefaultsRowsWhenNegativeAndNoFilters() {
         TurSNAutoComplete turSNAutoComplete = mock(TurSNAutoComplete.class);
-        TurSNSiteAutoCompleteAPI api = new TurSNSiteAutoCompleteAPI(turSNAutoComplete);
+        TurSNSiteAutoCompleteAPI api = new TurSNSiteAutoCompleteAPI(turSNAutoComplete,
+                mock(TurSNSiteSearchService.class));
         TurSNSearchParams params = new TurSNSearchParams();
         params.setQ("hello");
         params.setRows(-1);
@@ -97,7 +104,8 @@ class TurSNSiteAutoCompleteAPITest {
     @Test
     void testAutoCompleteUsesLocaleAndRowsWhenNoFilters() {
         TurSNAutoComplete turSNAutoComplete = mock(TurSNAutoComplete.class);
-        TurSNSiteAutoCompleteAPI api = new TurSNSiteAutoCompleteAPI(turSNAutoComplete);
+        TurSNSiteAutoCompleteAPI api = new TurSNSiteAutoCompleteAPI(turSNAutoComplete,
+                mock(TurSNSiteSearchService.class));
         TurSNSearchParams params = new TurSNSearchParams();
         params.setQ("world");
         params.setRows(7);
@@ -111,5 +119,86 @@ class TurSNSiteAutoCompleteAPITest {
 
         assertThat(result).isEqualTo(expected);
         assertThat(params.getLocale()).isEqualTo(Locale.CANADA);
+    }
+
+    /**
+     * T712 / §XLV — the POST variant must reach the same regular-search path when
+     * the body carries filter queries, and it must hand the collaborator a
+     * canonical URI on the <em>GET</em> {@code /ac} path (not {@code /ac/query}),
+     * plus a cache key derived from the body rather than from the — empty — POST
+     * query string.
+     */
+    @Test
+    void testAutoCompletePostUsesRegularSearchAndBodyDerivedCacheKey() {
+        TurSNAutoComplete turSNAutoComplete = mock(TurSNAutoComplete.class);
+        TurSNSiteSearchService searchService = mock(TurSNSiteSearchService.class);
+        TurSNSiteAutoCompleteAPI api =
+                new TurSNSiteAutoCompleteAPI(turSNAutoComplete, searchService);
+        TurSNSearchRequest searchRequest = new TurSNSearchRequest();
+        searchRequest.setQ("chat");
+        searchRequest.setLocale("en_US");
+        searchRequest.setFq(List.of("section:RAG & Chat"));
+        MockHttpServletRequest request =
+                new MockHttpServletRequest("POST", "/api/sn/site/ac/query");
+        when(turSNAutoComplete.autoCompleteWithRegularSearch(eq("site"),
+                any(TurSNSearchParams.class), any(URI.class), anyString()))
+                        .thenReturn(List.of("chatbot"));
+
+        List<String> result = api.turSNSiteAutoCompleteQueryPost("site", searchRequest, request);
+
+        assertThat(result).containsExactly("chatbot");
+        ArgumentCaptor<URI> uri = ArgumentCaptor.forClass(URI.class);
+        ArgumentCaptor<String> cacheKey = ArgumentCaptor.forClass(String.class);
+        verify(turSNAutoComplete).autoCompleteWithRegularSearch(eq("site"),
+                any(TurSNSearchParams.class), uri.capture(), cacheKey.capture());
+        assertThat(uri.getValue().getRawPath()).isEqualTo("/api/sn/site/ac");
+        assertThat(uri.getValue().getRawQuery()).contains("fq[]=section:RAG%20%26%20Chat");
+        assertThat(cacheKey.getValue()).startsWith("site_").contains("q=chat");
+    }
+
+    /**
+     * T712 / §XLV — without filter queries the POST variant takes the suggester
+     * path, exactly like the GET mapping, and applies the same default rows.
+     */
+    @Test
+    void testAutoCompletePostFallsBackToSuggesterAndDefaultsRows() {
+        TurSNAutoComplete turSNAutoComplete = mock(TurSNAutoComplete.class);
+        TurSNSiteSearchService searchService = mock(TurSNSiteSearchService.class);
+        TurSNSiteAutoCompleteAPI api =
+                new TurSNSiteAutoCompleteAPI(turSNAutoComplete, searchService);
+        TurSNSearchRequest searchRequest = new TurSNSearchRequest();
+        searchRequest.setQ("world");
+        searchRequest.setLocale("en_CA");
+        when(turSNAutoComplete.autoComplete("site", "world", Locale.CANADA, 20L))
+                .thenReturn(List.of("world"));
+
+        List<String> result = api.turSNSiteAutoCompleteQueryPost("site", searchRequest,
+                new MockHttpServletRequest("POST", "/api/sn/site/ac/query"));
+
+        assertThat(result).containsExactly("world");
+        verify(turSNAutoComplete).autoComplete("site", "world", Locale.CANADA, 20L);
+    }
+
+    /**
+     * T712 / §XLV — a body without a locale falls back to the site's default,
+     * mirroring {@code POST /search/query}.
+     */
+    @Test
+    void testAutoCompletePostResolvesDefaultLocaleWhenBodyOmitsIt() {
+        TurSNAutoComplete turSNAutoComplete = mock(TurSNAutoComplete.class);
+        TurSNSiteSearchService searchService = mock(TurSNSiteSearchService.class);
+        TurSNSiteAutoCompleteAPI api =
+                new TurSNSiteAutoCompleteAPI(turSNAutoComplete, searchService);
+        TurSNSearchRequest searchRequest = new TurSNSearchRequest();
+        searchRequest.setQ("world");
+        when(searchService.resolveDefaultLocale("site")).thenReturn(Locale.CANADA);
+        when(turSNAutoComplete.autoComplete("site", "world", Locale.CANADA, 20L))
+                .thenReturn(List.of("world"));
+
+        List<String> result = api.turSNSiteAutoCompleteQueryPost("site", searchRequest,
+                new MockHttpServletRequest("POST", "/api/sn/site/ac/query"));
+
+        assertThat(result).containsExactly("world");
+        verify(searchService).resolveDefaultLocale("site");
     }
 }

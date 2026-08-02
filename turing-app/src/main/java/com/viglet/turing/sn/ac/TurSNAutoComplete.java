@@ -16,6 +16,7 @@
  */
 package com.viglet.turing.sn.ac;
 
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -26,11 +27,14 @@ import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Component;
 
 import com.viglet.turing.api.sn.search.TurSNSiteSearchCachedAPI;
+import com.viglet.turing.commons.se.TurSEParameters;
 import com.viglet.turing.commons.sn.TurSNConfig;
 import com.viglet.turing.commons.sn.bean.TurSNSearchParams;
+import com.viglet.turing.commons.sn.bean.TurSNSitePostParamsBean;
 import com.viglet.turing.commons.sn.bean.TurSNSiteSearchBean;
 import com.viglet.turing.commons.sn.bean.TurSNSiteSearchResultsBean;
 import com.viglet.turing.commons.sn.field.TurSNFieldName;
+import com.viglet.turing.commons.sn.search.TurSNSiteSearchContext;
 import com.viglet.turing.persistence.repository.sn.TurSNSiteRepository;
 import com.viglet.turing.plugins.se.TurSearchEnginePluginFactory;
 import com.viglet.turing.se.TurSEStopWord;
@@ -65,6 +69,25 @@ public class TurSNAutoComplete {
     @NotNull
     public List<String> autoCompleteWithRegularSearch(String siteName,
             TurSNSearchParams turSNSearchParams, HttpServletRequest request) {
+        return autoCompleteWithRegularSearch(siteName, turSNSearchParams,
+                TurSNUtils.requestToURI(request), TurSNUtils.getCacheKey(siteName, request));
+    }
+
+    /**
+     * T712 / §XLV — the POST-driven flavour of
+     * {@link #autoCompleteWithRegularSearch(String, TurSNSearchParams, HttpServletRequest)}.
+     * A JSON body carries no query string, so both the search URI and the cache
+     * key have to be supplied by the caller (the GET flavour derives them from the
+     * request; keying on {@code request.getQueryString()} would collapse every
+     * distinct POST body onto {@code "<site>_null"}).
+     *
+     * @param uri      the canonical GET-equivalent URI for this request
+     * @param cacheKey a key that faithfully projects the request body
+     * @since 2026.3.4
+     */
+    @NotNull
+    public List<String> autoCompleteWithRegularSearch(String siteName,
+            TurSNSearchParams turSNSearchParams, URI uri, String cacheKey) {
         TurSNConfig turSNConfig = new TurSNConfig();
         turSNConfig.setHlEnabled(false);
         turSNSearchParams
@@ -72,10 +95,11 @@ public class TurSNAutoComplete {
         turSNSearchParams.setGroup(null);
         turSNSearchParams.setNfpr(0);
         turSNSearchParams.setP(1);
-        return Optional
-                .ofNullable(turSNSiteSearchCachedAPI.searchCached(
-                        TurSNUtils.getCacheKey(siteName, request),
-                        TurSNUtils.getTurSNSiteSearchContext(turSNConfig, siteName, turSNSearchParams, request)))
+        TurSNSitePostParamsBean postParams = new TurSNSitePostParamsBean();
+        TurSNSiteSearchContext context = new TurSNSiteSearchContext(siteName, turSNConfig,
+                new TurSEParameters(turSNSearchParams, postParams), turSNSearchParams.getLocale(),
+                uri, postParams);
+        return Optional.ofNullable(turSNSiteSearchCachedAPI.searchCached(cacheKey, context))
                 .map(TurSNSiteSearchBean::getResults).map(TurSNSiteSearchResultsBean::getDocument)
                 .map(documents -> {
                     List<String> termList = new ArrayList<>();

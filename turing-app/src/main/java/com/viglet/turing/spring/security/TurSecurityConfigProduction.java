@@ -230,6 +230,10 @@ public class TurSecurityConfigProduction {
                                                 mvc.matcher("/browserconfig.xml"),
                                                 mvc.matcher("/api/sn/names"),
                                                 mvc.matcher("/api/sn/*/ac"),
+                                                // T712 / §XLV — POST /api/sn/*/ac/query, the
+                                                // POST-native autocomplete variant. Same public,
+                                                // anonymous, read-only surface as the GET above.
+                                                mvc.matcher("/api/sn/*/ac/**"),
                                                 mvc.matcher("/api/sn/*/search"),
                                                 mvc.matcher("/api/sn/*/search/**"),
                                                 mvc.matcher("/api/sn/*/_search"),
@@ -310,6 +314,8 @@ public class TurSecurityConfigProduction {
                                                                 mvc.matcher("/fonts/**"),
                                                                 mvc.matcher("/api/sn/names"),
                                                                 mvc.matcher("/api/sn/*/ac"),
+                                                                // T712 / §XLV — POST-native autocomplete.
+                                                                mvc.matcher("/api/sn/*/ac/**"),
                                                                 mvc.matcher("/api/sn/*/search"),
                                                                 mvc.matcher("/api/sn/*/search/**"),
                                                                 mvc.matcher("/api/sn/*/_search"),

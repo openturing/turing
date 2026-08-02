@@ -143,6 +143,23 @@ class TurSNSearchRequestAdapterTest {
         assertThat(fqValue).isEqualTo("section:RAG & Chat");
     }
 
+    /**
+     * T712 / §XLV — the other POST variants ({@code /ac/query} and
+     * {@code /search/list/query}) must also canonicalise onto their GET
+     * counterpart, so a link rendered from one of them stays deep-linkable.
+     */
+    @Test
+    void testCanonicalUriStripsTheQuerySegmentOfEveryPostVariant() {
+        TurSNSearchRequest request = new TurSNSearchRequest();
+
+        assertThat(TurSNSearchRequestAdapter
+                .canonicalUri(URI.create("/api/sn/wknd/ac/query"), request, null).getRawPath())
+                        .isEqualTo("/api/sn/wknd/ac");
+        assertThat(TurSNSearchRequestAdapter
+                .canonicalUri(URI.create("/api/sn/wknd/search/list/query"), request, null)
+                .getRawPath()).isEqualTo("/api/sn/wknd/search/list");
+    }
+
     @Test
     void testCanonicalUriOmitsAbsentOptionalParameters() {
         URI canonical = TurSNSearchRequestAdapter.canonicalUri(POST_URI,

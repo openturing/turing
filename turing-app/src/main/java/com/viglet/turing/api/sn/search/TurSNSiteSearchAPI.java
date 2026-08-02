@@ -205,6 +205,39 @@ public class TurSNSiteSearchAPI {
         }
 
         /**
+         * T712 / §XLV — the select-list counterpart of
+         * {@link #turSNSiteSearchQueryPost}. Same anonymous JSON
+         * {@link TurSNSearchRequest} body, same immunity to the query-string
+         * round-trip; the projection it returns carries no links, so
+         * {@code responseFormat} does not apply here.
+         *
+         * <p>
+         * The GET {@code list} mapping is untouched.
+         * </p>
+         *
+         * @since 2026.3.4
+         */
+        @PostMapping(value = "list/query", consumes = MediaType.APPLICATION_JSON_VALUE,
+                        produces = MediaType.APPLICATION_JSON_VALUE)
+        public ResponseEntity<List<Object>> turSNSiteSearchSelectListQueryPost(
+                        @PathVariable String siteName,
+                        @RequestBody TurSNSearchRequest searchRequest,
+                        HttpServletRequest request) {
+                Locale locale = TurSNSearchRequestAdapter.resolveLocale(searchRequest);
+                if (locale == null) {
+                        locale = turSNSiteSearchService.resolveDefaultLocale(siteName);
+                }
+                TurSNSearchParams turSNSearchParams = TurSNSearchRequestAdapter
+                                .toSearchParams(searchRequest, locale);
+                if (!turSNSearchProcess.existsByTurSNSiteAndLanguage(siteName,
+                                turSNSearchParams.getLocale())) {
+                        return turSNSiteSearchService.notFoundResponse();
+                }
+                return turSNSiteSearchService.executePublicPostSearchList(searchRequest,
+                                turSNSearchParams, request, siteName);
+        }
+
+        /**
          * T708 / §XLV — applies the response-format flag. {@code LINKS} (the
          * default) returns the legacy bean untouched, so a consumer that merely
          * switches to POST sees the response it already parses; {@code STRUCTURED}

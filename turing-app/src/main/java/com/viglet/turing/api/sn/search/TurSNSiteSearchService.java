@@ -124,15 +124,8 @@ public class TurSNSiteSearchService {
             TurSNSearchParams turSNSearchParams,
             HttpServletRequest request,
             String siteName) {
-        TurSNSitePostParamsBean postParams = TurSNSearchRequestAdapter.toPostParams(searchRequest);
-        postParams.setTargetingRules(
-                turSNSearchProcess.requestTargetingRules(postParams.getTargetingRules()));
-        URI canonicalUri = TurSNSearchRequestAdapter.canonicalUri(
-                TurSNUtils.requestToURI(request), searchRequest, turSNSearchParams.getLocale());
-        TurSNSiteSearchContext searchContext = new TurSNSiteSearchContext(siteName,
-                getTurSNConfig(siteName),
-                new TurSEParameters(turSNSearchParams, postParams),
-                turSNSearchParams.getLocale(), canonicalUri, postParams);
+        TurSNSiteSearchContext searchContext =
+                publicPostSearchContext(searchRequest, turSNSearchParams, request, siteName);
         if (!searchCacheEnabled) {
             return executeSearch(searchContext);
         }
@@ -140,9 +133,61 @@ public class TurSNSiteSearchService {
         // every distinct body onto "<site>_null". Key on the canonical URI's
         // query instead — it is a faithful, order-stable projection of the body.
         return new ResponseEntity<>(
-                turSNSiteSearchCachedAPI.searchCached(
-                        "%s_%s".formatted(siteName, canonicalUri.getRawQuery()), searchContext),
+                turSNSiteSearchCachedAPI.searchCached(publicPostCacheKey(siteName, searchContext),
+                        searchContext),
                 HttpStatus.OK);
+    }
+
+    /**
+     * T712 / §XLV — the {@code /list} (select-list) counterpart of
+     * {@link #executePublicPostSearch}, so the whole public read surface can be
+     * driven from the same JSON body. The list projection has no links to render,
+     * so there is nothing to negotiate: the shape is the same {@code List<Object>}
+     * the GET mapping returns.
+     *
+     * @since 2026.3.4
+     */
+    public ResponseEntity<List<Object>> executePublicPostSearchList(
+            TurSNSearchRequest searchRequest,
+            TurSNSearchParams turSNSearchParams,
+            HttpServletRequest request,
+            String siteName) {
+        return new ResponseEntity<>(turSNSearchProcess.searchList(
+                publicPostSearchContext(searchRequest, turSNSearchParams, request, siteName)),
+                HttpStatus.OK);
+    }
+
+    /**
+     * Builds the search context for a public POST call. The canonical GET URI is
+     * rebuilt only so the legacy link-bearing response keeps emitting
+     * deep-linkable hrefs; the JSON body itself never goes through a query string.
+     *
+     * @since 2026.3.4
+     */
+    public TurSNSiteSearchContext publicPostSearchContext(
+            TurSNSearchRequest searchRequest,
+            TurSNSearchParams turSNSearchParams,
+            HttpServletRequest request,
+            String siteName) {
+        TurSNSitePostParamsBean postParams = TurSNSearchRequestAdapter.toPostParams(searchRequest);
+        postParams.setTargetingRules(
+                turSNSearchProcess.requestTargetingRules(postParams.getTargetingRules()));
+        URI canonicalUri = TurSNSearchRequestAdapter.canonicalUri(
+                TurSNUtils.requestToURI(request), searchRequest, turSNSearchParams.getLocale());
+        return new TurSNSiteSearchContext(siteName, getTurSNConfig(siteName),
+                new TurSEParameters(turSNSearchParams, postParams),
+                turSNSearchParams.getLocale(), canonicalUri, postParams);
+    }
+
+    /**
+     * Cache key for a public POST call — see the comment in
+     * {@link #executePublicPostSearch} for why the request's own query string
+     * cannot be used.
+     *
+     * @since 2026.3.4
+     */
+    public static String publicPostCacheKey(String siteName, TurSNSiteSearchContext context) {
+        return "%s_%s".formatted(siteName, context.getUri().getRawQuery());
     }
 
     public TurSNConfig getTurSNConfig(String siteName) {

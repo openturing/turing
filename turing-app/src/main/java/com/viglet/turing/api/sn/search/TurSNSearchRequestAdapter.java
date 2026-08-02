@@ -62,7 +62,6 @@ import com.viglet.turing.commons.utils.TurCommonsUtils;
  */
 public final class TurSNSearchRequestAdapter {
 
-    private static final String SEARCH_SUFFIX = "/search";
     private static final String QUERY_SUFFIX = "/query";
     private static final String DEFAULT_QUERY = "*";
 
@@ -188,12 +187,15 @@ public final class TurSNSearchRequestAdapter {
     }
 
     /**
-     * Strips the {@code /query} segment so the canonical URI sits on the GET search
-     * path. Any other incoming path is left as-is.
+     * Strips the trailing {@code /query} segment so the canonical URI sits on the
+     * GET counterpart of whichever POST variant was called
+     * ({@code …/search/query} → {@code …/search}, and since T712
+     * {@code …/ac/query} → {@code …/ac}, {@code …/search/list/query} →
+     * {@code …/search/list}). Any other incoming path is left as-is.
      */
     private static URI searchUri(URI requestUri) {
         String path = requestUri.getRawPath() == null ? "" : requestUri.getRawPath();
-        if (path.endsWith(SEARCH_SUFFIX + QUERY_SUFFIX)) {
+        if (path.endsWith(QUERY_SUFFIX)) {
             path = path.substring(0, path.length() - QUERY_SUFFIX.length());
         }
         return URI.create(path);
