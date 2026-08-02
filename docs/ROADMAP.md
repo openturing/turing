@@ -172,6 +172,47 @@
 > `parseHrefToParams` / `navigate(href)` / `onNavigate` is deliberately left to
 > the next major** — T713 deprecates, it does not delete.
 
+## Block BR — Block AV follow-through: the gaps the POST-native migration left (§LXV)
+
+> Block AV shipped the POST-native, link-free search contract (T707–T714). Building
+> it surfaced five things that are **not** part of that contract but were exposed
+> by it: (1) §XLV.5 settled the negotiation mechanism on a *request field*
+> precisely because "it works over both GET and POST" — but only the POST body
+> reads it, so the documented A/B story doesn't exist; (2) a POST-native client
+> needs **two** round-trips to paint a sort dropdown, because the structured
+> response deliberately points at `/search/sort-options` instead of duplicating it;
+> (3) `TurSNUtils.getCacheKey(site, request)` keys on `request.getQueryString()`,
+> so **every** POST endpoint has to remember to supply its own key — T707 and T712
+> each hit this separately, which makes it a footgun in the primitive, not two
+> isolated mistakes; (4) the whole Block AV backend has **no end-to-end coverage** —
+> `TurSdkContractIT` POSTs only to chat, and a mocked unit suite is exactly what
+> failed to catch the cache-key collision; (5) `EnrichedFacetItem.link` is typed
+> `string` but set to `""` in structured mode, so the type lies to consumers.
+> Design in [IMPROVEMENTS.md](IMPROVEMENTS.md) §LXV.
+
+- 📋 **T856** (deps: T708) **Honour `responseFormat` on GET** — bind the flag as a GET request param and route it through the same negotiation as the POST body, so the structured shape can be A/B'd against one query on either transport (what §XLV.5 says the request-field choice buys). If it turns out nothing wants structured-over-GET, amend §XLV instead — the defect is the doc and the code disagreeing. → §LXV.1
+- 📋 **T857** (deps: T708) **Optional inline sort options in the structured response** — an opt-in `includeSortOptions` on `TurSNSearchRequest` that inlines what `GET /search/sort-options` serves, so a POST-native surface paints its sort control in one round-trip instead of two. Opt-in, so the default body stays lean. → §LXV.2
+- 📋 **T858** (deps: T707, T712) **A cache key that cannot collide by construction** — derive the search cache key from `TurSNSiteSearchContext` (the effective params) rather than the raw `HttpServletRequest`, and retire the query-string overload. Today a new POST endpoint that forgets to pass a key silently collapses every distinct body onto `<site>_null`. → §LXV.3
+- 📋 **T859** (deps: T707, T708, T712) **End-to-end contract coverage for the POST/structured surface** — extend `TurSdkContractIT` (real Lucene marketplace site) to `POST /search/query` in both formats plus the T712 `/ac/query` and `/search/list/query`, asserting a reserved-character facet value round-trips and that a `STRUCTURED` body contains no href. The one test shape that would have caught the cache-key bug. → §LXV.4
+- 📋 **T860** (deps: T710) **Stop `EnrichedFacetItem.link` lying** — make `link` optional on the enriched facet item and populate it only in GET mode, instead of `""` POST-native. A consumer that renders `<a href={facet.link}>` currently gets a link to the current page. → §LXV.5
+
+## Block BS — The JS SDK release gate is not a gate (§LXVI)
+
+> Three findings from the Block AV work, none of them about search: the vanilla
+> SDK's `test` script **cannot run** (`"test": "vitest run"` with no `vitest`
+> devDependency — `pnpm --filter @viglet/turing-sdk test` fails with "vitest not
+> found"); its suite is **red at rest** (7 failures in `analytics-abandonment` +
+> `analytics-conversion`, unrelated to search and present before Block AV); and its
+> gzip budget was **already exceeded before Block AV** (16.22 kB against a 15.63 kB
+> ceiling), which means `prepublishOnly` would have blocked a publish over a stale
+> number rather than real bloat. Individually small; together they mean the package
+> most external consumers depend on has no working quality gate. Design in
+> [IMPROVEMENTS.md](IMPROVEMENTS.md) §LXVI.
+
+- 📋 **T861** (deps: —) **The vanilla SDK owns its test runner** — add `vitest` (and whatever else `src/__tests__` needs) to `@viglet/turing-sdk`'s devDependencies so its declared `test` script actually runs standalone, and confirm CI is running it rather than silently skipping a package whose binary resolves only by hoisting. → §LXVI.1
+- 📋 **T862** (deps: T861) **Fix the 7 red vanilla-SDK tests** — `analytics-abandonment.test.ts` (6) and `analytics-conversion.test.ts` (1) fail at baseline; the abandonment watcher's idle-timer/`pagehide` assertions look like fake-timer or jsdom-lifecycle drift. A suite that is red by default trains everyone to ignore it, which is how the other two findings survived. → §LXVI.2
+- 📋 **T863** (deps: T861) **Size budget as a delta guard, run in CI** — commit a measured baseline and fail on a *delta* beyond a threshold instead of on an absolute number that rots, and run `check-size` on PRs rather than only at `prepublishOnly`, where it is discovered by whoever tries to publish. → §LXVI.3
+
 ## Non-goals (do NOT add as tasks)
 
 Binding constraints — see [IMPROVEMENTS.md](IMPROVEMENTS.md) §I.6 (What NOT to

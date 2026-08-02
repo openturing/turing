@@ -2883,3 +2883,149 @@ answer endpoint is not modified, so Block BO's fail-open behaviour (a terminal `
 event, never a thrown stream) carries over unchanged. The new tile follows the existing
 launcher contract — an external link out of the bento shell, never an embedded console
 search — so the console keeps one way of launching a search surface.
+
+## LXV. Block AV follow-through — the gaps the POST-native migration left (Block BR)
+
+> Block AV (§XLV) closed the query-string bug class: search is POST-native, the
+> response can be link-free, and both JS SDKs drive it. None of the items below
+> are part of that contract — they are things the migration *exposed*, either
+> because a design note promised something the code doesn't do, or because a
+> primitive that was fine for GET-only turned out to invite a bug once a second
+> transport existed.
+
+### LXV.1 `responseFormat` is honoured on POST only (T856)
+
+§XLV.5 chose a request field over `Accept` negotiation with an explicit
+justification: *"it works over both GET and POST, which is what A/B-ing the two
+shapes against one query requires."* The implementation reads the flag from the
+POST body only (`TurSNSiteSearchAPI.negotiate`), so the GET mapping cannot
+produce the structured shape at all. The A/B story the choice was made for does
+not exist.
+
+Two honest resolutions, and the task is to pick one rather than leave the doc and
+the code disagreeing:
+
+- **Close it** — bind `responseFormat` as a GET request param and route the GET
+  response through the same negotiation. Cheap (the mapper is a pure function
+  over an already-computed bean) and it makes the stated rationale true.
+- **Amend §XLV** — if nothing actually wants structured-over-GET, say so and
+  record that the field was chosen for uniformity of *shape*, not of transport.
+
+Prefer closing it: a server-rendered surface that wants facet *data* without
+parsing its own links is a real consumer, and the cost is one parameter.
+
+### LXV.2 A sort control costs two round-trips POST-native (T857)
+
+The structured response deliberately does not carry the sort option list — the
+list already has an endpoint (`GET /search/sort-options`) and duplicating it in
+every search response would be waste on the overwhelmingly common path where the
+control is already rendered. That was the right default and it should stay the
+default.
+
+But it means a POST-native surface painting its *first* frame needs two calls:
+one for results, one to populate the sort dropdown. An opt-in
+`includeSortOptions` on `TurSNSearchRequest` collapses that to one, without
+putting the list on every subsequent request. Same shape as the rest of Block
+AV: additive, off by default, and the client asks for what it needs.
+
+### LXV.3 The cache-key primitive invites the bug (T858)
+
+`TurSNUtils.getCacheKey(siteName, request)` is
+`"%s_%s".formatted(siteName, request.getQueryString())`. That is correct exactly
+as long as the query string *is* the request — true for GET, false for every POST
+endpoint. A POST has no query string, so the key collapses to `<site>_null` and
+one cached result is served for every distinct body.
+
+This was hit twice, independently: T707 for `/search/query` and T712 for
+`/ac/query` + `/search/list/query`. Both fixed it the same way — by passing a key
+derived from the canonical URI. Two separate encounters with the same trap is
+evidence about the primitive, not about the two authors: the signature makes the
+wrong thing the easy thing, and the next POST endpoint will hit it again.
+
+The fix is to key on `TurSNSiteSearchContext` — the effective parameters, which
+every transport already builds — and retire the `HttpServletRequest` overload.
+The key then cannot depend on how the request arrived. Note this is a *cache*
+key, so a mistake here is silent (wrong results, no error), which is precisely
+why it should not rely on the caller remembering.
+
+### LXV.4 The Block AV backend has no end-to-end coverage (T859)
+
+Everything shipped in T707–T714 is verified by unit tests over mocks. That is
+what let the cache-key collision through: a mocked client cannot observe that two
+different bodies returned one cached response.
+
+`TurSdkContractIT` already boots the app on a random port and imports a real
+Lucene marketplace site (T406); it currently POSTs only to chat. Extending it to
+the read surface is mostly wiring:
+
+- `POST /search/query` in both formats — `LINKS` byte-comparable with the GET
+  response for the same query, `STRUCTURED` asserted to contain **no** `href` /
+  `link` / `cleanUpLink` / `cleanUpFacets`;
+- a facet value containing `&` selected via the structured `filterQuery` and
+  asserted to actually filter (the original production bug, end to end);
+- two distinct bodies against a cache-enabled site returning distinct results
+  (the T858 regression guard);
+- the T712 `/ac/query` and `/search/list/query` variants.
+
+### LXV.5 `EnrichedFacetItem.link` lies POST-native (T860)
+
+`useTuringFacets` builds `EnrichedFacetItem` from the structured response with
+`link: ""`, because the link-free response has no href and the type declares
+`link: string`. A consumer doing `<a href={facet.link}>` gets an anchor to the
+current page — a silent, plausible-looking bug.
+
+Make `link` optional on the enriched item (it is already absent in the data) and
+populate it only in GET mode. The type then says what is true, and a consumer
+that needs an anchor is forced to handle its absence.
+
+## LXVI. The JS SDK release gate is not a gate (Block BS)
+
+> Three findings from working through Block AV, none about search. They are
+> individually trivial and that is the point: each one alone looks like noise, and
+> together they mean `@viglet/turing-sdk` — the package external consumers and the
+> EDS blocks depend on — has no working quality gate.
+
+### LXVI.1 The declared test script cannot run (T861)
+
+`frontend/packages/sdk/package.json` declares `"test": "vitest run"` but lists
+only `typescript`, `vite` and `vite-plugin-dts` as devDependencies. There is no
+`vitest`, and `pnpm --filter @viglet/turing-sdk test` fails with
+`Command "vitest" not found`. Running the suite locally required borrowing
+`apps/turing-app/node_modules/.bin/vitest`.
+
+So either CI resolves the binary by hoisting (works, but by accident — a lockfile
+change can remove it) or CI is not running this package's tests at all. Both
+warrant the same fix: declare the dependency, then confirm the CI job actually
+executes it. The confirmation matters more than the dependency.
+
+### LXVI.2 The suite is red at rest (T862)
+
+`analytics-abandonment.test.ts` (6 failures) and `analytics-conversion.test.ts`
+(1) fail on a clean checkout, before and after Block AV. They are unrelated to
+search — the abandonment watcher's idle-timeout, `pagehide` and `stop()`
+assertions, which smells like fake-timer or jsdom-lifecycle drift rather than a
+product defect.
+
+The cost is not the seven tests. It is that "2 failed" is the expected output, so
+nobody reads it, so §LXVI.1 and §LXVI.3 could both sit there unnoticed. Fix them
+or, if a behaviour genuinely changed, update them — but the suite has to be green
+for the gate to mean anything.
+
+### LXVI.3 The size budget rots silently (T863)
+
+`check-size.mjs` enforces absolute gzip ceilings from `package.json`. At the
+start of Block AV the bundle was **already** over: 16.22 kB against a 15.63 kB
+ceiling. Since `check-size` runs in `prepublishOnly`, publishing was blocked —
+by a stale number, not by real bloat, and discoverable only by whoever next tried
+to publish.
+
+An absolute ceiling has to be re-tuned by hand every time the package
+legitimately grows, and each re-tune is indistinguishable from silencing the
+guard. Two changes make it durable:
+
+- **Guard the delta, not the level.** Commit a measured baseline alongside the
+  budget and fail when a change adds more than a threshold. Legitimate growth
+  updates the baseline in the same PR that causes it, where a reviewer can see
+  the cost next to the feature.
+- **Run it on PRs.** A size guard that only fires at publish time reports to the
+  wrong person at the wrong moment.

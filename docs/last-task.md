@@ -1,9 +1,23 @@
-# Last task number — `T855` · next block letter — `BR`
+# Last task number — `T863` · next block letter — `BT`
 
 > **Single source of truth for the next free task number.** The next new task is
-> `T856`; after assigning it, bump the number above and the log line below.
+> `T864`; after assigning it, bump the number above and the log line below.
 >
-> **Next block letter — `BR`** (Block **BQ** = The answer engine as a first-class
+> **Next block letter — `BT`** (Block **BS** = The JS SDK release gate is not a
+> gate — three findings from the Block AV work, none about search: `@viglet/turing-sdk`
+> declares `"test": "vitest run"` with no `vitest` devDependency (T861), its suite
+> is red at rest with 7 pre-existing analytics failures (T862), and its gzip budget
+> was already exceeded before Block AV so `prepublishOnly` blocked publishing on a
+> stale number (T863 — guard the delta, run it on PRs). §LXVI, created 2026-08-02;
+> Block **BR** = Block AV follow-through — the gaps the POST-native migration
+> exposed rather than introduced: `responseFormat` honoured on POST only though
+> §XLV.5 justified the request field by "works on both" (T856), a sort control
+> costing two round-trips POST-native (T857), `getCacheKey(site, request)` keying on
+> the query string so every POST endpoint must remember its own key — hit twice,
+> T707 and T712 (T858), zero end-to-end coverage of the whole Block AV backend in
+> `TurSdkContractIT` (T859), and `EnrichedFacetItem.link` typed `string` but set to
+> `""` POST-native (T860). §LXV, created 2026-08-02;
+> Block **BQ** = The answer engine as a first-class
 > search lens — Block BO shipped the engine but gave it one surface, the visitor
 > search page's `_aimode` panel; the console's "Live search" bar still offers only
 > Open Search + ANN, whose gate is strictly narrower than the answer endpoint's (so
@@ -212,6 +226,10 @@ number" looked free but wasn't. Grepping three files (`ROADMAP.md`,
    lists fully-shipped blocks), then bump the letter after creating the block.
 
 ## Log (most recent first)
+
+- **T856–T860 CREATED** (📋, Block BR §LXV — Block AV follow-through: `responseFormat` on GET, inline sort options, collision-proof cache key, end-to-end POST/structured contract IT, `EnrichedFacetItem.link` optional) — 2026-08-02.
+
+- **T861–T863 CREATED** (📋, Block BS §LXVI — the JS SDK release gate: vanilla SDK owns its test runner, fix the 7 red analytics tests, size budget as a delta guard in CI) — 2026-08-02.
 
 - **T713 SHIPPED** (Block AV §XLV — href round-trip deprecated w/ one-time notice, NOT removed (next major); legacy javadoc on the 6 link fields; fixed co-browse facet tools broken POST-native since T710. **Block AV CLOSED**) — 2026-08-02.
 
