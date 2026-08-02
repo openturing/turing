@@ -21,7 +21,6 @@ import com.viglet.turing.commons.se.similar.TurSESimilarResult;
 import com.viglet.turing.commons.sn.bean.TurSNSearchRequest;
 import com.viglet.turing.commons.sn.bean.TurSNSearchResponse;
 import com.viglet.turing.commons.sn.bean.TurSNSiteSearchQueryContextBean;
-import com.viglet.turing.commons.sn.bean.TurSNSiteSearchResultsBean;
 import com.viglet.turing.commons.sn.bean.TurSNSortOptionBean;
 import com.viglet.turing.commons.sn.bean.TurSNSiteSpotlightDocumentBean;
 
@@ -51,9 +50,11 @@ import lombok.experimental.Accessors;
  * </ul>
  *
  * <p>
- * {@code queryContext} and {@code results} are carried over from the legacy
- * response unchanged — they were already link-free, and re-shaping them would
- * break consumers for no gain.
+ * {@code queryContext} is carried over from the legacy response unchanged.
+ * {@code results} is <em>projected</em> since T864: §XLV.3 assumed it was
+ * already link-free, and the T859 end-to-end run proved otherwise — each
+ * document's {@code metadata} carried the document's own facet hrefs. Every
+ * other property keeps its legacy name and shape.
  * </p>
  *
  * @author Alexandre Oliveira
@@ -73,7 +74,7 @@ public class TurSNStructuredSearchBean implements TurSNSearchResponse, Serializa
 
     private TurSNSiteSearchQueryContextBean queryContext;
 
-    private TurSNSiteSearchResultsBean results;
+    private TurSNStructuredResultsBean results;
 
     private List<TurSNStructuredGroupBean> groups;
 

@@ -2893,29 +2893,6 @@ search — so the console keeps one way of launching a search surface.
 > primitive that was fine for GET-only turned out to invite a bug once a second
 > transport existed.
 
-### LXV.6 The structured response still emits per-document facet links (T864)
-
-§XLV.3 carried `queryContext` and `results` over from the legacy bean untouched,
-on the stated grounds that they "were already link-free". T859's end-to-end run
-— the first time the structured shape was exercised over a response that
-actually has documents, rather than the empty bean the unit test used — showed
-that they are not: each document's `metadata[]` is a list of
-`{href, text}` pairs, the document's own facet links, pointing at
-`/api/sn/{site}/search?q=…&fq[]=habitat:Mountains`.
-
-So `STRUCTURED` is link-free everywhere except the one place a result renderer
-looks. A consumer that renders those chips is still parsing URLs, which is the
-whole bug class the block set out to close.
-
-The fix mirrors what T708 already did one level up: project the metadata onto
-the same shape the structured facets use — `field` + `value` + `filterQuery` (+
-the display `text`) — so clicking a document's chip is "add this filterQuery to
-`request.fq`", exactly like clicking the same value in the facet rail. GET keeps
-its hrefs.
-
-Acceptance is mechanical: `TurSdkContractIT.postSearchQueryInStructuredFormatCarriesNoLinks`
-drops its `navigationOnly(...)` carve-out and scans the whole body.
-
 ## LXVI. The JS SDK release gate is not a gate (Block BS)
 
 > Three findings from working through Block AV, none about search. They are

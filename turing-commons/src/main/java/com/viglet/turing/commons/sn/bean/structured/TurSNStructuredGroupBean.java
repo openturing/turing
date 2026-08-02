@@ -16,7 +16,6 @@ package com.viglet.turing.commons.sn.bean.structured;
 import java.io.Serializable;
 import java.util.List;
 
-import com.viglet.turing.commons.sn.bean.TurSNSiteSearchResultsBean;
 
 import lombok.Getter;
 import lombok.Setter;
@@ -41,6 +40,6 @@ public class TurSNStructuredGroupBean implements Serializable {
     private int pageEnd;
     private int pageStart;
     private int limit;
-    private TurSNSiteSearchResultsBean results;
+    private TurSNStructuredResultsBean results;
     private List<TurSNStructuredPageBean> pagination;
 }

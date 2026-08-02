@@ -266,6 +266,10 @@ export type {
   TurResponseFormat,
   TurFacetItemAction,
   TurStructuredSearchResponse,
+  // T864 — link-free results: a document's facet chips are data, not hrefs.
+  TurStructuredDocument,
+  TurStructuredDocumentMetadata,
+  TurStructuredResults,
   TurStructuredFacet,
   TurStructuredFacetItem,
   TurStructuredPage,

@@ -242,19 +242,17 @@ class TurSdkContractIT extends AbstractTuringSpringIT {
     }
 
     /**
-     * The load-bearing assertion of T708: the negotiated part of the structured
-     * body is <em>link-free</em>. Not "has fewer links" — none at all, so a
-     * consumer cannot accidentally keep parsing URLs.
+     * The load-bearing assertion of T708: the structured body is
+     * <em>link-free</em>. Not "has fewer links" — none at all, anywhere in the
+     * body, so a consumer cannot accidentally keep parsing URLs.
      *
      * <p>
-     * {@code results} is excluded, and that exclusion is a <b>finding, not a
-     * convenience</b>: this test is the first thing to run the structured shape
-     * over a response that actually has documents, and it showed that
-     * {@code results.document[].metadata[]} still carries {@code href} —
-     * per-document facet links the mapper passes through untouched, because
-     * §XLV.3 assumed {@code results} was already link-free. Closing that is
-     * <b>T864</b>; tightening this scan to the whole body is that task's
-     * acceptance criterion.
+     * The scan covered everything except {@code results} until T864: this test
+     * was the first thing to run the structured shape over a response that
+     * actually has documents, and it found that
+     * {@code results.document[].metadata[]} still carried {@code href}. T864
+     * projected those chips onto {@code field}/{@code value}/{@code filterQuery}
+     * and this scan lost its carve-out — which is what makes the claim real.
      * </p>
      */
     @Test
@@ -265,13 +263,17 @@ class TurSdkContractIT extends AbstractTuringSpringIT {
                         .formatted(LOCALE));
         assertEquals(200, res.statusCode());
 
-        JsonNode structured = json.readTree(res.body());
-        String navigation = navigationOnly(structured);
+        String body = res.body();
         for (String forbidden : List.of("\"link\"", "\"href\"", "\"cleanUpLink\"",
                 "\"cleanUpFacets\"", "/api/sn/")) {
-            assertTrue(!navigation.contains(forbidden),
-                    "STRUCTURED response must not contain " + forbidden + ": " + navigation);
+            assertTrue(!body.contains(forbidden),
+                    "STRUCTURED response must not contain " + forbidden + ": " + body);
         }
+        JsonNode structured = json.readTree(body);
+        // T864 — the document's facet chips are actions, not URLs.
+        JsonNode chip = structured.path("results").path("document").get(0).path("metadata").get(0);
+        assertTrue(!chip.path("filterQuery").asString().isBlank(),
+                "each document chip must carry the filterQuery to add to request.fq");
         assertEquals("*", structured.path("request").path("q").asString(),
                 "the structured response must echo the effective request");
         assertTrue(structured.path("facets").isArray() && !structured.path("facets").isEmpty(),
@@ -369,7 +371,7 @@ class TurSdkContractIT extends AbstractTuringSpringIT {
 
         assertEquals(200, res.statusCode());
         JsonNode structured = json.readTree(res.body());
-        assertTrue(!navigationOnly(structured).contains("\"href\""),
+        assertTrue(!res.body().contains("\"href\""),
                 "GET with responseFormat=structured must return the link-free shape");
         assertEquals("*", structured.path("request").path("q").asString(),
                 "the GET structured response must echo the effective request too");
@@ -469,18 +471,6 @@ class TurSdkContractIT extends AbstractTuringSpringIT {
                 .POST(BodyPublishers.ofString(body))
                 .build();
         return http.send(req, BodyHandlers.ofString());
-    }
-
-    /**
-     * The structured body minus {@code results} — everything Block AV actually
-     * re-shaped. See {@link #postSearchQueryInStructuredFormatCarriesNoLinks} for
-     * why {@code results} is carved out (T864).
-     */
-    private String navigationOnly(JsonNode structured) {
-        ObjectNode navigation = (ObjectNode) structured.deepCopy();
-        navigation.remove("results");
-        navigation.remove("groups");
-        return navigation.toString();
     }
 
     /** Finds a facet item by field + value in a structured response. */

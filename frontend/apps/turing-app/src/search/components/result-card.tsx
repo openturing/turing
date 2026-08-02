@@ -1,16 +1,26 @@
 import { BadgeColorful } from "@/components/badge-colorful";
 import { sanitizeHighlight } from "@/lib/sanitize-html";
 import { Button } from "@/components/ui/button";
-import type { ResolvedDocument, TurDocument } from "@viglet/turing-react-sdk";
+import type {
+  ResolvedDocument,
+  TurDocument,
+  TurStructuredDocument,
+} from "@viglet/turing-react-sdk";
 import { useTuringClickTracking } from "@viglet/turing-react-sdk";
 import { IconBraces, IconCalendar, IconCopy, IconExternalLink, IconPhoto } from "@tabler/icons-react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { NavLink } from "react-router-dom";
 
+/**
+ * T864 — either document shape. POST-native (the default) the facet chips carry
+ * a `filterQuery` instead of an `href`.
+ */
+type AnyRawDocument = TurDocument | TurStructuredDocument;
+
 interface ResultCardProps {
   document: ResolvedDocument;
-  raw: TurDocument;
+  raw: AnyRawDocument;
   siteName: string;
   /** 1-based rank of the result within the page; powers click-position metrics. */
   position: number;
@@ -19,7 +29,7 @@ interface ResultCardProps {
   onViewJson: (doc: Record<string, unknown>) => void;
 }
 
-function resolveDocumentId(doc: ResolvedDocument, raw: TurDocument): string {
+function resolveDocumentId(doc: ResolvedDocument, raw: AnyRawDocument): string {
   const fieldId = raw.fields?.id;
   return doc.url || (fieldId != null ? String(fieldId) : "") || doc.title || "";
 }
@@ -126,15 +136,23 @@ export function ResultCard({ document: doc, raw, siteName, position, defaultImag
 
           {/* Metadata row: badges + date */}
           <div className="flex flex-wrap items-center gap-2">
+            {/* T864 — the chip's identity is its text plus whatever the response
+                gave us to act on: an `href` in legacy mode, a `filterQuery`
+                POST-native. Only the legacy shape is navigable, so the
+                structured chip renders as a plain badge instead of vanishing
+                (which is what it did before T864 gave it any payload at all). */}
             {Array.isArray(raw.metadata) &&
               raw.metadata.map((meta) => {
-                if (!meta?.text || !meta?.href) return null;
+                if (!meta?.text) return null;
+                const href = "href" in meta ? meta.href : undefined;
+                const action = href ?? ("filterQuery" in meta ? meta.filterQuery : undefined);
+                if (!action) return null;
                 return (
                   <BadgeColorful
-                    key={`${meta.text}-${meta.href}`}
+                    key={`${meta.text}-${action}`}
                     text={meta.text}
-                    href={meta.href}
-                    onClick={onNavigate}
+                    href={href}
+                    onClick={href ? onNavigate : undefined}
                   />
                 );
               })}

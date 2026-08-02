@@ -43,10 +43,18 @@ class TurSNSiteSearchDocumentMetadataBeanTest {
         String href = "https://example.com/document/123";
         String text = "Example Document Title";
 
-        TurSNSiteSearchDocumentMetadataBean metadata = new TurSNSiteSearchDocumentMetadataBean(href, text);
+        // T864 — the trio after `text` is the link-free hand-off (@JsonIgnore),
+        // so the legacy JSON is unchanged while the structured projection can
+        // express the chip as data.
+        TurSNSiteSearchDocumentMetadataBean metadata =
+                new TurSNSiteSearchDocumentMetadataBean(href, text, "origin", "Greek",
+                        "origin:Greek");
 
         assertThat(metadata.getHref()).isEqualTo(href);
         assertThat(metadata.getText()).isEqualTo(text);
+        assertThat(metadata.getField()).isEqualTo("origin");
+        assertThat(metadata.getValue()).isEqualTo("Greek");
+        assertThat(metadata.getFilterQuery()).isEqualTo("origin:Greek");
     }
 
     @Test

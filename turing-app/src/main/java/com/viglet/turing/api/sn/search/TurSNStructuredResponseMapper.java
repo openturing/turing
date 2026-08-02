@@ -25,15 +25,21 @@ import com.viglet.turing.commons.sn.bean.TurSNSiteLocaleBean;
 import com.viglet.turing.commons.sn.bean.TurSNSiteSearchBean;
 import com.viglet.turing.commons.sn.bean.TurSNSiteSearchFacetBean;
 import com.viglet.turing.commons.sn.bean.TurSNSiteSearchFacetItemBean;
+import com.viglet.turing.commons.sn.bean.TurSNSiteSearchDocumentBean;
+import com.viglet.turing.commons.sn.bean.TurSNSiteSearchDocumentMetadataBean;
 import com.viglet.turing.commons.sn.bean.TurSNSiteSearchGroupBean;
 import com.viglet.turing.commons.sn.bean.TurSNSiteSearchPaginationBean;
+import com.viglet.turing.commons.sn.bean.TurSNSiteSearchResultsBean;
 import com.viglet.turing.commons.sn.bean.TurSNSiteSearchWidgetBean;
 import com.viglet.turing.commons.sn.bean.spellcheck.TurSNSiteSpellCheckBean;
 import com.viglet.turing.commons.sn.bean.structured.TurSNStructuredFacetBean;
 import com.viglet.turing.commons.sn.bean.structured.TurSNStructuredFacetItemBean;
+import com.viglet.turing.commons.sn.bean.structured.TurSNStructuredDocumentBean;
 import com.viglet.turing.commons.sn.bean.structured.TurSNStructuredGroupBean;
+import com.viglet.turing.commons.sn.bean.structured.TurSNStructuredMetadataBean;
 import com.viglet.turing.commons.sn.bean.structured.TurSNStructuredLocaleBean;
 import com.viglet.turing.commons.sn.bean.structured.TurSNStructuredPageBean;
+import com.viglet.turing.commons.sn.bean.structured.TurSNStructuredResultsBean;
 import com.viglet.turing.commons.sn.bean.structured.TurSNStructuredSearchBean;
 import com.viglet.turing.commons.sn.bean.structured.TurSNStructuredSpellCheckBean;
 import com.viglet.turing.commons.sn.pagination.TurSNPaginationType;
@@ -82,7 +88,7 @@ public final class TurSNStructuredResponseMapper {
         TurSNStructuredSearchBean structured = new TurSNStructuredSearchBean()
                 .setRequest(request)
                 .setQueryContext(searchBean.getQueryContext())
-                .setResults(searchBean.getResults())
+                .setResults(results(searchBean.getResults()))
                 .setPagination(pages(searchBean.getPagination(), currentPage(searchBean)))
                 .setGroups(groups(searchBean.getGroups()));
         TurSNSiteSearchWidgetBean widget = searchBean.getWidget();
@@ -118,6 +124,47 @@ public final class TurSNStructuredResponseMapper {
         return pages;
     }
 
+    /**
+     * T864 / §LXV.6 — projects the result list so a document's facet chips stop
+     * being URLs. Everything else about a document is copied across by name.
+     */
+    private static TurSNStructuredResultsBean results(TurSNSiteSearchResultsBean results) {
+        if (results == null) {
+            return null;
+        }
+        TurSNStructuredResultsBean structured = new TurSNStructuredResultsBean();
+        if (results.getDocument() == null) {
+            return structured;
+        }
+        List<TurSNStructuredDocumentBean> documents = new ArrayList<>();
+        results.getDocument().forEach(document -> documents.add(document(document)));
+        return structured.setDocument(documents);
+    }
+
+    private static TurSNStructuredDocumentBean document(TurSNSiteSearchDocumentBean document) {
+        return new TurSNStructuredDocumentBean()
+                .setSource(document.getSource())
+                .setElevate(document.isElevate())
+                .setFields(document.getFields())
+                .setRankingExplanation(document.getRankingExplanation())
+                .setDuplicateCluster(document.getDuplicateCluster())
+                .setMetadata(metadata(document.getMetadata()));
+    }
+
+    private static List<TurSNStructuredMetadataBean> metadata(
+            List<TurSNSiteSearchDocumentMetadataBean> metadata) {
+        if (metadata == null) {
+            return null;
+        }
+        List<TurSNStructuredMetadataBean> structured = new ArrayList<>();
+        metadata.forEach(item -> structured.add(new TurSNStructuredMetadataBean()
+                .setField(item.getField())
+                .setValue(item.getValue())
+                .setFilterQuery(item.getFilterQuery())
+                .setText(item.getText())));
+        return structured;
+    }
+
     private static List<TurSNStructuredGroupBean> groups(List<TurSNSiteSearchGroupBean> groups) {
         if (groups == null) {
             return null;
@@ -131,7 +178,7 @@ public final class TurSNStructuredResponseMapper {
                 .setPageEnd(group.getPageEnd())
                 .setPageStart(group.getPageStart())
                 .setLimit(group.getLimit())
-                .setResults(group.getResults())
+                .setResults(results(group.getResults()))
                 .setPagination(pages(group.getPagination(), group.getPage()))));
         return structuredGroups;
     }

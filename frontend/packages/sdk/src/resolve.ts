@@ -5,6 +5,7 @@ import type {
   TurDocument,
   TurQueryContext,
   TurSearchResponse,
+  TurStructuredDocument,
   TurStructuredSearchResponse,
 } from "./types";
 
@@ -18,9 +19,17 @@ import type {
  */
 export interface ResolvableSearchResponse {
   queryContext: TurQueryContext;
-  results?: { document: TurDocument[] };
-  groups?: readonly { results?: { document: TurDocument[] } }[];
+  results?: { document: ResolvableDocument[] };
+  groups?: readonly { results?: { document: ResolvableDocument[] } }[];
 }
+
+/**
+ * T864 — either document shape. The two differ only in `metadata` (hrefs in the
+ * legacy response, `filterQuery` actions in the link-free one), and the
+ * resolver never touches it — it reads `fields` and passes the document through
+ * as `raw`.
+ */
+export type ResolvableDocument = TurDocument | TurStructuredDocument;
 
 /**
  * Maps raw API documents/groups to the resolved shapes using the default
@@ -43,7 +52,7 @@ export function resolveDocuments(response: ResolvableSearchResponse): ResolvedDo
 }
 
 /** Shared field projection, so the two group resolvers cannot drift. */
-function resolveDocument(doc: TurDocument, df: TurDefaultFields): ResolvedDocument {
+function resolveDocument(doc: ResolvableDocument, df: TurDefaultFields): ResolvedDocument {
   return {
     url: doc.fields[df.url] ?? "",
     title: doc.fields[df.title] ?? "",

@@ -36,12 +36,17 @@ import com.viglet.turing.commons.sn.bean.TurSNSiteSearchBean;
 import com.viglet.turing.commons.sn.bean.TurSNSiteSearchFacetBean;
 import com.viglet.turing.commons.sn.bean.TurSNSiteSearchFacetItemBean;
 import com.viglet.turing.commons.sn.bean.TurSNSiteSearchFacetLabelBean;
+import com.viglet.turing.commons.sn.bean.TurSNSiteSearchDocumentBean;
+import com.viglet.turing.commons.sn.bean.TurSNSiteSearchDocumentMetadataBean;
 import com.viglet.turing.commons.sn.bean.TurSNSiteSearchPaginationBean;
 import com.viglet.turing.commons.sn.bean.TurSNSiteSearchQueryContextBean;
+import com.viglet.turing.commons.sn.bean.TurSNSiteSearchResultsBean;
 import com.viglet.turing.commons.sn.bean.TurSNSiteSearchWidgetBean;
 import com.viglet.turing.commons.sn.bean.spellcheck.TurSNSiteSpellCheckBean;
 import com.viglet.turing.commons.sn.bean.spellcheck.TurSNSiteSpellCheckText;
 import com.viglet.turing.commons.sn.bean.structured.TurSNStructuredFacetBean;
+import com.viglet.turing.commons.sn.bean.structured.TurSNStructuredDocumentBean;
+import com.viglet.turing.commons.sn.bean.structured.TurSNStructuredMetadataBean;
 import com.viglet.turing.commons.sn.bean.structured.TurSNStructuredSearchBean;
 import com.viglet.turing.commons.sn.pagination.TurSNPaginationType;
 import com.viglet.turing.commons.sn.search.TurSNFacetItemAction;
@@ -108,6 +113,7 @@ class TurSNStructuredResponseMapperTest {
 
         return new TurSNSiteSearchBean()
                 .setQueryContext(new TurSNSiteSearchQueryContextBean().setPage(2).setCount(42))
+                .setResults(legacyResults())
                 .setWidget(widget)
                 .setPagination(List.of(
                         new TurSNSiteSearchPaginationBean().setType(TurSNPaginationType.FIRST)
@@ -259,14 +265,59 @@ class TurSNStructuredResponseMapperTest {
     }
 
     @Test
-    void testQueryContextAndResultsAreCarriedOverUnchanged() {
+    void testQueryContextIsCarriedOverUnchanged() {
         TurSNSiteSearchBean bean = legacyBean();
 
         TurSNStructuredSearchBean structured = TurSNStructuredResponseMapper
                 .toStructured(bean, new TurSNSearchRequest(), Locale.US);
 
         assertThat(structured.getQueryContext()).isSameAs(bean.getQueryContext());
-        assertThat(structured.getResults()).isSameAs(bean.getResults());
+    }
+
+    /**
+     * T864 / §LXV.6 — a document's facet chips become data. Everything else about
+     * the document is copied across by name, so a result renderer is unchanged.
+     */
+    @Test
+    void testDocumentMetadataBecomesFilterQueriesNotLinks() {
+        TurSNStructuredDocumentBean document = map().getResults().getDocument().get(0);
+
+        assertThat(document.getSource()).isEqualTo("/content/wknd/deploy");
+        assertThat(document.isElevate()).isTrue();
+        assertThat(document.getFields()).containsEntry("title", RESERVED_VALUE);
+
+        TurSNStructuredMetadataBean chip = document.getMetadata().get(0);
+        assertThat(chip.getField()).isEqualTo("section");
+        assertThat(chip.getValue()).isEqualTo(RESERVED_VALUE);
+        assertThat(chip.getFilterQuery()).isEqualTo(RESERVED_FQ);
+        assertThat(chip.getText()).isEqualTo(RESERVED_VALUE);
+    }
+
+    /** A response with no documents at all must not blow up the projection. */
+    @Test
+    void testResultsProjectionToleratesAnEmptyResponse() {
+        TurSNStructuredSearchBean structured = TurSNStructuredResponseMapper.toStructured(
+                new TurSNSiteSearchBean().setResults(new TurSNSiteSearchResultsBean()),
+                new TurSNSearchRequest(), Locale.US);
+
+        assertThat(structured.getResults()).isNotNull();
+        assertThat(structured.getResults().getDocument()).isNull();
+    }
+
+    private static TurSNSiteSearchResultsBean legacyResults() {
+        return new TurSNSiteSearchResultsBean().setDocument(List.of(
+                TurSNSiteSearchDocumentBean.builder()
+                        .source("/content/wknd/deploy")
+                        .elevate(true)
+                        .fields(java.util.Map.of("title", RESERVED_VALUE))
+                        .metadata(List.of(TurSNSiteSearchDocumentMetadataBean.builder()
+                                .href("/api/sn/wknd/search?q=*&fq[]=section:RAG%20%26%20Chat")
+                                .text(RESERVED_VALUE)
+                                .field("section")
+                                .value(RESERVED_VALUE)
+                                .filterQuery(RESERVED_FQ)
+                                .build()))
+                        .build()));
     }
 
     @Test

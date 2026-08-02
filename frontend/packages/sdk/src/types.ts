@@ -122,6 +122,33 @@ export interface TurDocumentMetadata {
   text: string;
 }
 
+/**
+ * T864 — one of a document's facet chips in the link-free response. Same shape
+ * as {@link TurStructuredFacetItem} because it is the same action: add
+ * `filterQuery` to `request.fq` and re-send. Never carries a URL.
+ */
+export interface TurStructuredDocumentMetadata {
+  field: string;
+  value: string;
+  filterQuery: string;
+  text: string;
+}
+
+/**
+ * T864 — a search result in the link-free response. Identical to
+ * {@link TurDocument} except that `metadata` is expressed as data rather than
+ * as hrefs.
+ */
+export interface TurStructuredDocument extends Omit<TurDocument, "metadata"> {
+  source?: string;
+  metadata: TurStructuredDocumentMetadata[];
+}
+
+/** T864 — the link-free result list. */
+export interface TurStructuredResults {
+  document: TurStructuredDocument[];
+}
+
 export interface TurPaginationItem {
   href: string;
   page: number;
@@ -266,7 +293,8 @@ export interface TurStructuredGroup {
   pageStart: number;
   pageEnd: number;
   limit: number;
-  results: TurSearchResults;
+  /** T864 — link-free results, same as the top-level `results`. */
+  results: TurStructuredResults;
   pagination?: TurStructuredPage[];
 }
 
@@ -279,7 +307,8 @@ export interface TurStructuredSearchResponse {
   /** The request that produced this response, every default resolved. */
   request: TurSearchRequest;
   queryContext: TurQueryContext;
-  results?: TurSearchResults;
+  /** T864 — link-free results: each document's `metadata` is data, not hrefs. */
+  results?: TurStructuredResults;
   groups?: TurStructuredGroup[];
   pagination?: TurStructuredPage[];
   facets?: TurStructuredFacet[];
@@ -828,7 +857,11 @@ export interface ResolvedDocument {
   date: string;
   image: string;
   text: string;
-  raw: TurDocument;
+  /**
+   * T864 — the document this was projected from: `TurDocument` in legacy mode,
+   * `TurStructuredDocument` POST-native. They differ only in `metadata`.
+   */
+  raw: TurDocument | TurStructuredDocument;
 }
 
 /** A resolved group with documents mapped to default fields */

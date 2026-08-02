@@ -334,8 +334,16 @@ public class TurSNUtils {
             List<TurSNSiteSearchDocumentMetadataBean> documentMetadataBeans, String facet,
             Object attrValue) {
         String facetValue = TurSolrField.convertFieldToString(attrValue);
+        String filterQuery = facet + ":" + facetValue;
         documentMetadataBeans.add(TurSNSiteSearchDocumentMetadataBean.builder()
-                .href(TurSNUtils.addFilterQuery(uri, facet + ":" + facetValue).toString())
-                .text(facetValue).build());
+                .href(TurSNUtils.addFilterQuery(uri, filterQuery).toString())
+                .text(facetValue)
+                // T864 — captured here because this is the only place that still
+                // knows the field and the raw value; the structured projection
+                // must not have to parse them back out of the href.
+                .field(facet)
+                .value(facetValue)
+                .filterQuery(filterQuery)
+                .build());
     }
 }

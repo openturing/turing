@@ -10,7 +10,17 @@ import type { ReactNode } from "react";
 export interface TuringRawDocument {
   elevate: boolean;
   fields: Record<string, unknown>;
-  metadata: { href: string; text: string }[];
+  /**
+   * The document's facet chips. Two shapes, because the response has two: the
+   * legacy one carries an `href` to navigate, the T864 link-free one carries the
+   * `filterQuery` to add to the request. `text` is common to both, and is all
+   * this package needs to render a chip — narrow on `"href" in chip` if you act
+   * on it.
+   */
+  metadata: ({ text: string } & (
+    | { href: string }
+    | { field: string; value: string; filterQuery: string }
+  ))[];
 }
 
 /** Minimal structural shape of a resolved (default-field-mapped) document. */
