@@ -42,6 +42,7 @@ interface EndpointContract {
 const PUBLIC_ENDPOINTS: readonly EndpointContract[] = [
   // ── Search ──
   { method: "GET", path: "/sn/{site}/search", fn: "fetchSearch" },
+  { method: "POST", path: "/sn/{site}/search/query", fn: "postSearch" }, // T707/T711
   { method: "POST", path: "/sn/{site}/click", fn: "postClick" },
   { method: "GET", path: "/sn/{site}/ac", fn: "fetchAutoComplete" },
   { method: "GET", path: "/sn/{site}/search/sort-options", fn: "fetchSortOptions" },
@@ -91,10 +92,31 @@ const here = dirname(fileURLToPath(import.meta.url));
 const reactSdkRoot = resolve(here, "../../../react-sdk/src");
 const reactIndex = readFileSync(resolve(reactSdkRoot, "index.ts"), "utf8");
 const reactCoreApi = readFileSync(resolve(reactSdkRoot, "core/api.ts"), "utf8");
+const reactResolve = readFileSync(resolve(reactSdkRoot, "core/resolve.ts"), "utf8");
+const reactTypes = readFileSync(resolve(reactSdkRoot, "core/types.ts"), "utf8");
 
-/** Matches `export function foo` / `export async function foo` in core/api.ts. */
+/** True when `name` appears inside an `export { … } from "@viglet/turing-sdk"` block. */
+function reExportsFromVanillaSdk(source: string, name: string): boolean {
+  const blocks = source.match(/export\s*\{[^}]*\}\s*from\s*"@viglet\/turing-sdk"/g) ?? [];
+  return blocks.some((block) => new RegExp(`\\b${name}\\b`).test(block));
+}
+
+/**
+ * Matches `export function foo` / `export async function foo` in core/api.ts,
+ * **or** a re-export of that name from the vanilla SDK.
+ *
+ * T711 — the re-export form counts on purpose. Some wrappers are pure functions
+ * with no React or axios coupling (`applyFacetAction`, the `SearchParams` <->
+ * `TurSearchRequest` bridges), and for those the React SDK re-exports the
+ * vanilla implementation instead of copying it. A copy is precisely the drift
+ * this guard exists to prevent, so a copy must not be the only accepted shape.
+ */
 function reactDefinesFn(name: string): boolean {
-  return new RegExp(`export (async )?function ${name}\\b`).test(reactCoreApi);
+  if (new RegExp(`export (async )?function ${name}\\b`).test(reactCoreApi)) return true;
+  return (
+    reExportsFromVanillaSdk(reactCoreApi, name) ||
+    reExportsFromVanillaSdk(reactResolve, name)
+  );
 }
 
 /** Matches the name appearing in the React barrel's export list. */
@@ -130,5 +152,91 @@ describe("SDK parity guard (T406)", () => {
   it("has no duplicate wrapper names in the contract", () => {
     const names = PUBLIC_ENDPOINTS.map((e) => e.fn);
     expect(new Set(names).size).toBe(names.length);
+  });
+});
+
+/**
+ * T711 / §XLV — parity guard for the POST-native, link-free search path.
+ *
+ * The endpoint wrapper alone (`postSearch`, above) is not the whole contract
+ * here: the value of Block AV is that a client can rebuild its next request
+ * from *data*. That takes a specific set of helpers and a specific response
+ * shape, and if either SDK loses one, that SDK silently falls back to parsing
+ * hrefs — the exact regression §XLV closes.
+ */
+describe("POST-native structured contract parity (T711)", () => {
+  /** Helpers a POST-native client needs beyond the endpoint wrapper itself. */
+  const STRUCTURED_HELPERS = [
+    "postStructuredSearch",
+    "applyFacetAction",
+    "searchParamsToRequest",
+    "requestToSearchParams",
+    "resolveStructuredGroups",
+  ] as const;
+
+  /** The response/request shape both SDKs must publish. */
+  const STRUCTURED_TYPES = [
+    "TurSearchRequest",
+    "TurResponseFormat",
+    "TurFacetItemAction",
+    "TurStructuredSearchResponse",
+    "TurStructuredFacet",
+    "TurStructuredFacetItem",
+    "TurStructuredPage",
+    "TurStructuredLocale",
+    "TurStructuredSpellCheck",
+    "TurStructuredGroup",
+  ] as const;
+
+  it.each(STRUCTURED_HELPERS)("vanilla SDK exports %s()", (fn) => {
+    expect(
+      typeof (vanillaSdk as Record<string, unknown>)[fn],
+      `@viglet/turing-sdk is missing "${fn}" — the POST-native path needs it`,
+    ).toBe("function");
+  });
+
+  it.each(STRUCTURED_HELPERS)("React SDK exports %s()", (fn) => {
+    expect(
+      reactDefinesFn(fn),
+      `@viglet/turing-react-sdk neither defines nor re-exports "${fn}"`,
+    ).toBe(true);
+    expect(
+      reactBarrelExports(fn),
+      `@viglet/turing-react-sdk index.ts does not re-export "${fn}"`,
+    ).toBe(true);
+  });
+
+  it.each(STRUCTURED_TYPES)("both SDKs publish the %s type", (typeName) => {
+    expect(
+      new RegExp(`\\b${typeName}\\b`).test(reactTypes),
+      `@viglet/turing-react-sdk core/types.ts does not re-export "${typeName}"`,
+    ).toBe(true);
+    expect(
+      reactBarrelExports(typeName),
+      `@viglet/turing-react-sdk index.ts does not re-export "${typeName}"`,
+    ).toBe(true);
+  });
+
+  /**
+   * The demo (`turing-demo.viglet.org`) is anonymous and its nginx allowlist
+   * proxies `/api/sn/` method-agnostically, so POST search reaches the backend.
+   * The server also lists `/api/sn/**` as CSRF-exempt (T707), which is why the
+   * vanilla client sends the search POST with `csrf: false`. If that ever flips
+   * back to priming, every public embed pays an extra `/csrf` round-trip per
+   * search — so pin it here, next to the contract it belongs to.
+   */
+  it("sends the search POST without CSRF priming", async () => {
+    const calls: unknown[][] = [];
+    const client = {
+      post: (...args: unknown[]) => {
+        calls.push(args);
+        return Promise.resolve({});
+      },
+    } as unknown as Parameters<typeof vanillaSdk.postSearch>[0];
+
+    await vanillaSdk.postSearch(client, "wknd", { q: "*" });
+
+    expect(calls[0][0]).toBe("/sn/wknd/search/query");
+    expect(calls[0][2]).toMatchObject({ csrf: false });
   });
 });

@@ -2339,8 +2339,10 @@ source of truth for search state (deep-linking is a kept feature, see non-goals)
 what went POST-native is the API transport, which is where the
 reserved-character round-trip lived. **No CSRF priming** — see the settled note
 below. `/ac` and `/similar` stay GET until T712 adds their POST variants
-server-side. **T711** extends the T406 parity guard to the POST/structured paths
-and confirms the anonymous demo's nginx allowlist covers POST search.
+server-side. **T711** shipped the parity guard extension and confirmed the
+anonymous demo's nginx allowlist already covers POST search (the `/api/sn/`
+location is method-agnostic) — documented there as a "do not harden to
+GET-only".
 
 **Phase 4 — breadth & retirement (T712–T714, 💭).** POST variants for `/ac`
 (autocomplete) and `/list`; once both SDKs are POST-native, mark the embedded
