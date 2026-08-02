@@ -133,7 +133,7 @@ function FacetSidebar() {
           <div className="space-y-0.5">
             {group.facets.map((facet) => (
               <button
-                key={facet.label + facet.link}
+                key={facet.label}
                 onClick={facet.toggle}
                 className={cn(
                   "flex w-full items-center justify-between rounded-md px-2.5 py-1.5 text-sm transition-colors",

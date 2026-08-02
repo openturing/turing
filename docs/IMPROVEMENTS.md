@@ -2893,17 +2893,6 @@ search — so the console keeps one way of launching a search surface.
 > primitive that was fine for GET-only turned out to invite a bug once a second
 > transport existed.
 
-### LXV.5 `EnrichedFacetItem.link` lies POST-native (T860)
-
-`useTuringFacets` builds `EnrichedFacetItem` from the structured response with
-`link: ""`, because the link-free response has no href and the type declares
-`link: string`. A consumer doing `<a href={facet.link}>` gets an anchor to the
-current page — a silent, plausible-looking bug.
-
-Make `link` optional on the enriched item (it is already absent in the data) and
-populate it only in GET mode. The type then says what is true, and a consumer
-that needs an anchor is forced to handle its absence.
-
 ### LXV.6 The structured response still emits per-document facet links (T864)
 
 §XLV.3 carried `queryContext` and `results` over from the legacy bean untouched,

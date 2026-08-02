@@ -9,7 +9,20 @@ export interface FacetAction {
   toggle: () => void;
 }
 
-export type EnrichedFacetItem = TurFacetItem & FacetAction;
+export type EnrichedFacetItem = Omit<TurFacetItem, "link"> &
+  FacetAction & {
+    /**
+     * T860 — the server-rendered href for this facet value, present **only** in
+     * legacy (`postNative: false`) mode. The link-free response has no href, so
+     * this is `undefined` POST-native.
+     *
+     * It used to be typed `string` and filled with `""` in that case, which made
+     * `<a href={facet.link}>` compile into a link to the current page — a silent,
+     * plausible-looking bug. Use {@link FacetAction.toggle}; reach for `link`
+     * only to render a crawlable anchor, and handle its absence.
+     */
+    link?: string;
+  };
 
 export interface EnrichedFacetGroup {
   /** Group name */
@@ -89,7 +102,11 @@ export function useTuringFacets(): UseTuringFacetsReturn {
    * T710 — the link-free projection. Each item keeps the same public shape
    * ({@link EnrichedFacetItem}) so a consumer's JSX is unchanged; only what
    * `toggle`/`clear` do underneath differs — a structured action instead of a
-   * parsed href. `link` is emptied because there is none.
+   * parsed href.
+   *
+   * T860 — `link` is *omitted*, not emptied. There is no href here, and saying
+   * so is the point: an empty string would still satisfy `<a href={…}>` and
+   * quietly link to the current page.
    */
   const structuredGroups = useMemo<EnrichedFacetGroup[] | null>(() => {
     if (!structuredFacets) return null;
@@ -97,7 +114,6 @@ export function useTuringFacets(): UseTuringFacetsReturn {
       const facets: EnrichedFacetItem[] = group.items.map((item) => ({
         count: item.count,
         label: item.label,
-        link: "",
         selected: item.selected,
         toggle: () => toggleFacet(item),
       }));

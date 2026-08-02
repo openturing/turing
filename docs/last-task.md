@@ -227,6 +227,8 @@ number" looked free but wasn't. Grepping three files (`ROADMAP.md`,
 
 ## Log (most recent first)
 
+- **T860 SHIPPED** (Block BR §LXV — `EnrichedFacetItem.link` optional and omitted POST-native; four apps' facet keys updated) — 2026-08-02.
+
 - **T864 CREATED** (📋, Block BR §LXV.6 — structured response still emits per-document facet links in `results.document[].metadata[]`; found by T859) — 2026-08-02.
 
 - **T859 SHIPPED** (Block BR §LXV — end-to-end contract coverage of the POST/structured surface in `TurSdkContractIT`, incl. the T858 cache guard) — 2026-08-02.

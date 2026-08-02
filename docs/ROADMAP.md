@@ -190,8 +190,12 @@
 > `string` but set to `""` in structured mode, so the type lies to consumers.
 > Design in [IMPROVEMENTS.md](IMPROVEMENTS.md) §LXV.
 
+> **✅ T856–T860 shipped** — the block's original five gaps are closed (see
+> [CHANGELOG.md](CHANGELOG.md) → Block BR). What remains is **T864**, which the
+> new end-to-end coverage found on its first run: the structured response is
+> link-free everywhere except `results.document[].metadata[]`.
+
 - 📋 **T864** (deps: T859) **The structured response still emits per-document facet links** — `results.document[].metadata[]` carries `{href, text}` (the document's facet links), passed through untouched because §XLV.3 assumed `results` was already link-free. T859's end-to-end run over a response *with documents* proved it is not, so `STRUCTURED` is link-free everywhere except the results. Project the metadata onto the same `field`/`value`/`filterQuery` shape the facets use, and tighten `TurSdkContractIT`'s no-href scan to the whole body. → §LXV.6
-- 📋 **T860** (deps: T710) **Stop `EnrichedFacetItem.link` lying** — make `link` optional on the enriched facet item and populate it only in GET mode, instead of `""` POST-native. A consumer that renders `<a href={facet.link}>` currently gets a link to the current page. → §LXV.5
 
 ## Block BS — The JS SDK release gate is not a gate (§LXVI)
 
