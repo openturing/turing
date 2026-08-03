@@ -1,9 +1,19 @@
-# Last task number — `T878` · next block letter — `BW`
+# Last task number — `T885` · next block letter — `BX`
 
 > **Single source of truth for the next free task number.** The next new task is
-> `T879`; after assigning it, bump the number above and the log line below.
+> `T886`; after assigning it, bump the number above and the log line below.
 >
-> **Next block letter — `BW`** (Block **BV** = The quality gate stops at the
+> **Next block letter — `BX`** (Block **BW** = What the link-free response and its
+> consumers still lack — found while shipping Block BT, which fixed the three
+> consumers but not the shape or the reach: the site icon has no structured field
+> so every configured icon silently falls back to the Turing logo (T879),
+> `similar`/`spotlights` are set by the mapper and undeclared in both SDKs (T880),
+> the two-shape projection T865 wrote lives in one app when the vanilla SDK and
+> react-ui need it too (T881), `TuringResultList`'s chip is still the inert badge
+> T867 just fixed (T882), the react-sdk README still teaches `data.widget.facet`
+> (T883), `toggle_facet` cannot see a secondary facet (T884) and 💭 nothing stops a
+> fourth consumer reading `store.data` (T885). §LXX, created 2026-08-03; Block
+> **BV** = The quality gate stops at the
 > package boundary — every gate in `frontend/` is written per package
 > (`validate-js.yml`'s matrix is a hand-maintained list, each `prepublishOnly` is
 > its own, the four publish workflows diverged from a common copy), so applying
@@ -251,6 +261,18 @@ number" looked free but wasn't. Grepping three files (`ROADMAP.md`,
    lists fully-shipped blocks), then bump the letter after creating the block.
 
 ## Log (most recent first)
+
+- **T879–T885 CREATED** (📋/💭, Block BW §LXX — what the link-free response and its consumers still lack, found while shipping Block BT: site icon dropped, `similar`/`spotlights` undeclared, the projection stuck in one app, `TuringResultList`'s chip still inert, README teaches the broken shape, `toggle_facet` blind to secondary facets, no guard on `store.data`) — 2026-08-03.
+
+- **T869 SHIPPED** (Block BT §LXVII — document chips carry `selected`/`action` inherited from the matching facet item; `TurFacetToggleTarget`. **Block BT CLOSED**) — 2026-08-03.
+
+- **T868 SHIPPED** (Block BT §LXVII — search page tested against the real provider with a stubbed network and a real `STRUCTURED` payload; 180 admin tests) — 2026-08-03.
+
+- **T867 SHIPPED** (Block BT §LXVII — a result's structured facet chip is a real button wired to `toggleFacet`) — 2026-08-03.
+
+- **T866 SHIPPED** (Block BT §LXVII — applied-filters row and facet-item mode restored from `selectedFilterQueries` + `queryContext.facetItemType`) — 2026-08-03.
+
+- **T865 SHIPPED** (Block BT §LXVII — `/sn/{siteName}` reads one `search-view.ts` projection instead of `store.data`; no more error state on every search) — 2026-08-03.
 
 - **T865–T869 CREATED** (📋/💭, Block BT §LXVII — POST-native consumers never migrated off `store.data`: search page renders SearchError, applied-filters row gone, inert document chips, provider-level test shape, chip `selected`/`action`) — 2026-08-02.
 

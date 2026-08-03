@@ -3,6 +3,16 @@ import { MemoryRouter } from "react-router-dom";
 import { describe, expect, it, vi } from "vitest";
 import { SearchContent } from "../search-content";
 
+/**
+ * T868 / §LXVII.4 — this file mocks `useSearchStore`, which is why it stayed green
+ * through the three T865-T867 bugs: the `data`-populated store below is the *legacy*
+ * (`postNative: false`) shape, and since T710 made POST-native the default, no
+ * production search produces it. It is still a valid legacy fixture and the T835
+ * composition assertions here are cheap, so it stays — but the response shape that
+ * actually ships is asserted in `search/__tests__/search-page.post-native.test.tsx`,
+ * against the real provider. Do not add response-shape coverage here.
+ */
+
 // Shared spies + a mutable fake search store, hoisted so the vi.mock factories
 // (which run before imports) can close over them.
 const h = vi.hoisted(() => {

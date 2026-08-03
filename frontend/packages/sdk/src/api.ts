@@ -26,7 +26,7 @@ import type {
   TurLlmVendor,
   TurSearchRequest,
   TurSearchResponse,
-  TurStructuredFacetItem,
+  TurFacetToggleTarget,
   TurStructuredSearchResponse,
   TurSearchSuggestions,
   TurSortOption,
@@ -157,11 +157,14 @@ export function postStructuredSearch(
  * list. This is the structured replacement for "parse the item's href and
  * re-serialize it": no string is ever split on `&` or `=`.
  *
+ * <p>T869 — takes a {@link TurFacetToggleTarget}, so a result's facet chip is as
+ * toggleable as a rail item.
+ *
  * @since 2026.3.4
  */
 export function applyFacetAction(
   filterQueries: readonly string[],
-  item: Pick<TurStructuredFacetItem, "action" | "field" | "filterQuery">,
+  item: TurFacetToggleTarget,
 ): string[] {
   switch (item.action) {
     case "REMOVE":

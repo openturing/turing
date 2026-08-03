@@ -16,8 +16,8 @@ import type {
   SearchStatus,
   TurChatResponse,
   TurSearchResponse,
+  TurFacetToggleTarget,
   TurStructuredFacet,
-  TurStructuredFacetItem,
   TurStructuredSearchResponse,
 } from "./types";
 import { resolveDocuments, resolveGroups, resolveStructuredGroups } from "./resolve";
@@ -309,8 +309,11 @@ function UrlSyncSearchStore({
     [updateParams],
   );
 
+  // T869 — a `TurFacetToggleTarget`, not a full facet item: a result's chip
+  // carries exactly the three fields the action needs, so the same call serves
+  // the facet rail and the result cards.
   const toggleFacet = useCallback(
-    (item: TurStructuredFacetItem) =>
+    (item: TurFacetToggleTarget) =>
       setFilterQueries(applyFacetAction(explicitParams.fq ?? [], item)),
     [explicitParams.fq, setFilterQueries],
   );

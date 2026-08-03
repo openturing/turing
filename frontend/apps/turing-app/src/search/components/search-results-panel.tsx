@@ -5,21 +5,19 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import type {
-  ResolvedDocument,
-  TurSearchResponse,
-  TurSortOption,
-} from "@viglet/turing-react-sdk";
+import type { ResolvedDocument, TurSortOption } from "@viglet/turing-react-sdk";
 import { useSearchStore } from "@viglet/turing-react-sdk";
 import { IconList, IconSortDescending } from "@tabler/icons-react";
 import { useTranslation } from "react-i18next";
+import type { SearchView } from "../lib/search-view";
 import { FacetSidebar } from "./facet-sidebar";
 import { ResultCard } from "./result-card";
 import { SearchPagination } from "./search-pagination";
 import { SpellCheckBanner } from "./spell-check-banner";
 
 interface SearchResultsPanelProps {
-  data: TurSearchResponse;
+  /** T865 — the response-shape-agnostic projection; never `store.data`. */
+  view: SearchView;
   documents: ResolvedDocument[];
   sortOptions: TurSortOption[];
   currentSort: string;
@@ -28,7 +26,7 @@ interface SearchResultsPanelProps {
 }
 
 export function SearchResultsPanel({
-  data,
+  view,
   documents,
   sortOptions,
   currentSort,
@@ -37,7 +35,9 @@ export function SearchResultsPanel({
 }: Readonly<SearchResultsPanelProps>) {
   const { t } = useTranslation();
   const store = useSearchStore();
-  const { queryContext, widget } = data;
+  const { queryContext } = view;
+
+  if (!queryContext) return null;
 
   return (
     <div className="flex gap-8">
@@ -88,7 +88,7 @@ export function SearchResultsPanel({
           </div>
         </div>
 
-        <SpellCheckBanner spellCheck={widget.spellCheck} onNavigate={store.navigate} />
+        <SpellCheckBanner spellCheck={view.spellCheck} />
 
         {/* Document list */}
         <div className="space-y-3">
@@ -97,10 +97,11 @@ export function SearchResultsPanel({
               key={doc.url || index}
               document={doc}
               raw={doc.raw}
-              siteName={data.queryContext.index}
+              siteName={queryContext.index}
               position={(queryContext.pageStart ?? 1) + index}
-              defaultImageField={data.queryContext.defaultFields.image}
+              defaultImageField={queryContext.defaultFields?.image}
               onNavigate={store.navigate}
+              onToggleFacet={store.toggleFacet}
               onViewJson={onViewJson}
             />
           ))}

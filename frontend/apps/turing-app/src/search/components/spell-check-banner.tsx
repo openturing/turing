@@ -1,16 +1,21 @@
-import type { TurSpellCheck } from "@viglet/turing-react-sdk";
 import { IconSparkles } from "@tabler/icons-react";
 import { useTranslation } from "react-i18next";
+import type { SearchSpellCheckView } from "../lib/search-view";
 
 interface SpellCheckBannerProps {
-  spellCheck: TurSpellCheck;
-  onNavigate: (href: string) => void;
+  /**
+   * T865 — the projected spell-check, `null` when the query needed no correction.
+   * It carries its own actions, so this component no longer knows whether applying
+   * a correction means navigating an href (legacy) or re-running the request with
+   * new text (POST-native).
+   */
+  spellCheck: SearchSpellCheckView | null;
 }
 
-export function SpellCheckBanner({ spellCheck, onNavigate }: Readonly<SpellCheckBannerProps>) {
+export function SpellCheckBanner({ spellCheck }: Readonly<SpellCheckBannerProps>) {
   const { t } = useTranslation();
 
-  if (!spellCheck.correctedText) return null;
+  if (!spellCheck) return null;
 
   if (spellCheck.usingCorrectedText) {
     return (
@@ -20,19 +25,19 @@ export function SpellCheckBanner({ spellCheck, onNavigate }: Readonly<SpellCheck
           <span className="text-muted-foreground">{t("search.showingResultsFor")} </span>
           <button
             type="button"
-            onClick={() => onNavigate(spellCheck.corrected.link)}
+            onClick={spellCheck.applyCorrection}
             className="font-semibold text-foreground italic hover:text-blue-600 dark:hover:text-blue-400 underline underline-offset-2 decoration-blue-500/30 cursor-pointer"
           >
-            {spellCheck.corrected.text}
+            {spellCheck.correctedTextValue}
           </button>
           <span className="text-muted-foreground mx-1.5">&middot;</span>
           <span className="text-muted-foreground">{t("search.searchInsteadFor")} </span>
           <button
             type="button"
-            onClick={() => onNavigate(spellCheck.original.link)}
+            onClick={spellCheck.applyOriginal}
             className="font-medium text-blue-600 dark:text-blue-400 hover:underline cursor-pointer"
           >
-            {spellCheck.original.text}
+            {spellCheck.originalText}
           </button>
         </div>
       </div>
@@ -46,10 +51,10 @@ export function SpellCheckBanner({ spellCheck, onNavigate }: Readonly<SpellCheck
         <span className="text-muted-foreground">{t("search.didYouMean")} </span>
         <button
           type="button"
-          onClick={() => onNavigate(spellCheck.corrected.link)}
+          onClick={spellCheck.applyCorrection}
           className="font-semibold text-foreground italic hover:text-blue-600 dark:hover:text-blue-400 underline underline-offset-2 decoration-blue-500/30 cursor-pointer"
         >
-          {spellCheck.corrected.text}
+          {spellCheck.correctedTextValue}
         </button>
         <span className="text-muted-foreground">?</span>
       </p>

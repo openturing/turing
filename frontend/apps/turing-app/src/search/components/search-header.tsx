@@ -8,7 +8,8 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import type { SearchStoreValue, TurLocaleItem } from "@viglet/turing-react-sdk";
+import type { SearchStoreValue } from "@viglet/turing-react-sdk";
+import type { SearchLocaleView } from "../lib/search-view";
 import { Icon } from "@iconify/react";
 import { IconSearch, IconSparkles, IconX } from "@tabler/icons-react";
 import { useTranslation } from "react-i18next";
@@ -18,7 +19,12 @@ interface SearchHeaderProps {
   siteIcon?: string | null;
   store: SearchStoreValue;
   locale: string;
-  locales: TurLocaleItem[];
+  /**
+   * T865 — the projected locale list. The header only ever needed each locale's
+   * tag; the legacy `TurLocaleItem.link` it used to be typed as does not exist in
+   * the link-free response, and switching locale goes through `store.setLocale`.
+   */
+  locales: SearchLocaleView[];
   suggestions: string[];
   onInputChange: (value: string) => void;
   onSuggestionPick: (term: string) => void;

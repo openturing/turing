@@ -293,6 +293,69 @@ class TurSNStructuredResponseMapperTest {
         assertThat(chip.getText()).isEqualTo(RESERVED_VALUE);
     }
 
+    /**
+     * T869 / §LXVII.5 — the chip inherits the facet rail's verdict for the same
+     * {@code field:value}. {@code section:RAG & Chat} is applied, so the rail says
+     * REMOVE and the chip must too — otherwise clicking it re-adds a filter that is
+     * already there and nothing happens.
+     */
+    @Test
+    void testDocumentChipInheritsTheFacetRailSelectionAndAction() {
+        TurSNStructuredMetadataBean chip = map().getResults().getDocument().get(0).getMetadata()
+                .get(0);
+
+        assertThat(chip.isSelected()).isTrue();
+        assertThat(chip.getAction()).isEqualTo(TurSNFacetItemAction.REMOVE);
+    }
+
+    /** A single-select (AND) field replaces rather than adds — on the chip as well. */
+    @Test
+    void testDocumentChipCarriesReplaceForASingleSelectField() {
+        TurSNSiteSearchBean bean = legacyBean();
+        bean.getWidget().setSelectedFilterQueries(List.of());
+        bean.getWidget().getFacet().getFirst()
+                .setFacets(List.of(item(RESERVED_FQ, false, TurSNFacetItemAction.REPLACE)));
+
+        TurSNStructuredMetadataBean chip = TurSNStructuredResponseMapper
+                .toStructured(bean, new TurSNSearchRequest(), Locale.US)
+                .getResults().getDocument().get(0).getMetadata().get(0);
+
+        assertThat(chip.isSelected()).isFalse();
+        assertThat(chip.getAction()).isEqualTo(TurSNFacetItemAction.REPLACE);
+    }
+
+    /**
+     * A facet renders only up to its item limit, so a document can carry a chip for
+     * a value the rail never listed. It still has to be actionable.
+     */
+    @Test
+    void testDocumentChipOutsideTheFacetRailFallsBackToItsSelectionState() {
+        TurSNSiteSearchBean bean = legacyBean();
+        bean.getWidget().getFacet().getFirst()
+                .setFacets(List.of(item("section:Something Else", false,
+                        TurSNFacetItemAction.ADD)));
+
+        TurSNStructuredMetadataBean chip = TurSNStructuredResponseMapper
+                .toStructured(bean, new TurSNSearchRequest(), Locale.US)
+                .getResults().getDocument().get(0).getMetadata().get(0);
+
+        // Still in widget.selectedFilterQueries, just not among the rendered items.
+        assertThat(chip.isSelected()).isTrue();
+        assertThat(chip.getAction()).isEqualTo(TurSNFacetItemAction.REMOVE);
+    }
+
+    /** No widget means no facet state — the chips must still map, unselected. */
+    @Test
+    void testDocumentChipDefaultsToAddWhenThereIsNoWidget() {
+        TurSNStructuredMetadataBean chip = TurSNStructuredResponseMapper
+                .toStructured(new TurSNSiteSearchBean().setResults(legacyResults()),
+                        new TurSNSearchRequest(), Locale.US)
+                .getResults().getDocument().get(0).getMetadata().get(0);
+
+        assertThat(chip.isSelected()).isFalse();
+        assertThat(chip.getAction()).isEqualTo(TurSNFacetItemAction.ADD);
+    }
+
     /** A response with no documents at all must not blow up the projection. */
     @Test
     void testResultsProjectionToleratesAnEmptyResponse() {

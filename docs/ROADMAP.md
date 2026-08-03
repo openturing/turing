@@ -232,11 +232,15 @@
 > Found while shipping T860/T864. Design in
 > [IMPROVEMENTS.md](IMPROVEMENTS.md) §LXVII.
 
-- 📋 **T865** (deps: T710) **The search page renders its error state POST-native** — `SearchContent` bails on `!store.data` and then reads `data.widget.locales` / `data.widget.icon`, neither of which exists in the link-free response. Drive the page off `structured` (+ the already-resolved `documents`), keeping `data` only as the legacy fallback. Verify by *running* the page, not by a test that mocks the store. → §LXVII.1
-- 📋 **T866** (deps: T865) **The applied-filters row silently vanishes** — `FacetSidebar` reads `store.data?.widget?.facetToRemove` and `store.data?.queryContext?.facetItemType`; both are null POST-native, so the "Applied filters" chips disappear and every facet renders as if the site were single-select. Drive them from `structured.selectedFilterQueries` and the echoed request. → §LXVII.2
-- 📋 **T867** (deps: T864) **A document's facet chips are inert POST-native** — T864 gave each chip a `filterQuery`, and the result card now renders it, but only the legacy `href` chip is clickable. Wire the structured chip to `toggleFacet` so clicking a result's tag filters the search again, as it did before T710. → §LXVII.3
-- 📋 **T868** (deps: T865) **Make this class of regression catchable** — the three bugs above are one mistake repeated, and no test could see any of them because the suites mock `useSearchStore` wholesale. Render the search page against the *real* provider with a stubbed `fetch`, so the POST-native response shape is what the assertions run on. → §LXVII.4
-- 💭 **T869** (deps: T864) **Document chips carry no `selected` / `action`** — a structured *facet* item says whether it is applied and whether clicking adds, removes or replaces; a document's chip says neither, so a consumer cannot render "already filtered" or toggle one off. Carry the same two fields if a surface needs them. → §LXVII.5
+> **✅ Block BT fully shipped (T865–T869).** The page reads one projection
+> (`search/lib/search-view.ts`) instead of three components each reaching into
+> `store.data`, so `/sn/{siteName}` renders results rather than `SearchError`, the
+> applied-filters row and facet checkboxes are back, and a result's facet chip
+> filters the search again through the same `toggleFacet` the rail uses. A
+> document's chip now carries `selected` + `action` inherited from the matching
+> facet item, and the new suite mounts the real provider against a real
+> `STRUCTURED` payload — the mocked-store fixture that hid all three bugs cannot
+> hide the next one. See [CHANGELOG.md](CHANGELOG.md) → Block BT.
 
 ## Block BU — The search cache is off by a thousand and never evicted on write (§LXVIII)
 
@@ -266,6 +270,25 @@
 - 📋 **T876** (deps: T875) **The vanilla SDK has no publish workflow** — react-ui, cli and flow-dsl each have one; `@viglet/turing-sdk`, the package Block BS just built a gate around, is released by hand. Same pass: `publish-js-sdk.yml` patch-bumps *every* workspace per react-sdk release, so unpublished packages drift from what is on npm. → §LXIX.4
 - 📋 **T877** (deps: T861) **The most-consumed package ships zero tests** — `@viglet/turing-react-sdk` has no `test` script and no test files, so T861's `--if-present` correctly-but-unhelpfully skips it. Start with the provider/store contract T710 changed under its consumers, not a coverage target. → §LXIX.5
 - 💭 **T878** (deps: T863) **A total-only baseline cannot localize a regression** — react-sdk is `strict: false`, so its size baseline is one number and the guard can say "the package grew 4 kB" but never which file; the 7.8 kB that put it over its old ceiling is still unattributed. Baseline per directory (~a dozen reviewable numbers) instead of per file. → §LXIX.6
+
+## Block BW — What the link-free response and its consumers still lack (§LXX)
+
+> Found while shipping Block BT. That block fixed the three consumers reading
+> `store.data`; it did not fix the **shape** they were reading it for, nor the
+> **reach** of the fix. Two fields the legacy `widget` carried have no structured
+> equivalent (one of them a silent user-visible regression), two the mapper sets
+> are undeclared in both SDKs, the projection T865 wrote to end the mistake lives
+> in a single app while the vanilla SDK and react-ui have the same problem, and
+> the react-sdk README still documents the shape that broke. Design in
+> [IMPROVEMENTS.md](IMPROVEMENTS.md) §LXX.
+
+- 📋 **T879** (deps: T865) **A site's icon is silently dropped POST-native** — `TurSNSiteSearchWidgetBean.icon` is a plain string with no href, but `TurSNStructuredSearchBean` has no field for it, so every site that configured an icon renders the generic Turing logo instead. T865 had to hardcode `siteIcon: null` on the structured branch. Carry it. → §LXX.1
+- 📋 **T880** (deps: T709) **`similar` and `spotlights` are written by the mapper and invisible to both SDKs** — `toStructured` calls `.setSimilar(…)` / `.setSpotlights(…)`, yet `TurStructuredSearchResponse` declares no `similar` at all and types `spotlights` as `unknown[]`. A typed consumer cannot reach either; the "you may also like" rail and spotlight results are effectively legacy-only. → §LXX.2
+- 📋 **T881** (deps: T865) **The two-shape projection belongs in the SDK, not in one app** — `search/lib/search-view.ts` is the answer to "how do I read a response without caring which shape it is", and it is reachable only from `turing-app`. The vanilla SDK's `SearchController` consumers (the EDS blocks) and `@viglet/turing-react-ui` have the identical problem and no answer. Lift it beside `resolveDocuments` / `resolveGroups` as a pure `resolveSearchView(…)` and have the app import it. → §LXX.3
+- 📋 **T882** (deps: T867) **`TuringResultList`'s chip is the T867 bug, still shipping** — the headless package narrows `metadata` on `"href" in chip` but renders only `text`, with no way to act on either shape, so a viglet.com consumer gets exactly the dead badge T867 removed from the admin app. Give it the same optional `onToggleFacet`. → §LXX.4
+- 📋 **T883** (deps: T710) **The react-sdk README still teaches the shape that broke** — it shows `data.widget.facet.map(…)` and `turing.data?.widget.facet` as *the* way to render facets, which is `null` in the default mode. Anyone following the README writes T865 again on their first page. → §LXX.5
+- 📋 **T884** (deps: T713) **`toggle_facet` cannot reach a secondary facet** — `findStructuredFacetItem` searches `structured.facets` only, so the co-browse client tool answers "Facet not found" for any field configured as a secondary facet and then falls through to the legacy href lookup, which is primary-only too. Search both, as the T869 chip projection does. → §LXX.6
+- 💭 **T885** (deps: T868) **Nothing stops the fourth consumer** — T865–T867 were one mistake three times; T868 covers the page that had it, not the class. The systemic form is a guard that nothing outside the projection reads `store.data`, in the shape `TurDomainLayerConventionsTest` already uses on the backend — turning the next occurrence into a build failure instead of a bug report. → §LXX.7
 
 ## Non-goals (do NOT add as tasks)
 

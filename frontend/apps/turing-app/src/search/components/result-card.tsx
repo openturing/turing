@@ -4,7 +4,10 @@ import { Button } from "@/components/ui/button";
 import type {
   ResolvedDocument,
   TurDocument,
+  TurDocumentMetadata,
+  TurFacetToggleTarget,
   TurStructuredDocument,
+  TurStructuredDocumentMetadata,
 } from "@viglet/turing-react-sdk";
 import { useTuringClickTracking } from "@viglet/turing-react-sdk";
 import { IconBraces, IconCalendar, IconCopy, IconExternalLink, IconPhoto } from "@tabler/icons-react";
@@ -25,7 +28,19 @@ interface ResultCardProps {
   /** 1-based rank of the result within the page; powers click-position metrics. */
   position: number;
   defaultImageField?: string;
+  /**
+   * Legacy (`postNative: false`) only: follow a chip's server-rendered href.
+   *
+   * @deprecated T867 — POST-native the chip has no href. Kept so the legacy
+   *   transport keeps working.
+   */
   onNavigate: (href: string) => void;
+  /**
+   * T867 / §LXVII.3 — apply a structured chip's filter to the current search. Same
+   * call the facet rail makes for the same `field:value`, so a result's tag filters
+   * the search exactly as it did before T710.
+   */
+  onToggleFacet?: (item: TurFacetToggleTarget) => void;
   onViewJson: (doc: Record<string, unknown>) => void;
 }
 
@@ -47,7 +62,51 @@ function duplicateSourceLabel(member: { source?: string | null; url?: string | n
   return member.title || "—";
 }
 
-export function ResultCard({ document: doc, raw, siteName, position, defaultImageField, onNavigate, onViewJson }: Readonly<ResultCardProps>) {
+/**
+ * T867 / §LXVII.3 — one of a result's facet chips.
+ *
+ * <p>T864 gave the structured chip a `filterQuery` and made it render, but left it
+ * a dead badge: only the legacy `href` shape was clickable. Both are actions now,
+ * and the chip is wrapped in a real `<button>` when it has one — `BadgeColorful`
+ * only fires its `onClick` for an `href`, and passing a filter query as an href is
+ * exactly the "looks like a link, isn't one" confusion T860 removed.
+ */
+function DocumentFacetChip({
+  meta,
+  onNavigate,
+  onToggleFacet,
+}: Readonly<{
+  meta: TurDocumentMetadata | TurStructuredDocumentMetadata;
+  onNavigate: (href: string) => void;
+  onToggleFacet?: (item: TurFacetToggleTarget) => void;
+}>) {
+  const { t } = useTranslation();
+
+  if (!meta.text) return null;
+
+  if ("href" in meta) {
+    return <BadgeColorful text={meta.text} href={meta.href} onClick={onNavigate} />;
+  }
+  if (!meta.filterQuery) return null;
+  if (!onToggleFacet) return <BadgeColorful text={meta.text} />;
+
+  return (
+    <button
+      type="button"
+      onClick={() => onToggleFacet(meta)}
+      aria-pressed={meta.selected}
+      title={meta.selected ? t("search.clearFacet") : t("search.filterBy", { value: meta.text })}
+      className="cursor-pointer rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/40"
+    >
+      <BadgeColorful
+        text={meta.text}
+        className={meta.selected ? "ring-1 ring-blue-500/50" : undefined}
+      />
+    </button>
+  );
+}
+
+export function ResultCard({ document: doc, raw, siteName, position, defaultImageField, onNavigate, onToggleFacet, onViewJson }: Readonly<ResultCardProps>) {
   const { t, i18n } = useTranslation();
   const { trackClick } = useTuringClickTracking();
   const [imgError, setImgError] = useState(false);
@@ -138,24 +197,16 @@ export function ResultCard({ document: doc, raw, siteName, position, defaultImag
           <div className="flex flex-wrap items-center gap-2">
             {/* T864 — the chip's identity is its text plus whatever the response
                 gave us to act on: an `href` in legacy mode, a `filterQuery`
-                POST-native. Only the legacy shape is navigable, so the
-                structured chip renders as a plain badge instead of vanishing
-                (which is what it did before T864 gave it any payload at all). */}
+                POST-native. T867 — both are now actions. */}
             {Array.isArray(raw.metadata) &&
-              raw.metadata.map((meta) => {
-                if (!meta?.text) return null;
-                const href = "href" in meta ? meta.href : undefined;
-                const action = href ?? ("filterQuery" in meta ? meta.filterQuery : undefined);
-                if (!action) return null;
-                return (
-                  <BadgeColorful
-                    key={`${meta.text}-${action}`}
-                    text={meta.text}
-                    href={href}
-                    onClick={href ? onNavigate : undefined}
-                  />
-                );
-              })}
+              raw.metadata.map((meta) => (
+                <DocumentFacetChip
+                  key={`${meta.text}-${"href" in meta ? meta.href : meta.filterQuery}`}
+                  meta={meta}
+                  onNavigate={onNavigate}
+                  onToggleFacet={onToggleFacet}
+                />
+              ))}
             {doc.date && (
               <span className="inline-flex items-center gap-1 text-xs text-muted-foreground/70">
                 <IconCalendar className="size-3" />

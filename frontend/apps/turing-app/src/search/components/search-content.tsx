@@ -6,6 +6,7 @@ import {
 } from "@viglet/turing-react-sdk";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
+import { useSearchView } from "../lib/search-view";
 import { AiChatCard } from "./ai-chat-card";
 import { AiModeChat, type AiModeChatHandle } from "./ai-mode-chat";
 import { JsonSheet } from "./json-sheet";
@@ -19,6 +20,17 @@ interface SearchContentProps {
   siteName: string;
 }
 
+/**
+ * The answer panel seeds itself from what the user typed, else from the URL's
+ * query. `*` means "browse everything" and is not a question worth asking.
+ */
+function pickInitialAiQuery(inputValue: string, urlQuery: string | undefined): string | undefined {
+  for (const candidate of [inputValue, urlQuery]) {
+    if (candidate && candidate !== "*") return candidate;
+  }
+  return undefined;
+}
+
 export function SearchContent({ siteName }: Readonly<SearchContentProps>) {
   const [jsonSheetDoc, setJsonSheetDoc] = useState<Record<string, unknown> | null>(null);
   const [aiModeAvailable, setAiModeAvailable] = useState(false);
@@ -26,6 +38,10 @@ export function SearchContent({ siteName }: Readonly<SearchContentProps>) {
   const aiModeActive = searchParams.get("_aimode") === "true";
 
   const store = useSearchStore();
+  // T865 / §LXVII.1 — whichever response arrived, projected once. Reading
+  // `store.data` here is what made this page render its error state on every
+  // POST-native search.
+  const view = useSearchView();
   const { suggestions, fetch: fetchSuggestions, clear: clearSuggestions } = useTuringAutoComplete(300);
   const { sortOptions } = useTuringSortOptions();
   const aiModeChatRef = useRef<AiModeChatHandle>(null);
@@ -65,25 +81,27 @@ export function SearchContent({ siteName }: Readonly<SearchContentProps>) {
     setSearchParams(next, { replace: false });
   };
 
-  if (store.status === "loading" && !store.data) return <SearchLoading />;
-  if ((store.status === "error" || !store.data) && store.status !== "loading") {
+  // T865 — the gate is "has a response of either shape arrived", not "is the
+  // legacy body populated". `view.ready` is the only thing that answers that.
+  if (store.status === "loading" && !view.ready) return <SearchLoading />;
+  if ((store.status === "error" || !view.ready) && store.status !== "loading") {
     return <SearchError siteName={siteName} error={store.error} onShowAll={store.showAll} />;
   }
-  if (!store.data) return null;
 
-  const { data, chat, documents, params } = store;
-  const defaultLocale = data.widget.locales[0]?.locale ?? "";
+  const { chat, documents, params } = store;
+  const defaultLocale = view.locales[0]?.locale ?? "";
   const currentLocale = params._setlocale || defaultLocale;
   const showAiMode = aiModeActive && aiModeAvailable;
+  const initialAiQuery = pickInitialAiQuery(store.inputValue, params.q);
 
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col">
       <SearchHeader
         siteName={siteName}
-        siteIcon={data.widget.icon}
+        siteIcon={view.siteIcon}
         store={store}
         locale={currentLocale}
-        locales={data.widget.locales}
+        locales={view.locales}
         suggestions={suggestions}
         onInputChange={(v) => { store.setInputValue(v); fetchSuggestions(v, { _setlocale: params._setlocale }); }}
         onSuggestionPick={(term) => { store.setInputValue(term); clearSuggestions(); }}
@@ -109,11 +127,7 @@ export function SearchContent({ siteName }: Readonly<SearchContentProps>) {
               ref={aiModeChatRef}
               siteName={siteName}
               locale={currentLocale}
-              initialQuery={
-                store.inputValue && store.inputValue !== "*"
-                  ? store.inputValue
-                  : params.q && params.q !== "*" ? params.q : undefined
-              }
+              initialQuery={initialAiQuery}
             />
           </div>
         ) : (
@@ -123,14 +137,13 @@ export function SearchContent({ siteName }: Readonly<SearchContentProps>) {
         {documents.length === 0 ? (
           <SearchEmpty
             query={params.q}
-            spellCheck={data.widget.spellCheck}
+            spellCheck={view.spellCheck}
             chat={chat}
-            onNavigate={store.navigate}
             onShowAll={store.showAll}
           />
         ) : (
           <SearchResultsPanel
-            data={data}
+            view={view}
             documents={documents}
             sortOptions={sortOptions}
             currentSort={params.sort || "relevance"}

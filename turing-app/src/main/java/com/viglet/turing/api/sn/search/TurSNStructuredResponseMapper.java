@@ -14,9 +14,14 @@
 package com.viglet.turing.api.sn.search;
 
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 
 import org.apache.commons.lang3.StringUtils;
 
@@ -85,13 +90,16 @@ public final class TurSNStructuredResponseMapper {
      */
     public static TurSNStructuredSearchBean toStructured(TurSNSiteSearchBean searchBean,
             TurSNSearchRequest request, Locale locale) {
+        TurSNSiteSearchWidgetBean widget = searchBean.getWidget();
+        // T869 — the chips are projected *from* the facet state, so it has to be
+        // read before the results are.
+        ChipState chipState = ChipState.of(widget);
         TurSNStructuredSearchBean structured = new TurSNStructuredSearchBean()
                 .setRequest(request)
                 .setQueryContext(searchBean.getQueryContext())
-                .setResults(results(searchBean.getResults()))
+                .setResults(results(searchBean.getResults(), chipState))
                 .setPagination(pages(searchBean.getPagination(), currentPage(searchBean)))
-                .setGroups(groups(searchBean.getGroups()));
-        TurSNSiteSearchWidgetBean widget = searchBean.getWidget();
+                .setGroups(groups(searchBean.getGroups(), chipState));
         if (widget == null) {
             return structured;
         }
@@ -128,7 +136,8 @@ public final class TurSNStructuredResponseMapper {
      * T864 / §LXV.6 — projects the result list so a document's facet chips stop
      * being URLs. Everything else about a document is copied across by name.
      */
-    private static TurSNStructuredResultsBean results(TurSNSiteSearchResultsBean results) {
+    private static TurSNStructuredResultsBean results(TurSNSiteSearchResultsBean results,
+            ChipState chipState) {
         if (results == null) {
             return null;
         }
@@ -137,35 +146,44 @@ public final class TurSNStructuredResponseMapper {
             return structured;
         }
         List<TurSNStructuredDocumentBean> documents = new ArrayList<>();
-        results.getDocument().forEach(document -> documents.add(document(document)));
+        results.getDocument().forEach(document -> documents.add(document(document, chipState)));
         return structured.setDocument(documents);
     }
 
-    private static TurSNStructuredDocumentBean document(TurSNSiteSearchDocumentBean document) {
+    private static TurSNStructuredDocumentBean document(TurSNSiteSearchDocumentBean document,
+            ChipState chipState) {
         return new TurSNStructuredDocumentBean()
                 .setSource(document.getSource())
                 .setElevate(document.isElevate())
                 .setFields(document.getFields())
                 .setRankingExplanation(document.getRankingExplanation())
                 .setDuplicateCluster(document.getDuplicateCluster())
-                .setMetadata(metadata(document.getMetadata()));
+                .setMetadata(metadata(document.getMetadata(), chipState));
     }
 
     private static List<TurSNStructuredMetadataBean> metadata(
-            List<TurSNSiteSearchDocumentMetadataBean> metadata) {
+            List<TurSNSiteSearchDocumentMetadataBean> metadata, ChipState chipState) {
         if (metadata == null) {
             return null;
         }
         List<TurSNStructuredMetadataBean> structured = new ArrayList<>();
-        metadata.forEach(item -> structured.add(new TurSNStructuredMetadataBean()
-                .setField(item.getField())
-                .setValue(item.getValue())
-                .setFilterQuery(item.getFilterQuery())
-                .setText(item.getText())));
+        metadata.forEach(item -> {
+            boolean selected = chipState.isSelected(item.getFilterQuery());
+            structured.add(new TurSNStructuredMetadataBean()
+                    .setField(item.getField())
+                    .setValue(item.getValue())
+                    .setFilterQuery(item.getFilterQuery())
+                    .setText(item.getText())
+                    // T869 — the chip is the same action as the facet item for the
+                    // same field:value, so it reads the rail's own verdict.
+                    .setSelected(selected)
+                    .setAction(chipState.actionFor(item.getFilterQuery(), selected)));
+        });
         return structured;
     }
 
-    private static List<TurSNStructuredGroupBean> groups(List<TurSNSiteSearchGroupBean> groups) {
+    private static List<TurSNStructuredGroupBean> groups(List<TurSNSiteSearchGroupBean> groups,
+            ChipState chipState) {
         if (groups == null) {
             return null;
         }
@@ -178,9 +196,65 @@ public final class TurSNStructuredResponseMapper {
                 .setPageEnd(group.getPageEnd())
                 .setPageStart(group.getPageStart())
                 .setLimit(group.getLimit())
-                .setResults(results(group.getResults()))
+                .setResults(results(group.getResults(), chipState))
                 .setPagination(pages(group.getPagination(), group.getPage()))));
         return structuredGroups;
+    }
+
+    /**
+     * T869 / §LXVII.5 — the facet state a document's chips are projected against.
+     *
+     * <p>
+     * A chip and a facet item that name the same {@code field:value} are the same
+     * action, so they must not compute it twice. This carries the widget's applied
+     * filter queries plus the action every facet item resolved to, keyed by filter
+     * query; a chip looks itself up and inherits the rail's verdict — including
+     * {@code REPLACE} for a single-select (AND) field, which is the one value that
+     * cannot be derived from the chip alone.
+     * </p>
+     *
+     * <p>
+     * The fallback matters: a facet is rendered up to its configured item limit, so
+     * a document can legitimately carry a chip for a value that is not in the rail.
+     * Such a chip still gets a usable action from its selection state.
+     * </p>
+     */
+    private record ChipState(Set<String> selectedFilterQueries,
+            Map<String, TurSNFacetItemAction> actionByFilterQuery) {
+
+        private static final ChipState EMPTY = new ChipState(Set.of(), Map.of());
+
+        static ChipState of(TurSNSiteSearchWidgetBean widget) {
+            if (widget == null) {
+                return EMPTY;
+            }
+            Set<String> selected = widget.getSelectedFilterQueries() == null ? Set.of()
+                    : new HashSet<>(widget.getSelectedFilterQueries());
+            Map<String, TurSNFacetItemAction> actions = new HashMap<>();
+            collectActions(widget.getFacet(), actions);
+            collectActions(widget.getSecondaryFacet(), actions);
+            return new ChipState(selected, actions);
+        }
+
+        private static void collectActions(List<TurSNSiteSearchFacetBean> facets,
+                Map<String, TurSNFacetItemAction> actions) {
+            if (facets == null) {
+                return;
+            }
+            facets.stream().map(TurSNSiteSearchFacetBean::getFacets).filter(Objects::nonNull)
+                    .flatMap(List::stream)
+                    .filter(item -> item.getFilterQuery() != null && item.getAction() != null)
+                    .forEach(item -> actions.putIfAbsent(item.getFilterQuery(), item.getAction()));
+        }
+
+        boolean isSelected(String filterQuery) {
+            return filterQuery != null && selectedFilterQueries.contains(filterQuery);
+        }
+
+        TurSNFacetItemAction actionFor(String filterQuery, boolean selected) {
+            return Optional.ofNullable(actionByFilterQuery.get(filterQuery))
+                    .orElse(selected ? TurSNFacetItemAction.REMOVE : TurSNFacetItemAction.ADD);
+        }
     }
 
     private static List<TurSNStructuredFacetBean> facets(List<TurSNSiteSearchFacetBean> facets) {

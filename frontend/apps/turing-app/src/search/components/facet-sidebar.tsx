@@ -5,21 +5,23 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { Checkbox } from "@/components/ui/checkbox";
-import { useSearchStore, useTuringFacets } from "@viglet/turing-react-sdk";
+import { useTuringFacets } from "@viglet/turing-react-sdk";
 import { IconFilter, IconX } from "@tabler/icons-react";
 import { useTranslation } from "react-i18next";
+import { useSearchView } from "../lib/search-view";
 
 export function FacetSidebar() {
   const { t } = useTranslation();
-  const store = useSearchStore();
   const { facetGroups, hasSelected, clearAll } = useTuringFacets();
-  const facetToRemove = store.data?.widget?.facetToRemove;
-  const isFacetItemTypeOr = store.data?.queryContext?.facetItemType?.toUpperCase() === "OR";
+  // T866 / §LXVII.2 — both of these used to come from `store.data`, which is null
+  // POST-native: the applied-filters row (and its Clear all) disappeared, and
+  // every facet drew as if the site were single-select.
+  const { appliedFilters, multiSelectFacetItems } = useSearchView();
 
   return (
     <aside className="w-64 shrink-0 space-y-3">
       {/* Applied Filters */}
-      {facetToRemove?.facets && (
+      {appliedFilters.length > 0 && (
         <div className="rounded-xl border border-blue-500/30 bg-blue-500/5 overflow-hidden">
           <div className="px-4 py-3 flex items-center justify-between">
             <span className="text-sm font-semibold flex items-center gap-2">
@@ -36,14 +38,14 @@ export function FacetSidebar() {
             </button>
           </div>
           <div className="px-2 pb-2 flex flex-wrap gap-1.5">
-            {facetToRemove.facets.map((facet) => (
+            {appliedFilters.map((filter) => (
               <button
-                key={`${facet.label}-${facet.link}`}
+                key={filter.key}
                 type="button"
-                onClick={() => store.navigate(facet.link)}
+                onClick={filter.remove}
                 className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-blue-500/10 text-blue-700 dark:text-blue-300 text-xs font-medium hover:bg-blue-500/20 transition-colors cursor-pointer"
               >
-                {facet.label}
+                {filter.label}
                 <IconX className="size-3" />
               </button>
             ))}
@@ -88,7 +90,7 @@ export function FacetSidebar() {
                     className="w-full flex items-center justify-between gap-2 px-2.5 py-2 rounded-lg text-sm hover:bg-accent transition-colors cursor-pointer"
                   >
                     <span className="flex items-center gap-2 min-w-0">
-                      {isFacetItemTypeOr && (
+                      {multiSelectFacetItems && (
                         <Checkbox
                           checked={Boolean(facet.selected)}
                           aria-label={facet.label}

@@ -20,8 +20,8 @@ import type {
   TurChatResponse,
   TurSearchRequest,
   TurSearchResponse,
+  TurFacetToggleTarget,
   TurStructuredFacet,
-  TurStructuredFacetItem,
   TurStructuredSearchResponse,
 } from "../types";
 
@@ -97,8 +97,11 @@ export interface SearchController extends Store<SearchControllerState> {
    * T709 — toggle a facet value from the structured response. Applies the item's
    * own `action` (ADD / REMOVE / REPLACE), so single-select AND fields behave
    * correctly, and resets to page 1.
+   *
+   * T869 — takes a {@link TurFacetToggleTarget}, so a result's facet chip
+   * (`document.metadata[n]`) is toggled by this same call.
    */
-  toggleFacet(item: TurStructuredFacetItem): Promise<void>;
+  toggleFacet(item: TurFacetToggleTarget): Promise<void>;
   /** T709 — clear every selection of one facet (replaces `cleanUpLink`). */
   clearFacet(facet: TurStructuredFacet): Promise<void>;
   /** T709 — clear every filter (replaces `cleanUpFacets`). */

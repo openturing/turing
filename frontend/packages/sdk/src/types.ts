@@ -126,12 +126,22 @@ export interface TurDocumentMetadata {
  * T864 — one of a document's facet chips in the link-free response. Same shape
  * as {@link TurStructuredFacetItem} because it is the same action: add
  * `filterQuery` to `request.fq` and re-send. Never carries a URL.
+ *
+ * T869 — "same shape" is now literal: `selected` and `action` are carried too, so
+ * a chip can render as already-applied and can be toggled *off*, not only added.
+ * Both mirror the facet rail's own verdict for the same `field:value` (including
+ * `REPLACE` on a single-select field), so the two surfaces cannot disagree. The
+ * shape is `Pick`-compatible with {@link applyFacetAction}.
  */
 export interface TurStructuredDocumentMetadata {
   field: string;
   value: string;
   filterQuery: string;
   text: string;
+  /** T869 — whether this chip's filter is part of the current request. */
+  selected: boolean;
+  /** T869 — what clicking does to `request.fq`. */
+  action: TurFacetItemAction;
 }
 
 /**
@@ -247,6 +257,18 @@ export interface TurStructuredFacetItem {
   selected: boolean;
   action: TurFacetItemAction;
 }
+
+/**
+ * T869 — the minimum a value needs to be toggled: which field it belongs to, the
+ * `field:value` to put on `fq`, and what clicking does. Both a
+ * {@link TurStructuredFacetItem} (the facet rail) and a
+ * {@link TurStructuredDocumentMetadata} (a result's chip) satisfy it, which is
+ * what lets one `toggleFacet` serve both surfaces.
+ */
+export type TurFacetToggleTarget = Pick<
+  TurStructuredFacetItem,
+  "action" | "field" | "filterQuery"
+>;
 
 /** T709 — a facet group in the link-free response. */
 export interface TurStructuredFacet {

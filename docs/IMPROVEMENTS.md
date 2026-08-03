@@ -2894,86 +2894,6 @@ search — so the console keeps one way of launching a search surface.
 > transport existed.
 
 
-## LXVII. The POST-native default left its consumers behind (Block BT)
-
-> T710 flipped the React SDK's search provider to POST-native **by default**.
-> POST-native it calls `setData(null)` and populates `structured` instead — a
-> deliberate choice, since the legacy body is precisely what the block set out
-> to stop shipping. What was not done is migrating the consumers that still read
-> `data`. Three of them live in `turing-app`, and they were found while shipping
-> T860 and T864, not by a test.
-
-### LXVII.1 The search page renders its error state (T865)
-
-`search.page.tsx` mounts `TuringProvider` with `urlSync` and no `postNative`
-override, so the default applies. `SearchContent` then does:
-
-```tsx
-if (store.status === "loading" && !store.data) return <SearchLoading />;
-if ((store.status === "error" || !store.data) && store.status !== "loading") {
-  return <SearchError … />;
-}
-if (!store.data) return null;
-```
-
-`data` is null on every successful POST-native search, so the third branch is
-unreachable and the second one fires: `/sn/{siteName}` shows the error state
-whatever the query does. Everything after that point is legacy-shaped too —
-`data.widget.locales`, `data.widget.icon` — and the structured response has no
-`widget` at all (locales are top-level, and there is no icon).
-
-The fix is to read `structured` first and keep `data` as the legacy fallback,
-the same shape `useTuringFacets` already uses (`structuredGroups ?? legacyGroups`).
-`documents` needs nothing: the provider resolves it identically from both.
-
-**Verify by running the page.** A test that mocks `useSearchStore` cannot
-distinguish a fixed page from a broken one — see §LXVII.4.
-
-### LXVII.2 The applied-filters row silently vanishes (T866)
-
-`FacetSidebar` reads two more legacy-only values:
-
-- `store.data?.widget?.facetToRemove` — the whole "Applied filters" chip row is
-  wrapped in `{facetToRemove?.facets && …}`, so POST-native it renders nothing
-  and the *Clear all* button goes with it;
-- `store.data?.queryContext?.facetItemType` — used to decide whether to draw
-  checkboxes, so every facet renders as if the site were single-select.
-
-Both have structured equivalents already on the wire:
-`structured.selectedFilterQueries` and the echoed `request.fqItemOperator`.
-
-### LXVII.3 A document's facet chips are inert (T867)
-
-T864 gave each chip a `filterQuery` and the result card renders it, but only the
-legacy `href` chip is clickable — the structured one is a dead badge. Clicking a
-result's tag used to filter the search; wiring the chip to `toggleFacet` (the
-same call the facet rail makes for the same value) restores it.
-
-Note this is *not* the same bug as §LXVII.1/2: T864 already made the chip
-appear. This is the missing action, and it is why the chip is worth carrying
-`selected`/`action` too (T869).
-
-### LXVII.4 Make this class of regression catchable (T868)
-
-The three bugs above are one mistake repeated three times, and the frontend
-suite is green through all of them because it mocks `useSearchStore` and hands
-the component a `data` object that production can no longer produce.
-
-That is the same failure mode as T708's link-free assertion running over a
-response with no documents (§LXV.6): **a test whose fixture cannot occur proves
-nothing about the code path that does.** The remedy is the same one T859 applied
-on the backend — assert against the real boundary. Render the search page
-against the actual `TuringProvider` with a stubbed `fetch` returning a real
-`STRUCTURED` payload, so the shape under test is the shape that ships.
-
-### LXVII.5 Document chips carry no `selected` / `action` (T869)
-
-A structured facet item carries `selected` and a `TurSNFacetItemAction`
-(`ADD`/`REMOVE`/`REPLACE`); a document's chip carries neither. So a consumer
-cannot show that a chip's filter is already applied, and cannot toggle it off —
-it can only ever add. Both fields are already computed for the facet rail; carry
-them on the chip if a surface asks for it (which T867 may well do).
-
 ## LXVIII. The search cache is off by a thousand and never evicted on write (Block BU)
 
 > Read while deriving the T858 cache key from the search context. All three are
@@ -3114,3 +3034,105 @@ over its old ceiling is still unattributed.
 A middle ground exists: baseline per **directory** (`core/`, `ui/`, `hooks/`)
 rather than per file. Roughly a dozen numbers, reviewable, and enough to point at
 the change.
+
+## LXX. What the link-free response and its consumers still lack (Block BW)
+
+> Block BT migrated the three `turing-app` consumers off `store.data`. What it did
+> not do is finish the **shape** they were reading it for, or extend the fix past
+> the one app. Every item below was read out of the code while shipping T865–T869.
+
+### LXX.1 A site's icon is silently dropped POST-native (T879)
+
+`TurSNSiteSearchWidgetBean` carries `icon` — a plain Iconify name, no href, no
+round-trip — and `TurSNStructuredSearchBean` has no field for it. So T865 had to
+write `siteIcon: null` on the structured branch and let the page fall back to the
+Turing logo. That is a user-visible regression on every site that configured an
+icon, and it is invisible in review because the fallback looks deliberate.
+
+It is also the cheapest kind of gap to close: the value is already a scalar with
+nothing URL-shaped about it. Carry it on the structured bean and drop the
+hardcoded `null`.
+
+### LXX.2 `similar` and `spotlights` are written and undeclared (T880)
+
+`toStructured` ends with `.setSimilar(widget.getSimilar())` and
+`.setSpotlights(widget.getSpotlights())`, so both are on the wire. Neither is
+usable:
+
+- `TurStructuredSearchResponse` (owned by `@viglet/turing-sdk`, re-exported by the
+  React SDK) declares **no `similar` field at all**;
+- `spotlights` is declared `unknown[]`, which a typed consumer cannot read without
+  casting.
+
+The asymmetry is the bug: the server pays to compute and serialize both, and the
+only clients that can use them are the legacy ones. Declare `similar`, and give
+the spotlight entry a real type rather than `unknown`.
+
+### LXX.3 The projection belongs in the SDK, not in one app (T881)
+
+`search/lib/search-view.ts` exists because three components each reached into
+`store.data` and each got it wrong the same way (§LXVII). It answers "read a
+response without caring which shape it is" — and it answers it for exactly one
+app, because that is where it lives.
+
+The other consumers have the same question and no answer. The vanilla SDK's
+`SearchController` fills both `data` and `structured` for the EDS blocks;
+`@viglet/turing-react-ui` re-declares a structural `TuringRawDocument` precisely
+so it can stay dependency-free, and renders whichever chip shape it gets by
+ignoring the difference rather than resolving it. `toSearchView` was deliberately
+exported as a pure function of the store, so lifting it next to
+`resolveDocuments` / `resolveGroups` — the two functions that already do exactly
+this for documents and groups — is a move, not a rewrite. The app then imports it
+and keeps only its own React-flavoured `useSearchView` wrapper.
+
+### LXX.4 `TuringResultList`'s chip is the T867 bug, still shipping (T882)
+
+`TuringRawDocument.metadata` is typed as the union of both chip shapes and the
+docblock even says "narrow on `"href" in chip` if you act on it" — but the
+component never acts on it: it renders `text` and nothing else. A viglet.com
+consumer therefore gets exactly the dead badge T867 removed from the admin app.
+
+The fix has the same shape as T867 and the same constraint as the rest of
+react-ui: an optional `onToggleFacet` prop (design-agnostic, no SDK import — the
+package must stay zero-runtime-dependency), narrowing on the union, so the
+consumer decides whether a chip is actionable.
+
+### LXX.5 The README still teaches the shape that broke (T883)
+
+`packages/react-sdk/README.md` documents facet rendering twice — once as
+`data.widget.facet.map(…)`, once as `turing.data?.widget.facet` — and both are
+`null` in the default mode. The README is the first thing a new consumer reads, so
+it currently instructs them to write T865 on their first page, and the second form
+(`?.`) will do it *silently*: no crash, just an empty rail.
+
+Rewrite both examples on `useTuringFacets`, which has resolved the two shapes
+since T710, and say plainly that `data` is the legacy transport.
+
+### LXX.6 `toggle_facet` cannot reach a secondary facet (T884)
+
+`findStructuredFacetItem` (T713) looks the target up in `store.structured?.facets`
+and stops there. A field configured as a *secondary* facet lives in
+`structured.secondaryFacets`, so the co-browse client tool returns
+`Facet not found: field=value` for it — then falls through to `findFacetLink`,
+which reads `store.data?.widget?.facet` and is primary-only as well, so the legacy
+transport has the same hole.
+
+T869's `ChipState` had to solve the identical problem for document chips and reads
+both lists; this should do the same. Worth checking whether any other consumer
+enumerates `facets` without `secondaryFacets` in the same pass.
+
+### LXX.7 Nothing stops the fourth consumer (T885)
+
+T865–T867 were one mistake made three times, in three files, by three edits that
+each looked locally reasonable. T868 makes *that page* catchable. It does not make
+the *class* catchable: a new component can still write `store.data?.widget?.…`
+today and pass every suite, because the value is legitimately non-null in legacy
+mode and the type system cannot tell the difference.
+
+The backend already has the pattern for this — `TurDomainLayerConventionsTest`
+asserts an architectural rule as a test rather than a review habit. The frontend
+equivalent is a convention test (or an ESLint `no-restricted-syntax` rule) over
+`frontend/apps/**` that fails on a `store.data` read outside the projection
+module. Kept as 💭 because the boundary needs stating precisely first: the SDK's
+own hooks read `data` on purpose, and the legacy fallback inside the projection
+must stay allowed.

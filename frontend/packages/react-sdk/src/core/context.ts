@@ -3,8 +3,8 @@ import type {
   TuringConfig,
   TurSearchResponse,
   TurChatResponse,
+  TurFacetToggleTarget,
   TurStructuredFacet,
-  TurStructuredFacetItem,
   TurStructuredSearchResponse,
   ResolvedDocument,
   ResolvedGroup,
@@ -72,8 +72,12 @@ export interface SearchStoreValue {
   /**
    * T710 — toggle a facet value from the structured response, applying the
    * item's own `action` (ADD / REMOVE / REPLACE) and resetting to page 1.
+   *
+   * T869 — takes a {@link TurFacetToggleTarget}, so a result's facet chip
+   * (`document.metadata[n]`) can be toggled by the same call the facet rail
+   * makes for the same value.
    */
-  toggleFacet: (item: TurStructuredFacetItem) => void;
+  toggleFacet: (item: TurFacetToggleTarget) => void;
   /** T710 — clear every selection of one facet (replaces `cleanUpLink`). */
   clearFacet: (facet: TurStructuredFacet) => void;
   /** T710 — clear every filter (replaces `cleanUpFacets`). */

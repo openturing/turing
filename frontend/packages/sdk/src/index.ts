@@ -272,6 +272,8 @@ export type {
   TurStructuredResults,
   TurStructuredFacet,
   TurStructuredFacetItem,
+  // T869 — the toggleable shape both a rail item and a result's chip satisfy.
+  TurFacetToggleTarget,
   TurStructuredPage,
   TurStructuredLocale,
   TurStructuredSpellCheck,

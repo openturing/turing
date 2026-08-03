@@ -15,6 +15,8 @@ package com.viglet.turing.commons.sn.bean.structured;
 
 import java.io.Serializable;
 
+import com.viglet.turing.commons.sn.search.TurSNFacetItemAction;
+
 import lombok.Getter;
 import lombok.Setter;
 import lombok.experimental.Accessors;
@@ -28,6 +30,16 @@ import lombok.experimental.Accessors;
  * This is the same chip expressed as data — identical in shape to a
  * {@link TurSNStructuredFacetItemBean}, because it <em>is</em> the same action:
  * add {@link #filterQuery} to {@code request.fq} and re-send.
+ * </p>
+ *
+ * <p>
+ * T869 / §LXVII.5 — "identical in shape" is now literal: the chip also carries
+ * {@link #selected} and {@link #action}. Without them a consumer could only ever
+ * <em>add</em> a chip's filter, so a chip whose filter was already applied looked
+ * the same as one that was not, and clicking it a second time was a no-op. Both
+ * values are already computed for the facet rail; the chip reads them from the
+ * matching facet item, so the rail and the chip can never disagree about the same
+ * {@code field:value}.
  * </p>
  *
  * @author Alexandre Oliveira
@@ -49,4 +61,20 @@ public class TurSNStructuredMetadataBean implements Serializable {
 
     /** What to render. */
     private String text;
+
+    /**
+     * T869 — whether this chip's filter is part of the current request.
+     *
+     * @since 2026.3.4
+     */
+    private boolean selected;
+
+    /**
+     * T869 — what to do to {@code request.fq} when this chip is clicked. Mirrors
+     * the matching facet item's action, so a single-select (AND) field yields
+     * {@code REPLACE} here too.
+     *
+     * @since 2026.3.4
+     */
+    private TurSNFacetItemAction action;
 }

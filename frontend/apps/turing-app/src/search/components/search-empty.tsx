@@ -1,17 +1,18 @@
 import { GradientButton } from "@/components/ui/gradient-button";
-import type { TurChatResponse, TurSpellCheck } from "@viglet/turing-react-sdk";
+import type { TurChatResponse } from "@viglet/turing-react-sdk";
 import { IconSearch } from "@tabler/icons-react";
 import { useTranslation } from "react-i18next";
+import type { SearchSpellCheckView } from "../lib/search-view";
 
 interface SearchEmptyProps {
   query: string;
-  spellCheck: TurSpellCheck;
+  /** T865 — the projected spell-check, `null` when there is no correction to offer. */
+  spellCheck: SearchSpellCheckView | null;
   chat: TurChatResponse | null;
-  onNavigate: (href: string) => void;
   onShowAll: () => void;
 }
 
-export function SearchEmpty({ query, spellCheck, chat, onNavigate, onShowAll }: Readonly<SearchEmptyProps>) {
+export function SearchEmpty({ query, spellCheck, chat, onShowAll }: Readonly<SearchEmptyProps>) {
   const { t } = useTranslation();
 
   return (
@@ -23,25 +24,26 @@ export function SearchEmpty({ query, spellCheck, chat, onNavigate, onShowAll }: 
         <h3 className="text-xl font-semibold">
           {t("search.noResults", { query })}
         </h3>
-        {spellCheck.correctedText ? (
+        {spellCheck && (
           <p className="text-sm text-muted-foreground">
             {t("search.didYouMean")}{" "}
             <button
               type="button"
-              onClick={() => onNavigate(spellCheck.corrected.link)}
+              onClick={spellCheck.applyCorrection}
               className="font-semibold text-blue-600 dark:text-blue-400 hover:underline cursor-pointer"
             >
-              {spellCheck.corrected.text}
+              {spellCheck.correctedTextValue}
             </button>
             ?
           </p>
-        ) : !chat?.text ? (
+        )}
+        {!spellCheck && !chat?.text && (
           <p className="text-sm text-muted-foreground">
             {t("search.tryDifferent")}
           </p>
-        ) : null}
+        )}
       </div>
-      {!spellCheck.correctedText && !chat?.text && (
+      {!spellCheck && !chat?.text && (
         <GradientButton size="lg" onClick={onShowAll}>
           {t("search.browseAll")}
         </GradientButton>
