@@ -64,6 +64,12 @@ java -jar turing-app/target/viglet-turing.jar
 3. Make sure the build passes (`./mvnw clean install`) before opening the PR.
 4. Write a clear description of **what** changed and **why**.
 5. **Sign off every commit** — see below.
+6. **Do not hand-edit the roadmap files.** `docs/ROADMAP.md`, `docs/CHANGELOG.md`,
+   `docs/IMPROVEMENTS.md` and `docs/STRATEGY.md` are written by
+   [roadkeep](https://github.com/alegauss/roadkeep) — `roadkeep add`, `roadkeep ship`,
+   `roadkeep section add` and so on, configured by [`roadkeep.toml`](roadkeep.toml).
+   `roadkeep lint` runs in CI and fails on a line that drifted from the format, so a
+   hand-written entry is a build failure rather than a review comment.
 
 ## Developer Certificate of Origin (DCO)
 

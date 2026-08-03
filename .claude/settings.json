@@ -1,0 +1,41 @@
+{
+  "enabledMcpjsonServers": [
+    "roadkeep"
+  ],
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python \"${CLAUDE_PROJECT_DIR}/../../../alegauss/roadkeep/scripts/roadkeep.py\" guard",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Edit|MultiEdit|NotebookEdit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python \"${CLAUDE_PROJECT_DIR}/../../../alegauss/roadkeep/scripts/roadkeep.py\" guard",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python \"${CLAUDE_PROJECT_DIR}/../../../alegauss/roadkeep/scripts/roadkeep.py\" guard",
+            "timeout": 30
+          }
+        ]
+      }
+    ]
+  }
+}

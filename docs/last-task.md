@@ -1,7 +1,11 @@
-# Last task number — `T885` · next block letter — `BX`
+# Next block letter — `BX` · last task number — `T885`
 
-> **Single source of truth for the next free task number.** The next new task is
-> `T886`; after assigning it, bump the number above and the log line below.
+> **The task number is no longer kept here.** `roadkeep next-id` derives it from the
+> roadmap, the ledger and `agents.md` — it answers `T886` today, agreeing with the
+> number above, which is why the hand-kept counter could retire. Never bump a number
+> here and then trust it over the tool; `roadkeep add` assigns the id itself. What
+> stays below is the **block letter** (the one label `roadkeep block add` cannot
+> derive) and the one-line-per-task log.
 >
 > **Next block letter — `BX`** (Block **BW** = What the link-free response and its
 > consumers still lack — found while shipping Block BT, which fixed the three

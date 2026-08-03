@@ -11,7 +11,8 @@
 >
 > | Skill | Reach for it when… |
 > | ----- | ------------------ |
-> | `turing-roadmap-docs` | editing `docs/ROADMAP.md`/`CHANGELOG.md`/`IMPROVEMENTS.md`/`STRATEGY.md`, adding/shipping a task, picking the next `T<n>` |
+> | `roadkeep` | **the write path for `docs/ROADMAP.md`/`CHANGELOG.md`/`IMPROVEMENTS.md`/`STRATEGY.md`** — adding, shipping, retiring, deferring or sectioning a task, and every query about the backlog |
+> | `turing-roadmap-docs` | the Turing rules `roadkeep` does not enforce — one-task-one-commit + `/loop`, the next block letter, propagating a shipped user-facing task to the `docs-turing` site |
 > | `turing-persistence` | writing JPA entities, `@Column` annotations, associations (LAZY rule), or Liquibase changelogs |
 > | `turing-integration-tests` | creating or debugging a `*IT.java` / `@SpringBootTest` / context-startup hang |
 > | `turing-frontend-testing` | adding or debugging a `*.test.tsx` (vitest + RTL) |
@@ -78,11 +79,19 @@ Verify with `git -C D:\Git\viglet\turing\latest rev-parse --abbrev-ref HEAD`
 
 ### Roadmap & docs maintenance
 
-> **Moved to the `turing-roadmap-docs` skill.** The roadmap is split across four
-> `docs/` files (`ROADMAP.md` = status, `CHANGELOG.md` = shipped, `IMPROVEMENTS.md`
-> = design rationale, `STRATEGY.md` = business) with strict cross-file sync rules,
-> and the next `T<n>` lives in [`docs/last-task.md`](docs/last-task.md). Invoke the
-> skill (or `/turing-roadmap-docs`) before adding/shipping a task or editing those docs.
+> **The four `docs/` files are written by [`roadkeep`](https://github.com/alegauss/roadkeep),
+> never by hand.** [`roadkeep.toml`](roadkeep.toml) governs `ROADMAP.md` (status),
+> `CHANGELOG.md` (shipped), `IMPROVEMENTS.md` (design rationale) and `STRATEGY.md`
+> (business), and an `Edit` on any of them is **denied** by a hook that names the command
+> to call instead. The write path, what each command derives and the whole query surface
+> are the **`roadkeep` skill**; prefer the `mcp__roadkeep__*` tools. The next `T<n>` is
+> derived — `roadkeep next-id`, not a counter read out of a file.
+>
+> The Turing rules roadkeep does *not* enforce are the **`turing-roadmap-docs` skill**:
+> one-task-one-commit + `/loop`, the next block letter, and propagating a shipped
+> user-facing task into the `docs-turing` site. `roadkeep lint` gates the turn and runs in
+> CI against a baseline, so it fails on what a branch added and forgives the corpus's
+> standing adoption debt.
 
 ### Build & Test Commands
 

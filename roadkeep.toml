@@ -1,31 +1,36 @@
 # Turing's roadkeep configuration — the third real corpus, after Shio (RK20) and
 # roadkeep's own (RK21).
 #
-# NOT WIRED INTO CI, AND NOT READY TO BE. Under this file `roadkeep lint` reports 407
-# findings, and the point of writing it now is that the measurement is reproducible —
-# `roadkeep -C . lint --json`. What each class needs, largest first:
+# WIRED IN, AND THE WRITE PATH NOW. The tool owns the four files below: `.mcp.json` offers
+# its verbs, a `PreToolUse` hook denies an `Edit` on any of them, `.claude/skills/roadkeep/`
+# says which command to call, and `.github/workflows/roadkeep.yml` runs the gate. The gate
+# is wired **against a baseline** rather than absolutely — a corpus this old cannot pass an
+# absolute count on the day it adopts a schema, and a number that moves by one per pull
+# request carries no signal, so CI fails on what a branch added and forgives the rest by
+# name. Drop the baseline the day `roadkeep -C . lint` exits 0, and the gate goes absolute.
 #
-#   216  block.missing   22 sub-block headings spell `## D.1 — …` where the same file
-#                        writes `## Block A/B/C`. That is Turing's own inconsistency and
-#                        the fix is renaming them: `D.1` is already a legal block label.
-#    88  the roadmap     32 `why` over 200, 31 lines over 320, 25 with a second sentence,
-#                        across 46 lines. This is the ask adoption is *for*: each of them
-#                        points at a section in IMPROVEMENTS.md that already makes the
-#                        argument at length, so the limit wants the sentence that
-#                        paragraph is the long form of — never a deletion.
-#    68  IMPROVEMENTS    25 sections over 250 words, 40 rationales whose task already
-#                        shipped (`ship` deletes the section; these survived a hand edit),
-#                        3 sections nothing points at.
-#    12  deps.stale      derived, so `roadkeep --fix` repairs all 12 and nothing else.
-#    11  ref.unresolved  §LVIII.1-3 and eight more point at headings that do not exist.
-#     8  path.missing    files a shipped line names that are no longer in the repository.
-#     4  id.format       `T24b`, `T221a`, `T227a` and one more: a sub-lettered id, which
-#                        the format has no shape for. Turing renumbers, or roadkeep grows
-#                        one — an open question, not a defect either way.
+# The live number is `roadkeep -C . lint` and is deliberately not copied here: a count in a
+# comment is a count that goes stale, which is the drift this tool exists to stop. What the
+# adoption measurement found, and where each class went:
 #
-# None of these are roadkeep defects: 755 ledger entries and all 46 roadmap lines parse.
-# Every value below is what the files already spell, so adopting the tool changes the
-# format of nothing that is already correct.
+#   block.missing   22 sub-block headings spelled `## D.1 — …` where the same file writes
+#                   `## Block A/B/C`, hiding 216 ledger lines from every count. Renamed —
+#                   `D.1` was already a legal label, only the word was missing.
+#   deps.stale      derived, so `roadkeep lint --fix` repaired them and nothing else.
+#   id.format       `T24b`, `T221a`, `T227a`, `T228a` — a split recorded by sub-lettering.
+#                   Closed by declaring the shape (`[ids] suffix`), not by renumbering four
+#                   shipped entries, which would be changing history over a config key.
+#   the roadmap     `why` over 200, lines over 320, a second sentence — the ask adoption is
+#                   *for*: each such line points at a section in IMPROVEMENTS.md that
+#                   already makes the argument at length, so the limit wants the sentence
+#                   that paragraph is the long form of, never a deletion.
+#   IMPROVEMENTS    sections over 250 words, rationales whose task already shipped (`ship`
+#                   deletes the section; those survived a hand edit — `section drop` is the
+#                   verb for the ones already orphaned), sections nothing points at.
+#
+# None of these were roadkeep defects: 755 ledger entries and all 46 roadmap lines parse.
+# Every value below is what the files already spell, so adopting the tool changed the
+# format of nothing that was already correct.
 
 prefix = "T"
 
@@ -36,6 +41,14 @@ ref_scheme = "outline"
 
 # agents.md cites task ids in prose, and an id the scan misses is an id that gets reused.
 id_sources = ["agents.md"]
+
+[ids]
+# `T24b`, `T221a`, `T227a`, `T228a` — a split recorded by sub-lettering the id it came
+# from, which four ledger entries already spell. Declaring the shape is what closes the
+# open question the header used to carry: the alternative was renumbering four shipped
+# entries, i.e. changing history because a config key was not set. The scan reads the
+# number out of a sub-lettered id, so `next-id` clears it like any other.
+suffix = true
 
 [files]
 roadmap = "docs/ROADMAP.md"

@@ -1,0 +1,30 @@
+# The gate the write path already runs locally, called in CI through the action
+# roadkeep publishes rather than a copied `run:` block, which drifts per
+# repository. `roadkeep lint` exits 1 on a governed file that drifted, and that
+# exit code is the whole contract.
+#
+# Tuned here for a corpus that predates the tool: the baseline fails the build on
+# what a branch added and forgives the standing debt by name, which is the only
+# setting under which this gate can be on at all — an absolute count answers
+# nothing while the adoption cleanup is still in progress. It is resolved from the
+# event rather than written as a branch name, this repository releasing from a
+# per-version default branch (`2026.3`) and never from `main`. Drop the baseline
+# the day `roadkeep lint` exits 0 on the default branch, and the gate is absolute.
+name: roadkeep
+
+on: [push, pull_request]
+
+jobs:
+  lint:
+    name: roadkeep lint
+    runs-on: ubuntu-latest
+    steps:
+      # The baseline is a rev, so the gate needs the history to diff against.
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: alegauss/roadkeep@main
+        with:
+          # `base_ref` on a pull request, the default branch on a push — where the
+          # two coincide the diff is empty and the gate passes on the debt.
+          baseline: origin/${{ github.base_ref || github.event.repository.default_branch }}
