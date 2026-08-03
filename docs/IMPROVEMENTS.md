@@ -157,7 +157,8 @@ improvement has a dual path. The trade-off table:
 | Best fit | Hot path, small data, per-instance | Large corpus, multi-instance, persistent |
 | Recovery on restart | Cold-start rebuild needed | Already there |
 
-**Per-feature recommendations**:
+#### V.1.1 Per-feature recommendations
+
 
 | Feature | Backing store | Why |
 |---|---|---|
@@ -169,7 +170,9 @@ improvement has a dual path. The trade-off table:
 | §IV.3 Persona tone | Embedded | Per-turn, in-process strings |
 | §IV.4 Conv. memory retrieval | Embedded per-conversation | Tiny data, per-conversation |
 
-**When the second SE-backed feature ships**, extract a small
+#### V.1.2 When the second SE-backed feature ships
+
+, extract a small
 `TurSeBackedFeatureIndex<K>` helper:
 - Owns per-feature index name convention
 - Routes through the active `TurSearchEnginePlugin`
@@ -644,11 +647,14 @@ what Turing already has:
 | **Context engineering middleware** | "Compress conversation history, offload large tool results, isolate context with subagents, use prompt caching" | T30 relevance retrieval (compress), `summarizeVariables` cap (partial offload), sub-flows (isolate), T31 prompt caching (caching) | **No automatic summarization** of compressed memory. **No artifact-store offload** for large tool results. |
 | **Human-in-the-loop** | "Supports human intervention when needed" | None directly; sketched as Spectator mode in §VIII | **No `humanApproval` node type.** |
 
-**Two operational features**:
+#### IX.1.1 Two operational features
+
 - **Model-agnostic** — Turing has it ✅ (Spring AI + 6 providers).
 - **SDK + CLI** — Turing has SDK ✅; **no CLI**.
 
-**Bottom line**: Turing is already a deep-agent-grade platform in
+#### IX.1.2 Bottom line
+
+Turing is already a deep-agent-grade platform in
 infrastructure terms. The gap is one missing primitive (workspace) and
 two missing UX surfaces (CLI + eval).
 
@@ -1013,31 +1019,43 @@ surface the CLI can read — they can't be fixed in the CLI alone.
 
 Three groups, ranked by ratio of differentiation × Turing-infra reuse:
 
-**Group 1 — workspace foundation** (~3 weeks, gates everything else):
+#### IX.11.1 Group 1 — workspace foundation
+
+(~3 weeks, gates everything else):
 - T111 `TurAgentWorkspace` service (1 week, reuses `TurStorageService`)
 - T112 `workspace` Groovy helper (3 days)
 - T113 workspace SSE bus (3 days, reuses `TurChatSlotEventBus` pattern)
 - T114 auto-offload large tool results (1 week, reuses
   `TurToolCallbackPipeline` middleware seam)
 
-**Group 2 — planning + cross-agent** (~2 weeks, reuses chat-flow + Custom Tool DSL):
+#### IX.11.2 Group 2 — planning + cross-agent
+
+(~2 weeks, reuses chat-flow + Custom Tool DSL):
 - T108 `planningStep` node type (1 week, similar surface to `writeSlot`)
 - T109 `agent.invoke(...)` helper (1 week, reuses agent + executor + analytics)
 - T110 sub-agent analytics rows (3 days, extends T84 scorecard schema)
 
-**Group 3 — CLI + eval** (~3 weeks parallel track):
+#### IX.11.3 Group 3 — CLI + eval
+
+(~3 weeks parallel track):
 - T125 `turing` CLI scaffold + dev mode (2 weeks)
 - T126 `turing eval` (1 week, generalizes §VI.4.3 pattern)
 
-**Group 4 — long-running + HITL** (~2 weeks):
+#### IX.11.4 Group 4 — long-running + HITL
+
+(~2 weeks):
 - T121 suspend/resume primitive (1 week)
 - T119 `humanApproval` node type (1 week, layers on T54 SSE)
 
-**Group 5 — context enforcement** (~1 week):
+#### IX.11.5 Group 5 — context enforcement
+
+(~1 week):
 - T123 token-budget enforcement (1 week, plumbing through T31 + T30)
 - T115 memory compression to workspace (3 days, depends on T111)
 
-**Group 6 — interop + ecosystem** (~3 weeks):
+#### IX.11.6 Group 6 — interop + ecosystem
+
+(~3 weeks):
 - T128 LangSmith export (1 week)
 - T129 OTel export (1 week)
 - T116 `TurSkill` entity + manifest format (2 weeks)
@@ -1147,60 +1165,6 @@ Block F orders into seven groups by leverage × infrastructure reuse.
 **Group 1 gates everything else**; the rest can ship in parallel
 streams.
 
-**Group 1 — Foundation (T130–T132, ~3 weeks)**
-
-- T130 `TurNativeProviderClient` seam (1.5 wk, reuses
-  `TurLlmModelFactory` decryption/resilience)
-- T131 `TurNativeChatExecutor` variant (1 wk, reuses post-T33
-  collaborators)
-- T132 capability matrix table + UI (3 days)
-
-**Group 2 — Citations + RAG verifiability (T152–T155, ~2 weeks)**
-
-Highest customer-visible UX win for enterprise-search positioning.
-Anthropic-only initially (OpenAI doesn't have an equivalent yet);
-generalizable later if OpenAI ships citations.
-
-**Group 3 — Built-in server tools (T133–T138, T139–T143, ~4 weeks
-parallel)**
-
-T133/T139 (web_search both vendors), T141 (Anthropic code_execution
-— FREE with web_search), T134 (OpenAI file_search). Drives T187
-"Live answers" mode. T136/T142/T143 (computer_use + bash + text_editor)
-later — high demo value, medium production priority.
-
-**Group 4 — MCP federation (T138, T144, T146, ~3 weeks)**
-
-T146 publishes Turing as MCP server (smallest, biggest market
-expansion). T138 + T144 wire vendors to call any MCP. T145 unifies
-the allow-list across vendors.
-
-**Group 5 — Batch + cost economics (T156–T162, ~2 weeks)**
-
-Pure cost-cutting; no UX surface. Roughly halves the bulk-AI bill.
-
-**Group 6 — Memory + structured outputs + predicted outputs
-(T163–T174, ~3 weeks)**
-
-Foundational for the long-running chat experience + replaces JSON
-guardrails.
-
-**Group 7 — Stored completions + distillation flywheel (T167–T170,
-~3 weeks)**
-
-Production self-improvement loop. Wait until ~6 months of stored
-traffic exists before triggering the first distillation cycle.
-
-**Voice (T147–T151, ~3 weeks)** runs in a parallel track —
-demo-heavy, ships best alongside Group 2 citations for the marquee
-demo: "the agent answers your voice question with cited search
-results."
-
-**Total Block F: ~18 weeks focused work to ship every committed
-(📋) task**, with 17 💭 long-shot tasks following on opportunity-cost
-basis. Block F is structured so any single shipped task delivers
-customer value — there is no monolithic "Block F is done" gate.
-
 ### X.17 The narrative — one paragraph
 
 > "Spring AI is what Turing uses when the standard works. The official
@@ -1226,7 +1190,9 @@ customer value — there is no monolithic "Block F is done" gate.
 
 ### XII.2 Headless UI library — `@viglet/turing-react-ui` (the what/why)
 
-**Problem.** Turing's chat surfaces now live in two apps that must stay
+#### XII.2.1 Problem
+
+Turing's chat surfaces now live in two apps that must stay
 visually independent: the **admin console** (React 19 + Vite + shadcn/Tailwind +
 `@viglet/viglet-design-system`) and **viglet.com** (Next.js 15, its own brand).
 As features land in both — code-interpreter HTML/canvas previews, `sandbox:`
@@ -1236,7 +1202,9 @@ this block). Putting them in `@viglet/turing-react-sdk` is wrong: that package
 carries the **axios/API hooks** layer, and viglet.com deliberately stays on the
 zero-dep, fetch-based `@viglet/turing-sdk` core (it must not pull axios).
 
-**The layering decision (binding).** Three packages, one direction of
+#### XII.2.2 The layering decision (binding)
+
+Three packages, one direction of
 dependency:
 
 | Package | Holds | Deps | Consumers |
@@ -1250,7 +1218,9 @@ reused by every surface). React rendering belongs in **react-ui**. API/transport
 stays in **react-sdk**. viglet.com composes core + react-ui + its own Next BFF
 transport; it never sees axios.
 
-**The headless contract (how we "don't commit to design").** A react-ui
+#### XII.2.3 The headless contract (how we "don't commit to design")
+
+A react-ui
 component renders **structure only** — no colors, borders, or spacing of its
 own (only functional layout, e.g. an iframe's `width:100%`/`border:0`). The host
 app supplies the look through three injection points:
@@ -1268,7 +1238,9 @@ This is why the admin (shadcn look) and viglet.com (its brand) share one
 `TuringHtmlSandbox` implementation while keeping distinct appearances — each
 app's `*-sandbox.tsx` is now a **thin skin adapter** (props only, zero logic).
 
-**Packaging principles.** `tsc` → ESM `dist` (`"type":"module"`,
+#### XII.2.4 Packaging principles
+
+`tsc` → ESM `dist` (`"type":"module"`,
 `sideEffects:false` for tree-shaking), peer-dep React (never bundled), consumed
 via `workspace:*` (admin) / `file:` (viglet.com) symlinks — **rebuild the dist**
 for consumers to pick up changes. SSR-safe (Next RSC): client-only concerns
@@ -1276,7 +1248,9 @@ for consumers to pick up changes. SSR-safe (Next RSC): client-only concerns
 boundaries. Keep the package **publishable** (npm, semver) so external embedders
 can use it too.
 
-**Roadmap shape (see ROADMAP.md D.12).** Migrate by **ROI and design-weight**,
+#### XII.2.5 Roadmap shape (see ROADMAP.md D.12)
+
+Migrate by **ROI and design-weight**,
 not all at once: design-less primitives first (sandbox preview ✅, rich-content
 segmentation, markdown wrapper, D2 diagrams, code-block/loading atoms), then a
 slot-driven message shell only if duplication keeps hurting. The fully-branded
@@ -1576,28 +1550,6 @@ rest cheap:
 The read paths already use React Query hooks (`api/queries/*.queries.ts`), which
 the bento pages consume directly — no data-layer work per screen.
 
-> **T547 shipped** — architecture & cutover decision now lives in ADR
-> `docs/adr/0002-bento-ui-migration-cutover.md` (Bento-as-primary, route-swap +
-> `<Navigate>` redirects, closed surface inventory). See CHANGELOG Block AG.
-
-> **T548 shipped** — the shared scaffold (`BentoEntityShell` + `BentoListPage` +
-> `BentoEntityTile`) is extracted and the LLM + AI-Agent surfaces re-skinned onto
-> it as proof. Each Phase 1–4 screen is now a thin config + its `BentoFormSection`
-> field groups. See CHANGELOG Block AG.
-
-> **T549 shipped** — persistent frosted `BentoNavRail` (fixed left icon rail,
-> desktop) over the migrated surfaces + a zero-dep `⌘K` `BentoCommandPalette`
-> reaching every area (unmigrated ones link out to the console until they
-> migrate). Both driven by a single `bento-nav.config.ts` registry that mirrors
-> the console `AppSidebar` taxonomy. See CHANGELOG Block AG.
-
-> **T550 shipped** — conventions codified in
-> [`components/bento/CONVENTIONS.md`](../frontend/apps/turing-app/src/components/bento/CONVENTIONS.md)
-> (i18n key reuse + object-form `t` defaults, a11y baseline, reduced-motion
-> guard extended to the ambient blobs, responsive rules) + vitest coverage for
-> all shared components under `components/bento/__tests__/`. **Phase 0 is
-> complete** — Phases 1–4 now fan out against the scaffold. See CHANGELOG Block AG.
-
 ## XXXIII. Evaluation platform — pluggable graders + datasets (Block AJ)
 
 ### XXXIII.0 The problem — eval is two hard-wired islands
@@ -1742,11 +1694,6 @@ not a second call site.
 > rule. **T616 also shipped** — the T115 memory summary and T30 relevance turns now
 > assemble through a message-level SPI (`TurMessageContributor` /
 > `TurMessageAssemblyPipeline`), so the whole message list has one assembly point.
-> **T617 also shipped** — the `message-pipeline-enabled` escape hatch and the inline
-> `buildMemoryPrefixLegacy` path were deleted (single history-prefix assembly path),
-> and the Live Preview now mirrors the whole message list, not just the system
-> message. Block AL (§XXXV) is now fully shipped and closed; see CHANGELOG Block AL.
-
 ## XXXVI. HuggingFace embedding provider + provider-aware model discovery (Block AM)
 
 > **Block AM (T623–T629) is fully shipped and closed** — see CHANGELOG Block AM.
@@ -1830,56 +1777,6 @@ from the GET default** — we can ship a cleaner v2 shape on the POST/opt-in pat
 without disturbing the GET response one byte.
 
 ### XLV.4 Design (phased, additive)
-
-**Phase 1 — public POST contract (T707).** Shipped — see CHANGELOG Block AV.
-The endpoint is `POST /api/sn/{siteName}/search/query`; later phases build on its
-`TurSNSearchRequest` body and on `TurSNSearchRequestAdapter`, which rebuilds the
-canonical GET URI the legacy link-bearing response is rendered against.
-
-**Phase 2 — structured, link-free response (T708).** Shipped — see CHANGELOG
-Block AV. The negotiation mechanism is the request field `responseFormat`
-(`LINKS` default | `STRUCTURED`); the shape is `TurSNStructuredSearchBean`, whose
-contract is *take the echoed `request`, apply one structured change, send it
-back*. Phases 3–4 consume that contract.
-
-**Phase 3 — SDKs go 100% POST (T709 vanilla, T710 React + react-ui).** Shipped
-— see CHANGELOG Block AV. One scoping decision is worth keeping: in the
-URL-synced React provider, **URL sync is not the bug**. The browser URL stays the
-source of truth for search state (deep-linking is a kept feature, see non-goals);
-what went POST-native is the API transport, which is where the
-reserved-character round-trip lived. **No CSRF priming** — see the settled note
-below. `/ac` and `/similar` stay GET until T712 adds their POST variants
-server-side. **T711** shipped the parity guard extension and confirmed the
-anonymous demo's nginx allowlist already covers POST search (the `/api/sn/`
-location is method-agnostic) — documented there as a "do not harden to
-GET-only".
-
-**Phase 4 — breadth & retirement (T712–T714). Shipped; the block is closed** —
-see CHANGELOG Block AV. Four decisions worth keeping:
-
-1. Neither the autocomplete nor the select-list projection carries links, so
-   `responseFormat` deliberately does not apply to them (T712).
-2. **T713 had to be re-sequenced after T714.** The two consumers T709 pinned to
-   `postNative: false` (the marketing-site `SearchDemo` and the EDS
-   `turing-search` block) were the *only* remaining callers of
-   `parseHrefToParams` / `navigate(href)`; touching the helpers before migrating
-   them would have broken the very surfaces the block exists to prove out.
-3. **T713 deprecates, it does not delete.** Going POST-only — dropping the
-   helpers *and* `postNative: false` — was considered and rejected: it is a hard
-   break on published packages three tasks after deliberately shipping that
-   opt-out. The removal is scheduled for the next major, and only then does the
-   gzip budget the T709 changeset anticipated actually come back (a deprecation
-   notice adds bytes). Note that `buildQueryString` is **not** one of the
-   helpers on notice: it serializes the GET request itself, which the GET
-   contract still needs. The round-trip is specifically *parsing a
-   server-rendered href back into params*.
-4. Going POST-native by default silently broke something, which is worth
-   remembering as a pattern: `useCoBrowseSearch`'s `toggle_facet` /
-   `clear_facets` resolved their target out of `store.data`, which is `null`
-   POST-native, so they failed in the *default* mode from T710 until T713 found
-   it. When a default flips, audit every reader of the field the old default
-   populated — a type-check will not catch it, because `data` is legitimately
-   nullable.
 
 ### XLV.5 Non-goals & open questions
 
@@ -2068,7 +1965,9 @@ This block widens that funnel once and then turns the recovered data into produc
 
 ## LIV. Vectorless (Structured-Data) RAG — name it, feed it, integrate it (Block BF)
 
-**The realization.** Turing already ships a production-grade "talk to a structured
+### LIV.1 The realization
+
+Turing already ships a production-grade "talk to a structured
 catalog, grounded, with citations, no embeddings" engine — it just isn't *named*
 that way and isn't discoverable as its own capability. The T392
 `TurCatalogCopilotService` (§XX.12) composes the Block R primitives into exactly
@@ -2086,7 +1985,9 @@ lexical, LLM failure → still returns the matched citations). The word "vectorl
 appears nowhere in the codebase today (verified) — so the substance exists but the
 *capability* is invisible to an integrator scanning for it.
 
-**Why name it.** A vendor evaluating Turing for "LLM Q&A over our structured data
+### LIV.2 Why name it
+
+A vendor evaluating Turing for "LLM Q&A over our structured data
 (product catalog, price list, model registry, spec sheet) without standing up a
 vector database" has no way to find that Turing does this out of the box — they see
 "RAG" and assume embeddings + a vector store + a chunking pipeline. Naming the mode
@@ -2097,7 +1998,9 @@ pairs directly with the public `openviglet/model-catalog` as the flagship live
 example. This is the **structured-source-indexing** thesis (§XX) surfaced as a
 product-level capability.
 
-**The two real gaps (everything else exists).** The map is otherwise green: provider
+### LIV.3 The two real gaps (everything else exists)
+
+The map is otherwise green: provider
 factory + 12 LLMs (`TurGenAiLlmProviderFactory`, incl. `openai-compatible`),
 structured index + DSL (`plugins/se/*`, `sn/dsl/*`), arbitrary-JSON-doc indexing via
 `POST /api/sn/import` (`TurSNJobItems`), grounded cited Q&A (T392), NL→filter
@@ -2224,7 +2127,9 @@ _Fully shipped — Block BO (T832–T845). See [CHANGELOG.md](CHANGELOG.md) and 
 
 ## LXIV. The answer engine as a first-class search lens (`/answer`) (Block BQ)
 
-**The problem — one engine, one surface, and it's the wrong audience.** Block BO
+### LXIV.0 The problem — one engine, one surface, and it's the wrong audience
+
+Block BO
 shipped the whole answer engine: a streaming `GET /api/sn/{siteName}/answer` (T833),
 numbered citations (T832/T836), steerable filters (T838), provenance (T839),
 freshness (T840), artifacts (T841), a research trace (T843), permalinks (T844) and
