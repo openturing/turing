@@ -527,85 +527,6 @@ These are the items that *should* live in the Turing platform but
 currently exist only as Education customer-side patterns, sketches or
 explicit gaps. Each maps to a T-task in §0 Block D.
 
-#### VII.2.a HTTP auth chainable helpers (T39)
-Custom Tools today re-implement bearer / basic auth headers per call.
-Goal: `http.bearer(token).postJson(url, body)`, `http.basic(user, pw)`.
-Pairs with slot prefix `__` reserved for credentials (`__bearer_token`
-→ auto `Authorization` header on every `http.*` call, never echoed in
-logs).
-
-#### VII.2.c Groovy hot-reload via WebSocket (T41)
-Admin edits → save → WS pushes reload notice to backend → next
-invocation uses the new script without restart. Cuts ~3min wait per
-iteration.
-
-#### VII.2.d `subFlowSwitch` + `functionCall` runtime (T46, T47)
-- `subFlowSwitch`: switch chooses a sub-flow by slot value (not edges).
-  Composes reusable mini-flows (lead-capture / handoff selection /
-  pricing tier flows).
-- `functionCall`: the type exists in `ChatFlowNodeGeneration.ts` but the
-  engine does not execute it. **Decision needed: implement OR remove
-  from the DSL.** Vapor types are worse than absences.
-
-#### VII.2.e Capture-first inversion (T51)
-Restructures the engine so the user message is **always** persisted into
-the active slot BEFORE the judge runs. Judge becomes advisory (writes
-`slot_confidence: low/high` into a parallel slot); the flow never stalls
-with `slot=null`. Architectural — kills the whole "judge rejects → flow
-stuck" class at the root (vs. T45's per-node `onJudgeReject` mitigation).
-Risk: affects every existing flow, requires full IT revalidation.
-Filosofia change: "validate-then-capture" → "capture-then-grade."
-
-#### VII.2.g Slot audit log + PII prefix (T60, T61)
-- **Audit log**: `chat_slot_write_log` (conversationId, slot, oldValue,
-  newValue, source ∈ {`node`, `tool`, `endpoint`, `extract`}, ts). LGPD
-  audit + debug forensics. SlotInspector renders as timeline with source
-  badge.
-- **PII prefix `pii_*`**: engine redacts in logs/analytics, encrypts at
-  rest, TTL configurable (default 24h). Compliance pitch for regulated
-  customers (banking, healthcare, B2C with strong privacy reqs).
-
-#### VII.2.i A/B multi-armed bandit (T70) + champion-challenger (T71)
-Current A/B is fixed split + scheduling window. Bandit math (Thompson
-sampling / UCB) auto-adjusts `trafficWeight` based on observed conversion
-in the last N sessions. Champion-challenger auto-promotes a statistically
-significant winner to `trafficWeight=100` and archives the loser. Less
-operator vigilance; better optimization on slow-moving conversions.
-
-#### VII.2.j Funnel + conversation replay (T85, T86)
-- **Funnel viz**: turn-by-turn abandonment heatmap over the flow graph.
-  "60% drop between `ai-cargo` and `ai-objetivo`" enables surgical UX
-  fixes vs whole-flow rewrites.
-- **Conversation replay**: click `conversationId` in scorecard → see
-  transcript + slot timeline side-by-side, scrubber temporal, per-turn
-  prompt + response artifacts. Investigation-grade DX for operators.
-
-#### VII.2.k Flow editor capabilities (T94, T95, T98)
-- **Chat-flow lint** (`TurChatFlowLinter`): static analyzer flags
-  `aiInstruction > 500 chars`, dead-end node, orphan node, edge without
-  label, ambiguous trigger across flows, `outputVariable` never read.
-  Sidebar warnings panel. Analogue of TypeScript for chat-flows.
-- **Live preview** of the active node in editor — second panel renders
-  "what the visitor sees" with mocked slots, updates <300ms on edit.
-  Iteration speed: 10× vs running real turns.
-- **TypeScript DSL** (`@viglet/turing-flow-dsl`) — `flows/foo.ts` with
-  backend enums imported, transpiles to JSON at build time. Catches
-  `tone=PROFESSIONAL` typos at compile time; full IDE auto-complete.
-
-#### VII.2.l Multi-flow architecture (T91, T92, T93)
-With the Education customer running 3 coexisting flows (lead-capture
-B2C + in-company quote B2B + micro-lesson educational), three new
-platform needs emerged:
-- **Trigger conflict resolver UI**: admin flags "this triggerDescription
-  has overlap with flow X" + suggests disambiguation. Today specificity
-  decides silently.
-- **Flow chooser endpoint** `POST /chat/flow-select`: portal forces a
-  specific flow (override LLM router). Useful for deep links
-  (`?flow=in-company` lands on the right persona).
-- **Cross-flow slot inheritance**: when the engine mid-flow-routes
-  ("oh this is actually B2B"), preserve already-captured slots
-  (`name`/`cargo_atual`) via a declared mapping in the receiving flow.
-
 ### VII.3 Lessons from the engagement worth keeping
 
 These survive customer rotation — patterns / pitfalls that should be
@@ -732,74 +653,6 @@ infrastructure terms. The gap is one missing primitive (workspace) and
 two missing UX surfaces (CLI + eval).
 
 ### IX.2 Parity moves — close the gap with primitives, not features
-
-#### IX.2.a Planning as a flow node (T108)
-
-Deep Agents bakes planning into the harness — every agent gets a
-planning tool by default. **Turing's better move**: make planning an
-**authorable node type**, not implicit middleware.
-
-```jsonc
-// Inside a chat-flow:
-{
-  "type": "planningStep",
-  "data": {
-    "outputVariable": "__plan",                  // slot receiving the JSON plan
-    "aiInstruction": "Break the user's goal into 3-6 concrete steps...",
-    "schema": "List<{id: string, title: string, status: 'pending'|'done'}>"
-  }
-}
-
-// followed by an iterator:
-{
-  "type": "iteratePlan",
-  "data": {
-    "planSlot": "__plan",
-    "bodyFlowId": "step-executor-subflow",      // sub-flow runs once per pending step
-    "completionMode": "mark_done"
-  }
-}
-```
-
-**Why this is better than Deep Agents' approach**:
-- Planning is **visible in the editor** — operators see "this flow plans before executing." Deep Agents hides it as middleware.
-- **Selective** — admins decide when planning is worth the LLM call. Deep Agents always plans.
-- **Auditable** — the plan IS a slot value; T54 SSE bus already emits it; T60 audit log already captures origin.
-- **Replayable** — exact plan from prod becomes a regression test fixture (T127).
-
-#### IX.2.b Cross-agent invocation (T109)
-
-Deep Agents spawns subagents inside the same harness. Turing should
-expose **agent-as-tool** at the platform level:
-
-```groovy
-// Inside a Custom Tool Groovy script:
-def specialist_answer = agent.invoke(
-    "specialist-legal-agent",                    // target agent
-    "Is this contract clause enforceable? ${slots.contract_excerpt}",
-    [timeout: 30_000, isolated: true]
-)
-slots.set("legal_review", specialist_answer)
-```
-
-Each invocation spawns a child conversation, links to parent via
-`parentConversationId`, gets its own scorecard row (T110). Recursion
-allowed up to a configurable depth (default 3) — mirrors the
-`TRANSPARENT_WALK_MAX` cycle cap pattern.
-
-**Why this beats Deep Agents subagents**:
-- Sub-agents in Turing are **persisted, named, reusable** entities — not anonymous spawns.
-- Each can have its own LLM, persona, flow, tools — true specialization.
-- **Multi-tenant by construction** — workspace + path isolation (T78) extend to child conversations automatically.
-- **Observable** — drill-down dashboard "orchestrator X calls specialist Y on average 2.3 times per conversation, costing $0.04 each."
-
-#### IX.2.c Sub-agent analytics (T110)
-
-Every `agent.invoke(...)` recorded as a separate session event with
-`parentConversationId` foreign key. Scorecard supports parent/child
-filter. Operator can answer "is the orchestrator overspending on the
-specialist?" — a question Deep Agents users have no built-in way to
-answer.
 
 ### IX.3 The workspace primitive — Turing's defensible move
 
@@ -1070,69 +923,6 @@ Once T80 (container sandbox for Code Interpreter) ships, the same
 container can bind-mount only its own conversation's workspace —
 sealing the last leak vector.
 
-#### IX.3.a `TurAgentWorkspace` service (T111)
-
-Per-conversation, key-value-blob store. **Critical insight**: Turing
-already has the storage abstraction it needs — `TurStorageService`
-(NoOp / Filesystem / MinIO, configured via `turing.storage.type`).
-Workspace is a thin façade over that:
-
-```java
-public interface TurAgentWorkspace {
-    void put(String key, byte[] content, String contentType);
-    Optional<byte[]> get(String key);
-    List<WorkspaceEntry> list(String prefix);
-    void delete(String key);
-    String signedUrl(String key);  // uses TurCodeInterpreterUrlSigner pattern (T79)
-}
-
-// Scoped path: tenants/{agentId}/{conversationId}/workspace/<key>
-// Matches T78 multi-tenant isolation verbatim.
-```
-
-**Why this is strictly better than Deep Agents' virtual filesystem**:
-
-| Capability | Deep Agents virtual FS | Turing workspace |
-|---|---|---|
-| Storage backend | In-memory or implementation detail | **Pluggable** — NoOp/FS/MinIO/S3 per deployment |
-| Multi-tenant | Implicit / unclear | **Path-isolated** by agent + conversation (reuses T78) |
-| URL access | Not exposed | **HMAC-signed URLs** with cookie binding (reuses T79) |
-| Content types | Strings | Binary blobs with MIME type — PDFs, images, CSVs |
-| Eviction / TTL | Manual | Tied to `SubmissionRetention` config (T66) |
-| External serving | None | Files directly servable from the deployed instance |
-
-#### IX.3.b `workspace` Custom Tool helper (T112)
-
-```groovy
-// Custom Tool script can mix workspace with existing helpers:
-def report = code.executePython("""
-    import json, csv
-    data = json.loads('''${slots.dataset}''')
-    with open('report.csv', 'w') as f:
-        writer = csv.writer(f)
-        for row in data: writer.writerow(row)
-""")
-// code helper saved the file inside the sandbox; copy to workspace:
-def csvBytes = http.getBytes("${report.fileUrl}")
-workspace.put("reports/lead-export-${slots.export_date}.csv", csvBytes, "text/csv")
-
-// Later turn, another tool reads the same workspace entry:
-def previous = workspace.get("reports/lead-export-${slots.export_date}.csv")
-```
-
-This composes naturally with the existing `code`, `http`, `slots`,
-`turingSearch` helpers — same `ToolContext` threading, same per-call
-analytics.
-
-#### IX.3.c Workspace SSE bus (T113)
-
-Mirrors `TurChatSlotEventBus` (T54). Endpoint
-`GET /chat/workspace/stream?conversationId=X` emits
-`{event, key, contentType, size, signedUrl}`. SDK hook
-`useTuringWorkspace<T>` consumes; portals render the active artifact
-list as a sidebar — "files this agent built for you." Sub-100ms
-latency, multiplexer pattern reused from T104.
-
 ### IX.4 Skills as first-class — the marketplace moat
 
 Deep Agents mentions "skills" in passing. Turing makes them **typed,
@@ -1172,95 +962,6 @@ decomposed-manifest framing above).
 > a product direction — import/export ZIP (T319/T320) is the interop boundary;
 > distribution beyond that is out of scope.
 
-#### IX.4.d The pivot — Skill = Anthropic-standard folder, run in Docker (T317–T325)
-
-> **Direction locked 2026-06-10.** After working the model end to end we
-> reframed what a Skill *is*. The earlier design (T310–T315: attach a
-> decomposed `TurSkill` to an agent, inject `personaFragment`, register
-> `tools`, seed `workspaceDefaults`, persona-by-FK) is **superseded** and
-> those task numbers are retired. The shipped T116 decomposed-manifest
-> model (JSON columns for persona/tools/workspace/deps) is likewise
-> **superseded by T317** — kept in CHANGELOG as history.
-
-**The new definition.** A Skill is an **Anthropic-compatible folder** —
-`SKILL.md` at the root plus `references/`, `scripts/`, `assets/` — stored
-in object storage, edited like a mini-VS-Code, and **executed in a Docker
-sandbox compatible with Anthropic's skill container**. Turing does **not**
-port the skill into its own entities; it treats the folder as the truth
-and runs it to the standard. Reference bundle (a deliberately complex
-example) lives at `turing-marketplace/anthropic-skills/brand-content-studio/`.
-
-**Why this shape wins.** It resolves every tension we hit:
-- *No porting.* Scripts run as-is in Docker; no "script → Custom Tool"
-  translation, no persona-FK, no decomposed manifest.
-- *Compatibility is the moat.* The same folder runs in Claude and in
-  Turing → Turing becomes an **entry/exit door** for capabilities
-  (import any Anthropic skill ZIP; export Turing folders as Anthropic
-  skills). Differentiation = following the market standard, not inventing.
-- *Files-as-truth* reuses `TurStorageService` (a skill is just objects in
-  storage) and Turing's existing ZIP export/import muscle.
-
-**Hard requirement.** The feature is gated on **Docker** being configured
-(Code Interpreter `DOCKER` mode, T80) — analogous to how `storageEnabled`
-gates `/admin/assets`. NATIVE-only deployments don't get skills.
-
-**The goal state.** The *same* skill runs in **chat** and in **semantic
-navigation**, and a single imported **ZIP may carry many skills**, each an
-independently-activatable unit.
-
-**Tasks (dependency-ordered, each executable on its own):**
-
-- **T323 — Use skill in chat. (shipped)** A session's available skills
-  activate by description, but with a key design rule: **a skill always
-  runs on the Global Settings Default LLM, never the caller's own model**,
-  so a portable skill behaves identically regardless of which agent (or SN
-  site) triggers it. Since a tool cannot switch the model that drives it,
-  this is realised as a *delegated sub-loop*: the parent turn sees only the
-  cheap name+description block + a single `run_skill(skill, task)` tool;
-  invoking it spins a separate agentic loop on the Default LLM (reusing the
-  T322 harness for the sub-loop's prompt + `load_skill`/`skill_bash` tools)
-  that operates the skill end-to-end and returns the result. T324/T325
-  inherit this rule.
-- **T324 — Use skill in semantic navigation. (shipped)** Two parts. (1)
-  *Activation* came free: the SN AI chat shares `TurAgentChatExecutor`, so
-  T323's per-agent toggle already activates skills in SN mode (on the
-  Default LLM, per the rule above). (2) *Turing search as a skill tool*:
-  the skill's Default-LLM sub-loop now also gets the Semantic Navigation
-  DSL toolset (`TurDslToolService` — list indices / get mappings / search /
-  …, the same surface the semantic chat uses) alongside
-  `load_skill`/`skill_bash`. The tools run in-process; the model bridges
-  results into the sandbox `/workspace` via `skill_bash`. This is the first
-  place a skill leverages Turing's own data — the v2 "integrate, via
-  standard tools" step.
-- **T325 — Multi-skill ZIP as independent units. (shipped)** Each skill
-  in an imported ZIP is independently activatable (already true via T319,
-  which splits every `SKILL.md`-bearing folder into its own indexed
-  `TurSkill`) and now optionally selectable in chat as a distinct
-  mode/"flow": an optional `selectedSkillId` rides the chat request and,
-  when set, narrows the turn to that one skill (prompt block + `run_skill`
-  tool); blank keeps the legacy all-skills progressive disclosure.
-
-**Sequencing.** The whole authoring + interop layer has shipped: T326
-(rollback), T317 (storage/index shape), T318 (the mini-VS-Code folder
-editor at `/admin/skill`), T319 (import ZIP — entry door) and T320
-(export ZIP — exit door). **T321 — the engine — has shipped**
-(`TurSkillSandbox*`: a persistent `bash`-driven Docker session with the
-skill folder mounted read-only and a workspace that survives across
-turns, gated on `DOCKER` mode). **T322 — the activation harness — has
-shipped** (`TurSkillActivationHarness`: progressive-disclosure prompt
-block + `load_skill` / `skill_bash` tools over the T321 sandbox, gated on
-storage + `DOCKER`). **T323 — use skill in chat — has shipped**
-(`TurSkillRunnerService` + `run_skill` delegation, per-agent `skillsEnabled`
-toggle, skill always driven by the Default LLM). **T324 — use skill in
-semantic navigation — has shipped** (skill activation is free via the
-shared executor; the skill sub-loop also gets the `TurDslToolService`
-Turing-search tools). **T325 — multi-skill ZIP as independent units — has
-shipped** (independent units via T319 import; per-conversation skill-mode
-selection via an optional `selectedSkillId` on the chat request). The
-whole §IX.4.d skill block is now complete. (A hosted public registry was
-considered and dropped — not a product direction; ZIP import/export is the
-interop boundary.)
-
 ### IX.5 Human-in-the-loop — make it a graph node, not magic
 
 Deep Agents has HITL as middleware (the harness pauses for you when
@@ -1292,35 +993,6 @@ generic state machines. Turing makes it a one-line authoring primitive.
 The `turing` CLI + `turing eval` shipped (T125–T127); these close the
 honest gaps left in the first cut, all of which need a small **backend**
 surface the CLI can read — they can't be fixed in the CLI alone.
-
-#### IX.8.a Per-conversation tool-call trace (T427) — ✅ shipped
-
-Shipped alongside Block W (T436) — see [CHANGELOG.md](CHANGELOG.md) §E.7.
-
-#### IX.8.b `assert.outcome` terminal-state assertion (T428)
-
-The CLI can assert slots and cursor node, but not the conversation's
-*end state* (`CAPTURED` / `ABANDONED` / `HANDOFF`). That label is already
-computed inside `TurAgentEvalRunnerService`; T428 lifts it onto a session
-read endpoint (or the existing `/state` DTO) so a fixture can assert
-`assert.outcome: CAPTURED`. Without it, "did the lead-capture flow
-actually complete?" can only be approximated via slot presence.
-
-#### IX.8.c Global chat-event tail (T429)
-
-`turing logs` rides the T120 spectator SSE stream, which is
-conversation-scoped — you must already know the `conversationId`. A
-`turing logs` with no id should tail a firehose of recent chat events
-across all conversations. T429 adds an admin SSE endpoint backed by a
-bounded in-memory ring buffer (single-node caveat shared with the slot/
-message buses) that fans recent turns out to the CLI.
-
-#### IX.8.d `turing eval` CI gate (T430)
-
-A reusable composite GitHub Action wrapping `turing eval` against a
-deployed instance as a PR gate, plus an `npx @viglet/turing-cli`
-quickstart in the docs. Pure packaging/docs on top of T126 — the
-"every PR runs the eval suite" story from the original design.
 
 ### IX.10 What we explicitly do NOT copy from Deep Agents
 
@@ -1544,15 +1216,6 @@ customer value — there is no monolithic "Block F is done" gate.
 > Claude starts citing; OpenAI starts batching; the bill drops 50%.
 > That is the platform pitch."
 
-### X.18 Capability taxonomy & UX surfacing (T432–T435) — shipped
-
-> **Shipped (2026-06-26).** The unified capability registry/taxonomy (T432),
-> per-agent selection + union execution (T433), the capability-first agent
-> picker (T434), and the registry-driven REQUEST_OPTION settings (T435) all
-> landed — see [CHANGELOG.md](CHANGELOG.md) §X.18. The registry is the single
-> source both the agent UI and the T186 instance × capability heatmap (shipped,
-> CHANGELOG §X.14.f) render from. Design detail is recoverable from `git log`.
-
 ## XII. Admin chat ↔ `@viglet/turing-react-sdk` convergence — shipped
 
 > Block H (T219–T232) is complete: SDK gained LLM listing/context-info, per-turn
@@ -1650,27 +1313,25 @@ invite-based, many-users-per-tenant posture.
 The remaining follow-ups are about making the *multi-product* Cloud seamless,
 not about correctness of the single-service flow:
 
-- **XIV.8.7 — ship Cloud default config as a GLOBAL seed ZIP (T373).** The
-  product ask: a fresh Viglet Cloud deployment should come with a default LLM,
-  default search engine, etc. already configured for *all* users, loadable purely
-  from the Docker image with no post-deploy clicking. `application.properties` is
-  the wrong tool — each instance has ~20 fields plus a `providerOptionsJson` blob
-  and an encrypted API key. The right tool already exists: `TurExportImportOnStartup`
-  scans `export/*.zip` on first boot and imports LLM/SE/Embedding/MCP/etc. through
-  `TurImportExchange` (guarded once by the `EXPORT_AUTO_IMPORT` config marker). The
-  only new guarantee needed is that the seeded BYO-infra lands in the GLOBAL pool:
-  `TurInfraTenantScope.stampOnImport` already keeps `tenantId = null` when no tenant
-  is bound to the thread (the startup import case), and the import code preserves
-  whatever `tenantId` the bundle carries — so the work is to ensure the *export*
-  side emits `tenantId = null` for instances intended as platform defaults, then
-  bake the ZIP into the image (`COPY seed/defaults.zip /app/export/`). Two
-  operational caveats: (a) every container must share the same
-  `TurSecretCryptoService` key or the exported (encrypted) API keys won't decrypt;
-  (b) the `EXPORT_AUTO_IMPORT` marker makes this one-shot per database — changing
-  the defaults later means clearing the marker or a versioned re-seed, which is not
-  yet modeled.
 
----
+#### XIV.8.7 XIV.8.7 — ship Cloud default config as a GLOBAL seed ZIP (T373)
+
+The product ask: a fresh Viglet Cloud deployment should come with a default LLM, default
+search engine, etc. already configured for *all* users, loadable purely from the Docker
+image with no post-deploy clicking. `application.properties` is the wrong tool — each
+instance has ~20 fields plus a `providerOptionsJson` blob and an encrypted API key. The
+right tool already exists: `TurExportImportOnStartup` scans `export/*.zip` on first boot
+and imports LLM/SE/Embedding/MCP/etc. through `TurImportExchange` (guarded once by the
+`EXPORT_AUTO_IMPORT` config marker). The only new guarantee needed is that the seeded
+BYO-infra lands in the GLOBAL pool: `TurInfraTenantScope.stampOnImport` already keeps
+`tenantId = null` when no tenant is bound to the thread (the startup import case), and
+the import code preserves whatever `tenantId` the bundle carries — so the work is to
+ensure the *export* side emits `tenantId = null` for instances intended as platform
+defaults, then bake the ZIP into the image (`COPY seed/defaults.zip /app/export/`). Two
+operational caveats: (a) every container must share the same `TurSecretCryptoService`
+key or the exported (encrypted) API keys won't decrypt; (b) the `EXPORT_AUTO_IMPORT`
+marker makes this one-shot per database — changing the defaults later means clearing the
+marker or a versioned re-seed, which is not yet modeled.  ---
 
 ## XVI. Cost & token governance (Block L)
 
@@ -1790,27 +1451,6 @@ shadcn, standalone, no SDK/backend dependency). Content lives in one place,
 `src/components/sections/`. Deploy: `pnpm build:site` → `apps/site/dist/*` copied
 to the Pages root by `publish-github-pages.yml`.
 
-### XXVII.1 Repositioning & structure (shipped, T473–T476)
-
-- **Hero** — launched analogy-first (*"the open-source alternative to Algolia"*);
-  **revised platform-first by T630** to *"Enterprise search, cited RAG and AI
-  agents — over your own content"* with the Algolia analogy demoted to a
-  sub-line (§XIV.2). Leads with the differentiator, not the category anchor.
-- **Search it → Ask it → Automate it → Run it** — four outcome pillars replace a
-  flat feature grid, selling breadth as depth without diluting the message.
-- **"Why Turing" comparison** — defensible, high-level table (Turing vs hosted
-  SaaS vs DIY) with an explicit "as of 2026, verify vendor capabilities" caveat;
-  attributes chosen to be true (license, hosting, data residency, unified
-  agent+search) rather than feature trivia that ages or misleads.
-- **In-page interactive search demo** — client-side filtering of a small sample
-  corpus (`SEARCH_DOCS`) so the hero shows the product working with zero backend
-  (the Meilisearch movie-demo pattern). It is explicitly labelled "sample data."
-- **Near-free trust wins** — live GitHub-stars badge (`api.github.com`, graceful
-  fallback), copy-paste quickstart (`npx @viglet/turing-cli init`), public
-  Roadmap/Changelog links to the **canonical GitHub-rendered** markdown (not
-  duplicated into the site — founding anti-duplication rule), and the CLI
-  showcase section + the published `@viglet/turing-cli` README.
-
 ### XXVII.2 The live-demo linchpin (T477)
 
 The defining bet (§XIV.3): a *truly* live demo. The hero search + cited-chat are
@@ -1844,35 +1484,6 @@ the host bring-up and pointing the marketplace SPAs at the instance.
 **Non-goals:** do not duplicate ROADMAP/CHANGELOG content into the site (link to
 GitHub); do not fabricate proof (logos/metrics) before real adopters exist; do
 not over-claim in the comparison table (keep it defensible + dated).
-
-### XXVII.4 Persona-adaptive & content-validation demo (T633–T638)
-
-The PoC that won early interest highlighted two capabilities that are now deep in
-Turing but invisible on the site: **ChatFlow** (declarative, deterministic
-multi-step conversations) and **Personas**. A persona is a wildcard: as a SPEAKER
-it fuses tone/verbosity/vocabulary/brand into the assistant's voice; as an
-AUDIENCE it becomes a **spectator that validates content** — `TurPersonaContentFitEvaluator`
-role-plays the persona as a reader and returns a structured verdict (fit %, what
-does/doesn't fit, flagged spans + rewrites). "Cited RAG chat" is now commodity;
-persona-as-content-validator is a genuinely uncommon, memorable differentiator.
-
-**Positioning discipline:** these reinforce *Ask it / Automate it* — they are NOT
-new top-level pillars (that would dilute the platform-first message and read as
-complexity, per §XIV). The site sells the *outcome* ("same content, different
-eyes"; "validate before you publish"), shown live in the playground, not the
-machinery.
-
-**Why these tasks exist (the API gap):** personas + content-fit are fully built
-but only reachable **admin-secured**, and persona is bound per-agent / per-flow —
-there is no per-request persona on the anonymous read-only path the demo uses, and
-no anonymous content-fit endpoint. Rather than fake it with per-persona flows, we
-evolve the product: a **catalog-restricted** per-request persona on `/api/sn/*/chat`
-(T633) and a **rate-limited, input-capped** guest content-fit endpoint (T634) —
-both safe because the persona must belong to the site agent's own catalog, and the
-content-fit path is an LLM-cost surface that inherits the demo's nginx guard
-(`docker/DEMO.md`). SDK (T635) + headless react-ui (T636) + demo seed (T637) then
-let the playground (T638) dogfood it. The site becomes the forcing function that
-turns two admin-only capabilities into public, embeddable product primitives.
 
 ## XXVIII. Provider coverage + cross-vendor capability exploitation (Block AD)
 
@@ -1911,15 +1522,6 @@ reason just to lengthen the list (pure-chat clones belong behind T505's generic
 seam, not as bespoke providers); don't make any new capability default-on (every
 one is gated); don't let the managed-RAG seam (T520) fork the retrieval core —
 it's an alternative backend, not a rewrite.
-
-## XXIX. Documentation parity & didactic refresh — post-T410 (Block AE) — ✅ SHIPPED
-
-> **Block AE (T524–T538) shipped 2026-06-30.** Per the founding rule, the detailed
-> design rationale was removed once the block shipped. What shipped is indexed in
-> [`CHANGELOG.md`](CHANGELOG.md) → Block AE; the living coverage gate is
-> `docs-turing/COVERAGE.md` (every shipped block/feature → its doc page, or an
-> explicit "deliberately internal" row). The house-style + didactic checklist that
-> guided the round now lives on, applied, across the `docs-turing` pages themselves.
 
 ## XXX. Domain layer — bounded completion, stop-criteria & enforcement (Block AF)
 
@@ -1996,50 +1598,6 @@ the bento pages consume directly — no data-layer work per screen.
 > all shared components under `components/bento/__tests__/`. **Phase 0 is
 > complete** — Phases 1–4 now fan out against the scaffold. See CHANGELOG Block AG.
 
-### XXXI.5 Phases 1 & the simple-CRUD tail (T551–T556, T562)
-
-These are the BYO-infra and plain entity CRUDs — SE, Embedding Store, Embedding
-Model, Token, Integration, MCP Server, Custom Tool, Routine, Chat Webhook,
-Persona, Git, Page. Each is the LLM pattern: list of tiles → hero-driven detail →
-`BentoFormSection`s wrapping the current fields. Grouped ~2 per task so each is a
-shippable PR. Custom Tool and Skill keep their code editors inside a section (the
-editor component is reused as-is). BYO-infra screens must keep the `T372`
-GLOBAL-is-read-only behavior in the bento CRUD.
-
-### XXXI.6 Semantic Navigation (T557–T559)
-
-The heaviest area. Three tasks: the **instance** CRUD (identity + engine/store
-bindings + config sections), the **fields** sub-CRUD (a nested editor — best
-rendered as its own bento sub-surface, not a modal — plus the T388 coverage bars
-and T386 manifest plan/diff), and the **onboarding wizard** re-skinned as a bento
-stepper. Splitting keeps each PR reviewable.
-
-### XXXI.7 Editors & browsers (T560–T561)
-
-Skill (the T318 mini-VS-Code file-tree + editor) and Asset (file browser) aren't
-form CRUDs — they're app-like surfaces. They mainly need to sit correctly inside
-the bento shell (full-height layout inside the frosted chrome, the
-`turing-resizable-panel` `overflowHidden` gotcha) rather than adopt the
-hero/save-bar pattern. Reachable via T549 nav, not the home mosaic.
-
-### XXXI.8 Functional & dashboard surfaces (T563–T566)
-
-Chat, Conversation detail, the AI-Analytics dashboards (cost-governance,
-chat-analytics, parked-conversations, capability-matrix), GraphQL explorer,
-Dashboard, Marketplace, Voice Kiosk, Global Settings, Import/Exchange, Logging,
-System Info. These are read-mostly / bespoke; the work is hosting them in the
-bento shell + nav and applying the frosted-tile visual language to their existing
-charts/panels — not the CRUD scaffold. Chart color rules follow the dataviz
-guidance and the brand blue→indigo palette.
-
-### XXXI.9 Admin & tenancy (T567–T568)
-
-Admin settings (users/groups/roles/settings/tokens), Tenant settings, Tenant
-admin, User account. The only subtlety is preserving the existing **Keycloak-vs-
-JPA dependent-query pattern** (see `api/queries/admin.queries.ts`) — the bento
-re-skin must not collapse the source discriminator that toggles cleanly between
-backends.
-
 ## XXXIII. Evaluation platform — pluggable graders + datasets (Block AJ)
 
 ### XXXIII.0 The problem — eval is two hard-wired islands
@@ -2092,54 +1650,6 @@ reusable named templates with weighted aggregation and per-grader thresholds
 (retiring the hardcoded all-must-pass). T603 (§XXXIII.18)
 extends grading from pre-publish to **online/continuous** — sampling live traffic
 and alerting on drift (composing T87 sentiment, T155 citation-drift, T447 miner).
-
-### XXXIII.18 Continuous / online eval (T603)
-
-The whole block so far grades **golden** cases **before** publish. T603 closes
-the loop on the other side: grade **real production traffic** **after** publish,
-so quality regressions that a fixed golden set never anticipated (a drifted
-knowledge base, a provider model swap, a new customer intent) surface on their
-own. The key realisation is that the answer already happened — there is nothing
-to replay. `TurOnlineEvalService` samples an agent's recent live sessions from
-the T87 chat-analytics store (the same index `TurSelfTuningMiner` and the T596
-transcript importer already read), reconstructs a `TurEvalGradingContext` from
-each conversation's persisted turns (T61 chat memory), captured slots + final
-node (T66 submission), session outcome, and T427 tool trace, and runs the same
-pluggable grader stack the pre-publish runner uses — no new grader kinds, no
-replay harness. Expectation-based CODE graders (slot / outcome / node) naturally
-`appliesTo == false` on un-annotated live traffic, so the useful online stack is
-content/quality graders (rubric, model-judge, contains/regex, tool-called) — a
-choice the operator makes by binding an `onlineEvalGraderStackId` (blank ⇒
-signal-only, no LLM cost).
-
-Each sweep writes one `TurOnlineEvalSnapshot`: the sampled/graded counts, the
-grader-stack mean score + pass-rate, and three **composed** post-hoc signals —
-the negative-sentiment rate (T87), the stale-citation rate (T155, only when
-citation-drift detection is itself on), and the failing-session rate (T447, the
-miner's exact heuristic reused verbatim so the two subsystems can't disagree).
-The first snapshot per agent is the healthy **baseline**; later windows are
-compared to it and flagged `driftDetected` with a human-readable reason when the
-mean score / pass-rate fall a configurable margin below baseline **or** any
-absolute signal (sentiment / citation / failing) crosses its alarm threshold.
-Drift below a minimum sample size is never flagged (too small to trust), and
-"re-baseline after a fix" is an explicit operator action rather than an
-auto-reset. Consistent with the block invariants it is opt-in twice (a global
-`turing.genai.online-eval.enabled` switch **and** a per-agent `onlineEvalEnabled`
-flag) and fail-open everywhere — a disabled analytics store, a missing LLM, or
-any error yields a non-persisted "unavailable" snapshot, never an exception on
-the nightly `@SchedulerLock` sweep. Alerting today is the persisted drift flag +
-a `log.warn` line + the Eval Studio **Online** tab's drift timeline; wiring drift
-into an email / webhook channel stays out of scope (no chat-analytics-native
-notification seam exists yet — see the review-task / suggestion pattern for the
-eventual home). This is deliberately **detection**, complementary to (not a
-duplicate of) the T447 self-tuning loop that turns failing sessions into
-suggested prompt changes.
-
-**Design invariants for the whole block:** every layer is opt-in and fail-open —
-empty/legacy config runs the exact current path; CODE graders stay LLM-free so PR
-CI is zero-cost; MODEL graders never use free-text JSON; the grounding hard-fail
-(Block R) and "propose, never auto-apply" (T447) postures carry over to dataset
-generation and self-tuning.
 
 ## XXXIV. Live Preview as a per-turn prompt-diagnostics surface (Block AK)
 
@@ -2424,8 +1934,6 @@ the studio are thin compositions over shipped code — which is why the block ca
 large without being risky, and why the two interconnection bets (§XLVI.4) are where
 the actual product differentiation lives.
 
-### XLVI.2 Phase 2 — the study model — ✅ shipped (see CHANGELOG Block AW: T719–T721)
-
 ### XLVI.3 Phase 3 — synthesis & sufficiency
 
 - **T722 — insights report.** Synthesis runs through `TurLlmSummaryService` (cached,
@@ -2558,67 +2066,6 @@ deprecated. The data is already on the wire and thrown away at one method.
 
 This block widens that funnel once and then turns the recovered data into product.
 
-### LIII.1 Widen the funnel + auto-pricing (T776–T778)
-
-`TurLlmModelOption` (and its frontend twin + `toCatalogMap`) is the lossy
-three-field carrier; **T776** widens it to preserve the rich `ModelEntry` fields
-(and the `Classifier` tier/tags) so the picker and services stop re-deriving what
-the catalog states — including trusting catalog `kind` instead of the heuristic
-classifier. **T777** is the headline the whole block hangs off: a scheduled
-reconciler seeds/refreshes `TurLLMPrice` from catalog `pricing` with a
-CATALOG-vs-MANUAL `source` column so token cost (`TurLLMTokenUsage.costUsd`,
-`TurLLMPriceService.computeCost`, the cost dashboard, gateway per-key spend, budget
-gates) is populated automatically for well-known models, while a customer's
-negotiated/manual rate always wins and is never overwritten. Because catalog prices
-are explicitly `indicative`, **T778** makes provenance honest in the UI: price
-source, `lastVerified`, the indicative flag, and a "verify at vendor" deep link
-(`providers()` `apiPricingUrl`), with a warning when a billed model is unpriced or
-stale.
-
-### LIII.2 Enriched selection & correctness (T779–T782)
-
-Users pick models blind today. **T779** puts the recovered metadata where the
-choice is made — price, limits, capability/modality, benchmark rank, TTFT, cutoff
-and tier as badges/tooltips in the combobox, sortable by price/context/intelligence.
-**T780** stops the manual re-entry of `contextWindow`/`maxOutputTokens`/
-`embeddingDimensions` by pre-filling them from the catalog (override kept, hand
-values validated). **T781** uses `capabilities`/`modalities` to gate features that
-otherwise fail at runtime — no tool calling on a model without `tools`, no image
-upload on a text-only model — and seeds the native-capability matrix defaults from
-the catalog rather than hand-toggling. **T782** closes the lifecycle blind spot: a
-scan flags configured models the vendor has `deprecated`/`RETIRED` and proposes a
-GA replacement with matching capabilities.
-
-### LIII.3 Intelligence, budgeting & optimization (T783–T786)
-
-With prices trustworthy, cost becomes a first-class planning input. **T783** shows a
-projected cost before an expensive run (eval dataset, research study, batch
-re-embed). **T784** turns pricing/benchmarks/performance/tier into router policy on
-the Block AZ gateway — cheapest-that-qualifies, highest-intelligence, or
-lowest-latency selection instead of round-robin only. **T785** is the onboarding
-lever: describe the constraints ("needs vision, ≥128k context, ≤ $X/1M, ≥ High
-tier") and get a ranked recommendation with one-click instance creation, over
-`fetchByCapability`/`fetchByModality`. **T786** runs the loop backwards — from
-observed per-agent usage it proposes a cheaper/faster model that still covers what
-the agent actually uses, with projected savings.
-
-### LIII.4 Freshness & trust (T787–T789)
-
-**T787** surfaces `knowledgeCutoff`/`releaseDate` so both operators and end users
-know how stale an answer may be (optionally self-disclosed in the system prompt).
-**T788** consumes the client `changes()` feed so admins are told when a model they
-depend on is deprecated, repriced, or superseded — the catalog becomes a live
-signal, not a startup snapshot. **T789** (💭) rounds it out with `providers()`
-authoritative pricing links and an optional `plans()` consumer-plan reference.
-
-**Library note (optional, not a blocker).** The 1.0.5 client already exposes
-everything above; `providers()`/`plans()`/`changes()`/`aliases()`/`stats()`/
-`coverage()` currently return untyped `Map<String,Object>`. The only refinement
-worth filing in `openviglet/model-catalog` (`clients/java`) is *typed* records for
-those registries plus an alias-resolution convenience (`get`/lookup that honors
-`aliases.json` + `ModelEntry.aliases()`, so a stored alias id still resolves). Both
-are ergonomic upgrades Turing can work around with raw-map reads until then.
-
 ## LIV. Vectorless (Structured-Data) RAG — name it, feed it, integrate it (Block BF)
 
 **The realization.** Turing already ships a production-grade "talk to a structured
@@ -2668,53 +2115,6 @@ grounding on a declared schema (T385). What is missing:
    sources. A `use-turing-copilot` hook + a thin embeddable component closes it so
    external sites (the model-catalog "Ask the catalog" box) can drop it in.
 
-### LIV.1 Name & surface the capability (T790)
-Promote the T392 retrieval path to an explicitly-named, first-class knowledge-base
-**mode**: a Vector / **Vectorless-Structured** / Hybrid selector on the SN-site AI
-form; a readiness path in `ChatDisabledReason` that recognizes "vectorless" needs
-only a default LLM (not `MISSING_EMBEDDING`/`MISSING_STORE`); and an end-user docs
-page. No new retrieval code — this is discoverability + config surface. The engine
-already exists; the point is that an integrator can *find* and *turn it on*.
-
-### LIV.2 Scheduled JSON-feed source (T791)
-A `TurStructuredFeedIngestService`: a scheduled (TTL) ingester that GETs a remote
-JSON feed — a plain array or a catalog envelope, natively consuming the model
-catalog's `catalog.ndjson` — via the T739 `TurUrlFetcher`, declares/refreshes the
-SN-site field schema (`TurSNSiteFieldExt`) from a **field manifest** (the model
-catalog's emitted `query-manifest.json`: field name, type, facetable, enum sets,
-numeric ranges), maps each record to `TurSNJobItems.attributes`, and POSTs to the
-existing `/api/sn/import` pipeline (with de-index of vanished ids). Config under
-`turing.genai.*`, opt-in per source. This is the missing "pull" side of ingestion.
-
-### LIV.3 Copilot React widget + react-sdk hook (T792)
-A `use-turing-copilot` react-sdk hook + a thin, embeddable Q&A component bound to
-`POST /api/sn/{siteName}/copilot`, rendering the answer plus `TurCatalogCitation[]`
-as linked sources (mirrors `ai-mode-chat.tsx` but for the vectorless/copilot path,
-and multi-turn like `TurCatalogCopilotResult`). Closes the frontend gap so both the
-admin app and external sites can consume vectorless Q&A with citations.
-
-### LIV.4 Stuff-all mode for small datasets (T793)
-For a dataset below a token threshold, skip DSL retrieval entirely and ground the
-LLM on the **whole** context bundle (e.g. the model catalog's emitted `context.txt`,
-sized ≤ ~40k tokens) — the extreme-vectorless path where a ~240-row catalog fits in
-one prompt, cheaper to reason over and still cited + fail-open. A per-source toggle
-on the copilot; retrieval stays the default above the threshold.
-
-### LIV.5 Dogfood: model-catalog as the first vectorless KB on the demo (T794)
-Provision an SN site + field schema from the model catalog's `query-manifest.json`,
-wire the T791 feed to the published `openviglet.github.io/model-catalog` endpoint,
-enable Vectorless RAG, and expose the copilot on `turing-demo.viglet.org` — the live
-demo answering *"cheapest embedding model with ≥1M context?"* with cited model
-links. Turns the capability into a public, clickable proof and the reference
-integration for the model-catalog "Ask the catalog" widget (that repo's Block M).
-
-### LIV.6 Vectorless RAG over the OpenAI-compatible gateway (T793 → 💭 T795)
-Extend the Block AZ gateway (§XLIX) so a `turing-copilot:<site>` model route (or an
-`x-turing-copilot-site` header) invokes the vectorless copilot path — letting any
-OpenAI-style client get grounded, cited structured answers with zero Turing-SDK
-code. The cleanest "separate backend" integration for an external static site, and
-a natural extension of the T744 `turing-sn:<site>` / RAG-as-a-header routing.
-
 ## LVIII. Configurable, per-language NL ranking lexicon (Lucene analysis) (Block BJ)
 
 > **On hold — §LIX has shipped.** `LLM_ASSISTED`/`HYBRID` (Block BK) handle other
@@ -2743,36 +2143,45 @@ dependency (embedded vector store + the Lucene SE plugin), so reusing it adds no
 
 **The design — data-driven lexicon + Lucene analysis, resolved per locale.**
 
-- **LVIII.1 (T814) Externalize.** Lift the four hardcoded sets into a resource-backed
-  `TurRankingLexicon` (a default `en` bundle under `resources/`) served by a
-  `TurRankingLexiconProvider`. `TurNLRankingPlanner` consumes the lexicon instead of
-  static fields — English parity, zero behaviour change, but now the vocabulary is
-  data. This is the seam everything else hangs off.
-- **LVIII.2 (T815) Lucene analysis backbone.** Replace the hand-rolled
-  `tokenize`/`expand`/stopword code with a per-locale Lucene `Analyzer`:
-  `StandardTokenizer` → `LowerCaseFilter` → per-language `StopFilter` (Lucene ships the
-  stopword sets) → a Snowball/`*Stemmer` for the language → `SynonymGraphFilter` built
-  from the T814 synonym map. Crucially the **same analyzer runs over both the query and
-  each declared field's name + description**, so a query lemma matches a field lemma
-  after stemming — "cheapest"/"cheaper"/"cheap" and "barato"/"baratíssimo" all collapse
-  to one stem, and the synonym filter (not a hand map) does the adjective→concept
-  bridge. New inflections stop being a maintenance burden.
-- **LVIII.3 (T816) Per-language + external override.** A registry resolves the lexicon
-  and analyzer by the copilot's request/site locale, falling back to `en`; ship `pt`
-  (and `es`) bundles. `turing.genai.copilot.ranking.lexicon-dir` lets a deployment mount
-  an external lexicon directory so a new language or a tuned synonym set ships as a
-  config file, not a rebuild. Adding a language becomes: a stopword set (Lucene has it),
-  a stemmer (Lucene has it), and a small direction+synonym resource.
-- **LVIII.4 (T817, 💭) Per-site / admin overrides.** Optionally let a site or global
-  settings extend the direction/synonym lexicon with domain terms, editable in admin and
-  merged over the resource defaults — promote only if a deployment needs vocabulary
-  beyond the shipped bundles.
 
-**Invariants preserved.** The planner stays **deterministic and fail-open** — no LLM is
-reintroduced; an unresolved locale falls back to `en`; a lexicon/analyzer failure
-degrades to no-sort exactly as today. The engine (`TurDslLuceneExecutor.buildSort`) is
-untouched. A possible future alignment (out of scope here) is to reuse the target SN
-site's own index analyzers so ranking tokenization matches how the field was indexed.
+### LVIII.1 LVIII.1 (T814) Externalize
+
+Lift the four hardcoded sets into a resource-backed `TurRankingLexicon` (a default `en`
+bundle under `resources/`) served by a `TurRankingLexiconProvider`.
+`TurNLRankingPlanner` consumes the lexicon instead of static fields — English parity,
+zero behaviour change, but now the vocabulary is data. This is the seam everything else
+hangs off.
+
+### LVIII.2 LVIII.2 (T815) Lucene analysis backbone
+
+Replace the hand-rolled `tokenize`/`expand`/stopword code with a per-locale Lucene
+`Analyzer`: `StandardTokenizer` → `LowerCaseFilter` → per-language `StopFilter` (Lucene
+ships the stopword sets) → a Snowball/`*Stemmer` for the language → `SynonymGraphFilter`
+built from the T814 synonym map. Crucially the **same analyzer runs over both the query
+and each declared field's name + description**, so a query lemma matches a field lemma
+after stemming — "cheapest"/"cheaper"/"cheap" and "barato"/"baratíssimo" all collapse to
+one stem, and the synonym filter (not a hand map) does the adjective→concept bridge. New
+inflections stop being a maintenance burden.
+
+### LVIII.3 LVIII.3 (T816) Per-language + external override
+
+A registry resolves the lexicon and analyzer by the copilot's request/site locale,
+falling back to `en`; ship `pt` (and `es`) bundles.
+`turing.genai.copilot.ranking.lexicon-dir` lets a deployment mount an external lexicon
+directory so a new language or a tuned synonym set ships as a config file, not a
+rebuild. Adding a language becomes: a stopword set (Lucene has it), a stemmer (Lucene
+has it), and a small direction+synonym resource.
+
+### LVIII.4 LVIII.4 (T817, 💭) Per-site / admin overrides
+
+Optionally let a site or global settings extend the direction/synonym lexicon with
+domain terms, editable in admin and merged over the resource defaults — promote only if
+a deployment needs vocabulary beyond the shipped bundles.  **Invariants preserved.** The
+planner stays **deterministic and fail-open** — no LLM is reintroduced; an unresolved
+locale falls back to `en`; a lexicon/analyzer failure degrades to no-sort exactly as
+today. The engine (`TurDslLuceneExecutor.buildSort`) is untouched. A possible future
+alignment (out of scope here) is to reuse the target SN site's own index analyzers so
+ranking tokenization matches how the field was indexed.
 
 ## LXI. Content-fit tuning loop — model-aware, enforceable, and it tells you (Block BN)
 
@@ -2849,40 +2258,47 @@ layer up. Deep-linking `/sn/{name}?_aimode=true` would be cheaper, but it is a l
 into lens #1 with a panel open — it inherits the reader-tuned chrome, and it still
 leaves vectorless sites without a tile. The block adds **no backend**.
 
-- **LXIV.1 (T852) The route.** `ROUTES.ANSWER_SEARCH = "/answer"` + a lazy
-  `answer-search.page.tsx` registered next to the existing `/sn` and `/ann` routes in
-  `App.tsx`, composing `TuringAnswer` from `@viglet/turing-react-sdk` over the shipped
-  endpoint. All state that defines an answer — `q`, `_setlocale`, and the `fq` filter
-  set T838 already threads — lives in the URL, mirroring how `/ann` keeps its filters
-  in search params, so an answer an operator wants to discuss is a link (distinct from
-  T844 permalinks, which snapshot a *produced* answer; this just makes the *input*
-  reproducible).
-- **LXIV.2 (T853) The tile and its gate.** `buildSnSearchLaunchers` returns a third
-  `answer` launcher, and `SnLaunchBar` renders it. The gate is **not** a second
-  frontend derivation: use the shipped `GET /sn/{site}/chat/enabled`, whose
-  `diagnoseAgentReadiness` walk already distinguishes the vectorless path
-  (`MISSING_DEFAULT_LLM`) from the vector one (`MISSING_EMBEDDING`/`MISSING_STORE`)
-  and returns a `ChatDisabledReason`. That reason is the point: instead of a tile that
-  silently disappears, the console can say *which* condition to fix. Per-locale
-  dropdown, matching the other two launchers.
-- **LXIV.3 (T854) Operator affordances.** Turn the reader defaults inside out on this
-  page only: `showProvenance` expanded, the T843 trace shown, footnote rank + retrieval
-  score on each source card, and the `JsonSheet` raw-document view `/ann` already uses.
-  Nothing new is computed — every field already rides the `citations`/`trace` events;
-  this is presentation, which is why it is a separate, small task rather than folded
-  into T852.
-- **LXIV.4 (T855, 💭) Cross-lens compare.** Carry `q`/locale/filters across the three
-  routes so the same question can be replayed as keyword, vector and answer. The
-  diagnostic payoff (recall vs rerank vs synthesis) is real, but it is worth building
-  only once the three lenses exist and operators are observed switching between them —
-  hence 💭.
 
-**Invariants.** Purely additive and console-only: the public `/sn` page, its
-`_aimode` panel and both SDKs are untouched, so nothing a visitor sees changes. The
-answer endpoint is not modified, so Block BO's fail-open behaviour (a terminal `error`
-event, never a thrown stream) carries over unchanged. The new tile follows the existing
-launcher contract — an external link out of the bento shell, never an embedded console
-search — so the console keeps one way of launching a search surface.
+### LXIV.1 LXIV.1 (T852) The route
+
+`ROUTES.ANSWER_SEARCH = "/answer"` + a lazy `answer-search.page.tsx` registered next to
+the existing `/sn` and `/ann` routes in `App.tsx`, composing `TuringAnswer` from
+`@viglet/turing-react-sdk` over the shipped endpoint. All state that defines an answer —
+`q`, `_setlocale`, and the `fq` filter set T838 already threads — lives in the URL,
+mirroring how `/ann` keeps its filters in search params, so an answer an operator wants
+to discuss is a link (distinct from T844 permalinks, which snapshot a *produced* answer;
+this just makes the *input* reproducible).
+
+### LXIV.2 LXIV.2 (T853) The tile and its gate
+
+`buildSnSearchLaunchers` returns a third `answer` launcher, and `SnLaunchBar` renders
+it. The gate is **not** a second frontend derivation: use the shipped `GET
+/sn/{site}/chat/enabled`, whose `diagnoseAgentReadiness` walk already distinguishes the
+vectorless path (`MISSING_DEFAULT_LLM`) from the vector one
+(`MISSING_EMBEDDING`/`MISSING_STORE`) and returns a `ChatDisabledReason`. That reason is
+the point: instead of a tile that silently disappears, the console can say *which*
+condition to fix. Per-locale dropdown, matching the other two launchers.
+
+### LXIV.3 LXIV.3 (T854) Operator affordances
+
+Turn the reader defaults inside out on this page only: `showProvenance` expanded, the
+T843 trace shown, footnote rank + retrieval score on each source card, and the
+`JsonSheet` raw-document view `/ann` already uses. Nothing new is computed — every field
+already rides the `citations`/`trace` events; this is presentation, which is why it is a
+separate, small task rather than folded into T852.
+
+### LXIV.4 LXIV.4 (T855, 💭) Cross-lens compare
+
+Carry `q`/locale/filters across the three routes so the same question can be replayed as
+keyword, vector and answer. The diagnostic payoff (recall vs rerank vs synthesis) is
+real, but it is worth building only once the three lenses exist and operators are
+observed switching between them — hence 💭.  **Invariants.** Purely additive and
+console-only: the public `/sn` page, its `_aimode` panel and both SDKs are untouched, so
+nothing a visitor sees changes. The answer endpoint is not modified, so Block BO's
+fail-open behaviour (a terminal `error` event, never a thrown stream) carries over
+unchanged. The new tile follows the existing launcher contract — an external link out of
+the bento shell, never an embedded console search — so the console keeps one way of
+launching a search surface.
 
 ## LXV. Block AV follow-through — the gaps the POST-native migration left (Block BR)
 
