@@ -278,14 +278,7 @@ tests; the Javadocs reference each other so drift is visible.
 | #12 — aiInstruction literal | A | `countMatches(systemText, snippet) == 2` in regen | reply mentions distinctive term from `aiInstruction` | programa-match-ee | 🗑 deleted |
 | #13 — chips congruency | A | 4 labels literal + "MUST be congruent" in system text | generated question admits all 4 chips as natural answers | regen-with-chips | 🗑 deleted |
 
-**Structural-only — all DELETED in T16** (regen path gone):
-- #8 — `textAlignedWithCurrentNode` + chip suppression
-- #9 — regen omits next-step preview
-- #11 — drop `baseSystemPrompt` in regen
-- #14 — trim history to 3 turns in regen
-- #15 — refresh state before strategy advance (T13 `@Transactional` replaces it)
-
-**Contract-only** (middleware):
+#### VI.3.2 Contract-only (middleware)
 - #16 — explicit save after walk → redesigned as "all walk saves coalesce in one transaction" (T13)
 - #17 — cycle cap (already covered by `TurChatFlowSubFlowEngineIT` — don't duplicate)
 - #18 — fallback HEURISTIC
@@ -294,7 +287,7 @@ tests; the Javadocs reference each other so drift is visible.
 - #21 — judge retry / `isNonBlankRedirect` — 🗑 deleted in T16; replaced entirely by #22
 - #22 — `onJudgeReject` declarative (already covered by `LlmJudgeGuardrailStrategyTest` — don't duplicate)
 
-**Special**:
+#### VI.3.3 Special
 - #5 — `forbidsToolCalls` substring overload 🗑 deleted in T16; `@Nested` unit class now only exercises the node-aware overload (`ChatFlowNode.toolsEnabled`)
 - #6 — `freshlyTriggered` skip: strong indirect coverage via `autoTriggerRouter_rejectsGreeting_picksFlowOnExplicitIntent`. Post-T16 the contract narrowed to "skip earlyAdvance on the trigger turn"; the structural skeleton survives and needs a body.
 
