@@ -107,20 +107,32 @@ These are product, not patches — preserve verbatim:
 
 ### III.1 Subsystem inventory
 
+#### III.1.1 Where a deterministic mechanism already shipped
+
 | Subsystem | Class | Current mechanism | Opportunity |
 |---|---|---|---|
 | Chat-flow router | `TurChatFlowEngineService` | Token overlap (Lucene PT analyzer) + LLM fallback | ✅ Shipped (§II) |
 | RAG retrieval | `TurRagSearchToolService`, `TurRagContextBuilder` | Vector + BM25 fused via Reciprocal Rank Fusion (T24) per-agent toggle | ✅ Single-collection shipped (§III.2); multi-locale (T24b) pending |
 | Vector store | `TurLuceneVectorIndex`, `TurLuceneVectorStore` | Vector index + BM25 inverted index + `hybridSearch` (T24) | ✅ Shipped (§III.2, §III.3); multi-locale split pending (T24b) |
 | Spotlights | `TurSNSpotlightProcess` | MemoryIndex + QueryParser (T21) — phrase / slop / fuzzy / boolean syntax via per-request MemoryIndex; AND-default keeps V1 precision | ✅ V1+V2 shipped (§III.4) |
+| Persona tone validation | `TurPersonaToneValidator` | Multi-locale Lucene stem matching: BrazilianAnalyzer + EnglishAnalyzer + SpanishAnalyzer (T22) | ✅ Shipped (§IV.3) |
+
+#### III.1.2 Where one is still worth adding
+
+| Subsystem | Class | Current mechanism | Opportunity |
+|---|---|---|---|
 | Chat analytics enricher | `TurChatAnalyticsEnricher`, `TurChatAnalyticsEngine` | Pluggable interface; default no-op | **TF-IDF intent classifier** (§III.5) |
 | Chat memory | `TurChatMemoryService` | Chronological FIFO of last N turns | Possible — **conversation-relevance retrieval** (§IV.4) |
+| MCP/Custom tool selection | `TurAgentChatExecutor.resolveToolCallbacks` | All tools passed to LLM each turn | Possible — **tool pre-filtering** (§IV.2) |
+
+#### III.1.3 Where the LLM, or a delegate, is already the right tool
+
+| Subsystem | Class | Current mechanism | Opportunity |
+|---|---|---|---|
 | Slot extraction | `TurChatSlotExtractionService` | LLM-only with structured-output prompt | None — semantic extraction is LLM's strength |
 | Persona resolution | `TurAgentPersonaResolver` | Exact `__activePersonaId` variable lookup | None — already deterministic |
-| Persona tone validation | `TurPersonaToneValidator` | Multi-locale Lucene stem matching: BrazilianAnalyzer + EnglishAnalyzer + SpanishAnalyzer (T22) | ✅ Shipped (§IV.3) |
 | Persona few-shot | `TurPersonaFewShotRetriever` | Vector topK over persona's example pool | None — vector is right for this |
 | Search rules | `TurSNSearchRuleEvaluator` | EQUALS/CONTAINS/STARTS_WITH on params | None — string matching is the contract |
-| MCP/Custom tool selection | `TurAgentChatExecutor.resolveToolCallbacks` | All tools passed to LLM each turn | Possible — **tool pre-filtering** (§IV.2) |
 | Spell check | `TurSNSiteSpellCheckAPI` | Delegated to Solr (Lucene under the hood) | None |
 | Autocomplete | `TurSNSiteAutoCompleteAPI` | Delegated to SE plugin | None |
 | Token usage | `TurLLMTokenUsageService` | Counter aggregation | None |
@@ -262,21 +274,6 @@ tests; the Javadocs reference each other so drift is visible.
 >
 > Deleted pairs (no longer applicable): #7, #10, #12, #13 — all four
 > tested the regen / OVERRIDE path that T16 removed.
-
-> **Historical inventory** (kept for context — the categories below
-> describe what the 22 patches WERE pre-refactor). Use this only when
-> reading old PRs; the active contract is the survivors table above.
-
-| Patch | Cat | Structural IT (mock) | Behavioral IT (gpt-4o-mini real) | Fixture | T16 status |
-|---|---|---|---|---|---|
-| #1 — persona post-flow | A | `resolver` called ≥2×; 1st prompt has post-walk persona | reply in post-walk persona voice (Lucas), not default (Marina) | persona-switch-mid-flow | ⏳ redesign |
-| #2 — persona in regen | A | `resolver` 3×; 2nd prompt has post-walk persona | 2nd turn in post-walk voice after crossing `persona-*` | persona-switch-mid-flow | 🗑 deleted |
-| #3 — tool strip initial | B | `ToolCallingChatOptions.getToolCallbacks()` empty when node forbids | LLM does NOT invoke `compor_proposta_in_company` on capture turn | tool-free-node | ⏳ redesign |
-| #4 — tool strip regen | B | idem #3 on 2nd call | idem #3 on 2nd call | tool-free-node | 🗑 deleted |
-| #7 — regen full path | A | `chatModel.call()` invoked 2×; 2nd prompt has post-advance addendum | question generated is from node B (regex), not A | programa-match-ee | 🗑 deleted |
-| #10 — OVERRIDE block | A | substrings `INSTRUÇÃO DE PRIORIDADE MÁXIMA` + `HIGHEST-PRIORITY OVERRIDE` in regen system text | with OVERRIDE: question from node B; without (mock-control): regresses to node A | programa-match-ee | 🗑 deleted |
-| #12 — aiInstruction literal | A | `countMatches(systemText, snippet) == 2` in regen | reply mentions distinctive term from `aiInstruction` | programa-match-ee | 🗑 deleted |
-| #13 — chips congruency | A | 4 labels literal + "MUST be congruent" in system text | generated question admits all 4 chips as natural answers | regen-with-chips | 🗑 deleted |
 
 #### VI.3.2 Contract-only (middleware)
 - #16 — explicit save after walk → redesigned as "all walk saves coalesce in one transaction" (T13)
@@ -528,36 +525,39 @@ explicit gaps. Each maps to a T-task in §0 Block D.
 These survive customer rotation — patterns / pitfalls that should be
 internalized in the next customer's design phase, not re-discovered.
 
-1. **Determinism + LLM hybrid is the production pattern.** Three
-   Education-customer tools (`compor_proposta_in_company`,
-   `gerar_proposta_pdf`, `aula_relampago`) follow the same shape:
-   Groovy composes structure deterministically (pricing tables, layout,
-   mindmap), LLM contributes only *content* (tone, narrative voice).
-   Pricing and references must audit; tone is a stylistic dial.
-   Document this as platform doctrine and ship `scaffold.markdown` /
-   `scaffold.pickQuote` / `scaffold.buildMindMap` helpers (T98 in §VII.4).
+#### VII.3.1 Determinism + LLM hybrid is the production pattern
 
-2. **Slot orthogonality enables multi-flow coexistence.** B2B flow uses
-   `razao_social`/`num_pessoas`/`tema`/`prazo`; B2C uses
-   `name`/`cargo_atual`/`objetivo`/`area`. Same session accumulates both
-   without corruption. LLM router decides at trigger; presence of a
-   distinctive slot (`proposta_in_company`) determines UI without
-   needing an explicit mode flag.
+Three Education-customer tools (`compor_proposta_in_company`, `gerar_proposta_pdf`,
+`aula_relampago`) follow the same shape: Groovy composes structure deterministically
+(pricing tables, layout, mindmap), LLM contributes only *content* (tone, narrative
+voice). Pricing and references must audit; tone is a stylistic dial. Document this as
+platform doctrine and ship `scaffold.markdown` / `scaffold.pickQuote` /
+`scaffold.buildMindMap` helpers (T98 in §VII.4).
 
-3. **`triggerDescription` is a denylist, not an allowlist.** Allow-list
-   of keywords kills greetings. Denylist + specificity-tiebreak is what
-   works in production.
+#### VII.3.2 Slot orthogonality enables multi-flow coexistence
 
-4. **`gpt-4o-mini` at temp=0 is deterministic but NOT robust to JSON.**
-   Structured-output as a guardrail is a dead-end with this model class.
-   Use tool-calling with provider-side schema or the bilingual `LlmJudge`
-   strategy instead (already encoded as §I.7 non-goal — verbatim in §0).
+B2B flow uses `razao_social`/`num_pessoas`/`tema`/`prazo`; B2C uses
+`name`/`cargo_atual`/`objetivo`/`area`. Same session accumulates both without
+corruption. LLM router decides at trigger; presence of a distinctive slot
+(`proposta_in_company`) determines UI without needing an explicit mode flag.
 
-5. **DSpace / public-content grounding beats LLM-invented references.**
-   Pull the source + extract a verbatim quote ≥40 chars + hand it to the
-   persona in the scaffold. The LLM has no opportunity to hallucinate
-   an author. Generalizable beyond academia: any public-content corpus
-   (papers, manuals, knowledge base) works with the same pattern.
+#### VII.3.3 `triggerDescription` is a denylist, not an allowlist
+
+Allow-list of keywords kills greetings. Denylist + specificity-tiebreak is what works in
+production.
+
+#### VII.3.4 `gpt-4o-mini` at temp=0 is deterministic but NOT robust to JSON
+
+Structured-output as a guardrail is a dead-end with this model class. Use tool-calling
+with provider-side schema or the bilingual `LlmJudge` strategy instead (already encoded
+as §I.7 non-goal — verbatim in §0).
+
+#### VII.3.5 DSpace / public-content grounding beats LLM-invented references
+
+Pull the source + extract a verbatim quote ≥40 chars + hand it to the persona in the
+scaffold. The LLM has no opportunity to hallucinate an author. Generalizable beyond
+academia: any public-content corpus (papers, manuals, knowledge base) works with the
+same pattern.
 
 6. **The persona should NOT use a first name in B2B.** "Olá, Maria"
    sounds invasive in account-exec contexts; the B2B persona speaks to
@@ -1096,22 +1096,25 @@ unchanged.
 The audit found three classes of features Spring AI 2.0 does **not**
 cover and where the official Java SDKs ship richer surface:
 
-1. **Whole-new endpoints that didn't exist when Spring AI 1.x
-   shipped**: OpenAI Responses API, Realtime API, Batch APIs of both
-   vendors, OpenAI Evals / Stored Completions / Distillation, Anthropic
-   MCP Connector / Files API / Token Counting. Spring AI 2.0
-   milestones M3/M4 added some of these — most stay open issues.
-2. **Server-side built-in tools**: every "the model executes a tool
-   in the vendor's infrastructure with no client code" feature
-   (OpenAI `web_search` / `file_search` / `code_interpreter` /
-   `computer_use` / remote `mcp`; Anthropic `web_search` /
-   `web_fetch` / `code_execution` / `bash` / `text_editor` /
-   `memory_20250818` / `computer_use_20251124`). Spring AI's tool
-   surface is client-side `MethodToolCallback`-only.
-3. **Provider-specific governance**: `safety_identifier`,
-   `omni-moderation-latest`, `service_tier`, `reasoning.summary`,
-   `predicted output`, Anthropic Citations with the Search Results
-   content type, Admin API / Usage API for per-tenant cost tracking.
+#### X.1.1 Whole-new endpoints that didn't exist when Spring AI 1.x shipped
+
+OpenAI Responses API, Realtime API, Batch APIs of both vendors, OpenAI Evals / Stored
+Completions / Distillation, Anthropic MCP Connector / Files API / Token Counting. Spring
+AI 2.0 milestones M3/M4 added some of these — most stay open issues.
+
+#### X.1.2 Server-side built-in tools
+
+every "the model executes a tool in the vendor's infrastructure with no client code"
+feature (OpenAI `web_search` / `file_search` / `code_interpreter` / `computer_use` /
+remote `mcp`; Anthropic `web_search` / `web_fetch` / `code_execution` / `bash` /
+`text_editor` / `memory_20250818` / `computer_use_20251124`). Spring AI's tool surface
+is client-side `MethodToolCallback`-only.
+
+#### X.1.3 Provider-specific governance
+
+`safety_identifier`, `omni-moderation-latest`, `service_tier`, `reasoning.summary`,
+`predicted output`, Anthropic Citations with the Search Results content type, Admin API
+/ Usage API for per-tenant cost tracking.
 
 For these three classes Turing introduces a **`TurNativeProviderClient`**
 seam (T130). The existing `TurGenAiLlmProvider` gains two parallel
@@ -1124,14 +1127,14 @@ per-instance capability matrix agree on a feature; otherwise it returns
 empty and the caller delegates to the Spring AI collaborator graph
 verbatim.
 
-**Migration philosophy**: this is **not** "rip out Spring AI". It's
-"keep Spring AI as the default, opt into native paths per capability
-per agent per LLM instance." The per-LLM-instance capability matrix
-(T132) makes that opt-in explicit: an admin enabling `openai-web-search-tool`
-on instance X turns on T133 for that instance only, every other
-instance keeps falling through to the Spring AI executor. Block F has
-**no monolithic flag day** — features ship one at a time, each guarded
-by its own capability row.
+#### X.1.4 Migration philosophy
+
+this is **not** "rip out Spring AI". It's "keep Spring AI as the default, opt into
+native paths per capability per agent per LLM instance." The per-LLM-instance capability
+matrix (T132) makes that opt-in explicit: an admin enabling `openai-web-search-tool` on
+instance X turns on T133 for that instance only, every other instance keeps falling
+through to the Spring AI executor. Block F has **no monolithic flag day** — features
+ship one at a time, each guarded by its own capability row.
 
 ### X.5 MCP federation — shipped (F.4)
 
@@ -1330,8 +1333,9 @@ marker or a versioned re-seed, which is not yet modeled.  ---
 >    filters. This is a correctness contract shared with Dumont **D03**.
 > 2. **Objective ranking.** Public-data aggregator → no "preferred/partner" boost,
 >    ever. Hybrid/semantic ranking must order by relevance and neutral signals only.
->
-> **Amplification (2026-06-16).** T381–T385 were scoped narrowly as the cursarei
+### XX.14 Amplification (2026-06-16) — the reusable platform capability
+
+> T381–T385 were scoped narrowly as the cursarei
 > migration's indexing half. Read together they are the foundation of a reusable
 > platform capability: **Turing as a declarative, self-hosted structured-search engine**
 > for public and enterprise catalogs — the open-core Algolia/Coveo posture in
@@ -1381,8 +1385,9 @@ these block the Dumont collection work — a sidecar
 >    component), and the result is fed back into the loop. Turing has **no**
 >    mechanism for the agent to invoke client code; Slots + forms are a
 >    data-driven contour, not a tool-call round-trip.
->
-> **Non-goal clarification.** Turing is **the backend** — it is *not* trying to
+### XXII.7 Non-goal clarification — Turing is the backend, not a protocol adapter
+
+> Turing is **the backend** — it is *not* trying to
 > become a protocol adapter that fronts LangGraph/CrewAI/Mastra (AG-UI's other
 > selling point). The goal here is UI-observable parity for Turing's *own*
 > agent runtime, not multi-runtime federation. The optional canonical-protocol
@@ -1524,6 +1529,8 @@ route-hierarchy "up" navigation, a dark-mode toggle and a user menu. It carries 
 - `bento/ai-agent` — list (`bento-grid` of tiles) + detail dashboard.
 - `bento/llm` — list + instance detail + form.
 
+#### XXXI.0.1 The settled detail pattern, and why it is worth codifying
+
 The **detail pattern is settled and worth codifying** because it's what makes the
 rest cheap:
 
@@ -1608,26 +1615,33 @@ provenance, origin legend) instead of one scrolling `<pre>` per fragment. That
 alone turned it into a tool people actually read — and reading it surfaced real,
 quantifiable problems on a live agent (the Insper multi-flow concierge):
 
-- **~40–50% of an active-flow turn is inert or duplicated.** The agent prompt
-  hard-codes a whole "first-interaction / welcome / 3-experiences" section that the
-  flow addendum *explicitly orders the model to ignore* ("IGNORE TODO O RESTO …
-  siga o Goal"). On every active-flow turn that is ~800 tokens of dead weight the
-  model still has to attend to.
-- **Rules are paid for 2–3×.** The forbidden-vocabulary list (`talvez`,
-  `impossível`, `não sei`, …) appears in the Persona block *and* the agent "REGRAS
-  DURAS"; "never ask for CPF/card" and "never cite competitors" likewise. Same
-  rule, multiple segments.
-- **The node label was pure cost.** The flow addendum emitted
-  `=== ACTIVE FLOW STEP: <label> ===` — literal `===` (not Markdown) plus a
-  Portuguese node label inside an English scaffold, when behavior is driven
-  entirely by the `Goal:` line and the Hard rules already tell the model to ignore
-  persona/role framing. (Fixed ahead of this block: the delimiter is now a Markdown
-  `## ACTIVE FLOW STEP` heading and the label is dropped.)
-- **The preview lies about the persona.** `buildPreviewInternal` hardcodes
-  `agent.getDefaultPersona()`, but at runtime `TurAgentPersonaResolver.resolve()`
-  reads a `__activePersonaId` set by a `persona`-type flow node — so a flow can
-  switch Marina → Professor Insper and the preview would still show Marina.
-  `TurSystemPromptValidatorService` has the same blind spot.
+#### XXXIV.0.1 ~40–50% of an active-flow turn is inert or duplicated
+
+The agent prompt hard-codes a whole "first-interaction / welcome / 3-experiences"
+section that the flow addendum *explicitly orders the model to ignore* ("IGNORE TODO O
+RESTO … siga o Goal"). On every active-flow turn that is ~800 tokens of dead weight the
+model still has to attend to.
+
+#### XXXIV.0.2 Rules are paid for 2–3×
+
+The forbidden-vocabulary list (`talvez`, `impossível`, `não sei`, …) appears in the
+Persona block *and* the agent "REGRAS DURAS"; "never ask for CPF/card" and "never cite
+competitors" likewise. Same rule, multiple segments.
+
+#### XXXIV.0.3 The node label was pure cost
+
+The flow addendum emitted `=== ACTIVE FLOW STEP: <label> ===` — literal `===` (not
+Markdown) plus a Portuguese node label inside an English scaffold, when behavior is
+driven entirely by the `Goal:` line and the Hard rules already tell the model to ignore
+persona/role framing. (Fixed ahead of this block: the delimiter is now a Markdown
+`## ACTIVE FLOW STEP` heading and the label is dropped.)
+
+#### XXXIV.0.4 The preview lies about the persona
+
+`buildPreviewInternal` hardcodes `agent.getDefaultPersona()`, but at runtime
+`TurAgentPersonaResolver.resolve()` reads a `__activePersonaId` set by a `persona`-type
+flow node — so a flow can switch Marina → Professor Insper and the preview would still
+show Marina. `TurSystemPromptValidatorService` has the same blind spot.
 
 The insight: the Live Preview is the natural place to *optimize the turn*. It
 should answer three questions per turn — **what does the model actually receive,
@@ -1675,18 +1689,6 @@ injecting test parameters, validate the method + the final prompt, and show the
 truly faithful prompt.* Exactly right — and the scalable form of it is a pipeline,
 not a second call site.
 
-> **T613 (SPI + single-pass assembler) and T614 (stability-classed ordering +
-> cache breakpoint) shipped** — see CHANGELOG Block AL. The `TurPromptContributor`
-> SPI, the single-pass `TurPromptAssemblyPipeline`, the six built-in contributors,
-> the byte-identical legacy join, the preview rendering the same segments, and the
-> opt-in STABLE-first reorder + `cacheBreakpointIndex` are all in. **T615 also
-> shipped** — the pre-pipeline concatenation and its
-> `turing.prompt.assembly.pipeline-enabled` escape hatch were deleted, so the
-> pipeline is now the single system-prompt assembly path. The subsections that
-> specified all three were removed per the "no shipped reports in IMPROVEMENTS"
-> rule. **T616 also shipped** — the T115 memory summary and T30 relevance turns now
-> assemble through a message-level SPI (`TurMessageContributor` /
-> `TurMessageAssemblyPipeline`), so the whole message list has one assembly point.
 ## XXXVI. HuggingFace embedding provider + provider-aware model discovery (Block AM)
 
 > **Block AM (T623–T629) is fully shipped and closed** — see CHANGELOG Block AM.
@@ -2131,6 +2133,8 @@ inside the *public* search page (`_aimode`, T835). The admin console never got i
 `SnLaunchBar` still renders two launcher tiles, Open Search (`/sn/{name}`) and ANN
 (`/ann/{name}`). Three gaps follow.
 
+#### LXIV.0.1 The three gaps that follow
+
 - **The gates disagree, and the narrower one wins.** The ANN tile requires
   `annEnabled` — an agent that is enabled *and* `ragEnabled`, *and* a site not in
   `VECTORLESS_STRUCTURED` (T790) — re-derived in the frontend. The answer endpoint
@@ -2149,7 +2153,9 @@ inside the *public* search page (`_aimode`, T835). The admin console never got i
   the first two lenses; without the third, the comparison can't be made in the
   console.
 
-**The design — `/answer` as a peer route, not a query parameter.** `/ann` is the
+#### LXIV.0.2 The design — `/answer` as a peer route, not a query parameter
+
+`/ann` is the
 precedent: it exists because "raw vector hits with scores and a JSON sheet" is an
 *operator* view of retrieval that no visitor wants. `/answer` is the same move one
 layer up. Deep-linking `/sn/{name}?_aimode=true` would be cheaper, but it is a link
