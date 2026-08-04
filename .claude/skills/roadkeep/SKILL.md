@@ -8,8 +8,7 @@ description: Call the roadkeep CLI instead of editing a project's governed ROADM
 The line format is a schema at the point of insertion, not a convention to remember. Every
 field is validated before a sentence exists, so a refusal costs a retry and never a deletion.
 Read `roadkeep.toml` for this project's prefix, id shape, paths, markers and limits (L6);
-nothing below hardcodes them. `roadkeep` is the installed entry point — `python -m roadkeep.cli` when it is
-not on PATH.
+nothing below hardcodes them. `python "../../../alegauss/roadkeep/scripts/roadkeep.py"` is this project's entry point — `install` wired it to a checkout, so the package is not installed here and `roadkeep` is on no PATH.
 
 ## Writing and shipping
 
