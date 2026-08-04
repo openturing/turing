@@ -96,7 +96,9 @@ public class TurSNSiteSearchSnapshotService {
      * empty result itself is cached so repeated 404s do not roundtrip the DB.
      */
     @Cacheable(value = CACHE_NAME,
-            key = "T(com.viglet.turing.sn.snapshot.TurSNSiteSearchSnapshotService).cacheKey(#siteName, #locale)")
+            key = "@turTenantCacheKey.scoped("
+                    + "T(com.viglet.turing.sn.snapshot.TurSNSiteSearchSnapshotService)"
+                    + ".cacheKey(#siteName, #locale))")
     public Optional<TurSNSiteSearchSnapshot> getSnapshot(String siteName, Locale locale) {
         // Reaching this method means the cache lookup missed — Spring's @Cacheable
         // proxy short-circuits hits before invoking the method.
@@ -116,6 +118,13 @@ public class TurSNSiteSearchSnapshotService {
      * {@link #getSnapshot}) share the same shape: {@code lower(siteName):locale}.
      * A null locale collapses to {@code "*"} so endpoints that need only
      * site-level config (no facet labels) reuse the same cache slot.
+     *
+     * <p>
+     * T895 / §LXVIII.4 — this is the <em>site-scoped</em> half of the key only. The
+     * SN site name is unique per tenant, not globally, so the SpEL on
+     * {@link #getSnapshot} wraps this in {@code @turTenantCacheKey.scoped(...)}; a
+     * caller that builds the key itself must do the same.
+     * </p>
      */
     public static String cacheKey(String siteName, Locale locale) {
         String name = StringUtils.lowerCase(siteName);

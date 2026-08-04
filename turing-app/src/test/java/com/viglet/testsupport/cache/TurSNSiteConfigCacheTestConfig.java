@@ -14,7 +14,9 @@ import org.springframework.cache.concurrent.ConcurrentMapCacheManager;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
+import com.viglet.core.tenancy.VigletTenantContext;
 import com.viglet.turing.genai.tool.TurSNSiteConfigCache;
+import com.viglet.turing.tenant.TurTenantCacheKey;
 
 /**
  * Standalone cache context for {@code TurSNSiteConfigCacheTest} (T487).
@@ -40,5 +42,16 @@ public class TurSNSiteConfigCacheTestConfig {
     @Bean
     TurSNSiteConfigCache configCache() {
         return new TurSNSiteConfigCache();
+    }
+
+    /**
+     * T895 / §LXVIII.4 — the cache's key SpEL resolves
+     * {@code @turTenantCacheKey.scoped(...)}, so the bean has to exist here too.
+     * Tenancy is left on with the {@code DEFAULT} tenant, which is what a
+     * single-tenant install resolves to.
+     */
+    @Bean
+    TurTenantCacheKey turTenantCacheKey() {
+        return new TurTenantCacheKey(new VigletTenantContext(true, "DEFAULT"));
     }
 }

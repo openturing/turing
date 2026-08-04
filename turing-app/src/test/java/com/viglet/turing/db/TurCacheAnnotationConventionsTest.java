@@ -21,6 +21,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.stream.Stream;
@@ -29,6 +30,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.cache.annotation.Caching;
+import org.springframework.core.annotation.MergedAnnotation;
 import org.springframework.core.annotation.MergedAnnotations;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.type.classreading.MetadataReader;
@@ -84,6 +86,96 @@ class TurCacheAnnotationConventionsTest {
                         the hot path, cache an immutable read-model/DTO in a dedicated cache service
                         (see T487), never a JPA entity. Offending repository members below:""")
                 .isEmpty();
+    }
+
+    /**
+     * T895 / §LXVIII.4 — <strong>every explicitly-keyed {@code @Cacheable} is either
+     * tenant-scoped or listed here as globally unique.</strong>
+     *
+     * <p>An explicit {@code key} SpEL bypasses {@code TurTenantCacheKeyGenerator}
+     * entirely, so such a cache is partitioned by tenant only if its own key says
+     * so. That exemption was taken on the grounds that explicitly-keyed caches are
+     * id-keyed and a UUID is already globally unique — which held for five of the
+     * eight and failed for the three keyed on the <em>SN site name</em>, a value
+     * unique only within a tenant. Two tenants owning a site called {@code intranet}
+     * shared cached answers, the site snapshot and the LLM tool's field config.
+     *
+     * <p>The lint is the part that stops the next one: a new explicitly-keyed cache
+     * must either wrap its key in {@code @turTenantCacheKey.scoped(...)} or be added
+     * to {@link #GLOBALLY_UNIQUE_KEYS} with the reason its key cannot collide across
+     * tenants. Both are cheap; neither is silent.
+     */
+    @Test
+    void everyExplicitlyKeyedCacheIsTenantScopedOrGloballyUnique() throws IOException {
+        Path classesDir = Paths.get("target/classes");
+        assertThat(Files.isDirectory(classesDir))
+                .as("Expected compiled classes at %s. Run 'mvn -DskipTests compile' first.",
+                        classesDir)
+                .isTrue();
+
+        MetadataReaderFactory readers = new SimpleMetadataReaderFactory();
+        Set<String> violations = new TreeSet<>();
+
+        try (Stream<Path> paths = Files.walk(classesDir)) {
+            paths.filter(Files::isRegularFile)
+                    .filter(TurCacheAnnotationConventionsTest::isClassFile)
+                    .forEach(p -> scanExplicitKeys(p, readers, violations));
+        }
+
+        assertThat(violations)
+                .as("""
+                        An explicitly-keyed @Cacheable bypasses TurTenantCacheKeyGenerator, so it is
+                        partitioned by tenant only if its own key says so (T895 / §LXVIII.4). Either
+                        wrap the key in @turTenantCacheKey.scoped(...), or — if the key genuinely
+                        cannot collide across tenants (a UUID, or content-addressed input) — add the
+                        member to GLOBALLY_UNIQUE_KEYS in this test with the reason. Unscoped and
+                        unlisted below:""")
+                .isEmpty();
+    }
+
+    /**
+     * Explicitly-keyed caches whose key cannot collide across tenants, with the
+     * reason. Reviewed as part of T895 — add to this map only after checking that
+     * every component of the key is either a globally-unique id or content the value
+     * is fully derived from.
+     */
+    private static final Map<String, String> GLOBALLY_UNIQUE_KEYS = Map.of(
+            "TurChatFlowGraphCache#graph", "flowId is a UUID",
+            "TurChatFlowStaticPromptCache#staticHead", "flowId + nodeId are UUIDs",
+            "TurChatFlowStaticPromptCache#staticTail", "flowId + nodeId are UUIDs",
+            "TurPersonaStaticPromptCache#composeStaticBlock", "persona.id is a UUID",
+            "TurLLMPriceService#rates",
+            "vendorId + modelName address the public model catalog, which is not tenant data",
+            "TurRagRerankCache#orderedIds",
+            "content-addressed: the ordering is fully derived from strategy/model/topK/"
+                    + "candidatesHash/query, so equal keys have equal correct values");
+
+    /** The wrapper that makes a hand-written key tenant-scoped. */
+    private static final String TENANT_SCOPED = "@turTenantCacheKey.scoped(";
+
+    private static void scanExplicitKeys(Path classFile, MetadataReaderFactory readers,
+            Set<String> violations) {
+        try {
+            MetadataReader reader = readers.getMetadataReader(new FileSystemResource(classFile));
+            String className = reader.getClassMetadata().getClassName();
+            String simpleName = className.substring(className.lastIndexOf('.') + 1);
+            reader.getAnnotationMetadata().getDeclaredMethods().forEach(method -> {
+                MergedAnnotation<Cacheable> cacheable =
+                        method.getAnnotations().get(Cacheable.class);
+                if (!cacheable.isPresent()) {
+                    return;
+                }
+                String key = cacheable.getString("key");
+                String member = simpleName + "#" + method.getMethodName();
+                if (key.isBlank() || key.contains(TENANT_SCOPED)
+                        || GLOBALLY_UNIQUE_KEYS.containsKey(member)) {
+                    return;
+                }
+                violations.add(member + " -> key = \"" + key + "\"");
+            });
+        } catch (IOException | RuntimeException ignored) {
+            // Skip class files we can't parse — they can't carry a @Cacheable anyway.
+        }
     }
 
     private static boolean isClassFile(Path path) {

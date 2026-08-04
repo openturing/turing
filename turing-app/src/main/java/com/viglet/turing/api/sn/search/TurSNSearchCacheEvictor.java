@@ -25,6 +25,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 
 import com.viglet.turing.commons.sn.search.TurSNSearchCacheKey;
+import com.viglet.turing.tenant.TurTenantCacheKey;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -69,11 +70,13 @@ public class TurSNSearchCacheEvictor {
     public static final String SEARCH_CACHE = "searchAPI";
 
     private final CacheManager cacheManager;
+    private final TurTenantCacheKey tenantCacheKey;
     private final boolean searchCacheEnabled;
 
-    public TurSNSearchCacheEvictor(CacheManager cacheManager,
+    public TurSNSearchCacheEvictor(CacheManager cacheManager, TurTenantCacheKey tenantCacheKey,
             @Value("${turing.search.cache.enabled:false}") boolean searchCacheEnabled) {
         this.cacheManager = cacheManager;
+        this.tenantCacheKey = tenantCacheKey;
         this.searchCacheEnabled = searchCacheEnabled;
     }
 
@@ -101,7 +104,13 @@ public class TurSNSearchCacheEvictor {
     }
 
     private void evictSite(Cache cache, String siteName) {
-        String prefix = TurSNSearchCacheKey.sitePrefix(siteName);
+        // T895 / §LXVIII.4 — the stored key is tenant-scoped, so the prefix has to be
+        // too, or a write in tenant A would evict every tenant's copy of that site
+        // name. The indexing queue binds the tenant from the message header before
+        // this runs (T272), so the current tenant is the one that was written.
+        String prefix = tenantCacheKey
+                .scoped(TurSNSearchCacheKey.sitePrefix(siteName))
+                .toLowerCase(Locale.ROOT);
         Object nativeCache = cache.getNativeCache();
         if (!(nativeCache instanceof Map<?, ?> map)) {
             log.debug("[T870] Native cache of '{}' is not a Map ({}) — clearing all entries",

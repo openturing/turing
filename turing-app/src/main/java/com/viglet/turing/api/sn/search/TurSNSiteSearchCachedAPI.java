@@ -94,7 +94,14 @@ public class TurSNSiteSearchCachedAPI {
         log.info("Cleaning Search API");
     }
 
-    @Cacheable(value = TurSNSearchCacheEvictor.SEARCH_CACHE, key = "#cacheKey")
+    /**
+     * T895 / §LXVIII.4 — the key is scoped by tenant. It is supplied by the caller
+     * (derived from the search context) and begins with the SN site name, which is
+     * unique only within a tenant, so without the wrapper two tenants owning a site
+     * of the same name would serve each other's documents.
+     */
+    @Cacheable(value = TurSNSearchCacheEvictor.SEARCH_CACHE,
+            key = "@turTenantCacheKey.scoped(#cacheKey)")
     public TurSNSiteSearchBean searchCached(String cacheKey,
             TurSNSiteSearchContext turSNSiteSearchContext) {
         log.info("Search cache key: {}", cacheKey);

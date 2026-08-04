@@ -2136,25 +2136,6 @@ leaves vectorless sites without a tile. The block adds **no backend**.
 > also the reason they have survived: the feature is opt-in and nobody who opted
 > in has reported it.
 
-### LXVIII.4 The search cache is not partitioned by tenant
-
-`TurTenantCacheKeyGenerator` (T267 / §XIV.4.1) is installed as the project-wide default
-so every `@Cacheable` is partitioned by tenant. Its own javadoc states the exemption it
-relies on: caches that declare an explicit `key` SpEL bypass the generator entirely, and
-those are *"overwhelmingly id-keyed, where the global-unique UUID is already safe"*.
-
-`searchCached` is the case that assumption does not cover. It declares `key =
-"#cacheKey"`, and the key begins with the **SN site name** — which is unique per tenant,
-not globally. Two tenants that each own a site called `intranet` therefore write to the
-same cache entry, and whichever searched first serves its documents to the other.
-
-Both features are opt-in (`turing.tenancy.enabled` and `turing.search.cache.enabled`
-default to `false`), which is why this has not been seen — but Cloud turns tenancy on.
-The fix belongs in the key rather than in the generator: the tenant is part of what
-identifies the answer, exactly as the site is. A conformance test asserting that no
-explicitly-keyed `@Cacheable` is keyed on a per-tenant identifier would keep the next
-one from landing.
-
 ### LXVIII.5 Spotlight, synonym and field-config writes do not evict the search cache
 
 T870 evicted the search cache from the indexing queue, because that is where a

@@ -63,12 +63,19 @@ public class TurSNSiteConfigCache {
      * {@code null}) out of the cache so a freshly-created site is picked up on
      * the next call rather than being negatively pinned.
      *
-     * @param siteNameKey the lowercased site name — the only part of the key
+     * <p>T895 / §LXVIII.4 — the key is wrapped in
+     * {@code @turTenantCacheKey.scoped(...)} because a site name is unique per
+     * tenant, not globally: without it, two tenants owning a site of the same name
+     * would read each other's field configuration.
+     *
+     * @param siteNameKey the lowercased site name — the only tenant-relative part
+     *                    of the key
      * @param load        produces the field-config model (or {@code null} when
      *                    the site does not exist) on a cache miss
      * @return the field-config model, or {@code null} when the site is unknown
      */
-    @Cacheable(cacheNames = FIELD_CONFIG_CACHE, key = "#siteNameKey",
+    @Cacheable(cacheNames = FIELD_CONFIG_CACHE,
+            key = "@turTenantCacheKey.scoped(#siteNameKey)",
             condition = "#siteNameKey != null", unless = "#result == null")
     public TurSNSiteFieldConfigModel fieldConfig(String siteNameKey,
             Supplier<TurSNSiteFieldConfigModel> load) {
