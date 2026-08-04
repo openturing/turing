@@ -22,6 +22,12 @@
     "keywordOnly": "Keyword only",
     "viewJson": "View raw JSON",
     "openAnswerSearch": "Open AI Answer",
+    "lens": {
+      "title": "Search lens",
+      "keyword": "Keyword",
+      "vector": "Vector",
+      "answer": "Answer"
+    },
     "disabled": {
       "NO_GENAI": "Configure Generative AI for this site",
       "NO_AGENT": "Link an AI Agent to this site",

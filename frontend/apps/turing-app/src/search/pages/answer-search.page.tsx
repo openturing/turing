@@ -1,10 +1,7 @@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import {
-  useTuringAnswer,
-  type AnswerFilters,
-} from "@viglet/turing-react-sdk";
+import { useTuringAnswer } from "@viglet/turing-react-sdk";
 import {
   TuringAnswerProvenance,
   TuringMarkdown,
@@ -23,6 +20,8 @@ import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useParams, useSearchParams } from "react-router-dom";
 import { JsonSheet } from "../components/json-sheet";
+import { SearchLensSwitcher } from "../components/search-lens-switcher";
+import { readLensQuery, unknownLensParams } from "../lib/search-lens";
 
 /**
  * T852 / §LXIV.1 (Block BQ) — `/answer/{siteName}`, the **third search lens**, a
@@ -52,24 +51,6 @@ import { JsonSheet } from "../components/json-sheet";
  * @since 2026.3.4
  */
 
-/** URL params that are not steering filters. */
-const RESERVED_PARAMS = new Set(["q", "_setlocale", "fq"]);
-
-/** Reads the repeated `fq=field:value` params into the SDK's filter map. */
-function parseFilters(params: URLSearchParams): AnswerFilters {
-  const filters: AnswerFilters = {};
-  for (const raw of params.getAll("fq")) {
-    const separator = raw.indexOf(":");
-    if (separator <= 0) continue;
-    const field = raw.slice(0, separator);
-    const value = raw.slice(separator + 1);
-    if (!field || !value) continue;
-    filters[field] ??= [];
-    filters[field].push(value);
-  }
-  return filters;
-}
-
 export default function AnswerSearchPage() {
   const { siteName } = useParams<{ siteName: string }>();
   const site = siteName || "";
@@ -82,9 +63,12 @@ export default function AnswerSearchPage() {
   const [inputValue, setInputValue] = useState(urlQuery);
   const [jsonView, setJsonView] = useState<Record<string, unknown> | null>(null);
 
-  // The filter map is derived from the URL, so it is a new object every render;
-  // key the ask effect off its serialization, not its identity.
-  const filters = useMemo(() => parseFilters(searchParams), [searchParams]);
+  // T855 — the lens-independent question, read through the shared translator so
+  // the switcher can hand the same `q` / locale / filters to `/sn` and `/ann`.
+  const lensQuery = useMemo(() => readLensQuery("answer", searchParams), [searchParams]);
+  // Derived from the URL, so it is a new object every render; key the ask effect
+  // off its serialization, not its identity.
+  const filters = lensQuery.filters;
   const filtersKey = useMemo(() => JSON.stringify(filters), [filters]);
 
   const {
@@ -151,7 +135,7 @@ export default function AnswerSearchPage() {
   const constraints = Object.entries(filters).flatMap(([field, values]) =>
     (values ?? []).map((value) => [field, value] as const),
   );
-  const unknownParams = [...searchParams.keys()].filter((key) => !RESERVED_PARAMS.has(key));
+  const unknownParams = unknownLensParams("answer", searchParams);
 
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col">
@@ -161,10 +145,12 @@ export default function AnswerSearchPage() {
             <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center">
               <IconSparkles className="size-5 text-white" />
             </div>
-            <div>
+            <div className="min-w-0 flex-1">
               <h1 className="text-lg font-semibold">{t("answer.title")}</h1>
               <p className="text-xs text-muted-foreground">{site}</p>
             </div>
+            {/* T855 — replay the same question as keyword / vector / answer. */}
+            <SearchLensSwitcher current="answer" siteName={site} query={lensQuery} />
           </div>
           <form onSubmit={submit} className="flex gap-2">
             <div className="relative flex-1">

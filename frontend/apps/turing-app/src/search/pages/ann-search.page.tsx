@@ -21,6 +21,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useParams, useSearchParams } from "react-router-dom";
 import { JsonSheet } from "../components/json-sheet";
+import { SearchLensSwitcher } from "../components/search-lens-switcher";
+import { readLensQuery } from "../lib/search-lens";
 
 const annSearchService = new TurAnnSearchService();
 
@@ -47,6 +49,9 @@ export default function AnnSearchPage() {
   const [error, setError] = useState<string | null>(null);
   const [jsonView, setJsonView] = useState<Record<string, unknown> | null>(null);
   const lastQueryRef = useRef<string>("");
+
+  // T855 — the lens-independent question the switcher carries to `/sn` / `/answer`.
+  const lensQuery = useMemo(() => readLensQuery("vector", searchParams), [searchParams]);
 
   const selectedFilters = useMemo<SelectedFilters>(() => {
     const result: SelectedFilters = {};
@@ -151,10 +156,13 @@ export default function AnnSearchPage() {
             <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center">
               <IconAtom className="size-5 text-white" />
             </div>
-            <div>
+            <div className="min-w-0 flex-1">
               <h1 className="text-lg font-semibold">{t("ann.title")}</h1>
               <p className="text-xs text-muted-foreground">{site}</p>
             </div>
+            {/* T855 / §LXIV.4 — replay the same question as keyword / vector / answer,
+                so a bad answer is attributed to recall, rerank or synthesis. */}
+            <SearchLensSwitcher current="vector" siteName={site} query={lensQuery} />
           </div>
           <form onSubmit={handleSubmit} className="flex gap-2">
             <div className="relative flex-1">

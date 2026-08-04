@@ -17,10 +17,6 @@
 
 - 💭 **T831** (deps: T704 ✅) **Apply a persona adjustment (human-confirmed)** — for PERSONA items only, an opt-in Apply action renders the suggestion as a field-level diff over the audience facet and writes it only after the operator confirms each field. → §LXI.7
 
-## Block BQ — The answer engine as a first-class search lens (`/answer`) (§LXIV)
-
-- 💭 **T855** (deps: T852 ✅, T853 ✅) **Cross-lens compare — same query, three lenses** — a switcher carrying `q`, locale and filters between `/sn`, `/ann` and `/answer`, so a bad answer is attributed to recall, rerank or synthesis in one pass. → §LXIV.4
-
 ## Block J follow-ups — Cloud SaaS hardening (T334–T373)
 
 - 📋 **T373** (deps: —) **Ship Cloud default config as a GLOBAL seed ZIP** — guarantee the export keeps `tenantId = null` for the 6 BYO-infra types and bake the seed ZIP into the image, so one seeded default is visible to every auto-provisioned tenant. → §XIV.8.7

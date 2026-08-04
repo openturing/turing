@@ -22,6 +22,12 @@
     "keywordOnly": "Somente palavra-chave",
     "viewJson": "Ver JSON bruto",
     "openAnswerSearch": "Abrir Resposta com IA",
+    "lens": {
+      "title": "Lente de busca",
+      "keyword": "Palavra-chave",
+      "vector": "Vetorial",
+      "answer": "Resposta"
+    },
     "disabled": {
       "NO_GENAI": "Configure a IA Generativa para este site",
       "NO_AGENT": "Vincule um AI Agent a este site",

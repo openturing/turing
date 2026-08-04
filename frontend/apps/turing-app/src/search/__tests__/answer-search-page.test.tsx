@@ -164,3 +164,33 @@ describe("AnswerSearchPage — operator affordances (T854)", () => {
     expect(await screen.findByLabelText("answer.viewJson")).toBeInTheDocument();
   });
 });
+
+/** T855 / §LXIV.4 — the same question, one click away in the other two lenses. */
+describe("AnswerSearchPage — cross-lens switcher (T855)", () => {
+  beforeEach(() => {
+    vi.restoreAllMocks();
+    stubAnswerFetch([["token", "Two years."], ["done", "{}"]]);
+  });
+
+  it("carries the question, locale and filters into the keyword and vector lenses", () => {
+    renderAt("/answer/Sample?q=warranty&_setlocale=en_US&fq=brand:Acme");
+
+    expect(screen.getByText("answer.lens.keyword").closest("a")).toHaveAttribute(
+      "href",
+      "/sn/Sample?q=warranty&_setlocale=en_US&fq=brand%3AAcme",
+    );
+    // The vector lens spells filters as bare params, not `fq`.
+    expect(screen.getByText("answer.lens.vector").closest("a")).toHaveAttribute(
+      "href",
+      "/ann/Sample?q=warranty&_setlocale=en_US&brand=Acme",
+    );
+  });
+
+  it("marks the lens being viewed as current instead of linking to itself", () => {
+    renderAt("/answer/Sample?q=warranty");
+
+    const current = screen.getByText("answer.lens.answer");
+    expect(current.closest("a")).toBeNull();
+    expect(current.closest("[aria-current]")).toHaveAttribute("aria-current", "page");
+  });
+});

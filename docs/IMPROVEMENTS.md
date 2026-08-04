@@ -2119,19 +2119,6 @@ into lens #1 with a panel open — it inherits the reader-tuned chrome, and it s
 leaves vectorless sites without a tile. The block adds **no backend**.
 
 
-### LXIV.4 LXIV.4 (T855, 💭) Cross-lens compare
-
-Carry `q`/locale/filters across the three routes so the same question can be replayed as
-keyword, vector and answer. The diagnostic payoff (recall vs rerank vs synthesis) is
-real, but it is worth building only once the three lenses exist and operators are
-observed switching between them — hence 💭.  **Invariants.** Purely additive and
-console-only: the public `/sn` page, its `_aimode` panel and both SDKs are untouched, so
-nothing a visitor sees changes. The answer endpoint is not modified, so Block BO's
-fail-open behaviour (a terminal `error` event, never a thrown stream) carries over
-unchanged. The new tile follows the existing launcher contract — an external link out of
-the bento shell, never an embedded console search — so the console keeps one way of
-launching a search surface.
-
 ## LXV. Block AV follow-through — the gaps the POST-native migration left (Block BR)
 
 > Block AV (§XLV) closed the query-string bug class: search is POST-native, the
