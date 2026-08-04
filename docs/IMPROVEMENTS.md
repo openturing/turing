@@ -2136,6 +2136,66 @@ leaves vectorless sites without a tile. The block adds **no backend**.
 > also the reason they have survived: the feature is opt-in and nobody who opted
 > in has reported it.
 
+### LXVIII.4 The search cache is not partitioned by tenant
+
+`TurTenantCacheKeyGenerator` (T267 / §XIV.4.1) is installed as the project-wide default
+so every `@Cacheable` is partitioned by tenant. Its own javadoc states the exemption it
+relies on: caches that declare an explicit `key` SpEL bypass the generator entirely, and
+those are *"overwhelmingly id-keyed, where the global-unique UUID is already safe"*.
+
+`searchCached` is the case that assumption does not cover. It declares `key =
+"#cacheKey"`, and the key begins with the **SN site name** — which is unique per tenant,
+not globally. Two tenants that each own a site called `intranet` therefore write to the
+same cache entry, and whichever searched first serves its documents to the other.
+
+Both features are opt-in (`turing.tenancy.enabled` and `turing.search.cache.enabled`
+default to `false`), which is why this has not been seen — but Cloud turns tenancy on.
+The fix belongs in the key rather than in the generator: the tenant is part of what
+identifies the answer, exactly as the site is. A conformance test asserting that no
+explicitly-keyed `@Cacheable` is keyed on a per-tenant identifier would keep the next
+one from landing.
+
+### LXVIII.5 Spotlight, synonym and field-config writes do not evict the search cache
+
+T870 evicted the search cache from the indexing queue, because that is where a
+*document* changes. But a search answer is derived from more than the documents:
+spotlights are injected at query time, synonyms rewrite the query, and the site's
+field configuration decides which facets are counted and whether highlighting
+runs. Every one of those is edited through an admin controller that never touches
+the indexing queue.
+
+`TurSNSiteSpotlightAPI` is the clearest case — its POST, PUT and DELETE each carry
+`@CacheEvict(value = {"spotlight", "spotlight_term"}, allEntries = true)`. The author
+knew a write invalidates a cache; they invalidated the two caches their own package owns
+and had no reason to know about a third. Synonyms and field-ext writes do the same for
+theirs.
+
+This is the same defect as §LXVIII.1 arriving through a different door, so the same
+conclusion applies: evict where the answer changed. The lesson is that "where the answer
+changed" is a larger set than the indexing path, and nothing enumerates it — which is
+the part worth fixing, by routing these writes through the one evictor rather than by
+adding a third annotation to each controller.
+
+### LXVIII.6 Per-site eviction has to reach outside the Spring `Cache` contract
+
+`TurSNSearchCacheEvictor` (T870) evicts a site by listing the cache's keys and matching
+the `site=` prefix. The Spring `Cache` interface has no key enumeration and no prefix
+eviction, so the keys come from `getNativeCache()` — a `Map` for both managers this app
+wires today, and an assumption about the provider rather than about the abstraction. A
+provider whose native cache is not a `Map` falls back to clearing every site: correct,
+but it cold-starts every other site on the instance, which is the cost per-site eviction
+existed to avoid.
+
+The alternative is to make eviction a *write* instead of a *scan*: hold a per-site
+generation counter and include it in the cache key (`site=x|gen=7|…`). Eviction becomes
+one increment — O(1), provider-independent, cluster-safe — and stale entries are simply
+unreachable until the backstop sweep collects them. The cost is that the sweep becomes
+load-bearing again (garbage accumulates between sweeps) and the counter itself has to be
+shared across the cluster, which is one more piece of state than the current scan needs.
+
+Worth doing if a third cache provider appears or a bulk import's eviction cost shows up
+in a profile; not worth the extra state before then.
+
 ## LXIX. The quality gate stops at the package boundary (Block BV)
 
 > Block BS fixed the gate for one package. Adopting the same two changes across
