@@ -2385,3 +2385,37 @@ equivalent is a convention test (or an ESLint `no-restricted-syntax` rule) over
 module. Kept as 💭 because the boundary needs stating precisely first: the SDK's
 own hooks read `data` on purpose, and the legacy fallback inside the projection
 must stay allowed.
+
+## XXXVII Security hardening (post-audit)
+
+Block AN's standing home. The audit that opened it is shipped and its rationale sections
+went with it; the heading is reopened here because the same file keeps producing the
+same class of finding. `TurSecurityConfigProduction` states its permitAll list **twice**
+— once for the Keycloak branch, once for local auth — and the two copies are maintained
+by hand. Every drift filed below is a path present in one copy and absent from the
+other, or absent from both because a shipped endpoint was never added.
+
+### XXXVII.17 The public search page is unreachable under Keycloak
+
+`mvc.matcher("/sn/**")` appears in only the local-auth branch. On a Keycloak deployment
+the flagship anonymous surface — the public faceted search page — therefore redirects a
+visitor to the SSO login, while `/ann/**` and `/pages/**` beside it are permitted in
+both branches. Every API the page calls (`/api/sn/*/search`, `/ac`, `/click`) is already
+anonymous in both, so the gap is the SPA route alone: the data is public and the page
+serving it is not. Confirm against a Keycloak-profile deployment before assuming a
+visitor hits the login — a reverse proxy or static-asset rule may mask it in the current
+hosting — and if it reproduces, add the one matcher to the Keycloak branch rather than
+widening anything else.
+
+### XXXVII.18 One permitAll list, written twice, drifts
+
+Roughly forty matchers are spelled twice, once per auth branch, with no mechanism
+holding the copies equal. That duplication is not a style problem: it is the direct
+cause of §XXXVII.17 (a path in one copy only) and of T889 (a shipped endpoint in
+neither), and T889's guard test had to assert a count of two precisely because the list
+is doubled. Extract the anonymous surface to one `private static final String[]` — or a
+small builder both branches call — so a new public endpoint is added in one place and
+cannot be half-added. The two branches genuinely differ in their login and logout
+wiring, so this is about the shared matcher list only, not about merging the branches.
+The T889 source-level guard should then assert the shared constant rather than counting
+occurrences, which is a weaker check that a refactor would silently satisfy.
