@@ -16,6 +16,7 @@ import { Toaster } from "./components/ui/sonner"
 import { TuringServiceProvider } from "./contexts/TuringServiceContext"
 import { BreadcrumbProvider } from "./contexts/breadcrumb.context"
 const AnnSearchPage = lazy(() => import("./search/pages/ann-search.page"))
+const AnswerSearchPage = lazy(() => import("./search/pages/answer-search.page"))
 const SearchPage = lazy(() => import("./search/pages/search.page"))
 
 function App() {
@@ -33,6 +34,7 @@ function App() {
               <Route path={ROUTES.SETUP} element={<SetupPage />} />
               <Route path={`${ROUTES.SN_SEARCH}/:siteName`} element={<SearchPage />} />
               <Route path={`${ROUTES.ANN_SEARCH}/:siteName`} element={<AnnSearchPage />} />
+              <Route path={`${ROUTES.ANSWER_SEARCH}/:siteName`} element={<AnswerSearchPage />} />
               {BentoRoutes}
               {VoiceKioskRoutes}
               {/* Retired console deep-links resolve to their bento equivalent. */}

@@ -1,0 +1,16 @@
+{
+  "answer": {
+    "title": "AI Answer",
+    "placeholder": "Ask a question — the answer is synthesized from your indexed content...",
+    "ask": "Ask",
+    "empty": "Ask a question to see the synthesized answer, its sources and how it was produced.",
+    "thinking": "Researching and synthesizing...",
+    "sources": "Sources",
+    "followups": "Follow-up questions",
+    "within": "Answering within:",
+    "removeConstraint": "Remove constraint {{field}} = {{value}}",
+    "ignoredParams": "Ignored URL parameters (use fq=field:value to steer the answer): {{params}}",
+    "noCitations": "The answer carries no footnote citations.",
+    "openAnswerSearch": "Open AI Answer"
+  }
+}

@@ -2119,16 +2119,6 @@ into lens #1 with a panel open — it inherits the reader-tuned chrome, and it s
 leaves vectorless sites without a tile. The block adds **no backend**.
 
 
-### LXIV.1 LXIV.1 (T852) The route
-
-`ROUTES.ANSWER_SEARCH = "/answer"` + a lazy `answer-search.page.tsx` registered next to
-the existing `/sn` and `/ann` routes in `App.tsx`, composing `TuringAnswer` from
-`@viglet/turing-react-sdk` over the shipped endpoint. All state that defines an answer —
-`q`, `_setlocale`, and the `fq` filter set T838 already threads — lives in the URL,
-mirroring how `/ann` keeps its filters in search params, so an answer an operator wants
-to discuss is a link (distinct from T844 permalinks, which snapshot a *produced* answer;
-this just makes the *input* reproducible).
-
 ### LXIV.2 LXIV.2 (T853) The tile and its gate
 
 `buildSnSearchLaunchers` returns a third `answer` launcher, and `SnLaunchBar` renders

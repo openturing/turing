@@ -46,6 +46,7 @@ import enWebhook from "./locales/en/webhook.json";
 import enPage from "./locales/en/page.json";
 import enSe from "./locales/en/se.json";
 import enAnn from "./locales/en/ann.json";
+import enAnswer from "./locales/en/answer.json";
 import enSearch from "./locales/en/search.json";
 import enSidebar from "./locales/en/sidebar.json";
 import enSn from "./locales/en/sn.json";
@@ -99,6 +100,7 @@ import ptWebhook from "./locales/pt/webhook.json";
 import ptPage from "./locales/pt/page.json";
 import ptSe from "./locales/pt/se.json";
 import ptAnn from "./locales/pt/ann.json";
+import ptAnswer from "./locales/pt/answer.json";
 import ptSearch from "./locales/pt/search.json";
 import ptSidebar from "./locales/pt/sidebar.json";
 import ptSn from "./locales/pt/sn.json";
@@ -115,7 +117,7 @@ const en = {
   ...enStore, ...enIntegration, ...enMcp, ...enCustomTool, ...enEmbeddingModel,
   ...enAiAgent, ...enAiAuthoring, ...enIntent, ...enAnalyticsIntent, ...enApiToken, ...enAdmin, ...enAccount,
   ...enExchange, ...enGraphql, ...enLogging, ...enTokenUsage, ...enParkedConversations, ...enCostGovernance,
-  ...enSystemInfo, ...enGlobalSettings, ...enForms, ...enSearch, ...enAnn, ...enCapabilityMatrix,
+  ...enSystemInfo, ...enGlobalSettings, ...enForms, ...enSearch, ...enAnn, ...enAnswer, ...enCapabilityMatrix,
   ...enPage, ...enGit, ...enGateway, ...enMarketplace, ...enPersona, ...enRoutine, ...enWebhook,
   ...enVoiceKiosk, ...enBento, ...enEvalStudio, ...enSkill, ...enThesaurus,
 };
@@ -126,7 +128,7 @@ const pt = {
   ...ptStore, ...ptIntegration, ...ptMcp, ...ptCustomTool, ...ptEmbeddingModel,
   ...ptAiAgent, ...ptAiAuthoring, ...ptIntent, ...ptAnalyticsIntent, ...ptApiToken, ...ptAdmin, ...ptAccount,
   ...ptExchange, ...ptGraphql, ...ptLogging, ...ptTokenUsage, ...ptParkedConversations, ...ptCostGovernance,
-  ...ptSystemInfo, ...ptGlobalSettings, ...ptForms, ...ptSearch, ...ptAnn, ...ptCapabilityMatrix,
+  ...ptSystemInfo, ...ptGlobalSettings, ...ptForms, ...ptSearch, ...ptAnn, ...ptAnswer, ...ptCapabilityMatrix,
   ...ptPage, ...ptGit, ...ptGateway, ...ptMarketplace, ...ptPersona, ...ptRoutine, ...ptWebhook,
   ...ptVoiceKiosk, ...ptBento, ...ptEvalStudio, ...ptSkill, ...ptThesaurus,
 };

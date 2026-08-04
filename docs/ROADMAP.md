@@ -19,10 +19,9 @@
 
 ## Block BQ — The answer engine as a first-class search lens (`/answer`) (§LXIV)
 
-- 📋 **T852** (deps: T833 ✅, T837 ✅) **`/answer/{siteName}` — the third search route** — a peer route beside `/sn` and `/ann`, answer-first over `TuringAnswer` driving the shipped answer endpoint, with query, locale and filters in the URL so an answer is linkable. → §LXIV.1
-- 📋 **T853** (deps: T852) **Third launcher tile in the console, with its own gate** — `buildSnSearchLaunchers` gains an `answer` tile gated by the readiness probe rather than the frontend-derived `annEnabled`, so a `VECTORLESS_STRUCTURED` site finally gets the AI lens. → §LXIV.2
-- 📋 **T854** (deps: T852) **The operator page shows its work by default** — turn the reader defaults inside out on this page — provenance expanded, the research trace, rank and score per source, the raw `JsonSheet` — so a wrong answer is debuggable in the console. → §LXIV.3
-- 💭 **T855** (deps: T852, T853) **Cross-lens compare — same query, three lenses** — a switcher carrying `q`, locale and filters between `/sn`, `/ann` and `/answer`, so a bad answer is attributed to recall, rerank or synthesis in one pass. → §LXIV.4
+- 📋 **T853** (deps: T852 ✅) **Third launcher tile in the console, with its own gate** — `buildSnSearchLaunchers` gains an `answer` tile gated by the readiness probe rather than the frontend-derived `annEnabled`, so a `VECTORLESS_STRUCTURED` site finally gets the AI lens. → §LXIV.2
+- 📋 **T854** (deps: T852 ✅) **The operator page shows its work by default** — turn the reader defaults inside out on this page — provenance expanded, the research trace, rank and score per source, the raw `JsonSheet` — so a wrong answer is debuggable in the console. → §LXIV.3
+- 💭 **T855** (deps: T852 ✅, T853) **Cross-lens compare — same query, three lenses** — a switcher carrying `q`, locale and filters between `/sn`, `/ann` and `/answer`, so a bad answer is attributed to recall, rerank or synthesis in one pass. → §LXIV.4
 
 ## Block J follow-ups — Cloud SaaS hardening (T334–T373)
 

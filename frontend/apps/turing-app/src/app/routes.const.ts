@@ -8,6 +8,8 @@ export const ROUTES = {
   HOME: `${consolePath}/home`,
   SN_SEARCH: `/sn`,
   ANN_SEARCH: `/ann`,
+  /** Block BQ (§LXIV.1) — the answer-first lens, peer of `/sn` and `/ann`. */
+  ANSWER_SEARCH: `/answer`,
   SN_ROOT: `${consolePath}/sn`,
   SN_INSTANCE: `${consolePath}/sn/instance`,
   SN_ONBOARDING: `${consolePath}/sn/onboarding`,

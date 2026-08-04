@@ -1,0 +1,16 @@
+{
+  "answer": {
+    "title": "Resposta com IA",
+    "placeholder": "Faça uma pergunta — a resposta é sintetizada do seu conteúdo indexado...",
+    "ask": "Perguntar",
+    "empty": "Faça uma pergunta para ver a resposta sintetizada, suas fontes e como ela foi produzida.",
+    "thinking": "Pesquisando e sintetizando...",
+    "sources": "Fontes",
+    "followups": "Perguntas de acompanhamento",
+    "within": "Respondendo dentro de:",
+    "removeConstraint": "Remover restrição {{field}} = {{value}}",
+    "ignoredParams": "Parâmetros de URL ignorados (use fq=campo:valor para direcionar a resposta): {{params}}",
+    "noCitations": "A resposta não traz citações numeradas.",
+    "openAnswerSearch": "Abrir Resposta com IA"
+  }
+}
