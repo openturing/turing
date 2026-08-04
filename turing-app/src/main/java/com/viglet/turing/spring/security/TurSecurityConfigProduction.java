@@ -242,6 +242,21 @@ public class TurSecurityConfigProduction {
                                                 mvc.matcher("/api/sn/*/query/**"),
                                                 mvc.matcher("/api/sn/*/chat"),
                                                 mvc.matcher("/api/sn/*/chat/**"),
+                                                // T889 / §LXIV.5 (Block BQ) — the T833 answer stream is the
+                                                // same anonymous LLM-cost class as the site chat above, and
+                                                // is gated by the same TurSNSiteApiKeyGateFilter and
+                                                // abuse-control caps, so the SDK's public answer surfaces
+                                                // (showcase, public-site hero) can consume it keyless.
+                                                // `freshness` and `signal` ride with it: both are
+                                                // fire-and-forget companions of an answer already produced.
+                                                // `answer/share` is deliberately ABSENT — minting a
+                                                // permalink is a WRITE, and an anonymous write is a
+                                                // storage/spam surface. So is the `/answer/**` console page:
+                                                // T854 turns the reader defaults inside out there (rank,
+                                                // score, raw document), which is operator-only.
+                                                mvc.matcher("/api/sn/*/answer"),
+                                                mvc.matcher("/api/sn/*/answer/freshness"),
+                                                mvc.matcher("/api/sn/*/answer/signal"),
                                                 // T392 — grounded catalog copilot (LLM-cost surface;
                                                 // nginx-rate-limited on the demo host). Anonymous like
                                                 // chat so the model-catalog "Ask the catalog" widget
@@ -324,6 +339,14 @@ public class TurSecurityConfigProduction {
                                                                 mvc.matcher("/api/sn/*/query/**"),
                                                                 mvc.matcher("/api/sn/*/chat"),
                                                                 mvc.matcher("/api/sn/*/chat/**"),
+                                                                // T889 / §LXIV.5 — the answer stream, in the
+                                                                // same anonymous class as the chat above.
+                                                                // `answer/share` and the `/answer/**` console
+                                                                // page are deliberately absent; see the
+                                                                // Keycloak branch for why.
+                                                                mvc.matcher("/api/sn/*/answer"),
+                                                                mvc.matcher("/api/sn/*/answer/freshness"),
+                                                                mvc.matcher("/api/sn/*/answer/signal"),
                                                                 // T392 — grounded catalog copilot
                                                                 // (LLM-cost surface; nginx-rate-limited).
                                                                 // Anonymous like chat for the model-catalog

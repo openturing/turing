@@ -2119,19 +2119,6 @@ into lens #1 with a panel open — it inherits the reader-tuned chrome, and it s
 leaves vectorless sites without a tile. The block adds **no backend**.
 
 
-### LXIV.5 The answer surface's auth class
-
-`TurSecurityConfigProduction` permits `/api/sn/*/chat/**`, `/api/sn/*/copilot/**`,
-`/api/ann/*/search` and the `/ann/**` SPA route, but nothing matches `/api/sn/*/answer`
-(T833) or the T852 `/answer/**` route. An operator in the console is authenticated, so
-Block BQ shipped working; every anonymous consumer the react-SDK documents for
-`useTuringAnswer` — the showcase, the public-site hero — gets a login redirect instead
-of a stream. Decide the surface deliberately: permit the answer endpoint alongside chat
-(same LLM-cost class, so the same API-key gate and abuse-control caps apply), or state
-that the answer lens is authenticated-only and correct the SDK's doc comment. The T854
-operator affordances (rank, score, raw JSON) argue for the second reading, in which case
-the public hero needs the chat endpoint instead.
-
 ## LXV. Block AV follow-through — the gaps the POST-native migration left (Block BR)
 
 > Block AV (§XLV) closed the query-string bug class: search is POST-native, the
