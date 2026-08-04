@@ -17,6 +17,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cache.Cache;
@@ -72,6 +73,8 @@ public class TurSNSearchCacheEvictor {
     private final CacheManager cacheManager;
     private final TurTenantCacheKey tenantCacheKey;
     private final boolean searchCacheEnabled;
+    /** Guards the T897 degradation warning so it is said once, not per write. */
+    private final AtomicBoolean degradedWarningIssued = new AtomicBoolean(false);
 
     public TurSNSearchCacheEvictor(CacheManager cacheManager, TurTenantCacheKey tenantCacheKey,
             @Value("${turing.search.cache.enabled:false}") boolean searchCacheEnabled) {
@@ -140,8 +143,7 @@ public class TurSNSearchCacheEvictor {
                 .toLowerCase(Locale.ROOT);
         Object nativeCache = cache.getNativeCache();
         if (!(nativeCache instanceof Map<?, ?> map)) {
-            log.debug("[T870] Native cache of '{}' is not a Map ({}) — clearing all entries",
-                    SEARCH_CACHE, nativeCache == null ? "null" : nativeCache.getClass().getName());
+            warnDegradedOnce(nativeCache);
             cache.clear();
             return;
         }
@@ -156,6 +158,29 @@ public class TurSNSearchCacheEvictor {
         if (!keys.isEmpty()) {
             log.debug("[T870] Evicted {} search cache entrie(s) of SN Site '{}'", keys.size(),
                     siteName);
+        }
+    }
+
+    /**
+     * T897 / §LXVIII.6 — says once, at {@code WARN}, that per-site eviction has
+     * degraded to a full clear.
+     *
+     * <p>
+     * The scan reads keys off {@link Cache#getNativeCache()}, which is an assumption
+     * about the provider rather than about the {@link Cache} abstraction — true for
+     * both managers this app wires. A provider whose native cache is not a
+     * {@link Map} still evicts correctly, but it cold-starts every other site, which
+     * is precisely the cost per-site eviction exists to avoid. That is worth
+     * knowing, so it is not left at {@code DEBUG}; it is a property of the
+     * deployment rather than of the request, so it is said once and not per write.
+     * </p>
+     */
+    private void warnDegradedOnce(Object nativeCache) {
+        if (degradedWarningIssued.compareAndSet(false, true)) {
+            log.warn("[T897] Native cache of '{}' is a {}, not a Map — per-site eviction has "
+                    + "degraded to clearing every site's entries. Still correct, but each "
+                    + "indexed site now cold-starts every other one.", SEARCH_CACHE,
+                    nativeCache == null ? "null" : nativeCache.getClass().getName());
         }
     }
 
