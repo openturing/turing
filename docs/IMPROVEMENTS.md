@@ -2136,15 +2136,6 @@ leaves vectorless sites without a tile. The block adds **no backend**.
 > also the reason they have survived: the feature is opt-in and nobody who opted
 > in has reported it.
 
-### LXVIII.3 `TurSNSiteSearchCachedAPI` is two classes wearing one name (T872)
-
-The bean holds the `@Cacheable` search seam **and** the MongoDB logging
-configuration with its nightly purge job — seven Mongo constructor parameters
-(`uri`, database, three collection names, purge days, enabled flag) that the
-cached search never reads. The cache seam is a load-bearing primitive that T858
-just spent a task making hard to misuse; it should not be reached through a bean
-whose name says "cached API" and whose constructor says "log store".
-
 ## LXIX. The quality gate stops at the package boundary (Block BV)
 
 > Block BS fixed the gate for one package. Adopting the same two changes across

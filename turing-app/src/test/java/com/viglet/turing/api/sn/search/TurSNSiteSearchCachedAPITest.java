@@ -33,17 +33,9 @@ class TurSNSiteSearchCachedAPITest {
 
     @BeforeEach
     void setUp() {
-        api = new TurSNSiteSearchCachedAPI(
-                turSNSearchProcess,
-                false, // enabled
-                "mongodb://localhost:27017",
-                "turingLog",
-                "server",
-                "indexing",
-                "aem",
-                30, // purgeDays
-                "" // T871 — legacy turing.search.cache.ttl.seconds unset
-        );
+        // T872 — the cache seam takes only what the cached search reads: the search
+        // process, plus the deprecated TTL key it warns about.
+        api = new TurSNSiteSearchCachedAPI(turSNSearchProcess, "");
     }
 
     @Test
@@ -120,15 +112,6 @@ class TurSNSiteSearchCachedAPITest {
     /** The deprecated key is named at startup rather than silently obeyed. */
     @Test
     void testLegacyTtlKeyIsWarnedAbout() {
-        assertDoesNotThrow(() -> new TurSNSiteSearchCachedAPI(turSNSearchProcess, false,
-                "mongodb://localhost:27017", "turingLog", "server", "indexing", "aem", 30,
-                "3600"));
-    }
-
-    @Test
-    void testPurgeMongoDBLogs_Disabled() {
-        assertDoesNotThrow(() -> api.purgeMongoDBLogs());
-        // Should return early due to enabled = false
-        // Static MongoClients.create won't be called, throwing no exceptions.
+        assertDoesNotThrow(() -> new TurSNSiteSearchCachedAPI(turSNSearchProcess, "3600"));
     }
 }

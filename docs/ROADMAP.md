@@ -23,8 +23,6 @@
 
 ## Block BU — The search cache is off by a thousand and never evicted on write (§LXVIII)
 
-- 💭 **T872** (deps: —) **`TurSNSiteSearchCachedAPI` is two classes wearing one name** — the `@Cacheable` search seam and the MongoDB logging config share a bean, so the cache primitive carries seven Mongo constructor parameters it never uses. → §LXVIII.3
-
 ## Block BV — The quality gate stops at the package boundary (§LXIX)
 
 - 📋 **T873** (deps: T861 ✅) **Two published packages are in no validation matrix** — both are public npm packages with real `node --test` suites listed in no validation matrix, so a break is caught at release time by whoever is shipping. → §LXIX.1

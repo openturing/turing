@@ -18,61 +18,44 @@
 
 package com.viglet.turing.api.sn.search;
 
-import java.util.Calendar;
-import java.util.Date;
-import java.util.GregorianCalendar;
-
-import org.bson.conversions.Bson;
-import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
-import net.javacrumbs.shedlock.spring.annotation.SchedulerLock;
-
-import com.mongodb.client.MongoClient;
-import com.mongodb.client.MongoClients;
-import com.mongodb.client.MongoDatabase;
-import com.mongodb.client.model.Filters;
 import com.viglet.turing.commons.sn.bean.TurSNSiteSearchBean;
 import com.viglet.turing.commons.sn.search.TurSNSiteSearchContext;
 import com.viglet.turing.sn.TurSNSearchProcess;
 
 import lombok.extern.slf4j.Slf4j;
 
+/**
+ * The {@code @Cacheable} seam of the search read path: one proxied method whose
+ * key is supplied by the caller (derived from the search context — T858 /
+ * §LXV.3), plus the backstop sweep that bounds an entry's lifetime.
+ *
+ * <p>
+ * T872 / §LXVIII.3 — this bean used to also hold the MongoDB logging
+ * configuration and its nightly purge job, so a cache primitive carried seven
+ * Mongo constructor parameters it never read. That job now lives in
+ * {@code TurLoggingPurgeService}; what remains here is only what the cached
+ * search actually uses.
+ * </p>
+ *
+ * @author Alexandre Oliveira
+ * @since 2026.3.4
+ */
 @Slf4j
 @Component
 public class TurSNSiteSearchCachedAPI {
-    public static final String DATE = "date";
+
     private final TurSNSearchProcess turSNSearchProcess;
-    private final boolean enabled;
-    private final String connectionString;
-    private final String databaseName;
-    private final String serverCollectionName;
-    private final String indexingCollectionName;
-    private final String aemCollectionName;
-    private final int purgeDays;
 
     public TurSNSiteSearchCachedAPI(TurSNSearchProcess turSNSearchProcess,
-            @Value("${turing.mongodb.enabled:false}") boolean enabled,
-            @Value("${turing.mongodb.uri:'mongodb://localhost:27017'}") String connectionString,
-            @Value("${turing.logging.database:'turingLog'}") String databaseName,
-            @Value("${turing.logging.collection.server:'server'}") String serverCollectionName,
-            @Value("${turing.logging.collection.indexing:'indexing'}") String indexingCollectionName,
-            @Value("${turing.logging.collection.aem:'aem'}") String aemCollectionName,
-            @Value("${turing.logging.purge.days:30}") int purgeDays,
             @Value("${turing.search.cache.ttl.seconds:}") String legacyCacheTtl) {
         warnLegacyCacheTtl(legacyCacheTtl);
         this.turSNSearchProcess = turSNSearchProcess;
-        this.enabled = enabled;
-        this.connectionString = connectionString;
-        this.databaseName = databaseName;
-        this.serverCollectionName = serverCollectionName;
-        this.indexingCollectionName = indexingCollectionName;
-        this.aemCollectionName = aemCollectionName;
-        this.purgeDays = purgeDays;
     }
 
     /**
@@ -116,30 +99,5 @@ public class TurSNSiteSearchCachedAPI {
             TurSNSiteSearchContext turSNSiteSearchContext) {
         log.info("Search cache key: {}", cacheKey);
         return turSNSearchProcess.search(turSNSiteSearchContext);
-    }
-
-    @Scheduled(cron = "0 0 0 * * *")
-    @SchedulerLock(name = "purgeMongoDBLogs", lockAtMostFor = "PT15M", lockAtLeastFor = "PT1M")
-    public void purgeMongoDBLogs() {
-        if (!enabled)
-            return;
-        Date purgeDate = getPurgeDate();
-        log.info("Executing housekeeping log task, purging logs older than {}", purgeDate);
-        try (MongoClient mongoClient = MongoClients.create(connectionString)) {
-            Bson filter = Filters.lt(DATE, purgeDate);
-            MongoDatabase database = mongoClient.getDatabase(databaseName);
-            long serverDeleted = database.getCollection(serverCollectionName).deleteMany(filter).getDeletedCount();
-            long aemDeleted = database.getCollection(aemCollectionName).deleteMany(filter).getDeletedCount();
-            long indexingDeleted = database.getCollection(indexingCollectionName).deleteMany(filter).getDeletedCount();
-            log.info("Purged logs: server={}, aem={}, indexing={}", serverDeleted, aemDeleted, indexingDeleted);
-        }
-    }
-
-    private @NotNull Date getPurgeDate() {
-        Date today = new Date();
-        Calendar cal = new GregorianCalendar();
-        cal.setTime(today);
-        cal.add(Calendar.DAY_OF_MONTH, purgeDays * (-1));
-        return cal.getTime();
     }
 }
