@@ -136,9 +136,20 @@
       "description": "Enable or disable caching for search query results."
     },
     {
+      "name": "turing.search.cache.ttl",
+      "type": "java.time.Duration",
+      "defaultValue": "24h",
+      "description": "How long a cached search result may survive without any write to its site. Since T870 the authoritative eviction happens per site at index/deindex/commit, so this is only the backstop sweep. Unit-bearing: '24h', 'PT1H', '30m'; a bare number is milliseconds."
+    },
+    {
       "name": "turing.search.cache.ttl.seconds",
       "type": "java.lang.Integer",
-      "description": "Time-to-live in seconds for cached search results before expiration."
+      "description": "Deprecated: despite its name this value was milliseconds, so '3600' meant a full-cache sweep every 3.6 seconds. Use turing.search.cache.ttl with a stated unit.",
+      "deprecation": {
+        "level": "warning",
+        "replacement": "turing.search.cache.ttl",
+        "reason": "The name said seconds and the value was milliseconds. turing.search.cache.ttl takes a Duration, so the unit is stated rather than implied."
+      }
     },
     {
       "name": "turing.search.engine.type",

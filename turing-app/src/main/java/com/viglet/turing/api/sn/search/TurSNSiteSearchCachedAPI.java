@@ -62,7 +62,9 @@ public class TurSNSiteSearchCachedAPI {
             @Value("${turing.logging.collection.server:'server'}") String serverCollectionName,
             @Value("${turing.logging.collection.indexing:'indexing'}") String indexingCollectionName,
             @Value("${turing.logging.collection.aem:'aem'}") String aemCollectionName,
-            @Value("${turing.logging.purge.days:30}") int purgeDays) {
+            @Value("${turing.logging.purge.days:30}") int purgeDays,
+            @Value("${turing.search.cache.ttl.seconds:}") String legacyCacheTtl) {
+        warnLegacyCacheTtl(legacyCacheTtl);
         this.turSNSearchProcess = turSNSearchProcess;
         this.enabled = enabled;
         this.connectionString = connectionString;
@@ -74,14 +76,37 @@ public class TurSNSiteSearchCachedAPI {
     }
 
     /**
+     * T871 / §LXVIII.2 — a configuration that still sets the old key is silently
+     * off by a thousand from what its name says, so it is named at startup rather
+     * than left to be discovered by the sweep frequency.
+     */
+    private static void warnLegacyCacheTtl(String legacyCacheTtl) {
+        if (legacyCacheTtl != null && !legacyCacheTtl.isBlank()) {
+            log.warn("[T871] 'turing.search.cache.ttl.seconds' is deprecated and its value ({}) "
+                    + "is read as MILLISECONDS, not seconds. Use 'turing.search.cache.ttl' with a "
+                    + "stated unit instead (e.g. 24h, PT1H, 30m).", legacyCacheTtl.trim());
+        }
+    }
+
+    /**
      * The <strong>backstop</strong> sweep. Since T870 / §LXVIII.1 the authoritative
      * eviction happens per site at the moment a write changes the answer
      * ({@link TurSNSearchCacheEvictor}, driven from the indexing queue); this sweep
      * only bounds the lifetime of entries whose site was never written again — and
      * catches anything a write path forgets.
+     *
+     * <p>
+     * T871 / §LXVIII.2 — the interval is {@code turing.search.cache.ttl}, a
+     * <em>unit-bearing</em> value: {@code 24h}, {@code PT1H}, {@code 30m}. It
+     * replaces {@code turing.search.cache.ttl.seconds}, whose name promised seconds
+     * while {@code fixedRateString} read milliseconds — so an operator who set
+     * {@code 3600} for "sweep hourly" got a full-cache eviction every 3.6 seconds.
+     * The old key stays bound (as the milliseconds it always was) so an existing
+     * configuration keeps its current behaviour for one version.
+     * </p>
      */
     @CacheEvict(value = TurSNSearchCacheEvictor.SEARCH_CACHE, allEntries = true)
-    @Scheduled(fixedRateString = "${turing.search.cache.ttl.seconds:86400000}")
+    @Scheduled(fixedRateString = "${turing.search.cache.ttl:${turing.search.cache.ttl.seconds:24h}}")
     public void cleanSearchCache() {
         log.info("Cleaning Search API");
     }

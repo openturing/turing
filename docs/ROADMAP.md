@@ -23,7 +23,6 @@
 
 ## Block BU — The search cache is off by a thousand and never evicted on write (§LXVIII)
 
-- 📋 **T871** (deps: —) **`turing.search.cache.ttl.seconds` is milliseconds** — it feeds `@Scheduled(fixedRateString = …)`, whose unit is ms, so an operator setting `3600` for hourly gets a sweep every 3.6 seconds — accept a `Duration` so the unit is stated. → §LXVIII.2
 - 💭 **T872** (deps: —) **`TurSNSiteSearchCachedAPI` is two classes wearing one name** — the `@Cacheable` search seam and the MongoDB logging config share a bean, so the cache primitive carries seven Mongo constructor parameters it never uses. → §LXVIII.3
 
 ## Block BV — The quality gate stops at the package boundary (§LXIX)

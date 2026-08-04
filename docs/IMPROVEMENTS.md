@@ -2136,21 +2136,6 @@ leaves vectorless sites without a tile. The block adds **no backend**.
 > also the reason they have survived: the feature is opt-in and nobody who opted
 > in has reported it.
 
-### LXVIII.2 `turing.search.cache.ttl.seconds` is milliseconds (T871)
-
-```java
-@Scheduled(fixedRateString = "${turing.search.cache.ttl.seconds:86400000}")
-```
-
-`fixedRateString` is milliseconds unless a `timeUnit` is declared, and the
-default `86400000` is indeed 24 hours — so the *code* is right and the *name* is
-wrong by a factor of 1000. An operator who reads the property and sets `3600`
-for "sweep hourly" gets a full-cache eviction every 3.6 seconds.
-
-Take a `Duration` (`24h`, `PT1H`) so the unit is stated rather than implied, or
-rename to `…ttl.ms` and keep the old key bound for one version. The bug is the
-name, so the fix has to change the name.
-
 ### LXVIII.3 `TurSNSiteSearchCachedAPI` is two classes wearing one name (T872)
 
 The bean holds the `@Cacheable` search seam **and** the MongoDB logging
