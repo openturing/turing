@@ -106,6 +106,13 @@ export function buildSnSearchLaunchers(
   } else if (hasMultipleLocales) {
     searchItems.push(...perLocale(searchUrl));
   }
+  // T891 / §LXIV.7 — the operator's way into the keyword lens WITH the cross-lens
+  // switcher. It is an item rather than the base URL because the base is the link
+  // an operator hands to a visitor, and a visitor gets the page unchanged.
+  searchItems.push({
+    label: t("answer.openSearchWithLens"),
+    url: withParam(searchUrl, "_lens=1"),
+  });
 
   return {
     search: { label: openSearchLabel, url: searchUrl, items: searchItems },

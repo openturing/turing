@@ -66,3 +66,31 @@ describe("buildSnSearchLaunchers — the answer launcher (T853)", () => {
     expect(ann?.url).toBe("/ann/Sample");
   });
 });
+
+/**
+ * T891 / §LXIV.7 — the operator's labeled way into the keyword lens with the
+ * switcher, kept off the base URL because the base is what a visitor is handed.
+ */
+describe("buildSnSearchLaunchers — the lens-switcher variant (T891)", () => {
+  it("offers the opt-in as an item, never as the base URL", () => {
+    const { search } = buildSnSearchLaunchers(site(), t);
+    expect(search.url).toBe("/sn/Sample");
+    expect(search.items).toContainEqual({
+      label: "answer.openSearchWithLens",
+      url: "/sn/Sample?_lens=1",
+    });
+  });
+
+  it("appends the opt-in to a site that already has other search variants", () => {
+    const { search } = buildSnSearchLaunchers(
+      site({ storageEnabled: true, searchTemplate: "atlas" }),
+      t,
+    );
+    expect(search.items.at(-1)).toEqual({
+      label: "answer.openSearchWithLens",
+      url: "/sn/Sample?_lens=1",
+    });
+    // The pre-existing Default Search variant survives ahead of it.
+    expect(search.items[0].url).toBe("/sn/Sample?_embedded=true");
+  });
+});

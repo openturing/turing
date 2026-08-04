@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { lensHref, readLensQuery, unknownLensParams } from "../lib/search-lens";
+import {
+  lensHref,
+  lensSwitcherVisible,
+  readLensQuery,
+  unknownLensParams,
+} from "../lib/search-lens";
 
 /**
  * T855 / §LXIV.4 (Block BQ) — one question survives the jump between the three
@@ -69,6 +74,37 @@ describe("lensHref", () => {
       const params = new URLSearchParams(href.slice(href.indexOf("?")));
       expect(readLensQuery(lens, params)).toEqual(query);
     }
+  });
+});
+
+/** T891 / §LXIV.7 — the public keyword page opts in; the operator lenses don't ask. */
+describe("the switcher's gate", () => {
+  it("shows on both operator lenses unconditionally", () => {
+    const bare = new URLSearchParams("q=x");
+    expect(lensSwitcherVisible("vector", bare)).toBe(true);
+    expect(lensSwitcherVisible("answer", bare)).toBe(true);
+  });
+
+  it("hides on the public keyword page until the opt-in param says otherwise", () => {
+    expect(lensSwitcherVisible("keyword", new URLSearchParams("q=x"))).toBe(false);
+    expect(lensSwitcherVisible("keyword", new URLSearchParams("q=x&_lens=1"))).toBe(true);
+    // Any other value is not the opt-in.
+    expect(lensSwitcherVisible("keyword", new URLSearchParams("q=x&_lens=true"))).toBe(false);
+  });
+
+  it("carries the opt-in into the keyword lens, and only there", () => {
+    const query = { q: "warranty", filters: {} };
+    expect(lensHref("keyword", "Sample", query, { switcher: true })).toContain("_lens=1");
+    expect(lensHref("vector", "Sample", query, { switcher: true })).not.toContain("_lens");
+    expect(lensHref("answer", "Sample", query, { switcher: true })).not.toContain("_lens");
+    // Absent by default, so a plain link stays the plain public URL.
+    expect(lensHref("keyword", "Sample", query)).toBe("/sn/Sample?q=warranty");
+  });
+
+  it("never reads the opt-in as a filter, in either dialect", () => {
+    expect(readLensQuery("keyword", new URLSearchParams("q=x&_lens=1")).filters).toEqual({});
+    expect(readLensQuery("vector", new URLSearchParams("q=x&_lens=1")).filters).toEqual({});
+    expect(unknownLensParams("keyword", new URLSearchParams("q=x&_lens=1"))).toEqual([]);
   });
 });
 

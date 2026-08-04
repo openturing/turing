@@ -2132,18 +2132,6 @@ that the answer lens is authenticated-only and correct the SDK's doc comment. Th
 operator affordances (rank, score, raw JSON) argue for the second reading, in which case
 the public hero needs the chat endpoint instead.
 
-### LXIV.7 The keyword lens is a one-way door
-
-T855 put the switcher on `/ann` and `/answer` only, because §LXIV's invariant holds the
-public `/sn` page untouched — nothing a visitor sees changes. The consequence is that
-the round trip is broken in one direction: an operator who starts from the keyword lens
-(the launcher's first tile, and the one they reach for when asking "was it even
-retrieved?") has to hand-edit a URL to reach the other two. Close it without breaking
-the invariant: render the switcher on `/sn` only for an authenticated console user, or
-behind an explicit opt-in param the launcher tile appends, so an anonymous visitor's
-page is byte-identical to today's. Either way `readLensQuery("keyword", …)` already
-reads that page's dialect, so the work is the gate, not the translation.
-
 ## LXV. Block AV follow-through — the gaps the POST-native migration left (Block BR)
 
 > Block AV (§XLV) closed the query-string bug class: search is POST-native, the

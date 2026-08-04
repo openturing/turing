@@ -39,6 +39,7 @@
     "thumbUp": "Yes",
     "thumbDown": "No",
     "openAnswerSearch": "Open AI Answer",
+    "openSearchWithLens": "Open Search with lens switcher",
     "lens": {
       "title": "Search lens",
       "keyword": "Keyword",

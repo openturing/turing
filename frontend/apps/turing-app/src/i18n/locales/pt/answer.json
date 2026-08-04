@@ -39,6 +39,7 @@
     "thumbUp": "Sim",
     "thumbDown": "Não",
     "openAnswerSearch": "Abrir Resposta com IA",
+    "openSearchWithLens": "Abrir Busca com alternador de lentes",
     "lens": {
       "title": "Lente de busca",
       "keyword": "Palavra-chave",

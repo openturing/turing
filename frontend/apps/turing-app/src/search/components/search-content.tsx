@@ -7,7 +7,9 @@ import {
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useSearchView } from "../lib/search-view";
+import { lensSwitcherVisible, readLensQuery } from "../lib/search-lens";
 import { AiChatCard } from "./ai-chat-card";
+import { SearchLensSwitcher } from "./search-lens-switcher";
 import { AiModeChat, type AiModeChatHandle } from "./ai-mode-chat";
 import { JsonSheet } from "./json-sheet";
 import { SearchEmpty } from "./search-empty";
@@ -113,6 +115,20 @@ export function SearchContent({ siteName }: Readonly<SearchContentProps>) {
       />
 
       <main className="flex-1 container mx-auto px-4 lg:px-8 py-6">
+        {/*
+         * T891 / §LXIV.7 — the keyword lens is the one an operator reaches for
+         * first ("was it even retrieved?"), so it must not be a one-way door.
+         * Opt-in only: without `_lens=1` a visitor's page is unchanged.
+         */}
+        {lensSwitcherVisible("keyword", searchParams) && (
+          <div className="mb-4 flex justify-end">
+            <SearchLensSwitcher
+              current="keyword"
+              siteName={siteName}
+              query={readLensQuery("keyword", searchParams)}
+            />
+          </div>
+        )}
         {/*
          * T835 — answer-first fused page. The answer panel (AiModeChat) is no
          * longer an exclusive mode that hides the results: it renders ABOVE a

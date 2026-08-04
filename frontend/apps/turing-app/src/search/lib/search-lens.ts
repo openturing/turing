@@ -17,6 +17,15 @@
 
 export type SearchLens = "keyword" | "vector" | "answer";
 
+/**
+ * T891 / §LXIV.7 — the opt-in that shows the switcher on the **public** keyword
+ * page. `/ann` and `/answer` are operator surfaces and carry it unconditionally;
+ * `/sn` is what a visitor sees, so it stays byte-identical unless this param
+ * says otherwise. The switcher's own keyword link and the console launcher both
+ * append it, which is how an operator keeps the switcher across the jump.
+ */
+export const LENS_PARAM = "_lens";
+
 /** The lens-independent state of one question. */
 export interface LensQuery {
   q: string;
@@ -37,10 +46,10 @@ const LENS_PREFIX: Readonly<Record<SearchLens, string>> = {
  * paging/topK trio is deliberately NOT carried across lenses: it is a property
  * of one lens's result list, not of the question.
  */
-const VECTOR_RESERVED = new Set(["q", "_setlocale", "topK", "page", "pageSize"]);
+const VECTOR_RESERVED = new Set(["q", "_setlocale", "topK", "page", "pageSize", LENS_PARAM]);
 
 /** Params the `fq`-dialect lenses own. */
-const FQ_RESERVED = new Set(["q", "_setlocale", "fq"]);
+const FQ_RESERVED = new Set(["q", "_setlocale", "fq", LENS_PARAM]);
 
 /** True when the lens spells filters as repeated `fq=field:value`. */
 function usesFqDialect(lens: SearchLens): boolean {
@@ -75,11 +84,25 @@ export function readLensQuery(lens: SearchLens, params: URLSearchParams): LensQu
   };
 }
 
+export interface LensHrefOptions {
+  /**
+   * Keep the switcher visible at the destination. Only meaningful for the
+   * keyword lens, whose page is public and hides the switcher by default.
+   */
+  switcher?: boolean;
+}
+
 /** Writes the question into the target lens's URL. */
-export function lensHref(lens: SearchLens, siteName: string, query: LensQuery): string {
+export function lensHref(
+  lens: SearchLens,
+  siteName: string,
+  query: LensQuery,
+  options?: LensHrefOptions,
+): string {
   const params = new URLSearchParams();
   if (query.q.trim()) params.set("q", query.q.trim());
   if (query.locale) params.set("_setlocale", query.locale);
+  if (options?.switcher && lens === "keyword") params.set(LENS_PARAM, "1");
   for (const [field, values] of Object.entries(query.filters)) {
     for (const value of values ?? []) {
       if (!field || !value) continue;
@@ -90,6 +113,15 @@ export function lensHref(lens: SearchLens, siteName: string, query: LensQuery): 
   const qs = params.toString();
   const suffix = qs ? "?" + qs : "";
   return `${LENS_PREFIX[lens]}/${siteName}${suffix}`;
+}
+
+/**
+ * T891 — whether the lens switcher belongs on this page. The two operator lenses
+ * always carry it; the public keyword page only when the opt-in param says so.
+ */
+export function lensSwitcherVisible(lens: SearchLens, params: URLSearchParams): boolean {
+  if (lens !== "keyword") return true;
+  return params.get(LENS_PARAM) === "1";
 }
 
 /**

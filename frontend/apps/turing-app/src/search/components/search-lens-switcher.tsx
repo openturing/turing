@@ -9,9 +9,10 @@ import { lensHref, type LensQuery, type SearchLens } from "../lib/search-lens";
  * attributed to **recall**, **rerank** or **synthesis** in one pass instead of
  * three hand-edited URLs.
  *
- * <p>Rendered on the operator lenses only. The public `/sn` page is deliberately
- * left alone — nothing a visitor sees changes — so the switcher offers a link
- * *into* the keyword lens without appearing on it.
+ * <p>The two operator lenses carry it unconditionally. The public `/sn` page shows
+ * it only behind the T891 `_lens=1` opt-in, so a visitor's page is unchanged —
+ * and the keyword link below carries that param, which is what keeps the round
+ * trip open once an operator is mid-comparison.
  *
  * @author Alexandre Oliveira
  * @since 2026.3.4
@@ -58,7 +59,11 @@ export function SearchLensSwitcher({
           );
         }
         return (
-          <a key={lens} href={lensHref(lens, siteName, query)} className={className}>
+          <a
+            key={lens}
+            href={lensHref(lens, siteName, query, { switcher: true })}
+            className={className}
+          >
             <Icon className="size-3.5" />
             {label}
           </a>
