@@ -1,6 +1,6 @@
 ---
 name: turing-roadmap-docs
-description: The Turing-specific rules around the roadmap that roadkeep does not enforce — the one-task-one-commit + /loop discipline, the next block letter and docs/last-task.md, and propagating a shipped user-facing task into the separate end-user documentation site (vigletdocs docs-turing) via its COVERAGE.md gate. The four docs/ files (ROADMAP.md, CHANGELOG.md, IMPROVEMENTS.md, STRATEGY.md) are written by the roadkeep tools and never by hand — for adding, shipping, retiring, sectioning, picking or querying a task use the `roadkeep` skill instead. Use when finishing a task, opening a block, or after shipping anything user-facing.
+description: The Turing-specific rules around the roadmap that roadkeep does not enforce — that ROADMAP.md stays minimal (headings + open lines only, no block descriptions or shipped notes, block drop when a block's last line ships), that new functionality REUSES an existing block (or a generic standing one) instead of minting a new letter, the one-task-one-commit + /loop discipline, the next block letter and docs/last-task.md, and propagating a shipped user-facing task into the separate end-user documentation site (vigletdocs docs-turing) via its COVERAGE.md gate. The four docs/ files (ROADMAP.md, CHANGELOG.md, IMPROVEMENTS.md, STRATEGY.md) are written by the roadkeep tools and never by hand — for adding, shipping, retiring, sectioning, picking or querying a task use the `roadkeep` skill instead. Use when planning where a new feature or a cluster of findings goes, when finishing a task, when about to open a block, or after shipping anything user-facing.
 ---
 
 # Turing roadmap & docs — what roadkeep does not cover
@@ -57,8 +57,121 @@ rule, so it is stated up front and it is absolute:
 
 The propagation to the end-user docs repo is a **separate** commit — see below.
 
+## ⛔ The roadmap is minimal: a heading and its open lines
+
+`docs/ROADMAP.md` holds **nothing but** the title, its four-line pointer note, the block
+headings, the open task lines, and the Non-goals section — which is exactly what
+`roadkeep init` scaffolds. It was cut from 308 lines to 98 once; keep it there.
+
+**Everything else has a home that already owns it:**
+
+| Do not put this in `ROADMAP.md` | Where it belongs |
+| ------------------------------- | ---------------- |
+| What a block is / the problem it solves | `IMPROVEMENTS.md` `§` — the `→ §` pointer on each line already goes there |
+| "✅ Block X fully shipped, see CHANGELOG" | `CHANGELOG.md`, which *is* that statement |
+| A shipped task, or a note about one | `CHANGELOG.md` (`ship` moves the line for you) |
+| "⏸ ON HOLD because …" | the block's `§` intro (or `defer <id> --reason`, which is the verb for a pause) |
+| A marker legend / symbol table | `roadkeep.toml` `[markers]` |
+| "How to pick work: lowest-numbered …" | `roadkeep brief` / `pick`, which print the reason |
+| Cluster sub-labels grouping lines | the `§` outline the lines point at |
+
+**Never write a prose note under a block heading.** No roadkeep verb writes one, which is
+the tell: it can only arrive through a hand edit the guard denies, or an approved `Bash`
+write that leaves the file's bytes unattested. It also **blocks `block drop`** — `_held`
+counts loose prose as work filed under the heading, so a note is what stops a
+fully-shipped block from ever leaving the roadmap.
+
+**When a block's last open line ships, drop the block:** `roadkeep block drop <x>` takes
+the heading out of `ROADMAP.md` only and reports the ledger as *"N entries filed under it:
+history keeps the heading it was filed under"*. That is the routine end of every block —
+Blocks **AV, BR, BS, BT** were each sitting in the roadmap as a heading plus a
+"fully shipped" paragraph, which is the ledger's sentence written twice. Reopening later is
+step 4 of the section below, so dropping costs nothing.
+
+## ⛔ Reuse a block before opening one (default: no new letter)
+
+**A block is a durable theme, not a changelog of one afternoon's findings.** When new
+functionality arrives — or a cluster of defects found while shipping something else — the
+default is to **file it under a block that already exists**. Opening a new letter is the
+exception, and it needs a reason you can state out loud.
+
+This is a rule because the corpus drifted hard the other way. Blocks **BR–BW** are each one
+narrow cluster — "Block AV follow-through", "The POST-native default left its consumers
+behind", "The quality gate stops at the package boundary", "The search cache is off by a
+thousand" — and every one of them had a home that already existed (SDK/client parity, CI &
+release gates, search contract, caching). The cost is not cosmetic: the labels ran out of
+single letters, `list --block` answers fragment, one subsystem's history is spread across
+five headings, and the block list stops being readable as the shape of the plan.
+
+**Before any `add`, run this:**
+
+1. **Read the blocks that already exist — in *both* line files.** `roadkeep list` (and
+   `list --block <x>`) for the roadmap, **and the `CHANGELOG.md` headings too**: the roadmap
+   is periodically pruned of fully-shipped blocks, so the right home is very often a heading
+   only the ledger still declares. **A block missing from `ROADMAP.md` is not unavailable** —
+   see the reopen step below.
+2. **Ask which subsystem or standing concern owns the work** — never which recent task
+   exposed it. "Found while shipping T865" is provenance for the `why` field; it is never a
+   block title.
+3. **File under the closest existing theme** with `add --block <x>`, and extend that block's
+   existing `§` outline with `add --section` / `section add` rather than opening a new
+   top-level anchor. One theme, one letter, one rationale subtree.
+4. **A pruned block is *reopened*, not replaced.** `roadkeep block add AG --title "<the exact
+   title CHANGELOG already records>"` writes the heading into `ROADMAP.md` only and reports
+   the ledger as *"already declares it"*. Keep the title byte-identical to the ledger's, so
+   one letter is never described two ways. Do **not** mint `AG2`, "AG follow-ups" or a fresh
+   letter for more work on a theme the ledger already owns.
+5. **A wave large enough to want its own heading takes a sub-label, not a new letter.**
+   `[ids]` puts no pattern on a label and the corpus already spells `D.1`, `E.7`, `F.16`,
+   `J.9`, so `block add AD.1 --title "…"` files a distinct wave **inside** the theme that
+   owns it: the deps, the `list` grouping and the reader's mental model all stay with the
+   parent. This is the right answer for the case that produced BR–BW — a second round of
+   work on one subsystem.
+
+**Candidate standing homes** (confirm the letter with `roadkeep list` — this table is a
+starting point, not the registry):
+
+| The work is about… | Standing home |
+| ------------------ | ------------- |
+| Bento / admin UI migration & consistency | Block **AG** (AX is closed) |
+| Security hardening | Block **AN** |
+| Internal + end-user documentation parity | Block **AE**, Block **U** |
+| Domain layer, JPA caching & persistence architecture | Block **AF**, Block **AC** |
+| LLM provider coverage & cross-vendor parity | Block **AD** (Gemini: **F.16**) |
+| SDK / client parity (vanilla, React, react-ui) | Block **S** |
+| CI, release & quality gates across `frontend/` | Block **BV** |
+| Search result & facet rendering, relevance robustness | Block **AR**, Block **BH** |
+| Persona surfaces (match, dialogue, research) | Block **AI**, **AT**, **AU**, **AW** |
+| Multi-tenancy / Cloud SaaS | Block **J** (+ `J.x`) |
+
+**A new letter is justified only when all three hold:** the work is a genuinely new
+subsystem or product surface with no existing owner; you expect it to keep receiving tasks
+*after* this batch; and its title would still make sense a year from now **without naming
+the task or incident that exposed it**.
+
+**If nothing fits and it is not durable either — widen it into a generic standing block
+instead of a one-shot.** Name the block for the recurring concern, so the *next* cluster of
+the same kind lands in it too:
+
+| ❌ one-shot title (a new letter each time) | ✅ what it should have been |
+| ----------------------------------------- | -------------------------- |
+| "The POST-native default left its consumers behind" | `AV.1` — "Consumer follow-through after a search-contract change" |
+| "The quality gate stops at the package boundary" | Block **BV** — "Release & quality gates across the JS workspace" |
+| "The search cache is off by a thousand and never evicted on write" | lines under Block **AC** (caching) |
+| "Block AV follow-through" | no block at all — each line under the theme it belongs to |
+
+A generic block gets **one** rationale section stating the standing concern once; every
+later cluster adds lines under the same letter and extends the same outline. When you catch
+yourself writing a block title that contains a task id, "follow-up(s)", "follow-through",
+or the past tense of a specific incident, that is the signal to reuse or generalise.
+
+**Reusing a block does not consume the reserved letter.** `docs/last-task.md`'s *"Next block
+letter"* stays exactly as it is until a letter is actually spent — do not bump it for a
+task filed under an existing block.
+
 ## The next block letter, and `docs/last-task.md`
 
+Once the section above has actually justified a new letter,
 `roadkeep block add <label> --title "…"` is the only thing that declares a block heading,
 and it takes the **label** as its argument — that letter is the one fact the tool cannot
 derive for you.

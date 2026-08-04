@@ -12,7 +12,7 @@
 > | Skill | Reach for it when… |
 > | ----- | ------------------ |
 > | `roadkeep` | **the write path for `docs/ROADMAP.md`/`CHANGELOG.md`/`IMPROVEMENTS.md`/`STRATEGY.md`** — adding, shipping, retiring, deferring or sectioning a task, and every query about the backlog |
-> | `turing-roadmap-docs` | the Turing rules `roadkeep` does not enforce — one-task-one-commit + `/loop`, the next block letter, propagating a shipped user-facing task to the `docs-turing` site |
+> | `turing-roadmap-docs` | the Turing rules `roadkeep` does not enforce — **where new work goes (reuse a block, don't mint a letter)**, one-task-one-commit + `/loop`, the next block letter, propagating a shipped user-facing task to the `docs-turing` site |
 > | `turing-persistence` | writing JPA entities, `@Column` annotations, associations (LAZY rule), or Liquibase changelogs |
 > | `turing-integration-tests` | creating or debugging a `*IT.java` / `@SpringBootTest` / context-startup hang |
 > | `turing-frontend-testing` | adding or debugging a `*.test.tsx` (vitest + RTL) |
@@ -88,10 +88,26 @@ Verify with `git -C D:\Git\viglet\turing\latest rev-parse --abbrev-ref HEAD`
 > derived — `roadkeep next-id`, not a counter read out of a file.
 >
 > The Turing rules roadkeep does *not* enforce are the **`turing-roadmap-docs` skill**:
-> one-task-one-commit + `/loop`, the next block letter, and propagating a shipped
-> user-facing task into the `docs-turing` site. `roadkeep lint` gates the turn and runs in
-> CI against a baseline, so it fails on what a branch added and forgives the corpus's
-> standing adoption debt.
+> where new work is filed, one-task-one-commit + `/loop`, the next block letter, and
+> propagating a shipped user-facing task into the `docs-turing` site. `roadkeep lint` gates
+> the turn and runs in CI against a baseline, so it fails on what a branch added and
+> forgives the corpus's standing adoption debt.
+>
+> **`ROADMAP.md` is minimal — a title, the block headings, the open lines, Non-goals.** No
+> block descriptions (that is the `→ §` pointer's job), no "✅ block shipped" notes (that is
+> `CHANGELOG.md`), no marker legend (that is `roadkeep.toml`). Never write a prose note under
+> a block heading: no verb writes one, and it blocks `block drop` — which is how a block
+> whose last open line shipped leaves the roadmap while the ledger keeps its heading.
+>
+> **New functionality reuses an existing block — a new letter is the exception.** A block is
+> a durable theme, not a log of one afternoon's findings, so file new work (and clusters of
+> findings) under the block that already owns that subsystem, and prefer widening a block's
+> scope over minting a letter. Check **both** line files before deciding: `ROADMAP.md` is
+> pruned of fully-shipped blocks, so the right home is often a heading only `CHANGELOG.md`
+> still declares — `roadkeep block add <same letter> --title "<the ledger's exact title>"`
+> reopens it in the roadmap rather than creating a rival. The decision procedure, the
+> standing-home table and the "generic block instead of a one-shot" naming rule are in the
+> **`turing-roadmap-docs` skill**.
 
 ### Build & Test Commands
 

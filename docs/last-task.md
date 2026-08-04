@@ -7,6 +7,13 @@
 > stays below is the **block letter** (the one label `roadkeep block add` cannot
 > derive) and the one-line-per-task log.
 >
+> ⛔ **`BX` is a reservation, not a queue to advance.** New functionality is filed under
+> a block that already exists — including one pruned from `ROADMAP.md` but still declared
+> in `CHANGELOG.md`, which `block add <same letter>` reopens — and a genuinely new theme
+> is named generically so the next cluster of its kind lands in it too. This letter is
+> spent only when the `turing-roadmap-docs` skill's three tests all hold; a task filed
+> under an existing block leaves it untouched.
+>
 > **Next block letter — `BX`** (Block **BW** = What the link-free response and its
 > consumers still lack — found while shipping Block BT, which fixed the three
 > consumers but not the shape or the reach: the site icon has no structured field
