@@ -6,10 +6,6 @@
 > [STRATEGY.md](STRATEGY.md); the markers and limits are `roadkeep.toml`'s. Blocks are
 > reused, not minted — `roadkeep brief` picks the next task and states why.
 
-## Block W — Agent↔UI transparency & client tools (AG-UI parity)
-
-- 💭 **T441** (deps: T436 ✅, T438 ✅) **Canonical AG-UI protocol adapter** — an optional endpoint re-encoding Turing's stream into the canonical AG-UI event schema, so CopilotKit's off-the-shelf clients connect with no Turing-SDK code. → §XXII.6
-
 ## Block BJ — Configurable, per-language NL ranking lexicon (Lucene analysis) (§LVIII)
 
 - 💭 **T814** (deps: T811 ✅) **Externalize the ranking lexicon** — move the four hardcoded word sets out of `TurNLRankingPlanner` into a resource-backed `TurRankingLexicon` — English parity, but data-driven and the foundation for the block. → §LVIII.1
@@ -31,22 +27,6 @@
 ## Block J follow-ups — Cloud SaaS hardening (T334–T373)
 
 - 📋 **T373** (deps: —) **Ship Cloud default config as a GLOBAL seed ZIP** — guarantee the export keeps `tenantId = null` for the 6 BYO-infra types and bake the seed ZIP into the image, so one seeded default is visible to every auto-provisioned tenant. → §XIV.8.7
-
-## Block O — GEO / LLM discoverability & content distribution
-
-- 💭 **T348** (deps: T347 ✅) **Post: "Semantic & vector search in AEM with Turing ES"** — RAG/embedding angle on the same audience. → §X.3
-- 💭 **T349** (deps: T342 ✅) **Post: "Adding enterprise search to WordPress with Turing ES"** — the other named CMS; second-largest connector audience. → §X.3
-- 💭 **T351** (deps: T350 ✅) **Post: "Turing ES vs. Coveo / vs. Lucidworks Fusion"** — head-to-head positioning for enterprise portals. → §X.3
-- 💭 **T352** (deps: T350 ✅) **Post: "When to choose Solr, Elasticsearch, or Turing ES"** — captures the "which search engine" decision query. → §X.3
-- 💭 **T353** (deps: T342 ✅) **Post: "RAG over enterprise content with Turing + MCP"** — ties the §VIII.4 MCP pillar + Block M provenance into the discovery funnel. → §X.3
-- 📋 **T354** (deps: —) **Seed independent mentions** — answer relevant SO/Reddit/AEM-forum threads, republish the posts to Dev.to/Medium behind a canonical link, and list on AlternativeTo, `awesome-*` and G2. → §X.1
-- 💭 **T355** (deps: T354) **Monthly model-prompt audit** — prompt ChatGPT/Claude/Gemini with the target queries, log whether Turing appears and where; the actual KPI for this block. → §X.4
-
-## Block AB — Public site & top-of-funnel conversion (`turing.viglet.org`)
-
-- ⏳ **T477** (deps: T451–T457 ✅) **Public read-only demo instance behind the site** — infra, seeding and the LLM are live at `turing-demo.viglet.org`, so what is left is the host setting the demo agent's budget cap. → §XXVII.2
-- 💭 **T480** (deps: T477) **Hosted "try it free" path via Viglet Cloud** — dual-path CTA (self-host docs + hosted sandbox) so visitors who won't install still reach first value. → §XXVII.3
-- 💭 **T481** (deps: real design partners) **Social-proof surface** — adopters, logos, testimonials and quantified case studies on the Dify model, never fabricated. → §XXVII.3
 
 ## Block BU — The search cache is off by a thousand and never evicted on write (§LXVIII)
 

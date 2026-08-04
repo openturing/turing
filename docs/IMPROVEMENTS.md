@@ -1393,16 +1393,6 @@ these block the Dumont collection work — a sidecar
 > agent runtime, not multi-runtime federation. The optional canonical-protocol
 > adapter (§XXII.6) is a 💭 bet, deliberately separated.
 
-### XXII.6 Canonical AG-UI protocol adapter (T441, 💭 bet)
-
-Optional, strategic: an endpoint that re-encodes Turing's chat stream into the
-**canonical AG-UI event schema** (`RUN_STARTED`, `TEXT_MESSAGE_*`,
-`TOOL_CALL_*`, `STATE_SNAPSHOT`/`STATE_DELTA`, `MESSAGES_SNAPSHOT`, …) so
-CopilotKit's off-the-shelf React/Angular clients connect to a Turing agent with
-zero Turing-SDK code. This is a distribution play (meet developers in the
-ecosystem they already use), not core parity — depends on T436+T438 existing
-first, and should only be promoted from 💭 if a named integration asks for it.
-
 ## XXVII. Public site & top-of-funnel conversion (Block AB)
 
 > The marketing site (`turing.viglet.org`) as a conversion surface, not a
@@ -1422,40 +1412,6 @@ shadcn, standalone, no SDK/backend dependency). Content lives in one place,
 `src/lib/site-content.ts`; sections are thin renderers in
 `src/components/sections/`. Deploy: `pnpm build:site` → `apps/site/dist/*` copied
 to the Pages root by `publish-github-pages.yml`.
-
-### XXVII.2 The live-demo linchpin (T477)
-
-The defining bet (§XIV.3): a *truly* live demo. The hero search + cited-chat are
-now live (T478, shipped — see CHANGELOG). Remaining under this section is only
-the host bring-up and pointing the marketplace SPAs at the instance.
-
-- **T477** — stand up a **public read-only Turing instance** with CORS + rate
-  limiting, seeded with demo content; read-only/anonymous scope only, no write
-  surface. **Realized in `viglet/cloud`** as a dedicated throwaway instance
-  (`docker compose --profile demo`): a separate `turing-demo` + isolated
-  `solr-demo`, `TURING_KEYCLOAK=false`/no-tenancy, **ephemeral tmpfs** store +
-  index (wiped on recreate), `cap_drop: ALL`/`no-new-privileges`/mem-cpu-pids
-  caps, **no `docker.sock`** (Code Interpreter DOCKER + skills off by
-  construction), behind an nginx **deny-by-default allowlist** vhost
-  (`turing-demo.viglet.org` → only `/api/sn/*`, `/csrf`, `…/semantic-chat`;
-  admin/login/oauth/actuator/write → 404) with per-IP rate limits, plus a
-  **systemd timer that recreates + re-seeds** periodically (the self-heal). Seed
-  sources are committed (`demo-seed-src/mythical-creatures` + `turing-docs`);
-  `docker/DEMO.md` documents the host go-live steps (DNS, real TLS, demo-agent
-  budget cap). Pending = those host steps, not platform code.
-
-### XXVII.3 Proof & deeper funnel (T479–T482)
-
-- **T480** — hosted **"try it free"** path via Viglet Cloud (the dual-path CTA
-  Meilisearch/Supabase use: self-host docs **and** a hosted sandbox), so visitors
-  who won't install can still reach first value.
-- **T481** — real **social proof** surface: adopters/logos, testimonials, and
-  quantified case studies (the Dify model: "18,000 hours saved"). Gated on having
-  real design partners — never fabricated.
-
-**Non-goals:** do not duplicate ROADMAP/CHANGELOG content into the site (link to
-GitHub); do not fabricate proof (logos/metrics) before real adopters exist; do
-not over-claim in the comparison table (keep it defensible + dated).
 
 ## XXVIII. Provider coverage + cross-vendor capability exploitation (Block AD)
 

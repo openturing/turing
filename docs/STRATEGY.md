@@ -290,10 +290,11 @@ of it.
 > Added 2026-06-14. The concrete execution of §IX.4 ("distribution before
 > pricing pages pay") for the channel that now matters as much as Google:
 > **LLM assistants** (ChatGPT, Claude, Gemini, Copilot) answering "what's the
-> best search for Adobe AEM / WordPress?". Tasks in [ROADMAP.md](ROADMAP.md)
-> Block O (T342–T354). Some tasks live in sibling repos
-> (`openviglet.github.io`, `vigletdocs.github.io`), tracked here because §IX.4
-> already operates cross-repo.
+> best search for Adobe AEM / WordPress?". Block O shipped its foundation and its
+> remaining posts were retired to the channel that writes them — see
+> [CHANGELOG.md](CHANGELOG.md) Block O. The plan below is the standing strategy;
+> execution lives in the sibling repos (`openviglet.github.io`,
+> `vigletdocs.github.io`), because §IX.4 already operates cross-repo.
 
 ### X.1 The thesis — why an LLM doesn't suggest Turing today
 
