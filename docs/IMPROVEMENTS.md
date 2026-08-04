@@ -2162,6 +2162,51 @@ anyway, so precision only ever mattered for the indexing path, where the scan al
 works. Resume when a provider whose native cache is not a `Map` is actually wired, or
 when a bulk import's eviction cost shows up in a profile.
 
+### LXVIII.7 Bulk deletes bypass the eviction listener that T896 relies on (T899)
+
+T896 hooked the JPA layer precisely so no write path could forget to evict — the
+callback fires whichever service saved the entity. That argument has one hole, and it is
+a hole in JPA rather than in the wiring: lifecycle callbacks fire for entities the
+persistence context manages, and bulk operations do not manage any.
+`deleteAllInBatch(...)` and `@Modifying @Query("delete …")` issue SQL directly, so
+`@PostRemove` never runs.
+
+`TurSNSpotlightProcess` uses exactly that, six times — `deleteAllInBatch` on spotlights,
+terms and documents when re-importing or clearing a provider's unmanaged spotlights. The
+create half of the same flow calls `save(...)` and does evict, which is what makes this
+easy to miss: the common path looks covered because the *last* write in it happens to be
+a managed one. A delete with no following save is not.
+
+So the listener is necessary and not sufficient, and the honest fix is to stop relying
+on one mechanism for a guarantee it cannot make alone. Two candidates: have the
+bulk-delete callers evict explicitly (small, local, and back to "someone must
+remember"), or move the eviction to a Hibernate integrator that observes the SQL-level
+events bulk operations *do* produce. The second is the one that keeps T896's property;
+the first is what a fix under time pressure will look like, which is worth saying out
+loud before it is written.
+
+### LXVIII.8 An import carrying spotlights clears the whole search cache once per row (T900)
+
+T896's whole-cache clear was justified on volume: configuration edits are rare and
+operator-driven, so per-site precision buys nothing. That is true of the admin
+controllers — and false of one path, because an *unmanaged spotlight* is not an admin
+edit. It arrives as a job item on the indexing queue, and
+`TurSNSpotlightProcess.createUnmanagedSpotlight` saves the spotlight plus a row per term
+and per document. Every one of those saves is a managed write, so every one fires the
+callback and clears the entire cache.
+
+A 500-document import that carries spotlights therefore issues on the order of a
+thousand full clears where T870 was careful to issue one eviction per site. Nothing is
+*wrong*: the cache ends correct and the import still completes. It is only that the
+volume argument the coarse clear rests on does not hold on the one write path that
+shares a door with indexing.
+
+The cheap fix is to skip the callback while the indexing queue is draining — it already
+evicts per site at the end of the message, so the clears are redundant there, not merely
+expensive. That is a flag on a thread-local, which is the kind of state worth adding
+only once someone measures the import. Filed as an idea for that reason: the correctness
+is already there, and this is a cost nobody has yet reported paying.
+
 ## LXIX. The quality gate stops at the package boundary (Block BV)
 
 > Block BS fixed the gate for one package. Adopting the same two changes across
@@ -2407,3 +2452,36 @@ cannot be half-added. The two branches genuinely differ in their login and logou
 wiring, so this is about the shared matcher list only, not about merging the branches.
 The T889 source-level guard should then assert the shared constant rather than counting
 occurrences, which is a weaker check that a refactor would silently satisfy.
+
+## LXXI The no-entity-caching rule is enforced only where it was first broken (Block AC)
+
+> Found while enumerating the explicitly-keyed caches for T895. Block AC's rule is
+> unqualified — never cache a JPA entity — but its guard walks repositories only, so the
+> hottest service-level cache in the product holds six entity types and passes the lint
+> for the policy it violates. The evidence that this is not theoretical is in that cache's
+> own javadoc: it already works around the exact failure, one association at a time.
+
+### LXXI.1 The search snapshot caches six kinds of JPA entity, which T486 forbids (T898)
+
+Block AC's rule is stated without qualification: cache an immutable read-model or DTO,
+**never a JPA entity**, because a cached entity carries lazy proxies that throw
+`LazyInitializationException` the moment a hot path dereferences one outside a
+transaction. T486 removed the whole class of bug — at the repository layer.
+
+`TurSNSiteSearchSnapshot` is a `@Cacheable` record whose six components are `TurSNSite`,
+`List<TurSNSiteFieldExt>`, `Map<…, List<TurSNSiteCustomFacet>>`, `Map<…,
+Set<TurSNSiteFieldExtFacet>>`, `List<TurSNSiteLocale>` and `List<TurSNSiteCustomSort>` —
+entities, all of them, on the hottest read in the product.
+
+It has already been bitten. `getSnapshot` deliberately calls
+`findByNameIgnoreCaseWithGenAi` rather than the plain finder, and says why: *"The
+snapshot caches the entity, so the T383 hybrid-ranking path that reads `turSNSiteGenAi`
+on a cache hit would otherwise hit a detached LAZY proxy."* That is the T486 failure,
+diagnosed and worked around one association at a time — the treadmill the policy exists
+to end. The next association added to any of the six repeats it.
+
+`TurCacheAnnotationConventionsTest` cannot see this: it filters to types named
+`*Repository` or under `persistence.repository`, so a service cache is invisible to the
+guard for the rule it enforces. Two things are wanted, and the second is the durable
+one: project the snapshot into a read-model of records, and widen the lint past the
+repository boundary so the policy is checked wherever caching happens.

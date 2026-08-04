@@ -46,7 +46,11 @@
 > tenant-scoped though it starts with a per-tenant site name (T895), the write paths
 > that bypass the indexing queue — spotlight, synonym, field config — still never
 > evict (T896), and 💭 eviction reaches outside the Spring `Cache` contract to
-> enumerate keys (T897). §LXVIII.4–.6,
+> enumerate keys (T897). **T895–T896 SHIPPED; T897 deliberately not built** (its
+> resume trigger is in §LXVIII.6). Reopened **again** with what those two exposed:
+> `deleteAllInBatch` fires no `@PostRemove` so the bulk spotlight deletes bypass the
+> T896 listener (T899), and 💭 an import carrying spotlights fires the whole-cache
+> clear once per saved row (T900). §LXVIII.4–.8,
 > created 2026-08-02; Block **BT** = The POST-native default left its consumers
 > behind — T710 made `postNative: true` the default and the provider sets
 > `data = null`, but three `turing-app` consumers still read it: `SearchContent`
@@ -277,6 +281,14 @@ number" looked free but wasn't. Grepping three files (`ROADMAP.md`,
    lists fully-shipped blocks), then bump the letter after creating the block.
 
 ## Log (most recent first)
+
+- **T898–T900 CREATED** (📋/💭 — T898 in **Block AC** §LXXI.1, reopened from the ledger: `TurSNSiteSearchSnapshot` is a `@Cacheable` record of six JPA entity types, which T486 forbids outright, and its own javadoc documents working around the resulting detached-LAZY failure one association at a time — `TurCacheAnnotationConventionsTest` cannot see it because the lint filters to `*Repository`. T899/T900 in **Block BU** §LXVIII.7–.8: `deleteAllInBatch` fires no `@PostRemove`, so the six bulk spotlight deletes bypass T896's listener entirely (T899), and 💭 unmanaged spotlights are saved *through the indexing queue*, so each row fires T896's whole-cache clear and a large import repeats it hundreds of times (T900)) — 2026-08-04.
+
+- **T897 NOT BUILT, kept 💭** (Block BU §LXVIII.6 — the generation-counter design is deliberately not built: no non-`Map` cache provider is wired, no profile shows the scan, and T896 weakened the case further since a config write now clears the whole cache anyway. The *silent* half was fixed — the degradation now warns once at `WARN`, naming the provider. Resume trigger recorded in the section) — 2026-08-04.
+
+- **T896 SHIPPED** (Block BU §LXVIII — `TurSNSearchCacheEvictionListener` (a second JPA callback, deliberately not a widening of the snapshot one) on the 19 SN entities a search answer is derived from; the enumeration lives in a test that fails when a new SN entity is in neither column. Writing it out found 7 more entities than the line named — ranking expressions/conditions, search rules/actions/conditions, facet+sort items — and one that must NEVER carry it: `TurSNSiteMetricAccess`, which a search *writes*) — 2026-08-04.
+
+- **T895 SHIPPED** (Block BU §LXVIII — restated mid-task from "the search cache" to **three** site-name-keyed caches: `searchAPI`, `turSNSiteSearchSnapshot`, `turSNSiteFieldConfig` all bypassed `TurTenantCacheKeyGenerator` via an explicit `key` SpEL. One `TurTenantCacheKey.scoped(...)` primitive + a conformance lint over all 9 explicitly-keyed caches, 6 of which are allowlisted as globally unique with a reason) — 2026-08-04.
 
 - **T895–T897 CREATED** (📋/💭, Block BU §LXVIII.4–.6 — reopened while shipping T870–T872: the search cache is not partitioned by tenant because an explicit `key` SpEL bypasses `TurTenantCacheKeyGenerator` and the key starts with the per-tenant SN site name (T895), spotlight/synonym/field-config writes change the answer without going through the indexing queue so T870's eviction never fires for them (T896), and 💭 per-site eviction has to read `getNativeCache()` as a `Map` where a generation counter in the key would be O(1) (T897)) — 2026-08-04.
 

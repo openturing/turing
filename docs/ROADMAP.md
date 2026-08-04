@@ -24,6 +24,8 @@
 ## Block BU — The search cache is off by a thousand and never evicted on write (§LXVIII)
 
 - 💭 **T897** (deps: T870 ✅) **Per-site eviction has to reach outside the Spring `Cache` contract** — Enumerating a site's keys needs `getNativeCache()` to be a `Map`, so a provider that is not one silently degrades to clearing every site — a generation counter in the key would not. → §LXVIII.6
+- 📋 **T899** (deps: T896 ✅) **Bulk deletes bypass the eviction listener that T896 relies on** — `deleteAllInBatch` and `@Modifying` JPQL issue SQL without loading entities, so no `@PostRemove` fires and a batch spotlight or synonym delete leaves the answer stale. → §LXVIII.7
+- 💭 **T900** (deps: T896 ✅) **An import carrying spotlights clears the whole search cache once per row** — Unmanaged spotlights are saved through the indexing queue, so each saved row fires the T896 whole-cache clear and a large import repeats it hundreds of times. → §LXVIII.8
 
 ## Block BV — The quality gate stops at the package boundary (§LXIX)
 
@@ -49,6 +51,10 @@
 
 - 📋 **T893** (deps: —) **The public search page is not in the Keycloak branch's anonymous list** — `/sn/**` is permitted only under local auth, so a Keycloak deployment sends a visitor to SSO login for a page whose every API is already public. → §XXXVII.17
 - 📋 **T894** (deps: —) **The permitAll list is written twice and nothing holds the copies equal** — forty matchers are spelled once per auth branch by hand, which is what produced both the missing answer endpoint and the missing search page. → §XXXVII.18
+
+## Block AC — JPA caching strategy: decouple cache from entities
+
+- 📋 **T898** (deps: —) **The search snapshot caches six kinds of JPA entity, which T486 forbids** — T486's lint only walks repositories, so a service-level `@Cacheable` holding entities passes — and this one already paid for it once with a workaround for the exact failure. → §LXXI.1
 
 ## Non-goals (do NOT add as tasks)
 
