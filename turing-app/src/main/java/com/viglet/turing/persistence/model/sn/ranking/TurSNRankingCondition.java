@@ -28,8 +28,11 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.viglet.core.jpa.VigletAssignableUuidGenerator;
 import com.viglet.turing.spring.security.TurAuditable;
 
+import com.viglet.turing.sn.snapshot.TurSNSearchCacheEvictionListener;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EntityListeners;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
@@ -47,6 +50,7 @@ import lombok.ToString;
 @Setter
 @Getter
 @Entity
+@EntityListeners(TurSNSearchCacheEvictionListener.class)
 @ToString
 @Table(name = "sn_ranking_condition")
 @JsonIgnoreProperties({ "turSNRankingExpression" })

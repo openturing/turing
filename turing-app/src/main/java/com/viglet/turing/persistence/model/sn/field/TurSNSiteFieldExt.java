@@ -37,6 +37,7 @@ import com.viglet.turing.persistence.model.sn.TurSNSite;
 import com.viglet.turing.persistence.model.sn.TurSNSiteFacetRangeEnum;
 import com.viglet.core.jpa.VigletAssignableUuidGenerator;
 import com.viglet.turing.sn.TurSNFieldType;
+import com.viglet.turing.sn.snapshot.TurSNSearchCacheEvictionListener;
 import com.viglet.turing.sn.snapshot.TurSNSiteSnapshotEvictionListener;
 
 import jakarta.persistence.CascadeType;
@@ -68,7 +69,8 @@ import lombok.Setter;
 @Setter
 @Getter
 @Table(name = "sn_site_field_ext")
-@EntityListeners(TurSNSiteSnapshotEvictionListener.class)
+@EntityListeners({ TurSNSiteSnapshotEvictionListener.class,
+        TurSNSearchCacheEvictionListener.class })
 public class TurSNSiteFieldExt implements Serializable {
     @Serial
     private static final long serialVersionUID = 1L;

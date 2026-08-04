@@ -31,10 +31,13 @@ import java.util.Map;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.viglet.core.jpa.VigletAssignableUuidGenerator;
 
+import com.viglet.turing.sn.snapshot.TurSNSearchCacheEvictionListener;
+
 import jakarta.persistence.CollectionTable;
 import jakarta.persistence.Column;
 import jakarta.persistence.ElementCollection;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EntityListeners;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.Id;
@@ -49,6 +52,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 @Entity
+@EntityListeners(TurSNSearchCacheEvictionListener.class)
 @Builder(toBuilder = true)
 @AllArgsConstructor
 @NoArgsConstructor

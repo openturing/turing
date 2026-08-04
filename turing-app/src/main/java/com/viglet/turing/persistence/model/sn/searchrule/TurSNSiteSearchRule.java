@@ -13,9 +13,12 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.viglet.turing.persistence.model.sn.TurSNSite;
 import com.viglet.core.jpa.VigletAssignableUuidGenerator;
 
+import com.viglet.turing.sn.snapshot.TurSNSearchCacheEvictionListener;
+
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EntityListeners;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
@@ -36,6 +39,7 @@ import lombok.Setter;
  * @since 2026.2.4
  */
 @Entity
+@EntityListeners(TurSNSearchCacheEvictionListener.class)
 @Builder(toBuilder = true)
 @AllArgsConstructor
 @NoArgsConstructor

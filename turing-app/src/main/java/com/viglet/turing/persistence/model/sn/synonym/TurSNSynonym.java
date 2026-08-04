@@ -29,10 +29,13 @@ import org.hibernate.annotations.OnDeleteAction;
 import com.viglet.core.jpa.VigletAssignableUuidGenerator;
 import com.viglet.turing.persistence.model.sn.TurSNSite;
 
+import com.viglet.turing.sn.snapshot.TurSNSearchCacheEvictionListener;
+
 import jakarta.persistence.CollectionTable;
 import jakarta.persistence.Column;
 import jakarta.persistence.ElementCollection;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EntityListeners;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
@@ -62,6 +65,7 @@ import lombok.Setter;
 @Getter
 @Setter
 @Entity
+@EntityListeners(TurSNSearchCacheEvictionListener.class)
 @Table(name = "sn_site_synonym")
 public class TurSNSynonym implements Serializable {
     @Serial

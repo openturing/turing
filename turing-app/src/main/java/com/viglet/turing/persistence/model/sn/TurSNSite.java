@@ -43,6 +43,7 @@ import com.viglet.turing.persistence.model.sn.metric.TurSNSiteMetricAccess;
 import com.viglet.turing.persistence.model.sn.ranking.TurSNRankingExpression;
 import com.viglet.turing.persistence.model.sn.spotlight.TurSNSiteSpotlight;
 import com.viglet.core.jpa.VigletAssignableUuidGenerator;
+import com.viglet.turing.sn.snapshot.TurSNSearchCacheEvictionListener;
 import com.viglet.turing.sn.snapshot.TurSNSiteSnapshotEvictionListener;
 import com.viglet.turing.spring.security.TurAuditable;
 
@@ -73,7 +74,8 @@ import lombok.Setter;
 @JsonIgnoreProperties({ "turSNSiteFields", "turSNSiteFieldExts", "turSNSiteSpotlights",
 		"turSNSiteLocales", "turSNSiteMetricAccesses", "turSNRankingExpressions", "turSNSiteMergeProviders",
 		"turSNSiteCustomSorts", "turSNSiteSearchRules" })
-@EntityListeners({ AuditingEntityListener.class, TurSNSiteSnapshotEvictionListener.class })
+@EntityListeners({ AuditingEntityListener.class, TurSNSiteSnapshotEvictionListener.class,
+		TurSNSearchCacheEvictionListener.class })
 public class TurSNSite extends TurAuditable<String> implements Serializable {
 
 	@Serial

@@ -34,6 +34,7 @@ import org.hibernate.annotations.OnDeleteAction;
 import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.viglet.core.jpa.VigletAssignableUuidGenerator;
+import com.viglet.turing.sn.snapshot.TurSNSearchCacheEvictionListener;
 import com.viglet.turing.sn.snapshot.TurSNSiteSnapshotEvictionListener;
 
 import jakarta.persistence.CascadeType;
@@ -63,7 +64,8 @@ import lombok.Setter;
 @Getter
 @Table(name = "sn_site_custom_facet")
 @JsonIgnoreProperties({ "turSNSiteFieldExt" })
-@EntityListeners(TurSNSiteSnapshotEvictionListener.class)
+@EntityListeners({ TurSNSiteSnapshotEvictionListener.class,
+        TurSNSearchCacheEvictionListener.class })
 public class TurSNSiteCustomFacet implements Serializable {
     @Serial
     private static final long serialVersionUID = 1L;

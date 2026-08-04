@@ -25,6 +25,7 @@ import com.viglet.turing.persistence.model.agent.TurAIAgent;
 import com.viglet.turing.persistence.model.rag.TurRagBm25Source;
 import com.viglet.turing.persistence.model.se.TurSEInstance;
 import com.viglet.core.jpa.VigletAssignableUuidGenerator;
+import com.viglet.turing.sn.snapshot.TurSNSearchCacheEvictionListener;
 import com.viglet.turing.sn.snapshot.TurSNSiteSnapshotEvictionListener;
 
 import jakarta.persistence.Column;
@@ -54,7 +55,8 @@ import lombok.Setter;
 @Setter
 @Entity
 @Table(name = "sn_site_genai")
-@EntityListeners(TurSNSiteSnapshotEvictionListener.class)
+@EntityListeners({ TurSNSiteSnapshotEvictionListener.class,
+        TurSNSearchCacheEvictionListener.class })
 public class TurSNSiteGenAi implements Serializable {
 
     @Serial

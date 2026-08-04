@@ -27,6 +27,7 @@ import java.util.Locale;
 
 import com.viglet.turing.persistence.model.sn.TurSNSite;
 import com.viglet.core.jpa.VigletAssignableUuidGenerator;
+import com.viglet.turing.sn.snapshot.TurSNSearchCacheEvictionListener;
 import com.viglet.turing.sn.snapshot.TurSNSiteSnapshotEvictionListener;
 
 import jakarta.persistence.Column;
@@ -49,7 +50,8 @@ import lombok.Setter;
 @Setter
 @Entity
 @Table(name = "sn_site_locale")
-@EntityListeners(TurSNSiteSnapshotEvictionListener.class)
+@EntityListeners({ TurSNSiteSnapshotEvictionListener.class,
+        TurSNSearchCacheEvictionListener.class })
 public class TurSNSiteLocale implements Serializable {
 	@Serial
 	private static final long serialVersionUID = 1L;

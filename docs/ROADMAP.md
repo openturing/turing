@@ -23,7 +23,6 @@
 
 ## Block BU — The search cache is off by a thousand and never evicted on write (§LXVIII)
 
-- 📋 **T896** (deps: T870 ✅) **Spotlight, synonym and field-config writes do not evict the search cache** — They change what a query returns without going through the indexing queue and evict only their own caches, so the answer stays stale for up to 24h after an admin edit. → §LXVIII.5
 - 💭 **T897** (deps: T870 ✅) **Per-site eviction has to reach outside the Spring `Cache` contract** — Enumerating a site's keys needs `getNativeCache()` to be a `Map`, so a provider that is not one silently degrades to clearing every site — a generation counter in the key would not. → §LXVIII.6
 
 ## Block BV — The quality gate stops at the package boundary (§LXIX)

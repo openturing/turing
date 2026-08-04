@@ -103,6 +103,33 @@ public class TurSNSearchCacheEvictor {
         evictSites(List.of(siteName));
     }
 
+    /**
+     * T896 / §LXVIII.5 — evicts every cached search answer, for every site and
+     * tenant.
+     *
+     * <p>
+     * Used by the configuration write paths (spotlights, synonyms, field/facet/sort
+     * config, site settings), which reach the cache through
+     * {@code TurSNSearchCacheEviction­Listener} rather than the indexing queue.
+     * Coarse on purpose: unlike a document write these are rare, operator-driven
+     * edits, so the precision T870 needed for the indexing firehose buys nothing
+     * here — and resolving the affected site would mean walking a lazy association
+     * inside a JPA callback, which is the shape Block AC removed for good reason.
+     * </p>
+     */
+    public void evictAll() {
+        if (!searchCacheEnabled) {
+            return;
+        }
+        Cache cache = cacheManager.getCache(SEARCH_CACHE);
+        if (cache == null) {
+            return;
+        }
+        cache.clear();
+        log.debug("[T896] Cleared the '{}' cache after a search-affecting configuration write",
+                SEARCH_CACHE);
+    }
+
     private void evictSite(Cache cache, String siteName) {
         // T895 / §LXVIII.4 — the stored key is tenant-scoped, so the prefix has to be
         // too, or a write in tenant A would evict every tenant's copy of that site

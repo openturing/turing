@@ -27,8 +27,11 @@ import java.io.Serializable;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.viglet.core.jpa.VigletAssignableUuidGenerator;
 
+import com.viglet.turing.sn.snapshot.TurSNSearchCacheEvictionListener;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EntityListeners;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
@@ -45,6 +48,7 @@ import lombok.Setter;
 @Setter
 @Getter
 @Entity
+@EntityListeners(TurSNSearchCacheEvictionListener.class)
 @Table(name = "sn_site_spotlight_term")
 @JsonIgnoreProperties({ "turSNSiteSpotlight" })
 public class TurSNSiteSpotlightTerm implements Serializable {

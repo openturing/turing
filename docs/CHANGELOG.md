@@ -1205,3 +1205,4 @@
 - **T871** — The backstop sweep now reads `turing.search.cache.ttl`, a Duration that states its unit (24h, PT1H, 30m); the old millisecond key stays bound and warns.
 - **T872** — The MongoDB log purge moved to its own `TurLoggingPurgeService`, so the cached-search seam's constructor now names only the search process it actually calls.
 - **T895** — The three site-name-keyed caches wrap their key in one `scoped(...)` primitive, and a conformance lint fails any new explicitly-keyed cache that neither scopes nor justifies itself.
+- **T896** — A JPA callback on the 19 entities a search answer is derived from now clears the cache, and a test fails when a new SN entity declares neither that it affects answers nor why not.

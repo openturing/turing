@@ -2136,27 +2136,6 @@ leaves vectorless sites without a tile. The block adds **no backend**.
 > also the reason they have survived: the feature is opt-in and nobody who opted
 > in has reported it.
 
-### LXVIII.5 Spotlight, synonym and field-config writes do not evict the search cache
-
-T870 evicted the search cache from the indexing queue, because that is where a
-*document* changes. But a search answer is derived from more than the documents:
-spotlights are injected at query time, synonyms rewrite the query, and the site's
-field configuration decides which facets are counted and whether highlighting
-runs. Every one of those is edited through an admin controller that never touches
-the indexing queue.
-
-`TurSNSiteSpotlightAPI` is the clearest case — its POST, PUT and DELETE each carry
-`@CacheEvict(value = {"spotlight", "spotlight_term"}, allEntries = true)`. The author
-knew a write invalidates a cache; they invalidated the two caches their own package owns
-and had no reason to know about a third. Synonyms and field-ext writes do the same for
-theirs.
-
-This is the same defect as §LXVIII.1 arriving through a different door, so the same
-conclusion applies: evict where the answer changed. The lesson is that "where the answer
-changed" is a larger set than the indexing path, and nothing enumerates it — which is
-the part worth fixing, by routing these writes through the one evictor rather than by
-adding a third annotation to each controller.
-
 ### LXVIII.6 Per-site eviction has to reach outside the Spring `Cache` contract
 
 `TurSNSearchCacheEvictor` (T870) evicts a site by listing the cache's keys and matching

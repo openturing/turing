@@ -27,6 +27,7 @@ import java.util.Locale;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.viglet.core.jpa.VigletAssignableUuidGenerator;
+import com.viglet.turing.sn.snapshot.TurSNSearchCacheEvictionListener;
 import com.viglet.turing.sn.snapshot.TurSNSiteSnapshotEvictionListener;
 
 import jakarta.persistence.Column;
@@ -51,7 +52,8 @@ import lombok.experimental.Tolerate;
 @Entity
 @Table(name = "sn_site_field_ext_facet")
 @JsonIgnoreProperties({ "turSNSiteFieldExt" })
-@EntityListeners(TurSNSiteSnapshotEvictionListener.class)
+@EntityListeners({ TurSNSiteSnapshotEvictionListener.class,
+        TurSNSearchCacheEvictionListener.class })
 public class TurSNSiteFieldExtFacet implements Serializable {
     @Serial
     private static final long serialVersionUID = 1L;
