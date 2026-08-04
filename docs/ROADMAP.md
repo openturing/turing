@@ -50,7 +50,6 @@
 ## Block BQ — The answer engine as a first-class search lens (`/answer`) (§LXIV)
 
 - 📋 **T889** (deps: —) **The answer endpoint is authenticated while the chat beside it is anonymous** — No matcher covers `/api/sn/*/answer` or `/answer/**`, so the shipped answer surface 302s anonymous callers to login. → §LXIV.5
-- 🛠 **T890** (deps: —) **An operator can read an answer but cannot hand it over** — share, freshness re-check and thumbs all ship behind the answer hook and none is on the page, so a bad answer leaves the console as a screenshot. → §LXIV.6
 - 📋 **T891** (deps: T855 ✅) **The keyword lens is a one-way door out of the switcher** — the switcher is on the two operator lenses only, so an operator starting at `/sn` hand-edits a URL to replay the question as vector or answer. → §LXIV.7
 
 ## Non-goals (do NOT add as tasks)

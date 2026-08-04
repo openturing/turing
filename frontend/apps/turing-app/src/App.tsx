@@ -17,6 +17,7 @@ import { TuringServiceProvider } from "./contexts/TuringServiceContext"
 import { BreadcrumbProvider } from "./contexts/breadcrumb.context"
 const AnnSearchPage = lazy(() => import("./search/pages/ann-search.page"))
 const AnswerSearchPage = lazy(() => import("./search/pages/answer-search.page"))
+const AnswerSharePage = lazy(() => import("./search/pages/answer-share.page"))
 const SearchPage = lazy(() => import("./search/pages/search.page"))
 
 function App() {
@@ -34,6 +35,11 @@ function App() {
               <Route path={ROUTES.SETUP} element={<SetupPage />} />
               <Route path={`${ROUTES.SN_SEARCH}/:siteName`} element={<SearchPage />} />
               <Route path={`${ROUTES.ANN_SEARCH}/:siteName`} element={<AnnSearchPage />} />
+              {/* T890 — the share permalink is more specific than the lens route. */}
+              <Route
+                path={`${ROUTES.ANSWER_SEARCH}/:siteName/share/:shareId`}
+                element={<AnswerSharePage />}
+              />
               <Route path={`${ROUTES.ANSWER_SEARCH}/:siteName`} element={<AnswerSearchPage />} />
               {BentoRoutes}
               {VoiceKioskRoutes}

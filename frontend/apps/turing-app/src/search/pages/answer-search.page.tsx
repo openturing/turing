@@ -9,15 +9,21 @@ import {
   rehypeCitationAnchors,
 } from "@viglet/turing-react-ui";
 import {
+  IconAlertTriangle,
   IconBraces,
   IconExternalLink,
   IconLoader2,
+  IconRefresh,
   IconSearch,
+  IconShare2,
   IconSparkles,
+  IconThumbDown,
+  IconThumbUp,
   IconX,
 } from "@tabler/icons-react";
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { toast } from "sonner";
 import { useParams, useSearchParams } from "react-router-dom";
 import { JsonSheet } from "../components/json-sheet";
 import { SearchLensSwitcher } from "../components/search-lens-switcher";
@@ -62,6 +68,11 @@ export default function AnswerSearchPage() {
 
   const [inputValue, setInputValue] = useState(urlQuery);
   const [jsonView, setJsonView] = useState<Record<string, unknown> | null>(null);
+  // T890 — the thumbs are one-shot per answer, so the row acknowledges the
+  // judgement instead of inviting a second one that the miner would double-count.
+  const [verdict, setVerdict] = useState<"up" | "down" | null>(null);
+  const [sharing, setSharing] = useState(false);
+  const [checkingFreshness, setCheckingFreshness] = useState(false);
 
   // T855 — the lens-independent question, read through the shared translator so
   // the switcher can hand the same `q` / locale / filters to `/sn` and `/ann`.
@@ -81,7 +92,10 @@ export default function AnswerSearchPage() {
     status,
     error,
     isStreaming,
+    staleSources,
     ask,
+    checkFreshness,
+    share,
     signal,
   } = useTuringAnswer({ siteName: site, locale: locale || undefined });
 
@@ -105,6 +119,45 @@ export default function AnswerSearchPage() {
 
   // A link pasted into the address bar must repopulate the visible input.
   useEffect(() => setInputValue(urlQuery), [urlQuery]);
+
+  // T890 — a new question is a new answer to judge: clear the previous verdict so
+  // the thumbs are live again rather than showing the last answer's acknowledgement.
+  useEffect(() => setVerdict(null), [urlQuery, filtersKey]);
+
+  const onShare = async () => {
+    setSharing(true);
+    try {
+      const shareId = await share();
+      const url = `${window.location.origin}/answer/${site}/share/${shareId}`;
+      await navigator.clipboard.writeText(url);
+      toast.success(t("answer.shareCopied"));
+    } catch {
+      // Fail-closed on the toast only: nothing about the answer changes.
+      toast.error(t("answer.shareFailed"));
+    } finally {
+      setSharing(false);
+    }
+  };
+
+  const onCheckFreshness = async () => {
+    setCheckingFreshness(true);
+    try {
+      await checkFreshness();
+    } finally {
+      setCheckingFreshness(false);
+    }
+  };
+
+  const onVerdict = (next: "up" | "down") => {
+    if (verdict) return;
+    signal(next === "up" ? "THUMBS_UP" : "THUMBS_DOWN");
+    setVerdict(next);
+  };
+
+  const reAnswer = () => {
+    signal("RE_ANSWER_REQUESTED");
+    void ask(urlQuery, { filters: Object.keys(filters).length > 0 ? filters : undefined });
+  };
 
   const submit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -233,6 +286,70 @@ export default function AnswerSearchPage() {
           </article>
         )}
 
+        {/* T890 — the three things an operator does with an answer it has read:
+            hand it over, re-check whether its sources moved, and judge it. */}
+        {status === "success" && answer && (
+          <div className="mt-3 flex flex-wrap items-center gap-2">
+            <Button variant="outline" size="sm" disabled={sharing} onClick={() => void onShare()}>
+              {sharing ? (
+                <IconLoader2 className="size-4 animate-spin" />
+              ) : (
+                <IconShare2 className="size-4" />
+              )}
+              {t("answer.share")}
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={checkingFreshness || citations.length === 0}
+              onClick={() => void onCheckFreshness()}
+              title={citations.length === 0 ? t("answer.freshnessNeedsCitations") : undefined}
+            >
+              {checkingFreshness ? (
+                <IconLoader2 className="size-4 animate-spin" />
+              ) : (
+                <IconRefresh className="size-4" />
+              )}
+              {t("answer.checkFreshness")}
+            </Button>
+            <span className="ml-auto flex items-center gap-1.5 text-xs text-muted-foreground">
+              {verdict ? t("answer.feedbackRecorded") : t("answer.feedback")}
+              <Button
+                variant="ghost"
+                size="icon-sm"
+                disabled={verdict !== null}
+                aria-label={t("answer.thumbUp")}
+                aria-pressed={verdict === "up"}
+                onClick={() => onVerdict("up")}
+                className={verdict === "up" ? "text-emerald-600 dark:text-emerald-400" : undefined}
+              >
+                <IconThumbUp className="size-4" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon-sm"
+                disabled={verdict !== null}
+                aria-label={t("answer.thumbDown")}
+                aria-pressed={verdict === "down"}
+                onClick={() => onVerdict("down")}
+                className={verdict === "down" ? "text-red-600 dark:text-red-400" : undefined}
+              >
+                <IconThumbDown className="size-4" />
+              </Button>
+            </span>
+          </div>
+        )}
+
+        {staleSources.length > 0 && (
+          <output className="mt-3 flex flex-wrap items-center gap-2 rounded-lg border border-amber-500/40 bg-amber-500/5 px-3 py-2 text-xs">
+            <IconAlertTriangle className="size-4 text-amber-600 dark:text-amber-400" />
+            {t("answer.stale", { count: staleSources.length })}
+            <Button variant="outline" size="sm" onClick={reAnswer}>
+              {t("answer.reanswer")}
+            </Button>
+          </output>
+        )}
+
         {/* T854 — expanded by default: on the operator page "why did it say that?"
             is the question, so the audit trail is not behind a click. */}
         {answer && (
@@ -322,6 +439,16 @@ export default function AnswerSearchPage() {
                       )}
                     </span>
                     <span className="flex shrink-0 items-center gap-1.5">
+                      {/* T890 — which source drifted is the actionable half of the
+                          freshness verdict; the banner only says that one did. */}
+                      {staleSources.includes(source.sourceId) && (
+                        <Badge
+                          variant="outline"
+                          className="border-amber-500/40 text-[10px] text-amber-700 dark:text-amber-300"
+                        >
+                          {t("answer.sourceStale")}
+                        </Badge>
+                      )}
                       {typeof score === "number" && (
                         <Badge variant="secondary" className="text-[10px] tabular-nums">
                           {t("answer.score")}: {score.toFixed(3)}

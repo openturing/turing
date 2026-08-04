@@ -1,4 +1,6 @@
 import { render, screen, waitFor } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+import axios from "axios";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import AnswerSearchPage from "../pages/answer-search.page";
@@ -192,5 +194,77 @@ describe("AnswerSearchPage — cross-lens switcher (T855)", () => {
     const current = screen.getByText("answer.lens.answer");
     expect(current.closest("a")).toBeNull();
     expect(current.closest("[aria-current]")).toHaveAttribute("aria-current", "page");
+  });
+});
+
+/**
+ * T890 / §LXIV.6 — the three things an operator does with an answer it has read:
+ * hand it over, re-check its sources, and judge it.
+ */
+describe("AnswerSearchPage — handing an answer over (T890)", () => {
+  const CITED = [
+    ["sources", JSON.stringify([{ sourceId: "doc-1", title: "Warranty policy", rank: 1 }])],
+    ["token", "Two years."],
+    ["citations", JSON.stringify([{ rank: 1, sourceId: "doc-1", title: "Warranty policy" }])],
+    ["done", "{}"],
+  ] as Array<[string, string]>;
+
+  let clipboard: ReturnType<typeof vi.fn>;
+
+  beforeEach(() => {
+    vi.restoreAllMocks();
+    clipboard = vi.fn(async () => undefined);
+    Object.defineProperty(navigator, "clipboard", {
+      value: { writeText: clipboard },
+      configurable: true,
+    });
+    stubAnswerFetch(CITED);
+  });
+
+  it("mints a permalink and copies a link that resolves to the share view", async () => {
+    vi.mocked(axios.post).mockResolvedValue({ data: { id: "shr-42" } });
+    renderAt("/answer/Sample?q=warranty");
+
+    await userEvent.click(await screen.findByText("answer.share"));
+
+    await waitFor(() =>
+      expect(clipboard).toHaveBeenCalledWith(
+        expect.stringContaining("/answer/Sample/share/shr-42"),
+      ),
+    );
+    expect(vi.mocked(axios.post).mock.calls[0][0]).toBe("/sn/Sample/answer/share");
+  });
+
+  it("records one thumbs verdict and then stops inviting another", async () => {
+    renderAt("/answer/Sample?q=warranty");
+
+    await userEvent.click(await screen.findByLabelText("answer.thumbDown"));
+
+    expect(vi.mocked(axios.post)).toHaveBeenCalledWith(
+      "/sn/Sample/answer/signal",
+      expect.objectContaining({ signal: "THUMBS_DOWN" }),
+    );
+    expect(await screen.findByText("answer.feedbackRecorded")).toBeInTheDocument();
+    expect(screen.getByLabelText("answer.thumbUp")).toBeDisabled();
+  });
+
+  it("flags the source the freshness re-check says drifted", async () => {
+    vi.mocked(axios.post).mockResolvedValue({
+      data: [{ sourceId: "doc-1", status: "STALE" }],
+    });
+    renderAt("/answer/Sample?q=warranty");
+
+    await userEvent.click(await screen.findByText("answer.checkFreshness"));
+
+    expect(await screen.findByText("answer.sourceStale")).toBeInTheDocument();
+    expect(screen.getByText("answer.reanswer")).toBeInTheDocument();
+  });
+
+  it("cannot re-check freshness when the answer cited nothing", async () => {
+    stubAnswerFetch([["token", "Two years."], ["done", "{}"]]);
+    renderAt("/answer/Sample?q=warranty");
+
+    await waitFor(() => expect(screen.getByText("answer.checkFreshness")).toBeInTheDocument());
+    expect(screen.getByText("answer.checkFreshness").closest("button")).toBeDisabled();
   });
 });

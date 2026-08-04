@@ -1195,3 +1195,4 @@
 - **T853** — An `answer` launcher tile gated by `GET /sn/{site}/chat/enabled`, so a vectorless site gets the AI lens and a closed gate names the condition to fix.
 - **T854** — The `/answer` page shows its work: provenance expanded, the research trace, footnote rank + score + chunk per source, and the raw `JsonSheet` one click away.
 - **T855** — A lens switcher on `/answer` and `/ann` replays one question as keyword, vector and answer, translating the `fq` and bare-param filter dialects between them.
+- **T890** — Share mints a permalink and copies a link to a new read-only snapshot view; freshness re-check flags the drifted source, and one thumbs verdict is recorded per answer.

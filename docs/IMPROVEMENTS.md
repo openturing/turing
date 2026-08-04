@@ -2132,18 +2132,6 @@ that the answer lens is authenticated-only and correct the SDK's doc comment. Th
 operator affordances (rank, score, raw JSON) argue for the second reading, in which case
 the public hero needs the chat endpoint instead.
 
-### LXIV.6 The operator can read an answer but not hand it over
-
-T852 wired the answer stream, T854 the audit trail, but three shipped answer
-capabilities are still absent from the page: the T844 share permalink (snapshots a
-*produced* answer, which is exactly what an operator wants to attach to a ticket), the
-T840 freshness re-check (a cited source that re-indexed since the answer is why a replay
-disagrees with the screenshot), and the T845 thumbs signals (the operator page is where
-a human judgement of a bad answer is cheapest to collect). All three already exist
-behind `useTuringAnswer` — `share()`, `checkFreshness()` and `signal()` — so this is
-wiring three controls and their states, not new capability. Keep the URL contract: a
-share id is a produced-answer permalink and must not become a fourth input param.
-
 ### LXIV.7 The keyword lens is a one-way door
 
 T855 put the switcher on `/ann` and `/answer` only, because §LXIV's invariant holds the
