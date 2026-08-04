@@ -41,7 +41,12 @@
 > cache is opt-in: nothing in the indexing path evicts it so a reindexed document
 > serves stale results until the daily sweep (T870), `turing.search.cache.ttl.seconds`
 > feeds `fixedRateString` and is therefore **milliseconds** (T871), and the bean
-> mixes the `@Cacheable` seam with the MongoDB log purge (💭 T872). §LXVIII,
+> mixes the `@Cacheable` seam with the MongoDB log purge (💭 T872). **T870–T872
+> SHIPPED; reopened the same day** with what shipping them exposed: the key is not
+> tenant-scoped though it starts with a per-tenant site name (T895), the write paths
+> that bypass the indexing queue — spotlight, synonym, field config — still never
+> evict (T896), and 💭 eviction reaches outside the Spring `Cache` contract to
+> enumerate keys (T897). §LXVIII.4–.6,
 > created 2026-08-02; Block **BT** = The POST-native default left its consumers
 > behind — T710 made `postNative: true` the default and the provider sets
 > `data = null`, but three `turing-app` consumers still read it: `SearchContent`
@@ -272,6 +277,14 @@ number" looked free but wasn't. Grepping three files (`ROADMAP.md`,
    lists fully-shipped blocks), then bump the letter after creating the block.
 
 ## Log (most recent first)
+
+- **T895–T897 CREATED** (📋/💭, Block BU §LXVIII.4–.6 — reopened while shipping T870–T872: the search cache is not partitioned by tenant because an explicit `key` SpEL bypasses `TurTenantCacheKeyGenerator` and the key starts with the per-tenant SN site name (T895), spotlight/synonym/field-config writes change the answer without going through the indexing queue so T870's eviction never fires for them (T896), and 💭 per-site eviction has to read `getNativeCache()` as a `Map` where a generation counter in the key would be O(1) (T897)) — 2026-08-04.
+
+- **T872 SHIPPED** (Block BU §LXVIII — MongoDB log purge extracted to `TurLoggingPurgeService`; the `@Cacheable` search seam's constructor is down from nine parameters to two) — 2026-08-04.
+
+- **T871 SHIPPED** (Block BU §LXVIII — the backstop sweep reads `turing.search.cache.ttl`, a unit-bearing `Duration`; the old millisecond key stays bound and warns at startup. The end-user config reference had propagated the same error and was corrected) — 2026-08-04.
+
+- **T870 SHIPPED** (Block BU §LXVIII — `TurSNSearchCacheEvictor` + `TurSNSearchCacheKey.sitePrefix`; the indexing queue evicts once per written site per message, the daily sweep is now only the backstop) — 2026-08-04.
 
 - **T879–T885 CREATED** (📋/💭, Block BW §LXX — what the link-free response and its consumers still lack, found while shipping Block BT: site icon dropped, `similar`/`spotlights` undeclared, the projection stuck in one app, `TuringResultList`'s chip still inert, README teaches the broken shape, `toggle_facet` blind to secondary facets, no guard on `store.data`) — 2026-08-03.
 
