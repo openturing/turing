@@ -97,3 +97,70 @@ describe("AnswerSearchPage", () => {
     await waitFor(() => expect(fetchMock).not.toHaveBeenCalled());
   });
 });
+
+/**
+ * T854 / §LXIV.3 — the operator affordances: the reader defaults are inside out
+ * on this page, so the audit trail is visible without a click.
+ */
+describe("AnswerSearchPage — operator affordances (T854)", () => {
+  beforeEach(() => {
+    vi.restoreAllMocks();
+    stubAnswerFetch([
+      [
+        "sources",
+        JSON.stringify([
+          {
+            sourceId: "doc-1",
+            title: "Warranty policy",
+            rank: 1,
+            score: 0.8421,
+            chunkIndex: 3,
+            keywordOnly: true,
+          },
+        ]),
+      ],
+      ["token", "Two years."],
+      [
+        "citations",
+        JSON.stringify([
+          {
+            rank: 1,
+            sourceId: "doc-1",
+            title: "Warranty policy",
+            rankingExplanation: { lexicalRank: 4, semanticRank: 1, rrfScore: 0.031 },
+          },
+        ]),
+      ],
+      ["trace_step", JSON.stringify({ callId: "c1", name: "sn_search", phase: "end", durationMs: 42, status: "ok" })],
+      ["trace_step", JSON.stringify({ callId: "c2", name: "sn_search", phase: "start" })],
+      ["trace", JSON.stringify({ sourceCount: 1, answerLength: 10, kbMode: "HYBRID", rerankEnabled: true, rerankStrategy: "CROSS_ENCODER" })],
+      ["done", "{}"],
+    ]);
+    renderAt("/answer/Sample?q=how+long+is+the+warranty");
+  });
+
+  it("opens the provenance panel by default and shows the rank breakdown", async () => {
+    const panel = await screen.findByText("answer.provenance");
+    expect(panel.closest("details")).toHaveAttribute("open");
+    expect(screen.getByText("HYBRID")).toBeInTheDocument();
+    expect(screen.getByText("CROSS_ENCODER")).toBeInTheDocument();
+    expect(screen.getByText("rrfScore")).toBeInTheDocument();
+  });
+
+  it("shows the research trace, counting only completed steps", async () => {
+    expect(await screen.findByText("answer.trace")).toBeInTheDocument();
+    expect(screen.getByText("42ms")).toBeInTheDocument();
+    // The in-flight `start` step must not double the entry it will complete.
+    expect(screen.getAllByText("sn_search")).toHaveLength(1);
+  });
+
+  it("carries the retrieval score, chunk and keyword-only cue on the source card", async () => {
+    expect(await screen.findByText("answer.score: 0.842")).toBeInTheDocument();
+    expect(screen.getByText("answer.chunk 3")).toBeInTheDocument();
+    expect(screen.getByText("answer.keywordOnly")).toBeInTheDocument();
+  });
+
+  it("offers the raw JSON of the source the answer cited", async () => {
+    expect(await screen.findByLabelText("answer.viewJson")).toBeInTheDocument();
+  });
+});

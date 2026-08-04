@@ -2119,14 +2119,6 @@ into lens #1 with a panel open — it inherits the reader-tuned chrome, and it s
 leaves vectorless sites without a tile. The block adds **no backend**.
 
 
-### LXIV.3 LXIV.3 (T854) Operator affordances
-
-Turn the reader defaults inside out on this page only: `showProvenance` expanded, the
-T843 trace shown, footnote rank + retrieval score on each source card, and the
-`JsonSheet` raw-document view `/ann` already uses. Nothing new is computed — every field
-already rides the `citations`/`trace` events; this is presentation, which is why it is a
-separate, small task rather than folded into T852.
-
 ### LXIV.4 LXIV.4 (T855, 💭) Cross-lens compare
 
 Carry `q`/locale/filters across the three routes so the same question can be replayed as

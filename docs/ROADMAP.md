@@ -19,7 +19,6 @@
 
 ## Block BQ — The answer engine as a first-class search lens (`/answer`) (§LXIV)
 
-- 📋 **T854** (deps: T852 ✅) **The operator page shows its work by default** — turn the reader defaults inside out on this page — provenance expanded, the research trace, rank and score per source, the raw `JsonSheet` — so a wrong answer is debuggable in the console. → §LXIV.3
 - 💭 **T855** (deps: T852 ✅, T853 ✅) **Cross-lens compare — same query, three lenses** — a switcher carrying `q`, locale and filters between `/sn`, `/ann` and `/answer`, so a bad answer is attributed to recall, rerank or synthesis in one pass. → §LXIV.4
 
 ## Block J follow-ups — Cloud SaaS hardening (T334–T373)

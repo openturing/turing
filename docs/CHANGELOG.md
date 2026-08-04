@@ -1193,3 +1193,4 @@
 
 - **T852** — `/answer/{siteName}` streams the answer endpoint beside `/sn` and `/ann`, with `q`, locale and `fq` read from the URL — so an answer's input is a link.
 - **T853** — An `answer` launcher tile gated by `GET /sn/{site}/chat/enabled`, so a vectorless site gets the AI lens and a closed gate names the condition to fix.
+- **T854** — The `/answer` page shows its work: provenance expanded, the research trace, footnote rank + score + chunk per source, and the raw `JsonSheet` one click away.
