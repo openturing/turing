@@ -35,6 +35,7 @@
 - 📋 **T876** (deps: T875) **The vanilla SDK has no publish workflow** — `@viglet/turing-sdk` is released by hand while react-ui, cli and flow-dsl each have a workflow, and the react-sdk release patch-bumps every workspace so unpublished packages drift from npm. → §LXIX.4
 - 📋 **T877** (deps: T861 ✅) **The most-consumed package ships zero tests** — `@viglet/turing-react-sdk` has no `test` script and no test files, so T861's `--if-present` correctly-but-unhelpfully skips the most-consumed package. → §LXIX.5
 - 💭 **T878** (deps: T863 ✅) **A total-only baseline cannot localize a regression** — react-sdk is `strict: false`, so its baseline is one number that can say the package grew 4 kB but never which file — baseline per directory instead. → §LXIX.6
+- 📋 **T892** (deps: —) **A Java enum and its hand-written TypeScript mirror drift with nothing watching** — `MISSING_DEFAULT_LLM` was in the backend enum and absent from the SDK union for eight months, narrowing the reason to `undefined` in every consumer. → §LXIX.7
 
 ## Block BW — What the link-free response and its consumers still lack (§LXX)
 
@@ -45,6 +46,12 @@
 - 📋 **T883** (deps: T710 ✅) **The react-sdk README still teaches the shape that broke** — it shows `data.widget.facet.map(…)` as the way to render facets, which is `null` in the default mode, so anyone following it writes T865 again on their first page. → §LXX.5
 - 📋 **T884** (deps: T713 ✅) **`toggle_facet` cannot reach a secondary facet** — `findStructuredFacetItem` searches `structured.facets` only, so a secondary facet answers "Facet not found" and falls through to a legacy lookup that is primary-only too. → §LXX.6
 - 💭 **T885** (deps: T868 ✅) **Nothing stops the fourth consumer** — T865–T867 were one mistake three times and T868 covers the page rather than the class, so the systemic form is a guard that nothing outside the projection reads `store.data`. → §LXX.7
+
+## Block BQ — The answer engine as a first-class search lens (`/answer`) (§LXIV)
+
+- 📋 **T889** (deps: —) **The answer endpoint is authenticated while the chat beside it is anonymous** — No matcher covers `/api/sn/*/answer` or `/answer/**`, so the shipped answer surface 302s anonymous callers to login. → §LXIV.5
+- 📋 **T890** (deps: —) **An operator can read an answer but cannot hand it over** — share, freshness re-check and thumbs all ship behind the answer hook and none is on the page, so a bad answer leaves the console as a screenshot. → §LXIV.6
+- 📋 **T891** (deps: T855 ✅) **The keyword lens is a one-way door out of the switcher** — the switcher is on the two operator lenses only, so an operator starting at `/sn` hand-edits a URL to replay the question as vector or answer. → §LXIV.7
 
 ## Non-goals (do NOT add as tasks)
 

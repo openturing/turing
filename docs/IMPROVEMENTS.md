@@ -2119,6 +2119,43 @@ into lens #1 with a panel open — it inherits the reader-tuned chrome, and it s
 leaves vectorless sites without a tile. The block adds **no backend**.
 
 
+### LXIV.5 The answer surface's auth class
+
+`TurSecurityConfigProduction` permits `/api/sn/*/chat/**`, `/api/sn/*/copilot/**`,
+`/api/ann/*/search` and the `/ann/**` SPA route, but nothing matches `/api/sn/*/answer`
+(T833) or the T852 `/answer/**` route. An operator in the console is authenticated, so
+Block BQ shipped working; every anonymous consumer the react-SDK documents for
+`useTuringAnswer` — the showcase, the public-site hero — gets a login redirect instead
+of a stream. Decide the surface deliberately: permit the answer endpoint alongside chat
+(same LLM-cost class, so the same API-key gate and abuse-control caps apply), or state
+that the answer lens is authenticated-only and correct the SDK's doc comment. The T854
+operator affordances (rank, score, raw JSON) argue for the second reading, in which case
+the public hero needs the chat endpoint instead.
+
+### LXIV.6 The operator can read an answer but not hand it over
+
+T852 wired the answer stream, T854 the audit trail, but three shipped answer
+capabilities are still absent from the page: the T844 share permalink (snapshots a
+*produced* answer, which is exactly what an operator wants to attach to a ticket), the
+T840 freshness re-check (a cited source that re-indexed since the answer is why a replay
+disagrees with the screenshot), and the T845 thumbs signals (the operator page is where
+a human judgement of a bad answer is cheapest to collect). All three already exist
+behind `useTuringAnswer` — `share()`, `checkFreshness()` and `signal()` — so this is
+wiring three controls and their states, not new capability. Keep the URL contract: a
+share id is a produced-answer permalink and must not become a fourth input param.
+
+### LXIV.7 The keyword lens is a one-way door
+
+T855 put the switcher on `/ann` and `/answer` only, because §LXIV's invariant holds the
+public `/sn` page untouched — nothing a visitor sees changes. The consequence is that
+the round trip is broken in one direction: an operator who starts from the keyword lens
+(the launcher's first tile, and the one they reach for when asking "was it even
+retrieved?") has to hand-edit a URL to reach the other two. Close it without breaking
+the invariant: render the switcher on `/sn` only for an authenticated console user, or
+behind an explicit opt-in param the launcher tile appends, so an anonymous visitor's
+page is byte-identical to today's. Either way `readLensQuery("keyword", …)` already
+reads that page's dialect, so the work is the gate, not the translation.
+
 ## LXV. Block AV follow-through — the gaps the POST-native migration left (Block BR)
 
 > Block AV (§XLV) closed the query-string bug class: search is POST-native, the
@@ -2269,6 +2306,20 @@ over its old ceiling is still unattributed.
 A middle ground exists: baseline per **directory** (`core/`, `ui/`, `hooks/`)
 rather than per file. Roughly a dozen numbers, reviewable, and enough to point at
 the change.
+
+### LXIX.7 A Java enum and its TypeScript mirror drift silently
+
+`ChatDisabledReason` exists twice: as a Java enum in `TurSNSiteGenAiAPI` and as a
+string-union mirror in `@viglet/turing-sdk`, with a `CHAT_DISABLED_HINTS` record keyed
+by it. T790 added `MISSING_DEFAULT_LLM` to the Java side and the mirror was not updated,
+so for eight months the vectorless readiness reason narrowed to `undefined` in every TS
+consumer — found only because T853 built a UI on that reason. The record's
+exhaustiveness gives no protection: it constrains the mirror to itself, never to the
+enum. The gate that is missing is one test that parses the declared Java enum constants
+and asserts set equality with the union, run in the same job as the rest of the package
+suites. The same shape guards `TurSEFieldType`, `TurAnswerSignalKind` and every other
+enum the SDKs re-declare, so make the check take the pair list rather than hard-code
+one.
 
 ## LXX. What the link-free response and its consumers still lack (Block BW)
 
