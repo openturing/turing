@@ -23,7 +23,6 @@
 
 ## Block BU — The search cache is off by a thousand and never evicted on write (§LXVIII)
 
-- 📋 **T870** (deps: T858 ✅) **Indexing does not evict the search cache** — the only eviction is a scheduled `allEntries` sweep, so a reindexed document keeps serving its previous result for up to 24h — evict per site at index, deindex and commit. → §LXVIII.1
 - 📋 **T871** (deps: —) **`turing.search.cache.ttl.seconds` is milliseconds** — it feeds `@Scheduled(fixedRateString = …)`, whose unit is ms, so an operator setting `3600` for hourly gets a sweep every 3.6 seconds — accept a `Duration` so the unit is stated. → §LXVIII.2
 - 💭 **T872** (deps: —) **`TurSNSiteSearchCachedAPI` is two classes wearing one name** — the `@Cacheable` search seam and the MongoDB logging config share a bean, so the cache primitive carries seven Mongo constructor parameters it never uses. → §LXVIII.3
 

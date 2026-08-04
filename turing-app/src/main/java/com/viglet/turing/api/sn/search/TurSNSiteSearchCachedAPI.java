@@ -73,13 +73,20 @@ public class TurSNSiteSearchCachedAPI {
         this.purgeDays = purgeDays;
     }
 
-    @CacheEvict(value = "searchAPI", allEntries = true)
+    /**
+     * The <strong>backstop</strong> sweep. Since T870 / §LXVIII.1 the authoritative
+     * eviction happens per site at the moment a write changes the answer
+     * ({@link TurSNSearchCacheEvictor}, driven from the indexing queue); this sweep
+     * only bounds the lifetime of entries whose site was never written again — and
+     * catches anything a write path forgets.
+     */
+    @CacheEvict(value = TurSNSearchCacheEvictor.SEARCH_CACHE, allEntries = true)
     @Scheduled(fixedRateString = "${turing.search.cache.ttl.seconds:86400000}")
     public void cleanSearchCache() {
         log.info("Cleaning Search API");
     }
 
-    @Cacheable(value = "searchAPI", key = "#cacheKey")
+    @Cacheable(value = TurSNSearchCacheEvictor.SEARCH_CACHE, key = "#cacheKey")
     public TurSNSiteSearchBean searchCached(String cacheKey,
             TurSNSiteSearchContext turSNSiteSearchContext) {
         log.info("Search cache key: {}", cacheKey);

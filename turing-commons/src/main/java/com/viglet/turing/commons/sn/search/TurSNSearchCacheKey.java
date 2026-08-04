@@ -15,6 +15,7 @@ package com.viglet.turing.commons.sn.search;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.TreeSet;
@@ -69,6 +70,23 @@ public final class TurSNSearchCacheKey {
 
     private TurSNSearchCacheKey() {
         throw new IllegalStateException("Utility class");
+    }
+
+    /**
+     * T870 / §LXVIII.1 — the prefix every key of {@code siteName} starts with.
+     *
+     * <p>
+     * {@code site} is deliberately the <em>first</em> segment of {@link #of}, so a
+     * write to one site can be evicted without touching another's entries. The
+     * prefix is returned lower-cased because the site name reaches the key exactly
+     * as the caller spelled it, while the indexing path resolves the site
+     * case-insensitively — callers match it against a lower-cased key.
+     * </p>
+     */
+    public static String sitePrefix(String siteName) {
+        StringBuilder prefix = new StringBuilder();
+        append(prefix, "site", siteName == null ? null : siteName.toLowerCase(Locale.ROOT));
+        return prefix.toString();
     }
 
     /** The cache key for a search, whatever transport produced the context. */

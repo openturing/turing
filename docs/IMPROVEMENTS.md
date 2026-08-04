@@ -2136,20 +2136,6 @@ leaves vectorless sites without a tile. The block adds **no backend**.
 > also the reason they have survived: the feature is opt-in and nobody who opted
 > in has reported it.
 
-### LXVIII.1 Indexing does not evict the search cache (T870)
-
-The `searchAPI` cache has exactly one eviction: a `@Scheduled` sweep annotated
-`@CacheEvict(allEntries = true)`. Nothing in the indexing path touches it. So
-with the cache enabled, a document that is reindexed, deindexed or edited keeps
-serving its previous result — including its previous facet counts — until the
-next sweep, 24 hours later by default.
-
-This is the standard trap of caching a *derived* read with a time-based policy
-only: the cache is correct right up until the underlying data changes, which is
-the one moment anyone notices. Evict per site at the point the answer actually
-changed — index, deindex, and the commit that follows a bulk import — and keep
-the sweep as the backstop it should have been.
-
 ### LXVIII.2 `turing.search.cache.ttl.seconds` is milliseconds (T871)
 
 ```java

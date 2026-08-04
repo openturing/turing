@@ -43,6 +43,7 @@ import com.viglet.turing.client.sn.job.TurSNJobItems;
 import com.viglet.turing.commons.indexing.TurIndexingStatus;
 import com.viglet.turing.commons.sn.field.TurSNFieldName;
 import com.viglet.turing.commons.utils.TurCommonsUtils;
+import com.viglet.turing.api.sn.search.TurSNSearchCacheEvictor;
 import com.viglet.turing.logging.TurLoggingUtils;
 import com.viglet.turing.persistence.model.se.TurSEInstance;
 import com.viglet.turing.persistence.model.sn.TurSNSite;
@@ -79,6 +80,7 @@ public class TurSNProcessQueue {
     private final TurSNContentFitIndexer turSNContentFitIndexer;
     private final TurSNGeminiMediaIndexer turSNGeminiMediaIndexer;
     private final com.viglet.turing.sn.kb.TurSNMicrothesaurusIndexer turSNMicrothesaurusIndexer;
+    private final TurSNSearchCacheEvictor turSNSearchCacheEvictor;
     private final TurSNProcessQueue self;
 
     public TurSNProcessQueue(TurSearchEnginePluginFactory pluginFactory,
@@ -93,6 +95,7 @@ public class TurSNProcessQueue {
             TurSNContentFitIndexer turSNContentFitIndexer,
             TurSNGeminiMediaIndexer turSNGeminiMediaIndexer,
             com.viglet.turing.sn.kb.TurSNMicrothesaurusIndexer turSNMicrothesaurusIndexer,
+            TurSNSearchCacheEvictor turSNSearchCacheEvictor,
             @org.springframework.context.annotation.Lazy TurSNProcessQueue self) {
         this.pluginFactory = pluginFactory;
         this.turSNSiteRepository = turSNSiteRepository;
@@ -106,6 +109,7 @@ public class TurSNProcessQueue {
         this.turSNContentFitIndexer = turSNContentFitIndexer;
         this.turSNGeminiMediaIndexer = turSNGeminiMediaIndexer;
         this.turSNMicrothesaurusIndexer = turSNMicrothesaurusIndexer;
+        this.turSNSearchCacheEvictor = turSNSearchCacheEvictor;
         this.self = self;
     }
 
@@ -139,7 +143,13 @@ public class TurSNProcessQueue {
         // open batches first — so ordering relative to the CREATEs is preserved —
         // and are then processed per item exactly as before.
         Map<TurSNBatchKey, List<TurSNJobItem>> batches = new LinkedHashMap<>();
+        // T870 / §LXVIII.1 — every site this message writes to has stale cached
+        // search answers afterwards. Collected here and evicted once at the end of
+        // the message rather than per document, so a bulk import pays one eviction
+        // per site instead of one per document.
+        Set<String> writtenSites = new HashSet<>();
         for (TurSNJobItem turSNJobItem : turSNJobItems) {
+            Optional.ofNullable(turSNJobItem.getSiteNames()).ifPresent(writtenSites::addAll);
             if (isBatchableCreate(turSNJobItem)) {
                 turSNJobItem.getSiteNames()
                         .forEach(siteName -> batches
@@ -153,6 +163,7 @@ public class TurSNProcessQueue {
             }
         }
         flushBatches(batches, ensuredCores);
+        turSNSearchCacheEvictor.evictSites(writtenSites);
     }
 
     /**

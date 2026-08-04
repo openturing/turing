@@ -1198,3 +1198,7 @@
 - **T890** — Share mints a permalink and copies a link to a new read-only snapshot view; freshness re-check flags the drifted source, and one thumbs verdict is recorded per answer.
 - **T891** — The switcher reaches the keyword page behind a `_lens=1` opt-in the switcher and the console launcher append, so the round trip closes and a visitor's page is unchanged.
 - **T889** — The answer stream, freshness and signal are anonymous like the chat beside them; minting a share permalink and the operator page stay authenticated, guarded by a source test.
+
+## Block BU — The search cache is off by a thousand and never evicted on write
+
+- **T870** — Indexing, deindexing and commit now evict the search cache per site, so a reindexed document is visible on the next search instead of after the 24h sweep.
