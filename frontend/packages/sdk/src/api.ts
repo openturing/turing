@@ -238,7 +238,14 @@ export type ChatDisabledReason =
   | "RAG_DISABLED"
   | "MISSING_LLM"
   | "MISSING_EMBEDDING"
-  | "MISSING_STORE";
+  | "MISSING_STORE"
+  /**
+   * T790 — the site runs in `VECTORLESS_STRUCTURED` mode (the catalog copilot,
+   * which needs neither an embedding model nor a vector store) but no usable
+   * default LLM is configured. The vectorless readiness path reports this
+   * instead of `MISSING_EMBEDDING` / `MISSING_STORE`.
+   */
+  | "MISSING_DEFAULT_LLM";
 
 export interface ChatEnabledResponse {
   readonly enabled: boolean;
@@ -260,6 +267,8 @@ export const CHAT_DISABLED_HINTS: Readonly<Record<ChatDisabledReason, string>> =
   MISSING_LLM: "O AI Agent não tem nenhuma instância de LLM configurada",
   MISSING_EMBEDDING: "O AI Agent não tem um modelo de embedding selecionado",
   MISSING_STORE: "O AI Agent não tem um vector store selecionado",
+  MISSING_DEFAULT_LLM:
+    "Este site responde sem vetores, mas nenhum LLM padrão está configurado",
 };
 
 /**

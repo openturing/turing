@@ -1,7 +1,9 @@
 /**
- * Shared builder for the two visitor-facing SN "launch" targets — the public
- * faceted **search** UI (`/sn/{name}`) and, when RAG is available, the **ANN**
- * (vector) search UI (`/ann/{name}`). Both open outside the admin.
+ * Shared builder for the visitor-facing SN "launch" targets — the public faceted
+ * **search** UI (`/sn/{name}`), the **ANN** (vector) search UI (`/ann/{name}`)
+ * when RAG is available, and the **answer** UI (`/answer/{name}`) when the
+ * backend readiness probe says the site can answer (T853). All open outside the
+ * admin.
  *
  * Per-locale variants (`?_setlocale=xx`) are exposed when the site has more than
  * one locale. When the site has an SPA `searchTemplate` (and storage is on) the
@@ -31,6 +33,14 @@ export interface SnSearchLaunchers {
   search: SnLauncher;
   /** Null when the site is not ANN-ready (no RAG-enabled effective agent). */
   ann: SnLauncher | null;
+  /**
+   * T853 / §LXIV.2 (Block BQ) — the answer-first lens (`/answer/{name}`). Null
+   * when the backend readiness probe says the site cannot answer. Unlike
+   * {@link SnSearchLaunchers.ann} this is NOT derived in the frontend: the
+   * caller passes what `GET /sn/{site}/chat/enabled` returned, which is the only
+   * gate that knows a `VECTORLESS_STRUCTURED` site answers without vectors.
+   */
+  answer: SnLauncher | null;
 }
 
 export interface SnLaunchSite {
@@ -41,6 +51,13 @@ export interface SnLaunchSite {
    * this (it needs the global default flag from `/api/features`).
    */
   annEnabled: boolean;
+  /**
+   * T853 — the site can answer, as reported by `GET /sn/{site}/chat/enabled`.
+   * The backend's `diagnoseAgentReadiness` walk is the single source of truth
+   * here, so a vectorless (structured-data) site gets the AI lens even though
+   * {@link SnLaunchSite.annEnabled} is false for it by design.
+   */
+  answerEnabled: boolean;
   /** Object storage is configured (gates the SPA `searchTemplate` path). */
   storageEnabled?: boolean;
   /** The site's SPA search template name, when one is set. */
@@ -60,6 +77,7 @@ export function buildSnSearchLaunchers(
   const searchUrl = `/sn/${name}`;
   const defaultUrl = withParam(searchUrl, "_embedded=true");
   const annUrl = `/ann/${name}`;
+  const answerUrl = `/answer/${name}`;
   const locales = site.locales ?? [];
   const hasMultipleLocales = locales.length > 1;
   const hasTemplate = Boolean(site.storageEnabled && site.searchTemplate?.trim());
@@ -93,6 +111,9 @@ export function buildSnSearchLaunchers(
     search: { label: openSearchLabel, url: searchUrl, items: searchItems },
     ann: site.annEnabled
       ? { label: t("ann.openAnnSearch"), url: annUrl, items: perLocale(annUrl) }
+      : null,
+    answer: site.answerEnabled
+      ? { label: t("answer.openAnswerSearch"), url: answerUrl, items: perLocale(answerUrl) }
       : null,
   };
 }

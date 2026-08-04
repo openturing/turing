@@ -56,6 +56,11 @@ export const queryKeys = {
     all: () => ['sn-site-content-fit'] as const,
     bySite: (siteId: string) => [...queryKeys.snSiteContentFit.all(), 'site', siteId] as const,
   },
+  /** T853 — the `GET /sn/{site}/chat/enabled` answer-readiness probe, by site NAME. */
+  snChatEnabled: {
+    all: () => ['sn-chat-enabled'] as const,
+    bySite: (siteName: string) => [...queryKeys.snChatEnabled.all(), 'site', siteName] as const,
+  },
   locales: {
     all: () => ['locales'] as const,
     list: () => [...queryKeys.locales.all(), 'list'] as const,

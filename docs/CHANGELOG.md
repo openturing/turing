@@ -1192,3 +1192,4 @@
 ## Block BQ — The answer engine as a first-class search lens (`/answer`) (§LXIV)
 
 - **T852** — `/answer/{siteName}` streams the answer endpoint beside `/sn` and `/ann`, with `q`, locale and `fq` read from the URL — so an answer's input is a link.
+- **T853** — An `answer` launcher tile gated by `GET /sn/{site}/chat/enabled`, so a vectorless site gets the AI lens and a closed gate names the condition to fix.

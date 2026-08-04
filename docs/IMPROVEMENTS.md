@@ -2119,16 +2119,6 @@ into lens #1 with a panel open — it inherits the reader-tuned chrome, and it s
 leaves vectorless sites without a tile. The block adds **no backend**.
 
 
-### LXIV.2 LXIV.2 (T853) The tile and its gate
-
-`buildSnSearchLaunchers` returns a third `answer` launcher, and `SnLaunchBar` renders
-it. The gate is **not** a second frontend derivation: use the shipped `GET
-/sn/{site}/chat/enabled`, whose `diagnoseAgentReadiness` walk already distinguishes the
-vectorless path (`MISSING_DEFAULT_LLM`) from the vector one
-(`MISSING_EMBEDDING`/`MISSING_STORE`) and returns a `ChatDisabledReason`. That reason is
-the point: instead of a tile that silently disappears, the console can say *which*
-condition to fix. Per-locale dropdown, matching the other two launchers.
-
 ### LXIV.3 LXIV.3 (T854) Operator affordances
 
 Turn the reader defaults inside out on this page only: `showProvenance` expanded, the

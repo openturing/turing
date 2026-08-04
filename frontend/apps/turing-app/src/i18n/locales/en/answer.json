@@ -11,6 +11,17 @@
     "removeConstraint": "Remove constraint {{field}} = {{value}}",
     "ignoredParams": "Ignored URL parameters (use fq=field:value to steer the answer): {{params}}",
     "noCitations": "The answer carries no footnote citations.",
-    "openAnswerSearch": "Open AI Answer"
+    "openAnswerSearch": "Open AI Answer",
+    "disabled": {
+      "NO_GENAI": "Configure Generative AI for this site",
+      "NO_AGENT": "Link an AI Agent to this site",
+      "AGENT_DISABLED": "The linked AI Agent is disabled",
+      "RAG_DISABLED": "Enable RAG on the linked AI Agent",
+      "MISSING_LLM": "The AI Agent has no LLM instance",
+      "MISSING_EMBEDDING": "The AI Agent has no embedding model",
+      "MISSING_STORE": "The AI Agent has no vector store",
+      "MISSING_DEFAULT_LLM": "Set a default LLM — this site answers without vectors",
+      "UNKNOWN": "This site cannot answer yet"
+    }
   }
 }

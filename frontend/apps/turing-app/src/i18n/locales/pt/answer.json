@@ -11,6 +11,17 @@
     "removeConstraint": "Remover restrição {{field}} = {{value}}",
     "ignoredParams": "Parâmetros de URL ignorados (use fq=campo:valor para direcionar a resposta): {{params}}",
     "noCitations": "A resposta não traz citações numeradas.",
-    "openAnswerSearch": "Abrir Resposta com IA"
+    "openAnswerSearch": "Abrir Resposta com IA",
+    "disabled": {
+      "NO_GENAI": "Configure a IA Generativa para este site",
+      "NO_AGENT": "Vincule um AI Agent a este site",
+      "AGENT_DISABLED": "O AI Agent vinculado está desabilitado",
+      "RAG_DISABLED": "Habilite o RAG no AI Agent vinculado",
+      "MISSING_LLM": "O AI Agent não tem instância de LLM",
+      "MISSING_EMBEDDING": "O AI Agent não tem modelo de embedding",
+      "MISSING_STORE": "O AI Agent não tem vector store",
+      "MISSING_DEFAULT_LLM": "Defina um LLM padrão — este site responde sem vetores",
+      "UNKNOWN": "Este site ainda não consegue responder"
+    }
   }
 }
