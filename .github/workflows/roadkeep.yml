@@ -20,7 +20,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       # The baseline is a rev, so the gate needs the history to diff against.
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
       - uses: alegauss/roadkeep@main
