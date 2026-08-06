@@ -16,6 +16,8 @@ import org.springframework.cache.Cache;
 import org.springframework.cache.CacheManager;
 import org.springframework.cache.concurrent.ConcurrentMapCacheManager;
 import org.springframework.cache.support.NoOpCacheManager;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import com.viglet.core.tenancy.VigletTenantContext;
 import com.viglet.turing.commons.se.TurSEParameters;
@@ -308,6 +310,131 @@ class TurSNSearchCacheEvictorTest {
         assertEquals(1, cacheManager.clears);
         evictor.evictAll();
         assertEquals(2, cacheManager.clears);
+    }
+
+    // ------------------------------------------------------------------
+    // T901 — nothing is evicted until the writing transaction commits
+    // ------------------------------------------------------------------
+
+    /** Binds a synchronization-active transaction for the body, like Spring's tx proxy. */
+    private static void inTransaction(Runnable body, boolean commit) {
+        TransactionSynchronizationManager.initSynchronization();
+        try {
+            body.run();
+            List<TransactionSynchronization> synchronizations =
+                    TransactionSynchronizationManager.getSynchronizations();
+            if (commit) {
+                synchronizations.forEach(TransactionSynchronization::afterCommit);
+            }
+            int status = commit ? TransactionSynchronization.STATUS_COMMITTED
+                    : TransactionSynchronization.STATUS_ROLLED_BACK;
+            synchronizations.forEach(s -> s.afterCompletion(status));
+        } finally {
+            TransactionSynchronizationManager.clearSynchronization();
+        }
+    }
+
+    /**
+     * The window this closes: a search arriving between the evict and the commit used to
+     * re-cache the pre-commit answer.
+     */
+    @Test
+    void perSiteEvictionWaitsForTheCommit() {
+        CacheManager cacheManager = new ConcurrentMapCacheManager();
+        Cache cache = seed(cacheManager);
+        TurSNSearchCacheEvictor evictor = evictor(cacheManager, true);
+
+        inTransaction(() -> {
+            evictor.evictSites(List.of(SITE));
+            assertNotNull(cache.get(keyOf(SITE, "one")),
+                    "still cached: the write it invalidates is not visible yet");
+        }, true);
+
+        assertNull(cache.get(keyOf(SITE, "one")));
+        assertNotNull(cache.get(keyOf(OTHER_SITE, "one")));
+    }
+
+    /** A rolled-back write changed nothing, so it must discard nothing. */
+    @Test
+    void aRolledBackWriteEvictsNothing() {
+        CacheManager cacheManager = new ConcurrentMapCacheManager();
+        Cache cache = seed(cacheManager);
+        TurSNSearchCacheEvictor evictor = evictor(cacheManager, true);
+
+        inTransaction(() -> evictor.evictSites(List.of(SITE)), false);
+
+        assertNotNull(cache.get(keyOf(SITE, "one")));
+    }
+
+    @Test
+    void wholeCacheClearWaitsForTheCommit() {
+        CountingCacheManager cacheManager = new CountingCacheManager();
+        TurSNSearchCacheEvictor evictor = evictor(cacheManager, true);
+
+        inTransaction(() -> {
+            evictor.evictAll();
+            assertEquals(0, cacheManager.clears);
+        }, true);
+
+        assertEquals(1, cacheManager.clears);
+    }
+
+    /** One clear per transaction, however many writes ask for it. */
+    @Test
+    void manyWritesInOneTransactionRegisterOneClear() {
+        CountingCacheManager cacheManager = new CountingCacheManager();
+        TurSNSearchCacheEvictor evictor = evictor(cacheManager, true);
+
+        inTransaction(() -> {
+            for (int i = 0; i < 40; i++) {
+                evictor.evictAll();
+            }
+        }, true);
+
+        assertEquals(1, cacheManager.clears);
+    }
+
+    /** The dedupe flag is per transaction, not per thread for all time. */
+    @Test
+    void aLaterTransactionOnTheSameThreadClearsAgain() {
+        CountingCacheManager cacheManager = new CountingCacheManager();
+        TurSNSearchCacheEvictor evictor = evictor(cacheManager, true);
+
+        inTransaction(evictor::evictAll, true);
+        inTransaction(evictor::evictAll, true);
+
+        assertEquals(2, cacheManager.clears);
+    }
+
+    /** The queue's coalesced clear is closed inside the transaction, so it waits too. */
+    @Test
+    void theCoalescedClearAlsoWaitsForTheCommit() {
+        CountingCacheManager cacheManager = new CountingCacheManager();
+        TurSNSearchCacheEvictor evictor = evictor(cacheManager, true);
+
+        inTransaction(() -> {
+            evictor.beginCoalescing();
+            try {
+                evictor.evictAll();
+                evictor.evictAll();
+            } finally {
+                evictor.endCoalescing();
+            }
+            assertEquals(0, cacheManager.clears, "the coalesced clear is not visible yet");
+        }, true);
+
+        assertEquals(1, cacheManager.clears);
+    }
+
+    /** With no transaction in progress, eviction is immediate — the pre-T901 path. */
+    @Test
+    void withoutATransactionEvictionIsImmediate() {
+        CacheManager cacheManager = new ConcurrentMapCacheManager();
+        Cache cache = seed(cacheManager);
+
+        evictor(cacheManager, true).evictSites(List.of(SITE));
+
+        assertNull(cache.get(keyOf(SITE, "one")));
     }
 
     /** Tenancy off collapses to one partition, so behaviour is unchanged. */

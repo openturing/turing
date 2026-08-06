@@ -2162,31 +2162,6 @@ anyway, so precision only ever mattered for the indexing path, where the scan al
 works. Resume when a provider whose native cache is not a `Map` is actually wired, or
 when a bulk import's eviction cost shows up in a profile.
 
-### LXVIII.9 Every eviction in this block runs before the writing transaction commits (T901)
-
-Every eviction added in this block runs *inside* the writing transaction.
-`processIndexingQueue` is `@Transactional`, and both T870's `evictSites(writtenSites)`
-and T900's coalesced clear sit in its body; T896's listener fires on `@PostPersist` /
-`@PostUpdate` / `@PostRemove`, which run at flush, also before commit.
-
-So there is a window: evict, then commit. A search arriving inside it reads the
-pre-commit state and caches it, and the entry then survives until the next write or the
-backstop sweep — the exact staleness this block spent five tasks removing, reintroduced
-by ordering.
-
-The window is narrow and does not touch documents. Those live in the search engine, and
-`indexDocuments` / `commit(...)` land there independently of the JPA transaction, so
-they are already visible when the eviction runs. What is exposed is the entity-backed
-configuration written in the same transaction: a spotlight, a field, a synonym. Those
-become visible only at commit, so a concurrent search can cache an answer that predates
-them.
-
-The fix is ordering, not more eviction: register the eviction as an after-commit
-callback (`TransactionSynchronizationManager.registerSynchronization`) and let it run
-when the data it invalidates is actually visible, falling back to running inline when no
-transaction is active. That also makes the eviction correct on rollback, where today a
-failed indexing message still evicts — harmless, but for the wrong reason.
-
 ## LXIX. The quality gate stops at the package boundary (Block BV)
 
 > Block BS fixed the gate for one package. Adopting the same two changes across

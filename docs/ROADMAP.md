@@ -24,7 +24,6 @@
 ## Block BU — The search cache is off by a thousand and never evicted on write (§LXVIII)
 
 - 💭 **T897** (deps: T870 ✅) **Per-site eviction has to reach outside the Spring `Cache` contract** — Enumerating a site's keys needs `getNativeCache()` to be a `Map`, so a provider that is not one silently degrades to clearing every site — a generation counter in the key would not. → §LXVIII.6
-- 📋 **T901** (deps: T870 ✅, T896 ✅, T900 ✅) **Every eviction in this block runs before the writing transaction commits** — A search arriving between the evict and the commit caches the pre-commit answer, which then survives to the backstop sweep — the staleness the block removed, reintroduced by ordering. → §LXVIII.9
 
 ## Block BV — The quality gate stops at the package boundary (§LXIX)
 
