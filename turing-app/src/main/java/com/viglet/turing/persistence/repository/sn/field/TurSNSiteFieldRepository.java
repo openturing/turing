@@ -37,15 +37,16 @@ public interface TurSNSiteFieldRepository extends JpaRepository<TurSNSiteField, 
 	boolean existsByTurSNSiteAndName(TurSNSite turSNSite, String name);
 
 	/**
-	 * bulk-delete-ok — T899 / §LXVIII.7.
+	 * T899 / §LXVIII.7 — a bulk delete fires no {@code @PostRemove}, which is why the
+	 * equivalent methods were removed from {@code TurSNSiteFieldExtRepository}. This one is
+	 * kept: {@link TurSNSiteField} carries <em>no</em> {@code @EntityListeners} — it is the
+	 * raw field registry, and the configuration a query actually reads is
+	 * {@code TurSNSiteFieldExt} — so no eviction callback exists here to skip.
 	 *
 	 * <p>
-	 * A bulk delete fires no {@code @PostRemove}, which is why the equivalent methods
-	 * were removed from {@code TurSNSiteFieldExtRepository}. This one is kept:
-	 * {@link TurSNSiteField} carries <em>no</em> {@code @EntityListeners} — it is the raw
-	 * field registry, and the configuration a query actually reads is
-	 * {@code TurSNSiteFieldExt} — so no eviction callback exists here to skip. Should this
-	 * entity ever gain a listener, delete this method rather than the marker above.
+	 * T908 — this needs no exemption marker. Since T906 the lint guards the repositories
+	 * whose entity declares a listener, so adding one to {@link TurSNSiteField} brings this
+	 * method into scope by itself, which is the moment it would need deleting.
 	 * </p>
 	 */
 	@Modifying

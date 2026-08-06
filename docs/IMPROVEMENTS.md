@@ -2185,31 +2185,6 @@ change owner often enough that "it is correct today" stops being a claim anyone 
 check. If it is taken: daily, matching `searchAPI`, and logging at a level that says a
 backstop fired, so a deployment relying on it is visible rather than merely surviving.
 
-### LXVIII.15 The bulk-delete lint reads text, so a fully-qualified annotation walks past it (T908)
-
-`TurSNBulkDeleteConventionsTest` matches source text: `@Modifying` near a
-`@Query("delete …")`, and `.deleteAllInBatch(`. Verifying T907 by injecting a violation
-showed the limit directly — the first probe wrote
-`@org.springframework.data.jpa.repository.Modifying` and the lint stayed green.
-Rewritten with the imported short form, it failed as intended.
-
-That is not a hypothetical spelling. `@org.springframework.data.jpa.repository.Query` is
-already written fully-qualified twice in this codebase, and fully-qualified annotations
-appear about fifty times overall. Neither of those two is a live miss — both were
-checked, and their entities declare no listener — so nothing is broken today. What is
-wrong is the guarantee: a lint whose entire job is to be un-evadable can be evaded by an
-import statement, and the evasion is a form the codebase already uses.
-
-The sibling lint does not have this problem. `TurCacheAnnotationConventionsTest` reads
-bytecode through Spring's `MetadataReader`, where an annotation's identity is resolved
-rather than spelled, and where a fully-qualified `@CacheEvict` is simply `@CacheEvict`.
-The `@Modifying` half of this rule can move to exactly that. The call half
-(`deleteAllInBatch`) can too — it is an `invokeinterface` in the constant pool, which is
-a sharper signal than a substring.
-
-While it is being rewritten, the class should lose its `TurSN` prefix. T906 widened it
-to the whole codebase and the name still claims otherwise.
-
 ## LXIX. The quality gate stops at the package boundary (Block BV)
 
 > Block BS fixed the gate for one package. Adopting the same two changes across
