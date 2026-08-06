@@ -50,7 +50,10 @@
 > resume trigger is in §LXVIII.6). Reopened **again** with what those two exposed:
 > `deleteAllInBatch` fires no `@PostRemove` so the bulk spotlight deletes bypass the
 > T896 listener (T899), and 💭 an import carrying spotlights fires the whole-cache
-> clear once per saved row (T900). §LXVIII.4–.8,
+> clear once per saved row (T900). **T899–T900 SHIPPED**; reopened a third time with
+> the one thing all five evictions share — they run before the writing transaction
+> commits (T901). Only 💭 T897 (deliberately not built) and T901 remain.
+> §LXVIII.4–.9,
 > created 2026-08-02; Block **BT** = The POST-native default left its consumers
 > behind — T710 made `postNative: true` the default and the provider sets
 > `data = null`, but three `turing-app` consumers still read it: `SearchContent`
@@ -281,6 +284,12 @@ number" looked free but wasn't. Grepping three files (`ROADMAP.md`,
    lists fully-shipped blocks), then bump the letter after creating the block.
 
 ## Log (most recent first)
+
+- **T901–T902 CREATED** (📋 — T901 in **Block BU** §LXVIII.9: every eviction this block added runs *inside* the writing transaction (`processIndexingQueue` is `@Transactional`; `@PostPersist`/`@PostRemove` fire at flush), so a search arriving between the evict and the commit re-caches the pre-commit answer. Narrow — documents land in the search engine independently of the JPA transaction, so only entity-backed config (spotlight, field, synonym) is exposed. Fix is ordering: `registerSynchronization` after commit. T902 in **Block BV** §LXIX.8: `STRATEGY.md` and `IMPROVEMENTS.md` declare the same 13 anchors (§VIII, §IX–§IX.4, §X, §X.1, §X.5, §XII, §XII.2, §XIV, §XVI), so every verb reading one refuses; fix is `[refs] <role> = "<prefix>"` in `roadkeep.toml`, not a rewrite) — 2026-08-04.
+
+- **T900 SHIPPED** (Block BU §LXVIII — `beginCoalescing`/`endCoalescing` collapse a queue message's whole-cache clears into at most one. Paired calls rather than a `coalescing(Runnable)` wrapper **on purpose**: the wrapper form made a *mocked* evictor skip the queue body, turning 14 `TurSNProcessQueueTest` cases into silent no-ops — paired calls degrade the safe way, to pre-T900 immediate eviction) — 2026-08-04.
+
+- **T899 SHIPPED** (Block BU §LXVIII — 5 `deleteAllInBatch` + 2 `@Modifying` delete queries fired no `@PostRemove`, so spotlight and field-ext deletes skipped both the T896 listener **and the pre-existing snapshot one** — the latter a live bug since well before the search cache. Every call site had already loaded its rows, so `deleteAll` costs no extra query. `TurSNBulkDeleteConventionsTest` refuses a new bulk delete in the SN packages, with a *counted* per-occurrence escape hatch) — 2026-08-04.
 
 - **T898–T900 CREATED** (📋/💭 — T898 in **Block AC** §LXXI.1, reopened from the ledger: `TurSNSiteSearchSnapshot` is a `@Cacheable` record of six JPA entity types, which T486 forbids outright, and its own javadoc documents working around the resulting detached-LAZY failure one association at a time — `TurCacheAnnotationConventionsTest` cannot see it because the lint filters to `*Repository`. T899/T900 in **Block BU** §LXVIII.7–.8: `deleteAllInBatch` fires no `@PostRemove`, so the six bulk spotlight deletes bypass T896's listener entirely (T899), and 💭 unmanaged spotlights are saved *through the indexing queue*, so each row fires T896's whole-cache clear and a large import repeats it hundreds of times (T900)) — 2026-08-04.
 

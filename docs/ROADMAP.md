@@ -24,6 +24,7 @@
 ## Block BU — The search cache is off by a thousand and never evicted on write (§LXVIII)
 
 - 💭 **T897** (deps: T870 ✅) **Per-site eviction has to reach outside the Spring `Cache` contract** — Enumerating a site's keys needs `getNativeCache()` to be a `Map`, so a provider that is not one silently degrades to clearing every site — a generation counter in the key would not. → §LXVIII.6
+- 📋 **T901** (deps: T870 ✅, T896 ✅, T900 ✅) **Every eviction in this block runs before the writing transaction commits** — A search arriving between the evict and the commit caches the pre-commit answer, which then survives to the backstop sweep — the staleness the block removed, reintroduced by ordering. → §LXVIII.9
 
 ## Block BV — The quality gate stops at the package boundary (§LXIX)
 
@@ -34,6 +35,7 @@
 - 📋 **T877** (deps: T861 ✅) **The most-consumed package ships zero tests** — `@viglet/turing-react-sdk` has no `test` script and no test files, so T861's `--if-present` correctly-but-unhelpfully skips the most-consumed package. → §LXIX.5
 - 💭 **T878** (deps: T863 ✅) **A total-only baseline cannot localize a regression** — react-sdk is `strict: false`, so its baseline is one number that can say the package grew 4 kB but never which file — baseline per directory instead. → §LXIX.6
 - 📋 **T892** (deps: —) **A Java enum and its hand-written TypeScript mirror drift with nothing watching** — `MISSING_DEFAULT_LLM` was in the backend enum and absent from the SDK union for eight months, narrowing the reason to `undefined` in every consumer. → §LXIX.7
+- 📋 **T902** (deps: —) **Two governed prose files declare the same 13 section anchors** — STRATEGY.md and IMPROVEMENTS.md number sections from one outline, so a pointer to any of the 13 resolves to two sections and every verb that reads one refuses. → §LXIX.8
 
 ## Block BW — What the link-free response and its consumers still lack (§LXX)
 
