@@ -66,8 +66,10 @@
 > **T907 SHIPPED**; reopened an eighth time by *verifying* it — a fully-qualified
 > annotation walks past the source-regex lint, in a form this codebase already writes
 > (T908). **T908 SHIPPED**; reopened a ninth time with the verb nobody looked at — the
-> listeners fire on update too, and the lint checks only deletes (T909). Only 💭 T897,
-> 💭 T905 (both deliberately not built) and T909 remain. §LXVIII.4–.16,
+> listeners fire on update too, and the lint checks only deletes (T909). **T909 SHIPPED**.
+> Block converging: every `@Cacheable` in the app was checked and all ten have an eviction
+> path, so the defect class this block opened on is provably absent. Only 💭 T897, 💭 T905
+> (both deliberately not built) and 💭 T910 remain — no 📋 work. §LXVIII.4–.17,
 > created 2026-08-02; Block **BT** = The POST-native default left its consumers
 > behind — T710 made `postNative: true` the default and the provider sets
 > `data = null`, but three `turing-app` consumers still read it: `SearchContent`
@@ -298,6 +300,10 @@ number" looked free but wasn't. Grepping three files (`ROADMAP.md`,
    lists fully-shipped blocks), then bump the letter after creating the block.
 
 ## Log (most recent first)
+
+- **T910 CREATED** (💭, Block BU §LXVIII.17 — both escape hatches in the bulk-write lint have zero users and zero tests: the counted `bulk-delete-ok` marker (last user removed at T908) and `ALLOWED_BULK_WRITES` (born empty at T909). The counting arithmetic in particular is non-trivial and unexercised. If it is wrong the strict way, the next author with a legitimate batch update finds the documented exit does not work — and the likely response is deleting the assertion, which costs the block everything it spent ten tasks buying) — 2026-08-04.
+
+- **T909 SHIPPED** (Block BU §LXVIII — the rule is `@Modifying` itself, not the word "delete". Matching a verb was always a proxy: `@Modifying` exists precisely to mark a query run through `executeUpdate()`, the bulk-DML path that manages no entity — so this is *smaller* than the delete-plus-update predicate the design proposed, and truer. `ALLOWED_BULK_WRITES` is the stated-reason door, empty and not expected to stay so: a batch status flip is a reasonable thing to want. Renamed `TurBulkWriteConventionsTest`. Verified with a fully-qualified bulk UPDATE probe — the exact case the previous rule was blind to) — 2026-08-04.
 
 - **T909 CREATED** (📋, Block BU §LXVIII.16 — every task in this block has been about deletes because that is what was broken, but the listeners declare `@PostPersist`/`@PostUpdate`/`@PostRemove`. The argument for why a bulk delete skips `@PostRemove` is the argument for why a bulk update skips `@PostUpdate`, word for word — and the lint checks only the delete verb. Verified latent: no repository of a listener-bearing entity declares a bulk write of any other verb today. Note for whoever takes it: unlike deletes, where zero survive, a bulk *update* is a reasonable thing to want, so this rule should expect legitimate exemptions) — 2026-08-04.
 
