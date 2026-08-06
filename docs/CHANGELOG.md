@@ -1215,3 +1215,4 @@
 - **T907** — The lint reads the entity out of each repository declaration instead of guessing it from the file name, and names the repositories the derivation must keep finding.
 - **T908** — The annotation half of the lint reads bytecode, where an annotation means one thing however it is spelled; the call half stays on source, where a method name has to appear literally.
 - **T909** — The rule is now `@Modifying` itself rather than the word delete, so a bulk update on a listener-bearing entity fails too, with a stated-reason door for the ones that are deliberate.
+- **T910** — Both doors are pure functions now, exercised against fixtures: a marked call is exempt, one marker never covers a second, and an allowlisted member is not reported.

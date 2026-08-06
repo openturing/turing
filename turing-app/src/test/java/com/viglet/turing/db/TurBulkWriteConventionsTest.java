@@ -191,8 +191,8 @@ class TurBulkWriteConventionsTest {
                         }
                         reader.getAnnotationMetadata().getDeclaredMethods().forEach(method -> {
                             String member = simpleName + "#" + method.getMethodName();
-                            if (method.isAnnotated(MODIFYING) && !ALLOWED_BULK_WRITES
-                                    .containsKey(member)) {
+                            if (isReportableBulkWrite(member, method.isAnnotated(MODIFYING),
+                                    ALLOWED_BULK_WRITES)) {
                                 violations.add("%s (manages %s, which declares a listener)"
                                         .formatted(member, entity));
                             }
@@ -253,18 +253,105 @@ class TurBulkWriteConventionsTest {
     }
 
     private static void scanForCalls(Path javaFile, Set<String> violations) {
-        read(javaFile).ifPresent(source -> {
-            long calls = BATCH_DELETE_CALL.matcher(source).results().count();
-            if (calls == 0) {
-                return;
-            }
-            // One marker per call, so an exemption written for one cannot cover a second.
-            long allowed = source.split(Pattern.quote(ALLOW_MARKER), -1).length - 1L;
-            if (calls > allowed) {
-                violations.add("%s — %d bulk-delete call(s), %d marked '%s'".formatted(
-                        javaFile.getFileName(), calls, allowed, ALLOW_MARKER));
-            }
-        });
+        read(javaFile).ifPresent(source -> callViolation(javaFile.getFileName().toString(), source)
+                .ifPresent(violations::add));
+    }
+
+    /**
+     * T910 / §LXVIII.17 — the counted-marker rule, as a function of the text alone so it can
+     * be exercised against fixtures rather than only against whatever the tree happens to
+     * contain.
+     *
+     * <p>
+     * It had no user and no test: the last real marker became vestigial at T906 and was
+     * removed at T908, so this arithmetic ran against zero markers every time it ran. That
+     * is the failure mode worth naming — not a wrong answer, but an unexercised path whose
+     * first user is someone under time pressure. If it were wrong in the strict direction
+     * they would find the documented way out does not work, and the cheap response to that
+     * is deleting the assertion.
+     * </p>
+     *
+     * <p>
+     * One marker per call, not one per file, so an exemption written for one call cannot
+     * silently cover a second one added later.
+     * </p>
+     */
+    static Optional<String> callViolation(String fileName, String source) {
+        long calls = BATCH_DELETE_CALL.matcher(source).results().count();
+        if (calls == 0) {
+            return Optional.empty();
+        }
+        long allowed = source.split(Pattern.quote(ALLOW_MARKER), -1).length - 1L;
+        if (calls <= allowed) {
+            return Optional.empty();
+        }
+        return Optional.of("%s — %d bulk-delete call(s), %d marked '%s'"
+                .formatted(fileName, calls, allowed, ALLOW_MARKER));
+    }
+
+    /**
+     * T910 / §LXVIII.17 — the allowlist door, as a function of its inputs. Near-trivial
+     * today, which is the point: it is the shape a future refactor would break silently,
+     * and a member that is listed must not be reported.
+     */
+    static boolean isReportableBulkWrite(String member, boolean modifying,
+            Map<String, String> allowlist) {
+        return modifying && !allowlist.containsKey(member);
+    }
+
+    // ------------------------------------------------------------------
+    // T910 — the escape hatches, exercised
+    // ------------------------------------------------------------------
+
+    private static final String ONE_CALL = "  repo.deleteAllInBatch(rows);\n";
+    private static final String MARKER_LINE = "  // " + ALLOW_MARKER + " — reason\n";
+
+    /** Unmarked calls are reported, and the count in the message is the real one. */
+    @Test
+    void anUnmarkedCallIsReported() {
+        assertThat(callViolation("X.java", ONE_CALL))
+                .hasValueSatisfying(v -> assertThat(v).contains("1 bulk-delete call(s)", "0 marked"));
+
+        assertThat(callViolation("X.java", ONE_CALL + ONE_CALL))
+                .hasValueSatisfying(v -> assertThat(v).contains("2 bulk-delete call(s)"));
+    }
+
+    /** The documented way out has to actually work, or its first user is stuck. */
+    @Test
+    void aMarkedCallIsExempt() {
+        assertThat(callViolation("X.java", MARKER_LINE + ONE_CALL)).isEmpty();
+        assertThat(callViolation("X.java", MARKER_LINE + ONE_CALL + MARKER_LINE + ONE_CALL))
+                .isEmpty();
+    }
+
+    /** One marker exempts one call — the property the counting exists for. */
+    @Test
+    void oneMarkerDoesNotCoverASecondCall() {
+        assertThat(callViolation("X.java", MARKER_LINE + ONE_CALL + ONE_CALL))
+                .hasValueSatisfying(v -> assertThat(v)
+                        .contains("2 bulk-delete call(s)", "1 marked"));
+    }
+
+    @Test
+    void aFileWithNoCallIsNotReported() {
+        assertThat(callViolation("X.java", "  repo.deleteAll(rows);\n")).isEmpty();
+        assertThat(callViolation("X.java", "")).isEmpty();
+    }
+
+    /** {@code deleteInBatch} is the same hole under a shorter name. */
+    @Test
+    void bothBatchDeleteSpellingsAreCaught() {
+        assertThat(callViolation("X.java", "  repo.deleteInBatch(rows);\n")).isPresent();
+        assertThat(callViolation("X.java", "  repo.deleteAllInBatch(rows);\n")).isPresent();
+    }
+
+    @Test
+    void anAllowlistedBulkWriteIsNotReported() {
+        Map<String, String> allowlist = Map.of("R#bump", "counter increment; evicts explicitly");
+
+        assertThat(isReportableBulkWrite("R#bump", true, allowlist)).isFalse();
+        assertThat(isReportableBulkWrite("R#other", true, allowlist)).isTrue();
+        assertThat(isReportableBulkWrite("R#bump", false, allowlist)).isFalse();
     }
 
     // ------------------------------------------------------------------

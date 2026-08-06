@@ -25,7 +25,6 @@
 
 - 💭 **T897** (deps: T870 ✅) **Per-site eviction has to reach outside the Spring `Cache` contract** — Enumerating a site's keys needs `getNativeCache()` to be a `Map`, so a provider that is not one silently degrades to clearing every site — a generation counter in the key would not. → §LXVIII.6
 - 💭 **T905** (deps: T903 ✅) **The snapshot and field-config caches have no backstop sweep** — Their correctness rests entirely on eviction being right — the assumption that was wrong three times in this block — and a wrong entry survives until the next SN write. → §LXVIII.12
-- 💭 **T910** (deps: T909 ✅) **Both escape hatches in the bulk-write lint have no user and no test** — The counted marker and the allowlist are each exercised by nothing, so a break shows up as the next author hitting a wall on a rule they cannot legitimately escape. → §LXVIII.17
 
 ## Block BV — The quality gate stops at the package boundary (§LXIX)
 

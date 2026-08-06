@@ -2185,30 +2185,6 @@ change owner often enough that "it is correct today" stops being a claim anyone 
 check. If it is taken: daily, matching `searchAPI`, and logging at a level that says a
 backstop fired, so a deployment relying on it is visible rather than merely surviving.
 
-### LXVIII.17 Both escape hatches in the bulk-write lint have no user and no test (T910)
-
-`TurBulkWriteConventionsTest` offers two ways to say "this one is deliberate": the
-counted `bulk-delete-ok` marker for a call, and `ALLOWED_BULK_WRITES` for a `@Modifying`
-method. Neither has a single user. The marker's last one became vestigial at T906 and
-was removed at T908; the map was born empty at T909.
-
-So both are code that has never run. The counted-marker logic in particular is not
-trivial — it counts occurrences and compares against the number of offences, precisely
-so one exemption cannot cover a second call — and nothing checks that arithmetic. If it
-is wrong in the permissive direction the lint quietly stops guarding; if it is wrong in
-the strict direction, the next author with a legitimate batch update finds that the
-documented way out does not work, on a rule they cannot otherwise satisfy. The likely
-response to that is to delete the assertion, which costs the block everything it spent
-ten tasks buying.
-
-The fix is small and belongs with the lint rather than in it: exercise both doors
-against fixtures — a synthetic source string with two calls and one marker, a synthetic
-member in the allowlist — so the escape hatch is known to work before someone needs it
-at speed.
-
-Filed as an idea because nothing is broken and nobody is blocked. It is worth doing the
-next time this lint is opened for any other reason, not on its own.
-
 ## LXIX. The quality gate stops at the package boundary (Block BV)
 
 > Block BS fixed the gate for one package. Adopting the same two changes across
