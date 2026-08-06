@@ -25,6 +25,7 @@
 
 - 💭 **T897** (deps: T870 ✅) **Per-site eviction has to reach outside the Spring `Cache` contract** — Enumerating a site's keys needs `getNativeCache()` to be a `Map`, so a provider that is not one silently degrades to clearing every site — a generation counter in the key would not. → §LXVIII.6
 - 💭 **T905** (deps: T903 ✅) **The snapshot and field-config caches have no backstop sweep** — Their correctness rests entirely on eviction being right — the assumption that was wrong three times in this block — and a wrong entry survives until the next SN write. → §LXVIII.12
+- 📋 **T909** (deps: T908 ✅) **The lint checks bulk deletes, but the listeners it guards also fire on update** — A @Modifying update on a guarded repository skips @PostUpdate exactly as a bulk delete skips @PostRemove, and the rule says nothing — none exists today, so it is latent. → §LXVIII.16
 
 ## Block BV — The quality gate stops at the package boundary (§LXIX)
 

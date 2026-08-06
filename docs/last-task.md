@@ -65,8 +65,9 @@
 > seventh time with the naming assumption its own widened lint now rests on (T907).
 > **T907 SHIPPED**; reopened an eighth time by *verifying* it — a fully-qualified
 > annotation walks past the source-regex lint, in a form this codebase already writes
-> (T908). Only 💭 T897, 💭 T905 (both deliberately not built) and T908 remain.
-> §LXVIII.4–.15,
+> (T908). **T908 SHIPPED**; reopened a ninth time with the verb nobody looked at — the
+> listeners fire on update too, and the lint checks only deletes (T909). Only 💭 T897,
+> 💭 T905 (both deliberately not built) and T909 remain. §LXVIII.4–.16,
 > created 2026-08-02; Block **BT** = The POST-native default left its consumers
 > behind — T710 made `postNative: true` the default and the provider sets
 > `data = null`, but three `turing-app` consumers still read it: `SearchContent`
@@ -297,6 +298,10 @@ number" looked free but wasn't. Grepping three files (`ROADMAP.md`,
    lists fully-shipped blocks), then bump the letter after creating the block.
 
 ## Log (most recent first)
+
+- **T909 CREATED** (📋, Block BU §LXVIII.16 — every task in this block has been about deletes because that is what was broken, but the listeners declare `@PostPersist`/`@PostUpdate`/`@PostRemove`. The argument for why a bulk delete skips `@PostRemove` is the argument for why a bulk update skips `@PostUpdate`, word for word — and the lint checks only the delete verb. Verified latent: no repository of a listener-bearing entity declares a bulk write of any other verb today. Note for whoever takes it: unlike deletes, where zero survive, a bulk *update* is a reasonable thing to want, so this rule should expect legitimate exemptions) — 2026-08-04.
+
+- **T908 SHIPPED** (Block BU §LXVIII — the annotation half of the lint moved to `MetadataReader` bytecode, where an annotation means one thing however it is spelled; the *call* half deliberately stays on source, because a method's simple name has to appear literally at the call site whatever the imports say — and that keeps the counted escape-hatch marker bytecode could not offer. Class renamed `TurBulkDeleteConventionsTest` (T906 widened it; the `TurSN` prefix had been false since). `TurSNSiteFieldRepository`'s `bulk-delete-ok` marker removed — vestigial since T906, as its entity declares no listener. Verified by re-injecting the exact fully-qualified probe the previous version missed) — 2026-08-04.
 
 - **T908 CREATED** (📋, Block BU §LXVIII.15 — found by *verifying* T907 rather than by reading it: injecting `@org.springframework.data.jpa.repository.Modifying` into a guarded repository left the lint green; the imported short form failed it correctly. Not hypothetical — `@org.springframework.data.jpa.repository.Query` is already written fully-qualified twice here, and ~50 fully-qualified annotations exist overall. Neither is a live miss (both checked; their entities declare no listener), so nothing is broken — what is wrong is the guarantee. The sibling `TurCacheAnnotationConventionsTest` reads bytecode via `MetadataReader`, where identity is resolved not spelled; this rule can move there. Also: drop the now-false `TurSN` prefix) — 2026-08-04.
 
