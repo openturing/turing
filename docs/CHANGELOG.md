@@ -1220,3 +1220,7 @@
 - **T912** — The evictor names the IT that proves it and the IT declares it owns the cache-enabled context, so the end-to-end proof is reachable from the code it covers.
 - **T905** — A daily locked sweep bounds how long a missed eviction can serve stale SN configuration, and says "backstop" in the log so a healthy sweep is not read as a defect.
 - 🗑 **T897** — abandoned: The "silently" was fixed by the WARN this task already shipped, and the generation counter would replace removal with abandonment — dead entries accruing until the daily sweep — to port to a non-Map provider this codebase does not wire.
+
+## Block BV — The quality gate stops at the package boundary
+
+- **T875** — publish-js-sdk.yml now filters react-sdk instead of the vanilla SDK, so the package it publishes is the one it builds rather than a prepublishOnly side effect, and the publish is gated on the size budget and on tests when present.

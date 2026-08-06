@@ -47,9 +47,25 @@ jobs:
         run: pnpm -r --include-workspace-root exec -- npm version patch --no-git-tag-version
 
       # ── Build & publish the SDK (which now carries the bumped version) ──
+      # T875: this step used to run `build:sdk`, which filters the *vanilla*
+      # `@viglet/turing-sdk`. react-sdk depends on sdk and not the reverse, so
+      # turbo never built react-sdk here — it was built only as a side effect of
+      # its own `prepublishOnly`. The `...` suffix builds react-sdk plus its
+      # workspace dependencies, matching validate-js.yml and publish-react-ui.yml.
       - name: Build @viglet/turing-react-sdk
         working-directory: frontend
-        run: pnpm run build:sdk
+        run: pnpm --filter "@viglet/turing-react-sdk..." run build
+
+      # T875: publish-react-ui.yml gates on size and test; this workflow gated on
+      # neither. `--if-present` keeps the test gate green until react-sdk grows a
+      # suite (T877), after which it becomes a real gate with no workflow change.
+      - name: Bundle-size budget (publish gate)
+        working-directory: frontend
+        run: pnpm --filter "@viglet/turing-react-sdk" run size
+
+      - name: Test (publish gate)
+        working-directory: frontend
+        run: pnpm --filter "@viglet/turing-react-sdk" run --if-present test
 
       - name: Publish @viglet/turing-react-sdk
         working-directory: frontend/packages/react-sdk

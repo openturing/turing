@@ -2171,28 +2171,6 @@ resolve to the admin app.
 That is the largest frontend suite in the repo, and it is exactly the suite
 §LXVII.4 is about to invest in — a regression guard nobody runs is not a guard.
 
-### LXIX.3 `publish-js-sdk.yml` builds the wrong package (T875)
-
-The step is named *"Build @viglet/turing-react-sdk"* and runs:
-
-```yaml
-run: pnpm run build:sdk
-```
-
-`build:sdk` is `turbo run build --filter=@viglet/turing-sdk` — the **vanilla**
-package. `build:react-sdk` is the other script. react-sdk depends on sdk, not the
-reverse, so turbo never builds react-sdk, and the next step publishes from
-`frontend/packages/react-sdk` regardless.
-
-It has not produced a bad publish only because `npm publish` fires react-sdk's
-own `prepublishOnly` (`npm run build && npm run size`), which builds it as a side
-effect. That accident is load-bearing today, and until T863 its `size` half was
-*failing* (react-sdk measured 97.83 kB against a 90.00 kB ceiling) — so this
-workflow would have aborted at the publish step.
-
-Fix the filter, and while there, close the gate asymmetry: `publish-react-ui.yml`
-gates on size **and** test, this one gates on neither.
-
 ### LXIX.4 The vanilla SDK has no publish workflow (T876)
 
 `publish-js-sdk.yml` publishes react-sdk. There is a `publish-react-ui.yml`, a
