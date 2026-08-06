@@ -2148,18 +2148,6 @@ leaves vectorless sites without a tile. The block adds **no backend**.
 > workflows were copied from each other and then diverged. Nothing enumerates the
 > workspace and asserts each publishable package is covered.
 
-### LXIX.1 Two published packages are in no validation matrix (T873)
-
-`@viglet/turing-cli` and `@viglet/turing-flow-dsl` are both public npm packages
-with real suites (`node --test` over `dist/test/**`), and neither appears in
-`validate-js.yml`'s `matrix.workspace`. Nothing builds or tests them before a
-merge.
-
-Their *publish* workflows do gate on `pnpm run test`, so a break is caught — at
-release time, by whoever is trying to ship, which is the same "wrong person at
-the wrong moment" §LXVI.3 objected to for the size budget. Add both to the
-matrix; they need no new tooling, only to be listed.
-
 ### LXIX.2 The admin app's 171 tests run in no workflow (T874)
 
 `turing-app` has a full vitest + RTL suite (171 tests) and it executes in **no**
