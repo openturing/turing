@@ -132,6 +132,19 @@ public class TurSNProcessQueue {
             log.debug("turSNJob empty or siteId empty");
             return;
         }
+        // T900 / §LXVIII.8 — an unmanaged spotlight is saved (and since T899, deleted)
+        // row by row through JPA, so each row fired a whole-cache clear. Inside this
+        // method those clears are redundant rather than wrong: every written site is
+        // evicted precisely at the end. Collapse the run into at most one.
+        turSNSearchCacheEvictor.beginCoalescing();
+        try {
+            processQueueItems(turSNJobItems);
+        } finally {
+            turSNSearchCacheEvictor.endCoalescing();
+        }
+    }
+
+    private void processQueueItems(TurSNJobItems turSNJobItems) {
         receiveQueueLog(turSNJobItems);
         // T335 / §XIV.8.2 — track the cores already verified in this batch so a
         // bulk index pays at most one on-demand provisioning check per distinct

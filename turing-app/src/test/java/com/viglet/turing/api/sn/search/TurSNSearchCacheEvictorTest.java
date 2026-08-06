@@ -193,6 +193,123 @@ class TurSNSearchCacheEvictorTest {
         assertNotNull(cache.get(keyB));
     }
 
+    // ------------------------------------------------------------------
+    // T900 — coalescing the whole-cache clears the indexing queue provokes
+    // ------------------------------------------------------------------
+
+    /** A counting cache manager, so "how many clears" is assertable. */
+    private static final class CountingCacheManager extends ConcurrentMapCacheManager {
+        private int clears;
+
+        @Override
+        protected Cache createConcurrentMapCache(String name) {
+            Cache delegate = super.createConcurrentMapCache(name);
+            return new org.springframework.cache.support.AbstractValueAdaptingCache(true) {
+                @Override
+                public String getName() {
+                    return delegate.getName();
+                }
+
+                @Override
+                public Object getNativeCache() {
+                    return delegate.getNativeCache();
+                }
+
+                @Override
+                protected Object lookup(Object key) {
+                    ValueWrapper wrapper = delegate.get(key);
+                    return wrapper == null ? null : wrapper.get();
+                }
+
+                @Override
+                public <T> T get(Object key, java.util.concurrent.Callable<T> valueLoader) {
+                    return delegate.get(key, valueLoader);
+                }
+
+                @Override
+                public void put(Object key, Object value) {
+                    delegate.put(key, value);
+                }
+
+                @Override
+                public void evict(Object key) {
+                    delegate.evict(key);
+                }
+
+                @Override
+                public void clear() {
+                    clears++;
+                    delegate.clear();
+                }
+            };
+        }
+    }
+
+    /** Many clears inside one window become exactly one, performed on exit. */
+    @Test
+    void coalescingCollapsesManyClearsIntoOne() {
+        CountingCacheManager cacheManager = new CountingCacheManager();
+        TurSNSearchCacheEvictor evictor = evictor(cacheManager, true);
+
+        evictor.beginCoalescing();
+        try {
+            for (int i = 0; i < 500; i++) {
+                evictor.evictAll();
+            }
+            assertEquals(0, cacheManager.clears, "nothing is cleared until the window closes");
+        } finally {
+            evictor.endCoalescing();
+        }
+
+        assertEquals(1, cacheManager.clears);
+    }
+
+    /** A window nobody asked to clear in clears nothing. */
+    @Test
+    void coalescingWithoutAnyEvictionClearsNothing() {
+        CountingCacheManager cacheManager = new CountingCacheManager();
+
+        TurSNSearchCacheEvictor evictor = evictor(cacheManager, true);
+        evictor.beginCoalescing();
+        evictor.endCoalescing();
+
+        assertEquals(0, cacheManager.clears);
+    }
+
+    /** Outside a window, behaviour is exactly what T896 shipped. */
+    @Test
+    void evictAllOutsideAWindowClearsImmediately() {
+        CountingCacheManager cacheManager = new CountingCacheManager();
+        TurSNSearchCacheEvictor evictor = evictor(cacheManager, true);
+
+        evictor.evictAll();
+        evictor.evictAll();
+
+        assertEquals(2, cacheManager.clears);
+    }
+
+    /** The window must close even when the work throws, or evictions stay deferred. */
+    @Test
+    void coalescingReleasesTheWindowOnFailure() {
+        CountingCacheManager cacheManager = new CountingCacheManager();
+        TurSNSearchCacheEvictor evictor = evictor(cacheManager, true);
+
+        evictor.beginCoalescing();
+        try {
+            evictor.evictAll();
+            throw new IllegalStateException("indexing blew up");
+        } catch (IllegalStateException expected) {
+            // the caller's finally still closes the window
+        } finally {
+            evictor.endCoalescing();
+        }
+
+        // The pending clear is still performed, and the thread is no longer deferring.
+        assertEquals(1, cacheManager.clears);
+        evictor.evictAll();
+        assertEquals(2, cacheManager.clears);
+    }
+
     /** Tenancy off collapses to one partition, so behaviour is unchanged. */
     @Test
     void tenancyOffUsesOnePartition() {

@@ -1207,3 +1207,4 @@
 - **T895** — The three site-name-keyed caches wrap their key in one `scoped(...)` primitive, and a conformance lint fails any new explicitly-keyed cache that neither scopes nor justifies itself.
 - **T896** — A JPA callback on the 19 entities a search answer is derived from now clears the cache, and a test fails when a new SN entity declares neither that it affects answers nor why not.
 - **T899** — Spotlight and field-ext deletes load their rows and delete them one by one, so removal fires the callbacks that evict the snapshot and search caches; a lint refuses a new bulk delete.
+- **T900** — The indexing queue coalesces the whole-cache clears its own spotlight writes provoke into at most one, since it already evicts every written site when the message ends.

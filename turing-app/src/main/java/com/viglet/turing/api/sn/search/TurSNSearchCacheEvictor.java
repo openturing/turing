@@ -75,6 +75,12 @@ public class TurSNSearchCacheEvictor {
     private final boolean searchCacheEnabled;
     /** Guards the T897 degradation warning so it is said once, not per write. */
     private final AtomicBoolean degradedWarningIssued = new AtomicBoolean(false);
+    /**
+     * T900 — the current thread's coalescing window, or {@code null} outside one. A
+     * thread-local because the indexing queue's listener is what opens it, and the JPA
+     * callbacks it collapses fire on that same thread.
+     */
+    private static final ThreadLocal<Deferral> coalescing = new ThreadLocal<>();
 
     public TurSNSearchCacheEvictor(CacheManager cacheManager, TurTenantCacheKey tenantCacheKey,
             @Value("${turing.search.cache.enabled:false}") boolean searchCacheEnabled) {
@@ -124,6 +130,18 @@ public class TurSNSearchCacheEvictor {
         if (!searchCacheEnabled) {
             return;
         }
+        // T900 / §LXVIII.8 — inside the indexing queue this clear is redundant, not
+        // merely expensive: the queue evicts each written site when the message ends.
+        // Record that one was asked for and collapse the run into a single clear.
+        Deferral deferral = coalescing.get();
+        if (deferral != null) {
+            deferral.requested = true;
+            return;
+        }
+        clearNow();
+    }
+
+    private void clearNow() {
         Cache cache = cacheManager.getCache(SEARCH_CACHE);
         if (cache == null) {
             return;
@@ -131,6 +149,67 @@ public class TurSNSearchCacheEvictor {
         cache.clear();
         log.debug("[T896] Cleared the '{}' cache after a search-affecting configuration write",
                 SEARCH_CACHE);
+    }
+
+    /**
+     * T900 / §LXVIII.8 — opens a window in which whole-cache clears are coalesced into
+     * at most one, performed by {@link #endCoalescing()}.
+     *
+     * <p>
+     * An <em>unmanaged spotlight</em> is not an operator edit: it arrives as a job item
+     * on the indexing queue, and creating one saves the spotlight plus a row per term
+     * and per document — each a managed write, so each fires {@link #evictAll()}. T899
+     * roughly doubled that by making the delete path fire callbacks too, which it has
+     * to. A single import carrying spotlights was therefore issuing on the order of a
+     * thousand full clears where T870 was careful to issue one eviction per site.
+     * </p>
+     *
+     * <p>
+     * The clears are <em>redundant</em> there rather than wrong: the queue calls
+     * {@link #evictSites} for every site it wrote before the message ends. So the run
+     * collapses to one clear, performed on exit only if something asked for one — never
+     * fewer evictions than before, only fewer repetitions of the same one.
+     * </p>
+     *
+     * <p>
+     * Deliberately bounded: a callback that fires at transaction commit runs after this
+     * window closes and still clears immediately, exactly as it does today. This removes
+     * the repetition it can see and claims nothing about the rest.
+     * </p>
+     *
+     * <p>
+     * Deliberately <em>not</em> a {@code coalescing(Runnable)} wrapper. Routing the
+     * caller's body through this bean means a test that mocks it runs no body at all —
+     * which is how the first attempt turned 14 queue tests into silent no-ops. Paired
+     * begin/end calls degrade the other way: against a mock, both are no-ops and every
+     * eviction simply happens immediately, which is the pre-T900 behaviour.
+     * </p>
+     */
+    public void beginCoalescing() {
+        if (searchCacheEnabled && coalescing.get() == null) {
+            coalescing.set(new Deferral());
+        }
+    }
+
+    /**
+     * Closes the window opened by {@link #beginCoalescing()} and performs the single
+     * clear it accumulated, if any. Must be called from a {@code finally}.
+     */
+    public void endCoalescing() {
+        Deferral deferral = coalescing.get();
+        if (deferral == null) {
+            return;
+        }
+        coalescing.remove();
+        if (deferral.requested) {
+            log.debug("[T900] Coalesced the run's whole-cache clears into one");
+            clearNow();
+        }
+    }
+
+    /** Mutable flag for the current thread's coalescing window. */
+    private static final class Deferral {
+        private boolean requested;
     }
 
     private void evictSite(Cache cache, String siteName) {

@@ -24,7 +24,6 @@
 ## Block BU — The search cache is off by a thousand and never evicted on write (§LXVIII)
 
 - 💭 **T897** (deps: T870 ✅) **Per-site eviction has to reach outside the Spring `Cache` contract** — Enumerating a site's keys needs `getNativeCache()` to be a `Map`, so a provider that is not one silently degrades to clearing every site — a generation counter in the key would not. → §LXVIII.6
-- 💭 **T900** (deps: T896 ✅) **An import carrying spotlights clears the whole search cache once per row** — Unmanaged spotlights are saved through the indexing queue, so each saved row fires the T896 whole-cache clear and a large import repeats it hundreds of times. → §LXVIII.8
 
 ## Block BV — The quality gate stops at the package boundary (§LXIX)
 

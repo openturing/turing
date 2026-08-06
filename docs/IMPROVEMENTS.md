@@ -2162,28 +2162,6 @@ anyway, so precision only ever mattered for the indexing path, where the scan al
 works. Resume when a provider whose native cache is not a `Map` is actually wired, or
 when a bulk import's eviction cost shows up in a profile.
 
-### LXVIII.8 An import carrying spotlights clears the whole search cache once per row (T900)
-
-T896's whole-cache clear was justified on volume: configuration edits are rare and
-operator-driven, so per-site precision buys nothing. That is true of the admin
-controllers — and false of one path, because an *unmanaged spotlight* is not an admin
-edit. It arrives as a job item on the indexing queue, and
-`TurSNSpotlightProcess.createUnmanagedSpotlight` saves the spotlight plus a row per term
-and per document. Every one of those saves is a managed write, so every one fires the
-callback and clears the entire cache.
-
-A 500-document import that carries spotlights therefore issues on the order of a
-thousand full clears where T870 was careful to issue one eviction per site. Nothing is
-*wrong*: the cache ends correct and the import still completes. It is only that the
-volume argument the coarse clear rests on does not hold on the one write path that
-shares a door with indexing.
-
-The cheap fix is to skip the callback while the indexing queue is draining — it already
-evicts per site at the end of the message, so the clears are redundant there, not merely
-expensive. That is a flag on a thread-local, which is the kind of state worth adding
-only once someone measures the import. Filed as an idea for that reason: the correctness
-is already there, and this is a cost nobody has yet reported paying.
-
 ## LXIX. The quality gate stops at the package boundary (Block BV)
 
 > Block BS fixed the gate for one package. Adopting the same two changes across
