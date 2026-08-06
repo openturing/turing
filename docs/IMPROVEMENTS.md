@@ -2160,20 +2160,6 @@ A middle ground exists: baseline per **directory** (`core/`, `ui/`, `hooks/`)
 rather than per file. Roughly a dozen numbers, reviewable, and enough to point at
 the change.
 
-### LXIX.7 A Java enum and its TypeScript mirror drift silently
-
-`ChatDisabledReason` exists twice: as a Java enum in `TurSNSiteGenAiAPI` and as a
-string-union mirror in `@viglet/turing-sdk`, with a `CHAT_DISABLED_HINTS` record keyed
-by it. T790 added `MISSING_DEFAULT_LLM` to the Java side and the mirror was not updated,
-so for eight months the vectorless readiness reason narrowed to `undefined` in every TS
-consumer — found only because T853 built a UI on that reason. The record's
-exhaustiveness gives no protection: it constrains the mirror to itself, never to the
-enum. The gate that is missing is one test that parses the declared Java enum constants
-and asserts set equality with the union, run in the same job as the rest of the package
-suites. The same shape guards `TurSEFieldType`, `TurAnswerSignalKind` and every other
-enum the SDKs re-declare, so make the check take the pair list rather than hard-code
-one.
-
 ### LXIX.8 Two governed prose files declare the same 13 section anchors (T902)
 
 `STRATEGY.md` and `IMPROVEMENTS.md` both number their sections from the same outline,

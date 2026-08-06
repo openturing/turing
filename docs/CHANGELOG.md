@@ -1229,3 +1229,4 @@
 - **T874** — the admin app is a validate-js.yml matrix entry, so its 222 vitest tests and its tsc-plus-vite build now run in CI instead of only on a developer's machine.
 - **T913** — the undici override keeps its security floor but stops at the 7 line, so jsdom loads again and the 51 test files that could not start a worker run their 304 tests.
 - **T877** — the React SDK has a vitest suite, and its first 17 tests cover the provider/store contract T710 changed: which transport runs, which of data and structured is authoritative, that facet and page actions write the URL, that implicit params never reach it, and that a late response cannot overwrite a newer one.
+- **T892** — a table-driven test reads the Java enum constants and the TypeScript union literals from source and asserts set equality for four mirrored pairs, so the next constant added on one side fails the SDK suite instead of narrowing to undefined.
