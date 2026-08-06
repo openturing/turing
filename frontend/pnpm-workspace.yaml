@@ -116,7 +116,12 @@ overrides:
   # deps: undici (SOCKS5 TLS-bypass / cross-origin routing / WS DoS), js-yaml
   # (quadratic-DoS in merge keys), @babel/core (arbitrary file read via
   # sourceMappingURL).
-  "undici": ">=7.28.0"
+  # T913 — keep the security floor (>=7.28.0) but stay on the undici 7 line, the
+  # same accident @babel/core hit below. jsdom@29 declares `undici: ^7.25.0`; an
+  # open-ended override outranks that range and linked undici 8.7.0, which
+  # removed `lib/handler/wrap-handler.js` — so `Window.js` failed to load and
+  # every `environment: "jsdom"` suite in the repo died before its first test.
+  "undici": ">=7.28.0 <8"
   # Keep the security floor (>=7.29.6) but stay on the Babel 7 line. An
   # open-ended ">=7.29.6" let pnpm pull @babel/core 8.0.1 into every consumer;
   # Babel 8's loadPartialConfig is now callback-only, which breaks
