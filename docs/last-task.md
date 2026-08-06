@@ -62,8 +62,11 @@
 > sixth time with the two live bugs the audit found outside the T899 lint's SN scope —
 > deleting an AI agent or a chat flow bypasses its eviction listener (T906 — restated on
 > execution: only the agent was live, the flow compensated). **T906 SHIPPED**; reopened a
-> seventh time with the naming assumption its own widened lint now rests on (T907). Only
-> 💭 T897, 💭 T905 (both deliberately not built) and T907 remain. §LXVIII.4–.14,
+> seventh time with the naming assumption its own widened lint now rests on (T907).
+> **T907 SHIPPED**; reopened an eighth time by *verifying* it — a fully-qualified
+> annotation walks past the source-regex lint, in a form this codebase already writes
+> (T908). Only 💭 T897, 💭 T905 (both deliberately not built) and T908 remain.
+> §LXVIII.4–.15,
 > created 2026-08-02; Block **BT** = The POST-native default left its consumers
 > behind — T710 made `postNative: true` the default and the provider sets
 > `data = null`, but three `turing-app` consumers still read it: `SearchContent`
@@ -294,6 +297,10 @@ number" looked free but wasn't. Grepping three files (`ROADMAP.md`,
    lists fully-shipped blocks), then bump the letter after creating the block.
 
 ## Log (most recent first)
+
+- **T908 CREATED** (📋, Block BU §LXVIII.15 — found by *verifying* T907 rather than by reading it: injecting `@org.springframework.data.jpa.repository.Modifying` into a guarded repository left the lint green; the imported short form failed it correctly. Not hypothetical — `@org.springframework.data.jpa.repository.Query` is already written fully-qualified twice here, and ~50 fully-qualified annotations exist overall. Neither is a live miss (both checked; their entities declare no listener), so nothing is broken — what is wrong is the guarantee. The sibling `TurCacheAnnotationConventionsTest` reads bytecode via `MetadataReader`, where identity is resolved not spelled; this rule can move there. Also: drop the now-false `TurSN` prefix) — 2026-08-04.
+
+- **T907 SHIPPED** (Block BU §LXVIII — the lint parses `extends JpaRepository<Entity, Id>` (all 98 repositories declare it) instead of guessing `<Entity>Repository` from the file name, so the naming convention no longer matters. A second test **names four repositories the derivation must keep finding**: `isNotEmpty()` catches a derivation returning nothing, only naming members catches it returning *less*, which was the whole failure mode. Verified by injecting a violation and watching it fail) — 2026-08-04.
 
 - **T907 CREATED** (📋, Block BU §LXVIII.14 — self-critique of T906: the lint now *derives* its guarded set from `@EntityListeners`, but maps entity→repository by the `<Entity>Repository` name convention. It holds for every listener entity today (checked), and nothing keeps it holding — a rename removes an entity from the set silently, and the lint keeps passing by checking less. Same shape as the defect it replaced, one level up. Fix: parse `extends JpaRepository<Entity, Id>`, or assert the two agree) — 2026-08-04.
 
