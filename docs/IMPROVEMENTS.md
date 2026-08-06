@@ -2185,30 +2185,6 @@ change owner often enough that "it is correct today" stops being a claim anyone 
 check. If it is taken: daily, matching `searchAPI`, and logging at a level that says a
 backstop fired, so a deployment relying on it is visible rather than merely surviving.
 
-### LXVIII.18 No test proves a write changes what a cached search returns (T911)
-
-This block has spent eleven tasks on one sentence: a write must change what the next
-search returns. Every one of them was verified by a unit test of a component or by a
-lint over the source. None of them was verified by doing it.
-
-`TurSdkContractIT` is the only context that runs with
-`turing.search.cache.enabled=true`, and what it asserts is T858's concern — two distinct
-POST bodies must not share a cached response. That is a statement about the *key*.
-Nothing anywhere states that indexing a document, or editing a spotlight, makes the next
-search return something different.
-
-The gap is not theoretical, because two independent functions have to agree for eviction
-to work at all: `TurSNSearchCacheKey.of(context)`, which the `@Cacheable` SpEL stores
-under (wrapped since T895 in `TurTenantCacheKey.scoped`), and `sitePrefix(siteName)`,
-which the evictor matches against. They agree today by construction and by a unit test
-that builds both from the same helpers. What no test does is let the real Spring proxy
-write a real key and then ask the real evictor to remove it — which is the only check
-that survives someone changing one of the two.
-
-One IT: enable the cache, search, index a document, search again, assert the answer
-moved. Then the same for a spotlight edit, which reaches the cache through the other
-door entirely.
-
 ## LXIX. The quality gate stops at the package boundary (Block BV)
 
 > Block BS fixed the gate for one package. Adopting the same two changes across

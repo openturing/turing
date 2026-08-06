@@ -26,7 +26,10 @@ import java.net.http.HttpResponse.BodyHandlers;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
+import java.util.Map;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
@@ -41,9 +44,16 @@ import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 
+import com.viglet.turing.api.sn.queue.TurSNProcessQueue;
+import com.viglet.turing.api.sn.search.TurSNSearchCacheEvictor;
+import com.viglet.turing.client.sn.job.TurSNJobAction;
+import com.viglet.turing.client.sn.job.TurSNJobItem;
+import com.viglet.turing.client.sn.job.TurSNJobItems;
 import com.viglet.turing.exchange.TurImportExchange;
 import com.viglet.turing.exchange.TurImportExchange.ImportResult;
+import com.viglet.turing.persistence.model.sn.spotlight.TurSNSiteSpotlight;
 import com.viglet.turing.persistence.repository.sn.TurSNSiteRepository;
+import com.viglet.turing.persistence.repository.sn.spotlight.TurSNSiteSpotlightRepository;
 import com.viglet.turing.testutil.AbstractTuringSpringIT;
 
 import tools.jackson.databind.JsonNode;
@@ -97,6 +107,8 @@ class TurSdkContractIT extends AbstractTuringSpringIT {
     /** T859 — a facet value that cannot survive a naive query-string round-trip. */
     private static final String RESERVED_FACET_VALUE = "Ash & Ember";
     private static final String RESERVED_DOCUMENT_ID = "myth-contract-999";
+    /** T911 — a document indexed and removed within one test, to move the answer. */
+    private static final String CACHE_PROBE_ID = "t911-cache-probe";
 
     @Value("${local.server.port}")
     private int port;
@@ -129,6 +141,15 @@ class TurSdkContractIT extends AbstractTuringSpringIT {
 
     @Autowired
     private TurSNSiteRepository siteRepository;
+
+    @Autowired
+    private TurSNProcessQueue processQueue;
+
+    @Autowired
+    private TurSNSiteSpotlightRepository spotlightRepository;
+
+    @Autowired
+    private org.springframework.cache.CacheManager cacheManager;
 
     private final HttpClient http = HttpClient.newHttpClient();
     private final ObjectMapper json = JsonMapper.builder().build();
@@ -336,6 +357,116 @@ class TurSdkContractIT extends AbstractTuringSpringIT {
         assertTrue(dragonCount < totalCount,
                 "a cached response was served for a different body: 'dragon' returned "
                         + dragonCount + " and '*' returned " + totalCount);
+    }
+
+    // ── T911: the assertion Block BU spent eleven tasks not making ──
+
+    /**
+     * T911 / §LXVIII.18 — <strong>a write changes what the next search returns.</strong>
+     *
+     * <p>
+     * Every eviction task in Block BU was verified by a unit test of a component or a lint
+     * over the source; none of them by doing it. The risk that leaves is specific: two
+     * independent functions have to agree for eviction to work at all —
+     * {@code TurSNSearchCacheKey.of(context)}, which the {@code @Cacheable} SpEL stores
+     * under (wrapped since T895 in {@code TurTenantCacheKey.scoped}), and
+     * {@code sitePrefix(siteName)}, which the evictor matches. A unit test builds both from
+     * the same helpers, so it cannot see them drift apart. This lets the real proxy write a
+     * real key and asks the real evictor to remove it.
+     * </p>
+     *
+     * <p>
+     * Indexing runs through {@link TurSNProcessQueue#processIndexingQueue} directly rather
+     * than over JMS: the same {@code @Transactional} proxy, so the T901 after-commit
+     * eviction is exercised as it is in production, without an async await to make the
+     * assertion flaky. The document is deindexed at the end so the class stays hermetic
+     * whatever order its tests run in — and that restore is a second eviction, through the
+     * DELETE branch.
+     * </p>
+     */
+    @Test
+    void indexingEvictsTheCachedAnswerAndChangesIt() throws Exception {
+        int before = totalDocuments();
+        assertTrue(cachedEntriesForSite() > 0,
+                "the search must have been cached, or this test asserts nothing about eviction");
+
+        index(TurSNJobAction.CREATE, CACHE_PROBE_ID);
+        try {
+            assertEquals(0, cachedEntriesForSite(),
+                    "indexing left the site's cached answers in place: the key the @Cacheable "
+                            + "SpEL stores under and the prefix the evictor matches have drifted");
+            assertEquals(before + 1, totalDocuments(),
+                    "the next search must see the indexed document");
+        } finally {
+            index(TurSNJobAction.DELETE, CACHE_PROBE_ID);
+        }
+
+        assertEquals(0, cachedEntriesForSite(), "deindexing must evict too");
+        assertEquals(before, totalDocuments(), "the probe document must be gone again");
+    }
+
+    /**
+     * T911 / §LXVIII.18 — the other door. A spotlight is not a document: it reaches the
+     * cache through {@code TurSNSearchCacheEvictionListener} (T896) on a JPA callback,
+     * scheduled after commit (T903/T904), with no indexing queue involved at all.
+     */
+    @Test
+    void aConfigurationWriteEvictsTheCachedAnswer() throws Exception {
+        totalDocuments();
+        assertTrue(cachedEntriesForSite() > 0, "the search must have been cached first");
+
+        TurSNSiteSpotlight spotlight = new TurSNSiteSpotlight();
+        spotlight.setName("t911-probe");
+        spotlight.setLanguage(Locale.forLanguageTag("en-US"));
+        spotlight.setTurSNSite(siteRepository.findByNameIgnoreCase(SITE).orElseThrow());
+        TurSNSiteSpotlight saved = spotlightRepository.save(spotlight);
+        try {
+            assertEquals(0, cachedEntriesForSite(),
+                    "a spotlight write must clear the cached answers: it changes what a "
+                            + "search returns without touching the indexing queue");
+        } finally {
+            spotlightRepository.deleteById(saved.getId());
+        }
+    }
+
+    /** Documents matching {@code *}, which also populates the search cache. */
+    private int totalDocuments() throws Exception {
+        return json.readTree(postJson("/sn/" + SITE + "/search/query",
+                """
+                        {"q":"*","locale":"%s"}""".formatted(LOCALE)).body())
+                .path("queryContext").path("count").asInt();
+    }
+
+    /**
+     * How many entries the {@code searchAPI} cache holds for this site, read off the native
+     * map — the same shape {@code TurSNSearchCacheEvictor} reads, so a key the evictor
+     * cannot see is a key this cannot see either.
+     */
+    private long cachedEntriesForSite() {
+        org.springframework.cache.Cache cache =
+                cacheManager.getCache(TurSNSearchCacheEvictor.SEARCH_CACHE);
+        assertNotNull(cache, "the searchAPI cache must exist when the cache is enabled");
+        Object nativeCache = cache.getNativeCache();
+        assertTrue(nativeCache instanceof Map,
+                "this assertion reads the native map; the manager wired here must provide one");
+        return ((Map<?, ?>) nativeCache).keySet().stream()
+                .map(String::valueOf)
+                .filter(key -> key.toLowerCase(Locale.ROOT).contains("site=" + SITE))
+                .count();
+    }
+
+    /** Runs one job item through the real queue processor, transaction and all. */
+    private void index(TurSNJobAction action, String id) {
+        Map<String, Object> attributes = new HashMap<>();
+        attributes.put("id", id);
+        if (action == TurSNJobAction.CREATE) {
+            attributes.put("type", "CreatureProbe");
+            attributes.put("title", "T911 cache probe");
+            attributes.put("text", "a document that exists only to be indexed and removed");
+        }
+        processQueue.processIndexingQueue(new TurSNJobItems(
+                new TurSNJobItem(action, List.of(SITE), Locale.forLanguageTag("en-US"),
+                        attributes, null)));
     }
 
     /** T712 — the autocomplete POST variant takes the same anonymous JSON body. */

@@ -1216,3 +1216,4 @@
 - **T908** — The annotation half of the lint reads bytecode, where an annotation means one thing however it is spelled; the call half stays on source, where a method name has to appear literally.
 - **T909** — The rule is now `@Modifying` itself rather than the word delete, so a bulk update on a listener-bearing entity fails too, with a stated-reason door for the ones that are deliberate.
 - **T910** — Both doors are pure functions now, exercised against fixtures: a marked call is exempt, one marker never covers a second, and an allowlisted member is not reported.
+- **T911** — An IT indexes and edits a spotlight against a live cache and asserts the entries go and the answer moves, so the stored key and the evictor's prefix are checked against each other.
