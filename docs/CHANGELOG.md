@@ -1214,3 +1214,4 @@
 - **T906** — The three bulk deletes are gone so the callbacks fire, the two hand compensations that stood in for them are removed, and the lint now derives its scope from the entities that declare a listener.
 - **T907** — The lint reads the entity out of each repository declaration instead of guessing it from the file name, and names the repositories the derivation must keep finding.
 - **T908** — The annotation half of the lint reads bytecode, where an annotation means one thing however it is spelled; the call half stays on source, where a method name has to appear literally.
+- **T909** — The rule is now `@Modifying` itself rather than the word delete, so a bulk update on a listener-bearing entity fails too, with a stated-reason door for the ones that are deliberate.

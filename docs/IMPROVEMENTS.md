@@ -2185,31 +2185,6 @@ change owner often enough that "it is correct today" stops being a claim anyone 
 check. If it is taken: daily, matching `searchAPI`, and logging at a level that says a
 backstop fired, so a deployment relying on it is visible rather than merely surviving.
 
-### LXVIII.16 The lint checks bulk deletes, but the listeners it guards also fire on update (T909)
-
-Every task in this block has been about deletes, because that is what was broken. The
-listeners the block exists to protect declare `@PostPersist`, `@PostUpdate` <em>and</em>
-`@PostRemove` — and the argument for why a bulk delete skips `@PostRemove` is the
-argument for why a bulk update skips `@PostUpdate`, word for word: the operation issues
-SQL without loading anything, so the persistence context manages no entity and no
-callback fires.
-
-`TurBulkDeleteConventionsTest` checks only the delete verb. A `@Modifying @Query("update
-TurAIAgent a set …")` on a guarded repository would leave the SN snapshot cache holding
-the pre-update agent, and the lint would report nothing — the same defect as T906,
-arriving through the verb nobody looked at.
-
-Checked before filing: no repository of a listener-bearing entity declares a bulk write
-of any verb other than delete today. So this is latent, exactly as T908 was — nothing is
-broken, and the guarantee is narrower than the rule it claims to enforce.
-
-The fix is small, which is most of the argument for doing it: `isModifyingDelete`
-becomes `isBulkWrite`, and the message stops naming one verb. What deserves thought is
-the escape hatch. A bulk update is a far more reasonable thing to want than a bulk
-delete — batch status flips, counter increments — so unlike deletes, where zero survive,
-this rule should expect legitimate exemptions and make stating one cheap and reviewable
-rather than adversarial.
-
 ## LXIX. The quality gate stops at the package boundary (Block BV)
 
 > Block BS fixed the gate for one package. Adopting the same two changes across

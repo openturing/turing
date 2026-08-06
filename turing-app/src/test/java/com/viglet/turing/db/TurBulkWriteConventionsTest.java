@@ -18,7 +18,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.HashMap;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -29,7 +28,6 @@ import java.util.stream.Stream;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.core.io.FileSystemResource;
-import org.springframework.core.type.MethodMetadata;
 import org.springframework.core.type.classreading.MetadataReader;
 import org.springframework.core.type.classreading.MetadataReaderFactory;
 import org.springframework.core.type.classreading.SimpleMetadataReaderFactory;
@@ -37,7 +35,7 @@ import org.springframework.core.type.classreading.SimpleMetadataReaderFactory;
 import jakarta.persistence.EntityListeners;
 
 /**
- * <strong>No bulk delete on an entity whose removal has to run a callback.</strong>
+ * <strong>No bulk write on an entity whose lifecycle has to run a callback.</strong>
  *
  * <p>
  * T896 hooked JPA lifecycle callbacks precisely so that no write path could forget to
@@ -57,6 +55,17 @@ import jakarta.persistence.EntityListeners;
  * </p>
  *
  * <p>
+ * <b>T909 — the rule is {@code @Modifying}, not the word "delete".</b> Every task in this
+ * block was about deletes, because that is what was broken; the listeners declare
+ * {@code @PostPersist}, {@code @PostUpdate} <em>and</em> {@code @PostRemove}, so a bulk
+ * <em>update</em> skips {@code @PostUpdate} by the same mechanism and the earlier
+ * verb-matching version said nothing about it. Matching the verb was always a proxy:
+ * {@code @Modifying} exists precisely to mark a query run through
+ * {@code Query.executeUpdate()}, which is the bulk-DML path that manages no entity. So the
+ * annotation is the rule, and no verb is parsed.
+ * </p>
+ *
+ * <p>
  * <b>T908 — annotations are read from bytecode, calls from source, and the split is the
  * point.</b> Verifying T907 by injecting a violation exposed the previous version's limit:
  * a probe written {@code @org.springframework.data.jpa.repository.Modifying} walked past a
@@ -71,7 +80,7 @@ import jakarta.persistence.EntityListeners;
  * @author Alexandre Oliveira
  * @since 2026.3.4
  */
-class TurBulkDeleteConventionsTest {
+class TurBulkWriteConventionsTest {
 
     /** Bulk delete calls that bypass the persistence context, and so every callback. */
     private static final Pattern BATCH_DELETE_CALL =
@@ -98,7 +107,6 @@ class TurBulkDeleteConventionsTest {
             SOURCE_ROOT.resolve("com/viglet/turing/persistence/repository");
 
     private static final String MODIFYING = "org.springframework.data.jpa.repository.Modifying";
-    private static final String QUERY = "org.springframework.data.jpa.repository.Query";
 
     // ------------------------------------------------------------------
     // The guarded set
@@ -160,11 +168,11 @@ class TurBulkDeleteConventionsTest {
     }
 
     /**
-     * A guarded repository must declare no {@code @Modifying} delete query. Read from
+     * A guarded repository must declare no {@code @Modifying} query at all. Read from
      * bytecode, so the annotation's identity is what is checked rather than its spelling.
      */
     @Test
-    void noGuardedRepositoryDeclaresAModifyingDelete() throws IOException {
+    void noGuardedRepositoryDeclaresABulkWrite() throws IOException {
         Map<String, String> guarded = guardedRepositories();
         assertThat(guarded).as("the derivation found nothing to guard").isNotEmpty();
 
@@ -182,9 +190,11 @@ class TurBulkDeleteConventionsTest {
                             return;
                         }
                         reader.getAnnotationMetadata().getDeclaredMethods().forEach(method -> {
-                            if (isModifyingDelete(method)) {
-                                violations.add("%s#%s (manages %s, which declares a listener)"
-                                        .formatted(simpleName, method.getMethodName(), entity));
+                            String member = simpleName + "#" + method.getMethodName();
+                            if (method.isAnnotated(MODIFYING) && !ALLOWED_BULK_WRITES
+                                    .containsKey(member)) {
+                                violations.add("%s (manages %s, which declares a listener)"
+                                        .formatted(member, entity));
                             }
                         });
                     }));
@@ -192,27 +202,30 @@ class TurBulkDeleteConventionsTest {
 
         assertThat(violations)
                 .as("""
-                        A JPQL bulk delete manages no entity, so no @PostRemove fires and the
-                        listener that entity declares never runs. Use the inherited
-                        delete(entity) / deleteById(id) / deleteAll(iterable), which do —
-                        every site that hit this had already loaded the rows, so it costs no
-                        extra query. Offenders:""")
+                        @Modifying runs the query through executeUpdate(), which manages no
+                        entity — so no @PostRemove or @PostUpdate fires and the listener that
+                        entity declares never runs. Use the inherited delete(entity) /
+                        deleteById(id) / deleteAll(iterable), or load-mutate-save for an
+                        update; every site that hit this had already loaded the rows, so it
+                        costs no extra query. A bulk update is a more reasonable thing to want
+                        than a bulk delete, so if one is genuinely needed, evict explicitly and
+                        add the member to ALLOWED_BULK_WRITES with the reason. Offenders:""")
                 .isEmpty();
     }
 
-    private static boolean isModifyingDelete(MethodMetadata method) {
-        if (!method.isAnnotated(MODIFYING)) {
-            return false;
-        }
-        Map<String, Object> query = method.getAnnotationAttributes(QUERY);
-        if (query == null) {
-            // @Modifying with a derived delete name (deleteByX) still loads nothing.
-            return method.getMethodName().toLowerCase(Locale.ROOT).startsWith("delete");
-        }
-        Object value = query.get("value");
-        return value != null && value.toString().stripLeading()
-                .toLowerCase(Locale.ROOT).startsWith("delete");
-    }
+    /**
+     * Bulk writes on a guarded repository that are deliberate, with the reason.
+     *
+     * <p>
+     * Empty today, and expected not to stay that way. Zero bulk <em>deletes</em> survived
+     * this block, but a bulk update — a batch status flip, a counter increment — is a
+     * reasonable thing to want, and the cost of loading every row to do it is real. This is
+     * the door for that: a member and a sentence saying which callback was considered and
+     * how its work is done instead. The sibling {@code TurCacheAnnotationConventionsTest}
+     * uses the same shape, so an exemption is stated in the diff rather than argued with.
+     * </p>
+     */
+    private static final Map<String, String> ALLOWED_BULK_WRITES = Map.of();
 
     /**
      * A bulk delete <em>call</em> is refused anywhere in the app's own packages. There are
@@ -226,7 +239,7 @@ class TurBulkDeleteConventionsTest {
         try (Stream<Path> paths = Files.walk(SOURCE_ROOT)) {
             paths.filter(Files::isRegularFile)
                     .filter(p -> p.getFileName().toString().endsWith(".java"))
-                    .filter(TurBulkDeleteConventionsTest::isOwnPackage)
+                    .filter(TurBulkWriteConventionsTest::isOwnPackage)
                     .forEach(p -> scanForCalls(p, violations));
         }
 
