@@ -1,46 +1,18 @@
 {
-  "enabledMcpjsonServers": [
-    "roadkeep"
-  ],
   "permissions": {
     "allow": [
       "mcp__roadkeep"
     ]
   },
-  "hooks": {
-    "SessionStart": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "python \"${CLAUDE_PROJECT_DIR}/../../../alegauss/roadkeep/scripts/roadkeep.py\" guard",
-            "timeout": 10
-          }
-        ]
+  "enabledPlugins": {
+    "roadkeep@alegauss": true
+  },
+  "extraKnownMarketplaces": {
+    "alegauss": {
+      "source": {
+        "source": "github",
+        "repo": "alegauss/roadkeep"
       }
-    ],
-    "PreToolUse": [
-      {
-        "matcher": "Edit|MultiEdit|NotebookEdit|Write|Bash",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "python \"${CLAUDE_PROJECT_DIR}/../../../alegauss/roadkeep/scripts/roadkeep.py\" guard",
-            "timeout": 10
-          }
-        ]
-      }
-    ],
-    "Stop": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "python \"${CLAUDE_PROJECT_DIR}/../../../alegauss/roadkeep/scripts/roadkeep.py\" guard",
-            "timeout": 30
-          }
-        ]
-      }
-    ]
+    }
   }
 }

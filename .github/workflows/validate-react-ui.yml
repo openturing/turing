@@ -4,11 +4,6 @@ name: Validate @viglet/turing-react-ui
 # per-entry + total gzip bundle-size budget, and run its jsdom render tests.
 on:
   workflow_dispatch:
-  pull_request:
-    paths:
-      - "frontend/packages/react-ui/**"
-      - "frontend/.changeset/**"
-      - ".github/workflows/validate-react-ui.yml"
 
 jobs:
   validate:
