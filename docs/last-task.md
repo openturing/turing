@@ -60,8 +60,10 @@
 > otherwise (T904), and 💭 neither snapshot cache has a backstop (T905). **T904 SHIPPED;
 > T905 declined** (both ideas now carry a recorded decision + resume trigger); reopened a
 > sixth time with the two live bugs the audit found outside the T899 lint's SN scope —
-> deleting an AI agent or a chat flow bypasses its eviction listener (T906). Only 💭 T897,
-> 💭 T905 (both deliberately not built) and T906 remain. §LXVIII.4–.13,
+> deleting an AI agent or a chat flow bypasses its eviction listener (T906 — restated on
+> execution: only the agent was live, the flow compensated). **T906 SHIPPED**; reopened a
+> seventh time with the naming assumption its own widened lint now rests on (T907). Only
+> 💭 T897, 💭 T905 (both deliberately not built) and T907 remain. §LXVIII.4–.14,
 > created 2026-08-02; Block **BT** = The POST-native default left its consumers
 > behind — T710 made `postNative: true` the default and the provider sets
 > `data = null`, but three `turing-app` consumers still read it: `SearchContent`
@@ -292,6 +294,10 @@ number" looked free but wasn't. Grepping three files (`ROADMAP.md`,
    lists fully-shipped blocks), then bump the letter after creating the block.
 
 ## Log (most recent first)
+
+- **T907 CREATED** (📋, Block BU §LXVIII.14 — self-critique of T906: the lint now *derives* its guarded set from `@EntityListeners`, but maps entity→repository by the `<Entity>Repository` name convention. It holds for every listener entity today (checked), and nothing keeps it holding — a rename removes an entity from the set silently, and the lint keeps passing by checking less. Same shape as the defect it replaced, one level up. Fix: parse `extends JpaRepository<Entity, Id>`, or assert the two agree) — 2026-08-04.
+
+- **T906 SHIPPED** (Block BU §LXVIII — **T906's own premise was wrong when filed and was `restate`d**: I claimed two live bugs; `TurChatFlowAPI` in fact compensated. The truth is sharper — *two* of the three (`TurPersona`, `TurChatFlow`) were already patched by hand, each under a comment diagnosing this exact bug, and neither author generalised it, so the third (`TurAIAgent`) stayed broken with no compensation at all. Three `@Modifying` deletes removed, both hand compensations removed with them, and the lint no longer takes a package list: it derives from `@EntityListeners`, asserts the derived set is non-empty, and refuses a bulk-delete *call* anywhere in `com.viglet.turing`) — 2026-08-04.
 
 - **T906 CREATED** (📋, Block BU §LXVIII.13 — T899's lint scans the SN packages because that is where the defect was found, so it is a gate written for one surface. Three entities outside it pair `@EntityListeners` with a `@Modifying` delete: **`TurAIAgent` and `TurChatFlow` are live** — deleting an agent leaves the SN snapshot cache holding it, deleting a flow leaves the router cache. The third, `TurPersona`, compensates with an explicit evict *and a comment explaining exactly this bug* — someone diagnosed it, fixed their instance and wrote it down, and the other two were never found because nothing looked) — 2026-08-04.
 
