@@ -68,8 +68,10 @@
 > (T908). **T908 SHIPPED**; reopened a ninth time with the verb nobody looked at — the
 > listeners fire on update too, and the lint checks only deletes (T909). **T909 SHIPPED**.
 > Block converging: every `@Cacheable` in the app was checked and all ten have an eviction
-> path, so the defect class this block opened on is provably absent. Only 💭 T897, 💭 T905
-> (both deliberately not built) and 💭 T910 remain — no 📋 work. §LXVIII.4–.17,
+> path, so the defect class this block opened on is provably absent. **T910 SHIPPED**;
+> reopened an eleventh time with the capstone nobody wrote — eleven tasks of eviction
+> correctness, none verified by actually writing then searching (T911). Only 💭 T897,
+> 💭 T905 (both deliberately not built) and T911 remain. §LXVIII.4–.18,
 > created 2026-08-02; Block **BT** = The POST-native default left its consumers
 > behind — T710 made `postNative: true` the default and the provider sets
 > `data = null`, but three `turing-app` consumers still read it: `SearchContent`
@@ -300,6 +302,10 @@ number" looked free but wasn't. Grepping three files (`ROADMAP.md`,
    lists fully-shipped blocks), then bump the letter after creating the block.
 
 ## Log (most recent first)
+
+- **T911 CREATED** (📋, Block BU §LXVIII.18 — the capstone gap: eleven tasks made eviction correct, every one verified by a unit test of a component or a lint over the source, **none by doing it**. `TurSdkContractIT` is the only cache-enabled context and it asserts T858's key-collision property, not that a write changes an answer. Concretely at risk: `TurSNSearchCacheKey.of(context)` (what `@Cacheable` stores, wrapped since T895 in `scoped`) and `sitePrefix(siteName)` (what the evictor matches) are two functions that must agree — they do today by construction and a unit test, but nothing lets the real proxy write a real key and the real evictor remove it) — 2026-08-04.
+
+- **T910 SHIPPED** (Block BU §LXVIII — both escape hatches extracted to pure functions (`callViolation`, `isReportableBulkWrite`) and driven from fixtures: unmarked call reported with the real count, marked call exempt, one marker never covers a second, both batch spellings caught, allowlisted member not reported. **Mutation-checked**: turning `calls <= allowed` into `allowed > 0` — one marker covering the file, the bug the counting prevents — fails `oneMarkerDoesNotCoverASecondCall` and nothing else) — 2026-08-04.
 
 - **T910 CREATED** (💭, Block BU §LXVIII.17 — both escape hatches in the bulk-write lint have zero users and zero tests: the counted `bulk-delete-ok` marker (last user removed at T908) and `ALLOWED_BULK_WRITES` (born empty at T909). The counting arithmetic in particular is non-trivial and unexercised. If it is wrong the strict way, the next author with a legitimate batch update finds the documented exit does not work — and the likely response is deleting the assertion, which costs the block everything it spent ten tasks buying) — 2026-08-04.
 
