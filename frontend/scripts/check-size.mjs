@@ -26,6 +26,15 @@
  * The absolute `entries` / `total` numbers remain supported as a coarse backstop
  * for packages that have not adopted a baseline yet.
  *
+ * ## The middle ground: per-directory baselines (T878)
+ *
+ * A non-strict package baselines only its `total`, because per-file numbers over
+ * ~100 `tsc` outputs are a manifest nobody reviews. That guard can say *"the
+ * package grew 4 kB"* and never *"which file"*. `"groupBy": "dir"` adds a third
+ * granularity between the two: one baseline per top-level `dist` directory —
+ * roughly a dozen numbers, reviewable, and enough to point at the change. Files
+ * sitting directly in `dist` are grouped under `(root)`.
+ *
  * package.json → "sizeBudget":
  *   {
  *     "dir":        "dist",            // scanned directory (default "dist")
@@ -35,11 +44,13 @@
  *     "total":      14000,             // absolute gzip ceiling over all matched files
  *     "strict":     true,              // every matched file MUST be covered by a
  *                                      // budget or a baseline
- *     "delta":      { "entry": 512, "total": 1024 }, // allowed growth over baseline
+ *     "groupBy":    "dir",             // also baseline each top-level dist directory
+ *     "delta":      { "entry": 512, "dir": 1024, "total": 1024 }, // growth allowances
  *     "baseline":   {                  // measured — write with --update-baseline
  *       "measured": "2026-08-02",
  *       "total":    33168,
- *       "entries":  { "index.js": 780 }
+ *       "entries":  { "index.js": 780 },
+ *       "dirs":     { "core/": 21000, "(root)": 2080 }
  *     }
  *   }
  *
@@ -54,7 +65,10 @@ const pkgDir = process.cwd();
 const updateBaseline = process.argv.includes("--update-baseline");
 
 /** Growth tolerated over a committed baseline when the package sets none. */
-const DEFAULT_DELTA = { entry: 512, total: 1024 };
+const DEFAULT_DELTA = { entry: 512, dir: 1024, total: 1024 };
+
+/** T878 — the group a file directly under `dist` belongs to. */
+const ROOT_GROUP = "(root)";
 
 function fail(msg) {
   console.error(`\n  size budget: ${msg}\n`);
@@ -81,9 +95,14 @@ const exclude = cfg.exclude ?? [];
 const entries = cfg.entries ?? {};
 const total = cfg.total;
 const strict = cfg.strict ?? false;
+const groupByDir = cfg.groupBy === "dir";
 const baseline = cfg.baseline;
 const baseEntries = baseline?.entries ?? {};
+const baseDirs = baseline?.dirs ?? {};
 const delta = { ...DEFAULT_DELTA, ...cfg.delta };
+
+/** T878 — the top-level `dist` directory a relative path belongs to. */
+const groupOf = (rel) => (rel.includes("/") ? `${rel.slice(0, rel.indexOf("/"))}/` : ROOT_GROUP);
 
 function walk(d) {
   const out = [];
@@ -116,12 +135,16 @@ const kb = (n) => `${(n / 1024).toFixed(2)} kB`;
 const signed = (n) => `${n >= 0 ? "+" : "−"}${kb(Math.abs(n))}`;
 const rows = [];
 const violations = [];
+/** T878 — gzip totals per top-level `dist` directory, in first-seen order. */
+const dirGzip = new Map();
 let totalGzip = 0;
 
 for (const f of matched.sort()) {
   const rel = toPosix(relative(dir, f));
   const gzip = gzipSync(readFileSync(f), { level: 9 }).length;
   totalGzip += gzip;
+  const group = groupOf(rel);
+  dirGzip.set(group, (dirGzip.get(group) ?? 0) + gzip);
 
   const budget = entries[rel];
   const base = baseEntries[rel];
@@ -160,6 +183,38 @@ for (const name of Object.keys(baseEntries)) {
   }
 }
 
+// T878 — the middle guard: which directory grew, for packages too large to
+// baseline file by file. Only ever checked where the package opted in, so a
+// package on `total` alone behaves exactly as before.
+const dirRows = groupByDir
+  ? [...dirGzip.entries()].sort(([a], [b]) => a.localeCompare(b)).map(([name, gzip]) => ({
+      name,
+      gzip,
+      base: baseDirs[name],
+    }))
+  : [];
+
+if (groupByDir) {
+  for (const row of dirRows) {
+    if (row.base === undefined) {
+      violations.push(
+        `directory "${row.name}" has no baseline` +
+          (baseline ? " — re-run with --update-baseline" : ' — run --update-baseline to record one'),
+      );
+    } else if (row.gzip > row.base + delta.dir) {
+      violations.push(
+        `${row.name} grew ${signed(row.gzip - row.base)} over its ${kb(row.base)} baseline,` +
+          ` past the ${kb(delta.dir)} allowance — justify it and re-run with --update-baseline`,
+      );
+    }
+  }
+  for (const name of Object.keys(baseDirs)) {
+    if (!dirGzip.has(name)) {
+      violations.push(`baseline for directory "${name}" but no such directory — re-run with --update-baseline`);
+    }
+  }
+}
+
 if (baseline?.total !== undefined && totalGzip > baseline.total + delta.total) {
   violations.push(
     `package total grew ${signed(totalGzip - baseline.total)} over its ${kb(baseline.total)} baseline,` +
@@ -183,6 +238,14 @@ for (const r of rows) {
   const flag = (r.budget !== undefined && r.gzip > r.budget) || (r.base !== undefined && r.gzip > r.base + delta.entry) ? "  ✗" : "";
   console.log(`    ${r.rel.padEnd(pad)}  ${kb(r.gzip).padStart(9)}  / ${b.padStart(9)}  ${d.padStart(10)}${flag}`);
 }
+if (dirRows.length > 0) {
+  console.log(`    ${"".padEnd(pad, "─")}`);
+  for (const r of dirRows) {
+    const d = r.base === undefined ? "—" : signed(r.gzip - r.base);
+    const flag = r.base === undefined || r.gzip > r.base + delta.dir ? "  ✗" : "";
+    console.log(`    ${r.name.padEnd(pad)}  ${kb(r.gzip).padStart(9)}  / ${"—".padStart(9)}  ${d.padStart(10)}${flag}`);
+  }
+}
 const totalBudget = total === undefined ? "—" : kb(total);
 const totalDelta = baseline?.total === undefined ? "—" : signed(totalGzip - baseline.total);
 console.log(
@@ -200,6 +263,11 @@ if (updateBaseline) {
     measured: new Date().toISOString().slice(0, 10),
     total: totalGzip,
     ...(strict ? { entries: Object.fromEntries(rows.map((r) => [r.rel, r.gzip])) } : {}),
+    // T878 — a dozen directory numbers, for the packages that cannot carry a
+    // hundred file ones. Sorted so a diff shows the directory that moved.
+    ...(groupByDir
+      ? { dirs: Object.fromEntries([...dirGzip.entries()].sort(([a], [b]) => a.localeCompare(b))) }
+      : {}),
   };
   pkg.sizeBudget = { ...cfg, baseline: next };
   const indent = /\n([ \t]+)"name"/.exec(pkgRaw)?.[1]?.length ?? 2;

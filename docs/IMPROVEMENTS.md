@@ -2148,18 +2148,6 @@ leaves vectorless sites without a tile. The block adds **no backend**.
 > workflows were copied from each other and then diverged. Nothing enumerates the
 > workspace and asserts each publishable package is covered.
 
-### LXIX.6 A total-only baseline cannot localize a regression (T878)
-
-T863 gave react-sdk a delta guard, but `strict: false` means the baseline is a
-single `total`, because per-file baselines over ~100 `tsc` outputs would be an
-unreviewable manifest. So the guard can now say *"the package grew 4 kB"* and
-never *"which file"* — and it has already had to: the 7.8 kB that put react-sdk
-over its old ceiling is still unattributed.
-
-A middle ground exists: baseline per **directory** (`core/`, `ui/`, `hooks/`)
-rather than per file. Roughly a dozen numbers, reviewable, and enough to point at
-the change.
-
 ### LXIX.8 Two governed prose files declare the same 13 section anchors (T902)
 
 `STRATEGY.md` and `IMPROVEMENTS.md` both number their sections from the same outline,

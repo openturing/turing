@@ -19,12 +19,31 @@
   "keywords": [
     "viglet",
     "turing",
+    "viglet-turing",
     "cli",
     "enterprise-search",
+    "ai-search",
     "ai-agent",
-    "eval"
+    "agent-framework",
+    "rag",
+    "llm",
+    "mcp",
+    "chatbot",
+    "eval",
+    "llm-evaluation",
+    "semantic-search",
+    "self-hosted"
   ],
-  "author": "Alexandre Oliveira",
+  "homepage": "https://turing.viglet.org",
+  "bugs": {
+    "url": "https://github.com/openviglet/turing-ce/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/openviglet/turing-ce.git",
+    "directory": "frontend/packages/cli"
+  },
+  "author": "Viglet <opensource@viglet.org> (https://viglet.org)",
   "license": "Apache-2.0",
   "devDependencies": {
     "@types/node": "^26.1.1",
