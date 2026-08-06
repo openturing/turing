@@ -72,9 +72,12 @@
 > reopened an eleventh time with the capstone nobody wrote — eleven tasks of eviction
 > correctness, none verified by actually writing then searching (T911). **T911 SHIPPED —
 > the block's thesis is now proven end-to-end and mutation-checked.** What remains is
-> 💭 only: T897 and T905 declined on substance with recorded triggers, T912 a cohesion
-> note on where T911's coverage lives. **No 📋 work; treat the block as closed** unless a
-> trigger fires. §LXVIII.4–.19,
+> 💭 only. **T912 SHIPPED (its premise amended on execution); the block is exhausted.**
+> Twelve tasks shipped across §LXVIII; what is left is 💭 T897 and 💭 T905, both declined
+> on substance with recorded resume triggers that have not fired. **Do not reopen BU to
+> find work** — every `@Cacheable` was audited and all have an eviction path, no direct
+> `EntityManager` DML exists, and the thesis is proven end-to-end and mutation-checked.
+> §LXVIII.4–.19,
 > created 2026-08-02; Block **BT** = The POST-native default left its consumers
 > behind — T710 made `postNative: true` the default and the provider sets
 > `data = null`, but three `turing-app` consumers still read it: `SearchContent`
@@ -305,6 +308,8 @@ number" looked free but wasn't. Grepping three files (`ROADMAP.md`,
    lists fully-shipped blocks), then bump the letter after creating the block.
 
 ## Log (most recent first)
+
+- **T912 SHIPPED — Block BU exhausted** (§LXVIII — **the filed premise was wrong and was amended before the fix**: I claimed an SDK restructure could drop the coverage silently; mutating the property away fails three tests on their own precondition, so it can only be deleted visibly. What remained was the *opposite* direction — nobody changing `TurSNSearchCacheEvictor` could learn a proof of it exists, since the evictor named no test and the test lives in a file promising the JS SDK. Fixed with a pointer each way rather than a move: the tidy split costs a second context or a 600-line fixture hoist, which cohesion alone does not buy. **No 📋 work remains in BU** — only 💭 T897 and 💭 T905, declined on substance with unmet triggers) — 2026-08-04.
 
 - **T912 CREATED** (💭, Block BU §LXVIII.19 — self-critique of how T911 was delivered: `turing.search.cache.enabled=true` is set in exactly one place in the suite, a `@DynamicPropertySource` inside `TurSdkContractIT`, so that class now owns three cache-eviction assertions and none is about the SDK. Reusing it was the right trade (a dedicated context costs ~40s for millisecond tests), but the failure mode is real: an SDK-driven restructure deletes the only end-to-end eviction proof without looking like it, and the name means nobody looking for cache tests opens the file) — 2026-08-04.
 
