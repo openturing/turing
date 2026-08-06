@@ -7,6 +7,8 @@
   "scripts": {
     "build": "tsc",
     "dev": "tsc --watch",
+    "test": "vitest run",
+    "test:watch": "vitest",
     "size": "node ../../scripts/check-size.mjs",
     "size:update": "node ../../scripts/check-size.mjs --update-baseline",
     "prepublishOnly": "npm run build && npm run size",
@@ -48,19 +50,24 @@
     }
   },
   "devDependencies": {
+    "@storybook/addon-docs": "^10.5.1",
     "@storybook/addon-links": "^10.5.1",
     "@storybook/react": "^10.5.1",
     "@storybook/react-vite": "^10.5.1",
+    "@testing-library/jest-dom": "^7.0.0",
+    "@testing-library/react": "^16.3.0",
     "@types/react": "^19.2.17",
+    "@types/react-dom": "^19.0.0",
     "@vitejs/plugin-react": "^6.0.3",
     "axios": "^1.18.1",
+    "jsdom": "^29.1.1",
     "react": "^19.2.7",
     "react-dom": "^19.2.7",
     "react-router-dom": "^7.18.1",
     "storybook": "^10.5.1",
     "typescript": "^6.0.2",
     "vite": "^8.0.16",
-    "@storybook/addon-docs": "^10.5.1"
+    "vitest": "^4.1.10"
   },
   "repository": {
     "type": "git",

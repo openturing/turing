@@ -2148,17 +2148,6 @@ leaves vectorless sites without a tile. The block adds **no backend**.
 > workflows were copied from each other and then diverged. Nothing enumerates the
 > workspace and asserts each publishable package is covered.
 
-### LXIX.5 The most-consumed package ships zero tests (T877)
-
-`@viglet/turing-react-sdk` has no `test` script and **no test files at all** (0,
-against 17 in the vanilla SDK and 11 in react-ui). T861's `--if-present` keeps
-the matrix green by skipping it, which is the honest behaviour for a package with
-no suite and the wrong outcome for this one: it is the package the admin app, the
-showcase and all three marketplace examples consume.
-
-Start where the risk is, not with a coverage target — the provider/store contract
-that T710 changed under its consumers (§LXVII) is the obvious first suite.
-
 ### LXIX.6 A total-only baseline cannot localize a regression (T878)
 
 T863 gave react-sdk a delta guard, but `strict: false` means the baseline is a

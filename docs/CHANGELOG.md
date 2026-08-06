@@ -1228,3 +1228,4 @@
 - **T873** — validate-js.yml now builds and tests the CLI and the flow DSL on every dispatch, so their 115 tests fail in CI instead of at release time, and the size gate is a declared matrix property rather than a guess from the package scope.
 - **T874** — the admin app is a validate-js.yml matrix entry, so its 222 vitest tests and its tsc-plus-vite build now run in CI instead of only on a developer's machine.
 - **T913** — the undici override keeps its security floor but stops at the 7 line, so jsdom loads again and the 51 test files that could not start a worker run their 304 tests.
+- **T877** — the React SDK has a vitest suite, and its first 17 tests cover the provider/store contract T710 changed: which transport runs, which of data and structured is authoritative, that facet and page actions write the URL, that implicit params never reach it, and that a late response cannot overwrite a newer one.
