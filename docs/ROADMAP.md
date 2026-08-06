@@ -25,7 +25,6 @@
 
 - 💭 **T897** (deps: T870 ✅) **Per-site eviction has to reach outside the Spring `Cache` contract** — Enumerating a site's keys needs `getNativeCache()` to be a `Map`, so a provider that is not one silently degrades to clearing every site — a generation counter in the key would not. → §LXVIII.6
 - 💭 **T905** (deps: T903 ✅) **The snapshot and field-config caches have no backstop sweep** — Their correctness rests entirely on eviction being right — the assumption that was wrong three times in this block — and a wrong entry survives until the next SN write. → §LXVIII.12
-- 💭 **T912** (deps: T911 ✅) **The suite's only cache-enabled context belongs to a class named for the SDK** — Cache behaviour is tested inside `TurSdkContractIT` because it is the one context with the cache on, so an SDK-driven restructure would drop that coverage without looking like it. → §LXVIII.19
 
 ## Block BV — The quality gate stops at the package boundary (§LXIX)
 

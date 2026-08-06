@@ -61,6 +61,14 @@ import lombok.extern.slf4j.Slf4j;
  * {@link Cache#clear()}: coarser than intended, still correct.
  * </p>
  *
+ * <p>
+ * T911 / T912 — this class is proved end to end, not only by unit tests. {@code
+ * TurSdkContractIT} runs the suite's one cache-enabled context and asserts that indexing a
+ * document, and separately editing a spotlight, removes this site's entries and moves the
+ * next answer. That test lives in a file named for the JS SDK contract, so it is named here:
+ * whoever changes eviction should know the proof exists before concluding it does not.
+ * </p>
+ *
  * @author Alexandre Oliveira
  * @since 2026.3.4
  */

@@ -2185,29 +2185,6 @@ change owner often enough that "it is correct today" stops being a claim anyone 
 check. If it is taken: daily, matching `searchAPI`, and logging at a level that says a
 backstop fired, so a deployment relying on it is visible rather than merely surviving.
 
-### LXVIII.19 The suite's only cache-enabled context belongs to a class named for the SDK (T912)
-
-`turing.search.cache.enabled=true` is set in exactly one place in the whole suite: a
-`@DynamicPropertySource` inside `TurSdkContractIT`, whose name and javadoc say it exists
-to pin the server side of the JS SDK's wire. T859 put the first cache test there for a
-good reason — the context already existed — and T911 added two more for the same reason.
-The class now owns three assertions about cache eviction and none of them is about the
-SDK.
-
-The cost of the alternative is real and is why it was not taken: a dedicated
-`@SpringBootTest` with one differing property is a second context, roughly forty
-seconds, for tests that take milliseconds once it is up.
-
-What makes it worth a line anyway is the failure mode. Someone restructuring, splitting
-or retiring this class for SDK reasons has no signal that they are also deleting the
-only end-to-end proof that a write invalidates a cached answer — the thing eleven tasks
-were about. The name actively misleads: a reader looking for cache tests will not open
-it, and a reader opening it will not expect to find them.
-
-Cheapest honest fix is not a new context but a name and a docstring that admit what the
-class is: the suite's cache-enabled context, shared by whoever needs one. Splitting the
-cache tests into their own class is the tidier answer and costs the forty seconds.
-
 ## LXIX. The quality gate stops at the package boundary (Block BV)
 
 > Block BS fixed the gate for one package. Adopting the same two changes across

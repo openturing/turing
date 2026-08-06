@@ -85,6 +85,17 @@ import tools.jackson.databind.node.ObjectNode;
  * Content is indexed synchronously by {@link TurImportExchange} (no JMS queue
  * await), so the assertions are deterministic.
  *
+ * <p><b>This is also the suite's only cache-enabled context</b>, and therefore owns the
+ * end-to-end proof of Block BU's search-cache eviction — see
+ * {@link #indexingEvictsTheCachedAnswerAndChangesIt} and
+ * {@link #aConfigurationWriteEvictsTheCachedAnswer}. That is a deliberate trade rather than
+ * drift (T912 / §LXVIII.19): a dedicated context costs ~40s for tests that take
+ * milliseconds. It is recorded here because the class name promises only the SDK, so
+ * nothing else would tell a reader the cache tests are in this file. The cache tests defend
+ * themselves — removing {@code turing.search.cache.enabled} fails them on their own
+ * precondition rather than making them vacuous — but if this class is ever split, they need
+ * a home with the property, not merely a home.
+ *
  * <p>Inherits the ephemeral H2 + per-JVM Artemis isolation from
  * {@link AbstractTuringSpringIT}. The {@code @SpringBootTest} here re-declares
  * {@code spring.jmx.enabled=true} (so the parent's mandatory JMX bean still
