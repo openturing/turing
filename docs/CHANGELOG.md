@@ -1212,3 +1212,4 @@
 - **T903** — Both snapshot caches clear through the shared after-commit scheduler the search cache now uses, so one seam decides when every SN eviction becomes visible.
 - **T904** — The three evictions on transactional paths clear through the after-commit scheduler, and a lint refuses a new @CacheEvict in a transactional class.
 - **T906** — The three bulk deletes are gone so the callbacks fire, the two hand compensations that stood in for them are removed, and the lint now derives its scope from the entities that declare a listener.
+- **T907** — The lint reads the entity out of each repository declaration instead of guessing it from the file name, and names the repositories the derivation must keep finding.

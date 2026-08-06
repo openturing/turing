@@ -2185,30 +2185,6 @@ change owner often enough that "it is correct today" stops being a claim anyone 
 check. If it is taken: daily, matching `searchAPI`, and logging at a level that says a
 backstop fired, so a deployment relying on it is visible rather than merely surviving.
 
-### LXVIII.14 The bulk-delete lint maps an entity to its repository by name alone (T907)
-
-T906 stopped the lint taking a list of packages and had it derive the guarded set from
-the entities that declare `@EntityListeners`. That removed the failure mode where a gate
-stops at the surface it was written for — and introduced a smaller one in its place.
-
-The derivation maps an entity to its repository by name: `TurAIAgent` →
-`TurAIAgentRepository.java`. The convention holds for every listener-bearing entity in
-the codebase today, checked explicitly. Nothing keeps it holding. Rename a repository,
-or introduce one that manages a listener-bearing entity under another name, and that
-entity quietly leaves the guarded set — the lint keeps passing, and it passes by
-checking less.
-
-This is the same shape as the defect it replaced, one level up: an assumption that is true
-when written, load-bearing, and unasserted. T906 already learned the lesson once by adding
-`assertThat(guardedRepositories).isNotEmpty()`, which catches the derivation returning
-*nothing*. It does not catch the derivation returning *less*.
-
-The check is cheap and exact, because the real mapping is readable: a repository
-declares its entity in `extends JpaRepository<Entity, Id>`. Parse that instead of
-guessing from the file name — or keep the name-based lookup and assert the two agree,
-which also documents the convention in the one place that depends on it. Either way the
-lint stops resting on a naming habit.
-
 ## LXIX. The quality gate stops at the package boundary (Block BV)
 
 > Block BS fixed the gate for one package. Adopting the same two changes across

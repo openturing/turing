@@ -17,9 +17,11 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.function.Predicate;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
@@ -77,7 +79,14 @@ class TurSNBulkDeleteConventionsTest {
     private static final String ALLOW_MARKER = "bulk-delete-ok";
 
     private static final Path SOURCE_ROOT = Paths.get("src/main/java");
-    private static final Path ENTITY_ROOT = SOURCE_ROOT.resolve("com/viglet/turing/persistence/model");
+    private static final Path ENTITY_ROOT =
+            SOURCE_ROOT.resolve("com/viglet/turing/persistence/model");
+    private static final Path REPOSITORY_ROOT =
+            SOURCE_ROOT.resolve("com/viglet/turing/persistence/repository");
+
+    /** The entity a repository manages, read from its own declaration. */
+    private static final Pattern MANAGED_ENTITY =
+            Pattern.compile("extends\\s+JpaRepository\\s*<\\s*(\\w+)\\s*,", Pattern.DOTALL);
 
     /**
      * T906 / §LXVIII.13 — the guarded set is <strong>derived</strong>, not listed.
@@ -91,30 +100,79 @@ class TurSNBulkDeleteConventionsTest {
      * </p>
      *
      * <p>
-     * The rule is about entities, so it is read off the entities: any type declaring
-     * {@code @EntityListeners} must not be reachable by a delete that skips callbacks.
-     * Repositories are matched by the {@code <Entity>Repository} convention this codebase
-     * follows without exception.
+     * T907 / §LXVIII.14 — and the derivation reads the <em>declaration</em>, not the file
+     * name. It first matched repositories by the {@code <Entity>Repository} convention,
+     * which held everywhere at the time and was held by nothing: a rename would have
+     * dropped an entity from the guarded set in silence, leaving the lint passing by
+     * checking less — the same shape as the defect it replaced, one level up. A repository
+     * states the entity it manages in {@code extends JpaRepository<Entity, Id>}, so that is
+     * what is parsed.
      * </p>
      */
     private static Set<String> repositoriesOfEntitiesWithListeners() throws IOException {
-        Set<String> repositories = new TreeSet<>();
-        try (Stream<Path> paths = Files.walk(ENTITY_ROOT)) {
+        Set<String> entitiesWithListeners = sourcesMatching(ENTITY_ROOT,
+                source -> source.contains("@EntityListeners"));
+
+        Set<String> guarded = new TreeSet<>();
+        try (Stream<Path> paths = Files.walk(REPOSITORY_ROOT)) {
             paths.filter(Files::isRegularFile)
                     .filter(p -> p.getFileName().toString().endsWith(".java"))
-                    .forEach(p -> {
-                        try {
-                            if (Files.readString(p, StandardCharsets.UTF_8)
-                                    .contains("@EntityListeners")) {
-                                String entity = p.getFileName().toString().replace(".java", "");
-                                repositories.add(entity + "Repository.java");
-                            }
-                        } catch (IOException ignored) {
-                            // Unreadable sources cannot be asserted on.
-                        }
-                    });
+                    .forEach(p -> managedEntity(p)
+                            .filter(entitiesWithListeners::contains)
+                            .ifPresent(entity -> guarded.add(p.getFileName().toString())));
         }
-        return repositories;
+        return guarded;
+    }
+
+    /** Simple names of the types under {@code root} whose source satisfies {@code test}. */
+    private static Set<String> sourcesMatching(Path root, Predicate<String> test)
+            throws IOException {
+        Set<String> names = new TreeSet<>();
+        try (Stream<Path> paths = Files.walk(root)) {
+            paths.filter(Files::isRegularFile)
+                    .filter(p -> p.getFileName().toString().endsWith(".java"))
+                    .forEach(p -> read(p).filter(test).ifPresent(
+                            source -> names.add(p.getFileName().toString().replace(".java", ""))));
+        }
+        return names;
+    }
+
+    private static Optional<String> managedEntity(Path repositoryFile) {
+        return read(repositoryFile)
+                .map(MANAGED_ENTITY::matcher)
+                .filter(Matcher::find)
+                .map(matcher -> matcher.group(1));
+    }
+
+    private static Optional<String> read(Path file) {
+        try {
+            return Optional.of(Files.readString(file, StandardCharsets.UTF_8));
+        } catch (IOException ignored) {
+            // A source we cannot read cannot be asserted on.
+            return Optional.empty();
+        }
+    }
+
+    /**
+     * T907 / §LXVIII.14 — the derivation is asserted, not trusted.
+     *
+     * <p>
+     * The lint's whole value is the set it computes, and a set that quietly shrinks leaves
+     * it green while it stops checking. {@code isNotEmpty()} catches the derivation
+     * returning nothing; only naming members catches it returning less. These four are the
+     * repositories whose entities were actually caught deleting around a listener — the
+     * cases this lint exists for — so if the derivation stops finding them, the reason to
+     * have it has gone with them.
+     * </p>
+     */
+    @Test
+    void theDerivationFindsTheRepositoriesItMustGuard() throws IOException {
+        assertThat(repositoriesOfEntitiesWithListeners())
+                .as("derived from @EntityListeners + extends JpaRepository<Entity, Id>")
+                .contains("TurSNSiteFieldExtRepository.java",
+                        "TurAIAgentRepository.java",
+                        "TurChatFlowRepository.java",
+                        "TurPersonaRepository.java");
     }
 
     @Test
