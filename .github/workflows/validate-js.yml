@@ -24,6 +24,11 @@ jobs:
             size: false
           - workspace: "@viglet/turing-flow-dsl"
             size: false
+          # T874: the admin app carries the largest frontend suite in the repo
+          # and ran in no workflow at all — validate.yml is the Maven build and
+          # publish.yml only uploads the jar.
+          - workspace: turing-app
+            size: false
           - workspace: turing-example-mythical-creatures
             size: false
           - workspace: turing-example-space-missions

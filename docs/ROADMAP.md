@@ -23,7 +23,6 @@
 
 ## Block BV — The quality gate stops at the package boundary (§LXIX)
 
-- 📋 **T874** (deps: T861 ✅) **The admin app's 171 tests run in no workflow** — `turing-app`'s vitest suite is the largest in the repo and executes in no CI job at all, so the suite T868 is about to invest in is one nobody runs. → §LXIX.2
 - 📋 **T877** (deps: T861 ✅) **The most-consumed package ships zero tests** — `@viglet/turing-react-sdk` has no `test` script and no test files, so T861's `--if-present` correctly-but-unhelpfully skips the most-consumed package. → §LXIX.5
 - 💭 **T878** (deps: T863 ✅) **A total-only baseline cannot localize a regression** — react-sdk is `strict: false`, so its baseline is one number that can say the package grew 4 kB but never which file — baseline per directory instead. → §LXIX.6
 - 📋 **T892** (deps: —) **A Java enum and its hand-written TypeScript mirror drift with nothing watching** — `MISSING_DEFAULT_LLM` was in the backend enum and absent from the SDK union for eight months, narrowing the reason to `undefined` in every consumer. → §LXIX.7

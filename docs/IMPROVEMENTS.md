@@ -2148,17 +2148,6 @@ leaves vectorless sites without a tile. The block adds **no backend**.
 > workflows were copied from each other and then diverged. Nothing enumerates the
 > workspace and asserts each publishable package is covered.
 
-### LXIX.2 The admin app's 171 tests run in no workflow (T874)
-
-`turing-app` has a full vitest + RTL suite (171 tests) and it executes in **no**
-CI workflow: `validate.yml` is the Maven build, `validate-js.yml`'s matrix does
-not list `turing-app`, and `publish.yml` mentions it only to upload the jar. The
-one grep that proves it: `run test` appears in five workflow files, none of which
-resolve to the admin app.
-
-That is the largest frontend suite in the repo, and it is exactly the suite
-§LXVII.4 is about to invest in — a regression guard nobody runs is not a guard.
-
 ### LXIX.5 The most-consumed package ships zero tests (T877)
 
 `@viglet/turing-react-sdk` has no `test` script and **no test files at all** (0,

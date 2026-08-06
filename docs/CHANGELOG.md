@@ -1226,3 +1226,4 @@
 - **T875** — publish-js-sdk.yml now filters react-sdk instead of the vanilla SDK, so the package it publishes is the one it builds rather than a prepublishOnly side effect, and the publish is gated on the size budget and on tests when present.
 - **T876** — publish-sdk.yml releases the vanilla SDK behind the same build, size and test gates the other packages get, and the react-sdk release now patch-bumps only react-sdk so unpublished workspaces stop drifting from npm.
 - **T873** — validate-js.yml now builds and tests the CLI and the flow DSL on every dispatch, so their 115 tests fail in CI instead of at release time, and the size gate is a declared matrix property rather than a guess from the package scope.
+- **T874** — the admin app is a validate-js.yml matrix entry, so its 222 vitest tests and its tsc-plus-vite build now run in CI instead of only on a developer's machine.
