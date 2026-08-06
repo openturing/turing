@@ -29,9 +29,17 @@ import com.viglet.turing.persistence.model.agent.TurChatFlow;
  */
 public interface TurChatFlowRepository extends JpaRepository<TurChatFlow, String> {
 
-    @Modifying
-    @Query("delete from TurChatFlow f where f.id = ?1")
-    void delete(String id);
+    /**
+     * T906 / §LXVIII.13 — the {@code @Modifying} delete that used to live here is gone.
+     *
+     * <p>
+     * A JPQL bulk delete issues SQL without loading anything, so no {@code @PostRemove}
+     * fires — and {@code TurChatFlow} declares {@code @EntityListeners}, whose whole purpose
+     * is to run on exactly that event. Use the inherited {@code deleteById(id)} /
+     * {@code delete(entity)}, which do. {@code TurSNBulkDeleteConventionsTest} refuses a
+     * bulk delete on any entity that declares a listener.
+     * </p>
+     */
 
     /**
      * Re-fetches a flow as a fully-initialized entity by id. Unlike

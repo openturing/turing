@@ -737,11 +737,11 @@ public class TurChatFlowAPI {
                 .filter(flow -> flow.getTurAIAgent() != null
                         && agentId.equals(flow.getTurAIAgent().getId()))
                 .map(flow -> {
-                    turChatFlowRepository.delete(id);
-                    // Bulk-DML delete in the repository bypasses JPA entity
-                    // callbacks; wipe the flow-derived caches here so the engine
-                    // doesn't keep scoring against (or prompting from) a stale flow.
-                    chatFlowEngineService.evictFlowDerivedCaches();
+                    // T906 / §LXVIII.13 — delete the loaded entity, so @PostRemove
+                    // fires and TurChatFlowRouterEvictionListener calls
+                    // evictFlowDerivedCaches() itself. The explicit call that used to
+                    // stand here compensated for a bulk delete that no longer happens.
+                    turChatFlowRepository.delete(flow);
                     return true;
                 }).orElse(false);
     }

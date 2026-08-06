@@ -28,8 +28,6 @@ import com.viglet.turing.genai.authoring.AiAuthoringRequest;
 import com.viglet.turing.genai.authoring.AiAuthoringResponse;
 import com.viglet.turing.genai.authoring.TurAiAuthoringService;
 import com.viglet.turing.genai.authoring.persona.PersonaGeneration;
-import com.viglet.turing.genai.persona.TurPersonaStaticPromptCache;
-import com.viglet.turing.system.cache.TurCacheEvictionScheduler;
 import com.viglet.turing.persistence.dto.persona.TurPersonaDto;
 import com.viglet.turing.persistence.mapper.persona.TurPersonaMapper;
 import com.viglet.turing.persistence.model.persona.TurPersona;
@@ -131,20 +129,17 @@ public class TurPersonaAPI {
     private final TurStoreInstanceRepository turStoreInstanceRepository;
     private final TurMcpServerRepository turMcpServerRepository;
     private final TurAiAuthoringService aiAuthoringService;
-    private final TurCacheEvictionScheduler evictionScheduler;
 
     public TurPersonaAPI(TurPersonaRepository turPersonaRepository,
             TurPersonaMapper turPersonaMapper,
             TurStoreInstanceRepository turStoreInstanceRepository,
             TurMcpServerRepository turMcpServerRepository,
-            TurAiAuthoringService aiAuthoringService,
-            TurCacheEvictionScheduler evictionScheduler) {
+            TurAiAuthoringService aiAuthoringService) {
         this.turPersonaRepository = turPersonaRepository;
         this.turPersonaMapper = turPersonaMapper;
         this.turStoreInstanceRepository = turStoreInstanceRepository;
         this.turMcpServerRepository = turMcpServerRepository;
         this.aiAuthoringService = aiAuthoringService;
-        this.evictionScheduler = evictionScheduler;
     }
 
     @Operation(summary = "Persona List")
@@ -204,18 +199,13 @@ public class TurPersonaAPI {
     @Operation(summary = "Delete a Persona")
     @DeleteMapping("/{id}")
     @Secured({"ROLE_ADMIN", "AI_AGENT_DELETE"})
-    // Bulk-DML delete(id) bypasses JPA entity callbacks, so the
-    // TurPersonaStaticPromptEvictionListener never fires on this path; evict the
-    // persona static-prompt cache explicitly so a deleted persona leaves no stale
-    // composed block behind.
-    //
-    // T904 / §LXVIII.11 — through the shared scheduler rather than @CacheEvict: this
-    // method is @Transactional, and the annotation fires when it returns, which is not
-    // the same moment as the commit. The cache is read while composing a chat prompt,
-    // so an entry re-cached in that window outlives the delete.
+    // T906 / §LXVIII.13 — deleteById loads the entity, so @PostRemove fires and
+    // TurPersonaStaticPromptEvictionListener clears the static-prompt cache itself.
+    // The explicit eviction that used to stand here compensated for a bulk delete that
+    // no longer happens, and the comment explaining it was the only record anywhere
+    // that the bug existed.
     public boolean turPersonaDelete(@PathVariable String id) {
-        evictionScheduler.clearOnce(TurPersonaStaticPromptCache.CACHE_NAME);
-        turPersonaRepository.delete(id);
+        turPersonaRepository.deleteById(id);
         return true;
     }
 

@@ -73,7 +73,15 @@ public interface TurAIAgentRepository extends JpaRepository<TurAIAgent, String> 
     @Query("SELECT a FROM TurAIAgent a JOIN a.personas p WHERE p.id = ?1")
     List<TurAIAgent> findByPersonaId(String personaId);
 
-    @Modifying
-    @Query("delete from TurAIAgent a where a.id = ?1")
-    void delete(String id);
+    /**
+     * T906 / §LXVIII.13 — the {@code @Modifying} delete that used to live here is gone.
+     *
+     * <p>
+     * A JPQL bulk delete issues SQL without loading anything, so no {@code @PostRemove}
+     * fires — and {@code TurAIAgent} declares {@code @EntityListeners}, whose whole purpose
+     * is to run on exactly that event. Use the inherited {@code deleteById(id)} /
+     * {@code delete(entity)}, which do. {@code TurSNBulkDeleteConventionsTest} refuses a
+     * bulk delete on any entity that declares a listener.
+     * </p>
+     */
 }

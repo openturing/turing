@@ -48,7 +48,15 @@ public interface TurPersonaRepository extends JpaRepository<TurPersona, String> 
     /** Used by the store delete path (persona few-shot store). @since 2026.2.8 */
     List<TurPersona> findByFewShotStore_Id(String storeId);
 
-    @Modifying
-    @Query("delete from TurPersona p where p.id = ?1")
-    void delete(String id);
+    /**
+     * T906 / §LXVIII.13 — the {@code @Modifying} delete that used to live here is gone.
+     *
+     * <p>
+     * A JPQL bulk delete issues SQL without loading anything, so no {@code @PostRemove}
+     * fires — and {@code TurPersona} declares {@code @EntityListeners}, whose whole purpose
+     * is to run on exactly that event. Use the inherited {@code deleteById(id)} /
+     * {@code delete(entity)}, which do. {@code TurSNBulkDeleteConventionsTest} refuses a
+     * bulk delete on any entity that declares a listener.
+     * </p>
+     */
 }

@@ -11,6 +11,7 @@ package com.viglet.turing.db;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -75,50 +76,94 @@ class TurSNBulkDeleteConventionsTest {
      */
     private static final String ALLOW_MARKER = "bulk-delete-ok";
 
+    private static final Path SOURCE_ROOT = Paths.get("src/main/java");
+    private static final Path ENTITY_ROOT = SOURCE_ROOT.resolve("com/viglet/turing/persistence/model");
+
     /**
-     * Packages whose entities carry an eviction callback
-     * ({@code TurSNSearchCacheEvictionListener} / {@code TurSNSiteSnapshotEvictionListener}),
-     * plus the services that write them.
+     * T906 / §LXVIII.13 — the guarded set is <strong>derived</strong>, not listed.
+     *
+     * <p>
+     * This test was originally scoped to the SN packages, because that is where T899 found
+     * the defect — and three entities outside that scope turned out to carry the same pair.
+     * Two of them had already been patched by hand, each under a comment describing the bug
+     * precisely; nobody generalised it, so the third stayed broken. A guarded list written
+     * from where a bug was found is a list that stops at the bug.
+     * </p>
+     *
+     * <p>
+     * The rule is about entities, so it is read off the entities: any type declaring
+     * {@code @EntityListeners} must not be reachable by a delete that skips callbacks.
+     * Repositories are matched by the {@code <Entity>Repository} convention this codebase
+     * follows without exception.
+     * </p>
      */
-    private static final List<String> GUARDED_ROOTS = List.of(
-            "src/main/java/com/viglet/turing/persistence/repository/sn",
-            "src/main/java/com/viglet/turing/persistence/model/sn",
-            "src/main/java/com/viglet/turing/sn",
-            "src/main/java/com/viglet/turing/api/sn");
+    private static Set<String> repositoriesOfEntitiesWithListeners() throws IOException {
+        Set<String> repositories = new TreeSet<>();
+        try (Stream<Path> paths = Files.walk(ENTITY_ROOT)) {
+            paths.filter(Files::isRegularFile)
+                    .filter(p -> p.getFileName().toString().endsWith(".java"))
+                    .forEach(p -> {
+                        try {
+                            if (Files.readString(p, StandardCharsets.UTF_8)
+                                    .contains("@EntityListeners")) {
+                                String entity = p.getFileName().toString().replace(".java", "");
+                                repositories.add(entity + "Repository.java");
+                            }
+                        } catch (IOException ignored) {
+                            // Unreadable sources cannot be asserted on.
+                        }
+                    });
+        }
+        return repositories;
+    }
 
     @Test
     void noBulkDeleteWhereRemovalMustFireACallback() throws IOException {
         Set<String> violations = new TreeSet<>();
+        Set<String> guardedRepositories = repositoriesOfEntitiesWithListeners();
+        assertThat(guardedRepositories)
+                .as("no entity declares @EntityListeners — the derivation is broken, "
+                        + "and this test would pass by finding nothing to check")
+                .isNotEmpty();
 
-        for (String root : GUARDED_ROOTS) {
-            Path dir = Paths.get(root);
-            if (!Files.isDirectory(dir)) {
-                continue;
-            }
-            try (Stream<Path> paths = Files.walk(dir)) {
-                paths.filter(Files::isRegularFile)
-                        .filter(p -> p.getFileName().toString().endsWith(".java"))
-                        .forEach(p -> scan(p, violations));
-            }
+        try (Stream<Path> paths = Files.walk(SOURCE_ROOT)) {
+            paths.filter(Files::isRegularFile)
+                    .filter(p -> p.getFileName().toString().endsWith(".java"))
+                    // A declared bulk delete is only a defect on a guarded repository; a
+                    // *call* is banned everywhere, because there are none left and the
+                    // cheapest moment to refuse the next one is before it is written.
+                    .filter(p -> guardedRepositories.contains(p.getFileName().toString())
+                            || BATCH_CALL_SCOPE.test(p))
+                    .forEach(p -> scan(p, guardedRepositories, violations));
         }
 
         assertThat(violations)
                 .as("""
-                        A bulk delete manages no entity, so no @PostRemove fires and the caches that
-                        depend on it are left stale (T899 / §LXVIII.7). Load the rows and use
-                        delete(entity) / deleteAll(iterable) — every site that hit this had already
-                        loaded them, so it costs no extra query. If a batch really is required,
-                        evict explicitly and mark the line '%s' with the reason. Offenders:"""
+                        A bulk delete manages no entity, so no @PostRemove fires and the caches
+                        that depend on it are left stale (T899 / §LXVIII.7, widened by T906 /
+                        §LXVIII.13 to every entity that declares a listener). Load the rows and
+                        use delete(entity) / deleteById(id) / deleteAll(iterable) — every site
+                        that hit this had already loaded them, so it costs no extra query. If a
+                        batch really is required, evict explicitly and mark the line '%s' with
+                        the reason. Offenders:"""
                         .formatted(ALLOW_MARKER))
                 .isEmpty();
     }
 
-    private static void scan(Path javaFile, Set<String> violations) {
+    /** A bulk-delete *call* is refused anywhere under the app's own packages. */
+    private static final java.util.function.Predicate<Path> BATCH_CALL_SCOPE =
+            path -> path.toString().replace(File.separatorChar, '/')
+                    .contains("/com/viglet/turing/");
+
+    private static void scan(Path javaFile, Set<String> guardedRepositories,
+            Set<String> violations) {
         try {
             String source = Files.readString(javaFile, StandardCharsets.UTF_8);
             String name = javaFile.getFileName().toString();
             long batched = count(BATCH_DELETE_CALL, source);
-            long declared = count(MODIFYING_DELETE_QUERY, source);
+            long declared = guardedRepositories.contains(name)
+                    ? count(MODIFYING_DELETE_QUERY, source)
+                    : 0L;
             long offences = batched + declared;
             if (offences == 0) {
                 return;

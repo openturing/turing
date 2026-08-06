@@ -322,7 +322,11 @@ public class TurAIAgentAPI {
             siteGenAi.setTurAIAgent(null);
             this.turSNSiteGenAiRepository.saveAndFlush(siteGenAi);
         }
-        this.turAIAgentRepository.delete(id);
+        // T906 / §LXVIII.13 — deleteById loads the entity, so @PostRemove fires and
+        // TurSNSiteSnapshotEvictionListener drops the snapshot that still names this
+        // agent. The bulk delete this replaces fired nothing and compensated with
+        // nothing, so a deleted agent stayed in the snapshot cache indefinitely.
+        this.turAIAgentRepository.deleteById(id);
         return true;
     }
 

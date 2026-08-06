@@ -174,7 +174,9 @@ class TurAIAgentAPITest {
                 .andExpect(status().isOk())
                 .andExpect(content().string("true"));
 
-        verify(turAIAgentRepository, times(1)).delete("1");
+        // T906 — deleteById loads the entity, so @PostRemove fires and the snapshot
+        // eviction listener runs; the bulk delete this replaces fired neither.
+        verify(turAIAgentRepository, times(1)).deleteById("1");
     }
 
     @Test

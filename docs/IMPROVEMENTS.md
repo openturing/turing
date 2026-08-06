@@ -2185,33 +2185,6 @@ change owner often enough that "it is correct today" stops being a claim anyone 
 check. If it is taken: daily, matching `searchAPI`, and logging at a level that says a
 backstop fired, so a deployment relying on it is visible rather than merely surviving.
 
-### LXVIII.13 Three entities outside the T899 lint delete around their eviction listener (T906)
-
-T899 removed the bulk deletes that bypassed `@PostRemove` and added
-`TurSNBulkDeleteConventionsTest` to stop them coming back. That lint scans the SN
-packages, because that is where the defect was found — so it is a gate written for one
-surface, and the entities outside it inherited nothing.
-
-Three do. `TurPersona`, `TurAIAgent` and `TurChatFlow` each carry `@EntityListeners`
-*and* a `@Modifying @Query("delete …")` on their repository, which is exactly the pair
-T899 proved cannot coexist.
-
-Two of the three are live. `TurAIAgentAPI` deletes an agent through the bulk query, and
-`TurAIAgent` is annotated with `TurSNSiteSnapshotEvictionListener` — so deleting an
-agent leaves the SN snapshot cache holding it. `TurChatFlowAPI` does the same for a
-flow, whose listener evicts the router cache. Neither compensates.
-
-The third is the interesting one: `TurPersonaAPI` *does* compensate, with an explicit
-evict and a comment saying why — *"Bulk-DML delete(id) bypasses JPA entity callbacks, so
-the listener never fires on this path."* Someone diagnosed this exact bug, fixed their
-instance, and wrote it down, and the other two were never found because nothing looked.
-A comment is not a gate.
-
-The work is to widen the lint past `persistence.repository.sn` to every entity that
-declares an eviction listener, and to remove the two bulk deletes it then reports. The
-persona workaround can go at the same time: with the callback firing, the explicit evict
-is redundant.
-
 ## LXIX. The quality gate stops at the package boundary (Block BV)
 
 > Block BS fixed the gate for one package. Adopting the same two changes across
