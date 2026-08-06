@@ -2162,29 +2162,6 @@ anyway, so precision only ever mattered for the indexing path, where the scan al
 works. Resume when a provider whose native cache is not a `Map` is actually wired, or
 when a bulk import's eviction cost shows up in a profile.
 
-### LXVIII.12 The snapshot and field-config caches have no backstop sweep (T905)
-
-`searchAPI` has a `@Scheduled` sweep. Five tasks of this block made its eviction
-correct, and the sweep is now only the backstop — but that is precisely its value: if
-eviction ever fails, staleness is bounded at 24 hours instead of forever.
-
-`turSNSiteSearchSnapshot` and `turSNSiteFieldConfig` have no such bound. Their
-correctness rests entirely on the eviction path being right — the assumption that was
-wrong repeatedly in this block. A snapshot that goes stale for a reason nobody has
-thought of stays stale until the next write to any SN entity, which on a settled site
-may be never; the only recovery is a restart.
-
-Deliberately **not** built. A periodic clear on caches that are on by default costs a
-rebuild per site per period for a fault nobody has observed — and it dulls the signal: a
-bug that would announce itself as permanent staleness instead becomes staleness that
-mysteriously heals, which is harder to diagnose, not easier. Buying insurance by
-disabling the alarm is a poor trade while these paths are under active repair.
-
-Resume if a stale snapshot is ever observed in the field, or if the eviction paths
-change owner often enough that "it is correct today" stops being a claim anyone can
-check. If it is taken: daily, matching `searchAPI`, and logging at a level that says a
-backstop fired, so a deployment relying on it is visible rather than merely surviving.
-
 ## LXIX. The quality gate stops at the package boundary (Block BV)
 
 > Block BS fixed the gate for one package. Adopting the same two changes across

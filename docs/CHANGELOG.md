@@ -1218,3 +1218,4 @@
 - **T910** — Both doors are pure functions now, exercised against fixtures: a marked call is exempt, one marker never covers a second, and an allowlisted member is not reported.
 - **T911** — An IT indexes and edits a spotlight against a live cache and asserts the entries go and the answer moves, so the stored key and the evictor's prefix are checked against each other.
 - **T912** — The evictor names the IT that proves it and the IT declares it owns the cache-enabled context, so the end-to-end proof is reachable from the code it covers.
+- **T905** — A daily locked sweep bounds how long a missed eviction can serve stale SN configuration, and says "backstop" in the log so a healthy sweep is not read as a defect.

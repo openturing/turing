@@ -131,6 +131,12 @@
       "description": "Enable or disable the fine-grained permissions system. When disabled, all authenticated users receive full admin privileges."
     },
     {
+      "name": "turing.sn.snapshot.cache.ttl",
+      "type": "java.time.Duration",
+      "defaultValue": "24h",
+      "description": "Interval of the backstop sweep that clears the SN snapshot and field-config caches. These are evicted authoritatively on every write; the sweep only bounds how long a missed eviction could serve stale configuration. Unit-bearing: '24h', 'PT12H' (a bare number is milliseconds)."
+    },
+    {
       "name": "turing.search.cache.enabled",
       "type": "java.lang.Boolean",
       "description": "Enable or disable caching for search query results."
