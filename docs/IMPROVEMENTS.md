@@ -2136,32 +2136,6 @@ leaves vectorless sites without a tile. The block adds **no backend**.
 > also the reason they have survived: the feature is opt-in and nobody who opted
 > in has reported it.
 
-### LXVIII.6 Per-site eviction has to reach outside the Spring `Cache` contract (T897)
-
-`TurSNSearchCacheEvictor` (T870) evicts a site by listing the cache's keys and matching
-the `site=` prefix. The Spring `Cache` interface has no key enumeration and no prefix
-eviction, so the keys come from `getNativeCache()` — a `Map` for both managers this app
-wires today, and an assumption about the provider rather than about the abstraction. A
-provider whose native cache is not a `Map` falls back to clearing every site: correct,
-but it cold-starts every other site, which is the cost per-site eviction existed to
-avoid.
-
-The **silent** half is now fixed: the degradation is reported once at `WARN` naming the
-provider, so such a deployment learns its per-site eviction is not per-site. What
-remains is the design question.
-
-The alternative is eviction as a *write* rather than a *scan*: a per-(tenant, site)
-generation counter included in the key (`tenant=t::site=x|gen=7|…`). Eviction becomes
-one increment — O(1), provider-independent, cluster-safe — and stale entries are
-unreachable until the backstop sweep collects them. The cost: the sweep becomes
-load-bearing again, and the counter is one more piece of cluster-shared state.
-
-Deliberately **not** built. No third provider exists, no profile shows the scan, and
-T896 made the case weaker still — a configuration write now clears the whole cache
-anyway, so precision only ever mattered for the indexing path, where the scan already
-works. Resume when a provider whose native cache is not a `Map` is actually wired, or
-when a bulk import's eviction cost shows up in a profile.
-
 ## LXIX. The quality gate stops at the package boundary (Block BV)
 
 > Block BS fixed the gate for one package. Adopting the same two changes across

@@ -72,12 +72,11 @@
 > reopened an eleventh time with the capstone nobody wrote — eleven tasks of eviction
 > correctness, none verified by actually writing then searching (T911). **T911 SHIPPED —
 > the block's thesis is now proven end-to-end and mutation-checked.** What remains is
-> 💭 only. **T912 SHIPPED (its premise amended on execution); the block is exhausted.**
-> Twelve tasks shipped across §LXVIII; what is left is 💭 T897 and 💭 T905, both declined
-> on substance with recorded resume triggers that have not fired. **Do not reopen BU to
-> find work** — every `@Cacheable` was audited and all have an eviction path, no direct
-> `EntityManager` DML exists, and the thesis is proven end-to-end and mutation-checked.
-> §LXVIII.4–.19,
+> 💭 only. **BLOCK CLOSED and the roadmap heading dropped**: 13 shipped, T897 retired with
+> its reason recorded, nothing open. The thesis is proven end-to-end and mutation-checked,
+> every `@Cacheable` was audited and all have an eviction path, and no direct
+> `EntityManager` DML exists. §LXVIII is fully consumed. **Do not reopen BU** — a genuinely
+> new search-cache defect would be a new block, not this one. §LXVIII.4–.19 (all shipped),
 > created 2026-08-02; Block **BT** = The POST-native default left its consumers
 > behind — T710 made `postNative: true` the default and the provider sets
 > `data = null`, but three `turing-app` consumers still read it: `SearchContent`
@@ -308,6 +307,8 @@ number" looked free but wasn't. Grepping three files (`ROADMAP.md`,
    lists fully-shipped blocks), then bump the letter after creating the block.
 
 ## Log (most recent first)
+
+- **T905 SHIPPED, T897 RETIRED — Block BU CLOSED, heading dropped** (both remaining ideas resolved rather than deferred a third time. **T905 built**: `TurSNSnapshotCacheSweep`, daily, unit-bearing per T871, `@SchedulerLock`'d. The "it dulls the signal" objection is answered *in the log* rather than dismissed — the line says "backstop", gives the count, and states plainly it does not mean any entry was stale, because the sweep bounds staleness and cannot detect it. **T897 retired, not built**: its "silently" was already fixed by the WARN it shipped, and the generation counter would replace *removal* (`keys.forEach(cache::evict)`) with *abandonment* — dead entries accruing until the daily sweep, on a cache holding full response beans — to port to a non-Map provider neither wired manager is. 19 changelog entries keep the heading; the roadmap heading is gone) — 2026-08-04.
 
 - **T912 SHIPPED — Block BU exhausted** (§LXVIII — **the filed premise was wrong and was amended before the fix**: I claimed an SDK restructure could drop the coverage silently; mutating the property away fails three tests on their own precondition, so it can only be deleted visibly. What remained was the *opposite* direction — nobody changing `TurSNSearchCacheEvictor` could learn a proof of it exists, since the evictor named no test and the test lives in a file promising the JS SDK. Fixed with a pointer each way rather than a move: the tidy split costs a second context or a 600-line fixture hoist, which cohesion alone does not buy. **No 📋 work remains in BU** — only 💭 T897 and 💭 T905, declined on substance with unmet triggers) — 2026-08-04.
 

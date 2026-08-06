@@ -21,10 +21,6 @@
 
 - 📋 **T373** (deps: —) **Ship Cloud default config as a GLOBAL seed ZIP** — guarantee the export keeps `tenantId = null` for the 6 BYO-infra types and bake the seed ZIP into the image, so one seeded default is visible to every auto-provisioned tenant. → §XIV.8.7
 
-## Block BU — The search cache is off by a thousand and never evicted on write (§LXVIII)
-
-- 💭 **T897** (deps: T870 ✅) **Per-site eviction has to reach outside the Spring `Cache` contract** — Enumerating a site's keys needs `getNativeCache()` to be a `Map`, so a provider that is not one silently degrades to clearing every site — a generation counter in the key would not. → §LXVIII.6
-
 ## Block BV — The quality gate stops at the package boundary (§LXIX)
 
 - 📋 **T873** (deps: T861 ✅) **Two published packages are in no validation matrix** — both are public npm packages with real `node --test` suites listed in no validation matrix, so a break is caught at release time by whoever is shipping. → §LXIX.1
