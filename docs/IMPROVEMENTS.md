@@ -2169,19 +2169,19 @@ every verb that reads one refuses rather than guessing.
 
 Nothing surfaced this until the lint learned to check it, which is the part worth
 noting: the collision has been latent for as long as both files have been governed, and
-it was invisible precisely because no *pointer* happened to aim at a doubled anchor. The
-condition was always there; only the gate is new. A rule enforced from the pointer end
-alone reports a defect when someone stumbles into it, not when it is introduced.
+it was invisible precisely because no *pointer* happened to aim at a doubled anchor.
 
-The fix is configuration, not rewriting: `[refs] <role> = "<prefix>"` in `roadkeep.toml`
-gives one of the two files its own namespace, after which its addresses are written
-`§<prefix>:<x.y>` and the two outlines stop competing. Choosing which file takes the
-prefix is the only real decision — `STRATEGY.md` is the smaller surface and the one
-whose anchors are cited least, so it is the cheaper side to renumber.
+**Blocked on roadkeep, as of 2026-08-06.** The fix this section named —
+`[refs] <role> = "<prefix>"`, giving one file its own namespace — is not
+implemented: `config.py` parses no `[refs]` table, and `anchors` states the
+opposite as the design ("one outline spans both"). Filed upstream as RK378. Nor
+can the anchors simply be moved: under `ref_scheme = "outline"` no verb changes a
+section's address, because `renumber` moves an id and carries the anchor only
+when the two are the same thing. Filed as RK377.
 
-Filed here because Block BV's thesis is gates that reach one surface and not the next.
-This is the same shape one layer up: the gate over the governed docs was not checking
-what the docs were free to get wrong.
+What is left today is renumbering all 49 `STRATEGY.md` headings past §LXXI, one
+`drop`/`add` pair at a time, which appends its outline to the end of the file in
+scrambled order. That is worse than the collision, so this waits.
 
 ## LXX. What the link-free response and its consumers still lack (Block BW)
 

@@ -24,7 +24,7 @@
 ## Block BV — The quality gate stops at the package boundary (§LXIX)
 
 - 💭 **T878** (deps: T863 ✅) **A total-only baseline cannot localize a regression** — react-sdk is `strict: false`, so its baseline is one number that can say the package grew 4 kB but never which file — baseline per directory instead. → §LXIX.6
-- 📋 **T902** (deps: —) **Two governed prose files declare the same 13 section anchors** — STRATEGY.md and IMPROVEMENTS.md number sections from one outline, so a pointer to any of the 13 resolves to two sections and every verb that reads one refuses. → §LXIX.8
+- ⏳ **T902** (deps: roadkeep RK378 + RK377) **Two governed prose files declare the same 13 section anchors** — STRATEGY.md and IMPROVEMENTS.md number sections from one outline, so a pointer to any of the 13 resolves to two sections and every verb that reads one refuses. → §LXIX.8
 
 ## Block BW — What the link-free response and its consumers still lack (§LXX)
 
