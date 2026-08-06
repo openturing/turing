@@ -2171,22 +2171,6 @@ resolve to the admin app.
 That is the largest frontend suite in the repo, and it is exactly the suite
 §LXVII.4 is about to invest in — a regression guard nobody runs is not a guard.
 
-### LXIX.4 The vanilla SDK has no publish workflow (T876)
-
-`publish-js-sdk.yml` publishes react-sdk. There is a `publish-react-ui.yml`, a
-`publish-cli.yml` and a `publish-flow-dsl.yml`. There is nothing for
-`@viglet/turing-sdk` — the package Block BS spent three tasks putting a gate
-around is released by hand.
-
-The root `release` script (`changeset publish`) covers it in principle, but no
-workflow invokes changesets for these packages, so in practice the vanilla SDK's
-only gate is whatever the publisher's laptop runs.
-
-Related drift worth fixing in the same pass: `publish-js-sdk.yml` bumps **every**
-workspace (`pnpm -r --include-workspace-root exec -- npm version patch`) on each
-react-sdk release, so packages that were not published still get a new version
-number — `package.json` versions and what is actually on npm diverge silently.
-
 ### LXIX.5 The most-consumed package ships zero tests (T877)
 
 `@viglet/turing-react-sdk` has no `test` script and **no test files at all** (0,

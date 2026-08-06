@@ -41,10 +41,14 @@ jobs:
         working-directory: frontend
         run: pnpm install --frozen-lockfile=false
 
-      # ── Bump every workspace (root + apps + packages) by a patch ──
-      - name: Bump all workspaces (patch)
-        working-directory: frontend
-        run: pnpm -r --include-workspace-root exec -- npm version patch --no-git-tag-version
+      # ── Bump the published package only ──
+      # T876: this used to patch-bump every workspace, so packages that were not
+      # published still got a new version number and their package.json drifted
+      # from what npm actually holds. Only react-sdk is released here, so only
+      # react-sdk is bumped; the vanilla SDK has publish-sdk.yml.
+      - name: Bump @viglet/turing-react-sdk (patch)
+        working-directory: frontend/packages/react-sdk
+        run: npm version patch --no-git-tag-version
 
       # ── Build & publish the SDK (which now carries the bumped version) ──
       # T875: this step used to run `build:sdk`, which filters the *vanilla*
@@ -73,9 +77,9 @@ jobs:
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
-      # ── Commit every package.json touched by the workspace-wide bump ──
+      # ── Commit the one package.json the bump touched ──
       - name: Commit version bump
         run: |
-          git add frontend/package.json                   frontend/packages/*/package.json                   frontend/apps/turing-app/package.json                   frontend/apps/marketplace/*/package.json
-          git commit -m "chore: bump frontend workspaces to match @viglet/turing-react-sdk [skip ci]" || echo "No changes to commit"
+          git add frontend/packages/react-sdk/package.json
+          git commit -m "chore: bump @viglet/turing-react-sdk [skip ci]" || echo "No changes to commit"
           git push
