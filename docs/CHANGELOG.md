@@ -1210,3 +1210,4 @@
 - **T900** — The indexing queue coalesces the whole-cache clears its own spotlight writes provoke into at most one, since it already evicts every written site when the message ends.
 - **T901** — Eviction is registered on the transaction and runs after commit, so nothing is discarded while the write is still invisible and a rollback discards nothing at all.
 - **T903** — Both snapshot caches clear through the shared after-commit scheduler the search cache now uses, so one seam decides when every SN eviction becomes visible.
+- **T904** — The three evictions on transactional paths clear through the after-commit scheduler, and a lint refuses a new @CacheEvict in a transactional class.

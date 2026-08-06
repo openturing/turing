@@ -24,7 +24,6 @@ import java.util.Optional;
 import java.util.Set;
 
 import org.jetbrains.annotations.NotNull;
-import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -38,6 +37,8 @@ import org.springframework.web.bind.annotation.RestController;
 import com.viglet.turing.persistence.dto.sn.spotlight.TurSNSiteSpotlightDto;
 import com.viglet.turing.persistence.mapper.sn.spotlight.TurSNSiteSpotlightMapper;
 import com.viglet.turing.persistence.model.sn.spotlight.TurSNSiteSpotlight;
+import com.viglet.turing.sn.spotlight.TurSpotlightCache;
+import com.viglet.turing.system.cache.TurCacheEvictionScheduler;
 import com.viglet.turing.persistence.model.sn.spotlight.TurSNSiteSpotlightDocument;
 import com.viglet.turing.persistence.model.sn.spotlight.TurSNSiteSpotlightTerm;
 import com.viglet.turing.persistence.repository.sn.TurSNSiteRepository;
@@ -63,17 +64,38 @@ public class TurSNSiteSpotlightAPI {
     private final TurSNSiteSpotlightDocumentRepository turSNSiteSpotlightDocumentRepository;
     private final TurSNSiteSpotlightTermRepository turSNSiteSpotlightTermRepository;
     private final TurSNSiteSpotlightMapper turSNSiteSpotlightMapper;
+    private final TurCacheEvictionScheduler evictionScheduler;
 
     public TurSNSiteSpotlightAPI(TurSNSiteRepository turSNSiteRepository,
             TurSNSiteSpotlightRepository turSNSiteSpotlightRepository,
             TurSNSiteSpotlightDocumentRepository turSNSiteSpotlightDocumentRepository,
             TurSNSiteSpotlightTermRepository turSNSiteSpotlightTermRepository,
-            TurSNSiteSpotlightMapper turSNSiteSpotlightMapper) {
+            TurSNSiteSpotlightMapper turSNSiteSpotlightMapper,
+            TurCacheEvictionScheduler evictionScheduler) {
         this.turSNSiteRepository = turSNSiteRepository;
         this.turSNSiteSpotlightRepository = turSNSiteSpotlightRepository;
         this.turSNSiteSpotlightDocumentRepository = turSNSiteSpotlightDocumentRepository;
         this.turSNSiteSpotlightTermRepository = turSNSiteSpotlightTermRepository;
         this.turSNSiteSpotlightMapper = turSNSiteSpotlightMapper;
+        this.evictionScheduler = evictionScheduler;
+    }
+
+    /**
+     * T904 / §LXVIII.11 — clears the spotlight caches through the shared after-commit
+     * scheduler rather than {@code @CacheEvict}.
+     *
+     * <p>
+     * The delete endpoint is {@code @Transactional} and carried {@code @CacheEvict} on the
+     * same method, so which of the two ran first was decided by the relative order of two
+     * interceptors that both declare {@code LOWEST_PRECEDENCE} — correct by accident, at
+     * best. The other two endpoints were not transactional and so were fine, and are
+     * converted anyway: the point is that a reader no longer has to work out which is
+     * which, and adding {@code @Transactional} here later cannot quietly reintroduce it.
+     * </p>
+     */
+    private void clearSpotlightCaches() {
+        evictionScheduler.clearOnce(TurSpotlightCache.SPOTLIGHT_CACHE);
+        evictionScheduler.clearOnce(TurSpotlightCache.SPOTLIGHT_TERM_CACHE);
     }
 
     @Operation(summary = "Semantic Navigation Site Spotlight List")
@@ -104,10 +126,10 @@ public class TurSNSiteSpotlightAPI {
 
     @Operation(summary = "Update a Semantic Navigation Site Spotlight")
     @PutMapping("/{id}")
-    @CacheEvict(value = { "spotlight", "spotlight_term" }, allEntries = true)
     public TurSNSiteSpotlightDto turSNSiteSpotlightUpdate(@PathVariable String id,
             @RequestBody TurSNSiteSpotlightDto turSNSiteSpotlightDto,
             @PathVariable String ignoredSnSiteId) {
+        clearSpotlightCaches();
         TurSNSiteSpotlight turSNSiteSpotlight = turSNSiteSpotlightMapper.toEntity(turSNSiteSpotlightDto);
 
         return turSNSiteSpotlightRepository.findById(id).map(turSNSiteSpotlightEdit -> {
@@ -148,19 +170,19 @@ public class TurSNSiteSpotlightAPI {
     @Transactional
     @Operation(summary = "Delete a Semantic Navigation Site Spotlight")
     @DeleteMapping("/{id}")
-    @CacheEvict(value = { "spotlight", "spotlight_term" }, allEntries = true)
     public boolean turSNSiteSpotlightDelete(@PathVariable String id,
             @PathVariable String ignoredSnSiteId) {
+        clearSpotlightCaches();
         turSNSiteSpotlightRepository.deleteById(id);
         return true;
     }
 
     @Operation(summary = "Create a Semantic Navigation Site Spotlight")
     @PostMapping
-    @CacheEvict(value = { "spotlight", "spotlight_term" }, allEntries = true)
     public TurSNSiteSpotlightDto turSNSiteSpotlightAdd(
             @RequestBody TurSNSiteSpotlightDto turSNSiteSpotlightDto,
             @PathVariable String ignoredSnSiteId) {
+        clearSpotlightCaches();
         TurSNSiteSpotlight turSNSiteSpotlight = turSNSiteSpotlightMapper.toEntity(turSNSiteSpotlightDto);
         return turSNSiteSpotlightMapper.toDto(saveSpotlight(turSNSiteSpotlight, turSNSiteSpotlight));
     }

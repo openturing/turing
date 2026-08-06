@@ -38,6 +38,7 @@ import java.util.Map;
 import java.util.Set;
 
 import org.junit.jupiter.api.Test;
+import org.springframework.cache.concurrent.ConcurrentMapCacheManager;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -59,6 +60,7 @@ import com.viglet.turing.persistence.repository.sn.spotlight.TurSNSiteSpotlightD
 import com.viglet.turing.persistence.repository.sn.spotlight.TurSNSiteSpotlightRepository;
 import com.viglet.turing.persistence.repository.sn.spotlight.TurSNSiteSpotlightTermRepository;
 import com.viglet.turing.solr.TurSolr;
+import com.viglet.turing.system.cache.TurCacheEvictionScheduler;
 
 /**
  * Unit tests for TurSNSpotlightProcess.
@@ -94,7 +96,8 @@ class TurSNSpotlightProcessTest {
 
                 TurSNSpotlightProcess process = new TurSNSpotlightProcess(turSNSiteSpotlightRepository,
                                 turSNSiteSpotlightTermRepository, turSNSiteSpotlightDocumentRepository, turSolr,
-                                turSpotlightCache, turSNSiteLocaleRepository);
+                                turSpotlightCache, turSNSiteLocaleRepository,
+                                new TurCacheEvictionScheduler(new ConcurrentMapCacheManager()));
 
                 assertThat(process.isSpotlightJob(jobItem)).isTrue();
         }
@@ -103,7 +106,8 @@ class TurSNSpotlightProcessTest {
         void testIsSpotlightJobReturnsFalseForNullAndMissingAttributes() {
                 TurSNSpotlightProcess process = new TurSNSpotlightProcess(turSNSiteSpotlightRepository,
                                 turSNSiteSpotlightTermRepository, turSNSiteSpotlightDocumentRepository, turSolr,
-                                turSpotlightCache, turSNSiteLocaleRepository);
+                                turSpotlightCache, turSNSiteLocaleRepository,
+                                new TurCacheEvictionScheduler(new ConcurrentMapCacheManager()));
 
                 assertThat(process.isSpotlightJob(null)).isFalse();
 
@@ -131,7 +135,8 @@ class TurSNSpotlightProcessTest {
 
                 TurSNSpotlightProcess process = new TurSNSpotlightProcess(turSNSiteSpotlightRepository,
                                 turSNSiteSpotlightTermRepository, turSNSiteSpotlightDocumentRepository, turSolr,
-                                turSpotlightCache, turSNSiteLocaleRepository);
+                                turSpotlightCache, turSNSiteLocaleRepository,
+                                new TurCacheEvictionScheduler(new ConcurrentMapCacheManager()));
 
                 assertThat(process.deleteUnmanagedSpotlight(jobItem, site)).isTrue();
                 verify(turSNSiteSpotlightRepository).deleteAll(spotlights);
@@ -147,7 +152,8 @@ class TurSNSpotlightProcessTest {
 
                 TurSNSpotlightProcess process = new TurSNSpotlightProcess(turSNSiteSpotlightRepository,
                                 turSNSiteSpotlightTermRepository, turSNSiteSpotlightDocumentRepository, turSolr,
-                                turSpotlightCache, turSNSiteLocaleRepository);
+                                turSpotlightCache, turSNSiteLocaleRepository,
+                                new TurCacheEvictionScheduler(new ConcurrentMapCacheManager()));
 
                 assertThat(process.deleteUnmanagedSpotlight(jobItem, new TurSNSite())).isTrue();
                 verify(turSNSiteSpotlightRepository).deleteAll(spotlights);
@@ -169,7 +175,8 @@ class TurSNSpotlightProcessTest {
 
                 TurSNSpotlightProcess process = new TurSNSpotlightProcess(turSNSiteSpotlightRepository,
                                 turSNSiteSpotlightTermRepository, turSNSiteSpotlightDocumentRepository, turSolr,
-                                turSpotlightCache, turSNSiteLocaleRepository);
+                                turSpotlightCache, turSNSiteLocaleRepository,
+                                new TurCacheEvictionScheduler(new ConcurrentMapCacheManager()));
 
                 assertThat(process.createUnmanagedSpotlight(jobItem, site)).isFalse();
         }
@@ -207,7 +214,8 @@ class TurSNSpotlightProcessTest {
 
                 TurSNSpotlightProcess process = new TurSNSpotlightProcess(turSNSiteSpotlightRepository,
                                 turSNSiteSpotlightTermRepository, turSNSiteSpotlightDocumentRepository, turSolr,
-                                turSpotlightCache, turSNSiteLocaleRepository);
+                                turSpotlightCache, turSNSiteLocaleRepository,
+                                new TurCacheEvictionScheduler(new ConcurrentMapCacheManager()));
 
                 assertThat(process.createUnmanagedSpotlight(jobItem, site)).isTrue();
                 verify(turSNSiteSpotlightRepository).deleteAll(existing);
@@ -245,7 +253,8 @@ class TurSNSpotlightProcessTest {
 
                 TurSNSpotlightProcess process = new TurSNSpotlightProcess(turSNSiteSpotlightRepository,
                                 turSNSiteSpotlightTermRepository, turSNSiteSpotlightDocumentRepository, turSolr,
-                                turSpotlightCache, turSNSiteLocaleRepository);
+                                turSpotlightCache, turSNSiteLocaleRepository,
+                                new TurCacheEvictionScheduler(new ConcurrentMapCacheManager()));
 
                 Map<Integer, List<TurSNSiteSpotlightDocument>> result = process.getSpotlightsFromQuery(context,
                                 spotlightSite);
@@ -279,7 +288,8 @@ class TurSNSpotlightProcessTest {
 
                 TurSNSpotlightProcess process = new TurSNSpotlightProcess(turSNSiteSpotlightRepository,
                                 turSNSiteSpotlightTermRepository, turSNSiteSpotlightDocumentRepository, turSolr,
-                                turSpotlightCache, turSNSiteLocaleRepository);
+                                turSpotlightCache, turSNSiteLocaleRepository,
+                                new TurCacheEvictionScheduler(new ConcurrentMapCacheManager()));
 
                 process.addSpotlightToResults(context, null, site, Map.of(), Map.of(), docs);
 

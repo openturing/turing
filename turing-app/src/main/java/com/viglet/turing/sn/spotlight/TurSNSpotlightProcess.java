@@ -43,11 +43,11 @@ import org.apache.lucene.queryparser.classic.QueryParser;
 import org.apache.lucene.queryparser.classic.QueryParserBase;
 import org.apache.lucene.search.Query;
 import org.jetbrains.annotations.NotNull;
-import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.stereotype.Component;
 
 import com.viglet.turing.api.sn.queue.TurSpotlightContent;
 import com.viglet.turing.client.sn.job.TurSNJobItem;
+import com.viglet.turing.system.cache.TurCacheEvictionScheduler;
 import com.viglet.turing.commons.sn.bean.TurSNSiteSearchDocumentBean;
 import com.viglet.turing.commons.sn.field.TurSNFieldName;
 import com.viglet.turing.commons.sn.search.TurSNSiteSearchContext;
@@ -131,19 +131,46 @@ public class TurSNSpotlightProcess {
 	private final TurSolr turSolr;
 	private final TurSpotlightCache turSpotlightCache;
 	private final TurSNSiteLocaleRepository turSNSiteLocaleRepository;
+	private final TurCacheEvictionScheduler evictionScheduler;
 
 	public TurSNSpotlightProcess(TurSNSiteSpotlightRepository turSNSiteSpotlightRepository,
 			TurSNSiteSpotlightTermRepository turSNSiteSpotlightTermRepository,
 			TurSNSiteSpotlightDocumentRepository turSNSiteSpotlightDocumentRepository,
 			TurSolr turSolr,
 			TurSpotlightCache turSpotlightCache,
-			TurSNSiteLocaleRepository turSNSiteLocaleRepository) {
+			TurSNSiteLocaleRepository turSNSiteLocaleRepository,
+			TurCacheEvictionScheduler evictionScheduler) {
 		this.turSNSiteSpotlightRepository = turSNSiteSpotlightRepository;
 		this.turSNSiteSpotlightTermRepository = turSNSiteSpotlightTermRepository;
 		this.turSNSiteSpotlightDocumentRepository = turSNSiteSpotlightDocumentRepository;
 		this.turSolr = turSolr;
 		this.turSpotlightCache = turSpotlightCache;
 		this.turSNSiteLocaleRepository = turSNSiteLocaleRepository;
+		this.evictionScheduler = evictionScheduler;
+	}
+
+	/**
+	 * T904 / §LXVIII.11 — the spotlight caches are cleared through the shared
+	 * after-commit scheduler, not by {@code @CacheEvict}.
+	 *
+	 * <p>
+	 * Both public methods below are called from {@code processIndexingQueue}, which is
+	 * {@code @Transactional}. {@code @CacheEvict} fires when the method returns, so the
+	 * clear landed while the spotlight rows it invalidates were still uncommitted — and
+	 * {@code spotlight_term} is {@code @Cacheable} and read at query time, so a search
+	 * arriving in that window re-cached the pre-write terms and served them afterwards.
+	 * </p>
+	 *
+	 * <p>
+	 * Calling this anywhere in the method is safe where the annotation was not: the
+	 * scheduler only evicts {@code afterCommit}, so a failure that rolls the write back
+	 * now discards nothing, whereas {@code @CacheEvict} simply did not fire and left the
+	 * decision to whether the method happened to return.
+	 * </p>
+	 */
+	private void clearSpotlightCaches() {
+		evictionScheduler.clearOnce(TurSpotlightCache.SPOTLIGHT_CACHE);
+		evictionScheduler.clearOnce(TurSpotlightCache.SPOTLIGHT_TERM_CACHE);
 	}
 
 	/**
@@ -178,8 +205,8 @@ public class TurSNSpotlightProcess {
 				&& turSNJobItem.getAttributes().get(TurSNFieldName.TYPE).equals(TYPE_VALUE);
 	}
 
-	@CacheEvict(value = { "spotlight", "spotlight_term" }, allEntries = true)
 	public boolean deleteUnmanagedSpotlight(TurSNJobItem turSNJobItem, TurSNSite turSNSite) {
+		clearSpotlightCaches();
 		if (turSNJobItem.getAttributes().containsKey(TurSNFieldName.ID)) {
 			TurSNSiteLocale turSNSiteLocale = turSNSiteLocaleRepository.findByTurSNSiteAndLanguage(turSNSite,
 					turSNJobItem.getLocale());
@@ -201,8 +228,8 @@ public class TurSNSpotlightProcess {
 		return true;
 	}
 
-	@CacheEvict(value = { "spotlight", "spotlight_term" }, allEntries = true)
 	public boolean createUnmanagedSpotlight(TurSNJobItem turSNJobItem, TurSNSite turSNSite) {
+		clearSpotlightCaches();
 		String id = (String) turSNJobItem.getAttributes().get(TurSNFieldName.ID);
 		TurSNSiteLocale turSNSiteLocale = turSNSiteLocaleRepository.findByTurSNSiteAndLanguage(turSNSite,
 				turSNJobItem.getLocale());

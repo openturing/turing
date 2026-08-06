@@ -31,12 +31,14 @@ import java.util.List;
 import java.util.Optional;
 
 import org.junit.jupiter.api.Test;
+import org.springframework.cache.concurrent.ConcurrentMapCacheManager;
 import org.mapstruct.factory.Mappers;
 
 import com.viglet.turing.persistence.dto.sn.spotlight.TurSNSiteSpotlightDto;
 import com.viglet.turing.persistence.mapper.sn.spotlight.TurSNSiteSpotlightMapper;
 import com.viglet.turing.persistence.model.sn.TurSNSite;
 import com.viglet.turing.persistence.model.sn.spotlight.TurSNSiteSpotlight;
+import com.viglet.turing.system.cache.TurCacheEvictionScheduler;
 import com.viglet.turing.persistence.model.sn.spotlight.TurSNSiteSpotlightDocument;
 import com.viglet.turing.persistence.model.sn.spotlight.TurSNSiteSpotlightTerm;
 import com.viglet.turing.persistence.repository.sn.TurSNSiteRepository;
@@ -59,7 +61,8 @@ class TurSNSiteSpotlightAPIUnitTest {
         TurSNSiteSpotlightMapper spotlightMapper = Mappers.getMapper(TurSNSiteSpotlightMapper.class);
         TurSNSiteSpotlightAPI api = new TurSNSiteSpotlightAPI(siteRepository, spotlightRepository,
                 mock(TurSNSiteSpotlightDocumentRepository.class), mock(TurSNSiteSpotlightTermRepository.class),
-                spotlightMapper);
+                spotlightMapper,
+                new TurCacheEvictionScheduler(new ConcurrentMapCacheManager()));
 
         when(siteRepository.findById("site")).thenReturn(Optional.empty());
 
@@ -75,7 +78,8 @@ class TurSNSiteSpotlightAPIUnitTest {
         TurSNSiteSpotlightTermRepository termRepository = mock(TurSNSiteSpotlightTermRepository.class);
         TurSNSiteSpotlightMapper spotlightMapper = Mappers.getMapper(TurSNSiteSpotlightMapper.class);
         TurSNSiteSpotlightAPI api = new TurSNSiteSpotlightAPI(mock(TurSNSiteRepository.class), spotlightRepository,
-                documentRepository, termRepository, spotlightMapper);
+                documentRepository, termRepository, spotlightMapper,
+                new TurCacheEvictionScheduler(new ConcurrentMapCacheManager()));
         TurSNSiteSpotlight spotlight = new TurSNSiteSpotlight();
         TurSNSiteSpotlightDocument doc = new TurSNSiteSpotlightDocument();
         TurSNSiteSpotlightTerm term = new TurSNSiteSpotlightTerm();
@@ -96,7 +100,8 @@ class TurSNSiteSpotlightAPIUnitTest {
         TurSNSiteSpotlightMapper spotlightMapper = Mappers.getMapper(TurSNSiteSpotlightMapper.class);
         TurSNSiteSpotlightAPI api = new TurSNSiteSpotlightAPI(mock(TurSNSiteRepository.class), spotlightRepository,
                 mock(TurSNSiteSpotlightDocumentRepository.class), mock(TurSNSiteSpotlightTermRepository.class),
-                spotlightMapper);
+                spotlightMapper,
+                new TurCacheEvictionScheduler(new ConcurrentMapCacheManager()));
 
         boolean result = api.turSNSiteSpotlightDelete("id", "site");
 
@@ -110,7 +115,8 @@ class TurSNSiteSpotlightAPIUnitTest {
         TurSNSiteSpotlightMapper spotlightMapper = Mappers.getMapper(TurSNSiteSpotlightMapper.class);
         TurSNSiteSpotlightAPI api = new TurSNSiteSpotlightAPI(siteRepository,
                 mock(TurSNSiteSpotlightRepository.class), mock(TurSNSiteSpotlightDocumentRepository.class),
-                mock(TurSNSiteSpotlightTermRepository.class), spotlightMapper);
+                mock(TurSNSiteSpotlightTermRepository.class), spotlightMapper,
+                new TurCacheEvictionScheduler(new ConcurrentMapCacheManager()));
         TurSNSite site = new TurSNSite();
 
         when(siteRepository.findById("site")).thenReturn(Optional.of(site));

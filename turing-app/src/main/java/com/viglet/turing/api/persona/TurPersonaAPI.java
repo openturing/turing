@@ -11,7 +11,6 @@ package com.viglet.turing.api.persona;
 
 import java.util.List;
 
-import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.security.access.annotation.Secured;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -30,6 +29,7 @@ import com.viglet.turing.genai.authoring.AiAuthoringResponse;
 import com.viglet.turing.genai.authoring.TurAiAuthoringService;
 import com.viglet.turing.genai.authoring.persona.PersonaGeneration;
 import com.viglet.turing.genai.persona.TurPersonaStaticPromptCache;
+import com.viglet.turing.system.cache.TurCacheEvictionScheduler;
 import com.viglet.turing.persistence.dto.persona.TurPersonaDto;
 import com.viglet.turing.persistence.mapper.persona.TurPersonaMapper;
 import com.viglet.turing.persistence.model.persona.TurPersona;
@@ -131,17 +131,20 @@ public class TurPersonaAPI {
     private final TurStoreInstanceRepository turStoreInstanceRepository;
     private final TurMcpServerRepository turMcpServerRepository;
     private final TurAiAuthoringService aiAuthoringService;
+    private final TurCacheEvictionScheduler evictionScheduler;
 
     public TurPersonaAPI(TurPersonaRepository turPersonaRepository,
             TurPersonaMapper turPersonaMapper,
             TurStoreInstanceRepository turStoreInstanceRepository,
             TurMcpServerRepository turMcpServerRepository,
-            TurAiAuthoringService aiAuthoringService) {
+            TurAiAuthoringService aiAuthoringService,
+            TurCacheEvictionScheduler evictionScheduler) {
         this.turPersonaRepository = turPersonaRepository;
         this.turPersonaMapper = turPersonaMapper;
         this.turStoreInstanceRepository = turStoreInstanceRepository;
         this.turMcpServerRepository = turMcpServerRepository;
         this.aiAuthoringService = aiAuthoringService;
+        this.evictionScheduler = evictionScheduler;
     }
 
     @Operation(summary = "Persona List")
@@ -205,8 +208,13 @@ public class TurPersonaAPI {
     // TurPersonaStaticPromptEvictionListener never fires on this path; evict the
     // persona static-prompt cache explicitly so a deleted persona leaves no stale
     // composed block behind.
-    @CacheEvict(value = TurPersonaStaticPromptCache.CACHE_NAME, allEntries = true)
+    //
+    // T904 / §LXVIII.11 — through the shared scheduler rather than @CacheEvict: this
+    // method is @Transactional, and the annotation fires when it returns, which is not
+    // the same moment as the commit. The cache is read while composing a chat prompt,
+    // so an entry re-cached in that window outlives the delete.
     public boolean turPersonaDelete(@PathVariable String id) {
+        evictionScheduler.clearOnce(TurPersonaStaticPromptCache.CACHE_NAME);
         turPersonaRepository.delete(id);
         return true;
     }

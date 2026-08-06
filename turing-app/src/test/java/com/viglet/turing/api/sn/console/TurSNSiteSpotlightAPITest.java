@@ -62,6 +62,8 @@ class TurSNSiteSpotlightAPITest {
         @Spy
         private TurSNSiteSpotlightMapper turSNSiteSpotlightMapper = Mappers.getMapper(TurSNSiteSpotlightMapper.class);
 
+        @Mock
+        private com.viglet.turing.system.cache.TurCacheEvictionScheduler evictionScheduler;
         @InjectMocks
         private TurSNSiteSpotlightAPI api;
 

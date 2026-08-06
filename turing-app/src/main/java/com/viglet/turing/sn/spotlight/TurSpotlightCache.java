@@ -33,12 +33,21 @@ import org.springframework.stereotype.Component;
  */
 @Component
 public class TurSpotlightCache {
+
+	/**
+	 * T904 / §LXVIII.11 — the two spotlight cache names, declared where the cache is so
+	 * an evictor references the same constant the reader does rather than repeating a
+	 * string literal at every write path.
+	 */
+	public static final String SPOTLIGHT_CACHE = "spotlight";
+	public static final String SPOTLIGHT_TERM_CACHE = "spotlight_term";
+
 	private final TurSpotlightService turSpotlightService;
 	public TurSpotlightCache(TurSpotlightService turSpotlightService) {
         this.turSpotlightService = turSpotlightService;
     }
 
-	@Cacheable(value = "spotlight_term", sync = true)
+	@Cacheable(value = SPOTLIGHT_TERM_CACHE, sync = true)
 	public List<TurSNSpotlightTermCacheBean> findTermsBySNSiteAndLanguage(String snSite, Locale language) {
 		return turSpotlightService.findSpotlightBySNSiteAndLanguage(snSite, language).stream()
 				.flatMap(turSNSiteSpotlight -> turSNSiteSpotlight.getTurSNSiteSpotlightTerms().stream())

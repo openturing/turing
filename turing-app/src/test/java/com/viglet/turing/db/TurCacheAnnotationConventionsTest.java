@@ -178,6 +178,80 @@ class TurCacheAnnotationConventionsTest {
         }
     }
 
+    /**
+     * T904 / §LXVIII.11 — <strong>no {@code @CacheEvict} in a class that is also
+     * transactional.</strong>
+     *
+     * <p>
+     * {@code @CacheEvict} cannot express "after commit". With the default
+     * {@code beforeInvocation = false} it fires when the method <em>returns</em>, which
+     * inside a transaction is still before the write it invalidates is visible — the
+     * window T901 and T903 closed for the search and snapshot caches. Worse, when both
+     * annotations sit on the same method the order is decided by two interceptors that
+     * both declare {@code LOWEST_PRECEDENCE}.
+     * </p>
+     *
+     * <p>
+     * The check is deliberately at class granularity: a method-level pairing is the
+     * dangerous case, but a transactional class is where the next one will be written.
+     * It cannot see the shape that actually caused this — {@code TurSNSpotlightProcess}
+     * had no {@code @Transactional} of its own and inherited one from
+     * {@code processIndexingQueue}, its caller. Nothing static catches that, which is
+     * why those two methods were converted rather than annotated: this lint narrows
+     * where the mistake can be made, it does not eliminate it.
+     * </p>
+     */
+    @Test
+    void noCacheEvictInATransactionalClass() throws IOException {
+        Path classesDir = Paths.get("target/classes");
+        assertThat(Files.isDirectory(classesDir))
+                .as("Expected compiled classes at %s. Run 'mvn -DskipTests compile' first.",
+                        classesDir)
+                .isTrue();
+
+        MetadataReaderFactory readers = new SimpleMetadataReaderFactory();
+        Set<String> violations = new TreeSet<>();
+
+        try (Stream<Path> paths = Files.walk(classesDir)) {
+            paths.filter(Files::isRegularFile)
+                    .filter(TurCacheAnnotationConventionsTest::isClassFile)
+                    .forEach(p -> scanCacheEvict(p, readers, violations));
+        }
+
+        assertThat(violations)
+                .as("""
+                        @CacheEvict fires when the method returns, not when the transaction commits,
+                        so in a transactional class it discards entries while the write is still
+                        invisible — and a concurrent reader re-caches the old value (T904 /
+                        §LXVIII.11). Use TurCacheEvictionScheduler.clearOnce(name) instead, which
+                        evicts afterCommit and skips a rollback entirely. Offenders:""")
+                .isEmpty();
+    }
+
+    private static void scanCacheEvict(Path classFile, MetadataReaderFactory readers,
+            Set<String> violations) {
+        try {
+            MetadataReader reader = readers.getMetadataReader(new FileSystemResource(classFile));
+            String className = reader.getClassMetadata().getClassName();
+            String simpleName = className.substring(className.lastIndexOf('.') + 1);
+            boolean transactionalClass = reader.getAnnotationMetadata()
+                    .isAnnotated(TRANSACTIONAL);
+            reader.getAnnotationMetadata().getDeclaredMethods().forEach(method -> {
+                if (!method.getAnnotations().isPresent(CacheEvict.class)) {
+                    return;
+                }
+                if (transactionalClass || method.getAnnotations().isPresent(TRANSACTIONAL)) {
+                    violations.add(simpleName + "#" + method.getMethodName());
+                }
+            });
+        } catch (IOException | RuntimeException ignored) {
+            // Unparseable class files carry no annotations we care about.
+        }
+    }
+
+    private static final String TRANSACTIONAL =
+            "org.springframework.transaction.annotation.Transactional";
+
     private static boolean isClassFile(Path path) {
         return path.getFileName().toString().endsWith(".class");
     }

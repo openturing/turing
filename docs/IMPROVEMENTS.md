@@ -2162,32 +2162,6 @@ anyway, so precision only ever mattered for the indexing path, where the scan al
 works. Resume when a provider whose native cache is not a `Map` is actually wired, or
 when a bulk import's eviction cost shows up in a profile.
 
-### LXVIII.11 Every remaining @CacheEvict evicts inside the writing transaction (T904)
-
-T901 and T903 moved the search and snapshot evictions to after-commit. Everything still
-evicting through `@CacheEvict` kept the old timing, because the annotation cannot
-express it: with the default `beforeInvocation = false` it fires when the method
-*returns*, which inside a transaction is still before the commit.
-
-Two places make that concrete rather than theoretical.
-`TurSNSpotlightProcess.createUnmanagedSpotlight` and `deleteUnmanagedSpotlight` each
-carry `@CacheEvict({"spotlight", "spotlight_term"})` and are called from inside
-`processIndexingQueue`'s transaction, so their eviction is unambiguously pre-commit —
-and `spotlight_term` is `@Cacheable` and read at query time, so the stale entry is one a
-user sees. `TurSNSiteSpotlightAPI`'s delete is `@Transactional` *and* `@CacheEvict` on
-the same method, where the outcome depends on the relative order of two interceptors
-that both declare `LOWEST_PRECEDENCE` — correct by accident is the more expensive kind
-of correct.
-
-`TurGlobalSettingsService` carries eight more for `turRagRerankScore`, on settings
-writes that are likely transactional too.
-
-The seam exists now: `TurCacheEvictionScheduler.clearOnce(name)` is what `@CacheEvict(…,
-allEntries = true)` should have been on a transactional path. The work is to route these
-through it and to decide what stops the next one — a lint over `@CacheEvict` in a
-transactional class is possible but noisy, and the honest alternative may be to accept
-the annotation where the cache is not read at query time, and say which those are.
-
 ### LXVIII.12 The snapshot and field-config caches have no backstop sweep (T905)
 
 `searchAPI` has a `@Scheduled` sweep. Five tasks of this block made its eviction
