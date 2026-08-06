@@ -2168,22 +2168,49 @@ when a bulk import's eviction cost shows up in a profile.
 correct, and the sweep is now only the backstop — but that is precisely its value: if
 eviction ever fails, staleness is bounded at 24 hours instead of forever.
 
-`turSNSiteSearchSnapshot` and `turSNSiteFieldConfig` have no such bound. They are
-correct today, and their correctness rests entirely on the eviction path being right —
-the same assumption that was wrong three separate times in this block, in caches where
-the mistake was cheaper. A snapshot that goes stale for any reason nobody has thought of
-stays stale until the next write to any SN entity, which on a site whose configuration
-has settled may be never; the operator's only recovery is a restart.
+`turSNSiteSearchSnapshot` and `turSNSiteFieldConfig` have no such bound. Their
+correctness rests entirely on the eviction path being right — the assumption that was
+wrong repeatedly in this block. A snapshot that goes stale for a reason nobody has
+thought of stays stale until the next write to any SN entity, which on a settled site
+may be never; the only recovery is a restart.
 
-The argument against is real and is why this is an idea rather than a task. A periodic
-clear on caches that are on by default costs a rebuild per site per period for a fault
-nobody has observed, and it dulls the signal: a bug that would have shown up as
-permanent staleness instead shows up as staleness that mysteriously heals, which is
-harder to diagnose, not easier.
+Deliberately **not** built. A periodic clear on caches that are on by default costs a
+rebuild per site per period for a fault nobody has observed — and it dulls the signal: a
+bug that would announce itself as permanent staleness instead becomes staleness that
+mysteriously heals, which is harder to diagnose, not easier. Buying insurance by
+disabling the alarm is a poor trade while these paths are under active repair.
 
-If it is taken, the sweep should be long — daily, matching `searchAPI` — and it should
-log at a level that says a backstop fired, so a deployment relying on it is visible
-rather than merely surviving.
+Resume if a stale snapshot is ever observed in the field, or if the eviction paths
+change owner often enough that "it is correct today" stops being a claim anyone can
+check. If it is taken: daily, matching `searchAPI`, and logging at a level that says a
+backstop fired, so a deployment relying on it is visible rather than merely surviving.
+
+### LXVIII.13 Three entities outside the T899 lint delete around their eviction listener (T906)
+
+T899 removed the bulk deletes that bypassed `@PostRemove` and added
+`TurSNBulkDeleteConventionsTest` to stop them coming back. That lint scans the SN
+packages, because that is where the defect was found — so it is a gate written for one
+surface, and the entities outside it inherited nothing.
+
+Three do. `TurPersona`, `TurAIAgent` and `TurChatFlow` each carry `@EntityListeners`
+*and* a `@Modifying @Query("delete …")` on their repository, which is exactly the pair
+T899 proved cannot coexist.
+
+Two of the three are live. `TurAIAgentAPI` deletes an agent through the bulk query, and
+`TurAIAgent` is annotated with `TurSNSiteSnapshotEvictionListener` — so deleting an
+agent leaves the SN snapshot cache holding it. `TurChatFlowAPI` does the same for a
+flow, whose listener evicts the router cache. Neither compensates.
+
+The third is the interesting one: `TurPersonaAPI` *does* compensate, with an explicit
+evict and a comment saying why — *"Bulk-DML delete(id) bypasses JPA entity callbacks, so
+the listener never fires on this path."* Someone diagnosed this exact bug, fixed their
+instance, and wrote it down, and the other two were never found because nothing looked.
+A comment is not a gate.
+
+The work is to widen the lint past `persistence.repository.sn` to every entity that
+declares an eviction listener, and to remove the two bulk deletes it then reports. The
+persona workaround can go at the same time: with the callback firing, the explicit evict
+is redundant.
 
 ## LXIX. The quality gate stops at the package boundary (Block BV)
 

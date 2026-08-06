@@ -57,8 +57,11 @@
 > default and have no backstop sweep (T903). **T903 SHIPPED**, extracting the shared
 > `TurCacheEvictionScheduler`; reopened a fifth time with what having one seam made
 > visible — every remaining `@CacheEvict` still evicts pre-commit and cannot say
-> otherwise (T904), and 💭 neither snapshot cache has a backstop (T905). Only 💭 T897
-> (deliberately not built), T904 and 💭 T905 remain. §LXVIII.4–.12,
+> otherwise (T904), and 💭 neither snapshot cache has a backstop (T905). **T904 SHIPPED;
+> T905 declined** (both ideas now carry a recorded decision + resume trigger); reopened a
+> sixth time with the two live bugs the audit found outside the T899 lint's SN scope —
+> deleting an AI agent or a chat flow bypasses its eviction listener (T906). Only 💭 T897,
+> 💭 T905 (both deliberately not built) and T906 remain. §LXVIII.4–.13,
 > created 2026-08-02; Block **BT** = The POST-native default left its consumers
 > behind — T710 made `postNative: true` the default and the provider sets
 > `data = null`, but three `turing-app` consumers still read it: `SearchContent`
@@ -289,6 +292,12 @@ number" looked free but wasn't. Grepping three files (`ROADMAP.md`,
    lists fully-shipped blocks), then bump the letter after creating the block.
 
 ## Log (most recent first)
+
+- **T906 CREATED** (📋, Block BU §LXVIII.13 — T899's lint scans the SN packages because that is where the defect was found, so it is a gate written for one surface. Three entities outside it pair `@EntityListeners` with a `@Modifying` delete: **`TurAIAgent` and `TurChatFlow` are live** — deleting an agent leaves the SN snapshot cache holding it, deleting a flow leaves the router cache. The third, `TurPersona`, compensates with an explicit evict *and a comment explaining exactly this bug* — someone diagnosed it, fixed their instance and wrote it down, and the other two were never found because nothing looked) — 2026-08-04.
+
+- **T905 NOT BUILT, kept 💭** (Block BU §LXVIII.12 — a backstop sweep for the snapshot caches is deliberately declined: a periodic clear on default-on caches costs a rebuild per site per period for a fault nobody has observed, and it *dulls the signal* — a bug that would announce itself as permanent staleness becomes staleness that mysteriously heals. Resume trigger recorded in the section) — 2026-08-04.
+
+- **T904 SHIPPED** (Block BU §LXVIII — the audit found **three** `@CacheEvict` on transactional paths and, usefully, that the other eleven are fine: `TurGlobalSettingsService` and `TurLLMPriceService` are not transactional. `TurSNSpotlightProcess`'s two inherit a transaction from `processIndexingQueue` over `spotlight_term`, read at query time; `TurSNSiteSpotlightAPI` and `TurPersonaAPI` deletes pair `@Transactional` with `@CacheEvict` on one method. Lint refuses `@CacheEvict` in a transactional class — it deliberately *cannot* see the caller-inherited case, which is why those two were converted rather than annotated) — 2026-08-04.
 
 - **T904–T905 CREATED** (📋/💭, Block BU §LXVIII.11–.12 — T904: everything still evicting through `@CacheEvict` kept the pre-commit timing, because the annotation cannot express after-commit (`beforeInvocation = false` fires on method *return*). Concrete in two places: `TurSNSpotlightProcess`'s two `@CacheEvict` methods are called from inside `processIndexingQueue`'s transaction, and `spotlight_term` is read at query time so the stale entry is user-visible; `TurSNSiteSpotlightAPI`'s delete is `@Transactional` *and* `@CacheEvict` on one method, where the outcome depends on two interceptors that both declare `LOWEST_PRECEDENCE`. Plus 8 more in `TurGlobalSettingsService`. 💭 T905: neither snapshot cache has a backstop sweep, so their correctness rests entirely on eviction being right — the assumption that was wrong three times in this block) — 2026-08-04.
 
