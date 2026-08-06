@@ -25,7 +25,6 @@ import java.util.Optional;
 
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 
 import com.viglet.turing.commons.se.field.TurSEFieldType;
@@ -63,11 +62,27 @@ public interface TurSNSiteFieldExtRepository extends JpaRepository<TurSNSiteFiel
 	@Query("SELECT MAX(t.facetPosition) FROM TurSNSiteFieldExt t where t.turSNSite = ?1")
 	Optional<Integer> findMaxFacetPosition(TurSNSite turSNSite);
 
-	@Modifying
-	@Query("delete from TurSNSiteFieldExt ssfe where ssfe.id = ?1")
-	void delete(String turSnSiteFieldId);
-
-	@Modifying
-	@Query("delete from TurSNSiteFieldExt ssfe where ssfe.turSNSite= ?1 and ssfe.snType = ?2")
-	void deleteByTurSNSiteAndSnType(TurSNSite turSNSite, TurSNFieldType turSNFieldType);
+	/**
+	 * T899 / §LXVIII.7 — the two {@code @Modifying} delete queries that used to live
+	 * here are gone on purpose.
+	 *
+	 * <p>
+	 * A JPQL bulk delete issues SQL without loading anything, so the persistence
+	 * context manages no entity and no {@code @PostRemove} fires. This entity carries
+	 * two callbacks that a delete must run — the snapshot eviction listener and the
+	 * T896 search-cache one — so deleting a field through them left a stale field
+	 * configuration in both caches. The admin delete endpoint had already loaded the
+	 * entity before calling {@code delete(id)}, which is what made the batched form
+	 * pure loss.
+	 * </p>
+	 *
+	 * <p>
+	 * Use the inherited {@code delete(TurSNSiteFieldExt)} / {@code deleteAll(Iterable)}
+	 * instead, and {@link #findByTurSNSiteAndSnType} to load what is being removed.
+	 * {@code TurSNBulkDeleteConventionsTest} fails if a bulk delete is reintroduced on
+	 * an entity whose answers are cached.
+	 * </p>
+	 */
+	List<TurSNSiteFieldExt> findByTurSNSiteAndSnType(TurSNSite turSNSite,
+			TurSNFieldType turSNFieldType);
 }

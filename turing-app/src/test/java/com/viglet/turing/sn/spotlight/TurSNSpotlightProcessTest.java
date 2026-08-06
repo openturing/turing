@@ -134,7 +134,7 @@ class TurSNSpotlightProcessTest {
                                 turSpotlightCache, turSNSiteLocaleRepository);
 
                 assertThat(process.deleteUnmanagedSpotlight(jobItem, site)).isTrue();
-                verify(turSNSiteSpotlightRepository).deleteAllInBatch(spotlights);
+                verify(turSNSiteSpotlightRepository).deleteAll(spotlights);
         }
 
         @Test
@@ -150,7 +150,7 @@ class TurSNSpotlightProcessTest {
                                 turSpotlightCache, turSNSiteLocaleRepository);
 
                 assertThat(process.deleteUnmanagedSpotlight(jobItem, new TurSNSite())).isTrue();
-                verify(turSNSiteSpotlightRepository).deleteAllInBatch(spotlights);
+                verify(turSNSiteSpotlightRepository).deleteAll(spotlights);
         }
 
         @Test
@@ -210,7 +210,7 @@ class TurSNSpotlightProcessTest {
                                 turSpotlightCache, turSNSiteLocaleRepository);
 
                 assertThat(process.createUnmanagedSpotlight(jobItem, site)).isTrue();
-                verify(turSNSiteSpotlightRepository).deleteAllInBatch(existing);
+                verify(turSNSiteSpotlightRepository).deleteAll(existing);
                 verify(turSNSiteSpotlightRepository).save(any(TurSNSiteSpotlight.class));
                 verify(turSNSiteSpotlightTermRepository, times(2)).save(any(TurSNSiteSpotlightTerm.class));
                 verify(turSNSiteSpotlightDocumentRepository, times(2)).save(any(TurSNSiteSpotlightDocument.class));

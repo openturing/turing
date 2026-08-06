@@ -36,6 +36,18 @@ public interface TurSNSiteFieldRepository extends JpaRepository<TurSNSiteField, 
 
 	boolean existsByTurSNSiteAndName(TurSNSite turSNSite, String name);
 
+	/**
+	 * bulk-delete-ok — T899 / §LXVIII.7.
+	 *
+	 * <p>
+	 * A bulk delete fires no {@code @PostRemove}, which is why the equivalent methods
+	 * were removed from {@code TurSNSiteFieldExtRepository}. This one is kept:
+	 * {@link TurSNSiteField} carries <em>no</em> {@code @EntityListeners} — it is the raw
+	 * field registry, and the configuration a query actually reads is
+	 * {@code TurSNSiteFieldExt} — so no eviction callback exists here to skip. Should this
+	 * entity ever gain a listener, delete this method rather than the marker above.
+	 * </p>
+	 */
 	@Modifying
 	@Query("delete from TurSNSiteField ssf where ssf.id = ?1")
 	void delete(String turSnSiteFieldId);

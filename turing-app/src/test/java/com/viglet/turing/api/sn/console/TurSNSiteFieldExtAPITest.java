@@ -24,6 +24,7 @@ package com.viglet.turing.api.sn.console;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyIterable;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -210,7 +211,10 @@ class TurSNSiteFieldExtAPITest {
                 List<TurSNSiteFieldExtDto> result = api.turSNSiteFieldExtList("site");
 
                 verify(template).createSEFields(site);
-                verify(fieldExtRepository).deleteByTurSNSiteAndSnType(site, TurSNFieldType.NER);
+                // T899 — the NER purge now loads the rows and deleteAll's them, so each removal
+                // fires the callbacks that evict the snapshot and search caches.
+                verify(fieldExtRepository).findByTurSNSiteAndSnType(site, TurSNFieldType.NER);
+                verify(fieldExtRepository).deleteAll(anyIterable());
                 verify(fieldExtRepository).save(any(TurSNSiteFieldExt.class));
                 assertThat(result).isEmpty();
         }
@@ -437,7 +441,7 @@ class TurSNSiteFieldExtAPITest {
 
                 assertThat(result).isTrue();
                 verify(fieldRepository).delete("ext");
-                verify(fieldExtRepository).delete("id");
+                verify(fieldExtRepository).delete(any(TurSNSiteFieldExt.class));
         }
 
         @Test
@@ -477,7 +481,7 @@ class TurSNSiteFieldExtAPITest {
 
                 assertThat(result).isTrue();
                 verify(fieldRepository, never()).delete(any(String.class));
-                verify(fieldExtRepository).delete("id");
+                verify(fieldExtRepository).delete(any(TurSNSiteFieldExt.class));
         }
 
         @Test
@@ -878,7 +882,7 @@ class TurSNSiteFieldExtAPITest {
                         utils.verify(() -> TurSolrUtils.deleteField(seInstance, "core_en", "title",
                                         TurSEFieldType.STRING));
                         verify(fieldRepository).delete("ext");
-                        verify(fieldExtRepository).delete("id");
+                        verify(fieldExtRepository).delete(any(TurSNSiteFieldExt.class));
                 }
         }
 

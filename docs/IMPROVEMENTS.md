@@ -2162,29 +2162,6 @@ anyway, so precision only ever mattered for the indexing path, where the scan al
 works. Resume when a provider whose native cache is not a `Map` is actually wired, or
 when a bulk import's eviction cost shows up in a profile.
 
-### LXVIII.7 Bulk deletes bypass the eviction listener that T896 relies on (T899)
-
-T896 hooked the JPA layer precisely so no write path could forget to evict — the
-callback fires whichever service saved the entity. That argument has one hole, and it is
-a hole in JPA rather than in the wiring: lifecycle callbacks fire for entities the
-persistence context manages, and bulk operations do not manage any.
-`deleteAllInBatch(...)` and `@Modifying @Query("delete …")` issue SQL directly, so
-`@PostRemove` never runs.
-
-`TurSNSpotlightProcess` uses exactly that, six times — `deleteAllInBatch` on spotlights,
-terms and documents when re-importing or clearing a provider's unmanaged spotlights. The
-create half of the same flow calls `save(...)` and does evict, which is what makes this
-easy to miss: the common path looks covered because the *last* write in it happens to be
-a managed one. A delete with no following save is not.
-
-So the listener is necessary and not sufficient, and the honest fix is to stop relying
-on one mechanism for a guarantee it cannot make alone. Two candidates: have the
-bulk-delete callers evict explicitly (small, local, and back to "someone must
-remember"), or move the eviction to a Hibernate integrator that observes the SQL-level
-events bulk operations *do* produce. The second is the one that keeps T896's property;
-the first is what a fix under time pressure will look like, which is worth saying out
-loud before it is written.
-
 ### LXVIII.8 An import carrying spotlights clears the whole search cache once per row (T900)
 
 T896's whole-cache clear was justified on volume: configuration edits are rare and

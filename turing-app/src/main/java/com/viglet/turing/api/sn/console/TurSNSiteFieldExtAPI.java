@@ -193,13 +193,21 @@ public class TurSNSiteFieldExtAPI {
             if (TurSNFieldType.SE.equals(turSNSiteFieldExt.getSnType())) {
                 this.turSNSiteFieldRepository.delete(turSNSiteFieldExt.getExternalId());
             }
-            this.turSNSiteFieldExtRepository.delete(id);
+            // T899 / §LXVIII.7 — delete the loaded entity, not its id. The id form was a
+            // @Modifying JPQL delete, which fires no @PostRemove, so removing a field left
+            // its configuration in the snapshot and search caches. The entity is already in
+            // hand from findById above, so this costs nothing.
+            this.turSNSiteFieldExtRepository.delete(turSNSiteFieldExt);
             return true;
         }).orElse(false);
     }
 
     private void updateFieldExtFromSNSite(TurSNSite turSNSite) {
-        turSNSiteFieldExtRepository.deleteByTurSNSiteAndSnType(turSNSite, TurSNFieldType.NER);
+        // T899 / §LXVIII.7 — load then deleteAll, so each removal fires the callbacks
+        // that evict the snapshot and search caches. The previous @Modifying JPQL delete
+        // ran as one statement and fired none of them.
+        turSNSiteFieldExtRepository.deleteAll(
+                turSNSiteFieldExtRepository.findByTurSNSiteAndSnType(turSNSite, TurSNFieldType.NER));
         Map<String, TurSNSiteField> fieldMap = createFieldMap(turSNSite);
         List<TurSNSiteFieldExt> fieldExtList = this.turSNSiteFieldExtRepository
                 .findByTurSNSite(TurPersistenceUtils.orderByNameIgnoreCase(), turSNSite);

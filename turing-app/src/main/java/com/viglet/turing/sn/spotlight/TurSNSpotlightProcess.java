@@ -146,15 +146,29 @@ public class TurSNSpotlightProcess {
 		this.turSNSiteLocaleRepository = turSNSiteLocaleRepository;
 	}
 
+	/**
+	 * T899 / §LXVIII.7 — deletes here use {@code deleteAll}, not
+	 * {@code deleteAllInBatch}.
+	 *
+	 * <p>
+	 * A batch delete issues SQL without loading anything, so the persistence context
+	 * manages no entity and no {@code @PostRemove} fires — which silently skipped both
+	 * the snapshot eviction listener and the T896 search-cache one, leaving a deleted
+	 * spotlight visible in cached answers. Every call site here has <em>already</em>
+	 * loaded the collection it is deleting, so {@code deleteAll} costs no extra query;
+	 * it only spends one statement per row instead of one batched statement, and buys
+	 * back the callbacks, the declared {@code cascade = ALL} and {@code orphanRemoval}.
+	 * </p>
+	 */
 	private void ifExistsDeleteSpotlightDependencies(TurSNSiteSpotlight turSNSiteSpotlight) {
 		if (turSNSiteSpotlight != null) {
 			Set<TurSNSiteSpotlightTerm> turSNSiteSpotlightTerms = turSNSiteSpotlightTermRepository
 					.findByTurSNSiteSpotlight(turSNSiteSpotlight);
-			turSNSiteSpotlightTermRepository.deleteAllInBatch(turSNSiteSpotlightTerms);
+			turSNSiteSpotlightTermRepository.deleteAll(turSNSiteSpotlightTerms);
 
 			Set<TurSNSiteSpotlightDocument> turSNSiteSpotlightDocuments = turSNSiteSpotlightDocumentRepository
 					.findByTurSNSiteSpotlight(turSNSiteSpotlight);
-			turSNSiteSpotlightDocumentRepository.deleteAllInBatch(turSNSiteSpotlightDocuments);
+			turSNSiteSpotlightDocumentRepository.deleteAll(turSNSiteSpotlightDocuments);
 		}
 	}
 
@@ -173,14 +187,14 @@ public class TurSNSpotlightProcess {
 					.findByUnmanagedIdAndTurSNSiteAndLanguage(
 							(String) turSNJobItem.getAttributes().get(TurSNFieldName.ID), turSNSite,
 							turSNSiteLocale.getLanguage());
-			turSNSiteSpotlightRepository.deleteAllInBatch(turSNSiteSpotlights);
+			turSNSiteSpotlightRepository.deleteAll(turSNSiteSpotlights);
 			logger.warn("Spotlight ID '{}' of '{}' SN Site ({}) was deleted.",
 					turSNJobItem.getAttributes().get(TurSNFieldName.ID), turSNSite.getName(),
 					turSNJobItem.getLocale());
 		} else if (turSNJobItem.getAttributes().containsKey(TurSNFieldName.SOURCE_APPS)) {
 			String provider = (String) turSNJobItem.getAttributes().get(TurSNFieldName.SOURCE_APPS);
 			Set<TurSNSiteSpotlight> turSNSiteSpotlights = turSNSiteSpotlightRepository.findByProvider(provider);
-			turSNSiteSpotlightRepository.deleteAllInBatch(turSNSiteSpotlights);
+			turSNSiteSpotlightRepository.deleteAll(turSNSiteSpotlights);
 			logger.warn("Spotlight by '{}' provider was deleted.", provider);
 		}
 
@@ -224,7 +238,7 @@ public class TurSNSpotlightProcess {
 		if (!spotlights.isEmpty()) {
 			spotlights.forEach(this::ifExistsDeleteSpotlightDependencies);
 			if (spotlights.size() > 1) {
-				turSNSiteSpotlightRepository.deleteAllInBatch(spotlights);
+				turSNSiteSpotlightRepository.deleteAll(spotlights);
 			} else {
 				spotlight = spotlights.iterator().next();
 			}
