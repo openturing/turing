@@ -70,8 +70,11 @@
 > Block converging: every `@Cacheable` in the app was checked and all ten have an eviction
 > path, so the defect class this block opened on is provably absent. **T910 SHIPPED**;
 > reopened an eleventh time with the capstone nobody wrote — eleven tasks of eviction
-> correctness, none verified by actually writing then searching (T911). Only 💭 T897,
-> 💭 T905 (both deliberately not built) and T911 remain. §LXVIII.4–.18,
+> correctness, none verified by actually writing then searching (T911). **T911 SHIPPED —
+> the block's thesis is now proven end-to-end and mutation-checked.** What remains is
+> 💭 only: T897 and T905 declined on substance with recorded triggers, T912 a cohesion
+> note on where T911's coverage lives. **No 📋 work; treat the block as closed** unless a
+> trigger fires. §LXVIII.4–.19,
 > created 2026-08-02; Block **BT** = The POST-native default left its consumers
 > behind — T710 made `postNative: true` the default and the provider sets
 > `data = null`, but three `turing-app` consumers still read it: `SearchContent`
@@ -302,6 +305,10 @@ number" looked free but wasn't. Grepping three files (`ROADMAP.md`,
    lists fully-shipped blocks), then bump the letter after creating the block.
 
 ## Log (most recent first)
+
+- **T912 CREATED** (💭, Block BU §LXVIII.19 — self-critique of how T911 was delivered: `turing.search.cache.enabled=true` is set in exactly one place in the suite, a `@DynamicPropertySource` inside `TurSdkContractIT`, so that class now owns three cache-eviction assertions and none is about the SDK. Reusing it was the right trade (a dedicated context costs ~40s for millisecond tests), but the failure mode is real: an SDK-driven restructure deletes the only end-to-end eviction proof without looking like it, and the name means nobody looking for cache tests opens the file) — 2026-08-04.
+
+- **T911 SHIPPED** (Block BU §LXVIII — the assertion eleven tasks never made. Two ITs: indexing through `TurSNProcessQueue` directly (same `@Transactional` proxy, so T901's after-commit eviction runs as in production, no async await to make it flaky) asserts the site's entries go and the next search sees the document, deindexing in a `finally` so the class stays hermetic; and a spotlight save, which reaches the cache through the JPA listener with no queue at all. **Mutation-checked**: disabling `evictSites` fails it with the drift message it was written to produce, `expected: <0> but was: <2>`) — 2026-08-04.
 
 - **T911 CREATED** (📋, Block BU §LXVIII.18 — the capstone gap: eleven tasks made eviction correct, every one verified by a unit test of a component or a lint over the source, **none by doing it**. `TurSdkContractIT` is the only cache-enabled context and it asserts T858's key-collision property, not that a write changes an answer. Concretely at risk: `TurSNSearchCacheKey.of(context)` (what `@Cacheable` stores, wrapped since T895 in `scoped`) and `sitePrefix(siteName)` (what the evictor matches) are two functions that must agree — they do today by construction and a unit test, but nothing lets the real proxy write a real key and the real evictor remove it) — 2026-08-04.
 
