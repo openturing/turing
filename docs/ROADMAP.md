@@ -24,6 +24,7 @@
 ## Block BU — The search cache is off by a thousand and never evicted on write (§LXVIII)
 
 - 💭 **T897** (deps: T870 ✅) **Per-site eviction has to reach outside the Spring `Cache` contract** — Enumerating a site's keys needs `getNativeCache()` to be a `Map`, so a provider that is not one silently degrades to clearing every site — a generation counter in the key would not. → §LXVIII.6
+- 📋 **T903** (deps: T901 ✅) **The snapshot and field-config caches evict before commit, and have no backstop** — Their listener clears at flush, so a concurrent read re-caches the pre-commit config — and neither cache has a sweep, so it stays stale until the next SN write. → §LXVIII.10
 
 ## Block BV — The quality gate stops at the package boundary (§LXIX)
 

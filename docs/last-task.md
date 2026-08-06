@@ -52,8 +52,10 @@
 > T896 listener (T899), and 💭 an import carrying spotlights fires the whole-cache
 > clear once per saved row (T900). **T899–T900 SHIPPED**; reopened a third time with
 > the one thing all five evictions share — they run before the writing transaction
-> commits (T901). Only 💭 T897 (deliberately not built) and T901 remain.
-> §LXVIII.4–.9,
+> commits (T901). **T901 SHIPPED**; reopened a fourth time with its sibling — the older
+> snapshot listener has the same pre-commit window, over two caches that are on by
+> default and have no backstop sweep (T903). Only 💭 T897 (deliberately not built) and
+> T903 remain. §LXVIII.4–.10,
 > created 2026-08-02; Block **BT** = The POST-native default left its consumers
 > behind — T710 made `postNative: true` the default and the provider sets
 > `data = null`, but three `turing-app` consumers still read it: `SearchContent`
@@ -284,6 +286,10 @@ number" looked free but wasn't. Grepping three files (`ROADMAP.md`,
    lists fully-shipped blocks), then bump the letter after creating the block.
 
 ## Log (most recent first)
+
+- **T903 CREATED** (📋, Block BU §LXVIII.10 — the sibling of T901, and **worse**: `TurSNSiteSnapshotEvictionListener` still clears `turSNSiteSearchSnapshot` + `turSNSiteFieldConfig` inline at flush. Those caches are on in *every* deployment (`searchAPI` is opt-in) and neither has a backstop sweep, so a snapshot re-cached in the pre-commit window stays wrong until the next write to any SN entity. Fix is to route both through the T901 after-commit seam — not to copy it, since two listeners with the same annotations and different visibility semantics is what produced the divergence) — 2026-08-04.
+
+- **T901 SHIPPED** (Block BU §LXVIII — eviction registers on the transaction and runs `afterCommit`, inline when none is active. Tenant-scoped prefixes are resolved at *call* time, not in the callback: the tenant is a thread-local, and binding what is evicted to when it is evicted is how an ordering fix would quietly reintroduce T895. Two bonuses: a rollback now discards nothing, and a whole-cache clear registers at most once per transaction) — 2026-08-04.
 
 - **T901–T902 CREATED** (📋 — T901 in **Block BU** §LXVIII.9: every eviction this block added runs *inside* the writing transaction (`processIndexingQueue` is `@Transactional`; `@PostPersist`/`@PostRemove` fire at flush), so a search arriving between the evict and the commit re-caches the pre-commit answer. Narrow — documents land in the search engine independently of the JPA transaction, so only entity-backed config (spotlight, field, synonym) is exposed. Fix is ordering: `registerSynchronization` after commit. T902 in **Block BV** §LXIX.8: `STRATEGY.md` and `IMPROVEMENTS.md` declare the same 13 anchors (§VIII, §IX–§IX.4, §X, §X.1, §X.5, §XII, §XII.2, §XIV, §XVI), so every verb reading one refuses; fix is `[refs] <role> = "<prefix>"` in `roadkeep.toml`, not a rewrite) — 2026-08-04.
 
