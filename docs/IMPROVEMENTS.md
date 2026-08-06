@@ -2162,6 +2162,55 @@ anyway, so precision only ever mattered for the indexing path, where the scan al
 works. Resume when a provider whose native cache is not a `Map` is actually wired, or
 when a bulk import's eviction cost shows up in a profile.
 
+### LXVIII.11 Every remaining @CacheEvict evicts inside the writing transaction (T904)
+
+T901 and T903 moved the search and snapshot evictions to after-commit. Everything still
+evicting through `@CacheEvict` kept the old timing, because the annotation cannot
+express it: with the default `beforeInvocation = false` it fires when the method
+*returns*, which inside a transaction is still before the commit.
+
+Two places make that concrete rather than theoretical.
+`TurSNSpotlightProcess.createUnmanagedSpotlight` and `deleteUnmanagedSpotlight` each
+carry `@CacheEvict({"spotlight", "spotlight_term"})` and are called from inside
+`processIndexingQueue`'s transaction, so their eviction is unambiguously pre-commit —
+and `spotlight_term` is `@Cacheable` and read at query time, so the stale entry is one a
+user sees. `TurSNSiteSpotlightAPI`'s delete is `@Transactional` *and* `@CacheEvict` on
+the same method, where the outcome depends on the relative order of two interceptors
+that both declare `LOWEST_PRECEDENCE` — correct by accident is the more expensive kind
+of correct.
+
+`TurGlobalSettingsService` carries eight more for `turRagRerankScore`, on settings
+writes that are likely transactional too.
+
+The seam exists now: `TurCacheEvictionScheduler.clearOnce(name)` is what `@CacheEvict(…,
+allEntries = true)` should have been on a transactional path. The work is to route these
+through it and to decide what stops the next one — a lint over `@CacheEvict` in a
+transactional class is possible but noisy, and the honest alternative may be to accept
+the annotation where the cache is not read at query time, and say which those are.
+
+### LXVIII.12 The snapshot and field-config caches have no backstop sweep (T905)
+
+`searchAPI` has a `@Scheduled` sweep. Five tasks of this block made its eviction
+correct, and the sweep is now only the backstop — but that is precisely its value: if
+eviction ever fails, staleness is bounded at 24 hours instead of forever.
+
+`turSNSiteSearchSnapshot` and `turSNSiteFieldConfig` have no such bound. They are
+correct today, and their correctness rests entirely on the eviction path being right —
+the same assumption that was wrong three separate times in this block, in caches where
+the mistake was cheaper. A snapshot that goes stale for any reason nobody has thought of
+stays stale until the next write to any SN entity, which on a site whose configuration
+has settled may be never; the operator's only recovery is a restart.
+
+The argument against is real and is why this is an idea rather than a task. A periodic
+clear on caches that are on by default costs a rebuild per site per period for a fault
+nobody has observed, and it dulls the signal: a bug that would have shown up as
+permanent staleness instead shows up as staleness that mysteriously heals, which is
+harder to diagnose, not easier.
+
+If it is taken, the sweep should be long — daily, matching `searchAPI` — and it should
+log at a level that says a backstop fired, so a deployment relying on it is visible
+rather than merely surviving.
+
 ## LXIX. The quality gate stops at the package boundary (Block BV)
 
 > Block BS fixed the gate for one package. Adopting the same two changes across

@@ -54,8 +54,11 @@
 > the one thing all five evictions share — they run before the writing transaction
 > commits (T901). **T901 SHIPPED**; reopened a fourth time with its sibling — the older
 > snapshot listener has the same pre-commit window, over two caches that are on by
-> default and have no backstop sweep (T903). Only 💭 T897 (deliberately not built) and
-> T903 remain. §LXVIII.4–.10,
+> default and have no backstop sweep (T903). **T903 SHIPPED**, extracting the shared
+> `TurCacheEvictionScheduler`; reopened a fifth time with what having one seam made
+> visible — every remaining `@CacheEvict` still evicts pre-commit and cannot say
+> otherwise (T904), and 💭 neither snapshot cache has a backstop (T905). Only 💭 T897
+> (deliberately not built), T904 and 💭 T905 remain. §LXVIII.4–.12,
 > created 2026-08-02; Block **BT** = The POST-native default left its consumers
 > behind — T710 made `postNative: true` the default and the provider sets
 > `data = null`, but three `turing-app` consumers still read it: `SearchContent`
@@ -286,6 +289,10 @@ number" looked free but wasn't. Grepping three files (`ROADMAP.md`,
    lists fully-shipped blocks), then bump the letter after creating the block.
 
 ## Log (most recent first)
+
+- **T904–T905 CREATED** (📋/💭, Block BU §LXVIII.11–.12 — T904: everything still evicting through `@CacheEvict` kept the pre-commit timing, because the annotation cannot express after-commit (`beforeInvocation = false` fires on method *return*). Concrete in two places: `TurSNSpotlightProcess`'s two `@CacheEvict` methods are called from inside `processIndexingQueue`'s transaction, and `spotlight_term` is read at query time so the stale entry is user-visible; `TurSNSiteSpotlightAPI`'s delete is `@Transactional` *and* `@CacheEvict` on one method, where the outcome depends on two interceptors that both declare `LOWEST_PRECEDENCE`. Plus 8 more in `TurGlobalSettingsService`. 💭 T905: neither snapshot cache has a backstop sweep, so their correctness rests entirely on eviction being right — the assumption that was wrong three times in this block) — 2026-08-04.
+
+- **T903 SHIPPED** (Block BU §LXVIII — the snapshot + field-config clears moved to after-commit. New `TurCacheEvictionScheduler` in `system/cache` owns `whenVisible`/`clearOnce`, and **both** the search evictor and the snapshot listener route through it — the seam is shared, not copied, because these two had the same defect and were fixed a task apart precisely because there was nothing to compare against. Inline clearing was wrong in both directions: a reader before the commit re-cached the old config, and a read on the *writing* thread published that transaction's uncommitted state to everyone) — 2026-08-04.
 
 - **T903 CREATED** (📋, Block BU §LXVIII.10 — the sibling of T901, and **worse**: `TurSNSiteSnapshotEvictionListener` still clears `turSNSiteSearchSnapshot` + `turSNSiteFieldConfig` inline at flush. Those caches are on in *every* deployment (`searchAPI` is opt-in) and neither has a backstop sweep, so a snapshot re-cached in the pre-commit window stays wrong until the next write to any SN entity. Fix is to route both through the T901 after-commit seam — not to copy it, since two listeners with the same annotations and different visibility semantics is what produced the divergence) — 2026-08-04.
 
