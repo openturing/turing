@@ -19,13 +19,12 @@ package com.viglet.turing.sn.snapshot;
 import java.util.concurrent.atomic.AtomicReference;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.cache.Cache;
-import org.springframework.cache.CacheManager;
 import org.springframework.stereotype.Component;
 
 import com.viglet.turing.genai.tool.TurSNSiteConfigCache;
 import com.viglet.turing.observability.TurMeterNames;
 import com.viglet.turing.observability.TurSearchPipelineObservation;
+import com.viglet.turing.system.cache.TurCacheEvictionScheduler;
 
 import jakarta.persistence.PostPersist;
 import jakarta.persistence.PostRemove;
@@ -51,7 +50,7 @@ import jakarta.persistence.PostUpdate;
  *
  * <p>Hibernate (via Spring Boot's auto-configured {@code SpringBeanContainer})
  * resolves the listener through the application context, so constructor
- * injection of {@link CacheManager} works. The static fallback handles legacy
+ * injection works. The static fallback handles legacy
  * setups where JPA instantiates the listener with the no-arg constructor.
  *
  * @author Alexandre Oliveira
@@ -60,52 +59,79 @@ import jakarta.persistence.PostUpdate;
 @Component
 public class TurSNSiteSnapshotEvictionListener {
 
-    private static final AtomicReference<CacheManager> cacheManagerStatic = new AtomicReference<>();
+    private static final AtomicReference<TurCacheEvictionScheduler> evictionSchedulerStatic =
+            new AtomicReference<>();
     private static final AtomicReference<TurSearchPipelineObservation> pipelineObservationStatic =
             new AtomicReference<>();
 
-    private final CacheManager cacheManager;
+    private final TurCacheEvictionScheduler evictionScheduler;
     private final TurSearchPipelineObservation pipelineObservation;
 
     public TurSNSiteSnapshotEvictionListener() {
-        this.cacheManager = null;
+        this.evictionScheduler = null;
         this.pipelineObservation = null;
     }
 
     @Autowired
-    public TurSNSiteSnapshotEvictionListener(CacheManager cacheManager,
+    public TurSNSiteSnapshotEvictionListener(TurCacheEvictionScheduler evictionScheduler,
             TurSearchPipelineObservation pipelineObservation) {
-        this.cacheManager = cacheManager;
+        this.evictionScheduler = evictionScheduler;
         this.pipelineObservation = pipelineObservation;
-        cacheManagerStatic.set(cacheManager);
+        evictionSchedulerStatic.set(evictionScheduler);
         pipelineObservationStatic.set(pipelineObservation);
     }
 
+    /**
+     * T903 / §LXVIII.10 — the clears run <strong>after the writing transaction
+     * commits</strong>, through the shared {@link TurCacheEvictionScheduler}.
+     *
+     * <p>
+     * These callbacks fire at flush, so clearing inline was wrong in both directions. A
+     * search on another thread arriving between the clear and the commit rebuilt the
+     * snapshot from committed state — the <em>old</em> configuration — and cached it,
+     * where it outlived the edit. And a read on the writing thread rebuilt it from that
+     * transaction's own uncommitted state and published it to everyone, so a rollback
+     * could leave the cache holding a configuration that never existed.
+     * </p>
+     *
+     * <p>
+     * That mattered more here than for the search cache T901 fixed first:
+     * {@code turing.search.cache.enabled} defaults to false, while these two are on in
+     * every deployment, and neither has a backstop sweep to bound how long a wrong entry
+     * survives.
+     * </p>
+     */
     @PostPersist
     @PostUpdate
     @PostRemove
     public void onChange(Object entity) {
-        CacheManager cm = cacheManager != null ? cacheManager : cacheManagerStatic.get();
-        if (cm == null) {
+        TurCacheEvictionScheduler scheduler = evictionScheduler != null
+                ? evictionScheduler
+                : evictionSchedulerStatic.get();
+        if (scheduler == null) {
             return;
         }
-        Cache cache = cm.getCache(TurSNSiteSearchSnapshotService.CACHE_NAME);
-        if (cache != null) {
-            cache.clear();
-            TurSearchPipelineObservation observation = pipelineObservation != null
-                    ? pipelineObservation
-                    : pipelineObservationStatic.get();
-            if (observation != null) {
-                observation.recordSnapshotOutcome(TurMeterNames.OUTCOME_EVICT);
-            }
-        }
+        scheduler.clearOnce(TurSNSiteSearchSnapshotService.CACHE_NAME);
         // T487 — the Semantic Navigation field-config read-model cache depends on
         // the same SN entity graph (site + fields), so any write that evicts the
         // search snapshot must also drop the memoized field config. Coarse,
         // whole-cache clear: it rebuilds in one round-trip on the next tool call.
-        Cache fieldConfigCache = cm.getCache(TurSNSiteConfigCache.FIELD_CONFIG_CACHE);
-        if (fieldConfigCache != null) {
-            fieldConfigCache.clear();
+        scheduler.clearOnce(TurSNSiteConfigCache.FIELD_CONFIG_CACHE);
+        recordEviction();
+    }
+
+    /**
+     * The eviction counter is incremented where the eviction is <em>requested</em>, not
+     * where it lands. It measures how often a write invalidates the snapshot, which is a
+     * property of the write; deferring it to the commit callback would also stop counting
+     * the writes that roll back, and those still tell you what the workload is doing.
+     */
+    private void recordEviction() {
+        TurSearchPipelineObservation observation = pipelineObservation != null
+                ? pipelineObservation
+                : pipelineObservationStatic.get();
+        if (observation != null) {
+            observation.recordSnapshotOutcome(TurMeterNames.OUTCOME_EVICT);
         }
     }
 }

@@ -2162,32 +2162,6 @@ anyway, so precision only ever mattered for the indexing path, where the scan al
 works. Resume when a provider whose native cache is not a `Map` is actually wired, or
 when a bulk import's eviction cost shows up in a profile.
 
-### LXVIII.10 The snapshot and field-config caches evict before commit, and have no backstop (T903)
-
-T901 moved the `searchAPI` eviction to after commit. `TurSNSiteSnapshotEvictionListener`
-— the older listener, and the one T896 was modelled on — still clears
-`turSNSiteSearchSnapshot` and `turSNSiteFieldConfig` inline from `@PostPersist` /
-`@PostUpdate` / `@PostRemove`, which run at flush. Same window, one layer over.
-
-It is the more serious of the two, for two reasons neither obvious from the code.
-`turing.search.cache.enabled` defaults to **false**, so everything this block fixed was
-latent for anyone who had not opted in; the snapshot cache is on in every deployment.
-And `searchAPI` has a backstop — the daily sweep bounded its staleness at 24 hours even
-when eviction failed entirely. Neither of these caches has one. A snapshot re-cached in
-the pre-commit window stays wrong until the next write to any SN entity, which on a site
-whose configuration has settled may be never.
-
-The concrete sequence: an admin edits a facet, the flush fires the listener, the caches
-clear; a search on another thread rebuilds the snapshot from committed state — still the
-old configuration — and caches it; the admin's transaction commits. The edit is durable
-and invisible.
-
-The fix is the seam T901 already built: route both clears through the same after-commit
-registration rather than clearing inline. What that seam should not be is a second copy
-of it. Two eviction listeners now sit in the same package with the same lifecycle
-annotations and different visibility semantics, which is the shape that produced this
-divergence in the first place.
-
 ## LXIX. The quality gate stops at the package boundary (Block BV)
 
 > Block BS fixed the gate for one package. Adopting the same two changes across

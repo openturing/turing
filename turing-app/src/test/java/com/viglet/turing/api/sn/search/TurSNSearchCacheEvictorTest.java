@@ -25,6 +25,7 @@ import com.viglet.turing.commons.sn.bean.TurSNSearchParams;
 import com.viglet.turing.commons.sn.bean.TurSNSiteSearchBean;
 import com.viglet.turing.commons.sn.search.TurSNSearchCacheKey;
 import com.viglet.turing.commons.sn.search.TurSNSiteSearchContext;
+import com.viglet.turing.system.cache.TurCacheEvictionScheduler;
 import com.viglet.turing.tenant.TurTenantCacheKey;
 
 /**
@@ -79,7 +80,8 @@ class TurSNSearchCacheEvictorTest {
     }
 
     private TurSNSearchCacheEvictor evictor(CacheManager cacheManager, boolean enabled) {
-        return new TurSNSearchCacheEvictor(cacheManager, tenantCacheKey, enabled);
+        return new TurSNSearchCacheEvictor(cacheManager,
+                new TurCacheEvictionScheduler(cacheManager), tenantCacheKey, enabled);
     }
 
     @Test

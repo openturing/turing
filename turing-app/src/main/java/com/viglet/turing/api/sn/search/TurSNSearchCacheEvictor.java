@@ -23,11 +23,10 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cache.Cache;
 import org.springframework.cache.CacheManager;
 import org.springframework.stereotype.Component;
-import org.springframework.transaction.support.TransactionSynchronization;
-import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.springframework.util.StringUtils;
 
 import com.viglet.turing.commons.sn.search.TurSNSearchCacheKey;
+import com.viglet.turing.system.cache.TurCacheEvictionScheduler;
 import com.viglet.turing.tenant.TurTenantCacheKey;
 
 import lombok.extern.slf4j.Slf4j;
@@ -73,6 +72,7 @@ public class TurSNSearchCacheEvictor {
     public static final String SEARCH_CACHE = "searchAPI";
 
     private final CacheManager cacheManager;
+    private final TurCacheEvictionScheduler evictionScheduler;
     private final TurTenantCacheKey tenantCacheKey;
     private final boolean searchCacheEnabled;
     /** Guards the T897 degradation warning so it is said once, not per write. */
@@ -83,16 +83,12 @@ public class TurSNSearchCacheEvictor {
      * callbacks it collapses fire on that same thread.
      */
     private static final ThreadLocal<Deferral> coalescing = new ThreadLocal<>();
-    /**
-     * T901 — set once a whole-cache clear is registered for the current transaction, so
-     * the other writes in it do not each register their own. Released in
-     * {@code afterCompletion}.
-     */
-    private static final ThreadLocal<Boolean> clearRegistered = new ThreadLocal<>();
 
-    public TurSNSearchCacheEvictor(CacheManager cacheManager, TurTenantCacheKey tenantCacheKey,
+    public TurSNSearchCacheEvictor(CacheManager cacheManager,
+            TurCacheEvictionScheduler evictionScheduler, TurTenantCacheKey tenantCacheKey,
             @Value("${turing.search.cache.enabled:false}") boolean searchCacheEnabled) {
         this.cacheManager = cacheManager;
+        this.evictionScheduler = evictionScheduler;
         this.tenantCacheKey = tenantCacheKey;
         this.searchCacheEnabled = searchCacheEnabled;
     }
@@ -117,7 +113,7 @@ public class TurSNSearchCacheEvictor {
         if (prefixes.isEmpty()) {
             return;
         }
-        whenVisible(() -> evictPrefixes(prefixes));
+        evictionScheduler.whenVisible(() -> evictPrefixes(prefixes));
     }
 
     private void evictPrefixes(List<String> prefixes) {
@@ -161,17 +157,7 @@ public class TurSNSearchCacheEvictor {
         }
         // T901 / §LXVIII.9 — a JPA callback fires at flush, so outside the queue's
         // coalescing window this is still inside the writing transaction.
-        scheduleClear();
-    }
-
-    private void clearNow() {
-        Cache cache = cacheManager.getCache(SEARCH_CACHE);
-        if (cache == null) {
-            return;
-        }
-        cache.clear();
-        log.debug("[T896] Cleared the '{}' cache after a search-affecting configuration write",
-                SEARCH_CACHE);
+        evictionScheduler.clearOnce(SEARCH_CACHE);
     }
 
     /**
@@ -228,88 +214,13 @@ public class TurSNSearchCacheEvictor {
             log.debug("[T900] Coalesced the run's whole-cache clears into one");
             // T901 — the queue closes its window inside the transaction, so the one
             // clear it accumulated still has to wait for the commit.
-            scheduleClear();
+            evictionScheduler.clearOnce(SEARCH_CACHE);
         }
     }
 
     /** Mutable flag for the current thread's coalescing window. */
     private static final class Deferral {
         private boolean requested;
-    }
-
-    /**
-     * T901 / §LXVIII.9 — runs {@code eviction} when the data it invalidates is actually
-     * visible to other threads: after commit if a transaction is in progress, inline if
-     * none is.
-     *
-     * <p>
-     * Every eviction this block added ran <em>inside</em> the writing transaction —
-     * {@code processIndexingQueue} is {@code @Transactional}, and the JPA callbacks fire
-     * at flush. That left a window between the evict and the commit in which a
-     * concurrent search reads the pre-commit state and caches it, and the entry then
-     * survives to the backstop sweep: the staleness this block spent five tasks
-     * removing, reintroduced by ordering rather than by a missing eviction.
-     * </p>
-     *
-     * <p>
-     * The window never touched documents — those reach the search engine through
-     * {@code indexDocuments}/{@code commit}, independently of the JPA transaction, so
-     * they were already visible. What was exposed is the entity-backed configuration
-     * written in the same transaction: a spotlight, a field, a synonym.
-     * </p>
-     *
-     * <p>
-     * Registering on {@code afterCommit} also makes a rollback correct rather than
-     * merely harmless: a failed indexing message used to evict anyway, discarding good
-     * entries to reflect a write that never happened.
-     * </p>
-     */
-    private void whenVisible(Runnable eviction) {
-        if (!TransactionSynchronizationManager.isSynchronizationActive()) {
-            eviction.run();
-            return;
-        }
-        TransactionSynchronizationManager.registerSynchronization(
-                new TransactionSynchronization() {
-                    @Override
-                    public void afterCommit() {
-                        eviction.run();
-                    }
-                });
-    }
-
-    /**
-     * A whole-cache clear, at most once per transaction.
-     *
-     * <p>
-     * The T900 window collapses the clears the indexing queue provokes, but an admin
-     * transaction that writes forty field-ext rows fires the listener forty times with no
-     * window open. One clear invalidates everything the other thirty-nine would have, so
-     * only the first is registered; the flag is released in {@code afterCompletion} so a
-     * later transaction on the same thread registers its own.
-     * </p>
-     */
-    private void scheduleClear() {
-        if (!TransactionSynchronizationManager.isSynchronizationActive()) {
-            clearNow();
-            return;
-        }
-        if (Boolean.TRUE.equals(clearRegistered.get())) {
-            return;
-        }
-        clearRegistered.set(Boolean.TRUE);
-        TransactionSynchronizationManager.registerSynchronization(
-                new TransactionSynchronization() {
-                    @Override
-                    public void afterCommit() {
-                        clearNow();
-                    }
-
-                    @Override
-                    public void afterCompletion(int status) {
-                        clearRegistered.remove();
-                    }
-                });
     }
 
     /**

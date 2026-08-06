@@ -1209,3 +1209,4 @@
 - **T899** — Spotlight and field-ext deletes load their rows and delete them one by one, so removal fires the callbacks that evict the snapshot and search caches; a lint refuses a new bulk delete.
 - **T900** — The indexing queue coalesces the whole-cache clears its own spotlight writes provoke into at most one, since it already evicts every written site when the message ends.
 - **T901** — Eviction is registered on the transaction and runs after commit, so nothing is discarded while the write is still invisible and a rollback discards nothing at all.
+- **T903** — Both snapshot caches clear through the shared after-commit scheduler the search cache now uses, so one seam decides when every SN eviction becomes visible.
