@@ -2027,11 +2027,11 @@ grounding on a declared schema (T385). What is missing:
 
 ## LVIII. Configurable, per-language NL ranking lexicon (Lucene analysis) (Block BJ)
 
-**Shipped.** T811's ranking planner carried its vocabulary as `private static final`
-fields: an English superlative→direction lexicon, an adjective→concept synonym map and a
-stopword set. A `pt_BR` user asking "modelo *mais barato*" or "*maior* janela de
-contexto" got no sort at all, and no deployment could add a domain word without editing
-Java.
+**Shipped and closed.** T811's ranking planner carried its vocabulary as `private static
+final` fields: an English superlative→direction lexicon, an adjective→concept synonym
+map and a stopword set. A `pt_BR` user asking "modelo *mais barato*" or "*maior* janela
+de contexto" got no sort at all, and no deployment could add a domain word without
+editing Java.
 
 The vocabulary is now a resource bundle per language (T814), tokenised by one Lucene
 analyzer that runs over the query and each declared field alike so inflections collapse
@@ -2040,13 +2040,16 @@ as the fallback and `pt`/`es` shipped (T816), and extensible per deployment
 (`turing.genai.copilot.ranking.lexicon-dir`) or per site from the admin form (T817).
 Both merges *extend* the shipped bundle rather than replacing it.
 
+Moving the analysis onto the request path cost what a Lucene pipeline costs, and the
+second round paid it back: a declared field is analysed once per lexicon rather than
+once per query (T940), the override cache evicts rather than refusing entries past its
+cap (T941), the lexicon directory can be re-read without a restart (T942), and an admin
+can check a bundle instead of inferring from unchanged results that it took (T943).
+
 The invariants held throughout: the planner stays deterministic and LLM-free, an
 unresolved locale or an unparseable override degrades to the shipped vocabulary, and a
 lexicon failure degrades to no sort exactly as before. `TurDslLuceneExecutor.buildSort`
 was never touched.
-
-What the block left open is below: the analysis now runs on the copilot's request path,
-and the two override surfaces have no operational story yet.
 
 ## LXI. Content-fit tuning loop — model-aware, enforceable, and it tells you (Block BN)
 

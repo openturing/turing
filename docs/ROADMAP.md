@@ -6,8 +6,6 @@
 > [STRATEGY.md](STRATEGY.md); the markers and limits are `roadkeep.toml`'s. Blocks are
 > reused, not minted — `roadkeep brief` picks the next task and states why.
 
-## Block BJ — Configurable, per-language NL ranking lexicon (Lucene analysis) (§LVIII)
-
 ## Block BN — Content-fit tuning loop: model-aware, enforceable, and it tells you (§LXI)
 
 - 💭 **T831** (deps: T704 ✅) **Apply a persona adjustment (human-confirmed)** — for PERSONA items only, an opt-in Apply action renders the suggestion as a field-level diff over the audience facet and writes it only after the operator confirms each field. → §LXI.7

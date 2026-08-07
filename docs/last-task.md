@@ -302,6 +302,11 @@ number" looked free but wasn't. Grepping three files (`ROADMAP.md`,
 
 ## Log (most recent first)
 
+- **Block BJ CLOSED, heading dropped** (§LVIII — 8 changelog entries keep the heading; the roadmap heading is gone) — 2026-08-07.
+- **T943 SHIPPED** (Block BJ §LVIII.8 — an admin can check a ranking bundle instead of inferring it took) — 2026-08-07.
+- **T942 SHIPPED** (Block BJ §LVIII.7 — reload the lexicons without a restart) — 2026-08-07.
+- **T941 SHIPPED** (Block BJ §LVIII.6 — the override cache evicts instead of refusing entries) — 2026-08-07.
+- **T940 SHIPPED** (Block BJ §LVIII.5 — a declared field is analysed once per lexicon, not per query) — 2026-08-07.
 - **T940–T943 CREATED** (📋, Block BJ §LVIII.5–.8 — what the Block BJ run left open: every declared field is re-analysed on every query, the override cache stops filling at its cap instead of evicting, a mounted lexicon file still needs a restart, and an unparseable site bundle is visible only in the log) — 2026-08-07.
 - **T817 SHIPPED** (Block BJ §LVIII.4 — per-site ranking-lexicon override, merged over the resolved bundle) — 2026-08-07.
 - **T816 SHIPPED** (Block BJ §LVIII.3 — lexicon + analyzer resolved by locale, `pt`/`es` bundles, `lexicon-dir`) — 2026-08-07.
