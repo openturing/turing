@@ -7,6 +7,7 @@
   "scripts": {
     "postinstall": "node scripts/workspace-status.mjs",
     "check:overrides": "node scripts/check-overrides.mjs",
+    "test:scripts": "node --test \"scripts/__tests__/*.test.mjs\"",
     "bump:patch": "pnpm -r --include-workspace-root exec -- npm version patch --no-git-tag-version",
     "bump:minor": "pnpm -r --include-workspace-root exec -- npm version minor --no-git-tag-version",
     "build": "pnpm install && turbo run build && node scripts/build-status.mjs",

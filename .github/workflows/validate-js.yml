@@ -71,6 +71,14 @@ jobs:
         working-directory: frontend
         run: pnpm --filter "${{ matrix.workspace }}..." run build
 
+      # T935 — the guard scripts have their own suite now, run once rather than
+      # per matrix entry: they are workspace-independent, so the first entry
+      # carries them and the other ten do not repeat the work.
+      - name: Guard scripts
+        if: matrix.workspace == '@viglet/turing-sdk'
+        working-directory: frontend
+        run: pnpm run test:scripts
+
       # T918: the shipping tsconfig excludes tests, stories and vitest config so
       # they never reach `dist` — which also meant nothing type-checked them,
       # since vitest transpiles without checking. `tsconfig.test.json` includes
