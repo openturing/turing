@@ -289,4 +289,3 @@ const invokedDirectly = import.meta.url === pathToFileURL(process.argv[1] ?? "")
 if (invokedDirectly) {
     void main();
 }
-//# sourceMappingURL=cli.js.map

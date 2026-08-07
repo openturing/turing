@@ -2171,33 +2171,6 @@ What is left today is renumbering all 49 `STRATEGY.md` headings past §LXXI, one
 `drop`/`add` pair at a time, which appends its outline to the end of the file in
 scrambled order. That is worse than the collision, so this waits.
 
-### LXIX.16 Every package ships source maps that resolve to nothing (T920)
-
-`react-sdk/dist/index.js.map` names `"sources": ["../src/index.ts"]` and carries no
-`sourcesContent`. `files` is `["dist/**/*"]`, so `src` is not in the tarball. A consumer
-who steps into the package gets a map that promises a source it cannot produce — worse
-than no map, because the debugger stops trying.
-
-It is not one file. Every package emits `sourceMap` and `declarationMap`:
-
-| package | maps | of dist |
-| --- | --- | --- |
-| sdk | 690 kB | 1006 kB |
-| react-sdk | 542 kB | 1348 kB |
-| react-ui | 207 kB | 527 kB |
-| cli | 257 kB | 574 kB |
-| flow-dsl | 138 kB | 377 kB |
-
-Nothing measures it either: `check-size.mjs` skips `.map` on its second line of
-filtering, and weighs `.js` only. So the guards T863 and T878 built report a 97.93 kB
-react-sdk while the tarball carries another half-megabyte the budget never sees.
-
-Three coherent positions, and the task is picking one. Add `src` to `files` and the maps
-work. Or set `"sourcesContent": true` and they work standalone, at the cost of larger
-maps. Or stop emitting maps for publication, and accept that consumers debug the
-compiled output. What is not coherent is the current state: paying the bytes for a map
-that cannot resolve.
-
 ## LXX. What the link-free response and its consumers still lack (Block BW)
 
 > Block BT migrated the three `turing-app` consumers off `store.data`. What it did

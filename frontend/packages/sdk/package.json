@@ -55,7 +55,8 @@
     "directory": "frontend/packages/sdk"
   },
   "files": [
-    "dist/**/*"
+    "dist/**/*",
+    "!**/*.map"
   ],
   "sizeBudget": {
     "extensions": [

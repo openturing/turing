@@ -86,4 +86,3 @@ export declare function transpileFlow(spec: FlowSpec): TranspiledFlow;
  * @since 2026.3.1
  */
 export declare function transpileBundle(specs: readonly FlowSpec[]): TranspiledFlow[];
-//# sourceMappingURL=transpile.d.ts.map

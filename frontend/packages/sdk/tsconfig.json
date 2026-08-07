@@ -5,7 +5,9 @@
     "moduleResolution": "bundler",
     "lib": ["ES2021", "DOM", "DOM.Iterable"],
     "declaration": true,
-    "declarationMap": true,
+    // T920 — not emitted: a .d.ts.map names ../src/*.ts, which `files` does not
+    // publish, and unlike a .js.map it cannot inline its sources. See vite.config.ts.
+    "declarationMap": false,
     "emitDeclarationOnly": true,
     "outDir": "./dist",
     "rootDir": "./src",

@@ -6,8 +6,14 @@
     "lib": ["ES2021", "DOM", "DOM.Iterable"],
     "jsx": "react-jsx",
     "declaration": true,
-    "declarationMap": true,
-    "sourceMap": true,
+    // T920 — not emitted: a published map named `../src/*.ts`, which `files`
+    // does not publish, and `.d.ts.map` cannot inline its sources at all. Making
+    // them resolve means shipping `src`, which reopens the tests-and-stories
+    // surface T915/T919 closed. Consumers get `.d.ts` for navigation; the
+    // reversal, if consumer step-debugging is ever wanted, is `src` in `files`
+    // plus `inlineSources`.
+    "declarationMap": false,
+    "sourceMap": false,
     "outDir": "./dist",
     "rootDir": "./src",
     "strict": true,

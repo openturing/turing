@@ -45,4 +45,3 @@ export function defineFlow(spec) {
 export function defineBundle(specs) {
     return specs;
 }
-//# sourceMappingURL=define-flow.js.map

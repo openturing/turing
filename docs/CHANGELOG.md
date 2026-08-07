@@ -1237,3 +1237,4 @@
 - **T917** — the tracked manifests carry no timestamp and a post-build --dist step stamps buildDate onto the copy in dist, so two consecutive builds leave the four files byte-identical while the ZIP still ships a real build date.
 - **T918** — each package has a tsconfig.test.json that includes what the shipping config excludes and emits nothing, wired into the matrix, and it already caught a zero-arg mock indexed as if it took one and a JSX namespace React 19 removed.
 - **T919** — the CLI and the flow DSL publish dist/src rather than all of dist, dropping 40 and 16 compiled test files, and a shared contents check runs in the matrix asserting no tarball carries tests or stories and that every declared entry point is in it.
+- **T920** — no package emits or publishes a source map, so nothing ships a reference that resolves to nothing, and the five tarballs drop from 2432 kB unpacked to 1226 kB with every entry point still present.

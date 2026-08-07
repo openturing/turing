@@ -42,4 +42,3 @@ export declare function defineFlow<T extends FlowSpec>(spec: T): T;
  * @since 2026.3.1
  */
 export declare function defineBundle<T extends readonly FlowSpec[]>(specs: T): T;
-//# sourceMappingURL=define-flow.d.ts.map

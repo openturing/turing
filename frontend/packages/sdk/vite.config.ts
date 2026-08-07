@@ -23,6 +23,8 @@ export default defineConfig({
     outDir: "dist",
     emptyOutDir: true,
     minify: "esbuild",
-    sourcemap: true,
+    // T920 — not emitted: the published map named sources `files` does not ship,
+    // so it resolved to nothing. See the note in tsconfig.json.
+    sourcemap: false,
   },
 });

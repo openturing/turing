@@ -10,11 +10,12 @@
  * against the `files` field, because `files` is what was *meant* and the listing
  * is what would actually be published:
  *
- *   1. Does it carry test or story files? T915 shipped 168 Storybook entries from
- *      react-sdk; T919 shipped 40 compiled tests from the CLI and 16 from the flow
- *      DSL. Two different causes — a missing `tsconfig` exclude, and a `files`
- *      glob one directory too wide — so the check is on the output, where both
- *      show up the same way.
+ *   1. Does it carry anything that should not ship? T915 shipped 168 Storybook
+ *      entries from react-sdk; T919 shipped 40 compiled tests from the CLI and 16
+ *      from the flow DSL; T920 shipped 1.8 MB of source map across all five. Three
+ *      different causes — a missing `tsconfig` exclude, a `files` glob one
+ *      directory too wide, and an emit flag — so the check is on the output, where
+ *      all three show up the same way.
  *
  *   2. Is every declared entry point actually in it? This is the failure mode the
  *      fix for (1) risks: narrowing `files` until it excludes `main`, `types` or a
@@ -63,7 +64,20 @@ const FORBIDDEN = [
   "dist/test/",
   ...(cfg.forbid ?? []),
 ];
-const FORBIDDEN_SUFFIX = [".test.js", ".test.d.ts", ".spec.js", ".stories.js", ".stories.d.ts"];
+// T920 — `.map` included: every map named `../src/*.ts` and carried no
+// `sourcesContent`, while `files` published no `src`, so 1.8 MB of map across the
+// five packages pointed at files the tarball did not contain. Making them resolve
+// would mean publishing `src`, which reopens the tests-and-stories surface T915
+// and T919 closed; so the coherent position is to ship compiled output only. The
+// maps are still emitted into `dist` for anyone debugging the workspace.
+const FORBIDDEN_SUFFIX = [
+  ".test.js",
+  ".test.d.ts",
+  ".spec.js",
+  ".stories.js",
+  ".stories.d.ts",
+  ".map",
+];
 
 // `npm pack --dry-run` writes nothing and reports exactly what publish would send.
 let listing;
@@ -82,7 +96,7 @@ try {
   fail(`\`npm pack --dry-run\` failed — did the build run? (${error.message})`);
 }
 
-const files = (listing.files ?? []).map((f) => f.path.split("\\").join("/"));
+const files = (listing.files ?? []).map((f) => f.path.replaceAll("\\", "/"));
 if (files.length === 0) fail("the tarball would be empty — did the build run?");
 
 const violations = [];
@@ -97,9 +111,9 @@ const shipped = files.filter(
 if (shipped.length > 0) {
   const shown = shipped.slice(0, 5).join(", ");
   violations.push(
-    `${shipped.length} test/story file(s) would be published — ${shown}` +
+    `${shipped.length} file(s) that must not be published would be — ${shown}` +
       (shipped.length > 5 ? ", …" : "") +
-      " — narrow \"files\" or exclude them from tsconfig",
+      " — narrow \"files\", or stop emitting them",
   );
 }
 
@@ -134,4 +148,4 @@ if (violations.length > 0) {
   process.exit(1);
 }
 
-console.log("  ✓ ships every entry point and no test or story file\n");
+console.log("  ✓ ships every entry point, and no test, story or map file\n");

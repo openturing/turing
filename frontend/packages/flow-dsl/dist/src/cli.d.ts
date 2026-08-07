@@ -43,4 +43,3 @@ export declare function build(inputDir: string, outputDir: string): Promise<{
     ok: number;
     failed: number;
 }>;
-//# sourceMappingURL=cli.d.ts.map

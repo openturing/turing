@@ -77,7 +77,8 @@
     "directory": "frontend/packages/react-sdk"
   },
   "files": [
-    "dist/**/*"
+    "dist/**/*",
+    "!**/*.map"
   ],
   "sizeBudget": {
     "strict": false,

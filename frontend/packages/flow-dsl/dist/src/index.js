@@ -15,4 +15,3 @@
  */
 export { defineBundle, defineFlow } from "./define-flow.js";
 export { FlowSpecError, transpileBundle, transpileFlow } from "./transpile.js";
-//# sourceMappingURL=index.js.map
