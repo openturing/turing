@@ -63,7 +63,7 @@ public class TurDeterministicCopilotQueryPlanner implements TurCopilotQueryPlann
     @Override
     public TurCopilotQueryPlan plan(PlanRequest request) {
         RankingIntent intent = rankingPlanner.detect(request.query(), request.schema(),
-                request.locale());
+                request.locale(), request.rankingLexicon());
         boolean sortOnly = intent.hasSort() && !StringUtils.hasText(intent.strippedQuery());
         Parsed parsed = sortOnly
                 ? new Parsed(TurCopilotQueryBodies.matchAll(DEFAULT_TOP_K), false)

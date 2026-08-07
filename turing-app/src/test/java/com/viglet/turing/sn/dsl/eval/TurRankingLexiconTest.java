@@ -193,6 +193,52 @@ class TurRankingLexiconTest {
         assertThat(lexicon.ascWords()).contains("cheapest");
     }
 
+    // ─────────────── T817 / §LVIII.4 — per-site overrides ───────────────
+
+    @Test
+    void aSiteOverrideExtendsTheLocalesLexiconWithoutReplacingIt() {
+        TurRankingLexicon lexicon = provider.lexicon("en", """
+                {"descWords":["torquiest"],"synonyms":{"torquiest":["torque"]}}""");
+
+        assertThat(lexicon.descStems()).containsAnyElementsOf(lexicon.tokens("torquiest"));
+        assertThat(lexicon.tokens("torquiest")).containsAnyElementsOf(lexicon.tokens("torque"));
+        // The shipped vocabulary is still there — the site listed only what was missing.
+        assertThat(lexicon.ascWords()).contains("cheapest");
+        assertThat(lexicon.tokens("cheapest")).containsAnyElementsOf(lexicon.tokens("pricing"));
+    }
+
+    @Test
+    void aSiteOverrideExtendsTheLanguageTheLocaleActuallyResolvedTo() {
+        TurRankingLexicon lexicon = provider.lexicon("pt_BR", """
+                {"ascWords":["econômico"],"synonyms":{"econômico":["preço"]}}""");
+
+        assertThat(lexicon.language()).isEqualTo("pt");
+        assertThat(lexicon.descWords()).contains("maior");
+        assertThat(lexicon.tokens("econômico")).containsAnyElementsOf(lexicon.tokens("preço"));
+    }
+
+    @Test
+    void anUnparseableOverrideCostsTheSiteItsExtraWordsAndNotItsSort() {
+        TurRankingLexicon lexicon = provider.lexicon("en", "{ not json at all");
+
+        assertThat(lexicon.ascWords()).contains("cheapest");
+        assertThat(lexicon.sortTriggerPattern()).isNotNull();
+    }
+
+    @Test
+    void aBlankOverrideIsTheSharedLexicon() {
+        assertThat(provider.lexicon("en", "  ")).isSameAs(provider.lexicon());
+        assertThat(provider.lexicon("en", null)).isSameAs(provider.lexicon());
+    }
+
+    @Test
+    void theSameOverrideIsCompiledOnce() {
+        String override = """
+                {"descWords":["torquiest"]}""";
+
+        assertThat(provider.lexicon("en", override)).isSameAs(provider.lexicon("en", override));
+    }
+
     @Test
     void aDeploymentWithNoBundleAtAllResolvesNoRanking() {
         TurRankingLexicon lexicon = TurRankingLexicon.of(TurRankingLexiconBundle.empty("zz"));

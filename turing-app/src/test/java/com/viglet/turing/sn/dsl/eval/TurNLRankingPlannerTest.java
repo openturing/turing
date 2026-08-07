@@ -152,6 +152,31 @@ class TurNLRankingPlannerTest {
         assertThat(smartest.order()).isEqualTo("desc");
     }
 
+    // ─────────────── T817 / §LVIII.4 — a site's own vocabulary ───────────────
+
+    @Test
+    void aSiteLexiconResolvesAWordTheShippedBundleNeverHeardOf() {
+        // "gutsiest" is nobody's superlative — until this catalog says it means the
+        // intelligence index, descending.
+        String siteLexicon = """
+                {"descWords":["gutsiest"],"synonyms":{"gutsiest":["intelligence"]}}""";
+
+        assertThat(planner.detect("the gutsiest model", SCHEMA, "en").hasSort()).isFalse();
+
+        RankingIntent intent = planner.detect("the gutsiest model", SCHEMA, "en", siteLexicon);
+        assertThat(intent.field()).isEqualTo("benchmarks_intelligenceIndex");
+        assertThat(intent.order()).isEqualTo("desc");
+    }
+
+    @Test
+    void aSiteLexiconDoesNotCostTheShippedVocabulary() {
+        RankingIntent intent = planner.detect("cheapest embedding models", SCHEMA, "en", """
+                {"descWords":["gutsiest"]}""");
+
+        assertThat(intent.field()).isEqualTo("pricing_inputPer1M");
+        assertThat(intent.order()).isEqualTo("asc");
+    }
+
     @Test
     void aLanguageWithNoBundleStillRanksInEnglish() {
         // The fallback is the pre-block behaviour: an English question in a de_DE

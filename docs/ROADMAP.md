@@ -8,8 +8,6 @@
 
 ## Block BJ — Configurable, per-language NL ranking lexicon (Lucene analysis) (§LVIII)
 
-- 💭 **T817** (deps: T816 ✅) **Per-site / admin-editable ranking lexicon overrides** — let a site or global settings extend the direction/synonym lexicon with domain terms, edited in admin and merged over the resource defaults. → §LVIII.4
-
 ## Block BN — Content-fit tuning loop: model-aware, enforceable, and it tells you (§LXI)
 
 - 💭 **T831** (deps: T704 ✅) **Apply a persona adjustment (human-confirmed)** — for PERSONA items only, an opt-in Apply action renders the suggestion as a field-level diff over the audience facet and writes it only after the operator confirms each field. → §LXI.7

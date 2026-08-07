@@ -59,6 +59,21 @@ class TurCopilotQueryPlannerFactoryTest {
 
         assertThat(resolution.planner()).isSameAs(deterministic);
         assertThat(resolution.maxPasses()).isEqualTo(2);
+        assertThat(resolution.rankingLexicon()).isNull();
+    }
+
+    @Test
+    void carriesTheSitesOwnRankingLexiconToThePlanRequest() {
+        // T817 / §LVIII.4 — the override is read here, where the GenAI binding is
+        // already loaded, so the planner never needs a repository of its own.
+        TurSNSiteGenAi genAi = new TurSNSiteGenAi();
+        genAi.setRankingLexicon("""
+                {"descWords":["torquiest"]}""");
+        when(turSNSiteRepository.findGenAiByNameIgnoreCase("catalog")).thenReturn(Optional.of(genAi));
+
+        var resolution = factory(deterministic, llmAssisted, hybrid).resolve("catalog");
+
+        assertThat(resolution.rankingLexicon()).contains("torquiest");
     }
 
     @Test

@@ -83,10 +83,20 @@ public class TurNLRankingPlanner {
      * back to {@code en} (T816), which is the pre-block behaviour for every locale.
      */
     public RankingIntent detect(String query, List<TurNLFacetField> schema, String locale) {
+        return detect(query, schema, locale, null);
+    }
+
+    /**
+     * As {@link #detect(String, List, String)}, with {@code lexiconOverride} — a
+     * site's own lexicon bundle (T817) — merged over the resolved one. Blank or
+     * unparseable, ranking is exactly what the resource bundles define.
+     */
+    public RankingIntent detect(String query, List<TurNLFacetField> schema, String locale,
+            String lexiconOverride) {
         if (!StringUtils.hasText(query) || schema == null || schema.isEmpty()) {
             return RankingIntent.none(query);
         }
-        TurRankingLexicon lexicon = lexiconProvider.lexicon(locale);
+        TurRankingLexicon lexicon = lexiconProvider.lexicon(locale, lexiconOverride);
         Set<String> queryTokens = lexicon.tokens(query);
         String direction = resolveDirection(query, queryTokens, lexicon);
         if (direction == null) {

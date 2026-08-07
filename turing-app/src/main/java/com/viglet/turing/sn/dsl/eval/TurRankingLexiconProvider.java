@@ -57,8 +57,16 @@ public class TurRankingLexiconProvider {
     private static final String FILE_PATTERN = "lexicon-%s.json";
     private static final ObjectMapper MAPPER = JsonMapper.builder().build();
 
+    /**
+     * How many distinct per-site overrides (T817) stay compiled. A deployment has
+     * one per catalog site, so this is generous — and it is a cap rather than a
+     * budget because the key is caller-supplied text.
+     */
+    private static final int MAX_CACHED_OVERRIDES = 64;
+
     private final ConcurrentMap<String, Optional<TurRankingLexicon>> byLanguage =
             new ConcurrentHashMap<>();
+    private final ConcurrentMap<String, TurRankingLexicon> byOverride = new ConcurrentHashMap<>();
     private final TurCatalogCopilotProperty copilotProperty;
 
     public TurRankingLexiconProvider(TurCatalogCopilotProperty copilotProperty) {
@@ -89,6 +97,54 @@ public class TurRankingLexiconProvider {
             return lexicon(TurRankingLexicon.DEFAULT_LANGUAGE);
         }
         return TurRankingLexicon.of(TurRankingLexiconBundle.empty(language));
+    }
+
+    /**
+     * T817 / §LVIII.4 — the {@code locale} lexicon with a site's own bundle merged
+     * over it. {@code override} is a lexicon bundle in the resource JSON shape;
+     * blank or unparseable, the resolved lexicon is returned unchanged, so a
+     * mistyped override costs the site nothing but its extra words.
+     */
+    public TurRankingLexicon lexicon(String locale, String override) {
+        if (!StringUtils.hasText(override)) {
+            return lexicon(locale);
+        }
+        String key = language(locale) + "\n" + override;
+        TurRankingLexicon cached = byOverride.get(key);
+        if (cached != null) {
+            return cached;
+        }
+        TurRankingLexicon merged = merge(locale, override);
+        if (byOverride.size() < MAX_CACHED_OVERRIDES) {
+            byOverride.put(key, merged);
+        }
+        return merged;
+    }
+
+    private TurRankingLexicon merge(String locale, String override) {
+        // Merge onto the bundle the locale actually resolved to, fallback included:
+        // a site's override must extend the lexicon its questions are ranked with.
+        String language = byLanguage.computeIfAbsent(language(locale), this::load).isPresent()
+                ? language(locale)
+                : TurRankingLexicon.DEFAULT_LANGUAGE;
+        try {
+            return TurRankingLexicon.of(baseBundle(language)
+                    .mergedWith(MAPPER.readValue(override, TurRankingLexiconBundle.class)));
+        } catch (Exception e) {
+            log.warn("[RankingLexicon] override is unreadable: {} — using the '{}' bundle as is",
+                    e.getMessage(), language);
+            return lexicon(locale);
+        }
+    }
+
+    /** The bundle behind an already-resolved lexicon, re-read so it can be merged. */
+    private TurRankingLexiconBundle baseBundle(String language) {
+        TurRankingLexiconBundle shipped = fromClasspath(language);
+        TurRankingLexiconBundle external = fromLexiconDir(language);
+        if (shipped == null) {
+            return external == null ? TurRankingLexiconBundle.empty(language) : external;
+        }
+        return shipped.mergedWith(external);
     }
 
     /** {@code pt_BR} / {@code pt-BR} / {@code PT} all name the {@code pt} bundle. */

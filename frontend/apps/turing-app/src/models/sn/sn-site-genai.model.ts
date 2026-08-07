@@ -121,6 +121,15 @@ export interface TurSNSiteGenAi {
    */
   copilotPlanningMaxPasses?: number | null;
   /**
+   * T817 / §LVIII.4 (Block BJ) — this site's ranking-lexicon override: a lexicon
+   * bundle in the same JSON shape as the shipped `ranking/lexicon-<language>.json`
+   * resources, merged OVER whichever bundle the request locale resolved to. It
+   * extends rather than replaces, so a catalog adds its own domain vocabulary
+   * without restating the shipped one. `null`/blank leaves ranking exactly as the
+   * resource bundles define it. @since 2026.3.4
+   */
+  rankingLexicon?: string | null;
+  /**
    * T472 / §XXVI.9 — opt-in for the index-time content-fit (readability)
    * signal. When `true` and {@link contentFitPersonaId} resolves to an
    * AUDIENCE/BOTH persona, each document is scored against that audience as it

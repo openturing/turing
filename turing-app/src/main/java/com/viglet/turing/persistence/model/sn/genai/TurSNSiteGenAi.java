@@ -353,4 +353,21 @@ public class TurSNSiteGenAi implements Serializable {
      */
     @Column(name = "copilotPlanningMaxPasses")
     private Integer copilotPlanningMaxPasses;
+
+    /**
+     * T817 / §LVIII.4 (Block BJ) — this site's <strong>ranking-lexicon
+     * override</strong>: a lexicon bundle in the same JSON shape the shipped
+     * {@code ranking/lexicon-<language>.json} resources use, merged <em>over</em>
+     * whichever bundle the request locale resolved to.
+     *
+     * <p>It extends rather than replaces, so a catalog adds its own domain terms
+     * ("torque" is a metric, "premium" means expensive) without restating the
+     * shipped vocabulary. {@code null}/blank — the default — leaves ranking exactly
+     * as the resource bundles define it, and an unparseable value is logged and
+     * ignored rather than costing the site its sort.
+     *
+     * @since 2026.3.4
+     */
+    @Column(name = "rankingLexicon", columnDefinition = "longtext")
+    private String rankingLexicon;
 }

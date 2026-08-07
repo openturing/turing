@@ -1,0 +1,26 @@
+databaseChangeLog:
+  # T817 / §LVIII.4 (Block BJ) — per-site ranking-lexicon override. Holds a lexicon
+  # bundle in the same JSON shape as the shipped `ranking/lexicon-<language>.json`
+  # resources; it is merged OVER whichever bundle the request locale resolved to, so
+  # a site adds domain vocabulary without restating the shipped one. Nullable, and
+  # null (the default for every existing site) leaves ranking unchanged.
+  #
+  # Idempotent (columnExists + MARK_RAN) because the app runs between changeset
+  # authoring; portable lowercase types; camelCase columns map literally.
+
+  - changeSet:
+      id: v2026.3.1.123-add-rankingLexicon-to-sn_site_genai
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - columnExists:
+                tableName: sn_site_genai
+                columnName: rankingLexicon
+      changes:
+        - addColumn:
+            tableName: sn_site_genai
+            columns:
+              - column:
+                  name: rankingLexicon
+                  type: longtext

@@ -2054,17 +2054,6 @@ dependency (embedded vector store + the Lucene SE plugin), so reusing it adds no
 **The design — data-driven lexicon + Lucene analysis, resolved per locale.**
 
 
-### LVIII.4 LVIII.4 (T817, 💭) Per-site / admin overrides
-
-Optionally let a site or global settings extend the direction/synonym lexicon with
-domain terms, editable in admin and merged over the resource defaults — promote only if
-a deployment needs vocabulary beyond the shipped bundles.  **Invariants preserved.** The
-planner stays **deterministic and fail-open** — no LLM is reintroduced; an unresolved
-locale falls back to `en`; a lexicon/analyzer failure degrades to no-sort exactly as
-today. The engine (`TurDslLuceneExecutor.buildSort`) is untouched. A possible future
-alignment (out of scope here) is to reuse the target SN site's own index analyzers so
-ranking tokenization matches how the field was indexed.
-
 ## LXI. Content-fit tuning loop — model-aware, enforceable, and it tells you (Block BN)
 
 > Motivated by building T704 (Block AT's closer). The loop the original Persona

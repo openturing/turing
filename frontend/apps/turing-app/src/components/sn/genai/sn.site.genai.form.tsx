@@ -147,6 +147,9 @@ export const SNSiteGenAiForm: React.FC<Props> = ({ snSite, baseRoute = ROUTES.SN
             // saving the form does not pin anything.
             copilotPlanningStrategy: snSite.turSNSiteGenAi?.copilotPlanningStrategy ?? null,
             copilotPlanningMaxPasses: snSite.turSNSiteGenAi?.copilotPlanningMaxPasses ?? null,
+            // T817 / §LVIII.4 (Block BJ) — per-site ranking-lexicon override. Empty
+            // means "rank with the shipped bundles only", which is every pre-BJ site.
+            rankingLexicon: snSite.turSNSiteGenAi?.rankingLexicon ?? "",
             ragBm25Fallback: snSite.turSNSiteGenAi?.ragBm25Fallback ?? true,
             ragHybridSearch: snSite.turSNSiteGenAi?.ragHybridSearch ?? true,
             // T24b — BM25 source defaults to EMBEDDED so a pre-T24b
@@ -763,6 +766,35 @@ export const SNSiteGenAiForm: React.FC<Props> = ({ snSite, baseRoute = ROUTES.SN
                                                 </Select>
                                             </FormItemTwoColumns.Right>
                                         </FormItemTwoColumns>
+                                    )}
+                                />
+
+                                {/* T817 / §LVIII.4 (Block BJ) — per-site ranking lexicon.
+                                    The deterministic planner resolves a superlative to a
+                                    numeric sort from a per-language lexicon; this extends
+                                    that lexicon with the catalog's own words, merged OVER
+                                    the shipped bundle rather than replacing it. Empty is
+                                    the shipped vocabulary alone, and an unparseable value
+                                    is ignored at ranking time rather than losing the sort. */}
+                                <FormField
+                                    control={form.control}
+                                    name="rankingLexicon"
+                                    render={({ field }) => (
+                                        <FormItem className="pt-2">
+                                            <FormLabel>{t("forms.snGenai.rankingLexicon")}</FormLabel>
+                                            <FormDescription>
+                                                {t("forms.snGenai.rankingLexiconDesc")}
+                                            </FormDescription>
+                                            <FormControl>
+                                                <Textarea
+                                                    placeholder={t("forms.snGenai.rankingLexiconPlaceholder")}
+                                                    className="min-h-32 font-mono text-xs"
+                                                    {...field}
+                                                    value={field.value ?? ""}
+                                                />
+                                            </FormControl>
+                                            <FormMessage />
+                                        </FormItem>
                                     )}
                                 />
 

@@ -329,8 +329,8 @@ public class TurCatalogCopilotService {
             }
         }
 
-        PlanRequest planRequest =
-                new PlanRequest(siteName, searchLocale, query, schema, resolution.maxPasses());
+        PlanRequest planRequest = new PlanRequest(siteName, searchLocale, query, schema,
+                resolution.maxPasses(), resolution.rankingLexicon());
         TurCopilotQueryPlan plan = planner.plan(planRequest);
         // T823 / §LX.2 — the filtered path was opaque: log the plan (strategy, LLM
         // passes, notes) AND the exact structured query executed, so a "no results"
@@ -413,8 +413,8 @@ public class TurCatalogCopilotService {
             String subQuery, List<TurNLFacetField> schema,
             TurCopilotQueryPlannerFactory.Resolution resolution) {
         try {
-            PlanRequest request =
-                    new PlanRequest(siteName, searchLocale, subQuery, schema, resolution.maxPasses());
+            PlanRequest request = new PlanRequest(siteName, searchLocale, subQuery, schema,
+                    resolution.maxPasses(), resolution.rankingLexicon());
             TurCopilotQueryPlan plan = resolution.planner().plan(request);
             Optional<TurDslSearchResponse> responseOpt =
                     dslSearchService.search(siteName, searchLocale, plan.request());

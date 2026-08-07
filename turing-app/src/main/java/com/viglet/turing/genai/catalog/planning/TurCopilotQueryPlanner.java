@@ -90,6 +90,15 @@ public interface TurCopilotQueryPlanner {
      *                  parse only, {@code 1} = + judge, {@code 2} = + refine)
      */
     record PlanRequest(String siteName, String locale, String query, List<TurNLFacetField> schema,
-            int maxPasses) {
+            int maxPasses, String rankingLexicon) {
+
+        /**
+         * A request with no per-site ranking-lexicon override (T817) — ranking is
+         * whatever the resource bundles define for the locale.
+         */
+        public PlanRequest(String siteName, String locale, String query,
+                List<TurNLFacetField> schema, int maxPasses) {
+            this(siteName, locale, query, schema, maxPasses, null);
+        }
     }
 }

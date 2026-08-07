@@ -71,7 +71,8 @@ public class TurCopilotQueryPlannerFactory {
         }
         Integer siteDepth = genAi.map(TurSNSiteGenAi::getCopilotPlanningMaxPasses).orElse(null);
         int depth = siteDepth != null ? siteDepth : copilotProperty.getPlanning().getMaxPasses();
-        return new Resolution(plannerFor(strategy), Math.max(0, depth));
+        String rankingLexicon = genAi.map(TurSNSiteGenAi::getRankingLexicon).orElse(null);
+        return new Resolution(plannerFor(strategy), Math.max(0, depth), rankingLexicon);
     }
 
     /** The registered planner for {@code strategy}, degrading to the deterministic one. */
@@ -104,9 +105,18 @@ public class TurCopilotQueryPlannerFactory {
     /**
      * The resolved planning configuration for one copilot turn.
      *
-     * @param planner   the planner to drive
-     * @param maxPasses the analysis depth to pass along in the {@code PlanRequest}
+     * @param planner        the planner to drive
+     * @param maxPasses      the analysis depth to pass along in the {@code PlanRequest}
+     * @param rankingLexicon T817 / §LVIII.4 — the site's own ranking-lexicon bundle,
+     *                       merged over the locale's; {@code null} for every site
+     *                       that declares none, which is ranking as it shipped
      */
-    public record Resolution(TurCopilotQueryPlanner planner, int maxPasses) {
+    public record Resolution(TurCopilotQueryPlanner planner, int maxPasses,
+            String rankingLexicon) {
+
+        /** A resolution for a site with no ranking-lexicon override. */
+        public Resolution(TurCopilotQueryPlanner planner, int maxPasses) {
+            this(planner, maxPasses, null);
+        }
     }
 }
