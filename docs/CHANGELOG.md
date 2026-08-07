@@ -1234,3 +1234,4 @@
 - **T914** — every publish workflow calls pnpm publish, so the workspace protocol is rewritten to the versions actually on npm instead of shipped verbatim, and a test over the workflow files fails the SDK suite if bare npm publish comes back.
 - **T915** — the React SDK's tsconfig excludes its Storybook tree the way react-ui's always did, so the published package drops from 422 entries to 254, and the size budget's now-dead exclusions are gone with it so what ships is what is weighed.
 - **T916** — the showcase and the marketing site are validate-js.yml matrix entries, so all four apps build in CI and the site's build is no longer verified by the act of publishing it.
+- **T917** — the tracked manifests carry no timestamp and a post-build --dist step stamps buildDate onto the copy in dist, so two consecutive builds leave the four files byte-identical while the ZIP still ships a real build date.

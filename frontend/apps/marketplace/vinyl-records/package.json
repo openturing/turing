@@ -9,7 +9,7 @@
     "zip": "node ../zip-dist.mjs",
     "package": "npm run build && npm run zip",
     "preview": "vite preview",
-    "build": "npm run gen-manifest && tsc -b && vite build"
+    "build": "npm run gen-manifest && tsc -b && vite build && node ../gen-manifest.mjs --dist"
   },
   "dependencies": {
     "@radix-ui/react-dropdown-menu": "^2.1.21",

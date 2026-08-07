@@ -2171,28 +2171,6 @@ What is left today is renumbering all 49 `STRATEGY.md` headings past §LXXI, one
 `drop`/`add` pair at a time, which appends its outline to the end of the file in
 scrambled order. That is worse than the collision, so this waits.
 
-### LXIX.13 Four app builds rewrite a tracked file on every run (T917)
-
-`turing-showcase` and all three marketplace examples run `gen-manifest` as the first
-step of `build`, which writes `buildDate: new Date().toISOString()` into
-`public/turing-manifest.json`. All four of those files are **tracked**, unlike the
-catalog `gen-catalog` writes into the ignored `export/`. So building any of them leaves
-the tree dirty with a one-line timestamp diff that is never a change anyone made.
-
-Found by T916, which put the showcase in the validation matrix: the build ran and the
-file appeared in `git status` beside the workflow edit it had nothing to do with.
-Running the full matrix afterwards surfaced the other three, whose stamps were months
-stale — proof the churn is only ever noticed by whoever builds next.
-
-In CI it is harmless, because nothing commits. Locally it is not: `run-commit.cmd`
-stages everything under its working directory, so a commit made for any reason carries a
-build stamp from whenever those apps were last built.
-
-Three ways out, in order of how much they claim. Drop `buildDate` — a manifest that
-identifies the app does not need to say when it was compiled. Or write the manifest to
-the build output rather than to `public/`, next to the catalog, and untrack all four. Or
-gitignore them, which costs the diffability that made someone track them.
-
 ### LXIX.14 No frontend test file is type-checked by anything (T918)
 
 `sdk`, `react-sdk` and `react-ui` all exclude their tests from `tsconfig.json` —

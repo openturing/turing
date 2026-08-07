@@ -4,7 +4,6 @@
   "author": "Alexandre Oliveira",
   "repository": "https://github.com/openviglet/turing",
   "description": "space-missions — Turing ES example application",
-  "buildDate": "2026-06-10T12:06:30.623Z",
   "snSite": "space-missions",
   "locale": "en_US",
   "framework": "react",
