@@ -2171,29 +2171,51 @@ What is left today is renumbering all 49 `STRATEGY.md` headings past §LXXI, one
 `drop`/`add` pair at a time, which appends its outline to the end of the file in
 scrambled order. That is worse than the collision, so this waits.
 
-### LXIX.23 Ten high advisories are open in the frontend dependency tree (T927)
+### LXIX.23 One advisory left, and it needs a major migration (T927)
 
-`pnpm audit --audit-level high` exits 1. Eleven findings, ten high, two already ignored
-by name. With `--prod` it is still six high, so this is not confined to build tooling.
+`pnpm audit --audit-level high` went from eleven findings to one. Seven advisories took
+a capped floor in `pnpm-workspace.yaml` — `fast-uri`, `postcss`, `brace-expansion` and
+both `js-yaml` lines — each a patch inside the major already resolved, verified by a
+full build and 676 passing tests.
 
-Distinct advisories, by package: `react-router` (>=7.12.0 <8.3.0), `postcss` (<=8.5.17),
-`fast-uri` (two ranges, via `@module-federation/enhanced`), `brace-expansion` (two
-ranges, via `eslint`), `js-yaml` (two ranges, via `@changesets/cli`).
+Two things that pass are worth keeping in view. The first attempt wrote `"fast-uri":
+">=3.1.5"` and pnpm resolved **4.1.2** under an `ajv` that wants 3.x — the T913
+accident, reproduced by the fix for it. Every floor here is capped at its major now. The
+second: a `js-yaml@5` version-selector key matched nothing, and the working form was the
+path-scoped `read-yaml-file>js-yaml`. The `js-yaml@3` entry T654 left behind uses the
+form that did not work (T930).
 
-`react-router` is the one to look at first: it is a runtime dependency of the
-marketplace apps rather than a build-time transitive, and its vulnerable range ends at a
-released version.
+What is left is `react-router`, vulnerable `>=7.12.0 <8.3.0`, patched only at
+**8.3.0**. `turing-app` and all three marketplace apps declare
+`react-router-dom@^7.18.1`, which pins `react-router` 7.18.1, so no floor reaches
+it: forcing 8.x under a v7 `react-router-dom` is a major mismatch, and v8 is where
+`react-router-dom` folds into `react-router`.
 
-This is what stops T924 from adding the `pull_request` trigger its own header asks for.
-A gate that is red before any change is made blocks every frontend PR — including the
-Dependabot PRs that would fix it — for reasons no author caused, and a permanently red
-check is one people learn to scroll past.
+So the remainder is a migration, not a version bump — four apps, the admin console among
+them with lazy routes throughout and 222 tests to re-verify. It wants its own pass
+rather than the tail of one.
 
-Two exits per advisory, and the work is deciding which: raise the floor with a
-`pnpm.overrides` entry the way T654 did for undici, or record it in
-`auditConfig.ignoreGhsas` with the reachability argument written next to it, as the two
-xlsx entries already are. Both are in `pnpm-workspace.yaml`. When the audit exits 0,
-T924's comment says what to add.
+### LXIX.25 An override key form that silently matches nothing is still in the config (T931)
+
+T927 needed js-yaml 5.x floored. `"js-yaml@5": ">=5.2.2"` changed nothing.
+`"js-yaml@^5.0.0": ">=5.2.2 <6"` changed nothing either. The form that worked was
+path-scoped: `"read-yaml-file>js-yaml": ">=5.2.2 <6"`.
+
+Note what pnpm did on the two that failed: it installed without a warning, an error, or
+any signal that a declared override matched no dependency in the tree. The config read
+as remediation and was inert.
+
+`pnpm-workspace.yaml` still carries `"js-yaml@3": ">=3.15.0"`, written by T654 and
+recorded in the ledger as one of three remediated advisories. It uses exactly the
+spelling that failed here. Whether it ever applied cannot be read off the file — no
+js-yaml 3.x is in the tree today, so there is nothing for it to match either way, and
+its being green proves only that.
+
+Two things to establish. Whether that entry is load-bearing or decoration, which a `pnpm
+why js-yaml` against a tree that has a 3.x copy would answer. And whether an override
+that matches nothing can be made to say so — a small script over `pnpm-workspace.yaml`'s
+`overrides` keys, asserting each names something the lockfile actually resolves, would
+catch the whole class rather than this instance.
 
 ## LXX. What the link-free response and its consumers still lack (Block BW)
 
