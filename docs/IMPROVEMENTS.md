@@ -1765,6 +1765,47 @@ Deliberately not folded into T884, because returning the secondary groups change
 an existing consumer renders and wants its own decision: a second list, or one list with
 a `secondary` flag per group.
 
+### XLV.7 The legacy similar is typed as a string (T937)
+
+T880 declared `similar` on the structured response and gave the spotlight entry a real
+type. It left the legacy arm alone, and the legacy arm is wrong in the same way for a
+different reason: `TurWidget.similar` is `string`, while
+`TurSNSiteSearchWidgetBean.similar` is a `List<TurSESimilarResult>`.
+
+So a consumer on `postNative: false` reads a declared `string` where an array arrives —
+worse than `unknown[]`, because the type actively lies rather than merely withholding.
+The fix is `TurSimilarDocument[]`, the type T880 already introduced, and the only cost
+is the one fixture that writes `similar: ""`.
+
+### XLV.8 The no-links guard passes on an incomplete fixture (T938)
+
+`testStructuredResponseCarriesNoLinks` is described in its own docblock as "the
+load-bearing assertion of the block": nothing in the structured response is a URL the
+client would have to parse. It asserts that by string-matching the serialized JSON for
+`"link"`, `"href"`, `cleanUpLink`, `cleanUpFacets` and `/api/sn/`.
+
+`TurSNSiteSpotlightDocumentBean` has a `link` field, and T709's mapper copies the
+spotlights across. The guard therefore passes only because `legacyBean()` sets no
+spotlights — add one and the block's central claim fails.
+
+Which of the two is wrong needs deciding, not patching: a spotlight's `link` is the
+*document's own destination*, the same kind of value `results[].fields.url` already
+carries, so it is arguably not a navigation action at all. Either the assertion names
+what it means by a link, or the spotlight is projected like the rest of the response.
+
+### XLV.9 The guard stops at the source, and the bug arrived by README (T939)
+
+T885 fails a build when an app reads `store.data` or `data.widget`. It scans
+`frontend/apps/**` source, which is the right boundary for the code — and the wrong one
+for how this particular bug propagated: T883 found the react-sdk README teaching
+`data.widget.facet.map(…)` as *the* way to render facets, so the first page a new
+consumer wrote reproduced T865 before any of their code could be scanned.
+
+The same rules already exist and are already tested. What is missing is running them
+over the fenced code in `packages/*/README.md` and `examples/**`, where the prose around
+a fence is exempt — a README has to be able to say "`data.widget` is null by default",
+which is exactly what T883 made it say.
+
 ## XLVI. Synthetic User Research — persona studies, interviews & continuous insight (Block AW)
 
 > Persona work so far has treated a `TurPersona` as something you act on **one at a
