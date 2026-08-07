@@ -97,10 +97,19 @@ server answers with the **link-free** (`STRUCTURED`) response. In that mode:
 | ----- | --------------------- | ------------------------------------ |
 | `structured` | the response | `null` |
 | `data` | **`null`** | the response |
-| `data.widget.facet` | **`null`** — there is no widget | the facet groups |
+| `data.widget.facet` | **throws** — there is no `data` to reach through | the facet groups |
 
-So `data.widget.facet.map(…)` renders nothing by default, and `data?.widget…`
-renders nothing *silently*. Two ways to avoid writing that:
+The two ways to write that read fail differently, and the difference is the
+point:
+
+- `data.widget.facet.map(…)` **throws** a `TypeError` on the first render.
+  `data` is `null`, so the property access never gets as far as `widget`. Loud,
+  and you find out immediately.
+- `data?.widget?.facet.map(…)` (or `?? []`) returns `undefined`. The optional
+  chain short-circuits the whole expression, so the page renders **an empty
+  facet rail and no error** — this is the one that ships.
+
+Two ways to avoid writing either:
 
 - inside `<TuringProvider urlSync={…}>`, use the derived hooks
   (`useTuringFacets`, `useTuringPagination`, …) — they have resolved both shapes

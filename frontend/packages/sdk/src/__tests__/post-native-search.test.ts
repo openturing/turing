@@ -425,4 +425,37 @@ describe("POST-native search (T709)", () => {
     const widget = search.getState().data!.widget;
     expect(widget.similar.map((doc) => doc.url)).toEqual(["/n"]);
   });
+
+  // ── T945 / §XLV.10 ──
+
+  /**
+   * The react-sdk README's "Two response shapes" passage is the source a new
+   * consumer reads before writing a line, and it used to say both ways of
+   * reaching through `data` render nothing. Only the optional-chained one does;
+   * the plain read throws, because `data` is `null` and the access never gets as
+   * far as `widget`.
+   *
+   * <p>That distinction is the whole point of the passage — one shape fails on
+   * the first render and the other is the silent one worth warning about — and it
+   * rests on a fact about the controller rather than about JavaScript: if
+   * POST-native ever left `data` as an empty object instead of `null`, the loud
+   * half would go quiet and the README would be wrong again, unnoticed.
+   */
+  it("leaves data null POST-native, so the two documented reads fail differently", async () => {
+    const c = makeClient();
+    const search = createSearchController(c, { site: "wknd", locale: "en_US" }, undefined, {
+      chat: false,
+    });
+    await search.searchQuery("boots");
+
+    const state = search.getState();
+    expect(state.data).toBeNull();
+
+    // `data.widget.facet.map(…)` — loud, and never reaches `widget`.
+    expect(() => (state.data as unknown as TurSearchResponse).widget.facet).toThrow(TypeError);
+
+    // `data?.widget?.facet.map(…)` — the whole chain short-circuits to undefined,
+    // which is an empty rail and no error: the one that ships.
+    expect(state.data?.widget?.facet.map((group) => group.name)).toBeUndefined();
+  });
 });

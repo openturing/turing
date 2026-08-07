@@ -30,8 +30,6 @@
 
 ## Block AV — POST-native search & link-free response contract (§XLV)
 
-- 📋 **T945** (deps: —) **The passage that warns about the legacy read describes the wrong failure** — The README says `data.widget.facet.map(...)` renders nothing by default, but `data` is null POST-native, so that read throws rather than rendering nothing. → §XLV.10
-
 ## Non-goals (do NOT add as tasks)
 
 Binding constraints — see [IMPROVEMENTS.md](IMPROVEMENTS.md) §I.6 (What NOT to
