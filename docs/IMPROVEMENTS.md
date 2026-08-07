@@ -2239,6 +2239,30 @@ Two exits per advisory, and the work is deciding which: raise the floor with a
 xlsx entries already are. Both are in `pnpm-workspace.yaml`. When the audit exits 0,
 T924's comment says what to add.
 
+### LXIX.24 Three workflow headers describe triggers the file does not have (T929)
+
+`24a848332e` deliberately moved four workflows to `workflow_dispatch`. It changed no
+comment, so three files still describe the triggers they used to have:
+
+- `dependency-audit.yml` — "Runs on PRs that touch the frontend, on a weekly
+  schedule, and on demand."
+- `roadkeep.yml` — a gate that "fails the build on what a branch added", and a
+  `baseline:` expression reading `github.base_ref`, which only a pull request
+  supplies.
+- `nightly-llm-it.yml` — "the default PR/validate pipeline excludes the real-LLM
+  ITs ... so every-PR CI doesn't burn API credits", presuming a pipeline that no
+  longer runs. Its filename claims a schedule its `name:` correctly disowns.
+
+This is not cosmetic. T922 and T924 were filed *because of* these comments and reasoned
+from them to the conclusion that the dispatch-only state was an oversight. It was not,
+and both had to be reverted (T928). The comments were the evidence, and they were stale.
+
+The fix is prose, not configuration: say that these run on demand and why, and where a
+sentence describes the previous arrangement, delete it rather than qualify it.
+`roadkeep.yml`'s `baseline:` expression is worth a line of its own — the
+`github.base_ref` fallback is correct for a dispatch run and reads as leftover, which is
+exactly how it misled.
+
 ## LXX. What the link-free response and its consumers still lack (Block BW)
 
 > Block BT migrated the three `turing-app` consumers off `store.data`. What it did

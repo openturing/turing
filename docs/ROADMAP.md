@@ -27,6 +27,7 @@
 - 📋 **T925** (deps: T873 ✅) **A whole workflow duplicates one matrix entry and does less** — validate-react-ui.yml builds, weighs and tests the package that validate-js.yml already builds, weighs, type-checks, contents-checks and tests, so it is a strict subset kept in parallel. → §LXIX.21
 - 📋 **T926** (deps: T923 ✅) **Two published packages have no size budget at all** — the CLI and the flow DSL declare no `sizeBudget`, so the matrix skips the budget for them and their publish workflows gate on the least of the five. → §LXIX.22
 - 📋 **T927** (deps: T924 ✅) **Ten high advisories are open in the frontend dependency tree** — `pnpm audit --audit-level high` exits 1 on ten, six of them reachable with `--prod`, so the gate cannot be a merge blocker until each is remediated or recorded as accepted. → §LXIX.23
+- 📋 **T929** (deps: T928 ✅) **Three workflow headers describe triggers the file does not have** — when 24a848332e set the workflows to manual dispatch it left every explanatory comment describing pull-request and schedule runs, so the files now assert something untrue and a reader acted on it. → §LXIX.24
 
 ## Block BW — What the link-free response and its consumers still lack (§LXX)
 
