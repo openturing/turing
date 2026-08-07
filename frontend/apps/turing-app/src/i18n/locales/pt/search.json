@@ -41,6 +41,7 @@
     "appliedFilters": "Filtros Ativos",
     "clearAll": "Limpar todos",
     "clearFacet": "Limpar",
+    "secondaryFilters": "Mais filtros",
     "filterBy": "Filtrar por {{value}}",
     "remove": "Remover",
     "resultsSummary": "<strong>{{count}}</strong> resultados encontrados",

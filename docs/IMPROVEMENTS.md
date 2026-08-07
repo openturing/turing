@@ -1750,21 +1750,6 @@ without disturbing the GET response one byte.
 - The impersonation POST payload and the authenticated metrics path are **out of
   scope** — they keep their current bean and behavior.
 
-### XLV.6 The secondary rail is invisible to the facet hook (T936)
-
-T884 fixed the *lookup* — the co-browse agent can toggle a secondary facet now — and
-asked whether anything else enumerates `facets` without `secondaryFacets` in the same
-pass. It does: `useTuringFacets` reads `store.structured?.facets` and
-`store.data?.widget?.facet`, so the secondary rail never reaches `facetGroups` in either
-transport.
-
-That is a rendering hole rather than a lookup one, and it is wider: the admin page draws
-its secondary rail from the response directly, so the gap is invisible there, while
-every SDK consumer — EDS blocks, viglet.com — silently drops a rail the site configured.
-Deliberately not folded into T884, because returning the secondary groups changes what
-an existing consumer renders and wants its own decision: a second list, or one list with
-a `secondary` flag per group.
-
 ### XLV.7 The legacy similar is typed as a string (T937)
 
 T880 declared `similar` on the structured response and gave the spotlight entry a real

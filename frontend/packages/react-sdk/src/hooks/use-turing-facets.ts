@@ -40,14 +40,26 @@ export interface EnrichedFacetGroup {
 }
 
 export interface UseTuringFacetsReturn {
-  /** Facet groups with toggle/clear actions attached */
+  /** Primary facet groups with toggle/clear actions attached */
   facetGroups: EnrichedFacetGroup[];
-  /** Whether any facet across all groups is selected */
+  /**
+   * T936 — the groups the site configured as *secondary*, enriched exactly like
+   * {@link facetGroups}. A **second list** rather than a `secondary` flag on one
+   * list, because returning them in `facetGroups` would make every existing
+   * consumer render a rail it never asked for; opting in is a render decision
+   * and belongs to the page.
+   *
+   * Empty on a site that configures no secondary facet, in either transport.
+   */
+  secondaryFacetGroups: EnrichedFacetGroup[];
+  /** Whether any facet across both rails is selected */
   hasSelected: boolean;
-  /** Clear all selected facets */
+  /** Clear all selected facets, on both rails */
   clearAll: () => void;
-  /** Raw facet data from API */
+  /** Raw primary facet data from API */
   raw: TurFacetGroup[];
+  /** T936 — raw secondary facet data from API */
+  rawSecondary: TurFacetGroup[];
 }
 
 /**
@@ -82,12 +94,20 @@ export interface UseTuringFacetsReturn {
  * }
  * ```
  *
+ * T936 — a site can configure a *secondary* rail; those groups arrive on
+ * {@link UseTuringFacetsReturn.secondaryFacetGroups} and are yours to render
+ * (or not) separately. They are never mixed into `facetGroups`.
+ *
  * @since 2026.3.0
  */
 export function useTuringFacets(): UseTuringFacetsReturn {
   const store = useSearchStore();
   const structuredFacets = store.structured?.facets;
+  // T936 — `undefined` on a site with no secondary rail, which is what keeps the
+  // structured/legacy switch below reading `structuredFacets` and not this one.
+  const structuredSecondary = store.structured?.secondaryFacets;
   const rawGroups = store.data?.widget?.facet ?? [];
+  const rawSecondary = store.data?.widget?.secondaryFacet ?? [];
   const cleanUpLink = store.data?.widget?.cleanUpFacets;
 
   const { navigate, toggleFacet, clearFacet, clearAllFilters } = store;
@@ -108,50 +128,86 @@ export function useTuringFacets(): UseTuringFacetsReturn {
    * so is the point: an empty string would still satisfy `<a href={…}>` and
    * quietly link to the current page.
    */
-  const structuredGroups = useMemo<EnrichedFacetGroup[] | null>(() => {
-    if (!structuredFacets) return null;
-    return structuredFacets.map((group: TurStructuredFacet) => {
-      const facets: EnrichedFacetItem[] = group.items.map((item) => ({
-        count: item.count,
-        label: item.label,
-        selected: item.selected,
-        toggle: () => toggleFacet(item),
-      }));
-      return {
-        name: group.name,
-        label: group.label ?? group.name,
-        multivalued: group.multiValued,
-        facets,
-        hasSelected: facets.some((f) => f.selected),
-        clear: () => clearFacet(group),
-      };
-    });
-  }, [structuredFacets, toggleFacet, clearFacet]);
+  const enrichStructured = useCallback(
+    (groups: TurStructuredFacet[]): EnrichedFacetGroup[] =>
+      groups.map((group: TurStructuredFacet) => {
+        const facets: EnrichedFacetItem[] = group.items.map((item) => ({
+          count: item.count,
+          label: item.label,
+          selected: item.selected,
+          toggle: () => toggleFacet(item),
+        }));
+        return {
+          name: group.name,
+          label: group.label ?? group.name,
+          multivalued: group.multiValued,
+          facets,
+          hasSelected: facets.some((f) => f.selected),
+          clear: () => clearFacet(group),
+        };
+      }),
+    [toggleFacet, clearFacet],
+  );
 
-  const legacyGroups = useMemo<EnrichedFacetGroup[]>(() => {
-    return rawGroups.map((group) => {
-      const facets: EnrichedFacetItem[] = group.facets.map((facet) => ({
-        ...facet,
-        toggle: () => navigate(facet.link),
-      }));
+  const enrichLegacy = useCallback(
+    (groups: TurFacetGroup[]): EnrichedFacetGroup[] =>
+      groups.map((group) => {
+        const facets: EnrichedFacetItem[] = group.facets.map((facet) => ({
+          ...facet,
+          toggle: () => navigate(facet.link),
+        }));
 
-      const hasSelected = facets.some((f) => f.selected);
+        const hasSelected = facets.some((f) => f.selected);
 
-      return {
-        name: group.name,
-        label: group.label.text,
-        multivalued: group.multivalued,
-        facets,
-        hasSelected,
-        clear: () => {
-          if (group.cleanUpLink) navigate(group.cleanUpLink);
-        },
-      };
-    });
-  }, [rawGroups, navigate]);
+        return {
+          name: group.name,
+          label: group.label.text,
+          multivalued: group.multivalued,
+          facets,
+          hasSelected,
+          clear: () => {
+            if (group.cleanUpLink) navigate(group.cleanUpLink);
+          },
+        };
+      }),
+    [navigate],
+  );
+
+  const structuredGroups = useMemo<EnrichedFacetGroup[] | null>(
+    () => (structuredFacets ? enrichStructured(structuredFacets) : null),
+    [structuredFacets, enrichStructured],
+  );
+
+  const legacyGroups = useMemo<EnrichedFacetGroup[]>(
+    () => enrichLegacy(rawGroups),
+    [rawGroups, enrichLegacy],
+  );
+
+  /**
+   * T936 — the secondary rail follows whichever transport answered, so a site
+   * with only secondary facets configured still lands on the structured arm:
+   * `structuredFacets` being defined (even empty) is what says the response was
+   * link-free, not whether it had any primary group.
+   */
+  const secondaryFacetGroups = useMemo<EnrichedFacetGroup[]>(
+    () =>
+      structuredFacets
+        ? enrichStructured(structuredSecondary ?? [])
+        : enrichLegacy(rawSecondary),
+    [structuredFacets, structuredSecondary, rawSecondary, enrichStructured, enrichLegacy],
+  );
 
   const facetGroups = structuredGroups ?? legacyGroups;
-  const hasSelected = facetGroups.some((g) => g.hasSelected);
+  const hasSelected =
+    facetGroups.some((g) => g.hasSelected) ||
+    secondaryFacetGroups.some((g) => g.hasSelected);
 
-  return { facetGroups, hasSelected, clearAll, raw: rawGroups };
+  return {
+    facetGroups,
+    secondaryFacetGroups,
+    hasSelected,
+    clearAll,
+    raw: rawGroups,
+    rawSecondary,
+  };
 }
