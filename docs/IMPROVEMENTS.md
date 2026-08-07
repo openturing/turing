@@ -1750,6 +1750,26 @@ without disturbing the GET response one byte.
 - The impersonation POST payload and the authenticated metrics path are **out of
   scope** — they keep their current bean and behavior.
 
+### XLV.12 Three fixes for one mistake, and no rule (T947)
+
+`structured.facets` and `structured.secondaryFacets` are two properties a consumer has
+to read together, and three tasks have now fixed one place that read only the first:
+T884 the co-browse lookup, T936 the React facet hook, T946 the EDS reference block. That
+is the count T885 was written at for `store.data` — the mistake stops being a habit and
+becomes a rule.
+
+The fourth is already on file: `apps/site`'s search demo does the same read. Whether it
+is a defect is a judgement rather than a lookup, because that surface caps its groups at
+`MAX_FACET_GROUPS` and is a curated demo, not a template anyone copies — which is
+exactly the decision a rule forces to be made once and written down, instead of
+re-derived by the next reader.
+
+The check is the one T885 and T939 already model, at file granularity: a file that reads
+the primary rail off a structured response and never names the secondary one is either a
+consumer with a hole or a surface that declared why it renders one rail. The scan
+surfaces differ, though — this rule has to reach `packages/*/src`, which the boundary
+test excludes on purpose.
+
 ## XLVI. Synthetic User Research — persona studies, interviews & continuous insight (Block AW)
 
 > Persona work so far has treated a `TurPersona` as something you act on **one at a
