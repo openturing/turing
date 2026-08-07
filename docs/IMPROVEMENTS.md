@@ -1750,22 +1750,6 @@ without disturbing the GET response one byte.
 - The impersonation POST payload and the authenticated metrics path are **out of
   scope** — they keep their current bean and behavior.
 
-### XLV.8 The no-links guard passes on an incomplete fixture (T938)
-
-`testStructuredResponseCarriesNoLinks` is described in its own docblock as "the
-load-bearing assertion of the block": nothing in the structured response is a URL the
-client would have to parse. It asserts that by string-matching the serialized JSON for
-`"link"`, `"href"`, `cleanUpLink`, `cleanUpFacets` and `/api/sn/`.
-
-`TurSNSiteSpotlightDocumentBean` has a `link` field, and T709's mapper copies the
-spotlights across. The guard therefore passes only because `legacyBean()` sets no
-spotlights — add one and the block's central claim fails.
-
-Which of the two is wrong needs deciding, not patching: a spotlight's `link` is the
-*document's own destination*, the same kind of value `results[].fields.url` already
-carries, so it is arguably not a navigation action at all. Either the assertion names
-what it means by a link, or the spotlight is projected like the rest of the response.
-
 ### XLV.9 The guard stops at the source, and the bug arrived by README (T939)
 
 T885 fails a build when an app reads `store.data` or `data.widget`. It scans

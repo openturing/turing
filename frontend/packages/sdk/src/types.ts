@@ -351,7 +351,12 @@ export interface TurSimilarDocument {
 
 /**
  * T880 — one editorially pinned document. `position` is 1-based and decides where
- * it is injected into the result list; `link` is the document's own destination.
+ * it is injected into the result list.
+ *
+ * T938 — the destination is `url`, not `link`: the structured response projects
+ * the spotlight now instead of carrying the legacy bean through, so the one field
+ * in it a reader could mistake for a navigation href is spelled the way
+ * {@link TurSimilarDocument} and a result's own `fields.url` spell it.
  */
 export interface TurSpotlightDocument {
   id: string;
@@ -360,7 +365,7 @@ export interface TurSpotlightDocument {
   type?: string;
   referenceId?: string;
   content?: string;
-  link?: string;
+  url?: string;
 }
 
 /**

@@ -382,7 +382,7 @@ describe("POST-native search (T709)", () => {
   it("exposes similar and spotlights as read-through typed fields", async () => {
     const response = structuredResponse({
       similar: [{ id: "doc-2", title: "Neighbour", type: "Page", url: "/n" }],
-      spotlights: [{ id: "sp-1", position: 1, title: "Pinned", link: "/pinned" }],
+      spotlights: [{ id: "sp-1", position: 1, title: "Pinned", url: "/pinned" }],
     });
     const c = makeClient(response);
 
@@ -392,7 +392,9 @@ describe("POST-native search (T709)", () => {
     const structured = search.getState().structured!;
     expect(structured.similar?.[0].title).toBe("Neighbour");
     expect(structured.spotlights?.[0].position).toBe(1);
-    expect(structured.spotlights?.[0].link).toBe("/pinned");
+    // T938 — `url`, not `link`: the spotlight is projected like the rest of the
+    // response, so nothing in it is spelled the way a navigation href is.
+    expect(structured.spotlights?.[0].url).toBe("/pinned");
   });
 
   // ── T937 / §XLV.7 ──

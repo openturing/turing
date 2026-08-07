@@ -30,8 +30,10 @@ import org.junit.jupiter.api.Test;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.viglet.turing.commons.se.similar.TurSESimilarResult;
 import com.viglet.turing.commons.sn.bean.TurSNSearchRequest;
 import com.viglet.turing.commons.sn.bean.TurSNSiteLocaleBean;
+import com.viglet.turing.commons.sn.bean.TurSNSiteSpotlightDocumentBean;
 import com.viglet.turing.commons.sn.bean.TurSNSiteSearchBean;
 import com.viglet.turing.commons.sn.bean.TurSNSiteSearchFacetBean;
 import com.viglet.turing.commons.sn.bean.TurSNSiteSearchFacetItemBean;
@@ -48,6 +50,7 @@ import com.viglet.turing.commons.sn.bean.structured.TurSNStructuredFacetBean;
 import com.viglet.turing.commons.sn.bean.structured.TurSNStructuredDocumentBean;
 import com.viglet.turing.commons.sn.bean.structured.TurSNStructuredMetadataBean;
 import com.viglet.turing.commons.sn.bean.structured.TurSNStructuredSearchBean;
+import com.viglet.turing.commons.sn.bean.structured.TurSNStructuredSpotlightBean;
 import com.viglet.turing.commons.sn.pagination.TurSNPaginationType;
 import com.viglet.turing.commons.sn.search.TurSNFacetItemAction;
 
@@ -62,6 +65,7 @@ class TurSNStructuredResponseMapperTest {
     private static final String RESERVED_VALUE = "RAG & Chat";
     private static final String RESERVED_FQ = "section:" + RESERVED_VALUE;
     private static final String SITE_ICON = "tabler:building-store";
+    private static final String SPOTLIGHT_DESTINATION = "/content/wknd/pinned";
 
     private static TurSNSiteSearchFacetItemBean item(String filterQuery, boolean selected,
             TurSNFacetItemAction action) {
@@ -105,11 +109,27 @@ class TurSNStructuredResponseMapperTest {
                 .setLocale(Locale.of("pt", "BR"))
                 .setLink("/api/sn/wknd/search?_setlocale=pt_BR");
 
+        // T938 — the guard below string-matches the whole serialized response, so
+        // every link-bearing part of the legacy bean has to be *in* the fixture.
+        // A spotlight is the one that was missing, and it is where the block's
+        // central claim actually failed.
+        TurSNSiteSpotlightDocumentBean spotlight = new TurSNSiteSpotlightDocumentBean()
+                .setId("sp-1")
+                .setPosition(1)
+                .setTitle("Pinned")
+                .setType("Page")
+                .setReferenceId("ref-1")
+                .setContent("Editorially pinned")
+                .setLink(SPOTLIGHT_DESTINATION);
+
         TurSNSiteSearchWidgetBean widget = new TurSNSiteSearchWidgetBean()
                 .setIcon(SITE_ICON)
                 .setCleanUpFacets("/api/sn/wknd/search?q=*")
                 .setSelectedFilterQueries(List.of(RESERVED_FQ))
                 .setFacet(List.of(facet))
+                .setSimilar(List.of(TurSESimilarResult.builder().id("doc-2").title("Neighbour")
+                        .type("Page").url("/content/wknd/neighbour").build()))
+                .setSpotlights(List.of(spotlight))
                 .setSpellCheck(spellCheck)
                 .setLocales(List.of(localeBean, otherLocale));
 
@@ -133,6 +153,15 @@ class TurSNStructuredResponseMapperTest {
     /**
      * The load-bearing assertion of the block: nothing in the structured response
      * is a URL the client would have to parse.
+     *
+     * <p>
+     * T938 / §XLV.8 — this used to pass on an incomplete fixture. The widget had
+     * no spotlight in it, and {@code TurSNSiteSpotlightDocumentBean} was carried
+     * across whole with a field named {@code link}; adding one failed the
+     * assertion, which is what the projection in {@code spotlights(…)} fixes. The
+     * fixture now holds every link-bearing part of the legacy bean, so the guard
+     * asserts over the whole shape rather than the parts that happened to be set.
+     * </p>
      */
     @Test
     void testStructuredResponseCarriesNoLinks() throws JsonProcessingException {
@@ -144,6 +173,46 @@ class TurSNStructuredResponseMapperTest {
                 .doesNotContain("\"cleanUpLink\"")
                 .doesNotContain("\"cleanUpFacets\"")
                 .doesNotContain("/api/sn/");
+    }
+
+    /**
+     * T938 — the fixture is only a guard if it actually carries the parts the
+     * guard is about. This fails the moment a spotlight or a similar document
+     * stops reaching the serialized response, which is how the hole opened.
+     */
+    @Test
+    void testGuardFixtureCarriesTheLinkBearingParts() throws JsonProcessingException {
+        String json = new ObjectMapper().writeValueAsString(map());
+
+        assertThat(json).contains("\"spotlights\"").contains("\"similar\"");
+    }
+
+    /**
+     * T938 — a spotlight's destination is the document's own URL, the same kind of
+     * value {@code similar[].url} carries, so it survives the projection under
+     * that name instead of being dropped with the navigation hrefs.
+     */
+    @Test
+    void testSpotlightDestinationSurvivesAsUrl() {
+        TurSNStructuredSpotlightBean spotlight = map().getSpotlights().getFirst();
+
+        assertThat(spotlight.getId()).isEqualTo("sp-1");
+        assertThat(spotlight.getPosition()).isEqualTo(1);
+        assertThat(spotlight.getTitle()).isEqualTo("Pinned");
+        assertThat(spotlight.getType()).isEqualTo("Page");
+        assertThat(spotlight.getReferenceId()).isEqualTo("ref-1");
+        assertThat(spotlight.getContent()).isEqualTo("Editorially pinned");
+        assertThat(spotlight.getUrl()).isEqualTo(SPOTLIGHT_DESTINATION);
+    }
+
+    /** A site with no spotlight leaves the field absent rather than empty. */
+    @Test
+    void testMissingSpotlightsStayNull() {
+        TurSNSiteSearchBean bean = legacyBean();
+        bean.getWidget().setSpotlights(null);
+
+        assertThat(TurSNStructuredResponseMapper
+                .toStructured(bean, new TurSNSearchRequest(), Locale.US).getSpotlights()).isNull();
     }
 
     /**

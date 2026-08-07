@@ -22,7 +22,6 @@ import com.viglet.turing.commons.sn.bean.TurSNSearchRequest;
 import com.viglet.turing.commons.sn.bean.TurSNSearchResponse;
 import com.viglet.turing.commons.sn.bean.TurSNSiteSearchQueryContextBean;
 import com.viglet.turing.commons.sn.bean.TurSNSortOptionBean;
-import com.viglet.turing.commons.sn.bean.TurSNSiteSpotlightDocumentBean;
 
 import lombok.Getter;
 import lombok.Setter;
@@ -112,5 +111,10 @@ public class TurSNStructuredSearchBean implements TurSNSearchResponse, Serializa
 
     private List<TurSESimilarResult> similar;
 
-    private List<TurSNSiteSpotlightDocumentBean> spotlights;
+    /**
+     * T938 / §XLV.8 — projected rather than carried across: the legacy bean names
+     * the document's destination {@code link}, which is indistinguishable from
+     * the navigation hrefs this response exists to remove.
+     */
+    private List<TurSNStructuredSpotlightBean> spotlights;
 }

@@ -36,6 +36,7 @@ import com.viglet.turing.commons.sn.bean.TurSNSiteSearchGroupBean;
 import com.viglet.turing.commons.sn.bean.TurSNSiteSearchPaginationBean;
 import com.viglet.turing.commons.sn.bean.TurSNSiteSearchResultsBean;
 import com.viglet.turing.commons.sn.bean.TurSNSiteSearchWidgetBean;
+import com.viglet.turing.commons.sn.bean.TurSNSiteSpotlightDocumentBean;
 import com.viglet.turing.commons.sn.bean.spellcheck.TurSNSiteSpellCheckBean;
 import com.viglet.turing.commons.sn.bean.structured.TurSNStructuredFacetBean;
 import com.viglet.turing.commons.sn.bean.structured.TurSNStructuredFacetItemBean;
@@ -47,6 +48,7 @@ import com.viglet.turing.commons.sn.bean.structured.TurSNStructuredPageBean;
 import com.viglet.turing.commons.sn.bean.structured.TurSNStructuredResultsBean;
 import com.viglet.turing.commons.sn.bean.structured.TurSNStructuredSearchBean;
 import com.viglet.turing.commons.sn.bean.structured.TurSNStructuredSpellCheckBean;
+import com.viglet.turing.commons.sn.bean.structured.TurSNStructuredSpotlightBean;
 import com.viglet.turing.commons.sn.pagination.TurSNPaginationType;
 import com.viglet.turing.commons.sn.search.TurSNFacetItemAction;
 
@@ -113,7 +115,31 @@ public final class TurSNStructuredResponseMapper {
                 .setSpellCheck(spellCheck(widget.getSpellCheck()))
                 .setLocales(locales(widget.getLocales(), locale))
                 .setSimilar(widget.getSimilar())
-                .setSpotlights(widget.getSpotlights());
+                .setSpotlights(spotlights(widget.getSpotlights()));
+    }
+
+    /**
+     * T938 / §XLV.8 — the one thing a spotlight carried that had to be renamed:
+     * its {@code link} is the document's own destination, not a search URL, so it
+     * crosses as {@code url} like {@code similar[]} and {@code fields.url} do.
+     * Copying the legacy bean straight through left a field spelled {@code link}
+     * in a response whose whole claim is that it holds none.
+     */
+    private static List<TurSNStructuredSpotlightBean> spotlights(
+            List<TurSNSiteSpotlightDocumentBean> spotlights) {
+        if (spotlights == null) {
+            return null;
+        }
+        return spotlights.stream()
+                .map(spotlight -> new TurSNStructuredSpotlightBean()
+                        .setId(spotlight.getId())
+                        .setPosition(spotlight.getPosition())
+                        .setTitle(spotlight.getTitle())
+                        .setType(spotlight.getType())
+                        .setReferenceId(spotlight.getReferenceId())
+                        .setContent(spotlight.getContent())
+                        .setUrl(spotlight.getLink()))
+                .toList();
     }
 
     private static int currentPage(TurSNSiteSearchBean searchBean) {
