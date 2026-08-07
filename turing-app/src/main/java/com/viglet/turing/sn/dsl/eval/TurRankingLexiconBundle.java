@@ -9,8 +9,11 @@
  */
 package com.viglet.turing.sn.dsl.eval;
 
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * T814 / §LVIII.1 (Block BJ) — the <strong>on-disk shape</strong> of a ranking
@@ -47,6 +50,36 @@ public record TurRankingLexiconBundle(
     public static TurRankingLexiconBundle empty(String language) {
         return new TurRankingLexiconBundle(language, null, List.of(), List.of(), List.of(),
                 List.of(), Map.of());
+    }
+
+    /**
+     * T816 / §LVIII.3 — this bundle with {@code override} laid over it: every list
+     * is the union (this one's order first), the synonym map is merged key by key,
+     * and a declared {@code language}/{@code stemmer} wins. Extending is the
+     * default because an override that had to restate the shipped vocabulary to add
+     * one word would be a fork, not a tune.
+     */
+    public TurRankingLexiconBundle mergedWith(TurRankingLexiconBundle override) {
+        if (override == null) {
+            return this;
+        }
+        Map<String, List<String>> synonyms = new LinkedHashMap<>(synonyms());
+        override.synonyms().forEach((trigger, concepts) ->
+                synonyms.merge(trigger, concepts, TurRankingLexiconBundle::union));
+        return new TurRankingLexiconBundle(
+                override.language() == null ? language : override.language(),
+                override.stemmer() == null ? stemmer : override.stemmer(),
+                union(ascWords(), override.ascWords()),
+                union(descWords(), override.descWords()),
+                union(sortTriggers(), override.sortTriggers()),
+                union(stopwords(), override.stopwords()),
+                Map.copyOf(synonyms));
+    }
+
+    private static List<String> union(List<String> first, List<String> second) {
+        Set<String> merged = new LinkedHashSet<>(first == null ? List.of() : first);
+        merged.addAll(second == null ? List.of() : second);
+        return List.copyOf(merged);
     }
 
     /** Null-safe accessors so a partially-declared bundle needs no defensive caller. */

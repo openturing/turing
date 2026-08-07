@@ -67,6 +67,33 @@ public class TurCatalogCopilotProperty {
     private final Planning planning = new Planning();
 
     /**
+     * T816 / §LVIII.3 (Block BJ) — the deterministic ranking lexicon, bound under
+     * {@code turing.genai.copilot.ranking.*}.
+     */
+    private final Ranking ranking = new Ranking();
+
+    /**
+     * T816 / §LVIII.3 (Block BJ) — where the per-language ranking lexicons come
+     * from, beyond the {@code en}/{@code pt}/{@code es} bundles on the classpath.
+     *
+     * @author Alexandre Oliveira
+     * @since 2026.3.4
+     */
+    @Getter
+    @Setter
+    public static class Ranking {
+
+        /**
+         * An external directory of {@code lexicon-<language>.json} files
+         * ({@code turing.genai.copilot.ranking.lexicon-dir}). A bundle found there is
+         * merged <em>over</em> the shipped one for the same language, so a deployment
+         * adds a domain synonym — or a whole new language — as a mounted config file
+         * rather than as a rebuild. Unset (the default), only the classpath is read.
+         */
+        private String lexiconDir;
+    }
+
+    /**
      * T818–T820 / §LIX (Block BK) — the deployment-wide planning defaults every SN
      * site inherits when it pins nothing of its own.
      *

@@ -34,8 +34,10 @@ import lombok.extern.slf4j.Slf4j;
  * question (nothing left to facet) skips the LLM entirely and runs
  * {@code match_all} + sort.
  *
- * <p>Instant, single-LLM-call (zero when sort-only) and CI-testable — but the
- * ranking lexicon is English-only, which is what T819/T820 address.
+ * <p>Instant, single-LLM-call (zero when sort-only) and CI-testable. Since T816 the
+ * ranking lexicon follows the request locale ({@code pt}/{@code es} ship, anything
+ * else falls back to {@code en}), so a non-English question resolves its own sort
+ * instead of escalating.
  *
  * @author Alexandre Oliveira
  * @since 2026.3.4
@@ -60,7 +62,8 @@ public class TurDeterministicCopilotQueryPlanner implements TurCopilotQueryPlann
 
     @Override
     public TurCopilotQueryPlan plan(PlanRequest request) {
-        RankingIntent intent = rankingPlanner.detect(request.query(), request.schema());
+        RankingIntent intent = rankingPlanner.detect(request.query(), request.schema(),
+                request.locale());
         boolean sortOnly = intent.hasSort() && !StringUtils.hasText(intent.strippedQuery());
         Parsed parsed = sortOnly
                 ? new Parsed(TurCopilotQueryBodies.matchAll(DEFAULT_TOP_K), false)

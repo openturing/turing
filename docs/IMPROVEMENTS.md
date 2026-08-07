@@ -2054,15 +2054,6 @@ dependency (embedded vector store + the Lucene SE plugin), so reusing it adds no
 **The design — data-driven lexicon + Lucene analysis, resolved per locale.**
 
 
-### LVIII.3 LVIII.3 (T816) Per-language + external override
-
-A registry resolves the lexicon and analyzer by the copilot's request/site locale,
-falling back to `en`; ship `pt` (and `es`) bundles.
-`turing.genai.copilot.ranking.lexicon-dir` lets a deployment mount an external lexicon
-directory so a new language or a tuned synonym set ships as a config file, not a
-rebuild. Adding a language becomes: a stopword set (Lucene has it), a stemmer (Lucene
-has it), and a small direction+synonym resource.
-
 ### LVIII.4 LVIII.4 (T817, 💭) Per-site / admin overrides
 
 Optionally let a site or global settings extend the direction/synonym lexicon with

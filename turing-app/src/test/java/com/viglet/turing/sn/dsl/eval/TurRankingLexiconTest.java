@@ -11,10 +11,16 @@ package com.viglet.turing.sn.dsl.eval;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
+
+import com.viglet.turing.properties.TurCatalogCopilotProperty;
 
 /**
  * T814 / §LVIII.1 · T815 / §LVIII.2 (Block BJ) — the lexicon is now data run
@@ -29,7 +35,9 @@ import org.junit.jupiter.api.Test;
  */
 class TurRankingLexiconTest {
 
-    private final TurRankingLexiconProvider provider = new TurRankingLexiconProvider();
+    private final TurCatalogCopilotProperty copilotProperty = new TurCatalogCopilotProperty();
+    private final TurRankingLexiconProvider provider =
+            new TurRankingLexiconProvider(copilotProperty);
 
     @Test
     void theShippedEnglishBundleCarriesTheT811Vocabulary() {
@@ -103,11 +111,92 @@ class TurRankingLexiconTest {
         assertThat(provider.lexicon()).isSameAs(provider.lexicon("EN"));
     }
 
-    @Test
-    void anAbsentBundleDegradesToALexiconThatResolvesNoRanking() {
-        TurRankingLexicon lexicon = provider.lexicon("zz");
+    // ─────────────── T816 / §LVIII.3 — per-language resolution ───────────────
 
-        assertThat(lexicon.language()).isEqualTo("zz");
+    @Test
+    void aLocaleResolvesToItsLanguagesBundle() {
+        assertThat(provider.lexicon("pt_BR").language()).isEqualTo("pt");
+        assertThat(provider.lexicon("pt-BR").language()).isEqualTo("pt");
+        assertThat(provider.lexicon("ES").language()).isEqualTo("es");
+    }
+
+    @Test
+    void aLanguageNothingDeclaresFallsBackToEnglish() {
+        // The pre-block behaviour for every locale, now the explicit fallback.
+        assertThat(provider.lexicon("zz")).isSameAs(provider.lexicon());
+        assertThat(provider.lexicon(null)).isSameAs(provider.lexicon());
+    }
+
+    @Test
+    void portugueseResolvesADirectionEnglishNeverCould() {
+        TurRankingLexicon lexicon = provider.lexicon("pt_BR");
+
+        // "mais" is a descending word, but "mais barato" is ascending — the adjective's
+        // polarity decides, which is why asc is tested before desc.
+        assertThat(lexicon.tokens("modelo mais barato"))
+                .containsAnyElementsOf(lexicon.ascStems());
+        assertThat(lexicon.tokens("maior janela de contexto"))
+                .containsAnyElementsOf(lexicon.descStems());
+        // …and the Portuguese synonym bridges to the English field name the catalog uses.
+        assertThat(lexicon.tokens("barato")).containsAnyElementsOf(lexicon.tokens("pricing"));
+        assertThat(lexicon.tokens("janela")).containsAnyElementsOf(lexicon.tokens("contextWindow"));
+    }
+
+    @Test
+    void spanishBridgesItsOwnVocabularyToTheSameFields() {
+        TurRankingLexicon lexicon = provider.lexicon("es");
+
+        assertThat(lexicon.tokens("el modelo más barato"))
+                .containsAnyElementsOf(lexicon.ascStems());
+        assertThat(lexicon.tokens("barato")).containsAnyElementsOf(lexicon.tokens("pricing"));
+        assertThat(lexicon.sortTriggerPattern().matcher("modelos ordenados por precio").find())
+                .isTrue();
+    }
+
+    @Test
+    void anExternalBundleIsMergedOverTheShippedOne(@TempDir Path lexiconDir) throws IOException {
+        Files.writeString(lexiconDir.resolve("lexicon-en.json"), """
+                {"ascWords":["thriftiest"],"synonyms":{"thriftiest":["pricing"]}}""");
+        copilotProperty.getRanking().setLexiconDir(lexiconDir.toString());
+
+        TurRankingLexicon lexicon = new TurRankingLexiconProvider(copilotProperty).lexicon();
+
+        // The deployment's word is added…
+        assertThat(lexicon.ascWords()).contains("thriftiest");
+        assertThat(lexicon.tokens("thriftiest")).containsAnyElementsOf(lexicon.tokens("pricing"));
+        // …without the shipped vocabulary having to be restated to keep it.
+        assertThat(lexicon.ascWords()).contains("cheapest");
+        assertThat(lexicon.tokens("cheapest")).containsAnyElementsOf(lexicon.tokens("pricing"));
+    }
+
+    @Test
+    void anExternalBundleCanAddAWholeLanguage(@TempDir Path lexiconDir) throws IOException {
+        Files.writeString(lexiconDir.resolve("lexicon-fr.json"), """
+                {"language":"fr","stemmer":"French","descWords":["plus"],\
+                "synonyms":{"intelligent":["intelligence"]}}""");
+        copilotProperty.getRanking().setLexiconDir(lexiconDir.toString());
+
+        TurRankingLexicon lexicon = new TurRankingLexiconProvider(copilotProperty).lexicon("fr_FR");
+
+        assertThat(lexicon.language()).isEqualTo("fr");
+        assertThat(lexicon.tokens("le plus intelligent")).containsAnyElementsOf(lexicon.descStems());
+    }
+
+    @Test
+    void anUnreadableExternalBundleLeavesTheShippedOneStanding(@TempDir Path lexiconDir)
+            throws IOException {
+        Files.writeString(lexiconDir.resolve("lexicon-en.json"), "{ this is not json");
+        copilotProperty.getRanking().setLexiconDir(lexiconDir.toString());
+
+        TurRankingLexicon lexicon = new TurRankingLexiconProvider(copilotProperty).lexicon();
+
+        assertThat(lexicon.ascWords()).contains("cheapest");
+    }
+
+    @Test
+    void aDeploymentWithNoBundleAtAllResolvesNoRanking() {
+        TurRankingLexicon lexicon = TurRankingLexicon.of(TurRankingLexiconBundle.empty("zz"));
+
         assertThat(lexicon.ascWords()).isEmpty();
         assertThat(lexicon.descWords()).isEmpty();
         assertThat(lexicon.sortTriggerPattern()).isNull();
@@ -134,12 +223,13 @@ class TurRankingLexiconTest {
 
     @Test
     void aPlannerOverAnEmptyLexiconResolvesNoSortAndKeepsTheQuery() {
-        TurNLRankingPlanner planner = new TurNLRankingPlanner(new TurRankingLexiconProvider() {
-            @Override
-            public TurRankingLexicon lexicon() {
-                return TurRankingLexicon.of(TurRankingLexiconBundle.empty("zz"));
-            }
-        });
+        TurNLRankingPlanner planner = new TurNLRankingPlanner(
+                new TurRankingLexiconProvider(copilotProperty) {
+                    @Override
+                    public TurRankingLexicon lexicon(String locale) {
+                        return TurRankingLexicon.of(TurRankingLexiconBundle.empty("zz"));
+                    }
+                });
 
         TurNLRankingPlanner.RankingIntent intent = planner.detect("cheapest embedding models",
                 TurNLRankingPlannerTest.SCHEMA);

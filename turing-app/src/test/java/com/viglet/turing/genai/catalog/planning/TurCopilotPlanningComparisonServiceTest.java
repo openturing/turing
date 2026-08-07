@@ -204,7 +204,8 @@ class TurCopilotPlanningComparisonServiceTest {
     private TurCopilotPlanningComparisonService service(TurNLFacetParser parser) {
         TurNLFacetEvalService evalService = new TurNLFacetEvalService(parser, scorer, null, null);
         TurDeterministicCopilotQueryPlanner deterministic = new TurDeterministicCopilotQueryPlanner(
-                parser, new TurNLRankingPlanner(new TurRankingLexiconProvider()));
+                parser, new TurNLRankingPlanner(
+                        new TurRankingLexiconProvider(new TurCatalogCopilotProperty())));
         TurLlmAssistedCopilotQueryPlanner llmAssisted =
                 new TurLlmAssistedCopilotQueryPlanner(parser, judge, compiler, validator);
         TurHybridCopilotQueryPlanner hybrid =

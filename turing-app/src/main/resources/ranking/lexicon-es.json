@@ -1,0 +1,50 @@
+{
+  "language": "es",
+  "stemmer": "Spanish",
+  "ascWords": [
+    "barato", "barata", "baratos", "baratas", "menor", "menores", "mínimo", "minimo",
+    "mínima", "minima", "min", "menos", "bajo", "baja", "rápido", "rapido", "rápida",
+    "rapida", "veloz", "corto", "corta", "pequeño", "pequeno", "asequible",
+    "económico", "economico", "ligero"
+  ],
+  "descWords": [
+    "más", "mas", "mayor", "mayores", "mejor", "mejores", "máximo", "maximo",
+    "máxima", "maxima", "max", "alto", "alta", "caro", "cara", "caros", "grande",
+    "grandes", "largo", "larga", "amplio", "amplia", "fuerte", "top", "profundo"
+  ],
+  "sortTriggers": [
+    "ordenar por", "ordenado por", "ordenados por", "ordena por",
+    "clasificar por", "clasificado por", "clasificados por", "por orden de"
+  ],
+  "stopwords": [
+    "modelo", "modelos", "cuál", "cual", "cuáles", "cuales", "quiero", "muestra",
+    "mostrar", "lista", "listar", "buscar", "busca", "encontrar", "encuentra",
+    "tiene", "sobre", "cada", "por", "un", "una"
+  ],
+  "synonyms": {
+    "barato": ["precio", "price", "pricing", "costo", "coste", "cost"],
+    "barata": ["precio", "price", "pricing", "costo", "coste", "cost"],
+    "caro": ["precio", "price", "pricing", "costo", "coste", "cost"],
+    "cara": ["precio", "price", "pricing", "costo", "coste", "cost"],
+    "asequible": ["precio", "price", "pricing", "costo", "coste", "cost"],
+    "económico": ["precio", "price", "pricing", "costo", "coste", "cost"],
+    "economico": ["precio", "price", "pricing", "costo", "coste", "cost"],
+    "precio": ["price", "pricing", "costo", "coste", "cost"],
+    "costo": ["precio", "price", "pricing", "coste", "cost"],
+    "coste": ["precio", "price", "pricing", "costo", "cost"],
+    "inteligente": ["inteligencia", "intelligence", "calidad", "quality"],
+    "inteligencia": ["intelligence", "calidad", "quality"],
+    "capaz": ["inteligencia", "intelligence", "calidad", "quality"],
+    "rápido": ["latencia", "latency", "velocidad", "speed", "rendimiento", "performance", "throughput"],
+    "rapido": ["latencia", "latency", "velocidad", "speed", "rendimiento", "performance", "throughput"],
+    "veloz": ["latencia", "latency", "velocidad", "speed", "rendimiento", "performance"],
+    "velocidad": ["latencia", "latency", "speed", "rendimiento", "performance", "throughput"],
+    "rendimiento": ["latencia", "latency", "performance", "throughput"],
+    "ventana": ["context", "window", "contexto", "length", "size"],
+    "contexto": ["context", "window", "ventana", "length", "size"],
+    "grande": ["contexto", "context", "ventana", "window", "length", "size", "tamaño"],
+    "largo": ["contexto", "context", "ventana", "window", "length"],
+    "tamaño": ["size", "length", "window", "ventana"],
+    "salida": ["output", "tokens"]
+  }
+}

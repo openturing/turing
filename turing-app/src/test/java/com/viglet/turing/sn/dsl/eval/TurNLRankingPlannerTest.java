@@ -16,6 +16,7 @@ import java.util.List;
 import org.junit.jupiter.api.Test;
 
 import com.viglet.turing.commons.se.field.TurSEFieldType;
+import com.viglet.turing.properties.TurCatalogCopilotProperty;
 import com.viglet.turing.sn.dsl.eval.TurNLRankingPlanner.RankingIntent;
 
 /**
@@ -28,7 +29,8 @@ import com.viglet.turing.sn.dsl.eval.TurNLRankingPlanner.RankingIntent;
  */
 class TurNLRankingPlannerTest {
 
-    private final TurNLRankingPlanner planner = new TurNLRankingPlanner(new TurRankingLexiconProvider());
+    private final TurNLRankingPlanner planner =
+            new TurNLRankingPlanner(new TurRankingLexiconProvider(new TurCatalogCopilotProperty()));
 
     /** Shared with {@link TurRankingLexiconTest} — the same declared catalog schema. */
     static final List<TurNLFacetField> SCHEMA = List.of(
@@ -117,5 +119,45 @@ class TurNLRankingPlannerTest {
     void nullOrEmptyQueryIsNoSort() {
         assertThat(planner.detect(null, SCHEMA).hasSort()).isFalse();
         assertThat(planner.detect("  ", SCHEMA).hasSort()).isFalse();
+    }
+
+    // ─────────────── T816 / §LVIII.3 — the same questions, other languages ───────────────
+
+    @Test
+    void portugueseResolvesTheSameSortsAsEnglish() {
+        // The three §LVIII questions that used to get no sort at all in pt_BR.
+        RankingIntent cheapest = planner.detect("modelo mais barato", SCHEMA, "pt_BR");
+        assertThat(cheapest.field()).isEqualTo("pricing_inputPer1M");
+        assertThat(cheapest.order()).isEqualTo("asc");
+
+        RankingIntent biggest = planner.detect("maior janela de contexto", SCHEMA, "pt_BR");
+        assertThat(biggest.field()).isEqualTo("contextWindow");
+        assertThat(biggest.order()).isEqualTo("desc");
+
+        RankingIntent sorted = planner.detect("modelos de chat ordenados por preço", SCHEMA, "pt");
+        assertThat(sorted.field()).isEqualTo("pricing_inputPer1M");
+        assertThat(sorted.order()).isEqualTo("desc");
+        // The facet must survive the strip here exactly as it does in English.
+        assertThat(sorted.strippedQuery()).containsIgnoringCase("chat");
+    }
+
+    @Test
+    void spanishResolvesItsOwnSuperlatives() {
+        RankingIntent cheapest = planner.detect("el modelo más barato", SCHEMA, "es");
+        assertThat(cheapest.field()).isEqualTo("pricing_inputPer1M");
+        assertThat(cheapest.order()).isEqualTo("asc");
+
+        RankingIntent smartest = planner.detect("el modelo más inteligente", SCHEMA, "es");
+        assertThat(smartest.field()).isEqualTo("benchmarks_intelligenceIndex");
+        assertThat(smartest.order()).isEqualTo("desc");
+    }
+
+    @Test
+    void aLanguageWithNoBundleStillRanksInEnglish() {
+        // The fallback is the pre-block behaviour: an English question in a de_DE
+        // request must not lose its sort because German ships no lexicon.
+        RankingIntent intent = planner.detect("cheapest embedding models", SCHEMA, "de_DE");
+        assertThat(intent.field()).isEqualTo("pricing_inputPer1M");
+        assertThat(intent.order()).isEqualTo("asc");
     }
 }

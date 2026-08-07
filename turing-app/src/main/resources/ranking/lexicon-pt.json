@@ -1,0 +1,55 @@
+{
+  "language": "pt",
+  "stemmer": "Portuguese",
+  "ascWords": [
+    "barato", "barata", "baratos", "baratas", "baratinho", "menor", "menores",
+    "mínimo", "minimo", "mínima", "minima", "min", "menos", "baixo", "baixa",
+    "rápido", "rapido", "rápida", "rapida", "veloz", "curto", "curta", "pequeno",
+    "pequena", "acessível", "acessivel", "econômico", "economico", "leve"
+  ],
+  "descWords": [
+    "mais", "maior", "maiores", "melhor", "melhores", "máximo", "maximo", "máxima",
+    "maxima", "max", "alto", "alta", "caro", "cara", "caros", "grande", "grandes",
+    "longo", "longa", "amplo", "ampla", "forte", "top", "melhorzinho", "profundo"
+  ],
+  "sortTriggers": [
+    "ordenar por", "ordenado por", "ordenados por", "ordenada por", "ordene por",
+    "classificar por", "classificado por", "classificados por", "ranquear por",
+    "ranqueado por", "por ordem de"
+  ],
+  "stopwords": [
+    "modelo", "modelos", "qual", "quais", "quero", "queria", "mostre", "mostrar",
+    "liste", "listar", "buscar", "busque", "encontrar", "encontre", "tem", "possui",
+    "sobre", "cada", "por", "um", "uma"
+  ],
+  "synonyms": {
+    "barato": ["preço", "preco", "price", "pricing", "custo", "cost"],
+    "barata": ["preço", "preco", "price", "pricing", "custo", "cost"],
+    "caro": ["preço", "preco", "price", "pricing", "custo", "cost"],
+    "cara": ["preço", "preco", "price", "pricing", "custo", "cost"],
+    "acessível": ["preço", "preco", "price", "pricing", "custo", "cost"],
+    "acessivel": ["preço", "preco", "price", "pricing", "custo", "cost"],
+    "econômico": ["preço", "preco", "price", "pricing", "custo", "cost"],
+    "economico": ["preço", "preco", "price", "pricing", "custo", "cost"],
+    "preço": ["preco", "price", "pricing", "custo", "cost"],
+    "preco": ["preço", "price", "pricing", "custo", "cost"],
+    "custo": ["preço", "preco", "price", "pricing", "cost"],
+    "inteligente": ["inteligência", "inteligencia", "intelligence", "qualidade", "quality"],
+    "inteligência": ["inteligencia", "intelligence", "qualidade", "quality"],
+    "inteligencia": ["inteligência", "intelligence", "qualidade", "quality"],
+    "esperto": ["inteligência", "inteligencia", "intelligence", "qualidade", "quality"],
+    "capaz": ["inteligência", "inteligencia", "intelligence", "qualidade", "quality"],
+    "rápido": ["latência", "latencia", "latency", "velocidade", "speed", "desempenho", "performance", "throughput"],
+    "rapido": ["latência", "latencia", "latency", "velocidade", "speed", "desempenho", "performance", "throughput"],
+    "veloz": ["latência", "latencia", "latency", "velocidade", "speed", "desempenho", "performance"],
+    "velocidade": ["latência", "latencia", "latency", "speed", "desempenho", "performance", "throughput"],
+    "desempenho": ["latência", "latencia", "latency", "performance", "throughput"],
+    "janela": ["context", "window", "contexto", "length", "size"],
+    "contexto": ["context", "window", "janela", "length", "size"],
+    "grande": ["contexto", "context", "janela", "window", "length", "size", "tamanho"],
+    "longo": ["contexto", "context", "janela", "window", "length"],
+    "tamanho": ["size", "length", "window", "janela"],
+    "saída": ["output", "saida", "tokens"],
+    "saida": ["output", "saída", "tokens"]
+  }
+}

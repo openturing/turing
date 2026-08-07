@@ -18,6 +18,7 @@ import org.junit.jupiter.api.Test;
 
 import com.viglet.turing.sn.dsl.eval.TurNLFacetExpectation.ExpectedFilter;
 import com.viglet.turing.sn.dsl.eval.TurNLFacetExpectation.ExpectedSort;
+import com.viglet.turing.properties.TurCatalogCopilotProperty;
 import com.viglet.turing.sn.dsl.eval.TurNLRankingPlanner.RankingIntent;
 
 import tools.jackson.databind.ObjectMapper;
@@ -40,7 +41,8 @@ class TurNLRankingPlannerSampleTest {
 
     private static final ObjectMapper MAPPER = JsonMapper.builder().build();
 
-    private final TurNLRankingPlanner planner = new TurNLRankingPlanner(new TurRankingLexiconProvider());
+    private final TurNLRankingPlanner planner =
+            new TurNLRankingPlanner(new TurRankingLexiconProvider(new TurCatalogCopilotProperty()));
 
     private TurNLFacetEvalPack loadPack() throws IOException {
         try (InputStream in = getClass().getClassLoader()

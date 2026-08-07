@@ -69,18 +69,24 @@ public class TurNLRankingPlanner {
         this.lexiconProvider = lexiconProvider;
     }
 
+    /** Ranking in the default language — {@link #detect(String, List, String)}'s {@code en}. */
+    public RankingIntent detect(String query, List<TurNLFacetField> schema) {
+        return detect(query, schema, TurRankingLexicon.DEFAULT_LANGUAGE);
+    }
+
     /**
      * Detect any ranking intent in {@code query} and resolve it against the
-     * declared {@code schema}. Never throws; returns {@link RankingIntent#none}
-     * (carrying the query unchanged as its stripped form) when no superlative /
-     * comparative / {@code sort by} phrasing is present or no numeric field
-     * resolves.
+     * declared {@code schema}, in {@code locale}'s language. Never throws; returns
+     * {@link RankingIntent#none} (carrying the query unchanged as its stripped
+     * form) when no superlative / comparative / {@code sort by} phrasing is present
+     * or no numeric field resolves. A language nothing declares a lexicon for falls
+     * back to {@code en} (T816), which is the pre-block behaviour for every locale.
      */
-    public RankingIntent detect(String query, List<TurNLFacetField> schema) {
+    public RankingIntent detect(String query, List<TurNLFacetField> schema, String locale) {
         if (!StringUtils.hasText(query) || schema == null || schema.isEmpty()) {
             return RankingIntent.none(query);
         }
-        TurRankingLexicon lexicon = lexiconProvider.lexicon();
+        TurRankingLexicon lexicon = lexiconProvider.lexicon(locale);
         Set<String> queryTokens = lexicon.tokens(query);
         String direction = resolveDirection(query, queryTokens, lexicon);
         if (direction == null) {

@@ -1266,3 +1266,4 @@
 
 - **T814** — The ranking vocabulary is a resource bundle a `TurRankingLexicon` is built from, so a deployment tunes it as data instead of editing Java.
 - **T815** — Query and declared field go through one Lucene analyzer, so `pricing` meets `price` by stemming instead of by an enumerated inflection.
+- **T816** — The lexicon and analyzer follow the request locale, so a `pt`/`es` question resolves its own sort and any other language falls back to `en`.

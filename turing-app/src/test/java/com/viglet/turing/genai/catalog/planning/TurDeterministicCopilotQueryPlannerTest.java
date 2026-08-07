@@ -32,6 +32,7 @@ import com.viglet.turing.sn.dsl.TurDslQueryRequest;
 import com.viglet.turing.sn.dsl.eval.TurNLFacetField;
 import com.viglet.turing.sn.dsl.eval.TurNLFacetParser;
 import com.viglet.turing.sn.dsl.eval.TurNLFacetParser.TurNLFacetParseException;
+import com.viglet.turing.properties.TurCatalogCopilotProperty;
 import com.viglet.turing.sn.dsl.eval.TurNLRankingPlanner;
 import com.viglet.turing.sn.dsl.eval.TurRankingLexiconProvider;
 
@@ -63,7 +64,7 @@ class TurDeterministicCopilotQueryPlannerTest {
     private TurNLFacetParser parser;
 
     private final TurNLRankingPlanner rankingPlanner =
-            new TurNLRankingPlanner(new TurRankingLexiconProvider());
+            new TurNLRankingPlanner(new TurRankingLexiconProvider(new TurCatalogCopilotProperty()));
 
     private TurDeterministicCopilotQueryPlanner planner() {
         return new TurDeterministicCopilotQueryPlanner(parser, rankingPlanner);
