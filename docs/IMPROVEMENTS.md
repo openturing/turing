@@ -2171,34 +2171,6 @@ What is left today is renumbering all 49 `STRATEGY.md` headings past §LXXI, one
 `drop`/`add` pair at a time, which appends its outline to the end of the file in
 scrambled order. That is worse than the collision, so this waits.
 
-### LXIX.19 No publish workflow checks what the tarball contains (T923)
-
-`check-package-contents.mjs` exists because of two publish defects: T915 shipped
-Storybook, T919 shipped compiled tests, T920 shipped unresolvable maps. It is wired into
-`validate-js.yml` and into none of the five publish workflows.
-
-What each one gates on today:
-
-| workflow | size | test | contents |
-| --- | --- | --- | --- |
-| publish-js-sdk | ✓ | ✓ | — |
-| publish-sdk | ✓ | ✓ | — |
-| publish-react-ui | ✓ | ✓ | — |
-| publish-cli | — | ✓ | — |
-| publish-flow-dsl | — | ✓ | — |
-
-So the check that answers "is this tarball right" is the one absent from the act of
-shipping it, and the CLI and flow DSL — the two whose tarballs T919 found wrong — gate
-on the least.
-
-Compounding, not coincidental: T922 says `validate-js.yml` never runs on its own either,
-so today the gate runs in exactly one circumstance, which is somebody choosing to run
-it.
-
-The fix is a step per workflow, mirroring the `size` one already there. Note the CLI and
-flow DSL have no `sizeBudget` block, so `size` for them is a separate question —
-`--if-present` would paper over it, and a real budget would be better.
-
 ## LXX. What the link-free response and its consumers still lack (Block BW)
 
 > Block BT migrated the three `turing-app` consumers off `store.data`. What it did

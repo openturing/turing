@@ -47,6 +47,14 @@ jobs:
         working-directory: frontend
         run: pnpm --filter "@viglet/turing-sdk" run test
 
+      # T923 — the last gate before the tarball leaves: no test, story or map
+      # file in it, and every declared entry point present. This check exists
+      # because of three publish defects (T915, T919, T920) and until now ran
+      # only in validate-js.yml, which is to say nowhere near a publish.
+      - name: Publish contents (publish gate)
+        working-directory: frontend
+        run: pnpm --filter "@viglet/turing-sdk" run contents
+
       - name: Publish to npm
         working-directory: frontend/packages/sdk
         # T914 — `pnpm publish`, never `npm publish`: npm does not rewrite pnpm's
