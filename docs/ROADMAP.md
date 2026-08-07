@@ -24,6 +24,8 @@
 ## Block BV — The quality gate stops at the package boundary (§LXIX)
 
 - ⏳ **T902** (deps: roadkeep RK378 + RK377) **Two governed prose files declare the same 13 section anchors** — STRATEGY.md and IMPROVEMENTS.md number sections from one outline, so a pointer to any of the 13 resolves to two sections and every verb that reads one refuses. → §LXIX.8
+- 📋 **T919** (deps: T915 ✅) **The CLI and the flow DSL publish their test suites to npm** — both compile tests into `dist/test` because that is where their `node --test` runner reads them, and `files` publishes all of `dist`, so a third of each tarball is tests. → §LXIX.15
+- 📋 **T920** (deps: —) **Every package ships source maps that resolve to nothing** — all five publish `.map` files whose `sources` name `../src`, which `files` does not publish, and with no `sourcesContent` — so 1.8 MB of map reaches consumers and points at absent files. → §LXIX.16
 
 ## Block BW — What the link-free response and its consumers still lack (§LXX)
 
