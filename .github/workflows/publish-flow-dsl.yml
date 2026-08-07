@@ -45,6 +45,10 @@ jobs:
 
       - name: Publish to npm
         working-directory: frontend/packages/flow-dsl
-        run: npm publish --access public
+        # T914 — `pnpm publish`, never `npm publish`: npm does not rewrite pnpm's
+        # `workspace:` protocol, so a package that grows a workspace dependency would
+        # ship an unresolvable range. `--no-git-checks` because actions/checkout
+        # leaves a detached HEAD, which pnpm's branch check rejects.
+        run: pnpm publish --access public --no-git-checks
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

@@ -2171,35 +2171,6 @@ What is left today is renumbering all 49 `STRATEGY.md` headings past §LXXI, one
 `drop`/`add` pair at a time, which appends its outline to the end of the file in
 scrambled order. That is worse than the collision, so this waits.
 
-### LXIX.10 The most-consumed package publishes an uninstallable dependency range (T914)
-
-`@viglet/turing-react-sdk` depends on `@viglet/turing-sdk` and `@viglet/turing-react-ui`
-at `workspace:*`. `pnpm publish` replaces that protocol with the workspace package's
-real version; `npm publish` — which is what `publish-js-sdk.yml` runs — does not,
-because these are pnpm workspaces and not npm ones. `npm pack` shows the result:
-
-```json
-"dependencies": {
-  "@viglet/turing-sdk": "workspace:*",
-  "@viglet/turing-react-ui": "workspace:*"
-}
-```
-
-`workspace:*` is not a specifier a registry client can resolve, so an install of the
-published package fails at dependency resolution. It is the package the admin app, the
-showcase and all three marketplace examples consume, and the one T877 just built a suite
-for.
-
-Two candidate fixes, and the choice is the task: switch the publish step to `pnpm
-publish --no-git-checks` (which rewrites the protocol and is what the `release` script's
-`changeset publish` already does), or pin the two dependencies to real ranges. The first
-keeps one source of truth for the version; the second makes the manifest correct
-regardless of which client publishes.
-
-`publish-react-ui.yml`, `publish-sdk.yml`, `publish-cli.yml` and `publish-flow-dsl.yml`
-are unaffected — none of those four declares a workspace dependency — so this is one
-package's problem, not the workflow pattern's.
-
 ### LXIX.11 The React SDK ships its Storybook stories to npm (T915)
 
 `npm pack` on `@viglet/turing-react-sdk` emits 422 entries, and `dist/stories/**` is

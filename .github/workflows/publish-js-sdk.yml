@@ -71,9 +71,17 @@ jobs:
         working-directory: frontend
         run: pnpm --filter "@viglet/turing-react-sdk" run --if-present test
 
+      # T914 — this is the package the bug was found on. react-sdk depends on
+      # `@viglet/turing-sdk` and `@viglet/turing-react-ui` at `workspace:*`, and
+      # `npm publish` copies that protocol into the manifest verbatim: these are
+      # pnpm workspaces, not npm ones, so npm has nothing to resolve it against.
+      # `pnpm publish` rewrites it to the workspace package's real version — the
+      # versions already on npm, now that T876 stopped the phantom bumps.
+      # `--no-git-checks` because actions/checkout leaves a detached HEAD and the
+      # version bump above leaves the tree dirty; pnpm rejects both by default.
       - name: Publish @viglet/turing-react-sdk
         working-directory: frontend/packages/react-sdk
-        run: npm publish --access public
+        run: pnpm publish --access public --no-git-checks
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
