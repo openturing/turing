@@ -2171,6 +2171,79 @@ What is left today is renumbering all 49 `STRATEGY.md` headings past §LXXI, one
 `drop`/`add` pair at a time, which appends its outline to the end of the file in
 scrambled order. That is worse than the collision, so this waits.
 
+### LXIX.10 The most-consumed package publishes an uninstallable dependency range (T914)
+
+`@viglet/turing-react-sdk` depends on `@viglet/turing-sdk` and `@viglet/turing-react-ui`
+at `workspace:*`. `pnpm publish` replaces that protocol with the workspace package's
+real version; `npm publish` — which is what `publish-js-sdk.yml` runs — does not,
+because these are pnpm workspaces and not npm ones. `npm pack` shows the result:
+
+```json
+"dependencies": {
+  "@viglet/turing-sdk": "workspace:*",
+  "@viglet/turing-react-ui": "workspace:*"
+}
+```
+
+`workspace:*` is not a specifier a registry client can resolve, so an install of the
+published package fails at dependency resolution. It is the package the admin app, the
+showcase and all three marketplace examples consume, and the one T877 just built a suite
+for.
+
+Two candidate fixes, and the choice is the task: switch the publish step to `pnpm
+publish --no-git-checks` (which rewrites the protocol and is what the `release` script's
+`changeset publish` already does), or pin the two dependencies to real ranges. The first
+keeps one source of truth for the version; the second makes the manifest correct
+regardless of which client publishes.
+
+`publish-react-ui.yml`, `publish-sdk.yml`, `publish-cli.yml` and `publish-flow-dsl.yml`
+are unaffected — none of those four declares a workspace dependency — so this is one
+package's problem, not the workflow pattern's.
+
+### LXIX.11 The React SDK ships its Storybook stories to npm (T915)
+
+`npm pack` on `@viglet/turing-react-sdk` emits 422 entries, and `dist/stories/**` is
+among them — `useAnswerAsApp.stories.js`, `__mocks__/fixtures.js` and the rest of the
+Storybook tree, each with its `.d.ts` and `.js.map`.
+
+Two settings have to agree for that to happen, and neither is wrong on its own. `files:
+["dist/**/*"]` publishes whatever the build emits, which is the right default.
+`tsconfig.json` excludes `src/**/*.test.ts*` and `src/test` — T877 added those — but not
+`src/stories`, so `tsc` compiles the stories into `dist`. `react-ui` has the same
+`files` field and does not ship stories, because its `exclude` lists
+`src/**/*.stories.tsx` and `src/stories`. The two packages' tsconfigs were written from
+the same template and one kept a line the other dropped.
+
+The size budget cannot see it: `sizeBudget.exclude` lists `stories/`, `__mocks__/` and
+`__tests__/`, so those bytes are outside the number T863 and T878 guard. A consumer
+downloads them; nothing measures them.
+
+The fix is one line in `tsconfig.json`, matched by dropping the now-dead
+`sizeBudget.exclude` entries so the budget weighs everything published.
+
+### LXIX.12 Two of the four apps still build in no validation workflow (T916)
+
+T874 added `turing-app` to `validate-js.yml`. Two of the remaining three apps are still
+uncovered, and for the two different reasons the block keeps meeting.
+
+`turing-showcase` builds in **no** workflow. It is the Block Y reference app — a typed
+catalog, faceted and hybrid search, RAG chat, agents and skills, the widest platform
+surface in the repository, plus `gen-catalog` and `gen-manifest` steps its build runs
+first. A break in it reaches whoever next runs `pnpm build:showcase`, and its e2e
+counterpart (`TurShowcaseSmokeIT`) tests the backend it talks to, not the app that talks
+to it.
+
+`turing-site` builds only in `publish-github-pages.yml`, at `pnpm run build:site` —
+which is to say the marketing site's build is verified by the act of publishing it. That
+is §LXVI.3's objection verbatim: the person who finds the break is the one trying to
+ship.
+
+Neither app has tests, so this is a build gate and not a suite: two more matrix entries
+with `size: false`, which is what the `include` shape T873 introduced was made to take.
+`turing-site`'s full `build` also prerenders and generates OG images, so the matrix may
+want `build:client` instead — worth measuring before committing the whole chain to every
+run.
+
 ## LXX. What the link-free response and its consumers still lack (Block BW)
 
 > Block BT migrated the three `turing-app` consumers off `store.data`. What it did
