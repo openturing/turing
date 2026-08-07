@@ -14,6 +14,8 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.regex.Pattern;
 
 import org.apache.lucene.analysis.Analyzer;
@@ -36,6 +38,13 @@ import org.apache.lucene.analysis.Analyzer;
  * {@link Analyzer} T815 replaced the hand-rolled split/expand/stopword code with,
  * run over the query and each declared field alike.
  *
+ * <p>T940 / §LVIII.5 — a <em>declared field's</em> tokens are memoised
+ * ({@link #fieldTokens(TurNLFacetField)}): they are a function of the field and
+ * this lexicon, neither of which changes between requests, so the ranking pass
+ * stops re-analysing the whole schema on every query. The cache is keyed by
+ * administrator-declared fields, not by request text, which is why it is bounded
+ * by the deployment's own schemas and needs no cap.
+ *
  * @author Alexandre Oliveira
  * @since 2026.3.4
  */
@@ -46,7 +55,19 @@ public record TurRankingLexicon(
         Set<String> ascStems,
         Set<String> descStems,
         Pattern sortTriggerPattern,
-        Analyzer analyzer) {
+        Analyzer analyzer,
+        ConcurrentMap<TurNLFacetField, FieldTokens> fieldTokenCache) {
+
+    /**
+     * What one declared field analyses to: its name's terms, its description's
+     * terms, and the union {@code strip} matches a user's words against. Name and
+     * description are kept apart because a name match scores double.
+     *
+     * @author Alexandre Oliveira
+     * @since 2026.3.4
+     */
+    public record FieldTokens(Set<String> name, Set<String> description, Set<String> all) {
+    }
 
     /** The language every deployment gets, and the fallback for any other (T816). */
     public static final String DEFAULT_LANGUAGE = "en";
@@ -72,7 +93,7 @@ public record TurRankingLexicon(
         return new TurRankingLexicon(language, ascWords, descWords,
                 stems(stemOnly, ascWords), stems(stemOnly, descWords),
                 sortTriggerPattern(bundle.sortTriggers()),
-                TurRankingAnalyzers.matching(bundle, protectedWords));
+                TurRankingAnalyzers.matching(bundle, protectedWords), new ConcurrentHashMap<>());
     }
 
     /**
@@ -82,6 +103,22 @@ public record TurRankingLexicon(
      */
     public Set<String> tokens(String value) {
         return TurRankingAnalyzers.tokens(analyzer, value);
+    }
+
+    /**
+     * What {@code field} analyses to, computed once per field per lexicon. This is
+     * the read the ranking pass makes for <em>every</em> declared field on every
+     * query, and neither operand changes between requests — so it is a map lookup
+     * after the first, and the pass stops scaling with field count (T940).
+     */
+    public FieldTokens fieldTokens(TurNLFacetField field) {
+        return fieldTokenCache.computeIfAbsent(field, declared -> {
+            Set<String> name = tokens(declared.name());
+            Set<String> description = tokens(declared.description());
+            Set<String> all = new LinkedHashSet<>(name);
+            all.addAll(description);
+            return new FieldTokens(name, description, Collections.unmodifiableSet(all));
+        });
     }
 
     private static Set<String> stems(Analyzer stemOnly, Set<String> surfaceWords) {

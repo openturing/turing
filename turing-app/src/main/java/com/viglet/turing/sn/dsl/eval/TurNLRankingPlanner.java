@@ -9,6 +9,7 @@
  */
 package com.viglet.turing.sn.dsl.eval;
 
+import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
@@ -158,24 +159,16 @@ public class TurNLRankingPlanner {
     }
 
     private int score(TurNLFacetField field, Set<String> queryTokens, TurRankingLexicon lexicon) {
-        Set<String> nameTokens = lexicon.tokens(field.name());
-        Set<String> descTokens = lexicon.tokens(field.description());
+        TurRankingLexicon.FieldTokens fieldTokens = lexicon.fieldTokens(field);
         int score = 0;
         for (String token : queryTokens) {
-            if (nameTokens.contains(token)) {
+            if (fieldTokens.name().contains(token)) {
                 score += 2;
-            } else if (descTokens.contains(token)) {
+            } else if (fieldTokens.description().contains(token)) {
                 score += 1;
             }
         }
         return score;
-    }
-
-    /** Every term the resolved field analyses to, name and description together. */
-    private Set<String> fieldTokens(TurNLFacetField field, TurRankingLexicon lexicon) {
-        Set<String> tokens = new LinkedHashSet<>(lexicon.tokens(field.name()));
-        tokens.addAll(lexicon.tokens(field.description()));
-        return tokens;
     }
 
     // ─────────────────────────── Stripping ───────────────────────────
@@ -203,7 +196,7 @@ public class TurNLRankingPlanner {
         Set<String> remove = new LinkedHashSet<>();
         remove.addAll(lexicon.ascWords());
         remove.addAll(lexicon.descWords());
-        remove.addAll(metricWords(query, fieldTokens(field, lexicon), lexicon));
+        remove.addAll(metricWords(query, lexicon.fieldTokens(field).all(), lexicon));
         for (String word : remove) {
             text = text.replaceAll("(?i)\\b" + Pattern.quote(word) + "\\b", " ");
         }
@@ -214,14 +207,21 @@ public class TurNLRankingPlanner {
         return lexicon.tokens(cleaned).isEmpty() ? "" : cleaned;
     }
 
-    /** The words the user typed whose analysis reaches {@code fieldTokens}. */
+    /**
+     * The words the user typed whose analysis reaches {@code fieldTokens}. Each
+     * <em>distinct</em> word is analysed once, and a direction word is not analysed
+     * at all — it is already being removed as one, so its analysis could only
+     * confirm a removal that has happened (T940).
+     */
     private Set<String> metricWords(String query, Set<String> fieldTokens,
             TurRankingLexicon lexicon) {
         Set<String> matched = new LinkedHashSet<>();
+        Set<String> seen = new HashSet<>(lexicon.ascWords());
+        seen.addAll(lexicon.descWords());
         Matcher words = SURFACE_WORD.matcher(query);
         while (words.find()) {
             String word = words.group().toLowerCase(Locale.ROOT);
-            if (!matched.contains(word)
+            if (seen.add(word)
                     && lexicon.tokens(word).stream().anyMatch(fieldTokens::contains)) {
                 matched.add(word);
             }

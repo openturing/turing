@@ -2048,22 +2048,6 @@ was never touched.
 What the block left open is below: the analysis now runs on the copilot's request path,
 and the two override surfaces have no operational story yet.
 
-### LVIII.5 Cache the analysed field tokens (T940)
-
-`TurNLRankingPlanner.score` calls `lexicon.tokens(field.name())` and
-`lexicon.tokens(field.description())` for **every numeric field, on every query**, and
-`metricWords` analyses each surface word of the query separately — each one a
-`TokenStream` open/reset/increment/close over the synonym FST and the stemmer. Before
-T815 the same work was one `Pattern.split`.
-
-Nothing here is per-request data: a declared field's tokens are a function of the field
-and the lexicon, both of which change only when a site is reconfigured or a bundle is
-reloaded. Memoise them on the lexicon — which is already cached per language and per
-override — so a query costs one analysis of itself and a map lookup per field.
-
-Measure before and after on a site with a wide schema: the point is that the ranking
-pass stops scaling with field count, not a number in a commit message.
-
 ### LVIII.6 Evict the override cache, do not stop filling it (T941)
 
 `TurRankingLexiconProvider` caps `byOverride` at 64 entries and, past that, returns a

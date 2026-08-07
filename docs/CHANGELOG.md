@@ -1268,3 +1268,4 @@
 - **T815** — Query and declared field go through one Lucene analyzer, so `pricing` meets `price` by stemming instead of by an enumerated inflection.
 - **T816** — The lexicon and analyzer follow the request locale, so a `pt`/`es` question resolves its own sort and any other language falls back to `en`.
 - **T817** — A site extends the resolved lexicon with its own domain words from the admin form, merged over the shipped bundle rather than replacing it.
+- **T940** — A declared field is analysed once per lexicon instead of on every query, so the ranking pass stops scaling with field count.

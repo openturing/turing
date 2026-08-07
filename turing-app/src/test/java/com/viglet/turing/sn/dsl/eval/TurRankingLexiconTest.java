@@ -16,10 +16,12 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.IntStream;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
+import com.viglet.turing.commons.se.field.TurSEFieldType;
 import com.viglet.turing.properties.TurCatalogCopilotProperty;
 
 /**
@@ -191,6 +193,73 @@ class TurRankingLexiconTest {
         TurRankingLexicon lexicon = new TurRankingLexiconProvider(copilotProperty).lexicon();
 
         assertThat(lexicon.ascWords()).contains("cheapest");
+    }
+
+    // ─────────────── T940 / §LVIII.5 — the field analysis is memoised ───────────────
+
+    @Test
+    void aDeclaredFieldIsAnalysedOncePerLexicon() {
+        TurRankingLexicon lexicon = provider.lexicon();
+        TurNLFacetField field = new TurNLFacetField("pricing_inputPer1M", TurSEFieldType.DOUBLE,
+                false, "Input price per 1M tokens (USD)");
+
+        // Identity, not equality: a second analysis would produce an equal set, and
+        // equality is exactly what would let the re-analysis back in unnoticed.
+        assertThat(lexicon.fieldTokens(field)).isSameAs(lexicon.fieldTokens(field));
+    }
+
+    @Test
+    void theMemoisedTokensAreWhatTheAnalyzerProduces() {
+        TurRankingLexicon lexicon = provider.lexicon();
+        TurNLFacetField field = new TurNLFacetField("pricing_inputPer1M", TurSEFieldType.DOUBLE,
+                false, "Input price per 1M tokens (USD)");
+
+        TurRankingLexicon.FieldTokens tokens = lexicon.fieldTokens(field);
+
+        assertThat(tokens.name()).isEqualTo(lexicon.tokens(field.name()));
+        assertThat(tokens.description()).isEqualTo(lexicon.tokens(field.description()));
+        assertThat(tokens.all()).containsAll(tokens.name()).containsAll(tokens.description());
+    }
+
+    @Test
+    void aWholeSchemaCostsOneAnalysisPerFieldNoMatterHowManyQueriesRunOverIt() {
+        TurRankingLexicon lexicon = provider.lexicon();
+        List<TurNLFacetField> schema = wideSchema();
+
+        schema.forEach(lexicon::fieldTokens);
+        List<TurRankingLexicon.FieldTokens> first = schema.stream()
+                .map(lexicon::fieldTokens)
+                .toList();
+        List<TurRankingLexicon.FieldTokens> second = schema.stream()
+                .map(lexicon::fieldTokens)
+                .toList();
+
+        // Every field resolves to the very object the first pass built — which is the
+        // property that stops the ranking pass scaling with field count.
+        for (int i = 0; i < schema.size(); i++) {
+            assertThat(second.get(i)).isSameAs(first.get(i));
+        }
+        assertThat(lexicon.fieldTokenCache()).hasSize(schema.size());
+    }
+
+    @Test
+    void aFieldCarriesItsOwnEntryPerLexicon() {
+        TurNLFacetField field = new TurNLFacetField("pricing_inputPer1M", TurSEFieldType.DOUBLE,
+                false, "Input price per 1M tokens (USD)");
+
+        // A site override is a different lexicon, so it may analyse the same field
+        // differently — sharing one cache across them would be a correctness bug, not
+        // an optimisation.
+        assertThat(provider.lexicon().fieldTokens(field))
+                .isNotSameAs(provider.lexicon("pt").fieldTokens(field));
+    }
+
+    /** 40 declared fields — a schema wide enough that re-analysis would show. */
+    private static List<TurNLFacetField> wideSchema() {
+        return IntStream.range(0, 40)
+                .mapToObj(i -> new TurNLFacetField("benchmarks_metric" + i, TurSEFieldType.FLOAT,
+                        false, "Benchmark metric number " + i))
+                .toList();
     }
 
     // ─────────────── T817 / §LVIII.4 — per-site overrides ───────────────
