@@ -103,6 +103,7 @@
     "build": "tsc && node copy-assets.mjs",
     "dev": "tsc --watch",
     "test": "vitest run",
+    "contents": "node ../../scripts/check-package-contents.mjs",
     "test:watch": "vitest",
     "typecheck": "tsc -p tsconfig.test.json --noEmit",
     "size": "node ../../scripts/check-size.mjs",

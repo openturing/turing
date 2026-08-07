@@ -17,6 +17,7 @@
     "build": "vite build && tsc --emitDeclarationOnly",
     "dev": "vite build --watch",
     "test": "vitest run",
+    "contents": "node ../../scripts/check-package-contents.mjs",
     "test:watch": "vitest",
     "typecheck": "tsc -p tsconfig.test.json --noEmit",
     "size": "node ../../scripts/check-size.mjs",

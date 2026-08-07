@@ -86,6 +86,14 @@ jobs:
         working-directory: frontend
         run: pnpm --filter "${{ matrix.workspace }}" run size
 
+      # T919: what the tarball would actually contain — no tests or stories
+      # (T915, T919), and every declared entry point present. The size budget
+      # weighs bytes; this checks membership, which is the half that let 168
+      # Storybook entries and 56 compiled tests reach npm unnoticed.
+      - name: Publish contents
+        working-directory: frontend
+        run: pnpm --filter "${{ matrix.workspace }}" run --if-present contents
+
       # T861: this job used to build and weigh the packages but never ran their
       # tests, so `@viglet/turing-sdk` could declare a `test` script it had no
       # runner for and nothing noticed. `--if-present` keeps the matrix entries

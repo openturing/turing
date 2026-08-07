@@ -2171,27 +2171,6 @@ What is left today is renumbering all 49 `STRATEGY.md` headings past §LXXI, one
 `drop`/`add` pair at a time, which appends its outline to the end of the file in
 scrambled order. That is worse than the collision, so this waits.
 
-### LXIX.15 The CLI and the flow DSL publish their test suites to npm (T919)
-
-T915 found this on react-sdk, where the cause was a missing `tsconfig` exclude and the
-fix was one line. The same defect on `@viglet/turing-cli` and `@viglet/turing-flow-dsl`
-has a different cause and no such fix.
-
-`npm pack` measures it: 40 of the CLI's 126 entries are `dist/test/**`, and 16 of the
-flow DSL's 42. Roughly a third of each published tarball.
-
-The cause is that `dist/test` is **load-bearing**. Their suites run `node --test
-"dist/test/**/*.test.js"` — compiled tests are the artifact the runner consumes, so the
-T915 fix (exclude tests from `tsconfig`) would delete the tests instead of the shipping
-problem. `files: ["dist/**/*", "README.md"]` then publishes whatever is there.
-
-Two ways out. Narrow `files` with a negation — `["dist/**/*", "!dist/test/**",
-"README.md"]` — which is one line per package and leaves the runner untouched. Or emit
-tests to a sibling `dist-test/` under their own tsconfig, which separates the two
-outputs properly and costs a second config plus a script change. The first is
-proportionate; the second is what T918 already built for the other three packages, so
-there is an argument for consistency.
-
 ### LXIX.16 Every package ships source maps that resolve to nothing (T920)
 
 `react-sdk/dist/index.js.map` names `"sources": ["../src/index.ts"]` and carries no

@@ -1,7 +1,7 @@
 {
   "name": "@viglet/turing-cli",
   "version": "2026.3.8",
-  "description": "turing — the Viglet Turing ES developer CLI: scaffold, run a full local stack, deploy agents/flows/tools/skills, tail chat events, and run YAML eval suites.",
+  "description": "turing \u2014 the Viglet Turing ES developer CLI: scaffold, run a full local stack, deploy agents/flows/tools/skills, tail chat events, and run YAML eval suites.",
   "type": "module",
   "main": "dist/src/index.js",
   "types": "dist/src/index.d.ts",
@@ -9,12 +9,13 @@
     "turing": "dist/src/cli.js"
   },
   "files": [
-    "dist/**/*",
+    "dist/src/**/*",
     "README.md"
   ],
   "scripts": {
     "build": "tsc -p tsconfig.json",
-    "test": "tsc -p tsconfig.json && node --test \"dist/test/**/*.test.js\""
+    "test": "tsc -p tsconfig.json && node --test \"dist/test/**/*.test.js\"",
+    "contents": "node ../../scripts/check-package-contents.mjs"
   },
   "keywords": [
     "viglet",
