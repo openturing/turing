@@ -97,6 +97,26 @@ public class TurRankingLexiconProvider {
         this.copilotProperty = copilotProperty;
     }
 
+    /**
+     * T942 / §LVIII.7 — drops every compiled lexicon, so the next question rebuilds
+     * from the resources and the {@code lexicon-dir} files as they are <em>now</em>.
+     * That directory exists to let a deployment tune a language without a rebuild,
+     * and until this it could not be tuned without a restart either.
+     *
+     * <p>Both caches go together: a merged per-site lexicon was built on top of the
+     * bundle that just changed, so keeping it would leave those sites ranking with
+     * the file the operator edited away.
+     *
+     * @return how many compiled lexicons were dropped
+     */
+    public int reload() {
+        int dropped = byLanguage.size() + byOverride.size();
+        byLanguage.clear();
+        byOverride.clear();
+        log.info("[RankingLexicon] reloaded — {} compiled lexicon(s) dropped", dropped);
+        return dropped;
+    }
+
     /** The default ({@code en}) lexicon — what T811's hardcoded sets became. */
     public TurRankingLexicon lexicon() {
         return lexicon(TurRankingLexicon.DEFAULT_LANGUAGE);

@@ -18,6 +18,8 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.cache.Cache;
 import org.springframework.cache.CacheManager;
+
+import com.viglet.turing.sn.dsl.eval.TurRankingLexiconProvider;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
@@ -32,6 +34,10 @@ class TurCacheAPITest {
     private Cache cacheA;
     @Mock
     private Cache cacheB;
+    // T942 / §LVIII.7 — the compiled ranking lexicons live in a bean, not in the
+    // CacheManager, so clearing "all caches" has to reach them explicitly.
+    @Mock
+    private TurRankingLexiconProvider rankingLexiconProvider;
 
     @InjectMocks
     private TurCacheAPI api;
@@ -60,11 +66,13 @@ class TurCacheAPITest {
         when(cacheManager.getCache("a-cache")).thenReturn(cacheA);
         when(cacheManager.getCache("b-cache")).thenReturn(cacheB);
         when(cacheManager.getCache("missing-cache")).thenReturn(null);
+        when(rankingLexiconProvider.reload()).thenReturn(4);
 
         mockMvc.perform(post("/api/system/cache/clear"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.clearedCaches").value(3))
+                .andExpect(jsonPath("$.rankingLexicons").value(4))
                 .andExpect(jsonPath("$.cacheNames[0]").value("a-cache"))
                 .andExpect(jsonPath("$.cacheNames[1]").value("b-cache"))
                 .andExpect(jsonPath("$.cacheNames[2]").value("missing-cache"));
@@ -84,5 +92,19 @@ class TurCacheAPITest {
                 .andExpect(jsonPath("$.clearedCaches").value(0));
 
         verify(cacheManager, never()).getCache(org.mockito.ArgumentMatchers.anyString());
+    }
+
+    @Test
+    void shouldReloadTheRankingLexiconsWithoutFlushingEveryOtherCache() throws Exception {
+        // The targeted door: an operator who edited a file under lexicon-dir should not
+        // have to evict every Spring cache in the application to see it take effect.
+        when(rankingLexiconProvider.reload()).thenReturn(2);
+
+        mockMvc.perform(post("/api/system/cache/ranking-lexicons/reload"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.rankingLexicons").value(2));
+
+        verify(cacheManager, never()).getCacheNames();
     }
 }

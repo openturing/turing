@@ -338,6 +338,46 @@ class TurRankingLexiconTest {
         assertThat(provider.lexicon("en", hot)).isSameAs(first);
     }
 
+    // ─────────────── T942 / §LVIII.7 — the directory can be re-read ───────────────
+
+    @Test
+    void aReloadPicksUpAnEditedLexiconFile(@TempDir Path lexiconDir) throws IOException {
+        Path bundle = lexiconDir.resolve("lexicon-en.json");
+        Files.writeString(bundle, """
+                {"ascWords":["thriftiest"]}""");
+        copilotProperty.getRanking().setLexiconDir(lexiconDir.toString());
+        assertThat(provider.lexicon().ascWords()).contains("thriftiest").doesNotContain("skimpiest");
+
+        Files.writeString(bundle, """
+                {"ascWords":["skimpiest"]}""");
+        // Without the reload the edit is invisible until the app restarts, which is
+        // the friction the lexicon-dir property was added to remove.
+        assertThat(provider.lexicon().ascWords()).doesNotContain("skimpiest");
+
+        assertThat(provider.reload()).isPositive();
+
+        assertThat(provider.lexicon().ascWords()).contains("skimpiest").doesNotContain("thriftiest");
+    }
+
+    @Test
+    void aReloadDropsTheSiteOverridesBuiltOnTheEditedBundle() {
+        String override = """
+                {"descWords":["torquiest"]}""";
+        TurRankingLexicon before = provider.lexicon("en", override);
+
+        provider.reload();
+
+        // A merged lexicon was built on top of a bundle that may have just changed —
+        // keeping it would leave those sites ranking with the file that went away.
+        assertThat(provider.lexicon("en", override)).isNotSameAs(before);
+    }
+
+    @Test
+    void aReloadOfNothingIsNotAnError() {
+        assertThat(new TurRankingLexiconProvider(new TurCatalogCopilotProperty()).reload())
+                .isZero();
+    }
+
     private static final int MAX_CACHED_OVERRIDES =
             TurRankingLexiconProvider.MAX_CACHED_OVERRIDES;
 

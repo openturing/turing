@@ -2048,20 +2048,6 @@ was never touched.
 What the block left open is below: the analysis now runs on the copilot's request path,
 and the two override surfaces have no operational story yet.
 
-### LVIII.7 Reload the external lexicon directory (T942)
-
-`turing.genai.copilot.ranking.lexicon-dir` exists so a deployment ships a new language
-or a tuned synonym set as a mounted config file rather than as a rebuild. `load` runs
-once per language and the result is cached for the life of the bean, so editing that
-file does nothing until the app restarts — which is most of the friction the property
-was meant to remove.
-
-Give the provider a way to drop its caches: an admin endpoint is the smallest one that
-works ("reload ranking lexicons"), a watch on the directory the most convenient, a TTL
-the cheapest. Whichever it is, the cache to clear is both maps — the per-language one
-and the per-override one, whose merged bundles were built on top of the file that
-changed.
-
 ### LVIII.8 Tell the admin the bundle did not parse (T943)
 
 Fail-open is right at ranking time — a typo must never cost a site its sort. It is wrong
