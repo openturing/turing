@@ -78,11 +78,6 @@
     "dist/**/*"
   ],
   "sizeBudget": {
-    "exclude": [
-      "stories/",
-      "__mocks__/",
-      "__tests__/"
-    ],
     "strict": false,
     "groupBy": "dir",
     "delta": {

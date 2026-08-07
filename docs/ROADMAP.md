@@ -24,7 +24,6 @@
 ## Block BV — The quality gate stops at the package boundary (§LXIX)
 
 - ⏳ **T902** (deps: roadkeep RK378 + RK377) **Two governed prose files declare the same 13 section anchors** — STRATEGY.md and IMPROVEMENTS.md number sections from one outline, so a pointer to any of the 13 resolves to two sections and every verb that reads one refuses. → §LXIX.8
-- 📋 **T915** (deps: —) **The React SDK ships its Storybook stories to npm** — `tsconfig.json` excludes tests but not `src/stories`, so 422 published entries include story files and their mock fixtures, which the size budget excludes and therefore never weighs. → §LXIX.11
 - 📋 **T916** (deps: T874 ✅) **Two of the four apps still build in no validation workflow** — T874 put the admin app in the matrix, but the showcase builds nowhere and the marketing site builds only inside the workflow that publishes it, which is the release-time gate the block objects to. → §LXIX.12
 
 ## Block BW — What the link-free response and its consumers still lack (§LXX)

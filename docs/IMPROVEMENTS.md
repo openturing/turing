@@ -2171,27 +2171,6 @@ What is left today is renumbering all 49 `STRATEGY.md` headings past §LXXI, one
 `drop`/`add` pair at a time, which appends its outline to the end of the file in
 scrambled order. That is worse than the collision, so this waits.
 
-### LXIX.11 The React SDK ships its Storybook stories to npm (T915)
-
-`npm pack` on `@viglet/turing-react-sdk` emits 422 entries, and `dist/stories/**` is
-among them — `useAnswerAsApp.stories.js`, `__mocks__/fixtures.js` and the rest of the
-Storybook tree, each with its `.d.ts` and `.js.map`.
-
-Two settings have to agree for that to happen, and neither is wrong on its own. `files:
-["dist/**/*"]` publishes whatever the build emits, which is the right default.
-`tsconfig.json` excludes `src/**/*.test.ts*` and `src/test` — T877 added those — but not
-`src/stories`, so `tsc` compiles the stories into `dist`. `react-ui` has the same
-`files` field and does not ship stories, because its `exclude` lists
-`src/**/*.stories.tsx` and `src/stories`. The two packages' tsconfigs were written from
-the same template and one kept a line the other dropped.
-
-The size budget cannot see it: `sizeBudget.exclude` lists `stories/`, `__mocks__/` and
-`__tests__/`, so those bytes are outside the number T863 and T878 guard. A consumer
-downloads them; nothing measures them.
-
-The fix is one line in `tsconfig.json`, matched by dropping the now-dead
-`sizeBudget.exclude` entries so the budget weighs everything published.
-
 ### LXIX.12 Two of the four apps still build in no validation workflow (T916)
 
 T874 added `turing-app` to `validate-js.yml`. Two of the remaining three apps are still

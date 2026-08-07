@@ -16,12 +16,19 @@
     "forceConsistentCasingInFileNames": true
   },
   "include": ["src/**/*"],
+  // `files: ["dist/**/*"]` publishes whatever this emits, so anything not
+  // excluded here is shipped to npm. T915: `src/stories` was not, and 1.3 MB of
+  // Storybook tree and mock fixtures went out with every release. Kept in step
+  // with react-ui's list, which the two tsconfigs were written from.
   "exclude": [
     "node_modules",
     "dist",
     "src/**/*.test.ts",
     "src/**/*.test.tsx",
+    "src/**/*.stories.tsx",
+    "src/stories",
     "src/test",
-    "vitest.config.ts"
+    "vitest.config.ts",
+    ".storybook"
   ]
 }
