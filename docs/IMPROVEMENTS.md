@@ -2179,18 +2179,6 @@ Re-check on the next plugin update: `roadkeep --version`, then `roadkeep section
 > not do is finish the **shape** they were reading it for, or extend the fix past
 > the one app. Every item below was read out of the code while shipping T865–T869.
 
-### LXX.4 `TuringResultList`'s chip is the T867 bug, still shipping (T882)
-
-`TuringRawDocument.metadata` is typed as the union of both chip shapes and the
-docblock even says "narrow on `"href" in chip` if you act on it" — but the
-component never acts on it: it renders `text` and nothing else. A viglet.com
-consumer therefore gets exactly the dead badge T867 removed from the admin app.
-
-The fix has the same shape as T867 and the same constraint as the rest of
-react-ui: an optional `onToggleFacet` prop (design-agnostic, no SDK import — the
-package must stay zero-runtime-dependency), narrowing on the union, so the
-consumer decides whether a chip is actionable.
-
 ### LXX.5 The README still teaches the shape that broke (T883)
 
 `packages/react-sdk/README.md` documents facet rendering twice — once as

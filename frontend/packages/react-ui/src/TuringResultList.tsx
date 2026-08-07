@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import type { TuringDocumentChip, TuringFacetToggleTarget } from "./TuringDocumentChips";
 
 /**
  * Minimal structural shape of a raw Turing document — redeclared locally so this
@@ -11,16 +12,12 @@ export interface TuringRawDocument {
   elevate: boolean;
   fields: Record<string, unknown>;
   /**
-   * The document's facet chips. Two shapes, because the response has two: the
-   * legacy one carries an `href` to navigate, the T864 link-free one carries the
-   * `filterQuery` to add to the request. `text` is common to both, and is all
-   * this package needs to render a chip — narrow on `"href" in chip` if you act
-   * on it.
+   * The document's facet chips, in either response shape. T882 — hand them to
+   * {@link TuringDocumentChips} rather than narrowing the union at the call site:
+   * telling every consumer to narrow on `"href" in chip` is what left viglet.com
+   * rendering the dead badge T867 removed from the admin app.
    */
-  metadata: ({ text: string } & (
-    | { href: string }
-    | { field: string; value: string; filterQuery: string }
-  ))[];
+  metadata: TuringDocumentChip[];
 }
 
 /** Minimal structural shape of a resolved (default-field-mapped) document. */
@@ -41,6 +38,14 @@ export interface TuringResultListProps {
     document: TuringResolvedDocument;
     raw: TuringRawDocument;
     index: number;
+    /**
+     * T882 — the chip handlers, forwarded so a row component does not have to
+     * thread them through its own props to render an actionable chip. Both are
+     * `undefined` when the list was given neither, which is the signal to render
+     * the chips as text.
+     */
+    onToggleFacet?: (target: TuringFacetToggleTarget) => void;
+    onNavigate?: (href: string) => void;
   }) => ReactNode;
   /** Rendered when there are no documents (and not loading). */
   emptyComponent?: () => ReactNode;
@@ -56,6 +61,21 @@ export interface TuringResultListProps {
    * editing each `itemComponent`. Self-contained — no SDK import.
    */
   onResultClick?: (document: TuringResolvedDocument, index: number) => void;
+  /**
+   * T882 — toggle a result's facet chip. Forwarded verbatim to
+   * {@link TuringResultListProps.itemComponent}, which is expected to pass it to
+   * {@link TuringDocumentChips}. Design-agnostic and self-contained: the target
+   * is a plain object, so no SDK import is needed to satisfy it.
+   */
+  onToggleFacet?: (target: TuringFacetToggleTarget) => void;
+  /**
+   * T882 — navigate a legacy chip's href. Forwarded the same way as
+   * {@link TuringResultListProps.onToggleFacet}.
+   *
+   * @deprecated the href round-trip §XLV removes; present because the legacy
+   * response is still supported.
+   */
+  onNavigate?: (href: string) => void;
 }
 
 /**
@@ -79,6 +99,8 @@ export function TuringResultList({
   isLoading = false,
   className,
   onResultClick,
+  onToggleFacet,
+  onNavigate,
 }: Readonly<TuringResultListProps>) {
   if (isLoading && loadingComponent) {
     return <div className={className}>{loadingComponent()}</div>;
@@ -105,7 +127,7 @@ export function TuringResultList({
             role="listitem"
             onClick={onResultClick ? () => onResultClick(doc, index) : undefined}
           >
-            {itemComponent({ document: doc, raw: doc.raw, index })}
+            {itemComponent({ document: doc, raw: doc.raw, index, onToggleFacet, onNavigate })}
           </div>
         );
       })}

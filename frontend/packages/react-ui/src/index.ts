@@ -191,6 +191,15 @@ export type {
   TuringRawDocument,
 } from "./TuringResultList";
 
+// T882 — a result's facet chips as actions, not as dead badges.
+export { TuringDocumentChips } from "./TuringDocumentChips";
+export type {
+  TuringDocumentChipsProps,
+  TuringDocumentChip,
+  TuringFacetToggleTarget,
+  TuringFacetAction,
+} from "./TuringDocumentChips";
+
 export { TuringPagination } from "./TuringPagination";
 export type {
   TuringPaginationProps,
