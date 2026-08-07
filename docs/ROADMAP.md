@@ -24,8 +24,6 @@
 ## Block BV — The quality gate stops at the package boundary (§LXIX)
 
 - ⏳ **T902** (deps: roadkeep RK378 + RK377) **Two governed prose files declare the same 13 section anchors** — STRATEGY.md and IMPROVEMENTS.md number sections from one outline, so a pointer to any of the 13 resolves to two sections and every verb that reads one refuses. → §LXIX.8
-- 📋 **T925** (deps: T873 ✅) **A whole workflow duplicates one matrix entry and does less** — validate-react-ui.yml builds, weighs and tests the package that validate-js.yml already builds, weighs, type-checks, contents-checks and tests, so it is a strict subset kept in parallel. → §LXIX.21
-- 📋 **T926** (deps: T923 ✅) **Two published packages have no size budget at all** — the CLI and the flow DSL declare no `sizeBudget`, so the matrix skips the budget for them and their publish workflows gate on the least of the five. → §LXIX.22
 - 📋 **T927** (deps: T924 ✅) **Ten high advisories are open in the frontend dependency tree** — `pnpm audit --audit-level high` exits 1 on ten, six of them reachable with `--prod`, so the gate cannot be a merge blocker until each is remediated or recorded as accepted. → §LXIX.23
 - 📋 **T929** (deps: T928 ✅) **Three workflow headers describe triggers the file does not have** — when 24a848332e set the workflows to manual dispatch it left every explanatory comment describing pull-request and schedule runs, so the files now assert something untrue and a reader acted on it. → §LXIX.24
 

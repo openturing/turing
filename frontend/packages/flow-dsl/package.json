@@ -1,7 +1,7 @@
 {
   "name": "@viglet/turing-flow-dsl",
   "version": "2026.3.3",
-  "description": "TypeScript DSL for Viglet Turing ES chat flows \u2014 author flows as typed source, transpile to the editor's JSON wire format. Catches enum typos (tone, guardrail, trigger) at compile time.",
+  "description": "TypeScript DSL for Viglet Turing ES chat flows — author flows as typed source, transpile to the editor's JSON wire format. Catches enum typos (tone, guardrail, trigger) at compile time.",
   "type": "module",
   "main": "dist/src/index.js",
   "types": "dist/src/index.d.ts",
@@ -11,6 +11,8 @@
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "test": "node --test dist/test/transpile.test.js dist/test/deploy.test.js dist/test/chaotic-chatflow.test.js",
+    "size": "node ../../scripts/check-size.mjs",
+    "size:update": "node ../../scripts/check-size.mjs --update-baseline",
     "contents": "node ../../scripts/check-package-contents.mjs"
   },
   "keywords": [
@@ -42,5 +44,25 @@
   "devDependencies": {
     "@types/node": "^26.1.1",
     "typescript": "^5.9.3"
+  },
+  "sizeBudget": {
+    "dir": "dist/src",
+    "strict": true,
+    "delta": {
+      "entry": 512,
+      "total": 1024
+    },
+    "baseline": {
+      "measured": "2026-08-07",
+      "total": 17112,
+      "entries": {
+        "cli.js": 3897,
+        "define-flow.js": 776,
+        "deploy.js": 6023,
+        "index.js": 456,
+        "transpile.js": 5442,
+        "types.js": 518
+      }
+    }
   }
 }

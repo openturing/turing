@@ -43,6 +43,12 @@ jobs:
         working-directory: frontend/packages/cli
         run: pnpm run test
 
+      # T926 — these two had no `sizeBudget` at all, so they were the only
+      # published packages whose workflow never weighed them.
+      - name: Bundle-size budget (publish gate)
+        working-directory: frontend
+        run: pnpm --filter "@viglet/turing-cli" run size
+
       # T923 — the last gate before the tarball leaves: no test, story or map
       # file in it, and every declared entry point present. This check exists
       # because of three publish defects (T915, T919, T920) and until now ran

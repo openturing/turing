@@ -1,7 +1,7 @@
 {
   "name": "@viglet/turing-cli",
   "version": "2026.3.8",
-  "description": "turing \u2014 the Viglet Turing ES developer CLI: scaffold, run a full local stack, deploy agents/flows/tools/skills, tail chat events, and run YAML eval suites.",
+  "description": "turing — the Viglet Turing ES developer CLI: scaffold, run a full local stack, deploy agents/flows/tools/skills, tail chat events, and run YAML eval suites.",
   "type": "module",
   "main": "dist/src/index.js",
   "types": "dist/src/index.d.ts",
@@ -16,6 +16,8 @@
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "test": "tsc -p tsconfig.json && node --test \"dist/test/**/*.test.js\"",
+    "size": "node ../../scripts/check-size.mjs",
+    "size:update": "node ../../scripts/check-size.mjs --update-baseline",
     "contents": "node ../../scripts/check-package-contents.mjs"
   },
   "keywords": [
@@ -57,5 +59,24 @@
   "publishConfig": {
     "access": "public",
     "registry": "https://registry.npmjs.org"
+  },
+  "sizeBudget": {
+    "dir": "dist/src",
+    "strict": false,
+    "groupBy": "dir",
+    "delta": {
+      "entry": 512,
+      "dir": 1024,
+      "total": 2048
+    },
+    "baseline": {
+      "measured": "2026-08-07",
+      "total": 37049,
+      "dirs": {
+        "(root)": 13611,
+        "commands/": 13979,
+        "eval/": 9459
+      }
+    }
   }
 }
