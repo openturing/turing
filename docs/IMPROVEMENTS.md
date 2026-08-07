@@ -2171,6 +2171,48 @@ What is left today is renumbering all 49 `STRATEGY.md` headings past §LXXI, one
 `drop`/`add` pair at a time, which appends its outline to the end of the file in
 scrambled order. That is worse than the collision, so this waits.
 
+### LXIX.13 The showcase build rewrites a tracked file on every run (T917)
+
+`turing-showcase`'s `build` runs `gen-manifest` first, which writes `buildDate: new
+Date().toISOString()` into `public/turing-manifest.json` — a file that is **tracked**,
+unlike the catalog its sibling `gen-catalog` writes into the ignored `export/`. So `pnpm
+build:showcase` leaves the tree dirty with a one-line timestamp diff that is never a
+change anyone made.
+
+Found by T916, which put the showcase in the validation matrix: the build ran, and the
+file appeared in `git status` next to the workflow edit it had nothing to do with. In CI
+that is harmless, because nothing commits. Locally it is not: `run-commit.cmd` stages
+everything under its working directory, so the next commit for any reason carries a
+build stamp from whenever the showcase was last built.
+
+Three ways out, in order of how much they claim. Drop `buildDate` — a manifest that
+identifies the app does not need to say when it was compiled. Or write the manifest to
+the build output rather than to `public/`, next to the catalog, and untrack it. Or keep
+it and gitignore the file, which costs the diffability that made someone track it in the
+first place.
+
+### LXIX.14 No frontend test file is type-checked by anything (T918)
+
+`sdk`, `react-sdk` and `react-ui` all exclude their tests from `tsconfig.json` —
+`src/__tests__` in the first, `src/**/*.test.ts*` and `src/test` in the other two. The
+exclusion is right: `files: ["dist/**/*"]` publishes whatever `tsc` emits, and T915 is
+what happens when something that should not ship is compiled anyway.
+
+The consequence is that nothing type-checks them. Vitest transpiles with esbuild and
+never checks. So across 339 frontend tests, a test may reference a field that no longer
+exists, pass the wrong shape to a helper, or hold a cast that stopped being true, and
+the only thing that notices is a runtime failure — or nothing, where the cast makes the
+wrong shape compile-shaped. T877's own suite builds its fixtures with `as unknown as
+TurStructuredSearchResponse`: if that response type gained a required field tomorrow,
+the fixture would keep passing while the code under test drifted away from it. That is
+the same defect class as T892, one layer in — the mirror is between a test's assumptions
+and the types it asserts against.
+
+The fix is a second `tsconfig.test.json` per package that includes the tests, and a
+`typecheck` script running `tsc -p tsconfig.test.json --noEmit`, wired into the matrix
+beside Build and Test. Emit stays governed by the shipping config, so nothing new
+reaches `dist`.
+
 ## LXX. What the link-free response and its consumers still lack (Block BW)
 
 > Block BT migrated the three `turing-app` consumers off `store.data`. What it did
