@@ -129,6 +129,22 @@ overrides:
   # No dependency actually requires Babel 8 — everything declares ^7.x.
   "@babel/core": ">=7.29.6 <8"
   "js-yaml@3": ">=3.15.0"
+  # T927 — four advisories whose fix is a patch inside the major already
+  # resolved, so each is a floor and not a migration. The versions in the tree
+  # when this was written: fast-uri 3.1.3/3.1.4, js-yaml 4.3.0 and 5.2.1,
+  # postcss 8.5.15, brace-expansion 5.0.7.
+  # Each floor is capped at its major. An open-ended range outranks the
+  # requester's own and jumps it a major — the T913 accident, which this hit on
+  # the first attempt: ">=3.1.5" resolved fast-uri 4.1.2 under an ajv wanting 3.x.
+  "fast-uri": ">=3.1.5 <4"
+  "js-yaml@^4.0.0": ">=4.3.1 <5"
+  # The 5.x line reaches the tree only through `read-yaml-file`, under
+  # @changesets/cli. A `js-yaml@5` version-selector key did not match it, so this
+  # is scoped by path instead — narrower than a bare `js-yaml` floor, which would
+  # drag the 4.x consumers a major.
+  "read-yaml-file>js-yaml": ">=5.2.2 <6"
+  "postcss": ">=8.5.18"
+  "brace-expansion": ">=5.0.9"
   # adm-zip <0.6.0: a crafted ZIP triggers a 4GB memory allocation
   # (GHSA-xcpc-8h2w-3j85). Transitive only via @module-federation/dts-plugin
   # (build-time .d.ts extraction for Module Federation) — never runs at
