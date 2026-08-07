@@ -971,6 +971,7 @@
 - **T945** — the README says which of the two legacy reads throws and which renders an empty rail silently, and a test pins the null that makes them differ
 - **T946** — the EDS reference block renders the site's secondary facet rail as a second list under its own heading, sharing one group renderer and the existing click delegation with the primary
 - **T947** — a convention test over both SDKs, the examples and the apps fails a file that reads structured.facets without naming secondaryFacets, and the marketing demo folds both rails into its capped list
+- **T948** — one named rule set carries the surfaces each rule applies to, so both scans and both package suites run the whole search-response contract and the react-sdk README no longer teaches a single facet rail
 
 ## Block AW — Synthetic User Research: persona studies, interviews & continuous insight (§XLVI)
 

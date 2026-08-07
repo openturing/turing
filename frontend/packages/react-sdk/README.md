@@ -190,8 +190,13 @@ function SearchPage() {
       ))}
 
       {/* Facets — the item carries its own action, so nothing is parsed
-          out of a URL and a value containing `&` cannot break. */}
-      {structured.facets?.map((group) => (
+          out of a URL and a value containing `&` cannot break.
+
+          A site's groups arrive on TWO properties: `facets` and, for the fields
+          it configured as secondary, `secondaryFacets`. Read only the first and
+          you silently render nothing for a rail the site set up. Here they are
+          one list; render them as two if you want the rail visually separate. */}
+      {[...(structured.facets ?? []), ...(structured.secondaryFacets ?? [])].map((group) => (
         <div key={group.name}>
           <h4>{group.label ?? group.name}</h4>
           {group.items.map((item) => (

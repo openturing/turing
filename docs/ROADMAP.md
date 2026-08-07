@@ -30,8 +30,6 @@
 
 ## Block AV — POST-native search & link-free response contract (§XLV)
 
-- 📋 **T948** (deps: —) **Each guard runs its own rules, so a new rule covers half the surface** — T939 reads README fences for the store-boundary rules and T947 reads source for the two-rail rule, and neither crosses, so the react-sdk README still teaches `structured.facets` alone. → §XLV.13
-
 ## Non-goals (do NOT add as tasks)
 
 Binding constraints — see [IMPROVEMENTS.md](IMPROVEMENTS.md) §I.6 (What NOT to

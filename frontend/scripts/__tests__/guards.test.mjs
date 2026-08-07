@@ -265,7 +265,14 @@ describe("check-package-contents", () => {
 // expect it, so a rename shows up here rather than as a suite that runs nothing.
 describe("the scripts under test", () => {
   it("are all present", () => {
-    const names = ["check-size.mjs", "check-package-contents.mjs", "check-overrides.mjs"];
+    const names = [
+      "check-size.mjs",
+      "check-package-contents.mjs",
+      "check-overrides.mjs",
+      // T948 — a rule set rather than an executable script, but the same
+      // rename hazard: its suite would run nothing.
+      "search-contract-rules.mjs",
+    ];
     deepEqual(
       names.filter((n) => existsSync(join(SCRIPTS, n))),
       names,

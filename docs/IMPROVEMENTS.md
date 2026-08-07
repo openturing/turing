@@ -1750,25 +1750,6 @@ without disturbing the GET response one byte.
 - The impersonation POST payload and the authenticated metrics path are **out of
   scope** — they keep their current bean and behavior.
 
-### XLV.13 Two scans, two rule sets, and the gap between them (T948)
-
-T939 answered "the bug arrived by README" by walking the fenced code in every package
-README with the store-boundary rules. T947 answered "three consumers got the same read
-wrong" by walking `packages/*/src`, `packages/*/examples` and `apps/*/src` with the
-two-rail rule. Each is right about its own surface, and the two never cross.
-
-So the react-sdk README's manual-mode fence still renders `structured.facets?.map(…)`
-and no secondary rail — the exact read T947 now fails a build over, in the exact place
-T939 was written because a reader copies. Neither guard is wrong; the rule and the
-surface were paired by hand, and this pair was not made.
-
-Fixing the one fence is a line. What stops the next one is the two scans sharing a rule
-set: one list of named rules, and per rule the surfaces it applies to, so adding a rule
-is a list entry rather than a decision to remember in two files. The surfaces genuinely
-differ — the SDK is exempt from the store-boundary rule and not from this one — so the
-pairing has to stay explicit; it just should not be implicit in which file the regex was
-typed into.
-
 ## XLVI. Synthetic User Research — persona studies, interviews & continuous insight (Block AW)
 
 > Persona work so far has treated a `TurPersona` as something you act on **one at a
