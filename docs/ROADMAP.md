@@ -25,8 +25,6 @@
 
 - ⏳ **T902** (deps: roadkeep RK377) **Two governed prose files declare the same 13 section anchors** — both halves of the fix exist upstream but not in the 0.1.285 plugin this repo runs, whose config parser would reject the key the fix declares. → §LXIX.8
 
-## Block BW — What the link-free response and its consumers still lack (§LXX)
-
 ## Block AN — Security hardening (post-audit, §XXXVII)
 
 - 📋 **T893** (deps: —) **The public search page is not in the Keycloak branch's anonymous list** — `/sn/**` is permitted only under local auth, so a Keycloak deployment sends a visitor to SSO login for a page whose every API is already public. → §XXXVII.17
@@ -35,6 +33,10 @@
 ## Block AC — JPA caching strategy: decouple cache from entities
 
 - 📋 **T898** (deps: —) **The search snapshot caches six kinds of JPA entity, which T486 forbids** — T486's lint only walks repositories, so a service-level `@Cacheable` holding entities passes — and this one already paid for it once with a workaround for the exact failure. → §LXXI.1
+
+## Block AV — POST-native search & link-free response contract (§XLV)
+
+- 📋 **T936** (deps: T884 ✅) **`useTuringFacets` renders the primary rail only** — It reads `structured.facets` and `widget.facet` and neither `secondaryFacets` nor `widget.secondaryFacet`, so a site's secondary facets are invisible to every SDK consumer. → §XLV.6
 
 ## Non-goals (do NOT add as tasks)
 
