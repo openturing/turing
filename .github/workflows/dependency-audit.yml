@@ -6,8 +6,39 @@ name: Dependency Audit
 # covered by the weekly Dependabot `maven` block (.github/dependabot.yml); add
 # an OWASP dependency-check step here if a hard Maven gate is later required.
 
+# T924 — the triggers the note above already claimed. Until now this declared
+# `workflow_dispatch` alone, so the only automated check between a published
+# advisory and the frontend dependency tree fired for nobody.
+#
+# The schedule matters as much as any event trigger and is not redundant with
+# them: an advisory is published against dependencies that are already merged, so
+# the run that catches it is the one no change triggered. Weekly, off the hour,
+# and on a branch pattern the next version inherits — `schedule` itself only ever
+# runs on the default branch.
+#
+# `pull_request` is deliberately NOT here yet, and T927 is why. `pnpm audit
+# --audit-level high` exits 1 today on ten open advisories (six of them with
+# `--prod`), none of which any future pull request will have caused. Adding the
+# trigger now would redden every frontend PR — including Dependabot's own
+# remediation PRs — on inherited debt, which is how a gate teaches people to
+# ignore it. Add `pull_request` filtered to `frontend/**` the day the audit exits
+# 0, whether by remediation or by recording an accepted advisory in
+# `auditConfig.ignoreGhsas` the way the two xlsx entries already are.
 on:
   workflow_dispatch:
+  push:
+    branches: ["2026.*"]
+    paths:
+      - "frontend/pnpm-lock.yaml"
+      - "frontend/pnpm-workspace.yaml"
+      - "frontend/**/package.json"
+      - ".github/workflows/dependency-audit.yml"
+  schedule:
+    - cron: "17 4 * * 1"
+
+concurrency:
+  group: dependency-audit-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   pnpm-audit:

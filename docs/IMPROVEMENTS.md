@@ -2171,29 +2171,6 @@ What is left today is renumbering all 49 `STRATEGY.md` headings past §LXXI, one
 `drop`/`add` pair at a time, which appends its outline to the end of the file in
 scrambled order. That is worse than the collision, so this waits.
 
-### LXIX.20 The dependency audit documents three triggers and has one (T924)
-
-`dependency-audit.yml` opens by stating what it is for: "a CI gate so a NEW
-high-severity advisory in the frontend dependency tree fails the build rather than
-sitting open. Runs on PRs that touch the frontend, on a weekly schedule, and on demand."
-
-Its `on:` block is `workflow_dispatch:` and nothing else. None of the three.
-
-T922 fixed this class for the three validate workflows and roadkeep's gate, and scoped
-itself to those by name — so this one was left, and it is the one where being dead costs
-the most: `pnpm audit --audit-level high` is the only automated check standing between a
-published advisory and the dependency tree. The Maven side is covered by Dependabot's
-weekly `maven` block, which does run.
-
-The fix is the triggers the header already specifies: `pull_request` filtered to
-`frontend/**` plus its own file, `schedule` weekly, and the existing
-`workflow_dispatch`. Take the concurrency group from T922 while there.
-
-Worth noting the shape rather than just the instance: three files now have said in prose
-what they do and been contradicted by their own `on:` block — `nightly-llm-it.yml`,
-`roadkeep.yml`, and this. A comment is not a trigger, and nothing checks that the two
-agree.
-
 ### LXIX.21 A whole workflow duplicates one matrix entry and does less (T925)
 
 `validate-react-ui.yml` runs four commands: install, `build`, `size`, `test`.
@@ -2237,6 +2214,30 @@ The work is one `sizeBudget` block each with a measured `baseline`, written by
 `--update-baseline`, plus `groupBy: "dir"` (T878) so a regression names `src/` or a
 subcommand rather than the package. Then the `size` step stops being skipped and their
 publish workflows gain the gate the other three have.
+
+### LXIX.23 Ten high advisories are open in the frontend dependency tree (T927)
+
+`pnpm audit --audit-level high` exits 1. Eleven findings, ten high, two already ignored
+by name. With `--prod` it is still six high, so this is not confined to build tooling.
+
+Distinct advisories, by package: `react-router` (>=7.12.0 <8.3.0), `postcss` (<=8.5.17),
+`fast-uri` (two ranges, via `@module-federation/enhanced`), `brace-expansion` (two
+ranges, via `eslint`), `js-yaml` (two ranges, via `@changesets/cli`).
+
+`react-router` is the one to look at first: it is a runtime dependency of the
+marketplace apps rather than a build-time transitive, and its vulnerable range ends at a
+released version.
+
+This is what stops T924 from adding the `pull_request` trigger its own header asks for.
+A gate that is red before any change is made blocks every frontend PR — including the
+Dependabot PRs that would fix it — for reasons no author caused, and a permanently red
+check is one people learn to scroll past.
+
+Two exits per advisory, and the work is deciding which: raise the floor with a
+`pnpm.overrides` entry the way T654 did for undici, or record it in
+`auditConfig.ignoreGhsas` with the reachability argument written next to it, as the two
+xlsx entries already are. Both are in `pnpm-workspace.yaml`. When the audit exits 0,
+T924's comment says what to add.
 
 ## LXX. What the link-free response and its consumers still lack (Block BW)
 
