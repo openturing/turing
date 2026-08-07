@@ -2155,21 +2155,23 @@ and 13 anchors collide: §VIII, §IX, §IX.1–§IX.4, §X, §X.1, §X.5, §XII,
 §XVI. An anchor names one section, so a pointer to any of them resolves to two — and
 every verb that reads one refuses rather than guessing.
 
-Nothing surfaced this until the lint learned to check it, which is the part worth
-noting: the collision has been latent for as long as both files have been governed, and
-it was invisible precisely because no *pointer* happened to aim at a doubled anchor.
+**Blocked on a roadkeep release, not on a roadkeep gap.** Both halves now exist
+upstream: `[refs] <role> = "<prefix>"` gives a prose file its own namespace
+(RK378, shipped), and `section move` re-addresses a section, its subtree and every
+pointer at it (RK377, in progress). Neither is in **0.1.285**, the plugin this
+repository runs — its hook denies the hand edit, its CLI writes the files, and its
+config parser would reject a `[refs]` key it does not know.
 
-**Blocked on roadkeep, as of 2026-08-06.** The fix this section named —
-`[refs] <role> = "<prefix>"`, giving one file its own namespace — is not
-implemented: `config.py` parses no `[refs]` table, and `anchors` states the
-opposite as the design ("one outline spans both"). Filed upstream as RK378. Nor
-can the anchors simply be moved: under `ref_scheme = "outline"` no verb changes a
-section's address, because `renumber` moves an id and carries the anchor only
-when the two are the same thing. Filed as RK377.
+So the sequencing is fixed and the work is small when it comes: update the plugin past a
+release carrying both, declare `refs.strategy`, then `section move` over the 13 anchors,
+which takes their subtrees and pointers with them.
 
-What is left today is renumbering all 49 `STRATEGY.md` headings past §LXXI, one
-`drop`/`add` pair at a time, which appends its outline to the end of the file in
-scrambled order. That is worse than the collision, so this waits.
+Doing any of it against 0.1.285 breaks every other roadkeep call in the repo, which is
+worse than the collision — nothing currently points at a doubled anchor, so the defect
+is latent rather than costing anyone a refusal today.
+
+Re-check on the next plugin update: `roadkeep --version`, then `roadkeep section
+--help` for `move`.
 
 ## LXX. What the link-free response and its consumers still lack (Block BW)
 

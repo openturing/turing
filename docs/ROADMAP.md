@@ -23,7 +23,7 @@
 
 ## Block BV — The quality gate stops at the package boundary (§LXIX)
 
-- ⏳ **T902** (deps: roadkeep RK378 + RK377) **Two governed prose files declare the same 13 section anchors** — STRATEGY.md and IMPROVEMENTS.md number sections from one outline, so a pointer to any of the 13 resolves to two sections and every verb that reads one refuses. → §LXIX.8
+- ⏳ **T902** (deps: roadkeep RK377) **Two governed prose files declare the same 13 section anchors** — both halves of the fix exist upstream but not in the 0.1.285 plugin this repo runs, whose config parser would reject the key the fix declares. → §LXIX.8
 
 ## Block BW — What the link-free response and its consumers still lack (§LXX)
 
