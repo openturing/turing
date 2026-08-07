@@ -302,6 +302,11 @@ number" looked free but wasn't. Grepping three files (`ROADMAP.md`,
 
 ## Log (most recent first)
 
+- **T940–T943 CREATED** (📋, Block BJ §LVIII.5–.8 — what the Block BJ run left open: every declared field is re-analysed on every query, the override cache stops filling at its cap instead of evicting, a mounted lexicon file still needs a restart, and an unparseable site bundle is visible only in the log) — 2026-08-07.
+- **T817 SHIPPED** (Block BJ §LVIII.4 — per-site ranking-lexicon override, merged over the resolved bundle) — 2026-08-07.
+- **T816 SHIPPED** (Block BJ §LVIII.3 — lexicon + analyzer resolved by locale, `pt`/`es` bundles, `lexicon-dir`) — 2026-08-07.
+- **T815 SHIPPED** (Block BJ §LVIII.2 — one Lucene analyzer over query and field, replacing the hand-rolled tokenizer) — 2026-08-07.
+- **T814 SHIPPED** (Block BJ §LVIII.1 — the ranking lexicon externalised to a resource bundle) — 2026-08-07.
 - **T936–T939 CREATED** (📋, Block AV §XLV.6–.9 — the follow-ups the Block BW run left: `useTuringFacets` renders the primary rail only, `TurWidget.similar` is typed `string`, the no-links guard passes on a spotlight-free fixture, and nothing stops a README teaching `data.widget` again) — 2026-08-07.
 
 - **T885 SHIPPED — Block BW CLOSED, heading dropped** (Block BW §LXX.7 — a convention test over `frontend/apps/**` fails on the three shapes T865–T867 shipped) — 2026-08-07.
