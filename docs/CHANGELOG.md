@@ -1261,3 +1261,7 @@
 - **T883** — The README now opens with the two response shapes and a table saying data.widget.facet is null by default; both examples were rewritten off it — the manual one onto structured.facets + toggleFacet/goToPage, the URL-synced one onto useTuringFacets with the urlSync prop it always needed. Both hook surfaces list structured and the link-free actions.
 - **T884** — Both co-browse lookups now walk the secondary rail as well — structured.secondaryFacets and, once TurWidget declared it, widget.secondaryFacet — so the agent toggles a secondary facet in either transport instead of answering Facet not found for a rail the user can see. Five cases pinned in a new co-browse suite.
 - **T885** — A convention test over frontend/apps/** fails on the three shapes T865-T867 shipped — a widget read off data, a store.data read, a data destructured out of the store — with comments stripped so a file may still explain the rule. The boundary is stated in the file: the SDK reads both shapes on purpose and is out of scope, and two counter-suites prove the rules match the bugs and spare the app's unrelated data/widget vocabulary.
+
+## Block BJ — Configurable, per-language NL ranking lexicon (Lucene analysis)
+
+- **T814** — The ranking vocabulary is a resource bundle a `TurRankingLexicon` is built from, so a deployment tunes it as data instead of editing Java.

@@ -12,7 +12,6 @@ package com.viglet.turing.sn.dsl.eval;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
-import java.util.Map;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -43,75 +42,26 @@ import org.springframework.util.StringUtils;
  * resolves the planner returns {@link RankingIntent#none} and the caller's path is
  * unchanged — additive and fail-open by construction.
  *
+ * <p>T814 / §LVIII.1 (Block BJ) — that vocabulary is no longer compiled in: the
+ * four word sets are a {@link TurRankingLexicon} served by
+ * {@link TurRankingLexiconProvider} from a resource bundle. English behaviour is
+ * unchanged; the difference is that the lexicon is now data, which is what
+ * per-language resolution and deployment overrides hang off.
+ *
  * @author Alexandre Oliveira
  * @since 2026.3.4
  */
 @Component
 public class TurNLRankingPlanner {
 
-    /** Superlative / comparative words that mean "smallest first" (ascending). */
-    private static final Set<String> ASC_WORDS = Set.of(
-            "cheapest", "cheaper", "lowest", "lower", "smallest", "least", "minimum", "min",
-            "fastest", "faster", "quickest", "shortest", "inexpensive", "affordable");
-
-    /** Superlative / comparative words that mean "largest first" (descending). */
-    private static final Set<String> DESC_WORDS = Set.of(
-            "most", "highest", "higher", "largest", "larger", "biggest", "bigger", "greatest",
-            "best", "top", "strongest", "maximum", "max", "longest", "longer", "widest", "deepest");
-
-    /**
-     * Explicit "sort/order/rank by …" triggers. Direction defaults to descending
-     * (list the top first) unless an ASC word is also present in the phrase.
-     */
-    private static final Pattern SORT_BY = Pattern.compile(
-            "\\b(?:sorted|sort|order|ordered|ranked|rank)\\s+by\\b",
-            Pattern.CASE_INSENSITIVE);
-
-    /**
-     * Adjective/verb → concept-noun seed. A query word on the left injects the
-     * right-hand tokens into the query's token bag so a pure-adjective query
-     * ("cheapest", "most intelligent", "fastest") still overlaps the declared
-     * field's name/description tokens ("pricing", "intelligence", "latency").
-     */
-    private static final Map<String, Set<String>> SYNONYMS = Map.ofEntries(
-            Map.entry("cheap", Set.of("price", "pricing", "cost")),
-            Map.entry("cheapest", Set.of("price", "pricing", "cost")),
-            Map.entry("cheaper", Set.of("price", "pricing", "cost")),
-            Map.entry("expensive", Set.of("price", "pricing", "cost")),
-            Map.entry("affordable", Set.of("price", "pricing", "cost")),
-            Map.entry("inexpensive", Set.of("price", "pricing", "cost")),
-            Map.entry("price", Set.of("pricing", "cost")),
-            Map.entry("priced", Set.of("price", "pricing", "cost")),
-            Map.entry("cost", Set.of("price", "pricing")),
-            Map.entry("intelligent", Set.of("intelligence", "quality")),
-            Map.entry("intelligence", Set.of("quality")),
-            Map.entry("smart", Set.of("intelligence", "quality")),
-            Map.entry("smartest", Set.of("intelligence", "quality")),
-            Map.entry("capable", Set.of("intelligence", "quality", "capability")),
-            Map.entry("fast", Set.of("latency", "throughput", "speed", "performance")),
-            Map.entry("fastest", Set.of("latency", "throughput", "speed", "performance")),
-            Map.entry("faster", Set.of("latency", "throughput", "speed", "performance")),
-            Map.entry("quick", Set.of("latency", "speed", "performance")),
-            Map.entry("quickest", Set.of("latency", "speed", "performance")),
-            Map.entry("speed", Set.of("latency", "throughput", "performance")),
-            Map.entry("big", Set.of("context", "window", "length", "size")),
-            Map.entry("biggest", Set.of("context", "window", "length", "size")),
-            Map.entry("large", Set.of("context", "window", "length", "size")),
-            Map.entry("largest", Set.of("context", "window", "length", "size")),
-            Map.entry("long", Set.of("context", "window", "length")),
-            Map.entry("longest", Set.of("context", "window", "length")),
-            Map.entry("output", Set.of("output", "tokens")));
-
-    /** Words carrying no signal for field resolution (kept out of the token bag). */
-    private static final Set<String> STOPWORDS = Set.of(
-            "the", "a", "an", "of", "by", "on", "in", "to", "for", "with", "and", "or", "is",
-            "are", "was", "has", "have", "had", "which", "what", "that", "this", "these", "those",
-            "model", "models", "me", "show", "find", "give", "list", "per", "it", "its", "their",
-            "as", "at", "be", "do", "does", "get", "you", "your", "can", "we", "how", "one", "sorted",
-            "sort", "order", "ordered", "ranked", "rank");
-
     /** Splits camelCase boundaries so {@code intelligenceIndex} → two tokens. */
     private static final Pattern CAMEL = Pattern.compile("([a-z0-9])([A-Z])");
+
+    private final TurRankingLexiconProvider lexiconProvider;
+
+    public TurNLRankingPlanner(TurRankingLexiconProvider lexiconProvider) {
+        this.lexiconProvider = lexiconProvider;
+    }
 
     /**
      * Detect any ranking intent in {@code query} and resolve it against the
@@ -124,16 +74,17 @@ public class TurNLRankingPlanner {
         if (!StringUtils.hasText(query) || schema == null || schema.isEmpty()) {
             return RankingIntent.none(query);
         }
-        Set<String> queryTokens = expand(tokenize(query));
-        String direction = resolveDirection(query, queryTokens);
+        TurRankingLexicon lexicon = lexiconProvider.lexicon();
+        Set<String> queryTokens = expand(tokenize(query, lexicon), lexicon);
+        String direction = resolveDirection(query, queryTokens, lexicon);
         if (direction == null) {
             return RankingIntent.none(query);
         }
-        TurNLFacetField field = resolveField(queryTokens, schema);
+        TurNLFacetField field = resolveField(queryTokens, schema, lexicon);
         if (field == null) {
             return RankingIntent.none(query);
         }
-        String stripped = strip(query, field);
+        String stripped = strip(query, field, lexicon);
         return new RankingIntent(true, field.name(), direction, stripped);
     }
 
@@ -144,17 +95,17 @@ public class TurNLRankingPlanner {
      * ranking intent. An explicit ASC/DESC superlative wins; a bare "sort by …"
      * defaults to descending (top first) unless an ASC word rides along.
      */
-    private String resolveDirection(String query, Set<String> queryTokens) {
-        boolean asc = queryTokens.stream().anyMatch(ASC_WORDS::contains);
-        boolean desc = queryTokens.stream().anyMatch(DESC_WORDS::contains);
-        if (asc) {
+    private String resolveDirection(String query, Set<String> queryTokens,
+            TurRankingLexicon lexicon) {
+        if (queryTokens.stream().anyMatch(lexicon.ascWords()::contains)) {
             return "asc";
         }
-        if (desc) {
+        if (queryTokens.stream().anyMatch(lexicon.descWords()::contains)) {
             return "desc";
         }
         // "sorted by <metric>" with no explicit adjective → top-first (descending).
-        return SORT_BY.matcher(query).find() ? "desc" : null;
+        Pattern sortBy = lexicon.sortTriggerPattern();
+        return sortBy != null && sortBy.matcher(query).find() ? "desc" : null;
     }
 
     // ─────────────────────────── Field resolution ───────────────────────────
@@ -165,14 +116,15 @@ public class TurNLRankingPlanner {
      * {@code null} when nothing overlaps (so the caller emits no sort rather than
      * guessing a field).
      */
-    private TurNLFacetField resolveField(Set<String> queryTokens, List<TurNLFacetField> schema) {
+    private TurNLFacetField resolveField(Set<String> queryTokens, List<TurNLFacetField> schema,
+            TurRankingLexicon lexicon) {
         TurNLFacetField best = null;
         int bestScore = 0;
         for (TurNLFacetField field : schema) {
             if (field == null || field.name() == null || !field.numeric()) {
                 continue;
             }
-            int score = score(field, queryTokens);
+            int score = score(field, queryTokens, lexicon);
             if (score > bestScore) {
                 bestScore = score;
                 best = field;
@@ -181,9 +133,9 @@ public class TurNLRankingPlanner {
         return bestScore > 0 ? best : null;
     }
 
-    private int score(TurNLFacetField field, Set<String> queryTokens) {
-        Set<String> nameTokens = tokenize(field.name());
-        Set<String> descTokens = tokenize(field.description());
+    private int score(TurNLFacetField field, Set<String> queryTokens, TurRankingLexicon lexicon) {
+        Set<String> nameTokens = tokenize(field.name(), lexicon);
+        Set<String> descTokens = tokenize(field.description(), lexicon);
         int score = 0;
         for (String token : queryTokens) {
             if (nameTokens.contains(token)) {
@@ -196,9 +148,10 @@ public class TurNLRankingPlanner {
     }
 
     /** The query tokens (minus stopwords) that actually matched the resolved field. */
-    private Set<String> matchedTokens(TurNLFacetField field, Set<String> queryTokens) {
-        Set<String> fieldTokens = new LinkedHashSet<>(tokenize(field.name()));
-        fieldTokens.addAll(tokenize(field.description()));
+    private Set<String> matchedTokens(TurNLFacetField field, Set<String> queryTokens,
+            TurRankingLexicon lexicon) {
+        Set<String> fieldTokens = new LinkedHashSet<>(tokenize(field.name(), lexicon));
+        fieldTokens.addAll(tokenize(field.description(), lexicon));
         Set<String> matched = new LinkedHashSet<>();
         for (String token : queryTokens) {
             if (fieldTokens.contains(token)) {
@@ -217,16 +170,19 @@ public class TurNLRankingPlanner {
      * that resolved the field. The remainder ("chat models") is what the caller
      * hands to the parser; a blank remainder means "sort-only, no facet".
      */
-    private String strip(String query, TurNLFacetField field) {
+    private String strip(String query, TurNLFacetField field, TurRankingLexicon lexicon) {
         String text = query;
-        Matcher sortBy = SORT_BY.matcher(text);
-        if (sortBy.find()) {
-            text = text.substring(0, sortBy.start());
+        Pattern sortBy = lexicon.sortTriggerPattern();
+        if (sortBy != null) {
+            Matcher matcher = sortBy.matcher(text);
+            if (matcher.find()) {
+                text = text.substring(0, matcher.start());
+            }
         }
         Set<String> remove = new LinkedHashSet<>();
-        remove.addAll(ASC_WORDS);
-        remove.addAll(DESC_WORDS);
-        remove.addAll(matchedTokens(field, expand(tokenize(query))));
+        remove.addAll(lexicon.ascWords());
+        remove.addAll(lexicon.descWords());
+        remove.addAll(matchedTokens(field, expand(tokenize(query, lexicon), lexicon), lexicon));
         for (String word : remove) {
             text = text.replaceAll("(?i)\\b" + Pattern.quote(word) + "\\b", " ");
         }
@@ -234,20 +190,20 @@ public class TurNLRankingPlanner {
         // A remnant of only stopwords ("which model has the") carries no facet — treat
         // it as blank so the caller runs a sort-only match_all rather than asking the
         // LLM to facet on nothing.
-        return tokenize(cleaned).isEmpty() ? "" : cleaned;
+        return tokenize(cleaned, lexicon).isEmpty() ? "" : cleaned;
     }
 
     // ─────────────────────────── Tokenising ───────────────────────────
 
     /** Lower-cased alnum tokens (camelCase split), stopwords and 1-char noise removed. */
-    static Set<String> tokenize(String value) {
+    static Set<String> tokenize(String value, TurRankingLexicon lexicon) {
         if (!StringUtils.hasText(value)) {
             return Set.of();
         }
         String spaced = CAMEL.matcher(value).replaceAll("$1 $2").toLowerCase(Locale.ROOT);
         Set<String> tokens = new LinkedHashSet<>();
         for (String part : spaced.split("[^a-z0-9]+")) {
-            if (part.length() >= 2 && !STOPWORDS.contains(part)) {
+            if (part.length() >= 2 && !lexicon.stopwords().contains(part)) {
                 tokens.add(part);
             }
         }
@@ -255,13 +211,10 @@ public class TurNLRankingPlanner {
     }
 
     /** Adds synonym concept-tokens for any trigger word present in {@code tokens}. */
-    private Set<String> expand(Set<String> tokens) {
+    private Set<String> expand(Set<String> tokens, TurRankingLexicon lexicon) {
         Set<String> expanded = new LinkedHashSet<>(tokens);
         for (String token : tokens) {
-            Set<String> extra = SYNONYMS.get(token);
-            if (extra != null) {
-                expanded.addAll(extra);
-            }
+            expanded.addAll(lexicon.synonymsOf(token));
         }
         return expanded;
     }

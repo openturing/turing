@@ -28,9 +28,10 @@ import com.viglet.turing.sn.dsl.eval.TurNLRankingPlanner.RankingIntent;
  */
 class TurNLRankingPlannerTest {
 
-    private final TurNLRankingPlanner planner = new TurNLRankingPlanner();
+    private final TurNLRankingPlanner planner = new TurNLRankingPlanner(new TurRankingLexiconProvider());
 
-    private static final List<TurNLFacetField> SCHEMA = List.of(
+    /** Shared with {@link TurRankingLexiconTest} — the same declared catalog schema. */
+    static final List<TurNLFacetField> SCHEMA = List.of(
             new TurNLFacetField("kind", TurSEFieldType.STRING, true, "chat | embedding | image"),
             new TurNLFacetField("vendor", TurSEFieldType.STRING, true, "Provider name"),
             new TurNLFacetField("benchmarks_intelligenceIndex", TurSEFieldType.FLOAT, false,

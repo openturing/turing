@@ -2054,14 +2054,6 @@ dependency (embedded vector store + the Lucene SE plugin), so reusing it adds no
 **The design — data-driven lexicon + Lucene analysis, resolved per locale.**
 
 
-### LVIII.1 LVIII.1 (T814) Externalize
-
-Lift the four hardcoded sets into a resource-backed `TurRankingLexicon` (a default `en`
-bundle under `resources/`) served by a `TurRankingLexiconProvider`.
-`TurNLRankingPlanner` consumes the lexicon instead of static fields — English parity,
-zero behaviour change, but now the vocabulary is data. This is the seam everything else
-hangs off.
-
 ### LVIII.2 LVIII.2 (T815) Lucene analysis backbone
 
 Replace the hand-rolled `tokenize`/`expand`/stopword code with a per-locale Lucene

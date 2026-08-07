@@ -31,6 +31,7 @@ import com.viglet.turing.sn.dsl.eval.TurNLFacetEvalScorer;
 import com.viglet.turing.sn.dsl.eval.TurNLFacetEvalService;
 import com.viglet.turing.sn.dsl.eval.TurNLFacetParser;
 import com.viglet.turing.sn.dsl.eval.TurNLRankingPlanner;
+import com.viglet.turing.sn.dsl.eval.TurRankingLexiconProvider;
 
 import tools.jackson.databind.ObjectMapper;
 import tools.jackson.databind.json.JsonMapper;
@@ -202,8 +203,8 @@ class TurCopilotPlanningComparisonServiceTest {
 
     private TurCopilotPlanningComparisonService service(TurNLFacetParser parser) {
         TurNLFacetEvalService evalService = new TurNLFacetEvalService(parser, scorer, null, null);
-        TurDeterministicCopilotQueryPlanner deterministic =
-                new TurDeterministicCopilotQueryPlanner(parser, new TurNLRankingPlanner());
+        TurDeterministicCopilotQueryPlanner deterministic = new TurDeterministicCopilotQueryPlanner(
+                parser, new TurNLRankingPlanner(new TurRankingLexiconProvider()));
         TurLlmAssistedCopilotQueryPlanner llmAssisted =
                 new TurLlmAssistedCopilotQueryPlanner(parser, judge, compiler, validator);
         TurHybridCopilotQueryPlanner hybrid =

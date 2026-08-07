@@ -113,7 +113,8 @@ class TurCatalogCopilotServiceTest {
         lenient().when(plannerFactory.resolve(anyString())).thenReturn(
                 new TurCopilotQueryPlannerFactory.Resolution(
                         new TurDeterministicCopilotQueryPlanner(parser,
-                                new com.viglet.turing.sn.dsl.eval.TurNLRankingPlanner()),
+                                new com.viglet.turing.sn.dsl.eval.TurNLRankingPlanner(
+                                        new com.viglet.turing.sn.dsl.eval.TurRankingLexiconProvider())),
                         2));
     }
 

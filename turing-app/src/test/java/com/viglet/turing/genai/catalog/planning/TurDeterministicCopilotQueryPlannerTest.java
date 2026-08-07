@@ -33,6 +33,7 @@ import com.viglet.turing.sn.dsl.eval.TurNLFacetField;
 import com.viglet.turing.sn.dsl.eval.TurNLFacetParser;
 import com.viglet.turing.sn.dsl.eval.TurNLFacetParser.TurNLFacetParseException;
 import com.viglet.turing.sn.dsl.eval.TurNLRankingPlanner;
+import com.viglet.turing.sn.dsl.eval.TurRankingLexiconProvider;
 
 import tools.jackson.databind.ObjectMapper;
 import tools.jackson.databind.json.JsonMapper;
@@ -61,7 +62,8 @@ class TurDeterministicCopilotQueryPlannerTest {
     @Mock
     private TurNLFacetParser parser;
 
-    private final TurNLRankingPlanner rankingPlanner = new TurNLRankingPlanner();
+    private final TurNLRankingPlanner rankingPlanner =
+            new TurNLRankingPlanner(new TurRankingLexiconProvider());
 
     private TurDeterministicCopilotQueryPlanner planner() {
         return new TurDeterministicCopilotQueryPlanner(parser, rankingPlanner);

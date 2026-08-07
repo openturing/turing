@@ -40,7 +40,7 @@ class TurNLRankingPlannerSampleTest {
 
     private static final ObjectMapper MAPPER = JsonMapper.builder().build();
 
-    private final TurNLRankingPlanner planner = new TurNLRankingPlanner();
+    private final TurNLRankingPlanner planner = new TurNLRankingPlanner(new TurRankingLexiconProvider());
 
     private TurNLFacetEvalPack loadPack() throws IOException {
         try (InputStream in = getClass().getClassLoader()
