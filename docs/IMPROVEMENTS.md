@@ -2171,6 +2171,73 @@ What is left today is renumbering all 49 `STRATEGY.md` headings past §LXXI, one
 `drop`/`add` pair at a time, which appends its outline to the end of the file in
 scrambled order. That is worse than the collision, so this waits.
 
+### LXIX.20 The dependency audit documents three triggers and has one (T924)
+
+`dependency-audit.yml` opens by stating what it is for: "a CI gate so a NEW
+high-severity advisory in the frontend dependency tree fails the build rather than
+sitting open. Runs on PRs that touch the frontend, on a weekly schedule, and on demand."
+
+Its `on:` block is `workflow_dispatch:` and nothing else. None of the three.
+
+T922 fixed this class for the three validate workflows and roadkeep's gate, and scoped
+itself to those by name — so this one was left, and it is the one where being dead costs
+the most: `pnpm audit --audit-level high` is the only automated check standing between a
+published advisory and the dependency tree. The Maven side is covered by Dependabot's
+weekly `maven` block, which does run.
+
+The fix is the triggers the header already specifies: `pull_request` filtered to
+`frontend/**` plus its own file, `schedule` weekly, and the existing
+`workflow_dispatch`. Take the concurrency group from T922 while there.
+
+Worth noting the shape rather than just the instance: three files now have said in prose
+what they do and been contradicted by their own `on:` block — `nightly-llm-it.yml`,
+`roadkeep.yml`, and this. A comment is not a trigger, and nothing checks that the two
+agree.
+
+### LXIX.21 A whole workflow duplicates one matrix entry and does less (T925)
+
+`validate-react-ui.yml` runs four commands: install, `build`, `size`, `test`.
+`validate-js.yml`'s `@viglet/turing-react-ui` matrix entry runs those plus `typecheck`
+(T918) and `contents` (T919). A strict subset.
+
+It predates the matrix — T303 wrote it as the packaging gate for react-ui alone, and
+T873 later generalised `validate-js.yml` into the matrix that absorbed it. Nobody
+removed the original, so react-ui is the one package with two validation workflows, and
+the older one is the weaker.
+
+It has done no harm so far only because both were dispatch-only. T922 changed that for
+`validate-js.yml`, which makes the duplicate an active choice now: give it triggers and
+the same package is validated twice per push, or leave it dispatch-only and it is a file
+that looks like a gate and is not one.
+
+Delete it. Everything it asserts is asserted by the matrix, under more checks, and a
+second file that must be kept in step with the first is the failure mode T921 removed
+from `.gitignore` and T919 removed from `files`.
+
+Check the branch-protection required-checks list before deleting, in case the job name
+is referenced there.
+
+### LXIX.22 Two published packages have no size budget at all (T926)
+
+`@viglet/turing-cli` and `@viglet/turing-flow-dsl` carry no `sizeBudget` block, so
+`matrix.size` is `false` for them (T873) and their publish workflows run `test` and
+`contents` but no `size` — the least of the five.
+
+They are not exempt by nature. The CLI unpacks to 154 kB and the flow DSL to 93 kB, both
+npm-installed by users, and the CLI is the one that grows: `init`, `dev`, `deploy`,
+`logs` and `eval` are five subcommands with room for a sixth. A budget is exactly as
+meaningful there as on react-ui.
+
+The reason they have none is order of arrival: T303 wrote `check-size.mjs` for the
+bundle packages, and these two were added later without one. `--if-present` on the
+matrix step then made their absence silent rather than visible, which is the correct
+behaviour for a package that has no budget and the wrong outcome for one that should.
+
+The work is one `sizeBudget` block each with a measured `baseline`, written by
+`--update-baseline`, plus `groupBy: "dir"` (T878) so a regression names `src/` or a
+subcommand rather than the package. Then the `size` step stops being skipped and their
+publish workflows gain the gate the other three have.
+
 ## LXX. What the link-free response and its consumers still lack (Block BW)
 
 > Block BT migrated the three `turing-app` consumers off `store.data`. What it did

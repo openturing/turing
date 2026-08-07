@@ -24,6 +24,9 @@
 ## Block BV — The quality gate stops at the package boundary (§LXIX)
 
 - ⏳ **T902** (deps: roadkeep RK378 + RK377) **Two governed prose files declare the same 13 section anchors** — STRATEGY.md and IMPROVEMENTS.md number sections from one outline, so a pointer to any of the 13 resolves to two sections and every verb that reads one refuses. → §LXIX.8
+- 📋 **T924** (deps: T922 ✅) **The dependency audit documents three triggers and has one** — its header says it runs on frontend pull requests, on a weekly schedule and on demand, but `on:` declares only `workflow_dispatch`, so a new high-severity advisory fails nothing. → §LXIX.20
+- 📋 **T925** (deps: T873 ✅) **A whole workflow duplicates one matrix entry and does less** — validate-react-ui.yml builds, weighs and tests the package that validate-js.yml already builds, weighs, type-checks, contents-checks and tests, so it is a strict subset kept in parallel. → §LXIX.21
+- 📋 **T926** (deps: T923 ✅) **Two published packages have no size budget at all** — the CLI and the flow DSL declare no `sizeBudget`, so the matrix skips the budget for them and their publish workflows gate on the least of the five. → §LXIX.22
 
 ## Block BW — What the link-free response and its consumers still lack (§LXX)
 
