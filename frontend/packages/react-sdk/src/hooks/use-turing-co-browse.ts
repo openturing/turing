@@ -40,29 +40,40 @@ interface ToggleFacetArgs {
   value?: unknown;
 }
 
+/** The agent names a facet by its visible label, so every match is folded. */
+function sameName(a: string | undefined, b: string): boolean {
+  return a?.toLowerCase() === b.toLowerCase();
+}
+
 /**
  * T713 — find a structured facet item by group name + visible value label
  * (case-insensitive). This is the POST-native lookup and the only one that
  * works in the default mode: `store.data` is `null` there, so the previous
  * href-based lookup made `toggle_facet` / `clear_facets` fail outright.
+ *
+ * <p>T884 — searches the secondary rail too. A field configured as a secondary
+ * facet is on `structured.secondaryFacets`, so looking only at `facets` answered
+ * "Facet not found" for it — and the agent has no way to tell a secondary facet
+ * from a primary one, because the user cannot either.
  */
 function findStructuredFacetItem(
   store: SearchStoreValue,
   field: string,
   value: string,
 ): TurStructuredFacetItem | undefined {
-  const groups = store.structured?.facets ?? [];
-  const group = groups.find((g) => g.name?.toLowerCase() === field.toLowerCase());
-  return group?.items.find(
-    (item) =>
-      item.label?.toLowerCase() === value.toLowerCase() ||
-      item.value?.toLowerCase() === value.toLowerCase(),
-  );
+  const groups = [
+    ...(store.structured?.facets ?? []),
+    ...(store.structured?.secondaryFacets ?? []),
+  ];
+  return groups
+    .filter((g) => sameName(g.name, field))
+    .flatMap((g) => g.items ?? [])
+    .find((item) => sameName(item.label, value) || sameName(item.value, value));
 }
 
 /**
  * Legacy (`postNative: false`) fallback: the same lookup against the
- * link-bearing response.
+ * link-bearing response, secondary rail included (T884).
  *
  * @deprecated T713 — goes away with `navigate(href)` in the next major.
  */
@@ -71,10 +82,12 @@ function findFacetLink(
   field: string,
   value: string,
 ): string | undefined {
-  const groups = store.data?.widget?.facet ?? [];
-  const group = groups.find((g) => g.name?.toLowerCase() === field.toLowerCase());
-  const item = group?.facets.find((f) => f.label?.toLowerCase() === value.toLowerCase());
-  return item?.link;
+  const widget = store.data?.widget;
+  const groups = [...(widget?.facet ?? []), ...(widget?.secondaryFacet ?? [])];
+  return groups
+    .filter((g) => sameName(g.name, field))
+    .flatMap((g) => g.facets ?? [])
+    .find((f) => sameName(f.label, value))?.link;
 }
 
 export function useCoBrowseSearch(store: SearchStoreValue): UseCoBrowseReturn {

@@ -2179,19 +2179,6 @@ Re-check on the next plugin update: `roadkeep --version`, then `roadkeep section
 > not do is finish the **shape** they were reading it for, or extend the fix past
 > the one app. Every item below was read out of the code while shipping T865–T869.
 
-### LXX.6 `toggle_facet` cannot reach a secondary facet (T884)
-
-`findStructuredFacetItem` (T713) looks the target up in `store.structured?.facets`
-and stops there. A field configured as a *secondary* facet lives in
-`structured.secondaryFacets`, so the co-browse client tool returns
-`Facet not found: field=value` for it — then falls through to `findFacetLink`,
-which reads `store.data?.widget?.facet` and is primary-only as well, so the legacy
-transport has the same hole.
-
-T869's `ChipState` had to solve the identical problem for document chips and reads
-both lists; this should do the same. Worth checking whether any other consumer
-enumerates `facets` without `secondaryFacets` in the same pass.
-
 ### LXX.7 Nothing stops the fourth consumer (T885)
 
 T865–T867 were one mistake made three times, in three files, by three edits that

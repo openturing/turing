@@ -171,6 +171,13 @@ export interface TurPaginationItem {
 export interface TurWidget {
   icon?: string | null;
   facet: TurFacetGroup[];
+  /**
+   * T884 — facet groups the site configured as *secondary*. The server has always
+   * sent them; declaring them only here is what made every lookup that walked
+   * `facet` alone silently primary-only. Mirrors `secondaryFacets` on the
+   * structured response.
+   */
+  secondaryFacet?: TurFacetGroup[];
   facetToRemove: TurFacetGroup;
   similar: string;
   spellCheck: TurSpellCheck;
