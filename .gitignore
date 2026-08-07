@@ -1,9 +1,12 @@
 # ── Build outputs ────────────────────────────────────────────
 /bin/
 /build/
+# T921 — every workspace's build output, by pattern. This used to be one
+# anchored line per workspace, thirteen of them, and flow-dsl never got its
+# own: 20 compiled files were tracked, and each build landed in the next
+# commit. A list that must be extended per workspace is a list that misses one.
+dist/
 /target/
-/dist/
-/frontend/dist/
 /backup/
 
 # ── IDE & editor ─────────────────────────────────────────────
@@ -64,11 +67,9 @@ turing-app/src/main/resources/public/favicon.ico
 /turing-react/.__mf__temp
 
 # ── Turing React SDK ────────────────────────────────────────
-turing-react-sdk/dist
 
 # ── Turing Marketplace (generated manifests, builds, exports) ──
 turing-marketplace/*/app/public/turing-manifest.json
-turing-marketplace/*/app/dist
 turing-marketplace/*/app/*.zip
 turing-marketplace/*/export/*.zip
 
@@ -82,18 +83,13 @@ turing-react-sdk/debug-storybook.log
 **/storybook-static/
 /.github/modernize
 /frontend/.turbo
-/frontend/apps/marketplace/space-missions/dist
 frontend/apps/marketplace/space-missions/space-missions.zip
-/frontend/apps/showcase/dist
 /frontend/apps/showcase/.turbo
 frontend/apps/showcase/atlas-store.zip
-/frontend/apps/marketplace/vinyl-records/dist
 /frontend/apps/turing-app/.__mf__temp
 /frontend/packages/react-sdk/.turbo
 frontend/packages/react-sdk/debug-storybook.log
 /frontend/packages/shared-types/.turbo
-/frontend/packages/shared-types/dist
-/frontend/apps/marketplace/mythical-creatures/dist
 frontend/apps/marketplace/mythical-creatures/mythical-creatures.zip
 /frontend/apps/marketplace/space-missions/.turbo
 /frontend/apps/marketplace/vinyl-records/.turbo
@@ -101,9 +97,7 @@ frontend/apps/marketplace/mythical-creatures/mythical-creatures.zip
 frontend/apps/marketplace/vinyl-records/vinyl-records.zip
 /turing-app/src/test/resources/h2-snapshot
 /frontend/packages/sdk/.turbo
-/frontend/packages/react-ui/dist
 /frontend/packages/react-ui/.turbo
 scripts/sonar/scan.log
-/frontend/packages/cli/dist
 /frontend/packages/cli/.turbo
 /frontend/packages/flow-dsl/.turbo

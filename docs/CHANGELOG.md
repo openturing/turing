@@ -1238,3 +1238,4 @@
 - **T918** — each package has a tsconfig.test.json that includes what the shipping config excludes and emits nothing, wired into the matrix, and it already caught a zero-arg mock indexed as if it took one and a JSX namespace React 19 removed.
 - **T919** — the CLI and the flow DSL publish dist/src rather than all of dist, dropping 40 and 16 compiled test files, and a shared contents check runs in the matrix asserting no tarball carries tests or stories and that every declared entry point is in it.
 - **T920** — no package emits or publishes a source map, so nothing ships a reference that resolves to nothing, and the five tarballs drop from 2432 kB unpacked to 1226 kB with every entry point still present.
+- **T921** — one unanchored dist rule replaces thirteen per-workspace lines and the flow DSL's 20 compiled files are out of the index, so a rebuild of any workspace leaves the tree clean and a new workspace is covered without an edit.

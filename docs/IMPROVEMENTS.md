@@ -2171,27 +2171,6 @@ What is left today is renumbering all 49 `STRATEGY.md` headings past §LXXI, one
 `drop`/`add` pair at a time, which appends its outline to the end of the file in
 scrambled order. That is worse than the collision, so this waits.
 
-### LXIX.17 One package's build output is committed to the repository (T921)
-
-`git ls-files frontend/packages/*/dist` returns 40 files, all of them `flow-dsl`'s. The
-other four packages and every app return nothing.
-
-The cause is the shape of `.gitignore`: it ignores `dist` by naming each workspace —
-`/frontend/packages/react-ui/dist`, `/frontend/packages/cli/dist`,
-`/frontend/apps/showcase/dist`, ten more — and flow-dsl has no line. A list that must be
-extended for every new workspace is a list that will miss one, and this is the one it
-missed. The files entered in `1d0a703439`, an unrelated feature commit, which is what a
-tracked build output does: it arrives as a side effect.
-
-Found by T920, whose whole diff should have been six config lines and instead carried 40
-files of compiled JavaScript because turning off `sourceMap` changed tracked output.
-That is the same failure T917 fixed for the app manifests — a build that dirties the
-tree — and here it is a whole directory.
-
-The fix is a pattern, not another line: `dist/` (unanchored) ignores every workspace's
-output at once, after `git rm -r --cached frontend/packages/flow-dsl/dist`. The per-path
-entries then become the dead config they already nearly are, and can go with them.
-
 ## LXX. What the link-free response and its consumers still lack (Block BW)
 
 > Block BT migrated the three `turing-app` consumers off `store.data`. What it did

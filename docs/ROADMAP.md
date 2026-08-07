@@ -24,7 +24,6 @@
 ## Block BV — The quality gate stops at the package boundary (§LXIX)
 
 - ⏳ **T902** (deps: roadkeep RK378 + RK377) **Two governed prose files declare the same 13 section anchors** — STRATEGY.md and IMPROVEMENTS.md number sections from one outline, so a pointer to any of the 13 resolves to two sections and every verb that reads one refuses. → §LXIX.8
-- 📋 **T921** (deps: T920 ✅) **One package's build output is committed to the repository** — `.gitignore` names `dist` per path and has an entry for every workspace but flow-dsl, so its 40 compiled files are tracked and each build lands in the next commit. → §LXIX.17
 
 ## Block BW — What the link-free response and its consumers still lack (§LXX)
 
