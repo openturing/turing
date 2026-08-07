@@ -40,10 +40,22 @@ jobs:
         working-directory: frontend
         run: pnpm install --frozen-lockfile=false
 
-      # Fail the build on any high/critical advisory. Known transitive lows/
-      # mediums are tracked by Dependabot; a NEW high blocks the merge. The
-      # pnpm.overrides in frontend/package.json remediate the currently-open
-      # highs (undici, xlsx via the SheetJS CDN patched build).
+      # T933 — an override is a claim that no copy below a floor reaches anyone,
+      # and pnpm never checks it: two js-yaml overrides installed clean while the
+      # vulnerable version stayed in the tree. This runs before the audit because
+      # a remediation that is not in force is why the audit would find something.
+      - name: Overrides are in force
+        working-directory: frontend
+        run: pnpm run check:overrides
+
+      # Fail on any high/critical advisory. Known transitive lows/mediums are
+      # tracked by Dependabot. The `overrides` block in frontend/pnpm-workspace.yaml
+      # remediates the open highs, and `auditConfig.ignoreGhsas` records the two
+      # accepted ones (xlsx, unreachable — export only).
+      #
+      # T927: one advisory is still open here — react-router is patched only in
+      # 8.3.0 and the apps pin react-router-dom 7, so this step exits 1 until that
+      # migration lands. That is also why nothing gates a merge on it.
       - name: pnpm audit (high+)
         working-directory: frontend
         run: pnpm audit --audit-level high

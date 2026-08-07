@@ -25,7 +25,6 @@
 
 - ⏳ **T902** (deps: roadkeep RK378 + RK377) **Two governed prose files declare the same 13 section anchors** — STRATEGY.md and IMPROVEMENTS.md number sections from one outline, so a pointer to any of the 13 resolves to two sections and every verb that reads one refuses. → §LXIX.8
 - ⏳ **T927** (deps: T924 ✅) **Ten high advisories are open in the frontend dependency tree** — one advisory is left and no floor can reach it: react-router is patched only in 8.3.0, so the four apps pinning react-router-dom 7.18.1 need a major migration rather than an override. → §LXIX.23
-- 📋 **T931** (deps: T927 ✅) **An override key form that silently matches nothing is still in the config** — `js-yaml@3` uses the version-selector spelling that demonstrably failed for `js-yaml@5`, so a remediation T654 recorded as applied may never have resolved anything. → §LXIX.25
 
 ## Block BW — What the link-free response and its consumers still lack (§LXX)
 

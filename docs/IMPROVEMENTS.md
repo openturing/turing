@@ -2195,28 +2195,6 @@ So the remainder is a migration, not a version bump — four apps, the admin con
 them with lazy routes throughout and 222 tests to re-verify. It wants its own pass
 rather than the tail of one.
 
-### LXIX.25 An override key form that silently matches nothing is still in the config (T931)
-
-T927 needed js-yaml 5.x floored. `"js-yaml@5": ">=5.2.2"` changed nothing.
-`"js-yaml@^5.0.0": ">=5.2.2 <6"` changed nothing either. The form that worked was
-path-scoped: `"read-yaml-file>js-yaml": ">=5.2.2 <6"`.
-
-Note what pnpm did on the two that failed: it installed without a warning, an error, or
-any signal that a declared override matched no dependency in the tree. The config read
-as remediation and was inert.
-
-`pnpm-workspace.yaml` still carries `"js-yaml@3": ">=3.15.0"`, written by T654 and
-recorded in the ledger as one of three remediated advisories. It uses exactly the
-spelling that failed here. Whether it ever applied cannot be read off the file — no
-js-yaml 3.x is in the tree today, so there is nothing for it to match either way, and
-its being green proves only that.
-
-Two things to establish. Whether that entry is load-bearing or decoration, which a `pnpm
-why js-yaml` against a tree that has a 3.x copy would answer. And whether an override
-that matches nothing can be made to say so — a small script over `pnpm-workspace.yaml`'s
-`overrides` keys, asserting each names something the lockfile actually resolves, would
-catch the whole class rather than this instance.
-
 ## LXX. What the link-free response and its consumers still lack (Block BW)
 
 > Block BT migrated the three `turing-app` consumers off `store.data`. What it did
