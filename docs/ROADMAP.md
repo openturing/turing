@@ -25,7 +25,7 @@
 
 - ⏳ **T902** (deps: roadkeep RK378 + RK377) **Two governed prose files declare the same 13 section anchors** — STRATEGY.md and IMPROVEMENTS.md number sections from one outline, so a pointer to any of the 13 resolves to two sections and every verb that reads one refuses. → §LXIX.8
 - 📋 **T922** (deps: —) **No workflow in the repository runs without a human clicking it** — all fifteen declare `workflow_dispatch` and nothing else, so every gate this block added is armed and never fires, while two files document a per-PR pipeline that does not exist. → §LXIX.18
-- 📋 **T923** (deps: T919 + T922) **No publish workflow checks what the tarball contains** — the contents gate runs only in validate-js.yml, so the check written for publish defects is absent from the five workflows that publish, two of which also skip the size budget. → §LXIX.19
+- 📋 **T923** (deps: T919 ✅, T922) **No publish workflow checks what the tarball contains** — the contents gate runs only in validate-js.yml, so the check written for publish defects is absent from the five workflows that publish, two of which also skip the size budget. → §LXIX.19
 
 ## Block BW — What the link-free response and its consumers still lack (§LXX)
 
