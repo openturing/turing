@@ -2179,18 +2179,6 @@ Re-check on the next plugin update: `roadkeep --version`, then `roadkeep section
 > not do is finish the **shape** they were reading it for, or extend the fix past
 > the one app. Every item below was read out of the code while shipping T865–T869.
 
-### LXX.1 A site's icon is silently dropped POST-native (T879)
-
-`TurSNSiteSearchWidgetBean` carries `icon` — a plain Iconify name, no href, no
-round-trip — and `TurSNStructuredSearchBean` has no field for it. So T865 had to
-write `siteIcon: null` on the structured branch and let the page fall back to the
-Turing logo. That is a user-visible regression on every site that configured an
-icon, and it is invisible in review because the fallback looks deliberate.
-
-It is also the cheapest kind of gap to close: the value is already a scalar with
-nothing URL-shaped about it. Carry it on the structured bean and drop the
-hardcoded `null`.
-
 ### LXX.2 `similar` and `spotlights` are written and undeclared (T880)
 
 `toStructured` ends with `.setSimilar(widget.getSimilar())` and

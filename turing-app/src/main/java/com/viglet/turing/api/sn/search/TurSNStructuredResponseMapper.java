@@ -104,6 +104,9 @@ public final class TurSNStructuredResponseMapper {
             return structured;
         }
         return structured
+                // T879 — the icon is a plain Iconify name, not a link, so it
+                // crosses unchanged.
+                .setIcon(widget.getIcon())
                 .setFacets(facets(widget.getFacet()))
                 .setSecondaryFacets(facets(widget.getSecondaryFacet()))
                 .setSelectedFilterQueries(widget.getSelectedFilterQueries())

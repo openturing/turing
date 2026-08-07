@@ -1251,3 +1251,7 @@
 - **T933** — check-overrides.mjs reads the declared overrides against what the lockfile resolved and fails when one names nothing or is not in force, which is how js-yaml@3 is now visible as selecting no copy in the tree.
 - **T934** — the js-yaml floor is documented as deliberately defensive with the evidence that it once bound 3.14.2, and the block now states the rule that separates a security floor kept after its dependency leaves from a compatibility pin that goes.
 - **T935** — seventeen tests run the three guards as subprocesses against temp fixtures and assert the exit code, and breaking each guard in turn fails exactly one of them, so the mutation evidence that was run once by hand now runs on every dispatch.
+
+## Block BW — What the link-free response and its consumers still lack (§LXX)
+
+- **T879** — TurSNStructuredSearchBean now carries the icon and the mapper copies it off the widget, so a site that configured one renders it POST-native instead of the generic Turing logo. search-view reads structured.icon; a pure toSearchView suite plus two mapper tests pin both shapes.

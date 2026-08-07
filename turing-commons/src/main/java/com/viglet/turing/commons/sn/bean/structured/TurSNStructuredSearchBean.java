@@ -72,6 +72,15 @@ public class TurSNStructuredSearchBean implements TurSNSearchResponse, Serializa
      */
     private TurSNSearchRequest request;
 
+    /**
+     * T879 / §LXX.1 — the site's configured icon, a plain Iconify name. It is the
+     * one widget property that was never link-shaped, so dropping it with the
+     * hrefs made every site with an icon fall back to the Turing logo.
+     *
+     * @since 2026.3.4
+     */
+    private String icon;
+
     private TurSNSiteSearchQueryContextBean queryContext;
 
     private TurSNStructuredResultsBean results;

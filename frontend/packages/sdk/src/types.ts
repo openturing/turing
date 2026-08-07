@@ -329,6 +329,11 @@ export interface TurStructuredSearchResponse {
   /** The request that produced this response, every default resolved. */
   request: TurSearchRequest;
   queryContext: TurQueryContext;
+  /**
+   * T879 — the site's configured icon as a plain Iconify name. Absent when the
+   * site configured none; it is not a link and needs no round-trip.
+   */
+  icon?: string;
   /** T864 — link-free results: each document's `metadata` is data, not hrefs. */
   results?: TurStructuredResults;
   groups?: TurStructuredGroup[];

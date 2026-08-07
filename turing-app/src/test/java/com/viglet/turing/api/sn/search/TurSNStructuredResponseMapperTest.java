@@ -61,6 +61,7 @@ class TurSNStructuredResponseMapperTest {
 
     private static final String RESERVED_VALUE = "RAG & Chat";
     private static final String RESERVED_FQ = "section:" + RESERVED_VALUE;
+    private static final String SITE_ICON = "tabler:building-store";
 
     private static TurSNSiteSearchFacetItemBean item(String filterQuery, boolean selected,
             TurSNFacetItemAction action) {
@@ -105,6 +106,7 @@ class TurSNStructuredResponseMapperTest {
                 .setLink("/api/sn/wknd/search?_setlocale=pt_BR");
 
         TurSNSiteSearchWidgetBean widget = new TurSNSiteSearchWidgetBean()
+                .setIcon(SITE_ICON)
                 .setCleanUpFacets("/api/sn/wknd/search?q=*")
                 .setSelectedFilterQueries(List.of(RESERVED_FQ))
                 .setFacet(List.of(facet))
@@ -172,6 +174,26 @@ class TurSNStructuredResponseMapperTest {
         assertThat(facet.getItems().getFirst().getValue()).isEqualTo(RESERVED_VALUE);
         assertThat(facet.getItems().getFirst().getFilterQuery()).isEqualTo(RESERVED_FQ);
         assertThat(facet.getItems().getFirst().getCount()).isEqualTo(7);
+    }
+
+    /**
+     * T879 / §LXX.1 — the icon was the one widget property that carried no link,
+     * and dropping it with the hrefs made every site with an icon render the
+     * generic Turing logo.
+     */
+    @Test
+    void testSiteIconSurvivesTheProjection() {
+        assertThat(map().getIcon()).isEqualTo(SITE_ICON);
+    }
+
+    /** A site with no icon leaves the field absent, so the client can fall back. */
+    @Test
+    void testMissingSiteIconStaysNull() {
+        TurSNSiteSearchBean bean = legacyBean();
+        bean.getWidget().setIcon(null);
+
+        assertThat(TurSNStructuredResponseMapper
+                .toStructured(bean, new TurSNSearchRequest(), Locale.US).getIcon()).isNull();
     }
 
     /** "Clear this facet" becomes a list to subtract, not a URL to navigate. */

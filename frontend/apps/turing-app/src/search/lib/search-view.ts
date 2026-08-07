@@ -60,8 +60,9 @@ export interface SearchView {
   /** True once a response of either shape has arrived — the page's render gate. */
   ready: boolean;
   /**
-   * The site's icon, legacy-only: the link-free response has no `widget`, so
-   * POST-native the page falls back to the Turing logo.
+   * The site's icon as an Iconify name, or `null` when the site configured none
+   * and the page should fall back to the Turing logo. Both shapes carry it since
+   * T879 — legacy on `widget.icon`, structured at the top level.
    */
   siteIcon: string | null;
   locales: SearchLocaleView[];
@@ -126,8 +127,8 @@ function structuredView(store: SearchStoreValue): SearchView {
   return {
     source: "structured",
     ready: true,
-    // The link-free response has no widget, hence no icon (§LXVII.1).
-    siteIcon: null,
+    // T879 — the structured response carries the icon on its own now.
+    siteIcon: structured.icon ?? null,
     locales: structured.locales ?? [],
     queryContext: structured.queryContext ?? null,
     spellCheck: spellCheck?.correctedText
