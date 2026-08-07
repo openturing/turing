@@ -128,6 +128,15 @@ overrides:
   # react-docgen@8.0.3 (calls it synchronously) and fails the Storybook build.
   # No dependency actually requires Babel 8 — everything declares ^7.x.
   "@babel/core": ">=7.29.6 <8"
+  # T934 — kept deliberately, though it selects nothing today. js-yaml 3.14.2 was
+  # in the tree when T654 wrote this; whatever pulled it has since gone, and
+  # `check-overrides.mjs` now reports the entry as "selects nothing".
+  #
+  # The rule for this block, so the next such entry does not need re-litigating:
+  # a **security floor** stays after its dependency leaves — it costs nothing and
+  # caps a vulnerable copy on arrival if some future transitive reintroduces the
+  # line. A **compatibility pin** (@codemirror/view below) does not: it encodes a
+  # conflict that can be resolved upstream, so an inert one is stale and goes.
   "js-yaml@3": ">=3.15.0"
   # T927 — four advisories whose fix is a patch inside the major already
   # resolved, so each is a floor and not a migration. The versions in the tree

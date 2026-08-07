@@ -2195,32 +2195,6 @@ So the remainder is a migration, not a version bump — four apps, the admin con
 them with lazy routes throughout and 222 tests to re-verify. It wants its own pass
 rather than the tail of one.
 
-### LXIX.27 An override selects no copy in the tree and nobody knows if that is intended (T934)
-
-T933's check reports it plainly:
-
-```
-js-yaml@3   >=3.15.0   -> 4.3.1, 5.2.3   selects nothing
-```
-
-No js-yaml 3.x is in the tree, so the entry constrains nothing today. T654 wrote it as
-one of three remediations and the ledger records it as applied.
-
-It is deliberately **not** a violation in the check. An override selecting nothing has
-two honest readings and the tool cannot tell them apart: a defensive floor, kept so that
-a 3.x copy reappearing through some future transitive is capped on arrival — which is a
-real and cheap thing to want — or config outliving the dependency that needed it, like
-the `sizeBudget.exclude` entries T915 removed and the thirteen `.gitignore` lines T921
-replaced.
-
-Deciding it is a one-line change either way, and the value is in the line that says
-which. If defensive, a comment naming the transitive it guards against, so the next
-person does not delete it. If dead, delete it, and the check stops reporting a row that
-trains readers to skim past "selects nothing" — which is the state in which the *next*
-one, the one that matters, gets skimmed past too.
-
-The same question applies to any future entry the check flags this way.
-
 ## LXX. What the link-free response and its consumers still lack (Block BW)
 
 > Block BT migrated the three `turing-app` consumers off `store.data`. What it did
