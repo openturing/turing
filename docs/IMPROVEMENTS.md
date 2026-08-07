@@ -2027,32 +2027,83 @@ grounding on a declared schema (T385). What is missing:
 
 ## LVIII. Configurable, per-language NL ranking lexicon (Lucene analysis) (Block BJ)
 
-> **On hold — §LIX has shipped.** `LLM_ASSISTED`/`HYBRID` (Block BK) handle other
-> languages natively, so a per-language *deterministic* lexicon is no longer needed
-> for i18n. This section remains the design for the deterministic multilingual path;
-> build it only if that is wanted *alongside* the LLM path — the free, CI-testable
-> `DETERMINISTIC` planner is also what `HYBRID` runs first, so a non-English lexicon
-> would reduce how often `HYBRID` has to pay for an escalation.
+**Shipped.** T811's ranking planner carried its vocabulary as `private static final`
+fields: an English superlative→direction lexicon, an adjective→concept synonym map and a
+stopword set. A `pt_BR` user asking "modelo *mais barato*" or "*maior* janela de
+contexto" got no sort at all, and no deployment could add a domain word without editing
+Java.
 
-**The problem.** T811's `TurNLRankingPlanner` made ranking deterministic, but it did so
-with a **hardcoded English word list** baked into the class: `ASC_WORDS`/`DESC_WORDS`
-(the superlative→direction lexicon), `SYNONYMS` (adjective→concept-noun bridges like
-`cheapest`→price), and `STOPWORDS`. Two limits follow:
+The vocabulary is now a resource bundle per language (T814), tokenised by one Lucene
+analyzer that runs over the query and each declared field alike so inflections collapse
+by stemming rather than by enumeration (T815), resolved by the request locale with `en`
+as the fallback and `pt`/`es` shipped (T816), and extensible per deployment
+(`turing.genai.copilot.ranking.lexicon-dir`) or per site from the admin form (T817).
+Both merges *extend* the shipped bundle rather than replacing it.
 
-- **Not configurable** — a deployment or a specific catalog can't add its own ranking
-  vocabulary (a domain word, a house synonym) without editing Java and rebuilding.
-- **English-only** — the words are English. A `pt_BR` user asking "modelo *mais
-  barato*", "*maior* janela de contexto" or "*ordenar por* preço" gets no sort,
-  because none of those tokens are in the sets. The copilot already knows the request
-  locale (it is passed through `retrieve`), so the lexicon should follow it.
+The invariants held throughout: the planner stays deterministic and LLM-free, an
+unresolved locale or an unparseable override degrades to the shipped vocabulary, and a
+lexicon failure degrades to no sort exactly as before. `TurDslLuceneExecutor.buildSort`
+was never touched.
 
-Enumerating every language × every inflection in Java would be unmaintainable
-("barato/baratíssimo/mais barato", "cheap/cheaper/cheapest"). This is exactly the
-problem **Lucene's analysis pipeline already solves** — and Lucene is already a Turing
-dependency (embedded vector store + the Lucene SE plugin), so reusing it adds no weight.
+What the block left open is below: the analysis now runs on the copilot's request path,
+and the two override surfaces have no operational story yet.
 
-**The design — data-driven lexicon + Lucene analysis, resolved per locale.**
+### LVIII.5 Cache the analysed field tokens (T940)
 
+`TurNLRankingPlanner.score` calls `lexicon.tokens(field.name())` and
+`lexicon.tokens(field.description())` for **every numeric field, on every query**, and
+`metricWords` analyses each surface word of the query separately — each one a
+`TokenStream` open/reset/increment/close over the synonym FST and the stemmer. Before
+T815 the same work was one `Pattern.split`.
+
+Nothing here is per-request data: a declared field's tokens are a function of the field
+and the lexicon, both of which change only when a site is reconfigured or a bundle is
+reloaded. Memoise them on the lexicon — which is already cached per language and per
+override — so a query costs one analysis of itself and a map lookup per field.
+
+Measure before and after on a site with a wide schema: the point is that the ranking
+pass stops scaling with field count, not a number in a commit message.
+
+### LVIII.6 Evict the override cache, do not stop filling it (T941)
+
+`TurRankingLexiconProvider` caps `byOverride` at 64 entries and, past that, returns a
+freshly merged lexicon without storing it. The cap is right — the key is caller-supplied
+text and an unbounded map keyed by it is a liability — but "stop caching" is the wrong
+behaviour at the boundary: a deployment with 65 catalog sites has *every* turn on the
+65th rebuild the merged bundle, build the synonym FST and construct two analyzers, on
+the request path.
+
+Make it an LRU (or a size-bounded cache with eviction) so the cap bounds memory without
+turning into a cliff. While there: those discarded analyzers are `Closeable` and nothing
+closes them — an eviction hook is the natural place, and it is the reason to prefer a
+cache with one over a bare map.
+
+### LVIII.7 Reload the external lexicon directory (T942)
+
+`turing.genai.copilot.ranking.lexicon-dir` exists so a deployment ships a new language
+or a tuned synonym set as a mounted config file rather than as a rebuild. `load` runs
+once per language and the result is cached for the life of the bean, so editing that
+file does nothing until the app restarts — which is most of the friction the property
+was meant to remove.
+
+Give the provider a way to drop its caches: an admin endpoint is the smallest one that
+works ("reload ranking lexicons"), a watch on the directory the most convenient, a TTL
+the cheapest. Whichever it is, the cache to clear is both maps — the per-language one
+and the per-override one, whose merged bundles were built on top of the file that
+changed.
+
+### LVIII.8 Tell the admin the bundle did not parse (T943)
+
+Fail-open is right at ranking time — a typo must never cost a site its sort. It is wrong
+as the *only* feedback: the form accepts any text, the backend logs a warning nobody is
+watching, and the admin's evidence that the vocabulary took effect is that questions
+still rank the way they did before.
+
+The missing half is a check the admin can run: parse the bundle and report what it adds
+(how many direction words, which synonym triggers) and what it could not read. The
+natural shape is a POST that takes the bundle and a sample question and answers with the
+resolved field and direction — the same thing `detect` returns, which makes the control
+a preview rather than a validator, and reuses the analyzer instead of re-describing it.
 
 ## LXI. Content-fit tuning loop — model-aware, enforceable, and it tells you (Block BN)
 
