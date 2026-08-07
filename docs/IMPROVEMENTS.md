@@ -2171,29 +2171,6 @@ What is left today is renumbering all 49 `STRATEGY.md` headings past §LXXI, one
 `drop`/`add` pair at a time, which appends its outline to the end of the file in
 scrambled order. That is worse than the collision, so this waits.
 
-### LXIX.12 Two of the four apps still build in no validation workflow (T916)
-
-T874 added `turing-app` to `validate-js.yml`. Two of the remaining three apps are still
-uncovered, and for the two different reasons the block keeps meeting.
-
-`turing-showcase` builds in **no** workflow. It is the Block Y reference app — a typed
-catalog, faceted and hybrid search, RAG chat, agents and skills, the widest platform
-surface in the repository, plus `gen-catalog` and `gen-manifest` steps its build runs
-first. A break in it reaches whoever next runs `pnpm build:showcase`, and its e2e
-counterpart (`TurShowcaseSmokeIT`) tests the backend it talks to, not the app that talks
-to it.
-
-`turing-site` builds only in `publish-github-pages.yml`, at `pnpm run build:site` —
-which is to say the marketing site's build is verified by the act of publishing it. That
-is §LXVI.3's objection verbatim: the person who finds the break is the one trying to
-ship.
-
-Neither app has tests, so this is a build gate and not a suite: two more matrix entries
-with `size: false`, which is what the `include` shape T873 introduced was made to take.
-`turing-site`'s full `build` also prerenders and generates OG images, so the matrix may
-want `build:client` instead — worth measuring before committing the whole chain to every
-run.
-
 ## LXX. What the link-free response and its consumers still lack (Block BW)
 
 > Block BT migrated the three `turing-app` consumers off `store.data`. What it did

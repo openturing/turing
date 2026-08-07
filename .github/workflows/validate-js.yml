@@ -29,6 +29,17 @@ jobs:
           # publish.yml only uploads the jar.
           - workspace: turing-app
             size: false
+          # T916: the last two apps. The showcase — the Block Y reference app and
+          # the widest platform surface here — built in no workflow at all, and
+          # the marketing site built only inside publish-github-pages.yml, which
+          # is to say its build was verified by the act of publishing it. Neither
+          # has tests, so `--if-present` skips the Test step and this is a build
+          # gate. turing-site's `build` runs its SSR pass, prerender and OG image
+          # too; that is the chain that ships, so it is the chain to check.
+          - workspace: turing-showcase
+            size: false
+          - workspace: turing-site
+            size: false
           - workspace: turing-example-mythical-creatures
             size: false
           - workspace: turing-example-space-missions
