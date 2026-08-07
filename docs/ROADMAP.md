@@ -8,8 +8,6 @@
 
 ## Block BJ — Configurable, per-language NL ranking lexicon (Lucene analysis) (§LVIII)
 
-- 📋 **T943** (deps: T817 ✅) **An invalid site lexicon is visible only in the server log** — The form saves any text and ranking silently ignores what it cannot parse, so an admin who mistypes a bundle sees a saved site whose sort quietly never improved. → §LVIII.8
-
 ## Block BN — Content-fit tuning loop: model-aware, enforceable, and it tells you (§LXI)
 
 - 💭 **T831** (deps: T704 ✅) **Apply a persona adjustment (human-confirmed)** — for PERSONA items only, an opt-in Apply action renders the suggestion as a field-level diff over the audience facet and writes it only after the operator confirms each field. → §LXI.7

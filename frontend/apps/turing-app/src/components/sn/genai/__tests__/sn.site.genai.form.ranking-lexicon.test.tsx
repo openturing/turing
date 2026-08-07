@@ -15,6 +15,9 @@ import type { TurSNSite } from "@/models/sn/sn-site.model";
  */
 
 const mutateAsync = vi.fn();
+// Hoisted: the form instantiates the service at module scope, so vi.mock's factory
+// runs before a plain `const` would have initialised.
+const preview = vi.hoisted(() => vi.fn());
 
 vi.mock("@/api/queries/sn-site.queries", () => ({
   useUpdateSnSite: () => ({ mutateAsync, isPending: false }),
@@ -54,6 +57,11 @@ vi.mock("@/services/sn/sn.service", () => ({
 vi.mock("@viglet/turing-react-sdk", () => ({
   postLlmChat: () => Promise.resolve(""),
 }));
+vi.mock("@/services/sn/sn.ranking-lexicon.service", () => ({
+  TurSNRankingLexiconService: class {
+    preview = preview;
+  },
+}));
 
 // eslint-disable-next-line import/first
 import { SNSiteGenAiForm } from "../sn.site.genai.form";
@@ -92,6 +100,7 @@ describe("SNSiteGenAiForm — per-site ranking lexicon (Block BJ)", () => {
   beforeEach(() => {
     mutateAsync.mockReset();
     mutateAsync.mockResolvedValue({ id: "site-1" });
+    preview.mockReset();
   });
 
   it("renders the ranking-vocabulary field inside the planning card", () => {
@@ -128,5 +137,85 @@ describe("SNSiteGenAiForm — per-site ranking lexicon (Block BJ)", () => {
     const payload = await submitAndReadPayload();
 
     expect(payload.rankingLexicon).toBe("{ not json");
+  });
+
+  // T943 / §LVIII.8 — the check. Ranking is fail-open, so this panel is the only
+  // place an admin learns a bundle did not parse, or parsed and resolved nothing.
+
+  it("checks the typed bundle against the admin's own sample question", async () => {
+    preview.mockResolvedValue({
+      valid: true,
+      language: "en",
+      addedAscWords: [],
+      addedDescWords: ["torquiest"],
+      addedSortTriggers: [],
+      addedSynonyms: ["torquiest → torque"],
+      sortResolved: true,
+      field: "specs_torque",
+      order: "desc",
+    });
+    renderForm();
+
+    const bundle = '{"descWords":["torquiest"]}';
+    fireEvent.change(lexiconField(), { target: { value: bundle } });
+    fireEvent.change(
+      screen.getByPlaceholderText("forms.snGenai.rankingLexiconSamplePlaceholder"),
+      { target: { value: "the torquiest engine" } },
+    );
+    fireEvent.click(screen.getByText("forms.snGenai.rankingLexiconCheck"));
+
+    // The draft is what gets checked — not the saved site, which does not have it yet.
+    await waitFor(() => expect(preview).toHaveBeenCalledWith({
+      siteName: "catalog",
+      lexicon: bundle,
+      query: "the torquiest engine",
+    }));
+    expect(await screen.findByText("forms.snGenai.rankingLexiconSort")).toBeInTheDocument();
+  });
+
+  it("says the bundle did not parse, which nothing else would tell the admin", async () => {
+    preview.mockResolvedValue({
+      valid: false,
+      error: "Unexpected character",
+      language: "en",
+      addedAscWords: [],
+      addedDescWords: [],
+      addedSortTriggers: [],
+      addedSynonyms: [],
+      sortResolved: false,
+    });
+    renderForm();
+
+    fireEvent.change(lexiconField(), { target: { value: "{ not json" } });
+    fireEvent.click(screen.getByText("forms.snGenai.rankingLexiconCheck"));
+
+    expect(await screen.findByText("forms.snGenai.rankingLexiconInvalid")).toBeInTheDocument();
+    expect(screen.getByText("Unexpected character")).toBeInTheDocument();
+  });
+
+  it("distinguishes a bundle that parsed from one that resolved a sort", async () => {
+    // The case a yes/no validator would have called fine: valid JSON, a real added
+    // word, and no sort because it bridges to no declared field.
+    preview.mockResolvedValue({
+      valid: true,
+      language: "en",
+      addedAscWords: [],
+      addedDescWords: ["torquiest"],
+      addedSortTriggers: [],
+      addedSynonyms: [],
+      sortResolved: false,
+    });
+    renderForm();
+
+    fireEvent.click(screen.getByText("forms.snGenai.rankingLexiconCheck"));
+
+    expect(await screen.findByText("forms.snGenai.rankingLexiconNoSort")).toBeInTheDocument();
+  });
+
+  it("shows no result panel until the check has been run", () => {
+    renderForm();
+
+    expect(screen.queryByText("forms.snGenai.rankingLexiconNoSort")).not.toBeInTheDocument();
+    expect(screen.queryByText("forms.snGenai.rankingLexiconInvalid")).not.toBeInTheDocument();
   });
 });

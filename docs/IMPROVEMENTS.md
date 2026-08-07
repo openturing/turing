@@ -2048,19 +2048,6 @@ was never touched.
 What the block left open is below: the analysis now runs on the copilot's request path,
 and the two override surfaces have no operational story yet.
 
-### LVIII.8 Tell the admin the bundle did not parse (T943)
-
-Fail-open is right at ranking time — a typo must never cost a site its sort. It is wrong
-as the *only* feedback: the form accepts any text, the backend logs a warning nobody is
-watching, and the admin's evidence that the vocabulary took effect is that questions
-still rank the way they did before.
-
-The missing half is a check the admin can run: parse the bundle and report what it adds
-(how many direction words, which synonym triggers) and what it could not read. The
-natural shape is a POST that takes the bundle and a sample question and answers with the
-resolved field and direction — the same thing `detect` returns, which makes the control
-a preview rather than a validator, and reuses the analyzer instead of re-describing it.
-
 ## LXI. Content-fit tuning loop — model-aware, enforceable, and it tells you (Block BN)
 
 > Motivated by building T704 (Block AT's closer). The loop the original Persona

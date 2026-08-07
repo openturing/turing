@@ -17,6 +17,7 @@ import {
     FormMessage,
 } from "@/components/ui/form"
 import { FormItemTwoColumns } from "@/components/ui/form-item-two-columns"
+import { Input } from "@/components/ui/input"
 import {
     Select,
     SelectContent,
@@ -40,6 +41,10 @@ import { TurEmbeddingModelService } from "@/services/embedding/embedding-model.s
 import type { TurEmbeddingModel } from "@/models/embedding/embedding-model.model"
 import { postLlmChat } from "@viglet/turing-react-sdk"
 import { TurSEInstanceService } from "@/services/se/se.service"
+import {
+    TurSNRankingLexiconService,
+    type TurRankingLexiconPreview,
+} from "@/services/sn/sn.ranking-lexicon.service"
 import { TurSNSiteService } from "@/services/sn/sn.service"
 import { TurGlobalSettingsService } from "@/services/system/global-settings.service"
 import { IconArrowsSort, IconBrain, IconCpu2, IconDatabaseSearch, IconDeviceFloppy, IconFileDescription, IconLoader2, IconMovie, IconRefresh, IconRouteAltLeft, IconSparkles, IconUserSearch, IconX } from "@tabler/icons-react"
@@ -55,6 +60,7 @@ import { GradientButton } from "../../ui/gradient-button"
 import { Textarea } from "../../ui/textarea"
 
 const turSNSiteService = new TurSNSiteService();
+const turSNRankingLexiconService = new TurSNRankingLexiconService();
 const turAIAgentService = new TurAIAgentService();
 const turSEInstanceService = new TurSEInstanceService();
 const turGlobalSettingsService = new TurGlobalSettingsService();
@@ -98,6 +104,12 @@ export const SNSiteGenAiForm: React.FC<Props> = ({ snSite, baseRoute = ROUTES.SN
     const [isGenerating, setIsGenerating] = useState(false);
     const [showOverwriteDialog, setShowOverwriteDialog] = useState(false);
     const [isReindexing, setIsReindexing] = useState(false);
+    // T943 / §LVIII.4 — the ranking-vocabulary check. `null` = never run; the
+    // sample question is the admin's own, because a bundle that parses and adds
+    // words can still resolve no sort, and only a question shows that.
+    const [lexiconPreview, setLexiconPreview] = useState<TurRankingLexiconPreview | null>(null);
+    const [lexiconSample, setLexiconSample] = useState("");
+    const [isCheckingLexicon, setIsCheckingLexicon] = useState(false);
     const [reindexProgress, setReindexProgress] = useState<{
         processed: number;
         total: number;
@@ -200,6 +212,26 @@ export const SNSiteGenAiForm: React.FC<Props> = ({ snSite, baseRoute = ROUTES.SN
     const copilotPlanningStrategy = form.watch("copilotPlanningStrategy");
     const copilotPlanningUsesLlm =
         copilotPlanningStrategy === "LLM_ASSISTED" || copilotPlanningStrategy === "HYBRID";
+    // T943 / §LVIII.8 — check the vocabulary the admin typed, saved or not. Ranking
+    // is fail-open, so an unparseable bundle is ignored at request time and nothing
+    // else would ever tell them; the sample question is what turns "it parsed" into
+    // "this is the sort you now get".
+    const checkRankingLexicon = useCallback(async () => {
+        setIsCheckingLexicon(true);
+        try {
+            setLexiconPreview(await turSNRankingLexiconService.preview({
+                siteName: snSite.name,
+                lexicon: form.getValues("rankingLexicon") ?? "",
+                query: lexiconSample,
+            }));
+        } catch (err) {
+            console.error("Failed to check the ranking vocabulary", err);
+            setLexiconPreview(null);
+        } finally {
+            setIsCheckingLexicon(false);
+        }
+    }, [form, lexiconSample, snSite.name]);
+
     const ragEnabled = !!selectedAgent && selectedAgent.ragEnabled === true && vectorModeActive;
     // T622 — when the site picks no agent of its own, chat/RAG/ANN fall back to
     // the global Default AI Agent. Surface which agent that is so the admin sees
@@ -797,6 +829,73 @@ export const SNSiteGenAiForm: React.FC<Props> = ({ snSite, baseRoute = ROUTES.SN
                                         </FormItem>
                                     )}
                                 />
+
+                                {/* T943 / §LVIII.8 — the check. A preview, not a validator:
+                                    it says what the bundle added AND what a sample question
+                                    resolves to, because a bundle that parses and adds words
+                                    can still bridge to no declared field. */}
+                                <div className="flex flex-wrap items-center gap-2 pt-1">
+                                    <Input
+                                        value={lexiconSample}
+                                        onChange={(e) => setLexiconSample(e.target.value)}
+                                        placeholder={t("forms.snGenai.rankingLexiconSamplePlaceholder")}
+                                        className="max-w-sm"
+                                    />
+                                    <GradientButton
+                                        type="button"
+                                        variant="outline"
+                                        disabled={isCheckingLexicon}
+                                        onClick={checkRankingLexicon}
+                                    >
+                                        {t("forms.snGenai.rankingLexiconCheck")}
+                                    </GradientButton>
+                                </div>
+
+                                {lexiconPreview && (
+                                    <div
+                                        className={`rounded-lg border px-4 py-3 mt-2 text-xs space-y-1 ${
+                                            lexiconPreview.valid
+                                                ? "border-emerald-500/40 bg-emerald-500/5"
+                                                : "border-red-500/40 bg-red-500/5"
+                                        }`}
+                                    >
+                                        {!lexiconPreview.valid && (
+                                            <div className="text-foreground">
+                                                <strong>{t("forms.snGenai.rankingLexiconInvalid")}</strong>
+                                                <div className="text-muted-foreground break-all">
+                                                    {lexiconPreview.error}
+                                                </div>
+                                            </div>
+                                        )}
+                                        {lexiconPreview.valid && (
+                                            <>
+                                                <div className="text-foreground">
+                                                    <strong>
+                                                        {t("forms.snGenai.rankingLexiconAdded", {
+                                                            asc: lexiconPreview.addedAscWords.length,
+                                                            desc: lexiconPreview.addedDescWords.length,
+                                                            synonyms: lexiconPreview.addedSynonyms.length,
+                                                            language: lexiconPreview.language,
+                                                        })}
+                                                    </strong>
+                                                </div>
+                                                {lexiconPreview.addedSynonyms.length > 0 && (
+                                                    <div className="text-muted-foreground font-mono">
+                                                        {lexiconPreview.addedSynonyms.join(" · ")}
+                                                    </div>
+                                                )}
+                                                <div className="text-muted-foreground">
+                                                    {lexiconPreview.sortResolved
+                                                        ? t("forms.snGenai.rankingLexiconSort", {
+                                                            field: lexiconPreview.field,
+                                                            order: lexiconPreview.order,
+                                                        })
+                                                        : t("forms.snGenai.rankingLexiconNoSort")}
+                                                </div>
+                                            </>
+                                        )}
+                                    </div>
+                                )}
 
                                 {/* Cost callout — an LLM strategy multiplies the per-turn
                                     LLM calls, which is the whole trade-off of the block. */}

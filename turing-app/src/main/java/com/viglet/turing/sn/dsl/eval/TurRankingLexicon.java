@@ -54,6 +54,7 @@ public record TurRankingLexicon(
         Set<String> descWords,
         Set<String> ascStems,
         Set<String> descStems,
+        Set<String> sortTriggers,
         Pattern sortTriggerPattern,
         Analyzer analyzer,
         ConcurrentMap<TurNLFacetField, FieldTokens> fieldTokenCache) {
@@ -92,10 +93,11 @@ public record TurRankingLexicon(
         // The stem-only analyzer is scaffolding: it normalises the direction words and
         // is unreachable the moment this method returns, which makes here the one place
         // an analyzer can be closed without racing a request that still holds it.
+        Set<String> sortTriggers = words(bundle.sortTriggers());
         try (Analyzer stemOnly = TurRankingAnalyzers.stemOnly(bundle)) {
             return new TurRankingLexicon(language, ascWords, descWords,
                     stems(stemOnly, ascWords), stems(stemOnly, descWords),
-                    sortTriggerPattern(bundle.sortTriggers()),
+                    sortTriggers, sortTriggerPattern(sortTriggers),
                     TurRankingAnalyzers.matching(bundle, protectedWords),
                     new ConcurrentHashMap<>());
         }
@@ -160,8 +162,7 @@ public record TurRankingLexicon(
      * Returns {@code null} when the bundle declares no trigger, which the planner
      * reads as "this language has no explicit sort phrasing".
      */
-    private static Pattern sortTriggerPattern(List<String> triggers) {
-        Set<String> phrases = words(triggers);
+    private static Pattern sortTriggerPattern(Set<String> phrases) {
         if (phrases.isEmpty()) {
             return null;
         }
