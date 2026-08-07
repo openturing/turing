@@ -2179,22 +2179,6 @@ Re-check on the next plugin update: `roadkeep --version`, then `roadkeep section
 > not do is finish the **shape** they were reading it for, or extend the fix past
 > the one app. Every item below was read out of the code while shipping T865–T869.
 
-### LXX.7 Nothing stops the fourth consumer (T885)
-
-T865–T867 were one mistake made three times, in three files, by three edits that
-each looked locally reasonable. T868 makes *that page* catchable. It does not make
-the *class* catchable: a new component can still write `store.data?.widget?.…`
-today and pass every suite, because the value is legitimately non-null in legacy
-mode and the type system cannot tell the difference.
-
-The backend already has the pattern for this — `TurDomainLayerConventionsTest`
-asserts an architectural rule as a test rather than a review habit. The frontend
-equivalent is a convention test (or an ESLint `no-restricted-syntax` rule) over
-`frontend/apps/**` that fails on a `store.data` read outside the projection
-module. Kept as 💭 because the boundary needs stating precisely first: the SDK's
-own hooks read `data` on purpose, and the legacy fallback inside the projection
-must stay allowed.
-
 ## XXXVII Security hardening (post-audit)
 
 Block AN's standing home. The audit that opened it is shipped and its rationale sections
