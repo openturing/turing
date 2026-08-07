@@ -2171,6 +2171,58 @@ What is left today is renumbering all 49 `STRATEGY.md` headings past §LXXI, one
 `drop`/`add` pair at a time, which appends its outline to the end of the file in
 scrambled order. That is worse than the collision, so this waits.
 
+### LXIX.18 No workflow in the repository runs without a human clicking it (T922)
+
+Fifteen workflows, fifteen `on: workflow_dispatch:`, no `push`, no `pull_request`, no
+`schedule`. Nothing in `.github/` runs unless someone opens the Actions tab and presses
+a button, and there is no second CI system: no Jenkinsfile, no `.gitlab-ci.yml`, no
+`azure-pipelines.yml`.
+
+That is the whole of Block BV, one level up. T873 put the CLI and flow DSL in a matrix,
+T874 the admin app, T916 the showcase and the site; T877, T892, T918, T919 and T920
+added gates to it. Every one is armed and none fires. §LXVI.3's objection — that a break
+is found by the wrong person at the wrong moment — is not answered by a gate nobody
+runs, only relocated to whoever remembers to dispatch it.
+
+Two files say this is an accident rather than a policy. `nightly-llm-it.yml` opens by
+explaining that it is manual because "the default PR/validate pipeline excludes the
+real-LLM ITs ... so every-PR CI doesn't burn API credits" — a sentence presuming an
+every-PR CI. And `roadkeep.toml` describes its gate as wired against a baseline so "CI
+fails on what a branch added", which requires a per-branch run.
+
+The decision is which trigger each file earns: `pull_request` for the three validate
+workflows and roadkeep's gate, and the publish workflows staying manual, which they
+should. Worth costing first — the matrix is eleven jobs and the admin app's build is the
+slow one.
+
+### LXIX.19 No publish workflow checks what the tarball contains (T923)
+
+`check-package-contents.mjs` exists because of two publish defects: T915 shipped
+Storybook, T919 shipped compiled tests, T920 shipped unresolvable maps. It is wired into
+`validate-js.yml` and into none of the five publish workflows.
+
+What each one gates on today:
+
+| workflow | size | test | contents |
+| --- | --- | --- | --- |
+| publish-js-sdk | ✓ | ✓ | — |
+| publish-sdk | ✓ | ✓ | — |
+| publish-react-ui | ✓ | ✓ | — |
+| publish-cli | — | ✓ | — |
+| publish-flow-dsl | — | ✓ | — |
+
+So the check that answers "is this tarball right" is the one absent from the act of
+shipping it, and the CLI and flow DSL — the two whose tarballs T919 found wrong — gate
+on the least.
+
+Compounding, not coincidental: T922 says `validate-js.yml` never runs on its own either,
+so today the gate runs in exactly one circumstance, which is somebody choosing to run
+it.
+
+The fix is a step per workflow, mirroring the `size` one already there. Note the CLI and
+flow DSL have no `sizeBudget` block, so `size` for them is a separate question —
+`--if-present` would paper over it, and a real budget would be better.
+
 ## LXX. What the link-free response and its consumers still lack (Block BW)
 
 > Block BT migrated the three `turing-app` consumers off `store.data`. What it did
