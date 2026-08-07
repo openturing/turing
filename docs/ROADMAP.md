@@ -17,6 +17,7 @@
 ## Block BV — The quality gate stops at the package boundary (§LXIX)
 
 - ⏳ **T902** (deps: roadkeep RK377) **Two governed prose files declare the same 13 section anchors** — both halves of the fix exist upstream but not in the 0.1.285 plugin this repo runs, whose config parser would reject the key the fix declares. → §LXIX.8
+- 📋 **T944** (deps: —) **A README fence hands a reader a prop the component does not have** — The T939 guard reads the fences for one rule and nothing compiles them, so `TuringResultList`s documented `renderItem` outlived the rename to `itemComponent`. → §LXIX.29
 
 ## Block AN — Security hardening (post-audit, §XXXVII)
 
@@ -28,6 +29,8 @@
 - 📋 **T898** (deps: —) **The search snapshot caches six kinds of JPA entity, which T486 forbids** — T486's lint only walks repositories, so a service-level `@Cacheable` holding entities passes — and this one already paid for it once with a workaround for the exact failure. → §LXXI.1
 
 ## Block AV — POST-native search & link-free response contract (§XLV)
+
+- 📋 **T945** (deps: —) **The passage that warns about the legacy read describes the wrong failure** — The README says `data.widget.facet.map(...)` renders nothing by default, but `data` is null POST-native, so that read throws rather than rendering nothing. → §XLV.10
 
 ## Non-goals (do NOT add as tasks)
 

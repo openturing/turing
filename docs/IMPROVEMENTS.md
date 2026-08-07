@@ -1750,6 +1750,24 @@ without disturbing the GET response one byte.
 - The impersonation POST payload and the authenticated metrics path are **out of
   scope** — they keep their current bean and behavior.
 
+### XLV.10 The warning about the two shapes gets its own failure mode wrong (T945)
+
+T883 wrote the react-sdk README's "Two response shapes" passage to stop the T865 class
+at the source a new consumer actually reads. Its central sentence is that
+`data.widget.facet.map(...)` renders nothing by default and `data?.widget...` renders
+nothing silently.
+
+Only the second half is true. POST-native, `data` is `null` — the table one line above
+says so — so the unguarded read throws a TypeError and takes the page down; it does not
+render nothing. The table's own next row compounds it by giving `data.widget.facet` the
+value `null`, which is what a property access on `null` cannot return.
+
+The distinction is the whole point of the passage: one shape fails loudly on the first
+render and the other is the silent one worth warning about, and a reader who has been
+told both fail the same quiet way has no reason to believe the section. Which failure
+each shape produces is also the one thing here a test can pin, so the correction is
+worth asserting rather than only rewriting.
+
 ## XLVI. Synthetic User Research — persona studies, interviews & continuous insight (Block AW)
 
 > Persona work so far has treated a `TurPersona` as something you act on **one at a
@@ -2130,6 +2148,24 @@ is latent rather than costing anyone a refusal today.
 
 Re-check on the next plugin update: `roadkeep --version`, then `roadkeep section
 --help` for `move`.
+
+### LXIX.29 The README fences are read by a rule and compiled by nobody (T944)
+
+T939 runs the search-store boundary rules over every package README's fenced code, which
+is one rule out of everything a fence can get wrong. The first thing it did not catch
+sits two lines above the fence it did: the `TuringResultList` example passes
+`renderItem`, and the component's one required render prop is `itemComponent`.
+
+So the documented usage neither compiles nor renders, and has not since the prop was
+renamed — a fence is prose to every tool in the repo, so a rename a build would have
+caught anywhere else passes here in silence.
+
+The fix that closes the class rather than the instance is to compile the fences: extract
+every `tsx`/`ts` block from `packages/*/README.md` into a scratch file importing the
+package's own types and run `tsc --noEmit` over it, walking them the way the T939 scan
+already does. A fence that is deliberately partial declares itself in its info string,
+which is a decision its author makes once instead of one the reader discovers by
+copying.
 
 ## LXX. What the link-free response and its consumers still lack (Block BW)
 
