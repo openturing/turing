@@ -12,7 +12,10 @@ package com.viglet.turing.sn.dsl.eval;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -62,11 +65,32 @@ public class TurRankingLexiconProvider {
      * one per catalog site, so this is generous — and it is a cap rather than a
      * budget because the key is caller-supplied text.
      */
-    private static final int MAX_CACHED_OVERRIDES = 64;
+    static final int MAX_CACHED_OVERRIDES = 64;
 
     private final ConcurrentMap<String, Optional<TurRankingLexicon>> byLanguage =
             new ConcurrentHashMap<>();
-    private final ConcurrentMap<String, TurRankingLexicon> byOverride = new ConcurrentHashMap<>();
+
+    /**
+     * T941 / §LVIII.6 — merged per-site lexicons, least-recently-used first out. The
+     * cap bounds a map whose key is caller-supplied text; the <em>eviction</em> is
+     * what keeps it from becoming a cliff, where one site past the cap rebuilt its
+     * lexicon on every request.
+     *
+     * <p>Nothing closes what it evicts, deliberately: eviction is not unreachability.
+     * A request that read a lexicon a moment ago still holds it, and closing that
+     * analyzer would make an unrelated turn lose its sort. The analyzer becomes
+     * collectible when the last holder drops it, which is the only moment that is
+     * safe and the one no hook can observe.
+     */
+    private final Map<String, TurRankingLexicon> byOverride = Collections.synchronizedMap(
+            new LinkedHashMap<>(16, 0.75f, true) {
+                @Override
+                protected boolean removeEldestEntry(
+                        Map.Entry<String, TurRankingLexicon> eldest) {
+                    return size() > MAX_CACHED_OVERRIDES;
+                }
+            });
+
     private final TurCatalogCopilotProperty copilotProperty;
 
     public TurRankingLexiconProvider(TurCatalogCopilotProperty copilotProperty) {
@@ -114,10 +138,12 @@ public class TurRankingLexiconProvider {
         if (cached != null) {
             return cached;
         }
+        // Merged outside the map's lock: building one costs a JSON parse, a synonym
+        // FST and two analyzers, and holding the lock for that would serialise every
+        // other site's cache hit behind it. A racing duplicate build is the cheaper
+        // of the two, and `put` makes the last one win for everybody after it.
         TurRankingLexicon merged = merge(locale, override);
-        if (byOverride.size() < MAX_CACHED_OVERRIDES) {
-            byOverride.put(key, merged);
-        }
+        byOverride.put(key, merged);
         return merged;
     }
 

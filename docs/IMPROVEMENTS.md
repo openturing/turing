@@ -2048,20 +2048,6 @@ was never touched.
 What the block left open is below: the analysis now runs on the copilot's request path,
 and the two override surfaces have no operational story yet.
 
-### LVIII.6 Evict the override cache, do not stop filling it (T941)
-
-`TurRankingLexiconProvider` caps `byOverride` at 64 entries and, past that, returns a
-freshly merged lexicon without storing it. The cap is right — the key is caller-supplied
-text and an unbounded map keyed by it is a liability — but "stop caching" is the wrong
-behaviour at the boundary: a deployment with 65 catalog sites has *every* turn on the
-65th rebuild the merged bundle, build the synonym FST and construct two analyzers, on
-the request path.
-
-Make it an LRU (or a size-bounded cache with eviction) so the cap bounds memory without
-turning into a cliff. While there: those discarded analyzers are `Closeable` and nothing
-closes them — an eviction hook is the natural place, and it is the reason to prefer a
-cache with one over a bare map.
-
 ### LVIII.7 Reload the external lexicon directory (T942)
 
 `turing.genai.copilot.ranking.lexicon-dir` exists so a deployment ships a new language

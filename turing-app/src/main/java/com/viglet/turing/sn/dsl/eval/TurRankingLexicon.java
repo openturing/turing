@@ -89,11 +89,16 @@ public record TurRankingLexicon(
         Set<String> protectedWords = new LinkedHashSet<>(ascWords);
         protectedWords.addAll(descWords);
         protectedWords.addAll(words(List.copyOf(bundle.synonyms().keySet())));
-        Analyzer stemOnly = TurRankingAnalyzers.stemOnly(bundle);
-        return new TurRankingLexicon(language, ascWords, descWords,
-                stems(stemOnly, ascWords), stems(stemOnly, descWords),
-                sortTriggerPattern(bundle.sortTriggers()),
-                TurRankingAnalyzers.matching(bundle, protectedWords), new ConcurrentHashMap<>());
+        // The stem-only analyzer is scaffolding: it normalises the direction words and
+        // is unreachable the moment this method returns, which makes here the one place
+        // an analyzer can be closed without racing a request that still holds it.
+        try (Analyzer stemOnly = TurRankingAnalyzers.stemOnly(bundle)) {
+            return new TurRankingLexicon(language, ascWords, descWords,
+                    stems(stemOnly, ascWords), stems(stemOnly, descWords),
+                    sortTriggerPattern(bundle.sortTriggers()),
+                    TurRankingAnalyzers.matching(bundle, protectedWords),
+                    new ConcurrentHashMap<>());
+        }
     }
 
     /**

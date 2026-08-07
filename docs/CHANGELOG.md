@@ -1269,3 +1269,4 @@
 - **T816** — The lexicon and analyzer follow the request locale, so a `pt`/`es` question resolves its own sort and any other language falls back to `en`.
 - **T817** — A site extends the resolved lexicon with its own domain words from the admin form, merged over the shipped bundle rather than replacing it.
 - **T940** — A declared field is analysed once per lexicon instead of on every query, so the ranking pass stops scaling with field count.
+- **T941** — The override cache evicts least-recently-used instead of refusing new entries, so no site past the cap rebuilds its lexicon per request.

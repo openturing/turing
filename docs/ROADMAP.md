@@ -8,7 +8,6 @@
 
 ## Block BJ — Configurable, per-language NL ranking lexicon (Lucene analysis) (§LVIII)
 
-- 📋 **T941** (deps: T817 ✅) **Past 64 site overrides the lexicon is rebuilt on every turn** — The override cache stops accepting entries at its cap instead of evicting, so the 65th catalog pays a JSON parse, a synonym FST and an analyzer per request. → §LVIII.6
 - 📋 **T942** (deps: T816 ✅) **A mounted lexicon file still needs a restart to take effect** — Each language is read once and cached for the life of the bean, so the directory added to tune languages without a rebuild cannot be tuned without a bounce. → §LVIII.7
 - 📋 **T943** (deps: T817 ✅) **An invalid site lexicon is visible only in the server log** — The form saves any text and ranking silently ignores what it cannot parse, so an admin who mistypes a bundle sees a saved site whose sort quietly never improved. → §LVIII.8
 

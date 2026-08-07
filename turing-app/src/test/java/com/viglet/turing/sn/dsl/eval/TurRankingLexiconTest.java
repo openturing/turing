@@ -308,6 +308,43 @@ class TurRankingLexiconTest {
         assertThat(provider.lexicon("en", override)).isSameAs(provider.lexicon("en", override));
     }
 
+    // ─────────────── T941 / §LVIII.6 — the cache evicts, it does not stop ───────────────
+
+    @Test
+    void aSitePastTheCapIsStillCachedAndTheLeastRecentlyUsedGoes() {
+        // One more override than the cap: before T941 the last one was never stored,
+        // so that site rebuilt its lexicon on every single turn.
+        for (int i = 0; i <= MAX_CACHED_OVERRIDES; i++) {
+            provider.lexicon("en", override(i));
+        }
+
+        String last = override(MAX_CACHED_OVERRIDES);
+        assertThat(provider.lexicon("en", last)).isSameAs(provider.lexicon("en", last));
+    }
+
+    @Test
+    void anOverrideKeptInUseSurvivesTheOnesThatArrivedAfterIt() {
+        // Access order, not insertion order: the first site keeps being asked for, so
+        // it must not be the one evicted by traffic from sites nobody is using.
+        String hot = override(0);
+        TurRankingLexicon first = provider.lexicon("en", hot);
+
+        for (int i = 1; i < MAX_CACHED_OVERRIDES; i++) {
+            provider.lexicon("en", override(i));
+            provider.lexicon("en", hot);
+        }
+        provider.lexicon("en", override(MAX_CACHED_OVERRIDES));
+
+        assertThat(provider.lexicon("en", hot)).isSameAs(first);
+    }
+
+    private static final int MAX_CACHED_OVERRIDES =
+            TurRankingLexiconProvider.MAX_CACHED_OVERRIDES;
+
+    private static String override(int i) {
+        return "{\"descWords\":[\"torquiest" + i + "\"]}";
+    }
+
     @Test
     void aDeploymentWithNoBundleAtAllResolvesNoRanking() {
         TurRankingLexicon lexicon = TurRankingLexicon.of(TurRankingLexiconBundle.empty("zz"));
