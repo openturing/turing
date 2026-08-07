@@ -1750,19 +1750,6 @@ without disturbing the GET response one byte.
 - The impersonation POST payload and the authenticated metrics path are **out of
   scope** — they keep their current bean and behavior.
 
-### XLV.9 The guard stops at the source, and the bug arrived by README (T939)
-
-T885 fails a build when an app reads `store.data` or `data.widget`. It scans
-`frontend/apps/**` source, which is the right boundary for the code — and the wrong one
-for how this particular bug propagated: T883 found the react-sdk README teaching
-`data.widget.facet.map(…)` as *the* way to render facets, so the first page a new
-consumer wrote reproduced T865 before any of their code could be scanned.
-
-The same rules already exist and are already tested. What is missing is running them
-over the fenced code in `packages/*/README.md` and `examples/**`, where the prose around
-a fence is exempt — a README has to be able to say "`data.widget` is null by default",
-which is exactly what T883 made it say.
-
 ## XLVI. Synthetic User Research — persona studies, interviews & continuous insight (Block AW)
 
 > Persona work so far has treated a `TurPersona` as something you act on **one at a

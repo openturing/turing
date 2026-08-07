@@ -417,13 +417,16 @@ import { TuringResultList } from "@viglet/turing-react-sdk";
 #### TuringPagination
 
 ```tsx
-import { TuringPagination } from "@viglet/turing-react-sdk";
+import { TuringPagination, useTuringPagination } from "@viglet/turing-react-sdk";
+
+// `pages` resolves both response shapes; `data.pagination` is null POST-native.
+const { pages } = useTuringPagination();
 
 <TuringPagination
-  items={turing.data?.pagination ?? []}
-  onNavigate={turing.navigate}
-  renderItem={({ item, isActive, onClick }) => (
-    <button onClick={onClick} disabled={isActive}>
+  items={pages.map((page) => page.raw)}
+  onSelectPage={(page) => pages.find((p) => p.page === page)?.select()}
+  itemComponent={({ item, isCurrent, onClick }) => (
+    <button onClick={onClick} disabled={isCurrent}>
       {item.text}
     </button>
   )}

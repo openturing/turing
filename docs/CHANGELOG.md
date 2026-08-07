@@ -967,6 +967,7 @@
 - **T936** — useTuringFacets returns the site's secondary facet rail as its own secondaryFacetGroups list in both transports, and the search sidebar renders it
 - **T937** — TurWidget.similar is TurSimilarDocument[], the same documents the structured arm carries, so a legacy consumer can iterate what the server always sent
 - **T938** — the structured response projects the spotlight into a url-bearing bean, so the no-links guard holds over a fixture that carries every link-bearing part of the legacy bean
+- **T939** — the boundary guard runs the same rules over the fenced code in every package README and example, and the react-sdk README no longer hands a reader a legacy pagination read
 
 ## Block AW — Synthetic User Research: persona studies, interviews & continuous insight (§XLVI)
 

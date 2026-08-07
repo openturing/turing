@@ -29,8 +29,6 @@
 
 ## Block AV — POST-native search & link-free response contract (§XLV)
 
-- 📋 **T939** (deps: T885 ✅) **Nothing stops the README teaching the broken shape again** — T885 guards app source, so a documentation fence may still show `data.widget.facet.map` — which is how T883's bug survived three releases in the first place. → §XLV.9
-
 ## Non-goals (do NOT add as tasks)
 
 Binding constraints — see [IMPROVEMENTS.md](IMPROVEMENTS.md) §I.6 (What NOT to
