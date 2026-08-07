@@ -12,8 +12,20 @@
 # the day `roadkeep lint` exits 0 on the default branch, and the gate is absolute.
 name: roadkeep
 
+# T922 — the baseline below reads `github.base_ref`, which only exists on a pull
+# request, and the note above describes a gate that "fails the build on what a
+# branch added". Neither was reachable: this ran on dispatch only. No path filter,
+# because the gate's subject is the four governed files and a branch that edits
+# none of them passes in seconds.
 on:
   workflow_dispatch:
+  pull_request:
+  push:
+    branches: ["2026.*"]
+
+concurrency:
+  group: roadkeep-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   lint:

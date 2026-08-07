@@ -2171,30 +2171,6 @@ What is left today is renumbering all 49 `STRATEGY.md` headings past §LXXI, one
 `drop`/`add` pair at a time, which appends its outline to the end of the file in
 scrambled order. That is worse than the collision, so this waits.
 
-### LXIX.18 No workflow in the repository runs without a human clicking it (T922)
-
-Fifteen workflows, fifteen `on: workflow_dispatch:`, no `push`, no `pull_request`, no
-`schedule`. Nothing in `.github/` runs unless someone opens the Actions tab and presses
-a button, and there is no second CI system: no Jenkinsfile, no `.gitlab-ci.yml`, no
-`azure-pipelines.yml`.
-
-That is the whole of Block BV, one level up. T873 put the CLI and flow DSL in a matrix,
-T874 the admin app, T916 the showcase and the site; T877, T892, T918, T919 and T920
-added gates to it. Every one is armed and none fires. §LXVI.3's objection — that a break
-is found by the wrong person at the wrong moment — is not answered by a gate nobody
-runs, only relocated to whoever remembers to dispatch it.
-
-Two files say this is an accident rather than a policy. `nightly-llm-it.yml` opens by
-explaining that it is manual because "the default PR/validate pipeline excludes the
-real-LLM ITs ... so every-PR CI doesn't burn API credits" — a sentence presuming an
-every-PR CI. And `roadkeep.toml` describes its gate as wired against a baseline so "CI
-fails on what a branch added", which requires a per-branch run.
-
-The decision is which trigger each file earns: `pull_request` for the three validate
-workflows and roadkeep's gate, and the publish workflows staying manual, which they
-should. Worth costing first — the matrix is eleven jobs and the admin app's build is the
-slow one.
-
 ### LXIX.19 No publish workflow checks what the tarball contains (T923)
 
 `check-package-contents.mjs` exists because of two publish defects: T915 shipped

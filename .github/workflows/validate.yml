@@ -8,8 +8,31 @@
 
 name: Java CI with Maven and SonarCloud
 
+# T922 — dispatch-only until now, so the backend build gated nothing.
+#
+# `paths-ignore` rather than `paths`: the packaged jar embeds the built frontend,
+# so almost any source change is relevant and the safe default is to run. What is
+# genuinely inert is prose — and prose is a large share of the commits here, since
+# every roadkeep ship writes one.
 on:
   workflow_dispatch:
+#
+# The lists are duplicated because GitHub Actions does not resolve YAML anchors.
+  pull_request:
+    paths-ignore:
+      - "docs/**"
+      - "**/*.md"
+      - ".github/ISSUE_TEMPLATE/**"
+  push:
+    branches: ["2026.*"]
+    paths-ignore:
+      - "docs/**"
+      - "**/*.md"
+      - ".github/ISSUE_TEMPLATE/**"
+
+concurrency:
+  group: validate-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   validate:
@@ -40,7 +63,18 @@ jobs:
           path: ~/.m2
           key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
           restore-keys: ${{ runner.os }}-m2
+      # Two steps, one command apart. Dependabot pull requests and forks do not
+      # receive repository secrets, so an unconditional `sonar` goal would fail
+      # every one of them on a missing SONAR_TOKEN — a gate that is red for
+      # reasons the author cannot fix is a gate that gets ignored. The build and
+      # the tests are the part that must run everywhere; the analysis needs a
+      # token, so it runs where one exists.
+      - name: Build and test
+        if: github.event_name == 'pull_request'
+        run: mvn -B verify -Dgpg.skip=true -Dturing.open-browser=false
+
       - name: Build and analyze
+        if: github.event_name != 'pull_request'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}

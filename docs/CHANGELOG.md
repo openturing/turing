@@ -1239,3 +1239,4 @@
 - **T919** — the CLI and the flow DSL publish dist/src rather than all of dist, dropping 40 and 16 compiled test files, and a shared contents check runs in the matrix asserting no tarball carries tests or stories and that every declared entry point is in it.
 - **T920** — no package emits or publishes a source map, so nothing ships a reference that resolves to nothing, and the five tarballs drop from 2432 kB unpacked to 1226 kB with every entry point still present.
 - **T921** — one unanchored dist rule replaces thirteen per-workspace lines and the flow DSL's 20 compiled files are out of the index, so a rebuild of any workspace leaves the tree clean and a new workspace is covered without an edit.
+- **T922** — the three gates that were written to run per branch now do: validate-js, validate and roadkeep trigger on pull requests and on pushes to a 2026 branch, with concurrency cancelling superseded runs and the Sonar analysis held to events that carry a token.

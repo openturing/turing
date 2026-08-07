@@ -1,7 +1,42 @@
 name: Validate JavaScript Projects
 
+# T922 — this ran on dispatch only, so every gate in it was armed and never fired.
+# Both triggers are needed: work reaches 2026.x through pull requests (Dependabot,
+# `claude/*` branches) and through direct pushes to the version branch.
+#
+# The branch filter is a pattern, not a name — T921's lesson one file over: a list
+# that must be extended per version is a list that misses one.
+#
+# The Java paths are not incidental. T892's enum-mirror test reads the Java enum
+# declarations out of `turing-app` and `turing-commons` and asserts set equality
+# with their TypeScript unions, so a backend-only change can break this suite. It
+# is a broad filter on purpose: a mirror gate that skips when only one side moved
+# is the defect it exists to catch.
+# The two path lists are duplicated rather than shared through a YAML anchor:
+# GitHub Actions does not resolve anchors, so an alias here parses locally and
+# breaks in CI.
 on:
   workflow_dispatch:
+  pull_request:
+    paths:
+      - "frontend/**"
+      - "turing-app/src/main/java/**"
+      - "turing-commons/src/main/java/**"
+      - ".github/workflows/validate-js.yml"
+  push:
+    branches: ["2026.*"]
+    paths:
+      - "frontend/**"
+      - "turing-app/src/main/java/**"
+      - "turing-commons/src/main/java/**"
+      - ".github/workflows/validate-js.yml"
+
+# 40+ commits a day land on the version branch; without this each one would leave
+# eleven jobs running against a ref nobody is looking at any more.
+concurrency:
+  group: validate-js-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   validate:
     runs-on: ubuntu-latest
