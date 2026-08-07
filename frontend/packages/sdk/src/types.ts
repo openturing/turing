@@ -321,6 +321,32 @@ export interface TurStructuredGroup {
 }
 
 /**
+ * T880 — one "more like this" neighbour of the seed document. `url` is the
+ * document's own destination, not a search action, so it survives the link-free
+ * projection unchanged.
+ */
+export interface TurSimilarDocument {
+  id: string;
+  title?: string;
+  type?: string;
+  url?: string;
+}
+
+/**
+ * T880 — one editorially pinned document. `position` is 1-based and decides where
+ * it is injected into the result list; `link` is the document's own destination.
+ */
+export interface TurSpotlightDocument {
+  id: string;
+  position: number;
+  title?: string;
+  type?: string;
+  referenceId?: string;
+  content?: string;
+  link?: string;
+}
+
+/**
  * T709 / §XLV — the link-free search response
  * (`responseFormat: "STRUCTURED"`). The contract is: take {@link request},
  * apply one structured change, send it back.
@@ -344,7 +370,13 @@ export interface TurStructuredSearchResponse {
   selectedFilterQueries?: string[];
   spellCheck?: TurStructuredSpellCheck;
   locales?: TurStructuredLocale[];
-  spotlights?: unknown[];
+  /**
+   * T880 — "more like this" neighbours, present only when the request named a
+   * seed document. The mapper has always written these; until T880 the type
+   * declared neither, so only a legacy client could read them.
+   */
+  similar?: TurSimilarDocument[];
+  spotlights?: TurSpotlightDocument[];
   /** T857 — present only when the request asked for `includeSortOptions`. */
   sortOptions?: TurSortOption[];
 }

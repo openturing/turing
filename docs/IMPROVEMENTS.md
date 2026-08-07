@@ -2179,21 +2179,6 @@ Re-check on the next plugin update: `roadkeep --version`, then `roadkeep section
 > not do is finish the **shape** they were reading it for, or extend the fix past
 > the one app. Every item below was read out of the code while shipping T865–T869.
 
-### LXX.2 `similar` and `spotlights` are written and undeclared (T880)
-
-`toStructured` ends with `.setSimilar(widget.getSimilar())` and
-`.setSpotlights(widget.getSpotlights())`, so both are on the wire. Neither is
-usable:
-
-- `TurStructuredSearchResponse` (owned by `@viglet/turing-sdk`, re-exported by the
-  React SDK) declares **no `similar` field at all**;
-- `spotlights` is declared `unknown[]`, which a typed consumer cannot read without
-  casting.
-
-The asymmetry is the bug: the server pays to compute and serialize both, and the
-only clients that can use them are the legacy ones. Declare `similar`, and give
-the spotlight entry a real type rather than `unknown`.
-
 ### LXX.3 The projection belongs in the SDK, not in one app (T881)
 
 `search/lib/search-view.ts` exists because three components each reached into

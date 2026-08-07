@@ -1255,3 +1255,4 @@
 ## Block BW — What the link-free response and its consumers still lack (§LXX)
 
 - **T879** — TurSNStructuredSearchBean now carries the icon and the mapper copies it off the widget, so a site that configured one renders it POST-native instead of the generic Turing logo. search-view reads structured.icon; a pure toSearchView suite plus two mapper tests pin both shapes.
+- **T880** — TurStructuredSearchResponse now declares similar: TurSimilarDocument[] and types spotlights as TurSpotlightDocument[], both exported from the vanilla SDK and re-exported by the React one, so a typed client can read what the mapper has written since T709. Asserted by a cast-free read in the post-native suite, type-checked via tsconfig.test.json.

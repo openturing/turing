@@ -370,4 +370,28 @@ describe("POST-native search (T709)", () => {
     expect(search.getState().data).toBe(legacy);
     expect(search.getState().structured).toBeNull();
   });
+
+  // ── T880 / §LXX.2 ──
+
+  /**
+   * The mapper has set `similar` and `spotlights` since T709, but the type
+   * declared neither — no `similar` field at all, and `spotlights: unknown[]`.
+   * Both reads below are the assertion: they do not compile if the fields are
+   * undeclared or untyped, so no cast may appear in this test.
+   */
+  it("exposes similar and spotlights as read-through typed fields", async () => {
+    const response = structuredResponse({
+      similar: [{ id: "doc-2", title: "Neighbour", type: "Page", url: "/n" }],
+      spotlights: [{ id: "sp-1", position: 1, title: "Pinned", link: "/pinned" }],
+    });
+    const c = makeClient(response);
+
+    const search = createSearchController(c, { site: "wknd", locale: "en_US" });
+    await search.searchQuery("boots");
+
+    const structured = search.getState().structured!;
+    expect(structured.similar?.[0].title).toBe("Neighbour");
+    expect(structured.spotlights?.[0].position).toBe(1);
+    expect(structured.spotlights?.[0].link).toBe("/pinned");
+  });
 });

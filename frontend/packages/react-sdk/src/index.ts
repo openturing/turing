@@ -496,6 +496,9 @@ export type {
   TurStructuredSpellCheck,
   TurStructuredGroup,
   TurSpellCheck,
+  // T880 — on the wire since T709, typed since T880.
+  TurSimilarDocument,
+  TurSpotlightDocument,
   TurRelatedTermSuggestion,
   TurLocaleItem,
   TurSortOption,
