@@ -2179,23 +2179,6 @@ Re-check on the next plugin update: `roadkeep --version`, then `roadkeep section
 > not do is finish the **shape** they were reading it for, or extend the fix past
 > the one app. Every item below was read out of the code while shipping T865–T869.
 
-### LXX.3 The projection belongs in the SDK, not in one app (T881)
-
-`search/lib/search-view.ts` exists because three components each reached into
-`store.data` and each got it wrong the same way (§LXVII). It answers "read a
-response without caring which shape it is" — and it answers it for exactly one
-app, because that is where it lives.
-
-The other consumers have the same question and no answer. The vanilla SDK's
-`SearchController` fills both `data` and `structured` for the EDS blocks;
-`@viglet/turing-react-ui` re-declares a structural `TuringRawDocument` precisely
-so it can stay dependency-free, and renders whichever chip shape it gets by
-ignoring the difference rather than resolving it. `toSearchView` was deliberately
-exported as a pure function of the store, so lifting it next to
-`resolveDocuments` / `resolveGroups` — the two functions that already do exactly
-this for documents and groups — is a move, not a rewrite. The app then imports it
-and keeps only its own React-flavoured `useSearchView` wrapper.
-
 ### LXX.4 `TuringResultList`'s chip is the T867 bug, still shipping (T882)
 
 `TuringRawDocument.metadata` is typed as the union of both chip shapes and the

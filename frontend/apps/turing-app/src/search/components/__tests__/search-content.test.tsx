@@ -35,12 +35,18 @@ const h = vi.hoisted(() => {
   return { store, submitSearch, ask };
 });
 
-vi.mock("@viglet/turing-react-sdk", () => ({
-  useSearchStore: () => h.store,
-  useTuringAutoComplete: () => ({ suggestions: [], fetch: vi.fn(), clear: vi.fn() }),
-  useTuringSortOptions: () => ({ sortOptions: [] }),
-  fetchChatEnabled: () => Promise.resolve({ enabled: true }),
-}));
+vi.mock("@viglet/turing-react-sdk", async (importOriginal) => {
+  // T881 — `toSearchView` is the real two-shape projection, not a hook: stubbing
+  // it would be stubbing the code under test. Only the hooks are replaced.
+  const { toSearchView } = await importOriginal<typeof import("@viglet/turing-react-sdk")>();
+  return {
+    toSearchView,
+    useSearchStore: () => h.store,
+    useTuringAutoComplete: () => ({ suggestions: [], fetch: vi.fn(), clear: vi.fn() }),
+    useTuringSortOptions: () => ({ sortOptions: [] }),
+    fetchChatEnabled: () => Promise.resolve({ enabled: true }),
+  };
+});
 
 // Child components → identifiable markers so we can assert what composes.
 vi.mock("../ai-mode-chat", async () => {

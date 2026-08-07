@@ -123,6 +123,16 @@ export type { TurSessionOptions } from "./core/session";
 
 // ── Resolve utilities ──
 export { resolveDocuments, resolveGroups, resolveStructuredGroups } from "./core/resolve";
+// T881 — the rest of the response, projected once for both shapes. Owned by the
+// vanilla SDK so an EDS block gets the same answer this app's page does.
+export { toSearchView } from "@viglet/turing-sdk";
+export type {
+  ProjectableSearchStore,
+  SearchView,
+  SearchLocaleView,
+  SearchSpellCheckView,
+  AppliedFilterView,
+} from "@viglet/turing-sdk";
 
 // ── Hooks ──
 export { useTuringSearch } from "./hooks/use-turing-search";

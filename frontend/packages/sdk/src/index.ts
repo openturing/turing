@@ -134,6 +134,16 @@ export type { TurSessionOptions } from "./session";
 export { resolveDocuments, resolveGroups, resolveStructuredGroups } from "./resolve";
 export type { ResolvableSearchResponse } from "./resolve";
 
+// T881 — the rest of the response, projected once for both shapes.
+export { toSearchView } from "./search-view";
+export type {
+  ProjectableSearchStore,
+  SearchView,
+  SearchLocaleView,
+  SearchSpellCheckView,
+  AppliedFilterView,
+} from "./search-view";
+
 // ── Sandbox artifact URLs (code-interpreter / workspace) ──
 export { resolveSandboxUrl, isSandboxUrl, absolutizeArtifactUrls } from "./sandbox";
 

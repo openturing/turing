@@ -27,7 +27,6 @@
 
 ## Block BW — What the link-free response and its consumers still lack (§LXX)
 
-- 📋 **T881** (deps: T865 ✅) **The two-shape projection belongs in the SDK, not in one app** — `search/lib/search-view.ts` answers how to read a response without caring which shape it is, and is reachable only from `turing-app` while both SDKs have the identical problem. → §LXX.3
 - 📋 **T882** (deps: T867 ✅) **`TuringResultList`'s chip is the T867 bug, still shipping** — the headless package narrows `metadata` on `"href" in chip` but renders only `text`, so a viglet.com consumer gets exactly the dead badge T867 removed from the admin app. → §LXX.4
 - 📋 **T883** (deps: T710 ✅) **The react-sdk README still teaches the shape that broke** — it shows `data.widget.facet.map(…)` as the way to render facets, which is `null` in the default mode, so anyone following it writes T865 again on their first page. → §LXX.5
 - 📋 **T884** (deps: T713 ✅) **`toggle_facet` cannot reach a secondary facet** — `findStructuredFacetItem` searches `structured.facets` only, so a secondary facet answers "Facet not found" and falls through to a legacy lookup that is primary-only too. → §LXX.6

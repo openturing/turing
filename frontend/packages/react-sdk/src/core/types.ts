@@ -81,6 +81,12 @@ export type {
   SearchState,
   ResolvedDocument,
   ResolvedGroup,
+  // T881 — the two-shape projection, owned by the vanilla SDK.
+  ProjectableSearchStore,
+  SearchView,
+  SearchLocaleView,
+  SearchSpellCheckView,
+  AppliedFilterView,
 } from "@viglet/turing-sdk";
 
 import type {
