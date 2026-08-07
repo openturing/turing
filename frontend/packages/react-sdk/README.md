@@ -88,6 +88,31 @@ Context provider that configures the Turing connection for all child hooks.
 
 ---
 
+### Two response shapes — read `structured`, not `data`
+
+Since **T710 the SDK is POST-native by default**: it POSTs a JSON request and the
+server answers with the **link-free** (`STRUCTURED`) response. In that mode:
+
+| Field | POST-native (default) | Legacy (`urlSync.postNative: false`) |
+| ----- | --------------------- | ------------------------------------ |
+| `structured` | the response | `null` |
+| `data` | **`null`** | the response |
+| `data.widget.facet` | **`null`** — there is no widget | the facet groups |
+
+So `data.widget.facet.map(…)` renders nothing by default, and `data?.widget…`
+renders nothing *silently*. Two ways to avoid writing that:
+
+- inside `<TuringProvider urlSync={…}>`, use the derived hooks
+  (`useTuringFacets`, `useTuringPagination`, …) — they have resolved both shapes
+  since T710, so your JSX never learns which arrived;
+- in manual mode, read `structured` and act through `toggleFacet` / `clearFacet` /
+  `goToPage`, which carry no URL. `navigate(href)` is the legacy path.
+
+`toSearchView(store)` resolves the rest of the response (site icon, locales,
+applied-filter chips, spell-check) the same way, for either shape.
+
+---
+
 ### Hooks
 
 #### useTuringSearch
@@ -97,14 +122,21 @@ Core search hook for programmatic control. Manages the full lifecycle: query, re
 ```tsx
 const {
   status,        // "idle" | "loading" | "success" | "error"
-  data,          // Raw TurSearchResponse
+  structured,    // TurStructuredSearchResponse | null — the default shape
+  data,          // TurSearchResponse | null — the LEGACY (link-bearing) shape
   chat,          // AI chat response (TurChatResponse | null)
   documents,     // ResolvedDocument[] with mapped default fields
   error,         // Error message string | null
   params,        // Current SearchParams
+  request,       // TurSearchRequest — POST-native, the source of truth
   search,        // (params: SearchParams) => Promise<void>
+  searchRequest, // (request: TurSearchRequest) => Promise<void>
   searchQuery,   // (query: string) => Promise<void>
-  navigate,      // (href: string) => Promise<void>
+  toggleFacet,   // (item: TurStructuredFacetItem) => Promise<void>
+  clearFacet,    // (facet: TurStructuredFacet) => Promise<void>
+  clearAllFilters,   // () => Promise<void>
+  applySpellCheck,   // (useOriginal?: boolean) => Promise<void>
+  navigate,      // (href: string) => Promise<void> — legacy; parses a URL back
   changeLocale,  // (locale: string) => Promise<void>
   changeSort,    // (sort: string) => Promise<void>
   goToPage,      // (page: number) => Promise<void>
@@ -123,9 +155,11 @@ function SearchPage() {
 
   if (turing.status === "loading") return <Spinner />;
   if (turing.status === "error") return <p>Error: {turing.error}</p>;
-  if (!turing.data) return null;
+  // Gate on the shape you read. Gating on `data` alone renders nothing
+  // POST-native, which is the default.
+  if (!turing.structured) return null;
 
-  const { documents, data } = turing;
+  const { documents, structured } = turing;
 
   return (
     <div>
@@ -146,30 +180,31 @@ function SearchPage() {
         </article>
       ))}
 
-      {/* Facets */}
-      {data.widget.facet.map((group) => (
+      {/* Facets — the item carries its own action, so nothing is parsed
+          out of a URL and a value containing `&` cannot break. */}
+      {structured.facets?.map((group) => (
         <div key={group.name}>
-          <h4>{group.label.text}</h4>
-          {group.facets.map((facet) => (
+          <h4>{group.label ?? group.name}</h4>
+          {group.items.map((item) => (
             <button
-              key={facet.link}
-              onClick={() => turing.navigate(facet.link)}
-              style={{ fontWeight: facet.selected ? "bold" : "normal" }}
+              key={item.filterQuery}
+              onClick={() => turing.toggleFacet(item)}
+              style={{ fontWeight: item.selected ? "bold" : "normal" }}
             >
-              {facet.label} ({facet.count})
+              {item.label} ({item.count})
             </button>
           ))}
         </div>
       ))}
 
-      {/* Pagination */}
-      {data.pagination.map((item, i) => (
+      {/* Pagination — by page number, not by href */}
+      {structured.pagination?.map((page) => (
         <button
-          key={i}
-          disabled={!item.href}
-          onClick={() => turing.navigate(item.href)}
+          key={page.page}
+          disabled={page.current}
+          onClick={() => turing.goToPage(page.page)}
         >
-          {item.text}
+          {page.text}
         </button>
       ))}
 
@@ -198,7 +233,8 @@ Works with `react-router-dom`'s `useSearchParams`, keeping the SDK router-agnost
 ```tsx
 const {
   status,         // "idle" | "loading" | "success" | "error"
-  data,           // Raw TurSearchResponse
+  structured,     // TurStructuredSearchResponse | null — the default shape
+  data,           // TurSearchResponse | null — the LEGACY shape
   chat,           // AI chat response
   documents,      // ResolvedDocument[]
   error,          // Error message
@@ -206,22 +242,36 @@ const {
   inputValue,     // Controlled input value
   setInputValue,  // Update input without searching
   submitSearch,   // Submit current inputValue as search
-  navigate,       // Navigate via Turing href (facets, pagination)
+  toggleFacet,    // Toggle a facet value (no URL)
+  clearFacet,     // Clear one facet's selections
+  clearAllFilters,// Clear every filter
+  goToPage,       // Go to a page by number
+  navigate,       // Legacy: navigate a Turing href
   setLocale,      // Change locale
   setSort,        // Change sort
   showAll,        // Reset to q=* (show all)
 } = useTuringUrlSearch(searchParams, setSearchParams);
 ```
 
+> `useTuringUrlSearch` **is** the shared store, so it requires
+> `<TuringProvider urlSync={{ searchParams, setSearchParams }}>` and every derived
+> hook (`useTuringFacets`, `useTuringPagination`, …) reads the same state.
+
 **Example: URL-synced search page**
 
 ```tsx
 import { useSearchParams } from "react-router-dom";
-import { TuringProvider, useTuringUrlSearch } from "@viglet/turing-react-sdk";
+import {
+  TuringProvider,
+  useTuringFacets,
+  useTuringUrlSearch,
+} from "@viglet/turing-react-sdk";
 
 function SearchContent() {
-  const [searchParams, setSearchParams] = useSearchParams();
-  const turing = useTuringUrlSearch(searchParams, setSearchParams);
+  const turing = useTuringUrlSearch();
+  // Resolved from whichever shape arrived: each item's `toggle` is a filter-query
+  // change POST-native and an href navigation on the legacy transport.
+  const { facetGroups, hasSelected, clearAll } = useTuringFacets();
 
   return (
     <div>
@@ -241,11 +291,12 @@ function SearchContent() {
       ))}
 
       {/* Facets — clicking updates the URL automatically */}
-      {turing.data?.widget.facet.map((group) => (
+      <button onClick={clearAll} disabled={!hasSelected}>Clear all</button>
+      {facetGroups.map((group) => (
         <div key={group.name}>
-          <h4>{group.label.text}</h4>
+          <h4>{group.label}</h4>
           {group.facets.map((facet) => (
-            <button key={facet.link} onClick={() => turing.navigate(facet.link)}>
+            <button key={facet.label} onClick={facet.toggle}>
               {facet.selected ? "✕ " : ""}{facet.label} ({facet.count})
             </button>
           ))}
@@ -256,8 +307,14 @@ function SearchContent() {
 }
 
 export default function SearchPage() {
+  const [searchParams, setSearchParams] = useSearchParams();
   return (
-    <TuringProvider config={{ site: "my-site", locale: "en_US" }}>
+    <TuringProvider
+      config={{ site: "my-site", locale: "en_US" }}
+      // Required by useTuringUrlSearch and every derived hook: it is what creates
+      // the shared store they read.
+      urlSync={{ searchParams, setSearchParams: (s) => setSearchParams(s) }}
+    >
       <SearchContent />
     </TuringProvider>
   );

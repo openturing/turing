@@ -2179,17 +2179,6 @@ Re-check on the next plugin update: `roadkeep --version`, then `roadkeep section
 > not do is finish the **shape** they were reading it for, or extend the fix past
 > the one app. Every item below was read out of the code while shipping T865–T869.
 
-### LXX.5 The README still teaches the shape that broke (T883)
-
-`packages/react-sdk/README.md` documents facet rendering twice — once as
-`data.widget.facet.map(…)`, once as `turing.data?.widget.facet` — and both are
-`null` in the default mode. The README is the first thing a new consumer reads, so
-it currently instructs them to write T865 on their first page, and the second form
-(`?.`) will do it *silently*: no crash, just an empty rail.
-
-Rewrite both examples on `useTuringFacets`, which has resolved the two shapes
-since T710, and say plainly that `data` is the legacy transport.
-
 ### LXX.6 `toggle_facet` cannot reach a secondary facet (T884)
 
 `findStructuredFacetItem` (T713) looks the target up in `store.structured?.facets`

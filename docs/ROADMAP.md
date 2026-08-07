@@ -27,7 +27,6 @@
 
 ## Block BW — What the link-free response and its consumers still lack (§LXX)
 
-- 📋 **T883** (deps: T710 ✅) **The react-sdk README still teaches the shape that broke** — it shows `data.widget.facet.map(…)` as the way to render facets, which is `null` in the default mode, so anyone following it writes T865 again on their first page. → §LXX.5
 - 📋 **T884** (deps: T713 ✅) **`toggle_facet` cannot reach a secondary facet** — `findStructuredFacetItem` searches `structured.facets` only, so a secondary facet answers "Facet not found" and falls through to a legacy lookup that is primary-only too. → §LXX.6
 - 💭 **T885** (deps: T868 ✅) **Nothing stops the fourth consumer** — T865–T867 were one mistake three times and T868 covers the page rather than the class, so the systemic form is a guard that nothing outside the projection reads `store.data`. → §LXX.7
 
