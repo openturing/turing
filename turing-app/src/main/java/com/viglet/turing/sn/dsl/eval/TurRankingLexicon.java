@@ -10,27 +10,31 @@
 package com.viglet.turing.sn.dsl.eval;
 
 import java.util.Collections;
-import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
-import java.util.Map;
 import java.util.Set;
 import java.util.regex.Pattern;
 
+import org.apache.lucene.analysis.Analyzer;
+
 /**
- * T814 / §LVIII.1 (Block BJ) — the <strong>runtime ranking lexicon</strong>: the
- * vocabulary {@link TurNLRankingPlanner} used to carry as {@code private static
- * final} fields, now a value built from a {@link TurRankingLexiconBundle}.
+ * T814 / §LVIII.1 · T815 / §LVIII.2 (Block BJ) — the <strong>runtime ranking
+ * lexicon</strong>: the vocabulary {@link TurNLRankingPlanner} used to carry as
+ * {@code private static final} fields, now a value built from a
+ * {@link TurRankingLexiconBundle}.
  *
- * <p>The bundle is the file and this is what the planner reads: every word is
- * lower-cased once here rather than at every comparison, and the {@code sort by}
- * triggers arrive as phrases and leave as one compiled {@link Pattern}, so
- * {@code detect} never pays for a regex compile.
+ * <p>The bundle is the file and this is what the planner reads. Direction words
+ * are kept twice on purpose: the <em>surface</em> forms are what the planner
+ * strips out of the user's text, and the <em>stems</em> are what it recognises a
+ * direction by, because {@code affordable} analyses to {@code afford} and a set of
+ * surface words could never match it. The {@code sort by} triggers arrive as
+ * phrases and leave as one compiled {@link Pattern}, so {@code detect} never pays
+ * for a regex compile.
  *
- * <p>Behaviour is unchanged from T811 — the shipped {@code en} bundle is the old
- * word sets verbatim. What changed is that the vocabulary is now data, which is
- * the seam T815/T816/T817 hang off.
+ * <p>{@link #tokens(String)} is the single tokenisation path — the Lucene
+ * {@link Analyzer} T815 replaced the hand-rolled split/expand/stopword code with,
+ * run over the query and each declared field alike.
  *
  * @author Alexandre Oliveira
  * @since 2026.3.4
@@ -39,38 +43,51 @@ public record TurRankingLexicon(
         String language,
         Set<String> ascWords,
         Set<String> descWords,
+        Set<String> ascStems,
+        Set<String> descStems,
         Pattern sortTriggerPattern,
-        Set<String> stopwords,
-        Map<String, Set<String>> synonyms) {
+        Analyzer analyzer) {
 
     /** The language every deployment gets, and the fallback for any other (T816). */
     public static final String DEFAULT_LANGUAGE = "en";
 
     /**
-     * Builds the runtime lexicon from a (possibly already merged) bundle:
-     * lower-cases every word, drops blanks, and compiles the {@code sort by}
-     * phrases into a single alternation whose inner whitespace matches any run of
-     * spaces.
+     * Builds the runtime lexicon from a (possibly already merged) bundle: the
+     * direction words are lower-cased and stemmed once here rather than at every
+     * comparison, the {@code sort by} phrases are compiled into a single
+     * alternation whose inner whitespace matches any run of spaces, and the
+     * matching analyzer is told to protect the ranking vocabulary from its own
+     * stopword list.
      */
     public static TurRankingLexicon of(TurRankingLexiconBundle bundle) {
         String language = bundle.language() == null || bundle.language().isBlank()
                 ? DEFAULT_LANGUAGE
                 : bundle.language().toLowerCase(Locale.ROOT);
-        Map<String, Set<String>> synonyms = new LinkedHashMap<>();
-        bundle.synonyms().forEach((trigger, concepts) -> {
-            String key = normalize(trigger);
-            if (key != null) {
-                synonyms.put(key, words(concepts));
-            }
-        });
-        return new TurRankingLexicon(language, words(bundle.ascWords()), words(bundle.descWords()),
-                sortTriggerPattern(bundle.sortTriggers()), words(bundle.stopwords()),
-                Map.copyOf(synonyms));
+        Set<String> ascWords = words(bundle.ascWords());
+        Set<String> descWords = words(bundle.descWords());
+        Set<String> protectedWords = new LinkedHashSet<>(ascWords);
+        protectedWords.addAll(descWords);
+        protectedWords.addAll(words(List.copyOf(bundle.synonyms().keySet())));
+        Analyzer stemOnly = TurRankingAnalyzers.stemOnly(bundle);
+        return new TurRankingLexicon(language, ascWords, descWords,
+                stems(stemOnly, ascWords), stems(stemOnly, descWords),
+                sortTriggerPattern(bundle.sortTriggers()),
+                TurRankingAnalyzers.matching(bundle, protectedWords));
     }
 
-    /** The concept tokens a query word injects, or an empty set when it bridges nothing. */
-    public Set<String> synonymsOf(String token) {
-        return synonyms.getOrDefault(token, Set.of());
+    /**
+     * The distinct terms {@code value} analyses to — stemmed, stopword-filtered and
+     * synonym-expanded by the one analyzer both the query and the declared fields
+     * go through.
+     */
+    public Set<String> tokens(String value) {
+        return TurRankingAnalyzers.tokens(analyzer, value);
+    }
+
+    private static Set<String> stems(Analyzer stemOnly, Set<String> surfaceWords) {
+        Set<String> stemmed = new LinkedHashSet<>();
+        surfaceWords.forEach(word -> stemmed.addAll(TurRankingAnalyzers.tokens(stemOnly, word)));
+        return Collections.unmodifiableSet(stemmed);
     }
 
     private static Set<String> words(List<String> values) {

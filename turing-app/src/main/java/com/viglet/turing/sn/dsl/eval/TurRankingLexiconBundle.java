@@ -26,11 +26,17 @@ import java.util.Map;
  * <p>Every field is optional: a bundle that declares only {@code synonyms} is a
  * legal override, and a missing list is an empty one rather than a failure.
  *
+ * <p>{@code stemmer} (T815) is a Snowball language name — {@code English},
+ * {@code Portuguese}, {@code Spanish} — and addresses both the stemmer and
+ * Snowball's stopword list for that language, so a new language is a resource and
+ * not a rebuild. Absent, nothing is stemmed.
+ *
  * @author Alexandre Oliveira
  * @since 2026.3.4
  */
 public record TurRankingLexiconBundle(
         String language,
+        String stemmer,
         List<String> ascWords,
         List<String> descWords,
         List<String> sortTriggers,
@@ -39,8 +45,8 @@ public record TurRankingLexiconBundle(
 
     /** An empty bundle — what an unreadable or absent resource degrades to. */
     public static TurRankingLexiconBundle empty(String language) {
-        return new TurRankingLexiconBundle(language, List.of(), List.of(), List.of(), List.of(),
-                Map.of());
+        return new TurRankingLexiconBundle(language, null, List.of(), List.of(), List.of(),
+                List.of(), Map.of());
     }
 
     /** Null-safe accessors so a partially-declared bundle needs no defensive caller. */

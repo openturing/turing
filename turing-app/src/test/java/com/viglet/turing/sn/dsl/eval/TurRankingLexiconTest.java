@@ -17,11 +17,12 @@ import java.util.Map;
 import org.junit.jupiter.api.Test;
 
 /**
- * T814 / §LVIII.1 (Block BJ) — the lexicon is now data, so these are the guards the
- * hardcoded sets never needed: the shipped {@code en} bundle really is on the
- * classpath and carries the T811 vocabulary, a bundle that declares nothing is
- * legal, and an absent one degrades to a lexicon that resolves no ranking rather
- * than to an exception.
+ * T814 / §LVIII.1 · T815 / §LVIII.2 (Block BJ) — the lexicon is now data run
+ * through a Lucene analyzer, so these are the guards the hardcoded sets never
+ * needed: the shipped {@code en} bundle is on the classpath, inflections collapse
+ * to one stem, a ranking word the language calls a stopword survives its own
+ * stopword list, and an absent bundle degrades to a lexicon that resolves no
+ * ranking rather than to an exception.
  *
  * @author Alexandre Oliveira
  * @since 2026.3.4
@@ -37,9 +38,50 @@ class TurRankingLexiconTest {
         assertThat(lexicon.language()).isEqualTo("en");
         assertThat(lexicon.ascWords()).contains("cheapest", "lowest", "fastest");
         assertThat(lexicon.descWords()).contains("highest", "biggest", "most");
-        assertThat(lexicon.stopwords()).contains("the", "which", "models");
-        assertThat(lexicon.synonymsOf("cheapest")).contains("price", "pricing", "cost");
-        assertThat(lexicon.synonymsOf("nothing-bridges-this")).isEmpty();
+        // "affordable" stems to "afford", which is why the stems are kept separately.
+        assertThat(lexicon.ascStems()).contains("afford");
+        assertThat(lexicon.descStems()).contains("most", "biggest");
+    }
+
+    @Test
+    void inflectionsOfOneWordCollapseToOneStem() {
+        TurRankingLexicon lexicon = provider.lexicon();
+
+        // The whole point of the analyzer: the field says "pricing", the query "price".
+        assertThat(lexicon.tokens("pricing")).containsExactly("price");
+        // "intelligent" and "intelligence" are one stem, so an adjective reaches a
+        // field named after the noun without either being enumerated.
+        assertThat(lexicon.tokens("intelligent"))
+                .containsAnyElementsOf(lexicon.tokens("intelligence"));
+    }
+
+    @Test
+    void theSynonymFilterBridgesAnAdjectiveToItsConcept() {
+        TurRankingLexicon lexicon = provider.lexicon();
+
+        // "cheapest" carries no price token of its own — the synonym filter adds it,
+        // and the original survives because the direction still has to be recognised.
+        assertThat(lexicon.tokens("cheapest"))
+                .containsAll(lexicon.tokens("pricing"))
+                .contains("cheapest");
+    }
+
+    @Test
+    void aRankingWordTheLanguageCallsAStopwordSurvives() {
+        TurRankingLexicon lexicon = provider.lexicon();
+
+        // Snowball's English stop list holds "most" — losing it would cost every
+        // "the most intelligent model" its direction.
+        assertThat(lexicon.tokens("the most intelligent model")).contains("most");
+        // A stopword that is not ranking vocabulary is still dropped.
+        assertThat(lexicon.tokens("the most intelligent model")).doesNotContain("the", "model");
+    }
+
+    @Test
+    void camelCaseAndUnderscoresAreSplitBeforeAnalysis() {
+        assertThat(provider.lexicon().tokens("benchmarks_intelligenceIndex"))
+                .contains("index")
+                .containsAnyElementsOf(provider.lexicon().tokens("intelligence"));
     }
 
     @Test
@@ -74,11 +116,20 @@ class TurRankingLexiconTest {
     @Test
     void aBundleDeclaringOnlySynonymsIsLegal() {
         TurRankingLexicon lexicon = TurRankingLexicon.of(new TurRankingLexiconBundle(
-                null, null, null, null, null, Map.of("Barato", List.of("Preco"))));
+                null, null, null, null, null, null, Map.of("barato", List.of("preco"))));
 
         assertThat(lexicon.language()).isEqualTo(TurRankingLexicon.DEFAULT_LANGUAGE);
-        assertThat(lexicon.synonymsOf("barato")).containsExactly("preco");
+        assertThat(lexicon.tokens("barato")).contains("preco");
         assertThat(lexicon.sortTriggerPattern()).isNull();
+    }
+
+    @Test
+    void anUnknownStemmerNameIsNotFatal() {
+        TurRankingLexicon lexicon = TurRankingLexicon.of(new TurRankingLexiconBundle(
+                "zz", "NoSuchLanguage", List.of("menor"), List.of(), List.of(), List.of(),
+                Map.of()));
+
+        assertThat(lexicon.ascStems()).containsExactly("menor");
     }
 
     @Test

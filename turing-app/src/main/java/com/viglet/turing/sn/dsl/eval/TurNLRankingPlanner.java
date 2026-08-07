@@ -48,14 +48,20 @@ import org.springframework.util.StringUtils;
  * unchanged; the difference is that the lexicon is now data, which is what
  * per-language resolution and deployment overrides hang off.
  *
+ * <p>T815 / §LVIII.2 (Block BJ) — tokenisation is a Lucene {@link
+ * org.apache.lucene.analysis.Analyzer} rather than a regex split plus two hand-kept
+ * maps, run over the query and each declared field alike, so a query lemma meets a
+ * field lemma after stemming ({@code pricing} ≡ {@code price}) and the synonym
+ * bridge is a filter in that pipeline.
+ *
  * @author Alexandre Oliveira
  * @since 2026.3.4
  */
 @Component
 public class TurNLRankingPlanner {
 
-    /** Splits camelCase boundaries so {@code intelligenceIndex} → two tokens. */
-    private static final Pattern CAMEL = Pattern.compile("([a-z0-9])([A-Z])");
+    /** Splits a query into the surface words {@link #strip} may remove. */
+    private static final Pattern SURFACE_WORD = Pattern.compile("[\\p{L}\\p{N}]+");
 
     private final TurRankingLexiconProvider lexiconProvider;
 
@@ -75,7 +81,7 @@ public class TurNLRankingPlanner {
             return RankingIntent.none(query);
         }
         TurRankingLexicon lexicon = lexiconProvider.lexicon();
-        Set<String> queryTokens = expand(tokenize(query, lexicon), lexicon);
+        Set<String> queryTokens = lexicon.tokens(query);
         String direction = resolveDirection(query, queryTokens, lexicon);
         if (direction == null) {
             return RankingIntent.none(query);
@@ -93,14 +99,16 @@ public class TurNLRankingPlanner {
     /**
      * Resolves the sort direction, or {@code null} when the query carries no
      * ranking intent. An explicit ASC/DESC superlative wins; a bare "sort by …"
-     * defaults to descending (top first) unless an ASC word rides along.
+     * defaults to descending (top first) unless an ASC word rides along. The
+     * comparison is against the lexicon's <em>stems</em>, both sides having gone
+     * through the same analyzer.
      */
     private String resolveDirection(String query, Set<String> queryTokens,
             TurRankingLexicon lexicon) {
-        if (queryTokens.stream().anyMatch(lexicon.ascWords()::contains)) {
+        if (queryTokens.stream().anyMatch(lexicon.ascStems()::contains)) {
             return "asc";
         }
-        if (queryTokens.stream().anyMatch(lexicon.descWords()::contains)) {
+        if (queryTokens.stream().anyMatch(lexicon.descStems()::contains)) {
             return "desc";
         }
         // "sorted by <metric>" with no explicit adjective → top-first (descending).
@@ -134,8 +142,8 @@ public class TurNLRankingPlanner {
     }
 
     private int score(TurNLFacetField field, Set<String> queryTokens, TurRankingLexicon lexicon) {
-        Set<String> nameTokens = tokenize(field.name(), lexicon);
-        Set<String> descTokens = tokenize(field.description(), lexicon);
+        Set<String> nameTokens = lexicon.tokens(field.name());
+        Set<String> descTokens = lexicon.tokens(field.description());
         int score = 0;
         for (String token : queryTokens) {
             if (nameTokens.contains(token)) {
@@ -147,18 +155,11 @@ public class TurNLRankingPlanner {
         return score;
     }
 
-    /** The query tokens (minus stopwords) that actually matched the resolved field. */
-    private Set<String> matchedTokens(TurNLFacetField field, Set<String> queryTokens,
-            TurRankingLexicon lexicon) {
-        Set<String> fieldTokens = new LinkedHashSet<>(tokenize(field.name(), lexicon));
-        fieldTokens.addAll(tokenize(field.description(), lexicon));
-        Set<String> matched = new LinkedHashSet<>();
-        for (String token : queryTokens) {
-            if (fieldTokens.contains(token)) {
-                matched.add(token);
-            }
-        }
-        return matched;
+    /** Every term the resolved field analyses to, name and description together. */
+    private Set<String> fieldTokens(TurNLFacetField field, TurRankingLexicon lexicon) {
+        Set<String> tokens = new LinkedHashSet<>(lexicon.tokens(field.name()));
+        tokens.addAll(lexicon.tokens(field.description()));
+        return tokens;
     }
 
     // ─────────────────────────── Stripping ───────────────────────────
@@ -169,6 +170,10 @@ public class TurNLRankingPlanner {
      * trigger onward, then drops standalone direction words and the metric words
      * that resolved the field. The remainder ("chat models") is what the caller
      * hands to the parser; a blank remainder means "sort-only, no facet".
+     *
+     * <p>What is removed is always a <em>surface</em> word the user typed: a word
+     * is dropped when what it analyses to reaches the field, so "intelligence"
+     * goes even though the term that matched was the stem {@code intellig}.
      */
     private String strip(String query, TurNLFacetField field, TurRankingLexicon lexicon) {
         String text = query;
@@ -182,7 +187,7 @@ public class TurNLRankingPlanner {
         Set<String> remove = new LinkedHashSet<>();
         remove.addAll(lexicon.ascWords());
         remove.addAll(lexicon.descWords());
-        remove.addAll(matchedTokens(field, expand(tokenize(query, lexicon), lexicon), lexicon));
+        remove.addAll(metricWords(query, fieldTokens(field, lexicon), lexicon));
         for (String word : remove) {
             text = text.replaceAll("(?i)\\b" + Pattern.quote(word) + "\\b", " ");
         }
@@ -190,33 +195,22 @@ public class TurNLRankingPlanner {
         // A remnant of only stopwords ("which model has the") carries no facet — treat
         // it as blank so the caller runs a sort-only match_all rather than asking the
         // LLM to facet on nothing.
-        return tokenize(cleaned, lexicon).isEmpty() ? "" : cleaned;
+        return lexicon.tokens(cleaned).isEmpty() ? "" : cleaned;
     }
 
-    // ─────────────────────────── Tokenising ───────────────────────────
-
-    /** Lower-cased alnum tokens (camelCase split), stopwords and 1-char noise removed. */
-    static Set<String> tokenize(String value, TurRankingLexicon lexicon) {
-        if (!StringUtils.hasText(value)) {
-            return Set.of();
-        }
-        String spaced = CAMEL.matcher(value).replaceAll("$1 $2").toLowerCase(Locale.ROOT);
-        Set<String> tokens = new LinkedHashSet<>();
-        for (String part : spaced.split("[^a-z0-9]+")) {
-            if (part.length() >= 2 && !lexicon.stopwords().contains(part)) {
-                tokens.add(part);
+    /** The words the user typed whose analysis reaches {@code fieldTokens}. */
+    private Set<String> metricWords(String query, Set<String> fieldTokens,
+            TurRankingLexicon lexicon) {
+        Set<String> matched = new LinkedHashSet<>();
+        Matcher words = SURFACE_WORD.matcher(query);
+        while (words.find()) {
+            String word = words.group().toLowerCase(Locale.ROOT);
+            if (!matched.contains(word)
+                    && lexicon.tokens(word).stream().anyMatch(fieldTokens::contains)) {
+                matched.add(word);
             }
         }
-        return tokens;
-    }
-
-    /** Adds synonym concept-tokens for any trigger word present in {@code tokens}. */
-    private Set<String> expand(Set<String> tokens, TurRankingLexicon lexicon) {
-        Set<String> expanded = new LinkedHashSet<>(tokens);
-        for (String token : tokens) {
-            expanded.addAll(lexicon.synonymsOf(token));
-        }
-        return expanded;
+        return matched;
     }
 
     /**

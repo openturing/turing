@@ -2054,17 +2054,6 @@ dependency (embedded vector store + the Lucene SE plugin), so reusing it adds no
 **The design — data-driven lexicon + Lucene analysis, resolved per locale.**
 
 
-### LVIII.2 LVIII.2 (T815) Lucene analysis backbone
-
-Replace the hand-rolled `tokenize`/`expand`/stopword code with a per-locale Lucene
-`Analyzer`: `StandardTokenizer` → `LowerCaseFilter` → per-language `StopFilter` (Lucene
-ships the stopword sets) → a Snowball/`*Stemmer` for the language → `SynonymGraphFilter`
-built from the T814 synonym map. Crucially the **same analyzer runs over both the query
-and each declared field's name + description**, so a query lemma matches a field lemma
-after stemming — "cheapest"/"cheaper"/"cheap" and "barato"/"baratíssimo" all collapse to
-one stem, and the synonym filter (not a hand map) does the adjective→concept bridge. New
-inflections stop being a maintenance burden.
-
 ### LVIII.3 LVIII.3 (T816) Per-language + external override
 
 A registry resolves the lexicon and analyzer by the copilot's request/site locale,

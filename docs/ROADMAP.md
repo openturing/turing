@@ -8,8 +8,7 @@
 
 ## Block BJ — Configurable, per-language NL ranking lexicon (Lucene analysis) (§LVIII)
 
-- 💭 **T815** (deps: T814 ✅) **Lucene analysis backbone** — replace the hand-rolled tokenize/expand/stopword logic with a per-locale Lucene `Analyzer` over both the query and each field, so inflected forms collapse without enumerating them. → §LVIII.2
-- 💭 **T816** (deps: T814 ✅, T815) **Per-language lexicons + locale resolution** — resolve lexicon and analyzer by request/site locale with an `en` fallback, ship `pt`/`es` bundles, and add a lexicon-dir property so a deployment tunes languages without a rebuild. → §LVIII.3
+- 💭 **T816** (deps: T814 ✅, T815 ✅) **Per-language lexicons + locale resolution** — resolve lexicon and analyzer by request/site locale with an `en` fallback, ship `pt`/`es` bundles, and add a lexicon-dir property so a deployment tunes languages without a rebuild. → §LVIII.3
 - 💭 **T817** (deps: T816) **Per-site / admin-editable ranking lexicon overrides** — let a site or global settings extend the direction/synonym lexicon with domain terms, edited in admin and merged over the resource defaults. → §LVIII.4
 
 ## Block BN — Content-fit tuning loop: model-aware, enforceable, and it tells you (§LXI)

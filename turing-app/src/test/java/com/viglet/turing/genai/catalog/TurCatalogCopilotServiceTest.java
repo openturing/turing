@@ -314,8 +314,9 @@ class TurCatalogCopilotServiceTest {
                         "Overall intelligence index — the single headline metric"),
                 fieldWithDescription("benchmarks_scores_math_value", TurSEFieldType.FLOAT,
                         "Math domain sub-score only, NOT the overall index")));
-        when(parser.isAvailable()).thenReturn(true);
-        when(parser.parse(any())).thenReturn(groundedQuery());
+        // No parser stub: since T815 the analyzer strips "most intelligent" as ranking
+        // vocabulary, leaving nothing to facet — the plan is sort-only match_all and
+        // costs no LLM parse.
         when(hybridRankingService.isEnabled(site)).thenReturn(false);
         when(dslSearchService.search(eq("catalog"), eq("en"), any(TurDslQueryRequest.class)))
                 .thenReturn(Optional.of(scoredResponse()));
