@@ -30,8 +30,6 @@
 
 ## Block AV — POST-native search & link-free response contract (§XLV)
 
-- 📋 **T947** (deps: —) **The rail read three consumers got wrong is nobody's rule yet** — T884, T936 and T946 each fixed one place that enumerated `structured.facets` without `secondaryFacets`, and the marketing search demo still does, so the fourth is only found by reading. → §XLV.12
-
 ## Non-goals (do NOT add as tasks)
 
 Binding constraints — see [IMPROVEMENTS.md](IMPROVEMENTS.md) §I.6 (What NOT to

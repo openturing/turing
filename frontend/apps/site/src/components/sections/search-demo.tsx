@@ -231,7 +231,12 @@ function LiveSearchDemo({
     controllerRef.current = controller;
     const unsub = controller.subscribe((s) => {
       setDocuments(s.documents);
-      setFacets(s.structured?.facets ?? []);
+      // T947 — a site's facet groups arrive on two properties, and this bar is
+      // one capped horizontal list with no primary/secondary distinction in its
+      // UI. So the rails are concatenated in order and the cap applies to the
+      // whole: what the demo shows is "the site's first MAX_FACET_GROUPS facet
+      // groups", never "no secondary group, whatever the site configured".
+      setFacets([...(s.structured?.facets ?? []), ...(s.structured?.secondaryFacets ?? [])]);
       setSpellCheck(s.structured?.spellCheck ?? null);
       setHasFilters((s.structured?.selectedFilterQueries?.length ?? s.request.fq?.length ?? 0) > 0);
       setTotal(s.structured?.queryContext?.count ?? s.documents.length);
