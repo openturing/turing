@@ -24,6 +24,7 @@
 ## Block BV — The quality gate stops at the package boundary (§LXIX)
 
 - ⏳ **T902** (deps: roadkeep RK378 + RK377) **Two governed prose files declare the same 13 section anchors** — STRATEGY.md and IMPROVEMENTS.md number sections from one outline, so a pointer to any of the 13 resolves to two sections and every verb that reads one refuses. → §LXIX.8
+- 📋 **T935** (deps: T933 ✅) **The gates that guard the build are the only code with no test** — five scripts under frontend/scripts decide whether a package ships, and one hand-parses a pnpm lockfile by regex, with nothing asserting any still detect what they were written to detect. → §LXIX.28
 
 ## Block BW — What the link-free response and its consumers still lack (§LXX)
 

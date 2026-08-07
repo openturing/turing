@@ -2171,6 +2171,28 @@ What is left today is renumbering all 49 `STRATEGY.md` headings past §LXXI, one
 `drop`/`add` pair at a time, which appends its outline to the end of the file in
 scrambled order. That is worse than the collision, so this waits.
 
+### LXIX.28 The gates that guard the build are the only code with no test (T935)
+
+`check-size.mjs` (290 lines), `check-overrides.mjs` (234) and
+`check-package-contents.mjs` (151) decide whether a package is publishable. No test
+covers any of them. Every claim made for them in this block — T863's delta guard, T878's
+per-directory baseline, T919's contents check, T933's override check — rests on a
+mutation test run by hand once, at the moment it was written, and never again.
+
+The sharpest edge is `check-overrides.mjs`, which reads `pnpm-lock.yaml` with a regex
+against `lockfileVersion: '9.0'` — an external format on someone else's release
+schedule. Its failure mode is the quiet one: a v10 lockfile whose package keys are
+spelled differently yields no matches, and the honest-looking line "parsed no packages"
+is the *only* thing standing between that and a green run that checked nothing. Building
+this script also took three parser corrections inside one session — CRLF endings, quoted
+scoped keys, path-scoped keys — each found by eye, which is the sample size the tests
+would replace.
+
+The suite writes itself from what already exists: the mutation cases proved by hand. A
+not-in-force override, an override naming nothing, a tarball carrying a test file, an
+entry point `files` excludes, a directory over its baseline. Fixture strings rather than
+a real install, so it runs anywhere `node --test` does.
+
 ## LXX. What the link-free response and its consumers still lack (Block BW)
 
 > Block BT migrated the three `turing-app` consumers off `store.data`. What it did
