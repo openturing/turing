@@ -1,7 +1,7 @@
-# Next block letter — `BX` · last task number — `T885`
+# Next block letter — `BX` · last task number — `T939`
 
 > **The task number is no longer kept here.** `roadkeep next-id` derives it from the
-> roadmap, the ledger and `agents.md` — it answers `T886` today, agreeing with the
+> roadmap, the ledger and `agents.md` — it answers `T940` today, agreeing with the
 > number above, which is why the hand-kept counter could retire. Never bump a number
 > here and then trust it over the tool; `roadkeep add` assigns the id itself. What
 > stays below is the **block letter** (the one label `roadkeep block add` cannot
@@ -15,15 +15,9 @@
 > under an existing block leaves it untouched.
 >
 > **Next block letter — `BX`** (Block **BW** = What the link-free response and its
-> consumers still lack — found while shipping Block BT, which fixed the three
-> consumers but not the shape or the reach: the site icon has no structured field
-> so every configured icon silently falls back to the Turing logo (T879),
-> `similar`/`spotlights` are set by the mapper and undeclared in both SDKs (T880),
-> the two-shape projection T865 wrote lives in one app when the vanilla SDK and
-> react-ui need it too (T881), `TuringResultList`'s chip is still the inert badge
-> T867 just fixed (T882), the react-sdk README still teaches `data.widget.facet`
-> (T883), `toggle_facet` cannot see a secondary facet (T884) and 💭 nothing stops a
-> fourth consumer reading `store.data` (T885). §LXX, created 2026-08-03; Block
+> consumers still lack — §LXX, created 2026-08-03, **closed and heading dropped
+> 2026-08-07**; its follow-ups T936–T939 were filed under the reopened Block **AV**,
+> which is the standing home this cluster should have had. Block
 > **BV** = The quality gate stops at the
 > package boundary — every gate in `frontend/` is written per package
 > (`validate-js.yml`'s matrix is a hand-maintained list, each `prepublishOnly` is
@@ -307,6 +301,22 @@ number" looked free but wasn't. Grepping three files (`ROADMAP.md`,
    lists fully-shipped blocks), then bump the letter after creating the block.
 
 ## Log (most recent first)
+
+- **T936–T939 CREATED** (📋, Block AV §XLV.6–.9 — the follow-ups the Block BW run left: `useTuringFacets` renders the primary rail only, `TurWidget.similar` is typed `string`, the no-links guard passes on a spotlight-free fixture, and nothing stops a README teaching `data.widget` again) — 2026-08-07.
+
+- **T885 SHIPPED — Block BW CLOSED, heading dropped** (Block BW §LXX.7 — a convention test over `frontend/apps/**` fails on the three shapes T865–T867 shipped) — 2026-08-07.
+
+- **T884 SHIPPED** (Block BW §LXX.6 — both co-browse lookups walk the secondary rail; `TurWidget.secondaryFacet` declared) — 2026-08-07.
+
+- **T883 SHIPPED** (Block BW §LXX.5 — the react-sdk README teaches the link-free response; both facet examples rewritten off `data.widget`) — 2026-08-07.
+
+- **T882 SHIPPED** (Block BW §LXX.4 — `TuringDocumentChips` in react-ui makes a result's chip an action in both shapes) — 2026-08-07.
+
+- **T881 SHIPPED** (Block BW §LXX.3 — `toSearchView` moved into `@viglet/turing-sdk` beside `resolveDocuments`; the app keeps only the memo wrapper) — 2026-08-07.
+
+- **T880 SHIPPED** (Block BW §LXX.2 — `similar` declared and `spotlights` typed on `TurStructuredSearchResponse`) — 2026-08-07.
+
+- **T879 SHIPPED** (Block BW §LXX.1 — the structured response carries the site icon, so a configured icon stops falling back to the Turing logo) — 2026-08-07.
 
 - **T905 SHIPPED, T897 RETIRED — Block BU CLOSED, heading dropped** (both remaining ideas resolved rather than deferred a third time. **T905 built**: `TurSNSnapshotCacheSweep`, daily, unit-bearing per T871, `@SchedulerLock`'d. The "it dulls the signal" objection is answered *in the log* rather than dismissed — the line says "backstop", gives the count, and states plainly it does not mean any entry was stale, because the sweep bounds staleness and cannot detect it. **T897 retired, not built**: its "silently" was already fixed by the WARN it shipped, and the generation counter would replace *removal* (`keys.forEach(cache::evict)`) with *abandonment* — dead entries accruing until the daily sweep, on a cache holding full response beans — to port to a non-Map provider neither wired manager is. 19 changelog entries keep the heading; the roadmap heading is gone) — 2026-08-04.
 
