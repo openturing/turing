@@ -1,11 +1,16 @@
 # Manual real-LLM integration tests (T242).
 #
-# The default PR/validate pipeline excludes the real-LLM ITs (*BehavioralIT,
-# *AgentEvalIT, *NLFacetEvalIT) so every-PR CI doesn't burn API credits. This
-# workflow runs them on-demand (workflow_dispatch only) by activating their
-# Maven profiles (-Pllm-it / -Pagent-eval / -Pnl-facet-eval) with the
-# OPENAI_API_KEY secret injected, so LLM-path regressions can be surfaced
-# without gating every PR.
+# `validate.yml` excludes the real-LLM ITs (*BehavioralIT, *AgentEvalIT,
+# *NLFacetEvalIT) so a routine build doesn't burn API credits. This workflow runs
+# them on-demand (workflow_dispatch only) by activating their Maven profiles
+# (-Pllm-it / -Pagent-eval / -Pnl-facet-eval) with the OPENAI_API_KEY secret
+# injected, so LLM-path regressions can be surfaced deliberately.
+#
+# T929: this used to say "the default PR/validate pipeline" and "without gating
+# every PR", written when `validate.yml` ran per pull request. It has not since
+# 24a848332e, so the sentence described a pipeline that no longer existed — one of
+# the three stale headers T922 mistook for evidence. The filename says nightly and
+# the `name:` says manual; the `name:` is the true one.
 #
 # Each IT class gates on @EnabledIfEnvironmentVariable("OPENAI_API_KEY"); if the
 # secret is missing the classes short-circuit to "skipped" (no API calls, no

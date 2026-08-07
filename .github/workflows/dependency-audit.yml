@@ -1,10 +1,18 @@
 name: Dependency Audit
 
-# T654 / §XXXVII.16 — CI gate so a NEW high-severity advisory in the frontend
-# dependency tree fails the build rather than sitting open. Runs on PRs that
-# touch the frontend, on a weekly schedule, and on demand. The Maven side is
-# covered by the weekly Dependabot `maven` block (.github/dependabot.yml); add
-# an OWASP dependency-check step here if a hard Maven gate is later required.
+# T654 / §XXXVII.16 — checks the frontend dependency tree for high-severity
+# advisories. The Maven side is covered by the weekly Dependabot `maven` block
+# (.github/dependabot.yml); add an OWASP dependency-check step here if a hard
+# Maven gate is later required.
+#
+# **On demand only** (T929). This header used to describe pull-request and
+# weekly-schedule runs, which 24a848332e removed along with every other automatic
+# trigger; the sentence outlived the config by long enough that T922/T924 read it
+# as evidence the state was accidental and had to be reverted (T928). Two things
+# would have to be true before a `pull_request` trigger belongs here: the decision
+# to run CI automatically at all, and T927 — `pnpm audit --audit-level high`
+# exits 1 today on ten open advisories, so the gate would be red before any change
+# was made.
 
 on:
   workflow_dispatch:

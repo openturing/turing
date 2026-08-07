@@ -3,13 +3,19 @@
 # repository. `roadkeep lint` exits 1 on a governed file that drifted, and that
 # exit code is the whole contract.
 #
-# Tuned here for a corpus that predates the tool: the baseline fails the build on
-# what a branch added and forgives the standing debt by name, which is the only
-# setting under which this gate can be on at all — an absolute count answers
-# nothing while the adoption cleanup is still in progress. It is resolved from the
-# event rather than written as a branch name, this repository releasing from a
-# per-version default branch (`2026.3`) and never from `main`. Drop the baseline
-# the day `roadkeep lint` exits 0 on the default branch, and the gate is absolute.
+# Tuned here for a corpus that predates the tool: the baseline forgives the
+# standing debt by name and reports what a run added, which is the only setting
+# under which this gate can be on at all — an absolute count answers nothing while
+# the adoption cleanup is still in progress. Drop the baseline the day
+# `roadkeep lint` exits 0 on the default branch, and the gate is absolute.
+#
+# **On demand only** (T929). 24a848332e moved this to manual dispatch and left the
+# prose describing a per-branch gate, which is how T922 came to read the state as
+# an oversight and had to be reverted (T928). The `baseline:` expression below is
+# written for both worlds and is not leftover: `github.base_ref` is empty outside
+# a pull request, so a dispatch run falls through to the default branch and the
+# diff is the branch against it — which is the useful comparison when a human is
+# the one asking.
 name: roadkeep
 
 on:
