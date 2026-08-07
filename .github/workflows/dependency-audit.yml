@@ -10,9 +10,9 @@ name: Dependency Audit
 # trigger; the sentence outlived the config by long enough that T922/T924 read it
 # as evidence the state was accidental and had to be reverted (T928). Two things
 # would have to be true before a `pull_request` trigger belongs here: the decision
-# to run CI automatically at all, and T927 — `pnpm audit --audit-level high`
-# exits 1 today on ten open advisories, so the gate would be red before any change
-# was made.
+# to run CI automatically at all, and a green audit. The second holds now — T927
+# remediated seven advisories and recorded the eighth as unreachable, so this
+# exits 0.
 
 on:
   workflow_dispatch:
@@ -51,11 +51,12 @@ jobs:
       # Fail on any high/critical advisory. Known transitive lows/mediums are
       # tracked by Dependabot. The `overrides` block in frontend/pnpm-workspace.yaml
       # remediates the open highs, and `auditConfig.ignoreGhsas` records the two
-      # accepted ones (xlsx, unreachable — export only).
+      # accepted ones (two xlsx parse paths and react-router RSC, all unreachable).
       #
-      # T927: one advisory is still open here — react-router is patched only in
-      # 8.3.0 and the apps pin react-router-dom 7, so this step exits 1 until that
-      # migration lands. That is also why nothing gates a merge on it.
+      # T927 closed the standing debt: seven advisories took a capped floor, and
+      # react-router's RSC-mode CSRF is recorded as unreachable (the RSC runtime is
+      # not installed) rather than paid for with a breaking major across 220 files.
+      # This step exits 0, so it is now a gate that would mean something.
       - name: pnpm audit (high+)
         working-directory: frontend
         run: pnpm audit --audit-level high

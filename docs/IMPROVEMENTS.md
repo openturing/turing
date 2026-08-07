@@ -2171,30 +2171,6 @@ What is left today is renumbering all 49 `STRATEGY.md` headings past §LXXI, one
 `drop`/`add` pair at a time, which appends its outline to the end of the file in
 scrambled order. That is worse than the collision, so this waits.
 
-### LXIX.23 One advisory left, and it needs a major migration (T927)
-
-`pnpm audit --audit-level high` went from eleven findings to one. Seven advisories took
-a capped floor in `pnpm-workspace.yaml` — `fast-uri`, `postcss`, `brace-expansion` and
-both `js-yaml` lines — each a patch inside the major already resolved, verified by a
-full build and 676 passing tests.
-
-Two things that pass are worth keeping in view. The first attempt wrote `"fast-uri":
-">=3.1.5"` and pnpm resolved **4.1.2** under an `ajv` that wants 3.x — the T913
-accident, reproduced by the fix for it. Every floor here is capped at its major now. The
-second: a `js-yaml@5` version-selector key matched nothing, and the working form was the
-path-scoped `read-yaml-file>js-yaml`. The `js-yaml@3` entry T654 left behind uses the
-form that did not work (T930).
-
-What is left is `react-router`, vulnerable `>=7.12.0 <8.3.0`, patched only at
-**8.3.0**. `turing-app` and all three marketplace apps declare
-`react-router-dom@^7.18.1`, which pins `react-router` 7.18.1, so no floor reaches
-it: forcing 8.x under a v7 `react-router-dom` is a major mismatch, and v8 is where
-`react-router-dom` folds into `react-router`.
-
-So the remainder is a migration, not a version bump — four apps, the admin console among
-them with lazy routes throughout and 222 tests to re-verify. It wants its own pass
-rather than the tail of one.
-
 ## LXX. What the link-free response and its consumers still lack (Block BW)
 
 > Block BT migrated the three `turing-app` consumers off `store.data`. What it did

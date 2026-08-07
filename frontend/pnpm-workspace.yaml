@@ -170,3 +170,21 @@ auditConfig:
   ignoreGhsas:
     - GHSA-5pgg-2g8v-p4x9   # xlsx ReDoS (parse-path, unreachable — export only)
     - GHSA-4r6h-8v6p-xvw6   # xlsx prototype pollution (parse-path, unreachable)
+    # T927 — react-router "RSC Mode CSRF Bypass Allows Action Execution Before
+    # 400 Response". The flaw is in the RSC request handler: an action runs before
+    # the origin check rejects the request. Unreachable here, and not merely
+    # unused — the runtime it lives in is not installed. No `@react-router/*`
+    # package is in the tree, no `react-router.config.*` exists, and nothing
+    # references `unstable_RSC`, `RSCHydratedRouter` or `createStaticHandler`.
+    # Every app is a client SPA mounting `BrowserRouter` (1), `HashRouter` (4) or
+    # `MemoryRouter` (13, in tests); none defines a server action for the
+    # vulnerable path to execute.
+    #
+    # Fixed only in react-router 8.3.0, and `react-router-dom` has no 8.x — v8
+    # folds it into `react-router`. Taking the fix therefore means dropping
+    # react-router-dom and rewriting the import in 220 files, 204 of them in the
+    # admin console: a breaking major to close a path that does not exist here.
+    #
+    # REVISIT if any app adopts react-router framework/RSC mode, i.e. the moment a
+    # `@react-router/*` dependency or a `react-router.config.*` appears.
+    - GHSA-qwww-vcr4-c8h2   # react-router RSC CSRF (RSC mode not installed)
