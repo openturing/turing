@@ -394,4 +394,33 @@ describe("POST-native search (T709)", () => {
     expect(structured.spotlights?.[0].position).toBe(1);
     expect(structured.spotlights?.[0].link).toBe("/pinned");
   });
+
+  // ── T937 / §XLV.7 ──
+
+  /**
+   * `TurWidget.similar` was declared `string` while the server has always sent a
+   * `List<TurSESimilarResult>` there, so the legacy transport carried a value no
+   * typed consumer could iterate. `.map` below is the assertion: it does not
+   * compile against a `string`, and no cast may appear in this test.
+   */
+  it("types the legacy widget's similar as the same documents the structured arm carries", async () => {
+    const legacy: TurSearchResponse = {
+      queryContext: { count: 1 } as TurSearchResponse["queryContext"],
+      results: { document: [] },
+      widget: {
+        similar: [{ id: "doc-2", title: "Neighbour", type: "Page", url: "/n" }],
+      } as TurSearchResponse["widget"],
+    };
+    const get = vi.fn((_url: string) => Promise.resolve(legacy));
+    const c = { get, post: vi.fn() } as unknown as TuringClient;
+
+    const search = createSearchController(c, { site: "wknd", locale: "en_US" }, undefined, {
+      chat: false,
+      postNative: false,
+    });
+    await search.searchQuery("boots");
+
+    const widget = search.getState().data!.widget;
+    expect(widget.similar.map((doc) => doc.url)).toEqual(["/n"]);
+  });
 });

@@ -318,7 +318,7 @@ function legacyResponse(): TurSearchResponse {
         cleanUpLink: "",
         facets: [{ count: 1, label: "RAG & Chat", link: "/remove-rag", selected: true }],
       },
-      similar: "",
+      similar: [],
       spellCheck: {
         correctedText: false,
         usingCorrectedText: false,

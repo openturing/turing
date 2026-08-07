@@ -179,7 +179,17 @@ export interface TurWidget {
    */
   secondaryFacet?: TurFacetGroup[];
   facetToRemove: TurFacetGroup;
-  similar: string;
+  /**
+   * T937 — the documents the engine found similar to this result set. Declared
+   * `string` since the type was written, while `TurSNSiteSearchWidgetBean.similar`
+   * has always been a `List<TurSESimilarResult>` — a type that actively lied,
+   * rather than one that merely withheld, so a consumer wrote `.length` on an
+   * array and read a character count that never existed.
+   *
+   * Same element type as `TurStructuredSearchResponse.similar`: the two transports
+   * carry the same documents and only ever differed in how they were declared.
+   */
+  similar: TurSimilarDocument[];
   spellCheck: TurSpellCheck;
   locales: TurLocaleItem[];
   cleanUpFacets: string;

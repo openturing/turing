@@ -547,7 +547,7 @@ export function buildSearchResponse(
         cleanUpLink: "",
         facets: [],
       },
-      similar: "",
+      similar: [],
       spellCheck: {
         correctedText: false,
         usingCorrectedText: false,

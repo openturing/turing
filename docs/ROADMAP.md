@@ -29,7 +29,6 @@
 
 ## Block AV — POST-native search & link-free response contract (§XLV)
 
-- 📋 **T937** (deps: T880 ✅) **The legacy `similar` is as unreadable as the structured one was** — `TurWidget.similar` is typed `string` while the server sends a list of similar documents, so the legacy transport carries a value no typed consumer can iterate. → §XLV.7
 - 📋 **T938** (deps: T880 ✅) **The no-links guard passes because its fixture is incomplete** — `testStructuredResponseCarriesNoLinks` asserts the JSON holds no `"link"`, but a spotlight document carries one, so the block's central claim holds only while no spotlight is in the response. → §XLV.8
 - 📋 **T939** (deps: T885 ✅) **Nothing stops the README teaching the broken shape again** — T885 guards app source, so a documentation fence may still show `data.widget.facet.map` — which is how T883's bug survived three releases in the first place. → §XLV.9
 

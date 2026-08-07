@@ -1750,18 +1750,6 @@ without disturbing the GET response one byte.
 - The impersonation POST payload and the authenticated metrics path are **out of
   scope** — they keep their current bean and behavior.
 
-### XLV.7 The legacy similar is typed as a string (T937)
-
-T880 declared `similar` on the structured response and gave the spotlight entry a real
-type. It left the legacy arm alone, and the legacy arm is wrong in the same way for a
-different reason: `TurWidget.similar` is `string`, while
-`TurSNSiteSearchWidgetBean.similar` is a `List<TurSESimilarResult>`.
-
-So a consumer on `postNative: false` reads a declared `string` where an array arrives —
-worse than `unknown[]`, because the type actively lies rather than merely withholding.
-The fix is `TurSimilarDocument[]`, the type T880 already introduced, and the only cost
-is the one fixture that writes `similar: ""`.
-
 ### XLV.8 The no-links guard passes on an incomplete fixture (T938)
 
 `testStructuredResponseCarriesNoLinks` is described in its own docblock as "the
