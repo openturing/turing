@@ -969,6 +969,7 @@
 - **T938** — the structured response projects the spotlight into a url-bearing bean, so the no-links guard holds over a fixture that carries every link-bearing part of the legacy bean
 - **T939** — the boundary guard runs the same rules over the fenced code in every package README and example, and the react-sdk README no longer hands a reader a legacy pagination read
 - **T945** — the README says which of the two legacy reads throws and which renders an empty rail silently, and a test pins the null that makes them differ
+- **T946** — the EDS reference block renders the site's secondary facet rail as a second list under its own heading, sharing one group renderer and the existing click delegation with the primary
 
 ## Block AW — Synthetic User Research: persona studies, interviews & continuous insight (§XLVI)
 

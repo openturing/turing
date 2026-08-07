@@ -36,7 +36,7 @@ prefer Option A for production EDS sites where you control the asset.
 
 | Block | File | What it shows |
 |-------|------|---------------|
-| `turing-search` | [`blocks/turing-search/`](blocks/turing-search/) | `createSearchController` + `createAutoComplete`, repainting the DOM via `subscribe`, facet/pagination `navigate`. |
+| `turing-search` | [`blocks/turing-search/`](blocks/turing-search/) | `createSearchController` + `createAutoComplete`, repainting the DOM via `subscribe`. POST-native since T714: a facet click is `toggleFacet(item)` and a page click is `goToPage(page)`, never a URL to parse. Renders **both** facet rails — a site's `secondaryFacets` is a second list, not a flag (T946). |
 | `turing-chat` | [`blocks/turing-chat/`](blocks/turing-chat/) | `createChatController` with token-by-token streaming (`onToken`), suggestion chips, `sessionStorage` persistence. |
 | `turing-analytics` | [`blocks/turing-analytics/`](blocks/turing-analytics/) | `createTuringAnalytics` + `googleAnalyticsSink` (Block Z): one bus shared by search + chat emits canonical events to GA4/GTM, **auto-detecting** the host `window.gtag` / `dataLayer` (zero config). Stitches the `search → chat → lead` funnel via `TUR_SESSION`. |
 

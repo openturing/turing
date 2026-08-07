@@ -30,8 +30,6 @@
 
 ## Block AV — POST-native search & link-free response contract (§XLV)
 
-- 📋 **T946** (deps: —) **The EDS reference block renders the primary facet rail only** — T936 named EDS blocks as what silently drops a rail the site configured, then fixed the React hook, so `turing-search.js` still reads `structured.facets` and never `secondaryFacets`. → §XLV.11
-
 ## Non-goals (do NOT add as tasks)
 
 Binding constraints — see [IMPROVEMENTS.md](IMPROVEMENTS.md) §I.6 (What NOT to

@@ -100,25 +100,12 @@ export default function decorate(block) {
   });
 
   /**
-   * Facets straight from structured state: `item.selected` drives the checkbox
-   * and `toggleFacet` applies the item's own ADD / REMOVE / REPLACE action, so
-   * single-select fields behave correctly without the block knowing the rule.
+   * One rail's worth of facet groups. Extracted (T946) so the secondary rail
+   * renders through the same code as the primary one rather than a second copy
+   * of it that drifts.
    */
-  function renderFacets(structured) {
-    facetsEl.innerHTML = "";
-    const facets = structured?.facets ?? [];
-    if (!facets.length) return;
-
-    if (structured.selectedFilterQueries?.length) {
-      const clearAll = document.createElement("button");
-      clearAll.type = "button";
-      clearAll.className = "turing-search__clear-all";
-      clearAll.textContent = `Clear all filters (${structured.selectedFilterQueries.length})`;
-      clearAll.addEventListener("click", () => search.clearAllFilters());
-      facetsEl.append(clearAll);
-    }
-
-    for (const facet of facets) {
+  function appendFacetGroups(groups) {
+    for (const facet of groups) {
       const group = document.createElement("section");
       group.className = "turing-search__facet";
       const title = document.createElement("h3");
@@ -139,6 +126,45 @@ export default function decorate(block) {
       }
       group.append(list);
       facetsEl.append(group);
+    }
+  }
+
+  /**
+   * Facets straight from structured state: `item.selected` drives the checkbox
+   * and `toggleFacet` applies the item's own ADD / REMOVE / REPLACE action, so
+   * single-select fields behave correctly without the block knowing the rule.
+   *
+   * T946 — a site can configure a **secondary** rail, and it arrives on its own
+   * `secondaryFacets` property. Reading `facets` alone is how every consumer
+   * that copied this block silently dropped a rail the site had configured; the
+   * two are rendered as two lists, under a heading that says which is which,
+   * because that is a layout decision and not a property of a facet group. Both
+   * rails share the click delegation below — a secondary item is an ordinary
+   * structured facet item and `toggleFacet` needs to know nothing about it.
+   */
+  function renderFacets(structured) {
+    facetsEl.innerHTML = "";
+    const facets = structured?.facets ?? [];
+    const secondaryFacets = structured?.secondaryFacets ?? [];
+    if (!facets.length && !secondaryFacets.length) return;
+
+    if (structured.selectedFilterQueries?.length) {
+      const clearAll = document.createElement("button");
+      clearAll.type = "button";
+      clearAll.className = "turing-search__clear-all";
+      clearAll.textContent = `Clear all filters (${structured.selectedFilterQueries.length})`;
+      clearAll.addEventListener("click", () => search.clearAllFilters());
+      facetsEl.append(clearAll);
+    }
+
+    appendFacetGroups(facets);
+
+    if (secondaryFacets.length) {
+      const heading = document.createElement("p");
+      heading.className = "turing-search__facets-secondary-label";
+      heading.textContent = "More filters";
+      facetsEl.append(heading);
+      appendFacetGroups(secondaryFacets);
     }
   }
 

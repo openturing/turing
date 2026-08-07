@@ -1750,24 +1750,6 @@ without disturbing the GET response one byte.
 - The impersonation POST payload and the authenticated metrics path are **out of
   scope** — they keep their current bean and behavior.
 
-### XLV.11 The vanilla half of the secondary-rail hole (T946)
-
-T936 closed the rendering hole in `useTuringFacets` and named its victims by name:
-"every SDK consumer — EDS blocks, viglet.com — silently drops a rail the site
-configured". It fixed one of them.
-
-`examples/eds/blocks/turing-search/turing-search.js` is the reference block an Adobe
-Edge Delivery consumer starts from, and `renderFacets` reads `structured?.facets ?? []`.
-A site with a secondary facet gets the same silent drop there, from the same cause, in
-the SDK that has no hook to fix it in — the vanilla package projects no facet rail at
-all, so the read is the consumer's and the example is what teaches it.
-
-Which makes this a documentation fix as much as a code one, and the T939 scan already
-walks this file: what a reader needs is a block that renders both rails and says which
-is which, so copying it does not reproduce the bug the sibling SDK just stopped
-reproducing. The decision T936 already took applies — a second list, not one list with a
-flag — so nothing about the shape is open.
-
 ## XLVI. Synthetic User Research — persona studies, interviews & continuous insight (Block AW)
 
 > Persona work so far has treated a `TurPersona` as something you act on **one at a
