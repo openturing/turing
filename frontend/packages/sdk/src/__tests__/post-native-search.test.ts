@@ -352,7 +352,10 @@ describe("POST-native search (T709)", () => {
       results: { document: [] },
       widget: {} as TurSearchResponse["widget"],
     };
-    const get = vi.fn(() => Promise.resolve(legacy));
+    // The url parameter is declared because the assertion below reads it: a
+    // zero-arg mock types `mock.calls` as an empty tuple, so `calls[0][0]` is
+    // an error the runtime never reports (T918).
+    const get = vi.fn((_url: string) => Promise.resolve(legacy));
     const post = vi.fn(() => Promise.resolve(undefined));
     const c = { get, post } as unknown as TuringClient;
 

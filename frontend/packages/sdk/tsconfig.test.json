@@ -1,0 +1,28 @@
+{
+  // T918 — type-checks what the shipping config deliberately excludes.
+  //
+  // `tsconfig.json` leaves tests, stories and vitest config out because
+  // `files: ["dist/**/*"]` publishes whatever `tsc` emits (T915). Vitest then
+  // transpiles them with esbuild and never checks, so nothing looked at these
+  // files at all. This config includes everything and emits nothing, so a test
+  // that drifted from the types it asserts against fails here — not at runtime,
+  // and not silently behind a cast that stopped being true.
+  //
+  // `rootDir` is widened to the package root so vitest.config.ts is covered too;
+  // it constrains output layout, and this config emits nothing.
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "emitDeclarationOnly": false,
+    "declaration": false,
+    "declarationMap": false,
+    "sourceMap": false,
+    // Tests run on Node 26 and are never shipped, so they may use what the
+    // published `lib` (ES2021, a deliberate compatibility floor) leaves out.
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "rootDir": ".",
+    "types": ["vitest/globals"]
+  },
+  "include": ["src/**/*", "vitest.config.ts"],
+  "exclude": ["node_modules", "dist"]
+}

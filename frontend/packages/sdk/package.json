@@ -18,6 +18,7 @@
     "dev": "vite build --watch",
     "test": "vitest run",
     "test:watch": "vitest",
+    "typecheck": "tsc -p tsconfig.test.json --noEmit",
     "size": "node ../../scripts/check-size.mjs",
     "size:update": "node ../../scripts/check-size.mjs --update-baseline",
     "prepublishOnly": "npm run build && npm run size"

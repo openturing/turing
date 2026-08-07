@@ -24,7 +24,6 @@
 ## Block BV — The quality gate stops at the package boundary (§LXIX)
 
 - ⏳ **T902** (deps: roadkeep RK378 + RK377) **Two governed prose files declare the same 13 section anchors** — STRATEGY.md and IMPROVEMENTS.md number sections from one outline, so a pointer to any of the 13 resolves to two sections and every verb that reads one refuses. → §LXIX.8
-- 📋 **T918** (deps: —) **No frontend test file is type-checked by anything** — all three package tsconfigs exclude their tests so `tsc` never sees them, and vitest transpiles without checking, leaving 339 tests where a type error is invisible until it is a runtime failure. → §LXIX.14
 
 ## Block BW — What the link-free response and its consumers still lack (§LXX)
 

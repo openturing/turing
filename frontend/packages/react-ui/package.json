@@ -1,7 +1,7 @@
 {
   "name": "@viglet/turing-react-ui",
   "version": "2026.3.5",
-  "description": "Headless React UI primitives for Viglet Turing ES — design-agnostic chat / rich-content components (e.g. TuringHtmlSandbox) shared across the admin console and viglet.com. No API or axios dependency; skin via classNames / labels / icons.",
+  "description": "Headless React UI primitives for Viglet Turing ES \u2014 design-agnostic chat / rich-content components (e.g. TuringHtmlSandbox) shared across the admin console and viglet.com. No API or axios dependency; skin via classNames / labels / icons.",
   "type": "module",
   "main": "dist/index.js",
   "module": "dist/index.js",
@@ -104,6 +104,7 @@
     "dev": "tsc --watch",
     "test": "vitest run",
     "test:watch": "vitest",
+    "typecheck": "tsc -p tsconfig.test.json --noEmit",
     "size": "node ../../scripts/check-size.mjs",
     "size:update": "node ../../scripts/check-size.mjs --update-baseline",
     "storybook": "storybook dev -p 6007",

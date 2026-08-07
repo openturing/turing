@@ -71,6 +71,15 @@ jobs:
         working-directory: frontend
         run: pnpm --filter "${{ matrix.workspace }}..." run build
 
+      # T918: the shipping tsconfig excludes tests, stories and vitest config so
+      # they never reach `dist` — which also meant nothing type-checked them,
+      # since vitest transpiles without checking. `tsconfig.test.json` includes
+      # them and emits nothing. `--if-present` covers the apps, whose own
+      # tsconfig already has their tests in the build.
+      - name: Type-check tests
+        working-directory: frontend
+        run: pnpm --filter "${{ matrix.workspace }}" run --if-present typecheck
+
       # Bundle-size budget for the packages that declare one (T303).
       - name: Bundle-size budget
         if: matrix.size

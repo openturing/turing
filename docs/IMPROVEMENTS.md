@@ -2171,28 +2171,6 @@ What is left today is renumbering all 49 `STRATEGY.md` headings past §LXXI, one
 `drop`/`add` pair at a time, which appends its outline to the end of the file in
 scrambled order. That is worse than the collision, so this waits.
 
-### LXIX.14 No frontend test file is type-checked by anything (T918)
-
-`sdk`, `react-sdk` and `react-ui` all exclude their tests from `tsconfig.json` —
-`src/__tests__` in the first, `src/**/*.test.ts*` and `src/test` in the other two. The
-exclusion is right: `files: ["dist/**/*"]` publishes whatever `tsc` emits, and T915 is
-what happens when something that should not ship is compiled anyway.
-
-The consequence is that nothing type-checks them. Vitest transpiles with esbuild and
-never checks. So across 339 frontend tests, a test may reference a field that no longer
-exists, pass the wrong shape to a helper, or hold a cast that stopped being true, and
-the only thing that notices is a runtime failure — or nothing, where the cast makes the
-wrong shape compile-shaped. T877's own suite builds its fixtures with `as unknown as
-TurStructuredSearchResponse`: if that response type gained a required field tomorrow,
-the fixture would keep passing while the code under test drifted away from it. That is
-the same defect class as T892, one layer in — the mirror is between a test's assumptions
-and the types it asserts against.
-
-The fix is a second `tsconfig.test.json` per package that includes the tests, and a
-`typecheck` script running `tsc -p tsconfig.test.json --noEmit`, wired into the matrix
-beside Build and Test. Emit stays governed by the shipping config, so nothing new
-reaches `dist`.
-
 ## LXX. What the link-free response and its consumers still lack (Block BW)
 
 > Block BT migrated the three `turing-app` consumers off `store.data`. What it did
