@@ -12,13 +12,13 @@ import {
 import { useSubPageBreadcrumb } from "@/hooks/use-sub-page-breadcrumb";
 import type { TurProfile } from "@/models/profile/profile.model";
 import type { TurSNSiteFacetOrdering } from "@/models/sn/sn-site-facet-ordering.model";
-import { TurSNFacetProfileService } from "@/services/sn/sn.facet.profile.service";
+import { TurSNProfileFacetOrderingService } from "@/services/sn/sn.profile.facet.ordering.service";
 import { IconFilter } from "@tabler/icons-react";
 import React, { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useParams } from "react-router-dom";
 
-const profileService = new TurSNFacetProfileService();
+const profileService = new TurSNProfileFacetOrderingService();
 
 export default function SNSiteFacetListPage() {
   const { id: siteId } = useParams() as { id: string };

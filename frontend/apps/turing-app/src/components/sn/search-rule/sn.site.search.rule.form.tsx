@@ -14,7 +14,7 @@ import { TurSNSiteSearchRuleService } from "@/services/sn/sn.site.search.rule.se
 import { TurSNSiteCustomSortService } from "@/services/sn/sn.site.custom.sort.service"
 import { TurSNSiteLocaleService } from "@/services/sn/sn.site.locale.service"
 import { TurSNFacetedFieldService } from "@/services/sn/sn.faceted.field.service"
-import { TurSNFacetProfileService } from "@/services/sn/sn.facet.profile.service"
+import { TurSNProfileFacetOrderingService } from "@/services/sn/sn.profile.facet.ordering.service"
 import React, { useEffect, useState } from "react"
 import { IconDeviceFloppy, IconGavel, IconX } from "@tabler/icons-react"
 import { GradientButton } from "@/components/ui/gradient-button"
@@ -31,7 +31,7 @@ const turSNSiteSearchRuleService = new TurSNSiteSearchRuleService();
 const turSNSiteCustomSortService = new TurSNSiteCustomSortService();
 const turSNSiteLocaleService = new TurSNSiteLocaleService();
 const turSNFacetedFieldService = new TurSNFacetedFieldService();
-const turSNFacetProfileService = new TurSNFacetProfileService();
+const turSNProfileFacetOrderingService = new TurSNProfileFacetOrderingService();
 
 interface Props {
     snSiteId: string;
@@ -62,7 +62,7 @@ export const SNSiteSearchRuleForm: React.FC<Props> = ({ snSiteId, value, isNew, 
         turSNSiteCustomSortService.query(snSiteId).then(setCustomSorts).catch(console.error);
         turSNSiteLocaleService.query(snSiteId).then(setSiteLocales).catch(console.error);
         turSNFacetedFieldService.query(snSiteId).then(setFacets).catch(console.error);
-        turSNFacetProfileService.query(snSiteId).then(setProfiles).catch(console.error);
+        turSNProfileFacetOrderingService.query(snSiteId).then(setProfiles).catch(console.error);
     }, [snSiteId]);
 
     async function onSubmit(data: TurSNSiteSearchRule) {

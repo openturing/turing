@@ -16,14 +16,14 @@ import type { TurProfile } from "@/models/profile/profile.model"
 import type { TurSNStatusFields } from "@/models/sn/sn-field-status.model"
 import type { TurSNSiteField } from "@/models/sn/sn-site-field.model.ts"
 import { TurSNFieldService } from "@/services/sn/sn.field.service"
-import { TurSNFacetProfileService } from "@/services/sn/sn.facet.profile.service"
+import { TurSNProfileFacetOrderingService } from "@/services/sn/sn.profile.facet.ordering.service"
 import { IconAlignBoxCenterStretch } from "@tabler/icons-react"
 import { useTranslation } from "react-i18next"
 import { useParams } from "react-router-dom"
 
 
 const turSNFieldService = new TurSNFieldService();
-const facetProfileService = new TurSNFacetProfileService();
+const profileFacetOrderingService = new TurSNProfileFacetOrderingService();
 export default function SNSiteFieldListPage() {
     const { id } = useParams() as { id: string };
     const [data, setSnField] = React.useState<TurSNSiteField[]>();
@@ -49,7 +49,7 @@ export default function SNSiteFieldListPage() {
     }, [id, refreshStatus]);
 
     React.useEffect(() => {
-        facetProfileService
+        profileFacetOrderingService
             .query(id)
             .then((list) => {
                 setProfiles(list);

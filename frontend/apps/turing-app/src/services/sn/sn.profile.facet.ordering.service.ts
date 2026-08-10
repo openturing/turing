@@ -3,11 +3,12 @@ import type { TurSNSiteFacetOrdering } from "@/models/sn/sn-site-facet-ordering.
 import axios from "axios";
 
 /**
- * Facet-ordering configuration of a site (spec 002). Profiles themselves are global
- * and managed under {@link TurProfileService} (Management); here the site only
- * selects a global profile and configures its facet ordering for this site.
+ * Facet ordering of a global profile for a site (spec 002) — mirrors the backend
+ * {@code TurProfileFacetOrderingService}. Profiles are global and serve the whole
+ * product; they are managed under {@link TurProfileService} (Management). Here the
+ * site only selects one of them and configures its facet ordering for this site.
  */
-export class TurSNFacetProfileService {
+export class TurSNProfileFacetOrderingService {
   /** Global profiles available to select on this site. */
   async query(siteId: string): Promise<TurProfile[]> {
     const response = await axios.get<TurProfile[]>(`/sn/${siteId}/facet/profile`);
