@@ -7,8 +7,10 @@ import static com.viglet.turing.solr.TurSolrConstants.TUR_SPELL;
 import static com.viglet.turing.solr.TurSolrConstants.TUR_SUGGEST;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -79,6 +81,9 @@ public class TurSolr {
      */
     private static final Pattern UNDEFINED_FIELD =
             Pattern.compile("undefined field:?\\s*\"?([^\"\\s]+)\"?");
+
+    /** Solr parameter holding the date-range facet fields ({@code facet.range}). */
+    private static final String FACET_RANGE = "facet.range";
 
     private final TurSNSiteRepository turSNSiteRepository;
     private final boolean isCommitEnabled;
@@ -309,10 +314,13 @@ public class TurSolr {
         String core = turSolrInstance.getCore();
         // A facet on a field that does not exist in this core's schema makes Solr reject the
         // WHOLE query (documents included). That happens on partially-indexed cores, where a
-        // configured facet field was never created because no document ever carried it. Instead
-        // of failing the entire search, strip the offending facet field and retry. The retry
-        // budget is bounded by the number of facet fields, so it can never loop unbounded.
-        int maxAttempts = 1 + Optional.ofNullable(query.getFacetFields()).map(f -> f.length).orElse(0);
+        // configured facet field was never created because no document ever carried it — and on
+        // profile-driven searches, where a profile can enable a facet on a field the core does
+        // not have yet. Instead of failing the entire search, strip the offending facet and retry.
+        // All three facet flavours are covered (facet.field, facet.range and the custom facet.query),
+        // since a date-range or custom facet on a missing field rejects the query just the same.
+        // The retry budget is bounded by the number of facet entries, so it can never loop unbounded.
+        int maxAttempts = 1 + facetEntryCount(query);
         for (int attempt = 0; attempt < maxAttempts; attempt++) {
             try {
                 QueryResponse response = turSolrInstance.getSolrClient().query(core, query);
@@ -323,9 +331,9 @@ public class TurSolr {
             } catch (SolrException e) {
                 // RemoteSolrException (server-side rejection, e.g. undefined field) is unchecked
                 // and would otherwise escape the resilience wrapper as an unhandled exception.
-                String removedFacet = removeUndefinedFacetField(query, e);
+                String removedFacet = removeUndefinedFacet(query, e);
                 if (removedFacet == null) {
-                    // The undefined field is not a facet field we can strip (e.g. it is in q/fq/hl),
+                    // The undefined field is not a facet we can strip (e.g. it is in q/fq/hl),
                     // so retrying would not help — log and give up as before.
                     logSolrException(query, e, true);
                     return Optional.empty();
@@ -338,20 +346,31 @@ public class TurSolr {
     }
 
     /**
-     * When Solr rejects a query for an {@code undefined field}, removes that field from the
-     * query's {@code facet.field} list so the caller can retry. Returns the removed field name,
-     * or {@code null} when the undefined field is not a stripable facet field (the caller must
-     * then stop retrying). Facet field entries may carry a leading Solr local-params block
-     * (e.g. {@code {!ex=tag}catedras}); the bare field name is compared against Solr's message.
+     * When Solr rejects a query for an {@code undefined field}, removes every facet entry bound to
+     * that field so the caller can retry. Covers the three flavours Turing emits:
+     * {@code facet.field}, {@code facet.range} (date-range facets) and {@code facet.query} (custom
+     * facets). Returns the removed field name, or {@code null} when the undefined field is not a
+     * stripable facet (the caller must then stop retrying) — e.g. it came from {@code q}/{@code fq}/
+     * {@code hl}, where dropping a facet would not help.
+     * <p>
+     * Entries may carry a leading Solr local-params block (e.g. {@code {!ex=tag}catedras} or
+     * {@code {!key='Ano::2026'}dataInicio:[…]}); the bare expression is matched against the field.
      */
-    private static String removeUndefinedFacetField(SolrQuery query, SolrException e) {
+    private static String removeUndefinedFacet(SolrQuery query, SolrException e) {
         String field = parseUndefinedField(e.getMessage());
         if (field == null) {
             return null;
         }
+        boolean removed = removeUndefinedFacetField(query, field);
+        removed |= removeUndefinedFacetRange(query, field);
+        removed |= removeUndefinedFacetQuery(query, field);
+        return removed ? field : null;
+    }
+
+    private static boolean removeUndefinedFacetField(SolrQuery query, String field) {
         String[] facetFields = query.getFacetFields();
         if (facetFields == null) {
-            return null;
+            return false;
         }
         boolean removed = false;
         for (String facetField : facetFields) {
@@ -360,7 +379,84 @@ public class TurSolr {
                 removed = true;
             }
         }
-        return removed ? field : null;
+        return removed;
+    }
+
+    /**
+     * Drops the {@code facet.range} entries of the undefined field, along with the per-field range
+     * parameters Solr would otherwise keep ({@code f.<field>.facet.range.*}). A date-range facet on
+     * a field missing from the core rejects the whole query exactly like a plain facet field does.
+     */
+    private static boolean removeUndefinedFacetRange(SolrQuery query, String field) {
+        String[] facetRanges = query.getParams(FACET_RANGE);
+        if (facetRanges == null) {
+            return false;
+        }
+        List<String> kept = new ArrayList<>();
+        boolean removed = false;
+        for (String facetRange : facetRanges) {
+            if (bareFacetField(facetRange).equals(field)) {
+                removed = true;
+            } else {
+                kept.add(facetRange);
+            }
+        }
+        if (!removed) {
+            return false;
+        }
+        if (kept.isEmpty()) {
+            query.remove(FACET_RANGE);
+        } else {
+            query.setParam(FACET_RANGE, kept.toArray(new String[0]));
+        }
+        removePerFieldParams(query, field);
+        return true;
+    }
+
+    /**
+     * Drops the custom-facet {@code facet.query} entries that filter on the undefined field. The
+     * expression carries the field name after the local-params block (e.g.
+     * {@code {!key='Ano::2026'}dataInicio:[2026-01-01T00:00:00Z TO *]}).
+     */
+    private static boolean removeUndefinedFacetQuery(SolrQuery query, String field) {
+        String[] facetQueries = query.getFacetQuery();
+        if (facetQueries == null) {
+            return false;
+        }
+        boolean removed = false;
+        for (String facetQuery : facetQueries) {
+            if (facetQueryTargetsField(facetQuery, field)) {
+                query.removeFacetQuery(facetQuery);
+                removed = true;
+            }
+        }
+        return removed;
+    }
+
+    /** {@code true} when the facet query filters on {@code field} (i.e. starts with "field:"). */
+    private static boolean facetQueryTargetsField(String facetQuery, String field) {
+        return bareFacetField(facetQuery).startsWith(field + ":");
+    }
+
+    /** Removes the {@code f.<field>.*} per-field parameters left behind by a stripped facet. */
+    private static void removePerFieldParams(SolrQuery query, String field) {
+        String prefix = "f." + field + ".";
+        List<String> toRemove = new ArrayList<>();
+        Iterator<String> names = query.getParameterNamesIterator();
+        while (names.hasNext()) {
+            String name = names.next();
+            if (name.startsWith(prefix)) {
+                toRemove.add(name);
+            }
+        }
+        toRemove.forEach(query::remove);
+    }
+
+    /** Total facet entries in the query — the upper bound for strip-and-retry attempts. */
+    private static int facetEntryCount(SolrQuery query) {
+        return Optional.ofNullable(query.getFacetFields()).map(f -> f.length).orElse(0)
+                + Optional.ofNullable(query.getParams(FACET_RANGE)).map(f -> f.length).orElse(0)
+                + Optional.ofNullable(query.getFacetQuery()).map(f -> f.length).orElse(0);
     }
 
     private static String parseUndefinedField(String message) {
