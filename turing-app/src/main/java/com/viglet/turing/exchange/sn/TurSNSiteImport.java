@@ -55,7 +55,6 @@ import com.viglet.turing.persistence.repository.se.TurSEInstanceRepository;
 import com.viglet.turing.persistence.repository.se.TurSEVendorRepository;
 import com.viglet.turing.persistence.repository.sn.TurSNSiteRepository;
 import com.viglet.turing.persistence.repository.sn.field.TurSNSiteFieldExtRepository;
-import com.viglet.turing.sn.facet.TurSNSiteFacetProfileService;
 import com.viglet.turing.persistence.repository.sn.field.TurSNSiteFieldRepository;
 import com.viglet.turing.persistence.repository.sn.genai.TurSNSiteGenAiRepository;
 import com.viglet.turing.persistence.repository.sn.locale.TurSNSiteLocaleRepository;
@@ -96,7 +95,6 @@ public class TurSNSiteImport {
 	private final com.viglet.turing.persistence.repository.agent.TurAIAgentRepository turAIAgentRepository;
 	private final TurSearchEnginePluginFactory turSearchEnginePluginFactory;
 	private final CacheManager cacheManager;
-	private final TurSNSiteFacetProfileService turSNSiteFacetProfileService;
 
 	public TurSNSiteImport(TurSNSiteRepository turSNSiteRepository,
 			TurSEInstanceRepository turSEInstanceRepository,
@@ -117,8 +115,7 @@ public class TurSNSiteImport {
 			TurEmbeddingModelRepository turEmbeddingModelRepository,
 			com.viglet.turing.persistence.repository.agent.TurAIAgentRepository turAIAgentRepository,
 			TurSearchEnginePluginFactory turSearchEnginePluginFactory,
-			CacheManager cacheManager,
-			TurSNSiteFacetProfileService turSNSiteFacetProfileService) {
+			CacheManager cacheManager) {
 		this.turSNSiteRepository = turSNSiteRepository;
 		this.turSEInstanceRepository = turSEInstanceRepository;
 		this.turSEVendorRepository = turSEVendorRepository;
@@ -139,7 +136,6 @@ public class TurSNSiteImport {
 		this.turAIAgentRepository = turAIAgentRepository;
 		this.turSearchEnginePluginFactory = turSearchEnginePluginFactory;
 		this.cacheManager = cacheManager;
-		this.turSNSiteFacetProfileService = turSNSiteFacetProfileService;
 	}
 
 	@Transactional
@@ -192,10 +188,10 @@ public class TurSNSiteImport {
 			saveSNSiteMergeProviders(turSNSiteExchange, savedSite);
 			saveSNSiteCustomSorts(turSNSiteExchange, savedSite);
 
-			// Imported sites come from versions without ordering profiles: derive the
-			// default "Geral" profile from the imported facetPosition values so the
-			// facets land in the default profile right away.
-			turSNSiteFacetProfileService.ensureDefaultProfile(savedSite);
+			// The default "Padrão" profile ordering is seeded per site from the legacy
+			// facetPosition columns by TurProfileMigrationOnStartup on the next boot; until
+			// then the search read path falls back to facetPosition, so imported facets are
+			// ordered correctly without persisting an ordering here.
 
 			log.info("Imported SN Site: {} ({})", savedSite.getName(), savedSite.getId());
 		}

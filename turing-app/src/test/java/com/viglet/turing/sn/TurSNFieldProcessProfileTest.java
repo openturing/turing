@@ -52,7 +52,7 @@ import com.viglet.turing.sn.facet.TurSNFacetDefinitionFactory;
 
 /**
  * Tests for the global-profile-aware facet ordering resolution at search runtime
- * (spec 002, Fase 4). {@code facetProfile} resolves a global profile by name/id,
+ * (spec 002, Fase 4). The {@code profile} search parameter resolves a global profile by name/id,
  * then reads its (profile × site) ordering, falling back to the default profile's
  * ordering for the site.
  *
@@ -188,7 +188,7 @@ class TurSNFieldProcessProfileTest {
     }
 
     @Test
-    void fallsBackToDefaultProfileWhenFacetProfileAbsent() {
+    void fallsBackToDefaultProfileWhenProfileAbsent() {
         TurSNSite site = site("site-1");
         TurSNSiteFieldExt category = fieldFacet("f1", "category", 5, site);
         TurProfile padrao = TurProfile.builder().id("pd").name("Padrão").defaultProfile(true).build();

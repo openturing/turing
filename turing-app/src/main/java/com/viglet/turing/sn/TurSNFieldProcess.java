@@ -133,16 +133,16 @@ public class TurSNFieldProcess {
          * site is used; if there is none, the legacy {@code facetPosition} applies.
          *
          * @param snSiteId     the SN site id
-         * @param facetProfile the requested (global) profile name or id (may be {@code null})
+         * @param profileNameOrId the requested (global) profile name or id (may be {@code null})
          * @since 2026.2.7
          */
         @NotNull
         public Optional<List<TurSNSiteFieldExt>> getTurSNSiteFieldOrdering(String snSiteId,
-                        String facetProfile) {
+                        String profileNameOrId) {
                 return turSNSiteRepository.findById(snSiteId).map(turSNSite -> {
                         List<TurSNSiteFieldExt> enabledFields = turSNSiteFieldExtRepository
                                         .findByTurSNSiteAndEnabled(turSNSite, 1);
-                        Map<String, Integer> profilePositions = resolveProfilePositions(turSNSite, facetProfile);
+                        Map<String, Integer> profilePositions = resolveProfilePositions(turSNSite, profileNameOrId);
                         boolean hasProfile = !profilePositions.isEmpty();
                         return turSNFacetDefinitionFactory.fromFields(enabledFields, null).stream()
                                         .map(definition -> {
@@ -166,10 +166,10 @@ public class TurSNFieldProcess {
                 });
         }
 
-        private Map<String, Integer> resolveProfilePositions(TurSNSite site, String facetProfile) {
+        private Map<String, Integer> resolveProfilePositions(TurSNSite site, String profileNameOrId) {
                 Optional<TurProfile> profile = Optional.empty();
-                if (facetProfile != null && !facetProfile.isBlank()) {
-                        String key = facetProfile.trim();
+                if (profileNameOrId != null && !profileNameOrId.isBlank()) {
+                        String key = profileNameOrId.trim();
                         profile = turProfileRepository.findByNameIgnoreCase(key);
                         if (profile.isEmpty()) {
                                 profile = turProfileRepository.findById(key);
