@@ -1,0 +1,130 @@
+-------------------------------------------------------------
+CONTEXTO
+-------------------------------------------------------------
+branch atual : feature/turing-generic-profiles
+HEAD         : eb83366820
+base         : origin/2026.3 = 5e01e4050f
+merge-base   : fd78b2b5f
+
+AVISO: se a base não resolver, rode antes:  git fetch origin 2026.3
+-------------------------------------------------------------
+B1 — o DDL da formação 001 já existe na base?  (DECIDE a D2)
+-------------------------------------------------------------
+B1 = EXISTE_NA_BASE
+
+>>> ATENÇÃO: a decisão D2 INVERTE.
+>>> As tabelas sn_site_facet_profile existem em instalação publicada.
+>>> Passa a exigir changeset dropTable + plano de migração de dados,
+>>> e o passo 1 de TurProfileMigrationOnStartup NÃO pode ser removido.
+>>> NÃO rode o 01-fase1-remocao.sh. Revise o spec 004 antes.
+
+-- histórico do arquivo na base (deve ser vazio se AUSENTE):
+d78891df7f feat: add chat mode toggle for LLM execution in agents
+-- quem criou o arquivo no branch:
+69430661b0 feat: add facet ordering profiles for semantic navigation
+-------------------------------------------------------------
+B2 — colisão de numeração de changelog?  (DECIDE a Q3)
+-------------------------------------------------------------
+-- últimos includes do master NA BASE:
+  - include:
+      file: db/changelog/v2026.3.1.116.yaml
+  - include:
+      file: db/changelog/v2026.3.1.117.yaml
+  - include:
+      file: db/changelog/v2026.3.1.118.yaml
+  - include:
+      file: db/changelog/v2026.3.1.119.yaml
+  - include:
+      file: db/changelog/v2026.3.1.120.yaml
+  - include:
+      file: db/changelog/v2026.3.1.121.yaml
+  - include:
+      file: db/changelog/v2026.3.1.122.yaml
+
+-- changelogs 7.x presentes NA BASE:
+turing-app/src/main/resources/db/changelog/v2026.2.7.0.yaml
+turing-app/src/main/resources/db/changelog/v2026.2.7.1.yaml
+turing-app/src/main/resources/db/changelog/v2026.2.7.2.yaml
+turing-app/src/main/resources/db/changelog/v2026.2.7.3.yaml
+turing-app/src/main/resources/db/changelog/v2026.2.7.4.yaml
+turing-app/src/main/resources/db/changelog/v2026.2.7.5.yaml
+turing-app/src/main/resources/db/changelog/v2026.2.7.6.yaml
+turing-app/src/main/resources/db/changelog/v2026.2.7.7.yaml
+turing-app/src/main/resources/db/changelog/v2026.2.7.8.yaml
+turing-app/src/main/resources/db/changelog/v2026.2.7.9.yaml
+turing-app/src/main/resources/db/changelog/v2026.2.7.10.yaml
+turing-app/src/main/resources/db/changelog/v2026.2.7.11.yaml
+turing-app/src/main/resources/db/changelog/v2026.2.7.12.yaml
+turing-app/src/main/resources/db/changelog/v2026.2.7.13.yaml
+
+  !! COLISÃO: v2026.2.7.8.yaml já existe na base
+  !! COLISÃO: v2026.2.7.9.yaml já existe na base
+  !! COLISÃO: v2026.2.7.10.yaml já existe na base
+
+>>> Se houver QUALQUER colisão, a Q3 deixa de ser estética:
+>>> renumerar os changelogs do branch vira OBRIGATÓRIO (T1.10).
+-------------------------------------------------------------
+B3 — a pasta specs/ existe na base?
+-------------------------------------------------------------
+B3 = specs/ NÃO existe na base (é nova neste PR)
+-------------------------------------------------------------
+ATRASO DO BRANCH  (DECIDE a Q7)
+-------------------------------------------------------------
+commits da base que faltam no branch : 1316
+commits do branch à frente da base   : 9
+
+-- últimos 25 commits da base ausentes no branch:
+5e01e4050f fix(apps): stamp buildDate into dist, not the tracked manifest (T917)
+1e09371259 docs: widen T917 to the four apps whose build stamps a tracked manifest
+194a084550 docs: file the showcase build churn and the untyped frontend tests (T917, T918)
+06d0e68912 ci: build the showcase and the marketing site on every dispatch (T916)
+d78c3804b3 fix(react-sdk): stop publishing the Storybook tree to npm (T915)
+1446c96886 fix(ci): publish with pnpm so the workspace protocol is rewritten (T914)
+92265a10cc docs: file three findings from the Block BV pass (T914, T915, T916)
+a7415b0e03 feat(size): baseline each dist directory so a regression names one (T878)
+f9325b2fef docs: block T902 on the two roadkeep gaps it needs (RK377, RK378)
+c5efdec0b0 test(sdk): gate the Java enum to TypeScript union mirrors (T892)
+5fbb0bf99b test(react-sdk): cover the provider/store contract with a first vitest suite (T877)
+14d1c9dc06 fix(deps): cap the undici override at the 7 line so jsdom loads (T913)
+99398a6e06 ci: run the admin app's vitest suite in CI (T874)
+65b509ecb3 ci: validate the CLI and flow DSL packages on every dispatch (T873)
+8e20b630ec ci: add a publish workflow for the vanilla SDK (T876)
+eb694cd518 ci: build react-sdk in its own publish workflow (T875)
+24a848332e chore: update workflows and configuration for roadkeep integration
+f85186e578 docs: retire T897 and close Block BU
+764351ffdf feat(cache): give the SN snapshot caches the backstop sweep they never had (T905)
+4375652bfc Merge branch '2026.3' of https://github.com/openviglet/turing into 2026.3
+748e1f65b3 docs: record Block BU as exhausted
+8af55279cf docs(cache): make the end-to-end eviction proof reachable from the code it covers (T912)
+aa833cb464 docs: file T912 on where T911's coverage ended up living
+3f67f8f3fe test(search): prove a write changes what a cached search returns (T911)
+70ac15979b docs: file T911 on the assertion eleven tasks never made
+-------------------------------------------------------------
+TAMANHO REAL DO PR CONTRA A BASE CORRETA
+-------------------------------------------------------------
+ .../commons/sn/bean/TurSNSitePostParamsBean.java   |   1 +
+ .../turing/commons/sn/search/TurSNParamType.java   |   1 +
+ 135 files changed, 10460 insertions(+), 625 deletions(-)
+-------------------------------------------------------------
+B4 — @Secured já existe na base?
+-------------------------------------------------------------
+<arquivo não existe na base — então TODAS as rotas dele são novas>
+-------------------------------------------------------------
+B5/B6/B7/B8/B9 — o que o PR realmente adiciona vs. a base
+-------------------------------------------------------------
+TurSolrUtils.java                                                        37	1	turing-app/src/main/java/com/viglet/turing/solr/TurSolrUtils.java
+TurSolr.java                                                             109	9	turing-app/src/main/java/com/viglet/turing/solr/TurSolr.java
+TurSNProcessQueue.java                                                   <sem diferença / caminho inexistente>
+TurSolrQueryBuilder.java                                                 85	8	turing-app/src/main/java/com/viglet/turing/solr/TurSolrQueryBuilder.java
+TurSNSearchProcess.java                                                  <sem diferença / caminho inexistente>
+
+-- frontend e index.html:
+ frontend/apps/turing-app/index.html                            | 10 +++++++++-
+ .../apps/turing-app/src/search/components/search-content.tsx   |  8 +++++++-
+ frontend/packages/react-sdk/src/core/resolve.ts                |  9 ++++++---
+ 3 files changed, 22 insertions(+), 5 deletions(-)
+-------------------------------------------------------------
+RESUMO
+-------------------------------------------------------------
+Cole a saída acima (ou o arquivo specs/004-enxugamento-perfis/scripts/base-report.txt) de volta na conversa.
+As duas linhas que decidem tudo são a de B1 e as três de colisão em B2.
