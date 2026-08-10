@@ -122,7 +122,12 @@ public class TurCommonsUtils {
 
     public static URI addOrReplaceParameter(URI uri, String paramName, String paramValue,
             boolean decoded) {
-        List<NameValuePair> params = new URIBuilder(uri, StandardCharsets.ISO_8859_1).getQueryParams();
+        // The query string must be parsed as UTF-8: percent-encoded octets of non-ASCII values
+        // (profile/facet names such as "Padrão" -> "Padr%C3%A3o") are UTF-8. Reading them as
+        // ISO-8859-1 turned every accent into mojibake ("PadrÃ£o"), and the corrupted value was
+        // then carried over into the pagination/facet links, so following one of those links no
+        // longer matched the profile it came from.
+        List<NameValuePair> params = new URIBuilder(uri, StandardCharsets.UTF_8).getQueryParams();
         StringBuilder sbQueryString = new StringBuilder();
         boolean alreadyExists = false;
         for (NameValuePair nameValuePair : params) {
