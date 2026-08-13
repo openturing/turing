@@ -84,7 +84,7 @@ class TurSNSimilarDocumentsServiceTest {
     }
 
     private void snapshotExists(Locale language) {
-        TurSNSiteSearchSnapshot snapshot = new TurSNSiteSearchSnapshot(site(), language, "solr",
+        TurSNSiteSearchSnapshot snapshot = new TurSNSiteSearchSnapshot(view(site()), language, "solr",
                 false, List.of(), java.util.Set.of(), Map.of(), Map.of(),
                 List.of(locale(language)), List.of());
         when(snapshotService.getSnapshot(eq(SITE), any())).thenReturn(Optional.of(snapshot));
@@ -256,5 +256,10 @@ class TurSNSimilarDocumentsServiceTest {
         service.findSimilar(SITE, SEED, 0, Locale.ENGLISH, null);
 
         verify(plugin).getSimilarDocuments(any(), eq(SEED), eq(10));
+    }
+
+    private static com.viglet.turing.sn.snapshot.TurSNSiteSearchSiteView view(
+            com.viglet.turing.persistence.model.sn.TurSNSite site) {
+        return com.viglet.turing.sn.snapshot.TurSNSiteSearchSiteView.from(site, "solr");
     }
 }

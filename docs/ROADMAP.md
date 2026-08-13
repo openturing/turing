@@ -10,10 +10,6 @@
 
 - ⏳ **T902** (deps: roadkeep RK377) **Two governed prose files declare the same 13 section anchors** — both halves of the fix exist upstream but not in the 0.1.285 plugin this repo runs, whose config parser would reject the key the fix declares. → §LXIX.8
 
-## Block AC — JPA caching strategy: decouple cache from entities
-
-- 📋 **T953** (deps: —) **The search path takes the site entity through ten signatures** — Every one is a hot-path collaborator reached from the cached instance, so the last component cannot be projected without changing what they accept. → §LXXI.7
-
 ## Non-goals (do NOT add as tasks)
 
 Binding constraints — see [IMPROVEMENTS.md](IMPROVEMENTS.md) §I.6 (What NOT to

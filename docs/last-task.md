@@ -302,6 +302,8 @@ number" looked free but wasn't. Grepping three files (`ROADMAP.md`,
 
 ## Log (most recent first)
 
+- **Block AC CLOSED, heading dropped** (§LXXI — the acknowledged-entity-cache list is empty; no @Cacheable holds a JPA entity) — 2026-08-13.
+- **T953 SHIPPED** (Block AC §LXXI.7 — TurSNSiteSearchSiteView caches 32 scalars + denormalised genAi/pluginType; snapshot.site() rebuilds a transient, 0 of 65 signatures changed) — 2026-08-13.
 - **T898 SHIPPED** (Block AC §LXXI.1 — 5 of 6 snapshot components are records + the lint widened past the repository boundary; TurSNSite remains as declared debt, filed as T953) — 2026-08-13.
 - **T953 CREATED** (📋, Block AC §LXXI.7 — measured: 10 hot-path signatures take TurSNSite, plus an FK write and a query parameter; 9 LAZY collections none fetch-joined) — 2026-08-13.
 - **T898e SHIPPED** (Block AC §LXXI.6 — enabledFields projected into FieldExtView, all 21 scalars, rebuilt transient at 2 boundaries; reflective round-trip test; cached entity kinds 2 -> 1) — 2026-08-13.

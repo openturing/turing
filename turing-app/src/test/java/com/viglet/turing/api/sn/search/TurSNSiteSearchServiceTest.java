@@ -81,7 +81,7 @@ class TurSNSiteSearchServiceTest {
         site.setId("site-id");
         site.setName(name);
         site.setHl(1);
-        return new TurSNSiteSearchSnapshot(site, null, "solr", hasHl,
+        return new TurSNSiteSearchSnapshot(view(site), null, "solr", hasHl,
                 List.of(), Set.of(), Map.of(), Map.of(), locales, List.of());
     }
 
@@ -315,5 +315,10 @@ class TurSNSiteSearchServiceTest {
         assertThat(params.getLocale()).hasToString("pt_BR");
         assertThat(postParams.getTargetingRules()).containsExactly("role:\"admin\"");
         verify(searchProcess).requestTargetingRules(List.of("role:admin"));
+    }
+
+    private static com.viglet.turing.sn.snapshot.TurSNSiteSearchSiteView view(
+            com.viglet.turing.persistence.model.sn.TurSNSite site) {
+        return com.viglet.turing.sn.snapshot.TurSNSiteSearchSiteView.from(site, "solr");
     }
 }

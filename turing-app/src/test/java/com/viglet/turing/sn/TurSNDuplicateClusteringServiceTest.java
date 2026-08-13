@@ -89,7 +89,7 @@ class TurSNDuplicateClusteringServiceTest {
     }
 
     private void snapshotExists(Locale language) {
-        TurSNSiteSearchSnapshot snapshot = new TurSNSiteSearchSnapshot(site(), language, "solr",
+        TurSNSiteSearchSnapshot snapshot = new TurSNSiteSearchSnapshot(view(site()), language, "solr",
                 false, List.of(), java.util.Set.of(), Map.of(), Map.of(),
                 List.of(locale(language)), List.of());
         when(snapshotService.getSnapshot(eq(SITE), any())).thenReturn(Optional.of(snapshot));
@@ -251,7 +251,7 @@ class TurSNDuplicateClusteringServiceTest {
     // ---- attachClusters (inline per-result enrichment) -------------------
 
     private TurSNSiteSearchSnapshot snapshot(Locale language) {
-        return new TurSNSiteSearchSnapshot(site(), language, "solr", false, List.of(),
+        return new TurSNSiteSearchSnapshot(view(site()), language, "solr", false, List.of(),
                 java.util.Set.of(), Map.of(), Map.of(), List.of(locale(language)), List.of());
     }
 
@@ -289,5 +289,10 @@ class TurSNDuplicateClusteringServiceTest {
                 .extracting(TurSNDuplicateClusterMember::id).containsExactly(SEED, "doc-2");
         // Exactly one hydration call for the whole page (the batch optimization).
         verify(plugin).getDocumentsByIds(any(), eq(List.of("doc-2")));
+    }
+
+    private static com.viglet.turing.sn.snapshot.TurSNSiteSearchSiteView view(
+            com.viglet.turing.persistence.model.sn.TurSNSite site) {
+        return com.viglet.turing.sn.snapshot.TurSNSiteSearchSiteView.from(site, "solr");
     }
 }

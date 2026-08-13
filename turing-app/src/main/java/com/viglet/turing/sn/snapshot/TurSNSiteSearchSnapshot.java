@@ -41,7 +41,7 @@ import com.viglet.turing.sn.TurSNFieldType;
  * @since 2026.2.4
  */
 public record TurSNSiteSearchSnapshot(
-        TurSNSite site,
+        TurSNSiteSearchSiteView siteView,
         Locale locale,
         String pluginType,
         boolean hasHlFields,
@@ -164,11 +164,31 @@ public record TurSNSiteSearchSnapshot(
         private static final long serialVersionUID = 1L;
     }
 
+    /**
+     * The site as its collaborators still take it — rebuilt from {@link TurSNSiteSearchSiteView},
+     * never served from the cache (T953 / §LXXI.7).
+     *
+     * <p>Sixty-five parameters across the nine search-path files are typed on
+     * {@code TurSNSite}, and many of them also serve indexing and console callers
+     * that hold a managed instance, so pushing a record through them would mean
+     * overloading rather than replacing. Rebuilding here keeps every one of those
+     * signatures untouched while the <em>cache</em> holds no entity, which is the
+     * distinction Block AC's rule actually draws.
+     *
+     * <p>Strictly safer than what it replaces: the entity declares nine
+     * {@code @OneToMany(LAZY)} collections and the snapshot query fetch-joins none,
+     * so on the cached instance they were proxies that threw — the failure
+     * {@code TurPersonaSnDocResolver} documents. On the rebuilt one they are empty.
+     */
+    public TurSNSite site() {
+        return siteView == null ? null : siteView.toEntity();
+    }
+
     public String siteId() {
-        return site != null ? site.getId() : null;
+        return siteView != null ? siteView.id() : null;
     }
 
     public String siteName() {
-        return site != null ? site.getName() : null;
+        return siteView != null ? siteView.name() : null;
     }
 }

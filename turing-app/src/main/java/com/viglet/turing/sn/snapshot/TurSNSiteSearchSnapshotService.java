@@ -189,7 +189,8 @@ public class TurSNSiteSearchSnapshotService {
 
         String pluginType = resolvePluginType(site);
 
-        return new TurSNSiteSearchSnapshot(site, locale, pluginType, hasHlFields,
+        return new TurSNSiteSearchSnapshot(
+                TurSNSiteSearchSiteView.from(site, pluginType), locale, pluginType, hasHlFields,
                 List.copyOf(enabledFieldViews), Set.copyOf(fieldIdsWithCustomFacets),
                 Map.copyOf(customFacetsByFieldId), Map.copyOf(facetLabelsByFieldId),
                 List.copyOf(allLocales), List.copyOf(customSorts));

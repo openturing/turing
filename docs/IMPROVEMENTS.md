@@ -2121,33 +2121,28 @@ The standing concerns that outlived it, both learned the hard way:
 
 ## LXXI The no-entity-caching rule is enforced only where it was first broken (Block AC)
 
-> Found while enumerating the explicitly-keyed caches for T895. Block AC's rule is
-> unqualified — never cache a JPA entity — but its guard walks repositories only, so the
-> hottest service-level cache in the product holds six entity types and passes the lint
-> for the policy it violates. The evidence that this is not theoretical is in that cache's
-> own javadoc: it already works around the exact failure, one association at a time.
+_Fully shipped — Block AC (T898, T898b–T898e, T952, T953). See
+[CHANGELOG.md](CHANGELOG.md) and `git log`._
 
-### LXXI.7 The last cached entity is a signature problem (T953)
+Block AC's rule is unqualified: cache an immutable read-model, **never a JPA entity**.
+Its guard walked repositories only, so the hottest service-level cache in the product
+held six entity kinds and passed the lint for the rule it was breaking.
 
-Five of the snapshot's six components are records (T898b–T898e). The sixth is
-`TurSNSite` itself, and it does not yield to the same move: it is not read from the
-cache so much as **handed to collaborators typed on it**.
+Both halves are closed. The lint checks the cached **value type** of every `@Cacheable`
+anywhere, recursing into record components — which is what made a cache returning
+`Optional<TurSNSiteSearchSnapshot>` legible at all — and its acknowledged-debt list is
+now empty.
 
-Measured: ten of them. `TurSNHybridRankingService` alone takes it in `isEnabled`,
-`fuse`, `findNeighbors`, `findScoredNeighbors`, `indexDocument`, `deIndex` and
-`deIndexByType`; `TurSNDocumentResponse#buildFieldExtMap`,
-`TurSNQueryContextBuilder#build` and `TurSNFacetRenderer#facetIsEnabled` take it too.
-Two further couplings are not signatures at all: `populateMetrics` uses it as a JPA **FK
-on a write**, and `TurSNDocumentResponse` passes it to `findByTurSNSiteAndEnabled` as a
-query parameter.
+Three things this cost that are worth keeping:
 
-The hazard is live, not theoretical. `TurSNSite` declares **nine** `@OneToMany(LAZY)`
-collections and the snapshot query fetch-joins none of them — `TurPersonaSnDocResolver`
-already carries a comment saying that touching `site.getTurSNSiteLocales()` on the
-cached instance throws and rolls back the caller's transaction, which is why it reads
-the snapshot's locales instead.
-
-So the remaining work is a search-path signature change, and it should be taken as one
-deliberate piece rather than smuggled into a projection. Re-loading per request is the
-wrong exit: the snapshot exists (T487) precisely so a search does not touch the
-database.
+- **A projection and a copy are different moves.** Four components were projected to what
+  their consumers read; two had to be copied whole, because their consumers *hand them
+  on* to signatures typed on the entity. A copy is where a forgotten field goes silent,
+  so both are proved by reflective round-trip rather than by review.
+- **Rebuild at the boundary beats propagating a record.** Pushing a view through the
+  search path would have reached sixty-five parameters across nine files; rebuilding a
+  transient at the cache boundary changed none, and left the lazy collections empty
+  instead of throwing.
+- **An allowlist that masks its own detector is not a guard.** Every acknowledged entry
+  must still be detected, and a positive control proves the walk works once the list is
+  empty.

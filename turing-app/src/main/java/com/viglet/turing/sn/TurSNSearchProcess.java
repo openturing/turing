@@ -406,7 +406,11 @@ public class TurSNSearchProcess {
                         turSNSiteMetricAccess.setLanguage(turSNSiteSearchContext.getLocale());
                         turSNSiteMetricAccess.setTerm(
                                         turSNSiteSearchContext.getTurSEParameters().getQuery());
-                        turSNSiteMetricAccess.setTurSNSite(turSNSite);
+                        // T953 — the site is rebuilt from the cached view now, so the FK
+                        // takes a managed reference by id rather than a transient
+                        // instance. getReferenceById issues no query.
+                        turSNSiteMetricAccess.setTurSNSite(
+                                        turSNSiteRepository.getReferenceById(turSNSite.getId()));
                         turSNSiteMetricAccess.setNumFound(numFound);
                         Optional.ofNullable(turSNSiteSearchContext.getTurSNSitePostParamsBean())
                                         .ifPresent(p -> {

@@ -78,7 +78,7 @@ class TurSNSiteSearchAPITest {
         TurSNSite site = new TurSNSite();
         site.setId("site-id");
         site.setName(siteName);
-        return new TurSNSiteSearchSnapshot(site, null, "solr", false,
+        return new TurSNSiteSearchSnapshot(view(site), null, "solr", false,
                 List.of(), Set.of(), Map.of(), Map.of(), List.of(), List.of());
     }
 
@@ -632,5 +632,10 @@ class TurSNSiteSearchAPITest {
                 api.turSNSiteSearchSortOptions("site");
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
+    }
+
+    private static com.viglet.turing.sn.snapshot.TurSNSiteSearchSiteView view(
+            com.viglet.turing.persistence.model.sn.TurSNSite site) {
+        return com.viglet.turing.sn.snapshot.TurSNSiteSearchSiteView.from(site, "solr");
     }
 }

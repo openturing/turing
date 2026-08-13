@@ -23,6 +23,7 @@ package com.viglet.turing.sn;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -173,7 +174,7 @@ class TurSNSearchProcessTest {
                         List<TurSNSiteSearchSnapshot.FieldExtView> enabledFields,
                         Map<String, Set<TurSNSiteSearchSnapshot.FacetLabelView>> facetLabels,
                         List<TurSNSiteSearchSnapshot.LocaleView> allLocales) {
-                return new TurSNSiteSearchSnapshot(site, locale, "solr", false,
+                return new TurSNSiteSearchSnapshot(view(site), locale, "solr", false,
                                 enabledFields, Set.of(),
                                 Map.of(), facetLabels, allLocales, List.of());
         }
@@ -604,7 +605,12 @@ class TurSNSearchProcessTest {
                 spotlight.setLink("/spotlight");
                 spotlight.setReferenceId("ref-1");
                 spotlight.setType("doc");
-                when(turSNSpotlightProcess.getSpotlightsFromQuery(any(), eq(site)))
+                // T953 — the snapshot rebuilds the site from its cached view, so the
+                // instance the process passes down is not the one this test built.
+                // TurSNSite overrides no equals, so eq(site) matched by identity;
+                // matching on the id is what the collaborator actually cares about.
+                when(turSNSpotlightProcess.getSpotlightsFromQuery(any(),
+                                argThat(s -> s != null && "site-id".equals(s.getId()))))
                                 .thenReturn(Map.of(1, List.of(spotlight)));
 
                 TurSEResults seResults = TurSEResults.builder()
@@ -648,4 +654,9 @@ class TurSNSearchProcessTest {
 
                 assertThat(hasMlt).isFalse();
         }
+
+    private static com.viglet.turing.sn.snapshot.TurSNSiteSearchSiteView view(
+            com.viglet.turing.persistence.model.sn.TurSNSite site) {
+        return com.viglet.turing.sn.snapshot.TurSNSiteSearchSiteView.from(site, "solr");
+    }
 }

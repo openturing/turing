@@ -274,7 +274,7 @@ class TurCacheAnnotationConventionsTest {
      * retires it. A <em>new</em> entity cache is not listable — it is a defect.
      */
     @Test
-    void noCacheableMayHoldAJpaEntity() throws IOException {
+    void noCacheableMayHoldAJpaEntity() throws IOException, NoSuchMethodException {
         Path classesDir = Paths.get("target/classes");
         assertThat(Files.isDirectory(classesDir))
                 .as("Expected compiled classes at %s. Run 'mvn -DskipTests compile' first.",
@@ -292,6 +292,14 @@ class TurCacheAnnotationConventionsTest {
         assertThat(cacheableMembers)
                 .as("the walk found no @Cacheable method at all — the check would pass vacuously")
                 .isNotEmpty();
+
+        // The allowlist used to double as evidence that the detector still detects.
+        // T953 emptied it, so the evidence is explicit: an entity nested exactly as
+        // the snapshot's were — inside an Optional, inside a record component — is
+        // still found. Without this, blinding the walk would pass in silence.
+        assertThat(entitiesReachableFrom(positiveControlType()))
+                .as("the entity walk must still find an entity nested in a record")
+                .contains("TurSNSite");
 
         Set<String> unfiltered = new TreeSet<>();
         for (String member : cacheableMembers) {
@@ -334,20 +342,7 @@ class TurCacheAnnotationConventionsTest {
      * claiming the lazy-proxy failure mode is acceptable on that path, which Block
      * AC says it is not.
      */
-    private static final Map<String, String> KNOWN_ENTITY_CACHES = Map.of(
-            "TurSNSiteSearchSnapshotService#getSnapshot",
-            "T898 / §LXXI.1 — down from six entity kinds to one. Five components are "
-                    + "records now (CustomFacetView, CustomSortView, FacetLabelView, "
-                    + "LocaleView, FieldExtView), the last of them copying every scalar "
-                    + "because its consumers hand it on rather than read it, with a "
-                    + "reflective round-trip test standing in for the fields nobody would "
-                    + "notice going missing. What is left is TurSNSite itself: populateMetrics "
-                    + "uses it as a JPA FK on a write, and the search path reads it for hybrid "
-                    + "ranking, facets, spotlights and the query context. T952 already stopped "
-                    + "the genai/ann escape — getSNSite loads now — so the remaining reads are "
-                    + "the search path's own, and converting them is a signature change "
-                    + "across ten hot-path collaborators rather than a sixth projection "
-                    + "(T953 / §LXXI.7)");
+    private static final Map<String, String> KNOWN_ENTITY_CACHES = Map.of();
 
     /** How deep to follow a cached value's shape before giving up. */
     private static final int MAX_DEPTH = 4;
@@ -399,6 +394,28 @@ class TurCacheAnnotationConventionsTest {
             // A class we cannot load here cannot be inspected; the metadata-level
             // checks above still cover its annotations.
         }
+    }
+
+    /** The shape the snapshot had: an entity behind a record behind an Optional. */
+    record EntityBearingProbe(String label,
+            java.util.List<com.viglet.turing.persistence.model.sn.TurSNSite> sites) {
+    }
+
+    private static java.lang.reflect.Type positiveControlType() throws NoSuchMethodException {
+        return TurCacheAnnotationConventionsTest.class
+                .getDeclaredMethod("probe").getGenericReturnType();
+    }
+
+    @SuppressWarnings("unused")
+    private static java.util.Optional<EntityBearingProbe> probe() {
+        return java.util.Optional.empty();
+    }
+
+    /** Every entity a type can reach — the walk, exposed so it can be proved. */
+    static Set<String> entitiesReachableFrom(java.lang.reflect.Type type) {
+        Set<String> entities = new TreeSet<>();
+        walk(type, 0, new java.util.HashSet<>(), entities);
+        return entities;
     }
 
     /** Follows a generic type into its arguments and, for records, its components. */

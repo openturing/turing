@@ -30,6 +30,10 @@ import org.mockito.quality.Strictness;
 
 import com.viglet.turing.observability.TurSearchPipelineObservation;
 import com.viglet.turing.persistence.model.sn.TurSNSite;
+import com.viglet.turing.persistence.model.sn.genai.TurSNRankingMode;
+import com.viglet.turing.persistence.model.sn.genai.TurSNKnowledgeBaseMode;
+import com.viglet.turing.persistence.model.sn.genai.TurSNSiteGenAi;
+import com.viglet.turing.persistence.model.se.TurSEInstance;
 import com.viglet.turing.persistence.model.sn.field.TurSNSiteCustomFacet;
 import com.viglet.turing.persistence.model.sn.field.TurSNSiteFieldExt;
 import com.viglet.turing.persistence.model.sn.field.TurSNSiteFieldExtFacet;
@@ -372,6 +376,87 @@ class TurSNSiteSearchSnapshotServiceTest {
             assertThat(view.name()).isEqualTo("category");
             assertThat(view.enabled()).isEqualTo(1);
         });
+    }
+
+    // ---- the site copy (T953) ----------------------------------------------
+
+    /**
+     * T953 / §LXXI.7 — the same proof {@code FieldExtView} gets, for the bigger
+     * copy. Every declared scalar is populated, projected into
+     * {@code TurSNSiteSearchSiteView} and rebuilt, then compared. A column added
+     * to {@code TurSNSite} without being carried fails here rather than becoming
+     * a null on the hottest read in the product.
+     */
+    @Test
+    void everySiteScalarSurvivesTheProjectionAndTheRebuild() throws Exception {
+        TurSNSite original = new TurSNSite();
+        List<java.lang.reflect.Field> scalars = new java.util.ArrayList<>();
+        java.util.Map<Class<?>, Integer> seenPerType = new java.util.HashMap<>();
+        for (java.lang.reflect.Field declared : TurSNSite.class.getDeclaredFields()) {
+            if (java.lang.reflect.Modifier.isStatic(declared.getModifiers())
+                    || java.util.Collection.class.isAssignableFrom(declared.getType())
+                    || declared.getType() == TurSEInstance.class
+                    || declared.getType() == TurSNSiteGenAi.class) {
+                continue; // the two associations are asserted separately below
+            }
+            declared.setAccessible(true);
+            int nth = seenPerType.merge(declared.getType(), 1, Integer::sum) - 1;
+            declared.set(original, sampleFor(declared.getType(), declared.getName(), nth));
+            scalars.add(declared);
+        }
+        assertThat(scalars).as("the site must still have scalars to copy").hasSize(32);
+
+        TurSNSite rebuilt = TurSNSiteSearchSiteView.from(original, "solr").toEntity();
+
+        for (java.lang.reflect.Field declared : scalars) {
+            assertThat(declared.get(rebuilt))
+                    .as("'%s' was lost between the site, the view and the rebuild",
+                            declared.getName())
+                    .isEqualTo(declared.get(original));
+        }
+    }
+
+    @Test
+    void theRebuiltSiteCarriesWhatTheRankingServiceReads() {
+        TurSNSite original = site();
+        TurSNSiteGenAi genAi = new TurSNSiteGenAi();
+        genAi.setId("genai-1");
+        genAi.setKnowledgeBaseMode(TurSNKnowledgeBaseMode.VECTOR);
+        genAi.setEmbeddingModelId("emb-1");
+        genAi.setSnRankingMode(TurSNRankingMode.HYBRID_RRF);
+        original.setTurSNSiteGenAi(genAi);
+
+        TurSNSite rebuilt = TurSNSiteSearchSiteView.from(original, "solr").toEntity();
+
+        // TurSNHybridRankingService reads exactly these three off the site.
+        assertThat(rebuilt.getTurSNSiteGenAi()).isNotNull();
+        assertThat(rebuilt.getTurSNSiteGenAi().getKnowledgeBaseMode())
+                .isEqualTo(TurSNKnowledgeBaseMode.VECTOR);
+        assertThat(rebuilt.getTurSNSiteGenAi().getEmbeddingModelId()).isEqualTo("emb-1");
+        assertThat(rebuilt.getTurSNSiteGenAi().getSnRankingMode())
+                .isEqualTo(TurSNRankingMode.HYBRID_RRF);
+    }
+
+    @Test
+    void theRebuiltSiteAnswersThePluginLookupIdentically() {
+        // getPluginForSite resolves vendor.plugin, falling back to vendor.id. The
+        // snapshot already resolved both into pluginType, so the rebuilt vendor
+        // must answer with it or every search silently falls back to Solr.
+        TurSNSite rebuilt = TurSNSiteSearchSiteView.from(site(), "lucene").toEntity();
+
+        assertThat(rebuilt.getTurSEInstance()).isNotNull();
+        assertThat(rebuilt.getTurSEInstance().getTurSEVendor().getPlugin()).isEqualTo("lucene");
+    }
+
+    @Test
+    void theRebuiltSiteHasEmptyCollectionsRatherThanProxies() {
+        // The reason this cannot regress anything: on the cached entity these were
+        // uninitialised proxies that threw (TurPersonaSnDocResolver documents it).
+        TurSNSite rebuilt = TurSNSiteSearchSiteView.from(site(), "solr").toEntity();
+
+        assertThat(rebuilt.getTurSNSiteLocales()).isEmpty();
+        assertThat(rebuilt.getTurSNSiteFieldExts()).isEmpty();
+        assertThat(rebuilt.getTurSNSiteSpotlights()).isEmpty();
     }
 
     // ---- the invariant the projection exists for ---------------------------

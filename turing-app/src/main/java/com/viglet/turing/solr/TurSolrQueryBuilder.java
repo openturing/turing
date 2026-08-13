@@ -693,10 +693,11 @@ public class TurSolrQueryBuilder {
     }
 
     private List<TurSNSiteFieldExt> getEnabledFacetsFromSnapshot(TurSNSiteSearchSnapshot snap) {
+        TurSNSite site = snap.site();
         return snap.enabledFields().stream()
                 .filter(field -> field.facet() == 1
                         || snap.fieldIdsWithCustomFacets().contains(field.id()))
-                .map(field -> TurSNSiteSearchSnapshotService.toEntity(field, snap.site()))
+                .map(field -> TurSNSiteSearchSnapshotService.toEntity(field, site))
                 .toList();
     }
 
@@ -796,9 +797,12 @@ public class TurSolrQueryBuilder {
      */
     private List<TurSNSiteFieldExt> getEnabledFields(TurSNSite turSNSite) {
         return snapshotForSite(turSNSite)
-                .map(snap -> snap.enabledFields().stream()
-                        .map(field -> TurSNSiteSearchSnapshotService.toEntity(field, snap.site()))
-                        .toList())
+                .map(snap -> {
+                    TurSNSite cachedSite = snap.site();
+                    return snap.enabledFields().stream()
+                            .map(field -> TurSNSiteSearchSnapshotService.toEntity(field, cachedSite))
+                            .toList();
+                })
                 .orElseGet(() -> turSNSiteFieldExtRepository
                         .findByTurSNSiteAndEnabled(turSNSite, 1));
     }
@@ -813,9 +817,12 @@ public class TurSolrQueryBuilder {
     private List<TurSNSiteFieldExt> getEnabledFacets(TurSNSite turSNSite) {
         Optional<TurSNSiteSearchSnapshot> snapOpt = snapshotForSite(turSNSite);
         List<TurSNSiteFieldExt> enabledFields = snapOpt
-                .map(snap -> snap.enabledFields().stream()
-                        .map(field -> TurSNSiteSearchSnapshotService.toEntity(field, snap.site()))
-                        .toList())
+                .map(snap -> {
+                    TurSNSite cachedSite = snap.site();
+                    return snap.enabledFields().stream()
+                            .map(field -> TurSNSiteSearchSnapshotService.toEntity(field, cachedSite))
+                            .toList();
+                })
                 .orElseGet(() -> turSNSiteFieldExtRepository
                         .findByTurSNSiteAndEnabled(turSNSite, 1));
         Set<String> fieldIdsWithCustomFacets = snapOpt
