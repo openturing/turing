@@ -8,7 +8,7 @@
 
 ## Block BV — The quality gate stops at the package boundary (§LXIX)
 
-- ⏳ **T902** (deps: roadkeep RK377) **Two governed prose files declare the same 13 section anchors** — both halves of the fix exist upstream but not in the 0.1.285 plugin this repo runs, whose config parser would reject the key the fix declares. → §LXIX.8
+- ⏳ **T902** (deps: roadkeep RK377) **Two governed prose files declare the same 13 section anchors** — Both upstream halves shipped and the re-check passes; what blocks it is local, the 0.1.285 plugin whose config parser rejects the refs key its own CLI would write. → §LXIX.8
 
 ## Non-goals (do NOT add as tasks)
 

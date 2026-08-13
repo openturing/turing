@@ -2072,23 +2072,24 @@ and 13 anchors collide: §VIII, §IX, §IX.1–§IX.4, §X, §X.1, §X.5, §XII,
 §XVI. An anchor names one section, so a pointer to any of them resolves to two — and
 every verb that reads one refuses rather than guessing.
 
-**Blocked on a roadkeep release, not on a roadkeep gap.** Both halves now exist
-upstream: `[refs] <role> = "<prefix>"` gives a prose file its own namespace
-(RK378, shipped), and `section move` re-addresses a section, its subtree and every
-pointer at it (RK377, in progress). Neither is in **0.1.285**, the plugin this
-repository runs — its hook denies the hand edit, its CLI writes the files, and its
-config parser would reject a `[refs]` key it does not know.
+**Blocked on a plugin update, and on nothing else.** The re-check this section asked for
+has been run, and both halves are upstream and done:
 
-So the sequencing is fixed and the work is small when it comes: update the plugin past a
-release carrying both, declare `refs.strategy`, then `section move` over the 13 anchors,
-which takes their subtrees and pointers with them.
+- `[refs] <role> = "<prefix>"` gives a prose file its own namespace. Credited here to
+  RK378, which was in fact **retired as a duplicate** — RK340 had shipped it a day
+  before that line was filed.
+- `section move` re-addresses a section, its subtree and every pointer at it. Recorded
+  here as in progress; **RK377 shipped**, and `roadkeep section --help` now lists
+  `move`.
 
-Doing any of it against 0.1.285 breaks every other roadkeep call in the repo, which is
-worse than the collision — nothing currently points at a doubled anchor, so the defect
-is latent rather than costing anyone a refusal today.
+What remains is local: the plugin wired to this repository is still **0.1.285**, whose
+config parser rejects a `[refs]` key it does not know, and whose hook and CI gate are
+the copies that judge every write here. `/plugin update` is the whole blocker.
 
-Re-check on the next plugin update: `roadkeep --version`, then `roadkeep section
---help` for `move`.
+Then the work is small: declare `refs.strategy`, and `section move` over the 13 anchors,
+which takes their subtrees and pointers with them. Doing any of it against 0.1.285
+breaks every other roadkeep call in the repo — and nothing points at a doubled anchor
+today, so the defect stays latent rather than costing a refusal.
 
 ## LXX. What the link-free response and its consumers still lack (Block BW)
 
