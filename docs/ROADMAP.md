@@ -18,7 +18,6 @@
 
 ## Block AN — Security hardening (post-audit, §XXXVII)
 
-- 📋 **T893** (deps: —) **The public search page is not in the Keycloak branch's anonymous list** — `/sn/**` is permitted only under local auth, so a Keycloak deployment sends a visitor to SSO login for a page whose every API is already public. → §XXXVII.17
 - 📋 **T894** (deps: —) **The permitAll list is written twice and nothing holds the copies equal** — forty matchers are spelled once per auth branch by hand, which is what produced both the missing answer endpoint and the missing search page. → §XXXVII.18
 
 ## Block AC — JPA caching strategy: decouple cache from entities

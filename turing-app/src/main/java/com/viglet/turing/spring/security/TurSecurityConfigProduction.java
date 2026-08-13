@@ -273,6 +273,16 @@ public class TurSecurityConfigProduction {
                                                 // (the opaque token is the capability). The plural
                                                 // /api/genai/approvals admin list stays authenticated.
                                                 mvc.matcher("/api/genai/approval/*"),
+                                                // T893 / §XXXVII.17 — the public faceted search page. It is
+                                                // served by TurSNSearchController (@RequestMapping("/sn")), a
+                                                // real controller and not a static resource, so it goes
+                                                // through this chain; without this line anyRequest()
+                                                // .authenticated() sent an anonymous visitor to SSO login for
+                                                // a page whose every API — /api/sn/*/search, /ac, /click — is
+                                                // already permitted right above. The site's own SPA assets are
+                                                // served by the same controller under /sn/{site}/assets/**, so
+                                                // the /assets/** entry does not reach them either.
+                                                mvc.matcher("/sn/**"),
                                                 mvc.matcher("/ann/**"),
                                                 mvc.matcher("/pages/**"),
                                                 // T245 — MCP server endpoint (loopback-gated, see CSRF note above).

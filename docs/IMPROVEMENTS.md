@@ -2190,15 +2190,27 @@ widening anything else.
 ### XXXVII.18 One permitAll list, written twice, drifts
 
 Roughly forty matchers are spelled twice, once per auth branch, with no mechanism
-holding the copies equal. That duplication is not a style problem: it is the direct
-cause of §XXXVII.17 (a path in one copy only) and of T889 (a shipped endpoint in
-neither), and T889's guard test had to assert a count of two precisely because the list
-is doubled. Extract the anonymous surface to one `private static final String[]` — or a
-small builder both branches call — so a new public endpoint is added in one place and
-cannot be half-added. The two branches genuinely differ in their login and logout
-wiring, so this is about the shared matcher list only, not about merging the branches.
-The T889 source-level guard should then assert the shared constant rather than counting
-occurrences, which is a weaker check that a refactor would silently satisfy.
+holding the copies equal. That duplication is the direct cause of §XXXVII.17 (a path in
+one copy only) and of T889 (a shipped endpoint in neither), and T889's guard had to
+assert a count of two precisely because the list is doubled.
+
+Measured while shipping T893: the Keycloak branch is a strict **subset** of the local
+one — 35 matchers against 47. The twelve it lacks are `/`, `/index.html`, `/welcome/**`,
+`/fonts/**`, `/login/**`, `/setup/**`, `/admin/**`, `/bento/**`, `/console/**`, `/sn/**`
+(T893's fix), `/api/v2/guest/**` and `/api/v2/user/register`.
+
+**That number is the trap: only some of the twelve are accidental.** The operator
+surfaces — `/admin/**`, `/bento/**`, `/console/**`, `/setup/**` — are local-only *on
+purpose*, because under Keycloak they must go through SSO. So one shared constant both
+branches use, as first written here, is the wrong shape: it would sweep the console into
+the anonymous set and turn a duplication bug into an authorization one. The right shape
+is a shared constant for the genuinely **public** surface plus an explicitly named
+local-auth-only addition, so the difference is declared once and on purpose.
+
+The branches also differ in login/logout wiring, so this is about the matcher lists
+alone. The T889 and T893 guards should then assert the shared constant instead of
+counting occurrences — while keeping T893's check that the SSO branch never permits
+*more* than the local one.
 
 ## LXXI The no-entity-caching rule is enforced only where it was first broken (Block AC)
 
