@@ -2053,49 +2053,6 @@ leaves vectorless sites without a tile. The block adds **no backend**.
 > also the reason they have survived: the feature is opt-in and nobody who opted
 > in has reported it.
 
-## LXIX. The quality gate stops at the package boundary (Block BV)
-
-> Block BS fixed the gate for one package. Adopting the same two changes across
-> the workspace — declare the runner, then *confirm CI runs it* — turned up the
-> same shape five more times, in packages nobody had checked because
-> `@viglet/turing-sdk` was the one that happened to be under the microscope. The
-> pattern is consistent and worth naming: **every gate here was written per
-> package, so a package added later inherits nothing.** `validate-js.yml`'s
-> matrix is a hand-maintained list; `prepublishOnly` is per package; the publish
-> workflows were copied from each other and then diverged. Nothing enumerates the
-> workspace and asserts each publishable package is covered.
-
-### LXIX.30 The seven citations T902 could not repoint (T955)
-
-T902 gave `STRATEGY.md` its own namespace, so its headings are addressed `S:VIII` and
-the 26 doubled anchors went to zero. The file's own prose still cites the bare outline
-it was written against, and a bare `§XI` inside a namespaced file resolves against the
-global index rather than the file's own space — so declaring the namespace turned 15
-intra-file citations into dangling ones.
-
-Eight were repointed to `§S:…` through `section amend`, which is the only door the guard
-leaves. The other seven could not land, and not because of the citation: `amend`
-validates the whole body it is handed, and four of these sections already break limits
-that predate this work.
-
-    S:VIII.7   442 words (limit 250), and names seven spent ids
-                                                         — 3 citations stuck
-    S:XI.4     names one spent id                        — 2 citations stuck
-    S:XII.2    365 words                                 — 1 citation stuck
-    S:XVI      321 words                                 — 1 citation stuck
-
-(`lint` names the ids; repeating them here would spend them again, which is the same
-rule that refuses the sections.)
-
-So `ref.dangling` stands at 32: the 25 this project already had, plus these 7. The
-doubled anchors, which is what T902 was about, are gone and stay gone.
-
-What is left is a prose edit, not a tooling one. Shortening a positioning section by 192
-words decides which part of an argument survives, and renaming a shipped id inside a
-sentence decides what that sentence now claims — both are the author's, which is why
-they were not folded into the namespace change. Each is one `section amend` once the
-words are chosen, and the citation rides along in the same call.
-
 ## LXX. What the link-free response and its consumers still lack (Block BW)
 
 > Block BT migrated the three `turing-app` consumers off `store.data`. What it did

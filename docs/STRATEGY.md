@@ -155,9 +155,9 @@ Cutting saves ciclo. Hesitation costs forever-maintenance.
    non-engineer changes a prompt and a golden-set eval gate proves no
    regression before publish. The next live anchor is now Block M (#3).
 2. ✅/✖ **MCP pillar (Block I)** — the both-ways `/mcp` core **shipped**
-   (T245–T253 + T146 + the §VIII.4 Groovy→MCP exporter); the *remaining*
+   (T245–T253 + T146 + the §S:VIII.4 Groovy→MCP exporter); the *remaining*
    expansion (per-tenant SaaS endpoints + the federation directory) is
-   **cancelled** — see "Cancelled" below. The distribution bet is realized by
+   **cancelled** — see §S:VIII.9. The distribution bet is realized by
    the shipped surface; no further Block I build is scheduled.
 3. **Block M — Verifiable answers (T292–T293)** — provider-agnostic
    provenance UI over existing RAG hits. Cheap, visible, and the
@@ -168,32 +168,10 @@ Cutting saves ciclo. Hesitation costs forever-maintenance.
    any bank/hospital conversation; also seeds Agent CI's anonymized
    golden sets.
 
-**Cancelled (courage to deprecate, applied to our own roadmap):**
-- **Embedded LLM / Jlama (former Block G, T193–T218, then the T193 spike)
-  — cancelled, not on the roadmap.** Upstream is stagnant (last release
-  2025-01-01) and **Ollama-as-sidecar** already delivers the air-gapped +
-  tool-calling story in the same docker-compose with far less risk, so the
-  zero-egress deployment need is already met. Revisit only if a *named*
-  customer requires a pure-Java in-process engine that Ollama cannot serve.
-  Jlama design detail remains in `git log` (former §XI).
-- **Block I remaining (T254 per-tenant SaaS MCP endpoints + T192 inter-tenant
-  federation directory) — cancelled.** The MCP-server *core* shipped (Turing's
-  both-ways `/mcp`, T245–T253 + T146); the per-tenant SaaS endpoint scaling and
-  the `directory.turing.io` federation network-effect bet are dropped — no named
-  customer is asking, and the shipped surface already covers the integration
-  story. Reopen only on a concrete multi-tenant SaaS demand. Design in `git log`
-  (former §XIII).
-- **Block P remaining (T362 license posture, T363 private Eval-engine carve-out,
-  T364 point GEO at `turing-ce`) — cancelled.** The publish *mechanics* shipped
-  (T356–T361); the open remainder were "decide later" strategy calls — settle by
-  default: **stay Apache 2.0**, keep the Eval engine in-tree, no further open-core
-  surgery until Turing Cloud is real revenue AND a competitor hosts the CE. Design
-  in `git log` (former §XIX).
-
-**Defer**: T80–T82 (Code Interpreter sandbox) shipped. Most remaining
-Block D/F items wait on a customer to ask for them twice before
-scheduling. Note F.6/F.13 (vendor citations & Usage-API cost) are now
-the *enrichment* layer beneath Blocks M and L, not standalone priorities.
+**Defer**: T80–T82 (Code Interpreter sandbox) shipped. Most remaining Block D/F items
+wait on a customer to ask for them twice before scheduling. Note F.6/F.13 (vendor
+citations & Usage-API cost) are now the *enrichment* layer beneath Blocks M and L, not
+standalone priorities.
 
 ### VIII.8 The pergunta hard
 
@@ -212,6 +190,27 @@ Difference is not features. It is **focus, clarity, and the courage to
 deprecate what does not pay**.
 
 ---
+
+### VIII.9 Cancelled — courage to deprecate, applied to our own roadmap
+
+- **Embedded LLM / Jlama (former Block G, and the spike that followed it)
+  — cancelled, not on the roadmap.** Upstream is stagnant (last release
+  2025-01-01) and **Ollama-as-sidecar** already delivers the air-gapped +
+  tool-calling story in the same docker-compose with far less risk, so the
+  zero-egress deployment need is already met. Revisit only if a *named*
+  customer requires a pure-Java in-process engine that Ollama cannot serve.
+  Jlama design detail remains in `git log`, under the outline number XI then held.
+- **Block I remaining (per-tenant SaaS MCP endpoints + the inter-tenant
+  federation directory) — cancelled.** The MCP-server *core* shipped (Turing's
+  both-ways `/mcp`, T245–T253 + T146); the per-tenant SaaS endpoint scaling and
+  the `directory.turing.io` federation network-effect bet are dropped — no named
+  customer is asking, and the shipped surface already covers the integration
+  story. Reopen only on a concrete multi-tenant SaaS demand. Design in `git log`, under the outline number XIII then held.
+- **Block P remaining (license posture, the private Eval-engine carve-out and
+  pointing GEO at `turing-ce`) — cancelled.** The publish *mechanics* shipped
+  (T356–T361); the open remainder were "decide later" strategy calls — settle by
+  default: **stay Apache 2.0**, keep the Eval engine in-tree, no further open-core
+  surgery until Turing Cloud is real revenue AND a competitor hosts the CE. Design in `git log`, under the outline number XIX then held.
 
 ## IX. Short-term monetization playbook (the "almost no users" reality)
 
@@ -243,14 +242,14 @@ both are sold **bundled with Turing**, not standalone.
 
 1. **Services first (week 1, zero new code).** Sell installation, support
    contracts, and custom connectors to the founder's existing network and the
-   "Education" anchor account (§VIII proved the product there). This is the only
+   "Education" anchor account (§S:VIII proved the product there). This is the only
    path that pays in <90 days with no user base.
 2. **Dual license (week 1–2, zero new code).** Offer the commercial license to
    any org that wants warranty/indemnity/closed-embedding. One email thread,
    one signed agreement — high margin, no engineering.
 3. **Sponsorship (live).** Passive, low yield until users exist; keep it on.
 4. **Open-core add-on (quarter, real build).** Deferred — see IX.3. Do **not**
-   build before §IX.2 produces a *paying* customer who asks for it twice
+   build before §S:IX.2 produces a *paying* customer who asks for it twice
    (the binding non-goal from CLAUDE.md §I).
 
 ### IX.3 The open-core pick — when it's time
@@ -275,25 +274,24 @@ requirement, not on hope.
 
 ### IX.4 Non-negotiable: distribution before pricing pages pay
 
-The single highest-leverage *short-term* move is not in this repo — it's
-**visibility**: one public case study from the Education account, a Show HN /
-Spring community post, and direct outreach. Without that, §IX.1's storefront
-sits in the dark. Treat the storefront as "done and waiting", and spend the
-actual short-term effort on getting the first ten serious evaluators in front
-of it.
+The single highest-leverage *short-term* move is not in this repo — it's **visibility**:
+one public case study from the Education account, a Show HN / Spring community post, and
+direct outreach. Without that, §S:IX.1's storefront sits in the dark. Treat the
+storefront as "done and waiting", and spend the actual short-term effort on getting the
+first ten serious evaluators in front of it.
 
 ---
 
 ## X. Discoverability & GEO (Generative Engine Optimization)
 
-> Added 2026-06-14. The concrete execution of §IX.4 ("distribution before
+> Added 2026-06-14. The concrete execution of §S:IX.4 ("distribution before
 > pricing pages pay") for the channel that now matters as much as Google:
 > **LLM assistants** (ChatGPT, Claude, Gemini, Copilot) answering "what's the
 > best search for Adobe AEM / WordPress?". Block O shipped its foundation and its
 > remaining posts were retired to the channel that writes them — see
 > [CHANGELOG.md](CHANGELOG.md) Block O. The plan below is the standing strategy;
 > execution lives in the sibling repos (`openviglet.github.io`,
-> `vigletdocs.github.io`), because §IX.4 already operates cross-repo.
+> `vigletdocs.github.io`), because §S:IX.4 already operates cross-repo.
 
 ### X.1 The thesis — why an LLM doesn't suggest Turing today
 
@@ -376,30 +374,28 @@ to surface in answers; off-domain mentions (X.1 #1) and live-retrieval surfaces
 > Added 2026-07-20. Positioning for **Block BC** (ROADMAP / IMPROVEMENTS §LI).
 > The endpoint is **planned, not yet live** — this is the strategy behind it.
 
-A **vendor-neutral, kind-aware model catalog** published as an open JSON endpoint
-at `turing.viglet.org` is a cheap, durable discoverability lever that no one in
-the market owns cleanly. LiteLLM's `model_prices_and_context_window.json` is the
-nearest thing and it is pricing-first and buried in a repo; there is no canonical,
-browsable "what kind of model is this id, and what are its context window /
-embedding dimensions / capabilities" reference.
+A **vendor-neutral, kind-aware model catalog** published as an open JSON endpoint at
+`turing.viglet.org` is a cheap, durable discoverability lever that no one in the market
+owns cleanly. LiteLLM's `model_prices_and_context_window.json` is the nearest thing:
+pricing-first and buried in a repo; there is no canonical, browsable "what kind of model
+is this id, and what are its context window / embedding dimensions / capabilities"
+reference.
 
-**Why it compounds the GEO thesis (§X.1).** A citable, linkable reference page +
-a machine-readable endpoint is exactly the kind of off-domain-friendly,
-live-retrievable artifact that assistants surface *fast* (it doesn't wait on a
-training cutoff). Every tool that fetches the endpoint, and every doc/post that
-cites "per the Turing model catalog", builds the association we're trying to
-manufacture — and it does so while being genuinely useful, not SEO filler. It
-also removes a product wart (the catalog no longer has to ship inside the jar to
-be current) and gives Turing a reason to appear in `awesome-*` lists and
-integration docs on its own merit.
+**Why it compounds the GEO thesis (§S:X.1).** A citable, linkable reference page + a
+machine-readable endpoint is exactly the kind of off-domain-friendly, live-retrievable
+artifact that assistants surface *fast* (it doesn't wait on a training cutoff). Every
+tool that fetches the endpoint, and every doc/post that cites "per the Turing model
+catalog", builds the association we're trying to manufacture — and it does so while
+being genuinely useful, not SEO filler. It also removes a product wart (the catalog no
+longer has to ship inside the jar to be current) and gives Turing a reason to appear in
+`awesome-*` lists and integration docs on its own merit.
 
 **Guardrails.** First cut is **identity + kind + capability**, deliberately *not*
-pricing — LiteLLM owns pricing and it is a maintenance treadmill; we can link out
-to prices later. The catalog must stay honestly curated (wrong `kind`/dimension
-data would poison the very trust that makes it a reference), versioned so external
-consumers can pin a schema, and CORS-open so it is trivially usable. It is a
-distribution/authority asset, **not** a monetised API — keep it free and
-unauthenticated.
+pricing — LiteLLM owns pricing and it is a maintenance treadmill; we can link out to
+prices later. The catalog must stay honestly curated (wrong `kind`/dimension data would
+poison the very trust that makes it a reference), versioned so external consumers can
+pin a schema, and CORS-open so it is trivially usable. It is a distribution/authority
+asset, **not** a monetised API — keep it free and unauthenticated.
 
 ---
 
@@ -407,24 +403,24 @@ unauthenticated.
 
 > Added 2026-06-15. The boundary + license posture for separating the public
 > community edition from confidential strategy. Implements the open-core model
-> §VIII/§IX assume but never specced mechanically. Publish mechanics **shipped**
+> §S:VIII/§S:IX assume but never specced mechanically. Publish mechanics **shipped**
 > (T356–T361) — see [CHANGELOG.md](CHANGELOG.md) → Block P; the remaining
-> open-core decisions are **cancelled** (§VIII.7) — default is stay Apache 2.0.
+> open-core decisions are **cancelled** (§S:VIII.7) — default is stay Apache 2.0.
 
 ### XI.1 The boundary principle — hide *thinking* and *revenue*, not *cleverness*
 
 The instinct to hide "clever" code (the LLM judge, the chat-flow engine, the skill
 sandbox) protects almost nothing: those are strong *implementations of known patterns*,
 reproducible by any competent engineer in days — or by asking an LLM. Hiding them only
-costs adoption, and adoption is the actual bottleneck (§IX.4). Decide what stays private
-by two tests, **never** by "is it hard to copy":
+costs adoption, and adoption is the actual bottleneck (§S:IX.4). Decide what stays
+private by two tests, **never** by "is it hard to copy":
 
 1. **Does it expose our thinking?** — `STRATEGY.md`, `IMPROVEMENTS.md`,
    `ROADMAP.md`, `docs/products/**`. ~2.300 lines of design rationale is a
    competitor's playbook and is *not* reproducible. This is the real moat —
    far more than any one feature's source.
 2. **Does a paying customer pay for it?** — the productized commercial add-on
-   (Agent Eval engine, §IX.3) and managed hosting (Turing Sandbox / Cloud,
+   (Agent Eval engine, §S:IX.3) and managed hosting (Turing Sandbox / Cloud,
    §S:VIII.1–2). Held back by *business model*, not by secrecy.
 
 Everything else — the entire runtime, the LLM-judge primitive, the SDKs, the connectors
@@ -437,13 +433,13 @@ community-edition funnel that the paid Agent Eval engine sells against.
 - **Commit history** — T-numbers and commit titles ("feat: T257 multi-tenancy
   enterprise…") leak the roadmap as loudly as ROADMAP.md. The public repo is a
   **squashed snapshot per release**, never a full-history mirror.
-- The one monetized add-on engine, *when built* (§IX.3) — deferred behind the
+- The one monetized add-on engine, *when built* (§S:IX.3) — deferred behind the
   binding "paying customer asks twice" non-goal; **not** a Phase-1 carve-out.
 
 ### XI.3 Phasing — don't fragment the code prematurely
 
-With near-zero users (§IX), splitting the platform into CE/EE Maven modules now
-is premature surgery. Two phases:
+With near-zero users (§S:IX), splitting the platform into CE/EE Maven modules now is
+premature surgery. Two phases:
 
 - **Phase 1 (now):** publish *everything* except docs + history. Pure mechanics
   — a one-way denylist publish (Block P). Maximizes the funnel and feeds Block O
@@ -461,22 +457,21 @@ is premature surgery. Two phases:
   threat.
 - The threat a restrictive license defends against — a hyperscaler hosting
   Turing against your own Cloud — **does not exist at near-zero users**.
-  Permissive Apache 2.0 on the CE maximizes the funnel, which §IX.4 names as
+  Permissive Apache 2.0 on the CE maximizes the funnel, which §S:IX.4 names as
   *the* bottleneck.
 - Protection today already comes from **dual licensing**
   ([COMMERCIAL-LICENSE.md](../COMMERCIAL-LICENSE.md)) **+ what you don't
-  publish** (§XI.2), not from license terms.
+  publish** (§S:XI.2), not from license terms.
 
-**But preserve the *option*.** Single-owner copyright means Viglet can
-relicense unilaterally later. To keep that right as external contributions
-arrive on the public repo, adopt a **DCO sign-off (or lightweight CLA) before
-accepting the first external PR** (T361) — otherwise contributed code dilutes
-the right to relicense. The conditional future move, **if** Turing Cloud
-(§VIII.2) becomes real revenue **and** a competitor hosts the CE against you:
-evaluate the **FSL (Functional Source License)** — converts to Apache 2.0 after
-2 years, blocks only competing/hosted use — applied **only** to the affected
-parts, in preference to BSL/SSPL. Decision deferred to T362; not actioned until
-both conditions hold.
+**But preserve the *option*.** Single-owner copyright means Viglet can relicense
+unilaterally later. To keep that right as external contributions arrive on the public
+repo, adopt a **DCO sign-off (or lightweight CLA) before accepting the first external
+PR** (T361) — otherwise contributed code dilutes the right to relicense. The conditional
+future move, **if** Turing Cloud (§S:VIII.2) becomes real revenue **and** a competitor
+hosts the CE against you: evaluate the **FSL (Functional Source License)** — converts to
+Apache 2.0 after 2 years, blocks only competing/hosted use — applied **only** to the
+affected parts, in preference to BSL/SSPL. That call was settled by default — stay
+Apache 2.0 — and is not actioned until both conditions hold.
 
 ---
 
@@ -520,10 +515,16 @@ In scope (framework-level, reusable, stable patterns):
   delivery API) — present in all three (`TurAuthTokenHeaderFilter`,
   `ShApiTokenFilter`, `DumApiKeyFilter`).
 
-A dependency-and-utility audit across the three Spring Boot 4.0.6 codebases
-(2026-06-16) surfaced concrete duplication that the original scope list above
-missed — each present in **all three** products unless noted, so the *rule of
-three* is already satisfied:
+Out of scope (stays in each product): domain entities, the tenant-registry tables,
+product-specific business logic (search/Solr in Turing, CMS post-types in Shio,
+crawler/PF4J connectors in Dumont). **Packaging is multi-module + a BOM, never one fat
+kitchen-sink jar** — apps depend only on the concern they need.
+
+#### XII.2.1 The dependency audit — duplication the scope list missed
+
+A dependency-and-utility audit across the three Spring Boot 4.0.6 codebases (2026-06-16)
+surfaced concrete duplication that the original scope list above missed — each present
+in **all three** products unless noted, so the *rule of three* is already satisfied:
 
 - **Content/document extraction** — Apache Tika (`tika-core` + the pdf / text /
   ocr / microsoft parser modules, all pinned to 3.3.1) + jsoup HTML→text + image
@@ -542,17 +543,12 @@ three* is already satisfied:
   tracing interceptor + API-key header (`TurHttpClientConfiguration`/`DumRestClientConfig`).
 - **Observability** — Micrometer/Prometheus/OTel meter naming + registration.
 
-The audit also found the three poms pin **identical versions** for the shared
-libraries (Tika 3.3.1, jsoup 1.22.2, Guava 33.6.0-jre, commons-lang3 3.20.0,
-commons-io 2.22.0, commons-compress 1.28.0, zip4j 2.11.6, org.json 20260522,
-jackson-datatype-hibernate7, jetbrains-annotations 26.1.0) — they are *already
-hand-synced* across all three, which both confirms the duplication and is
-precisely what the Phase-2 BOM (§XII.3) should pin.
-
-Out of scope (stays in each product): domain entities, the tenant-registry
-tables, product-specific business logic (search/Solr in Turing, CMS post-types
-in Shio, crawler/PF4J connectors in Dumont). **Packaging is multi-module + a
-BOM, never one fat kitchen-sink jar** — apps depend only on the concern they need.
+The audit also found the three poms pin **identical versions** for the shared libraries
+(Tika 3.3.1, jsoup 1.22.2, Guava 33.6.0-jre, commons-lang3 3.20.0, commons-io 2.22.0,
+commons-compress 1.28.0, zip4j 2.11.6, org.json 20260522, jackson-datatype-hibernate7,
+jetbrains-annotations 26.1.0) — they are *already hand-synced* across all three, which
+both confirms the duplication and is precisely what the Phase-2 BOM (§S:XII.3) should
+pin.
 
 ### XII.3 Phasing — incubate in Turing, promote when stable
 
@@ -596,7 +592,7 @@ duplication is cheaper than the wrong abstraction).
 > [ROADMAP.md](ROADMAP.md) Block R / T381–T393; design in
 > [IMPROVEMENTS.md](IMPROVEMENTS.md) §XX). The cursarei migration surfaced a capability
 > that is bigger than one customer: Turing can be **the self-hosted, declarative search
-> engine for public and enterprise catalogs**. This is the **Turing Search** SKU (§VIII.1)
+> engine for public and enterprise catalogs**. This is the **Turing Search** SKU (§S:VIII.1)
 > growing a sharper edge, not a new product.
 
 ### XIII.1 The thesis — a category Turing already half-owns
@@ -633,7 +629,7 @@ is the proof that the assembled stack collapses onto Turing.
   anchor case here.
 - **Enterprise product/knowledge catalogs** already self-hosting Solr/ES — Turing is the
   declarative layer (schema-as-code T386 + hybrid ranking T389) that retires their bespoke
-  search glue. Overlaps the §X GEO "open-source Algolia/Coveo alternative" narrative.
+  search glue. Overlaps the §S:X GEO "open-source Algolia/Coveo alternative" narrative.
 - **Dumont connector customers** — every structured connector now has a one-shot Turing
   target (manifest provisioning T382/T391), making "collect → index → search → chat" a
   single Viglet-stack story rather than four integrations.
@@ -644,12 +640,12 @@ Each Block-R task rides an existing seam (RRF, the Block-N reranker, the RAG sta
 default LLM, `TurSNJobAttributeSpec`), so the marginal build cost is low relative to the
 positioning gain — the bet is **packaging and sequencing**, not net-new platform. It
 also compounds the other bets: it sharpens the §S:VIII.1 *Turing Search* SKU, feeds the
-§X GEO "alternative to Algolia/Coveo" content with a real reference workload, and (via
-T393) exports the grounding/manifest discipline into `viglet-core` (§XII) so Shio and
+§S:X GEO "alternative to Algolia/Coveo" content with a real reference workload, and (via
+T393) exports the grounding/manifest discipline into `viglet-core` (§S:XII) so Shio and
 Dumont inherit it. **Sequencing caution:** this is a *positioning* sharpening of an
 existing SKU, not a reason to out-prioritize the convicted §S:VIII.7 anchors (MCP
 pillar, verifiable answers, cost governance) — pull Block R forward when a named catalog
-customer (cursarei, or a second aggregator) asks, consistent with the §IX "asks twice"
+customer (cursarei, or a second aggregator) asks, consistent with the §S:IX "asks twice"
 discipline.
 
 ---
@@ -695,7 +691,7 @@ hero now **leads with the platform** and keeps the analogy as a support sub-line
 > *(plus an explicit who-it's-for line: engineering teams who need production
 > search and RAG without shipping data to someone else's cloud.)*
 
-This still ladders up to the §S:VIII.1 *Turing Search* SKU and the §X GEO "alternative
+This still ladders up to the §S:VIII.1 *Turing Search* SKU and the §S:X GEO "alternative
 to Algolia/Coveo" line (now a sub-line + SEO phrase, not the headline). The platform
 breadth stays structured as four outcomes: **Search it → Ask it → Automate it → Run
 it.**
@@ -746,10 +742,9 @@ the founding anti-duplication rule). A careful, defensible **comparison table**
   hosted "try it" path via Viglet Cloud; real social proof (adopters,
   testimonials, quantified case studies à la Dify); deep comparison/FAQ pages.
 
-**Sequencing caution (per §IX "asks twice"):** Phase 0 is cheap and compounds
-every other bet, so it ships now. Phases 1–2 trade real effort/infra — pull them
-forward as inbound interest or a named design-partner justifies, not
-speculatively.
+**Sequencing caution (per §S:IX "asks twice"):** Phase 0 is cheap and compounds every
+other bet, so it ships now. Phases 1–2 trade real effort/infra — pull them forward as
+inbound interest or a named design-partner justifies, not speculatively.
 
 ## XV. The answer-engine bet — steerable, auditable answers
 
@@ -825,19 +820,19 @@ stakes: without them Turing looks a generation behind, so they are worth buildin
 their own merit. Phases 3–4 are the bet and should be sequenced by which claim a real
 prospect actually presses on — steerability (T838) and auditability (T839) are the two
 that have carried the most weight in review conversations, and both are cheap because
-the underlying data already exists. Per §IX ("build when asked twice"), the speculative
-ones — structured answers (T841), permalinks (T844) — stay 💭 until a named deployment
-asks.
+the underlying data already exists. Per §S:IX ("build when asked twice"), the
+speculative ones — structured answers (T841), permalinks (T844) — stay 💭 until a named
+deployment asks.
 
 A distribution note: on public deployments the answer surface is also a **GEO asset**
-(Block O, §X) — a citable, permalinked, indexable answer page is exactly the artifact
+(Block O, §S:X) — a citable, permalinked, indexable answer page is exactly the artifact
 that gets a product surfaced by other assistants.
 
 ## XVI. Vendor model deprecations — the transcription case (July 2026)
 
-OpenAI's `gpt-transcribe` / `gpt-live-transcribe` release (Block BP, §LXIII) is a
-useful precedent for how Turing should treat a vendor superseding a model, because it
-moved **three** dials at once and only one of them is engineering:
+OpenAI's `gpt-transcribe` / `gpt-live-transcribe` release (Block BP, §LXIII) is a useful
+precedent for how Turing should treat a vendor superseding a model, because it moved
+**three** dials at once and only one of them is engineering:
 
 1. **Unit cost falls.** Async transcription goes to **$0.0045/min** — below `whisper-1`
    ($0.006/min) — while roughly halving word error rate. Live transcription is
@@ -855,9 +850,11 @@ moved **three** dials at once and only one of them is engineering:
    confidence score T693's local→cloud fallback depends on disappears. The right answer
    is to model capability honestly per family (`confidence = null`) rather than
    synthesize a number — a degraded-but-truthful signal is worth more than a plausible
-   fabricated one, the same principle as the citation-drift badge in §XV.3.
+   fabricated one, the same principle as the citation-drift badge in §S:XV.3.
 
-**The reusable rule.** When a vendor supersedes a model: update the catalog first (price
+### XVI.1 The reusable rule when a vendor supersedes a model
+
+When a vendor supersedes a model: update the catalog first (price
 + status), let the shipped deprecation warnings surface it, move the *default* for the
 cloud strategy only, and never move a self-hosted default — an `OPENAI_COMPATIBLE`
 deployment runs whatever its own server serves, and a vendor announcement says nothing

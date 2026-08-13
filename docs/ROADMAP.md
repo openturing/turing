@@ -6,10 +6,6 @@
 > [STRATEGY.md](STRATEGY.md); the markers and limits are `roadkeep.toml`'s. Blocks are
 > reused, not minted — `roadkeep brief` picks the next task and states why.
 
-## Block BV — The quality gate stops at the package boundary (§LXIX)
-
-- 📋 **T955** (deps: —) **Seven strategy citations cannot be namespaced because amend refuses the sections that already break the prose limits** — Four sections hold 442, 365 and 321 words or name spent ids, and amend validates the whole body, so the citation edit cannot land until that prose debt is paid. → §LXIX.30
-
 ## Non-goals (do NOT add as tasks)
 
 Binding constraints — see [IMPROVEMENTS.md](IMPROVEMENTS.md) §I.6 (What NOT to
