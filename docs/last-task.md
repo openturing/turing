@@ -302,6 +302,7 @@ number" looked free but wasn't. Grepping three files (`ROADMAP.md`,
 
 ## Log (most recent first)
 
+- **T949 SHIPPED** (Block J §XIV.8.8 — the seed marker is written only when every ZIP lands; per-file markers stop a retry re-importing successes, because a re-import deletes and recreates the site) — 2026-08-13.
 - **T944 SHIPPED** (Block BV §LXIX.29 — README fence props checked against the components' own declared props, derived from source; the documented renderItem outlived its rename to itemComponent) — 2026-08-13.
 - **T952 SHIPPED** (Block AC §LXXI.2 — getSNSite loads instead of serving the cached site; measurement reversed the premise: the lazy walk past the fetch join was already happening at 8 sites) — 2026-08-13.
 - **T898d SHIPPED** (Block AC §LXXI.5 — allLocales projected into LocaleView; the two plugin call sites rebuild a transient TurSNSiteLocale carrying core + site; cached entity kinds 3 -> 2) — 2026-08-13.

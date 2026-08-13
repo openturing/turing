@@ -8,7 +8,6 @@
 
 ## Block J follow-ups — Cloud SaaS hardening (§XIV.8)
 
-- 📋 **T949** (deps: —) **A corrupt seed ZIP permanently disables seeding for that database** — The runner catches each ZIP's failure and writes the one-shot EXPORT_AUTO_IMPORT marker regardless, so a boot that imported nothing looks exactly like one that imported everything. → §XIV.8.8
 - 📋 **T950** (deps: —) **An import that created no site still reports one, named unknown** — importSNSiteFromExportFile returns the literal unknown for a site-less bundle, and the caller reads any non-null name as proof a site landed. → §XIV.8.9
 
 ## Block BV — The quality gate stops at the package boundary (§LXIX)
