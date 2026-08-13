@@ -23,6 +23,7 @@
 ## Block AC — JPA caching strategy: decouple cache from entities
 
 - ⏳ **T898** (deps: —) **The search snapshot caches six kinds of JPA entity, which T486 forbids** — T486's lint only walks repositories, so a service-level `@Cacheable` holding entities passes — and this one already paid for it once with a workaround for the exact failure. → §LXXI.1
+- 📋 **T952** (deps: —) **A cached detached site is handed to eleven files that walk its lazy graph** — getSNSite returns the snapshot's TurSNSite, and the only reason those walks work is one finder pre-fetching the exact two associations they happen to use today. → §LXXI.2
 
 ## Non-goals (do NOT add as tasks)
 

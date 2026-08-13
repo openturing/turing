@@ -302,6 +302,7 @@ number" looked free but wasn't. Grepping three files (`ROADMAP.md`,
 
 ## Log (most recent first)
 
+- **T952 CREATED** (📋, Block AC §LXXI.2 — measured: getSNSite hands the cached detached TurSNSite to 22 call sites in 11 files that dereference getTurSNSiteGenAi 24 times; only a two-association fetch-join keeps it working) — 2026-08-13.
 - **T898 PARTIAL** (⏳, Block AC §LXXI.1 — the lint half shipped: @Cacheable value types are checked everywhere, recursing into record components; the conversion half stays open) — 2026-08-13.
 - **T894 SHIPPED** (Block AN §XXXVII.18 — one declared anonymous surface + two declared branch-only lists, replacing the two hand-maintained permitAll copies) — 2026-08-13.
 - **T951 CREATED** (📋, Block AN §XXXVII.19 — measured: encoded traversal clears the firewall via the encoded-slash allowance and the SPA file server decodes+concatenates unchecked; only viglet-core resolveSafe stops it) — 2026-08-13.

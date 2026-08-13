@@ -2235,3 +2235,32 @@ to end. The next association added to any of the six repeats it.
 guard for the rule it enforces. Two things are wanted, and the second is the durable
 one: project the snapshot into a read-model of records, and widen the lint past the
 repository boundary so the policy is checked wherever caching happens.
+
+### LXXI.2 The cached site escapes through getSNSite (T952)
+
+Measured: `TurSNSearchProcess.getSNSite(siteName)` returns `snapshot.site()` — the
+**cached, detached** `TurSNSite` — to 22 call sites across 11 files, which between them
+dereference `getTurSNSiteGenAi()` 24 times and then walk on to `getTurAIAgent()` and
+past it (`TurSNSiteGenAiAPI` 10, `TurSNGenAi` 4, `TurGatewayModelRouter` 2, and one each
+in `TurCustomToolSearchHelper`, `TurPersonaGroundingService`, `TurSNAnswerService`,
+`TurAnswerSignalService`, `TurUserMemoryAPI`, `TurSNSitePersonaContentFitAPI`,
+`TurAnnSearchAPI`, `TurAnnSearchController`).
+
+None of that works by design. It works because `TurSNSiteRepository`'s
+`findByNameIgnoreCaseWithGenAi` carries `LEFT JOIN FETCH s.turSNSiteGenAi genAi` and
+`LEFT JOIN FETCH genAi.turAIAgent` — two associations chosen to match what these callers
+happen to read today. The next one added anywhere downstream throws
+`LazyInitializationException` on a cache hit, and the fix will be a third fetch-join.
+That is the treadmill Block AC exists to end, and §LXXI.1's comment already names one
+lap of it.
+
+This is the first of the three couplings that block converting the snapshot to a
+read-model (T898), and the only one large enough to be its own task: the other two —
+`populateMetrics` using the cached entity as a JPA FK on a write, and three finders
+taking snapshot entities as query parameters — are small enough to ride with the
+conversion.
+
+The shape of the fix is a GenAI read-model these callers take instead of the entity, so
+`getSNSite` stops being an entity escape hatch at all. What needs deciding first is
+whether the eleven files want one record or several, which is a question about what they
+actually read — the counts above are the input to that, not the answer.
