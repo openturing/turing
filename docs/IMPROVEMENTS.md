@@ -2152,3 +2152,28 @@ So finishing this is a **contract** change — `TurSNFacetDefinition`, which exp
 `TurSNSiteFieldExt`, `TurSNSiteFieldExtFacet` and `TurSNSiteCustomFacetItem` and is
 shared with the template and provisioning paths — not a fifth projection. Until someone
 takes that on, the lint names both remainders and the debt is counted, not invisible.
+
+### LXXI.7 The last cached entity is a signature problem (T953)
+
+Five of the snapshot's six components are records (T898b–T898e). The sixth is
+`TurSNSite` itself, and it does not yield to the same move: it is not read from the
+cache so much as **handed to collaborators typed on it**.
+
+Measured: ten of them. `TurSNHybridRankingService` alone takes it in `isEnabled`,
+`fuse`, `findNeighbors`, `findScoredNeighbors`, `indexDocument`, `deIndex` and
+`deIndexByType`; `TurSNDocumentResponse#buildFieldExtMap`,
+`TurSNQueryContextBuilder#build` and `TurSNFacetRenderer#facetIsEnabled` take it too.
+Two further couplings are not signatures at all: `populateMetrics` uses it as a JPA **FK
+on a write**, and `TurSNDocumentResponse` passes it to `findByTurSNSiteAndEnabled` as a
+query parameter.
+
+The hazard is live, not theoretical. `TurSNSite` declares **nine** `@OneToMany(LAZY)`
+collections and the snapshot query fetch-joins none of them — `TurPersonaSnDocResolver`
+already carries a comment saying that touching `site.getTurSNSiteLocales()` on the
+cached instance throws and rolls back the caller's transaction, which is why it reads
+the snapshot's locales instead.
+
+So the remaining work is a search-path signature change, and it should be taken as one
+deliberate piece rather than smuggled into a projection. Re-loading per request is the
+wrong exit: the snapshot exists (T487) precisely so a search does not touch the
+database.
