@@ -302,6 +302,7 @@ number" looked free but wasn't. Grepping three files (`ROADMAP.md`,
 
 ## Log (most recent first)
 
+- **T894 SHIPPED** (Block AN §XXXVII.18 — one declared anonymous surface + two declared branch-only lists, replacing the two hand-maintained permitAll copies) — 2026-08-13.
 - **T951 CREATED** (📋, Block AN §XXXVII.19 — measured: encoded traversal clears the firewall via the encoded-slash allowance and the SPA file server decodes+concatenates unchecked; only viglet-core resolveSafe stops it) — 2026-08-13.
 - **T893 SHIPPED** (Block AN §XXXVII.17 — the public search page is anonymous under Keycloak too, one matcher) — 2026-08-13.
 - **Block BN CLOSED, heading dropped** (§LXI — 7 changelog entries keep the heading; the roadmap heading is gone) — 2026-08-13.

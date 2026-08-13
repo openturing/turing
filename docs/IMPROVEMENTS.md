@@ -2175,43 +2175,6 @@ same class of finding. `TurSecurityConfigProduction` states its permitAll list *
 by hand. Every drift filed below is a path present in one copy and absent from the
 other, or absent from both because a shipped endpoint was never added.
 
-### XXXVII.17 The public search page is unreachable under Keycloak
-
-`mvc.matcher("/sn/**")` appears in only the local-auth branch. On a Keycloak deployment
-the flagship anonymous surface — the public faceted search page — therefore redirects a
-visitor to the SSO login, while `/ann/**` and `/pages/**` beside it are permitted in
-both branches. Every API the page calls (`/api/sn/*/search`, `/ac`, `/click`) is already
-anonymous in both, so the gap is the SPA route alone: the data is public and the page
-serving it is not. Confirm against a Keycloak-profile deployment before assuming a
-visitor hits the login — a reverse proxy or static-asset rule may mask it in the current
-hosting — and if it reproduces, add the one matcher to the Keycloak branch rather than
-widening anything else.
-
-### XXXVII.18 One permitAll list, written twice, drifts
-
-Roughly forty matchers are spelled twice, once per auth branch, with no mechanism
-holding the copies equal. That duplication is the direct cause of §XXXVII.17 (a path in
-one copy only) and of T889 (a shipped endpoint in neither), and T889's guard had to
-assert a count of two precisely because the list is doubled.
-
-Measured while shipping T893: the Keycloak branch is a strict **subset** of the local
-one — 35 matchers against 47. The twelve it lacks are `/`, `/index.html`, `/welcome/**`,
-`/fonts/**`, `/login/**`, `/setup/**`, `/admin/**`, `/bento/**`, `/console/**`, `/sn/**`
-(T893's fix), `/api/v2/guest/**` and `/api/v2/user/register`.
-
-**That number is the trap: only some of the twelve are accidental.** The operator
-surfaces — `/admin/**`, `/bento/**`, `/console/**`, `/setup/**` — are local-only *on
-purpose*, because under Keycloak they must go through SSO. So one shared constant both
-branches use, as first written here, is the wrong shape: it would sweep the console into
-the anonymous set and turn a duplication bug into an authorization one. The right shape
-is a shared constant for the genuinely **public** surface plus an explicitly named
-local-auth-only addition, so the difference is declared once and on purpose.
-
-The branches also differ in login/logout wiring, so this is about the matcher lists
-alone. The T889 and T893 guards should then assert the shared constant instead of
-counting occurrences — while keeping T893's check that the SSO branch never permits
-*more* than the local one.
-
 ### XXXVII.19 Encoded traversal reaches the storage key unchecked (T951)
 
 Measured, not suspected. A probe of `StrictHttpFirewall` configured exactly as

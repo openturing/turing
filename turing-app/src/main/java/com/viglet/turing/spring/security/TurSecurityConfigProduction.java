@@ -48,6 +48,10 @@ import org.springframework.security.web.csrf.CsrfTokenRequestAttributeHandler;
 import org.springframework.security.web.firewall.HttpFirewall;
 import org.springframework.security.web.firewall.StrictHttpFirewall;
 import org.springframework.security.web.servlet.util.matcher.PathPatternRequestMatcher;
+import org.springframework.security.web.util.matcher.RequestMatcher;
+
+import java.util.List;
+import java.util.stream.Stream;
 
 import com.viglet.core.security.VigletCsrfCookieFilter;
 import com.viglet.turing.properties.TurConfigProperties;
@@ -88,6 +92,148 @@ public class TurSecurityConfigProduction {
         private static final String BACK_CHANNEL_LOGOUT_PATH = "/logout/connect/back-channel/**";
         private static final String SETUP_PATH = "/api/setup";
         public static final String ERROR_PATH = "/error/**";
+
+        // ── T894 / §XXXVII.18 — the anonymous surface, declared ONCE ────────────
+        //
+        // These three lists replace two hand-maintained copies of the same ~50
+        // matchers, one per auth branch. Nothing held the copies equal, which is
+        // what shipped `/api/sn/*/answer` into neither of them (T889) and `/sn/**`
+        // into only one (T893). A new public endpoint is now added in one place and
+        // cannot be half-added.
+        //
+        // The branches genuinely differ, so the difference is DECLARED rather than
+        // left to emerge: PUBLIC_MATCHERS is what both permit, and the two
+        // ..._ONLY_MATCHERS lists each say why they are not shared. Merging all
+        // three into one list would sweep the admin console into the SSO branch —
+        // a duplication bug traded for an authorization one.
+
+        /**
+         * Permitted in <strong>both</strong> auth modes: the genuinely public
+         * surface. Anything added here is anonymous on every deployment, so an
+         * entry needs a reason to be public, not merely a reason to be convenient.
+         */
+        private static final List<String> PUBLIC_MATCHERS = List.of(
+                        ERROR_PATH,
+                        "/api/discovery",
+                        "/api/csrf",
+                        "/api/v2/ping",
+                        // Observability endpoints scraped by Prometheus and used by
+                        // health checks. Restrict at network/firewall level in prod.
+                        "/actuator/prometheus",
+                        "/actuator/health",
+                        "/actuator/health/**",
+                        // T640 / §XXXVII.2 — /api/system/chat-analytics/** is NO longer
+                        // permitAll: it exposed session enumeration + full chat
+                        // transcripts (end-user PII) anonymously. It now falls under
+                        // anyRequest().authenticated() and the controller adds
+                        // @Secured({ROLE_ADMIN, AI_AGENT_VIEW}). Grafana's Infinity
+                        // datasource must authenticate (basic/bearer).
+                        "/assets/**",
+                        "/favicon.ico",
+                        "/*.png",
+                        "/manifest.json",
+                        "/swagger-resources/**",
+                        "/browserconfig.xml",
+                        "/api/sn/names",
+                        "/api/sn/*/ac",
+                        // T712 / §XLV — POST /api/sn/*/ac/query, the POST-native
+                        // autocomplete variant. Same public, anonymous, read-only
+                        // surface as the GET above.
+                        "/api/sn/*/ac/**",
+                        "/api/sn/*/search",
+                        "/api/sn/*/search/**",
+                        "/api/sn/*/_search",
+                        "/api/sn/*/click",
+                        "/api/sn/*/query",
+                        "/api/sn/*/query/**",
+                        "/api/sn/*/chat",
+                        "/api/sn/*/chat/**",
+                        // T889 / §LXIV.5 (Block BQ) — the T833 answer stream is the same
+                        // anonymous LLM-cost class as the site chat above, and is gated
+                        // by the same TurSNSiteApiKeyGateFilter and abuse-control caps,
+                        // so the SDK's public answer surfaces (showcase, public-site
+                        // hero) can consume it keyless. `freshness` and `signal` ride
+                        // with it: both are fire-and-forget companions of an answer
+                        // already produced. `answer/share` is deliberately ABSENT —
+                        // minting a permalink is a WRITE, and an anonymous write is a
+                        // storage/spam surface. So is the `/answer/**` console page:
+                        // T854 turns the reader defaults inside out there (rank, score,
+                        // raw document), which is operator-only.
+                        "/api/sn/*/answer",
+                        "/api/sn/*/answer/freshness",
+                        "/api/sn/*/answer/signal",
+                        // T392 — grounded catalog copilot (LLM-cost surface;
+                        // nginx-rate-limited on the demo host). Anonymous like chat so
+                        // the model-catalog "Ask the catalog" widget can call it
+                        // keyless; API_KEY-mode sites still gated by
+                        // TurSNSiteApiKeyGateFilter.
+                        "/api/sn/*/copilot",
+                        "/api/sn/*/copilot/**",
+                        // T634 — anonymous persona content-fit (LLM-cost surface;
+                        // nginx-rate-limited on the demo host).
+                        "/api/sn/*/persona/*/content-fit",
+                        "/api/sn/*/*/spell-check",
+                        "/api/ann/*/search",
+                        // T119 — token-gated human-approval resolve endpoints (the
+                        // opaque token is the capability). The plural
+                        // /api/genai/approvals admin list stays authenticated.
+                        "/api/genai/approval/*",
+                        // T893 / §XXXVII.17 — the public faceted search page. It is
+                        // served by TurSNSearchController (@RequestMapping("/sn")), a
+                        // real controller and not a static resource, so it goes through
+                        // this chain; without it anyRequest().authenticated() sent an
+                        // anonymous visitor to SSO login for a page whose every API is
+                        // already permitted here. The site's own SPA assets are served
+                        // by the same controller under /sn/{site}/assets/**, so the
+                        // /assets/** entry does not reach them either.
+                        "/sn/**",
+                        "/ann/**",
+                        "/pages/**",
+                        // T245 — MCP server endpoint (loopback-gated, see CSRF note below).
+                        "/mcp",
+                        MCP,
+                        // T740 / §XLIX — gateway /v1/* (virtual-key auth, see note above).
+                        GATEWAY_V1,
+                        API_SIGNUP,
+                        LOGIN_PATH,
+                        SETUP_PATH
+        );
+
+        /**
+         * Permitted only under <strong>local</strong> auth. Under Keycloak these go
+         * through SSO, which is the point of running Keycloak — the operator
+         * surfaces below must NOT be moved into {@link #PUBLIC_MATCHERS}.
+         */
+        private static final List<String> LOCAL_AUTH_ONLY_MATCHERS = List.of(
+                        // Operator surfaces. Anonymous here only because local auth
+                        // lets the SPA boot and then authenticate against /api/login;
+                        // under Keycloak the SSO redirect happens first, by design.
+                        "/",
+                        "/index.html",
+                        "/welcome/**",
+                        "/login/**",
+                        "/setup/**",
+                        "/admin/**",
+                        "/bento/**",
+                        "/console/**",
+                        "/fonts/**",
+                        // Local logout is a plain GET on this app; under Keycloak
+                        // logout is redirected to the provider instead (see below).
+                        LOGOUT_PATH,
+                        "/api/v2/guest/**",
+                        "/api/v2/user/register"
+        );
+
+        /**
+         * Permitted only under <strong>Keycloak</strong>. The OIDC Back-Channel
+         * Logout callback is authenticated by the provider's signed logout token
+         * rather than a session, and means nothing without a provider — so it is
+         * deliberately not part of the shared surface.
+         */
+        private static final List<String> KEYCLOAK_ONLY_MATCHERS = List.of(
+                        BACK_CHANNEL_LOGOUT_PATH
+        );
+
         private final UserDetailsService userDetailsService;
 
         private final PasswordEncoder passwordEncoder;
@@ -100,6 +246,36 @@ public class TurSecurityConfigProduction {
         @Value("${server.servlet.session.cookie.name:JSESSIONID}")
         private String sessionCookieName;
         PathPatternRequestMatcher.Builder mvc = PathPatternRequestMatcher.withDefaults();
+
+        /**
+         * Turns the declared path groups into the matchers {@code requestMatchers}
+         * wants (T894 / §XXXVII.18). Taking the groups as varargs is what lets each
+         * branch spell its own surface as {@code PUBLIC + <its own>} instead of
+         * restating the shared half.
+         */
+        private RequestMatcher[] matchers(List<String> shared, List<String> branchOnly) {
+                return Stream.concat(shared.stream(), branchOnly.stream())
+                                .map(mvc::matcher)
+                                .toArray(RequestMatcher[]::new);
+        }
+
+        /**
+         * The declared surfaces, for the source-level guards in
+         * {@code TurPublicSearchPageAuthClassTest} / {@code TurAnswerSurfaceAuthClassTest}
+         * to assert against. Immutable {@code List.of(...)}, not arrays: an
+         * allowlist a caller could mutate in place is not an allowlist.
+         */
+        static List<String> publicMatchers() {
+                return PUBLIC_MATCHERS;
+        }
+
+        static List<String> localAuthOnlyMatchers() {
+                return LOCAL_AUTH_ONLY_MATCHERS;
+        }
+
+        static List<String> keycloakOnlyMatchers() {
+                return KEYCLOAK_ONLY_MATCHERS;
+        }
 
         public TurSecurityConfigProduction(UserDetailsService userDetailsService, PasswordEncoder passwordEncoder) {
                 this.userDetailsService = userDetailsService;
@@ -204,95 +380,8 @@ public class TurSecurityConfigProduction {
                         }
                         http.authorizeHttpRequests(authorizeRequests -> {
                                 authorizeRequests.requestMatchers(
-                                                mvc.matcher(ERROR_PATH),
-                                                // OIDC Back-Channel Logout callback (Single Logout) —
-                                                // authenticated by Keycloak's signed logout token, not a session.
-                                                mvc.matcher(BACK_CHANNEL_LOGOUT_PATH),
-                                                mvc.matcher("/api/discovery"),
-                                                mvc.matcher("/api/csrf"),
-                                                mvc.matcher("/api/v2/ping"),
-                                                // Observability endpoints scraped by Prometheus and used by
-                                                // health checks. Restrict at network/firewall level in prod.
-                                                mvc.matcher("/actuator/prometheus"),
-                                                mvc.matcher("/actuator/health"),
-                                                mvc.matcher("/actuator/health/**"),
-                                                // T640 / §XXXVII.2 — /api/system/chat-analytics/** is NO
-                                                // longer permitAll: it exposed session enumeration + full
-                                                // chat transcripts (end-user PII) anonymously. It now falls
-                                                // under anyRequest().authenticated() and the controller adds
-                                                // @Secured({ROLE_ADMIN, AI_AGENT_VIEW}). Grafana's Infinity
-                                                // datasource must authenticate (basic/bearer).
-                                                mvc.matcher("/assets/**"),
-                                                mvc.matcher("/favicon.ico"),
-                                                mvc.matcher("/*.png"),
-                                                mvc.matcher("/manifest.json"),
-                                                mvc.matcher("/swagger-resources/**"),
-                                                mvc.matcher("/browserconfig.xml"),
-                                                mvc.matcher("/api/sn/names"),
-                                                mvc.matcher("/api/sn/*/ac"),
-                                                // T712 / §XLV — POST /api/sn/*/ac/query, the
-                                                // POST-native autocomplete variant. Same public,
-                                                // anonymous, read-only surface as the GET above.
-                                                mvc.matcher("/api/sn/*/ac/**"),
-                                                mvc.matcher("/api/sn/*/search"),
-                                                mvc.matcher("/api/sn/*/search/**"),
-                                                mvc.matcher("/api/sn/*/_search"),
-                                                mvc.matcher("/api/sn/*/click"),
-                                                mvc.matcher("/api/sn/*/query"),
-                                                mvc.matcher("/api/sn/*/query/**"),
-                                                mvc.matcher("/api/sn/*/chat"),
-                                                mvc.matcher("/api/sn/*/chat/**"),
-                                                // T889 / §LXIV.5 (Block BQ) — the T833 answer stream is the
-                                                // same anonymous LLM-cost class as the site chat above, and
-                                                // is gated by the same TurSNSiteApiKeyGateFilter and
-                                                // abuse-control caps, so the SDK's public answer surfaces
-                                                // (showcase, public-site hero) can consume it keyless.
-                                                // `freshness` and `signal` ride with it: both are
-                                                // fire-and-forget companions of an answer already produced.
-                                                // `answer/share` is deliberately ABSENT — minting a
-                                                // permalink is a WRITE, and an anonymous write is a
-                                                // storage/spam surface. So is the `/answer/**` console page:
-                                                // T854 turns the reader defaults inside out there (rank,
-                                                // score, raw document), which is operator-only.
-                                                mvc.matcher("/api/sn/*/answer"),
-                                                mvc.matcher("/api/sn/*/answer/freshness"),
-                                                mvc.matcher("/api/sn/*/answer/signal"),
-                                                // T392 — grounded catalog copilot (LLM-cost surface;
-                                                // nginx-rate-limited on the demo host). Anonymous like
-                                                // chat so the model-catalog "Ask the catalog" widget
-                                                // can call it keyless; API_KEY-mode sites still gated
-                                                // by TurSNSiteApiKeyGateFilter.
-                                                mvc.matcher("/api/sn/*/copilot"),
-                                                mvc.matcher("/api/sn/*/copilot/**"),
-                                                // T634 — anonymous persona content-fit (LLM-cost
-                                                // surface; nginx-rate-limited on the demo host).
-                                                mvc.matcher("/api/sn/*/persona/*/content-fit"),
-                                                mvc.matcher("/api/sn/*/*/spell-check"),
-                                                mvc.matcher("/api/ann/*/search"),
-                                                // T119 — token-gated human-approval resolve endpoints
-                                                // (the opaque token is the capability). The plural
-                                                // /api/genai/approvals admin list stays authenticated.
-                                                mvc.matcher("/api/genai/approval/*"),
-                                                // T893 / §XXXVII.17 — the public faceted search page. It is
-                                                // served by TurSNSearchController (@RequestMapping("/sn")), a
-                                                // real controller and not a static resource, so it goes
-                                                // through this chain; without this line anyRequest()
-                                                // .authenticated() sent an anonymous visitor to SSO login for
-                                                // a page whose every API — /api/sn/*/search, /ac, /click — is
-                                                // already permitted right above. The site's own SPA assets are
-                                                // served by the same controller under /sn/{site}/assets/**, so
-                                                // the /assets/** entry does not reach them either.
-                                                mvc.matcher("/sn/**"),
-                                                mvc.matcher("/ann/**"),
-                                                mvc.matcher("/pages/**"),
-                                                // T245 — MCP server endpoint (loopback-gated, see CSRF note above).
-                                                mvc.matcher("/mcp"),
-                                                mvc.matcher(MCP),
-                                                // T740 / §XLIX — gateway /v1/* (virtual-key auth, see note above).
-                                                mvc.matcher(GATEWAY_V1),
-                                                mvc.matcher(API_SIGNUP),
-                                                mvc.matcher(LOGIN_PATH),
-                                                mvc.matcher(SETUP_PATH)).permitAll();
+                                                matchers(PUBLIC_MATCHERS, KEYCLOAK_ONLY_MATCHERS))
+                                                .permitAll();
                                 authorizeRequests.anyRequest().authenticated();
                         });
                         http.logout(logout -> logout.addLogoutHandler(turLogoutHandler)
@@ -311,85 +400,9 @@ public class TurSecurityConfigProduction {
                         http.httpBasic(httpBasic -> httpBasic.authenticationEntryPoint(turAuthenticationEntryPoint))
                                         .authorizeHttpRequests(authorizeRequests -> {
                                                 authorizeRequests.requestMatchers(
-                                                                mvc.matcher(ERROR_PATH),
-                                                                mvc.matcher("/api/discovery"),
-                                                                mvc.matcher("/api/csrf"),
-                                                                mvc.matcher("/api/v2/ping"),
-                                                                // Observability endpoints scraped by Prometheus
-                                                                // and used by health checks. Restrict at
-                                                                // network/firewall level in prod.
-                                                                mvc.matcher("/actuator/prometheus"),
-                                                                mvc.matcher("/actuator/health"),
-                                                                mvc.matcher("/actuator/health/**"),
-                                                                // T640 / §XXXVII.2 — /api/system/chat-analytics/**
-                                                                // removed from permitAll (was anonymous session
-                                                                // enumeration + full chat transcripts / PII). Now
-                                                                // authenticated() + @Secured on the controller.
-                                                                mvc.matcher(LOGOUT_PATH),
-                                                                mvc.matcher("/index.html"),
-                                                                mvc.matcher("/welcome/**"),
-                                                                mvc.matcher("/login/**"),
-                                                                mvc.matcher("/setup/**"),
-                                                                mvc.matcher("/admin/**"),
-                                                                mvc.matcher("/bento/**"),
-                                                                mvc.matcher("/"),
-                                                                mvc.matcher("/assets/**"),
-                                                                mvc.matcher("/swagger-resources/**"),
-                                                                mvc.matcher("/sn/**"),
-                                                                mvc.matcher("/fonts/**"),
-                                                                mvc.matcher("/api/sn/names"),
-                                                                mvc.matcher("/api/sn/*/ac"),
-                                                                // T712 / §XLV — POST-native autocomplete.
-                                                                mvc.matcher("/api/sn/*/ac/**"),
-                                                                mvc.matcher("/api/sn/*/search"),
-                                                                mvc.matcher("/api/sn/*/search/**"),
-                                                                mvc.matcher("/api/sn/*/_search"),
-                                                mvc.matcher("/api/sn/*/click"),
-                                                                mvc.matcher("/api/sn/*/query"),
-                                                                mvc.matcher("/api/sn/*/query/**"),
-                                                                mvc.matcher("/api/sn/*/chat"),
-                                                                mvc.matcher("/api/sn/*/chat/**"),
-                                                                // T889 / §LXIV.5 — the answer stream, in the
-                                                                // same anonymous class as the chat above.
-                                                                // `answer/share` and the `/answer/**` console
-                                                                // page are deliberately absent; see the
-                                                                // Keycloak branch for why.
-                                                                mvc.matcher("/api/sn/*/answer"),
-                                                                mvc.matcher("/api/sn/*/answer/freshness"),
-                                                                mvc.matcher("/api/sn/*/answer/signal"),
-                                                                // T392 — grounded catalog copilot
-                                                                // (LLM-cost surface; nginx-rate-limited).
-                                                                // Anonymous like chat for the model-catalog
-                                                                // "Ask the catalog" widget; API_KEY sites
-                                                                // still gated by TurSNSiteApiKeyGateFilter.
-                                                                mvc.matcher("/api/sn/*/copilot"),
-                                                                mvc.matcher("/api/sn/*/copilot/**"),
-                                                                // T634 — anonymous persona content-fit
-                                                                // (LLM-cost surface; nginx-rate-limited).
-                                                                mvc.matcher("/api/sn/*/persona/*/content-fit"),
-                                                                mvc.matcher("/api/sn/*/*/spell-check"),
-                                                                mvc.matcher("/api/ann/*/search"),
-                                                                // T119 — token-gated human-approval resolve
-                                                                // endpoints (token = capability). The plural
-                                                                // /api/genai/approvals list stays authenticated.
-                                                                mvc.matcher("/api/genai/approval/*"),
-                                                                mvc.matcher("/ann/**"),
-                                                                mvc.matcher("/pages/**"),
-                                                                // T245 — MCP server endpoint (loopback-gated, see CSRF note above).
-                                                                mvc.matcher("/mcp"),
-                                                                mvc.matcher(MCP),
-                                                                // T740 / §XLIX — gateway /v1/* (virtual-key auth).
-                                                                mvc.matcher(GATEWAY_V1),
-                                                                mvc.matcher("/favicon.ico"),
-                                                                mvc.matcher("/*.png"),
-                                                                mvc.matcher("/manifest.json"),
-                                                                mvc.matcher("/browserconfig.xml"),
-                                                                mvc.matcher("/console/**"),
-                                                                mvc.matcher("/api/v2/guest/**"),
-                                                                mvc.matcher("/api/v2/user/register"),
-                                                                mvc.matcher(API_SIGNUP),
-                                                                mvc.matcher(LOGIN_PATH),
-                                                                mvc.matcher(SETUP_PATH)).permitAll();
+                                                                matchers(PUBLIC_MATCHERS,
+                                                                                LOCAL_AUTH_ONLY_MATCHERS))
+                                                                .permitAll();
                                                 authorizeRequests.anyRequest().authenticated();
 
                                         });
