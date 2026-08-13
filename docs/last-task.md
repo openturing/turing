@@ -302,6 +302,8 @@ number" looked free but wasn't. Grepping three files (`ROADMAP.md`,
 
 ## Log (most recent first)
 
+- **T949–T950 CREATED** (📋, Block J §XIV.8.8–.9 — what shipping the seed path exposed: a corrupt seed ZIP still writes the one-shot EXPORT_AUTO_IMPORT marker, and a site-less bundle comes back as an imported site named "unknown") — 2026-08-13.
+- **T373 SHIPPED** (Block J §XIV.8.7 — Cloud default config as a GLOBAL seed ZIP) — 2026-08-13.
 - **Block BJ CLOSED, heading dropped** (§LVIII — 8 changelog entries keep the heading; the roadmap heading is gone) — 2026-08-07.
 - **T943 SHIPPED** (Block BJ §LVIII.8 — an admin can check a ranking bundle instead of inferring it took) — 2026-08-07.
 - **T942 SHIPPED** (Block BJ §LVIII.7 — reload the lexicons without a restart) — 2026-08-07.
