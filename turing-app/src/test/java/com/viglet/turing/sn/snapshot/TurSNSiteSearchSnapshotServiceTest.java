@@ -276,6 +276,104 @@ class TurSNSiteSearchSnapshotServiceTest {
                 .containsExactly("site_en", "site_pt");
     }
 
+    // ---- the field-ext copy ------------------------------------------------
+
+    /**
+     * T898 / §LXXI.1 — {@code FieldExtView} is the one projection that copies
+     * rather than narrows, because its consumers hand the value on instead of
+     * reading it. A copy is exactly where a forgotten field changes behaviour in
+     * silence, so this walks every declared scalar by reflection: populate it,
+     * project, rebuild, and compare. Adding a column to the entity without adding
+     * it to the record fails here rather than in production.
+     */
+    @Test
+    void everyScalarSurvivesTheProjectionAndTheRebuild() throws Exception {
+        TurSNSiteFieldExt original = new TurSNSiteFieldExt();
+        List<java.lang.reflect.Field> scalars = new java.util.ArrayList<>();
+        java.util.Map<Class<?>, Integer> seenPerType = new java.util.HashMap<>();
+        for (java.lang.reflect.Field declared : TurSNSiteFieldExt.class.getDeclaredFields()) {
+            if (java.lang.reflect.Modifier.isStatic(declared.getModifiers())
+                    || java.util.Collection.class.isAssignableFrom(declared.getType())
+                    || declared.getType() == TurSNSite.class) {
+                continue; // associations are deliberately not carried
+            }
+            declared.setAccessible(true);
+            // Counted per type, not hashed: facetType and facetItemType are the same
+            // enum, and a hash gave them the same constant — which made a swap of the
+            // two invisible. Found by injecting exactly that swap.
+            int nth = seenPerType.merge(declared.getType(), 1, Integer::sum) - 1;
+            declared.set(original, sampleFor(declared.getType(), declared.getName(), nth));
+            scalars.add(declared);
+        }
+        assertThat(scalars).as("the entity must still have scalars to copy").hasSize(21);
+
+        TurSNSiteFieldExt rebuilt = TurSNSiteSearchSnapshotService.toEntity(
+                TurSNSiteSearchSnapshotService.toView(original), site());
+
+        for (java.lang.reflect.Field declared : scalars) {
+            assertThat(declared.get(rebuilt))
+                    .as("'%s' was lost between the entity, the record and the rebuild",
+                            declared.getName())
+                    .isEqualTo(declared.get(original));
+        }
+    }
+
+    /**
+     * A value distinct from every other field of the same type, so swapping two
+     * same-typed fields is visible and not only losing one. {@code nth} is the
+     * field's ordinal among those of its type — a hash is not enough, because two
+     * fields can hash to the same enum constant, and two of these do.
+     */
+    private static Object sampleFor(Class<?> type, String name, int nth) {
+        if (type == String.class) {
+            return "value-of-" + name;
+        }
+        if (type == int.class) {
+            return nth + 1;
+        }
+        if (type == Integer.class) {
+            return nth + 101;
+        }
+        if (type == Boolean.class) {
+            return nth % 2 == 0;
+        }
+        if (type.isEnum()) {
+            Object[] constants = type.getEnumConstants();
+            if (nth >= constants.length) {
+                throw new IllegalStateException(type.getSimpleName() + " has fewer constants ("
+                        + constants.length + ") than fields using it, so this test cannot give "
+                        + "each a distinct value — a swap between them would be invisible.");
+            }
+            return constants[nth];
+        }
+        throw new IllegalStateException(
+                "TurSNSiteFieldExt gained a '" + type.getSimpleName() + "' field ('" + name
+                        + "') this test does not know how to populate — extend sampleFor "
+                        + "and check FieldExtView carries it.");
+    }
+
+    @Test
+    void theRebuiltFieldCarriesTheSiteTheDtoCopies() {
+        TurSNSiteFieldExt field = field();
+        TurSNSite site = site();
+
+        TurSNSiteFieldExt rebuilt = TurSNSiteSearchSnapshotService.toEntity(
+                TurSNSiteSearchSnapshotService.toView(field), site);
+
+        assertThat(rebuilt.getTurSNSite()).isSameAs(site);
+    }
+
+    @Test
+    void projectsTheEnabledFieldsIntoRecords() {
+        TurSNSiteSearchSnapshot snapshot = snapshot();
+
+        assertThat(snapshot.enabledFields()).singleElement().satisfies(view -> {
+            assertThat(view.id()).isEqualTo(FIELD_ID);
+            assertThat(view.name()).isEqualTo("category");
+            assertThat(view.enabled()).isEqualTo(1);
+        });
+    }
+
     // ---- the invariant the projection exists for ---------------------------
 
     @Test

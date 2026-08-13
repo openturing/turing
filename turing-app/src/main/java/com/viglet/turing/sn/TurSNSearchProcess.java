@@ -288,10 +288,13 @@ public class TurSNSearchProcess {
                         TurSolrInstance turSolrInstance, TurSEResults turSEResults) {
                 TurSNSite turSNSite = snap.site();
                 populateMetrics(turSNSite, context, turSEResults.getNumFound());
+                // T898 / §LXXI.1 — the snapshot holds FieldExtView records; the facet
+                // contract still takes the entity, so it is rebuilt at this boundary.
                 List<TurSNFacetDefinition> facetDefinitions = snap.enabledFields()
                                 .stream()
-                                .filter(field -> field.getFacet() == 1
-                                                || snap.fieldIdsWithCustomFacets().contains(field.getId()))
+                                .filter(view -> view.facet() == 1
+                                                || snap.fieldIdsWithCustomFacets().contains(view.id()))
+                                .map(view -> TurSNSiteSearchSnapshotService.toEntity(view, turSNSite))
                                 .flatMap(field -> turSNFacetDefinitionFactory.fromField(field,
                                                 context.getLocale(), facetLocalesFor(snap, field,
                                                                 context.getLocale()))

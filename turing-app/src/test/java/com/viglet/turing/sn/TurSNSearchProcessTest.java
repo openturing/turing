@@ -170,7 +170,7 @@ class TurSNSearchProcessTest {
 
         /** Build a snapshot tailored to a scenario. */
         private static TurSNSiteSearchSnapshot snapshot(TurSNSite site, Locale locale,
-                        List<TurSNSiteFieldExt> enabledFields,
+                        List<TurSNSiteSearchSnapshot.FieldExtView> enabledFields,
                         Map<String, Set<TurSNSiteSearchSnapshot.FacetLabelView>> facetLabels,
                         List<TurSNSiteSearchSnapshot.LocaleView> allLocales) {
                 return new TurSNSiteSearchSnapshot(site, locale, "solr", false,
@@ -410,7 +410,10 @@ class TurSNSearchProcessTest {
                 Map<String, Set<TurSNSiteSearchSnapshot.FacetLabelView>> labels = new HashMap<>();
                 labels.put("field-id", Set.of(facetLocale));
                 when(snapshotService.getSnapshot("site", Locale.US)).thenReturn(Optional.of(
-                                snapshot(site, Locale.US, List.of(facetField), labels, List.of())));
+                                snapshot(site, Locale.US,
+                                                List.of(com.viglet.turing.sn.snapshot.TurSNSiteSearchSnapshotService
+                                                                .toView(facetField)),
+                                                labels, List.of())));
                 when(searchEnginePluginFactory.getPlugin("solr")).thenReturn(plugin);
                 when(turSNSiteFieldExtRepository.findByTurSNSiteAndFacetAndEnabled(site, 1, 1))
                                 .thenReturn(List.of(facetField));

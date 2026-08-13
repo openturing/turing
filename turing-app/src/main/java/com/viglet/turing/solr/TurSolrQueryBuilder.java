@@ -694,8 +694,9 @@ public class TurSolrQueryBuilder {
 
     private List<TurSNSiteFieldExt> getEnabledFacetsFromSnapshot(TurSNSiteSearchSnapshot snap) {
         return snap.enabledFields().stream()
-                .filter(field -> field.getFacet() == 1
-                        || snap.fieldIdsWithCustomFacets().contains(field.getId()))
+                .filter(field -> field.facet() == 1
+                        || snap.fieldIdsWithCustomFacets().contains(field.id()))
+                .map(field -> TurSNSiteSearchSnapshotService.toEntity(field, snap.site()))
                 .toList();
     }
 
@@ -787,9 +788,17 @@ public class TurSolrQueryBuilder {
         return enabledFacets;
     }
 
+    /**
+     * T898 / §LXXI.1 — the one place the cached and the freshly-loaded halves meet.
+     * The snapshot holds FieldExtView records now, so the transient entity every
+     * downstream caller still takes — the facet contract, the field DTO, the three
+     * custom-facet finders — is rebuilt here rather than served from the cache.
+     */
     private List<TurSNSiteFieldExt> getEnabledFields(TurSNSite turSNSite) {
         return snapshotForSite(turSNSite)
-                .map(TurSNSiteSearchSnapshot::enabledFields)
+                .map(snap -> snap.enabledFields().stream()
+                        .map(field -> TurSNSiteSearchSnapshotService.toEntity(field, snap.site()))
+                        .toList())
                 .orElseGet(() -> turSNSiteFieldExtRepository
                         .findByTurSNSiteAndEnabled(turSNSite, 1));
     }
@@ -804,7 +813,9 @@ public class TurSolrQueryBuilder {
     private List<TurSNSiteFieldExt> getEnabledFacets(TurSNSite turSNSite) {
         Optional<TurSNSiteSearchSnapshot> snapOpt = snapshotForSite(turSNSite);
         List<TurSNSiteFieldExt> enabledFields = snapOpt
-                .map(TurSNSiteSearchSnapshot::enabledFields)
+                .map(snap -> snap.enabledFields().stream()
+                        .map(field -> TurSNSiteSearchSnapshotService.toEntity(field, snap.site()))
+                        .toList())
                 .orElseGet(() -> turSNSiteFieldExtRepository
                         .findByTurSNSiteAndEnabled(turSNSite, 1));
         Set<String> fieldIdsWithCustomFacets = snapOpt

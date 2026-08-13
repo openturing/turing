@@ -293,9 +293,22 @@ class TurCacheAnnotationConventionsTest {
                 .as("the walk found no @Cacheable method at all — the check would pass vacuously")
                 .isNotEmpty();
 
+        Set<String> unfiltered = new TreeSet<>();
+        for (String member : cacheableMembers) {
+            inspectCachedValue(member, unfiltered, false);
+        }
+        // Every acknowledged entry must STILL be detected. Without this the guard can
+        // be blinded and stay green: the allowlist would mask the fact that nothing
+        // is being detected at all, and a cache that was since converted would sit
+        // here forever claiming debt it no longer has. Found by injecting exactly
+        // that blinding.
+        for (String acknowledged : KNOWN_ENTITY_CACHES.keySet()) {
+            assertThat(unfiltered).anyMatch(found -> found.startsWith(acknowledged + " ->"));
+        }
+
         Set<String> violations = new TreeSet<>();
         for (String member : cacheableMembers) {
-            inspectCachedValue(member, violations);
+            inspectCachedValue(member, violations, true);
         }
 
         assertThat(violations)
@@ -323,18 +336,16 @@ class TurCacheAnnotationConventionsTest {
      */
     private static final Map<String, String> KNOWN_ENTITY_CACHES = Map.of(
             "TurSNSiteSearchSnapshotService#getSnapshot",
-            "T898 / §LXXI.1 — down from six entity kinds to two: customFacetsByFieldId, "
-                    + "customSorts, facetLabelsByFieldId and allLocales are projected into "
-                    + "CustomFacetView / CustomSortView / FacetLabelView / LocaleView. The two "
-                    + "that remain are each held by a coupling, not by inertia. TurSNSite: "
-                    + "populateMetrics uses it as a JPA FK on a write, and the search path "
-                    + "reads it for hybrid ranking, facets, spotlights and the query context "
-                    + "(T952 already stopped the genai/ann escape — getSNSite loads now). "
-                    + "TurSNSiteFieldExt: three finders take it as a query parameter, and the "
-                    + "TurSNFacetDefinition contract exposes it");
-
-    /** Where every JPA entity in this codebase lives. */
-    private static final String ENTITY_PACKAGE = "com.viglet.turing.persistence.model.";
+            "T898 / §LXXI.1 — down from six entity kinds to one. Five components are "
+                    + "records now (CustomFacetView, CustomSortView, FacetLabelView, "
+                    + "LocaleView, FieldExtView), the last of them copying every scalar "
+                    + "because its consumers hand it on rather than read it, with a "
+                    + "reflective round-trip test standing in for the fields nobody would "
+                    + "notice going missing. What is left is TurSNSite itself: populateMetrics "
+                    + "uses it as a JPA FK on a write, and the search path reads it for hybrid "
+                    + "ranking, facets, spotlights and the query context. T952 already stopped "
+                    + "the genai/ann escape — getSNSite loads now — so the remaining reads are "
+                    + "the search path's own");
 
     /** How deep to follow a cached value's shape before giving up. */
     private static final int MAX_DEPTH = 4;
@@ -359,7 +370,8 @@ class TurCacheAnnotationConventionsTest {
      * can reach. Reflection rather than bytecode metadata because the generics are
      * the whole point: {@code Optional<Snapshot>} says nothing, its components do.
      */
-    private static void inspectCachedValue(String member, Set<String> violations) {
+    private static void inspectCachedValue(String member, Set<String> violations,
+            boolean honourAllowlist) {
         int hash = member.lastIndexOf('#');
         String className = member.substring(0, hash);
         String methodName = member.substring(hash + 1);
@@ -375,7 +387,8 @@ class TurCacheAnnotationConventionsTest {
                 }
                 Set<String> entities = new TreeSet<>();
                 walk(method.getGenericReturnType(), 0, new java.util.HashSet<>(), entities);
-                if (entities.isEmpty() || KNOWN_ENTITY_CACHES.containsKey(key)) {
+                if (entities.isEmpty()
+                        || (honourAllowlist && KNOWN_ENTITY_CACHES.containsKey(key))) {
                     continue;
                 }
                 violations.add(key + " -> " + String.join(", ", entities));
@@ -408,9 +421,15 @@ class TurCacheAnnotationConventionsTest {
         if (!(type instanceof Class<?> raw) || !seen.add(raw.getName())) {
             return;
         }
-        if (raw.isAnnotationPresent(jakarta.persistence.Entity.class)
-                || raw.getName().startsWith(ENTITY_PACKAGE)) {
+        // @Entity is the precise definition, and precision matters here: the
+        // package this once also matched holds the persistence enums, which carry
+        // no proxies and are perfectly good record components. T898's FieldExtView
+        // is where that over-match surfaced.
+        if (raw.isAnnotationPresent(jakarta.persistence.Entity.class)) {
             entities.add(raw.getSimpleName());
+            return;
+        }
+        if (raw.isEnum() || raw.getName().startsWith("java.")) {
             return;
         }
         // Only our own records are worth descending into: a JDK container has

@@ -37,6 +37,7 @@ import com.viglet.turing.observability.TurSearchPipelineObservation;
 import com.viglet.turing.persistence.model.sn.TurSNSite;
 import com.viglet.turing.sn.snapshot.TurSNSiteSearchSnapshot.CustomFacetView;
 import com.viglet.turing.sn.snapshot.TurSNSiteSearchSnapshot.FacetLabelView;
+import com.viglet.turing.sn.snapshot.TurSNSiteSearchSnapshot.FieldExtView;
 import com.viglet.turing.sn.snapshot.TurSNSiteSearchSnapshot.LocaleView;
 import com.viglet.turing.sn.snapshot.TurSNSiteSearchSnapshot.CustomSortView;
 import com.viglet.turing.persistence.model.sn.field.TurSNSiteCustomFacet;
@@ -138,6 +139,9 @@ public class TurSNSiteSearchSnapshotService {
     private TurSNSiteSearchSnapshot build(TurSNSite site, Locale locale) {
         List<TurSNSiteFieldExt> enabledFields = turSNSiteFieldExtRepository
                 .findByTurSNSiteAndEnabled(site, 1);
+        List<FieldExtView> enabledFieldViews = enabledFields.stream()
+                .map(TurSNSiteSearchSnapshotService::toView)
+                .toList();
 
         List<TurSNSiteCustomFacet> customFacets = enabledFields.isEmpty()
                 ? Collections.emptyList()
@@ -186,9 +190,46 @@ public class TurSNSiteSearchSnapshotService {
         String pluginType = resolvePluginType(site);
 
         return new TurSNSiteSearchSnapshot(site, locale, pluginType, hasHlFields,
-                List.copyOf(enabledFields), Set.copyOf(fieldIdsWithCustomFacets),
+                List.copyOf(enabledFieldViews), Set.copyOf(fieldIdsWithCustomFacets),
                 Map.copyOf(customFacetsByFieldId), Map.copyOf(facetLabelsByFieldId),
                 List.copyOf(allLocales), List.copyOf(customSorts));
+    }
+
+    /**
+     * T898 / §LXXI.1 — every scalar, because the consumers hand this on rather
+     * than read it (see {@link FieldExtView}). Paired with
+     * {@link #toEntity(FieldExtView, TurSNSite)}, and both are covered by the
+     * reflective round-trip test that makes a forgotten field a red run.
+     */
+    public static FieldExtView toView(TurSNSiteFieldExt field) {
+        return new FieldExtView(field.getId(), field.getExternalId(), field.getName(),
+                field.getDescription(), field.getFacetName(), field.getFacetRange(),
+                field.getFacetType(), field.getFacetItemType(), field.getFacetSort(),
+                field.getFacetPosition(), field.getSecondaryFacet(),
+                field.getShowAllFacetItems(), field.getSnType(), field.getType(),
+                field.getMultiValued(), field.getFacet(), field.getHl(), field.getMlt(),
+                field.getEnabled(), field.getRequired(), field.getDefaultValue());
+    }
+
+    /**
+     * Rebuilds the transient entity the facet contract, the field DTO and the three
+     * custom-facet finders all still take. The finders bind {@code IN :fieldExts}
+     * by id, so a transient instance resolves exactly as the detached cached one
+     * did. The site rides along because {@code TurSNSiteFieldExtDto} copies it.
+     */
+    public static TurSNSiteFieldExt toEntity(FieldExtView view, TurSNSite site) {
+        return TurSNSiteFieldExt.builder()
+                .id(view.id()).externalId(view.externalId()).name(view.name())
+                .description(view.description()).facetName(view.facetName())
+                .facetRange(view.facetRange()).facetType(view.facetType())
+                .facetItemType(view.facetItemType()).facetSort(view.facetSort())
+                .facetPosition(view.facetPosition()).secondaryFacet(view.secondaryFacet())
+                .showAllFacetItems(view.showAllFacetItems()).snType(view.snType())
+                .type(view.type()).multiValued(view.multiValued()).facet(view.facet())
+                .hl(view.hl()).mlt(view.mlt()).enabled(view.enabled())
+                .required(view.required()).defaultValue(view.defaultValue())
+                .turSNSite(site)
+                .build();
     }
 
     private static String resolvePluginType(TurSNSite site) {

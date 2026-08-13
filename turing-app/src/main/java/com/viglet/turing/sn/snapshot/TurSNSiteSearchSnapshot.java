@@ -24,7 +24,11 @@ import java.util.Map;
 import java.util.Set;
 
 import com.viglet.turing.persistence.model.sn.TurSNSite;
-import com.viglet.turing.persistence.model.sn.field.TurSNSiteFieldExt;
+import com.viglet.turing.commons.se.field.TurSEFieldType;
+import com.viglet.turing.persistence.model.sn.TurSNSiteFacetRangeEnum;
+import com.viglet.turing.persistence.model.sn.field.TurSNSiteFacetFieldEnum;
+import com.viglet.turing.persistence.model.sn.field.TurSNSiteFacetFieldSortEnum;
+import com.viglet.turing.sn.TurSNFieldType;
 
 /**
  * Immutable, atomic snapshot of every persistent piece of configuration the SN
@@ -41,7 +45,7 @@ public record TurSNSiteSearchSnapshot(
         Locale locale,
         String pluginType,
         boolean hasHlFields,
-        List<TurSNSiteFieldExt> enabledFields,
+        List<FieldExtView> enabledFields,
         Set<String> fieldIdsWithCustomFacets,
         Map<String, List<CustomFacetView>> customFacetsByFieldId,
         Map<String, Set<FacetLabelView>> facetLabelsByFieldId,
@@ -50,6 +54,39 @@ public record TurSNSiteSearchSnapshot(
 
     @Serial
     private static final long serialVersionUID = 1L;
+
+    /**
+     * T898 / §LXXI.1 — an enabled field, as every scalar the entity carries.
+     *
+     * <p>The other views here project only what is read. This one deliberately
+     * carries <strong>all twenty-one</strong> scalars, because its consumers do
+     * not read it — they hand it on. `TurSNFacetDefinition` exposes the entity,
+     * `TurSNSiteFieldExtDto` copies twenty properties off it, and three finders
+     * take it as a query parameter, so the shape that reaches them has to be the
+     * shape they already get. `TurSNSiteSearchSnapshotService.toEntity` rebuilds a
+     * transient entity from this at the boundary.
+     *
+     * <p>That makes this a copy, and a copy is exactly where a forgotten field
+     * changes behaviour in silence. `TurSNSiteSearchSnapshotServiceTest` closes
+     * that by reflection: it populates every declared scalar, round-trips it, and
+     * compares every getter, so adding a column to the entity without adding it
+     * here is a red test rather than a null in production.
+     *
+     * <p>The two lazy collections are <em>not</em> carried, and cannot regress
+     * anything: on the cached detached entity they were uninitialised proxies
+     * already, so any consumer reading them was throwing before this change.
+     */
+    public record FieldExtView(
+            String id, String externalId, String name, String description, String facetName,
+            TurSNSiteFacetRangeEnum facetRange, TurSNSiteFacetFieldEnum facetType,
+            TurSNSiteFacetFieldEnum facetItemType, TurSNSiteFacetFieldSortEnum facetSort,
+            Integer facetPosition, Boolean secondaryFacet, Boolean showAllFacetItems,
+            TurSNFieldType snType, TurSEFieldType type,
+            int multiValued, int facet, int hl, int mlt, int enabled, int required,
+            String defaultValue) implements Serializable {
+        @Serial
+        private static final long serialVersionUID = 1L;
+    }
 
     /**
      * T898 / §LXXI.1 — a custom facet as the search flow reads it. The entity it

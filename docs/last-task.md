@@ -302,6 +302,7 @@ number" looked free but wasn't. Grepping three files (`ROADMAP.md`,
 
 ## Log (most recent first)
 
+- **T898e SHIPPED** (Block AC §LXXI.6 — enabledFields projected into FieldExtView, all 21 scalars, rebuilt transient at 2 boundaries; reflective round-trip test; cached entity kinds 2 -> 1) — 2026-08-13.
 - **Block AN CLOSED, heading dropped** (§XXXVII — 19 changelog entries keep the heading; reopened before and will be again) — 2026-08-13.
 - **T951 SHIPPED** (Block AN §XXXVII.19 — the SPA file server checks the decoded path before it becomes an object key; the rule moved to TurStorageKeys so the skill editor and the SPA server share one copy) — 2026-08-13.
 - **Block J CLOSED, heading dropped** (§XIV.8 — 38 changelog entries keep the heading; the roadmap heading is gone) — 2026-08-13.
