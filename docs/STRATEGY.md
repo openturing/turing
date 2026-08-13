@@ -85,11 +85,10 @@ left.
 
 ### VIII.4 The MCP pillar — Turing speaks MCP both ways
 
-**Tese**: Model Context Protocol is the de facto standard for agent
-tools (Anthropic, Cursor, Claude Desktop, Glama, OpenTools). Turing's
-MCP story is **one pillar with two directions** — previously split
-across two sections, now unified because the strategic move is the same
-bet on the same protocol:
+**Tese**: Model Context Protocol is the de facto standard for agent tools (Anthropic,
+Cursor, Claude Desktop, Glama, OpenTools). Turing's MCP story is **one pillar with two
+directions** — previously split across two sections, now unified because the strategic
+move is the same bet on the same protocol:
 
 1. **Turing as MCP _client_** (tool portability) — **Custom Tools Groovy
    is Turing-only lock-in.** Make Custom Tools **MCP servers by default**,
@@ -106,13 +105,13 @@ bet on the same protocol:
    the grounding layer inside whatever agent the customer already runs.
    The both-ways `/mcp` core **shipped** — see [CHANGELOG.md](CHANGELOG.md)
    → Block I; the remaining per-tenant SaaS + federation expansion is
-   **cancelled** (§VIII.7).
+   **cancelled** (§S:VIII.7).
 
-**Why one pillar, not two**: the same protocol investment (transport,
-auth, tool/resource/prompt schema) serves both. Sell it as one line —
-"Turing speaks MCP in both directions: your tools go out, the world's
-agents come in" — instead of two half-stories. **Trade-off**: existing
-Groovy customers need a migration path (the exporter covers it).
+**Why one pillar, not two**: the same protocol investment (transport, auth,
+tool/resource/prompt schema) serves both. Sell it as one line — "Turing speaks MCP in
+both directions: your tools go out, the world's agents come in" — instead of two
+half-stories. **Trade-off**: existing Groovy customers need a migration path (the
+exporter covers it).
 
 ### VIII.5 The Spring AI question — fork or live with the lag
 
@@ -335,8 +334,8 @@ posts into a custom SPA would cost days and dilute the docs' reference clarity.
 
 ### X.3 Content calendar — post themes that build the association
 
-Three intent clusters. Each post must **name the problem in the title** (that's
-the phrase users type at the LLM) and cross-link siblings.
+Three intent clusters. Each post must **name the problem in the title** (that's the
+phrase users type at the LLM) and cross-link siblings.
 
 **A. Integration how-tos (highest intent — these are the queries):**
 - "Integrating Viglet Turing ES with Adobe AEM" *(flagship)*
@@ -351,13 +350,13 @@ the phrase users type at the LLM) and cross-link siblings.
 - "When to choose Solr, Elasticsearch, or Turing ES"
 
 **C. Concept / thought-leadership (RAG & agents — ties to the moat):**
-- "RAG over enterprise content with Turing + MCP" *(ties §VIII.4 MCP pillar)*
+- "RAG over enterprise content with Turing + MCP" *(ties §S:VIII.4 MCP pillar)*
 - "Grounded, citeable answers from enterprise search" *(ties Block M)*
 - "Building a conversational search agent on your own infrastructure"
 
-Cadence: ship A1 (flagship) + B1 first (they convert the existing query volume),
-then one post / 2 weeks. Republish A/B posts to Dev.to/Medium with `canonical`
-pointing back to docs (reach without SEO duplication).
+Cadence: ship A1 (flagship) + B1 first (they convert the existing query volume), then
+one post / 2 weeks. Republish A/B posts to Dev.to/Medium with `canonical` pointing back
+to docs (reach without SEO duplication).
 
 ### X.4 Measurement — how we'll know it's working
 
@@ -414,12 +413,11 @@ unauthenticated.
 
 ### XI.1 The boundary principle — hide *thinking* and *revenue*, not *cleverness*
 
-The instinct to hide "clever" code (the LLM judge, the chat-flow engine, the
-skill sandbox) protects almost nothing: those are strong *implementations of
-known patterns*, reproducible by any competent engineer in days — or by asking
-an LLM. Hiding them only costs adoption, and adoption is the actual bottleneck
-(§IX.4). Decide what stays private by two tests, **never** by "is it hard to
-copy":
+The instinct to hide "clever" code (the LLM judge, the chat-flow engine, the skill
+sandbox) protects almost nothing: those are strong *implementations of known patterns*,
+reproducible by any competent engineer in days — or by asking an LLM. Hiding them only
+costs adoption, and adoption is the actual bottleneck (§IX.4). Decide what stays private
+by two tests, **never** by "is it hard to copy":
 
 1. **Does it expose our thinking?** — `STRATEGY.md`, `IMPROVEMENTS.md`,
    `ROADMAP.md`, `docs/products/**`. ~2.300 lines of design rationale is a
@@ -427,12 +425,11 @@ copy":
    far more than any one feature's source.
 2. **Does a paying customer pay for it?** — the productized commercial add-on
    (Agent Eval engine, §IX.3) and managed hosting (Turing Sandbox / Cloud,
-   §VIII.1–2). Held back by *business model*, not by secrecy.
+   §S:VIII.1–2). Held back by *business model*, not by secrecy.
 
-Everything else — the entire runtime, the LLM-judge primitive, the SDKs, the
-connectors — is **public** in `turing-ce`. The judge primitive being public is
-*desired*: it is the community-edition funnel that the paid Agent Eval engine
-sells against.
+Everything else — the entire runtime, the LLM-judge primitive, the SDKs, the connectors
+— is **public** in `turing-ce`. The judge primitive being public is *desired*: it is the
+community-edition funnel that the paid Agent Eval engine sells against.
 
 ### XI.2 What stays private
 
@@ -559,9 +556,8 @@ BOM, never one fat kitchen-sink jar** — apps depend only on the concern they n
 
 ### XII.3 Phasing — incubate in Turing, promote when stable
 
-Two phases, deliberately sequenced to defer the cross-product coupling cost
-until the design is proven (the same "don't fragment prematurely" logic as
-§XI.3):
+Two phases, deliberately sequenced to defer the cross-product coupling cost until the
+design is proven (the same "don't fragment prematurely" logic as §S:XI.3):
 
 - **Phase 1 — incubate as a Turing Maven submodule.** `viglet-core` starts life
   *inside* the Turing repo, with Turing as its first and only consumer. The
@@ -627,7 +623,7 @@ is the proof that the assembled stack collapses onto Turing.
 2. **Conservative grounding + self-host + citeable chat.** Absent-≠-empty (T381) and
    per-field coverage (T388) make data quality legible; the grounded copilot (T392)
    answers from the index with citations, self-hosted, no data leaving the customer.
-   That is the same end-to-end-auditable pitch that wins Education/Finance in §VIII.3,
+   That is the same end-to-end-auditable pitch that wins Education/Finance in §S:VIII.3,
    pointed at catalog search instead of agents.
 
 ### XIII.3 Who buys it
@@ -646,14 +642,15 @@ is the proof that the assembled stack collapses onto Turing.
 
 Each Block-R task rides an existing seam (RRF, the Block-N reranker, the RAG stack, the
 default LLM, `TurSNJobAttributeSpec`), so the marginal build cost is low relative to the
-positioning gain — the bet is **packaging and sequencing**, not net-new platform. It also
-compounds the other bets: it sharpens the §VIII.1 *Turing Search* SKU, feeds the §X GEO
-"alternative to Algolia/Coveo" content with a real reference workload, and (via T393)
-exports the grounding/manifest discipline into `viglet-core` (§XII) so Shio and Dumont
-inherit it. **Sequencing caution:** this is a *positioning* sharpening of an existing SKU,
-not a reason to out-prioritize the convicted §VIII.7 anchors (MCP pillar, verifiable
-answers, cost governance) — pull Block R forward when a named catalog customer (cursarei,
-or a second aggregator) asks, consistent with the §IX "asks twice" discipline.
+positioning gain — the bet is **packaging and sequencing**, not net-new platform. It
+also compounds the other bets: it sharpens the §S:VIII.1 *Turing Search* SKU, feeds the
+§X GEO "alternative to Algolia/Coveo" content with a real reference workload, and (via
+T393) exports the grounding/manifest discipline into `viglet-core` (§XII) so Shio and
+Dumont inherit it. **Sequencing caution:** this is a *positioning* sharpening of an
+existing SKU, not a reason to out-prioritize the convicted §S:VIII.7 anchors (MCP
+pillar, verifiable answers, cost governance) — pull Block R forward when a named catalog
+customer (cursarei, or a second aggregator) asks, consistent with the §IX "asks twice"
+discipline.
 
 ---
 
@@ -682,32 +679,31 @@ alone reads as "heavy and complex."
 
 ### XIV.2 The wedge — platform-first, analogy as support (revised, T630)
 
-Positioning by analogy (validated by Supabase's "open source Firebase
-alternative" and Meilisearch's stance) answers *category* and *differentiation*
-in one line, and the site launched with an analogy-first hero:
+Positioning by analogy (validated by Supabase's "open source Firebase alternative" and
+Meilisearch's stance) answers *category* and *differentiation* in one line, and the site
+launched with an analogy-first hero:
 
 > ~~The open-source, self-hosted alternative to Algolia — with AI agents built in.~~ *(original T474 lead)*
 
-**Revised (T630):** a conversion audit found the analogy-first lead *undersold*
-the product — it read as "a cheaper Algolia" and buried the actual
-differentiator (auditable cited RAG + agents + MCP, self-hosted), especially now
-that Algolia itself ships AI. The hero now **leads with the platform** and keeps
-the analogy as a support sub-line:
+**Revised (T630):** a conversion audit found the analogy-first lead *undersold* the
+product — it read as "a cheaper Algolia" and buried the actual differentiator (auditable
+cited RAG + agents + MCP, self-hosted), especially now that Algolia itself ships AI. The
+hero now **leads with the platform** and keeps the analogy as a support sub-line:
 
 > **Enterprise search, cited RAG and AI agents — over your own content.**
 > *(sub-line: "The open, self-hosted alternative to Algolia, with AI built in.")*
 > *(plus an explicit who-it's-for line: engineering teams who need production
 > search and RAG without shipping data to someone else's cloud.)*
 
-This still ladders up to the §VIII.1 *Turing Search* SKU and the §X GEO
-"alternative to Algolia/Coveo" line (now a sub-line + SEO phrase, not the
-headline). The platform breadth stays structured as four outcomes:
-**Search it → Ask it → Automate it → Run it.**
+This still ladders up to the §S:VIII.1 *Turing Search* SKU and the §X GEO "alternative
+to Algolia/Coveo" line (now a sub-line + SEO phrase, not the headline). The platform
+breadth stays structured as four outcomes: **Search it → Ask it → Automate it → Run
+it.**
 
-**ICP:** developers and platform teams who would otherwise (a) pay a hosted
-search SaaS but can't send data to someone else's cloud, or (b) hand-assemble a
-RAG/agent stack (LangChain + a vector DB) over weeks. The wedge against both:
-*open source + self-hosted + agents and search unified.*
+**ICP:** developers and platform teams who would otherwise (a) pay a hosted search SaaS
+but can't send data to someone else's cloud, or (b) hand-assemble a RAG/agent stack
+(LangChain + a vector DB) over weeks. The wedge against both: *open source + self-hosted
++ agents and search unified.*
 
 ### XIV.3 The defining bet — a live demo, because we lack proof
 

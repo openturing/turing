@@ -42,6 +42,16 @@ ref_scheme = "outline"
 # agents.md cites task ids in prose, and an id the scan misses is an id that gets reused.
 id_sources = ["agents.md"]
 
+[refs]
+# T902. Both prose files number from the same outline, so 13 addresses named a section in
+# each — §VIII, §IX, §IX.1–§IX.4, §X, §X.1, §X.5, §XII, §XII.2, §XIV, §XVI — and a pointer
+# to any of them resolved to two. A namespace gives STRATEGY.md its own address space, so
+# the collision is answered by where a section lives rather than by renumbering an outline
+# that predates the tool. IMPROVEMENTS.md keeps the bare outline it has always used: it
+# holds every `→ §` a task line points at, and renaming those would rewrite the pointers on
+# work already shipped.
+strategy = "S"
+
 [ids]
 # `T24b`, `T221a`, `T227a`, `T228a` — a split recorded by sub-lettering the id it came
 # from, which four ledger entries already spell. Declaring the shape is what closes the

@@ -2065,31 +2065,36 @@ leaves vectorless sites without a tile. The block adds **no backend**.
 > workflows were copied from each other and then diverged. Nothing enumerates the
 > workspace and asserts each publishable package is covered.
 
-### LXIX.8 Two governed prose files declare the same 13 section anchors (T902)
+### LXIX.30 The seven citations T902 could not repoint (T955)
 
-`STRATEGY.md` and `IMPROVEMENTS.md` both number their sections from the same outline,
-and 13 anchors collide: §VIII, §IX, §IX.1–§IX.4, §X, §X.1, §X.5, §XII, §XII.2, §XIV,
-§XVI. An anchor names one section, so a pointer to any of them resolves to two — and
-every verb that reads one refuses rather than guessing.
+T902 gave `STRATEGY.md` its own namespace, so its headings are addressed `S:VIII` and
+the 26 doubled anchors went to zero. The file's own prose still cites the bare outline
+it was written against, and a bare `§XI` inside a namespaced file resolves against the
+global index rather than the file's own space — so declaring the namespace turned 15
+intra-file citations into dangling ones.
 
-**Blocked on a plugin update, and on nothing else.** The re-check this section asked for
-has been run, and both halves are upstream and done:
+Eight were repointed to `§S:…` through `section amend`, which is the only door the guard
+leaves. The other seven could not land, and not because of the citation: `amend`
+validates the whole body it is handed, and four of these sections already break limits
+that predate this work.
 
-- `[refs] <role> = "<prefix>"` gives a prose file its own namespace. Credited here to
-  RK378, which was in fact **retired as a duplicate** — RK340 had shipped it a day
-  before that line was filed.
-- `section move` re-addresses a section, its subtree and every pointer at it. Recorded
-  here as in progress; **RK377 shipped**, and `roadkeep section --help` now lists
-  `move`.
+    S:VIII.7   442 words (limit 250), and names seven spent ids
+                                                         — 3 citations stuck
+    S:XI.4     names one spent id                        — 2 citations stuck
+    S:XII.2    365 words                                 — 1 citation stuck
+    S:XVI      321 words                                 — 1 citation stuck
 
-What remains is local: the plugin wired to this repository is still **0.1.285**, whose
-config parser rejects a `[refs]` key it does not know, and whose hook and CI gate are
-the copies that judge every write here. `/plugin update` is the whole blocker.
+(`lint` names the ids; repeating them here would spend them again, which is the same
+rule that refuses the sections.)
 
-Then the work is small: declare `refs.strategy`, and `section move` over the 13 anchors,
-which takes their subtrees and pointers with them. Doing any of it against 0.1.285
-breaks every other roadkeep call in the repo — and nothing points at a doubled anchor
-today, so the defect stays latent rather than costing a refusal.
+So `ref.dangling` stands at 32: the 25 this project already had, plus these 7. The
+doubled anchors, which is what T902 was about, are gone and stay gone.
+
+What is left is a prose edit, not a tooling one. Shortening a positioning section by 192
+words decides which part of an argument survives, and renaming a shipped id inside a
+sentence decides what that sentence now claims — both are the author's, which is why
+they were not folded into the namespace change. Each is one `section amend` once the
+words are chosen, and the citation rides along in the same call.
 
 ## LXX. What the link-free response and its consumers still lack (Block BW)
 
