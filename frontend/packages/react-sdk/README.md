@@ -419,7 +419,7 @@ import { TuringResultList } from "@viglet/turing-react-sdk";
 
 <TuringResultList
   documents={turing.documents}
-  renderItem={({ document }) => (
+  itemComponent={({ document }) => (
     <div>
       <h3>{document.title}</h3>
       <p>{document.description}</p>

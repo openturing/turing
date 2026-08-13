@@ -14,7 +14,6 @@
 ## Block BV — The quality gate stops at the package boundary (§LXIX)
 
 - ⏳ **T902** (deps: roadkeep RK377) **Two governed prose files declare the same 13 section anchors** — both halves of the fix exist upstream but not in the 0.1.285 plugin this repo runs, whose config parser would reject the key the fix declares. → §LXIX.8
-- 📋 **T944** (deps: —) **A README fence hands a reader a prop the component does not have** — The T939 guard reads the fences for one rule and nothing compiles them, so `TuringResultList`s documented `renderItem` outlived the rename to `itemComponent`. → §LXIX.29
 
 ## Block AN — Security hardening (post-audit, §XXXVII)
 

@@ -2142,24 +2142,6 @@ is latent rather than costing anyone a refusal today.
 Re-check on the next plugin update: `roadkeep --version`, then `roadkeep section
 --help` for `move`.
 
-### LXIX.29 The README fences are read by a rule and compiled by nobody (T944)
-
-T939 runs the search-store boundary rules over every package README's fenced code, which
-is one rule out of everything a fence can get wrong. The first thing it did not catch
-sits two lines above the fence it did: the `TuringResultList` example passes
-`renderItem`, and the component's one required render prop is `itemComponent`.
-
-So the documented usage neither compiles nor renders, and has not since the prop was
-renamed — a fence is prose to every tool in the repo, so a rename a build would have
-caught anywhere else passes here in silence.
-
-The fix that closes the class rather than the instance is to compile the fences: extract
-every `tsx`/`ts` block from `packages/*/README.md` into a scratch file importing the
-package's own types and run `tsc --noEmit` over it, walking them the way the T939 scan
-already does. A fence that is deliberately partial declares itself in its info string,
-which is a decision its author makes once instead of one the reader discovers by
-copying.
-
 ## LXX. What the link-free response and its consumers still lack (Block BW)
 
 > Block BT migrated the three `turing-app` consumers off `store.data`. What it did
