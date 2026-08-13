@@ -2212,6 +2212,34 @@ alone. The T889 and T893 guards should then assert the shared constant instead o
 counting occurrences — while keeping T893's check that the SSO branch never permits
 *more* than the local one.
 
+### XXXVII.19 Encoded traversal reaches the storage key unchecked (T951)
+
+Measured, not suspected. A probe of `StrictHttpFirewall` configured exactly as
+`allowUrlEncodedSlaturHttpFirewall()` does it rejects `../..`, `%2e%2e` and `%252e%252e`
+— and **passes** `/sn/site/..%2f..%2fsecret`, because `setAllowUrlEncodedSlash(true)`
+admits `%2f` and the firewall only rejects `.`/`..` as whole segments.
+
+What it reaches: `TurSNSearchController.serveSubPath` takes the raw
+`request.getRequestURI()`, `URLDecoder.decode`s it (line 137) — turning that into
+`../../secret` — and concatenates it into the object name (line 142) with no
+normalization and no containment check, then calls `storageService.downloadObject`.
+
+It is **not exploitable today**, and that is the finding rather than a reason to close
+it. The only thing that stops it is `resolveSafe` in `VigletFilesystemStorageService`
+(`viglet-core-storage`), which normalizes and asserts `startsWith(basePath)`; the MinIO
+backend treats the key as literal so it cannot escape a bucket. So a traversal defence
+for a Turing endpoint lives entirely in a separate artifact, reached through two layers
+that each declined to check, one of which has already loosened a default for an
+unrelated reason.
+
+T893 raised the blast radius: `/sn/**` is now anonymous under Keycloak as well, so this
+path is reachable without credentials on both deployment modes.
+
+The fix belongs in the controller: reject a decoded path that is not normalized (or
+resolve it against the template prefix and assert containment) before it becomes an
+object name, and pin the firewall probe above as a test so the encoded-slash allowance
+cannot silently become the whole defence again.
+
 ## LXXI The no-entity-caching rule is enforced only where it was first broken (Block AC)
 
 > Found while enumerating the explicitly-keyed caches for T895. Block AC's rule is

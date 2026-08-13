@@ -19,6 +19,7 @@
 ## Block AN — Security hardening (post-audit, §XXXVII)
 
 - 📋 **T894** (deps: —) **The permitAll list is written twice and nothing holds the copies equal** — forty matchers are spelled once per auth branch by hand, which is what produced both the missing answer endpoint and the missing search page. → §XXXVII.18
+- 📋 **T951** (deps: —) **The SPA file server decodes a path and concatenates it, checking nothing** — Encoded traversal clears the firewall because the encoded-slash allowance is on, so only a containment check in another repository stands between an anonymous request and an arbitrary storage key. → §XXXVII.19
 
 ## Block AC — JPA caching strategy: decouple cache from entities
 

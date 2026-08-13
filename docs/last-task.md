@@ -302,6 +302,8 @@ number" looked free but wasn't. Grepping three files (`ROADMAP.md`,
 
 ## Log (most recent first)
 
+- **T951 CREATED** (📋, Block AN §XXXVII.19 — measured: encoded traversal clears the firewall via the encoded-slash allowance and the SPA file server decodes+concatenates unchecked; only viglet-core resolveSafe stops it) — 2026-08-13.
+- **T893 SHIPPED** (Block AN §XXXVII.17 — the public search page is anonymous under Keycloak too, one matcher) — 2026-08-13.
 - **Block BN CLOSED, heading dropped** (§LXI — 7 changelog entries keep the heading; the roadmap heading is gone) — 2026-08-13.
 - **T831 SHIPPED** (Block BN §LXI.7 — apply a persona adjustment, human-confirmed field by field) — 2026-08-13.
 - **T949–T950 CREATED** (📋, Block J §XIV.8.8–.9 — what shipping the seed path exposed: a corrupt seed ZIP still writes the one-shot EXPORT_AUTO_IMPORT marker, and a site-less bundle comes back as an imported site named "unknown") — 2026-08-13.
