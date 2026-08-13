@@ -36,6 +36,7 @@ import com.viglet.turing.persistence.model.skill.TurSkill;
 import com.viglet.turing.persistence.repository.skill.TurSkillRepository;
 import com.viglet.turing.properties.TurConfigProperties;
 import com.viglet.turing.properties.TurStorageProperty;
+import com.viglet.turing.service.storage.TurStorageKeys;
 import com.viglet.turing.service.storage.TurStorageService;
 
 /**
@@ -472,27 +473,10 @@ public class TurSkillFileService {
      * forward-slash relative path.
      */
     static String safeRelative(String relativePath) {
-        if (relativePath == null || relativePath.isBlank()) {
-            throw new IllegalArgumentException("Path is required.");
-        }
-        String normalized = relativePath.replace('\\', '/').trim();
-        if (normalized.startsWith("/")) {
-            throw new IllegalArgumentException("Path must be relative to the skill root: " + relativePath);
-        }
-        List<String> segments = new ArrayList<>();
-        for (String segment : normalized.split("/")) {
-            if (segment.isEmpty() || segment.equals(".")) {
-                continue;
-            }
-            if (segment.equals("..")) {
-                throw new IllegalArgumentException("Path traversal is not allowed: " + relativePath);
-            }
-            segments.add(segment);
-        }
-        if (segments.isEmpty()) {
-            throw new IllegalArgumentException("Path is required.");
-        }
-        return String.join("/", segments);
+        // T951 — one copy of the rule, in TurStorageKeys. The SN SPA file server
+        // needed the same check, and a traversal guard written twice is what T894
+        // removed from the security config.
+        return TurStorageKeys.safeRelative(relativePath);
     }
 
     private String uniqueFolder(String slug) {

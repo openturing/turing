@@ -10,10 +10,6 @@
 
 - ⏳ **T902** (deps: roadkeep RK377) **Two governed prose files declare the same 13 section anchors** — both halves of the fix exist upstream but not in the 0.1.285 plugin this repo runs, whose config parser would reject the key the fix declares. → §LXIX.8
 
-## Block AN — Security hardening (post-audit, §XXXVII)
-
-- 📋 **T951** (deps: —) **The SPA file server decodes a path and concatenates it, checking nothing** — Encoded traversal clears the firewall because the encoded-slash allowance is on, so only a containment check in another repository stands between an anonymous request and an arbitrary storage key. → §XXXVII.19
-
 ## Block AC — JPA caching strategy: decouple cache from entities
 
 - ⏳ **T898** (deps: —) **Two of the snapshot's six cached entity kinds resist projection** — Four converted cleanly; TurSNSiteFieldExt reaches finders used in 17 places across 15 files and TurSNSite is a JPA FK on a write, so the rest is a facet-contract change rather than a fifth projection. → §LXXI.1

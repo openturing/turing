@@ -22,6 +22,7 @@ package com.viglet.turing.api.sn;
 
 import com.viglet.turing.domain.sn.TurSNSiteDomain;
 import com.viglet.turing.domain.sn.TurSNSiteRepositoryPort;
+import com.viglet.turing.service.storage.TurStorageKeys;
 import com.viglet.turing.service.storage.TurStorageService;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
@@ -137,6 +138,22 @@ public class TurSNSearchController {
         String decodedPath = java.net.URLDecoder.decode(filePath, java.nio.charset.StandardCharsets.UTF_8);
         if (decodedPath.isBlank()) {
             decodedPath = INDEX_HTML;
+        }
+
+        // T951 / §XXXVII.19 — the decode above is what makes this necessary.
+        // StrictHttpFirewall rejects `..` and `%2e%2e`, but Turing enables
+        // setAllowUrlEncodedSlash(true) and the firewall only rejects `.`/`..` as
+        // whole segments, so `..%2f..%2fsecret` reaches here intact and decodes to
+        // a traversal. Concatenating that into an object name left the only real
+        // defence in viglet-core-storage's resolveSafe — a different artifact, and
+        // one MinIO has no equivalent of. Rejected here instead of relied upon
+        // there, and NOT folded into the SPA fallback below: a traversal attempt
+        // is not client-side routing and must not be answered with a page.
+        try {
+            decodedPath = TurStorageKeys.safeRelative(decodedPath);
+        } catch (IllegalArgumentException e) {
+            log.warn("Rejected traversal in template '{}': {}", template, e.getMessage());
+            return ResponseEntity.badRequest().build();
         }
 
         String objectName = PAGES_PREFIX + template + "/" + decodedPath;

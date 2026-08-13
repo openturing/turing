@@ -303,4 +303,20 @@ class TurSkillFileServiceTest {
         }).when(repository).delete(anyString());
         return repository;
     }
+
+    /**
+     * T951 — the traversal rule moved to {@code TurStorageKeys} when the SN SPA
+     * file server needed the same one. This pins that there is still only one
+     * copy: a check written twice is what T894 removed from the security config.
+     */
+    @org.junit.jupiter.api.Test
+    void safeRelativeDelegatesToTheOneSharedRule() {
+        org.assertj.core.api.Assertions
+                .assertThat(TurSkillFileService.safeRelative("docs/a.md"))
+                .isEqualTo(com.viglet.turing.service.storage.TurStorageKeys
+                        .safeRelative("docs/a.md"));
+        org.assertj.core.api.Assertions
+                .assertThatThrownBy(() -> TurSkillFileService.safeRelative("../escape"))
+                .isInstanceOf(IllegalArgumentException.class);
+    }
 }

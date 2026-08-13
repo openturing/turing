@@ -2098,40 +2098,26 @@ Re-check on the next plugin update: `roadkeep --version`, then `roadkeep section
 
 ## XXXVII Security hardening (post-audit)
 
-Block AN's standing home. The audit that opened it is shipped and its rationale sections
-went with it; the heading is reopened here because the same file keeps producing the
-same class of finding. `TurSecurityConfigProduction` states its permitAll list **twice**
-— once for the Keycloak branch, once for local auth — and the two copies are maintained
-by hand. Every drift filed below is a path present in one copy and absent from the
-other, or absent from both because a shipped endpoint was never added.
+_Fully shipped — see [CHANGELOG.md](CHANGELOG.md) → Block AN and `git log`._
 
-### XXXVII.19 Encoded traversal reaches the storage key unchecked (T951)
+Block AN's standing home, reopened whenever the audit's class of finding recurs. It has
+been reopened twice already, so the pattern is the point rather than the exception.
 
-Measured, not suspected. A probe of `StrictHttpFirewall` configured exactly as
-`allowUrlEncodedSlaturHttpFirewall()` does it rejects `../..`, `%2e%2e` and `%252e%252e`
-— and **passes** `/sn/site/..%2f..%2fsecret`, because `setAllowUrlEncodedSlash(true)`
-admits `%2f` and the firewall only rejects `.`/`..` as whole segments.
+What this round changed about the premise. The block's own text used to say
+`TurSecurityConfigProduction` states its permitAll list **twice**, by hand, and that
+every drift filed here was a path in one copy and not the other. T894 ended that: the
+anonymous surface is one declaration, and the two branches' genuine differences are
+declared lists of their own, so "present in one copy only" is no longer a shape this
+file can take.
 
-What it reaches: `TurSNSearchController.serveSubPath` takes the raw
-`request.getRequestURI()`, `URLDecoder.decode`s it (line 137) — turning that into
-`../../secret` — and concatenates it into the object name (line 142) with no
-normalization and no containment check, then calls `storageService.downloadObject`.
+The standing concerns that outlived it, both learned the hard way:
 
-It is **not exploitable today**, and that is the finding rather than a reason to close
-it. The only thing that stops it is `resolveSafe` in `VigletFilesystemStorageService`
-(`viglet-core-storage`), which normalizes and asserts `startsWith(basePath)`; the MinIO
-backend treats the key as literal so it cannot escape a bucket. So a traversal defence
-for a Turing endpoint lives entirely in a separate artifact, reached through two layers
-that each declined to check, one of which has already loosened a default for an
-unrelated reason.
-
-T893 raised the blast radius: `/sn/**` is now anonymous under Keycloak as well, so this
-path is reachable without credentials on both deployment modes.
-
-The fix belongs in the controller: reject a decoded path that is not normalized (or
-resolve it against the template prefix and assert containment) before it becomes an
-object name, and pin the firewall probe above as a test so the encoded-slash allowance
-cannot silently become the whole defence again.
+- **A path is only as anonymous as the layer that serves it.** `/sn/**` is a controller,
+  not a static resource, so it goes through the chain — which is why it had to be
+  permitted (T893) and why what it serves had to be checked (T951).
+- **A defence that lives in another artifact is not a defence this repository has.**
+  The encoded-slash allowance let a traversal reach the storage key, and the only thing
+  stopping it was a containment check in `viglet-core-storage`.
 
 ## LXXI The no-entity-caching rule is enforced only where it was first broken (Block AC)
 

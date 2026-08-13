@@ -302,6 +302,8 @@ number" looked free but wasn't. Grepping three files (`ROADMAP.md`,
 
 ## Log (most recent first)
 
+- **Block AN CLOSED, heading dropped** (§XXXVII — 19 changelog entries keep the heading; reopened before and will be again) — 2026-08-13.
+- **T951 SHIPPED** (Block AN §XXXVII.19 — the SPA file server checks the decoded path before it becomes an object key; the rule moved to TurStorageKeys so the skill editor and the SPA server share one copy) — 2026-08-13.
 - **Block J CLOSED, heading dropped** (§XIV.8 — 38 changelog entries keep the heading; the roadmap heading is gone) — 2026-08-13.
 - **T950 SHIPPED** (Block J §XIV.8.9 — a site-less bundle reports siteImported=false / siteName=null instead of a site called "unknown"; StructuralImport splits failure from shape) — 2026-08-13.
 - **T949 SHIPPED** (Block J §XIV.8.8 — the seed marker is written only when every ZIP lands; per-file markers stop a retry re-importing successes, because a re-import deletes and recreates the site) — 2026-08-13.
