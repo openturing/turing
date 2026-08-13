@@ -585,9 +585,26 @@ public class TurImportExchange {
 		if (turExchange.getSnSites() != null && !turExchange.getSnSites().isEmpty()) {
 			logSNSites(turExchange.getSnSites());
 			turSNSiteImport.importSNSite(turExchange);
+		} else if (hasRootInfraReferences(turExchange)) {
+			// A seed bundle (T373) carries GLOBAL default infra and no site at
+			// all. Without this branch the root-level se/llm/store/embedding
+			// entries were parsed and then silently dropped.
+			log.info("No SN Sites in export file; importing root-level infra references only.");
+			turSNSiteImport.importInfraOnly(turExchange);
 		} else {
 			log.warn("No SN Sites found in export file");
 		}
+	}
+
+	private boolean hasRootInfraReferences(TurExchange turExchange) {
+		return isNotEmpty(turExchange.getSe())
+				|| isNotEmpty(turExchange.getLlm())
+				|| isNotEmpty(turExchange.getStore())
+				|| isNotEmpty(turExchange.getEmbeddingModels());
+	}
+
+	private boolean isNotEmpty(java.util.Collection<?> collection) {
+		return collection != null && !collection.isEmpty();
 	}
 
 	private void logSNSites(java.util.List<TurSNSiteExchange> sites) {

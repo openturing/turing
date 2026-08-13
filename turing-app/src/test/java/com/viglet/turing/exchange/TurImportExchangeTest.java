@@ -1,6 +1,7 @@
 package com.viglet.turing.exchange;
 
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
@@ -19,6 +20,7 @@ import org.springframework.web.multipart.MultipartFile;
 import com.viglet.turing.exchange.sn.TurSNSiteContentExchangeService;
 import com.viglet.turing.exchange.sn.TurSNSiteExchange;
 import com.viglet.turing.exchange.sn.TurSNSiteImport;
+import com.viglet.turing.persistence.model.se.TurSEInstance;
 import com.viglet.turing.persistence.repository.sn.TurSNSiteRepository;
 
 import tools.jackson.databind.json.JsonMapper;
@@ -108,5 +110,69 @@ class TurImportExchangeTest {
 
         assertNotNull(result);
         verify(turSNSiteImport, times(1)).importSNSite(org.mockito.ArgumentMatchers.any(TurExchange.class));
+        verify(turSNSiteImport, never()).importInfraOnly(org.mockito.ArgumentMatchers.any(TurExchange.class));
+    }
+
+    /**
+     * T373 — a Cloud seed bundle carries GLOBAL default infra and no site at
+     * all. Before this branch existed the root-level se/llm/store entries were
+     * parsed and then silently dropped, so the seeded defaults never landed.
+     */
+    @Test
+    void shouldImportRootInfraWhenExportHasNoSnSite(@TempDir Path tempDir) throws Exception {
+        TurSNSiteImport turSNSiteImport = org.mockito.Mockito.mock(TurSNSiteImport.class);
+        TurImportExchange turImportExchange = org.mockito.Mockito.spy(new TurImportExchange(turSNSiteImport,
+                org.mockito.Mockito.mock(TurSNSiteContentExchangeService.class),
+                org.mockito.Mockito.mock(TurSNSiteRepository.class),
+                org.mockito.Mockito.mock(com.viglet.turing.service.storage.TurStorageService.class),
+                org.mockito.Mockito.mock(com.viglet.turing.exchange.agent.TurAIAgentImportService.class)));
+
+        File extract = tempDir.resolve("extract").toFile();
+        Files.createDirectories(extract.toPath());
+
+        TurSEInstance se = new TurSEInstance();
+        se.setId("seed-se");
+        se.setTitle("Default Search Engine");
+        se.setEndpointUrl("./store/lucene-se");
+        TurExchange exchange = new TurExchange();
+        exchange.setSe(List.of(se));
+
+        String json = JsonMapper.builder().build().writeValueAsString(exchange);
+        Files.writeString(new File(extract, "export.json").toPath(), json, StandardCharsets.UTF_8);
+
+        MultipartFile multipartFile = new MockMultipartFile("file", "any.zip", "application/zip", new byte[] { 1 });
+        org.mockito.Mockito.doReturn(extract).when(turImportExchange).extractZipFile(multipartFile);
+
+        var result = turImportExchange.importFromMultipartFile(multipartFile);
+
+        assertNotNull(result);
+        verify(turSNSiteImport, times(1)).importInfraOnly(org.mockito.ArgumentMatchers.any(TurExchange.class));
+        verify(turSNSiteImport, never()).importSNSite(org.mockito.ArgumentMatchers.any(TurExchange.class));
+    }
+
+    /**
+     * The complement of the test above: an envelope with neither a site nor any
+     * root infra must still touch nothing, so the new branch cannot be mistaken
+     * for "always import".
+     */
+    @Test
+    void shouldImportNothingWhenExportHasNeitherSiteNorInfra(@TempDir Path tempDir) throws Exception {
+        TurSNSiteImport turSNSiteImport = org.mockito.Mockito.mock(TurSNSiteImport.class);
+        TurImportExchange turImportExchange = org.mockito.Mockito.spy(new TurImportExchange(turSNSiteImport,
+                org.mockito.Mockito.mock(TurSNSiteContentExchangeService.class),
+                org.mockito.Mockito.mock(TurSNSiteRepository.class),
+                org.mockito.Mockito.mock(com.viglet.turing.service.storage.TurStorageService.class),
+                org.mockito.Mockito.mock(com.viglet.turing.exchange.agent.TurAIAgentImportService.class)));
+
+        File extract = tempDir.resolve("extract").toFile();
+        Files.createDirectories(extract.toPath());
+        Files.writeString(new File(extract, "export.json").toPath(), "{\"se\":[]}", StandardCharsets.UTF_8);
+
+        MultipartFile multipartFile = new MockMultipartFile("file", "any.zip", "application/zip", new byte[] { 1 });
+        org.mockito.Mockito.doReturn(extract).when(turImportExchange).extractZipFile(multipartFile);
+
+        assertNotNull(turImportExchange.importFromMultipartFile(multipartFile));
+
+        verifyNoInteractions(turSNSiteImport);
     }
 }

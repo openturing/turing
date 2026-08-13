@@ -1,0 +1,25 @@
+{
+  "se" : [ {
+    "id" : "d0ce6e4e-2b1a-4b18-9e19-2f0f2f5b6a01",
+    "title" : "Default Search Engine",
+    "description" : "Platform-provided embedded Lucene search engine. GLOBAL: usable by every tenant, owned by none.",
+    "icon" : "search",
+    "enabled" : 1,
+    "endpointUrl" : "./store/lucene-se",
+    "turSEVendor" : {
+      "id" : "LUCENE"
+    }
+  } ],
+  "store" : [ {
+    "id" : "d0ce6e4e-2b1a-4b18-9e19-2f0f2f5b6a02",
+    "title" : "Default Vector Store",
+    "description" : "Platform-provided embedded Lucene vector store. GLOBAL: usable by every tenant, owned by none.",
+    "icon" : "database",
+    "enabled" : 1,
+    "url" : "./store/lucene-vector",
+    "collectionName" : "turing",
+    "turStoreVendor" : {
+      "id" : "LUCENE"
+    }
+  } ]
+}

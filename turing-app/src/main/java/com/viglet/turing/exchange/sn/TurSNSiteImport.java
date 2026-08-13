@@ -196,6 +196,17 @@ public class TurSNSiteImport {
 		clearSemanticNavigationCaches();
 	}
 
+	/**
+	 * Imports only the root-level infra references (SE / LLM / store / embedding
+	 * model) of an envelope that carries no SN site — the shape of a Cloud seed
+	 * bundle (T373 / §XIV.8.7), whose whole point is to provision GLOBAL default
+	 * infra without inventing a site to hang it on.
+	 */
+	@Transactional
+	public void importInfraOnly(TurExchange turExchange) {
+		importReferencedInstances(turExchange);
+	}
+
 	private void importReferencedInstances(TurExchange turExchange) {
 		if (turExchange == null) {
 			return;

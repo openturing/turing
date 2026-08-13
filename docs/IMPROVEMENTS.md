@@ -1262,46 +1262,27 @@ bundle-size budget) before a public release.
 > history; the operator + developer guide is [MULTI_TENANCY.md](MULTI_TENANCY.md)
 > and the shipped task index is [CHANGELOG.md](CHANGELOG.md) → Block J.
 
-### XIV.8 Cloud SaaS integration — one tenant per user (T333, T334, T335, T336, T365, T366 shipped; T373 open)
+### XIV.8 Cloud SaaS integration — one tenant per user (T333, T334, T335, T336, T365, T366, T373 shipped)
 
-Block J gives *isolation*; the Viglet Cloud product needs *one environment per
-signed-up user* on the shared turing/solr/postgres infra. The model: every Cloud
-user becomes the OWNER of their own personal tenant, so isolation is automatic
-and there is nothing to provision by hand.
+Block J gives *isolation*; the Viglet Cloud product needs *one environment per signed-up
+user* on the shared turing/solr/postgres infra. The model: every Cloud user becomes the
+OWNER of their own personal tenant, so isolation is automatic and there is nothing to
+provision by hand.
 
-**T333 (shipped 2026-06-12)** closes the only structural gap: the resolution
-filter (T259) used to drop an authenticated principal with no explicit tenant
-onto `DEFAULT` (shared). With the opt-in `turing.tenancy.auto-provision` flag on,
-that principal instead gets a personal tenant + OWNER membership minted on first
-request (slug derived from the username, race-safe reuse if a concurrent request
-won), and resolves to it via membership on every later request. No Keycloak SPI,
-no JWT `tenant` claim, and no console orchestration are required for the
-single-Turing flow — Cloud just sets `TURING_TENANCY_ENABLED=true` +
-`TURING_TENANCY_AUTOPROVISION=true`. Default off preserves the legacy
-invite-based, many-users-per-tenant posture.
+**T333 (shipped 2026-06-12)** closes the only structural gap: the resolution filter
+(T259) used to drop an authenticated principal with no explicit tenant onto `DEFAULT`
+(shared). With the opt-in `turing.tenancy.auto-provision` flag on, that principal
+instead gets a personal tenant + OWNER membership minted on first request (slug derived
+from the username, race-safe reuse if a concurrent request won), and resolves to it via
+membership on every later request. No Keycloak SPI, no JWT `tenant` claim, and no
+console orchestration are required for the single-Turing flow — Cloud just sets
+`TURING_TENANCY_ENABLED=true` + `TURING_TENANCY_AUTOPROVISION=true`. Default off
+preserves the legacy invite-based, many-users-per-tenant posture.
 
-The remaining follow-ups are about making the *multi-product* Cloud seamless,
-not about correctness of the single-service flow:
-
-
-#### XIV.8.7 XIV.8.7 — ship Cloud default config as a GLOBAL seed ZIP (T373)
-
-The product ask: a fresh Viglet Cloud deployment should come with a default LLM, default
-search engine, etc. already configured for *all* users, loadable purely from the Docker
-image with no post-deploy clicking. `application.properties` is the wrong tool — each
-instance has ~20 fields plus a `providerOptionsJson` blob and an encrypted API key. The
-right tool already exists: `TurExportImportOnStartup` scans `export/*.zip` on first boot
-and imports LLM/SE/Embedding/MCP/etc. through `TurImportExchange` (guarded once by the
-`EXPORT_AUTO_IMPORT` config marker). The only new guarantee needed is that the seeded
-BYO-infra lands in the GLOBAL pool: `TurInfraTenantScope.stampOnImport` already keeps
-`tenantId = null` when no tenant is bound to the thread (the startup import case), and
-the import code preserves whatever `tenantId` the bundle carries — so the work is to
-ensure the *export* side emits `tenantId = null` for instances intended as platform
-defaults, then bake the ZIP into the image (`COPY seed/defaults.zip /app/export/`). Two
-operational caveats: (a) every container must share the same `TurSecretCryptoService`
-key or the exported (encrypted) API keys won't decrypt; (b) the `EXPORT_AUTO_IMPORT`
-marker makes this one-shot per database — changing the defaults later means clearing the
-marker or a versioned re-seed, which is not yet modeled.  ---
+The standing constraint the seeded defaults inherit: a tenant id means something only in
+the install that minted it, so it never belongs in a portable bundle, and what makes one
+seeded instance serve every auto-provisioned tenant is owning none of them. See
+[CHANGELOG.md](CHANGELOG.md) → Block J for the as-built.
 
 ## XVI. Cost & token governance (Block L)
 

@@ -26,6 +26,7 @@ import org.springframework.web.server.ResponseStatusException;
 
 import com.viglet.turing.commons.utils.TurCommonsUtils;
 import com.viglet.turing.exchange.TurExchange;
+import com.viglet.turing.exchange.mixin.TurExportMappers;
 import com.viglet.turing.persistence.model.agent.TurAIAgent;
 import com.viglet.turing.persistence.model.agent.TurChatFlow;
 import com.viglet.turing.persistence.model.customtool.TurCustomTool;
@@ -42,7 +43,6 @@ import com.viglet.turing.persistence.repository.intent.TurIntentRepository;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
-import tools.jackson.databind.SerializationFeature;
 import tools.jackson.databind.json.JsonMapper;
 
 /**
@@ -277,9 +277,9 @@ public class TurAIAgentExportService {
     private File writeAgentJson(File exportDir, TurExchange envelope) {
         File exportFile = new File(exportDir, EXPORT_JSON);
         try {
-            JsonMapper mapper = JsonMapper.builder()
-                    .configure(SerializationFeature.INDENT_OUTPUT, true)
-                    .build();
+            // Tenant-blind by construction: the shared builder drops tenantId
+            // from every BYO-infra instance in the envelope (T373).
+            JsonMapper mapper = TurExportMappers.exportMapperBuilder().build();
             Path tmp = Files.createTempFile(exportDir.toPath(), "agent-", ".json");
             mapper.writer().writeValue(tmp.toFile(), envelope);
             Files.move(tmp, exportFile.toPath(), StandardCopyOption.REPLACE_EXISTING);

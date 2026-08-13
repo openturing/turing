@@ -10,6 +10,14 @@
 # The jar at turing-app/target/viglet-turing.jar is a Spring Boot fat-jar with
 # the SPA bundled under BOOT-INF/classes/public/, so no Node/Maven is needed here.
 
+# T373 — pack the platform defaults (seed/defaults/export.json) into the seed ZIP
+# TurExportImportOnStartup imports on the first boot of a fresh database. Needs a
+# JDK for `jar`, which the JRE runtime base does not carry. `-M` keeps the archive
+# manifest-free, so export.json sits at the root where the importer looks for it.
+FROM eclipse-temurin:21-jdk AS seed
+COPY seed/defaults /seed/defaults
+RUN jar --create --file /defaults.zip --no-manifest -C /seed/defaults .
+
 # Java 21 (NOT 25): embedded Artemis 2.43.0 (via Netty) crashes on Java 25 with
 # "Cannot clean arbitrary ByteBuffer instances" (CleanerJava25) while loading its
 # NIO journal, which takes down the broker and every JMS listener.
@@ -31,6 +39,10 @@ RUN apt-get update \
 COPY --from=docker:28-cli /usr/local/bin/docker /usr/local/bin/docker
 WORKDIR /app
 COPY turing-app/target/viglet-turing.jar app.jar
+# T373 — GLOBAL platform defaults, imported once on the first boot of a fresh
+# database (guarded by the EXPORT_AUTO_IMPORT config marker). Must land before
+# the chown below so the non-root java user (uid 1001) can read it.
+COPY --from=seed /defaults.zip /app/export/defaults.zip
 # Pre-create the store subdirs the demo mounts as their OWN named volumes
 # (onnx-cache, djl-cache — see viglet/cloud docker-compose, T656). A named volume
 # mounted onto a path that EXISTS in the image inherits that dir's ownership; if

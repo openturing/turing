@@ -21,6 +21,7 @@ import com.viglet.turing.api.asset.TurAssetItem;
 import com.viglet.turing.commons.utils.TurCommonsUtils;
 import com.viglet.turing.service.storage.TurStorageService;
 import com.viglet.turing.exchange.TurExchange;
+import com.viglet.turing.exchange.mixin.TurExportMappers;
 import com.viglet.turing.exchange.sn.mixin.TurSNSiteExchangeMixin;
 import com.viglet.turing.persistence.model.embedding.TurEmbeddingModel;
 import com.viglet.turing.persistence.model.llm.TurLLMInstance;
@@ -67,9 +68,9 @@ public class TurSNSiteExportFileService {
 			if (!exportDir.exists() && !exportDir.mkdirs()) {
 				throw new IOException("Failed to create export directory: " + exportDir.getAbsolutePath());
 			}
-			// Configure JsonMapper with mixins and pretty printing
-			JsonMapper mapper = JsonMapper.builder()
-					.configure(SerializationFeature.INDENT_OUTPUT, true)
+			// Configure JsonMapper with mixins and pretty printing. The builder
+			// already drops tenantId from every BYO-infra instance (T373).
+			JsonMapper mapper = TurExportMappers.exportMapperBuilder()
 					.addMixIn(TurSNRankingCondition.class, TurSNSiteExchangeMixin.class)
 					.addMixIn(TurSNRankingExpression.class, TurSNSiteExchangeMixin.class)
 					.addMixIn(TurSNSiteLocale.class, TurSNSiteExchangeMixin.class)

@@ -42,6 +42,12 @@ RUN chmod +x mvnw
 RUN --mount=type=cache,target=/root/.m2 \
     ./mvnw clean package -DskipTests -pl '!turing-utils' \
       -Dskip.installnodenpm=true -Dskip.npm=true -Dskip.pnpm=true 2>&1
+# T373 — pack the platform defaults (seed/defaults/export.json) into the seed ZIP
+# TurExportImportOnStartup imports on the first boot of a fresh database. Zipped
+# here rather than committed so the payload stays a reviewable diff. `-M` keeps
+# the archive manifest-free, so export.json sits at the root where the importer
+# looks for it.
+RUN jar --create --file /defaults.zip --no-manifest -C /src/seed/defaults .
 
 # Stage 3 — Runtime
 FROM eclipse-temurin:21-jre
@@ -57,6 +63,11 @@ RUN groupadd -r java && useradd -r -g java -u 1001 java
 COPY --from=docker:28-cli /usr/local/bin/docker /usr/local/bin/docker
 WORKDIR /app
 COPY --from=build /src/turing-app/target/viglet-turing.jar app.jar
+# T373 — GLOBAL platform defaults, imported once on the first boot of a fresh
+# database (guarded by the EXPORT_AUTO_IMPORT config marker). Must land before
+# the chown below so the non-root java user (uid 1001) can read it. A deployment
+# needing different defaults mounts its own ZIP over /app/export instead.
+COPY --from=build /defaults.zip /app/export/defaults.zip
 # Pre-create the store subdirs the demo mounts as their OWN named volumes
 # (onnx-cache, djl-cache — see viglet/cloud docker-compose, T656). A named volume
 # mounted onto a path that EXISTS in the image inherits that dir's ownership; if
