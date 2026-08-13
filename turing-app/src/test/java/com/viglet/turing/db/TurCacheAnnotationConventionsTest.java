@@ -249,6 +249,178 @@ class TurCacheAnnotationConventionsTest {
         }
     }
 
+    /**
+     * T898 / §LXXI.1 — <strong>no {@code @Cacheable} may hold a JPA entity, wherever
+     * it is declared.</strong>
+     *
+     * <p>{@link #noRepositoryMayCarryCacheAnnotations} enforces the Block AC rule at
+     * the repository boundary, and its own Javadoc puts service-level caches out of
+     * scope. But the rule T486 was written to enforce is about the <em>cached
+     * value</em>, not about which layer annotated it: an entity carries lazy proxies
+     * that throw {@code LazyInitializationException} the moment a hot path
+     * dereferences one outside a transaction, and that is true of a cache on a
+     * service exactly as it was of a cache on a finder. So the guard for the rule
+     * could not see the largest violation of it.
+     *
+     * <p>What makes the check work is recursion into <strong>record components</strong>.
+     * {@code TurSNSiteSearchSnapshotService#getSnapshot} returns
+     * {@code Optional<TurSNSiteSearchSnapshot>} — no entity in sight at the method
+     * signature; six of them one level in, some behind a {@code List} or a
+     * {@code Map} value. A check that looked only at the declared return type would
+     * have passed and proved nothing.
+     *
+     * <p>{@link #KNOWN_ENTITY_CACHES} is the enumerated debt, not an escape hatch: a
+     * cache listed there is a violation someone has written down with the task that
+     * retires it. A <em>new</em> entity cache is not listable — it is a defect.
+     */
+    @Test
+    void noCacheableMayHoldAJpaEntity() throws IOException {
+        Path classesDir = Paths.get("target/classes");
+        assertThat(Files.isDirectory(classesDir))
+                .as("Expected compiled classes at %s. Run 'mvn -DskipTests compile' first.",
+                        classesDir)
+                .isTrue();
+
+        MetadataReaderFactory readers = new SimpleMetadataReaderFactory();
+        Set<String> cacheableMembers = new TreeSet<>();
+        try (Stream<Path> paths = Files.walk(classesDir)) {
+            paths.filter(Files::isRegularFile)
+                    .filter(TurCacheAnnotationConventionsTest::isClassFile)
+                    .forEach(p -> collectCacheableMethods(p, readers, cacheableMembers));
+        }
+
+        assertThat(cacheableMembers)
+                .as("the walk found no @Cacheable method at all — the check would pass vacuously")
+                .isNotEmpty();
+
+        Set<String> violations = new TreeSet<>();
+        for (String member : cacheableMembers) {
+            inspectCachedValue(member, violations);
+        }
+
+        assertThat(violations)
+                .as("""
+                        A @Cacheable must hold an immutable read-model, never a JPA entity
+                        (Block AC / T486, widened past the repository boundary by T898 /
+                        §LXXI.1). A cached entity carries lazy proxies, so the first hot-path
+                        read that dereferences one outside a transaction throws
+                        LazyInitializationException — and the fix-one-association-at-a-time
+                        treadmill is what this policy exists to end. Project the value into
+                        records (see domain/sn/*Domain for the pattern). Entities reachable
+                        from a cached value, including through record components:""")
+                .isEmpty();
+    }
+
+    /**
+     * The entity caches that exist today, each with the task that retires it. Every
+     * line here is acknowledged debt: a cached value someone has confirmed carries
+     * an entity and has written down where the conversion is tracked.
+     *
+     * <p><strong>This list only ever shrinks.</strong> A new {@code @Cacheable}
+     * holding an entity is a defect to fix, not an entry to add — adding one means
+     * claiming the lazy-proxy failure mode is acceptable on that path, which Block
+     * AC says it is not.
+     */
+    private static final Map<String, String> KNOWN_ENTITY_CACHES = Map.of(
+            "TurSNSiteSearchSnapshotService#getSnapshot",
+            "T898 / §LXXI.1 — the hottest read in the product holds six entity kinds. "
+                    + "Converting it is blocked on three measured couplings, each needing its "
+                    + "own task: TurSNSearchProcess.getSNSite() hands the cached TurSNSite to "
+                    + "20 genai/ann sites that walk turSNSiteGenAi -> turAIAgent; "
+                    + "populateMetrics uses it as a JPA FK on a write; and three finders take "
+                    + "snapshot entities as query parameters. Until then the cache relies on "
+                    + "findByNameIgnoreCaseWithGenAi pre-fetching the one association a cache "
+                    + "hit dereferences — the workaround this policy exists to stop repeating");
+
+    /** Where every JPA entity in this codebase lives. */
+    private static final String ENTITY_PACKAGE = "com.viglet.turing.persistence.model.";
+
+    /** How deep to follow a cached value's shape before giving up. */
+    private static final int MAX_DEPTH = 4;
+
+    private static void collectCacheableMethods(Path classFile, MetadataReaderFactory readers,
+            Set<String> members) {
+        try {
+            MetadataReader reader = readers.getMetadataReader(new FileSystemResource(classFile));
+            String className = reader.getClassMetadata().getClassName();
+            reader.getAnnotationMetadata().getDeclaredMethods().forEach(method -> {
+                if (method.getAnnotations().isPresent(Cacheable.class)) {
+                    members.add(className + "#" + method.getMethodName());
+                }
+            });
+        } catch (IOException | RuntimeException ignored) {
+            // Unparseable class files carry no @Cacheable.
+        }
+    }
+
+    /**
+     * Reflects on one {@code @Cacheable} method and records every entity its value
+     * can reach. Reflection rather than bytecode metadata because the generics are
+     * the whole point: {@code Optional<Snapshot>} says nothing, its components do.
+     */
+    private static void inspectCachedValue(String member, Set<String> violations) {
+        int hash = member.lastIndexOf('#');
+        String className = member.substring(0, hash);
+        String methodName = member.substring(hash + 1);
+        String simpleName = className.substring(className.lastIndexOf('.') + 1);
+        String key = simpleName + "#" + methodName;
+        try {
+            Class<?> owner = Class.forName(className, false,
+                    TurCacheAnnotationConventionsTest.class.getClassLoader());
+            for (java.lang.reflect.Method method : owner.getDeclaredMethods()) {
+                if (!method.getName().equals(methodName)
+                        || !method.isAnnotationPresent(Cacheable.class)) {
+                    continue;
+                }
+                Set<String> entities = new TreeSet<>();
+                walk(method.getGenericReturnType(), 0, new java.util.HashSet<>(), entities);
+                if (entities.isEmpty() || KNOWN_ENTITY_CACHES.containsKey(key)) {
+                    continue;
+                }
+                violations.add(key + " -> " + String.join(", ", entities));
+            }
+        } catch (ClassNotFoundException | LinkageError | RuntimeException ignored) {
+            // A class we cannot load here cannot be inspected; the metadata-level
+            // checks above still cover its annotations.
+        }
+    }
+
+    /** Follows a generic type into its arguments and, for records, its components. */
+    private static void walk(java.lang.reflect.Type type, int depth, Set<String> seen,
+            Set<String> entities) {
+        if (depth > MAX_DEPTH || type == null) {
+            return;
+        }
+        if (type instanceof java.lang.reflect.ParameterizedType parameterized) {
+            walk(parameterized.getRawType(), depth, seen, entities);
+            for (java.lang.reflect.Type argument : parameterized.getActualTypeArguments()) {
+                walk(argument, depth + 1, seen, entities);
+            }
+            return;
+        }
+        if (type instanceof java.lang.reflect.WildcardType wildcard) {
+            for (java.lang.reflect.Type bound : wildcard.getUpperBounds()) {
+                walk(bound, depth + 1, seen, entities);
+            }
+            return;
+        }
+        if (!(type instanceof Class<?> raw) || !seen.add(raw.getName())) {
+            return;
+        }
+        if (raw.isAnnotationPresent(jakarta.persistence.Entity.class)
+                || raw.getName().startsWith(ENTITY_PACKAGE)) {
+            entities.add(raw.getSimpleName());
+            return;
+        }
+        // Only our own records are worth descending into: a JDK container has
+        // already been unwrapped above, and a third-party type is not ours to shape.
+        if (raw.isRecord() && raw.getName().startsWith("com.viglet.")) {
+            for (java.lang.reflect.RecordComponent component : raw.getRecordComponents()) {
+                walk(component.getGenericType(), depth + 1, seen, entities);
+            }
+        }
+    }
+
     private static final String TRANSACTIONAL =
             "org.springframework.transaction.annotation.Transactional";
 
