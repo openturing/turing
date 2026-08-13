@@ -84,10 +84,8 @@ class TurSNDuplicateClusteringServiceTest {
         return site;
     }
 
-    private TurSNSiteLocale locale(Locale language) {
-        TurSNSiteLocale snLocale = new TurSNSiteLocale();
-        snLocale.setLanguage(language);
-        return snLocale;
+    private TurSNSiteSearchSnapshot.LocaleView locale(Locale language) {
+        return new TurSNSiteSearchSnapshot.LocaleView(language, "core", 0);
     }
 
     private void snapshotExists(Locale language) {

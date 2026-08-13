@@ -242,7 +242,7 @@ public class TurSNSiteSearchService {
     public Locale resolveDefaultLocale(String siteName) {
         return snapshotService.getSnapshot(siteName, null)
                 .flatMap(snap -> snap.allLocales().stream().findFirst())
-                .map(TurSNSiteLocale::getLanguage)
+                .map(TurSNSiteSearchSnapshot.LocaleView::language)
                 .orElse(null);
     }
 

@@ -79,7 +79,7 @@ public class TurPersonaSnDocResolver {
             return "";
         }
         List<Locale> locales = snapshot.allLocales().stream()
-                .map(TurSNSiteLocale::getLanguage)
+                .map(TurSNSiteSearchSnapshot.LocaleView::language)
                 .filter(Objects::nonNull)
                 .distinct()
                 .toList();

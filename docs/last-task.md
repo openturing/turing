@@ -302,6 +302,7 @@ number" looked free but wasn't. Grepping three files (`ROADMAP.md`,
 
 ## Log (most recent first)
 
+- **T898d SHIPPED** (Block AC §LXXI.5 — allLocales projected into LocaleView; the two plugin call sites rebuild a transient TurSNSiteLocale carrying core + site; cached entity kinds 3 -> 2) — 2026-08-13.
 - **T898c SHIPPED** (Block AC §LXXI.4 — facetLabelsByFieldId projected into FacetLabelView; consumer builds the transient entity the facet contract wants; cached entity kinds 4 -> 3) — 2026-08-13.
 - **T898b SHIPPED** (Block AC §LXXI.3 — customFacetsByFieldId + customSorts projected into CustomFacetView/CustomSortView; the snapshot's cached entity kinds drop 6 -> 4) — 2026-08-13.
 - **T952 CREATED** (📋, Block AC §LXXI.2 — measured: getSNSite hands the cached detached TurSNSite to 22 call sites in 11 files that dereference getTurSNSiteGenAi 24 times; only a two-association fetch-join keeps it working) — 2026-08-13.

@@ -79,10 +79,8 @@ class TurSNSimilarDocumentsServiceTest {
         return site;
     }
 
-    private TurSNSiteLocale locale(Locale language) {
-        TurSNSiteLocale snLocale = new TurSNSiteLocale();
-        snLocale.setLanguage(language);
-        return snLocale;
+    private TurSNSiteSearchSnapshot.LocaleView locale(Locale language) {
+        return new TurSNSiteSearchSnapshot.LocaleView(language, "core", 0);
     }
 
     private void snapshotExists(Locale language) {
@@ -95,6 +93,36 @@ class TurSNSimilarDocumentsServiceTest {
     private static Map<String, Object> doc(String id, String title) {
         return Map.of(TurSNFieldName.ID, id, TurSNFieldName.TITLE, title,
                 TurSNFieldName.TYPE, "Page", TurSNFieldName.URL, "/c/" + id);
+    }
+
+    /**
+     * T898d / §LXXI.1 — the snapshot caches LocaleView records, so the
+     * TurSNSiteLocale handed to the plugin is rebuilt at this boundary. It has to
+     * arrive complete: the Elasticsearch plugin passes getTurSNSite() to a
+     * repository finder and Lucene resolves its MLT fields from it, so a missing
+     * site degrades both silently rather than failing, and `core` is how every
+     * plugin addresses the index.
+     */
+    @Test
+    void theLocaleHandedToThePluginCarriesCoreAndTheSite() {
+        snapshotExists(Locale.ENGLISH);
+        when(hybridRankingService.isEnabled(any())).thenReturn(false);
+        when(plugin.getSimilarDocuments(any(), eq(SEED), eq(10)))
+                .thenReturn(List.of());
+
+        service.findSimilar(SITE, SEED, 10, Locale.ENGLISH, null);
+
+        org.mockito.ArgumentCaptor<com.viglet.turing.persistence.model.sn.locale.TurSNSiteLocale>
+                captor = org.mockito.ArgumentCaptor.forClass(
+                        com.viglet.turing.persistence.model.sn.locale.TurSNSiteLocale.class);
+        verify(plugin).getSimilarDocuments(captor.capture(), eq(SEED), eq(10));
+
+        assertThat(captor.getValue()).satisfies(siteLocale -> {
+            assertThat(siteLocale.getLanguage()).isEqualTo(Locale.ENGLISH);
+            assertThat(siteLocale.getCore()).isEqualTo("core");
+            assertThat(siteLocale.getTurSNSite()).isNotNull();
+            assertThat(siteLocale.getTurSNSite().getName()).isEqualTo(SITE);
+        });
     }
 
     // ---- guards -----------------------------------------------------------

@@ -37,10 +37,10 @@ import com.viglet.turing.observability.TurSearchPipelineObservation;
 import com.viglet.turing.persistence.model.sn.TurSNSite;
 import com.viglet.turing.sn.snapshot.TurSNSiteSearchSnapshot.CustomFacetView;
 import com.viglet.turing.sn.snapshot.TurSNSiteSearchSnapshot.FacetLabelView;
+import com.viglet.turing.sn.snapshot.TurSNSiteSearchSnapshot.LocaleView;
 import com.viglet.turing.sn.snapshot.TurSNSiteSearchSnapshot.CustomSortView;
 import com.viglet.turing.persistence.model.sn.field.TurSNSiteCustomFacet;
 import com.viglet.turing.persistence.model.sn.field.TurSNSiteFieldExt;
-import com.viglet.turing.persistence.model.sn.locale.TurSNSiteLocale;
 import com.viglet.turing.persistence.model.sn.sort.TurSNSiteCustomSort;
 import com.viglet.turing.persistence.repository.sn.TurSNSiteRepository;
 import com.viglet.turing.persistence.repository.sn.field.TurSNSiteCustomFacetRepository;
@@ -168,8 +168,12 @@ public class TurSNSiteSearchSnapshotService {
 
         boolean hasHlFields = enabledFields.stream().anyMatch(f -> f.getHl() == 1);
 
-        List<TurSNSiteLocale> allLocales = turSNSiteLocaleRepository
-                .findByTurSNSiteOrderByPositionAsc(site);
+        // T898 / §LXXI.1 — projected in-session; the two consumers that need the
+        // entity for the plugin surface rebuild a transient one from this.
+        List<LocaleView> allLocales = turSNSiteLocaleRepository
+                .findByTurSNSiteOrderByPositionAsc(site).stream()
+                .map(l -> new LocaleView(l.getLanguage(), l.getCore(), l.getPosition()))
+                .toList();
 
         // T898 — findByTurSNSiteWithItems still fetch-joins `items`; the projection
         // drops them because no consumer reads them. Narrowing the query is a

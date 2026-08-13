@@ -170,7 +170,7 @@ class TurSNSearchProcessTest {
         private static TurSNSiteSearchSnapshot snapshot(TurSNSite site, Locale locale,
                         List<TurSNSiteFieldExt> enabledFields,
                         Map<String, Set<TurSNSiteSearchSnapshot.FacetLabelView>> facetLabels,
-                        List<TurSNSiteLocale> allLocales) {
+                        List<TurSNSiteSearchSnapshot.LocaleView> allLocales) {
                 return new TurSNSiteSearchSnapshot(site, locale, "solr", false,
                                 enabledFields, Set.of(),
                                 Map.of(), facetLabels, allLocales, List.of());
@@ -183,13 +183,9 @@ class TurSNSearchProcessTest {
                 return s;
         }
 
-        private static TurSNSiteLocale snLocale(String id, Locale language, int position) {
-                TurSNSiteLocale l = new TurSNSiteLocale();
-                l.setId(id);
-                l.setLanguage(language);
-                l.setCore("core");
-                l.setPosition(position);
-                return l;
+        private static TurSNSiteSearchSnapshot.LocaleView snLocale(String id, Locale language,
+                        int position) {
+                return new TurSNSiteSearchSnapshot.LocaleView(language, "core", position);
         }
 
         @Test

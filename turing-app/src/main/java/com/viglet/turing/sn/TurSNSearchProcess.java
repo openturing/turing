@@ -145,7 +145,7 @@ public class TurSNSearchProcess {
         public boolean existsByTurSNSiteAndLanguage(String siteName, Locale locale) {
                 return snapshotService.getSnapshot(siteName, locale)
                                 .map(snap -> snap.allLocales().stream()
-                                                .map(TurSNSiteLocale::getLanguage)
+                                                .map(TurSNSiteSearchSnapshot.LocaleView::language)
                                                 .anyMatch(l -> l != null && l.equals(locale)))
                                 .orElse(false);
         }
@@ -545,14 +545,15 @@ public class TurSNSearchProcess {
                                 .orElseGet(ArrayList::new);
         }
 
-        private List<TurSNSiteLocaleBean> responseLocaleBeans(List<TurSNSiteLocale> locales, URI uri) {
+        private List<TurSNSiteLocaleBean> responseLocaleBeans(
+                                List<TurSNSiteSearchSnapshot.LocaleView> locales, URI uri) {
                 List<TurSNSiteLocaleBean> turSNSiteLocaleBeans = new ArrayList<>();
                 locales.forEach(turSNSiteLocale -> turSNSiteLocaleBeans
                                 .add(new TurSNSiteLocaleBean()
-                                                .setLocale(turSNSiteLocale.getLanguage())
+                                                .setLocale(turSNSiteLocale.language())
                                                 .setLink(TurCommonsUtils.addOrReplaceParameter(uri,
                                                                 TurSNParamType.LOCALE,
-                                                                turSNSiteLocale.getLanguage(),
+                                                                turSNSiteLocale.language(),
                                                                 true)
                                                                 .toString())));
                 return turSNSiteLocaleBeans;

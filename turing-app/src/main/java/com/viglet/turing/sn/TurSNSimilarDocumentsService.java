@@ -148,18 +148,37 @@ public class TurSNSimilarDocumentsService {
 
     /** Picks the {@link TurSNSiteLocale} matching the request locale, else the first available. */
     private static TurSNSiteLocale resolveLocale(TurSNSiteSearchSnapshot snapshot, Locale locale) {
-        List<TurSNSiteLocale> locales = snapshot.allLocales();
+        List<TurSNSiteSearchSnapshot.LocaleView> locales = snapshot.allLocales();
         if (locales == null || locales.isEmpty()) {
             return null;
         }
+        TurSNSiteSearchSnapshot.LocaleView match = null;
         if (locale != null) {
-            for (TurSNSiteLocale candidate : locales) {
-                if (locale.equals(candidate.getLanguage())) {
-                    return candidate;
+            for (TurSNSiteSearchSnapshot.LocaleView candidate : locales) {
+                if (locale.equals(candidate.language())) {
+                    match = candidate;
+                    break;
                 }
             }
         }
-        return locales.get(0);
+        return toEntity(match != null ? match : locales.get(0), snapshot.site());
+    }
+
+    /**
+     * T898 / §LXXI.1 — the snapshot caches LocaleView records; TurSearchEnginePlugin
+     * is typed on the entity, so one is rebuilt here. The site is carried through on
+     * purpose: the Elasticsearch plugin passes {@code getTurSNSite()} to a repository
+     * finder and Lucene resolves its MLT fields from it, so a null there would
+     * degrade both silently instead of failing.
+     */
+    private static TurSNSiteLocale toEntity(TurSNSiteSearchSnapshot.LocaleView view,
+            TurSNSite site) {
+        TurSNSiteLocale siteLocale = new TurSNSiteLocale();
+        siteLocale.setLanguage(view.language());
+        siteLocale.setCore(view.core());
+        siteLocale.setPosition(view.position());
+        siteLocale.setTurSNSite(site);
+        return siteLocale;
     }
 
     private static int clampRows(int rows) {

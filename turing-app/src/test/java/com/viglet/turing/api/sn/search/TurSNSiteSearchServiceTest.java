@@ -76,7 +76,7 @@ import jakarta.servlet.http.HttpServletRequest;
 class TurSNSiteSearchServiceTest {
 
     private static TurSNSiteSearchSnapshot snapshot(String name, boolean hasHl,
-            List<TurSNSiteLocale> locales) {
+            List<TurSNSiteSearchSnapshot.LocaleView> locales) {
         TurSNSite site = new TurSNSite();
         site.setId("site-id");
         site.setName(name);
@@ -85,12 +85,8 @@ class TurSNSiteSearchServiceTest {
                 List.of(), Set.of(), Map.of(), Map.of(), locales, List.of());
     }
 
-    private static TurSNSiteLocale locale(Locale language, int position) {
-        TurSNSiteLocale l = new TurSNSiteLocale();
-        l.setLanguage(language);
-        l.setCore("core");
-        l.setPosition(position);
-        return l;
+    private static TurSNSiteSearchSnapshot.LocaleView locale(Locale language, int position) {
+        return new TurSNSiteSearchSnapshot.LocaleView(language, "core", position);
     }
 
     @Test

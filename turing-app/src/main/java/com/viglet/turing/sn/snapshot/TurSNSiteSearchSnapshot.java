@@ -25,7 +25,6 @@ import java.util.Set;
 
 import com.viglet.turing.persistence.model.sn.TurSNSite;
 import com.viglet.turing.persistence.model.sn.field.TurSNSiteFieldExt;
-import com.viglet.turing.persistence.model.sn.locale.TurSNSiteLocale;
 
 /**
  * Immutable, atomic snapshot of every persistent piece of configuration the SN
@@ -46,7 +45,7 @@ public record TurSNSiteSearchSnapshot(
         Set<String> fieldIdsWithCustomFacets,
         Map<String, List<CustomFacetView>> customFacetsByFieldId,
         Map<String, Set<FacetLabelView>> facetLabelsByFieldId,
-        List<TurSNSiteLocale> allLocales,
+        List<LocaleView> allLocales,
         List<CustomSortView> customSorts) implements Serializable {
 
     @Serial
@@ -102,6 +101,28 @@ public record TurSNSiteSearchSnapshot(
      * per-request object built by a builder carries no lazy proxy to begin with.
      */
     public record FacetLabelView(Locale locale, String label) implements Serializable {
+        @Serial
+        private static final long serialVersionUID = 1L;
+    }
+
+    /**
+     * T898 / §LXXI.1 — one of the site's locales, in the order the build read them.
+     *
+     * <p>Six of the eight consumers want the {@code language} and nothing else. The
+     * other two — the similar-documents and duplicate-clustering paths — resolve one
+     * of these and hand it to {@link com.viglet.turing.plugins.se.TurSearchEnginePlugin},
+     * whose surface is typed on the entity, so they rebuild a transient
+     * {@code TurSNSiteLocale} at that boundary. The plugin interface does the same
+     * thing itself in {@code createStandaloneIndex}, so this is its own idiom rather
+     * than a new one.
+     *
+     * <p>That transient instance must carry the site: the Elasticsearch plugin uses
+     * {@code siteLocale.getTurSNSite()} as a repository query parameter and Lucene
+     * resolves its MLT fields from it, so leaving it null would quietly degrade both
+     * rather than fail. {@code core} is what the plugins address the index by.
+     */
+    public record LocaleView(Locale language, String core, int position)
+            implements Serializable {
         @Serial
         private static final long serialVersionUID = 1L;
     }

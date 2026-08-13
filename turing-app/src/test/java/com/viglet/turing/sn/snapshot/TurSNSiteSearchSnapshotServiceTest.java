@@ -33,6 +33,7 @@ import com.viglet.turing.persistence.model.sn.TurSNSite;
 import com.viglet.turing.persistence.model.sn.field.TurSNSiteCustomFacet;
 import com.viglet.turing.persistence.model.sn.field.TurSNSiteFieldExt;
 import com.viglet.turing.persistence.model.sn.field.TurSNSiteFieldExtFacet;
+import com.viglet.turing.persistence.model.sn.locale.TurSNSiteLocale;
 import com.viglet.turing.persistence.model.sn.sort.TurSNSiteCustomSort;
 import com.viglet.turing.persistence.repository.sn.TurSNSiteRepository;
 import com.viglet.turing.persistence.repository.sn.field.TurSNSiteCustomFacetRepository;
@@ -235,6 +236,44 @@ class TurSNSiteSearchSnapshotServiceTest {
         org.mockito.Mockito.verify(turSNSiteFieldExtFacetRepository,
                 org.mockito.Mockito.never())
                 .findByTurSNSiteFieldExtAndLocale(any(), any());
+    }
+
+    // ---- locales -----------------------------------------------------------
+
+    private static TurSNSiteLocale snLocale(Locale language, String core, int position) {
+        TurSNSiteLocale locale = new TurSNSiteLocale();
+        locale.setId("loc-" + position);
+        locale.setLanguage(language);
+        locale.setCore(core);
+        locale.setPosition(position);
+        return locale;
+    }
+
+    @Test
+    void projectsEveryLocaleFieldThePluginBoundaryNeeds() {
+        when(turSNSiteLocaleRepository.findByTurSNSiteOrderByPositionAsc(any()))
+                .thenReturn(List.of(snLocale(Locale.US, "site_en", 0)));
+
+        assertThat(snapshot().allLocales()).singleElement().satisfies(view -> {
+            assertThat(view.language()).isEqualTo(Locale.US);
+            // core is how every plugin addresses the index; the similar-documents and
+            // clustering paths rebuild a TurSNSiteLocale from this record.
+            assertThat(view.core()).isEqualTo("site_en");
+            assertThat(view.position()).isZero();
+        });
+    }
+
+    @Test
+    void keepsTheLocaleOrderTheQueryReturned() {
+        // TurSNSiteSearchService#resolveDefaultLocale takes findFirst(), so the
+        // ORDER BY position of the query is load-bearing, not incidental.
+        when(turSNSiteLocaleRepository.findByTurSNSiteOrderByPositionAsc(any()))
+                .thenReturn(List.of(snLocale(Locale.US, "site_en", 0),
+                        snLocale(Locale.forLanguageTag("pt-BR"), "site_pt", 1)));
+
+        assertThat(snapshot().allLocales())
+                .extracting(TurSNSiteSearchSnapshot.LocaleView::core)
+                .containsExactly("site_en", "site_pt");
     }
 
     // ---- the invariant the projection exists for ---------------------------
