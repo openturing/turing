@@ -25,7 +25,6 @@ import java.util.Set;
 
 import com.viglet.turing.persistence.model.sn.TurSNSite;
 import com.viglet.turing.persistence.model.sn.field.TurSNSiteFieldExt;
-import com.viglet.turing.persistence.model.sn.field.TurSNSiteFieldExtFacet;
 import com.viglet.turing.persistence.model.sn.locale.TurSNSiteLocale;
 
 /**
@@ -46,7 +45,7 @@ public record TurSNSiteSearchSnapshot(
         List<TurSNSiteFieldExt> enabledFields,
         Set<String> fieldIdsWithCustomFacets,
         Map<String, List<CustomFacetView>> customFacetsByFieldId,
-        Map<String, Set<TurSNSiteFieldExtFacet>> facetLabelsByFieldId,
+        Map<String, Set<FacetLabelView>> facetLabelsByFieldId,
         List<TurSNSiteLocale> allLocales,
         List<CustomSortView> customSorts) implements Serializable {
 
@@ -79,6 +78,30 @@ public record TurSNSiteSearchSnapshot(
      */
     public record CustomSortView(String id, String name, String description)
             implements Serializable {
+        @Serial
+        private static final long serialVersionUID = 1L;
+    }
+
+    /**
+     * T898 / §LXXI.1 — a per-locale facet label as the search flow reads it.
+     *
+     * <p>Locale and label only. The entity also carries an {@code id}, and the
+     * {@code TurSNSiteFieldExtFacetDto} built downstream copies one — but that DTO
+     * is an internal {@code facetMap} value, and its single consumer
+     * ({@code TurSNFacetRenderer#groupLabel}) matches on the locale and reads the
+     * label. Nothing reads the id, so nothing here carries it.
+     *
+     * <p>Unlike the other two views this one has a consumer that hands its value on
+     * to {@code TurSNFacetDefinitionFactory}, whose contract
+     * ({@code TurSNFacetDefinition}) still traffics in entities — and legitimately
+     * so, since the template and provisioning paths that share it persist them.
+     * {@code TurSNSearchProcess} therefore builds a transient
+     * {@code TurSNSiteFieldExtFacet} from this record at that boundary, exactly as
+     * its own no-label fallback already does. The distinction that matters is the
+     * one Block AC draws: what is <em>cached</em> holds no entity, and a
+     * per-request object built by a builder carries no lazy proxy to begin with.
+     */
+    public record FacetLabelView(Locale locale, String label) implements Serializable {
         @Serial
         private static final long serialVersionUID = 1L;
     }

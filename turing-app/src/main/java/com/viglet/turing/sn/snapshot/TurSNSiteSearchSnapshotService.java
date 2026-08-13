@@ -19,6 +19,7 @@ package com.viglet.turing.sn.snapshot;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -35,10 +36,10 @@ import com.viglet.turing.observability.TurSearchPipelineObservation;
 
 import com.viglet.turing.persistence.model.sn.TurSNSite;
 import com.viglet.turing.sn.snapshot.TurSNSiteSearchSnapshot.CustomFacetView;
+import com.viglet.turing.sn.snapshot.TurSNSiteSearchSnapshot.FacetLabelView;
 import com.viglet.turing.sn.snapshot.TurSNSiteSearchSnapshot.CustomSortView;
 import com.viglet.turing.persistence.model.sn.field.TurSNSiteCustomFacet;
 import com.viglet.turing.persistence.model.sn.field.TurSNSiteFieldExt;
-import com.viglet.turing.persistence.model.sn.field.TurSNSiteFieldExtFacet;
 import com.viglet.turing.persistence.model.sn.locale.TurSNSiteLocale;
 import com.viglet.turing.persistence.model.sn.sort.TurSNSiteCustomSort;
 import com.viglet.turing.persistence.repository.sn.TurSNSiteRepository;
@@ -152,11 +153,16 @@ public class TurSNSiteSearchSnapshotService {
 
         Set<String> fieldIdsWithCustomFacets = new HashSet<>(customFacetsByFieldId.keySet());
 
-        Map<String, Set<TurSNSiteFieldExtFacet>> facetLabelsByFieldId = new HashMap<>();
+        // T898 / §LXXI.1 — projected in-session, locale + label only: those are
+        // what TurSNFacetRenderer#groupLabel reads off the far end.
+        Map<String, Set<FacetLabelView>> facetLabelsByFieldId = new HashMap<>();
         if (locale != null) {
             for (TurSNSiteFieldExt field : enabledFields) {
-                facetLabelsByFieldId.put(field.getId(), turSNSiteFieldExtFacetRepository
-                        .findByTurSNSiteFieldExtAndLocale(field, locale));
+                facetLabelsByFieldId.put(field.getId(),
+                        turSNSiteFieldExtFacetRepository
+                                .findByTurSNSiteFieldExtAndLocale(field, locale).stream()
+                                .map(f -> new FacetLabelView(f.getLocale(), f.getLabel()))
+                                .collect(Collectors.toCollection(LinkedHashSet::new)));
             }
         }
 

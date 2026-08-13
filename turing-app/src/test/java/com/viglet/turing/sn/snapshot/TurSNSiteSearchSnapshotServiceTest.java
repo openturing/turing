@@ -32,6 +32,7 @@ import com.viglet.turing.observability.TurSearchPipelineObservation;
 import com.viglet.turing.persistence.model.sn.TurSNSite;
 import com.viglet.turing.persistence.model.sn.field.TurSNSiteCustomFacet;
 import com.viglet.turing.persistence.model.sn.field.TurSNSiteFieldExt;
+import com.viglet.turing.persistence.model.sn.field.TurSNSiteFieldExtFacet;
 import com.viglet.turing.persistence.model.sn.sort.TurSNSiteCustomSort;
 import com.viglet.turing.persistence.repository.sn.TurSNSiteRepository;
 import com.viglet.turing.persistence.repository.sn.field.TurSNSiteCustomFacetRepository;
@@ -201,6 +202,39 @@ class TurSNSiteSearchSnapshotServiceTest {
         assertThat(snapshot.customFacetsByFieldId()).isEmpty();
         assertThat(snapshot.customSorts()).isEmpty();
         assertThat(snapshot.fieldIdsWithCustomFacets()).isEmpty();
+    }
+
+    // ---- facet labels ------------------------------------------------------
+
+    @Test
+    void projectsFacetLabelsPerFieldWithWhatTheRendererReads() {
+        TurSNSiteFieldExtFacet label = TurSNSiteFieldExtFacet.builder()
+                .id("fl-1").locale(Locale.US).label("Category").build();
+        when(turSNSiteFieldExtFacetRepository
+                .findByTurSNSiteFieldExtAndLocale(any(), any()))
+                .thenReturn(java.util.Set.of(label));
+
+        TurSNSiteSearchSnapshot snapshot =
+                service.getSnapshot(SITE_NAME, Locale.US).orElseThrow();
+
+        assertThat(snapshot.facetLabelsByFieldId()).containsOnlyKeys(FIELD_ID);
+        assertThat(snapshot.facetLabelsByFieldId().get(FIELD_ID)).singleElement()
+                .satisfies(view -> {
+                    // TurSNFacetRenderer#groupLabel matches on the locale and reads the
+                    // label; the entity's id is read by nothing, so it is not projected.
+                    assertThat(view.locale()).isEqualTo(Locale.US);
+                    assertThat(view.label()).isEqualTo("Category");
+                });
+    }
+
+    @Test
+    void readsNoFacetLabelsWhenTheRequestNamesNoLocale() {
+        // The build skips the per-field label query entirely for a null locale, which
+        // is what lets a site-level caller share the "*" cache slot.
+        assertThat(snapshot().facetLabelsByFieldId()).isEmpty();
+        org.mockito.Mockito.verify(turSNSiteFieldExtFacetRepository,
+                org.mockito.Mockito.never())
+                .findByTurSNSiteFieldExtAndLocale(any(), any());
     }
 
     // ---- the invariant the projection exists for ---------------------------

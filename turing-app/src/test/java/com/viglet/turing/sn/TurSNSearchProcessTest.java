@@ -169,7 +169,7 @@ class TurSNSearchProcessTest {
         /** Build a snapshot tailored to a scenario. */
         private static TurSNSiteSearchSnapshot snapshot(TurSNSite site, Locale locale,
                         List<TurSNSiteFieldExt> enabledFields,
-                        Map<String, Set<TurSNSiteFieldExtFacet>> facetLabels,
+                        Map<String, Set<TurSNSiteSearchSnapshot.FacetLabelView>> facetLabels,
                         List<TurSNSiteLocale> allLocales) {
                 return new TurSNSiteSearchSnapshot(site, locale, "solr", false,
                                 enabledFields, Set.of(),
@@ -376,9 +376,9 @@ class TurSNSearchProcessTest {
                 site.setItemsPerFacet(10);
                 site.setSpotlightWithResults(0);
 
-                TurSNSiteFieldExtFacet facetLocale = new TurSNSiteFieldExtFacet();
-                facetLocale.setLocale(Locale.US);
-                facetLocale.setLabel("Category");
+                TurSNSiteSearchSnapshot.FacetLabelView facetLocale =
+                                new TurSNSiteSearchSnapshot.FacetLabelView(
+                                                Locale.US, "Localised Category");
 
                 TurSNSiteFieldExt facetField = TurSNSiteFieldExt.builder()
                                 .id("field-id")
@@ -390,7 +390,7 @@ class TurSNSearchProcessTest {
                                 .facet(1)
                                 .build();
 
-                Map<String, Set<TurSNSiteFieldExtFacet>> labels = new HashMap<>();
+                Map<String, Set<TurSNSiteSearchSnapshot.FacetLabelView>> labels = new HashMap<>();
                 labels.put("field-id", Set.of(facetLocale));
                 when(snapshotService.getSnapshot("site", Locale.US)).thenReturn(Optional.of(
                                 snapshot(site, Locale.US, List.of(facetField), labels, List.of())));
@@ -437,6 +437,14 @@ class TurSNSearchProcessTest {
                 assertThat(bean.getResults().getDocument()).hasSize(1);
                 assertThat(bean.getWidget()).isNotNull();
                 assertThat(bean.getWidget().getFacet()).isNotEmpty();
+                // T898b/T898 — the group header comes from the snapshot's projected
+                // FacetLabelView, through the transient entity facetLocalesFor builds
+                // for the TurSNFacetDefinition contract, to TurSNFacetRenderer#groupLabel.
+                // Without this the whole record->entity hand-off was untested: dropping
+                // the label at that boundary left the suite green.
+                assertThat(bean.getWidget().getFacet())
+                                .anySatisfy(facet -> assertThat(facet.getLabel().getText())
+                                                .isEqualTo("Localised Category"));
                 assertThat(bean.getWidget().getFacetToRemove()).isNotNull();
                 assertThat(bean.getPagination()).isNotEmpty();
                 assertThat(bean.getQueryContext()).isNotNull();

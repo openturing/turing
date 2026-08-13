@@ -297,13 +297,21 @@ public class TurSNSearchProcess {
         @NotNull
         private HashSet<TurSNSiteFieldExtFacet> facetLocalesFor(TurSNSiteSearchSnapshot snap,
                         TurSNSiteFieldExt field, Locale locale) {
-                Set<TurSNSiteFieldExtFacet> labels = snap.facetLabelsByFieldId()
+                // T898 / §LXXI.1 — the snapshot caches FacetLabelView records now, so the
+                // transient entity the TurSNFacetDefinition contract wants is built here
+                // rather than served from the cache. Same builder the no-label fallback
+                // below already used, and with the same absent id: the only reader of
+                // these, TurSNFacetRenderer#groupLabel, matches locale and reads label.
+                Set<TurSNSiteSearchSnapshot.FacetLabelView> labels = snap.facetLabelsByFieldId()
                                 .getOrDefault(field.getId(), Collections.emptySet());
                 return new HashSet<>(Collections.singletonList(labels.stream()
-                                .filter(label -> label.getLabel() != null
-                                                && !label.getLabel().isBlank())
+                                .filter(label -> label.label() != null
+                                                && !label.label().isBlank())
                                 .findFirst()
-                                .orElse(TurSNSiteFieldExtFacet.builder().locale(locale)
+                                .map(label -> TurSNSiteFieldExtFacet.builder()
+                                                .locale(label.locale()).label(label.label())
+                                                .build())
+                                .orElseGet(() -> TurSNSiteFieldExtFacet.builder().locale(locale)
                                                 .label(TurSNFieldLabel.orHumanized(
                                                                 field.getFacetName(),
                                                                 field.getName()))
