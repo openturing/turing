@@ -302,6 +302,7 @@ number" looked free but wasn't. Grepping three files (`ROADMAP.md`,
 
 ## Log (most recent first)
 
+- **T954 SHIPPED** (Block BV §LXIX.30 — the snapshot cache's Hazelcast Serializable contract is pinned; the Optional it returns is unwrapped by Spring before the put, so the snapshot is what must serialize) — 2026-08-13.
 - **Block AC CLOSED, heading dropped** (§LXXI — the acknowledged-entity-cache list is empty; no @Cacheable holds a JPA entity) — 2026-08-13.
 - **T953 SHIPPED** (Block AC §LXXI.7 — TurSNSiteSearchSiteView caches 32 scalars + denormalised genAi/pluginType; snapshot.site() rebuilds a transient, 0 of 65 signatures changed) — 2026-08-13.
 - **T898 SHIPPED** (Block AC §LXXI.1 — 5 of 6 snapshot components are records + the lint widened past the repository boundary; TurSNSite remains as declared debt, filed as T953) — 2026-08-13.
