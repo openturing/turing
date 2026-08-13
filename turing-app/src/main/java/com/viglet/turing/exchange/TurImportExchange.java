@@ -177,12 +177,15 @@ public class TurImportExchange {
 			log.info("Skipping structural import for {} existing site(s); overwrite=false.",
 					conflicts.size());
 		} else {
-			siteName = importSNSiteFromExportFile(extractFolder);
-			siteImported = siteName != null;
-			if (!siteImported) {
+			StructuralImport structural = importSNSiteFromExportFile(extractFolder);
+			if (structural.failed()) {
 				cleanupSafely(extractFolder, parentExtractFolder);
 				return ImportResult.error("Failed to import SN Site from export.json");
 			}
+			// T950 — both null for an infra-only bundle. The report says what
+			// happened instead of naming a site called "unknown".
+			siteName = structural.siteName();
+			siteImported = structural.siteName() != null;
 		}
 
 		// content is optional
@@ -215,7 +218,7 @@ public class TurImportExchange {
 		cleanupSafely(extractFolder, parentExtractFolder);
 
 		log.info("Import complete — site: '{}', content: {} docs from {} files, template: '{}'  ({} files), agents imported: {}, skipped: {}",
-				siteName, contentDocuments, contentFiles,
+				siteName != null ? siteName : "none", contentDocuments, contentFiles,
 				templateName != null ? templateName : "none", templateFileCount,
 				agentSummary == null ? 0 : agentSummary.imported().size(),
 				agentSummary == null ? 0 : agentSummary.skipped().size());
@@ -553,9 +556,32 @@ public class TurImportExchange {
 	}
 
 	/**
-	 * @return the imported site name, or null on failure
+	 * What the structural half of an import produced (T950 / §XIV.8.9).
+	 *
+	 * <p>These are two questions — <em>did this bundle fail?</em> and <em>did it
+	 * contain a site?</em> — and they used to share one nullable string. Null meant
+	 * failure, so a bundle carrying no site had to return something non-null or the
+	 * whole import aborted; the something was the literal {@code "unknown"}, which
+	 * the caller then read as proof a site had landed. T373 turned the site-less
+	 * bundle from a malformed input into the shape of every Cloud seed, so the
+	 * misreport moved onto a supported path.
+	 *
+	 * @param failed   the envelope could not be read or imported at all
+	 * @param siteName the site that landed, or {@code null} when the bundle
+	 *                 legitimately carried none
 	 */
-	private String importSNSiteFromExportFile(File extractFolder) {
+	private record StructuralImport(boolean failed, String siteName) {
+
+		static StructuralImport failure() {
+			return new StructuralImport(true, null);
+		}
+
+		static StructuralImport of(String siteName) {
+			return new StructuralImport(false, siteName);
+		}
+	}
+
+	private StructuralImport importSNSiteFromExportFile(File extractFolder) {
 		ObjectMapper mapper = JsonMapper.builder().build();
 
 		try (FileInputStream fis = new FileInputStream(
@@ -564,12 +590,12 @@ public class TurImportExchange {
 			TurExchange turExchange = mapper.readValue(fis, TurExchange.class);
 			processTurExchange(turExchange);
 			if (turExchange.getSnSites() != null && !turExchange.getSnSites().isEmpty()) {
-				return turExchange.getSnSites().getFirst().getName();
+				return StructuralImport.of(turExchange.getSnSites().getFirst().getName());
 			}
-			return "unknown";
+			return StructuralImport.of(null);
 		} catch (Exception e) {
 			log.error("Error importing SN Site: {}", e.getMessage(), e);
-			return null;
+			return StructuralImport.failure();
 		}
 	}
 

@@ -1262,52 +1262,25 @@ bundle-size budget) before a public release.
 > history; the operator + developer guide is [MULTI_TENANCY.md](MULTI_TENANCY.md)
 > and the shipped task index is [CHANGELOG.md](CHANGELOG.md) → Block J.
 
-### XIV.8 Cloud SaaS integration — one tenant per user (T333, T334, T335, T336, T365, T366, T373 shipped)
+### XIV.8 Cloud SaaS integration — one tenant per user (T333–T373, T949, T950)
 
-Block J gives *isolation*; the Viglet Cloud product needs *one environment per signed-up
-user* on the shared turing/solr/postgres infra. The model: every Cloud user becomes the
-OWNER of their own personal tenant, so isolation is automatic and there is nothing to
-provision by hand.
+_Fully shipped — see [CHANGELOG.md](CHANGELOG.md) → Block J and `git log`._
 
-**T333 (shipped 2026-06-12)** closes the only structural gap: the resolution filter
-(T259) used to drop an authenticated principal with no explicit tenant onto `DEFAULT`
-(shared). With the opt-in `turing.tenancy.auto-provision` flag on, that principal
-instead gets a personal tenant + OWNER membership minted on first request (slug derived
-from the username, race-safe reuse if a concurrent request won), and resolves to it via
-membership on every later request. No Keycloak SPI, no JWT `tenant` claim, and no
-console orchestration are required for the single-Turing flow — Cloud just sets
-`TURING_TENANCY_ENABLED=true` + `TURING_TENANCY_AUTOPROVISION=true`. Default off
-preserves the legacy invite-based, many-users-per-tenant posture.
+Block J gives *isolation*; the Viglet Cloud product needed *one environment per
+signed-up user* on shared infra. The model: every Cloud user becomes the OWNER of their
+own personal tenant, so isolation is automatic and there is nothing to provision by hand
+— the opt-in `turing.tenancy.auto-provision` flag mints the tenant and its OWNER
+membership on first request, and default-off preserves the legacy invite-based posture.
 
-The standing constraint the seeded defaults inherit: a tenant id means something only in
-the install that minted it, so it never belongs in a portable bundle, and what makes one
-seeded instance serve every auto-provisioned tenant is owning none of them. See
-[CHANGELOG.md](CHANGELOG.md) → Block J for the as-built.
+Two standing constraints the seeded defaults inherit, both learned here:
 
-#### XIV.8.9 The import result calls an infra-only bundle a site (T950)
-
-[TurImportExchange.java:566-569](../turing-app/src/main/java/com/viglet/turing/exchange/TurImportExchange.java)
-returns the string `"unknown"` when the envelope carries no `snSites`, and the caller at
-line 181 derives `siteImported = siteName != null` from it. So an infra-only bundle
-comes back as `ImportResult(siteImported = true, siteName = "unknown")` — the admin
-import screen reports a site that was never created, and a caller branching on
-`siteImported` takes the wrong arm.
-
-The sentinel dates from when a site-less bundle was assumed to be a malformed one; the
-same line also has to stay non-null, because returning null at line 181 aborts the whole
-import with `"Failed to import SN Site from export.json"`. That coupling is why the fix
-is not a one-word change: the two questions "did this bundle fail?" and "did this bundle
-contain a site?" are answered by one nullable string.
-
-T373 turned the site-less bundle from a malformed input into a supported one — it is the
-shape of every Cloud seed — so the misreport is now on a path the product depends on
-rather than an error path.
-
-The fix is to separate the two: let the site importer report the site name as an
-`Optional` (or report the envelope's shape alongside it) and have the caller distinguish
-a genuine parse failure from an envelope that legitimately carried no site.
-`TurImportExchangeTest` already pins both routing arms, so the change has a place to
-land.
+- **A tenant id means something only in the install that minted it**, so it never
+  belongs in a portable bundle. What makes one seeded instance serve every
+  auto-provisioned tenant is owning none of them.
+- **A seed that imported nothing must not look finished.** The one-shot marker is what
+  stops the next boot from trying, so it is written only when every archive landed, and
+  a report says what actually happened rather than naming a site that was never
+  created.
 
 ## XVI. Cost & token governance (Block L)
 

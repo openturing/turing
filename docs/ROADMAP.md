@@ -6,10 +6,6 @@
 > [STRATEGY.md](STRATEGY.md); the markers and limits are `roadkeep.toml`'s. Blocks are
 > reused, not minted — `roadkeep brief` picks the next task and states why.
 
-## Block J follow-ups — Cloud SaaS hardening (§XIV.8)
-
-- 📋 **T950** (deps: —) **An import that created no site still reports one, named unknown** — importSNSiteFromExportFile returns the literal unknown for a site-less bundle, and the caller reads any non-null name as proof a site landed. → §XIV.8.9
-
 ## Block BV — The quality gate stops at the package boundary (§LXIX)
 
 - ⏳ **T902** (deps: roadkeep RK377) **Two governed prose files declare the same 13 section anchors** — both halves of the fix exist upstream but not in the 0.1.285 plugin this repo runs, whose config parser would reject the key the fix declares. → §LXIX.8
