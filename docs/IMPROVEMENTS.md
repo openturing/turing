@@ -2211,27 +2211,28 @@ cannot silently become the whole defence again.
 > for the policy it violates. The evidence that this is not theoretical is in that cache's
 > own javadoc: it already works around the exact failure, one association at a time.
 
-### LXXI.1 The search snapshot caches six kinds of JPA entity, which T486 forbids (T898)
+### LXXI.1 Two of the snapshot's six cached entity kinds resist projection (T898)
 
-Block AC's rule is stated without qualification: cache an immutable read-model or DTO,
-**never a JPA entity**, because a cached entity carries lazy proxies that throw
-`LazyInitializationException` the moment a hot path dereferences one outside a
-transaction. T486 removed the whole class of bug — at the repository layer.
+Block AC's rule is unqualified: cache an immutable read-model, **never a JPA entity**,
+because a cached entity carries lazy proxies that throw outside a transaction.
 
-`TurSNSiteSearchSnapshot` is a `@Cacheable` record whose six components are `TurSNSite`,
-`List<TurSNSiteFieldExt>`, `Map<…, List<TurSNSiteCustomFacet>>`, `Map<…,
-Set<TurSNSiteFieldExtFacet>>`, `List<TurSNSiteLocale>` and `List<TurSNSiteCustomSort>` —
-entities, all of them, on the hottest read in the product.
+Four of the six components are done. `customFacetsByFieldId` and `customSorts` (T898b),
+`facetLabelsByFieldId` (T898c) and `allLocales` (T898d) are records now, and the lint
+T898 widened prints the arithmetic: six kinds, then four, then three, then two. T952
+separately stopped `getSNSite` handing the cached site to the genai/ann paths.
 
-It has already been bitten. `getSnapshot` deliberately calls
-`findByNameIgnoreCaseWithGenAi` rather than the plain finder, and says why: *"The
-snapshot caches the entity, so the T383 hybrid-ranking path that reads `turSNSiteGenAi`
-on a cache hit would otherwise hit a detached LAZY proxy."* That is the T486 failure,
-diagnosed and worked around one association at a time — the treadmill the policy exists
-to end. The next association added to any of the six repeats it.
+**The remaining two do not yield to the same move**, and the measurement is the reason
+rather than the appetite. Those four converted because each had a small read set and a
+boundary where a transient entity could be rebuilt. Here:
 
-`TurCacheAnnotationConventionsTest` cannot see this: it filters to types named
-`*Repository` or under `persistence.repository`, so a service cache is invisible to the
-guard for the rule it enforces. Two things are wanted, and the second is the durable
-one: project the snapshot into a read-model of records, and widen the lint past the
-repository boundary so the policy is checked wherever caching happens.
+- `TurSNSiteFieldExt` has ~20 properties read, so a rebuilt transient is a twenty-field
+  shadow copy in which one forgotten field changes behaviour silently — and it reaches
+  `findByFieldExtsWithDetails` / `findByTurSNSiteAndEnabled`, used in **17 places across
+  15 files** (console APIs, Lucene, Solr, catalog copilot, coverage, DSL eval).
+- `TurSNSite` is used as a JPA FK by `populateMetrics` on a write, and the search path
+  reads it for hybrid ranking, facets, spotlights and the query context.
+
+So finishing this is a **contract** change — `TurSNFacetDefinition`, which exposes
+`TurSNSiteFieldExt`, `TurSNSiteFieldExtFacet` and `TurSNSiteCustomFacetItem` and is
+shared with the template and provisioning paths — not a fifth projection. Until someone
+takes that on, the lint names both remainders and the debt is counted, not invisible.
