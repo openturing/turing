@@ -59,6 +59,7 @@ import com.viglet.turing.persistence.model.sn.field.TurSNSiteFieldExt;
 import com.viglet.turing.persistence.model.sn.field.TurSNSiteFieldExtFacet;
 import com.viglet.turing.persistence.model.sn.locale.TurSNSiteLocale;
 import com.viglet.turing.persistence.model.sn.metric.TurSNSiteMetricAccess;
+import com.viglet.turing.persistence.repository.sn.TurSNSiteRepository;
 import com.viglet.turing.persistence.repository.sn.metric.TurSNSiteMetricAccessRepository;
 import com.viglet.turing.plugins.se.TurSearchEnginePlugin;
 import com.viglet.turing.plugins.se.TurSearchEnginePluginFactory;
@@ -87,6 +88,7 @@ public class TurSNSearchProcess {
         public static final String GROUP = "group";
         public static final String LANGUAGE = "language";
         private final TurSNSiteSearchSnapshotService snapshotService;
+        private final TurSNSiteRepository turSNSiteRepository;
         private final TurSolrInstanceProcess turSolrInstanceProcess;
         private final TurSNSpotlightProcess turSNSpotlightProcess;
         private final TurSNSiteMetricAccessRepository turSNSiteMetricAccessRepository;
@@ -104,6 +106,7 @@ public class TurSNSearchProcess {
         private final TurSNDuplicateClusteringService duplicateClusteringService;
 
         public TurSNSearchProcess(TurSNSiteSearchSnapshotService snapshotService,
+                        TurSNSiteRepository turSNSiteRepository,
                         TurSolrInstanceProcess turSolrInstanceProcess,
                         TurSNSpotlightProcess turSNSpotlightProcess,
                         TurSNSiteMetricAccessRepository turSNSiteMetricAccessRepository,
@@ -120,6 +123,7 @@ public class TurSNSearchProcess {
                         TurSNHybridRankingService hybridRankingService,
                         TurSNDuplicateClusteringService duplicateClusteringService) {
                 this.snapshotService = snapshotService;
+                this.turSNSiteRepository = turSNSiteRepository;
                 this.turSolrInstanceProcess = turSolrInstanceProcess;
                 this.turSNSpotlightProcess = turSNSpotlightProcess;
                 this.turSNSiteMetricAccessRepository = turSNSiteMetricAccessRepository;
@@ -137,9 +141,27 @@ public class TurSNSearchProcess {
                 this.duplicateClusteringService = duplicateClusteringService;
         }
 
+        /**
+         * The site entity, loaded fresh — deliberately NOT the snapshot's cached one
+         * (T952 / §LXXI.2).
+         *
+         * <p>This is the genai/ann accessor: 22 call sites across 11 files take what
+         * it returns and walk {@code turSNSiteGenAi -> turAIAgent} and past it, into
+         * {@code agent.getLlmInstances()} and {@code agent.getPersonas()}. Those two
+         * are {@code LAZY} and are <em>not</em> covered by the snapshot query's two
+         * fetch joins, so serving them off a detached instance cached in an earlier
+         * request left them as proxies on a closed session — the failure mode Block
+         * AC exists to end, and one the snapshot's own comment already documents one
+         * lap of. Seven of those call sites also hand the entity straight to
+         * {@code findByTurSNSiteAndLanguage}, which wants a managed one.
+         *
+         * <p>Loading here costs one indexed query per genai/ann request and buys
+         * back a managed entity inside the caller's own session. Nothing in the
+         * search path calls this method, so the search hot path is untouched — it
+         * reads {@code snapshot.site()} directly.
+         */
         public Optional<TurSNSite> getSNSite(String siteName) {
-                return snapshotService.getSnapshot(siteName, null)
-                                .map(TurSNSiteSearchSnapshot::site);
+                return turSNSiteRepository.findByNameIgnoreCaseWithGenAi(siteName);
         }
 
         public boolean existsByTurSNSiteAndLanguage(String siteName, Locale locale) {

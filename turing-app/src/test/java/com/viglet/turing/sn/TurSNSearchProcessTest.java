@@ -99,6 +99,8 @@ class TurSNSearchProcessTest {
 
         @Mock
         private TurSNSiteMetricAccessRepository turSNSiteMetricAccessRepository;
+        @Mock
+        private com.viglet.turing.persistence.repository.sn.TurSNSiteRepository turSNSiteRepository;
 
         @Mock
         private TurSNSiteMetricAccessRepositoryPort turSNSiteMetricAccessRepositoryPort;
@@ -144,7 +146,7 @@ class TurSNSearchProcessTest {
         }
 
         private TurSNSearchProcess process(boolean metricsEnabled) {
-                return new TurSNSearchProcess(snapshotService,
+                return new TurSNSearchProcess(snapshotService, turSNSiteRepository,
                                 turSolrInstanceProcess, turSNSpotlightProcess,
                                 turSNSiteMetricAccessRepository,
                                 turSNSiteMetricAccessRepositoryPort,
@@ -191,15 +193,34 @@ class TurSNSearchProcessTest {
         @Test
         void testGetSNSiteReturnsOptional() {
                 TurSNSite site = site("id", "site");
-                when(snapshotService.getSnapshot("site", null)).thenReturn(Optional.of(
-                                snapshot(site, null, List.of(), Map.of(), List.of())));
+                when(turSNSiteRepository.findByNameIgnoreCaseWithGenAi("site"))
+                                .thenReturn(Optional.of(site));
 
                 assertThat(process(false).getSNSite("site")).contains(site);
         }
 
+        /**
+         * T952 / §LXXI.2 — getSNSite must load, not serve the snapshot's cached
+         * instance. Its 22 callers walk turSNSiteGenAi -> turAIAgent and then into
+         * agent.getLlmInstances() / getPersonas(), which the snapshot query does not
+         * fetch-join, so a detached instance from an earlier request left those as
+         * proxies on a closed session. Seven of them also pass the entity to
+         * findByTurSNSiteAndLanguage, which wants a managed one.
+         */
+        @Test
+        void testGetSNSiteLoadsInsteadOfServingTheCachedInstance() {
+                TurSNSite loaded = site("id", "site");
+                when(turSNSiteRepository.findByNameIgnoreCaseWithGenAi("site"))
+                                .thenReturn(Optional.of(loaded));
+
+                assertThat(process(false).getSNSite("site")).containsSame(loaded);
+                verify(snapshotService, never()).getSnapshot(eq("site"), any());
+        }
+
         @Test
         void testGetSNSiteReturnsEmptyWhenMissing() {
-                when(snapshotService.getSnapshot("site", null)).thenReturn(Optional.empty());
+                when(turSNSiteRepository.findByNameIgnoreCaseWithGenAi("site"))
+                                .thenReturn(Optional.empty());
 
                 assertThat(process(false).getSNSite("site")).isEmpty();
         }

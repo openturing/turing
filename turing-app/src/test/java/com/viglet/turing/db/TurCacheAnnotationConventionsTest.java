@@ -327,10 +327,11 @@ class TurCacheAnnotationConventionsTest {
                     + "customSorts, facetLabelsByFieldId and allLocales are projected into "
                     + "CustomFacetView / CustomSortView / FacetLabelView / LocaleView. The two "
                     + "that remain are each held by a coupling, not by inertia. TurSNSite: "
-                    + "getSNSite() hands the cached instance to 22 call sites in 11 files that "
-                    + "walk turSNSiteGenAi -> turAIAgent (T952), and populateMetrics uses it as "
-                    + "a JPA FK on a write. TurSNSiteFieldExt: three finders take it as a query "
-                    + "parameter, and the TurSNFacetDefinition contract exposes it");
+                    + "populateMetrics uses it as a JPA FK on a write, and the search path "
+                    + "reads it for hybrid ranking, facets, spotlights and the query context "
+                    + "(T952 already stopped the genai/ann escape — getSNSite loads now). "
+                    + "TurSNSiteFieldExt: three finders take it as a query parameter, and the "
+                    + "TurSNFacetDefinition contract exposes it");
 
     /** Where every JPA entity in this codebase lives. */
     private static final String ENTITY_PACKAGE = "com.viglet.turing.persistence.model.";
