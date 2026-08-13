@@ -345,7 +345,9 @@ class TurCacheAnnotationConventionsTest {
                     + "uses it as a JPA FK on a write, and the search path reads it for hybrid "
                     + "ranking, facets, spotlights and the query context. T952 already stopped "
                     + "the genai/ann escape — getSNSite loads now — so the remaining reads are "
-                    + "the search path's own");
+                    + "the search path's own, and converting them is a signature change "
+                    + "across ten hot-path collaborators rather than a sixth projection "
+                    + "(T953 / §LXXI.7)");
 
     /** How deep to follow a cached value's shape before giving up. */
     private static final int MAX_DEPTH = 4;

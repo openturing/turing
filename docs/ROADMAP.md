@@ -12,7 +12,6 @@
 
 ## Block AC — JPA caching strategy: decouple cache from entities
 
-- ⏳ **T898** (deps: —) **One of the snapshot's six cached entity kinds resists projection** — Five converted; TurSNSite is used as a JPA FK on a write by populateMetrics and read for hybrid ranking, facets, spotlights and the query context, so the rest is the search path's own coupling. → §LXXI.1
 - 📋 **T953** (deps: —) **The search path takes the site entity through ten signatures** — Every one is a hot-path collaborator reached from the cached instance, so the last component cannot be projected without changing what they accept. → §LXXI.7
 
 ## Non-goals (do NOT add as tasks)

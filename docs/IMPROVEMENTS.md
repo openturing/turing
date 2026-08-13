@@ -2127,32 +2127,6 @@ The standing concerns that outlived it, both learned the hard way:
 > for the policy it violates. The evidence that this is not theoretical is in that cache's
 > own javadoc: it already works around the exact failure, one association at a time.
 
-### LXXI.1 Two of the snapshot's six cached entity kinds resist projection (T898)
-
-Block AC's rule is unqualified: cache an immutable read-model, **never a JPA entity**,
-because a cached entity carries lazy proxies that throw outside a transaction.
-
-Four of the six components are done. `customFacetsByFieldId` and `customSorts` (T898b),
-`facetLabelsByFieldId` (T898c) and `allLocales` (T898d) are records now, and the lint
-T898 widened prints the arithmetic: six kinds, then four, then three, then two. T952
-separately stopped `getSNSite` handing the cached site to the genai/ann paths.
-
-**The remaining two do not yield to the same move**, and the measurement is the reason
-rather than the appetite. Those four converted because each had a small read set and a
-boundary where a transient entity could be rebuilt. Here:
-
-- `TurSNSiteFieldExt` has ~20 properties read, so a rebuilt transient is a twenty-field
-  shadow copy in which one forgotten field changes behaviour silently — and it reaches
-  `findByFieldExtsWithDetails` / `findByTurSNSiteAndEnabled`, used in **17 places across
-  15 files** (console APIs, Lucene, Solr, catalog copilot, coverage, DSL eval).
-- `TurSNSite` is used as a JPA FK by `populateMetrics` on a write, and the search path
-  reads it for hybrid ranking, facets, spotlights and the query context.
-
-So finishing this is a **contract** change — `TurSNFacetDefinition`, which exposes
-`TurSNSiteFieldExt`, `TurSNSiteFieldExtFacet` and `TurSNSiteCustomFacetItem` and is
-shared with the template and provisioning paths — not a fifth projection. Until someone
-takes that on, the lint names both remainders and the debt is counted, not invisible.
-
 ### LXXI.7 The last cached entity is a signature problem (T953)
 
 Five of the snapshot's six components are records (T898b–T898e). The sixth is

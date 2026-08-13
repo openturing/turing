@@ -302,6 +302,7 @@ number" looked free but wasn't. Grepping three files (`ROADMAP.md`,
 
 ## Log (most recent first)
 
+- **T898 SHIPPED** (Block AC §LXXI.1 — 5 of 6 snapshot components are records + the lint widened past the repository boundary; TurSNSite remains as declared debt, filed as T953) — 2026-08-13.
 - **T953 CREATED** (📋, Block AC §LXXI.7 — measured: 10 hot-path signatures take TurSNSite, plus an FK write and a query parameter; 9 LAZY collections none fetch-joined) — 2026-08-13.
 - **T898e SHIPPED** (Block AC §LXXI.6 — enabledFields projected into FieldExtView, all 21 scalars, rebuilt transient at 2 boundaries; reflective round-trip test; cached entity kinds 2 -> 1) — 2026-08-13.
 - **Block AN CLOSED, heading dropped** (§XXXVII — 19 changelog entries keep the heading; reopened before and will be again) — 2026-08-13.
