@@ -1284,6 +1284,56 @@ the install that minted it, so it never belongs in a portable bundle, and what m
 seeded instance serve every auto-provisioned tenant is owning none of them. See
 [CHANGELOG.md](CHANGELOG.md) → Block J for the as-built.
 
+#### XIV.8.8 A failed seed import still claims to have run (T949)
+
+`TurExportImportOnStartup.run` catches the per-file failure at
+[TurExportImportOnStartup.java:135](../turing-app/src/main/java/com/viglet/turing/onstartup/TurExportImportOnStartup.java)
+and logs it, then falls through to write the `EXPORT_AUTO_IMPORT` config marker at line
+97 whether or not a single ZIP landed. The marker is the one-shot guard, so the next
+boot returns at line 70 and the seed never gets a second chance — recovering means
+someone knows to delete a row from `config_var`.
+
+The runner already distinguishes "nothing to do" from "done": an absent or empty
+`export/` returns early *without* writing the marker (lines 77 and 83), precisely so a
+ZIP mounted later still runs. A ZIP that was present and failed deserves the same
+treatment, and today gets the opposite.
+
+T373 made this load-bearing: the seeded GLOBAL defaults are now the only search engine
+and vector store a fresh Cloud deployment has, so a truncated layer or an unreadable
+file does not degrade the boot — it silently ships an install with no infra at all, and
+no marker to tell anyone why.
+
+The shape of the fix is to track whether every ZIP succeeded and write the marker only
+then, which turns a corrupt seed into a retried one. The open question is the partial:
+several ZIPs where one failed would re-import the successes on the next boot. That is
+idempotent for infra (find-or-create by id) but not obviously so for content, so the
+honest default may be to record the marker per file rather than once for the directory.
+
+#### XIV.8.9 The import result calls an infra-only bundle a site (T950)
+
+[TurImportExchange.java:566-569](../turing-app/src/main/java/com/viglet/turing/exchange/TurImportExchange.java)
+returns the string `"unknown"` when the envelope carries no `snSites`, and the caller at
+line 181 derives `siteImported = siteName != null` from it. So an infra-only bundle
+comes back as `ImportResult(siteImported = true, siteName = "unknown")` — the admin
+import screen reports a site that was never created, and a caller branching on
+`siteImported` takes the wrong arm.
+
+The sentinel dates from when a site-less bundle was assumed to be a malformed one; the
+same line also has to stay non-null, because returning null at line 181 aborts the whole
+import with `"Failed to import SN Site from export.json"`. That coupling is why the fix
+is not a one-word change: the two questions "did this bundle fail?" and "did this bundle
+contain a site?" are answered by one nullable string.
+
+T373 turned the site-less bundle from a malformed input into a supported one — it is the
+shape of every Cloud seed — so the misreport is now on a path the product depends on
+rather than an error path.
+
+The fix is to separate the two: let the site importer report the site name as an
+`Optional` (or report the envelope's shape alongside it) and have the caller distinguish
+a genuine parse failure from an envelope that legitimately carried no site.
+`TurImportExchangeTest` already pins both routing arms, so the change has a place to
+land.
+
 ## XVI. Cost & token governance (Block L)
 
 > **Shipped 2026-06-18** (T289–T291). Design realized; see

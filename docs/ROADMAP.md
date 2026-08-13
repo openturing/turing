@@ -10,7 +10,10 @@
 
 - 💭 **T831** (deps: T704 ✅) **Apply a persona adjustment (human-confirmed)** — for PERSONA items only, an opt-in Apply action renders the suggestion as a field-level diff over the audience facet and writes it only after the operator confirms each field. → §LXI.7
 
-## Block J follow-ups — Cloud SaaS hardening (T334–T373)
+## Block J follow-ups — Cloud SaaS hardening (§XIV.8)
+
+- 📋 **T949** (deps: —) **A corrupt seed ZIP permanently disables seeding for that database** — The runner catches each ZIP's failure and writes the one-shot EXPORT_AUTO_IMPORT marker regardless, so a boot that imported nothing looks exactly like one that imported everything. → §XIV.8.8
+- 📋 **T950** (deps: —) **An import that created no site still reports one, named unknown** — importSNSiteFromExportFile returns the literal unknown for a site-less bundle, and the caller reads any non-null name as proof a site landed. → §XIV.8.9
 
 ## Block BV — The quality gate stops at the package boundary (§LXIX)
 
