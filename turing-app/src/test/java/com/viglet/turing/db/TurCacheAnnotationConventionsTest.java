@@ -323,14 +323,17 @@ class TurCacheAnnotationConventionsTest {
      */
     private static final Map<String, String> KNOWN_ENTITY_CACHES = Map.of(
             "TurSNSiteSearchSnapshotService#getSnapshot",
-            "T898 / §LXXI.1 — the hottest read in the product holds six entity kinds. "
-                    + "Converting it is blocked on three measured couplings, each needing its "
-                    + "own task: TurSNSearchProcess.getSNSite() hands the cached TurSNSite to "
-                    + "20 genai/ann sites that walk turSNSiteGenAi -> turAIAgent; "
-                    + "populateMetrics uses it as a JPA FK on a write; and three finders take "
-                    + "snapshot entities as query parameters. Until then the cache relies on "
-                    + "findByNameIgnoreCaseWithGenAi pre-fetching the one association a cache "
-                    + "hit dereferences — the workaround this policy exists to stop repeating");
+            "T898 / §LXXI.1 — down from six entity kinds to four: customFacetsByFieldId and "
+                    + "customSorts are projected into CustomFacetView / CustomSortView, each "
+                    + "having had exactly one consumer reading only a name. The four that "
+                    + "remain are each held by a coupling, not by inertia. TurSNSite: "
+                    + "getSNSite() hands the cached instance to 22 call sites in 11 files that "
+                    + "walk turSNSiteGenAi -> turAIAgent (T952), and populateMetrics uses it as "
+                    + "a JPA FK on a write. TurSNSiteFieldExt: three finders take it as a query "
+                    + "parameter. TurSNSiteFieldExtFacet: its type is shared with the "
+                    + "non-snapshot path through TurSNFacetDefinitionFactory. TurSNSiteLocale: "
+                    + "instances are passed whole into TurSearchEnginePlugin, so converting it "
+                    + "changes that interface for Solr, Elasticsearch and Lucene alike");
 
     /** Where every JPA entity in this codebase lives. */
     private static final String ENTITY_PACKAGE = "com.viglet.turing.persistence.model.";

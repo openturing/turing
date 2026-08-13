@@ -24,11 +24,9 @@ import java.util.Map;
 import java.util.Set;
 
 import com.viglet.turing.persistence.model.sn.TurSNSite;
-import com.viglet.turing.persistence.model.sn.field.TurSNSiteCustomFacet;
 import com.viglet.turing.persistence.model.sn.field.TurSNSiteFieldExt;
 import com.viglet.turing.persistence.model.sn.field.TurSNSiteFieldExtFacet;
 import com.viglet.turing.persistence.model.sn.locale.TurSNSiteLocale;
-import com.viglet.turing.persistence.model.sn.sort.TurSNSiteCustomSort;
 
 /**
  * Immutable, atomic snapshot of every persistent piece of configuration the SN
@@ -47,13 +45,43 @@ public record TurSNSiteSearchSnapshot(
         boolean hasHlFields,
         List<TurSNSiteFieldExt> enabledFields,
         Set<String> fieldIdsWithCustomFacets,
-        Map<String, List<TurSNSiteCustomFacet>> customFacetsByFieldId,
+        Map<String, List<CustomFacetView>> customFacetsByFieldId,
         Map<String, Set<TurSNSiteFieldExtFacet>> facetLabelsByFieldId,
         List<TurSNSiteLocale> allLocales,
-        List<TurSNSiteCustomSort> customSorts) implements Serializable {
+        List<CustomSortView> customSorts) implements Serializable {
 
     @Serial
     private static final long serialVersionUID = 1L;
+
+    /**
+     * T898 / §LXXI.1 — a custom facet as the search flow reads it. The entity it
+     * replaces carried a lazy {@code items} collection and a back-reference to its
+     * field ext, neither of which the one consumer
+     * ({@code TurSolrQueryBuilder#getFacetFieldsInFilterQuery}) touches: it reads
+     * the name and nothing else.
+     *
+     * <p>Carrying only what is read is the point, not an economy. A component added
+     * here later is a deliberate act with a caller to justify it, where a cached
+     * entity silently offered every association and made the next
+     * {@code LazyInitializationException} a matter of which getter someone reached
+     * for.
+     */
+    public record CustomFacetView(String id, String name) implements Serializable {
+        @Serial
+        private static final long serialVersionUID = 1L;
+    }
+
+    /**
+     * T898 / §LXXI.1 — a custom sort as the search flow reads it. Its one consumer
+     * ({@code TurSNSiteSearchAPI#sortOptions}) builds a {@code TurSNSortOptionBean}
+     * from the name and the description; the entity's lazy {@code items} were
+     * fetch-joined on every snapshot build and never read.
+     */
+    public record CustomSortView(String id, String name, String description)
+            implements Serializable {
+        @Serial
+        private static final long serialVersionUID = 1L;
+    }
 
     public String siteId() {
         return site != null ? site.getId() : null;

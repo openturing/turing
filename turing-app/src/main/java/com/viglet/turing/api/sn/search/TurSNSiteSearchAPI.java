@@ -353,9 +353,9 @@ public class TurSNSiteSearchAPI {
                         options.add(new TurSNSortOptionBean("oldest", "Oldest"));
                         snap.customSorts()
                                         .forEach(cs -> options.add(new TurSNSortOptionBean(
-                                                        cs.getName(), cs.getDescription() != null
-                                                                        ? cs.getDescription()
-                                                                        : cs.getName())));
+                                                        cs.name(), cs.description() != null
+                                                                        ? cs.description()
+                                                                        : cs.name())));
                         return options;
                 });
         }

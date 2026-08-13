@@ -34,6 +34,8 @@ import com.viglet.turing.observability.TurMeterNames;
 import com.viglet.turing.observability.TurSearchPipelineObservation;
 
 import com.viglet.turing.persistence.model.sn.TurSNSite;
+import com.viglet.turing.sn.snapshot.TurSNSiteSearchSnapshot.CustomFacetView;
+import com.viglet.turing.sn.snapshot.TurSNSiteSearchSnapshot.CustomSortView;
 import com.viglet.turing.persistence.model.sn.field.TurSNSiteCustomFacet;
 import com.viglet.turing.persistence.model.sn.field.TurSNSiteFieldExt;
 import com.viglet.turing.persistence.model.sn.field.TurSNSiteFieldExtFacet;
@@ -140,8 +142,13 @@ public class TurSNSiteSearchSnapshotService {
                 ? Collections.emptyList()
                 : turSNSiteCustomFacetRepository.findByFieldExtsWithDetails(enabledFields);
 
-        Map<String, List<TurSNSiteCustomFacet>> customFacetsByFieldId = customFacets.stream()
-                .collect(Collectors.groupingBy(cf -> cf.getTurSNSiteFieldExt().getId()));
+        // T898 / §LXXI.1 — projected here, while the session is still open, so the
+        // cached value holds no lazy `items` collection and no back-reference.
+        Map<String, List<CustomFacetView>> customFacetsByFieldId = customFacets.stream()
+                .collect(Collectors.groupingBy(cf -> cf.getTurSNSiteFieldExt().getId(),
+                        Collectors.mapping(
+                                cf -> new CustomFacetView(cf.getId(), cf.getName()),
+                                Collectors.toList())));
 
         Set<String> fieldIdsWithCustomFacets = new HashSet<>(customFacetsByFieldId.keySet());
 
@@ -158,8 +165,13 @@ public class TurSNSiteSearchSnapshotService {
         List<TurSNSiteLocale> allLocales = turSNSiteLocaleRepository
                 .findByTurSNSiteOrderByPositionAsc(site);
 
-        List<TurSNSiteCustomSort> customSorts = turSNSiteCustomSortRepository
-                .findByTurSNSiteWithItems(site);
+        // T898 — findByTurSNSiteWithItems still fetch-joins `items`; the projection
+        // drops them because no consumer reads them. Narrowing the query is a
+        // separate change, and one this record now makes safe to make.
+        List<CustomSortView> customSorts = turSNSiteCustomSortRepository
+                .findByTurSNSiteWithItems(site).stream()
+                .map(cs -> new CustomSortView(cs.getId(), cs.getName(), cs.getDescription()))
+                .toList();
 
         String pluginType = resolvePluginType(site);
 

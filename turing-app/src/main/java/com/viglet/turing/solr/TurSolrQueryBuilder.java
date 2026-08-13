@@ -678,7 +678,7 @@ public class TurSolrQueryBuilder {
         if (snapOpt.isPresent()) {
             snapOpt.get().customFacetsByFieldId().values().stream()
                     .flatMap(List::stream)
-                    .map(TurSNSiteCustomFacet::getName)
+                    .map(TurSNSiteSearchSnapshot.CustomFacetView::name)
                     .filter(StringUtils::hasText)
                     .forEach(enabledFacetNames::add);
         } else {
