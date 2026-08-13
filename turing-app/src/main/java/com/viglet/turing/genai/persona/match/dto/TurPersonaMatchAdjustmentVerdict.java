@@ -54,6 +54,36 @@ public record TurPersonaMatchAdjustmentVerdict(
 
             @JsonPropertyDescription("Concrete edits someone can carry out, at most "
                     + "three. Never generic advice like 'improve the text'.")
-            List<String> actions) {
+            List<String> actions,
+
+            @JsonPropertyDescription("PERSONA items only: the audience fields to "
+                    + "correct, as field/value pairs an operator can confirm one by "
+                    + "one. Omit entirely when the fix is not a field value. Never "
+                    + "set this on a CONTENT item.")
+            List<FieldEdit> fieldEdits) {
+    }
+
+    /**
+     * T831 / §LXI.7 — one proposed audience-field value. Free text in this record;
+     * the service grounds every one of them against the real field set and the
+     * persona's current value before it reaches an operator, and drops the rest.
+     */
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    public record FieldEdit(
+
+            @JsonPropertyDescription("One of: READING_LEVEL, DOMAIN_EXPERTISE, "
+                    + "VOCABULARY_CEILING, COMPREHENSION_NOTES. Nothing else is "
+                    + "writable.")
+            String field,
+
+            @JsonPropertyDescription("The value to set. READING_LEVEL must be one of "
+                    + "ELEMENTARY, MIDDLE, SECONDARY, UNDERGRADUATE, GRADUATE; "
+                    + "DOMAIN_EXPERTISE one of NOVICE, BEGINNER, INTERMEDIATE, "
+                    + "ADVANCED, EXPERT. The other two are free text.")
+            String value,
+
+            @JsonPropertyDescription("One short sentence on why this field's current "
+                    + "value is wrong, citing the evidence.")
+            String reason) {
     }
 }

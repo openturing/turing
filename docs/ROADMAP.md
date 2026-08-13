@@ -6,10 +6,6 @@
 > [STRATEGY.md](STRATEGY.md); the markers and limits are `roadkeep.toml`'s. Blocks are
 > reused, not minted — `roadkeep brief` picks the next task and states why.
 
-## Block BN — Content-fit tuning loop: model-aware, enforceable, and it tells you (§LXI)
-
-- 💭 **T831** (deps: T704 ✅) **Apply a persona adjustment (human-confirmed)** — for PERSONA items only, an opt-in Apply action renders the suggestion as a field-level diff over the audience facet and writes it only after the operator confirms each field. → §LXI.7
-
 ## Block J follow-ups — Cloud SaaS hardening (§XIV.8)
 
 - 📋 **T949** (deps: —) **A corrupt seed ZIP permanently disables seeding for that database** — The runner catches each ZIP's failure and writes the one-shot EXPORT_AUTO_IMPORT marker regardless, so a boot that imported nothing looks exactly like one that imported everything. → §XIV.8.8

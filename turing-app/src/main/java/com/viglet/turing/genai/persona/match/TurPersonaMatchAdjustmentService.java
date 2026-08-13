@@ -30,7 +30,10 @@ import com.viglet.turing.genai.persona.match.dto.TurPersonaMatchAdjustmentDto.It
 import com.viglet.turing.genai.persona.match.dto.TurPersonaMatchAdjustmentDto.Target;
 import com.viglet.turing.genai.persona.match.dto.TurPersonaMatchAdjustmentVerdict;
 import com.viglet.turing.genai.persona.match.dto.TurPersonaMatchDriftDto;
+import com.viglet.turing.genai.persona.match.dto.TurPersonaMatchAdjustmentDto.FieldEdit;
 import com.viglet.turing.persistence.model.persona.TurPersona;
+import com.viglet.turing.persistence.model.persona.TurPersonaAudience;
+import com.viglet.turing.persistence.model.persona.TurPersonaAudienceField;
 import com.viglet.turing.persistence.model.persona.match.TurPersonaMatchProject;
 import com.viglet.turing.persistence.model.persona.match.TurPersonaMatchSource;
 import com.viglet.turing.persistence.repository.persona.TurPersonaRepository;
@@ -62,7 +65,12 @@ import tools.jackson.databind.json.JsonMapper;
  * persisted misfit suggestions and the weakest pairs, so the surface is never
  * empty and the whole feature stays testable without a network.
  *
- * <p>Advisory only: nothing here writes to a persona or a content.
+ * <p>Advisory only: nothing here writes to a persona or a content. T831 keeps that
+ * invariant and adds the missing half — a PERSONA item can now carry
+ * {@code fieldEdits}, a grounded per-field diff over the audience facet, so an
+ * operator who agrees does not have to retype the change elsewhere. The write
+ * itself lives in {@code TurPersonaAudienceApplyService} and happens only after
+ * the operator confirms each field.
  *
  * @author Alexandre Oliveira
  * @since 2026.3.4
@@ -193,11 +201,15 @@ public class TurPersonaMatchAdjustmentService {
         }
         Map<String, String> personaNames = new HashMap<>();
         Map<String, String> personaDescriptions = new HashMap<>();
+        Map<String, TurPersonaAudience> personaAudiences = new HashMap<>();
         personaJoinRepository.findByProject_Id(projectId).forEach(join -> {
             Optional<TurPersona> persona = personaRepository.findById(join.getPersonaId());
             persona.ifPresent(p -> {
                 personaNames.put(p.getId(), p.getName());
                 personaDescriptions.put(p.getId(), StringUtils.defaultString(p.getDescription()));
+                if (p.getAudience() != null) {
+                    personaAudiences.put(p.getId(), p.getAudience());
+                }
             });
         });
 
@@ -217,8 +229,8 @@ public class TurPersonaMatchAdjustmentService {
         List<TargetStat> personas = statsBy(live, TurPersonaMatchCellDto::personaId, personaNames,
                 personaDelta);
 
-        return new Context(live, sourceNames, personaNames, personaDescriptions, contents,
-                personas);
+        return new Context(live, sourceNames, personaNames, personaDescriptions, personaAudiences,
+                contents, personas);
     }
 
     /** Average each side's per-cell drift deltas into one movement per target. */
@@ -282,7 +294,10 @@ public class TurPersonaMatchAdjustmentService {
                 {"items": [{"target": "CONTENT|PERSONA",
                             "targetId": "<an id copied verbatim from the input>",
                             "rationale": "<one sentence, cite the score or the delta>",
-                            "actions": ["<one concrete edit>", "..."]}]}
+                            "actions": ["<one concrete edit>", "..."],
+                            "fieldEdits": [{"field": "<audience field>",
+                                            "value": "<the value to set>",
+                                            "reason": "<why the current one is wrong>"}]}]}
 
                 HARD RULES:
                 - "targetId" MUST be copied verbatim from the input. Never invent an id.
@@ -291,7 +306,22 @@ public class TurPersonaMatchAdjustmentService {
                   advice like "improve the text".
                 - At most %d CONTENT items and %d PERSONA items, at most 3 actions each.
                 - Reply in the language the summaries are written in.
-                """.formatted(MAX_TARGETS_PER_SIDE, MAX_TARGETS_PER_SIDE);
+
+                "fieldEdits" — PERSONA items only, and only when you can name the
+                value that is wrong. Each PERSONA line above carries the fields it
+                has today; propose a DIFFERENT value for one you have evidence
+                against, and omit the field otherwise. Never repeat the current
+                value back. Writable fields, and nothing else:
+                - READING_LEVEL: one of %s
+                - DOMAIN_EXPERTISE: one of %s
+                - VOCABULARY_CEILING: free text
+                - COMPREHENSION_NOTES: free text
+                Leave "fieldEdits" out of every CONTENT item — Turing does not own
+                the document, so there is no field there to set.
+                """.formatted(MAX_TARGETS_PER_SIDE, MAX_TARGETS_PER_SIDE,
+                        String.join(", ", TurPersonaAudienceField.READING_LEVEL.allowedValues()),
+                        String.join(", ",
+                                TurPersonaAudienceField.DOMAIN_EXPERTISE.allowedValues()));
     }
 
     // ---- parsing -----------------------------------------------------------
@@ -341,7 +371,58 @@ public class TurPersonaMatchAdjustmentService {
             return null;
         }
         return new Item(target, id, stat.name(), stat.avgFit(), stat.delta(),
-                StringUtils.trimToNull(dto.rationale()), actions);
+                StringUtils.trimToNull(dto.rationale()), actions,
+                groundFieldEdits(target, id, dto.fieldEdits(), context));
+    }
+
+    /**
+     * T831 — turns the model's free-text field/value pairs into a diff an operator
+     * can confirm, dropping everything that is not one. A schema constrains the
+     * shape; only this constrains the meaning, so each edit has to clear four
+     * gates: the item is a PERSONA one, the field is actually writable, an
+     * enumerated field's value is a real constant, and the value differs from what
+     * the persona already says. A CONTENT item never gets edits at all — Turing does
+     * not own the document, which is the invariant T704 was built on.
+     */
+    private List<FieldEdit> groundFieldEdits(Target target, String personaId,
+            List<TurPersonaMatchAdjustmentVerdict.FieldEdit> raw, Context context) {
+        if (target != Target.PERSONA || raw == null || raw.isEmpty()) {
+            return List.of();
+        }
+        TurPersonaAudience audience = context.personaAudiences().get(personaId);
+        List<FieldEdit> edits = new ArrayList<>();
+        Set<TurPersonaAudienceField> seen = new LinkedHashSet<>();
+        for (TurPersonaMatchAdjustmentVerdict.FieldEdit candidate : raw) {
+            if (candidate == null) {
+                continue;
+            }
+            Optional<TurPersonaAudienceField> parsed =
+                    TurPersonaAudienceField.parse(candidate.field());
+            if (parsed.isEmpty()) {
+                log.debug("[PersonaMatch] dropping field edit for unwritable field: {}",
+                        candidate.field());
+                continue;
+            }
+            TurPersonaAudienceField field = parsed.get();
+            String value = StringUtils.trimToNull(candidate.value());
+            if (value == null || !seen.add(field)) {
+                continue;
+            }
+            if (!field.accepts(value)) {
+                log.debug("[PersonaMatch] dropping field edit — {} does not accept '{}'",
+                        field, value);
+                continue;
+            }
+            String current = field.read(audience);
+            if (java.util.Objects.equals(current, value)) {
+                // The model proposed the value already in place: nothing to confirm.
+                continue;
+            }
+            edits.add(new FieldEdit(field.name(), current, value,
+                    StringUtils.trimToNull(candidate.reason()),
+                    List.of(field.allowedValues())));
+        }
+        return List.copyOf(edits);
     }
 
     private Target parseTarget(String raw) {
@@ -485,6 +566,7 @@ public class TurPersonaMatchAdjustmentService {
     /** Everything the prompt and the fallback read, resolved once. */
     private record Context(List<TurPersonaMatchCellDto> cells, Map<String, String> sourceNames,
             Map<String, String> personaNames, Map<String, String> personaDescriptions,
+            Map<String, TurPersonaAudience> personaAudiences,
             List<TargetStat> contents, List<TargetStat> personas) {
 
         TargetStat find(Target target, String id) {
@@ -504,6 +586,7 @@ public class TurPersonaMatchAdjustmentService {
                 if (StringUtils.isNotBlank(description)) {
                     sb.append(" description=").append(StringUtils.abbreviate(description, 300));
                 }
+                appendAudience(sb, id);
                 sb.append('\n');
             });
             sb.append("\nMATRIX:\n");
@@ -512,6 +595,26 @@ public class TurPersonaMatchAdjustmentService {
             }
             appendMovement(sb);
             return sb.toString();
+        }
+
+        /**
+         * The persona's writable audience fields, as they stand. T831 needs these
+         * in the prompt: a model told only the scores can say "the reading level
+         * looks wrong" but cannot propose a different value without knowing the
+         * current one, and would have no way to avoid proposing the same one back.
+         */
+        private void appendAudience(StringBuilder sb, String personaId) {
+            TurPersonaAudience audience = personaAudiences.get(personaId);
+            if (audience == null) {
+                return;
+            }
+            for (TurPersonaAudienceField field : TurPersonaAudienceField.values()) {
+                String value = field.read(audience);
+                if (StringUtils.isNotBlank(value)) {
+                    sb.append(' ').append(field.name()).append('=')
+                            .append(StringUtils.abbreviate(value, 200));
+                }
+            }
         }
 
         private void appendCell(StringBuilder sb, TurPersonaMatchCellDto cell) {

@@ -39,12 +39,45 @@ public record TurPersonaMatchAdjustmentDto(
     /**
      * One adjustment.
      *
-     * @param avgFit  the target's current average fit across the matrix
-     * @param delta   how that average moved since the previous run ({@code null}
-     *                when there is no previous run to compare against)
-     * @param actions the concrete edits to consider, most important first
+     * @param avgFit     the target's current average fit across the matrix
+     * @param delta      how that average moved since the previous run ({@code null}
+     *                   when there is no previous run to compare against)
+     * @param actions    the concrete edits to consider, most important first
+     * @param fieldEdits T831 — for a PERSONA item, the audience fields the
+     *                   suggestion would change, each already grounded against the
+     *                   persona's current value. Empty whenever there is nothing an
+     *                   operator could confirm, which is what the studio reads to
+     *                   decide whether an Apply affordance exists at all; always
+     *                   empty on a CONTENT item, whose target Turing does not own.
      */
     public record Item(Target target, String targetId, String targetName, double avgFit,
-            Double delta, String rationale, List<String> actions) {
+            Double delta, String rationale, List<String> actions, List<FieldEdit> fieldEdits) {
+
+        /** The pre-T831 shape, for callers that carry no field edits. */
+        public Item(Target target, String targetId, String targetName, double avgFit,
+                Double delta, String rationale, List<String> actions) {
+            this(target, targetId, targetName, avgFit, delta, rationale, actions, List.of());
+        }
+    }
+
+    /**
+     * One proposed audience-field change, as a diff the operator confirms field by
+     * field (T831 / §LXI.7). Never a bulk accept and never automatic: an LLM
+     * rewriting an audience definition unattended is the failure mode the
+     * advisory-only rule exists to prevent.
+     *
+     * @param field        the audience field, as a {@code TurPersonaAudienceField}
+     *                     constant name
+     * @param currentValue what the persona says today, {@code null} when unset —
+     *                     the left-hand side of the diff
+     * @param proposedValue the suggested replacement, never equal to
+     *                     {@code currentValue} (a no-op edit is dropped)
+     * @param reason       one sentence on why the current value is wrong
+     * @param allowedValues the closed value set for an enumerated field, empty for
+     *                     free text — so the studio can render a picker without
+     *                     knowing the enums
+     */
+    public record FieldEdit(String field, String currentValue, String proposedValue,
+            String reason, List<String> allowedValues) {
     }
 }

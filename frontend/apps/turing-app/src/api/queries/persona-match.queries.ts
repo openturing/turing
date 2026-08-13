@@ -1,6 +1,8 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type {
   MatchAdjustments,
+  MatchApplyRequest,
+  MatchApplyResult,
   MatchDrift,
   MatchMatrix,
   MatchProject,
@@ -63,6 +65,27 @@ export function useMatchDrift(id: string | undefined) {
 export function useMatchAdjustments(id: string | undefined) {
   return useMutation<MatchAdjustments, Error, boolean | undefined>({
     mutationFn: (regenerate) => service.adjustments(id as string, regenerate ?? false),
+  });
+}
+
+/**
+ * T831 — apply the audience fields the operator confirmed. Invalidates the
+ * persona caches as well as the project's, because the write lands on a persona
+ * every other surface reads.
+ */
+export function useApplyMatchAdjustment(id: string | undefined) {
+  const queryClient = useQueryClient();
+  return useMutation<MatchApplyResult, Error, MatchApplyRequest>({
+    mutationFn: (body) => service.applyAdjustment(id as string, body),
+    onSuccess: (result) => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.personas.all() });
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.personas.detail(result.personaId),
+      });
+      if (id) {
+        invalidateMatchProject(queryClient, id);
+      }
+    },
   });
 }
 

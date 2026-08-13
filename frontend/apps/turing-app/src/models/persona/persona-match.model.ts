@@ -178,6 +178,30 @@ export interface MatchDrift {
 
 export type MatchAdjustmentTarget = "CONTENT" | "PERSONA";
 
+/**
+ * T831 — the writable audience fields. Mirrors the backend
+ * `TurPersonaAudienceField`; `accessibilityNotes` and `primaryLanguage` are
+ * deliberately absent, because no fit verdict has evidence about either.
+ */
+export type MatchAudienceField =
+  | "READING_LEVEL"
+  | "DOMAIN_EXPERTISE"
+  | "VOCABULARY_CEILING"
+  | "COMPREHENSION_NOTES";
+
+/**
+ * T831 — one proposed audience-field change, already grounded by the backend
+ * against the persona's current value. `currentValue` is the left-hand side of
+ * the diff; `allowedValues` is empty for a free-text field.
+ */
+export interface MatchFieldEdit {
+  field: MatchAudienceField;
+  currentValue: string | null;
+  proposedValue: string;
+  reason?: string | null;
+  allowedValues: string[];
+}
+
 export interface MatchAdjustmentItem {
   target: MatchAdjustmentTarget;
   targetId: string;
@@ -186,6 +210,61 @@ export interface MatchAdjustmentItem {
   delta?: number | null;
   rationale?: string | null;
   actions: string[];
+  /**
+   * T831 — empty whenever there is nothing an operator could confirm, which is
+   * what the Apply affordance is gated on. Always empty on a CONTENT item.
+   */
+  fieldEdits: MatchFieldEdit[];
+}
+
+/** T831 — one field the operator ticked, with the value they saw. */
+export interface MatchConfirmedField {
+  field: MatchAudienceField;
+  value: string;
+}
+
+export interface MatchApplyRequest {
+  personaId: string;
+  rationale?: string | null;
+  llmUsed: boolean;
+  fields: MatchConfirmedField[];
+}
+
+export interface MatchAppliedField {
+  field: MatchAudienceField;
+  oldValue: string | null;
+  newValue: string;
+}
+
+export interface MatchSkippedField {
+  field: string;
+  reason: string;
+}
+
+export interface MatchApplyResult {
+  personaId: string;
+  appliedAt: string;
+  applied: MatchAppliedField[];
+  /** Reported, not thrown — one bad field never discards the other ticks. */
+  skipped: MatchSkippedField[];
+}
+
+/**
+ * T831 — which of an item's field edits the operator has ticked. Nothing is
+ * pre-ticked: confirmation is per field and per apply, never a bulk accept.
+ */
+export function confirmedFieldsOf(
+  item: MatchAdjustmentItem,
+  ticked: ReadonlySet<string>,
+): MatchConfirmedField[] {
+  return item.fieldEdits
+    .filter((edit) => ticked.has(edit.field))
+    .map((edit) => ({ field: edit.field, value: edit.proposedValue }));
+}
+
+/** Whether a suggestion offers anything to apply at all. */
+export function isApplicable(item: MatchAdjustmentItem): boolean {
+  return item.target === "PERSONA" && (item.fieldEdits?.length ?? 0) > 0;
 }
 
 export interface MatchAdjustments {

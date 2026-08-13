@@ -1,0 +1,104 @@
+databaseChangeLog:
+  # T831 / §LXI.7 (Block BN) — ai_persona_audience_apply_log: the append-only record
+  # of which audience field a Persona Match suggestion actually changed, and why.
+  #
+  # A persona is overwritten in place, so it only ever knows "now"; without this
+  # series a suggestion the operator agreed with is indistinguishable from a change
+  # made for an unrelated reason, and the next run's drift is unattributable. One
+  # row per field the operator confirmed, carrying the value it replaced.
+  #
+  # project_id is nullable on purpose: a row must survive the deletion of the
+  # project that suggested it rather than block it. Column names match the JPA
+  # field mapping (@Column names, snake_case here because the entity spells them
+  # that way explicitly). Portable lowercase types; longtext, not clob. Idempotent
+  # (tableExists not present + MARK_RAN) because the app runs between changesets.
+
+  - changeSet:
+      id: v2026.3.1.124-create-ai_persona_audience_apply_log
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - tableExists:
+                tableName: ai_persona_audience_apply_log
+      changes:
+        - createTable:
+            tableName: ai_persona_audience_apply_log
+            columns:
+              - column:
+                  name: id
+                  type: varchar(40)
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: tenantId
+                  type: varchar(40)
+              - column:
+                  name: persona_id
+                  type: varchar(40)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: project_id
+                  type: varchar(40)
+              - column:
+                  name: field
+                  type: varchar(32)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: old_value
+                  type: longtext
+              - column:
+                  name: new_value
+                  type: longtext
+              - column:
+                  name: rationale
+                  type: longtext
+              - column:
+                  name: llm_used
+                  type: boolean
+                  defaultValueBoolean: false
+                  constraints:
+                    nullable: false
+              - column:
+                  name: applied_at
+                  type: timestamp
+                  constraints:
+                    nullable: false
+              - column:
+                  name: applied_by
+                  type: varchar(255)
+
+  - changeSet:
+      id: v2026.3.1.124-index-ai_persona_audience_apply_log-persona
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - indexExists:
+                indexName: idx_persona_audience_apply_persona
+      changes:
+        - createIndex:
+            tableName: ai_persona_audience_apply_log
+            indexName: idx_persona_audience_apply_persona
+            columns:
+              - column:
+                  name: persona_id
+
+  - changeSet:
+      id: v2026.3.1.124-index-ai_persona_audience_apply_log-project
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - indexExists:
+                indexName: idx_persona_audience_apply_project
+      changes:
+        - createIndex:
+            tableName: ai_persona_audience_apply_log
+            indexName: idx_persona_audience_apply_project
+            columns:
+              - column:
+                  name: project_id

@@ -2,6 +2,8 @@ import axios from "axios";
 import { getCsrfToken } from "@/lib/axios";
 import type {
   MatchAdjustments,
+  MatchApplyRequest,
+  MatchApplyResult,
   MatchDrift,
   MatchMatrix,
   MatchPersonaRef,
@@ -115,6 +117,23 @@ export class TurPersonaMatchService {
   async adjustments(id: string, regenerate = false): Promise<MatchAdjustments> {
     const response = await axios.post<MatchAdjustments>(
       `/persona-match/${id}/adjustments?regenerate=${regenerate}`,
+    );
+    return response.data;
+  }
+
+  /**
+   * T831 — write the audience fields the operator confirmed on a PERSONA
+   * suggestion. A sibling endpoint rather than `PUT /persona/{id}`: that one
+   * replaces the whole audience facet and would clobber the fields the operator
+   * deliberately left alone.
+   */
+  async applyAdjustment(
+    id: string,
+    body: MatchApplyRequest,
+  ): Promise<MatchApplyResult> {
+    const response = await axios.post<MatchApplyResult>(
+      `/persona-match/${id}/adjustments/apply`,
+      body,
     );
     return response.data;
   }

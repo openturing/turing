@@ -1,12 +1,22 @@
-import { useMatchAdjustments, useMatchDrift, useMatchTrend } from "@/api/queries/persona-match.queries";
+import {
+  useApplyMatchAdjustment,
+  useMatchAdjustments,
+  useMatchDrift,
+  useMatchTrend,
+} from "@/api/queries/persona-match.queries";
 import { BentoFormSection } from "@/components/bento";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
+  confirmedFieldsOf,
   driftTone,
   formatDelta,
+  isApplicable,
   type MatchAdjustmentItem,
   type MatchAdjustments,
+  type MatchApplyResult,
+  type MatchAudienceField,
   type MatchDriftEntry,
   type MatchPersonaRef,
   type MatchSource,
@@ -15,7 +25,9 @@ import {
 import {
   IconAlertTriangle,
   IconArrowDownRight,
+  IconArrowRight,
   IconArrowUpRight,
+  IconCheck,
   IconFileText,
   IconLoader2,
   IconMinus,
@@ -24,6 +36,7 @@ import {
   IconUserCircle,
   IconWand,
 } from "@tabler/icons-react";
+import type { TFunction } from "i18next";
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
@@ -150,7 +163,7 @@ export function MatchTuningSection({
           <p className="text-sm text-rose-600">{t("persona.match.adjustmentsError")}</p>
         )}
 
-        {report && <AdjustmentReport report={report} />}
+        {report && <AdjustmentReport report={report} projectId={projectId} />}
       </div>
     </BentoFormSection>
   );
@@ -282,7 +295,10 @@ function DriftList({
   );
 }
 
-function AdjustmentReport({ report }: Readonly<{ report: MatchAdjustments }>) {
+function AdjustmentReport({
+  report,
+  projectId,
+}: Readonly<{ report: MatchAdjustments; projectId: string }>) {
   const { t } = useTranslation();
   const contents = report.items.filter((i) => i.target === "CONTENT");
   const personas = report.items.filter((i) => i.target === "PERSONA");
@@ -309,13 +325,173 @@ function AdjustmentReport({ report }: Readonly<{ report: MatchAdjustments }>) {
           title={t("persona.match.adjustContents")}
           icon={IconFileText}
           items={contents}
+          projectId={projectId}
+          llmUsed={report.llmUsed}
         />
         <AdjustmentColumn
           title={t("persona.match.adjustPersonas")}
           icon={IconUserCircle}
           items={personas}
+          projectId={projectId}
+          llmUsed={report.llmUsed}
         />
       </div>
+    </div>
+  );
+}
+
+/**
+ * T831 — the audience-field value as a reader sees it. An enumerated field has a
+ * label; free text is shown verbatim.
+ */
+function fieldValueLabel(
+  t: TFunction,
+  field: MatchAudienceField,
+  value: string | null,
+): string {
+  if (!value) {
+    return t("persona.match.applyUnset");
+  }
+  if (field === "READING_LEVEL") {
+    return t(`persona.readingLevels.${value}`, { defaultValue: value });
+  }
+  if (field === "DOMAIN_EXPERTISE") {
+    return t(`persona.domainExpertise.${value}`, { defaultValue: value });
+  }
+  return value;
+}
+
+const FIELD_LABEL_KEY: Record<MatchAudienceField, string> = {
+  READING_LEVEL: "forms.persona.readingLevel",
+  DOMAIN_EXPERTISE: "forms.persona.domainExpertise",
+  VOCABULARY_CEILING: "forms.persona.vocabularyCeiling",
+  COMPREHENSION_NOTES: "forms.persona.comprehensionNotes",
+};
+
+/**
+ * T831 — the Apply affordance, PERSONA items only. Rendered as a field-level
+ * diff the operator ticks field by field: nothing is pre-ticked and there is no
+ * select-all, because an LLM rewriting an audience definition unattended is the
+ * failure mode the advisory-only rule exists to prevent.
+ */
+function ApplyPanel({
+  projectId,
+  item,
+  llmUsed,
+}: Readonly<{
+  projectId: string;
+  item: MatchAdjustmentItem;
+  llmUsed: boolean;
+}>) {
+  const { t } = useTranslation();
+  const [ticked, setTicked] = useState<Set<string>>(new Set());
+  const apply = useApplyMatchAdjustment(projectId);
+  const [result, setResult] = useState<MatchApplyResult | null>(null);
+
+  const toggle = (field: string) => {
+    setTicked((current) => {
+      const next = new Set(current);
+      if (next.has(field)) {
+        next.delete(field);
+      } else {
+        next.add(field);
+      }
+      return next;
+    });
+  };
+
+  const confirmed = confirmedFieldsOf(item, ticked);
+  const remaining = item.fieldEdits.filter(
+    (edit) => !result?.applied.some((a) => a.field === edit.field),
+  );
+
+  if (remaining.length === 0) {
+    return (
+      <p className="flex items-center gap-1.5 text-xs text-emerald-600 dark:text-emerald-400">
+        <IconCheck size={13} className="shrink-0" />
+        {t("persona.match.applyAllDone")}
+      </p>
+    );
+  }
+
+  return (
+    <div className="flex flex-col gap-2 rounded-xl border border-violet-500/25 bg-violet-500/5 p-2.5">
+      <p className="text-[0.7rem] font-semibold uppercase tracking-wide text-violet-600 dark:text-violet-300">
+        {t("persona.match.applyTitle")}
+      </p>
+      <ul className="flex flex-col gap-2">
+        {remaining.map((edit) => (
+          <li key={edit.field} className="flex items-start gap-2">
+            <Checkbox
+              id={`${item.targetId}-${edit.field}`}
+              checked={ticked.has(edit.field)}
+              onCheckedChange={() => toggle(edit.field)}
+              className="mt-0.5 shrink-0"
+            />
+            <label
+              htmlFor={`${item.targetId}-${edit.field}`}
+              className="min-w-0 flex-1 cursor-pointer text-xs"
+            >
+              <span className="font-medium">{t(FIELD_LABEL_KEY[edit.field])}</span>
+              <span className="mt-0.5 flex flex-wrap items-center gap-1.5">
+                <span className="text-muted-foreground line-through">
+                  {fieldValueLabel(t, edit.field, edit.currentValue)}
+                </span>
+                <IconArrowRight size={12} className="shrink-0 text-muted-foreground" />
+                <span className="font-semibold text-violet-600 dark:text-violet-300">
+                  {fieldValueLabel(t, edit.field, edit.proposedValue)}
+                </span>
+              </span>
+              {edit.reason && (
+                <span className="mt-0.5 block text-muted-foreground">{edit.reason}</span>
+              )}
+            </label>
+          </li>
+        ))}
+      </ul>
+      <div className="flex flex-wrap items-center gap-2">
+        <Button
+          size="sm"
+          variant="outline"
+          disabled={confirmed.length === 0 || apply.isPending}
+          onClick={() =>
+            apply.mutate(
+              {
+                personaId: item.targetId,
+                rationale: item.rationale ?? null,
+                llmUsed,
+                fields: confirmed,
+              },
+              {
+                onSuccess: (data) => {
+                  setResult(data);
+                  setTicked(new Set());
+                },
+              },
+            )
+          }
+        >
+          {apply.isPending ? (
+            <IconLoader2 size={14} className="mr-1 animate-spin" />
+          ) : (
+            <IconCheck size={14} className="mr-1" />
+          )}
+          {t("persona.match.applyConfirmed", { count: confirmed.length })}
+        </Button>
+        {apply.isError && (
+          <span className="text-xs text-destructive">{t("persona.match.applyError")}</span>
+        )}
+      </div>
+      {result && result.applied.length > 0 && (
+        <p className="text-xs text-emerald-600 dark:text-emerald-400">
+          {t("persona.match.applyApplied", { count: result.applied.length })}
+        </p>
+      )}
+      {result?.skipped.map((skip) => (
+        <p key={skip.field} className="text-xs text-amber-600 dark:text-amber-400">
+          {t("persona.match.applySkipped", { field: skip.field, reason: skip.reason })}
+        </p>
+      ))}
     </div>
   );
 }
@@ -324,10 +500,14 @@ function AdjustmentColumn({
   title,
   icon: Icon,
   items,
+  projectId,
+  llmUsed,
 }: Readonly<{
   title: string;
   icon: typeof IconFileText;
   items: MatchAdjustmentItem[];
+  projectId: string;
+  llmUsed: boolean;
 }>) {
   const { t } = useTranslation();
   if (items.length === 0) {
@@ -368,6 +548,9 @@ function AdjustmentColumn({
               </li>
             ))}
           </ul>
+          {isApplicable(item) && (
+            <ApplyPanel projectId={projectId} item={item} llmUsed={llmUsed} />
+          )}
         </div>
       ))}
     </div>

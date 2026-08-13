@@ -9,10 +9,12 @@
  */
 package com.viglet.turing.api.persona.match;
 
+import java.security.Principal;
 import java.time.Duration;
 import java.util.List;
 
 import org.springframework.http.MediaType;
+import org.springframework.security.access.annotation.Secured;
 import org.springframework.http.codec.ServerSentEvent;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -28,6 +30,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import com.viglet.turing.api.exception.TurNotFoundException;
 import com.viglet.turing.genai.persona.fit.TurPersonaVerdictHealth;
+import com.viglet.turing.genai.persona.match.TurPersonaAudienceApplyService;
 import com.viglet.turing.genai.persona.match.TurPersonaMatchAdjustmentService;
 import com.viglet.turing.genai.persona.match.TurPersonaMatchAnalysisService;
 import com.viglet.turing.genai.persona.match.TurPersonaMatchEventBus;
@@ -35,6 +38,7 @@ import com.viglet.turing.genai.persona.match.TurPersonaMatchHistoryService;
 import com.viglet.turing.genai.persona.match.TurPersonaMatchMatrixDto;
 import com.viglet.turing.genai.persona.match.TurPersonaMatchRunEvent;
 import com.viglet.turing.genai.persona.match.TurPersonaMatchService;
+import com.viglet.turing.genai.persona.match.dto.TurPersonaAudienceApplyDto;
 import com.viglet.turing.genai.persona.match.dto.TurPersonaMatchAdjustmentDto;
 import com.viglet.turing.genai.persona.match.dto.TurPersonaMatchDriftDto;
 import com.viglet.turing.genai.persona.match.dto.TurPersonaMatchPersonaRefDto;
@@ -78,6 +82,7 @@ public class TurPersonaMatchAPI {
     private final TurPersonaMatchAnalysisService analysisService;
     private final TurPersonaMatchHistoryService historyService;
     private final TurPersonaMatchAdjustmentService adjustmentService;
+    private final TurPersonaAudienceApplyService applyService;
     private final TurPersonaMatchEventBus eventBus;
     private final TurTenantContext tenantContext;
     private final TurPersonaVerdictHealth verdictHealth;
@@ -86,6 +91,7 @@ public class TurPersonaMatchAPI {
             TurPersonaMatchAnalysisService analysisService,
             TurPersonaMatchHistoryService historyService,
             TurPersonaMatchAdjustmentService adjustmentService,
+            TurPersonaAudienceApplyService applyService,
             TurPersonaMatchEventBus eventBus,
             TurTenantContext tenantContext,
             TurPersonaVerdictHealth verdictHealth) {
@@ -93,6 +99,7 @@ public class TurPersonaMatchAPI {
         this.analysisService = analysisService;
         this.historyService = historyService;
         this.adjustmentService = adjustmentService;
+        this.applyService = applyService;
         this.eventBus = eventBus;
         this.tenantContext = tenantContext;
         this.verdictHealth = verdictHealth;
@@ -234,6 +241,22 @@ public class TurPersonaMatchAPI {
             @RequestParam(defaultValue = "false") boolean regenerate) {
         requireProject(id);
         return adjustmentService.suggest(id, regenerate);
+    }
+
+    /**
+     * T831 — writes the audience fields the operator confirmed on a PERSONA
+     * suggestion. A sibling of {@code /adjustments} rather than a reuse of
+     * {@code PUT /api/persona/{id}}: that endpoint replaces the whole audience
+     * facet, which would clobber the fields the operator left alone. Carries the
+     * persona-write roles because it is a persona write.
+     */
+    @Operation(summary = "Apply the confirmed audience fields of a PERSONA adjustment (T831)")
+    @PostMapping("/{id}/adjustments/apply")
+    @Secured({"ROLE_ADMIN", "AI_AGENT_EDIT"})
+    public TurPersonaAudienceApplyDto.Response applyAdjustment(@PathVariable String id,
+            @RequestBody TurPersonaAudienceApplyDto.Request request, Principal principal) {
+        requireProject(id);
+        return applyService.apply(id, request, principal == null ? null : principal.getName());
     }
 
     // ---- run ---------------------------------------------------------------

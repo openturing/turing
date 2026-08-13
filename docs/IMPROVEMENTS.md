@@ -2028,38 +2028,18 @@ was never touched.
 
 ## LXI. Content-fit tuning loop — model-aware, enforceable, and it tells you (Block BN)
 
-> Motivated by building T704 (Block AT's closer). The loop the original Persona
-> Match ask described — *"adjust the persona to the content and the content to the
-> persona, continuously"* — now has its memory (per-cell history), its signal
-> (drift) and its advice (adjustment suggestions); since T825 the score honours the
-> project's chosen model, since T826 the "good fit" bar is the project's own number
-> rather than a literal duplicated across the stack, and since T827 a scheduled run
-> that regresses a project can say so over a webhook instead of waiting for someone
-> to open the studio, since T828 a pipeline can fail a build on it
-> (`turing match run … --min-fit --fail-on-drop`), and since T829 both verdicts are
-> bound to a provider-enforced schema with their degradations counted instead of
-> silent, and since T830 both the studio and the exported PDFs report movement per
-> content and per persona rather than only for the project as a whole. What remains
-> is the 💭 apply action (T831).
+_Fully shipped — Block BN (T825–T831). See [CHANGELOG.md](CHANGELOG.md) and `git log`._
 
-### LXI.7 Advice that must be retyped (T831 — 💭)
+The loop the original Persona Match ask described — *"adjust the persona to the content
+and the content to the persona, continuously"* — has its memory (per-cell history), its
+signal (drift), its advice (adjustment suggestions) and, since T831, its write: a
+suggestion the operator agrees with is confirmed field by field and stamped with its
+cause, so the next run's drift is attributable.
 
-T704 is advisory by construction, and that invariant is right for content: Turing
-does not own the CMS a page lives in, so "apply" there would mean writing into
-someone else's system. But **persona** adjustments target a Turing entity, and
-today an operator who agrees with "the reading level is set too high" leaves the
-studio, opens the persona form, and retypes it — with no record that the change came
-from a fit suggestion, which makes the next run's drift unattributable.
-
-The bet is an opt-in *Apply* on PERSONA items only, presented as a **field-level
-diff** over the audience facet (`readingLevel`, `domainExpertise`,
-`vocabularyCeiling`, `comprehensionNotes`) that the operator confirms field by field
-— never a bulk accept, never automatic, because an LLM suggestion rewriting an
-audience definition unattended is exactly the failure mode the advisory-only rule
-exists to prevent. Stamping the applied suggestion is what turns the loop from
-"scores that move" into "changes with causes". Kept at 💭 until the trust surfaces
-(T825, T829) are in: applying a suggestion derived from a verdict produced by an
-unknown model is not something to build first.
+The standing constraint the whole loop is built on: Turing does not own the CMS a page
+lives in, so advice about a *content* stays advice. A **persona** is a Turing entity,
+which is the only reason an apply exists on that side — and even there, never a bulk
+accept and never automatic.
 
 ## LXII. Answer-first search — the steerable, auditable answer engine (Block BO)
 

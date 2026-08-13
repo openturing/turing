@@ -2,9 +2,12 @@ import { describe, expect, it } from "vitest";
 
 import {
   buildTargetTrends,
+  confirmedFieldsOf,
   fitTone,
+  isApplicable,
   mediumFitFloor,
   seriesDelta,
+  type MatchAdjustmentItem,
   type MatchTrend,
 } from "../persona-match.model";
 
@@ -111,5 +114,74 @@ describe("fitTone bands (T826)", () => {
     expect(fitTone(59, 60).level).toBe("medium");
     expect(fitTone(40, 60).level).toBe("medium");
     expect(fitTone(39, 60).level).toBe("low");
+  });
+});
+
+describe("isApplicable / confirmedFieldsOf (T831)", () => {
+  function item(
+    overrides: Partial<MatchAdjustmentItem> = {},
+  ): MatchAdjustmentItem {
+    return {
+      target: "PERSONA",
+      targetId: "a1",
+      targetName: "Researcher",
+      avgFit: 41,
+      delta: -7,
+      rationale: "Contents average 41% fit.",
+      actions: ["Lower the reading level."],
+      fieldEdits: [
+        {
+          field: "READING_LEVEL",
+          currentValue: "GRADUATE",
+          proposedValue: "SECONDARY",
+          reason: "Readers skim.",
+          allowedValues: ["ELEMENTARY", "MIDDLE", "SECONDARY"],
+        },
+        {
+          field: "COMPREHENSION_NOTES",
+          currentValue: null,
+          proposedValue: "skims rather than reads",
+          reason: null,
+          allowedValues: [],
+        },
+      ],
+      ...overrides,
+    };
+  }
+
+  it("offers Apply on a persona item that carries field edits", () => {
+    expect(isApplicable(item())).toBe(true);
+  });
+
+  it("offers no Apply when the suggestion names no field", () => {
+    expect(isApplicable(item({ fieldEdits: [] }))).toBe(false);
+  });
+
+  it("never offers Apply on a content item", () => {
+    // Turing does not own the document, so there is no field to set.
+    expect(isApplicable(item({ target: "CONTENT" }))).toBe(false);
+  });
+
+  it("sends only the fields the operator ticked", () => {
+    expect(confirmedFieldsOf(item(), new Set(["READING_LEVEL"]))).toEqual([
+      { field: "READING_LEVEL", value: "SECONDARY" },
+    ]);
+  });
+
+  it("sends nothing when nothing is ticked, so Apply cannot be a bulk accept", () => {
+    expect(confirmedFieldsOf(item(), new Set())).toEqual([]);
+  });
+
+  it("ignores a ticked field the suggestion does not actually propose", () => {
+    expect(confirmedFieldsOf(item(), new Set(["DOMAIN_EXPERTISE"]))).toEqual([]);
+  });
+
+  it("sends every ticked field when more than one is confirmed", () => {
+    expect(
+      confirmedFieldsOf(item(), new Set(["READING_LEVEL", "COMPREHENSION_NOTES"])),
+    ).toEqual([
+      { field: "READING_LEVEL", value: "SECONDARY" },
+      { field: "COMPREHENSION_NOTES", value: "skims rather than reads" },
+    ]);
   });
 });
