@@ -128,6 +128,7 @@
 - **T89** — Flow router decision logs — structured log per router call: candidate flows + score + winner + method. (§VII.10.f)
 - **T90** — SSE channel debug surface in admin — live panel showing open channels + refcount (consuming the SDK's `_slotsSseOpenChannelCount`). (§VII.10.g)
 - **T961** — Deleted `chat.regen`, its constant-zero source and its `regen_ms` log field, so the pipeline breakdown no longer publishes a stage the inverted harness cannot run.
+- **T962** — Re-parented the timer as the `chat.setup.advance` sub-stage, recorded around the real advance() call, so a slow LlmJudge reads as itself instead of as `chat.setup.flow`.
 
 ## Block D.7 — Multi-flow architecture & flow editor DX
 

@@ -60,12 +60,12 @@ class TurChatPipelineObservationSpanTest {
         SimpleMeterRegistry registry = new SimpleMeterRegistry();
         TurChatPipelineObservation obs = withSpans(registry, true);
 
-        assertThatThrownBy(() -> obs.record(TurMeterNames.STAGE_CHAT_ADVANCE, () -> {
+        assertThatThrownBy(() -> obs.record(TurMeterNames.STAGE_CHAT_SETUP_ADVANCE, () -> {
             throw new IllegalStateException("boom");
         })).isInstanceOf(IllegalStateException.class);
 
         Timer timer = registry.find(TurMeterNames.CHAT_PIPELINE)
-                .tags(Tags.of(TurMeterNames.TAG_STAGE, TurMeterNames.STAGE_CHAT_ADVANCE,
+                .tags(Tags.of(TurMeterNames.TAG_STAGE, TurMeterNames.STAGE_CHAT_SETUP_ADVANCE,
                         TurMeterNames.TAG_STATUS, TurMeterNames.STATUS_ERROR))
                 .timer();
         assertThat(timer).isNotNull();

@@ -11,10 +11,6 @@
 - 📋 **T959** (deps: T957 ✅) **the tenant quota answers 402 and 429 with a bare status, so exhausting the free credit surfaces as a broken request** — Carrying a signed upgrade target on the refusal lets the console render the two exits, which is where the credit converts. → §XIV.10.4
 - 📋 **T960** (deps: T957 ✅) **nothing binds a managed credential to the install that earned it, so one key works anywhere and the credit is farmable** — A persisted install id and a signed assertion on every managed call keep the credit a product feature, not a resellable API key. → §XIV.10.5
 
-## Block D.6 — Analytics & observability gaps
-
-- 📋 **T962** (deps: T961 ✅) **`chat.advance` reads zero although the flow advance it names still runs, now inside the setup phase** — T9 moved advance() ahead of the LLM call without moving its timer, so the judge round-trip is billed to `chat.setup` under a sub-stage that does not name it. → §VII.10.i
-
 ## Non-goals (do NOT add as tasks)
 
 Binding constraints — see [IMPROVEMENTS.md](IMPROVEMENTS.md) §I.6 (What NOT to

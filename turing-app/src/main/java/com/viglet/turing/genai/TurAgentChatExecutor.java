@@ -514,6 +514,7 @@ public class TurAgentChatExecutor {
         //   decrypt    — TurSecretCryptoService.decrypt (AES, ~ms)
         //   chatModel  — llmModelFactory.createChatModel (HTTP client init)
         //   flow       — resolveFlowContext + earlyAdvanceBeforeLlm
+        //   advance    — the advance() call inside that, nested under flow
         //   persona    — personaResolver.resolve (SINGLE resolution per turn)
         //   tools      — toolResolver.resolve (MCP handshake, BM25 pre-filter)
         //   compose    — promptAssembler.assemble (RAG prefix, personaComposer)
@@ -749,9 +750,16 @@ public class TurAgentChatExecutor {
             ChatModel auxiliaryModel) {
         log.info("[AgentExec] Running advance(flow={}, userMsg) BEFORE LLM",
                 initial.flow().getId());
+        // T962 — the advance is timed here rather than by the caller: it is the
+        // one part of the flow sub-stage that can make a network round-trip
+        // (LlmJudge), so a slow judge has to be readable as itself instead of
+        // as an unexplained rise in chat.setup.flow.
+        final long tAdvanceStart = System.currentTimeMillis();
         var earlyAdvance = chatFlowEngineService.advance(initial.flow(),
                 initial.state(), initial.graph(),
                 userMessage, /* assistantMessage = */ null, auxiliaryModel);
+        chatPipelineObservation.recordMillis(TurMeterNames.STAGE_CHAT_SETUP_ADVANCE,
+                System.currentTimeMillis() - tAdvanceStart);
         TurChatFlowState newState = earlyAdvance.state();
         if (newState == null || newState.getFlow() == null) {
             return initial;

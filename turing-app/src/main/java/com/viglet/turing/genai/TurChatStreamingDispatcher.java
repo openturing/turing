@@ -74,11 +74,11 @@ import tools.jackson.databind.ObjectMapper;
  * <p>Extracted from {@link TurAgentChatExecutor} in T33. Owns the
  * {@link TurMeterNames#STAGE_CHAT_LLM_CALL},
  * {@link TurMeterNames#STAGE_CHAT_POST},
- * {@link TurMeterNames#STAGE_CHAT_TOTAL} and
- * {@link TurMeterNames#STAGE_CHAT_ADVANCE} timings. The last is preserved
- * (always 0) post-T16 for backwards-compatible dashboards; the regen timer
- * it used to sit beside was deleted in T961, because the inverted harness
- * makes no second round-trip and so has no such stage to time.
+ * {@link TurMeterNames#STAGE_CHAT_TOTAL} timings. The two flow timers that
+ * used to sit beside them are gone: the inverted harness makes no second
+ * round-trip, so the regen stage has nothing to time (T961), and the advance
+ * now runs during setup, where it is timed as {@code chat.setup.advance}
+ * (T962).
  *
  * @author Alexandre Oliveira
  * @since 2026.3.1
@@ -431,11 +431,6 @@ public class TurChatStreamingDispatcher {
             // advance, no regen. Patches #6, #7, #8, #11, #14, #15 are
             // gone by construction.
             TurChatFlowState newState = flowContext == null ? null : flowContext.state();
-            // Kept at 0 — advance() ran in the setup phase, so no post-LLM
-            // advance substage exists in the inverted harness. The regen
-            // counterpart is gone entirely (T961): the inversion removed the
-            // second round-trip, so there is no stage left to time.
-            long tAdvanceMs = 0;
 
             // Persona's negative-constraint check runs LAST so it also
             // catches forbidden terms reintroduced by the flow override.
@@ -503,10 +498,8 @@ public class TurChatStreamingDispatcher {
             long tPost = tTotal - (tSetupEnd - tStart) - (tLlmEnd - tLlmStart);
             chatPipelineObservation.recordMillis(TurMeterNames.STAGE_CHAT_POST, tPost);
             chatPipelineObservation.recordMillis(TurMeterNames.STAGE_CHAT_TOTAL, tTotal);
-            chatPipelineObservation.recordMillis(TurMeterNames.STAGE_CHAT_ADVANCE, tAdvanceMs);
-            log.info("[AgentExec][timing] total_ms={} setup_ms={} llm_ms={} post_ms={} (advance_ms={})",
-                    tTotal, tSetupEnd - tStart, tLlmEnd - tLlmStart, tPost,
-                    tAdvanceMs);
+            log.info("[AgentExec][timing] total_ms={} setup_ms={} llm_ms={} post_ms={}",
+                    tTotal, tSetupEnd - tStart, tLlmEnd - tLlmStart, tPost);
             return new AssistantTurn(text, suggestedOptions, formJson, sources, guardrailVerdict,
                     secondOpinion, null);
         })

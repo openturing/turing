@@ -139,8 +139,12 @@ public final class TurMeterNames {
     public static final String STAGE_CHAT_SETUP = "chat.setup";
     public static final String STAGE_CHAT_LLM_CALL = "chat.llm.call";
     public static final String STAGE_CHAT_POST = "chat.post";
-    /** Time inside {@code chatFlowEngineService.advance} — includes LlmJudge round-trip if configured. */
-    public static final String STAGE_CHAT_ADVANCE = "chat.advance";
+    // `chat.advance` was a peer of the stages above, from when advance() ran
+    // after the LLM call. T9 moved it ahead of that call and T962 moved the
+    // timer to follow it: the work is now part of setup, so it is measured as
+    // the STAGE_CHAT_SETUP_ADVANCE sub-stage below rather than as a peer that
+    // reported 0 because nothing post-LLM was left to time.
+    //
     // `chat.regen` timed {@code regenerateReplyForNewNode}, the second LLM
     // round-trip taken when the flow advanced to a new aiQuestion. T16 deleted
     // that method — the inverted harness advances before the LLM call, so the
@@ -154,8 +158,9 @@ public final class TurMeterNames {
     // setup phase can be broken down into the parts that drive different
     // optimizations (decrypt + model build are dominated by the first-call
     // cold path; flow / persona resolution are dominated by JPA / cache;
-    // tools is dominated by MCP handshake on cold start; compose is the
-    // T31 cache hit/miss path).
+    // advance is dominated by the LlmJudge round-trip when the guardrail
+    // strategy is configured; tools is dominated by MCP handshake on cold
+    // start; compose is the T31 cache hit/miss path).
     //
     // The parent {@link #STAGE_CHAT_SETUP} timer stays — sum of all
     // sub-stages plus the assembly cost between them. Dashboards keep
@@ -164,6 +169,12 @@ public final class TurMeterNames {
     public static final String STAGE_CHAT_SETUP_DECRYPT = "chat.setup.decrypt";
     public static final String STAGE_CHAT_SETUP_MODEL = "chat.setup.model";
     public static final String STAGE_CHAT_SETUP_FLOW = "chat.setup.flow";
+    /**
+     * Time inside {@code chatFlowEngineService.advance} — includes the LlmJudge
+     * round-trip if configured. Nested inside {@link #STAGE_CHAT_SETUP_FLOW},
+     * which brackets flow resolution and the early advance together.
+     */
+    public static final String STAGE_CHAT_SETUP_ADVANCE = "chat.setup.advance";
     public static final String STAGE_CHAT_SETUP_PERSONA = "chat.setup.persona";
     public static final String STAGE_CHAT_SETUP_TOOLS = "chat.setup.tools";
     public static final String STAGE_CHAT_SETUP_COMPOSE = "chat.setup.compose";
