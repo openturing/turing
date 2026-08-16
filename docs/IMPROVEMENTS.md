@@ -1282,6 +1282,146 @@ Two standing constraints the seeded defaults inherit, both learned here:
   a report says what actually happened rather than naming a site that was never
   created.
 
+### XIV.10 Viglet AI — the managed LLM onboarding credit
+
+Turing ships without an LLM, so the first thing a new install asks for is an account
+somewhere else. The operator creates an OpenAI or Anthropic account, adds a payment
+method, mints a key, pastes it into an LLM instance and sets the default before chat,
+RAG, agents, skills or semantic navigation do anything. Every one of those steps happens
+outside the product, and each is a place the evaluation ends.
+
+The managed path closes that gap: Viglet runs an LLM endpoint, an install pairs with it
+in one click, and the AI surfaces work before the operator has chosen a vendor. What the
+endpoint needs already exists — Block AZ is an OpenAI-compatible governed gateway with
+virtual keys, rate limiting and usage accounting, and Block J is tenancy with per-plan
+limits that already answer 402 and 429. The service is that gateway run by Viglet,
+consumed through the openai-compatible provider the platform already ships.
+
+The positioning constraint binds the design. A catalogue of models priced per token is
+an inference marketplace, which is a market Turing cannot win and does not want. The
+credit is one opaque model alias, bound to an install, capped hard, and it converts by
+pointing at the paid surfaces — hosted Cloud, embeddings, transcription, rerank — never
+at more tokens of the same model. BYOK stays free and first-class.
+
+#### XIV.10.1 The `viglet` provider and its opaque model alias (T956)
+
+`TurOpenAiCompatibleLlmProvider` already takes a free `baseUrl`, and `TurLLMVendor` is a
+table rather than an enum, so the managed endpoint is reachable today — by an operator
+who knows the URL, picks the right vendor row and types a model name. That is three
+facts a first-time user does not have, and every one of them is a way to get the
+instance subtly wrong.
+
+`TurVigletLlmProvider` is the thin subclass that removes the choice: `baseUrl` fixed and
+not editable, plugin type `viglet` in `LlmProviderType.KNOWN`, a `VIGLET` vendor row
+seeded by Liquibase, and no model list to browse.
+
+The alias is the part that is a decision rather than plumbing. The instance's model is
+`viglet-small`, never a vendor model name. Naming the vendor model in the wire contract
+fixes Turing's cost to one vendor's price sheet and invites the comparison this credit
+is designed not to have; an alias lets the service move to whatever is cheapest per
+useful token without touching a single install. It also keeps `GET /v1/models` honest —
+the managed endpoint offers exactly one id, which is the whole catalogue, so there is
+nothing to shop.
+
+Capabilities follow the alias, not the model behind it: chat and embedding only, no
+native tools, no computer use. Anything richer is a reason to bring your own key, which
+stays free.
+
+#### XIV.10.2 Device-code pairing, and why the credential is never shipped (T957)
+
+A credential embedded in the distribution is public on the first day, and a credential
+pasted by hand is the friction this block exists to remove. Device-code pairing is the
+third option, and it is the one every CLI that faces this problem already uses.
+
+The flow: the install posts its id and version to the pairing endpoint and gets back a
+short user code and a verification URL; the console shows both; the operator opens the
+URL, signs in with GitHub or Google, and approves; the install polls until the
+credential arrives. `TurVigletPairingService` owns the client half — start, poll, and
+the completion that writes the result.
+
+Completion is the part that has to be whole, because a half-paired install is worse than
+an unpaired one. In one transaction it stores the credential through
+`TurSecretCryptoService`, creates the `TurLLMInstance` on the `viglet` provider with the
+`viglet-small` alias, and sets `DEFAULT_LLM` — after which chat, RAG, agents and
+semantic navigation work with nothing else configured. An install that already has a
+default keeps it; pairing adds an instance and does not take the operator's choice away.
+
+The install id is a persisted UUID, not derived from hardware or the container:
+otherwise every `docker run` presents as a new install and earns a fresh credit.
+Approval is per identity, and one free credit per identity is the rule the managed
+service enforces.
+
+#### XIV.10.3 The activation surface, and keeping BYOK first-class (T958)
+
+`bento-first-run-tour.tsx` currently teaches the hub rail, the command palette and
+layout customisation. All three are true and none of them is what stops a new operator:
+the install has no LLM, so every AI surface it points at is dead. The tour explains the
+furniture and skips the blocker.
+
+The fix is an activation card on the bento home, shown while no default LLM is set,
+offering exactly two paths side by side — "Activate Viglet AI" and "Use my own API key".
+They are equally prominent on purpose. Turing's argument is self-hosted, and a managed
+default that looks like the only way in reads as a bait, which costs more trust than the
+credit buys. The card states plainly that the managed path sends prompts to Viglet's
+endpoint, at the moment of the decision rather than in a footer.
+
+Beyond the home, every surface that needs a model — chat, semantic-navigation ask,
+agents, skills — gets the same no-LLM empty state, linking to the card instead of
+failing with a provider error. Today those surfaces fail late and opaquely, which reads
+as a broken build rather than an unconfigured one.
+
+The tour gains this as its first step, and the seen-flag suffix bumps so existing
+installs see it once. A tour that never mentions the one thing blocking the product is a
+tour worth re-showing.
+
+#### XIV.10.4 Exhaustion is the conversion moment, so the refusal has to carry the exit (T959)
+
+`TurTenantQuotaService` already refuses over-limit work — 402 on agents and sites, 429
+on monthly tokens, through the shared `VigletQuotaService`. What it returns is a status
+and nothing else, which is correct as a gate and useless as a product surface: the
+operator sees a request fail and has no idea whether the install is broken, the provider
+is down, or the free credit simply ran out.
+
+That moment is the only one in the whole flow where the user has demonstrated the value
+and hit the wall at the same time, so it is where the credit is supposed to convert. A
+landing page cannot reach it; the refusal can.
+
+The refusal body gains a signed upgrade target naming the tenant, the install and which
+limit was reached. Signed, because it crosses from the managed service into a
+self-hosted console and an unsigned link there is an open redirect with a friendly name.
+
+The console renders it as an in-app banner offering the same two exits the activation
+card offered — continue on a paid plan, or paste your own key — with the second never
+hidden or made to look like a downgrade. A free tier that reads as a cage burns the
+open-source trust the platform runs on, and that trust is worth more than the
+conversion.
+
+The banner states what ran out and when it resets.
+
+#### XIV.10.5 Binding the credential to the install, and why that is positioning (T960)
+
+A bearer token that works from anywhere is an inference API. Once the credential can be
+lifted out of the install and used with curl, the offering stops being "Turing comes
+with AI included" and becomes a free tier of a hosted model service — which is a market
+with incumbents, no moat and negative margin, and the thing this block is designed not
+to enter.
+
+Binding is what keeps the two apart. Every call to the managed endpoint carries the
+install id from pairing plus a short-lived assertion signed with a keypair generated at
+pairing time and never leaving the install. The managed side rejects a credential
+presented without a matching assertion, so a leaked key alone buys nothing.
+
+The same binding is the abuse control. Free tiers open to the internet are farmed, and a
+monthly token cap alone does not stop it — a thousand installs is a thousand caps. One
+credit per verified identity, one live binding per credit, and a per-minute ceiling on
+top of the monthly one closes the three cheap attacks.
+
+It also makes revocation possible at the granularity that matters: an install, not an
+account, so one abusive deployment does not cost a legitimate operator their other
+environments.
+
+None of this touches the BYOK path, which carries no assertion and is never metered.
+
 ## XVI. Cost & token governance (Block L)
 
 > **Shipped 2026-06-18** (T289–T291). Design realized; see

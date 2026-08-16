@@ -1298,3 +1298,6 @@
 - **T941** — The override cache evicts least-recently-used instead of refusing new entries, so no site past the cap rebuilds its lexicon per request.
 - **T942** — A reload endpoint recompiles the lexicons from the resources and `lexicon-dir` as they are now, so editing a mounted file no longer needs a restart.
 - **T943** — A check in the admin form reports what a bundle added and the sort a sample question gets, so an ignored typo is no longer invisible.
+
+## Block J.10 — Viglet AI: the managed LLM onboarding credit (§XIV.10)
+
