@@ -1307,3 +1307,4 @@
 - **T958** — The bento home offers Activate Viglet AI and Use my own API key at equal weight while no model exists, chat/agents/skills/SN say so instead of failing late, and the tour leads with it.
 - **T959** — Quota refusals now carry resource, used/limit, the reset instant and a signed upgrade target; the bento shell raises one banner offering the paid plan and BYOK at equal weight.
 - **T960** — Pairing now mints an Ed25519 keypair and registers the public half; every managed call carries a signed short-lived install assertion, so a lifted credential is not a resellable key.
+- **T964** — Streaming mints the assertion per request; the SDK-backed blocking path, which has no interceptor seam, rebuilds its model once the assertion is past half-life.

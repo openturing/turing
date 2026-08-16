@@ -119,8 +119,10 @@ public class TurOpenAiCompatibleLlmProvider implements TurGenAiLlmProvider {
 
         OpenAiChatOptions.Builder optionsBuilder = OpenAiChatOptions.builder().model(modelName);
         applyCommonOptions(optionsBuilder, turLLMInstance, options);
+        // T964 — a supplier, read per request: this model can outlive the
+        // short-lived headers it would otherwise have been born with.
         return new TurOpenAiStreamingChatModel(baseUrl, apiKey, modelName, optionsBuilder.build(),
-                extraHeaders(turLLMInstance, options));
+                () -> extraHeaders(turLLMInstance, options));
     }
 
     @Override

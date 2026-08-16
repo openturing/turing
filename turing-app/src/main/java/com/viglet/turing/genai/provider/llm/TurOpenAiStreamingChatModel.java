@@ -14,6 +14,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.function.Supplier;
 
 import org.springframework.ai.chat.messages.AssistantMessage;
 import org.springframework.ai.chat.messages.Message;
@@ -95,12 +96,13 @@ public class TurOpenAiStreamingChatModel implements ChatModel {
     private static final String SSE_DONE = "[DONE]";
 
     private final WebClient webClient;
+    private final Supplier<Map<String, String>> extraHeaders;
     private final String modelName;
     private final OpenAiChatOptions defaultOptions;
 
     public TurOpenAiStreamingChatModel(String baseUrl, String apiKey, String modelName,
             OpenAiChatOptions defaultOptions) {
-        this(baseUrl, apiKey, modelName, defaultOptions, Map.of());
+        this(baseUrl, apiKey, modelName, defaultOptions, Map::of);
     }
 
     /**
@@ -110,18 +112,23 @@ public class TurOpenAiStreamingChatModel implements ChatModel {
      * a binding the blocking path enforces and the streaming path does not is
      * no binding at all.
      *
+     * <p>T964 — a {@link Supplier} rather than a map, and read <b>per request</b>
+     * in {@link #stream(Prompt)}. The assertion is short-lived by design, and a
+     * model outlives one: an eval run or a weekly report builds a model once and
+     * calls it for minutes, so headers frozen at construction go stale mid-run
+     * and the managed side starts refusing a credential that is perfectly valid.
+     * Minting at request time costs one signature per call and never expires.
+     *
      * @since 2026.3.4
      */
     public TurOpenAiStreamingChatModel(String baseUrl, String apiKey, String modelName,
-            OpenAiChatOptions defaultOptions, Map<String, String> extraHeaders) {
-        WebClient.Builder builder = WebClient.builder()
+            OpenAiChatOptions defaultOptions, Supplier<Map<String, String>> extraHeaders) {
+        this.webClient = WebClient.builder()
                 .baseUrl(baseUrl)
                 .defaultHeader("Authorization", "Bearer " + apiKey)
-                .defaultHeader("Content-Type", MediaType.APPLICATION_JSON_VALUE);
-        if (extraHeaders != null) {
-            extraHeaders.forEach(builder::defaultHeader);
-        }
-        this.webClient = builder.build();
+                .defaultHeader("Content-Type", MediaType.APPLICATION_JSON_VALUE)
+                .build();
+        this.extraHeaders = extraHeaders == null ? Map::of : extraHeaders;
         this.modelName = modelName;
         this.defaultOptions = defaultOptions;
     }
@@ -145,9 +152,13 @@ public class TurOpenAiStreamingChatModel implements ChatModel {
     @Override
     public Flux<ChatResponse> stream(Prompt prompt) {
         Map<String, Object> body = buildRequestBody(prompt);
+        // T964 — minted here, not at construction: this model can be reused for
+        // longer than the assertion it would otherwise have been born with.
+        Map<String, String> perRequestHeaders = extraHeaders.get();
         return webClient.post()
                 .uri("/chat/completions")
                 .accept(MediaType.TEXT_EVENT_STREAM)
+                .headers(headers -> perRequestHeaders.forEach(headers::set))
                 .bodyValue(body)
                 .retrieve()
                 // bodyToFlux(String.class) on a text/event-stream response

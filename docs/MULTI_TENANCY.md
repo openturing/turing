@@ -141,6 +141,14 @@ buys nothing: without the assertion the managed side refuses it, and revocation
 lands on one install rather than an operator's whole account. The BYOK path sends
 neither header and is never metered.
 
+The assertion is short-lived, and a chat model is not (T964). The streaming
+transport mints one **per request**. The blocking one cannot — the OpenAI Java
+SDK bakes headers into its client at build time with no interceptor, and Spring
+AI's per-prompt `httpHeaders` reach only its legacy RestClient transport — so
+`TurRefreshingHeaderChatModel` rebuilds the model once its assertion is past
+half-life instead. A hundred-call eval run over ten minutes rebuilds ten times,
+not a hundred, and never sends an expired binding.
+
 ## Teardown runbook
 
 `TurTenantTeardownService` (platform-admin only, audited, **idempotent**):

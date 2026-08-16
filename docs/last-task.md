@@ -302,6 +302,7 @@ number" looked free but wasn't. Grepping three files (`ROADMAP.md`,
 
 ## Log (most recent first)
 
+- **T964 SHIPPED** (Block J.10 §LXXIII — streaming mints the install assertion per request via a Supplier; blocking wraps in TurRefreshingHeaderChatModel, rebuilding past half-life since the OpenAI SDK has no interceptor seam) — 2026-08-16.
 - **T963 SHIPPED** (Block J §LXXII — quota gate wired: checkCanCreateAgent/Site at the HTTP boundary (seeders + import exempt by construction), checkLlmAdmission in TurLlmModelFactory; embeddings deliberately not admitted) — 2026-08-16.
 - **T960 SHIPPED** (Block J.10 §XIV.10.5 — Ed25519 install keypair minted at pairing, public half registered; X-Viglet-Install + assertion headers via a new extraHeaders seam on the openai-compatible provider) — 2026-08-16.
 - **T959 SHIPPED** (Block J.10 §XIV.10.4 — quota refusal carries resource/used/limit/resetsAt + an HMAC-signed upgrade target keyed by the T957 credential; BentoQuotaBanner at the shell, BYOK at equal weight) — 2026-08-16.

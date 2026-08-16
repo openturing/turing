@@ -2085,31 +2085,6 @@ Three things this cost that are worth keeping:
   must still be detected, and a positive control proves the walk works once the list is
   empty.
 
-## LXXIII The install assertion is per model, and some models outlive it (Block J.10) (T964)
-
-T960 mints the assertion in `extraHeaders`, which the provider calls once while building
-a `ChatModel`, and bakes the result into the SDK client's default headers. That is
-correct wherever a model is built per request — the chat API, semantic chat, authoring —
-and wrong wherever one is built and then reused.
-
-`TurAgentEvalRunnerService` builds a judge model once and runs a dataset through it.
-`TurEvalDatasetGenerationService` and `TurWeeklySearchReportService` do the same shape.
-A run longer than `assertionTtlSeconds` (120 by default) starts failing partway through,
-and the failure looks like the managed service refusing a valid credential rather than a
-header that went stale.
-
-Raising the TTL is the wrong fix twice over: it weakens exactly the replay bound the
-short expiry buys, and it still fails on a long enough run. The header has to be minted
-per request, not per model.
-
-Both transports allow it. The blocking path can carry an OkHttp interceptor that sets
-the two headers as the call goes out; the streaming path can use a `WebClient` filter
-for the same. The provider then hands the client a supplier instead of a value, and
-`TurVigletInstallIdentityService` stays unchanged.
-
-A regression test wants a model built once, two calls made a simulated TTL apart, and
-both assertions distinct and unexpired.
-
 ## LXXIV Rotating the install key, which today means editing a config var by hand (Block J.10) (T965)
 
 `getOrCreatePublicKey` returns the existing pair whenever one is present, so re-pairing

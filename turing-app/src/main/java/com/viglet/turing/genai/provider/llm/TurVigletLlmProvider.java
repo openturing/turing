@@ -9,9 +9,12 @@
  */
 package com.viglet.turing.genai.provider.llm;
 
+import java.time.Duration;
+import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 
+import org.springframework.ai.chat.model.ChatModel;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 
@@ -71,6 +74,28 @@ public class TurVigletLlmProvider extends TurOpenAiCompatibleLlmProvider {
         super(optionsParser);
         this.vigletAiProperty = vigletAiProperty;
         this.installIdentityService = installIdentityService;
+    }
+
+    /**
+     * T964 / §LXXIII — the blocking model is wrapped so it rebuilds itself once
+     * its assertion is past half-life. The headers are baked into the OpenAI
+     * SDK's client at build time and there is no interceptor to refresh them,
+     * so a model reused across a long run — an eval sweep, the weekly report —
+     * would otherwise keep presenting an expired binding until the managed side
+     * started refusing it, which reads as an outage rather than a stale header.
+     *
+     * <p>An install that signs nothing is not wrapped at all: there is no
+     * expiry to outlive, and the wrapper would only add a lock.
+     */
+    @Override
+    public ChatModel createChatModel(TurLLMInstance turLLMInstance, String decryptedApiKey) {
+        if (!installIdentityService.isBound()) {
+            return super.createChatModel(turLLMInstance, decryptedApiKey);
+        }
+        return new TurRefreshingHeaderChatModel(
+                () -> super.createChatModel(turLLMInstance, decryptedApiKey),
+                Duration.ofSeconds(vigletAiProperty.getAssertionTtlSeconds()),
+                () -> Instant.now().getEpochSecond());
     }
 
     /**

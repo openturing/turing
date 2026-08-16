@@ -8,7 +8,6 @@
 
 ## Block J.10 — Viglet AI: the managed LLM onboarding credit (§LXXIII)
 
-- 📋 **T964** (deps: T960 ✅) **the install assertion is signed once per chat model, so a model reused across a long run sends an expired one** — A binding that expires mid-run turns a working eval or report into a wall of 401s, and the operator reads that as the managed service being down. → §LXXIII
 - 📋 **T965** (deps: T960 ✅) **a compromised install signing key cannot be rotated, because re-pairing reuses the existing pair and no verb replaces it** — Revoking at install granularity is the abuse control T960 argued for, and it is unusable while rotating the key means hand-deleting a config var. → §LXXIV
 
 ## Non-goals (do NOT add as tasks)
