@@ -1303,3 +1303,4 @@
 
 - **T956** — A viglet vendor row now resolves TurVigletLlmProvider, which pins the managed baseUrl and the viglet-fast alias for chat and embeddings, and offers that one id as the whole model list.
 - **T957** — TurVigletPairingService starts and polls a device-code attempt, and on approval one transaction encrypts the credential, creates the viglet instance and sets DEFAULT_LLM when none was chosen.
+- **T958** — The bento home offers Activate Viglet AI and Use my own API key at equal weight while no model exists, chat/agents/skills/SN say so instead of failing late, and the tour leads with it.

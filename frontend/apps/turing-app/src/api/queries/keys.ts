@@ -166,6 +166,10 @@ export const queryKeys = {
     all: () => ['features'] as const,
     current: () => [...queryKeys.features.all(), 'current'] as const,
   },
+  globalSettings: {
+    all: () => ['global-settings'] as const,
+    current: () => [...queryKeys.globalSettings.all(), 'current'] as const,
+  },
   chatFlows: {
     all: () => ['chat-flows'] as const,
     listByAgent: (agentId: string) => [...queryKeys.chatFlows.all(), 'list', 'agent', agentId] as const,

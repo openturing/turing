@@ -11,6 +11,12 @@ export { BENTO_TONE_GRADIENTS, type BentoTone } from "./bento-tones";
 export { BentoUserMenu } from "./bento-user-menu";
 export { BentoBackToTop } from "./bento-back-to-top";
 export { BentoEmptyState, type BentoEmptyStateProps } from "./bento-empty-state";
+export { BentoActivationCard, type BentoActivationCardProps } from "./bento-activation-card";
+export { BentoNoLlmState, type BentoNoLlmStateProps } from "./bento-no-llm-state";
+export {
+  BentoVigletActivationDialog,
+  type BentoVigletActivationDialogProps,
+} from "./bento-viglet-activation-dialog";
 export { BentoShortcutsDialog, type BentoShortcutsDialogProps } from "./bento-shortcuts-dialog";
 export {
   BentoFirstRunTour,

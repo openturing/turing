@@ -1303,29 +1303,6 @@ credit is one opaque model alias, bound to an install, capped hard, and it conve
 pointing at the paid surfaces — hosted Cloud, embeddings, transcription, rerank — never
 at more tokens of the same model. BYOK stays free and first-class.
 
-#### XIV.10.3 The activation surface, and keeping BYOK first-class (T958)
-
-`bento-first-run-tour.tsx` currently teaches the hub rail, the command palette and
-layout customisation. All three are true and none of them is what stops a new operator:
-the install has no LLM, so every AI surface it points at is dead. The tour explains the
-furniture and skips the blocker.
-
-The fix is an activation card on the bento home, shown while no default LLM is set,
-offering exactly two paths side by side — "Activate Viglet AI" and "Use my own API key".
-They are equally prominent on purpose. Turing's argument is self-hosted, and a managed
-default that looks like the only way in reads as a bait, which costs more trust than the
-credit buys. The card states plainly that the managed path sends prompts to Viglet's
-endpoint, at the moment of the decision rather than in a footer.
-
-Beyond the home, every surface that needs a model — chat, semantic-navigation ask,
-agents, skills — gets the same no-LLM empty state, linking to the card instead of
-failing with a provider error. Today those surfaces fail late and opaquely, which reads
-as a broken build rather than an unconfigured one.
-
-The tour gains this as its first step, and the seen-flag suffix bumps so existing
-installs see it once. A tour that never mentions the one thing blocking the product is a
-tour worth re-showing.
-
 #### XIV.10.4 Exhaustion is the conversion moment, so the refusal has to carry the exit (T959)
 
 `TurTenantQuotaService` already refuses over-limit work — 402 on agents and sites, 429

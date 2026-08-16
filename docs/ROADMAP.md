@@ -8,7 +8,6 @@
 
 ## Block J.10 — Viglet AI: the managed LLM onboarding credit (§XIV.10)
 
-- 📋 **T958** (deps: T957 ✅) **a new install offers no way to turn AI on; the first-run tour teaches the rail and the palette, never the blocker** — An activation card on the bento home and a no-LLM empty state on every AI surface offer the managed credit beside BYOK. → §XIV.10.3
 - 📋 **T959** (deps: T957 ✅) **the tenant quota answers 402 and 429 with a bare status, so exhausting the free credit surfaces as a broken request** — Carrying a signed upgrade target on the refusal lets the console render the two exits, which is where the credit converts. → §XIV.10.4
 - 📋 **T960** (deps: T957 ✅) **nothing binds a managed credential to the install that earned it, so one key works anywhere and the credit is farmable** — A persisted install id and a signed assertion on every managed call keep the credit a product feature, not a resellable API key. → §XIV.10.5
 

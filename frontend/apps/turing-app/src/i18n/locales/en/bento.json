@@ -28,6 +28,36 @@
       "openSelected": "Open the selected area",
       "dismiss": "Close the palette or a dialog"
     },
+    "activate": {
+      "title": "Turn on AI",
+      "subtitle": "Turing needs a language model before chat, retrieval, agents and semantic navigation can answer anything. Pick either way in — both work the same afterwards.",
+      "managed": {
+        "title": "Activate Viglet AI",
+        "body": "Pair this install in one click and start with a free managed model. No account, no card, no keys."
+      },
+      "byok": {
+        "title": "Use my own API key",
+        "body": "Point Turing at OpenAI, Anthropic, Gemini, Bedrock, a local Ollama — anything you already run. Free and fully featured."
+      },
+      "disclosure": "Viglet AI runs on Viglet's endpoint: prompts and retrieved content leave this install. Your own API key keeps that traffic between you and your provider.",
+      "noLlmTitle": "This needs a language model",
+      "noLlmDescription": "No model is configured yet, so there is nothing for this screen to ask. Choose either way in and come straight back.",
+      "noLlmAgents": "Agents can be authored now, but none of them can answer until a model is configured.",
+      "noLlmSkills": "Skills can be authored now, but none of them can run until a model is configured.",
+      "noLlmSn": "These settings can be saved now, but this site cannot answer a question until a model is configured.",
+      "dialogTitle": "Activate Viglet AI",
+      "starting": "Contacting Viglet AI…",
+      "instructions": "Open the page below, sign in, and enter this code to approve this install.",
+      "openPage": "Open the approval page",
+      "waiting": "Waiting for your approval…",
+      "doneTitle": "Viglet AI is on",
+      "doneBody": "Chat, retrieval, agents and semantic navigation are ready. You can switch to your own API key at any time.",
+      "close": "Done",
+      "startError": "Could not reach Viglet AI to start the activation.",
+      "pollError": "Lost contact with Viglet AI while waiting for approval.",
+      "deniedError": "The approval was declined.",
+      "expiredError": "The code expired. Start again."
+    },
     "tour": {
       "welcome": "Welcome to Turing ES",
       "skip": "Skip",
@@ -35,6 +65,10 @@
       "next": "Next",
       "done": "Get started",
       "replay": "Take the tour",
+      "activate": {
+        "title": "Turn on AI first",
+        "body": "Turing ships without a language model, so chat, retrieval and agents stay quiet until you give it one. On the home screen, activate the free managed Viglet AI or paste your own API key — both work the same afterwards."
+      },
       "rail": {
         "title": "One rail, three hubs",
         "body": "The left rail keeps just Home and the three hubs — Generative AI, Enterprise Search, and Management. Everything else lives one tap inside its hub."

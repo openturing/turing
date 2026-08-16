@@ -1,8 +1,10 @@
 import { ChatStarter } from "@/app/console/chat/components/chat-starter";
 import { useLlmInstances } from "@/api/queries/llm-instance.queries";
+import { useAiActivation } from "@/api/queries/viglet-ai.queries";
 import {
   BENTO_SPAN_FEATURED,
   BENTO_SPAN_SQUARE,
+  BentoActivationCard,
   BentoHero,
   BentoSection,
   BentoTile,
@@ -43,6 +45,9 @@ export default function BentoHomePage() {
     () => (llmInstances ?? []).some((i) => i.enabled === 1),
     [llmInstances],
   );
+  // T958 — while the install has no model at all, the home's first job is to
+  // offer the two ways to get one. It disappears the moment either lands.
+  const { needsActivation } = useAiActivation();
 
   const [defaultAgent, setDefaultAgent] = useState<TurAIAgent | null>(null);
   const [chatLlmId, setChatLlmId] = useState<string | null>(null);
@@ -99,6 +104,8 @@ export default function BentoHomePage() {
         title={<>{t(getGreetingKey())}, {firstName}.</>}
         subtitle={t("home.welcome")}
       />
+
+      {needsActivation && <BentoActivationCard />}
 
       {chatLlmId && defaultAgent && (
         <div className="bento-tile bento-glass mb-8 rounded-3xl p-4 md:mb-10 md:p-6">

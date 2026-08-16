@@ -27,19 +27,23 @@ function installMemoryStorage() {
 describe("BentoFirstRunTour", () => {
   beforeEach(() => installMemoryStorage());
 
-  it("steps forward through the three cards and finishes", () => {
+  it("steps forward through the four cards and finishes", () => {
     const onOpenChange = vi.fn();
     render(<BentoFirstRunTour open onOpenChange={onOpenChange} />);
 
-    // Step 1 — the rail.
+    // Step 1 (T958) — the blocker, before any of the furniture.
+    expect(screen.getByText("Turn on AI first")).toBeInTheDocument();
+    fireEvent.click(screen.getByText("Next"));
+
+    // Step 2 — the rail.
     expect(screen.getByText("One rail, three hubs")).toBeInTheDocument();
     fireEvent.click(screen.getByText("Next"));
 
-    // Step 2 — the palette.
+    // Step 3 — the palette.
     expect(screen.getByText("Jump anywhere with the palette")).toBeInTheDocument();
     fireEvent.click(screen.getByText("Next"));
 
-    // Step 3 — customize; the last step shows "Get started".
+    // Step 4 — customize; the last step shows "Get started".
     expect(screen.getByText("Make it yours")).toBeInTheDocument();
     fireEvent.click(screen.getByText("Get started"));
 
@@ -47,12 +51,17 @@ describe("BentoFirstRunTour", () => {
     expect(hasSeenBentoTour()).toBe(true);
   });
 
+  it("opens on the activation step, because that is what blocks a new install", () => {
+    render(<BentoFirstRunTour open onOpenChange={() => {}} />);
+    expect(screen.getByText("Turn on AI first")).toBeInTheDocument();
+  });
+
   it("can step back", () => {
     render(<BentoFirstRunTour open onOpenChange={() => {}} />);
     fireEvent.click(screen.getByText("Next"));
-    expect(screen.getByText("Jump anywhere with the palette")).toBeInTheDocument();
-    fireEvent.click(screen.getByText("Back"));
     expect(screen.getByText("One rail, three hubs")).toBeInTheDocument();
+    fireEvent.click(screen.getByText("Back"));
+    expect(screen.getByText("Turn on AI first")).toBeInTheDocument();
   });
 
   it("marks the tour seen when skipped", () => {

@@ -28,6 +28,36 @@
       "openSelected": "Abrir a área selecionada",
       "dismiss": "Fechar a paleta ou uma janela"
     },
+    "activate": {
+      "title": "Ative a IA",
+      "subtitle": "O Turing precisa de um modelo de linguagem antes que chat, recuperação, agentes e navegação semântica consigam responder qualquer coisa. Escolha um dos dois caminhos — depois disso, ambos funcionam igual.",
+      "managed": {
+        "title": "Ativar o Viglet AI",
+        "body": "Pareie esta instalação com um clique e comece com um modelo gerenciado gratuito. Sem conta, sem cartão, sem chaves."
+      },
+      "byok": {
+        "title": "Usar minha própria chave de API",
+        "body": "Aponte o Turing para OpenAI, Anthropic, Gemini, Bedrock, um Ollama local — o que você já usa. Gratuito e com todos os recursos."
+      },
+      "disclosure": "O Viglet AI roda no endpoint da Viglet: os prompts e o conteúdo recuperado saem desta instalação. Com a sua própria chave de API, esse tráfego fica entre você e o seu provedor.",
+      "noLlmTitle": "Isto precisa de um modelo de linguagem",
+      "noLlmDescription": "Nenhum modelo está configurado ainda, então não há a quem esta tela possa perguntar. Escolha um dos caminhos e volte para cá.",
+      "noLlmAgents": "Os agentes já podem ser criados, mas nenhum deles responderá até que um modelo seja configurado.",
+      "noLlmSkills": "As skills já podem ser criadas, mas nenhuma delas será executada até que um modelo seja configurado.",
+      "noLlmSn": "Estas configurações já podem ser salvas, mas este site não conseguirá responder a uma pergunta até que um modelo seja configurado.",
+      "dialogTitle": "Ativar o Viglet AI",
+      "starting": "Entrando em contato com o Viglet AI…",
+      "instructions": "Abra a página abaixo, entre com a sua conta e informe este código para aprovar esta instalação.",
+      "openPage": "Abrir a página de aprovação",
+      "waiting": "Aguardando a sua aprovação…",
+      "doneTitle": "O Viglet AI está ativo",
+      "doneBody": "Chat, recuperação, agentes e navegação semântica estão prontos. Você pode trocar para a sua própria chave de API quando quiser.",
+      "close": "Concluir",
+      "startError": "Não foi possível contatar o Viglet AI para iniciar a ativação.",
+      "pollError": "A conexão com o Viglet AI foi perdida enquanto aguardávamos a aprovação.",
+      "deniedError": "A aprovação foi recusada.",
+      "expiredError": "O código expirou. Comece de novo."
+    },
     "tour": {
       "welcome": "Bem-vindo ao Turing ES",
       "skip": "Pular",
@@ -35,6 +65,10 @@
       "next": "Próximo",
       "done": "Começar",
       "replay": "Fazer o tour",
+      "activate": {
+        "title": "Primeiro, ative a IA",
+        "body": "O Turing vem sem um modelo de linguagem, então chat, recuperação e agentes ficam em silêncio até você fornecer um. Na tela inicial, ative o Viglet AI gerenciado e gratuito ou cole a sua própria chave de API — depois disso, ambos funcionam igual."
+      },
       "rail": {
         "title": "Uma barra, três hubs",
         "body": "A barra à esquerda mantém apenas Início e os três hubs — IA Generativa, Busca Corporativa e Gerenciamento. Todo o resto fica a um toque dentro do seu hub."

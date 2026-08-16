@@ -1,15 +1,29 @@
 import { useAiAgents } from "@/api/queries/ai-agent.queries";
+import { useAiActivation } from "@/api/queries/viglet-ai.queries";
 import { ROUTES } from "@/app/routes.const";
-import { BentoEntityTile, BentoListPage } from "@/components/bento";
+import { BentoEntityTile, BentoListPage, BentoNoLlmState } from "@/components/bento";
 import { IconRobot } from "@tabler/icons-react";
 import { useTranslation } from "react-i18next";
 
 export default function BentoAIAgentListPage() {
   const { t } = useTranslation();
   const { data: agents, isError } = useAiAgents();
+  const { hasEnabledLlm, isResolved } = useAiActivation();
   const error = isError ? t("common.connectionError", { resource: "AI agents" }) : null;
 
   return (
+    <>
+    {/*
+     * T958 — an agent with no model behind it answers nothing, and the failure
+     * lands much later, inside a chat turn. Say it here instead. Kept ABOVE the
+     * list rather than replacing it: agents are still worth authoring before a
+     * model exists, so the blocker is stated without taking the surface away.
+     */}
+    {isResolved && !hasEnabledLlm && (
+      <BentoNoLlmState description={t("bento.activate.noLlmAgents", {
+        defaultValue: "Agents can be authored now, but none of them can answer until a model is configured.",
+      })} />
+    )}
     <BentoListPage
       items={agents}
       error={error}
@@ -42,5 +56,6 @@ export default function BentoAIAgentListPage() {
         />
       )}
     />
+    </>
   );
 }

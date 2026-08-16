@@ -1,6 +1,7 @@
 import { useCreateSkill, useImportSkillZip, useSkills } from "@/api/queries/skill.queries";
+import { useAiActivation } from "@/api/queries/viglet-ai.queries";
 import { ROUTES } from "@/app/routes.const";
-import { BentoHero } from "@/components/bento";
+import { BentoHero, BentoNoLlmState } from "@/components/bento";
 import { LoadProvider } from "@/components/loading-provider";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -27,6 +28,7 @@ export default function BentoSkillListPage() {
   const navigate = useNavigate();
   const { t } = useTranslation();
   const { data: skills, isError } = useSkills();
+  const { hasEnabledLlm, isResolved } = useAiActivation();
   const createSkill = useCreateSkill();
   const importZip = useImportSkillZip();
   const [createOpen, setCreateOpen] = useState(false);
@@ -103,6 +105,20 @@ export default function BentoSkillListPage() {
           </>
         }
       />
+
+      {/*
+       * T958 — a skill only ever runs inside a model's sub-loop, so without one
+       * the catalog is inert. Stated above the list rather than replacing it:
+       * authoring a skill folder before a model exists is legitimate.
+       */}
+      {isResolved && !hasEnabledLlm && (
+        <BentoNoLlmState
+          description={t("bento.activate.noLlmSkills", {
+            defaultValue:
+              "Skills can be authored now, but none of them can run until a model is configured.",
+          })}
+        />
+      )}
 
       {skills && skills.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">

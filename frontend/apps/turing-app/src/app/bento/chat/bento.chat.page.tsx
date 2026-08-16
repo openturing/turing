@@ -1,4 +1,5 @@
-import { BentoHero } from "@/components/bento";
+import { useAiActivation } from "@/api/queries/viglet-ai.queries";
+import { BentoHero, BentoNoLlmState } from "@/components/bento";
 import { ROUTES } from "@/app/routes.const";
 import ChatPage from "@/app/console/chat/chat.page";
 import { IconMessageChatbot } from "@tabler/icons-react";
@@ -22,22 +23,31 @@ import { useParams } from "react-router-dom";
 export default function BentoChatPage() {
   const { t } = useTranslation();
   const { agentId } = useParams<{ agentId?: string }>();
-  return (
-    <ChatPage
-      initialAgentId={agentId}
-      emptyStateHeader={
-        <BentoHero
-          backTo={ROUTES.BENTO_AREA_GENERATIVE_AI}
-          backLabel={t("home.sections.generativeAi.label")}
-          leading={
-            <span className="grid h-12 w-12 place-items-center rounded-2xl bg-linear-to-br from-blue-500 to-indigo-600 text-white shadow-md">
-              <IconMessageChatbot size={24} />
-            </span>
-          }
-          title={t("home.features.chat.title")}
-          subtitle={t("home.features.chat.description")}
-        />
+  const { hasEnabledLlm, isResolved } = useAiActivation();
+
+  const hero = (
+    <BentoHero
+      backTo={ROUTES.BENTO_AREA_GENERATIVE_AI}
+      backLabel={t("home.sections.generativeAi.label")}
+      leading={
+        <span className="grid h-12 w-12 place-items-center rounded-2xl bg-linear-to-br from-blue-500 to-indigo-600 text-white shadow-md">
+          <IconMessageChatbot size={24} />
+        </span>
       }
+      title={t("home.features.chat.title")}
+      subtitle={t("home.features.chat.description")}
     />
   );
+
+  /*
+   * T958 — with no model, the reused ChatPage falls back to a console blank
+   * slate pointing at the console LLM form. Answer the question here instead,
+   * with the same two paths the home card offers. Gated on `isResolved` so a
+   * working install never blinks this on the way in.
+   */
+  if (isResolved && !hasEnabledLlm) {
+    return <BentoNoLlmState header={hero} description={t("chat.noLlmDescription")} />;
+  }
+
+  return <ChatPage initialAgentId={agentId} emptyStateHeader={hero} />;
 }
