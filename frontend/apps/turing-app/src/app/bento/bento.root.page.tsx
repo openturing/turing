@@ -6,6 +6,7 @@ import {
   BentoCommandPalette,
   BentoFirstRunTour,
   BentoNavRail,
+  BentoQuotaBanner,
   BentoShortcutsDialog,
   BentoUserMenu,
   bentoSectionAreaRoute,
@@ -217,6 +218,12 @@ export default function BentoRootPage() {
               : "relative z-10 mx-auto w-full max-w-7xl px-4 py-6 focus:outline-none md:px-8 md:py-10"
           }
         >
+          {/*
+           * T959 — mounted at the shell, not per page: an exhausted plan is
+           * reported by whichever request happened to hit the limit, and the
+           * operator has to be told wherever they are standing.
+           */}
+          <BentoQuotaBanner />
           <Outlet />
         </main>
 

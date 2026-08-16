@@ -302,6 +302,7 @@ number" looked free but wasn't. Grepping three files (`ROADMAP.md`,
 
 ## Log (most recent first)
 
+- **T959 SHIPPED** (Block J.10 §XIV.10.4 — quota refusal carries resource/used/limit/resetsAt + an HMAC-signed upgrade target keyed by the T957 credential; BentoQuotaBanner at the shell, BYOK at equal weight) — 2026-08-16.
 - **T958 SHIPPED** (Block J.10 §XIV.10.3 — activation card with BYOK at equal weight; shared BentoNoLlmState on chat/agents/skills/SN; tour key bumped to v2) — 2026-08-16.
 - **T957 SHIPPED** (Block J.10 §XIV.10.2 — device-code pairing client half; completion is one transaction, install id is a persisted UUID) — 2026-08-16.
 - **T956 SHIPPED** (Block J.10 §XIV.10.1 — TurVigletLlmProvider pins the managed baseUrl and the viglet-fast alias; VIGLET vendor seeded, one-id model list) — 2026-08-16.

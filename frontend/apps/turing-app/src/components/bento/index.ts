@@ -13,6 +13,7 @@ export { BentoBackToTop } from "./bento-back-to-top";
 export { BentoEmptyState, type BentoEmptyStateProps } from "./bento-empty-state";
 export { BentoActivationCard, type BentoActivationCardProps } from "./bento-activation-card";
 export { BentoNoLlmState, type BentoNoLlmStateProps } from "./bento-no-llm-state";
+export { BentoQuotaBanner, useQuotaRefusal } from "./bento-quota-banner";
 export {
   BentoVigletActivationDialog,
   type BentoVigletActivationDialogProps,

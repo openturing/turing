@@ -52,6 +52,16 @@ public final class TurErrorTypes {
      * @since 2026.2.17
      */
     public static final String UPSTREAM_UNREACHABLE = BASE + "upstream-unreachable";
+    /**
+     * T959 — a plan limit was reached (402 on a resource count, 429 on the
+     * monthly token budget). The response body carries {@code resource},
+     * {@code used}, {@code limit}, {@code resetsAt} and — when this install can
+     * sign one — {@code upgradeUrl}, so the console renders the exit instead of
+     * a broken request.
+     *
+     * @since 2026.3.4
+     */
+    public static final String QUOTA_EXHAUSTED = BASE + "quota-exhausted";
     public static final String INTERNAL = BASE + "internal";
 
     private TurErrorTypes() {}

@@ -1284,30 +1284,6 @@ credit is one opaque model alias, bound to an install, capped hard, and it conve
 pointing at the paid surfaces — hosted Cloud, embeddings, transcription, rerank — never
 at more tokens of the same model. BYOK stays free and first-class.
 
-#### XIV.10.4 Exhaustion is the conversion moment, so the refusal has to carry the exit (T959)
-
-`TurTenantQuotaService` already refuses over-limit work — 402 on agents and sites, 429
-on monthly tokens, through the shared `VigletQuotaService`. What it returns is a status
-and nothing else, which is correct as a gate and useless as a product surface: the
-operator sees a request fail and has no idea whether the install is broken, the provider
-is down, or the free credit simply ran out.
-
-That moment is the only one in the whole flow where the user has demonstrated the value
-and hit the wall at the same time, so it is where the credit is supposed to convert. A
-landing page cannot reach it; the refusal can.
-
-The refusal body gains a signed upgrade target naming the tenant, the install and which
-limit was reached. Signed, because it crosses from the managed service into a
-self-hosted console and an unsigned link there is an open redirect with a friendly name.
-
-The console renders it as an in-app banner offering the same two exits the activation
-card offered — continue on a paid plan, or paste your own key — with the second never
-hidden or made to look like a downgrade. A free tier that reads as a cage burns the
-open-source trust the platform runs on, and that trust is worth more than the
-conversion.
-
-The banner states what ran out and when it resets.
-
 #### XIV.10.5 Binding the credential to the install, and why that is positioning (T960)
 
 A bearer token that works from anywhere is an inference API. Once the credential can be

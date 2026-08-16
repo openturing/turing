@@ -55,4 +55,30 @@ public class TurVigletAiProperty {
      * arrives; the server half lives in the {@code viglet/cloud} repository.
      */
     private String pairingBaseUrl = "https://llm.viglet.cloud/pair";
+
+    /**
+     * T959 / §XIV.10.4 — where a quota refusal points the operator when the free
+     * credit runs out. The full target is this URL plus a signed query string
+     * naming the install, the tenant and the limit that was reached; blank
+     * disables the paid exit entirely (the refusal still states what ran out and
+     * still offers the operator's own key).
+     */
+    private String upgradeBaseUrl = "https://viglet.cloud/upgrade";
+
+    /**
+     * T959 — pins the HMAC key used to sign the upgrade target. Left blank (the
+     * default) the signature uses the credential this install was paired with in
+     * T957, which the managed service issued and can therefore verify. Set this
+     * only for a Viglet-side staging environment, or for an install that must
+     * offer the paid exit without pairing first.
+     */
+    private String upgradeSigningSecret = "";
+
+    /**
+     * T959 — how long a signed upgrade target stays valid, in seconds. Short
+     * enough that a link copied out of a screenshot stops working, long enough
+     * that an operator can finish reading the banner and act on it. Values below
+     * 60 are raised to 60 at signing time.
+     */
+    private long upgradeTtlSeconds = 3600;
 }

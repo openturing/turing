@@ -84,6 +84,21 @@ public class TurGlobalExceptionHandler {
         if (ex instanceof TurProviderException tpe) {
             problem.setProperty("provider", tpe.getProvider());
         }
+        if (ex instanceof TurQuotaExhaustedException qee) {
+            // T959 — the refusal carries the exit: what ran out, when it comes
+            // back, and where to go. `upgradeUrl` is absent rather than blank
+            // when this install can't sign one, so the console can tell "no paid
+            // exit here" from "a link that goes nowhere".
+            problem.setProperty("resource", qee.getResource());
+            problem.setProperty("used", qee.getUsed());
+            problem.setProperty("limit", qee.getLimit());
+            if (qee.getResetsAt() != null) {
+                problem.setProperty("resetsAt", qee.getResetsAt().toString());
+            }
+            if (qee.getUpgradeUrl() != null) {
+                problem.setProperty("upgradeUrl", qee.getUpgradeUrl());
+            }
+        }
         logBusiness(ex.getStatus(), ex);
         return ResponseEntity.status(ex.getStatus()).body(problem);
     }

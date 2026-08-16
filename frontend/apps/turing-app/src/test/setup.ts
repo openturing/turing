@@ -41,10 +41,20 @@ if (!globalThis.matchMedia) {
 
 // ── Global module mocks (apply to every test file) ──
 // i18n: passthrough `t` returning the key (or its defaultValue when present),
-// so assertions can target stable strings without booting i18next.
+// so assertions can target stable strings without booting i18next. `{{var}}`
+// placeholders are substituted from the same options object real i18next reads
+// them from — otherwise a component whose copy interpolates renders a literal
+// `{{used}}` and its test can only assert on the template, not on the sentence
+// the operator actually sees.
 vi.mock("react-i18next", () => ({
   useTranslation: () => ({
-    t: (key: string, opts?: { defaultValue?: string }) => opts?.defaultValue ?? key,
+    t: (key: string, opts?: Record<string, unknown> & { defaultValue?: string }) => {
+      const template = (opts?.defaultValue as string | undefined) ?? key;
+      if (!opts) return template;
+      return template.replace(/\{\{(\w+)\}\}/g, (match, name: string) =>
+        opts[name] === undefined ? match : String(opts[name]),
+      );
+    },
     i18n: { language: "en", changeLanguage: () => Promise.resolve() },
   }),
   Trans: ({ children }: { children?: ReactNode }) => children,

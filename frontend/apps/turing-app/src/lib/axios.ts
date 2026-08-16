@@ -1,6 +1,8 @@
 import { reportBackendOffline, reportBackendOnline } from "@viglet/viglet-design-system";
 import axios, { type AxiosRequestConfig } from "axios";
 
+import { parseQuotaRefusal, reportQuotaRefusal } from "./quota-refusal";
+
 /**
  * Status codes that indicate the backend is effectively unreachable:
  * - no response (network/DNS/connection refused)
@@ -213,6 +215,20 @@ axios.interceptors.response.use(
     const tokenFromHeader = readCsrfTokenFromHeaders(error.response?.headers);
     if (tokenFromHeader) {
       csrfToken = tokenFromHeader;
+    }
+
+    /*
+     * T959 — a plan limit was reached. Publish it to the shell banner before
+     * the error continues on its way: the caller still sees its rejection (a
+     * failed save must still read as failed), but the operator also gets told
+     * what ran out and how to keep going, which is the whole difference
+     * between an exhausted credit and a broken build.
+     */
+    if (error.response) {
+      const refusal = parseQuotaRefusal(error.response.status, error.response.data);
+      if (refusal) {
+        reportQuotaRefusal(refusal);
+      }
     }
 
     const requestConfig = error.config as

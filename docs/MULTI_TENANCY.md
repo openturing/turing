@@ -103,6 +103,20 @@ The breach surface is every path that bypasses the ORM. Each is closed:
 `TurTenantQuotaService` maps `TurTenant.plan` → limits (`FREE` is bounded; paid/
 custom plans are unlimited). Enforced at create (402) and LLM admission (429).
 
+**The refusal carries the exit** (T959). Both statuses answer with an RFC 7807
+body typed `tag:viglet.com,2026:errors/quota-exhausted`, carrying `resource`,
+`used`, `limit`, `resetsAt` (the monthly token window only — a resource count
+does not come back by waiting) and, when the install shares a secret with the
+managed service, a signed `upgradeUrl`. The console raises one banner from it at
+the bento shell, offering the paid plan and bring-your-own-key at equal weight.
+
+The upgrade target is signed with HMAC-SHA256 over
+`v1|turing|{installId}|{tenantId}|{resource}|{exp}`, keyed by
+`turing.viglet-ai.upgrade-signing-secret` when pinned and otherwise by the
+credential T957 paired with. An install with neither ships the refusal **without**
+a paid exit rather than with an unsigned link — unsigned, that link is an open
+redirect with a forgeable tenant claim.
+
 ## Teardown runbook
 
 `TurTenantTeardownService` (platform-admin only, audited, **idempotent**):

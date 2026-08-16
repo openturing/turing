@@ -22,13 +22,15 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.web.server.ResponseStatusException;
+import org.springframework.http.HttpStatus;
 
 import com.viglet.core.tenancy.VigletPlanLimits;
 import com.viglet.core.tenancy.VigletQuotaService;
 import com.viglet.core.tenancy.VigletTenantRef;
 import com.viglet.core.tenancy.VigletTenantStatus;
 import com.viglet.core.tenancy.VigletTenantStore;
+import com.viglet.turing.api.exception.TurQuotaExhaustedException;
+import com.viglet.turing.genai.vigletai.TurVigletUpgradeTargetService;
 import com.viglet.turing.persistence.repository.agent.TurAIAgentRepository;
 import com.viglet.turing.persistence.repository.llm.TurLLMTokenUsageRepository;
 import com.viglet.turing.persistence.repository.sn.TurSNSiteRepository;
@@ -55,6 +57,8 @@ class TurTenantQuotaServiceTest {
     private TurSNSiteRepository snSiteRepository;
     @Mock
     private TurLLMTokenUsageRepository tokenUsageRepository;
+    @Mock
+    private TurVigletUpgradeTargetService upgradeTargetService;
 
     private TurTenantContext context;
 
@@ -65,7 +69,9 @@ class TurTenantQuotaServiceTest {
         TurVigletResourceCounter counter = new TurVigletResourceCounter(agentRepository,
                 snSiteRepository, tokenUsageRepository);
         VigletQuotaService quota = new VigletQuotaService(context, store, counter);
-        return new TurTenantQuotaService(quota);
+        lenient().when(upgradeTargetService.upgradeUrl(org.mockito.ArgumentMatchers.any(),
+                org.mockito.ArgumentMatchers.anyString())).thenReturn(Optional.empty());
+        return new TurTenantQuotaService(quota, context, counter, upgradeTargetService);
     }
 
     @AfterEach
@@ -95,8 +101,17 @@ class TurTenantQuotaServiceTest {
         when(agentRepository.count()).thenReturn(3L); // FREE limit is 3
 
         assertThatThrownBy(service::checkCanCreateAgent)
-                .isInstanceOf(ResponseStatusException.class)
-                .hasMessageContaining("402");
+                .isInstanceOf(TurQuotaExhaustedException.class)
+                .asInstanceOf(org.assertj.core.api.InstanceOfAssertFactories
+                        .type(TurQuotaExhaustedException.class))
+                .satisfies(ex -> {
+                    assertThat(ex.getStatus()).isEqualTo(HttpStatus.PAYMENT_REQUIRED);
+                    assertThat(ex.getResource()).isEqualTo(TurVigletResourceCounter.AGENTS);
+                    assertThat(ex.getUsed()).isEqualTo(3L);
+                    assertThat(ex.getLimit()).isEqualTo(3L);
+                    // A resource count does not come back by waiting.
+                    assertThat(ex.getResetsAt()).isNull();
+                });
     }
 
     @Test
@@ -115,8 +130,67 @@ class TurTenantQuotaServiceTest {
         when(snSiteRepository.count()).thenReturn(2L); // FREE limit is 2
 
         assertThatThrownBy(service::checkCanCreateSite)
-                .isInstanceOf(ResponseStatusException.class)
-                .hasMessageContaining("402");
+                .isInstanceOf(TurQuotaExhaustedException.class)
+                .hasMessageContaining("2 of 2 used");
+    }
+
+    /**
+     * T959 — the token budget is the one limit that comes back on its own, so it
+     * is the one refusal allowed to say when. 429, not 402: the work is not
+     * unaffordable, it is early.
+     */
+    @Test
+    void monthlyTokenRefusalCarriesTheResetInstant() {
+        TurTenantQuotaService service = service(true);
+        bindFreeTenant();
+        when(tokenUsageRepository.findUsageByTenant(org.mockito.ArgumentMatchers.any(),
+                org.mockito.ArgumentMatchers.any()))
+                .thenReturn(java.util.List.<Object[]>of(new Object[] { "t-1", "x", "y", 100_000L }));
+
+        assertThatThrownBy(service::checkLlmAdmission)
+                .isInstanceOf(TurQuotaExhaustedException.class)
+                .asInstanceOf(org.assertj.core.api.InstanceOfAssertFactories
+                        .type(TurQuotaExhaustedException.class))
+                .satisfies(ex -> {
+                    assertThat(ex.getStatus()).isEqualTo(HttpStatus.TOO_MANY_REQUESTS);
+                    assertThat(ex.getResource()).isEqualTo(TurVigletResourceCounter.MONTHLY_TOKENS);
+                    assertThat(ex.getResetsAt()).isNotNull();
+                    assertThat(ex.getResetsAt().getDayOfMonth()).isEqualTo(1);
+                    assertThat(ex.getResetsAt()).isAfter(java.time.OffsetDateTime.now());
+                    assertThat(ex.getMessage()).contains("Resets on");
+                });
+    }
+
+    /**
+     * T959 — an install with no shared secret still gets a usable refusal: the
+     * paid exit is simply absent rather than pointing at an unsigned link.
+     */
+    @Test
+    void refusalOmitsTheUpgradeTargetWhenNoneCanBeSigned() {
+        TurTenantQuotaService service = service(true);
+        bindFreeTenant();
+        when(agentRepository.count()).thenReturn(3L);
+
+        assertThatThrownBy(service::checkCanCreateAgent)
+                .asInstanceOf(org.assertj.core.api.InstanceOfAssertFactories
+                        .type(TurQuotaExhaustedException.class))
+                .satisfies(ex -> assertThat(ex.getUpgradeUrl()).isNull());
+    }
+
+    /** T959 — when a target can be signed, it travels on the refusal. */
+    @Test
+    void refusalCarriesTheSignedUpgradeTarget() {
+        TurTenantQuotaService service = service(true);
+        bindFreeTenant();
+        when(agentRepository.count()).thenReturn(3L);
+        when(upgradeTargetService.upgradeUrl("t-1", TurVigletResourceCounter.AGENTS))
+                .thenReturn(Optional.of("https://viglet.cloud/upgrade?sig=abc"));
+
+        assertThatThrownBy(service::checkCanCreateAgent)
+                .asInstanceOf(org.assertj.core.api.InstanceOfAssertFactories
+                        .type(TurQuotaExhaustedException.class))
+                .satisfies(ex -> assertThat(ex.getUpgradeUrl())
+                        .isEqualTo("https://viglet.cloud/upgrade?sig=abc"));
     }
 
     @Test
