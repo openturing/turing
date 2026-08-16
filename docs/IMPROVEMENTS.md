@@ -1051,13 +1051,14 @@ Three groups, ranked by ratio of differentiation × Turing-infra reuse:
 (~3 weeks):
 - T128 LangSmith export (1 week)
 - T129 OTel export (1 week)
-- T116 `TurSkill` entity + manifest format (2 weeks)
-- T117 skills marketplace UI (1 week, internal-only v1)
+- skills entity + manifest format (2 weeks) — landed by commit before the ledger
+  existed, then retired by the skill-folder pivot
+- skills marketplace UI (1 week, internal-only v1) — landed by commit before the
+  ledger existed
 
-**Total: ~14 weeks of focused work to reach Deep Agents parity +
-overtake on three dimensions** (workspace, skills marketplace, eval
-harness). (A hosted public skills registry, once floated as `skills.turing.io`,
-was dropped — not a product direction.)
+**Total: ~14 weeks of focused work to reach Deep Agents parity + overtake on three
+dimensions** (workspace, skills marketplace, eval harness). (A hosted public skills
+registry, once floated as `skills.turing.io`, was dropped — not a product direction.)
 
 ### IX.12 The competitive narrative — one paragraph
 
@@ -1144,15 +1145,15 @@ ship one at a time, each guarded by its own capability row.
 > Turing's `/mcp` is a public consumption surface, so customer LLM clients
 > integrate Turing rather than the reverse — Turing competes to be the search
 > infrastructure *inside* other AI products, not only the customer-facing chat UI.
-> The inter-tenant federation directory (`directory.turing.io`, the former T192
-> bet) is **cancelled** — see STRATEGY §VIII.7.
+> The inter-tenant federation directory (`directory.turing.io`, the former
+> long-shot bet) is **cancelled** — see STRATEGY §VIII.7.
 
 ### X.15 The bold creative bets — shipped
 
 > T187 "Live answers (hybrid)", T188 "Headless MCP backbone", T189 "Real-time
 > multilingual call center", T190 "Self-installing connectors", and T191
 > "Self-improving agents overnight" shipped — see CHANGELOG §X.15.a … §X.15.e.
-> The one remaining long-shot, T192 inter-tenant MCP federation, is **cancelled**
+> The one remaining long-shot, inter-tenant MCP federation, is **cancelled**
 > (STRATEGY §VIII.7).
 
 ### X.16 Sequencing — what to ship first
@@ -1261,26 +1262,6 @@ bundle-size budget) before a public release.
 > Shipped 2026-06-11. The design rationale that lived here is preserved in git
 > history; the operator + developer guide is [MULTI_TENANCY.md](MULTI_TENANCY.md)
 > and the shipped task index is [CHANGELOG.md](CHANGELOG.md) → Block J.
-
-### XIV.8 Cloud SaaS integration — one tenant per user (T333–T373, T949, T950)
-
-_Fully shipped — see [CHANGELOG.md](CHANGELOG.md) → Block J and `git log`._
-
-Block J gives *isolation*; the Viglet Cloud product needed *one environment per
-signed-up user* on shared infra. The model: every Cloud user becomes the OWNER of their
-own personal tenant, so isolation is automatic and there is nothing to provision by hand
-— the opt-in `turing.tenancy.auto-provision` flag mints the tenant and its OWNER
-membership on first request, and default-off preserves the legacy invite-based posture.
-
-Two standing constraints the seeded defaults inherit, both learned here:
-
-- **A tenant id means something only in the install that minted it**, so it never
-  belongs in a portable bundle. What makes one seeded instance serve every
-  auto-provisioned tenant is owning none of them.
-- **A seed that imported nothing must not look finished.** The one-shot marker is what
-  stops the next boot from trying, so it is written only when every archive landed, and
-  a report says what actually happened rather than naming a site that was never
-  created.
 
 ### XIV.10 Viglet AI — the managed LLM onboarding credit
 

@@ -673,34 +673,6 @@ harness; a protocol) and are easy to make instantly desirable. Turing is a
 **broad platform**, so the site must work *harder* on focus and proof — breadth
 alone reads as "heavy and complex."
 
-### XIV.2 The wedge — platform-first, analogy as support (revised, T630)
-
-Positioning by analogy (validated by Supabase's "open source Firebase alternative" and
-Meilisearch's stance) answers *category* and *differentiation* in one line, and the site
-launched with an analogy-first hero:
-
-> ~~The open-source, self-hosted alternative to Algolia — with AI agents built in.~~ *(original T474 lead)*
-
-**Revised (T630):** a conversion audit found the analogy-first lead *undersold* the
-product — it read as "a cheaper Algolia" and buried the actual differentiator (auditable
-cited RAG + agents + MCP, self-hosted), especially now that Algolia itself ships AI. The
-hero now **leads with the platform** and keeps the analogy as a support sub-line:
-
-> **Enterprise search, cited RAG and AI agents — over your own content.**
-> *(sub-line: "The open, self-hosted alternative to Algolia, with AI built in.")*
-> *(plus an explicit who-it's-for line: engineering teams who need production
-> search and RAG without shipping data to someone else's cloud.)*
-
-This still ladders up to the §S:VIII.1 *Turing Search* SKU and the §S:X GEO "alternative
-to Algolia/Coveo" line (now a sub-line + SEO phrase, not the headline). The platform
-breadth stays structured as four outcomes: **Search it → Ask it → Automate it → Run
-it.**
-
-**ICP:** developers and platform teams who would otherwise (a) pay a hosted search SaaS
-but can't send data to someone else's cloud, or (b) hand-assemble a RAG/agent stack
-(LangChain + a vector DB) over weeks. The wedge against both: *open source + self-hosted
-+ agents and search unified.*
-
 ### XIV.3 The defining bet — a live demo, because we lack proof
 
 Reading Algolia against Meilisearch is instructive: **the market leader dropped
