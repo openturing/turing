@@ -81,4 +81,13 @@ public class TurVigletAiProperty {
      * 60 are raised to 60 at signing time.
      */
     private long upgradeTtlSeconds = 3600;
+
+    /**
+     * T960 / §XIV.10.5 — how long the per-call install assertion stays valid, in
+     * seconds. Short on purpose: it bounds replay of a captured request, and the
+     * install mints a fresh one per call anyway. Values below 30 are raised to 30
+     * so a misconfiguration cannot sign assertions that are already expired by
+     * the time they arrive.
+     */
+    private long assertionTtlSeconds = 120;
 }

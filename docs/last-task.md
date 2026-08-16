@@ -302,6 +302,7 @@ number" looked free but wasn't. Grepping three files (`ROADMAP.md`,
 
 ## Log (most recent first)
 
+- **T960 SHIPPED** (Block J.10 §XIV.10.5 — Ed25519 install keypair minted at pairing, public half registered; X-Viglet-Install + assertion headers via a new extraHeaders seam on the openai-compatible provider) — 2026-08-16.
 - **T959 SHIPPED** (Block J.10 §XIV.10.4 — quota refusal carries resource/used/limit/resetsAt + an HMAC-signed upgrade target keyed by the T957 credential; BentoQuotaBanner at the shell, BYOK at equal weight) — 2026-08-16.
 - **T958 SHIPPED** (Block J.10 §XIV.10.3 — activation card with BYOK at equal weight; shared BentoNoLlmState on chat/agents/skills/SN; tour key bumped to v2) — 2026-08-16.
 - **T957 SHIPPED** (Block J.10 §XIV.10.2 — device-code pairing client half; completion is one transaction, install id is a persisted UUID) — 2026-08-16.

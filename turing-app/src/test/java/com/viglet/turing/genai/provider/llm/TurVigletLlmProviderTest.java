@@ -29,6 +29,8 @@ class TurVigletLlmProviderTest {
 
     @Mock
     private TurProviderOptionsParser optionsParser;
+    @Mock
+    private com.viglet.turing.genai.vigletai.TurVigletInstallIdentityService installIdentityService;
 
     private TurVigletAiProperty property;
     private TurVigletLlmProvider provider;
@@ -37,7 +39,7 @@ class TurVigletLlmProviderTest {
     @BeforeEach
     void setUp() {
         property = new TurVigletAiProperty();
-        provider = new TurVigletLlmProvider(optionsParser, property);
+        provider = new TurVigletLlmProvider(optionsParser, property, installIdentityService);
         instance = new TurLLMInstance();
         instance.setId("managed-instance");
     }

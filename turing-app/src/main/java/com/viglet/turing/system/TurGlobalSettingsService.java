@@ -157,6 +157,45 @@ public class TurGlobalSettingsService {
     }
 
     /**
+     * T960 / §XIV.10.5 — the install's Ed25519 signing key (PKCS#8, Base64),
+     * decrypted, or {@code ""} before the install has paired.
+     *
+     * <p>Not exposed by any API and never sent anywhere. A bearer credential that
+     * works from a laptop turns the onboarding credit into a resellable inference
+     * key; the key that stays here is what keeps the credit bound to the install
+     * that earned it.
+     *
+     * @since 2026.3.4
+     */
+    public String getVigletAiInstallPrivateKey() {
+        String stored = configVars.getString(TurConfigVarOnStartup.VIGLET_AI_INSTALL_PRIVATE_KEY, "");
+        if (stored.isBlank()) {
+            return "";
+        }
+        String decrypted = turSecretCryptoService.decrypt(stored);
+        return decrypted == null ? "" : decrypted;
+    }
+
+    /** T960 — the public half (X.509, Base64), stored in the clear; {@code ""} until paired. */
+    public String getVigletAiInstallPublicKey() {
+        return configVars.getString(TurConfigVarOnStartup.VIGLET_AI_INSTALL_PUBLIC_KEY, "");
+    }
+
+    /**
+     * T960 — persists a freshly minted keypair: the private half encrypted, the
+     * public half in the clear. Replacing an existing pair invalidates every
+     * assertion the managed service has registered for this install, which is
+     * exactly what re-pairing means.
+     *
+     * @since 2026.3.4
+     */
+    public void updateVigletAiInstallKeyPair(String privateKeyBase64, String publicKeyBase64) {
+        configVars.setRaw(TurConfigVarOnStartup.VIGLET_AI_INSTALL_PRIVATE_KEY,
+                turSecretCryptoService.encrypt(privateKeyBase64));
+        configVars.setRaw(TurConfigVarOnStartup.VIGLET_AI_INSTALL_PUBLIC_KEY, publicKeyBase64);
+    }
+
+    /**
      * T61 — PII slot retention TTL in hours. Returns 24 as the default
      * (matches the documented out-of-the-box compliance posture). Values
      * &lt;= 0 disable the cleanup job; the UI exposes that as the

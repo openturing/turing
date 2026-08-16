@@ -96,6 +96,22 @@ public class TurConfigVarOnStartup {
 	 */
 	public static final String VIGLET_AI_INSTALL_ID = "GLOBAL_VIGLET_AI_INSTALL_ID";
 	/**
+	 * T960 / §XIV.10.5 — the install's Ed25519 signing key (PKCS#8, Base64,
+	 * <b>encrypted at rest</b>). Minted at pairing time, never exposed by any API
+	 * and never sent anywhere: the managed service holds only the public half, so
+	 * a credential lifted out of this install cannot produce the assertion that
+	 * spends it. Blank until the install pairs.
+	 */
+	public static final String VIGLET_AI_INSTALL_PRIVATE_KEY =
+			"GLOBAL_VIGLET_AI_INSTALL_PRIVATE_KEY";
+	/**
+	 * T960 — the public half (X.509, Base64), stored in the clear because it is
+	 * public by construction. Sent to the managed service during pairing so it can
+	 * verify every later assertion against this install.
+	 */
+	public static final String VIGLET_AI_INSTALL_PUBLIC_KEY =
+			"GLOBAL_VIGLET_AI_INSTALL_PUBLIC_KEY";
+	/**
 	 * T517 — cross-provider per-stage model "lanes". Each holds an
 	 * {@code TurLLMInstance} id the matching pipeline stages use instead of the
 	 * default LLM; blank = fall back to {@link #DEFAULT_LLM} (legacy behaviour).
@@ -291,6 +307,10 @@ public class TurConfigVarOnStartup {
 				CODE_INTERPRETER_SKILL_IMAGE_DEFAULT_VALUE);
 		ensureConfigVar(DEFAULT_LLM, GLOBAL_PATH, "");
 		ensureConfigVar(VIGLET_AI_INSTALL_ID, GLOBAL_PATH, UUID.randomUUID().toString());
+		// T960 — the keypair is minted at pairing, not at boot: an install that
+		// never pairs should not carry a signing key it has no use for.
+		ensureConfigVar(VIGLET_AI_INSTALL_PRIVATE_KEY, GLOBAL_PATH, "");
+		ensureConfigVar(VIGLET_AI_INSTALL_PUBLIC_KEY, GLOBAL_PATH, "");
 		ensureConfigVar(MODEL_LANE_FAST, GLOBAL_PATH, "");
 		ensureConfigVar(MODEL_LANE_REASONING, GLOBAL_PATH, "");
 		ensureConfigVar(MODEL_LANE_CHEAP, GLOBAL_PATH, "");

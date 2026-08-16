@@ -53,6 +53,8 @@ class TurVigletPairingServiceTest {
     private TurLLMVendorRepository turLLMVendorRepository;
     @Mock
     private PlatformTransactionManager transactionManager;
+    @Mock
+    private TurVigletInstallIdentityService installIdentityService;
 
     private TurVigletAiProperty property;
     private StubbedPairingService service;
@@ -66,8 +68,9 @@ class TurVigletPairingServiceTest {
 
         StubbedPairingService(TurVigletAiProperty property, TurGlobalSettingsService settings,
                 TurSecretCryptoService crypto, TurLLMInstanceRepository instances,
-                TurLLMVendorRepository vendors, PlatformTransactionManager transactionManager) {
-            super(property, settings, crypto, instances, vendors, transactionManager);
+                TurLLMVendorRepository vendors, TurVigletInstallIdentityService identity,
+                PlatformTransactionManager transactionManager) {
+            super(property, settings, crypto, instances, vendors, identity, transactionManager);
         }
 
         void answerWith(HttpStatus status, Map<String, Object> body) {
@@ -86,8 +89,10 @@ class TurVigletPairingServiceTest {
     void setUp() {
         property = new TurVigletAiProperty();
         service = new StubbedPairingService(property, turGlobalSettingsService, turSecretCryptoService,
-                turLLMInstanceRepository, turLLMVendorRepository, transactionManager);
+                turLLMInstanceRepository, turLLMVendorRepository, installIdentityService,
+                transactionManager);
         lenient().when(turGlobalSettingsService.getOrCreateVigletAiInstallId()).thenReturn("install-uuid");
+        lenient().when(installIdentityService.getOrCreatePublicKey()).thenReturn("pub-key-b64");
     }
 
     private TurLLMVendor vigletVendor() {
@@ -143,6 +148,24 @@ class TurVigletPairingServiceTest {
         assertEquals("https://viglet.cloud/activate", session.verificationUri());
         assertEquals(7, session.intervalSeconds());
         assertEquals(600, session.expiresInSeconds());
+    }
+
+    /**
+     * T960 — the binding is registered by the attempt, not by a later call: the
+     * credential the flow ends with has to be bound to a key the managed service
+     * already knows, or there is a window where it is a plain bearer token.
+     */
+    @Test
+    void startRegistersTheInstallPublicKey() {
+        service.answerWith(HttpStatus.OK, Map.of(
+                "device_code", "dev-123",
+                "user_code", "ABCD-EFGH",
+                "verification_uri", "https://viglet.cloud/activate"));
+
+        service.start();
+
+        assertEquals("pub-key-b64", service.payloads.get(0).get("install_public_key"));
+        assertEquals("Ed25519", service.payloads.get(0).get("install_key_alg"));
     }
 
     @Test

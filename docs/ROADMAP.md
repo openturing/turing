@@ -6,10 +6,6 @@
 > [STRATEGY.md](STRATEGY.md); the markers and limits are `roadkeep.toml`'s. Blocks are
 > reused, not minted — `roadkeep brief` picks the next task and states why.
 
-## Block J.10 — Viglet AI: the managed LLM onboarding credit (§XIV.10)
-
-- 📋 **T960** (deps: T957 ✅) **nothing binds a managed credential to the install that earned it, so one key works anywhere and the credit is farmable** — A persisted install id and a signed assertion on every managed call keep the credit a product feature, not a resellable API key. → §XIV.10.5
-
 ## Non-goals (do NOT add as tasks)
 
 Binding constraints — see [IMPROVEMENTS.md](IMPROVEMENTS.md) §I.6 (What NOT to

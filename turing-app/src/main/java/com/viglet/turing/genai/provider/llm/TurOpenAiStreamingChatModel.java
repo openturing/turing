@@ -100,11 +100,28 @@ public class TurOpenAiStreamingChatModel implements ChatModel {
 
     public TurOpenAiStreamingChatModel(String baseUrl, String apiKey, String modelName,
             OpenAiChatOptions defaultOptions) {
-        this.webClient = WebClient.builder()
+        this(baseUrl, apiKey, modelName, defaultOptions, Map.of());
+    }
+
+    /**
+     * T960 — same model, plus the extra headers an endpoint may require beyond
+     * the bearer credential (the managed Viglet AI endpoint asks for the
+     * install-binding assertion). The streaming path has to carry them too:
+     * a binding the blocking path enforces and the streaming path does not is
+     * no binding at all.
+     *
+     * @since 2026.3.4
+     */
+    public TurOpenAiStreamingChatModel(String baseUrl, String apiKey, String modelName,
+            OpenAiChatOptions defaultOptions, Map<String, String> extraHeaders) {
+        WebClient.Builder builder = WebClient.builder()
                 .baseUrl(baseUrl)
                 .defaultHeader("Authorization", "Bearer " + apiKey)
-                .defaultHeader("Content-Type", MediaType.APPLICATION_JSON_VALUE)
-                .build();
+                .defaultHeader("Content-Type", MediaType.APPLICATION_JSON_VALUE);
+        if (extraHeaders != null) {
+            extraHeaders.forEach(builder::defaultHeader);
+        }
+        this.webClient = builder.build();
         this.modelName = modelName;
         this.defaultOptions = defaultOptions;
     }

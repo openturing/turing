@@ -35,7 +35,7 @@ class TurConfigVarOnStartupTest {
         when(turConfigVarRepository.findById(anyString())).thenReturn(Optional.empty());
         turConfigVarOnStartup.createDefaultRows();
         ArgumentCaptor<TurConfigVar> captor = ArgumentCaptor.forClass(TurConfigVar.class);
-        verify(turConfigVarRepository, times(55)).save(captor.capture());
+        verify(turConfigVarRepository, times(57)).save(captor.capture());
         return captor.getAllValues();
     }
 
@@ -92,6 +92,10 @@ class TurConfigVarOnStartupTest {
                 && configVar.getValue() != null
                 && configVar.getValue().length() == 36),
                 "Expected a minted UUID for GLOBAL_VIGLET_AI_INSTALL_ID");
+        // T960 — the signing keypair is seeded blank: an install that never pairs
+        // should not carry a key it has no use for. It is minted at pairing time.
+        expectVar(savedVars, "GLOBAL_VIGLET_AI_INSTALL_PRIVATE_KEY", GLOBAL, "");
+        expectVar(savedVars, "GLOBAL_VIGLET_AI_INSTALL_PUBLIC_KEY", GLOBAL, "");
     }
 
     @Test

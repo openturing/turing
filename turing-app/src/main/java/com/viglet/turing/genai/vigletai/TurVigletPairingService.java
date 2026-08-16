@@ -58,11 +58,18 @@ import lombok.extern.slf4j.Slf4j;
  * choice away. Re-pairing refreshes the existing managed instance rather than
  * stacking a second one beside it.
  *
+ * <p>T960 / §XIV.10.5 — the attempt also registers this install's <b>public
+ * key</b>. The credential the flow ends with is bound to it: every later call to
+ * the managed endpoint carries an assertion signed with the private half, which
+ * never leaves the install, so a credential copied out of the database buys
+ * nothing on its own (see {@link TurVigletInstallIdentityService}).
+ *
  * <p><b>Wire contract</b> (RFC 8628 shaped; the server half lives in the
  * {@code viglet/cloud} repository):
  * <pre>
  * POST {pairingBaseUrl}/device/code
- *   {"install_id": "...", "install_version": "...", "product": "turing"}
+ *   {"install_id": "...", "install_version": "...", "product": "turing",
+ *    "install_public_key": "&lt;base64 X.509&gt;", "install_key_alg": "Ed25519"}
  * → {"device_code", "user_code", "verification_uri",
  *    "verification_uri_complete"?, "interval"?, "expires_in"?}
  *
@@ -101,6 +108,7 @@ public class TurVigletPairingService {
     private final TurSecretCryptoService turSecretCryptoService;
     private final TurLLMInstanceRepository turLLMInstanceRepository;
     private final TurLLMVendorRepository turLLMVendorRepository;
+    private final TurVigletInstallIdentityService installIdentityService;
     private final TransactionTemplate transactionTemplate;
 
     public TurVigletPairingService(TurVigletAiProperty vigletAiProperty,
@@ -108,12 +116,14 @@ public class TurVigletPairingService {
             TurSecretCryptoService turSecretCryptoService,
             TurLLMInstanceRepository turLLMInstanceRepository,
             TurLLMVendorRepository turLLMVendorRepository,
+            TurVigletInstallIdentityService installIdentityService,
             PlatformTransactionManager transactionManager) {
         this.vigletAiProperty = vigletAiProperty;
         this.turGlobalSettingsService = turGlobalSettingsService;
         this.turSecretCryptoService = turSecretCryptoService;
         this.turLLMInstanceRepository = turLLMInstanceRepository;
         this.turLLMVendorRepository = turLLMVendorRepository;
+        this.installIdentityService = installIdentityService;
         this.transactionTemplate = new TransactionTemplate(transactionManager);
     }
 
@@ -140,6 +150,10 @@ public class TurVigletPairingService {
         payload.put(INSTALL_ID, turGlobalSettingsService.getOrCreateVigletAiInstallId());
         payload.put("install_version", installVersion());
         payload.put("product", PRODUCT);
+        // T960 — register the binding before a credential exists to bind. The
+        // public half travels; the private half is minted here and stays here.
+        payload.put("install_public_key", installIdentityService.getOrCreatePublicKey());
+        payload.put("install_key_alg", TurVigletInstallIdentityService.KEY_ALGORITHM);
 
         Map<String, Object> body = post("/device/code", payload).getBody();
         String deviceCode = stringValue(body, DEVICE_CODE);

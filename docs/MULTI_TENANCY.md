@@ -117,6 +117,16 @@ credential T957 paired with. An install with neither ships the refusal **without
 a paid exit rather than with an unsigned link — unsigned, that link is an open
 redirect with a forgeable tenant claim.
 
+**The managed credential is bound to its install** (T960). Pairing mints an
+Ed25519 keypair, registers the public half with the managed service and keeps the
+private half encrypted in `GLOBAL_VIGLET_AI_INSTALL_PRIVATE_KEY` — no API exposes
+it. Every call the `viglet` provider makes then carries `X-Viglet-Install` and
+`X-Viglet-Install-Assertion` (`v1.{installId}.{exp}.{nonce}.{sig}` over
+`v1|turing|{installId}|{exp}|{nonce}`), so a credential lifted out of the database
+buys nothing: without the assertion the managed side refuses it, and revocation
+lands on one install rather than an operator's whole account. The BYOK path sends
+neither header and is never metered.
+
 ## Teardown runbook
 
 `TurTenantTeardownService` (platform-admin only, audited, **idempotent**):

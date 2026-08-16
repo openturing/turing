@@ -83,8 +83,17 @@ public class TurOpenAiCompatibleLlmProvider implements TurGenAiLlmProvider {
         String baseUrl = resolveBaseUrl(turLLMInstance, options);
         String apiKey = resolveApiKey(decryptedApiKey);
 
-        OpenAIClient openAiClient = OpenAIOkHttpClient.builder().baseUrl(baseUrl).apiKey(apiKey).build();
-        OpenAIClientAsync openAiClientAsync = OpenAIOkHttpClientAsync.builder().baseUrl(baseUrl).apiKey(apiKey).build();
+        Map<String, String> headers = extraHeaders(turLLMInstance, options);
+        OpenAIOkHttpClient.Builder clientBuilder = OpenAIOkHttpClient.builder()
+                .baseUrl(baseUrl).apiKey(apiKey);
+        OpenAIOkHttpClientAsync.Builder asyncBuilder = OpenAIOkHttpClientAsync.builder()
+                .baseUrl(baseUrl).apiKey(apiKey);
+        headers.forEach((name, value) -> {
+            clientBuilder.putHeader(name, value);
+            asyncBuilder.putHeader(name, value);
+        });
+        OpenAIClient openAiClient = clientBuilder.build();
+        OpenAIClientAsync openAiClientAsync = asyncBuilder.build();
 
         OpenAiChatOptions.Builder optionsBuilder = OpenAiChatOptions.builder()
                 .model(resolveChatModelName(turLLMInstance, options));
@@ -110,17 +119,19 @@ public class TurOpenAiCompatibleLlmProvider implements TurGenAiLlmProvider {
 
         OpenAiChatOptions.Builder optionsBuilder = OpenAiChatOptions.builder().model(modelName);
         applyCommonOptions(optionsBuilder, turLLMInstance, options);
-        return new TurOpenAiStreamingChatModel(baseUrl, apiKey, modelName, optionsBuilder.build());
+        return new TurOpenAiStreamingChatModel(baseUrl, apiKey, modelName, optionsBuilder.build(),
+                extraHeaders(turLLMInstance, options));
     }
 
     @Override
     public EmbeddingModel createEmbeddingModel(TurLLMInstance turLLMInstance, String decryptedApiKey) {
         Map<String, Object> options = optionsParser.parse(turLLMInstance.getProviderOptionsJson());
         String baseUrl = resolveBaseUrl(turLLMInstance, options);
-        OpenAIClient openAiClient = OpenAIOkHttpClient.builder()
+        OpenAIOkHttpClient.Builder clientBuilder = OpenAIOkHttpClient.builder()
                 .baseUrl(baseUrl)
-                .apiKey(resolveApiKey(decryptedApiKey))
-                .build();
+                .apiKey(resolveApiKey(decryptedApiKey));
+        extraHeaders(turLLMInstance, options).forEach(clientBuilder::putHeader);
+        OpenAIClient openAiClient = clientBuilder.build();
 
         OpenAiEmbeddingOptions embeddingOptions = OpenAiEmbeddingOptions.builder()
                 .model(resolveEmbeddingModelName(turLLMInstance, options))
@@ -179,6 +190,23 @@ public class TurOpenAiCompatibleLlmProvider implements TurGenAiLlmProvider {
                             + "https://api.deepseek.com/v1)");
         }
         return baseUrl;
+    }
+
+    /**
+     * Extra HTTP headers every call from this instance carries, beyond the
+     * bearer credential. Empty here — a plain OpenAI-compatible endpoint has no
+     * second factor and must not be sent one.
+     *
+     * <p>{@code protected} so a subclass whose endpoint <b>does</b> require more
+     * than a bearer token can supply it: {@code TurVigletLlmProvider} returns the
+     * T960 install-binding assertion, without which a lifted credential would be
+     * a resellable inference key.
+     *
+     * @since 2026.3.4
+     */
+    protected Map<String, String> extraHeaders(TurLLMInstance turLLMInstance,
+            Map<String, Object> options) {
+        return Map.of();
     }
 
     /** The chat model name sent on the wire; {@code protected} for pinning subclasses. */

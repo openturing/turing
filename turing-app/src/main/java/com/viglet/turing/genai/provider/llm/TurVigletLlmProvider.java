@@ -16,6 +16,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 
 import com.viglet.turing.genai.provider.TurProviderOptionsParser;
+import com.viglet.turing.genai.vigletai.TurVigletInstallIdentityService;
 import com.viglet.turing.persistence.model.llm.TurLLMInstance;
 import com.viglet.turing.properties.TurVigletAiProperty;
 
@@ -62,11 +63,30 @@ public class TurVigletLlmProvider extends TurOpenAiCompatibleLlmProvider {
     public static final String VENDOR_ID = "VIGLET";
 
     private final TurVigletAiProperty vigletAiProperty;
+    private final TurVigletInstallIdentityService installIdentityService;
 
     public TurVigletLlmProvider(TurProviderOptionsParser optionsParser,
-            TurVigletAiProperty vigletAiProperty) {
+            TurVigletAiProperty vigletAiProperty,
+            TurVigletInstallIdentityService installIdentityService) {
         super(optionsParser);
         this.vigletAiProperty = vigletAiProperty;
+        this.installIdentityService = installIdentityService;
+    }
+
+    /**
+     * T960 / §XIV.10.5 — every managed call carries the install id and a
+     * short-lived assertion signed with the keypair minted at pairing, so the
+     * credential is spendable only from the install that earned it. Without this
+     * the credit is a bearer token, and a bearer token that works from anywhere
+     * is an inference API — the market this block exists not to enter.
+     *
+     * <p>An install that never paired signs nothing and sends nothing: the
+     * managed side refuses it, which is the correct answer and a legible one.
+     */
+    @Override
+    protected Map<String, String> extraHeaders(TurLLMInstance turLLMInstance,
+            Map<String, Object> options) {
+        return installIdentityService.assertionHeaders();
     }
 
     @Override

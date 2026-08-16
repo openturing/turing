@@ -1257,57 +1257,6 @@ Storybook as the living "two-skin" design contract, jsdom render tests for the
 headless contract, and packaging hardening (`exports` subpaths, a11y, SSR,
 bundle-size budget) before a public release.
 
-## XIV. Multi-tenancy — SHIPPED (Block J, T257–T284)
-
-> Shipped 2026-06-11. The design rationale that lived here is preserved in git
-> history; the operator + developer guide is [MULTI_TENANCY.md](MULTI_TENANCY.md)
-> and the shipped task index is [CHANGELOG.md](CHANGELOG.md) → Block J.
-
-### XIV.10 Viglet AI — the managed LLM onboarding credit
-
-Turing ships without an LLM, so the first thing a new install asks for is an account
-somewhere else. The operator creates an OpenAI or Anthropic account, adds a payment
-method, mints a key, pastes it into an LLM instance and sets the default before chat,
-RAG, agents, skills or semantic navigation do anything. Every one of those steps happens
-outside the product, and each is a place the evaluation ends.
-
-The managed path closes that gap: Viglet runs an LLM endpoint, an install pairs with it
-in one click, and the AI surfaces work before the operator has chosen a vendor. What the
-endpoint needs already exists — Block AZ is an OpenAI-compatible governed gateway with
-virtual keys, rate limiting and usage accounting, and Block J is tenancy with per-plan
-limits that already answer 402 and 429. The service is that gateway run by Viglet,
-consumed through the openai-compatible provider the platform already ships.
-
-The positioning constraint binds the design. A catalogue of models priced per token is
-an inference marketplace, which is a market Turing cannot win and does not want. The
-credit is one opaque model alias, bound to an install, capped hard, and it converts by
-pointing at the paid surfaces — hosted Cloud, embeddings, transcription, rerank — never
-at more tokens of the same model. BYOK stays free and first-class.
-
-#### XIV.10.5 Binding the credential to the install, and why that is positioning (T960)
-
-A bearer token that works from anywhere is an inference API. Once the credential can be
-lifted out of the install and used with curl, the offering stops being "Turing comes
-with AI included" and becomes a free tier of a hosted model service — which is a market
-with incumbents, no moat and negative margin, and the thing this block is designed not
-to enter.
-
-Binding is what keeps the two apart. Every call to the managed endpoint carries the
-install id from pairing plus a short-lived assertion signed with a keypair generated at
-pairing time and never leaving the install. The managed side rejects a credential
-presented without a matching assertion, so a leaked key alone buys nothing.
-
-The same binding is the abuse control. Free tiers open to the internet are farmed, and a
-monthly token cap alone does not stop it — a thousand installs is a thousand caps. One
-credit per verified identity, one live binding per credit, and a per-minute ceiling on
-top of the monthly one closes the three cheap attacks.
-
-It also makes revocation possible at the granularity that matters: an install, not an
-account, so one abusive deployment does not cost a legitimate operator their other
-environments.
-
-None of this touches the BYOK path, which carries no assertion and is never metered.
-
 ## XVI. Cost & token governance (Block L)
 
 > **Shipped 2026-06-18** (T289–T291). Design realized; see
