@@ -611,6 +611,31 @@ the Custom Tool copy-paste tax and gives a discoverable contract.
 
 ---
 
+### VII.10.i `chat.advance` measures a stage that moved rather than one that went (T962)
+
+The sibling of §VII.10.h, and deliberately a separate line because the defect is the
+opposite one. `chat.regen` names work that no longer happens; `chat.advance` names work
+that still happens every turn — `chatFlowEngineService.advance(...)`, including the
+`LlmJudge` round-trip when the guardrail strategy is configured — and the timer simply
+stayed behind when T9 inverted the order.
+
+The dispatcher declares `long tAdvanceMs = 0` and publishes it unchanged to
+`recordMillis(STAGE_CHAT_ADVANCE, …)` and to the `advance_ms` log field. The elapsed
+time is not lost: `advance()` now runs in setup, so it is inside `chat.setup` and, more
+precisely, inside whichever T32 sub-stage brackets the call — but no sub-stage is named
+for it, so a slow judge shows up as an unexplained rise in `chat.setup.flow` or in the
+parent's unattributed remainder.
+
+Two exits, and the choice is what the panel should say. Either record the real elapsed
+around the setup-phase `advance()` call and keep `chat.advance` as a sub-stage of
+`chat.setup` rather than a peer of it, or delete the meter and add a
+`chat.setup.advance` sub-stage alongside the existing six, which is the shape T32
+already established. Prefer the second: those six are the vocabulary the setup breakdown
+already uses, and a peer-level timer that is really a child is how this drifted in the
+first place.
+
+Ship after §VII.10.h, so the dead timer is gone before the live one is re-parented.
+
 ## VIII. Strategic moves — repositioning beyond features
 
 > Moved to [STRATEGY.md](STRATEGY.md) — pricing, market focus, the Cloud bet,

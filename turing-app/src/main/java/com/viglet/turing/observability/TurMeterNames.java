@@ -141,8 +141,11 @@ public final class TurMeterNames {
     public static final String STAGE_CHAT_POST = "chat.post";
     /** Time inside {@code chatFlowEngineService.advance} — includes LlmJudge round-trip if configured. */
     public static final String STAGE_CHAT_ADVANCE = "chat.advance";
-    /** Time inside {@code regenerateReplyForNewNode} — second LLM round-trip when the flow advanced to a new aiQuestion. */
-    public static final String STAGE_CHAT_REGEN = "chat.regen";
+    // `chat.regen` timed {@code regenerateReplyForNewNode}, the second LLM
+    // round-trip taken when the flow advanced to a new aiQuestion. T16 deleted
+    // that method — the inverted harness advances before the LLM call, so the
+    // round-trip never happens — and T961 deleted the timer it left behind,
+    // which had been publishing a constant 0 on every turn.
 
     // ---- Chat setup sub-stages (T32 / §IV.7) -----------------------------
     //
