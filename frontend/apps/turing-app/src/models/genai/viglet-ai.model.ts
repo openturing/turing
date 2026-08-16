@@ -41,3 +41,15 @@ export interface TurVigletPairingPoll {
   llmInstanceId: string | null;
   defaultLlmSet: boolean;
 }
+
+/**
+ * T965 — the outcome of rotating this install's signing key. `rotated` is false
+ * when the managed service refused the new key, which is not an error: it means
+ * the install is still signing with the key that works. Only the public half
+ * ever crosses the wire.
+ */
+export interface TurVigletKeyRotation {
+  rotated: boolean;
+  publicKey: string;
+  detail: string;
+}

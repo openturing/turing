@@ -149,6 +149,15 @@ AI's per-prompt `httpHeaders` reach only its legacy RestClient transport — so
 half-life instead. A hundred-call eval run over ten minutes rebuilds ten times,
 not a hundred, and never sends an expired binding.
 
+**Rotating the key after a leak** (T965): `POST /api/genai/viglet-ai/pairing/rotate-key`,
+surfaced as *Rotate key* in Global Settings beside the URL-signing secret (hidden
+on an install that never paired). The order is mint → register → swap: the
+candidate is generated in memory, offered to the managed service **signed with
+the key still in force**, and adopted only once that registration is accepted.
+A refusal or an unreachable endpoint therefore leaves the old key working, and
+is reported as "unchanged" rather than as an error — an install that adopts a
+key nobody registered has revoked itself.
+
 ## Teardown runbook
 
 `TurTenantTeardownService` (platform-admin only, audited, **idempotent**):

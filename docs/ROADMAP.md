@@ -6,10 +6,6 @@
 > [STRATEGY.md](STRATEGY.md); the markers and limits are `roadkeep.toml`'s. Blocks are
 > reused, not minted — `roadkeep brief` picks the next task and states why.
 
-## Block J.10 — Viglet AI: the managed LLM onboarding credit (§LXXIII)
-
-- 📋 **T965** (deps: T960 ✅) **a compromised install signing key cannot be rotated, because re-pairing reuses the existing pair and no verb replaces it** — Revoking at install granularity is the abuse control T960 argued for, and it is unusable while rotating the key means hand-deleting a config var. → §LXXIV
-
 ## Non-goals (do NOT add as tasks)
 
 Binding constraints — see [IMPROVEMENTS.md](IMPROVEMENTS.md) §I.6 (What NOT to

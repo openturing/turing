@@ -12,6 +12,7 @@ import { RagRerankSection } from "@/app/console/system/sections/rag-rerank.secti
 import { RagSettingsSection } from "@/app/console/system/sections/rag-settings.section";
 import { TranscriptionSection } from "@/app/console/system/sections/transcription.section";
 import { UrlSigningSecretSection } from "@/app/console/system/sections/url-signing-secret.section";
+import { VigletInstallKeySection } from "@/app/console/system/sections/viglet-install-key.section";
 import { useGlobalSettingsForm } from "@/app/console/system/use-global-settings-form";
 import { IconAdjustments, IconCode, IconSettings, IconSparkles, type Icon as TablerIcon } from "@tabler/icons-react";
 import { useState } from "react";
@@ -136,6 +137,12 @@ export default function BentoGlobalSettingsPage() {
             <ContentIngestionSection state={state} />
             <EmailSettingsSection state={state} />
             <UrlSigningSecretSection state={state} />
+            {/*
+             * T965 — beside the other rotatable secret, and self-contained: it
+             * reads pairing status itself and renders nothing on an install
+             * that never paired, so it stays out of the single-form state.
+             */}
+            <VigletInstallKeySection />
             <PiiSlotSection state={state} />
           </div>
 

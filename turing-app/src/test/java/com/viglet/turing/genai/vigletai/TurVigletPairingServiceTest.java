@@ -64,6 +64,7 @@ class TurVigletPairingServiceTest {
 
         private final List<String> paths = new ArrayList<>();
         private final List<Map<String, Object>> payloads = new ArrayList<>();
+        private final List<Map<String, String>> headers = new ArrayList<>();
         private ResponseEntity<Map<String, Object>> next;
 
         StubbedPairingService(TurVigletAiProperty property, TurGlobalSettingsService settings,
@@ -78,9 +79,11 @@ class TurVigletPairingServiceTest {
         }
 
         @Override
-        protected ResponseEntity<Map<String, Object>> post(String path, Map<String, Object> payload) {
+        protected ResponseEntity<Map<String, Object>> post(String path, Map<String, Object> payload,
+                Map<String, String> requestHeaders) {
             paths.add(path);
             payloads.add(payload);
+            headers.add(requestHeaders);
             return next;
         }
     }
@@ -296,5 +299,58 @@ class TurVigletPairingServiceTest {
 
         assertThrows(TurProviderException.class, () -> service.poll("dev-123"));
         verify(turLLMInstanceRepository, never()).save(any(TurLLMInstance.class));
+    }
+
+    // --- T965 / §LXXIV — key rotation: mint, register, then swap -------------
+
+    private java.security.KeyPair candidate() throws Exception {
+        return java.security.KeyPairGenerator.getInstance("Ed25519").generateKeyPair();
+    }
+
+    @Test
+    void rotationRegistersTheNewKeySignedWithTheOldOne() throws Exception {
+        java.security.KeyPair replacement = candidate();
+        when(installIdentityService.isBound()).thenReturn(true);
+        when(installIdentityService.mintReplacement()).thenReturn(replacement);
+        when(installIdentityService.assertionHeaders())
+                .thenReturn(Map.of("X-Viglet-Install-Assertion", "v1.install-uuid.1.n.sig"));
+        service.answerWith(HttpStatus.OK, Map.of("status", "accepted"));
+
+        TurVigletPairing.Rotation rotation = service.rotateKey();
+
+        assertEquals("/device/rotate", service.paths.get(0));
+        assertEquals("install-uuid", service.payloads.get(0).get("install_id"));
+        assertEquals("Ed25519", service.payloads.get(0).get("install_key_alg"));
+        // Signed with the key still in force — otherwise the managed service
+        // cannot tell this from a stranger asking it to trust their key.
+        assertEquals("v1.install-uuid.1.n.sig",
+                service.headers.get(0).get("X-Viglet-Install-Assertion"));
+        assertTrue(rotation.rotated());
+        verify(installIdentityService).adopt(replacement);
+    }
+
+    /** The registration has to land before the swap, or the install revokes itself. */
+    @Test
+    void aRefusedRegistrationLeavesTheOldKeyInPlace() throws Exception {
+        when(installIdentityService.isBound()).thenReturn(true);
+        when(installIdentityService.mintReplacement()).thenReturn(candidate());
+        when(installIdentityService.assertionHeaders()).thenReturn(Map.of());
+        when(turGlobalSettingsService.getVigletAiInstallPublicKey()).thenReturn("old-pub-key");
+        service.answerWith(HttpStatus.BAD_REQUEST, Map.of("error", "unknown_install"));
+
+        TurVigletPairing.Rotation rotation = service.rotateKey();
+
+        assertFalse(rotation.rotated());
+        assertEquals("old-pub-key", rotation.publicKey());
+        assertTrue(rotation.detail().contains("unknown_install"));
+        verify(installIdentityService, never()).adopt(any());
+    }
+
+    @Test
+    void anUnpairedInstallHasNoKeyToRotate() {
+        when(installIdentityService.isBound()).thenReturn(false);
+
+        assertThrows(IllegalArgumentException.class, () -> service.rotateKey());
+        verify(installIdentityService, never()).mintReplacement();
     }
 }

@@ -2084,26 +2084,3 @@ Three things this cost that are worth keeping:
 - **An allowlist that masks its own detector is not a guard.** Every acknowledged entry
   must still be detected, and a positive control proves the walk works once the list is
   empty.
-
-## LXXIV Rotating the install key, which today means editing a config var by hand (Block J.10) (T965)
-
-`getOrCreatePublicKey` returns the existing pair whenever one is present, so re-pairing
-an install keeps the key it already had. That is the right default — re-pairing after a
-credential expires should not invalidate a binding the managed service already trusts —
-but it leaves no path for the one case the binding exists to handle.
-
-If the private key leaks, the operator's only move is to delete
-`GLOBAL_VIGLET_AI_INSTALL_PRIVATE_KEY` from the database and pair again. That is a
-runbook step nobody finds under pressure, and it is exactly the moment the product
-should be easiest to use.
-
-The shape already exists one feature over: the code-interpreter URL-signing secret has a
-Regenerate action that mints a fresh value, states plainly that every previously-emitted
-URL stops working, and never shows the secret itself. The install key wants the same,
-plus one thing that secret does not need — the new public half has to reach the managed
-service before the old one stops being accepted, or the install revokes itself.
-
-So rotation is a pairing variant rather than a settings toggle: mint, register, then
-swap, with the old key still valid until the registration is confirmed. Failing halfway
-must leave the old key in place, on the same argument T957 made about a half-paired
-install being worse than an unpaired one.

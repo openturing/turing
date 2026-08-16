@@ -1,5 +1,6 @@
 import axios from "axios";
 import type {
+  TurVigletKeyRotation,
   TurVigletPairingPoll,
   TurVigletPairingSession,
   TurVigletPairingStatus,
@@ -31,6 +32,18 @@ export class TurVigletAiService {
     const response = await axios.post<TurVigletPairingPoll>("/genai/viglet-ai/pairing/poll", {
       deviceCode,
     });
+    return response.data;
+  }
+
+  /**
+   * T965 — rotate this install's signing key after a leak. The server registers
+   * the new key with the managed service before swapping, so a `rotated: false`
+   * answer means nothing changed and the current key still works.
+   */
+  async rotateKey(): Promise<TurVigletKeyRotation> {
+    const response = await axios.post<TurVigletKeyRotation>(
+      "/genai/viglet-ai/pairing/rotate-key",
+    );
     return response.data;
   }
 }

@@ -121,6 +121,43 @@ public class TurVigletInstallIdentityService {
     }
 
     /**
+     * T965 / §LXXIV — mints a replacement pair <b>without storing it</b>.
+     *
+     * <p>Rotation is registration-then-swap, not swap-then-hope: the managed
+     * service has to accept the new public half while the old one is still the
+     * one it trusts, because an install that adopts a key nobody has registered
+     * has revoked itself. So this hands the caller a candidate, and
+     * {@link #adopt(KeyPair)} is a separate step it only reaches after the
+     * registration came back accepted.
+     *
+     * @since 2026.3.4
+     */
+    public KeyPair mintReplacement() {
+        return generateKeyPair();
+    }
+
+    /** The public half of a candidate, in the encoding the wire uses. */
+    public static String publicKeyOf(KeyPair pair) {
+        return Base64.getEncoder().encodeToString(pair.getPublic().getEncoded());
+    }
+
+    /**
+     * T965 — swaps the stored pair for {@code replacement}, which invalidates
+     * every assertion signed with the old key. Called only once the managed
+     * service has confirmed the new public half; a failure before this point
+     * leaves the install signing with the key that still works.
+     *
+     * @since 2026.3.4
+     */
+    public synchronized void adopt(KeyPair replacement) {
+        turGlobalSettingsService.updateVigletAiInstallKeyPair(
+                Base64.getEncoder().encodeToString(replacement.getPrivate().getEncoded()),
+                publicKeyOf(replacement));
+        log.info("Rotated the Viglet AI install signing key ({}) — assertions signed with the "
+                + "previous key stop being accepted.", KEY_ALGORITHM);
+    }
+
+    /**
      * The headers a managed call carries, or an empty map when this install has
      * no key — an unpaired install must still be able to reach the endpoint and
      * be refused by it, rather than failing here with an exception the operator

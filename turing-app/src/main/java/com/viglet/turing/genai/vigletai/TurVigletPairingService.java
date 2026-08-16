@@ -9,6 +9,7 @@
  */
 package com.viglet.turing.genai.vigletai;
 
+import java.security.KeyPair;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
@@ -200,6 +201,58 @@ public class TurVigletPairingService {
     }
 
     /**
+     * T965 / §LXXIV — rotates this install's signing key: mint, register, then
+     * swap.
+     *
+     * <p>The order is the whole design. A leaked private key is the one case the
+     * T960 binding exists to handle, and the obvious implementation — replace the
+     * pair, then tell the service — revokes the install for as long as the
+     * registration takes, or forever if it fails. So the candidate is generated
+     * in memory, offered to the managed service <b>signed with the key still in
+     * force</b> (that signature is what proves the request comes from this
+     * install rather than from whoever holds the leaked copy), and adopted only
+     * once the service answers that it accepted it.
+     *
+     * <p>Any failure therefore leaves the old key in place and working — the same
+     * argument T957 made about a half-paired install being worse than an
+     * unpaired one.
+     *
+     * @throws IllegalArgumentException when this install has never paired, so
+     *         there is no binding to rotate
+     * @throws TurProviderException     when the pairing endpoint is unreachable
+     */
+    public TurVigletPairing.Rotation rotateKey() {
+        if (!installIdentityService.isBound()) {
+            throw new IllegalArgumentException(
+                    "This install has not paired with Viglet AI, so it has no signing key to rotate.");
+        }
+        KeyPair candidate = installIdentityService.mintReplacement();
+        String candidatePublicKey = TurVigletInstallIdentityService.publicKeyOf(candidate);
+
+        Map<String, Object> payload = new LinkedHashMap<>();
+        payload.put(INSTALL_ID, turGlobalSettingsService.getOrCreateVigletAiInstallId());
+        payload.put("product", PRODUCT);
+        payload.put("install_public_key", candidatePublicKey);
+        payload.put("install_key_alg", TurVigletInstallIdentityService.KEY_ALGORITHM);
+
+        // Signed with the key still in force: the managed service has to be able
+        // to tell this apart from a stranger asking it to trust their key.
+        ResponseEntity<Map<String, Object>> response =
+                post("/device/rotate", payload, installIdentityService.assertionHeaders());
+        if (!response.getStatusCode().is2xxSuccessful()) {
+            String error = stringValue(response.getBody(), "error");
+            return new TurVigletPairing.Rotation(false,
+                    turGlobalSettingsService.getVigletAiInstallPublicKey(),
+                    "Viglet AI refused the new key" + (StringUtils.hasText(error) ? ": " + error : "")
+                            + ". The current key is unchanged and still works.");
+        }
+        installIdentityService.adopt(candidate);
+        return new TurVigletPairing.Rotation(true, candidatePublicKey,
+                "The install signing key was rotated. Assertions signed with the previous key "
+                        + "are no longer accepted.");
+    }
+
+    /**
      * Stores the credential, creates (or refreshes) the managed instance and
      * registers it as the default LLM — all in one transaction, so the install is
      * never left half-paired.
@@ -262,6 +315,15 @@ public class TurVigletPairingService {
      * live managed service.
      */
     protected ResponseEntity<Map<String, Object>> post(String path, Map<String, Object> payload) {
+        return post(path, payload, Map.of());
+    }
+
+    /**
+     * T965 — the same hop, plus headers. Rotation is the one pairing call an
+     * already-bound install makes, so it is the one that can prove who it is.
+     */
+    protected ResponseEntity<Map<String, Object>> post(String path, Map<String, Object> payload,
+            Map<String, String> headers) {
         String baseUrl = vigletAiProperty.getPairingBaseUrl();
         if (!StringUtils.hasText(baseUrl)) {
             throw new TurProviderException(PROVIDER,
@@ -270,6 +332,7 @@ public class TurVigletPairingService {
         try {
             return RestClient.create(normalize(baseUrl)).post()
                     .uri(path)
+                    .headers(httpHeaders -> headers.forEach(httpHeaders::set))
                     .body(payload)
                     .retrieve()
                     .onStatus(HttpStatusCode::is4xxClientError, (request, response) -> {

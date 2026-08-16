@@ -71,4 +71,18 @@ public final class TurVigletPairing {
      */
     public record Status(boolean paired, String llmInstanceId, boolean defaultLlm, String installId) {
     }
+
+    /**
+     * T965 / §LXXIV — the outcome of rotating this install's signing key.
+     * {@code rotated} is true only when the managed service accepted the new
+     * public half and the swap therefore happened; on anything else the install
+     * is still signing with the key that works, which is the whole point of
+     * reporting rather than throwing on a refusal.
+     *
+     * @param rotated       whether the stored pair was replaced
+     * @param publicKey     the public half now in force (new when rotated, old otherwise)
+     * @param detail        what happened, for the console to show verbatim
+     */
+    public record Rotation(boolean rotated, String publicKey, String detail) {
+    }
 }

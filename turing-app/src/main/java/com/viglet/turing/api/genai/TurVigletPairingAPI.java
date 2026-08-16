@@ -70,4 +70,19 @@ public class TurVigletPairingAPI {
     public TurVigletPairing.Poll poll(@RequestBody PollRequest request) {
         return pairingService.poll(request == null ? null : request.deviceCode());
     }
+
+    /**
+     * T965 / §LXXIV — rotate this install's signing key after a leak.
+     *
+     * <p>Answers rather than throws when the managed service refuses: a refusal
+     * means the old key is still in force, which is a state the operator needs
+     * described, not an error page. The private half never appears in the
+     * response — only the public one, which is public by construction.
+     */
+    @Operation(summary = "Rotate this install's Viglet AI signing key (registers the new key first)")
+    @PostMapping("/rotate-key")
+    @Secured({ "ROLE_ADMIN", "LLM_CREATE" })
+    public TurVigletPairing.Rotation rotateKey() {
+        return pairingService.rotateKey();
+    }
 }
