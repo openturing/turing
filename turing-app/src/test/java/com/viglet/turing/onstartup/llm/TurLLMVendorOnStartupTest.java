@@ -35,7 +35,7 @@ class TurLLMVendorOnStartupTest {
         turLLMVendorOnStartup.createDefaultRows();
 
         ArgumentCaptor<TurLLMVendor> captor = ArgumentCaptor.forClass(TurLLMVendor.class);
-        verify(turLLMVendorRepository, times(13)).save(captor.capture());
+        verify(turLLMVendorRepository, times(14)).save(captor.capture());
         List<TurLLMVendor> vendors = captor.getAllValues();
         assertEquals("OPENAI", vendors.get(0).getId());
         assertEquals("OLLAMA", vendors.get(1).getId());
@@ -52,6 +52,9 @@ class TurLLMVendorOnStartupTest {
         // T754 / ADR 0004 — the two in-process ONNX embedding vendors.
         assertEquals("TRANSFORMERS_LOCAL", vendors.get(11).getId());
         assertEquals("HUGGINGFACE", vendors.get(12).getId());
+        // T956 / §XIV.10.1 — the managed Viglet AI vendor.
+        assertEquals("VIGLET", vendors.get(13).getId());
+        assertEquals("viglet", vendors.get(13).getPlugin());
     }
 
     @Test
@@ -63,6 +66,6 @@ class TurLLMVendorOnStartupTest {
         turLLMVendorOnStartup.createDefaultRows();
 
         verify(turLLMVendorRepository, never()).save(argThat(v -> "OPENAI".equals(v.getId())));
-        verify(turLLMVendorRepository, times(12)).save(any(TurLLMVendor.class));
+        verify(turLLMVendorRepository, times(13)).save(any(TurLLMVendor.class));
     }
 }

@@ -8,8 +8,7 @@
 
 ## Block J.10 — Viglet AI: the managed LLM onboarding credit (§XIV.10)
 
-- 📋 **T956** (deps: —) **no provider points at Viglet's managed endpoint, so reaching it means hand-typing a baseUrl and a vendor model name** — A fixed-endpoint `viglet` provider serving one opaque alias keeps the vendor model swappable and the install off a per-token catalogue. → §XIV.10.1
-- 📋 **T957** (deps: T956) **pairing an install with the managed service has no flow, so its credential would ship in the distro or be hand-pasted** — Device-code pairing mints a per-install credential, creates the LLM instance and sets the default, so activation costs one click. → §XIV.10.2
+- 📋 **T957** (deps: T956 ✅) **pairing an install with the managed service has no flow, so its credential would ship in the distro or be hand-pasted** — Device-code pairing mints a per-install credential, creates the LLM instance and sets the default, so activation costs one click. → §XIV.10.2
 - 📋 **T958** (deps: T957) **a new install offers no way to turn AI on; the first-run tour teaches the rail and the palette, never the blocker** — An activation card on the bento home and a no-LLM empty state on every AI surface offer the managed credit beside BYOK. → §XIV.10.3
 - 📋 **T959** (deps: T957) **the tenant quota answers 402 and 429 with a bare status, so exhausting the free credit surfaces as a broken request** — Carrying a signed upgrade target on the refusal lets the console render the two exits, which is where the credit converts. → §XIV.10.4
 - 📋 **T960** (deps: T957) **nothing binds a managed credential to the install that earned it, so one key works anywhere and the credit is farmable** — A persisted install id and a signed assertion on every managed call keep the credit a product feature, not a resellable API key. → §XIV.10.5

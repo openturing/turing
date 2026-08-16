@@ -56,8 +56,8 @@ import com.viglet.turing.persistence.model.llm.TurLLMInstance;
 @Component
 public class TurOpenAiCompatibleLlmProvider implements TurGenAiLlmProvider {
 
-    private static final String BASE_URL = "baseUrl";
-    private static final String MODEL = "model";
+    protected static final String BASE_URL = "baseUrl";
+    protected static final String MODEL = "model";
 
     /**
      * Placeholder used when no API key is configured — required because the
@@ -66,7 +66,7 @@ public class TurOpenAiCompatibleLlmProvider implements TurGenAiLlmProvider {
      */
     private static final String NO_AUTH_PLACEHOLDER = "not-needed";
 
-    private final TurProviderOptionsParser optionsParser;
+    protected final TurProviderOptionsParser optionsParser;
 
     public TurOpenAiCompatibleLlmProvider(TurProviderOptionsParser optionsParser) {
         this.optionsParser = optionsParser;
@@ -80,7 +80,7 @@ public class TurOpenAiCompatibleLlmProvider implements TurGenAiLlmProvider {
     @Override
     public ChatModel createChatModel(TurLLMInstance turLLMInstance, String decryptedApiKey) {
         Map<String, Object> options = optionsParser.parse(turLLMInstance.getProviderOptionsJson());
-        String baseUrl = requireBaseUrl(turLLMInstance, options);
+        String baseUrl = resolveBaseUrl(turLLMInstance, options);
         String apiKey = resolveApiKey(decryptedApiKey);
 
         OpenAIClient openAiClient = OpenAIOkHttpClient.builder().baseUrl(baseUrl).apiKey(apiKey).build();
@@ -104,7 +104,7 @@ public class TurOpenAiCompatibleLlmProvider implements TurGenAiLlmProvider {
         // SSE-parsing model is used for token-by-token delivery. Because these
         // endpoints speak the OpenAI wire format, the same model works.
         Map<String, Object> options = optionsParser.parse(turLLMInstance.getProviderOptionsJson());
-        String baseUrl = requireBaseUrl(turLLMInstance, options);
+        String baseUrl = resolveBaseUrl(turLLMInstance, options);
         String apiKey = resolveApiKey(decryptedApiKey);
         String modelName = resolveChatModelName(turLLMInstance, options);
 
@@ -116,7 +116,7 @@ public class TurOpenAiCompatibleLlmProvider implements TurGenAiLlmProvider {
     @Override
     public EmbeddingModel createEmbeddingModel(TurLLMInstance turLLMInstance, String decryptedApiKey) {
         Map<String, Object> options = optionsParser.parse(turLLMInstance.getProviderOptionsJson());
-        String baseUrl = requireBaseUrl(turLLMInstance, options);
+        String baseUrl = resolveBaseUrl(turLLMInstance, options);
         OpenAIClient openAiClient = OpenAIOkHttpClient.builder()
                 .baseUrl(baseUrl)
                 .apiKey(resolveApiKey(decryptedApiKey))
@@ -163,7 +163,12 @@ public class TurOpenAiCompatibleLlmProvider implements TurGenAiLlmProvider {
         return StringUtils.hasText(decryptedApiKey) ? decryptedApiKey : NO_AUTH_PLACEHOLDER;
     }
 
-    private String requireBaseUrl(TurLLMInstance turLLMInstance, Map<String, Object> options) {
+    /**
+     * The endpoint this instance talks to. {@code protected} so a fixed-endpoint
+     * subclass (see {@code TurVigletLlmProvider}) can pin it and ignore whatever
+     * the instance/options carry.
+     */
+    protected String resolveBaseUrl(TurLLMInstance turLLMInstance, Map<String, Object> options) {
         String baseUrl = firstNonBlank(
                 optionsParser.stringValue(options, BASE_URL),
                 turLLMInstance.getUrl());
@@ -176,14 +181,16 @@ public class TurOpenAiCompatibleLlmProvider implements TurGenAiLlmProvider {
         return baseUrl;
     }
 
-    private String resolveChatModelName(TurLLMInstance turLLMInstance, Map<String, Object> options) {
+    /** The chat model name sent on the wire; {@code protected} for pinning subclasses. */
+    protected String resolveChatModelName(TurLLMInstance turLLMInstance, Map<String, Object> options) {
         return firstNonBlank(
                 optionsParser.stringValue(options, "chatModel"),
                 optionsParser.stringValue(options, MODEL),
                 turLLMInstance.getModelName());
     }
 
-    private String resolveEmbeddingModelName(TurLLMInstance turLLMInstance, Map<String, Object> options) {
+    /** The embedding model name sent on the wire; {@code protected} for pinning subclasses. */
+    protected String resolveEmbeddingModelName(TurLLMInstance turLLMInstance, Map<String, Object> options) {
         return firstNonBlank(
                 optionsParser.stringValue(options, "embeddingModel"),
                 optionsParser.stringValue(options, MODEL),

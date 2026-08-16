@@ -51,7 +51,8 @@ public record LlmProviderType(String value) {
             "voyage",
             "cohere",
             "mistral",
-            "vertex-ai");
+            "vertex-ai",
+            "viglet");
 
     public LlmProviderType {
         if (value == null || value.isBlank()) {

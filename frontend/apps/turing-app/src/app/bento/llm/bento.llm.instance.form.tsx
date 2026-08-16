@@ -106,10 +106,11 @@ const parseNumber = (value: string) => {
 const USES_NUM_PREDICT = (vendorId?: string) => vendorId === "OLLAMA"
 
 // Vendors whose backend provider IGNORES the instance `url` field: Vertex AI
-// (project/location + IAM), Bedrock (region + IAM) and Voyage (fixed hardcoded
-// endpoints). For these the Endpoint URL input is hidden so it doesn't confuse
-// — the field stays blank and its required-rule never applies.
-const VENDORS_WITHOUT_ENDPOINT = new Set(["VERTEX_AI", "BEDROCK", "VOYAGE"])
+// (project/location + IAM), Bedrock (region + IAM), Voyage (fixed hardcoded
+// endpoints) and Viglet AI (T956 — the managed endpoint is pinned by
+// `turing.viglet-ai.base-url`). For these the Endpoint URL input is hidden so it
+// doesn't confuse — the field stays blank and its required-rule never applies.
+const VENDORS_WITHOUT_ENDPOINT = new Set(["VERTEX_AI", "BEDROCK", "VOYAGE", "VIGLET"])
 const VENDOR_NEEDS_ENDPOINT = (vendorId?: string) =>
   Boolean(vendorId) && !VENDORS_WITHOUT_ENDPOINT.has(vendorId as string)
 
@@ -439,6 +440,18 @@ export const BentoLLMInstanceForm: React.FC<Props> = ({ value, isNew, staged, on
       form.setValue("topP", 0.9, { shouldDirty: true })
       form.setValue("supportedCapabilities", "", { shouldDirty: true })
       setMaxTokensInput("1024")
+    }
+    if (vendorId === "VIGLET") {
+      // T956 — Viglet AI is a managed, fixed-endpoint provider serving one
+      // opaque model alias. Neither the endpoint nor the model name is a
+      // choice, so both are pinned here and the URL input stays hidden; the
+      // credential itself is minted by pairing (T957).
+      form.setValue("url", "", { shouldDirty: true })
+      form.setValue("modelName", "viglet-fast", { shouldDirty: true })
+      form.setValue("temperature", 0.7, { shouldDirty: true })
+      form.setValue("topP", 0.9, { shouldDirty: true })
+      form.setValue("supportedCapabilities", "", { shouldDirty: true })
+      setMaxTokensInput("4096")
     }
     if (vendorId === "BEDROCK") {
       // AWS Bedrock is IAM-authenticated and region-scoped — no base URL;

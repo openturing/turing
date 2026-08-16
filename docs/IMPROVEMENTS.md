@@ -1303,30 +1303,6 @@ credit is one opaque model alias, bound to an install, capped hard, and it conve
 pointing at the paid surfaces — hosted Cloud, embeddings, transcription, rerank — never
 at more tokens of the same model. BYOK stays free and first-class.
 
-#### XIV.10.1 The `viglet` provider and its opaque model alias (T956)
-
-`TurOpenAiCompatibleLlmProvider` already takes a free `baseUrl`, and `TurLLMVendor` is a
-table rather than an enum, so the managed endpoint is reachable today — by an operator
-who knows the URL, picks the right vendor row and types a model name. That is three
-facts a first-time user does not have, and every one of them is a way to get the
-instance subtly wrong.
-
-`TurVigletLlmProvider` is the thin subclass that removes the choice: `baseUrl` fixed and
-not editable, plugin type `viglet` in `LlmProviderType.KNOWN`, a `VIGLET` vendor row
-seeded by Liquibase, and no model list to browse.
-
-The alias is the part that is a decision rather than plumbing. The instance's model is
-`viglet-small`, never a vendor model name. Naming the vendor model in the wire contract
-fixes Turing's cost to one vendor's price sheet and invites the comparison this credit
-is designed not to have; an alias lets the service move to whatever is cheapest per
-useful token without touching a single install. It also keeps `GET /v1/models` honest —
-the managed endpoint offers exactly one id, which is the whole catalogue, so there is
-nothing to shop.
-
-Capabilities follow the alias, not the model behind it: chat and embedding only, no
-native tools, no computer use. Anything richer is a reason to bring your own key, which
-stays free.
-
 #### XIV.10.2 Device-code pairing, and why the credential is never shipped (T957)
 
 A credential embedded in the distribution is public on the first day, and a credential
@@ -1342,9 +1318,9 @@ the completion that writes the result.
 Completion is the part that has to be whole, because a half-paired install is worse than
 an unpaired one. In one transaction it stores the credential through
 `TurSecretCryptoService`, creates the `TurLLMInstance` on the `viglet` provider with the
-`viglet-small` alias, and sets `DEFAULT_LLM` — after which chat, RAG, agents and
-semantic navigation work with nothing else configured. An install that already has a
-default keeps it; pairing adds an instance and does not take the operator's choice away.
+`viglet-fast` alias, and sets `DEFAULT_LLM` — after which chat, RAG, agents and semantic
+navigation work with nothing else configured. An install that already has a default
+keeps it; pairing adds an instance and does not take the operator's choice away.
 
 The install id is a persisted UUID, not derived from hardware or the container:
 otherwise every `docker run` presents as a new install and earns a fresh credit.

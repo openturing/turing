@@ -1301,3 +1301,4 @@
 
 ## Block J.10 — Viglet AI: the managed LLM onboarding credit (§XIV.10)
 
+- **T956** — A viglet vendor row now resolves TurVigletLlmProvider, which pins the managed baseUrl and the viglet-fast alias for chat and embeddings, and offers that one id as the whole model list.

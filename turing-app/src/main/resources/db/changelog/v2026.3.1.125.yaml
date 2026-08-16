@@ -1,0 +1,37 @@
+databaseChangeLog:
+  # --- T956 / §XIV.10.1: Viglet AI managed LLM vendor (Block J.10) ---
+  # Fresh installs are seeded by TurLLMVendorOnStartup; this row is for existing
+  # installs whose llm_vendor table is already populated. Idempotent: skipped if
+  # the table is empty (fresh install) or the row already exists.
+  - changeSet:
+      id: v2026.3.1.125-01-add-viglet-ai-vendor
+      author: viglet-team
+      preConditions:
+        onFail: MARK_RAN
+        and:
+          - not:
+              - sqlCheck:
+                  expectedResult: "0"
+                  sql: "SELECT COUNT(*) FROM llm_vendor"
+          - sqlCheck:
+              expectedResult: "0"
+              sql: "SELECT COUNT(*) FROM llm_vendor WHERE id = 'VIGLET'"
+      changes:
+        - insert:
+            tableName: llm_vendor
+            columns:
+              - column:
+                  name: id
+                  value: VIGLET
+              - column:
+                  name: description
+                  value: "Viglet AI — the managed endpoint behind the onboarding credit (fixed endpoint, one model)"
+              - column:
+                  name: plugin
+                  value: viglet
+              - column:
+                  name: title
+                  value: "Viglet AI"
+              - column:
+                  name: website
+                  value: "https://turing.viglet.org"

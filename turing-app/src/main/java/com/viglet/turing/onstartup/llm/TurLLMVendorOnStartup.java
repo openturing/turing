@@ -25,6 +25,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.viglet.turing.genai.provider.llm.TurHuggingFaceEmbeddingModelFactory;
 import com.viglet.turing.genai.provider.llm.TurLocalEmbeddingModelFactory;
+import com.viglet.turing.genai.provider.llm.TurVigletLlmProvider;
 import com.viglet.turing.persistence.model.llm.TurLLMVendor;
 import com.viglet.turing.persistence.repository.llm.TurLLMVendorRepository;
 
@@ -78,6 +79,11 @@ public class TurLLMVendorOnStartup {
 		ensureVendor(TurHuggingFaceEmbeddingModelFactory.PROVIDER_TYPE,
 				"In-process ONNX embedding model from a Hugging Face repo id (no cloud, no chat)",
 				"huggingface", "Hugging Face (local ONNX)", "https://huggingface.co");
+		// T956 / §XIV.10.1 — Viglet AI, the managed endpoint behind the onboarding
+		// credit. Fixed endpoint, one opaque model alias; nothing to configure.
+		ensureVendor(TurVigletLlmProvider.VENDOR_ID,
+				"Viglet AI — the managed endpoint behind the onboarding credit (fixed endpoint, one model)",
+				TurVigletLlmProvider.PLUGIN_TYPE, "Viglet AI", "https://turing.viglet.org");
 	}
 
 	/** Creates the vendor only when its id is not already present (idempotent). */
