@@ -2084,3 +2084,78 @@ Three things this cost that are worth keeping:
 - **An allowlist that masks its own detector is not a guard.** Every acknowledged entry
   must still be detected, and a positive control proves the walk works once the list is
   empty.
+
+## LXXII The tenancy quota is a gate nothing calls (Block J) (T963)
+
+`TurTenantQuotaService` has three entry points — `checkCanCreateAgent`,
+`checkCanCreateSite`, `checkLlmAdmission` — and a repository-wide search finds a
+production caller for none of them. The bean is never injected outside its own unit
+test. `VigletQuotaService.check` is therefore never reached either, and
+`TurVigletResourceCounter` counts for nobody.
+
+So the create endpoints are open. `TurAIAgentAPI`'s POST goes from mapper to `save` with
+nothing in between, and `TurSNSiteAPI`'s POST checks only for a name collision. Agents
+are also created by import, by the chat-flow API and by two startup seeders, each of
+which needs the same gate or an explicit exemption.
+
+The LLM path has a gate, but a different one: `TurAgentChatExecutor` calls
+`TurTokenBudgetService`, which is the per-agent budget and knows nothing about the
+tenant's plan.
+
+This is what makes T959 worth finishing rather than admiring. The refusal now carries
+the counts, the reset instant and a signed upgrade target, and none of it can ever be
+emitted, because the code that would throw it never runs. The banner, the exception, the
+handler branch and the signed link are all dead until a call site exists.
+
+Wiring it is not one line. Each site has to decide whether the gate belongs at the API
+boundary or in the service beneath it, and the seeders and the import path must be
+exempt, or the first boot of a fresh tenant refuses to provision itself. That decision,
+made once, is the work.
+
+## LXXIII The install assertion is per model, and some models outlive it (Block J.10) (T964)
+
+T960 mints the assertion in `extraHeaders`, which the provider calls once while building
+a `ChatModel`, and bakes the result into the SDK client's default headers. That is
+correct wherever a model is built per request — the chat API, semantic chat, authoring —
+and wrong wherever one is built and then reused.
+
+`TurAgentEvalRunnerService` builds a judge model once and runs a dataset through it.
+`TurEvalDatasetGenerationService` and `TurWeeklySearchReportService` do the same shape.
+A run longer than `assertionTtlSeconds` (120 by default) starts failing partway through,
+and the failure looks like the managed service refusing a valid credential rather than a
+header that went stale.
+
+Raising the TTL is the wrong fix twice over: it weakens exactly the replay bound the
+short expiry buys, and it still fails on a long enough run. The header has to be minted
+per request, not per model.
+
+Both transports allow it. The blocking path can carry an OkHttp interceptor that sets
+the two headers as the call goes out; the streaming path can use a `WebClient` filter
+for the same. The provider then hands the client a supplier instead of a value, and
+`TurVigletInstallIdentityService` stays unchanged.
+
+A regression test wants a model built once, two calls made a simulated TTL apart, and
+both assertions distinct and unexpired.
+
+## LXXIV Rotating the install key, which today means editing a config var by hand (Block J.10) (T965)
+
+`getOrCreatePublicKey` returns the existing pair whenever one is present, so re-pairing
+an install keeps the key it already had. That is the right default — re-pairing after a
+credential expires should not invalidate a binding the managed service already trusts —
+but it leaves no path for the one case the binding exists to handle.
+
+If the private key leaks, the operator's only move is to delete
+`GLOBAL_VIGLET_AI_INSTALL_PRIVATE_KEY` from the database and pair again. That is a
+runbook step nobody finds under pressure, and it is exactly the moment the product
+should be easiest to use.
+
+The shape already exists one feature over: the code-interpreter URL-signing secret has a
+Regenerate action that mints a fresh value, states plainly that every previously-emitted
+URL stops working, and never shows the secret itself. The install key wants the same,
+plus one thing that secret does not need — the new public half has to reach the managed
+service before the old one stops being accepted, or the install revokes itself.
+
+So rotation is a pairing variant rather than a settings toggle: mint, register, then
+swap, with the old key still valid until the registration is confirmed. Failing halfway
+must leave the old key in place, on the same argument T957 made about a half-paired
+install being worse than an unpaired one.
