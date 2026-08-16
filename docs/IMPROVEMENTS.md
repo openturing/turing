@@ -2085,33 +2085,6 @@ Three things this cost that are worth keeping:
   must still be detected, and a positive control proves the walk works once the list is
   empty.
 
-## LXXII The tenancy quota is a gate nothing calls (Block J) (T963)
-
-`TurTenantQuotaService` has three entry points — `checkCanCreateAgent`,
-`checkCanCreateSite`, `checkLlmAdmission` — and a repository-wide search finds a
-production caller for none of them. The bean is never injected outside its own unit
-test. `VigletQuotaService.check` is therefore never reached either, and
-`TurVigletResourceCounter` counts for nobody.
-
-So the create endpoints are open. `TurAIAgentAPI`'s POST goes from mapper to `save` with
-nothing in between, and `TurSNSiteAPI`'s POST checks only for a name collision. Agents
-are also created by import, by the chat-flow API and by two startup seeders, each of
-which needs the same gate or an explicit exemption.
-
-The LLM path has a gate, but a different one: `TurAgentChatExecutor` calls
-`TurTokenBudgetService`, which is the per-agent budget and knows nothing about the
-tenant's plan.
-
-This is what makes T959 worth finishing rather than admiring. The refusal now carries
-the counts, the reset instant and a signed upgrade target, and none of it can ever be
-emitted, because the code that would throw it never runs. The banner, the exception, the
-handler branch and the signed link are all dead until a call site exists.
-
-Wiring it is not one line. Each site has to decide whether the gate belongs at the API
-boundary or in the service beneath it, and the seeders and the import path must be
-exempt, or the first boot of a fresh tenant refuses to provision itself. That decision,
-made once, is the work.
-
 ## LXXIII The install assertion is per model, and some models outlive it (Block J.10) (T964)
 
 T960 mints the assertion in `extraHeaders`, which the provider calls once while building

@@ -68,6 +68,7 @@ public class TurAIAgentAPI {
     private final TurSNSiteGenAiRepository turSNSiteGenAiRepository;
     private final TurGlobalSettingsService turGlobalSettingsService;
     private final TurAIAgentExportService turAIAgentExportService;
+    private final com.viglet.turing.tenant.TurTenantQuotaService turTenantQuotaService;
 
     public TurAIAgentAPI(TurAIAgentRepository turAIAgentRepository,
             TurAIAgentMapper turAIAgentMapper,
@@ -80,7 +81,8 @@ public class TurAIAgentAPI {
             TurPersonaRepository turPersonaRepository,
             TurSNSiteGenAiRepository turSNSiteGenAiRepository,
             TurGlobalSettingsService turGlobalSettingsService,
-            TurAIAgentExportService turAIAgentExportService) {
+            TurAIAgentExportService turAIAgentExportService,
+            com.viglet.turing.tenant.TurTenantQuotaService turTenantQuotaService) {
         this.turAIAgentRepository = turAIAgentRepository;
         this.turAIAgentMapper = turAIAgentMapper;
         this.turLLMInstanceRepository = turLLMInstanceRepository;
@@ -93,6 +95,7 @@ public class TurAIAgentAPI {
         this.turSNSiteGenAiRepository = turSNSiteGenAiRepository;
         this.turGlobalSettingsService = turGlobalSettingsService;
         this.turAIAgentExportService = turAIAgentExportService;
+        this.turTenantQuotaService = turTenantQuotaService;
     }
 
     @Operation(summary = "AI Agent List")
@@ -334,6 +337,13 @@ public class TurAIAgentAPI {
     @PostMapping
     @Secured({"ROLE_ADMIN", "AI_AGENT_CREATE"})
     public TurAIAgentDto turAIAgentAdd(@RequestBody TurAIAgentDto turAIAgentDto) {
+        // T963 / §LXXII — the plan's agent limit, enforced here at the HTTP
+        // boundary rather than in the repository beneath it. That placement is
+        // the exemption: the startup seeders and the import path create agents
+        // through the repository directly, and neither is a tenant spending
+        // their plan — a gate one layer down would refuse a fresh tenant's own
+        // provisioning, or need a flag threaded through to say "not this one".
+        turTenantQuotaService.checkCanCreateAgent();
         TurAIAgent turAIAgent = turAIAgentMapper.toEntity(turAIAgentDto);
         turAIAgent.setLlmInstances(resolveRelations(
                 turAIAgent.getLlmInstances(), turLLMInstanceRepository));

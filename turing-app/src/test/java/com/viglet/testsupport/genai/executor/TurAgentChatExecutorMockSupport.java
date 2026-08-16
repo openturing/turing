@@ -139,7 +139,7 @@ public class TurAgentChatExecutorMockSupport {
         // Re-use the same Mockito instance across createChatModel invocations
         // so a test can stage responses BEFORE the executor obtains the model
         // (the production factory is called from within execute()).
-        return new TurLlmModelFactory(null, null, null, null) {
+        return new TurLlmModelFactory(null, null, null, null, null) {
             @Override
             public org.springframework.ai.chat.model.ChatModel createChatModel(
                     com.viglet.turing.persistence.model.llm.TurLLMInstance llmInstance,

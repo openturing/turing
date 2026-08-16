@@ -63,6 +63,9 @@ class TurAIAgentAPITest {
     @Mock
     private TurSNSiteGenAiRepository turSNSiteGenAiRepository;
 
+    @Mock
+    private com.viglet.turing.tenant.TurTenantQuotaService turTenantQuotaService;
+
     @InjectMocks
     private TurAIAgentAPI turAIAgentAPI;
 
@@ -192,5 +195,34 @@ class TurAIAgentAPITest {
                 .andExpect(jsonPath("$.title").value("New Agent"));
 
         verify(turAIAgentRepository, times(1)).save(any(TurAIAgent.class));
+        // T963 — the plan is consulted on every create, not only when it bites.
+        verify(turTenantQuotaService, times(1)).checkCanCreateAgent();
+    }
+
+    /**
+     * T963 / §LXXII — a tenant at its agent limit is refused before anything is
+     * written. The refusal itself is T959's: the exception carries the counts
+     * and the exit, and this asserts only that nothing was created.
+     */
+    @Test
+    void testTurAIAgentAddRefusedAtThePlanLimit() throws Exception {
+        org.mockito.Mockito.doThrow(new com.viglet.turing.api.exception.TurQuotaExhaustedException(
+                org.springframework.http.HttpStatus.PAYMENT_REQUIRED, "agents", 3L, 3L, null, null,
+                "Plan limit reached for 'agents': 3 of 3 used."))
+                .when(turTenantQuotaService).checkCanCreateAgent();
+
+        TurAIAgentDto newAgent = new TurAIAgentDto();
+        newAgent.setTitle("One Too Many");
+
+        try {
+            mockMvc.perform(post("/api/ai-agent")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(objectMapper.writeValueAsString(newAgent)));
+        } catch (Exception expected) {
+            // standaloneSetup has no @ControllerAdvice, so the exception escapes
+            // the dispatcher rather than being rendered as the 402 it maps to.
+        }
+
+        verify(turAIAgentRepository, org.mockito.Mockito.never()).save(any(TurAIAgent.class));
     }
 }

@@ -91,7 +91,8 @@ class TurSNSiteAPITest {
                                 mock(com.viglet.turing.persistence.repository.se.TurSEInstanceRepository.class),
                                 export, mock(TurSNSiteContentExchangeService.class),
                                 template, queue, pluginFactory, siteMapper,
-                                mock(org.springframework.context.ApplicationEventPublisher.class));
+                                mock(org.springframework.context.ApplicationEventPublisher.class),
+                                mock(com.viglet.turing.tenant.TurTenantQuotaService.class));
         }
 
         @Test
@@ -192,7 +193,8 @@ class TurSNSiteAPITest {
                                 mock(TurSNSiteContentExchangeService.class),
                                 mock(TurSNTemplate.class), mock(TurSNQueue.class),
                                 mock(TurSearchEnginePluginFactory.class), siteMapper,
-                                mock(org.springframework.context.ApplicationEventPublisher.class));
+                                mock(org.springframework.context.ApplicationEventPublisher.class),
+                                mock(com.viglet.turing.tenant.TurTenantQuotaService.class));
 
                 TurSNSite existing = new TurSNSite();
                 TurSNSiteGenAi existingGenAi = new TurSNSiteGenAi();

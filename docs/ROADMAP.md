@@ -6,10 +6,6 @@
 > [STRATEGY.md](STRATEGY.md); the markers and limits are `roadkeep.toml`'s. Blocks are
 > reused, not minted — `roadkeep brief` picks the next task and states why.
 
-## Block J — Multi-tenancy (§XIV)
-
-- 📋 **T963** (deps: —) **the plan quota has no production caller, so no 402 or 429 is ever emitted and T959's refusal is dead code** — A gate nothing calls is a plan limit that does not exist, and the free credit it was built to bound is unbounded on every install running today. → §LXXII
-
 ## Block J.10 — Viglet AI: the managed LLM onboarding credit (§LXXIII)
 
 - 📋 **T964** (deps: T960 ✅) **the install assertion is signed once per chat model, so a model reused across a long run sends an expired one** — A binding that expires mid-run turns a working eval or report into a wall of 401s, and the operator reads that as the managed service being down. → §LXXIII

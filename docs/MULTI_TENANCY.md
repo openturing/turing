@@ -103,6 +103,20 @@ The breach surface is every path that bypasses the ORM. Each is closed:
 `TurTenantQuotaService` maps `TurTenant.plan` → limits (`FREE` is bounded; paid/
 custom plans are unlimited). Enforced at create (402) and LLM admission (429).
 
+**Where the gate actually sits** (T963 — until then it sat nowhere, and nothing
+called it):
+
+| Limit | Call site | Why there |
+| ----- | --------- | --------- |
+| `agents` | `TurAIAgentAPI.turAIAgentAdd` | The HTTP boundary *is* the exemption: the startup seeders and the import path create agents through the repository, and neither is a tenant spending a plan. |
+| `sites` | `TurSNSiteAPI.turSNSiteAdd` | Same, and before the name-collision check — renaming does not get an operator past a plan limit. |
+| `monthlyTokens` | `TurLlmModelFactory.createChatModel` / `createStreamingChatModel` | The single boundary every LLM call comes through. The alternative was a list of ~45 endpoints, which is a list that stops being complete; the two path-regex filters that already try it have both drifted. |
+
+`createEmbeddingModel` is deliberately **not** admitted: embeddings are what
+indexing and retrieval run on, so refusing them would turn an exhausted chat
+credit into a search outage. Single-tenant installs are unaffected —
+`currentLimits()` returns `UNLIMITED` and returns before counting anything.
+
 **The refusal carries the exit** (T959). Both statuses answer with an RFC 7807
 body typed `tag:viglet.com,2026:errors/quota-exhausted`, carrying `resource`,
 `used`, `limit`, `resetsAt` (the monthly token window only — a resource count

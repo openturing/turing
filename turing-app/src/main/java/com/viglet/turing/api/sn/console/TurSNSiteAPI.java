@@ -99,6 +99,7 @@ public class TurSNSiteAPI {
     private final TurSearchEnginePluginFactory pluginFactory;
     private final TurSNSiteMapper turSNSiteMapper;
     private final ApplicationEventPublisher eventPublisher;
+    private final com.viglet.turing.tenant.TurTenantQuotaService turTenantQuotaService;
 
     @Operation(summary = "Semantic Navigation Site List")
     @GetMapping
@@ -277,6 +278,10 @@ public class TurSNSiteAPI {
     @PostMapping
     @Secured({"ROLE_ADMIN", "SN_CREATE"})
     public ResponseEntity<Object> turSNSiteAdd(@RequestBody TurSNSiteDto turSNSiteDto, Principal principal) {
+        // T963 / §LXXII — the plan's site limit. Before the name check, because
+        // "you are at your plan limit" is the more useful of the two answers
+        // when both are true: renaming would not get the operator any further.
+        turTenantQuotaService.checkCanCreateSite();
         if (turSNSiteRepository.findByNameIgnoreCase(turSNSiteDto.getName()).isPresent()) {
             return ResponseEntity.status(HttpStatus.CONFLICT)
                     .body(Map.of(ERROR, "A site with this name already exists."));
