@@ -302,6 +302,7 @@ number" looked free but wasn't. Grepping three files (`ROADMAP.md`,
 
 ## Log (most recent first)
 
+- **T957 SHIPPED** (Block J.10 §XIV.10.2 — device-code pairing client half; completion is one transaction, install id is a persisted UUID) — 2026-08-16.
 - **T956 SHIPPED** (Block J.10 §XIV.10.1 — TurVigletLlmProvider pins the managed baseUrl and the viglet-fast alias; VIGLET vendor seeded, one-id model list) — 2026-08-16.
 - **T954 SHIPPED** (Block BV §LXIX.30 — the snapshot cache's Hazelcast Serializable contract is pinned; the Optional it returns is unwrapped by Spring before the put, so the snapshot is what must serialize) — 2026-08-13.
 - **Block AC CLOSED, heading dropped** (§LXXI — the acknowledged-entity-cache list is empty; no @Cacheable holds a JPA entity) — 2026-08-13.

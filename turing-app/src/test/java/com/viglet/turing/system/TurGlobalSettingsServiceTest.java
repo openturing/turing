@@ -671,4 +671,50 @@ class TurGlobalSettingsServiceTest {
         assertEquals(TurConfigVarOnStartup.GLOBAL_PATH, saved.getPath());
         assertEquals("test@example.com", saved.getValue());
     }
+
+    // --- T957 Viglet AI install id ---
+
+    @Test
+    void vigletAiInstallIdShouldBeMintedAndPersistedWhenMissing() {
+        when(turConfigVarRepository.findById(TurConfigVarOnStartup.VIGLET_AI_INSTALL_ID))
+                .thenReturn(Optional.empty());
+        when(turConfigVarRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+
+        String installId = service.getOrCreateVigletAiInstallId();
+
+        assertNotNull(installId);
+        assertDoesNotThrow(() -> java.util.UUID.fromString(installId));
+
+        ArgumentCaptor<TurConfigVar> captor = ArgumentCaptor.forClass(TurConfigVar.class);
+        verify(turConfigVarRepository).save(captor.capture());
+        assertEquals(TurConfigVarOnStartup.VIGLET_AI_INSTALL_ID, captor.getValue().getId());
+        assertEquals(TurConfigVarOnStartup.GLOBAL_PATH, captor.getValue().getPath());
+        assertEquals(installId, captor.getValue().getValue());
+    }
+
+    @Test
+    void vigletAiInstallIdShouldBeStableOnceMinted() {
+        TurConfigVar existing = new TurConfigVar();
+        existing.setValue("11111111-2222-3333-4444-555555555555");
+        when(turConfigVarRepository.findById(TurConfigVarOnStartup.VIGLET_AI_INSTALL_ID))
+                .thenReturn(Optional.of(existing));
+
+        assertEquals("11111111-2222-3333-4444-555555555555", service.getOrCreateVigletAiInstallId());
+        verify(turConfigVarRepository, never()).save(any());
+    }
+
+    @Test
+    void vigletAiInstallIdShouldSelfHealABlankRow() {
+        // An upgraded install never ran the FIRST_TIME seeder, so a row can exist
+        // blank (or be absent). Either way the id is minted rather than returned blank.
+        TurConfigVar blank = new TurConfigVar();
+        blank.setValue("  ");
+        when(turConfigVarRepository.findById(TurConfigVarOnStartup.VIGLET_AI_INSTALL_ID))
+                .thenReturn(Optional.of(blank));
+        when(turConfigVarRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+
+        String installId = service.getOrCreateVigletAiInstallId();
+
+        assertDoesNotThrow(() -> java.util.UUID.fromString(installId));
+    }
 }

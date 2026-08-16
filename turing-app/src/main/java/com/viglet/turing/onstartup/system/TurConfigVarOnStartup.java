@@ -22,6 +22,7 @@ package com.viglet.turing.onstartup.system;
 
 import java.security.SecureRandom;
 import java.util.Base64;
+import java.util.UUID;
 
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -84,6 +85,16 @@ public class TurConfigVarOnStartup {
 			"GLOBAL_CODE_INTERPRETER_SKILL_IMAGE";
 	public static final String CODE_INTERPRETER_SKILL_IMAGE_DEFAULT_VALUE = "python:3.12-slim";
 	public static final String DEFAULT_LLM = "GLOBAL_DEFAULT_LLM";
+	/**
+	 * T957 / §XIV.10.2 — this install's identity to the managed Viglet AI
+	 * service, a UUID minted once and persisted. Deliberately <b>not</b> derived
+	 * from hardware or the container: otherwise every {@code docker run} presents
+	 * as a new install and earns a fresh onboarding credit. Minted here on a fresh
+	 * database and lazily by
+	 * {@code TurGlobalSettingsService#getOrCreateVigletAiInstallId()} on an
+	 * upgraded one (this seeder only runs on FIRST_TIME).
+	 */
+	public static final String VIGLET_AI_INSTALL_ID = "GLOBAL_VIGLET_AI_INSTALL_ID";
 	/**
 	 * T517 — cross-provider per-stage model "lanes". Each holds an
 	 * {@code TurLLMInstance} id the matching pipeline stages use instead of the
@@ -279,6 +290,7 @@ public class TurConfigVarOnStartup {
 		ensureConfigVar(CODE_INTERPRETER_SKILL_IMAGE, GLOBAL_PATH,
 				CODE_INTERPRETER_SKILL_IMAGE_DEFAULT_VALUE);
 		ensureConfigVar(DEFAULT_LLM, GLOBAL_PATH, "");
+		ensureConfigVar(VIGLET_AI_INSTALL_ID, GLOBAL_PATH, UUID.randomUUID().toString());
 		ensureConfigVar(MODEL_LANE_FAST, GLOBAL_PATH, "");
 		ensureConfigVar(MODEL_LANE_REASONING, GLOBAL_PATH, "");
 		ensureConfigVar(MODEL_LANE_CHEAP, GLOBAL_PATH, "");

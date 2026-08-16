@@ -47,4 +47,12 @@ public class TurVigletAiProperty {
      * lets the service move behind it.
      */
     private String modelAlias = "viglet-fast";
+
+    /**
+     * T957 / §XIV.10.2 — base URL of the device-code pairing endpoint. The
+     * install posts its id and version to {@code {pairingBaseUrl}/device/code}
+     * and polls {@code {pairingBaseUrl}/device/token} until the credential
+     * arrives; the server half lives in the {@code viglet/cloud} repository.
+     */
+    private String pairingBaseUrl = "https://llm.viglet.cloud/pair";
 }

@@ -1,5 +1,7 @@
 package com.viglet.turing.system;
 
+import java.util.UUID;
+
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.stereotype.Service;
 
@@ -130,6 +132,28 @@ public class TurGlobalSettingsService {
         String fresh = TurConfigVarOnStartup.generateUrlSigningSecret();
         configVars.setRaw(TurConfigVarOnStartup.CODE_INTERPRETER_URL_SIGNING_SECRET, fresh);
         return fresh.length() >= 8 ? fresh.substring(0, 8) : fresh;
+    }
+
+    /**
+     * T957 / §XIV.10.2 — this install's identity to the managed Viglet AI
+     * service. Returns the persisted UUID, minting and storing one on first
+     * call. Lazy rather than seeded-only because
+     * {@code TurConfigVarOnStartup#createDefaultRows()} runs on a fresh database
+     * only, so an upgraded install would otherwise never get a row.
+     *
+     * <p>Deliberately a persisted UUID and not a fingerprint of the host or the
+     * container: a derived id would make every {@code docker run} present as a
+     * new install and earn a fresh onboarding credit.
+     *
+     * @since 2026.3.4
+     */
+    public String getOrCreateVigletAiInstallId() {
+        String existing = configVars.getString(TurConfigVarOnStartup.VIGLET_AI_INSTALL_ID, "");
+        if (existing != null && !existing.isBlank()) {
+            return existing;
+        }
+        return configVars.setString(TurConfigVarOnStartup.VIGLET_AI_INSTALL_ID,
+                UUID.randomUUID().toString());
     }
 
     /**

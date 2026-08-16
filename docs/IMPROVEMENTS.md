@@ -1303,30 +1303,6 @@ credit is one opaque model alias, bound to an install, capped hard, and it conve
 pointing at the paid surfaces — hosted Cloud, embeddings, transcription, rerank — never
 at more tokens of the same model. BYOK stays free and first-class.
 
-#### XIV.10.2 Device-code pairing, and why the credential is never shipped (T957)
-
-A credential embedded in the distribution is public on the first day, and a credential
-pasted by hand is the friction this block exists to remove. Device-code pairing is the
-third option, and it is the one every CLI that faces this problem already uses.
-
-The flow: the install posts its id and version to the pairing endpoint and gets back a
-short user code and a verification URL; the console shows both; the operator opens the
-URL, signs in with GitHub or Google, and approves; the install polls until the
-credential arrives. `TurVigletPairingService` owns the client half — start, poll, and
-the completion that writes the result.
-
-Completion is the part that has to be whole, because a half-paired install is worse than
-an unpaired one. In one transaction it stores the credential through
-`TurSecretCryptoService`, creates the `TurLLMInstance` on the `viglet` provider with the
-`viglet-fast` alias, and sets `DEFAULT_LLM` — after which chat, RAG, agents and semantic
-navigation work with nothing else configured. An install that already has a default
-keeps it; pairing adds an instance and does not take the operator's choice away.
-
-The install id is a persisted UUID, not derived from hardware or the container:
-otherwise every `docker run` presents as a new install and earns a fresh credit.
-Approval is per identity, and one free credit per identity is the rule the managed
-service enforces.
-
 #### XIV.10.3 The activation surface, and keeping BYOK first-class (T958)
 
 `bento-first-run-tour.tsx` currently teaches the hub rail, the command palette and

@@ -35,7 +35,7 @@ class TurConfigVarOnStartupTest {
         when(turConfigVarRepository.findById(anyString())).thenReturn(Optional.empty());
         turConfigVarOnStartup.createDefaultRows();
         ArgumentCaptor<TurConfigVar> captor = ArgumentCaptor.forClass(TurConfigVar.class);
-        verify(turConfigVarRepository, times(54)).save(captor.capture());
+        verify(turConfigVarRepository, times(55)).save(captor.capture());
         return captor.getAllValues();
     }
 
@@ -84,6 +84,14 @@ class TurConfigVarOnStartupTest {
         expectVar(savedVars, "GLOBAL_DEFAULT_EMBEDDING_STORE", GLOBAL, "");
         expectVar(savedVars, "GLOBAL_DEFAULT_AI_AGENT", GLOBAL, "");
         expectVar(savedVars, "GLOBAL_PII_SLOT_TTL_HOURS", GLOBAL, "24");
+        // T957 — the install's identity to the managed Viglet AI service is a UUID
+        // minted once, so it can't be pinned to a literal; just assert it is one.
+        assertTrue(savedVars.stream().anyMatch(configVar ->
+                "GLOBAL_VIGLET_AI_INSTALL_ID".equals(configVar.getId())
+                && GLOBAL.equals(configVar.getPath())
+                && configVar.getValue() != null
+                && configVar.getValue().length() == 36),
+                "Expected a minted UUID for GLOBAL_VIGLET_AI_INSTALL_ID");
     }
 
     @Test
@@ -121,7 +129,7 @@ class TurConfigVarOnStartupTest {
         // ensureConfigVar leaves these alone (existing row → no save), but
         // ensureSecretConfigVar AUTO-HEALS blank values for the HMAC
         // secret. So save is called exactly once — for the secret heal —
-        // and the other 53 rows are skipped.
+        // and the other 54 rows are skipped.
         when(turConfigVarRepository.findById(anyString()))
                 .thenReturn(Optional.of(new TurConfigVar()));
 

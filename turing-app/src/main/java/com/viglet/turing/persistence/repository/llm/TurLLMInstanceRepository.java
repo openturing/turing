@@ -51,4 +51,13 @@ public interface TurLLMInstanceRepository extends JpaRepository<TurLLMInstance, 
      */
     @Query("select e from TurLLMInstance e where e.tenantId = :tenantId or e.tenantId is null")
     java.util.List<TurLLMInstance> findVisibleToTenant(@Param("tenantId") String tenantId);
+
+    /**
+     * T957 / §XIV.10.2 — instances belonging to one vendor, oldest id first for a
+     * stable pick. Pairing uses it to find the install's existing managed
+     * ({@code VIGLET}) instance so a re-pair refreshes that credential instead of
+     * stacking a second instance next to it.
+     */
+    @Query("select e from TurLLMInstance e where e.turLLMVendor.id = :vendorId order by e.id")
+    java.util.List<TurLLMInstance> findByVendorId(@Param("vendorId") String vendorId);
 }
