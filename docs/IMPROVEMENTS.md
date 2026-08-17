@@ -2085,3 +2085,49 @@ Three things this cost that are worth keeping:
 - **An allowlist that masks its own detector is not a guard.** Every acknowledged entry
   must still be detected, and a positive control proves the walk works once the list is
   empty.
+
+## LXXV The path lists that guard the LLM surfaces have drifted (Block AN) (T966)
+
+`TurSNSiteApiKeyGateFilter` and `TurAnonymousAbuseRateLimitFilter` each carry a regex
+naming the paths that cost tokens. Mapping the endpoints that actually reach a model
+found about forty-five, and neither list has kept up.
+
+Uncovered today: `/api/sn/{site}/answer` (an SSE answer stream, public),
+`/v1/chat/completions` and `/v1/embeddings` (the governed gateway — the highest-volume
+token path there is), and `/api/v2/ai-agent/{agentId}/chat` (CSRF-exempt by design, so
+the filter is the only thing in front of it). Each is anonymous-reachable and each
+spends money per call.
+
+The same audit found a matcher for `/api/genai/chat` in `TurSecurityConfigProduction`
+with no controller behind it: a CSRF exemption for a route that does not exist. Harmless
+now, and exactly the kind of line that stops being harmless the day somebody adds that
+path back.
+
+T963 answered the same shape of problem by admitting the tenant budget at
+`TurLlmModelFactory` — one seam every call passes — instead of enumerating endpoints.
+Abuse control cannot move there, because it has to refuse before the work starts and it
+keys on the caller rather than the tenant. So the lists stay, and what they need is a
+test that fails when an endpoint reaches an LLM without appearing in one of them: the
+enumeration is fine, going stale silently is not.
+
+## LXXVI Clearing the standing lint debt so the gate can go absolute (Block BV) (T967)
+
+`roadkeep.toml` says it plainly: the gate is wired against a baseline because a corpus
+this old cannot pass an absolute count on adoption day, and the baseline goes the day
+`roadkeep -C . lint` exits 0. Nothing has moved it since, and the forgiven set is now
+the only thing between here and that day.
+
+It is small and it is mechanical. Twenty-five are `ref.dangling` — prose citing a `§` no
+prose file declares, mostly early sections (§III.1.1, §V.1.1) pointing at addresses that
+were renumbered or shipped away years ago. Each is one sentence: repoint it, or rewrite
+the clause that leant on it. `roadkeep origin` answers which commit took the section, so
+most of them can be corrected rather than deleted.
+
+The twenty-sixth is `path.missing` on the `T759` ledger entry, which names a script
+later extracted into the model-catalog repository. That one is filed upstream as RK1217
+— the remedy roadkeep offers today would replace ~1,500 characters of as-built record
+with a 200-character sentence — so it waits for the tool rather than for us.
+
+Do the twenty-five, confirm `lint` exits 0 with the `T759` finding as the only survivor,
+and then drop `--baseline` from `roadkeep.yml` once RK1217 lands. A gate nobody has to
+argue with is worth more than the hour this costs.
