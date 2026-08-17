@@ -1355,17 +1355,18 @@ these block the Dumont collection work — a sidecar
 
 ### XXVII.0 The gap & the framing
 
-Benchmarking the site against Meilisearch, Supabase, Dify, PostHog, Deep Agents
-and AG-UI showed the conversion blocker is **positioning → proof →
-time-to-first-value**, not visual design (full analysis in §XIV). The build
-answers the five 10-second questions a visitor asks, and turns artifacts we
-already maintain (stars, CLI, ROADMAP/CHANGELOG) into trust signals.
+Benchmarking the site against Meilisearch, Supabase, Dify, PostHog, Deep Agents and
+AG-UI showed the conversion blocker is **positioning → proof → time-to-first-value**,
+not visual design (the multi-tenancy analysis that framing came from shipped with Block
+J; its operator half is [MULTI_TENANCY.md](MULTI_TENANCY.md)). The build answers the
+five 10-second questions a visitor asks, and turns artifacts we already maintain (stars,
+CLI, ROADMAP/CHANGELOG) into trust signals.
 
-The home of the site is `frontend/apps/site` (React 19 + Vite + Tailwind v4 +
-shadcn, standalone, no SDK/backend dependency). Content lives in one place,
-`src/lib/site-content.ts`; sections are thin renderers in
-`src/components/sections/`. Deploy: `pnpm build:site` → `apps/site/dist/*` copied
-to the Pages root by `publish-github-pages.yml`.
+The home of the site is `frontend/apps/site` (React 19 + Vite + Tailwind v4 + shadcn,
+standalone, no SDK/backend dependency). Content lives in one place,
+`src/lib/site-content.ts`; sections are thin renderers in `src/components/sections/`.
+Deploy: `pnpm build:site` → `apps/site/dist/*` copied to the Pages root by
+`publish-github-pages.yml`.
 
 ## XXVIII. Provider coverage + cross-vendor capability exploitation (Block AD)
 
