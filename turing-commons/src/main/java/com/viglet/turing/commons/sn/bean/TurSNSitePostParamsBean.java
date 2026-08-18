@@ -54,6 +54,7 @@ public class TurSNSitePostParamsBean implements Serializable {
 	private String group;
 	private String locale;
 	private List<String> fieldList;
+	private String profile;
 	private boolean disableAutoComplete = false;
 	private List<String> targetingRules = new ArrayList<>();
 	private Map<String, List<String>> targetingRulesWithCondition = new HashMap<>();

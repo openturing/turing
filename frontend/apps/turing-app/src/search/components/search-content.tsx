@@ -69,7 +69,13 @@ export function SearchContent({ siteName }: Readonly<SearchContentProps>) {
   if (!store.data) return null;
 
   const { data, chat, documents, params } = store;
-  const defaultLocale = data.widget.locales[0]?.locale ?? "";
+  // The backend omits `widget` when it can't build a full response (e.g. Solr
+  // rejected the query). Degrade to the error card instead of white-screening
+  // on `data.widget.locales` (mirrors the queryContext guard in resolve.ts).
+  if (!data.widget) {
+    return <SearchError siteName={siteName} error={store.error} onShowAll={store.showAll} />;
+  }
+  const defaultLocale = data.widget.locales?.[0]?.locale ?? "";
   const currentLocale = params._setlocale || defaultLocale;
   const showAiMode = aiModeActive && aiModeAvailable;
 

@@ -1,0 +1,153 @@
+databaseChangeLog:
+  # Generic global profiles (spec 002-perfis-genericos-gerenciamento).
+  # A global TurProfile is created/managed under "Management"; its facet ordering
+  # is configured per (profile x SN site) in TurProfileFacetOrdering. Only DDL
+  # lives here (ids are app-assigned UUIDs); the default "Padrao" profile and the
+  # migration of spec-001 per-site profiles run at startup (TurProfileMigrationOnStartup).
+
+  - changeSet:
+      id: v2026.2.7.9-create-tur-profile-table
+      author: arthur-nascimento
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - tableExists:
+                tableName: tur_profile
+      changes:
+        - createTable:
+            tableName: tur_profile
+            columns:
+              - column:
+                  name: id
+                  type: VARCHAR(255)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: name
+                  type: VARCHAR(100)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: description
+                  type: VARCHAR(500)
+              - column:
+                  name: default_profile
+                  type: boolean
+                  defaultValueBoolean: false
+                  constraints:
+                    nullable: false
+        - addPrimaryKey:
+            tableName: tur_profile
+            columnNames: id
+            constraintName: pk_tur_profile
+        - addUniqueConstraint:
+            tableName: tur_profile
+            columnNames: name
+            constraintName: uq_tur_profile_name
+
+  - changeSet:
+      id: v2026.2.7.9-create-tur-profile-facet-ordering-table
+      author: arthur-nascimento
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - tableExists:
+                tableName: tur_profile_facet_ordering
+      changes:
+        - createTable:
+            tableName: tur_profile_facet_ordering
+            columns:
+              - column:
+                  name: id
+                  type: VARCHAR(255)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: profile_id
+                  type: VARCHAR(255)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: sn_site_id
+                  type: VARCHAR(255)
+                  constraints:
+                    nullable: false
+        - addPrimaryKey:
+            tableName: tur_profile_facet_ordering
+            columnNames: id
+            constraintName: pk_tur_profile_facet_ordering
+        - addForeignKeyConstraint:
+            baseTableName: tur_profile_facet_ordering
+            baseColumnNames: profile_id
+            referencedTableName: tur_profile
+            referencedColumnNames: id
+            constraintName: fk_tur_profile_facet_ordering_profile
+            onDelete: CASCADE
+        - addForeignKeyConstraint:
+            baseTableName: tur_profile_facet_ordering
+            baseColumnNames: sn_site_id
+            referencedTableName: sn_site
+            referencedColumnNames: id
+            constraintName: fk_tur_profile_facet_ordering_site
+            onDelete: CASCADE
+        - addUniqueConstraint:
+            tableName: tur_profile_facet_ordering
+            columnNames: profile_id, sn_site_id
+            constraintName: uq_tur_profile_facet_ordering_profile_site
+
+  - changeSet:
+      id: v2026.2.7.9-create-tur-profile-facet-ordering-item-table
+      author: arthur-nascimento
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - tableExists:
+                tableName: tur_profile_facet_ordering_item
+      changes:
+        - createTable:
+            tableName: tur_profile_facet_ordering_item
+            columns:
+              - column:
+                  name: id
+                  type: VARCHAR(255)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: ordering_id
+                  type: VARCHAR(255)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: field_ext_id
+                  type: VARCHAR(255)
+              - column:
+                  name: custom_facet_id
+                  type: VARCHAR(255)
+              - column:
+                  name: facet_position
+                  type: INT
+        - addPrimaryKey:
+            tableName: tur_profile_facet_ordering_item
+            columnNames: id
+            constraintName: pk_tur_profile_facet_ordering_item
+        - addForeignKeyConstraint:
+            baseTableName: tur_profile_facet_ordering_item
+            baseColumnNames: ordering_id
+            referencedTableName: tur_profile_facet_ordering
+            referencedColumnNames: id
+            constraintName: fk_tur_profile_ordering_item_ordering
+            onDelete: CASCADE
+        - addForeignKeyConstraint:
+            baseTableName: tur_profile_facet_ordering_item
+            baseColumnNames: field_ext_id
+            referencedTableName: sn_site_field_ext
+            referencedColumnNames: id
+            constraintName: fk_tur_profile_ordering_item_field_ext
+            onDelete: CASCADE
+        - addForeignKeyConstraint:
+            baseTableName: tur_profile_facet_ordering_item
+            baseColumnNames: custom_facet_id
+            referencedTableName: sn_site_custom_facet
+            referencedColumnNames: id
+            constraintName: fk_tur_profile_ordering_item_custom_facet
+            onDelete: CASCADE

@@ -225,6 +225,7 @@ public class TurSNSearchRuleEvaluator {
                 }
             }
             case SET_BOOST_QUERY -> params.setBoostQueries(List.of(value));
+            case SET_PROFILE -> params.setProfile(value);
         }
     }
 }

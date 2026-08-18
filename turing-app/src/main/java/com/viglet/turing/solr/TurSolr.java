@@ -7,11 +7,14 @@ import static com.viglet.turing.solr.TurSolrConstants.TUR_SPELL;
 import static com.viglet.turing.solr.TurSolrConstants.TUR_SUGGEST;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.apache.commons.lang3.StringUtils;
@@ -40,6 +43,7 @@ import com.viglet.turing.commons.se.result.spellcheck.TurSESpellCheckResult;
 import com.viglet.turing.commons.sn.search.TurSNSiteSearchContext;
 import com.viglet.turing.commons.utils.TurCommonsUtils;
 import com.viglet.turing.persistence.model.sn.TurSNSite;
+import com.viglet.turing.persistence.repository.profile.TurProfileRepository;
 import com.viglet.turing.persistence.repository.sn.TurSNSiteRepository;
 import com.viglet.turing.persistence.repository.sn.field.TurSNSiteCustomFacetRepository;
 import com.viglet.turing.persistence.repository.sn.sort.TurSNSiteCustomSortRepository;
@@ -49,6 +53,7 @@ import com.viglet.turing.persistence.repository.sn.ranking.TurSNRankingExpressio
 import com.viglet.turing.se.result.TurSEResult;
 import com.viglet.turing.se.result.TurSEResults;
 import com.viglet.turing.observability.TurSearchPipelineObservation;
+import com.viglet.turing.profile.TurProfileFieldConfigService;
 import com.viglet.turing.sn.TurSNFieldProcess;
 import com.viglet.turing.sn.TurSNUtils;
 import com.viglet.turing.sn.searchrule.TurSNSearchRuleEvaluator;
@@ -70,6 +75,16 @@ public class TurSolr {
     private static final Pattern SPELL_CHECK_SPECIAL_CHARS =
             Pattern.compile("[+\\-!(){}\\[\\]^~*?:\\\\/&|]");
 
+    /**
+     * Extracts the field name from a Solr {@code undefined field: "name"} rejection message.
+     * Handles both quoted ({@code undefined field: "catedras"}) and unquoted variants.
+     */
+    private static final Pattern UNDEFINED_FIELD =
+            Pattern.compile("undefined field:?\\s*\"?([^\"\\s]+)\"?");
+
+    /** Solr parameter holding the date-range facet fields ({@code facet.range}). */
+    private static final String FACET_RANGE = "facet.range";
+
     private final TurSNSiteRepository turSNSiteRepository;
     private final boolean isCommitEnabled;
     private final TurSolrDocumentHandler turSolrDocumentHandler;
@@ -88,7 +103,9 @@ public class TurSolr {
             TurDecimalFieldNormalizer turDecimalFieldNormalizer,
             TurSNSearchRuleEvaluator turSNSearchRuleEvaluator,
             TurSNSiteSearchSnapshotService snapshotService,
-            TurSearchPipelineObservation pipelineObservation) {
+            TurSearchPipelineObservation pipelineObservation,
+            TurProfileRepository turProfileRepository,
+            TurProfileFieldConfigService turProfileFieldConfigService) {
         this.isCommitEnabled = isCommitEnabled;
         this.turSNSiteRepository = turSNSiteRepository;
         this.turSolrDocumentHandler = new TurSolrDocumentHandler(commitWithin, turSNSiteFieldUtils,
@@ -96,7 +113,8 @@ public class TurSolr {
         this.turSolrQueryBuilder = new TurSolrQueryBuilder(turSNSiteFieldExtRepository,
                 turSNSiteCustomFacetRepository, turSNSiteCustomSortRepository,
                 turSNRankingExpressionRepository, turSNRankingConditionRepository, turSNTargetingRules,
-                turSNSearchRuleEvaluator, snapshotService);
+                turSNSearchRuleEvaluator, snapshotService, turProfileRepository,
+                turProfileFieldConfigService);
         this.turSolrResultProcessor = new TurSolrResultProcessor(turSNFieldProcess,
                 turSNSiteFieldExtRepository, turSNSiteCustomFacetRepository, pipelineObservation);
     }
@@ -294,17 +312,165 @@ public class TurSolr {
 
     public static Optional<QueryResponse> executeSolrQuery(TurSolrInstance turSolrInstance, SolrQuery query) {
         String core = turSolrInstance.getCore();
-        try {
-            QueryResponse response = turSolrInstance.getSolrClient().query(core, query);
-            return Optional.ofNullable(response);
-        } catch (SolrServerException | IOException e) {
-            logSolrException(query, e, false);
-        } catch (SolrException e) {
-            // RemoteSolrException (server-side rejection, e.g. undefined field) is unchecked
-            // and would otherwise escape the resilience wrapper as an unhandled exception.
-            logSolrException(query, e, true);
+        // A facet on a field that does not exist in this core's schema makes Solr reject the
+        // WHOLE query (documents included). That happens on partially-indexed cores, where a
+        // configured facet field was never created because no document ever carried it — and on
+        // profile-driven searches, where a profile can enable a facet on a field the core does
+        // not have yet. Instead of failing the entire search, strip the offending facet and retry.
+        // All three facet flavours are covered (facet.field, facet.range and the custom facet.query),
+        // since a date-range or custom facet on a missing field rejects the query just the same.
+        // The retry budget is bounded by the number of facet entries, so it can never loop unbounded.
+        int maxAttempts = 1 + facetEntryCount(query);
+        for (int attempt = 0; attempt < maxAttempts; attempt++) {
+            try {
+                QueryResponse response = turSolrInstance.getSolrClient().query(core, query);
+                return Optional.ofNullable(response);
+            } catch (SolrServerException | IOException e) {
+                logSolrException(query, e, false);
+                return Optional.empty();
+            } catch (SolrException e) {
+                // RemoteSolrException (server-side rejection, e.g. undefined field) is unchecked
+                // and would otherwise escape the resilience wrapper as an unhandled exception.
+                String removedFacet = removeUndefinedFacet(query, e);
+                if (removedFacet == null) {
+                    // The undefined field is not a facet we can strip (e.g. it is in q/fq/hl),
+                    // so retrying would not help — log and give up as before.
+                    logSolrException(query, e, true);
+                    return Optional.empty();
+                }
+                log.warn("Skipping undefined facet field '{}' in Solr core '{}' and retrying query.",
+                        removedFacet, core);
+            }
         }
         return Optional.empty();
+    }
+
+    /**
+     * When Solr rejects a query for an {@code undefined field}, removes every facet entry bound to
+     * that field so the caller can retry. Covers the three flavours Turing emits:
+     * {@code facet.field}, {@code facet.range} (date-range facets) and {@code facet.query} (custom
+     * facets). Returns the removed field name, or {@code null} when the undefined field is not a
+     * stripable facet (the caller must then stop retrying) — e.g. it came from {@code q}/{@code fq}/
+     * {@code hl}, where dropping a facet would not help.
+     * <p>
+     * Entries may carry a leading Solr local-params block (e.g. {@code {!ex=tag}catedras} or
+     * {@code {!key='Ano::2026'}dataInicio:[…]}); the bare expression is matched against the field.
+     */
+    private static String removeUndefinedFacet(SolrQuery query, SolrException e) {
+        String field = parseUndefinedField(e.getMessage());
+        if (field == null) {
+            return null;
+        }
+        boolean removed = removeUndefinedFacetField(query, field);
+        removed |= removeUndefinedFacetRange(query, field);
+        removed |= removeUndefinedFacetQuery(query, field);
+        return removed ? field : null;
+    }
+
+    private static boolean removeUndefinedFacetField(SolrQuery query, String field) {
+        String[] facetFields = query.getFacetFields();
+        if (facetFields == null) {
+            return false;
+        }
+        boolean removed = false;
+        for (String facetField : facetFields) {
+            if (bareFacetField(facetField).equals(field)) {
+                query.removeFacetField(facetField);
+                removed = true;
+            }
+        }
+        return removed;
+    }
+
+    /**
+     * Drops the {@code facet.range} entries of the undefined field, along with the per-field range
+     * parameters Solr would otherwise keep ({@code f.<field>.facet.range.*}). A date-range facet on
+     * a field missing from the core rejects the whole query exactly like a plain facet field does.
+     */
+    private static boolean removeUndefinedFacetRange(SolrQuery query, String field) {
+        String[] facetRanges = query.getParams(FACET_RANGE);
+        if (facetRanges == null) {
+            return false;
+        }
+        List<String> kept = new ArrayList<>();
+        boolean removed = false;
+        for (String facetRange : facetRanges) {
+            if (bareFacetField(facetRange).equals(field)) {
+                removed = true;
+            } else {
+                kept.add(facetRange);
+            }
+        }
+        if (!removed) {
+            return false;
+        }
+        if (kept.isEmpty()) {
+            query.remove(FACET_RANGE);
+        } else {
+            query.setParam(FACET_RANGE, kept.toArray(new String[0]));
+        }
+        removePerFieldParams(query, field);
+        return true;
+    }
+
+    /**
+     * Drops the custom-facet {@code facet.query} entries that filter on the undefined field. The
+     * expression carries the field name after the local-params block (e.g.
+     * {@code {!key='Ano::2026'}dataInicio:[2026-01-01T00:00:00Z TO *]}).
+     */
+    private static boolean removeUndefinedFacetQuery(SolrQuery query, String field) {
+        String[] facetQueries = query.getFacetQuery();
+        if (facetQueries == null) {
+            return false;
+        }
+        boolean removed = false;
+        for (String facetQuery : facetQueries) {
+            if (facetQueryTargetsField(facetQuery, field)) {
+                query.removeFacetQuery(facetQuery);
+                removed = true;
+            }
+        }
+        return removed;
+    }
+
+    /** {@code true} when the facet query filters on {@code field} (i.e. starts with "field:"). */
+    private static boolean facetQueryTargetsField(String facetQuery, String field) {
+        return bareFacetField(facetQuery).startsWith(field + ":");
+    }
+
+    /** Removes the {@code f.<field>.*} per-field parameters left behind by a stripped facet. */
+    private static void removePerFieldParams(SolrQuery query, String field) {
+        String prefix = "f." + field + ".";
+        List<String> toRemove = new ArrayList<>();
+        Iterator<String> names = query.getParameterNamesIterator();
+        while (names.hasNext()) {
+            String name = names.next();
+            if (name.startsWith(prefix)) {
+                toRemove.add(name);
+            }
+        }
+        toRemove.forEach(query::remove);
+    }
+
+    /** Total facet entries in the query — the upper bound for strip-and-retry attempts. */
+    private static int facetEntryCount(SolrQuery query) {
+        return Optional.ofNullable(query.getFacetFields()).map(f -> f.length).orElse(0)
+                + Optional.ofNullable(query.getParams(FACET_RANGE)).map(f -> f.length).orElse(0)
+                + Optional.ofNullable(query.getFacetQuery()).map(f -> f.length).orElse(0);
+    }
+
+    private static String parseUndefinedField(String message) {
+        if (message == null) {
+            return null;
+        }
+        Matcher matcher = UNDEFINED_FIELD.matcher(message);
+        return matcher.find() ? matcher.group(1) : null;
+    }
+
+    private static String bareFacetField(String facetField) {
+        // Strip a leading local-params block, e.g. "{!ex=tag}catedras" -> "catedras".
+        int close = facetField.lastIndexOf('}');
+        return close >= 0 ? facetField.substring(close + 1) : facetField;
     }
 
     private static void logSolrException(SolrQuery query, Exception e, boolean isRemote) {

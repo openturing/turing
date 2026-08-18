@@ -188,6 +188,11 @@ public class TurSNSiteImport {
 			saveSNSiteMergeProviders(turSNSiteExchange, savedSite);
 			saveSNSiteCustomSorts(turSNSiteExchange, savedSite);
 
+			// The default "Padrão" profile ordering is seeded per site from the legacy
+			// facetPosition columns by TurProfileMigrationOnStartup on the next boot; until
+			// then the search read path falls back to facetPosition, so imported facets are
+			// ordered correctly without persisting an ordering here.
+
 			log.info("Imported SN Site: {} ({})", savedSite.getName(), savedSite.getId());
 		}
 		clearSemanticNavigationCaches();

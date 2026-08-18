@@ -320,8 +320,11 @@ public class TurSolrDocumentHandler {
             updateRequest.add(document);
             updateRequest.setCommitWithin(commitWithin);
             updateRequest.process(turSolrInstance.getSolrClient(), turSolrInstance.getCore());
-        } catch (SolrServerException | IOException e) {
-            log.error(e.getMessage(), e);
+        } catch (Exception e) {
+            // Catch broadly (incl. Solr RemoteSolrException, a RuntimeException) so a single
+            // malformed document (schema/data mismatch) is logged and skipped instead of
+            // propagating to the JMS listener and causing endless re-delivery of the job.
+            log.error("Failed to index document in Solr: {}", e.getMessage(), e);
         }
     }
 }

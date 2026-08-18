@@ -1,0 +1,27 @@
+{
+  "profile": {
+    "title": "Profiles",
+    "description": "Generic, reusable profiles. Select and configure them per feature (e.g. facet ordering).",
+    "default": "Default",
+    "new": "New profile",
+    "edit": "Edit",
+    "rename": "Rename",
+    "delete": "Delete",
+    "setDefault": "Set as default",
+    "createTitle": "New profile",
+    "editTitle": "Edit profile",
+    "namePlaceholder": "Profile name",
+    "descriptionPlaceholder": "Description (optional)",
+    "save": "Save",
+    "cancel": "Cancel",
+    "created": "Profile \"{{name}}\" created",
+    "updated": "Profile updated",
+    "removed": "Profile deleted",
+    "defaultSet": "Default profile updated",
+    "confirmDelete": "Delete the profile \"{{name}}\"?",
+    "cannotRenameDefault": "The default profile cannot be renamed (its description can).",
+    "loadError": "Error loading profiles",
+    "saveError": "Could not save the profile",
+    "deleteError": "Could not delete the profile"
+  }
+}

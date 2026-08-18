@@ -147,6 +147,39 @@ public class TurSolrUtils {
         }
     }
 
+    /**
+     * Makes the Solr field multiValued while PRESERVING its current type. No-op
+     * when the field is missing or already multiValued. It never changes the
+     * field type: flipping a numeric/points type (e.g. pdouble→pfloat) corrupts
+     * an index that already has documents ("cannot change field ... numBytes").
+     *
+     * @since 2026.2.7
+     */
+    public static void reconcileMultiValued(TurSEInstance turSEInstance, String coreName,
+            String fieldName) {
+        if (!existsField(turSEInstance, coreName, fieldName)) {
+            return;
+        }
+        TurSolrFieldBean current = getField(turSEInstance, coreName, fieldName);
+        if (current == null || current.isMultiValued()) {
+            return;
+        }
+        TurSEFieldType preservedType = null;
+        for (TurSEFieldType type : TurSEFieldType.values()) {
+            if (getSolrFieldType(type).equals(current.getType())) {
+                preservedType = type;
+                break;
+            }
+        }
+        if (preservedType == null) {
+            log.warn("Skipping multiValued reconciliation for field '{}' (core '{}'): "
+                    + "unknown Solr type '{}'", fieldName, coreName, current.getType());
+            return;
+        }
+        addOrUpdateField(TurSolrFieldAction.REPLACE, turSEInstance, coreName, fieldName,
+                preservedType, true, true);
+    }
+
     private static void ensureCurrencyFieldTypeByCore(TurSEInstance turSEInstance,
             String coreName, TurSEFieldType turSEFieldType) {
         if (turSEFieldType != TurSEFieldType.CURRENCY) {

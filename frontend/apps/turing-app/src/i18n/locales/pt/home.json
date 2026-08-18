@@ -88,6 +88,10 @@
         "title": "Páginas",
         "description": "Implante e gerencie sites SPA servidos pelo MinIO."
       },
+      "profiles": {
+        "title": "Perfis",
+        "description": "Crie perfis genéricos reutilizáveis, escolhidos e configurados em cada recurso (ex.: ordenação de facetas)."
+      },
       "assets": {
         "title": "Ativos",
         "description": "Navegue e gerencie arquivos armazenados no MinIO."

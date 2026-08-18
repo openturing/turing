@@ -29,6 +29,7 @@ public class TurPrivilegeOnStartup implements ApplicationRunner {
     private static final String CATEGORY_STORE = "STORE";
     private static final String CATEGORY_AI_AGENT = "AI_AGENT";
     private static final String CATEGORY_INTENT = "INTENT";
+    private static final String CATEGORY_PROFILE = "PROFILE";
 
     private static final String[][] PRIVILEGE_DEFINITIONS = {
         {"READ_PRIVILEGE", "Legacy read privilege", "SYSTEM"},
@@ -68,6 +69,11 @@ public class TurPrivilegeOnStartup implements ApplicationRunner {
         {"INTENT_CREATE", "Create Intent categories", CATEGORY_INTENT},
         {"INTENT_EDIT", "Edit Intent categories", CATEGORY_INTENT},
         {"INTENT_DELETE", "Delete Intent categories", CATEGORY_INTENT},
+
+        {"PROFILE_VIEW", "View generic profiles", CATEGORY_PROFILE},
+        {"PROFILE_CREATE", "Create generic profiles", CATEGORY_PROFILE},
+        {"PROFILE_EDIT", "Edit generic profiles", CATEGORY_PROFILE},
+        {"PROFILE_DELETE", "Delete generic profiles", CATEGORY_PROFILE},
     };
 
     private final TurPrivilegeRepository turPrivilegeRepository;

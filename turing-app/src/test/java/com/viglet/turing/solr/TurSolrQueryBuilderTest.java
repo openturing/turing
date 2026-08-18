@@ -34,6 +34,8 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 
 import org.apache.solr.client.solrj.request.SolrQuery;
@@ -45,8 +47,10 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import com.viglet.turing.api.sn.bean.TurSNSiteFieldProfileConfigDto.FacetConfig;
 import com.viglet.turing.commons.se.TurSEParameters;
 import com.viglet.turing.commons.se.result.spellcheck.TurSESpellCheckResult;
+import com.viglet.turing.persistence.model.profile.TurProfile;
 import com.viglet.turing.commons.sn.TurSNConfig;
 import com.viglet.turing.commons.sn.bean.TurSNFilterParams;
 import com.viglet.turing.commons.sn.bean.TurSNSearchParams;
@@ -103,12 +107,18 @@ class TurSolrQueryBuilderTest {
         @Mock
         private com.viglet.turing.sn.snapshot.TurSNSiteSearchSnapshotService snapshotService;
 
+        @Mock
+        private com.viglet.turing.persistence.repository.profile.TurProfileRepository turProfileRepository;
+
+        @Mock
+        private com.viglet.turing.profile.TurProfileFieldConfigService turProfileFieldConfigService;
+
         private TurSolrQueryBuilder builder() {
                 return new TurSolrQueryBuilder(turSNSiteFieldExtRepository,
                                 turSNSiteCustomFacetRepository,
                                 turSNSiteCustomSortRepository,
                                 turSNRankingExpressionRepository, turSNRankingConditionRepository,
-                                turSNTargetingRules, turSNSearchRuleEvaluator, snapshotService);
+                                turSNTargetingRules, turSNSearchRuleEvaluator, snapshotService, turProfileRepository, turProfileFieldConfigService);
         }
 
         private TurSNSiteSearchContext contextFrom(TurSEParameters parameters,
@@ -122,7 +132,7 @@ class TurSolrQueryBuilderTest {
         @Test
         void testHasGroupWhenGroupIsPresent() {
                 TurSolrQueryBuilder builder = new TurSolrQueryBuilder(turSNSiteFieldExtRepository, turSNSiteCustomFacetRepository,
-                                turSNSiteCustomSortRepository, turSNRankingExpressionRepository, turSNRankingConditionRepository, turSNTargetingRules, turSNSearchRuleEvaluator, snapshotService);
+                                turSNSiteCustomSortRepository, turSNRankingExpressionRepository, turSNRankingConditionRepository, turSNTargetingRules, turSNSearchRuleEvaluator, snapshotService, turProfileRepository, turProfileFieldConfigService);
                 TurSNSearchParams searchParams = new TurSNSearchParams();
                 searchParams.setGroup("group");
                 TurSEParameters parameters = new TurSEParameters(
@@ -134,7 +144,7 @@ class TurSolrQueryBuilderTest {
         @Test
         void testHasGroupWhenGroupIsMissing() {
                 TurSolrQueryBuilder builder = new TurSolrQueryBuilder(turSNSiteFieldExtRepository, turSNSiteCustomFacetRepository,
-                                turSNSiteCustomSortRepository, turSNRankingExpressionRepository, turSNRankingConditionRepository, turSNTargetingRules, turSNSearchRuleEvaluator, snapshotService);
+                                turSNSiteCustomSortRepository, turSNRankingExpressionRepository, turSNRankingConditionRepository, turSNTargetingRules, turSNSearchRuleEvaluator, snapshotService, turProfileRepository, turProfileFieldConfigService);
                 TurSNSearchParams searchParams = new TurSNSearchParams();
                 TurSEParameters parameters = new TurSEParameters(
                                 searchParams);
@@ -145,7 +155,7 @@ class TurSolrQueryBuilderTest {
         @Test
         void testGetFqFieldsExtractsKeys() {
                 TurSolrQueryBuilder builder = new TurSolrQueryBuilder(turSNSiteFieldExtRepository, turSNSiteCustomFacetRepository,
-                                turSNSiteCustomSortRepository, turSNRankingExpressionRepository, turSNRankingConditionRepository, turSNTargetingRules, turSNSearchRuleEvaluator, snapshotService);
+                                turSNSiteCustomSortRepository, turSNRankingExpressionRepository, turSNRankingConditionRepository, turSNTargetingRules, turSNSearchRuleEvaluator, snapshotService, turProfileRepository, turProfileFieldConfigService);
                 TurSNFilterParams params = TurSNFilterParams.builder()
                                 .defaultValues(List.of("category:books", "type:article"))
                                 .and(List.of("author:john"))
@@ -187,7 +197,7 @@ class TurSolrQueryBuilderTest {
                                 .thenReturn(List.of(categoryFacet, typeFacet));
 
                 TurSolrQueryBuilder builder = new TurSolrQueryBuilder(turSNSiteFieldExtRepository, turSNSiteCustomFacetRepository,
-                                turSNSiteCustomSortRepository, turSNRankingExpressionRepository, turSNRankingConditionRepository, turSNTargetingRules, turSNSearchRuleEvaluator, snapshotService);
+                                turSNSiteCustomSortRepository, turSNRankingExpressionRepository, turSNRankingConditionRepository, turSNTargetingRules, turSNSearchRuleEvaluator, snapshotService, turProfileRepository, turProfileFieldConfigService);
                 TurSNFacetTypeContext context = new TurSNFacetTypeContext(site, params);
 
                 List<String> fields = builder.getFacetFieldsInFilterQuery(context);
@@ -246,6 +256,64 @@ class TurSolrQueryBuilderTest {
         }
 
         @Test
+        void testPrepareQueryFacetAppliesProfileFacetConfig() {
+                // spec 003 runtime: a non-default profile turns 'beta' into a facet (global off)
+                // and hides 'alpha' (global on). Candidate set follows the EFFECTIVE facet flag.
+                TurSNSite site = new TurSNSite();
+                TurSNSiteFieldExt alpha = TurSNSiteFieldExt.builder().id("a").name("alpha").facet(1)
+                                .enabled(1).build();
+                TurSNSiteFieldExt beta = TurSNSiteFieldExt.builder().id("b").name("beta").facet(0)
+                                .enabled(1).build();
+                TurProfile profile = TurProfile.builder().id("p").name("Cursos").defaultProfile(false).build();
+
+                when(turSNSiteFieldExtRepository.findByTurSNSiteAndEnabled(site, 1))
+                                .thenReturn(List.of(alpha, beta));
+                when(turSNSiteCustomFacetRepository.findByFieldExtsWithDetails(any()))
+                                .thenReturn(Collections.emptyList());
+                when(turProfileRepository.findByNameIgnoreCase("Cursos"))
+                                .thenReturn(Optional.of(profile));
+                when(turProfileFieldConfigService.resolveEffective(eq(profile), any()))
+                                .thenReturn(Map.of(
+                                                "a", facetConfig(0),
+                                                "b", facetConfig(1)));
+
+                TurSNSearchParams searchParams = new TurSNSearchParams();
+                TurSEParameters parameters = new TurSEParameters(searchParams);
+                parameters.setProfile("Cursos");
+
+                List<TurSNSiteFieldExt> facets = builder().prepareQueryFacet(site, new SolrQuery(),
+                                TurSNFilterParams.builder().build(), parameters);
+
+                assertThat(facets).extracting(TurSNSiteFieldExt::getName).containsExactly("beta");
+        }
+
+        @Test
+        void testPrepareQueryFacetWithoutProfileUsesGlobalFacets() {
+                TurSNSite site = new TurSNSite();
+                TurSNSiteFieldExt alpha = TurSNSiteFieldExt.builder().id("a").name("alpha").facet(1)
+                                .enabled(1).build();
+                TurSNSiteFieldExt beta = TurSNSiteFieldExt.builder().id("b").name("beta").facet(0)
+                                .enabled(1).build();
+                when(turSNSiteFieldExtRepository.findByTurSNSiteAndEnabled(site, 1))
+                                .thenReturn(List.of(alpha, beta));
+                when(turSNSiteCustomFacetRepository.findByFieldExtsWithDetails(any()))
+                                .thenReturn(Collections.emptyList());
+
+                TurSEParameters parameters = new TurSEParameters(new TurSNSearchParams());
+
+                List<TurSNSiteFieldExt> facets = builder().prepareQueryFacet(site, new SolrQuery(),
+                                TurSNFilterParams.builder().build(), parameters);
+
+                // No profile → global path: only the globally-enabled facet, profile service untouched.
+                assertThat(facets).extracting(TurSNSiteFieldExt::getName).containsExactly("alpha");
+                verify(turProfileFieldConfigService, org.mockito.Mockito.never()).resolveEffective(any(), any());
+        }
+
+        private static FacetConfig facetConfig(int facet) {
+                return new FacetConfig(facet, null, null, null, null, null, null, null);
+        }
+
+        @Test
         void testPrepareQueryMLTConfiguresQueryWhenEnabled() {
                 TurSNSite site = new TurSNSite();
                 site.setMlt(1);
@@ -254,7 +322,7 @@ class TurSolrQueryBuilderTest {
                                 .thenReturn(List.of(mltField));
 
                 TurSolrQueryBuilder builder = new TurSolrQueryBuilder(turSNSiteFieldExtRepository, turSNSiteCustomFacetRepository,
-                                turSNSiteCustomSortRepository, turSNRankingExpressionRepository, turSNRankingConditionRepository, turSNTargetingRules, turSNSearchRuleEvaluator, snapshotService);
+                                turSNSiteCustomSortRepository, turSNRankingExpressionRepository, turSNRankingConditionRepository, turSNTargetingRules, turSNSearchRuleEvaluator, snapshotService, turProfileRepository, turProfileFieldConfigService);
                 SolrQuery query = new SolrQuery();
 
                 List<TurSNSiteFieldExt> result = builder.prepareQueryMLT(site, query);

@@ -25,6 +25,7 @@ import type {
 } from "@/models/sn/sn-site-search-rule.model"
 import type { TurSNSiteCustomSort } from "@/models/sn/sn-site-custom-sort.model"
 import type { TurSNSiteFacetOrdering } from "@/models/sn/sn-site-facet-ordering.model"
+import type { TurProfile } from "@/models/profile/profile.model"
 import { SortValueSelector } from "./sn.site.search.rule.conditions"
 import { IconBolt, IconCirclePlus, IconTrash } from "@tabler/icons-react"
 import React, { useMemo } from "react"
@@ -33,9 +34,9 @@ import type { UseFormReturn } from "react-hook-form"
 
 const ACTION_TYPES: TurSNSiteSearchRuleActionType[] = [
     "SET_SORT", "ADD_FACETS", "REMOVE_FACETS",
-    "SET_ROWS", "ADD_FILTER_QUERY", "SET_BOOST_QUERY"
+    "SET_ROWS", "ADD_FILTER_QUERY", "SET_BOOST_QUERY", "SET_PROFILE"
 ];
-const SINGLE_USE_ACTION_TYPES = new Set<TurSNSiteSearchRuleActionType>(["SET_SORT", "SET_ROWS"]);
+const SINGLE_USE_ACTION_TYPES = new Set<TurSNSiteSearchRuleActionType>(["SET_SORT", "SET_ROWS", "SET_PROFILE"]);
 
 // ── Facet Selector ──────────────────────────────────────────────────
 // Shows all available facets (field + custom) as a checkbox list.
@@ -153,9 +154,10 @@ interface Props {
     fieldOptions: TurSNSiteSearchRuleFieldOption[];
     customSorts: TurSNSiteCustomSort[];
     facets: TurSNSiteFacetOrdering[];
+    profiles: TurProfile[];
 }
 
-export const SNSiteSearchRuleActions: React.FC<Props> = ({ form, fieldOptions, customSorts, facets }) => {
+export const SNSiteSearchRuleActions: React.FC<Props> = ({ form, fieldOptions, customSorts, facets, profiles }) => {
     const { t } = useTranslation();
     const actions = form.watch("actions") || [];
 
@@ -255,6 +257,24 @@ export const SNSiteSearchRuleActions: React.FC<Props> = ({ form, fieldOptions, c
                         fieldOptions={fieldOptions} t={t}
                     />
                 );
+            case "SET_PROFILE":
+                return (
+                    <Select
+                        value={action.value || ""}
+                        onValueChange={(val) => updateActionField(index, "value", val)}
+                    >
+                        <SelectTrigger>
+                            <SelectValue placeholder={t("sn.searchRule.selectProfile")} />
+                        </SelectTrigger>
+                        <SelectContent>
+                            {profiles.map((p) => (
+                                <SelectItem key={p.id} value={p.name}>
+                                    {p.default ? t("sn.facets.profile.default") : p.name}
+                                </SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+                );
             default:
                 return (
                     <Input
@@ -335,5 +355,6 @@ function getActionPlaceholder(actionType: TurSNSiteSearchRuleActionType): string
         case "SET_ROWS": return "e.g. 20";
         case "ADD_FILTER_QUERY": return "e.g. type:article";
         case "SET_BOOST_QUERY": return "";
+        case "SET_PROFILE": return "";
     }
 }

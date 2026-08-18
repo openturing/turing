@@ -18,6 +18,7 @@
 package com.viglet.turing.api.sn.queue;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -26,6 +27,8 @@ import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.LocaleUtils;
 import org.apache.commons.lang3.ObjectUtils;
@@ -39,6 +42,7 @@ import com.viglet.turing.client.sn.job.TurSNJobAttributeSpec;
 import com.viglet.turing.client.sn.job.TurSNJobItem;
 import com.viglet.turing.client.sn.job.TurSNJobItems;
 import com.viglet.turing.commons.indexing.TurIndexingStatus;
+import com.viglet.turing.commons.se.field.TurSEFieldType;
 import com.viglet.turing.commons.sn.field.TurSNFieldName;
 import com.viglet.turing.commons.utils.TurCommonsUtils;
 import com.viglet.turing.logging.TurLoggingUtils;
@@ -76,6 +80,13 @@ public class TurSNProcessQueue {
     private final TurSNSiteFieldExtRepository turSNSiteFieldExtRepository;
     private final TurSNSiteFieldExtFacetRepository turSNSiteFieldExtFacetRepository;
     private final TurSEInstanceRepository turSEInstanceRepository;
+
+    /**
+     * Tracks (site:core:field) tuples whose Solr multiValued flag has already
+     * been reconciled in this JVM run, so the schema is repaired at most once
+     * per field instead of on every indexed document.
+     */
+    private final Set<String> reconciledMultiValuedFields = ConcurrentHashMap.newKeySet();
 
     public TurSNProcessQueue(TurSearchEnginePluginFactory pluginFactory,
             TurSNSiteRepository turSNSiteRepository,
@@ -213,6 +224,7 @@ public class TurSNProcessQueue {
         Map<String, Object> attributes = this.removeDuplicateTerms(turSNMergeProvidersProcess.mergeDocuments(turSNSite,
                 getConsolidateResults(turSNJobItem), turSNJobItem.getLocale()));
         createMissingFields(turSNSite, turSNJobItem.getSpecs());
+        promoteMultiValuedFromPayload(turSNSite, attributes);
         return pluginFactory.getPluginForSite(turSNSite).indexDocument(turSNSite, turSNJobItem.getLocale(), attributes);
     }
 
@@ -227,8 +239,111 @@ public class TurSNProcessQueue {
                                 turSNSiteLocale.getCore(), spec.getName()))
                         .forEach(turSNSiteLocale -> createFieldInSearchEngine(turSNSite,
                                 turSNSiteLocale.getCore(), turSNSiteField));
+            } else {
+                reconcileMultiValuedField(turSNSite, spec.getName());
             }
         });
+    }
+
+    /**
+     * Self-heals the Solr schema for an already-known field: when the field is
+     * multiValued in Turing but the Solr field was created single-valued (the
+     * flag changed afterwards), indexing several values fails with
+     * "multiple values encountered for non multiValued field". This REPLACEs the
+     * Solr field as multiValued. Reconciled at most once per (site, core, field)
+     * per JVM run (see {@link #reconciledMultiValuedFields}).
+     */
+    private void reconcileMultiValuedField(TurSNSite turSNSite, String fieldName) {
+        if (turSNSite.getTurSEInstance() == null
+                || !reconciledMultiValuedFields.add(turSNSite.getId() + ':' + fieldName)) {
+            // Either no engine, or this field was already reconciled in this JVM run.
+            return;
+        }
+        boolean multiValued = turSNSiteFieldRepository.findByTurSNSite(turSNSite).stream()
+                .filter(field -> field.getName().equals(fieldName))
+                .findFirst().map(field -> field.getMultiValued() == 1).orElse(false);
+        if (!multiValued) {
+            return;
+        }
+        turSEInstanceRepository.findById(turSNSite.getTurSEInstance().getId())
+                .ifPresent(seInstance -> {
+                    TurSearchEnginePlugin plugin = pluginFactory.getPluginForSite(turSNSite);
+                    // Make the engine field multiValued WITHOUT changing its type — changing a
+                    // numeric/points type (e.g. pdouble->pfloat) corrupts an existing index.
+                    turSNSiteLocaleRepository.findByTurSNSite(turSNSite).forEach(turSNSiteLocale ->
+                            plugin.reconcileMultiValued(seInstance, turSNSiteLocale.getCore(), fieldName));
+                });
+    }
+
+    /**
+     * Defensive fix for facet fields whose payload carries several values (e.g. a course with
+     * many offerings → multiple {@code endOfClasses} dates). When a NON-multiValued field of a
+     * non-concatenable type (DATE/numeric/BOOL/CURRENCY) receives multiple values, the document
+     * handler concatenates them into a single string that Solr rejects ("Invalid Date Math
+     * String" / number format error). This promotes the field to multiValued — in Turing and in
+     * the search engine, preserving the type — so each value is indexed separately. Runs at most
+     * once per (site, field) per JVM run.
+     */
+    private void promoteMultiValuedFromPayload(TurSNSite turSNSite, Map<String, Object> attributes) {
+        if (turSNSite.getTurSEInstance() == null || attributes == null) {
+            return;
+        }
+        Map<String, TurSNSiteField> fieldsByName = null;
+        for (Entry<String, Object> attribute : attributes.entrySet()) {
+            if (!hasMultipleValues(attribute.getValue())
+                    || !reconciledMultiValuedFields.add(turSNSite.getId() + ":mv:" + attribute.getKey())) {
+                continue;
+            }
+            if (fieldsByName == null) {
+                fieldsByName = turSNSiteFieldRepository.findByTurSNSite(turSNSite).stream()
+                        .collect(Collectors.toMap(TurSNSiteField::getName, field -> field, (a, b) -> a));
+            }
+            TurSNSiteField field = fieldsByName.get(attribute.getKey());
+            if (field != null && field.getMultiValued() != 1
+                    && concatenationBreaksType(field.getType())) {
+                promoteFieldToMultiValued(turSNSite, field);
+            }
+        }
+    }
+
+    private void promoteFieldToMultiValued(TurSNSite turSNSite, TurSNSiteField field) {
+        log.info("Auto-promoting field '{}' (type {}) to multiValued: document carries multiple "
+                + "values for a non-concatenable type.", field.getName(), field.getType());
+        field.setMultiValued(1);
+        turSNSiteFieldRepository.save(field);
+        turSNSiteFieldExtRepository.findByTurSNSiteAndEnabled(turSNSite, 1).stream()
+                .filter(fieldExt -> fieldExt.getName().equals(field.getName()))
+                .forEach(fieldExt -> {
+                    fieldExt.setMultiValued(1);
+                    turSNSiteFieldExtRepository.save(fieldExt);
+                });
+        turSEInstanceRepository.findById(turSNSite.getTurSEInstance().getId())
+                .ifPresent(seInstance -> {
+                    TurSearchEnginePlugin plugin = pluginFactory.getPluginForSite(turSNSite);
+                    turSNSiteLocaleRepository.findByTurSNSite(turSNSite).forEach(turSNSiteLocale ->
+                            plugin.reconcileMultiValued(seInstance, turSNSiteLocale.getCore(),
+                                    field.getName()));
+                });
+    }
+
+    private static boolean hasMultipleValues(Object value) {
+        if (value instanceof Collection<?> collection) {
+            return collection.size() > 1;
+        }
+        if (value instanceof org.json.JSONArray jsonArray) {
+            return jsonArray.length() > 1;
+        }
+        return false;
+    }
+
+    private static boolean concatenationBreaksType(TurSEFieldType type) {
+        if (type == null) {
+            return false;
+        }
+        return switch (type) {
+            case DATE, INT, LONG, FLOAT, DOUBLE, BOOL, CURRENCY -> true;
+            case STRING, TEXT, ARRAY -> false;
+        };
     }
 
     private void saveFaceLocales(TurSNJobAttributeSpec spec, TurSNSiteFieldExt turSNSiteFieldExt) {

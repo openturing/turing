@@ -5,7 +5,10 @@ import type { ResolvedDocument, ResolvedGroup, TurSearchResponse } from "./types
  * from the query context. Shared by provider and standalone hooks.
  */
 export function resolveDocuments(response: TurSearchResponse): ResolvedDocument[] {
-  const df = response.queryContext.defaultFields;
+  // Degrade gracefully when the backend returns no query context (e.g. the Solr
+  // query failed): show an empty result instead of throwing a TypeError.
+  const df = response?.queryContext?.defaultFields;
+  if (!df) return [];
   const docs = response.results?.document ??
     response.groups?.flatMap((g) => g.results?.document ?? []) ?? [];
   return docs.map((doc) => ({
@@ -23,8 +26,8 @@ export function resolveDocuments(response: TurSearchResponse): ResolvedDocument[
  * Maps raw API groups to ResolvedGroup with resolved documents.
  */
 export function resolveGroups(response: TurSearchResponse): ResolvedGroup[] {
-  if (!response.groups) return [];
-  const df = response.queryContext.defaultFields;
+  const df = response?.queryContext?.defaultFields;
+  if (!response.groups || !df) return [];
   return response.groups.map((g) => ({
     name: g.name,
     count: g.count,

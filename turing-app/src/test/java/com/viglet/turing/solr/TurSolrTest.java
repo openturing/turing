@@ -42,6 +42,7 @@ import org.apache.solr.client.solrj.response.QueryResponse;
 import org.apache.solr.client.solrj.response.SpellCheckResponse;
 import org.apache.solr.common.SolrDocument;
 import org.apache.solr.common.SolrDocumentList;
+import org.apache.solr.common.SolrException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -110,6 +111,12 @@ class TurSolrTest {
 
     @Mock
     private com.viglet.turing.sn.snapshot.TurSNSiteSearchSnapshotService snapshotService;
+
+    @Mock
+    private com.viglet.turing.persistence.repository.profile.TurProfileRepository turProfileRepository;
+
+    @Mock
+    private com.viglet.turing.profile.TurProfileFieldConfigService turProfileFieldConfigService;
 
     @Mock
     private HttpJdkSolrClient httpJdkSolrClient;
@@ -201,6 +208,88 @@ class TurSolrTest {
         var result = TurSolr.executeSolrQuery(turSolrInstance, new SolrQuery().setQuery("test"));
 
         assertThat(result).isEmpty();
+    }
+
+    @Test
+    void testExecuteSolrQueryStripsUndefinedFacetFieldAndRetries() throws Exception {
+        QueryResponse response = mock(QueryResponse.class);
+        // First two attempts are rejected for two different undefined facet fields; the third
+        // (after both are stripped) succeeds. Content must load instead of the whole query failing.
+        when(solrClient.query(eq("core"), any(SolrQuery.class)))
+                .thenThrow(new SolrException(SolrException.ErrorCode.BAD_REQUEST, "undefined field: \"catedras\""))
+                .thenThrow(new SolrException(SolrException.ErrorCode.BAD_REQUEST, "undefined field: \"temas\""))
+                .thenReturn(response);
+
+        SolrQuery query = new SolrQuery().setQuery("*:*");
+        query.addFacetField("catedras");
+        query.addFacetField("temas");
+        query.addFacetField("area");
+
+        var result = TurSolr.executeSolrQuery(turSolrInstance, query);
+
+        assertThat(result).contains(response);
+        // Only the rejected facet fields are stripped; valid ones stay.
+        assertThat(query.getFacetFields()).containsExactly("area");
+        verify(solrClient, times(3)).query(eq("core"), any(SolrQuery.class));
+    }
+
+    @Test
+    void testExecuteSolrQueryStripsUndefinedDateRangeFacetAndRetries() throws Exception {
+        QueryResponse response = mock(QueryResponse.class);
+        // A profile can enable a date-range facet on a field the core does not have yet (e.g. right
+        // after the profile is configured, before the reindex creates it). Solr rejects the WHOLE
+        // query, so the search would return nothing at all unless the range facet is stripped.
+        when(solrClient.query(eq("core"), any(SolrQuery.class)))
+                .thenThrow(new SolrException(SolrException.ErrorCode.BAD_REQUEST,
+                        "undefined field: \"endOfClasses\""))
+                .thenReturn(response);
+
+        SolrQuery query = new SolrQuery().setQuery("*:*");
+        query.addDateRangeFacet("endOfClasses", new java.util.Date(0), new java.util.Date(), "+1MONTH");
+        query.addDateRangeFacet("publicationDate", new java.util.Date(0), new java.util.Date(), "+1MONTH");
+
+        var result = TurSolr.executeSolrQuery(turSolrInstance, query);
+
+        assertThat(result).contains(response);
+        // Only the undefined range facet is dropped; the valid one and its per-field params stay.
+        assertThat(query.getParams("facet.range")).containsExactly("publicationDate");
+        assertThat(query.getParams("f.endOfClasses.facet.range.start")).isNull();
+        verify(solrClient, times(2)).query(eq("core"), any(SolrQuery.class));
+    }
+
+    @Test
+    void testExecuteSolrQueryStripsUndefinedCustomFacetQueryAndRetries() throws Exception {
+        QueryResponse response = mock(QueryResponse.class);
+        // Same for custom facets, which are emitted as facet.query entries filtering on the field.
+        when(solrClient.query(eq("core"), any(SolrQuery.class)))
+                .thenThrow(new SolrException(SolrException.ErrorCode.BAD_REQUEST,
+                        "undefined field: \"inscricaoAberta\""))
+                .thenReturn(response);
+
+        SolrQuery query = new SolrQuery().setQuery("*:*");
+        query.addFacetQuery("{!key='Inscrição::Aberta'}inscricaoAberta:[NOW TO *]");
+        query.addFacetQuery("{!key='Tipo::Curso'}type:curso");
+
+        var result = TurSolr.executeSolrQuery(turSolrInstance, query);
+
+        assertThat(result).contains(response);
+        assertThat(query.getFacetQuery()).containsExactly("{!key='Tipo::Curso'}type:curso");
+        verify(solrClient, times(2)).query(eq("core"), any(SolrQuery.class));
+    }
+
+    @Test
+    void testExecuteSolrQueryDoesNotRetryWhenUndefinedFieldIsNotAFacet() throws Exception {
+        // "undefined field" coming from q/fq/hl is not a stripable facet field: give up after one try.
+        when(solrClient.query(eq("core"), any(SolrQuery.class)))
+                .thenThrow(new SolrException(SolrException.ErrorCode.BAD_REQUEST, "undefined field: \"preco\""));
+
+        SolrQuery query = new SolrQuery().setQuery("preco:[* TO *]");
+        query.addFacetField("catedras");
+
+        var result = TurSolr.executeSolrQuery(turSolrInstance, query);
+
+        assertThat(result).isEmpty();
+        verify(solrClient, times(1)).query(eq("core"), any(SolrQuery.class));
     }
 
     @Test
@@ -661,6 +750,8 @@ class TurSolrTest {
                 turDecimalFieldNormalizer,
                 turSNSearchRuleEvaluator,
                 snapshotService,
-                new com.viglet.turing.observability.TurSearchPipelineObservation(null));
+                new com.viglet.turing.observability.TurSearchPipelineObservation(null),
+                turProfileRepository,
+                turProfileFieldConfigService);
     }
 }

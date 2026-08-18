@@ -201,6 +201,21 @@ class TurCommonsUtilsTest {
     }
 
     @Test
+    void testAddOrReplaceParameterPreservesAccentedExistingParameter() throws URISyntaxException {
+        // A profile name with an accent ("Padrão") reaches the search as "Padr%C3%A3o" (UTF-8).
+        // When another parameter is replaced (e.g. paging), the profile must survive untouched —
+        // parsing the query as ISO-8859-1 used to turn it into "PadrÃ£o", so the generated
+        // pagination link no longer resolved to the profile the search was made with.
+        URI uri = new URI("/api/sn/site/search?q=*&profile=Padr%C3%A3o&p=1");
+        URI result = TurCommonsUtils.addOrReplaceParameter(uri, "p", "2", false);
+
+        assertThat(result.toASCIIString())
+                .contains("profile=Padr%C3%A3o")
+                .contains("p=2")
+                .doesNotContain("Padr%C3%83%C2%A3o");
+    }
+
+    @Test
     void testAddOrReplaceParameterValueWithSpaceAndQuoteIsEncoded() throws URISyntaxException {
         URI uri = new URI("/api/search?p=1");
         URI result = TurCommonsUtils.addOrReplaceParameter(uri, "q", "hello \"world\"", false);

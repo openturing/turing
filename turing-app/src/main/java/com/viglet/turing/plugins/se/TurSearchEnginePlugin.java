@@ -97,6 +97,15 @@ public interface TurSearchEnginePlugin {
 
     boolean fieldExists(TurSEInstance seInstance, String indexName, String fieldName);
 
+    /**
+     * Makes an existing field multiValued, preserving its current type. No-op by
+     * default (schema-less engines); Solr overrides it. Never changes the type —
+     * see {@code TurSolrUtils.reconcileMultiValued}.
+     */
+    default void reconcileMultiValued(TurSEInstance seInstance, String indexName, String fieldName) {
+        // no-op for schema-less engines (Lucene/Elasticsearch)
+    }
+
     // ---- Document operations (plugin resolves instance via site+locale) --
 
     boolean indexDocument(TurSNSite turSNSite, Locale locale, Map<String, Object> attributes);

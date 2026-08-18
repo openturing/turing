@@ -12,6 +12,7 @@ import {
   IconGitBranch,
   IconGlobe,
   IconHome,
+  IconId,
   IconLayoutDashboard,
   IconMessageChatbot,
   IconMessageCircle2,
@@ -63,6 +64,7 @@ const ITEM_PRIVILEGE: Record<string, string> = {
   persona: "AI_AGENT_VIEW",
   searchEngine: "SE_VIEW",
   semanticNavigation: "SN_VIEW",
+  profiles: "PROFILE_VIEW",
 }
 
 const generativeAiItems: SidebarNavItem[] = [
@@ -87,6 +89,7 @@ const searchItems: SidebarNavItem[] = [
 ]
 
 const managementItems: SidebarNavItem[] = [
+  { key: "profiles", titleKey: "home.features.profiles.title", url: ROUTES.PROFILE_INSTANCE, icon: IconId },
   { key: "assets", titleKey: "home.features.assets.title", url: ROUTES.ASSET_ROOT, icon: IconFolder },
   { key: "git", titleKey: "home.features.git.title", url: ROUTES.GIT_ROOT, icon: IconGitBranch },
   { key: "marketplace", titleKey: "home.features.marketplace.title", url: ROUTES.MARKETPLACE_ROOT, icon: IconBuildingStore },
@@ -147,9 +150,10 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       if (item.key === "git" && !gitServerEnabled) return false
       if (item.key === "marketplace" && !marketplaceEnabled) return false
       if (item.key === "administration" && !isAdmin) return false
+      if (item.key === "profiles" && !hasPrivilege("profiles")) return false
       return true
     }),
-    [storageEnabled, gitServerEnabled, marketplaceEnabled, isAdmin]
+    [storageEnabled, gitServerEnabled, marketplaceEnabled, isAdmin, hasPrivilege]
   )
 
   const toNavItems = React.useCallback(

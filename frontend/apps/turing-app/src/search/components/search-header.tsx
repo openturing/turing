@@ -10,7 +10,8 @@ import {
 } from "@/components/ui/dropdown-menu";
 import type { SearchStoreValue, TurLocaleItem } from "@viglet/turing-react-sdk";
 import { Icon } from "@iconify/react";
-import { IconSearch, IconSparkles, IconX } from "@tabler/icons-react";
+import { IconFilter, IconSearch, IconSparkles, IconX } from "@tabler/icons-react";
+import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 interface SearchHeaderProps {
@@ -46,6 +47,19 @@ export function SearchHeader({
   onSubmit,
 }: Readonly<SearchHeaderProps>) {
   const { t } = useTranslation();
+
+  // Facet ordering profile (preview control): committed to the `profile` search
+  // param on Enter/blur. Empty value clears it, so the backend uses the default profile.
+  const [profileInput, setProfileInput] = useState(store.params.profile ?? "");
+  useEffect(() => {
+    setProfileInput(store.params.profile ?? "");
+  }, [store.params.profile]);
+
+  const commitProfile = () => {
+    const value = profileInput.trim();
+    if (value === (store.params.profile ?? "")) return;
+    store.updateParams({ profile: value || undefined });
+  };
 
   return (
     <header className="sticky top-0 z-40 border-b border-border/50 bg-background/80 backdrop-blur-xl">
@@ -139,6 +153,27 @@ export function SearchHeader({
               )}
             </button>
           )}
+
+          {/* Facet Profile (preview control) */}
+          <div className="relative items-center shrink-0 hidden md:flex" title={t("search.profileHint")}>
+            <IconFilter className="absolute left-2.5 size-3.5 text-muted-foreground pointer-events-none" />
+            <input
+              value={profileInput}
+              onChange={(e) => setProfileInput(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  commitProfile();
+                }
+              }}
+              onBlur={commitProfile}
+              type="text"
+              aria-label={t("search.profile")}
+              className="h-9 w-40 pl-8 pr-3 rounded-lg border border-border bg-muted/50 text-sm placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500/50 transition-all"
+              placeholder={t("search.profilePlaceholder")}
+              autoComplete="off"
+            />
+          </div>
 
           {/* Theme Toggle */}
           <ModeToggle />
