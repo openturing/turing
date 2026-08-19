@@ -2084,3 +2084,54 @@ Three things this cost that are worth keeping:
 - **An allowlist that masks its own detector is not a guard.** Every acknowledged entry
   must still be detected, and a positive control proves the walk works once the list is
   empty.
+
+## LXXVII Nothing tests the wire the managed half is supposed to speak (Block J.10) (T968)
+
+T956–T965 shipped pairing, the install assertion, the signed upgrade target and key
+rotation, and every one of their tests stubs `TurVigletPairingService.post` or mocks the
+identity service. That is right for a unit test and it means the same thing every time:
+**no test has ever seen a request leave**.
+
+So the wire contract exists twice — as prose in `MULTI_TENANCY.md` and as a `Map` built
+in a service — and in neither form can it fail. Header names, the assertion's five
+dot-separated fields, the canonical payload's pipe delimiters, the RFC 8628 error
+strings, the query-parameter names on the upgrade link: any of them can drift and every
+test stays green.
+
+Viglet Cloud is now filing the server half (C125–C131) against that prose. Two teams
+implementing the same undertested contract from a document is exactly the setup where
+the mismatch surfaces on the first real pairing, in front of the operator the credit
+exists to win.
+
+What is wanted is a contract test with a stub server standing in for `llm.viglet.cloud`:
+WireMock or a Spring `MockRestServiceServer`, asserting the requests Turing actually
+emits — `/device/code` carrying the public key, `/device/token`, `/device/rotate`
+carrying an assertion signed by the key in force, and a `/v1` call carrying both headers
+— plus the responses it must tolerate, including `slow_down` and an expired device code.
+
+The same fixtures are what the cloud side should be handed to verify against, so the
+contract has one definition rather than two.
+
+## LXXVIII The gate a developer runs is not the gate that fails the build (Block BV) (T969)
+
+Three copies of roadkeep are in play here: the plugin the MCP tools and the `PreToolUse`
+hook run, the CLI in a local checkout, and `alegauss/roadkeep@main` in the workflow. The
+tool says so itself — every `lint` ends with an `engine.disagreement` note naming the
+two it can see.
+
+It was survivable while the gate ran against a baseline, because both copies forgave the
+same standing list and only new findings mattered. T967 removed that cushion. The gate
+is absolute now, so the two copies disagreeing is a build that fails on a finding the
+developer's own run does not produce — or worse, passes locally and fails in CI, which
+is the direction that wastes an afternoon.
+
+T967 met this immediately: the plugin still reported the `T759` ledger path while the
+newer engine did not, because RK1217 had shipped upstream in between. The right answer
+there was to trust the version CI runs, and that reasoning should not have to be redone
+by hand each time.
+
+The fix is to make the versions agree deliberately rather than by luck. Pin the action
+to a released version instead of `@main` and pin the plugin to the same one, or keep
+`@main` and adopt a documented "refresh the plugin before trusting a local lint" step.
+Either is fine; what is not fine is that today the answer depends on which copy
+answered.

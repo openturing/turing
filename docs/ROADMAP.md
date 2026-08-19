@@ -6,6 +6,14 @@
 > [STRATEGY.md](STRATEGY.md); the markers and limits are `roadkeep.toml`'s. Blocks are
 > reused, not minted — `roadkeep brief` picks the next task and states why.
 
+## Block J.10 — Viglet AI: the managed LLM onboarding credit (§LXXVII)
+
+- 📋 **T968** (deps: T965 ✅, Viglet Cloud C125–C131) **every managed-endpoint test stubs the one network hop, so nothing checks the wire the cloud half must implement** — The contract is only in prose and in a stub, so the first real pairing is where a shape mismatch is discovered. → §LXXVII
+
+## Block BV — The quality gate stops at the package boundary (§LXXVIII)
+
+- 📋 **T969** (deps: T967 ✅) **the local roadkeep plugin and the CI action are different versions, so a finding one reports the other does not** — Now that the gate is absolute, a disagreement between the copy a developer runs and the copy that gates is a red build nobody can reproduce. → §LXXVIII
+
 ## Non-goals (do NOT add as tasks)
 
 Binding constraints — see [IMPROVEMENTS.md](IMPROVEMENTS.md) §I.6 (What NOT to
