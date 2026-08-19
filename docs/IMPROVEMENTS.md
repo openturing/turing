@@ -2084,29 +2084,3 @@ Three things this cost that are worth keeping:
 - **An allowlist that masks its own detector is not a guard.** Every acknowledged entry
   must still be detected, and a positive control proves the walk works once the list is
   empty.
-
-## LXXXVIII The reference app is checked for compiling, not for working (Block Y) (T979)
-
-`frontend/apps/showcase/COVERAGE.md` says it plainly under its own known gaps: "No
-frontend test runner in the showcase app yet (the backend smoke IT covers the contract).
-A vitest smoke for the storefront render is a follow-up." It is still true — no
-`vitest.config`, no `*.test.tsx`, no `test` script.
-
-T916 put the showcase in `validate-js.yml`, and its comment is careful about what that
-buys: the app "has no tests, so `--if-present` skips the Test step and this is a build
-gate". CI proves it compiles. `TurShowcaseSmokeIT` proves the backend contract — the
-product count, the typed fields, the facets. Between those two sits the thing a visitor
-actually meets, and nothing looks at it.
-
-That matters more here than in most apps because this one is the demo: it is what
-someone clones to decide whether the platform is worth their afternoon, and a green
-build over a blank storefront is the worst version of that meeting.
-
-A smoke is enough and should stay one. Render the storefront with the SDK provider
-stubbed against the seeded catalog; assert the product grid, the facet sidebar and the
-search field appear; assert the honest "configure GenAI" notice renders in place of chat
-when no agent is configured — the state every fresh clone is in.
-
-Infrastructure comes first: no vitest config, no jsdom setup, no mocks.
-`apps/turing-app` has all three and the `turing-frontend-testing` skill documents that
-stack.

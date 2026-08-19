@@ -71,8 +71,13 @@ circular dependency in the T448 handoff service.
 
 ## Known gaps / follow-ups
 
-- **No frontend test runner** in the showcase app yet (the backend smoke IT
-  covers the contract). A vitest smoke for the storefront render is a follow-up.
+- **Frontend smoke landed (T979).** `src/pages/__tests__/storefront.test.tsx`
+  renders the storefront against a stubbed `axios` and asserts the four things
+  whose absence means a blank page: the product grid, a facet, the search field
+  and the Ask Atlas launcher — plus that a failed search degrades instead of
+  blanking. `pnpm --filter turing-showcase test`, and `validate-js.yml` now runs
+  it because the `--if-present` Test step has something to find. It is a smoke
+  and should stay one; the backend contract remains `TurShowcaseSmokeIT`'s.
 - **🔌 features need a configured backend** (agent + LLM + embeddings) to light
   up live; the offline Lucene seed is search-only by design and the UI shows
   honest "configure GenAI" notices.

@@ -6,10 +6,6 @@
 > [STRATEGY.md](STRATEGY.md); the markers and limits are `roadkeep.toml`'s. Blocks are
 > reused, not minted — `roadkeep brief` picks the next task and states why.
 
-## Block Y — Atlas Store — the reference app that stresses the platform (§LXXXVIII)
-
-- 📋 **T979** (deps: T978 ✅) **the showcase has no test runner, so its CI entry proves it builds and nothing proves the storefront renders** — It is the app people clone to see what Turing does, and a build that succeeds while the page comes up blank is the worst first impression available. → §LXXXVIII
-
 ## Non-goals (do NOT add as tasks)
 
 Binding constraints — see [IMPROVEMENTS.md](IMPROVEMENTS.md) §I.6 (What NOT to
