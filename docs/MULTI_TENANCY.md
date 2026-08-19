@@ -118,6 +118,13 @@ and stays **exempt**: it provisions a fresh install before any tenant exists.
 That exemption is structural — the seeder never sees the quota service — and
 `TurTenantQuotaBatchTest` fails if a later change gives it one.
 
+**The counts are per tenant, and that is tested** (T982). Everything above rests
+on `count()` being scoped by the `@TenantId` discriminator: were it not, one
+tenant's agents would exhaust another's plan — a cross-tenant leak presenting as
+a billing decision. `TurTenantQuotaIT` runs it against a real Hibernate session
+with two FREE tenants and asserts the load-bearing half — that the second tenant
+is admitted its first agent while the first is full.
+
 `createEmbeddingModel` is deliberately **not** admitted: embeddings are what
 indexing and retrieval run on, so refusing them would turn an exhausted chat
 credit into a search outage. Single-tenant installs are unaffected —

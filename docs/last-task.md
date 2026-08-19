@@ -304,6 +304,7 @@ number" looked free but wasn't. Grepping three files (`ROADMAP.md`,
 
 - **T966 SHIPPED** (Block AN §LXXV — answer+copilot added to both filters; PUBLIC_SN_LLM_COST/CHEAP classification in the security config enforced by TurLlmCostSurfaceCoverageTest; stale /api/genai/chat CSRF matcher removed) (Block AN §LXXV — the two LLM-cost path regexes have drifted: /answer, the /v1 gateway and /api/v2/ai-agent/{id}/chat are ungated; plus a CSRF exemption for a route with no controller) — 2026-08-16.
 - **T968 FILED** (Block J.10 §LXXVII — no contract test for the managed wire; every test stubs the one network hop while Viglet Cloud C125–C131 implements the other half from prose) — 2026-08-19.
+- **T982 SHIPPED** (Block J §XCI — TurTenantQuotaIT: two FREE tenants against a real Hibernate session; proves count() is @TenantId-scoped, so one tenant's usage never spends another's plan) — 2026-08-19.
 - **T981 SHIPPED** (Block J §XC — inspectDemand + checkCanCreateAgents/Sites(n): import and marketplace refuse the whole batch before writing; boot seed exempt, guarded structurally) — 2026-08-19.
 - **T980 SHIPPED** (Block J.10 §LXXXIX — docs-turing now says the managed endpoint is not live; BYOK is the working path today; vigletdocs 0acc117) — 2026-08-19.
 - **T979 SHIPPED** (Block Y §LXXXVIII — vitest + jsdom in the showcase and a 5-case storefront smoke; COVERAGE gap closed) — 2026-08-19.
