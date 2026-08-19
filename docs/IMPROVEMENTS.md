@@ -2084,28 +2084,3 @@ Three things this cost that are worth keeping:
 - **An allowlist that masks its own detector is not a guard.** Every acknowledged entry
   must still be detected, and a positive control proves the walk works once the list is
   empty.
-
-## LXXXV The answer engine is the orphan the coverage matrix missed (Block BQ) (T976)
-
-Comparing the 93 block headings in `CHANGELOG.md` against `docs-turing/COVERAGE.md`
-leaves nine unaccounted. Most are label drift rather than absence — the matrix groups
-blocks into rows like `D.1/D.2/D.5/…` and names the multi-tenancy lift by its subject
-rather than its letter — but Blocks **BO** and **BQ** are a genuine gap: there is no
-`answer.md`, and no row mentions either.
-
-That is the wrong subsystem to have missed. `/api/sn/{site}/answer` is anonymous by
-design, streams over SSE, and spends a completion per call — T966 had to add it to both
-the API-key gate and the abuse throttle after finding it in neither. An integrator can
-reach it without credentials and cannot read what it does, which is the exact
-combination the coverage gate exists to prevent.
-
-It earns its own page rather than a fold: it is a search *lens*, not a setting on one,
-and it comes with companions (`answer/freshness`, `answer/signal`) plus a deliberate
-absence (`answer/share` is not anonymous, because minting a permalink is a write). A
-reader needs the request shape, the SSE event sequence, the citation contract, and the
-API_KEY-mode behaviour in one place.
-
-The remaining seven want rows, not prose: **AF**, **BV** and **D.9** are internal
-engineering, and **AH**, **BB**, **BC** fold into the model-catalog material already on
-`llm-instances`. Add them in the same pass so the matrix stops disagreeing with the
-ledger.

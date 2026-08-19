@@ -304,7 +304,7 @@ number" looked free but wasn't. Grepping three files (`ROADMAP.md`,
 
 - **T966 SHIPPED** (Block AN §LXXV — answer+copilot added to both filters; PUBLIC_SN_LLM_COST/CHEAP classification in the security config enforced by TurLlmCostSurfaceCoverageTest; stale /api/genai/chat CSRF matcher removed) (Block AN §LXXV — the two LLM-cost path regexes have drifted: /answer, the /v1 gateway and /api/v2/ai-agent/{id}/chat are ungated; plus a CSRF exemption for a route with no controller) — 2026-08-16.
 - **T968 FILED** (Block J.10 §LXXVII — no contract test for the managed wire; every test stubs the one network hop while Viglet Cloud C125–C131 implements the other half from prose) — 2026-08-19.
-- **T976 FILED** (Block BQ §LXXXV — the answer engine has no end-user page and no COVERAGE row; 9 blocks unaccounted, 7 of them label drift) — 2026-08-19.
+- **T976 SHIPPED** (Block BQ §LXXXV — new docs-turing/answer.md + sidebar entry; COVERAGE closes at zero unaccounted blocks; docs committed in vigletdocs 6dc3c87) — 2026-08-19.
 - **T975 SHIPPED** (Block J.10 §LXXXIV — end-user docs propagation: Viglet AI folded into llm-instances + multi-tenancy in docs-turing, COVERAGE rows added; docs committed in vigletdocs f1a3594) — 2026-08-19.
 - **T974 SHIPPED** (Block BV §LXXXIII — TurAgentChatExecutorStructuralIT's class comment claimed all its tests were @Disabled placeholders; five run with 32 assertions) — 2026-08-19.
 - **T973 SHIPPED** (Block J.10 §LXXXII — TurQuotaRefusalResponseTest runs the advice and reads the response the console gets; type URI pinned as a literal on both sides) — 2026-08-19.

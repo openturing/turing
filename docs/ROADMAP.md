@@ -6,10 +6,6 @@
 > [STRATEGY.md](STRATEGY.md); the markers and limits are `roadkeep.toml`'s. Blocks are
 > reused, not minted — `roadkeep brief` picks the next task and states why.
 
-## Block BQ — The answer engine as a first-class search lens (`/answer`) (§LXXXV)
-
-- 📋 **T976** (deps: T975 ✅) **the answer engine is a public anonymous endpoint with no end-user page and no row in the coverage matrix** — It is the surface an integrator is most likely to call and least able to discover, and the gate that would have caught it says there are no orphans. → §LXXXV
-
 ## Non-goals (do NOT add as tasks)
 
 Binding constraints — see [IMPROVEMENTS.md](IMPROVEMENTS.md) §I.6 (What NOT to
