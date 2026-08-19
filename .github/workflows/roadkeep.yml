@@ -3,19 +3,21 @@
 # repository. `roadkeep lint` exits 1 on a governed file that drifted, and that
 # exit code is the whole contract.
 #
-# Tuned here for a corpus that predates the tool: the baseline forgives the
-# standing debt by name and reports what a run added, which is the only setting
-# under which this gate can be on at all — an absolute count answers nothing while
-# the adoption cleanup is still in progress. Drop the baseline the day
-# `roadkeep lint` exits 0 on the default branch, and the gate is absolute.
+# **The gate is absolute** (T967). It ran against a baseline for as long as the
+# adoption cleanup was in progress — 24 sections citing a `§` that no prose file
+# declared any more, plus one ledger entry naming a script later extracted to
+# another repository. The 24 were repointed; the ledger entry stopped being a
+# finding when roadkeep itself learned that a path absent from HEAD but present in
+# history is history and not drift (RK1217, upstream). `roadkeep lint` now exits 0
+# on the default branch with nothing forgiven, so nothing is forgiven: a finding
+# here is something this branch introduced.
+#
+# Do not reintroduce `baseline:` to make a red run green. It forgives by name,
+# which means the next real finding hides behind the same list.
 #
 # **On demand only** (T929). 24a848332e moved this to manual dispatch and left the
 # prose describing a per-branch gate, which is how T922 came to read the state as
-# an oversight and had to be reverted (T928). The `baseline:` expression below is
-# written for both worlds and is not leftover: `github.base_ref` is empty outside
-# a pull request, so a dispatch run falls through to the default branch and the
-# diff is the branch against it — which is the useful comparison when a human is
-# the one asking.
+# an oversight and had to be reverted (T928).
 name: roadkeep
 
 on:
@@ -26,12 +28,5 @@ jobs:
     name: roadkeep lint
     runs-on: ubuntu-latest
     steps:
-      # The baseline is a rev, so the gate needs the history to diff against.
       - uses: actions/checkout@v7
-        with:
-          fetch-depth: 0
       - uses: alegauss/roadkeep@main
-        with:
-          # `base_ref` on a pull request, the default branch on a push — where the
-          # two coincide the diff is empty and the gate passes on the debt.
-          baseline: origin/${{ github.base_ref || github.event.repository.default_branch }}

@@ -4,10 +4,10 @@
 # WIRED IN, AND THE WRITE PATH NOW. The tool owns the four files below: `.mcp.json` offers
 # its verbs, a `PreToolUse` hook denies an `Edit` on any of them, `.claude/skills/roadkeep/`
 # says which command to call, and `.github/workflows/roadkeep.yml` runs the gate. The gate
-# is wired **against a baseline** rather than absolutely — a corpus this old cannot pass an
-# absolute count on the day it adopts a schema, and a number that moves by one per pull
-# request carries no signal, so CI fails on what a branch added and forgives the rest by
-# name. Drop the baseline the day `roadkeep -C . lint` exits 0, and the gate goes absolute.
+# ran **against a baseline** for the length of the adoption cleanup — a corpus this old
+# could not pass an absolute count on the day it adopted a schema — and is **absolute since
+# T967**: the standing findings were cleared, `roadkeep -C . lint` exits 0 on the default
+# branch, and nothing is forgiven by name any more.
 #
 # The live number is `roadkeep -C . lint` and is deliberately not copied here: a count in a
 # comment is a count that goes stale, which is the drift this tool exists to stop. What the

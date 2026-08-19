@@ -802,7 +802,7 @@ that gets a product surfaced by other assistants.
 
 ## XVI. Vendor model deprecations — the transcription case (July 2026)
 
-OpenAI's `gpt-transcribe` / `gpt-live-transcribe` release (Block BP, §LXIII) is a useful
+OpenAI's `gpt-transcribe` / `gpt-live-transcribe` release (Block BP) is a useful
 precedent for how Turing should treat a vendor superseding a model, because it moved
 **three** dials at once and only one of them is engineering:
 

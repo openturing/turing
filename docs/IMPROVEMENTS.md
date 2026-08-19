@@ -112,18 +112,20 @@ These are product, not patches — preserve verbatim:
 | Subsystem | Class | Current mechanism | Opportunity |
 |---|---|---|---|
 | Chat-flow router | `TurChatFlowEngineService` | Token overlap (Lucene PT analyzer) + LLM fallback | ✅ Shipped (§II) |
-| RAG retrieval | `TurRagSearchToolService`, `TurRagContextBuilder` | Vector + BM25 fused via Reciprocal Rank Fusion (T24) per-agent toggle | ✅ Single-collection shipped (§III.2); multi-locale (T24b) pending |
-| Vector store | `TurLuceneVectorIndex`, `TurLuceneVectorStore` | Vector index + BM25 inverted index + `hybridSearch` (T24) | ✅ Shipped (§III.2, §III.3); multi-locale split pending (T24b) |
-| Spotlights | `TurSNSpotlightProcess` | MemoryIndex + QueryParser (T21) — phrase / slop / fuzzy / boolean syntax via per-request MemoryIndex; AND-default keeps V1 precision | ✅ V1+V2 shipped (§III.4) |
-| Persona tone validation | `TurPersonaToneValidator` | Multi-locale Lucene stem matching: BrazilianAnalyzer + EnglishAnalyzer + SpanishAnalyzer (T22) | ✅ Shipped (§IV.3) |
+| RAG retrieval | `TurRagSearchToolService`, `TurRagContextBuilder` | Vector + BM25 fused via Reciprocal Rank Fusion (T24) per-agent toggle | ✅ Single-collection shipped (T24); multi-locale (T24b) pending |
+| Vector store | `TurLuceneVectorIndex`, `TurLuceneVectorStore` | Vector index + BM25 inverted index + `hybridSearch` (T24) | ✅ Shipped (T24); multi-locale split pending (T24b) |
+| Spotlights | `TurSNSpotlightProcess` | MemoryIndex + QueryParser (T21) — phrase / slop / fuzzy / boolean syntax via per-request MemoryIndex; AND-default keeps V1 precision | ✅ V1+V2 shipped (T21) |
+| Persona tone validation | `TurPersonaToneValidator` | Multi-locale Lucene stem matching: BrazilianAnalyzer + EnglishAnalyzer + SpanishAnalyzer (T22) | ✅ Shipped (T22) |
 
-#### III.1.2 Where one is still worth adding
+#### III.1.2 Where one was still worth adding — all three shipped
 
-| Subsystem | Class | Current mechanism | Opportunity |
-|---|---|---|---|
-| Chat analytics enricher | `TurChatAnalyticsEnricher`, `TurChatAnalyticsEngine` | Pluggable interface; default no-op | **TF-IDF intent classifier** (§III.5) |
-| Chat memory | `TurChatMemoryService` | Chronological FIFO of last N turns | Possible — **conversation-relevance retrieval** (§IV.4) |
-| MCP/Custom tool selection | `TurAgentChatExecutor.resolveToolCallbacks` | All tools passed to LLM each turn | Possible — **tool pre-filtering** (§IV.2) |
+All three candidates this table used to list have since shipped, so the table is gone
+rather than kept as a stale one: the **TF-IDF intent classifier** on
+`TurChatAnalyticsEnricher` (T28), **conversation-relevance retrieval** on
+`TurChatMemoryService`, and **tool pre-filtering** in
+`TurAgentChatExecutor.resolveToolCallbacks` (both in the T29–T34 run). See
+[CHANGELOG.md](CHANGELOG.md). The inventory in §III.1.1 stays as evergreen reference;
+this heading stays so the numbering above and below it does not move.
 
 #### III.1.3 Where the LLM, or a delegate, is already the right tool
 
@@ -171,26 +173,26 @@ improvement has a dual path. The trade-off table:
 
 #### V.1.1 Per-feature recommendations
 
-
 | Feature | Backing store | Why |
 |---|---|---|
 | §I-II flow router | Embedded | Hot path, sub-ms required, small data |
-| §III.2/§III.3 RAG hybrid | SE-backed (route via `TurSearchEnginePlugin`) | Large corpus, multi-instance |
-| §III.4 Spotlights | Embedded | Hot path, tiny data, no clustering need |
-| §III.5 Analytics intents | SE-backed (ES MLT) | Shared state, persistent, dashboards |
-| §IV.2 Tool pre-filter | Embedded | Per-turn, ~50 tools max, sub-ms required |
-| §IV.3 Persona tone | Embedded | Per-turn, in-process strings |
-| §IV.4 Conv. memory retrieval | Embedded per-conversation | Tiny data, per-conversation |
+| T24 RAG hybrid | SE-backed (route via `TurSearchEnginePlugin`) | Large corpus, multi-instance |
+| T21 Spotlights | Embedded | Hot path, tiny data, no clustering need |
+| T28 Analytics intents | SE-backed (ES MLT) | Shared state, persistent, dashboards |
+| Tool pre-filter | Embedded | Per-turn, ~50 tools max, sub-ms required |
+| T22 Persona tone | Embedded | Per-turn, in-process strings |
+| Conv. memory retrieval | Embedded per-conversation | Tiny data, per-conversation |
 
 #### V.1.2 When the second SE-backed feature ships
 
-, extract a small
-`TurSeBackedFeatureIndex<K>` helper:
+When a second SE-backed feature ships, extract a small `TurSeBackedFeatureIndex<K>`
+helper:
+
 - Owns per-feature index name convention
 - Routes through the active `TurSearchEnginePlugin`
 - Falls back to embedded Lucene when the SE is unavailable (dev mode)
 
-Premature today (only §III.5 would use it).
+Premature today (only the T28 analytics intents would use it).
 
 ### V.2 Where new caches live
 
@@ -223,22 +225,22 @@ Premature today (only §III.5 would use it).
 
 ### VI.1 Principle: predictability without surprise
 
-The 22 patches (§I.3) exist for reasons that determine *which kind of
-test* can lock the regression. Two orthogonal axes — most critical
-patches touch both, and covering only one leaves a blind spot.
+The 22 harness patches this plan was written against (§I, since shipped — see
+[CHANGELOG.md](CHANGELOG.md)) exist for reasons that determine *which kind of test* can
+lock the regression. Two orthogonal axes — most critical patches touch both, and
+covering only one leaves a blind spot.
 
-**Wiring (structural).** The harness *composes the right prompt*, *builds
-the right `ChatOptions`*, *persists in the right order*, *calls the
-`personaResolver` N times*. Mock the `ChatModel`: enqueue responses,
-capture the `Prompt`, count invocations. Runs on every `mvn verify`,
-< 10 min, no env var.
+**Wiring (structural).** The harness *composes the right prompt*, *builds the right
+`ChatOptions`*, *persists in the right order*, *calls the `personaResolver` N times*.
+Mock the `ChatModel`: enqueue responses, capture the `Prompt`, count invocations. Runs
+on every `mvn verify`, < 10 min, no env var.
 
-**Behavior (real LLM).** Several patches exist because gpt-4o-mini
-*responded a certain way* to a certain prompt — anchoring (#10),
-preemptive tool call (#3), incongruent chip question (#13), persona
-drift (#1/#2). Mock can't assert behavior. Real LLM at `temperature=0`,
-loose regex assertions. `@EnabledIfEnvironmentVariable("OPENAI_API_KEY")`,
-runs under `-Pllm-it` (nightly / pre-release).
+**Behavior (real LLM).** Several patches exist because gpt-4o-mini *responded a certain
+way* to a certain prompt — anchoring (#10), preemptive tool call (#3), incongruent chip
+question (#13), persona drift (#1/#2). Mock can't assert behavior. Real LLM at
+`temperature=0`, loose regex assertions.
+`@EnabledIfEnvironmentVariable("OPENAI_API_KEY")`, runs under `-Pllm-it` (nightly /
+pre-release).
 
 ### VI.2 Three IT files, axis per assertion type
 
@@ -516,9 +518,9 @@ structurally with the critical patches: #1, #3, #7, #10, #12, #13.
 
 ### VII.2 Platform-pending items the engagement surfaced
 
-These are the items that *should* live in the Turing platform but
-currently exist only as Education customer-side patterns, sketches or
-explicit gaps. Each maps to a T-task in §0 Block D.
+These are the items that *should* live in the Turing platform but currently exist only
+as Education customer-side patterns, sketches or explicit gaps. Each maps to a T-task in
+Block D — see [CHANGELOG.md](CHANGELOG.md).
 
 ### VII.3 Lessons from the engagement worth keeping
 
@@ -549,8 +551,8 @@ production.
 #### VII.3.4 `gpt-4o-mini` at temp=0 is deterministic but NOT robust to JSON
 
 Structured-output as a guardrail is a dead-end with this model class. Use tool-calling
-with provider-side schema or the bilingual `LlmJudge` strategy instead (already encoded
-as §I.7 non-goal — verbatim in §0).
+with provider-side schema or the bilingual `LlmJudge` strategy instead — already encoded
+as a §I.7 non-goal, and restated verbatim in the roadmap's own non-goals.
 
 #### VII.3.5 DSpace / public-content grounding beats LLM-invented references
 
@@ -661,10 +663,10 @@ because of pre-existing infrastructure.
 
 #### IX.3.0 What "workspace" means in Turing — concrete walkthrough
 
-Before the API design (§IX.3.a), make the concept tangible. The
-**Agent Workspace** is a per-conversation, persistent file area that
-Custom Tools and the LLM share. It's a *fourth* type of state in
-Turing, distinct from the three that already exist:
+Ahead of the API design (T111, since shipped — see [CHANGELOG.md](CHANGELOG.md)), make
+the concept tangible. The **Agent Workspace** is a per-conversation, persistent file
+area that Custom Tools and the LLM share. It's a *fourth* type of state in Turing,
+distinct from the three that already exist:
 
 | State surface | Today | Shape | Lifetime | Visible to LLM | Visible to portal |
 |---|---|---|---|---|---|
@@ -673,10 +675,9 @@ Turing, distinct from the three that already exist:
 | **RAG vector store** | ✅ | Indexed chunks of corpus docs | Static, design-time | Yes — retrieved by `search_knowledge_base` tool | No (admin only) |
 | **Workspace** | ❌ (T111) | Binary blobs of arbitrary size, content-typed, key-addressable | Per conversation, persistent across turns and sessions | Yes — as URL references, not inlined content | Yes — SSE bus (T113) + signed URLs |
 
-Slots, memory and RAG cover the *small, structured, ephemeral, or
-shared-static* states. Workspace covers the gap they all leave:
-**large, unstructured, conversation-private, user-co-authored
-artifacts**.
+Slots, memory and RAG cover the *small, structured, ephemeral, or shared-static* states.
+Workspace covers the gap they all leave: **large, unstructured, conversation-private,
+user-co-authored artifacts**.
 
 #### Why slots aren't enough
 
@@ -924,8 +925,8 @@ sealing the last leak vector.
 
 ### IX.4 Skills as first-class — the marketplace moat
 
-Deep Agents mentions "skills" in passing. Turing makes them **typed,
-versioned, marketplace-distributable units**:
+Deep Agents mentions "skills" in passing. Turing makes them **typed, versioned,
+marketplace-distributable units**:
 
 ```json5
 // skill.manifest.json
@@ -951,10 +952,10 @@ versioned, marketplace-distributable units**:
 - `scaffold-quote-extraction` — `pickQuote(text, term)` heuristic
 - `scaffold-mindmap` — `buildMindMap(abstracts, term)` for Mermaid trees
 
-**The moat**: Deep Agents has skills as a *concept*; Turing makes them a
-**portable, ZIP-distributable folder format** that round-trips with
-Anthropic's own skill container (see §IX.4.d, which supersedes the
-decomposed-manifest framing above).
+**The moat**: Deep Agents has skills as a *concept*; Turing makes them a **portable,
+ZIP-distributable folder format** that round-trips with Anthropic's own skill container.
+That folder format (T317–T325) supersedes the decomposed-manifest framing above — see
+[CHANGELOG.md](CHANGELOG.md).
 
 > **A hosted public registry was dropped.** An earlier idea (a hosted
 > `skills.turing.io` community/vendor catalog) was considered and is **not**
@@ -963,11 +964,11 @@ decomposed-manifest framing above).
 
 ### IX.5 Human-in-the-loop — make it a graph node, not magic
 
-Deep Agents has HITL as middleware (the harness pauses for you when
-appropriate). **Turing's better move**: HITL is a node type, visible in
-the editor, observable in the analytics, auditable in the slot audit
-log. Both HITL tasks — the async `humanApproval` node (T119) and the
-live Spectator + Co-pilot mode (T120) — have shipped; see CHANGELOG §E.4.
+Deep Agents has HITL as middleware (the harness pauses for you when appropriate).
+**Turing's better move**: HITL is a node type, visible in the editor, observable in the
+analytics, auditable in the slot audit log. Both HITL tasks — the async `humanApproval`
+node (T119) and the live Spectator + Co-pilot mode (T120) — have shipped; see
+[CHANGELOG.md](CHANGELOG.md) → Block E.4.
 
 ### IX.6 Long-horizon tasks — explicit suspend / resume
 
@@ -1873,23 +1874,21 @@ This block widens that funnel once and then turns the recovered data into produc
 
 ### LIV.1 The realization
 
-Turing already ships a production-grade "talk to a structured
-catalog, grounded, with citations, no embeddings" engine — it just isn't *named*
-that way and isn't discoverable as its own capability. The T392
-`TurCatalogCopilotService` (§XX.12) composes the Block R primitives into exactly
-this: the latest user turn is parsed into a grounded `TurDslQueryRequest` over the
-site's **declared** field schema (`TurSNSiteFieldExt`) by the T385
-`TurNLFacetParser`/`TurLlmNLFacetParser` (the LLM may only reference declared
+Turing already ships a production-grade "talk to a structured catalog, grounded, with
+citations, no embeddings" engine — it just isn't *named* that way and isn't discoverable
+as its own capability. The T392 `TurCatalogCopilotService` composes the Block R
+primitives into exactly this: the latest user turn is parsed into a grounded
+`TurDslQueryRequest` over the site's **declared** field schema (`TurSNSiteFieldExt`) by
+the T385 `TurNLFacetParser`/`TurLlmNLFacetParser` (the LLM may only reference declared
 fields — hallucinated fields hard-fail), executed against the live index by
-`TurDslSearchService` (Solr/ES/Lucene — **field/facet/range queries, zero
-embeddings**), optionally reordered by objective signals via
-`TurSNHybridRankingService`, then the default LLM answers **strictly** from those
-cited rows, emitting `[n]` citations as `TurCatalogCitation`. It needs only a
-default LLM — **no embedding model, no vector store** — which is precisely what
-"vectorless" means. The whole path is fail-open (parse → free-text, hybrid →
-lexical, LLM failure → still returns the matched citations). The word "vectorless"
-appears nowhere in the codebase today (verified) — so the substance exists but the
-*capability* is invisible to an integrator scanning for it.
+`TurDslSearchService` (Solr/ES/Lucene — **field/facet/range queries, zero embeddings**),
+optionally reordered by objective signals via `TurSNHybridRankingService`, then the
+default LLM answers **strictly** from those cited rows, emitting `[n]` citations as
+`TurCatalogCitation`. It needs only a default LLM — **no embedding model, no vector
+store** — which is precisely what "vectorless" means. The whole path is fail-open (parse
+→ free-text, hybrid → lexical, LLM failure → still returns the matched citations). The
+word "vectorless" appears nowhere in the codebase today (verified) — so the substance
+exists but the *capability* is invisible to an integrator scanning for it.
 
 ### LIV.2 Why name it
 
@@ -2085,25 +2084,3 @@ Three things this cost that are worth keeping:
 - **An allowlist that masks its own detector is not a guard.** Every acknowledged entry
   must still be detected, and a positive control proves the walk works once the list is
   empty.
-
-## LXXVI Clearing the standing lint debt so the gate can go absolute (Block BV) (T967)
-
-`roadkeep.toml` says it plainly: the gate is wired against a baseline because a corpus
-this old cannot pass an absolute count on adoption day, and the baseline goes the day
-`roadkeep -C . lint` exits 0. Nothing has moved it since, and the forgiven set is now
-the only thing between here and that day.
-
-It is small and it is mechanical. Twenty-five are `ref.dangling` — prose citing a `§` no
-prose file declares, mostly early sections (§III.1.1, §V.1.1) pointing at addresses that
-were renumbered or shipped away years ago. Each is one sentence: repoint it, or rewrite
-the clause that leant on it. `roadkeep origin` answers which commit took the section, so
-most of them can be corrected rather than deleted.
-
-The twenty-sixth is `path.missing` on the `T759` ledger entry, which names a script
-later extracted into the model-catalog repository. That one is filed upstream as RK1217
-— the remedy roadkeep offers today would replace ~1,500 characters of as-built record
-with a 200-character sentence — so it waits for the tool rather than for us.
-
-Do the twenty-five, confirm `lint` exits 0 with the `T759` finding as the only survivor,
-and then drop `--baseline` from `roadkeep.yml` once RK1217 lands. A gate nobody has to
-argue with is worth more than the hour this costs.

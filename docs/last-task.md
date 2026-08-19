@@ -303,7 +303,7 @@ number" looked free but wasn't. Grepping three files (`ROADMAP.md`,
 ## Log (most recent first)
 
 - **T966 SHIPPED** (Block AN §LXXV — answer+copilot added to both filters; PUBLIC_SN_LLM_COST/CHEAP classification in the security config enforced by TurLlmCostSurfaceCoverageTest; stale /api/genai/chat CSRF matcher removed) (Block AN §LXXV — the two LLM-cost path regexes have drifted: /answer, the /v1 gateway and /api/v2/ai-agent/{id}/chat are ungated; plus a CSRF exemption for a route with no controller) — 2026-08-16.
-- **T967 FILED** (Block BV §LXXVI — clear the 26 baseline-forgiven lint findings so the roadkeep gate can go absolute) — 2026-08-16.
+- **T967 SHIPPED** (Block BV §LXXVI — 24 dangling § citations repointed at the tasks that shipped them; baseline dropped from roadkeep.yml, the gate is absolute) (Block BV §LXXVI — clear the 26 baseline-forgiven lint findings so the roadkeep gate can go absolute) — 2026-08-16.
 - **T965 SHIPPED** (Block J.10 §LXXIV — rotate-key endpoint + Global Settings action; mint/register-signed-with-the-old-key/swap, refusal reported as unchanged) — 2026-08-16.
 - **T964 SHIPPED** (Block J.10 §LXXIII — streaming mints the install assertion per request via a Supplier; blocking wraps in TurRefreshingHeaderChatModel, rebuilding past half-life since the OpenAI SDK has no interceptor seam) — 2026-08-16.
 - **T963 SHIPPED** (Block J §LXXII — quota gate wired: checkCanCreateAgent/Site at the HTTP boundary (seeders + import exempt by construction), checkLlmAdmission in TurLlmModelFactory; embeddings deliberately not admitted) — 2026-08-16.
