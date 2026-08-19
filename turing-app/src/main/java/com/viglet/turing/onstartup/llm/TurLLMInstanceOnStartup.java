@@ -66,6 +66,20 @@ import lombok.extern.slf4j.Slf4j;
  * default above is used.
  *
  * <p>
+ * <b>Endpoint (T987 / §XCVI).</b> {@code turing.startup.default-llm.endpoint}
+ * replaces the OpenAI base URL, which is otherwise the constant
+ * {@code https://api.openai.com/v1}. This is the {@code endpoint} half of the trio
+ * {@code turing.transcription.*} has had since T687, and it exists for the same
+ * reason: a headless or Viglet Cloud container has to be able to pin its backend
+ * without the Global Settings UI, and this instance row is encrypted and created
+ * before any admin can reach it. Set it beside an {@code OPENAI_API_KEY} holding a
+ * credential for an OpenAI-compatible gateway — Viglet Cloud's own
+ * {@code llm.viglet.cloud} being the case it was written for — and this container
+ * consumes governed, metered egress instead of the vendor directly. It applies to
+ * the OpenAI path only: the native Gemini provider dials no base URL, so an
+ * endpoint set on a Gemini boot is logged as ignored rather than silently dropped.
+ *
+ * <p>
  * Runs after {@link com.viglet.turing.onstartup.TurExportImportOnStartup}
  * ({@code @Order(2)}) via {@code @Order(3)} so a seeded export ZIP (which may
  * bring its
@@ -120,6 +134,7 @@ public class TurLLMInstanceOnStartup implements ApplicationRunner {
 
     private static final String ENABLED_PROPERTY = "turing.startup.default-llm.enabled";
     private static final String MODEL_PROPERTY = "turing.startup.default-llm.model";
+    private static final String ENDPOINT_PROPERTY = "turing.startup.default-llm.endpoint";
     private static final String MONTHLY_BUDGET_PROPERTY = "turing.startup.default-agent.monthly-budget-usd";
     private static final String PER_TURN_SOFT_CAP_PROPERTY = "turing.startup.default-agent.per-turn-soft-cap-usd";
     private static final String OPENAI_API_KEY_ENV = "OPENAI_API_KEY";
@@ -181,13 +196,30 @@ public class TurLLMInstanceOnStartup implements ApplicationRunner {
         // unset, the per-provider default (gpt-4o-mini / gemini-3.1-flash-lite) wins.
         String modelOverride = environment.getProperty(MODEL_PROPERTY);
 
+        // T987 — the endpoint half of the trio transcription has had since T687.
+        // Without it the OpenAI base URL is a constant, so a container holding a
+        // credential for a governed OpenAI-compatible gateway would still dial
+        // api.openai.com and be refused there. The instance row is encrypted and
+        // the demo has no reachable admin surface, so boot config is the only
+        // place this can be said.
+        String endpointOverride = environment.getProperty(ENDPOINT_PROPERTY);
+
         TurLLMInstance instance;
         if (StringUtils.hasText(openAiKey)) {
             instance = provisionInstance(OPENAI_VENDOR_ID, "OpenAI (default)",
                     "Auto-provisioned from " + OPENAI_API_KEY_ENV + " on startup.",
-                    OPENAI_BASE_URL, firstNonBlank(modelOverride, DEFAULT_OPENAI_MODEL),
+                    firstNonBlank(endpointOverride, OPENAI_BASE_URL),
+                    firstNonBlank(modelOverride, DEFAULT_OPENAI_MODEL),
                     openAiKey, OPENAI_API_KEY_ENV);
         } else {
+            // The native Gemini provider dials no base URL, so an endpoint set here
+            // would be silently dropped. Say so rather than let a deploy believe it
+            // pinned an endpoint it did not.
+            if (StringUtils.hasText(endpointOverride)) {
+                log.warn("Ignoring {}='{}': it applies to the OpenAI-compatible path, and this boot "
+                        + "provisioned the native Gemini vendor, which dials no base URL.",
+                        ENDPOINT_PROPERTY, endpointOverride);
+            }
             instance = provisionInstance(GEMINI_VENDOR_ID, "Google Gemini (default)",
                     "Auto-provisioned from " + GEMINI_API_KEY_ENV + " on startup.",
                     null, firstNonBlank(modelOverride, DEFAULT_GEMINI_MODEL),

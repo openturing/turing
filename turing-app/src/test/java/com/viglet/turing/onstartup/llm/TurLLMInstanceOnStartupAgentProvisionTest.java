@@ -162,4 +162,55 @@ class TurLLMInstanceOnStartupAgentProvisionTest {
         assertThat(imported.getLlmInstances()).hasSize(1); // unchanged
         verify(turAIAgentRepository, never()).save(imported); // no re-wire save
     }
+
+    // ── T987 / §XCVI: the endpoint half of the trio ────────────────────────────
+
+    @Test
+    void openAiBaseUrlIsTheVendorWhenNoEndpointIsConfigured() {
+        when(turAIAgentRepository.findAll()).thenReturn(List.of());
+
+        runner.run(args);
+
+        assertThat(provisionedInstance().getUrl()).isEqualTo("https://api.openai.com/v1");
+    }
+
+    @Test
+    void endpointOverrideReplacesTheOpenAiBaseUrl() {
+        // The case this exists for: an OPENAI_API_KEY holding a credential for a
+        // governed OpenAI-compatible gateway. Without the override the row would
+        // carry api.openai.com, which refuses that credential — so the container
+        // would be provisioned into a state no admin surface can repair.
+        when(environment.getProperty("turing.startup.default-llm.endpoint"))
+                .thenReturn("http://llm-gateway:8080/v1");
+        when(turAIAgentRepository.findAll()).thenReturn(List.of());
+
+        runner.run(args);
+
+        assertThat(provisionedInstance().getUrl()).isEqualTo("http://llm-gateway:8080/v1");
+    }
+
+    @Test
+    void endpointOverrideIsNotAppliedToTheNativeGeminiProvider() {
+        // Gemini dials no base URL, so the override must not land on the row —
+        // a URL there would be config the provider never reads, which is worse
+        // than none because it reads back as configured.
+        when(environment.getProperty("OPENAI_API_KEY")).thenReturn(null);
+        when(environment.getProperty("GEMINI_API_KEY")).thenReturn("gm-test");
+        when(environment.getProperty("turing.startup.default-llm.endpoint"))
+                .thenReturn("http://llm-gateway:8080/v1");
+        when(turLLMVendorRepository.findById("GEMINI"))
+                .thenReturn(java.util.Optional.of(new TurLLMVendor()));
+        when(turAIAgentRepository.findAll()).thenReturn(List.of());
+
+        runner.run(args);
+
+        assertThat(provisionedInstance().getUrl()).isNull();
+    }
+
+    /** The single {@link TurLLMInstance} this boot saved. */
+    private TurLLMInstance provisionedInstance() {
+        ArgumentCaptor<TurLLMInstance> captor = ArgumentCaptor.forClass(TurLLMInstance.class);
+        verify(turLLMInstanceRepository).save(captor.capture());
+        return captor.getValue();
+    }
 }
