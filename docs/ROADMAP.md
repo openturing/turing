@@ -6,6 +6,10 @@
 > [STRATEGY.md](STRATEGY.md); the markers and limits are `roadkeep.toml`'s. Blocks are
 > reused, not minted — `roadkeep brief` picks the next task and states why.
 
+## Block BV — The quality gate stops at the package boundary (§LXXXI)
+
+- 📋 **T972** (deps: T971 ✅) **failsafe carries testFailureIgnore=true on both goals, so a failing integration test does not fail the build** — An IT suite that cannot turn a build red is a slow advisory, and every other setting beside it explains itself while this one never has. → §LXXXI
+
 ## Non-goals (do NOT add as tasks)
 
 Binding constraints — see [IMPROVEMENTS.md](IMPROVEMENTS.md) §I.6 (What NOT to

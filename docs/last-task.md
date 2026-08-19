@@ -304,6 +304,7 @@ number" looked free but wasn't. Grepping three files (`ROADMAP.md`,
 
 - **T966 SHIPPED** (Block AN §LXXV — answer+copilot added to both filters; PUBLIC_SN_LLM_COST/CHEAP classification in the security config enforced by TurLlmCostSurfaceCoverageTest; stale /api/genai/chat CSRF matcher removed) (Block AN §LXXV — the two LLM-cost path regexes have drifted: /answer, the /v1 gateway and /api/v2/ai-agent/{id}/chat are ungated; plus a CSRF exemption for a route with no controller) — 2026-08-16.
 - **T968 FILED** (Block J.10 §LXXVII — no contract test for the managed wire; every test stubs the one network hop while Viglet Cloud C125–C131 implements the other half from prose) — 2026-08-19.
+- **T972 FILED** (Block BV §LXXXI — failsafe testFailureIgnore=true on both goals: a failing IT reads as not failing the build; confirm empirically, and carry trimStackTrace to failsafe in the same edit) — 2026-08-19.
 - **T971 SHIPPED** (Block BV §LXXX — surefire trimStackTrace=false, so a Spring context failure names the missing bean on the console) — 2026-08-19.
 - **T970 SHIPPED** (Block J.10 §LXXIX — TurVigletCallHeaderContractTest: JDK HttpServer stands in for the endpoint on both transports, arriving assertion verified against the registered public key) — 2026-08-19.
 - **T968 SHIPPED** (Block J.10 §LXXVII — TurVigletWireContractTest binds MockRestServiceServer to the pairing client; RestClient.Builder injectable via a package-private ctor, @Autowired on the public one) — 2026-08-19.
