@@ -2084,3 +2084,28 @@ Three things this cost that are worth keeping:
 - **An allowlist that masks its own detector is not a guard.** Every acknowledged entry
   must still be detected, and a positive control proves the walk works once the list is
   empty.
+
+## LXXIX The half of the wire T968 could not bind (Block J.10) (T970)
+
+T968 bound a `MockRestServiceServer` to the pairing client, so `/device/code`,
+`/device/token` and `/device/rotate` are now asserted from the bytes that leave. The
+`/v1` call is not, and it is the one every managed request goes through.
+
+What exists is weaker than it looks. `TurVigletInstallIdentityServiceTest` proves the
+assertion verifies against the registered public key,
+`TurOpenAiStreamingChatModelHeaderTest` proves the supplier is read once per request,
+and the contract test pins the two header names as string constants. None of that
+observes a request. Delete the `.headers(...)` line from the streaming model and every
+one of them still passes.
+
+Both transports resisted binding for different reasons, which is why T968 stopped where
+it did. The streaming path builds its own `WebClient` inside the model, so there is no
+builder to bind — the fix is the same shape as the pairing one, an injected
+`WebClient.Builder` and an `ExchangeFunction` stub. The blocking path hands headers to
+the OpenAI SDK's client at build time and the SDK offers no interceptor, so the honest
+test there is a local HTTP server the pinned `baseUrl` points at, asserting both headers
+arrive on a real request.
+
+Worth doing because this is the half that authenticates: a managed call whose assertion
+silently stops being sent does not fail here, it fails at Viglet's edge, as a credential
+refusal the operator reads as an outage.
