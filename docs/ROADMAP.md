@@ -6,6 +6,10 @@
 > [STRATEGY.md](STRATEGY.md); the markers and limits are `roadkeep.toml`'s. Blocks are
 > reused, not minted — `roadkeep brief` picks the next task and states why.
 
+## Block J.10 — Viglet AI: the managed LLM onboarding credit (§XCIV)
+
+- 📋 **T985** (deps: T984 ✅, T968 ✅, T970 ✅) **no install has ever paired against the live service, so the contract is agreed by two documents and no handshake** — Both halves were written from prose and each is green against its own stubs, which is precisely the setup where the first real pairing is the test. → §XCIV
+
 ## Non-goals (do NOT add as tasks)
 
 Binding constraints — see [IMPROVEMENTS.md](IMPROVEMENTS.md) §I.6 (What NOT to

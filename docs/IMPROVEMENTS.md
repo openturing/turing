@@ -2084,3 +2084,27 @@ Three things this cost that are worth keeping:
 - **An allowlist that masks its own detector is not a guard.** Every acknowledged entry
   must still be detected, and a positive control proves the walk works once the list is
   empty.
+
+## XCIV The first real handshake (Block J.10) (T985)
+
+The endpoint answers now. What has never happened is one install completing the flow
+against it: `TurVigletWireContractTest` asserts the requests Turing emits,
+`TurVigletCallHeaderContractTest` asserts the headers a `/v1` call carries, and both do
+it against stubs this repository wrote. The server half was implemented from the same
+prose. Two documents agreeing is not a handshake.
+
+The run is short and its value is entirely in what disagrees: start pairing from the
+bento activation card, approve at the verification URL, and watch whether the credential
+lands, the managed instance is created, and a first chat answers. Then rotate the key
+and confirm the refusal path — a rotation the service declines must leave the old key
+working, which is the one branch with real consequences if either side read it
+differently.
+
+Whatever mismatches, the fixtures are where the fix is recorded, so the next change to
+either half breaks a build instead of an operator.
+
+**This one needs a person for the middle.** Approving a device code means signing in at
+a URL, and a pairing attempt also spends real credit against a real account — neither is
+something to drive unattended. What can be prepared is the install: the fat-jar run is
+already written down, and the endpoint defaults are what a stock build already points
+at.
