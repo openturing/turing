@@ -1323,3 +1323,4 @@
 - **T970** — A throwaway JDK HttpServer stands in for the endpoint on both transports, and the arriving assertion is verified against the public key pairing registered.
 - **T973** — The advice now runs in a test that reads the response the console gets, and both ends pin the type URI as a literal so a drift on either side fails a build.
 - **T975** — Viglet AI is documented for the operator now — activation, pairing, the fixed alias and key rotation on llm-instances, the real plan limits and the refusal on multi-tenancy, with both COVERAGE rows.
+- **T980** — Both pages now say the managed endpoint is not live and that your own key is the working path today, with the description kept for the day it answers.
