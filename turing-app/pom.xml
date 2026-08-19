@@ -781,6 +781,17 @@
                     <!-- `-DskipUTs=true` skips unit tests (Surefire) but not
                          integration tests (Failsafe). -->
                     <skip>${skipUTs}</skip>
+                    <!-- T971 / §LXXX — print the causal chain on the console.
+                         Surefire trims it by default and keeps it only in
+                         target/surefire-reports/<class>.txt, which for a Spring
+                         context failure means five 2,000-character dumps of
+                         matched configuration and never the missing bean. The
+                         one line that names it ("No qualifying bean of type
+                         RestClient$Builder", "No default constructor found")
+                         costs a second ten-minute run to go and read, and the
+                         wall it hides behind is indistinguishable from the one
+                         an H2 file lock produces. -->
+                    <trimStackTrace>false</trimStackTrace>
                 </configuration>
             </plugin>
             <plugin>

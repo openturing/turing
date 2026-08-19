@@ -1281,6 +1281,7 @@
 - **T955** — Four sections were split rather than cut, so every word survives; 28 citations now carry the namespace, section.too-long is zero and the spent ids are gone.
 - **T967** — The 24 dangling citations are repointed at the tasks that shipped them, and with RK1217 landed upstream the gate runs absolute: baseline dropped from the workflow.
 - **T969** — The workflow pins roadkeep at a SHA verified to lint this corpus clean, and the skill says the pinned copy decides a disagreement while /plugin update aligns the local one.
+- **T971** — Surefire prints the causal chain now, so a context failure names the missing bean on the console instead of hiding it in a report file behind five identical walls.
 
 ## Block BW — What the link-free response and its consumers still lack (§LXX)
 
