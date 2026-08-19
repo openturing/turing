@@ -110,8 +110,12 @@ public class TurVigletPairingService {
     private final TurLLMInstanceRepository turLLMInstanceRepository;
     private final TurLLMVendorRepository turLLMVendorRepository;
     private final TurVigletInstallIdentityService installIdentityService;
+    private final RestClient.Builder restClientBuilder;
     private final TransactionTemplate transactionTemplate;
 
+    // @Autowired is required, not decorative: with two constructors and no marker
+    // Spring looks for a no-arg one and the context fails to start.
+    @org.springframework.beans.factory.annotation.Autowired
     public TurVigletPairingService(TurVigletAiProperty vigletAiProperty,
             TurGlobalSettingsService turGlobalSettingsService,
             TurSecretCryptoService turSecretCryptoService,
@@ -119,12 +123,36 @@ public class TurVigletPairingService {
             TurLLMVendorRepository turLLMVendorRepository,
             TurVigletInstallIdentityService installIdentityService,
             PlatformTransactionManager transactionManager) {
+        this(vigletAiProperty, turGlobalSettingsService, turSecretCryptoService,
+                turLLMInstanceRepository, turLLMVendorRepository, installIdentityService,
+                transactionManager, RestClient.builder());
+    }
+
+    /**
+     * T968 / §LXXVII — same service, with the HTTP client's builder supplied so a
+     * test can bind a {@code MockRestServiceServer} to it and assert the request
+     * that actually leaves.
+     *
+     * <p>Package-private, and the builder is the <b>last</b> parameter, because
+     * {@code RestClient.Builder} is not a bean in this application's context: a
+     * public constructor asking for one is a context that will not start, which is
+     * how this arrived the first time.
+     */
+    TurVigletPairingService(TurVigletAiProperty vigletAiProperty,
+            TurGlobalSettingsService turGlobalSettingsService,
+            TurSecretCryptoService turSecretCryptoService,
+            TurLLMInstanceRepository turLLMInstanceRepository,
+            TurLLMVendorRepository turLLMVendorRepository,
+            TurVigletInstallIdentityService installIdentityService,
+            PlatformTransactionManager transactionManager,
+            RestClient.Builder restClientBuilder) {
         this.vigletAiProperty = vigletAiProperty;
         this.turGlobalSettingsService = turGlobalSettingsService;
         this.turSecretCryptoService = turSecretCryptoService;
         this.turLLMInstanceRepository = turLLMInstanceRepository;
         this.turLLMVendorRepository = turLLMVendorRepository;
         this.installIdentityService = installIdentityService;
+        this.restClientBuilder = restClientBuilder;
         this.transactionTemplate = new TransactionTemplate(transactionManager);
     }
 
@@ -313,6 +341,13 @@ public class TurVigletPairingService {
      * <p>{@code protected} so a test can stub the one network hop and exercise the
      * flow's real branching (pending / slow down / expired / approved) without a
      * live managed service.
+     *
+     * <p>T968 / §LXXVII — the client comes from an injected {@link RestClient.Builder}
+     * rather than {@code RestClient.create}, so a test can bind a
+     * {@code MockRestServiceServer} to it and assert the request that actually
+     * leaves. Overriding {@code post} proves the branching; only binding the
+     * builder proves the wire, and the wire is the half another repository has to
+     * implement.
      */
     protected ResponseEntity<Map<String, Object>> post(String path, Map<String, Object> payload) {
         return post(path, payload, Map.of());
@@ -330,8 +365,8 @@ public class TurVigletPairingService {
                     "Missing turing.viglet-ai.pairing-base-url — cannot pair with the managed service.");
         }
         try {
-            return RestClient.create(normalize(baseUrl)).post()
-                    .uri(path)
+            return restClientBuilder.build().post()
+                    .uri(normalize(baseUrl) + path)
                     .headers(httpHeaders -> headers.forEach(httpHeaders::set))
                     .body(payload)
                     .retrieve()

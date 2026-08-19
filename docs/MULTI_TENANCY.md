@@ -158,6 +158,13 @@ A refusal or an unreachable endpoint therefore leaves the old key working, and
 is reported as "unchanged" rather than as an error — an install that adopts a
 key nobody registered has revoked itself.
 
+**The wire is asserted, not just described** (T968). `TurVigletWireContractTest`
+binds a `MockRestServiceServer` to the pairing client and checks the requests
+that actually leave: the three paths, every JSON key, the two header names, the
+canonical signed payload and the four RFC 8628 error strings. Those assertions
+are the fixtures the Viglet Cloud side (its Block T, C125–C131) implements
+against — if one has to change, it changes in both repositories on the same day.
+
 ## Teardown runbook
 
 `TurTenantTeardownService` (platform-admin only, audited, **idempotent**):
