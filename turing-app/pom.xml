@@ -808,7 +808,22 @@
                 </executions>
                 <configuration>
                     <classesDirectory>${project.build.outputDirectory}</classesDirectory>
-                    <testFailureIgnore>true</testFailureIgnore>
+                    <!-- T972 / §LXXXI — `testFailureIgnore` was true here, on both
+                         goals and without a comment, which made the whole IT suite
+                         advisory: a probe IT that called fail() printed
+                         "Failures: 1" and the run still ended BUILD SUCCESS with
+                         exit 0 (measured, not inferred). An integration suite that
+                         cannot turn a build red is a slow report.
+
+                         Removed, and the same probe now ends BUILD FAILURE with
+                         exit 1. Nothing had to be excluded to afford it: the
+                         suite was green on the day — 228 tests, 0 failures.
+
+                         A flaky IT is excluded by name below, with its reason,
+                         exactly like the real-LLM ones — that is the mechanism
+                         this block already has, and it costs one test instead of
+                         every failure. -->
+                    <trimStackTrace>false</trimStackTrace>
                     <!-- JaCoCo IT agent (set by jacoco prepare-agent-integration in
                          the root pom's `coverage` profile). Late @{} resolution so
                          it is empty/no-op when the profile is inactive. -->

@@ -2084,28 +2084,3 @@ Three things this cost that are worth keeping:
 - **An allowlist that masks its own detector is not a guard.** Every acknowledged entry
   must still be detected, and a positive control proves the walk works once the list is
   empty.
-
-## LXXXI The integration tests report but do not gate (Block BV) (T972)
-
-`turing-app/pom.xml` binds failsafe to `integration-test` **and** `verify`, and sets
-`testFailureIgnore` to true across both. On the face of it that means `mvn verify`
-completes green with a failing `*IT.java`, which would make the whole integration suite
-advisory — the same shape as T963's quota gate that nothing called and T966's path list
-that had drifted.
-
-The first step is to prove it rather than infer it: break one IT deliberately and watch
-the exit code. The behaviour is worth confirming because `verify` is supposed to consult
-the summary file and fail there, and reading a plugin's defaults is exactly how a wrong
-conclusion gets committed.
-
-If it is true, the value of the flag has to be weighed rather than simply flipped. Every
-other setting in that block carries a paragraph saying why — `classesDirectory`, the
-late-resolved `failsafeArgLine`, the `BehavioralIT` and `AgentEvalIT` exclusions — and
-this one carries nothing, which usually means it was added to get past something
-specific that has since been fixed by those very exclusions. Removing it may simply
-restore the gate; if some IT is genuinely flaky, name it in `excludes` with a reason
-like its neighbours, rather than blanket-ignoring every failure to accommodate one.
-
-Ship `trimStackTrace=false` on failsafe in the same edit: T971 fixed that for surefire,
-and leaving the ITs blind while the unit tests can see is an asymmetry with no argument
-behind it.
