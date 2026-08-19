@@ -42,13 +42,16 @@ public class TurMarketplaceAPI {
     private final TurConfigProperties configProperties;
     private final TurImportExchange turImportExchange;
     private final TurSNSiteContentExchangeService contentExchangeService;
+    private final com.viglet.turing.tenant.TurTenantQuotaService turTenantQuotaService;
 
     public TurMarketplaceAPI(TurConfigProperties configProperties,
                              TurImportExchange turImportExchange,
-                             TurSNSiteContentExchangeService contentExchangeService) {
+                             TurSNSiteContentExchangeService contentExchangeService,
+                             com.viglet.turing.tenant.TurTenantQuotaService turTenantQuotaService) {
         this.configProperties = configProperties;
         this.turImportExchange = turImportExchange;
         this.contentExchangeService = contentExchangeService;
+        this.turTenantQuotaService = turTenantQuotaService;
     }
 
     public record TurMarketplaceItem(
@@ -130,6 +133,12 @@ public class TurMarketplaceAPI {
             byte[] zipBytes = downloadZip(downloadUrl);
             var multipartFile = new MockMultipartFile("file", "marketplace.zip",
                     "application/zip", zipBytes);
+            // T981 / §XC — a marketplace app is an import like any other, and
+            // installing one is exactly the bulk creation the per-resource gate
+            // was walked around by.
+            var demand = turImportExchange.inspectDemand(multipartFile);
+            turTenantQuotaService.checkCanCreateAgents(demand.newAgents());
+            turTenantQuotaService.checkCanCreateSites(demand.newSites());
             var result = turImportExchange.importFromMultipartFile(
                     multipartFile, includeContent, includeTemplate, taskId, overwrite);
             if (result.error() != null) {

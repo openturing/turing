@@ -6,10 +6,6 @@
 > [STRATEGY.md](STRATEGY.md); the markers and limits are `roadkeep.toml`'s. Blocks are
 > reused, not minted — `roadkeep brief` picks the next task and states why.
 
-## Block J — Multi-tenancy (§XC)
-
-- 📋 **T981** (deps: T963 ✅) **import and marketplace install create agents and sites through an HTTP endpoint the plan quota does not check** — A limit the documented upload path walks around is not a limit, and T963 exempted that path on reasoning that only held for the startup seeders. → §XC
-
 ## Non-goals (do NOT add as tasks)
 
 Binding constraints — see [IMPROVEMENTS.md](IMPROVEMENTS.md) §I.6 (What NOT to

@@ -305,6 +305,59 @@ public class TurImportExchange {
 	}
 
 	/**
+	 * T981 / §XC — how many agents and sites this archive would <b>add</b>, which
+	 * is what a plan limit is about.
+	 *
+	 * <p>Entries that collide with an existing id are updates, not creations, and
+	 * are excluded: importing a bundle that refreshes three agents you already
+	 * have must not be refused on a three-agent plan.
+	 *
+	 * <p>Deliberately a read the <b>caller</b> makes, rather than a check inside
+	 * {@link #importFromMultipartFile}: that method also serves the first-boot
+	 * seed ({@code TurExportImportOnStartup}), which runs before any tenant
+	 * exists and must never be gated. Keeping the question at the HTTP boundary
+	 * keeps the exemption structural instead of a flag threaded through. It costs
+	 * one extra extraction per user-driven import, which is a rare, interactive
+	 * operation that already does far heavier work.
+	 */
+	public ArchiveDemand inspectDemand(MultipartFile multipartFile) {
+		File extractFolder = this.extractZipFile(multipartFile);
+		if (extractFolder == null) {
+			return new ArchiveDemand(0, 0);
+		}
+		File workFolder = resolveExportFolder(extractFolder);
+		File exportFile = new File(workFolder, EXPORT_FILE);
+		if (!exportFile.isFile()) {
+			cleanupSafely(extractFolder, null);
+			return new ArchiveDemand(0, 0);
+		}
+		try (FileInputStream fis = new FileInputStream(exportFile)) {
+			TurExchange exchange = JsonMapper.builder().build().readValue(fis, TurExchange.class);
+			int agents = countNew(exchange.getAgents() == null ? 0 : exchange.getAgents().size(),
+					turAIAgentImportService.detectConflicts(exchange).size());
+			int sites = countNew(exchange.getSnSites() == null ? 0 : exchange.getSnSites().size(),
+					detectConflicts(workFolder).size());
+			return new ArchiveDemand(agents, sites);
+		} catch (Exception e) {
+			// An unreadable archive is the import's problem to report, not the
+			// quota's: answer "adds nothing" and let the import fail on its own
+			// terms rather than refusing for a limit that was never consulted.
+			log.warn("Failed to inspect export.json for plan demand: {}", e.getMessage());
+			return new ArchiveDemand(0, 0);
+		} finally {
+			cleanupSafely(extractFolder, null);
+		}
+	}
+
+	private static int countNew(int total, int colliding) {
+		return Math.max(0, total - colliding);
+	}
+
+	/** T981 — what an archive would add, once collisions are discounted. */
+	public record ArchiveDemand(int newAgents, int newSites) {
+	}
+
+	/**
 	 * Checks the ZIP for available import options: content files, valid SPA template,
 	 * existing SN sites that would be overwritten (matched by ID), and existing AI
 	 * agents that would be overwritten.

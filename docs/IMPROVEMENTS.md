@@ -2084,29 +2084,3 @@ Three things this cost that are worth keeping:
 - **An allowlist that masks its own detector is not a guard.** Every acknowledged entry
   must still be detected, and a positive control proves the walk works once the list is
   empty.
-
-## XC The quota gate has a door marked import (Block J) (T981)
-
-T963 put the gate at the HTTP boundary and argued the placement *was* the exemption: the
-startup seeders and the import path create through the repository, and neither is a
-tenant spending a plan. Half of that is right. The seeders are boot-time and rightly
-exempt. **Import is an HTTP endpoint a user drives** — `POST /api/import` with a
-multipart file, and the marketplace's `POST /api/marketplace/import` beside it — both
-reaching `TurImportExchange` and its `TurAIAgentImportService`, neither asking the quota
-anything.
-
-So a FREE tenant capped at three agents and two sites uploads an archive holding ten of
-each and has ten. The single-create endpoints refuse the fourth agent while the
-documented bulk path ignores the cap entirely.
-
-The fix is not one more `checkCanCreateAgent()` call. An import creates N at once, so
-the question is whether N fits the remaining allowance, and the answer has to arrive
-**before** anything is written — a half-applied import that stops at the limit is the
-failure mode T957 argued against for pairing, with more wreckage.
-
-That needs a count of what the archive holds, taken from the parsed model before the
-write, and an N-aware check. `VigletQuotaService.check` compares one count to one limit,
-so the arithmetic belongs in `TurTenantQuotaService`, which already reads the counter
-and the limits for T959's refusal body.
-
-The boot seed must stay exempt: it runs before any tenant exists.

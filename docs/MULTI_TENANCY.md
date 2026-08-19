@@ -111,6 +111,12 @@ called it):
 | `agents` | `TurAIAgentAPI.turAIAgentAdd` | The HTTP boundary *is* the exemption: the startup seeders and the import path create agents through the repository, and neither is a tenant spending a plan. |
 | `sites` | `TurSNSiteAPI.turSNSiteAdd` | Same, and before the name-collision check — renaming does not get an operator past a plan limit. |
 | `monthlyTokens` | `TurLlmModelFactory.createChatModel` / `createStreamingChatModel` | The single boundary every LLM call comes through. The alternative was a list of ~45 endpoints, which is a list that stops being complete; the two path-regex filters that already try it have both drifted. |
+| `agents` + `sites`, in bulk | `TurImportAPI` and `TurMarketplaceAPI` (T981) | Import creates many at once, so both endpoints ask `inspectDemand` what the archive would **add** — entries colliding with an existing id are updates, not creations — and refuse the whole batch before a byte is written. A half-applied import is worse than a refused one. |
+
+The first-boot seed (`TurExportImportOnStartup`) reaches the same exchange method
+and stays **exempt**: it provisions a fresh install before any tenant exists.
+That exemption is structural — the seeder never sees the quota service — and
+`TurTenantQuotaBatchTest` fails if a later change gives it one.
 
 `createEmbeddingModel` is deliberately **not** admitted: embeddings are what
 indexing and retrieval run on, so refusing them would turn an exhausted chat

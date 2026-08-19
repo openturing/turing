@@ -48,13 +48,16 @@ public class TurImportAPI {
 	private final TurImportExchange turImportExchange;
 	private final TurSNSiteExportValidator turSNSiteExportValidator;
 	private final TurSNSiteContentExchangeService contentExchangeService;
+	private final com.viglet.turing.tenant.TurTenantQuotaService turTenantQuotaService;
 
 	public TurImportAPI(TurImportExchange turImportExchange,
 			TurSNSiteExportValidator turSNSiteExportValidator,
-			TurSNSiteContentExchangeService contentExchangeService) {
+			TurSNSiteContentExchangeService contentExchangeService,
+			com.viglet.turing.tenant.TurTenantQuotaService turTenantQuotaService) {
 		this.turImportExchange = turImportExchange;
 		this.turSNSiteExportValidator = turSNSiteExportValidator;
 		this.contentExchangeService = contentExchangeService;
+		this.turTenantQuotaService = turTenantQuotaService;
 	}
 
 	@PostMapping
@@ -63,6 +66,14 @@ public class TurImportAPI {
 			@RequestParam(defaultValue = "false") boolean includeTemplate,
 			@RequestParam(required = false) String taskId,
 			@RequestParam(defaultValue = "false") boolean overwrite) {
+		// T981 / §XC — the plan limit, asked for the whole archive before a byte
+		// of it is written. T963 gated the single-create endpoints and left this
+		// one open on the reasoning that import writes through the repository —
+		// true of the first-boot seed, which calls the exchange directly and
+		// stays exempt, and false of this endpoint, which a user drives.
+		TurImportExchange.ArchiveDemand demand = turImportExchange.inspectDemand(multipartFile);
+		turTenantQuotaService.checkCanCreateAgents(demand.newAgents());
+		turTenantQuotaService.checkCanCreateSites(demand.newSites());
 		return turImportExchange.importFromMultipartFile(
 				multipartFile, includeContent, includeTemplate, taskId, overwrite);
 	}

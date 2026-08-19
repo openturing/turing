@@ -93,6 +93,52 @@ public class TurTenantQuotaService {
     }
 
     /**
+     * T981 / §XC — reject (402) when creating {@code count} more agents would
+     * cross the plan limit.
+     *
+     * <p>An import creates many at once, and asking the one-at-a-time gate that
+     * many times would let the first few through before refusing — a
+     * half-applied import, which is worse than a refused one. So this answers
+     * for the whole batch before anything is written.
+     */
+    public void checkCanCreateAgents(int count) {
+        guardBatch(TurVigletResourceCounter.AGENTS, count);
+    }
+
+    /** T981 — the same, for Semantic Navigation sites. */
+    public void checkCanCreateSites(int count) {
+        guardBatch(TurVigletResourceCounter.SITES, count);
+    }
+
+    /**
+     * The batch form of {@link #guard}. The shared {@code VigletQuotaService}
+     * compares one count to one limit, so the arithmetic lives here — which is
+     * also where the counter and the limits are already read for T959's refusal
+     * body, and therefore where the two cannot disagree.
+     */
+    private void guardBatch(String resourceKey, int count) {
+        if (count <= 0) {
+            return;
+        }
+        VigletPlanLimits limits = currentLimits();
+        long max = limits.limit(resourceKey);
+        if (limits.isUnlimited(max)) {
+            return;
+        }
+        String tenantId = tenantContext.resolveCurrentTenant();
+        long used = resourceCounter.count(tenantId, resourceKey);
+        if (used + count <= max) {
+            return;
+        }
+        String upgradeUrl = upgradeTargetService.upgradeUrl(tenantId, resourceKey).orElse(null);
+        throw new TurQuotaExhaustedException(HttpStatus.PAYMENT_REQUIRED, resourceKey, used, max,
+                null, upgradeUrl,
+                "Plan limit reached for '" + resourceKey + "': " + used + " of " + max
+                        + " used, and this would add " + count
+                        + ". Upgrade the plan, or use your own API key.");
+    }
+
+    /**
      * Runs the shared check and, when it refuses, replaces the bare status with
      * the refusal the console can act on. The enrichment reads the same counter
      * the gate just consulted, so the numbers in the body are the numbers that
