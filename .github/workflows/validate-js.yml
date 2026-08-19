@@ -46,6 +46,14 @@ jobs:
             size: false
           - workspace: turing-example-vinyl-records
             size: false
+          # T978: the twelfth package, and the one nobody added. Its `main` and
+          # `types` point at `src/index.ts`, so dependents type-check its sources
+          # while building themselves and a plain type error does surface in
+          # turing-app — what ran nowhere is its own `tsc -p tsconfig.json`, so a
+          # stale tsconfig or an emit that stopped resolving was caught by
+          # nothing. No bundle ships from it, hence `size: false`.
+          - workspace: "@viglet/turing-shared-types"
+            size: false
 
     name: ${{ matrix.workspace }}
     steps:
@@ -73,7 +81,7 @@ jobs:
 
       # T935 — the guard scripts have their own suite now, run once rather than
       # per matrix entry: they are workspace-independent, so the first entry
-      # carries them and the other ten do not repeat the work.
+      # carries them and the other eleven do not repeat the work.
       - name: Guard scripts
         if: matrix.workspace == '@viglet/turing-sdk'
         working-directory: frontend
