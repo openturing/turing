@@ -2086,30 +2086,6 @@ Three things this cost that are worth keeping:
   must still be detected, and a positive control proves the walk works once the list is
   empty.
 
-## LXXV The path lists that guard the LLM surfaces have drifted (Block AN) (T966)
-
-`TurSNSiteApiKeyGateFilter` and `TurAnonymousAbuseRateLimitFilter` each carry a regex
-naming the paths that cost tokens. Mapping the endpoints that actually reach a model
-found about forty-five, and neither list has kept up.
-
-Uncovered today: `/api/sn/{site}/answer` (an SSE answer stream, public),
-`/v1/chat/completions` and `/v1/embeddings` (the governed gateway — the highest-volume
-token path there is), and `/api/v2/ai-agent/{agentId}/chat` (CSRF-exempt by design, so
-the filter is the only thing in front of it). Each is anonymous-reachable and each
-spends money per call.
-
-The same audit found a matcher for `/api/genai/chat` in `TurSecurityConfigProduction`
-with no controller behind it: a CSRF exemption for a route that does not exist. Harmless
-now, and exactly the kind of line that stops being harmless the day somebody adds that
-path back.
-
-T963 answered the same shape of problem by admitting the tenant budget at
-`TurLlmModelFactory` — one seam every call passes — instead of enumerating endpoints.
-Abuse control cannot move there, because it has to refuse before the work starts and it
-keys on the caller rather than the tenant. So the lists stay, and what they need is a
-test that fails when an endpoint reaches an LLM without appearing in one of them: the
-enumeration is fine, going stale silently is not.
-
 ## LXXVI Clearing the standing lint debt so the gate can go absolute (Block BV) (T967)
 
 `roadkeep.toml` says it plainly: the gate is wired against a baseline because a corpus

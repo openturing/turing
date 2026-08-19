@@ -62,14 +62,22 @@ public class TurSNSiteApiKeyGateFilter extends OncePerRequestFilter {
 
     /**
      * Public SN endpoints keyed by site NAME: {@code /api/sn/{site}/(ac|search|
-     * _search|click|query|chat|copilot)...}. Mirrors the {@code permitAll} matchers
-     * in the security config. {@code copilot} (T392) is an LLM-cost surface gated
-     * exactly like {@code chat}: an API_KEY-mode site requires a key, PUBLIC sites
-     * are open. Admin endpoints (resolved by id, or {@code names} / {@code console})
-     * never match a real site name and so are never gated.
+     * _search|click|query|chat|copilot|answer)...}. Mirrors the {@code permitAll}
+     * matchers in the security config. {@code copilot} (T392) is an LLM-cost surface
+     * gated exactly like {@code chat}: an API_KEY-mode site requires a key, PUBLIC
+     * sites are open. Admin endpoints (resolved by id, or {@code names} /
+     * {@code console}) never match a real site name and so are never gated.
+     *
+     * <p>T966 / §LXXV — {@code answer} joined the list late. T889 made the answer
+     * stream anonymous on the stated grounds that it was "gated by the same
+     * TurSNSiteApiKeyGateFilter and abuse-control caps" as site chat, and it was in
+     * neither: an API_KEY-mode site's answer stream answered anyone who asked. That
+     * is the failure mode a hand-maintained path list has, so
+     * {@code TurLlmCostSurfaceCoverageTest} now fails when a public SN path is
+     * declared LLM-cost and missing from here.
      */
     private static final Pattern PUBLIC_SN_PATH = Pattern.compile(
-            "^/api/sn/([^/]+)/(?:ac|search|_search|click|query|chat|copilot)(?:/.*)?$");
+            "^/api/sn/([^/]+)/(?:ac|search|_search|click|query|chat|copilot|answer)(?:/.*)?$");
 
     /** Spell-check carries an extra locale segment: {@code /api/sn/{site}/{locale}/spell-check}. */
     private static final Pattern SPELL_CHECK_PATH = Pattern.compile(
@@ -120,6 +128,20 @@ public class TurSNSiteApiKeyGateFilter extends OncePerRequestFilter {
         response.setStatus(HttpStatus.UNAUTHORIZED.value());
         response.setContentType(MediaType.APPLICATION_JSON_VALUE);
         response.getWriter().write("{\"error\":\"Unauthorized\"}");
+    }
+
+    /**
+     * T966 / §LXXV — whether this filter would gate {@code uri} (i.e. it resolves
+     * to a site name). Exposed so the coverage test can assert that every public
+     * SN path declared LLM-cost is actually reached by the gate, instead of the
+     * security config merely claiming it is.
+     *
+     * @since 2026.3.4
+     */
+    public static boolean gates(String uri) {
+        return PUBLIC_SN_PATH.matcher(uri).matches()
+                || SPELL_CHECK_PATH.matcher(uri).matches()
+                || CONTENT_FIT_PATH.matcher(uri).matches();
     }
 
     /**

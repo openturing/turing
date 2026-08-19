@@ -149,10 +149,15 @@ public class TurSecurityConfigProduction {
                         "/api/sn/*/chat",
                         "/api/sn/*/chat/**",
                         // T889 / §LXIV.5 (Block BQ) — the T833 answer stream is the same
-                        // anonymous LLM-cost class as the site chat above, and is gated
-                        // by the same TurSNSiteApiKeyGateFilter and abuse-control caps,
-                        // so the SDK's public answer surfaces (showcase, public-site
-                        // hero) can consume it keyless. `freshness` and `signal` ride
+                        // anonymous LLM-cost class as the site chat above, so the SDK's
+                        // public answer surfaces (showcase, public-site hero) can
+                        // consume it keyless. It is gated by the same
+                        // TurSNSiteApiKeyGateFilter and abuse-control caps — which
+                        // T966 had to make true: this comment claimed it while the
+                        // path was in neither filter's list, so an API_KEY-mode site's
+                        // answer stream answered anyone. It is now declared in
+                        // PUBLIC_SN_LLM_COST_MATCHERS and the coverage test holds both
+                        // filters to it. `freshness` and `signal` ride
                         // with it: both are fire-and-forget companions of an answer
                         // already produced. `answer/share` is deliberately ABSENT —
                         // minting a permalink is a WRITE, and an anonymous write is a
@@ -197,6 +202,54 @@ public class TurSecurityConfigProduction {
                         API_SIGNUP,
                         LOGIN_PATH,
                         SETUP_PATH
+        );
+
+        /**
+         * T966 / §LXXV — the anonymous {@code /api/sn/**} surface, split by what a
+         * call <b>costs</b>. Both lists together must equal every {@code /api/sn/}
+         * entry in {@link #PUBLIC_MATCHERS}, and {@code TurLlmCostSurfaceCoverageTest}
+         * enforces that — so a new public SN path cannot be added without saying
+         * which of the two it is.
+         *
+         * <p>The classification is not documentation. Everything in
+         * {@link #PUBLIC_SN_LLM_COST_MATCHERS} must be reached by both
+         * {@code TurSNSiteApiKeyGateFilter} (so an API_KEY-mode site is not open)
+         * and {@code TurAnonymousAbuseRateLimitFilter} (so an anonymous loop cannot
+         * spend without bound), and the same test fails when it is not.
+         *
+         * <p>This exists because the claim used to live in a comment. T889 made the
+         * answer stream anonymous "gated by the same TurSNSiteApiKeyGateFilter and
+         * abuse-control caps" as chat, and it was in neither list.
+         */
+        private static final List<String> PUBLIC_SN_LLM_COST_MATCHERS = List.of(
+                        "/api/sn/*/chat",
+                        "/api/sn/*/chat/**",
+                        "/api/sn/*/answer",
+                        "/api/sn/*/answer/freshness",
+                        "/api/sn/*/answer/signal",
+                        "/api/sn/*/copilot",
+                        "/api/sn/*/copilot/**",
+                        "/api/sn/*/persona/*/content-fit"
+        );
+
+        /**
+         * T966 — the anonymous SN paths that reach no model: retrieval and
+         * telemetry. Throttling these in the abuse filter would break per-keystroke
+         * autocomplete, so they are shed at the proxy with a looser zone instead
+         * (§XXXVII.3). They still pass the API-key gate, which is about who may read
+         * a site, not about what a call costs.
+         */
+        private static final List<String> PUBLIC_SN_CHEAP_MATCHERS = List.of(
+                        "/api/sn/names",
+                        "/api/sn/*/ac",
+                        "/api/sn/*/ac/**",
+                        "/api/sn/*/search",
+                        "/api/sn/*/search/**",
+                        "/api/sn/*/_search",
+                        "/api/sn/*/click",
+                        "/api/sn/*/query",
+                        "/api/sn/*/query/**",
+                        "/api/sn/*/*/spell-check"
         );
 
         /**
@@ -273,6 +326,15 @@ public class TurSecurityConfigProduction {
                 return LOCAL_AUTH_ONLY_MATCHERS;
         }
 
+        /** T966 / §LXXV — read by {@code TurLlmCostSurfaceCoverageTest}. */
+        static List<String> publicSnLlmCostMatchers() {
+                return PUBLIC_SN_LLM_COST_MATCHERS;
+        }
+
+        static List<String> publicSnCheapMatchers() {
+                return PUBLIC_SN_CHEAP_MATCHERS;
+        }
+
         static List<String> keycloakOnlyMatchers() {
                 return KEYCLOAK_ONLY_MATCHERS;
         }
@@ -324,7 +386,12 @@ public class TurSecurityConfigProduction {
                                 .csrfTokenRepository(csrfTokenRepository)
                                 .csrfTokenRequestHandler(new CsrfTokenRequestAttributeHandler())
                                 .ignoringRequestMatchers(
-                                                mvc.matcher("/api/genai/chat"),
+                                                // T966 / §LXXV — `/api/genai/chat` used to be listed
+                                                // here. No controller maps it, and `/api/genai/**`
+                                                // below already covers the prefix, so the line
+                                                // exempted a route that does not exist — the kind of
+                                                // leftover that stops being harmless the day somebody
+                                                // adds that path back expecting CSRF to apply.
                                                 mvc.matcher("/api/v2/integration/**"),
                                                 // AI Agent chat consumed server-to-server (e.g. the
                                                 // viglet.com Next.js proxy) authenticated by a Dev Token

@@ -6,10 +6,6 @@
 > [STRATEGY.md](STRATEGY.md); the markers and limits are `roadkeep.toml`'s. Blocks are
 > reused, not minted — `roadkeep brief` picks the next task and states why.
 
-## Block AN — Security hardening (post-audit, §XXXVII)
-
-- 📋 **T966** (deps: —) **the two filters that gate LLM-cost paths list them by regex, and both lists have drifted behind the endpoints** — An abuse limit that misses the answer stream, the gateway and the v2 agent chat is an open door on the three surfaces most worth abusing. → §LXXV
-
 ## Block BV — The quality gate stops at the package boundary
 
 - 📋 **T967** (deps: —) **the roadkeep gate runs against a baseline, so 26 standing findings are forgiven by name and nothing ever clears them** — A gate that forgives its own backlog reports only what this branch broke, and the debt it was adopted to remove outlives every branch that steps around it. → §LXXVI

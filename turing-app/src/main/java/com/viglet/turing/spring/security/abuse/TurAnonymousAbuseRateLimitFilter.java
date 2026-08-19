@@ -48,16 +48,25 @@ import lombok.extern.slf4j.Slf4j;
 public class TurAnonymousAbuseRateLimitFilter extends OncePerRequestFilter {
 
     /**
-     * The anonymous, <b>LLM-cost-bearing</b> SN endpoints: RAG chat and the
-     * persona content-fit call. Cheap high-frequency reads (autocomplete
-     * {@code /ac}, {@code /search}, {@code /query}) are deliberately NOT limited
-     * here — throttling per-keystroke autocomplete would break normal search UX;
-     * they are shed at the reverse-proxy layer with a looser zone instead. This
-     * filter is the app-layer backstop for the unbounded-spend chat surface
-     * (§XXXVII.3). Admin/console paths never match a site name so are never hit.
+     * The anonymous, <b>LLM-cost-bearing</b> SN endpoints: RAG chat, the answer
+     * stream, the catalog copilot and the persona content-fit call. Cheap
+     * high-frequency reads (autocomplete {@code /ac}, {@code /search},
+     * {@code /query}) are deliberately NOT limited here — throttling per-keystroke
+     * autocomplete would break normal search UX; they are shed at the
+     * reverse-proxy layer with a looser zone instead. This filter is the app-layer
+     * backstop for the unbounded-spend chat surface (§XXXVII.3). Admin/console
+     * paths never match a site name so are never hit.
+     *
+     * <p>T966 / §LXXV — {@code answer} and {@code copilot} were missing. Both are
+     * anonymous and both spend a completion per call; {@code copilot} was left to
+     * "nginx rate limiting on the demo host", which is precisely the dependency on
+     * a correctly-configured proxy this filter exists to remove, and
+     * {@code answer} was documented as covered here while it was not.
+     * {@code TurLlmCostSurfaceCoverageTest} now fails when a public SN path is
+     * declared LLM-cost and missing from this pattern.
      */
     private static final Pattern RATE_LIMITED_PATH = Pattern.compile(
-            "^/api/sn/[^/]+/chat(?:/.*)?$"
+            "^/api/sn/[^/]+/(?:chat|answer|copilot)(?:/.*)?$"
                     + "|^/api/sn/[^/]+/persona/[^/]+/content-fit$");
 
     private final TurAbuseControlProperty properties;
@@ -106,6 +115,17 @@ public class TurAnonymousAbuseRateLimitFilter extends OncePerRequestFilter {
         if (contextPath != null && !contextPath.isEmpty() && uri.startsWith(contextPath)) {
             uri = uri.substring(contextPath.length());
         }
+        return limits(uri);
+    }
+
+    /**
+     * T966 / §LXXV — whether {@code uri} is throttled. Exposed so the coverage
+     * test can assert the pattern against the security config's declared LLM-cost
+     * surface rather than against a second copy of the same list.
+     *
+     * @since 2026.3.4
+     */
+    public static boolean limits(String uri) {
         return RATE_LIMITED_PATH.matcher(uri).find();
     }
 
