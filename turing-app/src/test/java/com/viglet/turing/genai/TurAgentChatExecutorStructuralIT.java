@@ -59,10 +59,16 @@ import com.viglet.testsupport.genai.executor.TurAgentChatExecutorMockSupport;
  *       (fixtures land under task T5).</li>
  * </ol>
  *
- * <p>Each {@code @Test} stays {@code @Disabled} until implemented — the
- * Javadoc <b>is</b> the contract. Bodies are literally
- * {@code fail("Not implemented...")} so nobody enables a test without
- * writing the assertions.
+ * <p><b>These tests run.</b> They began as {@code @Disabled} skeletons whose
+ * bodies were {@code fail("Not implemented...")}, so that nobody could enable one
+ * without writing the assertions — and that is history: the bodies were filled
+ * in, and this class now holds five live tests with real assertions and no
+ * {@code @Disabled} anywhere. T974 corrected this paragraph, which had gone on
+ * describing the skeleton state long after it ended and so told every reader that
+ * a live gate was inert.
+ *
+ * <p>The per-test Javadoc below is still the contract each one locks, which is
+ * why it is written in that much detail.
  *
  * @author Alexandre Oliveira
  * @since 2026.2.7
