@@ -30,9 +30,19 @@ Two consequences worth stating, because they replace habits this file used to te
 - **The pointer into `IMPROVEMENTS.md` is derived and has to resolve.** `add --section` /
   `section add` writes the rationale in the same transaction as the line.
 
-`roadkeep lint` is the backstop and runs in CI (`.github/workflows/roadkeep.yml`) against
-a baseline, so it fails on what a branch added and forgives the corpus's standing
-adoption debt. Run `roadkeep lint --baseline HEAD` after your writes to see only yours.
+`roadkeep lint` is the backstop and runs in CI (`.github/workflows/roadkeep.yml`).
+**It is absolute since T967** — the adoption debt was cleared, so nothing is forgiven by
+name and a finding is something your branch introduced. `roadkeep lint --baseline HEAD`
+still narrows the output to your own writes while you work; the gate itself takes no
+baseline, and reintroducing one to turn a red run green hides the next real finding
+behind the same list.
+
+**When a local lint and CI disagree, CI's copy decides.** Two roadkeeps are in play: the
+plugin this session runs, and the SHA `.github/workflows/roadkeep.yml` pins (T969).
+`roadkeep engines` names them. The pinned SHA is the one that fails the build, so a
+finding your session reports and the pin does not — or the reverse — is answered by
+`/plugin update` to align the local copy, never by editing the four files to satisfy the
+older rule. A fix released upstream reaches this repo only when somebody bumps that pin.
 
 ## ⛔ One task, one commit (non-negotiable)
 

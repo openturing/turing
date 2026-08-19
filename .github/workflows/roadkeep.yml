@@ -15,6 +15,24 @@
 # Do not reintroduce `baseline:` to make a red run green. It forgives by name,
 # which means the next real finding hides behind the same list.
 #
+# **The action is pinned** (T969). `@main` was fine while the gate forgave a
+# baseline: both moved, and only new findings mattered. Absolute, an unpinned gate
+# means a rule added upstream turns this build red on prose nobody here touched,
+# and roadkeep's main moves several times a day — 0.1.678 to 0.1.1026 inside one
+# afternoon. The pin below is roadkeep 0.1.1026, verified to lint this corpus
+# clean before it was written down.
+#
+# To bump: pick the new SHA, run `roadkeep lint` from that revision against this
+# repo, and only then change the line — the pin is what makes a red build
+# reproducible, so it moves deliberately or not at all. Bumping is also how a fix
+# landed upstream (RK1217 was one) reaches this gate; it does not arrive on its
+# own any more, which is the price of the pin and the point of it.
+#
+# The plugin a session runs is NOT pinned here — it is the Claude Code plugin
+# cache. `roadkeep engines` names both; when they disagree, the version in this
+# file is the one that decides the build, and `/plugin update` is what moves the
+# local copy to match.
+#
 # **On demand only** (T929). 24a848332e moved this to manual dispatch and left the
 # prose describing a per-branch gate, which is how T922 came to read the state as
 # an oversight and had to be reverted (T928).
@@ -29,4 +47,5 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
-      - uses: alegauss/roadkeep@main
+      # roadkeep 0.1.1026 — see the note above before changing this SHA.
+      - uses: alegauss/roadkeep@19b2841c4e188afaeff8a9c4ae0b116534398a4b

@@ -2111,27 +2111,3 @@ carrying an assertion signed by the key in force, and a `/v1` call carrying both
 
 The same fixtures are what the cloud side should be handed to verify against, so the
 contract has one definition rather than two.
-
-## LXXVIII The gate a developer runs is not the gate that fails the build (Block BV) (T969)
-
-Three copies of roadkeep are in play here: the plugin the MCP tools and the `PreToolUse`
-hook run, the CLI in a local checkout, and `alegauss/roadkeep@main` in the workflow. The
-tool says so itself — every `lint` ends with an `engine.disagreement` note naming the
-two it can see.
-
-It was survivable while the gate ran against a baseline, because both copies forgave the
-same standing list and only new findings mattered. T967 removed that cushion. The gate
-is absolute now, so the two copies disagreeing is a build that fails on a finding the
-developer's own run does not produce — or worse, passes locally and fails in CI, which
-is the direction that wastes an afternoon.
-
-T967 met this immediately: the plugin still reported the `T759` ledger path while the
-newer engine did not, because RK1217 had shipped upstream in between. The right answer
-there was to trust the version CI runs, and that reasoning should not have to be redone
-by hand each time.
-
-The fix is to make the versions agree deliberately rather than by luck. Pin the action
-to a released version instead of `@main` and pin the plugin to the same one, or keep
-`@main` and adopt a documented "refresh the plugin before trusting a local lint" step.
-Either is fine; what is not fine is that today the answer depends on which copy
-answered.
