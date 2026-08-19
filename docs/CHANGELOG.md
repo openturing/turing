@@ -1285,6 +1285,7 @@
 - **T971** — Surefire prints the causal chain now, so a context failure names the missing bean on the console instead of hiding it in a report file behind five identical walls.
 - **T972** — A probe IT went from BUILD SUCCESS exit 0 to BUILD FAILURE exit 1; the suite was green on the day, so the gate came back without excluding anything.
 - **T974** — The class comment now says these five tests run, with the skeleton state named as the history it is, so nobody discounts a live gate on the strength of a stale paragraph.
+- **T977** — The skill now carries the command that answers it — roadkeep block list against COVERAGE.md — and says a label the matrix spells differently is a question rather than an orphan.
 
 ## Block BW — What the link-free response and its consumers still lack (§LXX)
 

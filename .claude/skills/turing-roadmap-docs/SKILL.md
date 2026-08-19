@@ -258,3 +258,23 @@ runs per task, but it's fine to accumulate several small page edits and land the
 focused vigletdocs commit at a natural boundary (e.g. once a whole block ships) rather
 than a trivial commit per task — as long as `COVERAGE.md` never claims a page that isn't
 there yet.
+
+**Seeing the current state — run this, don't invent it.** The decision above asks whether
+a block is accounted for, and the way to see that is one command plus one comparison:
+
+```bash
+roadkeep block list                      # every declared block, from the governed files
+grep -c "Block X" …/docs-turing/COVERAGE.md   # is that block accounted for?
+```
+
+`roadkeep block list` is the right source: it reads all four governed files, so it finds
+sub-blocks (`D.1`, `J.10`) and blocks the changelog groups under one heading. Scraping
+`^## Block` out of `CHANGELOG.md` instead — which is what two sessions reached for — sees
+fewer blocks and reports false gaps.
+
+**A label the matrix does not spell is a question, not a verdict.** `COVERAGE.md`
+deliberately groups related blocks into one row (`D.1/D.2/D.5/…`) and sometimes names a
+block by its subject rather than its letter. Read the row before concluding a block is an
+orphan: of nine that looked missing in T976, seven were spelled some other way and only
+two were real. When you resolve one of those, add the letter to the row so the next
+comparison lands at zero.
