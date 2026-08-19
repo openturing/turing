@@ -10,7 +10,10 @@
 package com.viglet.turing.genai.vigletai;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.content;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.header;
@@ -181,6 +184,49 @@ class TurVigletWireContractTest {
 
         server.verify();
         assertThat(rotation.rotated()).isTrue();
+    }
+
+    /**
+     * T985 / §XCIV — the refusal the live service actually returns, recorded from
+     * the first real pairing rather than imagined.
+     *
+     * <p>Every rotate assertion above it answers 2xx, so the branch that runs when
+     * Viglet AI says no had never run against anything. Against the deployed
+     * service it is the branch that runs: {@code /device/rotate} authenticates
+     * before it parses, and answers <b>401 {@code invalid_client}</b> — a string
+     * outside the four RFC 8628 errors the poll path maps, on a call the poll path
+     * never makes.
+     *
+     * <p>The load-bearing assertion is the last one: <b>{@code adopt} is never
+     * called</b>. Turing survives the refusal today because the branch keys off the
+     * status and not off the error string — but nothing said so, and an install that
+     * adopts a key the service declined to register signs every later call with a
+     * key nobody knows, losing its credit silently and permanently. That is the
+     * failure this fixture exists to make impossible.
+     */
+    @Test
+    void aRefusedRotationKeepsTheKeyTheServiceStillKnows() throws Exception {
+        when(installIdentityService.isBound()).thenReturn(true);
+        when(installIdentityService.mintReplacement())
+                .thenReturn(KeyPairGenerator.getInstance("Ed25519").generateKeyPair());
+        when(installIdentityService.assertionHeaders()).thenReturn(Map.of(
+                TurVigletInstallIdentityService.INSTALL_HEADER, "install-uuid",
+                TurVigletInstallIdentityService.ASSERTION_HEADER, "v1.install-uuid.99.nonce.sig"));
+        when(turGlobalSettingsService.getVigletAiInstallPublicKey()).thenReturn("current-key-b64");
+
+        server.expect(requestTo(PAIR_BASE + "/device/rotate"))
+                .andExpect(method(HttpMethod.POST))
+                .andRespond(withStatus(HttpStatus.UNAUTHORIZED)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .body("{\"error\":\"invalid_client\"}"));
+
+        TurVigletPairing.Rotation rotation = service.rotateKey();
+
+        server.verify();
+        assertThat(rotation.rotated()).isFalse();
+        assertThat(rotation.publicKey()).isEqualTo("current-key-b64");
+        assertThat(rotation.detail()).contains("invalid_client").contains("still works");
+        verify(installIdentityService, never()).adopt(any());
     }
 
     /**

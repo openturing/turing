@@ -2085,26 +2085,26 @@ Three things this cost that are worth keeping:
   must still be detected, and a positive control proves the walk works once the list is
   empty.
 
-## XCIV The first real handshake (Block J.10) (T985)
+## XCV The boot failure that will not say its name (T986)
 
-The endpoint answers now. What has never happened is one install completing the flow
-against it: `TurVigletWireContractTest` asserts the requests Turing emits,
-`TurVigletCallHeaderContractTest` asserts the headers a `/v1` call carries, and both do
-it against stubs this repository wrote. The server half was implemented from the same
-prose. Two documents agreeing is not a handshake.
+T985 needed a stock production install to pair with, and lost most of its run to getting
+one. The jar exited 1 with the log ending mid-sentence at "Skipping auto-import" — no
+stack, no message, nothing naming a property. It surfaced only after disabling Boot's
+logging system outright, which is not a move an operator knows to make:
+`TurLLMInstanceOnStartup.provisionInstance` throws `IllegalStateException:
+turing.ai.crypto.key must be configured in production`.
 
-The run is short and its value is entirely in what disagrees: start pairing from the
-bento activation card, approve at the verification URL, and watch whether the credential
-lands, the managed instance is created, and a first chat answers. Then rotate the key
-and confirm the refusal path — a rotation the service declines must leave the old key
-working, which is the one branch with real consequences if either side read it
-differently.
+The throw is right. Provisioning an instance means encrypting a credential, and doing
+that with no key configured would write a secret nobody can read back. What is wrong is
+that the sentence explaining it never reaches the operator, because the failure lands in
+a window where the appenders are not attached and Boot's own failure reporter does not
+cover it.
 
-Whatever mismatches, the fixtures are where the fix is recorded, so the next change to
-either half breaks a build instead of an operator.
+Two things worth having, and the first is enough alone: fail with the reason on stderr,
+so the exit code arrives with its cause. The second is that this only fires when a
+provider key is present and the crypto key is not — a pair the startup path could check
+and refuse by name up front, rather than partway through provisioning.
 
-**This one needs a person for the middle.** Approving a device code means signing in at
-a URL, and a pairing attempt also spends real credit against a real account — neither is
-something to drive unattended. What can be prepared is the install: the fat-jar run is
-already written down, and the endpoint defaults are what a stock build already points
-at.
+The same install would have failed identically on a first pairing in the field, where
+nobody has a fat jar to re-run with logging disabled. It is the cheapest kind of fix,
+and the run that found it was not cheap.

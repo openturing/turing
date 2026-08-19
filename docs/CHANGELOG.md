@@ -1328,3 +1328,4 @@
 - **T975** — Viglet AI is documented for the operator now — activation, pairing, the fixed alias and key rotation on llm-instances, the real plan limits and the refusal on multi-tenancy, with both COVERAGE rows.
 - **T980** — Both pages now say the managed endpoint is not live and that your own key is the working path today, with the description kept for the day it answers.
 - **T984** — Both stale notes are gone now that /pair answers, and the one clause that was about signing rather than liveness stayed.
+- **T985** — Paired against the live service: the credential landed and a chat turn answered. Rotation was declined with 401 invalid_client and the old key kept working; that refusal is now a fixture.

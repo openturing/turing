@@ -8,7 +8,7 @@
 
 ## Block J.10 — Viglet AI: the managed LLM onboarding credit (§XCIV)
 
-- 📋 **T985** (deps: T984 ✅, T968 ✅, T970 ✅) **no install has ever paired against the live service, so the contract is agreed by two documents and no handshake** — Both halves were written from prose and each is green against its own stubs, which is precisely the setup where the first real pairing is the test. → §XCIV
+- 📋 **T986** (deps: —) **a production install missing turing.ai.crypto.key dies at boot with the cause swallowed, so pairing cannot start** — The startup provisioner throws before the appenders attach, so the operator gets exit 1 and a log ending mid-sentence where one line would do. → §XCV
 
 ## Non-goals (do NOT add as tasks)
 
