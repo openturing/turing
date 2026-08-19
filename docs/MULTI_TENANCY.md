@@ -117,6 +117,13 @@ indexing and retrieval run on, so refusing them would turn an exhausted chat
 credit into a search outage. Single-tenant installs are unaffected —
 `currentLimits()` returns `UNLIMITED` and returns before counting anything.
 
+**The refusal body is asserted as a response** (T973). `TurQuotaRefusalResponseTest`
+runs the advice and reads what the console receives: the status, the `type` URI,
+and `resource` / `used` / `limit` / `resetsAt` / `upgradeUrl` under the names
+`src/lib/quota-refusal.ts` reads them by. Both sides pin the type URI as a
+literal, because the console returns null for any other `type` — so a drift
+there would not break a build, it would silently stop the banner rendering.
+
 **The refusal carries the exit** (T959). Both statuses answer with an RFC 7807
 body typed `tag:viglet.com,2026:errors/quota-exhausted`, carrying `resource`,
 `used`, `limit`, `resetsAt` (the monthly token window only — a resource count

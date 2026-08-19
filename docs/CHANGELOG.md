@@ -1316,3 +1316,4 @@
 - **T965** — Rotation is now a pairing variant — mint, register signed with the key in force, then swap — behind a Rotate key action; any failure leaves the old key working.
 - **T968** — A MockRestServiceServer bound to the pairing client asserts the requests that actually leave — paths, JSON keys, header names, signed payload and the RFC 8628 error strings.
 - **T970** — A throwaway JDK HttpServer stands in for the endpoint on both transports, and the arriving assertion is verified against the public key pairing registered.
+- **T973** — The advice now runs in a test that reads the response the console gets, and both ends pin the type URI as a literal so a drift on either side fails a build.

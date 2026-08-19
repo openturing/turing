@@ -31,6 +31,17 @@ function renderBanner() {
 }
 
 describe("parseQuotaRefusal", () => {
+  /**
+   * T973 — pinned as a literal, not compared to itself. This string is the whole
+   * gate: `parseQuotaRefusal` returns null for any other `type`, so if it drifts
+   * from the backend's `TurErrorTypes.QUOTA_EXHAUSTED` the banner silently stops
+   * rendering and no build fails. The backend pins the same literal in
+   * `TurQuotaRefusalResponseTest`, so a change on either side breaks a test.
+   */
+  it("keys on the exact type URI the backend stamps", () => {
+    expect(QUOTA_EXHAUSTED_TYPE).toBe("tag:viglet.com,2026:errors/quota-exhausted");
+  });
+
   it("reads the structured refusal off a 429 problem body", () => {
     const refusal = parseQuotaRefusal(429, {
       type: QUOTA_EXHAUSTED_TYPE,
