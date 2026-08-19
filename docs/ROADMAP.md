@@ -8,8 +8,6 @@
 
 ## Block J.10 — Viglet AI: the managed LLM onboarding credit (§XCIV)
 
-- 📋 **T986** (deps: —) **a production install missing turing.ai.crypto.key dies at boot with the cause swallowed, so pairing cannot start** — The startup provisioner throws before the appenders attach, so the operator gets exit 1 and a log ending mid-sentence where one line would do. → §XCV
-
 ## Non-goals (do NOT add as tasks)
 
 Binding constraints — see [IMPROVEMENTS.md](IMPROVEMENTS.md) §I.6 (What NOT to

@@ -6,6 +6,8 @@ import java.util.function.Supplier;
 
 import org.springframework.core.env.Environment;
 
+import com.viglet.turing.system.TurStartupFailure;
+
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -60,32 +62,47 @@ public class TurCryptoKeyMaterial implements Supplier<String> {
 
     @Override
     public String get() {
-        String material = configuredKey;
-        if (material == null || material.isBlank()) {
-            if (isProductionProfileActive()) {
-                throw new IllegalStateException(
-                        "turing.ai.crypto.key must be configured in production "
-                                + "(set the TURING_AI_CRYPTO_KEY environment variable)");
+        if (isProductionProfileActive()) {
+            String rejection = productionRejection(configuredKey);
+            if (rejection != null) {
+                throw TurStartupFailure.fatal(rejection);
             }
+            return configuredKey;
+        }
+        if (configuredKey == null || configuredKey.isBlank()) {
             if (!warnedAboutFallback) {
                 warnedAboutFallback = true;
                 log.warn("Using insecure fallback key for AI secret encryption outside production");
             }
-            material = DEV_FALLBACK_KEY;
-            return material;
+            return DEV_FALLBACK_KEY;
         }
-        if (isProductionProfileActive() && isRejectedSentinel(material)) {
-            throw new IllegalStateException(
-                    "turing.ai.crypto.key is set to a known sample/dev value and must not be used in "
-                            + "production. Set TURING_AI_CRYPTO_KEY to a strong, secret value and rotate any "
-                            + "secrets previously encrypted with the sample key "
-                            + "(see docs/operations/crypto-key-rotation.md).");
-        }
-        return material;
+        return configuredKey;
     }
 
-    private boolean isRejectedSentinel(String material) {
-        return REJECTED_SENTINELS.contains(material.trim().toLowerCase());
+    /**
+     * Why this key cannot be used in production, or {@code null} when it can.
+     *
+     * <p>T986 / §XCV — extracted static so the check can also be made <em>before</em>
+     * anything is provisioned. It used to fire only from {@link #get()}, which is
+     * reached partway through startup: by then a seed import has already written to
+     * the database, and the operator is left with a half-populated install and an
+     * exit code. Same rule, one place, askable early.
+     *
+     * @param configuredKey the value of {@code turing.ai.crypto.key}, possibly null
+     * @return the operator-facing reason, or {@code null} if the key is acceptable
+     */
+    public static String productionRejection(String configuredKey) {
+        if (configuredKey == null || configuredKey.isBlank()) {
+            return "turing.ai.crypto.key must be configured in production "
+                    + "(set the TURING_AI_CRYPTO_KEY environment variable)";
+        }
+        if (REJECTED_SENTINELS.contains(configuredKey.trim().toLowerCase())) {
+            return "turing.ai.crypto.key is set to a known sample/dev value and must not be used in "
+                    + "production. Set TURING_AI_CRYPTO_KEY to a strong, secret value and rotate any "
+                    + "secrets previously encrypted with the sample key "
+                    + "(see docs/operations/crypto-key-rotation.md).";
+        }
+        return null;
     }
 
     private boolean isProductionProfileActive() {

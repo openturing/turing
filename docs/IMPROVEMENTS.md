@@ -2084,27 +2084,3 @@ Three things this cost that are worth keeping:
 - **An allowlist that masks its own detector is not a guard.** Every acknowledged entry
   must still be detected, and a positive control proves the walk works once the list is
   empty.
-
-## XCV The boot failure that will not say its name (T986)
-
-T985 needed a stock production install to pair with, and lost most of its run to getting
-one. The jar exited 1 with the log ending mid-sentence at "Skipping auto-import" — no
-stack, no message, nothing naming a property. It surfaced only after disabling Boot's
-logging system outright, which is not a move an operator knows to make:
-`TurLLMInstanceOnStartup.provisionInstance` throws `IllegalStateException:
-turing.ai.crypto.key must be configured in production`.
-
-The throw is right. Provisioning an instance means encrypting a credential, and doing
-that with no key configured would write a secret nobody can read back. What is wrong is
-that the sentence explaining it never reaches the operator, because the failure lands in
-a window where the appenders are not attached and Boot's own failure reporter does not
-cover it.
-
-Two things worth having, and the first is enough alone: fail with the reason on stderr,
-so the exit code arrives with its cause. The second is that this only fires when a
-provider key is present and the crypto key is not — a pair the startup path could check
-and refuse by name up front, rather than partway through provisioning.
-
-The same install would have failed identically on a first pairing in the field, where
-nobody has a fat jar to re-run with logging disabled. It is the cheapest kind of fix,
-and the run that found it was not cheap.
