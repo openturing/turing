@@ -1313,3 +1313,4 @@
 - **T964** — Streaming mints the assertion per request; the SDK-backed blocking path, which has no interceptor seam, rebuilds its model once the assertion is past half-life.
 - **T965** — Rotation is now a pairing variant — mint, register signed with the key in force, then swap — behind a Rotate key action; any failure leaves the old key working.
 - **T968** — A MockRestServiceServer bound to the pairing client asserts the requests that actually leave — paths, JSON keys, header names, signed payload and the RFC 8628 error strings.
+- **T970** — A throwaway JDK HttpServer stands in for the endpoint on both transports, and the arriving assertion is verified against the public key pairing registered.

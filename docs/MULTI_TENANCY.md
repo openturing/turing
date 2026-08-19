@@ -165,6 +165,11 @@ canonical signed payload and the four RFC 8628 error strings. Those assertions
 are the fixtures the Viglet Cloud side (its Block T, C125–C131) implements
 against — if one has to change, it changes in both repositories on the same day.
 
+`TurVigletCallHeaderContractTest` does the same for the `/v1` call, on both
+transports: a throwaway JDK `HttpServer` stands in for the endpoint, and the test
+verifies the arriving assertion against the public key pairing registered — so a
+header that silently stops being sent fails here rather than at Viglet's edge.
+
 ## Teardown runbook
 
 `TurTenantTeardownService` (platform-admin only, audited, **idempotent**):
