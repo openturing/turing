@@ -304,6 +304,7 @@ number" looked free but wasn't. Grepping three files (`ROADMAP.md`,
 
 - **T966 SHIPPED** (Block AN §LXXV — answer+copilot added to both filters; PUBLIC_SN_LLM_COST/CHEAP classification in the security config enforced by TurLlmCostSurfaceCoverageTest; stale /api/genai/chat CSRF matcher removed) (Block AN §LXXV — the two LLM-cost path regexes have drifted: /answer, the /v1 gateway and /api/v2/ai-agent/{id}/chat are ungated; plus a CSRF exemption for a route with no controller) — 2026-08-16.
 - **T968 FILED** (Block J.10 §LXXVII — no contract test for the managed wire; every test stubs the one network hop while Viglet Cloud C125–C131 implements the other half from prose) — 2026-08-19.
+- **T979 FILED** (Block Y §LXXXVIII — showcase has no test runner; its CI entry is a build gate only, and the storefront render is unchecked) — 2026-08-19.
 - **T978 SHIPPED** (Block BV §LXXXVII — @viglet/turing-shared-types added to validate-js.yml, the one workspace package in no matrix; stale "other ten" count fixed) — 2026-08-19.
 - **T977 SHIPPED** (Block BV §LXXXVI — turing-roadmap-docs now carries `roadkeep block list` vs COVERAGE.md as the propagation check, plus the grouped-row caveat) — 2026-08-19.
 - **T976 SHIPPED** (Block BQ §LXXXV — new docs-turing/answer.md + sidebar entry; COVERAGE closes at zero unaccounted blocks; docs committed in vigletdocs 6dc3c87) — 2026-08-19.
