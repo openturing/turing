@@ -331,6 +331,7 @@
 - **T963** — The gate now runs: agent and site creates admit at the HTTP boundary, and the token budget admits in TurLlmModelFactory, the one seam every LLM call passes.
 - **T981** — Import and marketplace install now ask what the archive would add and refuse the whole batch before writing; the first-boot seed stays exempt and a test fails if that changes.
 - **T982** — TurTenantQuotaIT runs the gate against a real Hibernate session with two FREE tenants and proves the count is scoped: the second is admitted its first agent while the first is full.
+- **T983** — The end-user quota page now covers the import refusal — what counts as an addition, that it is all-or-nothing, what the message tells you to trim, and that the boot seed is exempt.
 
 ## Block K — Agent CI (flow/prompt eval gate, §XV)
 
