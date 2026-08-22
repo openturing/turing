@@ -2084,3 +2084,184 @@ Three things this cost that are worth keeping:
 - **An allowlist that masks its own detector is not a guard.** Every acknowledged entry
   must still be detected, and a positive control proves the walk works once the list is
   empty.
+
+## XCVI The bento layer leaves the product it grew in (Block BX)
+
+Turing built the bento UI and Turing is the only product that has it. Twenty-three
+components, roughly 4,300 lines of TypeScript, 216 lines of CSS and a written authoring
+contract sit in one application's components/bento folder, while a published design
+system that both products already depend on sits next to it exporting the console chrome
+bento replaced. Shio consumes that same package - all 24 of its ui files are one-line
+shims - and its console still renders 40 page headers and 42 flat cards, because the
+layer that would make it look like Turing is not installable. This block moves the
+shared half of bento into the design system behind its own subpath and leaves the
+product half here: the activation card, the quota banner and the no-LLM state are a
+commercial offer, not chrome. The order is deliberate. Install and prove the package
+first, shim the leaves so 118 pages need no edit, then the compounds, then the shell,
+and only then delete anything. Three tasks are instruments rather than moves - a
+duplication lint, a working local-dev path and a render digest - because every deletion
+here is justified by an assertion this repository currently cannot check.
+
+### XCVI.1 Install the layer before deleting anything of it (T988)
+
+Turing depends on the design system by caret range and already imports 39 primitives
+through one-line shims, so the mechanism is familiar. What is new is a second entry
+point and a stylesheet: the bento subpath and its CSS carry the frosted surface, the
+hover lift, the staggered grid and the fade custom property that drives the save-bar
+morph. Wire both, render a handful of representative pages against the package rather
+than the local folder, and compare. Nothing below this line is safe until that
+comparison has been made once, because every task in the block is a deletion justified
+by the claim that the package does the same thing. The 118 bento pages are the corpus
+that says whether it does, and they are also the corpus that nobody will edit if the
+shims hold.
+
+### XCVI.2 The leaves become shims, and 118 pages need no edit (T989)
+
+BentoHero, BentoFormSection, BentoTile, BentoEntityTile, BentoSection, BentoCountTile,
+BentoEmptyState, BentoStatusMarker and BentoActionsMenu are the vocabulary every bento
+page is written in, which is exactly why this step must not require touching the pages.
+The pattern is already established here: 39 of the 59 files under components/ui are
+single-line re-exports of a design-system component, and nothing in the application
+knows the difference. Do the same for the leaves - the local module keeps its path and
+its name and re-exports from the subpath - then delete the implementations. The import
+sites can migrate later, or never; a shim that costs one line is not debt in the way a
+forked component is.
+
+### XCVI.3 The compounds, where a duplicate costs most (T990)
+
+BentoEntityShell, BentoFormHero, BentoListPage and the scroll-fade machinery behind
+BentoSaveBar are the four largest things in the layer and the four whose behaviour is
+hardest to reproduce. A duplicate here is not a cosmetic drift: the shell owns inline
+identity editing and the delete flow, the form hero exists specifically so the two
+halves of a save bar cannot separate, and the list page collapses an entire screen into
+one call. If a copy survives locally, the next fix lands in one of the two homes and the
+other keeps the bug for a release. Shim them the way the leaves were shimmed, delete the
+implementations, and check the pages that exercise the morph by actually scrolling one.
+
+### XCVI.4 The shell moves; its contents stay (T992)
+
+The nav rail, the user menu and the back-to-top control are chrome and belong in the
+package. bento-nav.config.ts is 15 KB and is not: it is the shared source of truth the
+rail and the palette both read about roughly 29 of this product's surfaces - their
+labels, icons, routes, groups and required privileges. Splitting it is the point of the
+task. The package supplies a typed entry shape and both components that consume it; this
+product supplies the array. That keeps the single-declaration property which made the
+config worth having, where a surface is declared once and appears in both the rail and
+the palette, while making sure a second console does not inherit routes that do not
+exist in it.
+
+### XCVI.5 The palette, once its data lives somewhere else (T993)
+
+The command palette and the shortcuts dialog are the last of the shell and the most
+obviously generic parts of it: a filtered list, arrow-key navigation, a group header, a
+keyboard hint. They were coupled to this product only through the nav config, which the
+previous task separates. Move them after it rather than with it, so the split is proved
+by a palette that still works against a product-supplied array before the component
+leaves the repository. The palette matters more than its size suggests: it is how a
+migrated surface becomes findable without a rail entry, and it is the fallback
+navigation on mobile, where the rail is hidden by design.
+
+### XCVI.6 Coverage follows the code (T991)
+
+Twelve suites under the bento tests directory cover the entity shell, the list page, the
+form hero, the palette, the rail, the nav config, the empty state, the status marker,
+the shortcuts dialog, and three product-specific tiles. Once the shared components are
+shims, most of those suites assert a re-export: they run, they pass, and they prove
+nothing about the code that now renders. Move the suites for the moved components into
+the package alongside them, keep the ones covering activation, quota and the first-run
+tour here, and adapt their mocks, since the user context and the i18n passthrough both
+need package-level equivalents. A suite that is green about the wrong module is worse
+than no suite, because it is counted.
+
+### XCVI.7 The chrome adapter is a migration tool, not a local override (T994)
+
+components/ui/section-card.tsx does not fork the design-system SectionCard; it wraps it.
+A provider at the top of a page decides whether the sections inside render as console
+cards or as frosted bento sections, so a form with real field logic is written once and
+rendered in either chrome. That is the single most reusable thing this migration
+produced, and it is currently a private override sitting in one product's ui folder.
+Shio needs it more than Turing does: its post editor, post-type editor and site editor
+are the largest forms it has, and a parallel bento route would otherwise fork all three.
+Move it beside the two components it switches between, and leave the local file as a
+shim.
+
+### XCVI.8 Say which tiles are the product (T995)
+
+Four components in components/bento are not the layer: the activation card, the quota
+banner, the Viglet activation dialog and the no-LLM state. They are this product's
+commercial offer drawn as bento tiles. After the shared components leave, the folder
+holds almost nothing else, and its name is then actively misleading - a reader takes the
+directory for the layer, and so takes a product concern for shared chrome. Move them to
+a product-named folder that composes the package's primitives, and let components/bento
+disappear or shrink to the shims. The first-run tour goes with them unless it has been
+generalised, which is a decision the package's own boundary task settles rather than
+this one.
+
+### XCVI.9 Prove the token swap changed nothing here (T996)
+
+Tile tones and the brand hue are currently Tailwind class strings inside components.
+Once those components belong to the package, the classes are the package's opinion about
+this product's colour, and the fix is a token: tone palettes and a brand accent defined
+once in the preset and re-keyed per product. The risk of that change is almost entirely
+on this side. Turing has 118 pages drawing those tones today, and a token migration that
+shifts a chip a shade off is a regression nobody files because nobody can point at it.
+Take the digest before and after over a fixed set of surfaces, and treat any difference
+outside the intended accent as a failure rather than as taste.
+
+### XCVI.10 A lint, because discipline is not an instrument (T997)
+
+Thirty-nine of the 59 files under components/ui are one-line re-exports and the rest are
+genuinely product-specific. Nothing enforces that split. It held because the people
+writing it knew the rule, and the bento layer is the proof of what happens when a rule
+is not enforced: an entire design language grew here while a design system sat next to
+it exporting console chrome. Adopt the export-manifest lint the package ships - for
+every component declared locally, if the package exports that name, fail and name the
+import that replaces it - and run it in this repository's CI. Land it inside this block
+rather than after it, so the deletions above are checked by something other than a
+reviewer's memory.
+
+### XCVI.11 The path to try a package change (T998)
+
+copy-ds.cmd builds the design system and copies its dist into node_modules under
+turing/2026.1/frontend/apps/turing-app. That checkout has not existed since the move to
+2026.3, so the script fails on its first copy and there is no supported way to run this
+application against an unpublished design-system change. Every task in this block is
+exactly such a change. Without a working local path the loop becomes publish, install
+and look, which is slow, pollutes the version history of a package two products consume,
+and makes a bad move expensive to undo. Replace it with a workspace link or a file:
+override that resolves the checkout rather than a hardcoded version directory.
+
+### XCVI.12 The contract goes where the components went (T999)
+
+CONVENTIONS.md is why the bento layer stayed internally consistent across 118 pages:
+three page shapes and no fourth, no hand-rolled sticky wrapper, identity fields in the
+hero and never in the form, a back-link arrow on a back-link eyebrow, grid spans in
+multiples of two, the i18n object-form default, the accessibility baseline, the
+reduced-motion guard. It is written to this product and it lives in this product. Once
+the components belong to the package, so does the contract, and leaving a copy here
+creates two documents that disagree the first time one is amended. Replace it with a
+pointer, and keep locally only the rules that are genuinely about this application - its
+routes, its privileges, its entities.
+
+### XCVI.13 Finish the cutover that was declared (T1000)
+
+Forty pages still render under the console routes beside the 118 under bento, and a
+console-redirect module exists, so the cutover was started and then stopped. Every one
+of those pages is a reason to keep exporting the console chrome, to keep the sidebar
+provider mounted, and to keep two component sets alive in a repository whose whole
+direction is now a single shared layer. It is also the state the other product is about
+to enter deliberately and temporarily, and leaving it here permanently makes the
+temporary version look normal. Migrate or retire the remaining forty, drop the redirect
+and the console shell, and the package's deprecation of the console era stops being
+blocked on this repository.
+
+### XCVI.14 Prove the pages look the same after the move (T1001)
+
+Every task above is justified by an assertion nothing in this repository checks: that a
+page renders identically when its components come from a package instead of from a
+folder. The type checker sees an import path. The RTL suites see roles and labels.
+Neither sees a frosted surface that stopped being frosted because a stylesheet was not
+imported, or a hover lift that no longer lifts. Supply this product's token set to the
+cross-product render digest the package builds, run it over a fixed set of surfaces - a
+hero, a form section, an entity tile, a list mosaic, a scrolled save bar - and make any
+difference outside the brand accent fail the build.

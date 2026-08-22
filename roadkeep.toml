@@ -111,3 +111,8 @@ line = 8200
 # deleting them satisfies the rule. The roadmap keeps both rules, which is where they bite.
 one_sentence = false
 terminator = false
+
+# Acceptance criteria (RK). A non-goal says what is not built; nothing said what would
+# make a block done, so the only test left was a line count reaching zero. Declared at all
+# means governed; both limits stay at their defaults.
+[criteria]

@@ -8,6 +8,105 @@
 
 ## Block J.10 — Viglet AI: the managed LLM onboarding credit (§XCIV)
 
+## Block BX — The bento layer leaves the product it grew in (§XCVI)
+
+- 📋 **T988** (deps: viglet-design-system VDS8) **nothing here imports the design system bento subpath, so the shared layer is installed and unproven** — Every deletion below assumes the package renders identically, and that must be true before a local file goes. → §XCVI.1
+- 📋 **T989** (deps: T988) **nine bento leaf components are declared here and now also in the package, so the same tile exists twice** — The 118 bento pages must keep compiling untouched, which the one-line shim already does for 39 primitives. → §XCVI.2
+- 📋 **T990** (deps: T989) **the entity shell, form hero, list page and save-bar morph are declared here and now also in the package** — These four are the layer's compounds; leaving local copies means a fix has two homes and lands in one. → §XCVI.3
+- 📋 **T991** (deps: T990) **twelve RTL suites test components that now live in the package, so a green run here proves nothing about them** — A suite left behind asserts a shim; the coverage has to follow the code it covers. → §XCVI.6
+- 📋 **T992** (deps: T990) **the nav rail, user menu and back-to-top are declared here, and bento-nav.config mixes behaviour with 29 surfaces** — The config has to become data over the package schema, or a second console inherits this one's routes. → §XCVI.4
+- 📋 **T993** (deps: T992) **the command palette and shortcuts dialog are declared here, and both are generic once their data is split out** — They are the last of the shell, and the palette is what makes a migrated surface findable at all. → §XCVI.5
+- 📋 **T994** (deps: viglet-design-system VDS22) **the SectionCard chrome adapter overrides a shared component from inside this product** — It is the pattern that lets a heavy form render in either chrome, and the other product needs it more than this one. → §XCVI.7
+- 📋 **T995** (deps: T993) **activation, quota, no-LLM and Viglet dialog tiles sit in components/bento, so the folder claims they are the layer** — Commercial chrome belongs to this product, and the directory name is now the only thing saying otherwise. → §XCVI.8
+- 📋 **T996** (deps: viglet-design-system VDS23) **tile tones and the brand hue are named as Tailwind classes inside components this product no longer owns** — The token swap must be provably invisible here, or one look across products arrives as a regression in this one. → §XCVI.9
+- 📋 **T997** (deps: viglet-design-system VDS5) **nothing fails when a component is re-declared here instead of imported, which is how the bento layer grew** — Twenty local files were shims by discipline alone, and the next variation under time pressure will not be. → §XCVI.10
+- 📋 **T998** (deps: —) **copy-ds.cmd writes into turing/2026.1, a checkout that no longer exists, so there is no local design-system path** — Every task in this block is a package change that has to be tried here before it is published. → §XCVI.11
+- 📋 **T999** (deps: viglet-design-system VDS20) **CONVENTIONS.md is the layer's authoring contract and it lives in the product that no longer owns the layer** — Two copies of a contract drift exactly as two copies of a component do. → §XCVI.12
+- 📋 **T1000** (deps: T995) **40 console pages still render beside the 118 bento ones, so two chromes and two component sets stay alive** — The cutover was declared and never finished, and every unmigrated page is a reason to keep the old exports. → §XCVI.13
+- 📋 **T1001** (deps: viglet-design-system VDS25) **nothing here proves a page renders the same after its components moved out of the repository** — The whole block is a claim about appearance, and appearance is the one thing this suite never checks. → §XCVI.14
+
+## Done when — T988
+
+- **Representative pages render from the package, not the local folder** The subpath and
+  its stylesheet are wired, a handful of pages are compared against their current
+  rendering, and the differences are none or named.
+
+## Done when — T989
+
+- **The nine leaves are shims and 118 pages were not edited** Each local module keeps
+  its path and re-exports from the subpath, the implementations are deleted, and the
+  type check passes with no page change.
+
+## Done when — T990
+
+- **No compound has two homes** The entity shell, form hero, list page and scroll-fade
+  machinery resolve from the package, the local implementations are gone, and a scrolled
+  page still morphs.
+
+## Done when — T991
+
+- **No suite here asserts a re-export** The suites for moved components run in the
+  package, the ones covering product tiles stay and pass, and the mocks they needed have
+  package-level equivalents.
+
+## Done when — T992
+
+- **A surface is declared once and appears in the rail and the palette**
+  bento-nav.config is an array against the package's schema, the shell components come
+  from the package, and no route of this product crossed into it.
+
+## Done when — T993
+
+- **The palette and shortcuts dialog come from the package** Both resolve from the
+  subpath, arrow-key navigation and the global shortcut still work, and the mobile
+  fallback navigation is unaffected.
+
+## Done when — T994
+
+- **The chrome adapter is imported, not declared here** The local section-card module is
+  a shim, and a form that used the provider renders identically in both chromes.
+
+## Done when — T995
+
+- **components/bento holds no product tile** The activation card, quota banner, Viglet
+  dialog and no-LLM state live in a product-named folder composing package primitives,
+  and the bento folder is gone or only shims.
+
+## Done when — T996
+
+- **The token swap is invisible in this product** The render digest over a fixed set of
+  surfaces is identical before and after, except where the brand accent token is
+  deliberately different.
+
+## Done when — T997
+
+- **A component re-declared here fails this repository's CI** The export-manifest lint
+  runs on every push and names the import that replaces the local copy.
+
+## Done when — T998
+
+- **This application can run against an unpublished package change** One documented
+  command resolves the design-system checkout rather than a 2026.1 path, and it works
+  from a clean clone.
+
+## Done when — T999
+
+- **The authoring contract is a pointer, not a copy** CONVENTIONS.md here names the
+  package's contract and keeps only the rules genuinely about this application's routes,
+  privileges and entities.
+
+## Done when — T1000
+
+- **One chrome renders and the console routes are gone** The forty console pages are
+  migrated or retired, the redirect and the console shell are removed, and nothing
+  imports a console-era export.
+
+## Done when — T1001
+
+- **A page is proved unchanged by the move, not assumed** This product's token set feeds
+  the cross-product digest, it runs over a hero, a form section, an entity tile, a
+  mosaic and a scrolled save bar, and a difference fails the build.
+
 ## Non-goals (do NOT add as tasks)
 
 Binding constraints — see [IMPROVEMENTS.md](IMPROVEMENTS.md) §I.6 (What NOT to
