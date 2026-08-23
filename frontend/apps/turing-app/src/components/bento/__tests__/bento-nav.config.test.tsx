@@ -3,12 +3,10 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { ROUTES } from "@/app/routes.const";
 import {
   BENTO_NAV_ITEMS,
-  bentoNavTarget,
   bentoSectionAreaRoute,
   bentoSectionByAreaRoute,
   useVisibleBentoNav,
   useVisibleBentoSections,
-  type BentoNavItem,
 } from "../bento-nav.config";
 
 // Mutable user holder so each test can flip admin / privileges. `vi.hoisted`
@@ -23,18 +21,9 @@ vi.mock("@/contexts/user.context", () => ({
   UserProvider: ({ children }: { children?: React.ReactNode }) => children,
 }));
 
-describe("bentoNavTarget", () => {
-  it("prefers the bento route when the surface is migrated", () => {
-    const migrated = { bentoRoute: "/bento/llm/instance", consoleRoute: "/admin/llm/instance" } as BentoNavItem;
-    expect(bentoNavTarget(migrated)).toBe("/bento/llm/instance");
-  });
-
-  it("falls back to the console route when not yet migrated", () => {
-    const unmigrated = { consoleRoute: "/admin/se/instance" } as BentoNavItem;
-    expect(bentoNavTarget(unmigrated)).toBe("/admin/se/instance");
-  });
-});
-
+// T992 — `bentoNavTarget` left with the schema it reads; the design system
+// covers it there. What is still this product's to prove is the array below:
+// which surfaces exist, and who may see them.
 describe("useVisibleBentoNav", () => {
   beforeEach(() => {
     h.user = { admin: false, privileges: [] };

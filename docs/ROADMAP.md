@@ -10,8 +10,7 @@
 
 ## Block BX — The bento layer leaves the product it grew in (§XCVI)
 
-- 📋 **T992** (deps: T990 ✅) **the nav rail, user menu and back-to-top are declared here, and bento-nav.config mixes behaviour with 29 surfaces** — The config has to become data over the package schema, or a second console inherits this one's routes. → §XCVI.4
-- 📋 **T993** (deps: T992) **the command palette and shortcuts dialog are declared here, and both are generic once their data is split out** — They are the last of the shell, and the palette is what makes a migrated surface findable at all. → §XCVI.5
+- 📋 **T993** (deps: T992 ✅) **the command palette and shortcuts dialog are declared here, and both are generic once their data is split out** — They are the last of the shell, and the palette is what makes a migrated surface findable at all. → §XCVI.5
 - 📋 **T994** (deps: viglet-design-system VDS22) **the SectionCard chrome adapter overrides a shared component from inside this product** — It is the pattern that lets a heavy form render in either chrome, and the other product needs it more than this one. → §XCVI.7
 - 📋 **T995** (deps: T993) **activation, quota, no-LLM and Viglet dialog tiles sit in components/bento, so the folder claims they are the layer** — Commercial chrome belongs to this product, and the directory name is now the only thing saying otherwise. → §XCVI.8
 - 📋 **T996** (deps: viglet-design-system VDS23) **tile tones and the brand hue are named as Tailwind classes inside components this product no longer owns** — The token swap must be provably invisible here, or one look across products arrives as a regression in this one. → §XCVI.9
@@ -19,12 +18,15 @@
 - 📋 **T1000** (deps: T995) **40 console pages still render beside the 118 bento ones, so two chromes and two component sets stay alive** — The cutover was declared and never finished, and every unmigrated page is a reason to keep the old exports. → §XCVI.13
 - 📋 **T1001** (deps: viglet-design-system VDS25) **nothing here proves a page renders the same after its components moved out of the repository** — The whole block is a claim about appearance, and appearance is the one thing this suite never checks. → §XCVI.14
 - 📋 **T1002** (deps: —) **four bento modules were in neither the leaf list nor the compound list, so they are still declared here** — The lint T997 adopts reports fourteen names in them with no task to name as the reason. → §XCVI.15
+- 📋 **T1003** (deps: T1000) **the bento user menu is the one shell piece T992 left behind, because it reads the console-era user context** — The package's menu reads the design system's own provider, so moving it before the provider means two providers fetching one user. → §XCVI.16
 
-## Done when — T992
+## Block AR — Live-demo search & chat quality (Lucene parity gaps, §XLI)
 
-- **A surface is declared once and appears in the rail and the palette**
-  bento-nav.config is an array against the package's schema, the shell components come
-  from the package, and no route of this product crossed into it.
+- 📋 **T1004** (deps: —) **site chat emits the whole answer in one SSE content event, so no consumer can render it progressively** — Measured on turing-demo: two events 0.7s apart, sources then the entire text, so a consumer that streams correctly still shows nothing until the answer is done. → §XCVII
+
+## Block S — SDK / client parity (vanilla + React)
+
+## Block BS — The JS SDK release gate is not a gate (§LXVI)
 
 ## Done when — T993
 

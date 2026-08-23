@@ -1,7 +1,9 @@
+import { ROUTES } from "@/app/routes.const";
 import { render, screen } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import { describe, expect, it, vi } from "vitest";
 import { BentoNavRail } from "../bento-nav-rail";
+import { useVisibleBentoSections } from "../bento-nav.config";
 
 // Admin so every section is visible on the rail.
 vi.mock("@/contexts/user.context", () => ({
@@ -9,10 +11,28 @@ vi.mock("@/contexts/user.context", () => ({
   UserProvider: ({ children }: { children?: React.ReactNode }) => children,
 }));
 
+/*
+ * T992 — the rail is the design system's and is covered there against a fixture.
+ * What these assertions still prove is this product's half: that BENTO_NAV_ITEMS
+ * and BENTO_NAV_SECTIONS put Home and exactly three hubs on the rail, at this
+ * product's routes. So the rail is rendered here the way the shell renders it,
+ * fed by the real config rather than a fixture.
+ */
+function Rail() {
+  return (
+    <BentoNavRail
+      groups={useVisibleBentoSections()}
+      homeRoute={ROUTES.BENTO_HOME}
+      homeAliases={[ROUTES.BENTO_ROOT]}
+      homeLabel="home.title"
+    />
+  );
+}
+
 function renderRail(initial = "/bento/home") {
   return render(
     <MemoryRouter initialEntries={[initial]}>
-      <BentoNavRail />
+      <Rail />
     </MemoryRouter>,
   );
 }

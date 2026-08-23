@@ -11,6 +11,7 @@ import {
   BentoUserMenu,
   bentoSectionAreaRoute,
   hasSeenBentoTour,
+  useVisibleBentoSections,
 } from "@/components/bento";
 import { TurLogo } from "@/components/logo/tur-logo";
 import { ModeToggle } from "@/components/mode-toggle";
@@ -75,6 +76,12 @@ export default function BentoRootPage() {
   const { pathname } = useLocation();
   const { t } = useTranslation();
   const parentPath = resolveBentoParent(pathname);
+  /*
+   * T992 — the rail is the design system's; the sections it renders are ours.
+   * It is handed a list already filtered by privilege, because whether a reader
+   * may see a surface is a question only this product can answer.
+   */
+  const navGroups = useVisibleBentoSections();
   /*
    * "Immersive" app-like surfaces (the chat, the GraphQL explorer) fill the
    * shell edge-to-edge instead of being centered in the `max-w-7xl` reading
@@ -163,7 +170,12 @@ export default function BentoRootPage() {
         </a>
         <AmbientBackground />
 
-        <BentoNavRail />
+        <BentoNavRail
+          groups={navGroups}
+          homeRoute={ROUTES.BENTO_HOME}
+          homeAliases={[ROUTES.BENTO_ROOT]}
+          homeLabel={t("home.title")}
+        />
 
         <header className="bento-shell-header sticky top-0 z-30 flex shrink-0 items-center justify-between gap-3 border-b border-border/40 bg-background/55 px-4 py-3 backdrop-blur-xl backdrop-saturate-150 md:px-8">
           <div className="flex items-center gap-3">

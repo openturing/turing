@@ -68,7 +68,7 @@ export {
   resolveBentoLayout,
   toBentoLayoutEntries,
 } from "./bento-layout";
-export { BentoNavRail } from "./bento-nav-rail";
+export { BentoNavRail, type BentoNavRailProps } from "./bento-nav-rail";
 export { BentoCommandPalette, type BentoCommandPaletteProps } from "./bento-command-palette";
 export {
   BENTO_NAV_ITEMS,
@@ -85,6 +85,10 @@ export {
   type BentoNavItem,
   type BentoNavSection,
   type BentoNavSectionId,
+  type TurBentoNavGroup,
+  type TurBentoNavItem,
+  type TurBentoNavSection,
+  type TurBentoSectionId,
 } from "./bento-nav.config";
 export {
   BentoActionsMenu,

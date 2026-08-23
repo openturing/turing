@@ -1,7 +1,10 @@
-// T997 -- the export-manifest lint runs in CI now, and these names are also
-// exported by @viglet/viglet-design-system. Allowed until T992: the rail, the user menu and back-to-top move together.
-// viglet-ds-allow-duplicate BentoUserMenuProps -- T992 removes it
-// viglet-ds-allow-duplicate BentoUserMenu -- T992 removes it
+// T992 moved the rail and back-to-top; this one could not follow them yet. The
+// package's BentoUserMenu takes its routes as props but reads the user from the
+// design system's own UserContext, and this product's UserProvider is the
+// console-era one that T1000 replaces -- swapping the menu before the provider
+// would mean two providers fetching the same user under one shell.
+// viglet-ds-allow-duplicate BentoUserMenuProps -- T1003 removes it, after T1000
+// viglet-ds-allow-duplicate BentoUserMenu -- T1003 removes it, after T1000
 import {
   DropdownMenu,
   DropdownMenuContent,

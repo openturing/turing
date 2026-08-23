@@ -2102,18 +2102,6 @@ and only then delete anything. Three tasks are instruments rather than moves - a
 duplication lint, a working local-dev path and a render digest - because every deletion
 here is justified by an assertion this repository currently cannot check.
 
-### XCVI.4 The shell moves; its contents stay (T992)
-
-The nav rail, the user menu and the back-to-top control are chrome and belong in the
-package. bento-nav.config.ts is 15 KB and is not: it is the shared source of truth the
-rail and the palette both read about roughly 29 of this product's surfaces - their
-labels, icons, routes, groups and required privileges. Splitting it is the point of the
-task. The package supplies a typed entry shape and both components that consume it; this
-product supplies the array. That keeps the single-declaration property which made the
-config worth having, where a surface is declared once and appears in both the rail and
-the palette, while making sure a second console does not inherit routes that do not
-exist in it.
-
 ### XCVI.5 The palette, once its data lives somewhere else (T993)
 
 The command palette and the shortcuts dialog are the last of the shell and the most
@@ -2222,3 +2210,43 @@ One interaction to check rather than assume: bento-list-page's suite imports
 Using a re-exported helper to construct a fixture is not asserting a re-export, so
 T991's rule survives — but confirm it reads that way after the change rather than
 trusting this sentence.
+
+### XCVI.16 The user menu waits for its provider (T1003)
+
+T992 moved the rail and back-to-top out as one-line shims, because neither reads
+anything of this product: the rail is handed a group list and a home route, and
+back-to-top reads a scroll offset. The user menu is different. Its routes are already
+props in the package, but the user itself is not -- it comes from the design system's
+own UserContext, which reports a status the console-era provider here has no notion of,
+and which is exactly why the package's version stopped rendering a skeleton for ever on
+a failed fetch. This product still mounts its own UserProvider at the bento shell, and
+every page under it reads that context. Swapping the menu alone would put two providers
+under one shell, each fetching the same user. So the menu keeps its local copy, with the
+allow-duplicate line naming the provider move rather than T992, and follows once T1000
+has retired the console-era one.
+
+## XCVII Site chat aggregates the answer before emitting it (T1004)
+
+Measured against `turing-demo.viglet.org` on 2026-08-23, reading the raw SSE with curl:
+`POST /api/sn/mythical-creatures/chat/conversation` emits exactly two events — a
+`sources` payload, then a single `content` event carrying the entire answer text — 0.7s
+apart.
+
+Two events arriving separately shows nginx is not the culprit: it passed the first
+through before the second existed. The engine is aggregating the answer before it emits
+it.
+
+The consequence is not cosmetic for a consumer. `consumeAssistantStream` in the vanilla
+SDK reads the body with a stream reader and a streaming `TextDecoder` and calls
+`onToken` per event, so a correctly written consumer still receives exactly one token
+and can render nothing until the answer is complete. T684 added a typing indicator for
+the wait before the first token; this is the wait *being* the whole answer.
+
+Found while building the `schools` admissions app, whose own acceptance requires an
+answer that arrives token by token — that app has verified its framework does not
+buffer, so this is the remaining reason a visitor sees a pause and then a wall of text.
+
+Acceptance:
+- Site-scoped chat emits incremental `content` events as the model produces them.
+- A consumer counting `onToken` calls for a multi-sentence answer sees more than one.
+- Verified on the demo, with the event timings recorded.
