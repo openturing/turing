@@ -286,11 +286,11 @@ export default function SNSiteCustomFacetItemPage({ baseRoute = ROUTES.SN_INSTAN
             />
             <SectionCard.Content>
               <CustomFacetItemFormFields
+                key={`${customFacetId}-${itemIndex}`}
                 editingItem={editingItem}
                 isDateField={dateField}
                 fieldName={selectedFieldName}
                 availableLocales={availableLocales ?? []}
-                resetKey={`${customFacetId}-${itemIndex}`}
                 onUpdate={onUpdate}
                 onUpdateLabels={onUpdateLabels}
               />

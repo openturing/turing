@@ -4,7 +4,7 @@ import { useCustomTools } from "@/api/queries/custom-tool.queries"
 import { Checkbox } from "@/components/ui/checkbox"
 import type { TurAIAgent } from "@/models/agent/ai-agent.model.ts"
 import { IconBraces, IconCheck } from "@tabler/icons-react"
-import { useEffect, useState } from "react"
+import { useState } from "react"
 import { useTranslation } from "react-i18next"
 import { toast } from "@viglet/viglet-design-system"
 import { GradientButton } from "../ui/gradient-button"
@@ -28,11 +28,19 @@ export const AIAgentCustomToolForm: React.FC<Props> = ({ value, chrome = "consol
   const [savedIds, setSavedIds] = useState<Set<string>>(new Set());
   const updateMutation = useUpdateAiAgent();
 
-  useEffect(() => {
+  // T1017 — adjusted during render rather than in an effect. This mirrors the
+  // agent into the working copy and the saved copy the dirty check compares
+  // against; neither can simply be derived, because `onSave` writes the saved
+  // copy optimistically the moment the mutation succeeds, before the refetch
+  // lands. Done in an effect it cost a committed render showing the previous
+  // agent's selection, which is what the rule names.
+  const [syncedValue, setSyncedValue] = useState<TurAIAgent | null>(null);
+  if (syncedValue !== value) {
+    setSyncedValue(value);
     const ids = new Set((value.customTools ?? []).map((s) => s.id));
     setSelectedIds(ids);
     setSavedIds(ids);
-  }, [value]);
+  }
 
   const isDirty = (() => {
     if (selectedIds.size !== savedIds.size) return true;

@@ -10,7 +10,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { IconCirclePlus, IconTrash } from "@tabler/icons-react";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import type { TurLocale } from "@/models/locale/locale.model";
@@ -34,8 +34,6 @@ interface ItemFormFieldsProps {
   isDateField: boolean;
   fieldName: string;
   availableLocales: TurLocale[];
-  /** Resets internal `labelEntries` state when this key changes (e.g. open modal, change item). */
-  resetKey?: string | number;
   onUpdate: (key: keyof TurSNSiteCustomFacetItem, rawValue: string) => void;
   onUpdateLabels: (labels: Record<string, string>) => void;
 }
@@ -45,13 +43,19 @@ interface ItemFormFieldsProps {
  * operator, range values). Used inline by both the legacy modal and the
  * standalone page. Owns the local `labelEntries` state so empty rows (locale
  * not yet picked) survive parent re-renders.
+ *
+ * T1017 — reset by remounting. This used to take a `resetKey` prop and re-seed
+ * `labelEntries` from it in an effect, which is React's `key` written by hand
+ * and one render late: the old item's rows were on screen for a pass before the
+ * effect replaced them. The caller passes `key` now, so the lazy initialiser
+ * below is the only thing that seeds this state, and it runs before the first
+ * paint of each item.
  */
 export function CustomFacetItemFormFields({
   editingItem,
   isDateField,
   fieldName,
   availableLocales,
-  resetKey,
   onUpdate,
   onUpdateLabels,
 }: Readonly<ItemFormFieldsProps>) {
@@ -60,13 +64,6 @@ export function CustomFacetItemFormFields({
   const [labelEntries, setLabelEntries] = useState<Array<{ locale: string; label: string }>>(
     () => Object.entries(editingItem.labels ?? {}).map(([locale, label]) => ({ locale, label })),
   );
-
-  useEffect(() => {
-    setLabelEntries(
-      Object.entries(editingItem.labels ?? {}).map(([locale, label]) => ({ locale, label })),
-    );
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [resetKey]);
 
   function commitEntries(entries: Array<{ locale: string; label: string }>) {
     setLabelEntries(entries);

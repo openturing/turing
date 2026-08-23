@@ -5,7 +5,7 @@ import { Checkbox } from "@/components/ui/checkbox"
 import type { TurAIAgent } from "@/models/agent/ai-agent.model.ts"
 import type { TurMcpServer } from "@/models/mcp/mcp-server.model.ts"
 import { IconCheck, IconServer2, IconWorldBolt } from "@tabler/icons-react"
-import { useEffect, useState } from "react"
+import { useState } from "react"
 import { useTranslation } from "react-i18next"
 import { toast } from "@viglet/viglet-design-system"
 import { GradientButton } from "../ui/gradient-button"
@@ -28,13 +28,21 @@ export const AIAgentMcpForm: React.FC<Props> = ({ value, chrome = "console" }) =
   const [savedFederation, setSavedFederation] = useState(false);
   const updateMutation = useUpdateAiAgent();
 
-  useEffect(() => {
+  // T1017 — adjusted during render rather than in an effect. This mirrors the
+  // agent into the working copy and the saved copy the dirty check compares
+  // against; neither can simply be derived, because `onSave` writes the saved
+  // copy optimistically the moment the mutation succeeds, before the refetch
+  // lands. Done in an effect it cost a committed render showing the previous
+  // agent's selection, which is what the rule names.
+  const [syncedValue, setSyncedValue] = useState<TurAIAgent | null>(null);
+  if (syncedValue !== value) {
+    setSyncedValue(value);
     const ids = new Set((value.mcpServers ?? []).map((s) => s.id));
     setSelectedIds(ids);
     setSavedIds(ids);
     setFederation(value.mcpNativeFederation ?? false);
     setSavedFederation(value.mcpNativeFederation ?? false);
-  }, [value]);
+  }
 
   const isDirty = (() => {
     if (federation !== savedFederation) return true;

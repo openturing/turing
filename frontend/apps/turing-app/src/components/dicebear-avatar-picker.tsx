@@ -88,6 +88,12 @@ export function DiceBearAvatarPicker({
 
   const debouncedSeed = useDebounce(seed, 400)
 
+  // T1017 — the effect is the right place: this reacts to the dialog being
+  // opened, and `open` is the parent's state, so there is no event handler here
+  // to hang it on. It seeds the editor from whatever avatar the entity already
+  // has, which is a one-off per opening rather than a value derivable from the
+  // current render.
+  /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
     if (open) {
       if (currentAvatarUrl) {
@@ -100,6 +106,7 @@ export function DiceBearAvatarPicker({
       generatePreviewSeeds()
     }
   }, [open])
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   const generatePreviewSeeds = useCallback(() => {
     const seeds = Array.from({ length: 12 }, () => generateRandomSeed())
@@ -112,9 +119,17 @@ export function DiceBearAvatarPicker({
     [selectedStyle, debouncedSeed]
   )
 
+  // T1017 — kept as an effect deliberately. `selectedUrl` is not derived: the
+  // style grid and the preview grid both write it directly, and this only
+  // re-points it at the main preview when the style or the debounced seed
+  // moves. Adjusting during render instead would mean reading `mainPreviewUrl`
+  // above its own `useMemo`, which is the temporal-dead-zone trap agents.md
+  // warns about, for one saved render inside a dialog.
+  /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
     setSelectedUrl(mainPreviewUrl)
   }, [mainPreviewUrl])
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   const handleRandomize = () => {
     setSeed(generateRandomSeed())

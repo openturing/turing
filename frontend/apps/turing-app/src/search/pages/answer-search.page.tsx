@@ -117,12 +117,22 @@ export default function AnswerSearchPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [urlQuery, locale, filtersKey]);
 
-  // A link pasted into the address bar must repopulate the visible input.
-  useEffect(() => setInputValue(urlQuery), [urlQuery]);
-
-  // T890 — a new question is a new answer to judge: clear the previous verdict so
-  // the thumbs are live again rather than showing the last answer's acknowledgement.
-  useEffect(() => setVerdict(null), [urlQuery, filtersKey]);
+  // T1017 — adjusted during render rather than in an effect. Both of these
+  // reset when the question changes: the visible input must repopulate for a
+  // link pasted into the address bar, and T890's verdict must clear so the
+  // thumbs are live again rather than showing the last answer's
+  // acknowledgement. Done in an effect, each cost a committed render showing the
+  // previous question's input and its stale verdict before being corrected.
+  // React re-runs this component before painting, so nothing intermediate ships.
+  // Joined with a character `filtersKey` cannot contain: it is JSON, so a raw
+  // newline never appears inside it and the two halves stay unambiguous.
+  const askedKey = `${urlQuery}\n${filtersKey}`;
+  const [lastAskedKey, setLastAskedKey] = useState(askedKey);
+  if (askedKey !== lastAskedKey) {
+    setLastAskedKey(askedKey);
+    setInputValue(urlQuery);
+    setVerdict(null);
+  }
 
   const onShare = async () => {
     setSharing(true);

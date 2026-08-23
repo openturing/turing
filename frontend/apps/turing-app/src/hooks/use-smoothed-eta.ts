@@ -45,6 +45,14 @@ export function useSmoothedEta(
   const lastUpdateRef = useRef(0);
   const [display, setDisplay] = useState<number>(-1);
 
+  // T1017 — the effect is the right place, and this one cannot be anything
+  // else. The value it publishes is an accumulator: each run folds `rawMs`
+  // into the previous smoothed number and consults the wall clock to decide
+  // whether enough time has passed to publish again. That is order- and
+  // time-dependent by construction, so it has no render-time expression --
+  // React may render a component twice, and doing this twice would double the
+  // smoothing step.
+  /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
     if (rawMs == null || rawMs <= 0) {
       smoothedRef.current = null;
@@ -65,6 +73,7 @@ export function useSmoothedEta(
       setDisplay(smoothedRef.current);
     }
   }, [rawMs, options?.tick, alpha, minIntervalMs]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   return display;
 }

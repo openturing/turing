@@ -42,11 +42,19 @@ export const AIAgentToolsForm: React.FC<Props> = ({ value, chrome = "console" })
     turNativeToolService.query().then(setToolGroups);
   }, []);
 
-  useEffect(() => {
+  // T1017 — adjusted during render rather than in an effect. This mirrors the
+  // agent into the working copy and the saved copy the dirty check compares
+  // against; neither can simply be derived, because `onSave` writes the saved
+  // copy optimistically the moment the mutation succeeds, before the refetch
+  // lands. Done in an effect it cost a committed render showing the previous
+  // agent's selection, which is what the rule names.
+  const [syncedValue, setSyncedValue] = useState<TurAIAgent | null>(null);
+  if (syncedValue !== value) {
+    setSyncedValue(value);
     const tools = parseNativeTools(value.nativeTools);
     setSelectedTools(tools);
     setSavedTools(tools);
-  }, [value]);
+  }
 
   const isDirty = (() => {
     if (selectedTools.size !== savedTools.size) return true;

@@ -54,14 +54,22 @@ export const AIAgentCapabilitiesForm: React.FC<Props> = ({ value, chrome = "cons
     capabilityService.query().then((all) => setDescriptors(all.filter((d) => d.kind === "TOOL")));
   }, []);
 
-  useEffect(() => {
+  // T1017 — adjusted during render rather than in an effect. This mirrors the
+  // agent into the working copy and the saved copy the dirty check compares
+  // against; neither can simply be derived, because `onSave` writes the saved
+  // copy optimistically the moment the mutation succeeds, before the refetch
+  // lands. Done in an effect it cost a committed render showing the previous
+  // agent's selection, which is what the rule names.
+  const [syncedValue, setSyncedValue] = useState<TurAIAgent | null>(null);
+  if (syncedValue !== value) {
+    setSyncedValue(value);
     const tools = parseCsv(value.nativeTools);
     const caps = parseCsv(value.nativeCapabilities);
     setSelectedTools(tools);
     setSelectedCaps(caps);
     setSavedTools(tools);
     setSavedCaps(caps);
-  }, [value]);
+  }
 
   /** The providers the agent's bound LLM instances can actually run (vendor id, upper-cased). */
   const agentProviders = useMemo(() => {

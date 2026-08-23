@@ -6,7 +6,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 type TimeUnit = "ms" | "s" | "min" | "h" | "d";
@@ -47,12 +47,20 @@ export function DurationInput({ value, onChange, disabled }: Readonly<DurationIn
         return ms <= 0 ? "" : String(ms / UNITS[detectBestUnit(ms)].factor);
     });
 
-    useEffect(() => {
+    // T1017 — adjusted during render rather than in an effect. Both pieces of
+    // state below are the caller's `value` re-expressed, and the user edits
+    // them, so they cannot simply be derived; what they need is to re-seed when
+    // the prop moves. In an effect that cost a committed render showing the
+    // previous duration before the correction landed, which on a controlled
+    // input is a visible flicker of the old number.
+    const [lastValue, setLastValue] = useState(value);
+    if (value !== lastValue) {
+        setLastValue(value);
         const ms = value ?? 0;
         const bestUnit = detectBestUnit(ms);
         setUnit(bestUnit);
         setDisplayValue(ms <= 0 ? "" : String(ms / UNITS[bestUnit].factor));
-    }, [value]);
+    }
 
     const handleValueChange = useCallback(
         (raw: string) => {

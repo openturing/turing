@@ -51,9 +51,15 @@ export function AiSummaryPanel({ endpoint, i18nPrefix }: Readonly<AiSummaryPanel
         }
     }, [endpoint, i18nPrefix, t]);
 
+    // T1017 — this is the useState-plus-useEffect fetch T1018 counts, seen
+    // from the lint side: `fetchSummary` flips the loading flag before it
+    // awaits, which is what the rule names. The fix is the React Query hook,
+    // not a differently shaped effect, so it waits for that move.
+    /* eslint-disable react-hooks/set-state-in-effect */
     useEffect(() => {
         fetchSummary();
     }, [fetchSummary]);
+    /* eslint-enable react-hooks/set-state-in-effect */
 
     return (
         <div className="px-6 py-6 space-y-4">
