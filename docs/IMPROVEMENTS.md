@@ -2125,18 +2125,6 @@ leaves the repository. The palette matters more than its size suggests: it is ho
 migrated surface becomes findable without a rail entry, and it is the fallback
 navigation on mobile, where the rail is hidden by design.
 
-### XCVI.6 Coverage follows the code (T991)
-
-Twelve suites under the bento tests directory cover the entity shell, the list page, the
-form hero, the palette, the rail, the nav config, the empty state, the status marker,
-the shortcuts dialog, and three product-specific tiles. Once the shared components are
-shims, most of those suites assert a re-export: they run, they pass, and they prove
-nothing about the code that now renders. Move the suites for the moved components into
-the package alongside them, keep the ones covering activation, quota and the first-run
-tour here, and adapt their mocks, since the user context and the i18n passthrough both
-need package-level equivalents. A suite that is green about the wrong module is worse
-than no suite, because it is counted.
-
 ### XCVI.7 The chrome adapter is a migration tool, not a local override (T994)
 
 components/ui/section-card.tsx does not fork the design-system SectionCard; it wraps it.
