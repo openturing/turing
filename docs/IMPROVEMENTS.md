@@ -2180,3 +2180,31 @@ Acceptance:
 - Site-scoped chat emits incremental `content` events as the model produces them.
 - A consumer counting `onToken` calls for a multi-sentence answer sees more than one.
 - Verified on the demo, with the event timings recorded.
+
+## CIII The quality gate stops at the package boundary
+
+### CIII.2 What the working lint found (T1016)
+
+With its config loading again (T1015), `eslint .` reports 388 problems — 316 errors and
+72 warnings across 155 of this app's files. None is new code. They are what accumulated
+while the command could not run.
+
+By rule: 188 `react-refresh/only-export-components`, 76
+`react-hooks/set-state-in-effect`, 46 `react-hooks/exhaustive-deps`, 25
+`react-hooks/incompatible-library`, 9 `react-hooks/refs`, 9
+`@typescript-eslint/no-explicit-any`, 8 `@typescript-eslint/no-unused-vars`, 8
+`react-hooks/static-components`, 5 `react-hooks/immutability`, and fourteen more across
+eight rules.
+
+They are not one problem. `only-export-components` is a Fast Refresh constraint and
+mostly a file-splitting question; `set-state-in-effect` and `exhaustive-deps` are the
+two this repository already has written rules about, in `agents.md`, arrived at from
+real bugs. Reading the 76 is how you find whether any of them is one.
+
+The gate is the point, not the count. `validate-js.yml` runs lint for no workspace, and
+adding the step is what stops the number climbing again — which cannot happen while the
+job would fail on the first file.
+
+Acceptance:
+- Each rule is either driven to zero or given a reasoned severity in the config.
+- `validate-js.yml` runs lint for turing-app, and the job passes.

@@ -12,7 +12,11 @@ export default tseslint.config([
     extends: [
       js.configs.recommended,
       tseslint.configs.recommended,
-      reactHooks.configs['recommended-latest'],
+      // `configs['recommended-latest']` is the eslintrc shape — its `plugins`
+      // is the array `["react-hooks"]`, which ESLint 10 rejects outright, so
+      // `eslint .` failed before it linted a file. The `flat` namespace is the
+      // same 17 rules with `plugins` as an object.
+      reactHooks.configs.flat['recommended-latest'],
       reactRefresh.configs.vite,
     ],
     languageOptions: {

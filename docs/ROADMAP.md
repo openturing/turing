@@ -18,6 +18,10 @@
 
 - ⏳ **T1004** (deps: —) **site chat emits the whole answer in one SSE content event, so no consumer can render it progressively** — The mode that streams it exists; the demo runs a build from before it, so the last acceptance bullet waits on a deploy. → §XCVII
 
+## Block BV — The quality gate stops at the package boundary
+
+- 📋 **T1016** (deps: T1015 ✅) **388 lint findings across 155 files, and no workflow runs lint for any workspace** — They are eight unrelated rules, and the CI step that would hold the line cannot be added until the job passes. → §CIII.2
+
 ## Done when — T1000
 
 - **One chrome renders and the console routes are gone** The forty console pages are

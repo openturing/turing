@@ -1297,6 +1297,7 @@
 - **T974** — The class comment now says these five tests run, with the skeleton state named as the history it is, so nobody discounts a live gate on the strength of a stale paragraph.
 - **T977** — The skill now carries the command that answers it — roadkeep block list against COVERAGE.md — and says a label the matrix spells differently is a question rather than an orphan.
 - **T978** — shared-types is the twelfth matrix entry now, so its own tsc runs in CI instead of only sideways through whatever dependent happened to build it.
+- **T1015** — The config extends eslint-plugin-react-hooks' flat namespace instead of its eslintrc one, so ESLint 10 accepts the plugins object it was handed an array for. The command loads and lints again -- and reports 388 findings across 155 files, which is T1016 and not this. The comment at the line says which of the two shapes the plugin ships and why the other one is not it.
 
 ## Block BW — What the link-free response and its consumers still lack (§LXX)
 
