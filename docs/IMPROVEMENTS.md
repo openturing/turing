@@ -2174,21 +2174,6 @@ what shares one form instance across the LLM editor's section sub-pages -- and t
 padding differs, which is visible. Each needs the product concern lifted to a prop in
 the package, or the page retired to the bento layer. Neither is a rename.
 
-### XCVI.19 A seam for the icon suggestion (T1009)
-
-Everything else in the two dialogs matches. What the product's copy has and the
-package's does not is a call to the default LLM that turns the entity's name and
-description into candidate icon names, read through the global-settings service. That is
-a product concern by every test this block has used -- it names Turing's settings
-service and its chat endpoint -- so the package should not grow it, and the product
-should not keep a second dialog to hold it.
-
-The seam is one optional prop: a function from a text prompt to a list of icon names,
-called when present and the button hidden when absent. Filed separately from T1008
-because it is a change in the design system first and a swap here second, and because
-the picker is live -- the agent intent page under /bento/ai-agent renders it, so a
-silent regression here is a feature a user notices before a test does.
-
 ## XCVII Site chat aggregates the answer before emitting it (T1004)
 
 Measured against `turing-demo.viglet.org` on 2026-08-23, reading the raw SSE with curl:

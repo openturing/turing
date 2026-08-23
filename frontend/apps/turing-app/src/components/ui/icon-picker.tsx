@@ -4,6 +4,7 @@ import { IconPalette, IconSearch, IconTrash } from "@tabler/icons-react"
 import { useState } from "react"
 import { useTranslation } from "react-i18next"
 import { IconPickerDialog } from "./icon-picker-dialog"
+import { useIconKeywordSuggester } from "./icon-keyword-suggester"
 
 interface IconPickerProps {
   value?: string | null
@@ -19,6 +20,7 @@ interface IconPickerProps {
 function IconPickerComponent({ value, onChange, onRemove, title, description, children }: IconPickerProps) {
   const { t } = useTranslation()
   const [open, setOpen] = useState(false)
+  const suggestKeywords = useIconKeywordSuggester()
 
   return (
     <div className="flex items-center gap-4">
@@ -78,6 +80,10 @@ function IconPickerComponent({ value, onChange, onRemove, title, description, ch
         onClear={onRemove}
         title={title}
         description={description}
+        // T1009 — the dialog is the design system's; where keywords come from is
+        // ours. Undefined when no default LLM is configured, which is how the
+        // package knows to hide the suggest button rather than offer a dead one.
+        suggestKeywords={suggestKeywords}
       />
     </div>
   )

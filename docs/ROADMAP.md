@@ -15,8 +15,7 @@
 - 📋 **T999** (deps: viglet-design-system VDS20) **CONVENTIONS.md is the layer's authoring contract and it lives in the product that no longer owns the layer** — Two copies of a contract drift exactly as two copies of a component do. → §XCVI.12
 - ⏳ **T1000** (deps: T1008 ⏳) **40 console pages still render beside the 118 bento ones, so two chromes and two component sets stay alive** — The package cannot deprecate its console entry point while this product still declares four of its components. → §XCVI.13
 - 📋 **T1001** (deps: viglet-design-system VDS25) **nothing here proves a page renders the same after its components moved out of the repository** — The whole block is a claim about appearance, and appearance is the one thing this suite never checks. → §XCVI.14
-- ⏳ **T1008** (deps: T994, T1009) **four console-chrome components stay declared here because each package copy dropped something this product renders** — The remaining two wait on the persona chrome adapter and on a suggestion seam the package does not have yet. → §XCVI.18
-- 📋 **T1009** (deps: —) **the icon picker's LLM suggestion path is the only reason this product still declares IconPickerDialog** — The package's dialog has no seam for it, so taking that copy would make the picker quietly stop suggesting. → §XCVI.19
+- ⏳ **T1008** (deps: T994) **four console-chrome components stay declared here because each package copy dropped something this product renders** — SubPage and its InternalSidebar are the last two, and the persona chrome adapter is what still renders them. → §XCVI.18
 
 ## Block AR — Live-demo search & chat quality (Lucene parity gaps, §XLI)
 
