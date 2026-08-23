@@ -2161,33 +2161,6 @@ own rather than being spelled out at each call site. What should not stand is tw
 anonymous pairs that no token can re-key, because that is the fork T996 just finished
 removing, one page at a time.
 
-### XCVI.21 The waiver that does not waive (T1014)
-
-Any pnpm command in this workspace fails:
-
-    [ERR_PNPM_MINIMUM_RELEASE_AGE_VIOLATION] @viglet/viglet-design-system@2026.3.3
-    was published 2026-08-23T17:47Z, within the minimumReleaseAge cutoff
-
-It blocks before any command runs, so not only install: pnpm exec tsc and pnpm --filter
-run test hit it through the deps-status check.
-
-**Diagnosed, and it is not this repository's config.** Three facts, each read back from
-pnpm 11.8.0 rather than assumed. `pnpm config get minimumReleaseAge` returns undefined
--- nothing here sets the rule. `pnpm config get minimumReleaseAgeExclude` returns 171
-entries and does contain viglet-design-system@2026.3.3, so the waiver list is correct,
-complete and read. And the refusal comes from a separate pass, announced as "Verifying
-lockfile against supply-chain policies", which applies a release-age rule without
-consulting that list. No supplyChainPolicy-style key resolves to anything.
-
-So editing the exclude list cannot fix this: it is already right. The remaining options
-are to pin pnpm below the version that introduced the verification pass, to find
-whatever configures that pass, or to wait out a rolling window that re-arms on every
-same-day design-system publish -- of a first-party package, where an age guard aimed at
-typosquats and compromised releases has nothing to catch.
-
-What it costs: T1001 needs two devDependencies for a browser parity digest and cannot
-add them.
-
 ## XCVII Site chat aggregates the answer before emitting it (T1004)
 
 Measured against `turing-demo.viglet.org` on 2026-08-23, reading the raw SSE with curl:

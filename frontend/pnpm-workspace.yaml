@@ -13,8 +13,14 @@ allowBuilds:
   "@swc/core": true
   "@tailwindcss/oxide": true
 
+# T1014 — one entry per package name, versions joined with '||'. pnpm's
+# evaluateVersionPolicy returns on the FIRST rule whose name matches and never
+# looks at the rest, so a second line for a name already listed above is dead
+# config: it reads like a waiver and waives nothing. That is how
+# viglet-design-system@2026.3.3 stayed blocked while sitting in this list --
+# the 2026.3.2 line here answered for the name first.
 minimumReleaseAgeExclude:
-  - '@viglet/viglet-design-system@2026.3.2'
+  - '@viglet/viglet-design-system@2026.3.2||2026.3.3'
   - '@radix-ui/primitive@1.1.5'
   - '@radix-ui/react-accordion@1.2.16'
   - '@radix-ui/react-alert-dialog@1.1.19'
@@ -104,7 +110,6 @@ minimumReleaseAgeExclude:
   # tripping minimumReleaseAge. Vetted group bump — waive the age guard.
   - '@testing-library/jest-dom@7.0.0'
   - 'recharts@3.10.0'
-  - '@viglet/viglet-design-system@2026.3.3'
 
 # Force a single @codemirror/view copy. @codemirror/language@6.12.3 pulled in
 # 6.41.1 while @uiw/react-codemirror / codemirror@6.0.2 used 6.43.0. Two view
