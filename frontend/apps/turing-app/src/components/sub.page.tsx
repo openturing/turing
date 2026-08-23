@@ -1,7 +1,7 @@
 // T997 -- the export-manifest lint runs in CI now, and these names are also
 // exported by @viglet/viglet-design-system. The console routes went in T570 and
 // T1000 swapped the five whose package copy was a superset; this one is T1008's.
-// viglet-ds-allow-duplicate SubPage -- T1008: the package's drops outletContext, which shares one form across section sub-pages
+// viglet-ds-allow-duplicate SubPage -- T994: the persona chrome adapter renders it, and the package's drops outletContext
 import React, { type Dispatch, type SetStateAction } from "react";
 import { Outlet } from "react-router-dom";
 import { InternalSidebar } from "./internal.sidebar";

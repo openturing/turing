@@ -1,7 +1,7 @@
 // T997 -- the export-manifest lint runs in CI now, and these names are also
 // exported by @viglet/viglet-design-system. The console routes went in T570 and
 // T1000 swapped the five whose package copy was a superset; this one is T1008's.
-// viglet-ds-allow-duplicate InternalSidebar -- T1008: the package's NavMainItem requires a url and drops showOnNew
+// viglet-ds-allow-duplicate InternalSidebar -- T994: goes with the SubPage the persona chrome adapter still renders
 import { IconDownload } from "@tabler/icons-react";
 import React, { type ReactNode } from "react";
 import { useTranslation } from "react-i18next";

@@ -14,7 +14,6 @@ import "./chat-highlight.css"
 import { ROUTES } from "@/app/routes.const"
 import { BlankSlate } from "@/components/blank-slate"
 import { GradientButton } from "@/components/ui/gradient-button"
-import { PageHeader } from "@/components/page-header"
 import type { TurPersona } from "@/models/persona/persona.model"
 import { TurPersonaService } from "@/services/persona/persona.service"
 import type { ChatSession } from "@/services/chat/chat-session.service"
@@ -55,7 +54,7 @@ const turPersonaService = new TurPersonaService()
 export default function PersonaChatPage({
   personaId,
   emptyStateHeader,
-}: Readonly<{ personaId: string; emptyStateHeader?: ReactNode }>) {
+}: Readonly<{ personaId: string; emptyStateHeader: ReactNode }>) {
   const { t } = useTranslation()
   const tabId = `persona:${personaId}`
 
@@ -224,9 +223,14 @@ export default function PersonaChatPage({
 
   // ── Early returns ──
 
-  const blankSlateHeader = emptyStateHeader ?? (
-    <PageHeader turIcon={IconMasksTheater} title={t("persona.title", { defaultValue: "Persona" })} />
-  )
+  /*
+   * T1008 — `emptyStateHeader` is required. It used to fall back to the console
+   * PageHeader, which stopped being reachable when T570 retired the console
+   * routes: the only caller is the bento shell and it always passes a
+   * BentoHero. Requiring it is what let the PageHeader copy go, and with it the
+   * SidebarTrigger this surface must never pull into a shell with no provider.
+   */
+  const blankSlateHeader = emptyStateHeader
 
   // Chat controls (session history · session info · new chat) hosted in the
   // BentoHero's `trailing` slot instead of a header bar, to free vertical space

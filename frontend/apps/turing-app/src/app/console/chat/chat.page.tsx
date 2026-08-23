@@ -15,7 +15,6 @@ import "./chat-highlight.css"
 import { ROUTES } from "@/app/routes.const"
 import { BlankSlate } from "@/components/blank-slate"
 import { GradientButton } from "@/components/ui/gradient-button"
-import { PageHeader } from "@/components/page-header"
 import type { TurAIAgent } from "@/models/agent/ai-agent.model"
 import type { TurChatFlow } from "@/models/agent/chat-flow.model"
 import type { TurSkillSummary } from "@/models/skill/skill.model"
@@ -54,10 +53,9 @@ const turSkillService = new TurSkillService()
  * @param emptyStateHeader Optional page header rendered above the surface in
  * every state — the "no LLM" / "no agent" blank slates and the live chat alike
  * — so the chat matches the other Bento pages (a {@link BentoHero} in normal
- * flow, then a sized body below). Defaults to the console {@link PageHeader};
- * the Bento shell (T563) passes its own frosted {@code BentoHero} so the reused
- * surface never pulls the console {@code SidebarTrigger} into a shell that has
- * no SidebarProvider.
+ * flow, then a sized body below). Required: the Bento shell (T563) passes its
+ * own frosted {@code BentoHero} so the reused surface never pulls the console
+ * {@code SidebarTrigger} into a shell that has no SidebarProvider.
  * @param initialAgentId Block AI / §XXXII.3 (T580) — the agent to open on
  * mount, resolved from the deterministic `/bento/chat/agent/:agentId` route
  * (replaces the retired `CHAT_INITIAL_AGENT_KEY` sessionStorage hand-off). When
@@ -66,7 +64,7 @@ const turSkillService = new TurSkillService()
 export default function ChatPage({
   emptyStateHeader,
   initialAgentId,
-}: Readonly<{ emptyStateHeader?: ReactNode; initialAgentId?: string }> = {}) {
+}: Readonly<{ emptyStateHeader: ReactNode; initialAgentId?: string }>) {
   const { t } = useTranslation()
   // Empty until agents load — then becomes `agent:<id>` of the default or first agent.
   const [activeTab, setActiveTab] = useState<string>("")
@@ -357,9 +355,14 @@ export default function ChatPage({
 
   // ── Early returns ──
 
-  const blankSlateHeader = emptyStateHeader ?? (
-    <PageHeader turIcon={IconMessageChatbot} title={t("chat.chatTab")} />
-  )
+  /*
+   * T1008 — `emptyStateHeader` is required. It used to fall back to the console
+   * PageHeader, which stopped being reachable when T570 retired the console
+   * routes: the only caller is the bento shell and it always passes a
+   * BentoHero. Requiring it is what let the PageHeader copy go, and with it the
+   * SidebarTrigger this surface must never pull into a shell with no provider.
+   */
+  const blankSlateHeader = emptyStateHeader
 
   // Chat controls (session history · session info · new chat) — hosted in the
   // BentoHero's `trailing` slot instead of a dedicated header bar, to free the

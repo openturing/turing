@@ -41,6 +41,26 @@ interface CoreGroup {
 // Matches: {base}_{lang}_{COUNTRY} or {base}_{lang}
 const LOCALE_PATTERN = /^(.+)_([a-z]{2}_[A-Z]{2})$|^(.+)_([a-z]{2})$/;
 
+import type { TurSECoreSiteUsage } from "@/models/se/se-core-site-usage.model";
+import type { VigBlockedByItem } from "@/components/dialog.delete";
+
+/**
+ * T1008 — the delete dialog takes an `href` per blocking item now, rather than
+ * building an SN link out of `ROUTES` itself. Where a site/locale pair lives is
+ * this page's knowledge, so the mapping is here.
+ *
+ * Keyed by `localeId`, not `siteId`: one site blocks a core once per locale, and
+ * keying by the site would collide across its locales.
+ */
+function toBlockedBy(usedBySites: TurSECoreSiteUsage[] | undefined): VigBlockedByItem[] | undefined {
+  return usedBySites?.map((usage) => ({
+    id: usage.localeId,
+    name: usage.siteName,
+    language: usage.language,
+    href: `${ROUTES.SN_INSTANCE}/${usage.siteId}/locale/${usage.localeId}`,
+  }));
+}
+
 function groupCores(cores: TurSECoreInfo[]): CoreGroup[] {
   const map = new Map<string, LocaleEntry[]>();
   const leafMap = new Map<string, TurSECoreInfo>();
@@ -133,7 +153,7 @@ function LocaleRow({ locale, coreInfo, onDelete, onClear }: Readonly<LocaleRowPr
           open={deleteOpen}
           setOpen={setDeleteOpen}
           onDelete={() => { setDeleteOpen(false); onDelete(coreInfo.name); }}
-          blockedBy={coreInfo.usedBySites}
+          blockedBy={toBlockedBy(coreInfo.usedBySites)}
           trigger={
             <Button variant="ghost" size="icon-sm" title={t("se.cores.deleteCore")}>
               <IconTrash className="size-4" />
@@ -239,7 +259,7 @@ function CoreGroupRow({ group, onDelete, onClear }: Readonly<CoreGroupRowProps>)
                   open={deleteOpen}
                   setOpen={setDeleteOpen}
                   onDelete={() => { setDeleteOpen(false); onDelete(group.coreInfo!.name); }}
-                  blockedBy={group.coreInfo.usedBySites}
+                  blockedBy={toBlockedBy(group.coreInfo.usedBySites)}
                   trigger={
                     <Button variant="ghost" size="icon-sm" title={t("se.cores.deleteCore")}>
                       <IconTrash className="size-4" />

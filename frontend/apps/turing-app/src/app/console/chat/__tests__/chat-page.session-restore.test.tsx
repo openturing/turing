@@ -75,7 +75,7 @@ describe("ChatPage — session restore (T232.2)", () => {
       updatedAt: Date.now(),
     });
 
-    renderWithRouter(<ChatPage />);
+    renderWithRouter(<ChatPage emptyStateHeader={<h1>Chat</h1>} />);
 
     // Page ready (agent + LLM resolved → AgentChatTab mounted with an input).
     await screen.findByRole("textbox");
