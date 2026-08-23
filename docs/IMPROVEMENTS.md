@@ -2102,18 +2102,6 @@ and only then delete anything. Three tasks are instruments rather than moves - a
 duplication lint, a working local-dev path and a render digest - because every deletion
 here is justified by an assertion this repository currently cannot check.
 
-### XCVI.7 The chrome adapter is a migration tool, not a local override (T994)
-
-components/ui/section-card.tsx does not fork the design-system SectionCard; it wraps it.
-A provider at the top of a page decides whether the sections inside render as console
-cards or as frosted bento sections, so a form with real field logic is written once and
-rendered in either chrome. That is the single most reusable thing this migration
-produced, and it is currently a private override sitting in one product's ui folder.
-Shio needs it more than Turing does: its post editor, post-type editor and site editor
-are the largest forms it has, and a parallel bento route would otherwise fork all three.
-Move it beside the two components it switches between, and leave the local file as a
-shim.
-
 ### XCVI.9 Prove the token swap changed nothing here (T996)
 
 Tile tones and the brand hue are currently Tailwind class strings inside components.

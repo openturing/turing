@@ -10,21 +10,15 @@
 
 ## Block BX — The bento layer leaves the product it grew in (§XCVI)
 
-- 📋 **T994** (deps: viglet-design-system VDS22) **the SectionCard chrome adapter overrides a shared component from inside this product** — It is the pattern that lets a heavy form render in either chrome, and the other product needs it more than this one. → §XCVI.7
 - 📋 **T996** (deps: viglet-design-system VDS23) **tile tones and the brand hue are named as Tailwind classes inside components this product no longer owns** — The token swap must be provably invisible here, or one look across products arrives as a regression in this one. → §XCVI.9
 - 📋 **T999** (deps: viglet-design-system VDS20) **CONVENTIONS.md is the layer's authoring contract and it lives in the product that no longer owns the layer** — Two copies of a contract drift exactly as two copies of a component do. → §XCVI.12
 - ⏳ **T1000** (deps: T1008 ⏳) **40 console pages still render beside the 118 bento ones, so two chromes and two component sets stay alive** — The package cannot deprecate its console entry point while this product still declares four of its components. → §XCVI.13
 - 📋 **T1001** (deps: viglet-design-system VDS25) **nothing here proves a page renders the same after its components moved out of the repository** — The whole block is a claim about appearance, and appearance is the one thing this suite never checks. → §XCVI.14
-- ⏳ **T1008** (deps: T994) **four console-chrome components stay declared here because each package copy dropped something this product renders** — SubPage and its InternalSidebar are the last two, and the persona chrome adapter is what still renders them. → §XCVI.18
+- ⏳ **T1008** (deps: viglet-design-system SubPage props) **four console-chrome components stay declared here because each package copy dropped something this product renders** — The package's SubPage drops outletContext, which shares one form instance across the persona editor's section sub-pages. → §XCVI.18
 
 ## Block AR — Live-demo search & chat quality (Lucene parity gaps, §XLI)
 
 - ⏳ **T1004** (deps: —) **site chat emits the whole answer in one SSE content event, so no consumer can render it progressively** — The measurement that opened this has not been repeated against the demo. → §XCVII
-
-## Done when — T994
-
-- **The chrome adapter is imported, not declared here** The local section-card module is
-  a shim, and a form that used the provider renders identically in both chromes.
 
 ## Done when — T996
 
