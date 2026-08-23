@@ -121,6 +121,15 @@ export {
 } from "./core/session";
 export type { TurSessionOptions } from "./core/session";
 
+// ── Errors ──
+//
+// T1012 — re-exported from `@viglet/turing-sdk`, not re-declared. `instanceof`
+// compares constructor identity, so a second pair defined here would not match
+// what the vanilla SDK throws and a consumer of both would be back to reading
+// messages. A non-2xx throws TuringHttpError with a numeric `status`; a request
+// that produced no usable response throws TuringTransportError.
+export { TuringHttpError, TuringTransportError } from "@viglet/turing-sdk";
+
 // ── Resolve utilities ──
 export { resolveDocuments, resolveGroups, resolveStructuredGroups } from "./core/resolve";
 // T881 — the rest of the response, projected once for both shapes. Owned by the

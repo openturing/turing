@@ -1,4 +1,5 @@
 import axios from "axios";
+import { emptyBody, fetchOrThrow } from "./errors";
 import type {
   TurAnswerArtifact,
   TurAnswerCitation,
@@ -441,7 +442,7 @@ async function consumeAssistantStream(
   secondOpinion?: TurChatSecondOpinion;
 }> {
   if (!response.body) {
-    throw new Error("Chat response has no body");
+    throw emptyBody(response.url, "Chat response");
   }
   const reader = response.body.getReader();
   const decoder = new TextDecoder();
@@ -632,7 +633,7 @@ export async function postChatConversation(
   const tz = browserTimezone();
   if (tz) headers["X-Timezone"] = tz;
 
-  const response = await fetch(url, {
+  const response = await fetchOrThrow(url, {
     method: "POST",
     headers,
     credentials: "include",
@@ -647,9 +648,6 @@ export async function postChatConversation(
     signal: options?.signal,
   });
 
-  if (!response.ok) {
-    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-  }
 
   const {
     text,
@@ -739,7 +737,7 @@ export async function postAgentChat(
     body = JSON.stringify(requestPayload);
   }
 
-  const response = await fetch(url, {
+  const response = await fetchOrThrow(url, {
     method: "POST",
     headers,
     credentials: "include",
@@ -747,9 +745,6 @@ export async function postAgentChat(
     signal: options?.signal,
   });
 
-  if (!response.ok) {
-    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-  }
 
   const {
     text,
@@ -834,7 +829,7 @@ export async function postPersonaChat(
     body = JSON.stringify(requestPayload);
   }
 
-  const response = await fetch(url, {
+  const response = await fetchOrThrow(url, {
     method: "POST",
     headers,
     credentials: "include",
@@ -842,9 +837,6 @@ export async function postPersonaChat(
     signal: options?.signal,
   });
 
-  if (!response.ok) {
-    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-  }
 
   const {
     text,
@@ -908,7 +900,7 @@ export async function postClientToolResult(
   const xsrf = await ensureXsrfToken();
   if (xsrf) headers["X-XSRF-TOKEN"] = xsrf;
 
-  const response = await fetch(url, {
+  const response = await fetchOrThrow(url, {
     method: "POST",
     headers,
     credentials: "include",
@@ -916,9 +908,6 @@ export async function postClientToolResult(
     signal: options?.signal,
   });
 
-  if (!response.ok) {
-    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-  }
 
   const {
     text,
@@ -997,7 +986,7 @@ export async function postLlmChat(
     body = JSON.stringify({ messages });
   }
 
-  const response = await fetch(url, {
+  const response = await fetchOrThrow(url, {
     method: "POST",
     headers,
     credentials: "include",
@@ -1005,9 +994,6 @@ export async function postLlmChat(
     signal: options?.signal,
   });
 
-  if (!response.ok) {
-    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-  }
 
   const { text } = await consumeAssistantStream(response, options?.onToken);
   return { role: "assistant", content: text, options: [] };
@@ -1040,7 +1026,7 @@ export async function postSemanticChat(
   const xsrf = await ensureXsrfToken();
   if (xsrf) headers["X-XSRF-TOKEN"] = xsrf;
 
-  const response = await fetch(url, {
+  const response = await fetchOrThrow(url, {
     method: "POST",
     headers,
     credentials: "include",
@@ -1048,9 +1034,6 @@ export async function postSemanticChat(
     signal: options?.signal,
   });
 
-  if (!response.ok) {
-    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-  }
 
   const { text } = await consumeAssistantStream(response, options?.onToken);
   return { role: "assistant", content: text, options: [] };
@@ -1381,12 +1364,12 @@ export async function fetchPersonaContentFit(
   content: string,
   sourceName?: string,
 ): Promise<TurContentFit> {
-  const { data } = await axios.post<TurContentFit>(
-    `/sn/${site}/persona/${personaId}/content-fit`,
-    { content, sourceName },
-  );
+  const path = `/sn/${site}/persona/${personaId}/content-fit`;
+  const { data } = await axios.post<TurContentFit>(path, { content, sourceName });
   if (!data) {
-    throw new Error("Empty content-fit response");
+    // T1012 — the same type the vanilla SDK throws for a 2xx with no body, so a
+    // consumer of both matches one thing rather than two wordings.
+    throw emptyBody(`${axios.defaults.baseURL ?? ""}${path}`, "Content-fit response");
   }
   return data;
 }
@@ -1530,15 +1513,12 @@ export async function postVoiceSession(
   const headers: Record<string, string> = { "Content-Type": "application/json" };
   const xsrf = await ensureXsrfToken();
   if (xsrf) headers["X-XSRF-TOKEN"] = xsrf;
-  const response = await fetch(url, {
+  const response = await fetchOrThrow(url, {
     method: "POST",
     headers,
     credentials: "include",
     body: JSON.stringify(options ?? {}),
   });
-  if (!response.ok) {
-    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-  }
   return (await response.json()) as TurVoiceSession;
 }
 
@@ -1559,15 +1539,12 @@ export async function postVoiceTranslation(
   const headers: Record<string, string> = { "Content-Type": "application/json" };
   const xsrf = await ensureXsrfToken();
   if (xsrf) headers["X-XSRF-TOKEN"] = xsrf;
-  const response = await fetch(url, {
+  const response = await fetchOrThrow(url, {
     method: "POST",
     headers,
     credentials: "include",
     body: JSON.stringify({ text, targetLang, sourceLang }),
   });
-  if (!response.ok) {
-    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-  }
   const data = (await response.json()) as { translation?: string };
   return data.translation ?? "";
 }
@@ -1861,7 +1838,7 @@ async function consumeAnswerStream(
   handlers: AnswerStreamHandlers = {},
 ): Promise<AnswerResult> {
   if (!response.body) {
-    throw new Error("Answer response has no body");
+    throw emptyBody(response.url, "Answer response");
   }
   const reader = response.body.getReader();
   const decoder = new TextDecoder();
@@ -2000,15 +1977,12 @@ export async function fetchAnswer(
   const params = new URLSearchParams({ q: query });
   if (locale) params.set("locale", locale);
   appendAnswerFilterParams(params, options?.filters);
-  const response = await fetch(`${baseURL}/sn/${encodeURIComponent(site)}/answer?${params.toString()}`, {
+  const response = await fetchOrThrow(`${baseURL}/sn/${encodeURIComponent(site)}/answer?${params.toString()}`, {
     method: "GET",
     headers: { Accept: "text/event-stream" },
     credentials: "include",
     signal: options?.signal,
   });
-  if (!response.ok) {
-    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-  }
   return consumeAnswerStream(response, options);
 }
 
