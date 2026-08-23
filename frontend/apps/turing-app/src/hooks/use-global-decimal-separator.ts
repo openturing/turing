@@ -54,7 +54,7 @@ const looksLikeDecimal = (value: string): boolean => {
   if (/\d{4}-\d{2}-\d{2}/.test(trimmed)) {
     return false;
   }
-  return /^[+\-]?\d[\d\s.,]*$/.test(trimmed);
+  return /^[+-]?\d[\d\s.,]*$/.test(trimmed);
 };
 
 export function useGlobalDecimalSeparator() {

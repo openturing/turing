@@ -35,6 +35,17 @@ interface NavMainItem {
   showOnNew?: boolean;
 }
 
+/**
+ * One row of the optional indexing-counts group. It mirrors `NavCountItem` in
+ * `sub.page.tsx`, which is the only caller that fills it — `count` is optional
+ * there, and `formatCount` below already reads it that way.
+ */
+interface SidebarCount {
+  title: string;
+  count?: number;
+  icon?: React.ElementType;
+}
+
 interface InternalSidebarProps {
   icon: React.ElementType;
   feature: string;
@@ -42,7 +53,7 @@ interface InternalSidebarProps {
   urlBase?: string;
   isNew?: boolean;
   data?: {
-    counts?: any[];
+    counts?: SidebarCount[];
     navMain: NavMainItem[];
   };
   onDelete?: () => void;
@@ -172,7 +183,7 @@ export const InternalSidebar: React.FC<InternalSidebarProps> = ({
             <SidebarGroupLabel>{t("sidebar.indexing")}</SidebarGroupLabel>
             <SidebarGroupContent className="flex flex-col gap-2 pt-4">
               <SidebarMenu>
-                {data.counts.map((item: any) => (
+                {data.counts.map((item) => (
                   <SidebarMenuItem key={item.title}>
                     <SidebarMenuButton
                       tooltip={item.title + ": " + formatCount(item.count)}

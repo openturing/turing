@@ -63,7 +63,6 @@ vi.mock("@/services/sn/sn.ranking-lexicon.service", () => ({
   },
 }));
 
-// eslint-disable-next-line import/first
 import { SNSiteGenAiForm } from "../sn.site.genai.form";
 
 function renderForm(genAi: Record<string, unknown> = {}) {

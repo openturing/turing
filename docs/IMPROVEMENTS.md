@@ -2183,28 +2183,26 @@ Acceptance:
 
 ## CIII The quality gate stops at the package boundary
 
-### CIII.2 What the working lint found (T1016)
+### CIII.3 The backlog the ceiling holds (T1017)
 
-With its config loading again (T1015), `eslint .` reports 388 problems — 316 errors and
-72 warnings across 155 of this app's files. None is new code. They are what accumulated
-while the command could not run.
+T1016 put the gate up and pinned the number it found: `lint` runs with `--max-warnings
+358`, so a commit may lower the backlog and may not raise it. The ceiling is the whole
+of what holds it — nothing yet says any one of the 358 is wrong.
 
-By rule: 188 `react-refresh/only-export-components`, 76
-`react-hooks/set-state-in-effect`, 46 `react-hooks/exhaustive-deps`, 25
-`react-hooks/incompatible-library`, 9 `react-hooks/refs`, 9
-`@typescript-eslint/no-explicit-any`, 8 `@typescript-eslint/no-unused-vars`, 8
-`react-hooks/static-components`, 5 `react-hooks/immutability`, and fourteen more across
-eight rules.
+What is under it: 188 `react-refresh/only-export-components` over 33 files, 76
+`react-hooks/set-state-in-effect` over 63, 46 `react-hooks/exhaustive-deps` over 30, 25
+`react-hooks/incompatible-library`, and 23 across five more React Compiler rules.
 
-They are not one problem. `only-export-components` is a Fast Refresh constraint and
-mostly a file-splitting question; `set-state-in-effect` and `exhaustive-deps` are the
-two this repository already has written rules about, in `agents.md`, arrived at from
-real bugs. Reading the 76 is how you find whether any of them is one.
+They are three different jobs, and only the second is about correctness. Fast Refresh
+wants a module split; `exhaustive-deps` wants a dependency read; `set-state-in-effect`
+is the one this repository already has a written rule about in `agents.md`, arrived at
+from a real bug, so 76 call sites of it is the pile worth reading first — some will be a
+`useMemo` that was never needed, and some will be a render loop nobody has hit yet.
 
-The gate is the point, not the count. `validate-js.yml` runs lint for no workspace, and
-adding the step is what stops the number climbing again — which cannot happen while the
-job would fail on the first file.
+The ceiling should fall as each is answered. What it must not do is stay at 358 while
+being treated as the answer.
 
 Acceptance:
-- Each rule is either driven to zero or given a reasoned severity in the config.
-- `validate-js.yml` runs lint for turing-app, and the job passes.
+- `set-state-in-effect` is read call site by call site, each either rewritten or given a
+  line saying why the effect is the right place.
+- The `--max-warnings` ceiling in `lint` is lowered to whatever survives.

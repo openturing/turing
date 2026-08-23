@@ -20,7 +20,7 @@
 
 ## Block BV — The quality gate stops at the package boundary
 
-- 📋 **T1016** (deps: T1015 ✅) **388 lint findings across 155 files, and no workflow runs lint for any workspace** — They are eight unrelated rules, and the CI step that would hold the line cannot be added until the job passes. → §CIII.2
+- 📋 **T1017** (deps: T1016 ✅) **358 lint warnings sit under a pinned ceiling, and nothing says which of them is wrong** — They are three unrelated jobs, and only the 76 setState-in-effect findings are about correctness. → §CIII.3
 
 ## Done when — T1000
 

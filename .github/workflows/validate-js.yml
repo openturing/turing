@@ -130,6 +130,16 @@ jobs:
         working-directory: frontend
         run: pnpm --filter "${{ matrix.workspace }}" run --if-present test
 
+      # T1016: the step that holds the line. `lint` ran in no workflow at all,
+      # which is how this app's eslint config reached a state where it could not
+      # be loaded (T1015) without anything noticing. The script pins
+      # `--max-warnings` to the count that existed when the gate went up, so a
+      # commit may reduce the backlog and may not add to it; the errors are
+      # already zero and stay that way.
+      - name: Lint
+        working-directory: frontend
+        run: pnpm --filter "${{ matrix.workspace }}" run --if-present lint
+
       # T1001: the render digest, which lays the bento surfaces out in a real
       # browser under this app's own stylesheet chain and fails when a re-key
       # moves the layout, when an accent-bearing surface stops resolving the

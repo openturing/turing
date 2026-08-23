@@ -146,7 +146,6 @@ export default function BentoIntegrationInstancePage() {
         ))}
       </nav>
     );
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isNew, dumontNavItems, isSettings, activePath, queueSize, instanceBase, t]);
 
   // --- Dumont remote sub-page ---

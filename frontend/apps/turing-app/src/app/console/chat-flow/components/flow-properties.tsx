@@ -1728,7 +1728,6 @@ function ConvertToFormDialog({ open, plan, agentId, onOpenChange, onConfirm }: C
         </div>
         <ul className="max-h-64 space-y-1 overflow-auto rounded-md border bg-muted/30 p-2 text-sm">
           {fields.map((field, idx) => (
-            // eslint-disable-next-line react/no-array-index-key
             <li key={idx} className="flex items-center justify-between gap-2">
               <span className="truncate">{field.label || field.name || `field ${idx + 1}`}</span>
               <span className="flex items-center gap-1 text-[11px] text-muted-foreground">
@@ -1810,7 +1809,6 @@ function FormFieldsEditor({ fields, slotOptions, onChange }: FormFieldsEditorPro
         </div>
       ) : (
         fields.map((field, idx) => (
-          // eslint-disable-next-line react/no-array-index-key
           <div key={idx} className="flex flex-col gap-1.5 rounded-md border bg-background p-2">
             <div className="flex items-center gap-2">
               <Select

@@ -111,7 +111,10 @@ export function planFormConversion(
   if (!isCollapsibleQuestion(start)) return null;
 
   const run: Node<FlowNodeData>[] = [start!];
-  let stopReason: ConversionStopReason = "dead_end";
+  // Declared without an initial value on purpose: the loop below is `for (;;)`,
+  // so the only way past it is a `break`, and all six assign this first. An
+  // initialiser here would be a value no path can read.
+  let stopReason: ConversionStopReason;
 
   // Walk forward through the simple linear chain.
   for (;;) {

@@ -58,7 +58,6 @@ vi.mock("@viglet/turing-react-sdk", () => ({
   postLlmChat: () => Promise.resolve(""),
 }));
 
-// eslint-disable-next-line import/first
 import { SNSiteGenAiForm } from "../sn.site.genai.form";
 
 function renderForm(genAi: Record<string, unknown> = {}) {

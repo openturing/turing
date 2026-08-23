@@ -16,7 +16,7 @@ interface JsonObject {
   [key: string]: JsonValue;
 }
 
-interface JsonArray extends Array<JsonValue> { }
+type JsonArray = JsonValue[];
 
 interface JsonNodeProps {
   value: JsonValue;

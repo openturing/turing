@@ -29,6 +29,17 @@ import { useCallback, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "@viglet/viglet-design-system";
 
+/**
+ * What the two catch blocks below actually read off a rejection. Axios puts the
+ * server's body under `response.data`; anything else that throws here carries at
+ * most a `message`. Both are optional because a rejection is not obliged to be
+ * either, which is why the reads stay chained.
+ */
+type ImportFailure = {
+  response?: { data?: { message?: string } };
+  message?: string;
+};
+
 const importService = new TurExchangeImportService();
 const featuresService = new TurFeaturesService();
 
@@ -96,10 +107,11 @@ export default function ExchangeImportPage() {
                 setProgress(100);
                 toast.success(t("exchange.importSuccess"));
             }
-        } catch (err: any) {
+        } catch (err) {
+            const e = err as ImportFailure;
             const msg =
-                err?.response?.data?.message ||
-                err?.message ||
+                e?.response?.data?.message ||
+                e?.message ||
                 t("exchange.importError");
             setErrorMessage(msg);
             setStatus("error");
@@ -141,10 +153,11 @@ export default function ExchangeImportPage() {
                 }
                 // Nothing extra detected — import directly
                 await doImport(selectedFile, false, false);
-            } catch (err: any) {
+            } catch (err) {
+                const e = err as ImportFailure;
                 const msg =
-                    err?.response?.data?.message ||
-                    err?.message ||
+                    e?.response?.data?.message ||
+                    e?.message ||
                     t("exchange.importError");
                 setErrorMessage(msg);
                 setStatus("error");

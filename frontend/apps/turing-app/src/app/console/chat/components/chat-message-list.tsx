@@ -216,7 +216,6 @@ function SearchSuggestions({ message }: Readonly<{ message: ChatMessage }>) {
         // Google-mandated chips: a self-contained HTML/CSS fragment. Sanitised
         // (T653 / §XXXVII.15) to strip script/iframe/event-handlers/js: URLs
         // while preserving the chip markup + inline styles Google requires.
-        // eslint-disable-next-line react/no-danger
         <div
           className="overflow-x-auto"
           dangerouslySetInnerHTML={{ __html: sanitizeFragment(rendered) }}

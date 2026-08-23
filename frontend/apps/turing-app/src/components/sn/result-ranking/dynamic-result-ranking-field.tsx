@@ -1,3 +1,13 @@
+/* eslint-disable @typescript-eslint/no-explicit-any --
+ * T1016 — the five casts below are react-hook-form's dynamic-path escape, not
+ * untyped code. This component is generic over `TFieldValues`, and the paths it
+ * builds are template literals (`${fieldName}.${index}.attribute`) that RHF's
+ * `FieldPath<TFieldValues>` cannot resolve for an unbound generic: the union it
+ * needs is only computable once the concrete form type is known, which is at the
+ * call site and not here. `errors?.[fieldName]` is the same problem read back.
+ * Narrowing them would mean giving this component the form type it exists to be
+ * independent of.
+ */
 import { GradientButton } from '@/components/ui/gradient-button';
 import { IconCirclePlus, IconTrash } from "@tabler/icons-react";
 import { Input } from '@/components/ui/input';

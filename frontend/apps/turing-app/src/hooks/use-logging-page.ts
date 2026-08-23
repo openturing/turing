@@ -26,6 +26,7 @@ export function useLoggingPage<T>({
   const [refreshInterval, setRefreshInterval] = useState(0);
   const [initialLoad, setInitialLoad] = useState(true);
   const skipNextFetch = useRef(false);
+  const filterKey = JSON.stringify(filterDeps);
 
   const fetchData = useCallback(async (fetchPage: number, sort: "asc" | "desc" = "asc", silent = false) => {
     try {
@@ -45,7 +46,13 @@ export function useLoggingPage<T>({
       if (!silent) setError(errorMessage);
       return null;
     }
-  }, [pageSize, ...filterDeps]);
+    // T1016 — the filters travel as one key rather than spread into the list.
+    // A dependency list has to be a literal of constant length, and a spread is
+    // neither: the three callers pass three, four and three entries, so the
+    // arity is a property of the call site rather than of this hook. Serialising
+    // them keeps the same trigger (the callback is rebuilt when any filter
+    // moves) with a shape React and the linter can both read.
+  }, [pageSize, filterKey]);
 
   // Initial load: fetch page 0 desc (newest N rows), single request
   useEffect(() => {
