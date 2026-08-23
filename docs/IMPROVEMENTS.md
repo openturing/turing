@@ -2195,9 +2195,9 @@ Measured against `turing-demo.viglet.org` on 2026-08-23, reading the raw SSE wit
 `sources` payload, then a single `content` event carrying the entire answer text — 0.7s
 apart.
 
-Two events arriving separately shows nginx is not the culprit: it passed the first
-through before the second existed. The engine is aggregating the answer before it emits
-it.
+Two events arriving separately ruled nginx out: it passed the first through before the
+second existed. The engine aggregates the answer before it emits it, because the agent
+serving that site is on chat mode `call`.
 
 The consequence is not cosmetic for a consumer. `consumeAssistantStream` in the vanilla
 SDK reads the body with a stream reader and a streaming `TextDecoder` and calls
@@ -2205,9 +2205,12 @@ SDK reads the body with a stream reader and a streaming `TextDecoder` and calls
 and can render nothing until the answer is complete. T684 added a typing indicator for
 the wait before the first token; this is the wait *being* the whole answer.
 
-Found while building the `schools` admissions app, whose own acceptance requires an
-answer that arrives token by token — that app has verified its framework does not
-buffer, so this is the remaining reason a visitor sees a pause and then a wall of text.
+Found while building the `schools` admissions app, whose acceptance requires an answer
+that arrives token by token; that app verified its own framework does not buffer.
+
+Re-measured on 2026-08-23 once `AUTO` landed: the demo still emits the same two events,
+33ms apart. The demo runs a build from before that mode existed, so the last bullet
+below is waiting on a deploy rather than on anything left to write here.
 
 Acceptance:
 - Site-scoped chat emits incremental `content` events as the model produces them.

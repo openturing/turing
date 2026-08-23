@@ -18,7 +18,7 @@
 
 ## Block AR — Live-demo search & chat quality (Lucene parity gaps, §XLI)
 
-- ⏳ **T1004** (deps: —) **site chat emits the whole answer in one SSE content event, so no consumer can render it progressively** — The measurement that opened this has not been repeated against the demo. → §XCVII
+- ⏳ **T1004** (deps: —) **site chat emits the whole answer in one SSE content event, so no consumer can render it progressively** — The mode that streams it exists; the demo runs a build from before it, so the last acceptance bullet waits on a deploy. → §XCVII
 
 ## Done when — T1000
 
