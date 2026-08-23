@@ -2161,6 +2161,35 @@ own rather than being spelled out at each call site. What should not stand is tw
 anonymous pairs that no token can re-key, because that is the fork T996 just finished
 removing, one page at a time.
 
+### XCVI.21 The waiver that does not waive (T1014)
+
+Any pnpm install in this workspace currently fails:
+
+    [ERR_PNPM_MINIMUM_RELEASE_AGE_VIOLATION] 1 lockfile entries failed verification:
+      @viglet/viglet-design-system@2026.3.3 was published at 2026-08-23T17:47:39.422Z,
+      within the minimumReleaseAge cutoff
+
+The waiver for exactly that entry is already in pnpm-workspace.yaml. Line 107 reads
+'@viglet/viglet-design-system@2026.3.3', under minimumReleaseAgeExclude, added with the
+vetted-group bump above it. The check rejects it anyway, so the documented escape does
+not escape: a listed exclusion and an unlisted one produce the same refusal, and the
+list reads as protection it is not providing.
+
+Two properties make this worse than a slow day. The blocked package is first-party --
+the team publishes it -- so an age guard meant to catch a typosquat or a compromised
+release is being applied to their own artifact, and it fires on every same-day
+design-system publish. And it blocks the run before any command, so it is not only
+install: pnpm exec tsc and pnpm --filter run test hit it too, through the deps-status
+check.
+
+What it costs concretely: T1001 needs two new devDependencies to run a parity digest in
+a browser, and cannot add them. Any task needing a dependency waits roughly a day for
+the version to age out.
+
+Worth establishing before choosing a fix: whether the exclusion is ignored only by the
+pre-run verification path and honoured by install proper, because that changes this from
+a config error into an upstream one.
+
 ## XCVII Site chat aggregates the answer before emitting it (T1004)
 
 Measured against `turing-demo.viglet.org` on 2026-08-23, reading the raw SSE with curl:
