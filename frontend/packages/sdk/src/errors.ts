@@ -63,6 +63,16 @@ export class TuringHttpError extends Error {
 export class TuringTransportError extends Error {
   /** The URL that was requested. */
   readonly url: string;
+  /**
+   * The underlying failure — the `fetch` rejection, or `undefined` where the
+   * response arrived but carried nothing to read.
+   *
+   * Declared here rather than inherited: this package's `lib` is ES2021, which
+   * predates `Error.cause`, so assigning it without this compiles under the test
+   * config and then fails `tsc --emitDeclarationOnly` — and a consumer's `.d.ts`
+   * would not have carried the field at all.
+   */
+  readonly cause: unknown;
 
   constructor(url: string, cause?: unknown, message?: string) {
     super(message ?? `Request to ${url} did not complete: ${describe(cause)}`);
