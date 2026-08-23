@@ -26,6 +26,22 @@
  * The absolute `entries` / `total` numbers remain supported as a coarse backstop
  * for packages that have not adopted a baseline yet.
  *
+ * ## How old the baseline is, and why that is printed (T1010)
+ *
+ * The delta guard is only as good as the date of the number it compares against.
+ * Nothing runs this between releases — every workflow here is `workflow_dispatch`
+ * on purpose (T928/T929) — so a baseline goes stale as the normal course of
+ * things, and the growth it reports stops being about the change in front of you.
+ * That happened: T1005 tripped the gate by 0.93 kB, of which 0.66 kB predated it,
+ * and the output gave the author no way to tell. Establishing the split took
+ * stashing the work and rebuilding.
+ *
+ * So the age is printed next to the baseline date, a passing run says when its
+ * headroom was measured against a release-era number, and a failing run over a
+ * stale baseline names the stash-and-rebuild procedure instead of leaving one
+ * change to carry the argument for several. `staleAfterDays` (default 14) is the
+ * threshold, per package.
+ *
  * ## The middle ground: per-directory baselines (T878)
  *
  * A non-strict package baselines only its `total`, because per-file numbers over
@@ -46,6 +62,7 @@
  *                                      // budget or a baseline
  *     "groupBy":    "dir",             // also baseline each top-level dist directory
  *     "delta":      { "entry": 512, "dir": 1024, "total": 1024 }, // growth allowances
+ *     "staleAfterDays": 14,            // when the baseline stops being evidence (T1010)
  *     "baseline":   {                  // measured — write with --update-baseline
  *       "measured": "2026-08-02",
  *       "total":    33168,
@@ -228,7 +245,31 @@ if (total !== undefined && totalGzip > total) {
 // --------------------------------------------------------------------------
 // Report
 // --------------------------------------------------------------------------
-const measuredNote = baseline?.measured ? ` (baseline measured ${baseline.measured})` : "";
+/**
+ * How many days old the committed baseline is, or `null` when it has no date.
+ *
+ * T1010 — the delta guard reports growth over a committed number, and says
+ * nothing about how old that number is. When T1005 tripped this gate, 0.66 kB of
+ * the 0.93 kB predated the change: the author inherited three weeks of drift to
+ * justify and had no way to see that from the output. Every workflow here is
+ * workflow_dispatch on purpose (T928/T929), so nothing runs this between
+ * releases and a stale baseline is the normal case rather than the exception.
+ */
+function baselineAgeDays(measured) {
+  if (!measured) return null;
+  const then = Date.parse(`${measured}T00:00:00Z`);
+  if (Number.isNaN(then)) return null;
+  return Math.floor((Date.now() - then) / 86_400_000);
+}
+
+/** Days after which a baseline is old enough that a delta may not be the author's. */
+const STALE_AFTER_DAYS = cfg.staleAfterDays ?? 14;
+
+const ageDays = baselineAgeDays(baseline?.measured);
+const baselineIsStale = ageDays !== null && ageDays > STALE_AFTER_DAYS;
+const measuredNote = baseline?.measured
+  ? ` (baseline measured ${baseline.measured}${ageDays === null ? "" : `, ${ageDays}d ago`})`
+  : "";
 console.log(`\n  ${label} — bundle size (gzip)${measuredNote}\n`);
 const pad = Math.max(...rows.map((r) => r.rel.length), 5);
 console.log(`    ${"".padEnd(pad)}  ${"gzip".padStart(9)}  / ${"ceiling".padStart(9)}  ${"Δ base".padStart(10)}`);
@@ -279,12 +320,35 @@ if (updateBaseline) {
 if (violations.length > 0) {
   console.error("\n  size budget exceeded:");
   for (const v of violations) console.error(`    - ${v}`);
+  // T1010 — a delta over an old baseline is not evidence about this change. Say
+  // so, and name the procedure that splits it, because otherwise the person who
+  // tripped the gate either justifies growth that is not theirs or re-baselines
+  // without knowing what they blessed.
+  if (baselineIsStale) {
+    console.error(
+      `\n  the baseline above is ${ageDays} days old, so some of that growth may predate this\n` +
+        "  change. To find out how much, measure the tree without it:\n\n" +
+        "      git stash push -u -- <this package>\n" +
+        "      <build> && node ../../scripts/check-size.mjs\n" +
+        "      git stash pop\n\n" +
+        "  The delta it reports is inherited; the rest is yours. Re-baseline either way —\n" +
+        "  what should not happen is one change carrying the argument for several.",
+    );
+  }
   console.error("");
   process.exit(1);
 }
 
 if (!baseline) {
   console.log(`\n  ✓ all entries within budget (no baseline committed — run \`--update-baseline\` to add the delta guard)\n`);
+} else if (baselineIsStale) {
+  // Passing, and still worth saying: the number this passed against is old, so
+  // the headroom shown above is not the headroom the next author will find.
+  console.log(
+    `\n  ✓ all entries within budget — but the baseline is ${ageDays} days old, so the deltas\n` +
+      "    above are measured against a release-era number rather than a recent one. Re-run\n" +
+      "    with `--update-baseline` at the next release to keep the guard meaningful.\n",
+  );
 } else {
   console.log("\n  ✓ all entries within budget\n");
 }

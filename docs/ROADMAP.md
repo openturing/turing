@@ -22,10 +22,6 @@
 
 - ⏳ **T1004** (deps: —) **site chat emits the whole answer in one SSE content event, so no consumer can render it progressively** — The measurement that opened this has not been repeated against the demo. → §XCVII
 
-## Block BS — The JS SDK release gate is not a gate (§LXVI)
-
-- 📋 **T1010** (deps: —) **the SDK bundle had drifted 0.66 kB past its size baseline before T1005, and nothing had reported it** — A budget nobody runs is a budget that only fails the next person, for growth that was not theirs. → §C
-
 ## Done when — T994
 
 - **The chrome adapter is imported, not declared here** The local section-card module is

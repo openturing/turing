@@ -199,6 +199,64 @@ describe("check-size", () => {
     strictEqual(code, 1, out);
     match(out, /has no baseline/);
   });
+
+  // T1010 — the age of the number the delta is measured against. When T1005
+  // tripped this gate, 0.66 kB of the 0.93 kB predated the change and the output
+  // gave no way to see that, so the author inherited three weeks of drift to
+  // justify. Nothing runs this between releases (every workflow here is
+  // workflow_dispatch on purpose), so a stale baseline is the normal case.
+  it("reports the baseline's age, so a delta is read against a date", () => {
+    const dir = sizeFixture(
+      { strict: true, delta: { entry: 512, total: 1024 }, baseline: { measured: "2026-01-01", total: gz(body), entries: { "index.js": gz(body) } } },
+      { "index.js": body },
+    );
+    const { code, out } = run("check-size.mjs", dir);
+    strictEqual(code, 0, out);
+    match(out, /baseline measured 2026-01-01, \d+d ago/);
+  });
+
+  it("says a passing delta was measured against a stale number", () => {
+    const dir = sizeFixture(
+      { strict: true, delta: { entry: 512, total: 1024 }, baseline: { measured: "2026-01-01", total: gz(body), entries: { "index.js": gz(body) } } },
+      { "index.js": body },
+    );
+    const { code, out } = run("check-size.mjs", dir);
+    strictEqual(code, 0, out);
+    match(out, /the baseline is \d+ days old/);
+  });
+
+  it("names the stash procedure when a stale baseline is exceeded", () => {
+    const grown = `${body}${"export const b = 2;\n".repeat(400)}`;
+    const dir = sizeFixture(
+      { strict: true, delta: { entry: 8, total: 8 }, baseline: { measured: "2026-01-01", total: gz(body), entries: { "index.js": gz(body) } } },
+      { "index.js": grown },
+    );
+    const { code, out } = run("check-size.mjs", dir);
+    strictEqual(code, 1, out);
+    match(out, /may predate this/);
+    match(out, /git stash push -u/);
+  });
+
+  it("stays quiet about age when the baseline is recent", () => {
+    const today = new Date().toISOString().slice(0, 10);
+    const dir = sizeFixture(
+      { strict: true, delta: { entry: 512, total: 1024 }, baseline: { measured: today, total: gz(body), entries: { "index.js": gz(body) } } },
+      { "index.js": body },
+    );
+    const { code, out } = run("check-size.mjs", dir);
+    strictEqual(code, 0, out);
+    ok(!/days old/.test(out), "a fresh baseline must not be called stale");
+  });
+
+  it("honours a package's own staleAfterDays", () => {
+    const dir = sizeFixture(
+      { strict: true, staleAfterDays: 100000, delta: { entry: 512, total: 1024 }, baseline: { measured: "2026-01-01", total: gz(body), entries: { "index.js": gz(body) } } },
+      { "index.js": body },
+    );
+    const { code, out } = run("check-size.mjs", dir);
+    strictEqual(code, 0, out);
+    ok(!/days old/.test(out), "a package that widened the window must not be nagged");
+  });
 });
 
 // ── check-package-contents.mjs ───────────────────────────────────────────────
