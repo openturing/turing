@@ -25,6 +25,7 @@
 ## Block BS — The JS SDK release gate is not a gate (§LXVI)
 
 - 📋 **T1006** (deps: —) **postSearch is documented @since 2026.3.4 yet absent from the published 2026.3.7 dist** — A consumer following the docs writes imports that do not resolve, and the T710 helpers being absent forces the exact duplication their own re-export comment warns against. → §XCIX
+- 📋 **T1010** (deps: —) **the SDK bundle had drifted 0.66 kB past its size baseline before T1005, and nothing had reported it** — A budget nobody runs is a budget that only fails the next person, for growth that was not theirs. → §C
 
 ## Done when — T994
 
