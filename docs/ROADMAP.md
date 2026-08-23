@@ -17,6 +17,7 @@
 - 📋 **T1001** (deps: viglet-design-system VDS25) **nothing here proves a page renders the same after its components moved out of the repository** — The whole block is a claim about appearance, and appearance is the one thing this suite never checks. → §XCVI.14
 - 📋 **T1002** (deps: —) **four bento modules were in neither the leaf list nor the compound list, so they are still declared here** — The lint T997 adopts reports fourteen names in them with no task to name as the reason. → §XCVI.15
 - 📋 **T1003** (deps: T1000) **the bento user menu is the one shell piece T992 left behind, because it reads the console-era user context** — The package's menu reads the design system's own provider, so moving it before the provider means two providers fetching one user. → §XCVI.16
+- 📋 **T1007** (deps: —) **bento.styles.css is imported by nothing and its 500-odd lines still read as the layer's source of truth** — A stylesheet no build reads is the copy a reader edits when a frosted surface looks wrong. → §XCVI.17
 
 ## Block AR — Live-demo search & chat quality (Lucene parity gaps, §XLI)
 
