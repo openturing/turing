@@ -175,11 +175,15 @@ export default function BentoRootPage() {
        * blobs are clipped inside their own `fixed`-positioned layer
        * (see AmbientBackground) instead.
        *
-       * `md:pl-16` reserves the left gutter for the fixed BentoNavRail so
-       * the header + main clear it on desktop.
+       * `bento-rail-gutter` reserves the left gutter for the fixed BentoNavRail
+       * so the header + main clear it on desktop. T999 — this was a hardcoded
+       * `md:pl-16`, which is the same 4rem at the same breakpoint today and
+       * would silently stop matching the moment the package changed the rail's
+       * width. The class is the measurement the rail owns; the literal was a
+       * copy of it.
        */}
       <div
-        className={`relative w-full bg-background text-foreground md:pl-16 ${
+        className={`bento-rail-gutter relative w-full bg-background text-foreground ${
           isImmersive ? "flex h-svh flex-col overflow-hidden" : "min-h-svh"
         }`}
       >

@@ -2102,18 +2102,6 @@ and only then delete anything. Three tasks are instruments rather than moves - a
 duplication lint, a working local-dev path and a render digest - because every deletion
 here is justified by an assertion this repository currently cannot check.
 
-### XCVI.12 The contract goes where the components went (T999)
-
-CONVENTIONS.md is why the bento layer stayed internally consistent across 118 pages:
-three page shapes and no fourth, no hand-rolled sticky wrapper, identity fields in the
-hero and never in the form, a back-link arrow on a back-link eyebrow, grid spans in
-multiples of two, the i18n object-form default, the accessibility baseline, the
-reduced-motion guard. It is written to this product and it lives in this product. Once
-the components belong to the package, so does the contract, and leaving a copy here
-creates two documents that disagree the first time one is amended. Replace it with a
-pointer, and keep locally only the rules that are genuinely about this application - its
-routes, its privileges, its entities.
-
 ### XCVI.13 Finish the cutover that was declared (T1000)
 
 Forty pages still render under the console routes beside the 118 under bento, and a

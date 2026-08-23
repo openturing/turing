@@ -19,6 +19,9 @@ bespoke layout, and never the console chrome.
 
 This skill is the migration/authoring playbook. The always-locked rules live in
 [`components/bento/CONVENTIONS.md`](../../frontend/apps/turing-app/src/components/bento/CONVENTIONS.md)
+(which is a pointer since T999 — the authoring contract itself is the design
+system's `docs/BENTO-AUTHORING.md`, and what stays in this repository is only
+what is about Turing's own routes, privileges and entities)
 — read it too.
 
 ## What makes a page "look bento"

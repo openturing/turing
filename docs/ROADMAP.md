@@ -10,7 +10,6 @@
 
 ## Block BX — The bento layer leaves the product it grew in (§XCVI)
 
-- 📋 **T999** (deps: viglet-design-system VDS20) **CONVENTIONS.md is the layer's authoring contract and it lives in the product that no longer owns the layer** — Two copies of a contract drift exactly as two copies of a component do. → §XCVI.12
 - ⏳ **T1000** (deps: T1008 ⏳) **40 console pages still render beside the 118 bento ones, so two chromes and two component sets stay alive** — The package cannot deprecate its console entry point while this product still declares four of its components. → §XCVI.13
 - 📋 **T1001** (deps: viglet-design-system VDS25) **nothing here proves a page renders the same after its components moved out of the repository** — The whole block is a claim about appearance, and appearance is the one thing this suite never checks. → §XCVI.14
 - ⏳ **T1008** (deps: viglet-design-system SubPage props) **four console-chrome components stay declared here because each package copy dropped something this product renders** — The package's SubPage drops outletContext, which shares one form instance across the persona editor's section sub-pages. → §XCVI.18
@@ -19,12 +18,6 @@
 ## Block AR — Live-demo search & chat quality (Lucene parity gaps, §XLI)
 
 - ⏳ **T1004** (deps: —) **site chat emits the whole answer in one SSE content event, so no consumer can render it progressively** — The measurement that opened this has not been repeated against the demo. → §XCVII
-
-## Done when — T999
-
-- **The authoring contract is a pointer, not a copy** CONVENTIONS.md here names the
-  package's contract and keeps only the rules genuinely about this application's routes,
-  privileges and entities.
 
 ## Done when — T1000
 
