@@ -43,8 +43,9 @@
  *
  * package.json → "exportsSurface":
  *   {
- *     "entry":    "dist/index.d.ts",   // the built declaration to read
- *     "source":   "src/index.ts",      // the source barrel, for guard A
+ *     "entry":    "dist/index.d.ts",   // the built declaration(s) — string or array
+ *     "source":   "src/index.ts",      // the source barrel(s), for guard A
+ *     "changesetDir": "../../.changeset", // where guard B looks (default)
  *     "baseline": {                    // written with --update-baseline
  *       "version":  "2026.3.7",
  *       "recorded": "2026-08-23",
@@ -56,7 +57,7 @@
  * @since 2026.3.4
  */
 import { existsSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
-import { resolve } from "node:path";
+import { relative, resolve } from "node:path";
 
 const asJson = process.argv.includes("--json");
 const updateBaseline = process.argv.includes("--update-baseline");
@@ -73,8 +74,20 @@ if (!cfg) {
   process.exit(0);
 }
 
-const entryPath = resolve(cfg.entry ?? "dist/index.d.ts");
-const sourcePath = resolve(cfg.source ?? "src/index.ts");
+/**
+ * The built declarations to read, and the sources to read them against.
+ *
+ * Both accept an array (T1011). One entry is enough where a root barrel
+ * re-exports everything a package's subpaths expose — `@viglet/turing-react-ui`
+ * is that case, verified rather than assumed. A package whose subpath exports
+ * something its root does not would otherwise have that half of its surface
+ * silently understated, which is the failure this check exists to prevent.
+ */
+const asList = (value, fallback) =>
+  (Array.isArray(value) ? value : [value ?? fallback]).map((p) => resolve(p));
+
+const entryPaths = asList(cfg.entry, "dist/index.d.ts");
+const sourcePaths = asList(cfg.source, "src/index.ts");
 
 /**
  * Every name a barrel re-exports.
@@ -107,16 +120,30 @@ function surfaceOf(file) {
   return { names, stars };
 }
 
-if (!existsSync(entryPath)) {
+const missingEntry = entryPaths.find((p) => !existsSync(p));
+if (missingEntry) {
   console.error(
-    `check-exports: ${cfg.entry ?? "dist/index.d.ts"} is missing — build the package first ` +
-      "(the declaration emit is the half that writes it).",
+    `check-exports: ${relative(process.cwd(), missingEntry).replaceAll("\\", "/")} is missing — ` +
+      "build the package first (the declaration emit is the half that writes it).",
   );
   process.exit(1);
 }
 
-const built = surfaceOf(entryPath);
-const source = existsSync(sourcePath) ? surfaceOf(sourcePath) : null;
+/** Union of the surfaces of several files, so an array entry reads as one. */
+function unionOf(paths) {
+  const names = new Set();
+  let stars = false;
+  for (const path of paths) {
+    if (!existsSync(path)) continue;
+    const one = surfaceOf(path);
+    for (const name of one.names) names.add(name);
+    stars = stars || one.stars;
+  }
+  return { names, stars };
+}
+
+const built = unionOf(entryPaths);
+const source = sourcePaths.some((p) => existsSync(p)) ? unionOf(sourcePaths) : null;
 const baseline = cfg.baseline;
 const symbols = [...built.names].sort((a, b) => a.localeCompare(b));
 
@@ -198,7 +225,7 @@ if (updateBaseline) {
 const problems = [];
 if (built.stars) {
   problems.push(
-    `  ${cfg.entry ?? "dist/index.d.ts"} contains an \`export * from\`, which this check cannot ` +
+    "  a built declaration contains an `export * from`, which this check cannot " +
       "resolve.\n    Name the symbols explicitly, or the surface below is understated.",
   );
 }

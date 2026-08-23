@@ -203,6 +203,55 @@ describe("check-exports: the build carries the source surface", () => {
   });
 });
 
+describe("check-exports: several entry points", () => {
+  it("unions an array of entries, so a subpath cannot understate the surface", () => {
+    // T1011 — react-ui publishes sixteen subpaths beside its root. Its root
+    // barrel re-exports all of them, so one entry is enough there; a package
+    // whose subpath exports something its root does not needs both listed, and
+    // this is that shape.
+    const root = mkdtempSync(join(tmpdir(), "turing-exports-"));
+    roots.push(root);
+    const dir = join(root, "packages", "sdk");
+    write(dir, "package.json", `${JSON.stringify({
+      name: "@viglet/turing-sdk",
+      version: "1.0.0",
+      exportsSurface: {
+        entry: ["dist/index.d.ts", "dist/Deep.d.ts"],
+        source: ["src/index.ts", "src/deep.ts"],
+        baseline: { version: "1.0.0", recorded: "2026-07-13", symbols: ["fetchSearch", "DeepThing"] },
+      },
+    }, null, 2)}\n`);
+    write(dir, "dist/index.d.ts", 'export { fetchSearch } from "./x";\n');
+    write(dir, "dist/Deep.d.ts", 'export { DeepThing } from "./y";\n');
+    write(dir, "src/index.ts", 'export { fetchSearch } from "./x";\n');
+    write(dir, "src/deep.ts", 'export { DeepThing } from "./y";\n');
+
+    const { code, out } = run(dir);
+
+    strictEqual(code, 0, out);
+    match(out, /symbols\s+2/);
+    match(out, /matches the last release/);
+  });
+
+  it("fails when one of several declared entries was not built", () => {
+    const root = mkdtempSync(join(tmpdir(), "turing-exports-"));
+    roots.push(root);
+    const dir = join(root, "packages", "sdk");
+    write(dir, "package.json", `${JSON.stringify({
+      name: "@viglet/turing-sdk",
+      version: "1.0.0",
+      exportsSurface: { entry: ["dist/index.d.ts", "dist/Deep.d.ts"], source: "src/index.ts" },
+    })}\n`);
+    write(dir, "dist/index.d.ts", 'export { fetchSearch } from "./x";\n');
+    write(dir, "src/index.ts", 'export { fetchSearch } from "./x";\n');
+
+    const { code, out } = run(dir);
+
+    strictEqual(code, 1, out);
+    match(out, /Deep\.d\.ts is missing/);
+  });
+});
+
 describe("check-exports: packages that have not adopted it", () => {
   it("is a no-op without an exportsSurface block", () => {
     const root = mkdtempSync(join(tmpdir(), "turing-exports-"));

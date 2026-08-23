@@ -13,7 +13,9 @@
     "test": "node --test dist/test/transpile.test.js dist/test/deploy.test.js dist/test/chaotic-chatflow.test.js",
     "size": "node ../../scripts/check-size.mjs",
     "size:update": "node ../../scripts/check-size.mjs --update-baseline",
-    "contents": "node ../../scripts/check-package-contents.mjs"
+    "contents": "node ../../scripts/check-package-contents.mjs",
+    "exports": "node ../../scripts/check-exports.mjs",
+    "exports:update": "node ../../scripts/check-exports.mjs --update-baseline"
   },
   "keywords": [
     "turing",
@@ -63,6 +65,56 @@
         "transpile.js": 5442,
         "types.js": 518
       }
+    }
+  },
+  "exportsSurface": {
+    "entry": "dist/src/index.d.ts",
+    "source": "src/index.ts",
+    "baseline": {
+      "version": "2026.3.3",
+      "recorded": "2026-07-13",
+      "symbols": [
+        "AiQuestionNode",
+        "ConditionNode",
+        "defineBundle",
+        "defineFlow",
+        "EndNode",
+        "FlowEdge",
+        "FlowNode",
+        "FlowSpec",
+        "FlowSpecError",
+        "FormCaptureNode",
+        "FunctionCallNode",
+        "GuardrailMethod",
+        "NodeType",
+        "OnJudgeReject",
+        "PersonaDeclaration",
+        "PersonaLanguageStyle",
+        "PersonaNode",
+        "PersonaTone",
+        "ScheduleAgentNode",
+        "SlotDeclaration",
+        "SlotNode",
+        "SlotOperation",
+        "SlotType",
+        "StartNode",
+        "SubFlowNode",
+        "SubFlowSwitchNode",
+        "SuspendNode",
+        "SwitchNode",
+        "SwitchOption",
+        "ToolSource",
+        "transpileBundle",
+        "TranspiledEdge",
+        "TranspiledFlow",
+        "TranspiledNode",
+        "TranspiledNodeData",
+        "transpileFlow",
+        "TriggerLanguage",
+        "TriggerMode",
+        "ValidationRule",
+        "WriteSlotNode"
+      ]
     }
   }
 }

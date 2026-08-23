@@ -18,7 +18,9 @@
     "test": "tsc -p tsconfig.json && node --test \"dist/test/**/*.test.js\"",
     "size": "node ../../scripts/check-size.mjs",
     "size:update": "node ../../scripts/check-size.mjs --update-baseline",
-    "contents": "node ../../scripts/check-package-contents.mjs"
+    "contents": "node ../../scripts/check-package-contents.mjs",
+    "exports": "node ../../scripts/check-exports.mjs",
+    "exports:update": "node ../../scripts/check-exports.mjs --update-baseline"
   },
   "keywords": [
     "viglet",
@@ -77,6 +79,45 @@
         "commands/": 13979,
         "eval/": 9459
       }
+    }
+  },
+  "exportsSurface": {
+    "entry": "dist/src/index.d.ts",
+    "source": "src/index.ts",
+    "baseline": {
+      "version": "2026.3.8",
+      "recorded": "2026-07-13",
+      "symbols": [
+        "buildFixtureYaml",
+        "buildFlowImportPayload",
+        "buildToolPayload",
+        "buildZip",
+        "ClientEvalBackend",
+        "consumeSse",
+        "crc32",
+        "deployProject",
+        "describeAssertion",
+        "discoverSuiteFiles",
+        "EvalParseError",
+        "evaluate",
+        "formatRunResult",
+        "formatSuiteDetail",
+        "HttpError",
+        "initScaffold",
+        "loadProject",
+        "loadSuiteFile",
+        "normalizeSuite",
+        "parseYaml",
+        "promptPassword",
+        "recordFixture",
+        "resolveConnection",
+        "runEval",
+        "runEvalFiles",
+        "runSuite",
+        "scaffoldFiles",
+        "TuringClient",
+        "YamlError"
+      ]
     }
   }
 }

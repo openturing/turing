@@ -2200,25 +2200,6 @@ Acceptance:
 - A consumer counting `onToken` calls for a multi-sentence answer sees more than one.
 - Verified on the demo, with the event timings recorded.
 
-## CI The gate one package adopted (T1011)
-
-T1006 built check-exports for @viglet/turing-sdk: it reads the built declaration,
-asserts every source export reached it, and refuses growth past the last released
-surface unless a pending changeset claims a bump. It found a real defect -- 206 symbols
-at 2026.3.7 against 262 in the checkout.
-
-Four other packages publish from this workspace and none declares an exportsSurface
-block, so the check is a no-op for all of them. That is not a theoretical gap: the
-pending changesets bump react-sdk seven times, react-ui six and cli once, which is more
-unreleased surface than the sdk itself carried when the defect was found. react-sdk is
-the sharpest, because T710's changeset names it for the same POST-native work whose
-symbols went missing from the sdk's published tarball.
-
-Adopting it per package is a baseline measurement plus two lines of config. What needs
-deciding is react-ui, whose dist is a hundred tsc outputs rather than one bundle -- the
-same shape that made check-size grow per-directory baselines, so the entry may need to
-be a subpath map rather than a single index.
-
 ## CII The other SDK still throws a substring (T1012)
 
 T1005 gave @viglet/turing-sdk two thrown types: TuringHttpError with a numeric status,
