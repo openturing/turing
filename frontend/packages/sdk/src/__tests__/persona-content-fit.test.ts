@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { fetchPersonaContentFit, postSiteFlowSelect } from "../api";
+import { TuringTransportError } from "../errors";
 import type { TuringClient } from "../client";
 import type { TurContentFit } from "../types";
 
@@ -35,9 +36,12 @@ describe("fetchPersonaContentFit (T635)", () => {
     const post = vi.fn().mockResolvedValueOnce(undefined);
     const client = { post } as unknown as TuringClient;
 
-    await expect(fetchPersonaContentFit(client, "site1", "p1", "x")).rejects.toThrow(
-      /empty content-fit/i,
-    );
+    // T1005 — asserted on the type, not the wording. This case used to match
+    // /empty content-fit/i, which is the coupling the typed errors removed:
+    // a reworded message would have broken a consumer, and this test with it.
+    await expect(
+      fetchPersonaContentFit(client, "site1", "p1", "x"),
+    ).rejects.toBeInstanceOf(TuringTransportError);
   });
 
   it("postSiteFlowSelect forwards an optional personaId", async () => {

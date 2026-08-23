@@ -1,5 +1,6 @@
 import type { TuringClient } from "./client";
 import { warnDeprecated } from "./deprecation";
+import { assertOk, emptyBody } from "./errors";
 import type {
   TurAnswerArtifact,
   TurAnswerCitation,
@@ -490,7 +491,7 @@ async function consumeAssistantStream(
   secondOpinion?: TurChatSecondOpinion;
 }> {
   if (!response.body) {
-    throw new Error("Chat response has no body");
+    throw emptyBody(response.url, "Chat response");
   }
   const reader = response.body.getReader();
   const decoder = new TextDecoder();
@@ -667,9 +668,7 @@ export async function postChatConversation(
     signal: options?.signal,
   });
 
-  if (!response.ok) {
-    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-  }
+  assertOk(response);
 
   const {
     text,
@@ -797,9 +796,7 @@ export async function postAgentChat(
     signal: options?.signal,
   });
 
-  if (!response.ok) {
-    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-  }
+  assertOk(response);
 
   const {
     text,
@@ -909,9 +906,7 @@ export async function postPersonaChat(
     signal: options?.signal,
   });
 
-  if (!response.ok) {
-    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-  }
+  assertOk(response);
 
   const {
     text,
@@ -999,9 +994,7 @@ export async function postClientToolResult(
     signal: options?.signal,
   });
 
-  if (!response.ok) {
-    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-  }
+  assertOk(response);
 
   const {
     text,
@@ -1100,9 +1093,7 @@ export async function postLlmChat(
     signal: options?.signal,
   });
 
-  if (!response.ok) {
-    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-  }
+  assertOk(response);
 
   const { text } = await consumeAssistantStream(response, options?.onToken);
   return { role: "assistant", content: text, options: [] };
@@ -1140,9 +1131,7 @@ export async function postSemanticChat(
     signal: options?.signal,
   });
 
-  if (!response.ok) {
-    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-  }
+  assertOk(response);
 
   const { text } = await consumeAssistantStream(response, options?.onToken);
   return { role: "assistant", content: text, options: [] };
@@ -1545,12 +1534,13 @@ export async function fetchPersonaContentFit(
   content: string,
   sourceName?: string,
 ): Promise<TurContentFit> {
-  const data = await client.post<TurContentFit>(
-    `/sn/${site}/persona/${personaId}/content-fit`,
-    { content, sourceName },
-  );
+  const path = `/sn/${site}/persona/${personaId}/content-fit`;
+  const data = await client.post<TurContentFit>(path, { content, sourceName });
   if (!data) {
-    throw new Error("Empty content-fit response");
+    // T1005 — a 2xx with an empty body is the same decision for a caller as a
+    // stream with no readable body, so it throws the same type rather than a
+    // plain Error whose only signal is its wording.
+    throw emptyBody(`${client.baseURL}${path}`, "Content-fit response");
   }
   return data;
 }
@@ -2071,7 +2061,7 @@ export async function consumeAnswerStream(
   handlers: AnswerStreamHandlers = {},
 ): Promise<AnswerResult> {
   if (!response.body) {
-    throw new Error("Answer response has no body");
+    throw emptyBody(response.url, "Answer response");
   }
   const reader = response.body.getReader();
   const decoder = new TextDecoder();
@@ -2250,9 +2240,7 @@ export async function postAnswer(
     { method: "GET", headers: { Accept: "text/event-stream" }, signal: options?.signal },
     false,
   );
-  if (!response.ok) {
-    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-  }
+  assertOk(response);
   return consumeAnswerStream(response, options);
 }
 

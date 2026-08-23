@@ -22,10 +22,6 @@
 
 - ⏳ **T1004** (deps: —) **site chat emits the whole answer in one SSE content event, so no consumer can render it progressively** — The measurement that opened this has not been repeated against the demo. → §XCVII
 
-## Block S — SDK / client parity (vanilla + React)
-
-- 📋 **T1005** (deps: —) **a non-2xx throws a plain Error whose status exists only inside the message string** — Consumers regex error.message to tell a 404 from an unreachable tenant, so a reworded string breaks them and CI never notices. → §XCVIII
-
 ## Block BS — The JS SDK release gate is not a gate (§LXVI)
 
 - 📋 **T1006** (deps: —) **postSearch is documented @since 2026.3.4 yet absent from the published 2026.3.7 dist** — A consumer following the docs writes imports that do not resolve, and the T710 helpers being absent forces the exact duplication their own re-export comment warns against. → §XCIX

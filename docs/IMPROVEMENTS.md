@@ -2215,34 +2215,6 @@ Acceptance:
 - A consumer counting `onToken` calls for a multi-sentence answer sees more than one.
 - Verified on the demo, with the event timings recorded.
 
-## XCVIII The client's failures are untyped (T1005)
-
-`createTuringClient` throws `new Error(`HTTP ${status}: ${statusText}`)` on a non-2xx,
-and lets a `fetch` rejection through untouched. So the two facts a caller needs in order
-to react — was this a transport failure or an answer, and what status was it — exist
-only as substrings of a message.
-
-Measured while building the `schools` admissions app: distinguishing "the tenant is
-unreachable" from "the tenant said 404" from "the body was not readable" required a
-regex over `error.message`, plus an `instanceof TypeError` check and an `error.cause !==
-undefined` check to guess at transport failures. Every consumer that wants to retry a
-read but not a stream, or to show a visitor something other than a generic failure,
-writes that same guessing code.
-
-A message is also the wrong place for it because it is the one part of an error that is
-free to change: a reworded string silently breaks every consumer parsing it, and nothing
-in CI would notice.
-
-What the surface is missing is a thrown type carrying `status` as a field, distinct from
-the error raised when the request never completed. `TurChatStreamEvent` already shows
-the package is willing to export the shapes a consumer matches on.
-
-Acceptance:
-- A non-2xx throws an exported error type carrying `status` as a number.
-- A transport failure throws a distinct exported type.
-- Both are exported from the package root, so a consumer can `instanceof` them.
-- The message stays human-readable, but nothing needs to parse it.
-
 ## XCIX The published packages contradict their own docs (T1006)
 
 Two things an external consumer cannot get from the published packages.

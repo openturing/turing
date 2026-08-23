@@ -21,6 +21,8 @@
  * @since 2026.3.1
  */
 
+import { assertOk, isAbort, TuringTransportError } from "./errors";
+
 export interface TuringClientConfig {
   /**
    * Absolute base URL of the Turing API, e.g. {@code "http://localhost:2700/api"}.
@@ -162,7 +164,20 @@ export function createTuringClient(config: TuringClientConfig): TuringClient {
       const token = await ensureCsrfToken();
       if (token) headers["X-XSRF-TOKEN"] = token;
     }
-    return fetch(`${baseURL}${path}`, { credentials, ...init, headers });
+    const url = `${baseURL}${path}`;
+    // T1005 — a `fetch` rejection means the request never completed, which is a
+    // different thing from a status and is handled differently. Wrapped here, in
+    // the one place every call in this package goes through, so `api.ts`'s
+    // functions get the typed transport failure without each restating it.
+    //
+    // The caller's own abort is rethrown untouched: cancellation is not a
+    // failure, and a search-as-you-type controller aborts on every keystroke.
+    try {
+      return await fetch(url, { credentials, ...init, headers });
+    } catch (cause) {
+      if (isAbort(cause)) throw cause;
+      throw new TuringTransportError(url, cause);
+    }
   }
 
   async function request<T>(
@@ -194,9 +209,7 @@ export function createTuringClient(config: TuringClientConfig): TuringClient {
       csrf,
     );
 
-    if (!res.ok) {
-      throw new Error(`HTTP ${res.status}: ${res.statusText}`);
-    }
+    assertOk(res);
     // 204 No Content or empty body → undefined.
     if (res.status === 204) return undefined as T;
     const text = await res.text();
