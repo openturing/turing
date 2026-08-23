@@ -2185,27 +2185,27 @@ Acceptance:
 
 ### CIII.3 The backlog the ceiling holds (T1017)
 
-T1016 put the gate up and pinned the number it found: `lint` runs with `--max-warnings
-358`, so a commit may lower the backlog and may not raise it. The ceiling is the whole
-of what holds it — nothing yet says any one of the 358 is wrong.
+T1016 put the gate up and pinned the number it found. The reading that followed sorted
+all 72 `set-state-in-effect` findings, and most of them left: 45 across 39 files are the
+`useState` + `useEffect` + service fetch that `agents.md` already declares obsolete, so
+they are T1018 and not a rewrite worth doing twice. Thirteen entity pages lost `isNew`,
+which was state an effect wrote from a value the router already had.
 
-What is under it: 188 `react-refresh/only-export-components` over 33 files, 76
-`react-hooks/set-state-in-effect` over 63, 46 `react-hooks/exhaustive-deps` over 30, 25
-`react-hooks/incompatible-library`, and 23 across five more React Compiler rules.
+Twenty-seven are left, and they are the two groups no other task covers.
 
-They are three different jobs, and only the second is about correctness. Fast Refresh
-wants a module split; `exhaustive-deps` wants a dependency read; `set-state-in-effect`
-is the one this repository already has a written rule about in `agents.md`, arrived at
-from a real bug, so 76 call sites of it is the pile worth reading first — some will be a
-`useMemo` that was never needed, and some will be a render loop nobody has hit yet.
+Nineteen sit on pages that already use React Query, so the effect is syncing something
+other than a fetch — mostly a selection or a form value mirrored from a prop, with a
+second copy kept alongside it to compute dirtiness. That shape is what React's own
+guidance calls adjusting state during render, and each is a judgement about what the
+component should reset on.
 
-The ceiling should fall as each is answered. What it must not do is stay at 358 while
-being treated as the answer.
+Eight have no fetch at all: a smoothed ETA driven by refs and a timer, a duration input
+re-deriving its unit from a prop, an avatar picker. Some of these are the effect being
+the right place, and what they need is the line saying so rather than a rewrite.
 
 Acceptance:
-- `set-state-in-effect` is read call site by call site, each either rewritten or given a
-  line saying why the effect is the right place.
-- The `--max-warnings` ceiling in `lint` is lowered to whatever survives.
+- Each of the 27 is either rewritten or carries a line saying why the effect is right.
+- The `--max-warnings` ceiling falls by whatever the rewrites remove.
 
 ### CIII.4 The migration nobody was counting (T1018)
 
