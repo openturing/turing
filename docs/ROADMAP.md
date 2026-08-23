@@ -15,7 +15,6 @@
 - 📋 **T999** (deps: viglet-design-system VDS20) **CONVENTIONS.md is the layer's authoring contract and it lives in the product that no longer owns the layer** — Two copies of a contract drift exactly as two copies of a component do. → §XCVI.12
 - 📋 **T1000** (deps: T995 ✅) **40 console pages still render beside the 118 bento ones, so two chromes and two component sets stay alive** — The cutover was declared and never finished, and every unmigrated page is a reason to keep the old exports. → §XCVI.13
 - 📋 **T1001** (deps: viglet-design-system VDS25) **nothing here proves a page renders the same after its components moved out of the repository** — The whole block is a claim about appearance, and appearance is the one thing this suite never checks. → §XCVI.14
-- 📋 **T1002** (deps: —) **four bento modules were in neither the leaf list nor the compound list, so they are still declared here** — The lint T997 adopts reports fourteen names in them with no task to name as the reason. → §XCVI.15
 - 📋 **T1003** (deps: T1000) **the bento user menu is the one shell piece T992 left behind, because it reads the console-era user context** — The package's menu reads the design system's own provider, so moving it before the provider means two providers fetching one user. → §XCVI.16
 - 📋 **T1007** (deps: —) **bento.styles.css is imported by nothing and its 500-odd lines still read as the layer's source of truth** — A stylesheet no build reads is the copy a reader edits when a frosted surface looks wrong. → §XCVI.17
 
@@ -59,11 +58,6 @@
 - **A page is proved unchanged by the move, not assumed** This product's token set feeds
   the cross-product digest, it runs over a hero, a form section, an entity tile, a
   mosaic and a scrolled save bar, and a difference fails the build.
-
-## Done when — T1002
-
-- **The four modules declare nothing the package exports** check-duplicates reports no
-  finding in bento-layout, bento-inline-edit, bento-hero-icon-picker or bento-tones.
 
 ## Non-goals (do NOT add as tasks)
 

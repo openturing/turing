@@ -2160,34 +2160,6 @@ cross-product render digest the package builds, run it over a fixed set of surfa
 hero, a form section, an entity tile, a list mosaic, a scrolled save bar - and make any
 difference outside the brand accent fail the build.
 
-### XCVI.15 The four the two lists missed (T1002)
-
-T989 took the nine leaves and T990 the four compounds, named lists both, and between
-them they left four modules nobody wrote down. `bento-layout` is the largest: nine
-exports covering the emphasis span table, the layout entry and response shapes, and the
-resolve/serialise pair the mosaic runs on. `bento-inline-edit` and
-`bento-hero-icon-picker` are the identity-editing pieces the entity shell composes, and
-the shell has already gone. `bento-tones` is the odd one: the package exports
-`BentoTone` but not `BENTO_TONE_GRADIENTS`, because VDS9 made a tone a token, so only
-half of that file can leave.
-
-They surfaced the way an unwritten thing usually does — as findings, when the export
-manifest lint was pointed at this repository for T997 and reported fourteen names with
-no task to name in the reason. An allow-duplicate annotation whose reason is a task id
-that does not exist is the same defect as a stale eslint-disable: it reads as a decision
-and holds nothing.
-
-The work is the shape T989 established. `bento-layout`, `bento-inline-edit` and
-`bento-hero-icon-picker` become one-line re-exports. `bento-tones` re-exports
-`BentoTone` and keeps `BENTO_TONE_GRADIENTS` declared here until something replaces the
-gradient map, which T996 is about and this line is not.
-
-One interaction to check rather than assume: bento-list-page's suite imports
-`resolveBentoLayout` and `toBentoLayoutEntries` from `bento-layout` to build fixtures.
-Using a re-exported helper to construct a fixture is not asserting a re-export, so
-T991's rule survives — but confirm it reads that way after the change rather than
-trusting this sentence.
-
 ### XCVI.16 The user menu waits for its provider (T1003)
 
 T992 moved the rail and back-to-top out as one-line shims, because neither reads

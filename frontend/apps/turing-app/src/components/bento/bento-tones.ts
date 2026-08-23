@@ -1,20 +1,22 @@
-// T997 -- the export-manifest lint runs in CI now, and these names are also
-// exported by @viglet/viglet-design-system. Allowed until T1002: only BentoTone can leave; the gradient map stays.
-// viglet-ds-allow-duplicate BentoTone -- T1002 removes it
-/**
- * Color tones for Bento tiles. Each tone maps to a Tailwind gradient
- * applied to the icon chip — keeping the surface itself neutral
- * (frosted-glass) so colors don't visually compete.
- */
-export type BentoTone =
-  | "blue"
-  | "indigo"
-  | "violet"
-  | "emerald"
-  | "amber"
-  | "rose"
-  | "slate";
+// T1002 — half a shim, which is the honest shape of this file.
+//
+// `BentoTone` is the package's: VDS9 made a tone a token, so the vocabulary of
+// tones is shared and re-exported here. `BENTO_TONE_GRADIENTS` is not, because
+// the package deliberately does not ship a Tailwind gradient map — a shared
+// component that names its own colours makes one of two products look wrong,
+// and the package's answer is `bentoChipClass(tone)` over CSS custom properties.
+//
+// Two heroes here still index this map directly. Replacing them with the token
+// path is T996, which owes a proof that the swap is invisible in this product;
+// until then the map is declared here and nowhere else.
+export { type BentoTone } from "@viglet/viglet-design-system/bento";
 
+import type { BentoTone } from "@viglet/viglet-design-system/bento";
+
+/**
+ * Tailwind gradients per tone, applied to a tile's icon chip — the surface
+ * itself stays neutral (frosted glass) so colours do not visually compete.
+ */
 export const BENTO_TONE_GRADIENTS: Record<BentoTone, string> = {
   blue:    "from-blue-600 to-indigo-600",
   indigo:  "from-indigo-600 to-fuchsia-600",

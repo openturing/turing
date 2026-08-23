@@ -4,7 +4,6 @@ import { IconCpu2 } from "@tabler/icons-react";
 import type { ReactElement } from "react";
 import { MemoryRouter } from "react-router-dom";
 import { describe, expect, it } from "vitest";
-import { resolveBentoLayout, toBentoLayoutEntries } from "../bento-layout";
 import { BentoEntityTile, BentoListPage, BentoTileGrid } from "../bento-list-page";
 
 interface Row {
@@ -170,45 +169,8 @@ describe("BentoEntityTile", () => {
   });
 });
 
-describe("resolveBentoLayout", () => {
-  const items = [
-    { id: "a" },
-    { id: "b" },
-    { id: "c" },
-  ];
-  const key = (i: { id: string }) => i.id;
-
-  it("applies the featured=idx0 default when there are no entries", () => {
-    const resolved = resolveBentoLayout(items, key, undefined);
-    expect(resolved.map((r) => r.emphasis)).toEqual(["LARGE", "MEDIUM", "MEDIUM"]);
-    expect(resolved.map((r) => r.key)).toEqual(["a", "b", "c"]);
-  });
-
-  it("orders by displayOrder and sizes by persisted emphasis", () => {
-    const resolved = resolveBentoLayout(items, key, [
-      { itemId: "c", emphasis: "LARGE", displayOrder: 0 },
-      { itemId: "a", emphasis: "SMALL", displayOrder: 1 },
-      { itemId: "b", emphasis: "MEDIUM", displayOrder: 2 },
-    ]);
-    expect(resolved.map((r) => r.key)).toEqual(["c", "a", "b"]);
-    expect(resolved.map((r) => r.emphasis)).toEqual(["LARGE", "SMALL", "MEDIUM"]);
-  });
-
-  it("appends items missing from the layout at the end as MEDIUM", () => {
-    const resolved = resolveBentoLayout(items, key, [
-      { itemId: "b", emphasis: "LARGE", displayOrder: 0 },
-    ]);
-    expect(resolved.map((r) => r.key)).toEqual(["b", "a", "c"]);
-    expect(resolved[1].emphasis).toBe("MEDIUM");
-    expect(resolved[2].emphasis).toBe("MEDIUM");
-  });
-
-  it("round-trips through toBentoLayoutEntries with sequential displayOrder", () => {
-    const resolved = resolveBentoLayout(items, key, undefined);
-    expect(toBentoLayoutEntries(resolved)).toEqual([
-      { itemId: "a", emphasis: "LARGE", displayOrder: 0 },
-      { itemId: "b", emphasis: "MEDIUM", displayOrder: 1 },
-      { itemId: "c", emphasis: "MEDIUM", displayOrder: 2 },
-    ]);
-  });
-});
+// T1002 — the resolver and its round-trip left with `bento-layout`, which is now
+// a re-export of the package's. Its suite there covers the same four cases plus
+// the ones this one never had: a tie in displayOrder, an entry whose item is
+// gone, and an empty item list. What stays above is this product's: that a page
+// composing BentoListPage renders and enters its customise mode.
