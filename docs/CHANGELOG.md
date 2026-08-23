@@ -1336,3 +1336,4 @@
 
 - **T988** — turing-app installs 2026.3.3 and takes the bento subpath: the barrel imports the package stylesheet, five representative names resolve to the package, and a parity suite renders them from it and asserts the tile classes, the span passthrough and the --bento-fade property the save-bar morph reads.
 - **T989** — The nine leaves resolve to the package: eight local modules are one-line re-exports and BentoEntityTile is re-pointed in the barrel, 657 lines of duplicated implementation are gone, and no page under src/app was edited.
+- **T990** — The four compounds resolve to the package: the shell, form hero and save-bar morph are one-line shims, and the list page is an adapter that wires this product's layout hooks to the shared component, because the package takes the layout as a prop rather than fetching it.

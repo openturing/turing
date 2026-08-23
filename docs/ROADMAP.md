@@ -10,9 +10,8 @@
 
 ## Block BX — The bento layer leaves the product it grew in (§XCVI)
 
-- 📋 **T990** (deps: T989 ✅) **the entity shell, form hero, list page and save-bar morph are declared here and now also in the package** — These four are the layer's compounds; leaving local copies means a fix has two homes and lands in one. → §XCVI.3
-- 📋 **T991** (deps: T990) **twelve RTL suites test components that now live in the package, so a green run here proves nothing about them** — A suite left behind asserts a shim; the coverage has to follow the code it covers. → §XCVI.6
-- 📋 **T992** (deps: T990) **the nav rail, user menu and back-to-top are declared here, and bento-nav.config mixes behaviour with 29 surfaces** — The config has to become data over the package schema, or a second console inherits this one's routes. → §XCVI.4
+- 📋 **T991** (deps: T990 ✅) **twelve RTL suites test components that now live in the package, so a green run here proves nothing about them** — A suite left behind asserts a shim; the coverage has to follow the code it covers. → §XCVI.6
+- 📋 **T992** (deps: T990 ✅) **the nav rail, user menu and back-to-top are declared here, and bento-nav.config mixes behaviour with 29 surfaces** — The config has to become data over the package schema, or a second console inherits this one's routes. → §XCVI.4
 - 📋 **T993** (deps: T992) **the command palette and shortcuts dialog are declared here, and both are generic once their data is split out** — They are the last of the shell, and the palette is what makes a migrated surface findable at all. → §XCVI.5
 - 📋 **T994** (deps: viglet-design-system VDS22) **the SectionCard chrome adapter overrides a shared component from inside this product** — It is the pattern that lets a heavy form render in either chrome, and the other product needs it more than this one. → §XCVI.7
 - 📋 **T995** (deps: T993) **activation, quota, no-LLM and Viglet dialog tiles sit in components/bento, so the folder claims they are the layer** — Commercial chrome belongs to this product, and the directory name is now the only thing saying otherwise. → §XCVI.8
@@ -22,12 +21,6 @@
 - 📋 **T999** (deps: viglet-design-system VDS20) **CONVENTIONS.md is the layer's authoring contract and it lives in the product that no longer owns the layer** — Two copies of a contract drift exactly as two copies of a component do. → §XCVI.12
 - 📋 **T1000** (deps: T995) **40 console pages still render beside the 118 bento ones, so two chromes and two component sets stay alive** — The cutover was declared and never finished, and every unmigrated page is a reason to keep the old exports. → §XCVI.13
 - 📋 **T1001** (deps: viglet-design-system VDS25) **nothing here proves a page renders the same after its components moved out of the repository** — The whole block is a claim about appearance, and appearance is the one thing this suite never checks. → §XCVI.14
-
-## Done when — T990
-
-- **No compound has two homes** The entity shell, form hero, list page and scroll-fade
-  machinery resolve from the package, the local implementations are gone, and a scrolled
-  page still morphs.
 
 ## Done when — T991
 

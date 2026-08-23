@@ -2102,17 +2102,6 @@ and only then delete anything. Three tasks are instruments rather than moves - a
 duplication lint, a working local-dev path and a render digest - because every deletion
 here is justified by an assertion this repository currently cannot check.
 
-### XCVI.3 The compounds, where a duplicate costs most (T990)
-
-BentoEntityShell, BentoFormHero, BentoListPage and the scroll-fade machinery behind
-BentoSaveBar are the four largest things in the layer and the four whose behaviour is
-hardest to reproduce. A duplicate here is not a cosmetic drift: the shell owns inline
-identity editing and the delete flow, the form hero exists specifically so the two
-halves of a save bar cannot separate, and the list page collapses an entire screen into
-one call. If a copy survives locally, the next fix lands in one of the two homes and the
-other keeps the bug for a release. Shim them the way the leaves were shimmed, delete the
-implementations, and check the pages that exercise the morph by actually scrolling one.
-
 ### XCVI.4 The shell moves; its contents stay (T992)
 
 The nav rail, the user menu and the back-to-top control are chrome and belong in the

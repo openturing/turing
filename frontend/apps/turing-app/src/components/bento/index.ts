@@ -38,7 +38,7 @@ export { BentoFormSection, type BentoFormSectionProps } from "./bento-form-secti
 export { BentoSaveBar, type BentoSaveBarProps } from "./bento-save-bar";
 export { BentoScrollSaveBar } from "./bento-scroll-save-bar";
 export { BentoFormHero, type BentoFormHeroProps } from "./bento-form-hero";
-export { useBentoScrollFade } from "@viglet/viglet-design-system/bento";
+export { useBentoScrollFade } from "./bento-scroll-fade";
 export { BentoStatusMarker, type BentoStatusMarkerProps } from "./bento-status-marker";
 export { BentoHeroIconPicker, type BentoHeroIconPickerProps } from "./bento-hero-icon-picker";
 export { BentoInlineEdit, type BentoInlineEditProps } from "./bento-inline-edit";
@@ -54,15 +54,9 @@ export {
   type BentoListPageProps,
   BentoTileGrid,
   type BentoTileGridProps,
-} from "./bento-list-page";
-// T989 — the ninth leaf. Unlike the other eight it has no module of its own to
-// shim: it is declared inside bento-list-page, which is a compound T990 owns.
-// So it is re-pointed here instead, and the local declaration leaves with that
-// file rather than becoming a one-line re-export nothing would import.
-export {
   BentoEntityTile,
   type BentoEntityTileProps,
-} from "@viglet/viglet-design-system/bento";
+} from "./bento-list-page";
 export {
   BENTO_EMPHASIS_SPAN,
   BENTO_EMPHASIS_NEXT,
