@@ -12,7 +12,7 @@
 
 - ⏳ **T1000** (deps: T1008 ⏳) **40 console pages still render beside the 118 bento ones, so two chromes and two component sets stay alive** — The package cannot deprecate its console entry point while this product still declares four of its components. → §XCVI.13
 - 📋 **T1001** (deps: T1014) **nothing here proves a page renders the same after its components moved out of the repository** — The digest needs a browser runner, and no dependency can be added while every pnpm command is refused. → §XCVI.14
-- ⏳ **T1008** (deps: viglet-design-system SubPage props) **four console-chrome components stay declared here because each package copy dropped something this product renders** — The package's SubPage drops outletContext, which shares one form instance across the persona editor's section sub-pages. → §XCVI.18
+- ⏳ **T1008** (deps: viglet-design-system VDS76) **four console-chrome components stay declared here because each package copy dropped something this product renders** — The package's SubPage drops outletContext, which shares one form instance across the persona editor's section sub-pages. → §XCVI.18
 - ⏳ **T1013** (deps: —) **fifty bento pages write a hero gradient inline, using twenty-one colour pairs where the tones offer seven** — Twenty pairs remain, each a shade off a declared tone, and closing that gap changes what a page looks like. → §XCVI.20
 - 📋 **T1014** (deps: —) **every pnpm command fails the release-age policy on a version the waiver list already names** — The waiver list is correct and read; a separate lockfile-policy pass applies the rule without consulting it. → §XCVI.21
 
