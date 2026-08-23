@@ -2160,17 +2160,6 @@ shifts a chip a shade off is a regression nobody files because nobody can point 
 Take the digest before and after over a fixed set of surfaces, and treat any difference
 outside the intended accent as a failure rather than as taste.
 
-### XCVI.11 The path to try a package change (T998)
-
-copy-ds.cmd builds the design system and copies its dist into node_modules under
-turing/2026.1/frontend/apps/turing-app. That checkout has not existed since the move to
-2026.3, so the script fails on its first copy and there is no supported way to run this
-application against an unpublished design-system change. Every task in this block is
-exactly such a change. Without a working local path the loop becomes publish, install
-and look, which is slow, pollutes the version history of a package two products consume,
-and makes a bad move expensive to undo. Replace it with a workspace link or a file:
-override that resolves the checkout rather than a hardcoded version directory.
-
 ### XCVI.12 The contract goes where the components went (T999)
 
 CONVENTIONS.md is why the bento layer stayed internally consistent across 118 pages:

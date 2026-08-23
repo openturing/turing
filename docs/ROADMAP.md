@@ -15,7 +15,6 @@
 - 📋 **T994** (deps: viglet-design-system VDS22) **the SectionCard chrome adapter overrides a shared component from inside this product** — It is the pattern that lets a heavy form render in either chrome, and the other product needs it more than this one. → §XCVI.7
 - 📋 **T995** (deps: T993) **activation, quota, no-LLM and Viglet dialog tiles sit in components/bento, so the folder claims they are the layer** — Commercial chrome belongs to this product, and the directory name is now the only thing saying otherwise. → §XCVI.8
 - 📋 **T996** (deps: viglet-design-system VDS23) **tile tones and the brand hue are named as Tailwind classes inside components this product no longer owns** — The token swap must be provably invisible here, or one look across products arrives as a regression in this one. → §XCVI.9
-- 📋 **T998** (deps: —) **copy-ds.cmd writes into turing/2026.1, a checkout that no longer exists, so there is no local design-system path** — Every task in this block is a package change that has to be tried here before it is published. → §XCVI.11
 - 📋 **T999** (deps: viglet-design-system VDS20) **CONVENTIONS.md is the layer's authoring contract and it lives in the product that no longer owns the layer** — Two copies of a contract drift exactly as two copies of a component do. → §XCVI.12
 - 📋 **T1000** (deps: T995) **40 console pages still render beside the 118 bento ones, so two chromes and two component sets stay alive** — The cutover was declared and never finished, and every unmigrated page is a reason to keep the old exports. → §XCVI.13
 - 📋 **T1001** (deps: viglet-design-system VDS25) **nothing here proves a page renders the same after its components moved out of the repository** — The whole block is a claim about appearance, and appearance is the one thing this suite never checks. → §XCVI.14
@@ -49,12 +48,6 @@
 - **The token swap is invisible in this product** The render digest over a fixed set of
   surfaces is identical before and after, except where the brand accent token is
   deliberately different.
-
-## Done when — T998
-
-- **This application can run against an unpublished package change** One documented
-  command resolves the design-system checkout rather than a 2026.1 path, and it works
-  from a clean clone.
 
 ## Done when — T999
 
