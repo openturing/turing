@@ -1,6 +1,10 @@
-// T997 -- the export-manifest lint runs in CI now, and these names are also
-// exported by @viglet/viglet-design-system. Allowed until T1000: console-era, and 40 console pages still render it.
-// viglet-ds-allow-duplicate FloatingFormulasBg -- T1000 removes it
+// T1000 — this one is not a pending migration and never was, which is what the
+// marker used to claim. It already imports the package's component and wraps it;
+// it shares the name deliberately, so that the two call sites below get the
+// product's preset and site names without naming a second component. That is the
+// case the allow-duplicate escape exists for, and its reason should say so
+// rather than name a task that would delete a wrapper nothing replaces.
+// viglet-ds-allow-duplicate FloatingFormulasBg -- deliberate: wraps the package's with Turing's SN names + compact preset
 import { FloatingFormulasBg as DSFloatingFormulasBg, type FloatingFormulasBgProps as DSProps } from "@viglet/viglet-design-system";
 import axios from "axios";
 import { useEffect, useState } from "react";

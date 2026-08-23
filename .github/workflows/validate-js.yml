@@ -125,7 +125,8 @@ jobs:
       # `@viglet/viglet-design-system/exports.json` from the installed package
       # and names the import that replaces each local copy. Known duplicates
       # carry a `viglet-ds-allow-duplicate` line naming the task that removes
-      # them (T1000, T1003), so what fails here is a *new* one.
+      # them (T1003, T1008, plus one deliberate collision), so what fails here is
+      # a *new* one.
       - name: No component re-declared from the design system
         if: matrix.workspace == 'turing-app'
         working-directory: frontend

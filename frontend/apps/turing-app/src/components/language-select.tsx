@@ -1,82 +1,9 @@
-// T997 -- the export-manifest lint runs in CI now, and these names are also
-// exported by @viglet/viglet-design-system. Allowed until T1000: console-era, and 40 console pages still render it.
-// viglet-ds-allow-duplicate LanguageSelect -- T1000 removes it
-import { BadgeLocale } from "@/components/badge-locale";
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-} from "@/components/ui/select";
-import type { TurLocale } from "@/models/locale/locale.model";
-import { useTranslation } from "react-i18next";
-
-interface LanguageSelectProps {
-    value?: string;
-    onValueChange: (value: string) => void;
-    locales: TurLocale[];
-    extraLocaleValues?: string[];
-    placeholder?: string;
-    className?: string;
-}
-
-export function LanguageSelect({
-    value,
-    onValueChange,
-    locales,
-    extraLocaleValues = [],
-    placeholder,
-    className,
-}: Readonly<LanguageSelectProps>) {
-    const { t } = useTranslation();
-    const resolvedPlaceholder = placeholder ?? t("forms.common.chooseLanguage");
-    const localeMap = new Map<string, { name: string; label: string }>();
-
-    locales.forEach((locale) => {
-        localeMap.set(locale.initials, {
-            name: locale.en,
-            label: `${locale.en}`,
-        });
-    });
-
-    extraLocaleValues.forEach((localeValue) => {
-        if (localeValue && !localeMap.has(localeValue)) {
-            localeMap.set(localeValue, {
-                name: localeValue,
-                label: localeValue,
-            });
-        }
-    });
-
-    const options = Array.from(localeMap.entries()).map(([localeValue, localeData]) => ({
-        value: localeValue,
-        name: localeData.name,
-        label: localeData.label,
-    }));
-    const selectedOption = options.find((option) => option.value === value);
-
-    return (
-        <Select value={value} onValueChange={onValueChange}>
-            <SelectTrigger className={className}>
-                {selectedOption ? (
-                    <div className="flex items-center gap-2 truncate">
-                        <BadgeLocale locale={selectedOption.value} />
-                        <span className="truncate">{selectedOption.label}</span>
-                    </div>
-                ) : (
-                    <span className="text-muted-foreground">{resolvedPlaceholder}</span>
-                )}
-            </SelectTrigger>
-            <SelectContent>
-                {options.map((option) => (
-                    <SelectItem key={option.value} value={option.value}>
-                        <div className="flex items-center gap-2">
-                            <BadgeLocale locale={option.value} />
-                            <span>{option.label}</span>
-                        </div>
-                    </SelectItem>
-                ))}
-            </SelectContent>
-        </Select>
-    );
-}
+// T1000 — shim. LanguageSelect lives in the design system; this module keeps its
+// path so the four forms composing it need no edit.
+//
+// `TurLocale` and `VigLocale` are the same three fields — `initials`, `en`, `pt`
+// — so the locale arrays these callers already pass satisfy the package's props
+// exactly. The package's copy also labels the trigger with its placeholder: a
+// placeholder disappears the moment a locale is chosen, so without it a screen
+// reader announced this as an unlabelled combobox.
+export { LanguageSelect } from "@viglet/viglet-design-system";

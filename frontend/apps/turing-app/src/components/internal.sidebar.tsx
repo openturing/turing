@@ -1,6 +1,7 @@
 // T997 -- the export-manifest lint runs in CI now, and these names are also
-// exported by @viglet/viglet-design-system. Allowed until T1000: console-era, and 40 console pages still render it.
-// viglet-ds-allow-duplicate InternalSidebar -- T1000 removes it
+// exported by @viglet/viglet-design-system. The console routes went in T570 and
+// T1000 swapped the five whose package copy was a superset; this one is T1008's.
+// viglet-ds-allow-duplicate InternalSidebar -- T1008: the package's NavMainItem requires a url and drops showOnNew
 import { IconDownload } from "@tabler/icons-react";
 import React, { type ReactNode } from "react";
 import { useTranslation } from "react-i18next";

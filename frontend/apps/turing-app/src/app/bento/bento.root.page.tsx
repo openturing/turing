@@ -19,6 +19,7 @@ import {
 import { TurLogo } from "@/components/logo/tur-logo";
 import { ModeToggle } from "@/components/mode-toggle";
 import { UserProvider } from "@/contexts/user.context";
+import { TurUserService } from "@/services/auth/user.service";
 import { LanguageSwitcher } from "@viglet/viglet-design-system";
 import { IconArrowLeft, IconSearch } from "@tabler/icons-react";
 import { useEffect, useState } from "react";
@@ -35,6 +36,14 @@ const IS_MAC =
   typeof navigator !== "undefined" &&
   /Mac|iPhone|iPad|iPod/.test(navigator.platform || navigator.userAgent || "");
 const SHORTCUT_HINT = IS_MAC ? "⌘K" : "Ctrl K";
+
+/*
+ * T1000 — the provider is the design system's; which endpoint holds this
+ * product's user is ours. Declared at module scope so the reference is stable
+ * across renders and the provider does not treat every render as a new fetch.
+ */
+const userService = new TurUserService();
+const fetchCurrentUser = () => userService.get();
 
 /**
  * Resolve the parent route for the current bento path (config-driven, T573).
@@ -149,7 +158,7 @@ export default function BentoRootPage() {
   }, [pathname]);
 
   return (
-    <UserProvider>
+    <UserProvider fetchUser={fetchCurrentUser}>
       {/*
        * No `overflow-hidden` on this wrapper — that turns it into a
        * scroll container which prevents `position: sticky` on the

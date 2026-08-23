@@ -1,6 +1,7 @@
 // T997 -- the export-manifest lint runs in CI now, and these names are also
-// exported by @viglet/viglet-design-system. Allowed until T1000: console-era, and 40 console pages still render it.
-// viglet-ds-allow-duplicate DialogDelete -- T1000 removes it
+// exported by @viglet/viglet-design-system. The console routes went in T570 and
+// T1000 swapped the five whose package copy was a superset; this one is T1008's.
+// viglet-ds-allow-duplicate DialogDelete -- T1008: the package's takes VigBlockedByItem and no ROUTES
 import { ROUTES } from "@/app/routes.const";
 import type { TurSECoreSiteUsage } from "@/models/se/se-core-site-usage.model";
 import { IconAlertTriangle, IconTrash } from "@tabler/icons-react";

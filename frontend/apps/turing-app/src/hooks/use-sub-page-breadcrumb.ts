@@ -1,85 +1,12 @@
-// T997 -- the export-manifest lint runs in CI now, and these names are also
-// exported by @viglet/viglet-design-system. Allowed until T1000: console-era, and 40 console pages still render it.
-// viglet-ds-allow-duplicate useSubPageBreadcrumb -- T1000 removes it
-import { type BreadcrumbItem, useBreadcrumb } from "@/contexts/breadcrumb.context";
-import { useEffect, useRef } from "react";
-
-/**
- * Manages breadcrumb items for a sub-page, automatically inserting on mount,
- * updating when items change, and removing on unmount.
- *
- * Accepts:
- * - A string: single static label → `useSubPageBreadcrumb("Settings")`
- * - A BreadcrumbItem: label + optional href → `useSubPageBreadcrumb({ label: "Settings", href: "/..." })`
- * - An array of BreadcrumbItem: multiple levels → `useSubPageBreadcrumb([{ label: "Users", href: "/..." }, { label: "admin" }])`
- * - `undefined`: deferred — items are pushed once the value becomes defined (useful for async data)
- *
- * Items are tracked by object reference, so updating the input replaces them
- * in-place (preserving breadcrumb order even when async data arrives late).
- *
- * @since 2026.1.14
- */
-export function useSubPageBreadcrumb(
-    items: string | BreadcrumbItem | BreadcrumbItem[] | undefined,
-) {
-    const { setItems } = useBreadcrumb();
-    const ownItemsRef = useRef<BreadcrumbItem[]>([]);
-
-    useEffect(() => {
-        if (items === undefined) return;
-
-        const normalized: BreadcrumbItem[] =
-            typeof items === "string"
-                ? [{ label: items }]
-                : Array.isArray(items)
-                    ? items
-                    : [items];
-
-        const prev = ownItemsRef.current;
-
-        // Skip if nothing changed
-        if (
-            prev.length === normalized.length &&
-            prev.every((p, i) => p.label === normalized[i].label && p.href === normalized[i].href)
-        ) {
-            return;
-        }
-
-        setItems((breadcrumb) => {
-            if (prev.length > 0) {
-                // Find our existing items by reference and replace them in-place
-                const idx = breadcrumb.indexOf(prev[0]);
-                if (idx >= 0) {
-                    return [
-                        ...breadcrumb.slice(0, idx),
-                        ...normalized,
-                        ...breadcrumb.slice(idx + prev.length),
-                    ];
-                }
-            }
-            // First insertion — append
-            if (breadcrumb.length > 0 && breadcrumb[breadcrumb.length - 1].label === normalized[0]?.label) {
-                return breadcrumb;
-            }
-            return [...breadcrumb, ...normalized];
-        });
-
-        ownItemsRef.current = normalized;
-    }, [items, setItems]);
-
-    useEffect(() => {
-        return () => {
-            const own = ownItemsRef.current;
-            if (own.length > 0) {
-                setItems((breadcrumb) => {
-                    const idx = breadcrumb.indexOf(own[0]);
-                    if (idx >= 0) {
-                        return [...breadcrumb.slice(0, idx), ...breadcrumb.slice(idx + own.length)];
-                    }
-                    return breadcrumb;
-                });
-            }
-            ownItemsRef.current = [];
-        };
-    }, [setItems]);
-}
+// T1000 — shim. The hook lives in the design system; this module keeps its path
+// so the 23 pages calling it need no edit.
+//
+// Safe to take because `contexts/breadcrumb.context.tsx` here is already a
+// re-export of the package's provider, so the package's hook writes to the very
+// context this product's header reads. It also carries two fixes made after the
+// copy diverged: a sub-page restating its parent's level used to return the
+// breadcrumb untouched and lose every level behind the repeat — the hook's own
+// documented two-level example — and the ref recording which levels it inserted
+// was written outside the updater, so it named levels the dedupe had declined to
+// insert and the cleanup then removed nothing.
+export { useSubPageBreadcrumb } from "@viglet/viglet-design-system";

@@ -1,7 +1,8 @@
 // T997 -- the export-manifest lint runs in CI now, and these names are also
-// exported by @viglet/viglet-design-system. Allowed until T1000: console-era, and 40 console pages still render it.
-// viglet-ds-allow-duplicate IconPickerDialogProps -- T1000 removes it
-// viglet-ds-allow-duplicate IconPickerDialog -- T1000 removes it
+// exported by @viglet/viglet-design-system. The console routes went in T570 and
+// T1000 swapped the five whose package copy was a superset; this one is T1008's.
+// viglet-ds-allow-duplicate IconPickerDialogProps -- T1008: the package's has no LLM suggestion path
+// viglet-ds-allow-duplicate IconPickerDialog -- T1008: the package's has no LLM suggestion path
 "use client";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { GradientButton } from "@/components/ui/gradient-button";

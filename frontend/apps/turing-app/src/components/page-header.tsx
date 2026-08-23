@@ -1,6 +1,7 @@
 // T997 -- the export-manifest lint runs in CI now, and these names are also
-// exported by @viglet/viglet-design-system. Allowed until T1000: console-era, and 40 console pages still render it.
-// viglet-ds-allow-duplicate PageHeader -- T1000 removes it
+// exported by @viglet/viglet-design-system. The console routes went in T570 and
+// T1000 swapped the five whose package copy was a superset; this one is T1008's.
+// viglet-ds-allow-duplicate PageHeader -- T1008: the package's has no user menu, app switcher, language switcher or discovery
 import { Separator } from "@/components/ui/separator";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 
