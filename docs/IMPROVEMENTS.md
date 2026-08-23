@@ -2215,35 +2215,6 @@ Acceptance:
 - A consumer counting `onToken` calls for a multi-sentence answer sees more than one.
 - Verified on the demo, with the event timings recorded.
 
-## XCIX The published packages contradict their own docs (T1006)
-
-Two things an external consumer cannot get from the published packages.
-
-**A whole set of `@since 2026.3.4` symbols is absent from the published 2026.3.7.**
-`postSearch`, `TurSearchRequest`, and the T710 helpers — `applyFacetAction`,
-`searchParamsToRequest`, `requestToSearchParams` — are in the checkout and in
-`react-sdk`'s re-export list, and in no `dist/*.d.ts` of the published tarball.
-
-The T710 case is the sharp one, because the package already argues it: that re-export is
-commented "owned by the framework-agnostic `@viglet/turing-sdk` … pure functions with no
-React or axios coupling, so duplicating them would only create two places for the
-ADD/REMOVE/REPLACE semantics to drift." A consumer that cannot import them has no option
-*but* to duplicate: building `schools`' faceted search against 2026.3.7 meant
-hand-writing facet toggling and the params bridge. Reaching them through `react-sdk` is
-no way out for a server-rendered consumer, which cannot take a dependency peering on
-react and axios.
-
-**`@viglet/turing-shared-types` is `private: true`.** It is the obvious source for
-request and response types, and the point of taking types from a shared package is that
-a version bump which changes the contract breaks the consumer's typecheck rather than a
-page in production. Unpublished, an external app either depends on the SDK's re-exports
-— which is what `schools` now does — or restates the types by hand.
-
-Acceptance:
-- A test asserts every `@since` symbol in the source is present in the built `dist`.
-- Either `shared-types` is published, or the SDK's re-export is documented as the
-  supported source for consumers.
-
 ## C The budget that was already red (T1010)
 
 Re-baselining the vanilla SDK for T1005 measured the pre-change bundle too, and it was

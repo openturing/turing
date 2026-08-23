@@ -110,6 +110,18 @@ jobs:
         working-directory: frontend
         run: pnpm --filter "${{ matrix.workspace }}" run --if-present contents
 
+      # T1006: the surface, against the version it would publish under. The
+      # tarball checks above weigh and enumerate what is in `dist`; neither can
+      # tell that `dist` grew past the version naming it. `@viglet/turing-sdk`
+      # set 2026.3.7 on 2026-07-13, `postSearch` and the T710 params bridges
+      # landed on 2026-08-02, and a consumer installing 2026.3.7 imported symbols
+      # its dist did not contain. Growth is fine — growth no changeset claims is
+      # not, because that is the growth a release will publish under a version
+      # already taken.
+      - name: Export surface
+        working-directory: frontend
+        run: pnpm --filter "${{ matrix.workspace }}" run --if-present exports
+
       # T861: this job used to build and weigh the packages but never ran their
       # tests, so `@viglet/turing-sdk` could declare a `test` script it had no
       # runner for and nothing noticed. `--if-present` keeps the matrix entries

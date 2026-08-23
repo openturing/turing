@@ -122,6 +122,30 @@ Anonymous/public deployments with CSRF disabled work tokenless.
 When the SDK and Turing are on different origins, enable CORS with credentials
 on the backend (`Access-Control-Allow-Credentials: true` + an explicit origin).
 
+## Where the contract types come from
+
+**This package is the supported source for the request and response types.**
+Import them from `@viglet/turing-sdk` — `TurSearchRequest`, `TurStructuredSearchResponse`,
+`TurDocument`, `TurChatSource` and the rest are all re-exported from the root.
+
+`@viglet/turing-shared-types` is where several of them are authored, and it is
+deliberately **not published**: it is a workspace-internal package (`private: true`,
+`main` pointing at `src/index.ts`) that exists so the packages in this repository
+cannot drift from each other. Depending on it from outside would mean depending on
+an unpublished name. So the re-export here is not a convenience — it is the
+contract, and a version bump that changes a type breaks a consumer's typecheck,
+which is the whole reason to take types from a package rather than restate them.
+
+The same holds for the pure helpers. `applyFacetAction`, `searchParamsToRequest`
+and `requestToSearchParams` are exported here and re-exported (not duplicated) by
+`@viglet/turing-react-sdk`, so the ADD/REMOVE/REPLACE semantics cannot diverge
+between the two. A server-rendered consumer that cannot take a dependency peering
+on React and axios should reach them here.
+
+> Errors are types too: a non-2xx throws `TuringHttpError` with a numeric
+> `status`, and a request that produced no usable response throws
+> `TuringTransportError`. Match with `instanceof` rather than reading `message`.
+
 ## Relationship to the React SDK
 
 This package was extracted from the framework-agnostic `core/` layer of
