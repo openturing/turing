@@ -15,11 +15,12 @@
 - 📋 **T994** (deps: viglet-design-system VDS22) **the SectionCard chrome adapter overrides a shared component from inside this product** — It is the pattern that lets a heavy form render in either chrome, and the other product needs it more than this one. → §XCVI.7
 - 📋 **T995** (deps: T993) **activation, quota, no-LLM and Viglet dialog tiles sit in components/bento, so the folder claims they are the layer** — Commercial chrome belongs to this product, and the directory name is now the only thing saying otherwise. → §XCVI.8
 - 📋 **T996** (deps: viglet-design-system VDS23) **tile tones and the brand hue are named as Tailwind classes inside components this product no longer owns** — The token swap must be provably invisible here, or one look across products arrives as a regression in this one. → §XCVI.9
-- 📋 **T997** (deps: viglet-design-system VDS5) **nothing fails when a component is re-declared here instead of imported, which is how the bento layer grew** — Twenty local files were shims by discipline alone, and the next variation under time pressure will not be. → §XCVI.10
+- 🛠 **T997** (deps: viglet-design-system VDS5) **nothing fails when a component is re-declared here instead of imported, which is how the bento layer grew** — Twenty local files were shims by discipline alone, and the next variation under time pressure will not be. → §XCVI.10
 - 📋 **T998** (deps: —) **copy-ds.cmd writes into turing/2026.1, a checkout that no longer exists, so there is no local design-system path** — Every task in this block is a package change that has to be tried here before it is published. → §XCVI.11
 - 📋 **T999** (deps: viglet-design-system VDS20) **CONVENTIONS.md is the layer's authoring contract and it lives in the product that no longer owns the layer** — Two copies of a contract drift exactly as two copies of a component do. → §XCVI.12
 - 📋 **T1000** (deps: T995) **40 console pages still render beside the 118 bento ones, so two chromes and two component sets stay alive** — The cutover was declared and never finished, and every unmigrated page is a reason to keep the old exports. → §XCVI.13
 - 📋 **T1001** (deps: viglet-design-system VDS25) **nothing here proves a page renders the same after its components moved out of the repository** — The whole block is a claim about appearance, and appearance is the one thing this suite never checks. → §XCVI.14
+- 📋 **T1002** (deps: —) **four bento modules were in neither the leaf list nor the compound list, so they are still declared here** — The lint T997 adopts reports fourteen names in them with no task to name as the reason. → §XCVI.15
 
 ## Done when — T992
 
@@ -78,6 +79,11 @@
 - **A page is proved unchanged by the move, not assumed** This product's token set feeds
   the cross-product digest, it runs over a hero, a form section, an entity tile, a
   mosaic and a scrolled save bar, and a difference fails the build.
+
+## Done when — T1002
+
+- **The four modules declare nothing the package exports** check-duplicates reports no
+  finding in bento-layout, bento-inline-edit, bento-hero-icon-picker or bento-tones.
 
 ## Non-goals (do NOT add as tasks)
 
