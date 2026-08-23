@@ -1,4 +1,5 @@
 import { CHAT_INITIAL_PROMPT_KEY } from "@/app/console/chat/chat.types";
+import { bentoChipClass } from "@/components/bento";
 import { ROUTES } from "@/app/routes.const";
 import type { TurAIAgent } from "@/models/agent/ai-agent.model.ts";
 import { IconMessageChatbot } from "@tabler/icons-react";
@@ -36,7 +37,7 @@ export function AiAgentLaunchBar({ agent }: Readonly<{ agent: TurAIAgent }>) {
         onClick={openChat}
         className="bento-tile bento-tile-clickable bento-glass inline-flex items-center gap-2.5 rounded-2xl px-4 py-2.5 text-sm font-medium"
       >
-        <span className="grid h-8 w-8 shrink-0 place-items-center rounded-xl bg-linear-to-br from-blue-600 to-indigo-600 text-white shadow-sm">
+        <span className={`grid h-8 w-8 shrink-0 place-items-center rounded-xl ${bentoChipClass('blue')} text-white shadow-sm`}>
           <IconMessageChatbot size={16} />
         </span>
         {t("aiAgent.launch.openChat", { defaultValue: "Open chat" })}

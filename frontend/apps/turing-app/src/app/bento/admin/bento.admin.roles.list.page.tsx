@@ -1,6 +1,6 @@
 import { useAdminRoles } from "@/api/queries/admin.queries";
 import { ROUTES } from "@/app/routes.const";
-import { BentoEntityTile, BentoHero, BentoTileGrid } from "@/components/bento";
+import { BentoEntityTile, BentoHero, BentoTileGrid, bentoChipClass } from "@/components/bento";
 import { IconUserShield } from "@tabler/icons-react";
 import { useTranslation } from "react-i18next";
 
@@ -22,7 +22,7 @@ export default function BentoAdminRolesListPage() {
         backTo={ROUTES.BENTO_AREA_MANAGEMENT}
         backLabel={t("home.sections.management.label")}
         leading={
-          <span className="grid h-12 w-12 place-items-center rounded-2xl bg-linear-to-br from-slate-600 to-slate-700 text-white shadow-md">
+          <span className={`grid h-12 w-12 place-items-center rounded-2xl ${bentoChipClass('slate')} text-white shadow-md`}>
             <IconUserShield size={24} />
           </span>
         }

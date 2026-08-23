@@ -1,7 +1,7 @@
 import { ROUTES } from "@/app/routes.const";
 import { AdminKeycloakUserView } from "@/components/admin/admin.keycloak.user.view";
 import { AdminUserForm } from "@/components/admin/admin.user.form";
-import { BentoHero } from "@/components/bento";
+import { BentoHero, bentoChipClass } from "@/components/bento";
 import { LoadProvider } from "@/components/loading-provider";
 import { SectionCardChromeProvider } from "@/components/ui/section-card";
 import type { TurKeycloakUser } from "@/models/auth/keycloak-user";
@@ -86,7 +86,7 @@ export default function BentoAdminUserPage() {
   }
 
   const leading = (
-    <span className="grid h-12 w-12 place-items-center rounded-2xl bg-linear-to-br from-slate-600 to-slate-700 text-white shadow-md">
+    <span className={`grid h-12 w-12 place-items-center rounded-2xl ${bentoChipClass('slate')} text-white shadow-md`}>
       <IconUser size={24} />
     </span>
   );

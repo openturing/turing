@@ -1,5 +1,5 @@
 import { ROUTES } from "@/app/routes.const";
-import { BentoHero } from "@/components/bento";
+import { BentoHero, bentoChipClass } from "@/components/bento";
 import { DialogDelete } from "@/components/dialog.delete";
 import { LoadProvider } from "@/components/loading-provider";
 import { Badge } from "@/components/ui/badge";
@@ -96,7 +96,7 @@ export default function BentoPagePage() {
         backTo={ROUTES.BENTO_AREA_MANAGEMENT}
         backLabel={t("home.sections.management.label")}
         leading={
-          <span className="grid h-12 w-12 place-items-center rounded-2xl bg-linear-to-br from-blue-600 to-indigo-600 text-white shadow-md">
+          <span className={`grid h-12 w-12 place-items-center rounded-2xl ${bentoChipClass('blue')} text-white shadow-md`}>
             <IconGlobe size={24} />
           </span>
         }
@@ -124,7 +124,7 @@ export default function BentoPagePage() {
               <div key={site.name} className="bento-tile bento-glass flex flex-col gap-3 rounded-2xl p-5">
                 <div className="flex items-start justify-between gap-2">
                   <div className="flex items-center gap-3 min-w-0">
-                    <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-linear-to-br from-blue-600 to-indigo-600 text-white shadow-sm">
+                    <span className={`grid size-10 shrink-0 place-items-center rounded-xl ${bentoChipClass('blue')} text-white shadow-sm`}>
                       <IconGlobe className="size-5" />
                     </span>
                     <div className="min-w-0">

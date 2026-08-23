@@ -1,4 +1,5 @@
 import { ROUTES } from "@/app/routes.const";
+import { bentoChipClass } from "@/components/bento";
 import { AdminRoleForm } from "@/components/admin/admin.role.form";
 import { LoadProvider } from "@/components/loading-provider";
 import { SectionCardChromeProvider } from "@/components/ui/section-card";
@@ -48,7 +49,7 @@ export default function BentoAdminRolePage() {
               backTo: ROUTES.BENTO_ADMIN_ROLES,
               backLabel: t("admin.roles.title"),
               leading: (
-                <span className="grid h-12 w-12 place-items-center rounded-2xl bg-linear-to-br from-slate-600 to-slate-700 text-white shadow-md">
+                <span className={`grid h-12 w-12 place-items-center rounded-2xl ${bentoChipClass('slate')} text-white shadow-md`}>
                   <IconUserShield size={24} />
                 </span>
               ),

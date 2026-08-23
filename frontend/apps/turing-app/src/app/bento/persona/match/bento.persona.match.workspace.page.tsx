@@ -11,7 +11,7 @@ import {
 import { useLlmInstances } from "@/api/queries/llm-instance.queries";
 import { usePersonas } from "@/api/queries/persona.queries";
 import { ROUTES } from "@/app/routes.const";
-import { BentoActionsMenu, BentoFormSection, BentoHero } from "@/components/bento";
+import { BentoActionsMenu, BentoFormSection, BentoHero, bentoChipClass } from "@/components/bento";
 import { PersonaSelectGrid } from "@/components/persona/persona-select-grid";
 import { SnDocumentPicker, type PickedSnDocument } from "@/components/sn/sn-document-picker";
 import { Badge } from "@/components/ui/badge";
@@ -317,7 +317,7 @@ function CreateProjectCard() {
         backTo={ROUTES.BENTO_PERSONA_MATCH}
         backLabel={t("persona.match.back")}
         leading={
-          <span className="grid h-12 w-12 place-items-center rounded-2xl bg-linear-to-br from-indigo-600 to-fuchsia-600 text-white shadow-md">
+          <span className={`grid h-12 w-12 place-items-center rounded-2xl ${bentoChipClass('indigo')} text-white shadow-md`}>
             <IconTargetArrow size={24} />
           </span>
         }
@@ -675,7 +675,7 @@ function ProjectWorkspace({ projectId }: Readonly<{ projectId: string }>) {
         backTo={ROUTES.BENTO_PERSONA_MATCH}
         backLabel={t("persona.match.back")}
         leading={
-          <span className="grid h-12 w-12 place-items-center rounded-2xl bg-linear-to-br from-indigo-600 to-fuchsia-600 text-white shadow-md">
+          <span className={`grid h-12 w-12 place-items-center rounded-2xl ${bentoChipClass('indigo')} text-white shadow-md`}>
             <IconTargetArrow size={24} />
           </span>
         }

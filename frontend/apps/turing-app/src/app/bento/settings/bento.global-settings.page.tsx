@@ -1,4 +1,4 @@
-import { BentoFormHero } from "@/components/bento";
+import { BentoFormHero, bentoChipClass } from "@/components/bento";
 import { ROUTES } from "@/app/routes.const";
 import { Form } from "@/components/ui/form";
 import { SectionCardChromeProvider } from "@/components/ui/section-card";
@@ -81,7 +81,7 @@ export default function BentoGlobalSettingsPage() {
       <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col gap-5 pb-8">
         <BentoFormHero
           leading={
-            <span className="grid h-11 w-11 place-items-center rounded-2xl bg-linear-to-br from-slate-600 to-slate-700 text-white shadow-md">
+            <span className={`grid h-11 w-11 place-items-center rounded-2xl ${bentoChipClass('slate')} text-white shadow-md`}>
               <IconSettings size={22} />
             </span>
           }

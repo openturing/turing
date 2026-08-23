@@ -4,7 +4,7 @@ import {
 } from "@/api/queries/persona-match.queries";
 import { usePersona } from "@/api/queries/persona.queries";
 import { ROUTES } from "@/app/routes.const";
-import { BentoHero } from "@/components/bento";
+import { BentoHero, bentoChipClass } from "@/components/bento";
 import { IconLoader2, IconTargetArrow } from "@tabler/icons-react";
 import { useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
@@ -76,7 +76,7 @@ export default function BentoPersonaValidatePage() {
   return (
     <BentoHero
       leading={
-        <span className="grid h-12 w-12 place-items-center rounded-2xl bg-linear-to-br from-indigo-600 to-fuchsia-600 text-white shadow-md">
+        <span className={`grid h-12 w-12 place-items-center rounded-2xl ${bentoChipClass('indigo')} text-white shadow-md`}>
           <IconTargetArrow size={24} />
         </span>
       }

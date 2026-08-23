@@ -1,7 +1,7 @@
 import { ROUTES } from "@/app/routes.const";
 import { AdminGroupForm } from "@/components/admin/admin.group.form";
 import { AdminKeycloakGroupView } from "@/components/admin/admin.keycloak.group.view";
-import { BentoHero } from "@/components/bento";
+import { BentoHero, bentoChipClass } from "@/components/bento";
 import { LoadProvider } from "@/components/loading-provider";
 import { SectionCardChromeProvider } from "@/components/ui/section-card";
 import type { TurGroup } from "@/models/auth/group";
@@ -86,7 +86,7 @@ export default function BentoAdminGroupPage() {
   }
 
   const leading = (
-    <span className="grid h-12 w-12 place-items-center rounded-2xl bg-linear-to-br from-slate-600 to-slate-700 text-white shadow-md">
+    <span className={`grid h-12 w-12 place-items-center rounded-2xl ${bentoChipClass('slate')} text-white shadow-md`}>
       <IconUsersGroup size={24} />
     </span>
   );

@@ -12,7 +12,7 @@ import { BatchCostConfirmDialog } from "@/components/llm/batch-cost-confirm-dial
 import type { TurBatchCostRequest } from "@/models/cost-governance/cost-governance.model";
 import { usePersonas } from "@/api/queries/persona.queries";
 import { ROUTES } from "@/app/routes.const";
-import { BentoActionsMenu, BentoFormSection, BentoHero } from "@/components/bento";
+import { BentoActionsMenu, BentoFormSection, BentoHero, bentoChipClass } from "@/components/bento";
 import { PersonaSelectGrid } from "@/components/persona/persona-select-grid";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -710,7 +710,7 @@ function StudyWorkspace({ studyId }: Readonly<{ studyId: string }>) {
                       onClick={() => toggleExpanded(id)}
                       className="flex w-full items-center gap-3 px-3 py-2.5 text-left"
                     >
-                      <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-linear-to-br from-blue-600 to-indigo-600 text-xs font-bold text-white">
+                      <span className={`grid size-9 shrink-0 place-items-center rounded-xl ${bentoChipClass('blue')} text-xs font-bold text-white`}>
                         {(interview.personaName || "?").slice(0, 2).toUpperCase()}
                       </span>
                       <div className="min-w-0 flex-1">
