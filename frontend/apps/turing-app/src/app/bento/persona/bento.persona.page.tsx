@@ -39,7 +39,11 @@ export default function BentoPersonaPage() {
   const draft = (location.state as { draft?: TurPersona } | null)?.draft;
   const { t } = useTranslation();
   const [persona, setPersona] = useState<TurPersona>();
-  const [isNew, setIsNew] = useState<boolean>(true);
+  // T1017 — derived, not stored. `isNew` was state that an effect wrote to
+  // `id === "new"`, which is the same value the router already has: holding it
+  // meant a route change from an existing record to "new" rendered one pass
+  // with the previous answer before the effect corrected it.
+  const isNew = id === "new";
   const [error, setError] = useState<string | null>(null);
   // The persona section sub-routes (/new/general, /new/system-instruction, …)
   // are separate URLs that don't carry router state, so an audio-derived draft
@@ -61,13 +65,11 @@ export default function BentoPersonaPage() {
       } else {
         setPersona({ name: "", verbosity: 3, enabled: 1 } as TurPersona);
       }
-      setIsNew(true);
     } else {
       seededNewRef.current = false;
       turPersonaService.get(id)
         .then(setPersona)
         .catch(() => setError(t("common.connectionError", { resource: t("persona.title") })));
-      setIsNew(false);
     }
   }, [id, t, draft]);
 

@@ -16,7 +16,11 @@ export default function BentoSNLocalePage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const [snLocale, setSnLocale] = useState<TurSNSiteLocale>();
-  const [isNew, setIsNew] = useState(true);
+  // T1017 — derived, not stored. `isNew` was state that an effect wrote to
+  // `localeId === "new"`, which is the same value the router already has: holding it
+  // meant a route change from an existing record to "new" rendered one pass
+  // with the previous answer before the effect corrected it.
+  const isNew = localeId === "new";
   const [open, setOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const listRoute = `${ROUTES.BENTO_SN_INSTANCE}/${id}/locale`;
@@ -25,9 +29,8 @@ export default function BentoSNLocalePage() {
     if (localeId === "new") {
       service.query(id).then(() => setSnLocale({} as TurSNSiteLocale))
         .catch(() => setError(t("common.connectionError", { resource: t("sn.multiLanguage.title") })));
-      setIsNew(true);
     } else {
-      service.get(id, localeId).then((l) => { setSnLocale(l); setIsNew(false); })
+      service.get(id, localeId).then((l) => { setSnLocale(l); })
         .catch(() => setError(t("common.connectionError", { resource: t("sn.multiLanguage.title") })));
     }
   }, [id, localeId, t]);

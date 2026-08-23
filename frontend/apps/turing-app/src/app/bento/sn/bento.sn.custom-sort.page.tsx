@@ -17,7 +17,11 @@ export default function BentoSNCustomSortPage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const [value, setValue] = useState<TurSNSiteCustomSort>();
-  const [isNew, setIsNew] = useState(true);
+  // T1017 — derived, not stored. `isNew` was state that an effect wrote to
+  // `customSortId === "new"`, which is the same value the router already has: holding it
+  // meant a route change from an existing record to "new" rendered one pass
+  // with the previous answer before the effect corrected it.
+  const isNew = customSortId === "new";
   const [open, setOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const listRoute = `${ROUTES.BENTO_SN_INSTANCE}/${id}/custom-sort`;
@@ -25,9 +29,8 @@ export default function BentoSNCustomSortPage() {
   useEffect(() => {
     if (customSortId === "new") {
       setValue({ name: "", items: [] });
-      setIsNew(true);
     } else {
-      service.get(id, customSortId).then((s) => { setValue(s); setIsNew(false); })
+      service.get(id, customSortId).then((s) => { setValue(s); })
         .catch(() => setError(t("common.connectionError", { resource: t("sn.customSort.title") })));
     }
   }, [id, customSortId, t]);

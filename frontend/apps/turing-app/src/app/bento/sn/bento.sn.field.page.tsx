@@ -19,7 +19,11 @@ export default function BentoSNFieldPage() {
   const navigate = useNavigate();
   const { id, fieldId } = useParams() as { id: string; fieldId: string };
   const [snField, setSnField] = useState<TurSNSiteField>();
-  const [isNew, setIsNew] = useState<boolean>(true);
+  // T1017 — derived, not stored. `isNew` was state that an effect wrote to
+  // `fieldId === "new"`, which is the same value the router already has: holding it
+  // meant a route change from an existing record to "new" rendered one pass
+  // with the previous answer before the effect corrected it.
+  const isNew = fieldId === "new";
   const [open, setOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { t } = useTranslation();
@@ -30,7 +34,6 @@ export default function BentoSNFieldPage() {
       turSNFieldService.query(id).then(() => setSnField({} as TurSNSiteField)).catch(() => setError(t("common.connectionError", { resource: t("sn.fields.title") })));
     } else {
       turSNFieldService.get(id, fieldId).then(setSnField).catch(() => setError(t("common.connectionError", { resource: t("sn.fields.title") })));
-      setIsNew(false);
     }
   }, [id, fieldId, t]);
 

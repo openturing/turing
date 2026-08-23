@@ -16,17 +16,21 @@ export default function BentoSNSpotlightPage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const [value, setValue] = useState<TurSNSiteSpotlight>();
-  const [isNew, setIsNew] = useState(true);
+  // T1017 — derived, not stored. `isNew` was state that an effect wrote to
+  // `spotlightId === "new"`, which is the same value the router already has: holding it
+  // meant a route change from an existing record to "new" rendered one pass
+  // with the previous answer before the effect corrected it.
+  const isNew = spotlightId === "new";
   const [open, setOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const listRoute = `${ROUTES.BENTO_SN_INSTANCE}/${id}/spotlight`;
 
   useEffect(() => {
     if (spotlightId === "new") {
-      service.getStructure(id).then((s) => { setValue(s); setIsNew(true); })
+      service.getStructure(id).then((s) => { setValue(s); })
         .catch(() => setError(t("common.connectionError", { resource: t("sn.spotlight.title") })));
     } else {
-      service.get(id, spotlightId).then((s) => { setValue(s); setIsNew(false); })
+      service.get(id, spotlightId).then((s) => { setValue(s); })
         .catch(() => setError(t("common.connectionError", { resource: t("sn.spotlight.title") })));
     }
   }, [id, spotlightId, t]);

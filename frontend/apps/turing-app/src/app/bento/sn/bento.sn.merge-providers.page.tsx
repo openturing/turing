@@ -16,17 +16,21 @@ export default function BentoSNMergeProvidersPage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const [value, setValue] = useState<TurSNSiteMerge>();
-  const [isNew, setIsNew] = useState(true);
+  // T1017 — derived, not stored. `isNew` was state that an effect wrote to
+  // `mergeProviderId === "new"`, which is the same value the router already has: holding it
+  // meant a route change from an existing record to "new" rendered one pass
+  // with the previous answer before the effect corrected it.
+  const isNew = mergeProviderId === "new";
   const [open, setOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const listRoute = `${ROUTES.BENTO_SN_INSTANCE}/${id}/merge-providers`;
 
   useEffect(() => {
     if (mergeProviderId === "new") {
-      service.getStructure(id).then((s) => { setValue(s); setIsNew(true); })
+      service.getStructure(id).then((s) => { setValue(s); })
         .catch(() => setError(t("common.connectionError", { resource: t("sn.mergeProviders.title") })));
     } else {
-      service.get(id, mergeProviderId).then((m) => { setValue(m); setIsNew(false); })
+      service.get(id, mergeProviderId).then((m) => { setValue(m); })
         .catch(() => setError(t("common.connectionError", { resource: t("sn.mergeProviders.title") })));
     }
   }, [id, mergeProviderId, t]);

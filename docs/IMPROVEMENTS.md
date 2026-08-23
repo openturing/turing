@@ -2206,3 +2206,28 @@ Acceptance:
 - `set-state-in-effect` is read call site by call site, each either rewritten or given a
   line saying why the effect is the right place.
 - The `--max-warnings` ceiling in `lint` is lowered to whatever survives.
+
+### CIII.4 The migration nobody was counting (T1018)
+
+`agents.md` says read paths use React Query and that `useState` + `useEffect` +
+`service.then()` "is being phased out". It has been since 2026.2.6, and nothing counts
+what is left, so the phase-out has no end and no measure.
+
+Reading T1017's 72 `set-state-in-effect` findings supplied one. Thirty-nine of the 59
+files carry 45 of them, and every one is that pattern: a component holding its own
+`data`/`loading`/`error` triple and filling it from a service inside an effect. Nine of
+them set a loading flag synchronously before the await, which is the shape the rule
+names outright; the other thirty do the same thing without the flag.
+
+So the largest single group of findings under T1016's ceiling is not a lint problem. It
+is the migration already declared, seen from the other end — and rewriting those effects
+into some other effect-shaped thing would be work thrown away the moment the page moves
+to a hook.
+
+What the move buys beyond the warning: the shared 30s `staleTime`, the deterministic
+invalidation on write that these pages do by hand or not at all, and one fewer
+`useState` triple per page.
+
+Acceptance:
+- The 39 files read through `api/queries/*.queries.ts` hooks.
+- The `--max-warnings` ceiling falls by the 45 findings they carry.

@@ -16,7 +16,11 @@ export default function BentoSNCustomFacetPage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const [value, setValue] = useState<TurSNSiteCustomFacet>();
-  const [isNew, setIsNew] = useState(true);
+  // T1017 — derived, not stored. `isNew` was state that an effect wrote to
+  // `customFacetId === "new"`, which is the same value the router already has: holding it
+  // meant a route change from an existing record to "new" rendered one pass
+  // with the previous answer before the effect corrected it.
+  const isNew = customFacetId === "new";
   const [open, setOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const listRoute = `${ROUTES.BENTO_SN_INSTANCE}/${id}/facet`;
@@ -32,9 +36,8 @@ export default function BentoSNCustomFacetPage() {
         items: [],
         fieldExtId: "",
       } as TurSNSiteCustomFacet);
-      setIsNew(true);
     } else {
-      service.get(id, customFacetId).then((f) => { setValue(f); setIsNew(false); })
+      service.get(id, customFacetId).then((f) => { setValue(f); })
         .catch(() => setError(t("common.connectionError", { resource: t("sn.facets.title") })));
     }
   }, [id, customFacetId, t]);

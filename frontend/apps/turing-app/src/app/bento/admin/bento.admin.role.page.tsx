@@ -21,19 +21,21 @@ export default function BentoAdminRolePage() {
   const { t } = useTranslation();
   const { roleId } = useParams() as { roleId: string };
   const [role, setRole] = useState<TurRole>();
-  const [isNew, setIsNew] = useState(true);
+  // T1017 — derived, not stored. `isNew` was state that an effect wrote to
+  // `roleId === "new"`, which is the same value the router already has: holding it
+  // meant a route change from an existing record to "new" rendered one pass
+  // with the previous answer before the effect corrected it.
+  const isNew = roleId === "new";
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (roleId === "new") {
       setRole({ id: "", name: "", description: "" } as TurRole);
-      setIsNew(true);
     } else {
       turRoleService
         .get(roleId)
         .then(setRole)
         .catch(() => setError(t("admin.roles.loadOneFailed")));
-      setIsNew(false);
     }
   }, [roleId, t]);
 

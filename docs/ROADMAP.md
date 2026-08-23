@@ -20,7 +20,8 @@
 
 ## Block BV — The quality gate stops at the package boundary
 
-- 📋 **T1017** (deps: T1016 ✅) **358 lint warnings sit under a pinned ceiling, and nothing says which of them is wrong** — They are three unrelated jobs, and only the 76 setState-in-effect findings are about correctness. → §CIII.3
+- ⏳ **T1017** (deps: T1016 ✅) **358 lint warnings sit under a pinned ceiling, and nothing says which of them is wrong** — The 19 findings on React Query pages and the 8 with no fetch at all are still unread, one component at a time. → §CIII.3
+- 📋 **T1018** (deps: —) **39 files still fetch with useState and useEffect, and nothing counts what the React Query migration has left** — The pattern is already declared obsolete, so rewriting those effects into another effect would be thrown away. → §CIII.4
 
 ## Done when — T1000
 

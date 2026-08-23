@@ -30,10 +30,16 @@ export default function BentoAdminUserPage() {
   const { username } = useParams() as { username: string };
   const [user, setUser] = useState<TurUser>();
   const [keycloakUser, setKeycloakUser] = useState<TurKeycloakUser>();
-  const [isNew, setIsNew] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [open, setOpen] = useState(false);
   const [keycloak, setKeycloak] = useState<boolean | null>(null);
+  // T1017 — derived, not stored. `isNew` was state an effect wrote, and the two
+  // things it wrote from are both already here: the route param, and whether the
+  // backend is Keycloak. A Keycloak-backed record is never new, which is why the
+  // discovery flag is part of the expression rather than a branch above it.
+  // While discovery is pending `keycloak` is null, so this reads the param alone
+  // — the same answer the effect's early return used to leave standing.
+  const isNew = !keycloak && username === "new";
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -51,19 +57,16 @@ export default function BentoAdminUserPage() {
         .getUser(username)
         .then(setKeycloakUser)
         .catch(() => setError(t("admin.users.loadOneFailed")));
-      setIsNew(false);
       return;
     }
 
     if (username === "new") {
       setUser({ username: "", firstName: "", lastName: "", email: "", admin: false } as TurUser);
-      setIsNew(true);
     } else {
       turAdminUserService
         .get(username)
         .then(setUser)
         .catch(() => setError(t("admin.users.loadOneFailed")));
-      setIsNew(false);
     }
   }, [username, keycloak, t]);
 

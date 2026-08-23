@@ -16,7 +16,11 @@ export default function BentoSNSearchRulePage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const [value, setValue] = useState<TurSNSiteSearchRule>();
-  const [isNew, setIsNew] = useState(true);
+  // T1017 — derived, not stored. `isNew` was state that an effect wrote to
+  // `searchRuleId === "new"`, which is the same value the router already has: holding it
+  // meant a route change from an existing record to "new" rendered one pass
+  // with the previous answer before the effect corrected it.
+  const isNew = searchRuleId === "new";
   const [open, setOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const listRoute = `${ROUTES.BENTO_SN_INSTANCE}/${id}/search-rule`;
@@ -24,9 +28,8 @@ export default function BentoSNSearchRulePage() {
   useEffect(() => {
     if (searchRuleId === "new") {
       setValue({ name: "", position: 0, enabled: true, conditions: [], actions: [] });
-      setIsNew(true);
     } else {
-      service.get(id, searchRuleId).then((s) => { setValue(s); setIsNew(false); })
+      service.get(id, searchRuleId).then((s) => { setValue(s); })
         .catch(() => setError(t("common.connectionError", { resource: t("sn.searchRule.title") })));
     }
   }, [id, searchRuleId, t]);

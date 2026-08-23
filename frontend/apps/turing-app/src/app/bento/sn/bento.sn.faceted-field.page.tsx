@@ -14,7 +14,11 @@ export default function BentoSNFacetedFieldPage() {
   const { id, facetedFieldId } = useParams() as { id: string; facetedFieldId: string };
   const { t } = useTranslation();
   const [snField, setSnField] = useState<TurSNSiteField>();
-  const [isNew, setIsNew] = useState(true);
+  // T1017 — derived, not stored. `isNew` was state that an effect wrote to
+  // `facetedFieldId === "new"`, which is the same value the router already has: holding it
+  // meant a route change from an existing record to "new" rendered one pass
+  // with the previous answer before the effect corrected it.
+  const isNew = facetedFieldId === "new";
   const [open, setOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const facetRoute = `${ROUTES.BENTO_SN_INSTANCE}/${id}/facet`;
@@ -23,9 +27,8 @@ export default function BentoSNFacetedFieldPage() {
     if (facetedFieldId === "new") {
       service.query(id).then(() => setSnField({} as TurSNSiteField))
         .catch(() => setError(t("common.connectionError", { resource: t("sn.facets.title") })));
-      setIsNew(true);
     } else {
-      service.get(id, facetedFieldId).then((f) => { setSnField(f); setIsNew(false); })
+      service.get(id, facetedFieldId).then((f) => { setSnField(f); })
         .catch(() => setError(t("common.connectionError", { resource: t("sn.facets.title") })));
     }
   }, [id, facetedFieldId, t]);
