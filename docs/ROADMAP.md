@@ -21,6 +21,11 @@
 
 - ⏳ **T1004** (deps: —) **site chat emits the whole answer in one SSE content event, so no consumer can render it progressively** — The measurement that opened this has not been repeated against the demo. → §XCVII
 
+## Block BS — The JS SDK release gate is not a gate
+
+- 📋 **T1011** (deps: —) **four of the five publishable packages declare no exportsSurface, so the T1006 gate is a no-op for them** — The pending changesets bump react-sdk seven times, so it carries more unreleased surface than the package the defect was found in. → §CI
+- 📋 **T1012** (deps: —) **the React SDK's core still throws a plain Error for a non-2xx, so the two SDKs now disagree about the same failure** — A consumer using both gets different failure shapes for one HTTP status, which reads as a difference in what happened. → §CII
+
 ## Done when — T994
 
 - **The chrome adapter is imported, not declared here** The local section-card module is
