@@ -2160,20 +2160,6 @@ cross-product render digest the package builds, run it over a fixed set of surfa
 hero, a form section, an entity tile, a list mosaic, a scrolled save bar - and make any
 difference outside the brand accent fail the build.
 
-### XCVI.16 The user menu waits for its provider (T1003)
-
-T992 moved the rail and back-to-top out as one-line shims, because neither reads
-anything of this product: the rail is handed a group list and a home route, and
-back-to-top reads a scroll offset. The user menu is different. Its routes are already
-props in the package, but the user itself is not -- it comes from the design system's
-own UserContext, which reports a status the console-era provider here has no notion of,
-and which is exactly why the package's version stopped rendering a skeleton for ever on
-a failed fetch. This product still mounts its own UserProvider at the bento shell, and
-every page under it reads that context. Swapping the menu alone would put two providers
-under one shell, each fetching the same user. So the menu keeps its local copy, with the
-allow-duplicate line naming the provider move rather than T992, and follows once T1000
-has retired the console-era one.
-
 ### XCVI.18 Where the package's copy is narrower (T1008)
 
 T1000 swapped the five whose package counterpart was a strict superset. These four are

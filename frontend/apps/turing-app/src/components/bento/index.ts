@@ -29,7 +29,7 @@ export { BentoCountTile, type BentoCountTileProps } from "./bento-count-tile";
 export { BentoSection, type BentoSectionProps } from "./bento-section";
 export { BentoHero, BentoBackLink, type BentoHeroProps } from "./bento-hero";
 export { BENTO_TONE_GRADIENTS, type BentoTone } from "./bento-tones";
-export { BentoUserMenu } from "./bento-user-menu";
+export { BentoUserMenu, type BentoUserMenuProps } from "./bento-user-menu";
 export { BentoBackToTop } from "./bento-back-to-top";
 export { BentoEmptyState, type BentoEmptyStateProps } from "./bento-empty-state";
 export { BentoShortcutsDialog, type BentoShortcutsDialogProps } from "./bento-shortcuts-dialog";

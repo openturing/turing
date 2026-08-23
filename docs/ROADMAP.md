@@ -15,7 +15,6 @@
 - 📋 **T999** (deps: viglet-design-system VDS20) **CONVENTIONS.md is the layer's authoring contract and it lives in the product that no longer owns the layer** — Two copies of a contract drift exactly as two copies of a component do. → §XCVI.12
 - ⏳ **T1000** (deps: T1008) **40 console pages still render beside the 118 bento ones, so two chromes and two component sets stay alive** — The package cannot deprecate its console entry point while this product still declares four of its components. → §XCVI.13
 - 📋 **T1001** (deps: viglet-design-system VDS25) **nothing here proves a page renders the same after its components moved out of the repository** — The whole block is a claim about appearance, and appearance is the one thing this suite never checks. → §XCVI.14
-- 📋 **T1003** (deps: T1000 ⏳) **the bento user menu is the one shell piece T992 left behind, because it reads the console-era user context** — The package's menu reads the design system's own provider, so moving it before the provider means two providers fetching one user. → §XCVI.16
 - 📋 **T1008** (deps: —) **four console-chrome components stay declared here because each package copy dropped something this product renders** — A shim that silently loses the header's user menu or the icon picker's suggestions is worse than the duplicate it removes. → §XCVI.18
 
 ## Block AR — Live-demo search & chat quality (Lucene parity gaps, §XLI)

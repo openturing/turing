@@ -1,3 +1,4 @@
+import { useFeatures } from "@/api/queries/features.queries";
 import { ROUTES } from "@/app/routes.const";
 import {
   BENTO_NAV_ITEMS,
@@ -99,6 +100,14 @@ export default function BentoRootPage() {
    * renderings: `⌘K` and the rail cannot disagree about which surfaces exist.
    */
   const navItems = useVisibleBentoNav();
+  /*
+   * T1003 — the user menu's entries are routes now, not flags the package has to
+   * mirror. Whether this product has tenancy, and whether this reader may
+   * administer it, are ours to resolve; we answer by passing a route or leaving
+   * it out, and the menu shows the entry or does not.
+   */
+  const { data: features } = useFeatures();
+  const tenancyEnabled = features?.tenancyEnabled === true;
   /*
    * "Immersive" app-like surfaces (the chat, the GraphQL explorer) fill the
    * shell edge-to-edge instead of being centered in the `max-w-7xl` reading
@@ -231,6 +240,14 @@ export default function BentoRootPage() {
             <LanguageSwitcher />
             <ModeToggle />
             <BentoUserMenu
+              accountRoute={ROUTES.BENTO_USER_ACCOUNT}
+              logoutUrl={ROUTES.LOGOUT}
+              organizationsRoute={tenancyEnabled ? ROUTES.BENTO_TENANT_SETTINGS : undefined}
+              tenantAdminRoute={
+                tenancyEnabled && features?.platformAdmin === true
+                  ? ROUTES.BENTO_TENANT_ADMIN
+                  : undefined
+              }
               onOpenShortcuts={() => setShortcutsOpen(true)}
               onReplayTour={() => setTourOpen(true)}
             />
