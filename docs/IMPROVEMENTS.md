@@ -2174,6 +2174,20 @@ under one shell, each fetching the same user. So the menu keeps its local copy, 
 allow-duplicate line naming the provider move rather than T992, and follows once T1000
 has retired the console-era one.
 
+### XCVI.18 Where the package's copy is narrower (T1008)
+
+T1000 swapped the five whose package counterpart was a strict superset. These four are
+the opposite case, and each is specific. PageHeader there has no user menu, app
+switcher, language switcher or discovery call -- taking it would blank four controls.
+IconPickerDialog there has no LLM suggestion path, so the icon picker would quietly stop
+suggesting. DialogDelete generalised its blocked-by item to VigBlockedByItem and dropped
+the ROUTES import, so a caller must now pass both. SubPage and its InternalSidebar are
+narrower twice over: NavMainItem requires a url where this product deliberately allows
+none to render a group label, showOnNew is gone, outletContext is gone -- and that is
+what shares one form instance across the LLM editor's section sub-pages -- and the
+padding differs, which is visible. Each needs the product concern lifted to a prop in
+the package, or the page retired to the bento layer. Neither is a rename.
+
 ## XCVII Site chat aggregates the answer before emitting it (T1004)
 
 Measured against `turing-demo.viglet.org` on 2026-08-23, reading the raw SSE with curl:
@@ -2232,24 +2246,25 @@ Acceptance:
 
 Two things an external consumer cannot get from the published packages.
 
-**`postSearch` is documented `@since 2026.3.4` and is absent from the published
-2026.3.7.** Its own doc comment tells a reader to prefer it over `fetchSearch` for
-anything that toggles facets, and `docs/` describes POST search as what the SDKs do. In
-the 2026.3.7 tarball neither `postSearch` nor `TurSearchRequest` appears in
-`dist/index.d.ts` or `dist/api.d.ts`; both are in the checkout. So a consumer following
-the documentation writes an import that does not resolve, and the fallback is the GET
-form the docs call superseded. Whatever the cause — a release cut before the export
-landed, or an export never added to the barrel — the release gate did not catch that the
-package contradicts its own `@since`.
+**A whole set of `@since 2026.3.4` symbols is absent from the published 2026.3.7.**
+`postSearch`, `TurSearchRequest`, and the T710 helpers — `applyFacetAction`,
+`searchParamsToRequest`, `requestToSearchParams` — are in the checkout and in
+`react-sdk`'s re-export list, and in no `dist/*.d.ts` of the published tarball.
+
+The T710 case is the sharp one, because the package already argues it: that re-export is
+commented "owned by the framework-agnostic `@viglet/turing-sdk` … pure functions with no
+React or axios coupling, so duplicating them would only create two places for the
+ADD/REMOVE/REPLACE semantics to drift." A consumer that cannot import them has no option
+*but* to duplicate: building `schools`' faceted search against 2026.3.7 meant
+hand-writing facet toggling and the params bridge. Reaching them through `react-sdk` is
+no way out for a server-rendered consumer, which cannot take a dependency peering on
+react and axios.
 
 **`@viglet/turing-shared-types` is `private: true`.** It is the obvious source for
 request and response types, and the point of taking types from a shared package is that
 a version bump which changes the contract breaks the consumer's typecheck rather than a
-page in production. Unpublished, an external app either depends on
-`@viglet/turing-sdk`'s re-exports — which is what `schools` now does — or restates the
-types by hand, which is the failure the package exists to prevent.
-
-Found while building the `schools` admissions app against 2026.3.7.
+page in production. Unpublished, an external app either depends on the SDK's re-exports
+— which is what `schools` now does — or restates the types by hand.
 
 Acceptance:
 - A test asserts every `@since` symbol in the source is present in the built `dist`.

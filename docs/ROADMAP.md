@@ -16,6 +16,7 @@
 - 📋 **T1000** (deps: T995 ✅) **40 console pages still render beside the 118 bento ones, so two chromes and two component sets stay alive** — The cutover was declared and never finished, and every unmigrated page is a reason to keep the old exports. → §XCVI.13
 - 📋 **T1001** (deps: viglet-design-system VDS25) **nothing here proves a page renders the same after its components moved out of the repository** — The whole block is a claim about appearance, and appearance is the one thing this suite never checks. → §XCVI.14
 - 📋 **T1003** (deps: T1000) **the bento user menu is the one shell piece T992 left behind, because it reads the console-era user context** — The package's menu reads the design system's own provider, so moving it before the provider means two providers fetching one user. → §XCVI.16
+- 📋 **T1008** (deps: —) **four console-chrome components stay declared here because each package copy dropped something this product renders** — A shim that silently loses the header's user menu or the icon picker's suggestions is worse than the duplicate it removes. → §XCVI.18
 
 ## Block AR — Live-demo search & chat quality (Lucene parity gaps, §XLI)
 
@@ -27,7 +28,7 @@
 
 ## Block BS — The JS SDK release gate is not a gate (§LXVI)
 
-- 📋 **T1006** (deps: —) **postSearch is documented @since 2026.3.4 yet absent from the published 2026.3.7 dist** — A consumer following the docs writes an import that does not resolve, and shared-types being private leaves no published source for the contract types. → §XCIX
+- 📋 **T1006** (deps: —) **postSearch is documented @since 2026.3.4 yet absent from the published 2026.3.7 dist** — A consumer following the docs writes imports that do not resolve, and the T710 helpers being absent forces the exact duplication their own re-export comment warns against. → §XCIX
 
 ## Done when — T994
 
