@@ -11,7 +11,6 @@
 ## Block BX — The bento layer leaves the product it grew in (§XCVI)
 
 - ⏳ **T1000** (deps: T1008 ⏳) **40 console pages still render beside the 118 bento ones, so two chromes and two component sets stay alive** — The package cannot deprecate its console entry point while this product still declares four of its components. → §XCVI.13
-- 📋 **T1001** (deps: T1014 ✅) **nothing here proves a page renders the same after its components moved out of the repository** — The digest needs a browser runner, and no dependency can be added while every pnpm command is refused. → §XCVI.14
 - ⏳ **T1008** (deps: viglet-design-system VDS76) **four console-chrome components stay declared here because each package copy dropped something this product renders** — The package's SubPage drops outletContext, which shares one form instance across the persona editor's section sub-pages. → §XCVI.18
 - ⏳ **T1013** (deps: —) **fifty bento pages write a hero gradient inline, using twenty-one colour pairs where the tones offer seven** — Twenty pairs remain, each a shade off a declared tone, and closing that gap changes what a page looks like. → §XCVI.20
 
@@ -24,12 +23,6 @@
 - **One chrome renders and the console routes are gone** The forty console pages are
   migrated or retired, the redirect and the console shell are removed, and nothing
   imports a console-era export.
-
-## Done when — T1001
-
-- **A page is proved unchanged by the move, not assumed** This product's token set feeds
-  the cross-product digest, it runs over a hero, a form section, an entity tile, a
-  mosaic and a scrolled save bar, and a difference fails the build.
 
 ## Non-goals (do NOT add as tasks)
 

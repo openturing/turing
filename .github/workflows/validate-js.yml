@@ -130,6 +130,22 @@ jobs:
         working-directory: frontend
         run: pnpm --filter "${{ matrix.workspace }}" run --if-present test
 
+      # T1001: the render digest, which lays the bento surfaces out in a real
+      # browser under this app's own stylesheet chain and fails when a re-key
+      # moves the layout, when an accent-bearing surface stops resolving the
+      # tokens, or when a tone-driven one starts. It is a separate step because
+      # it is the one suite in the repo that needs a browser: `test` above is
+      # the jsdom project and stays runnable with nothing installed.
+      - name: Install Chromium for the render digest
+        if: matrix.workspace == 'turing-app'
+        working-directory: frontend
+        run: pnpm --filter turing-app exec playwright install --with-deps chromium
+
+      - name: Render digest
+        if: matrix.workspace == 'turing-app'
+        working-directory: frontend
+        run: pnpm --filter turing-app run test:parity
+
       # T997: the export-manifest lint the design system ships. Nothing here
       # failed when a component was re-declared instead of imported, and the
       # bento layer is what that costs — an entire design language grew inside

@@ -102,3 +102,8 @@ scripts/sonar/scan.log
 /frontend/packages/cli/.turbo
 /frontend/packages/flow-dsl/.turbo
 .roadkeep/
+
+# T1001 — the parity project writes a PNG next to the test when an assertion
+# fails in the browser. It is a debugging artefact of one run, not a baseline.
+frontend/apps/turing-app/src/**/__screenshots__/
+frontend/apps/turing-app/.vitest-attachments/

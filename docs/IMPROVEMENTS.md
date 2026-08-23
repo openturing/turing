@@ -2114,17 +2114,6 @@ temporary version look normal. Migrate or retire the remaining forty, drop the r
 and the console shell, and the package's deprecation of the console era stops being
 blocked on this repository.
 
-### XCVI.14 Prove the pages look the same after the move (T1001)
-
-Every task above is justified by an assertion nothing in this repository checks: that a
-page renders identically when its components come from a package instead of from a
-folder. The type checker sees an import path. The RTL suites see roles and labels.
-Neither sees a frosted surface that stopped being frosted because a stylesheet was not
-imported, or a hover lift that no longer lifts. Supply this product's token set to the
-cross-product render digest the package builds, run it over a fixed set of surfaces - a
-hero, a form section, an entity tile, a list mosaic, a scrolled save bar - and make any
-difference outside the brand accent fail the build.
-
 ### XCVI.18 Where the package's copy is narrower (T1008)
 
 T1000 swapped the five whose package counterpart was a strict superset. These four are
