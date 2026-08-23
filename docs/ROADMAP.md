@@ -26,7 +26,11 @@
 
 ## Block S — SDK / client parity (vanilla + React)
 
+- 📋 **T1005** (deps: —) **a non-2xx throws a plain Error whose status exists only inside the message string** — Consumers regex error.message to tell a 404 from an unreachable tenant, so a reworded string breaks them and CI never notices. → §XCVIII
+
 ## Block BS — The JS SDK release gate is not a gate (§LXVI)
+
+- 📋 **T1006** (deps: —) **postSearch is documented @since 2026.3.4 yet absent from the published 2026.3.7 dist** — A consumer following the docs writes an import that does not resolve, and shared-types being private leaves no published source for the contract types. → §XCIX
 
 ## Done when — T993
 
