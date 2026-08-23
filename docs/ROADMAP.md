@@ -10,9 +10,8 @@
 
 ## Block BX — The bento layer leaves the product it grew in (§XCVI)
 
-- 📋 **T993** (deps: T992 ✅) **the command palette and shortcuts dialog are declared here, and both are generic once their data is split out** — They are the last of the shell, and the palette is what makes a migrated surface findable at all. → §XCVI.5
 - 📋 **T994** (deps: viglet-design-system VDS22) **the SectionCard chrome adapter overrides a shared component from inside this product** — It is the pattern that lets a heavy form render in either chrome, and the other product needs it more than this one. → §XCVI.7
-- 📋 **T995** (deps: T993) **activation, quota, no-LLM and Viglet dialog tiles sit in components/bento, so the folder claims they are the layer** — Commercial chrome belongs to this product, and the directory name is now the only thing saying otherwise. → §XCVI.8
+- 📋 **T995** (deps: T993 ✅) **activation, quota, no-LLM and Viglet dialog tiles sit in components/bento, so the folder claims they are the layer** — Commercial chrome belongs to this product, and the directory name is now the only thing saying otherwise. → §XCVI.8
 - 📋 **T996** (deps: viglet-design-system VDS23) **tile tones and the brand hue are named as Tailwind classes inside components this product no longer owns** — The token swap must be provably invisible here, or one look across products arrives as a regression in this one. → §XCVI.9
 - 📋 **T999** (deps: viglet-design-system VDS20) **CONVENTIONS.md is the layer's authoring contract and it lives in the product that no longer owns the layer** — Two copies of a contract drift exactly as two copies of a component do. → §XCVI.12
 - 📋 **T1000** (deps: T995) **40 console pages still render beside the 118 bento ones, so two chromes and two component sets stay alive** — The cutover was declared and never finished, and every unmigrated page is a reason to keep the old exports. → §XCVI.13
@@ -31,12 +30,6 @@
 ## Block BS — The JS SDK release gate is not a gate (§LXVI)
 
 - 📋 **T1006** (deps: —) **postSearch is documented @since 2026.3.4 yet absent from the published 2026.3.7 dist** — A consumer following the docs writes an import that does not resolve, and shared-types being private leaves no published source for the contract types. → §XCIX
-
-## Done when — T993
-
-- **The palette and shortcuts dialog come from the package** Both resolve from the
-  subpath, arrow-key navigation and the global shortcut still work, and the mobile
-  fallback navigation is unaffected.
 
 ## Done when — T994
 

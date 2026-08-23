@@ -11,6 +11,7 @@ import {
   BentoUserMenu,
   bentoSectionAreaRoute,
   hasSeenBentoTour,
+  useVisibleBentoNav,
   useVisibleBentoSections,
 } from "@/components/bento";
 import { TurLogo } from "@/components/logo/tur-logo";
@@ -82,6 +83,11 @@ export default function BentoRootPage() {
    * may see a surface is a question only this product can answer.
    */
   const navGroups = useVisibleBentoSections();
+  /*
+   * T993 — the palette gets the flat form of the same list. One filter, two
+   * renderings: `⌘K` and the rail cannot disagree about which surfaces exist.
+   */
+  const navItems = useVisibleBentoNav();
   /*
    * "Immersive" app-like surfaces (the chat, the GraphQL explorer) fill the
    * shell edge-to-edge instead of being centered in the `max-w-7xl` reading
@@ -240,7 +246,7 @@ export default function BentoRootPage() {
         </main>
 
         <BentoBackToTop />
-        <BentoCommandPalette open={paletteOpen} onOpenChange={setPaletteOpen} />
+        <BentoCommandPalette open={paletteOpen} onOpenChange={setPaletteOpen} items={navItems} />
         <BentoShortcutsDialog open={shortcutsOpen} onOpenChange={setShortcutsOpen} isMac={IS_MAC} />
         <BentoFirstRunTour open={tourOpen} onOpenChange={setTourOpen} />
       </div>

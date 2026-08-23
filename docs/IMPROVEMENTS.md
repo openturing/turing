@@ -2102,17 +2102,6 @@ and only then delete anything. Three tasks are instruments rather than moves - a
 duplication lint, a working local-dev path and a render digest - because every deletion
 here is justified by an assertion this repository currently cannot check.
 
-### XCVI.5 The palette, once its data lives somewhere else (T993)
-
-The command palette and the shortcuts dialog are the last of the shell and the most
-obviously generic parts of it: a filtered list, arrow-key navigation, a group header, a
-keyboard hint. They were coupled to this product only through the nav config, which the
-previous task separates. Move them after it rather than with it, so the split is proved
-by a palette that still works against a product-supplied array before the component
-leaves the repository. The palette matters more than its size suggests: it is how a
-migrated surface becomes findable without a rail entry, and it is the fallback
-navigation on mobile, where the rail is hidden by design.
-
 ### XCVI.7 The chrome adapter is a migration tool, not a local override (T994)
 
 components/ui/section-card.tsx does not fork the design-system SectionCard; it wraps it.
