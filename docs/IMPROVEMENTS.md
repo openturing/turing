@@ -2163,32 +2163,30 @@ removing, one page at a time.
 
 ### XCVI.21 The waiver that does not waive (T1014)
 
-Any pnpm install in this workspace currently fails:
+Any pnpm command in this workspace fails:
 
-    [ERR_PNPM_MINIMUM_RELEASE_AGE_VIOLATION] 1 lockfile entries failed verification:
-      @viglet/viglet-design-system@2026.3.3 was published at 2026-08-23T17:47:39.422Z,
-      within the minimumReleaseAge cutoff
+    [ERR_PNPM_MINIMUM_RELEASE_AGE_VIOLATION] @viglet/viglet-design-system@2026.3.3
+    was published 2026-08-23T17:47Z, within the minimumReleaseAge cutoff
 
-The waiver for exactly that entry is already in pnpm-workspace.yaml. Line 107 reads
-'@viglet/viglet-design-system@2026.3.3', under minimumReleaseAgeExclude, added with the
-vetted-group bump above it. The check rejects it anyway, so the documented escape does
-not escape: a listed exclusion and an unlisted one produce the same refusal, and the
-list reads as protection it is not providing.
+It blocks before any command runs, so not only install: pnpm exec tsc and pnpm --filter
+run test hit it through the deps-status check.
 
-Two properties make this worse than a slow day. The blocked package is first-party --
-the team publishes it -- so an age guard meant to catch a typosquat or a compromised
-release is being applied to their own artifact, and it fires on every same-day
-design-system publish. And it blocks the run before any command, so it is not only
-install: pnpm exec tsc and pnpm --filter run test hit it too, through the deps-status
-check.
+**Diagnosed, and it is not this repository's config.** Three facts, each read back from
+pnpm 11.8.0 rather than assumed. `pnpm config get minimumReleaseAge` returns undefined
+-- nothing here sets the rule. `pnpm config get minimumReleaseAgeExclude` returns 171
+entries and does contain viglet-design-system@2026.3.3, so the waiver list is correct,
+complete and read. And the refusal comes from a separate pass, announced as "Verifying
+lockfile against supply-chain policies", which applies a release-age rule without
+consulting that list. No supplyChainPolicy-style key resolves to anything.
 
-What it costs concretely: T1001 needs two new devDependencies to run a parity digest in
-a browser, and cannot add them. Any task needing a dependency waits roughly a day for
-the version to age out.
+So editing the exclude list cannot fix this: it is already right. The remaining options
+are to pin pnpm below the version that introduced the verification pass, to find
+whatever configures that pass, or to wait out a rolling window that re-arms on every
+same-day design-system publish -- of a first-party package, where an age guard aimed at
+typosquats and compromised releases has nothing to catch.
 
-Worth establishing before choosing a fix: whether the exclusion is ignored only by the
-pre-run verification path and honoured by install proper, because that changes this from
-a config error into an upstream one.
+What it costs: T1001 needs two devDependencies for a browser parity digest and cannot
+add them.
 
 ## XCVII Site chat aggregates the answer before emitting it (T1004)
 
