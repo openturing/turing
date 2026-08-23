@@ -533,7 +533,12 @@ public class TurAgentChatExecutor {
         return streamingDispatcher.dispatch(
                 new TurChatTurnContext(agent, llmInstance, conversationId, lastUserMessageEarly,
                         username, tStart, tSetupEnd),
-                decryptedApiKey, chatModel, messages, initialOptions, flowContext, activePersona);
+                decryptedApiKey, chatModel, messages, initialOptions, flowContext, activePersona,
+                // T1004 — the resolved-and-gated toolset, which is what AUTO mode
+                // needs to know. Read from `callbacks` after both the T647
+                // untrusted-caller strip and the T11 node check, so a public SN
+                // turn on a tool-carrying agent correctly reports none.
+                !activeNodeForbidsTools && callbacks != null && callbacks.length > 0);
     }
 
     /**

@@ -16,7 +16,26 @@ package com.viglet.turing.persistence.model.agent;
  *       (flow-driven turns silently fall back to {@code CALL} so regen still
  *       works) AND incurs the trade-off that the per-turn tool callbacks
  *       (MCP / native / custom) are NOT honored on this path.</li>
+ *   <li>{@link #AUTO} — stream when the turn can be streamed without losing
+ *       anything, call otherwise. "Without losing anything" means the turn has
+ *       no flow governing it <em>and</em> no tool callbacks in play, so the two
+ *       things {@link #STREAM} silently gives up are not on the table: there is
+ *       no tool to drop and no bubble to rewrite. Decided per turn, not per
+ *       agent, because whether a turn carries tools is a per-turn fact — the
+ *       public SN chat surface strips every callback for an untrusted caller
+ *       (T647), so its turns are tool-free even on an agent that has tools.</li>
  * </ul>
+ *
+ * <h2>Why AUTO exists (T1004)</h2>
+ *
+ * <p>Site-scoped chat emitted its whole answer as one SSE {@code content} event,
+ * so a consumer reading the body with a stream reader received exactly one token
+ * and could render nothing until the answer was complete. The cause was not a
+ * missing capability — {@link #STREAM} already works — but this enum's default:
+ * an agent is {@link #CALL} unless an operator changes it, and changing it to
+ * {@link #STREAM} would trade the tools away on every other surface that agent
+ * serves. {@code AUTO} is the mode that can be the default for a public site
+ * chat, because on the turn that matters there is nothing to trade.</p>
  *
  * <h2>OpenAI streaming transport (T18, §IV.1.b)</h2>
  *
@@ -52,5 +71,6 @@ package com.viglet.turing.persistence.model.agent;
  */
 public enum TurAgentChatMode {
     CALL,
-    STREAM
+    STREAM,
+    AUTO
 }

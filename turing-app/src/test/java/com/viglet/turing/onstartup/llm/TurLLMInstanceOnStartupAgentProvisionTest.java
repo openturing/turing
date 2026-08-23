@@ -94,7 +94,30 @@ class TurLLMInstanceOnStartupAgentProvisionTest {
         // SN chat (T622 fallback), so it ships grounded to the site's content.
         assertThat(created.getGroundingMode())
                 .isEqualTo(com.viglet.turing.persistence.model.agent.TurAgentGroundingMode.STRICT_RAG);
+        // T1004 — and streams that chat rather than emitting the whole answer as
+        // one SSE event. AUTO, not STREAM: the same agent is reachable from the
+        // admin surfaces, where a turn carrying tools must still be a CALL.
+        assertThat(created.getChatMode())
+                .isEqualTo(com.viglet.turing.persistence.model.agent.TurAgentChatMode.AUTO);
         verify(turGlobalSettingsService).updateDefaultAiAgentId(any());
+    }
+
+    @Test
+    void adoptedAgentKeepsItsOwnChatMode() {
+        // T1004 — provisioning never overrides an existing agent, and the chat
+        // mode is no exception: an operator who chose CALL (or the install that
+        // predates AUTO) keeps it, and picks the new default up in the UI. This
+        // is what makes the provisioning change safe on an upgrade.
+        TurAIAgent imported = new TurAIAgent();
+        imported.setId("imported-2");
+        imported.setTitle("Turing Demo Assistant");
+        imported.setChatMode(com.viglet.turing.persistence.model.agent.TurAgentChatMode.CALL);
+        when(turAIAgentRepository.findAll()).thenReturn(List.of(imported));
+
+        runner.run(args);
+
+        assertThat(imported.getChatMode())
+                .isEqualTo(com.viglet.turing.persistence.model.agent.TurAgentChatMode.CALL);
     }
 
     @Test

@@ -10,6 +10,9 @@ import type { TurStoreInstance } from "../store/store-instance.model.ts";
  * Per-agent toggle for how the executor issues the LLM round-trip.
  * - "CALL"   — blocking `chatModel.call(prompt)`; assistant text arrives
  *              as a single SSE event after the LLM finishes (default).
+ * - "AUTO"   — T1004; streams when the turn can be streamed without losing
+ *              anything (no flow governing it and no tools in play), and
+ *              calls otherwise. Decided per turn, not per agent.
  * - "STREAM" — reactive `chatModel.stream(prompt)`; each token chunk is
  *              forwarded immediately to the SSE pipeline so the bubble
  *              fills in token-by-token. Effective on the non-flow path
@@ -17,7 +20,7 @@ import type { TurStoreInstance } from "../store/store-instance.model.ts";
  *              the advance/regen pipeline still works.
  * @since 2026.2.7
  */
-export type TurAgentChatMode = "CALL" | "STREAM";
+export type TurAgentChatMode = "CALL" | "STREAM" | "AUTO";
 
 /**
  * T66 / §VII.6.g — per-agent retention policy for the completed

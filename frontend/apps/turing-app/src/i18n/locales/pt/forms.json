@@ -1241,6 +1241,8 @@
       "chatModeCallDesc": "Espera a resposta inteira e envia como um único evento SSE.",
       "chatModeStream": "Stream (token a token)",
       "chatModeStreamDesc": "Encaminha cada chunk de token para o SSE conforme ele chega. As tools por turno (MCP / native / custom) NÃO são honradas nesse path — agentes que precisam de tool calling devem ficar em Call.",
+      "chatModeAuto": "Auto (stream quando seguro)",
+      "chatModeAutoDesc": "Faz stream token a token quando o turno não tem fluxo nem tools em jogo, e volta para Call quando tem. Nada é perdido em nenhum dos casos — é o modo indicado para o chat público de um site, cujas tools já são removidas para chamadas anônimas.",
       "groundingMode": "Ancoragem",
       "groundingModeDesc": "O quão estritamente este agente se limita ao conteúdo indexado do site. Aplicado apenas na superfície de chat da Navegação Semântica (/api/sn/…/chat).",
       "groundingModeOpen": "Aberto (uso geral)",

@@ -333,6 +333,15 @@ public class TurLLMInstanceOnStartup implements ApplicationRunner {
         // chat / MCP ignore the mode, so reusing this agent elsewhere is
         // unaffected. Operators can flip it to OPEN in the UI.
         agent.setGroundingMode(com.viglet.turing.persistence.model.agent.TurAgentGroundingMode.STRICT_RAG);
+        // T1004 — and for the same reason, AUTO rather than the CALL default.
+        // This agent answers the public SN chat, where the whole answer used to
+        // arrive as one SSE event: a consumer reading the body with a stream
+        // reader got exactly one token and could render nothing until the answer
+        // was finished. AUTO streams that turn and still calls whenever a flow or
+        // a tool is in play, so nothing is traded for it. Only new installs get
+        // this — provisioning never overrides an existing agent, so an install
+        // already running picks it up by setting Chat mode to Auto in the UI.
+        agent.setChatMode(com.viglet.turing.persistence.model.agent.TurAgentChatMode.AUTO);
         agent.getLlmInstances().add(llm);
 
         // Optional soft spend caps (T289–T291). Left null when unset/blank/<= 0,

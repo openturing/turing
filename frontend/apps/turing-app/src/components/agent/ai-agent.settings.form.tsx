@@ -19,7 +19,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { useCreateAiAgent, useUpdateAiAgent } from "@/api/queries/ai-agent.queries"
-import type { TurAIAgent } from "@/models/agent/ai-agent.model.ts"
+import type { TurAIAgent, TurAgentChatMode } from "@/models/agent/ai-agent.model.ts"
 import type { TurEmbeddingModel } from "@/models/embedding/embedding-model.model"
 import type { TurSEInstance } from "@/models/se/se-instance.model"
 import type { TurStoreInstance } from "@/models/store/store-instance.model"
@@ -44,6 +44,17 @@ import { SmartDescription } from "../ui/smart-description"
 import { BentoFormSection, type BentoTone } from "../bento"
 import { BentoAgentSubHero } from "@/app/bento/ai-agent/bento.ai-agent.sub-hero"
 import type { ComponentType, ReactNode } from "react"
+
+/*
+ * T1004 — one description per chat mode, keyed by the mode itself. A ternary on
+ * "is it STREAM" was fine while there were two modes and silently mislabelled
+ * the third: AUTO would have read as Call.
+ */
+const CHAT_MODE_DESCRIPTION_KEYS: Record<TurAgentChatMode, string> = {
+  CALL: "forms.agentSettings.chatModeCallDesc",
+  STREAM: "forms.agentSettings.chatModeStreamDesc",
+  AUTO: "forms.agentSettings.chatModeAutoDesc",
+};
 
 const turEmbeddingModelService = new TurEmbeddingModelService();
 const turStoreInstanceService = new TurStoreInstanceService();
@@ -1460,8 +1471,8 @@ export const AIAgentSettingsForm: React.FC<Props> = ({ value, isNew, chrome = "c
                     <FormItemTwoColumns.Left>
                       <FormItemTwoColumns.Label>{t("forms.agentSettings.chatMode")}</FormItemTwoColumns.Label>
                       <FormItemTwoColumns.Description>
-                        {field.value === "STREAM"
-                          ? t("forms.agentSettings.chatModeStreamDesc")
+                        {CHAT_MODE_DESCRIPTION_KEYS[field.value as TurAgentChatMode] !== undefined
+                          ? t(CHAT_MODE_DESCRIPTION_KEYS[field.value as TurAgentChatMode])
                           : t("forms.agentSettings.chatModeCallDesc")}
                       </FormItemTwoColumns.Description>
                     </FormItemTwoColumns.Left>
@@ -1475,6 +1486,7 @@ export const AIAgentSettingsForm: React.FC<Props> = ({ value, isNew, chrome = "c
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
+                            <SelectItem value="AUTO">{t("forms.agentSettings.chatModeAuto")}</SelectItem>
                             <SelectItem value="CALL">{t("forms.agentSettings.chatModeCall")}</SelectItem>
                             <SelectItem value="STREAM">{t("forms.agentSettings.chatModeStream")}</SelectItem>
                           </SelectContent>

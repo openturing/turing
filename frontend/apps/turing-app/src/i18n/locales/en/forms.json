@@ -1241,6 +1241,8 @@
       "chatModeCallDesc": "Wait for the full reply and send it as a single SSE event.",
       "chatModeStream": "Stream (token-by-token)",
       "chatModeStreamDesc": "Forward each token chunk to the SSE pipeline as it arrives. Per-turn tools (MCP / native / custom) are NOT honored on this path — agents that need tool calling should stay on Call.",
+      "chatModeAuto": "Auto (stream when safe)",
+      "chatModeAutoDesc": "Stream token-by-token when the turn has no flow and no tools in play, and fall back to Call when it does. Nothing is given up either way — this is the mode to use for a public site chat, whose tools are stripped for anonymous callers anyway.",
       "groundingMode": "Grounding",
       "groundingModeDesc": "How strictly this agent stays on the site's indexed content. Enforced on the Semantic Navigation chat surface (/api/sn/…/chat) only.",
       "groundingModeOpen": "Open (general-purpose)",

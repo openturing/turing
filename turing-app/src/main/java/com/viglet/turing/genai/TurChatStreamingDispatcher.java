@@ -160,6 +160,12 @@ public class TurChatStreamingDispatcher {
      * @param flowContext nullable — null disables flow-aware behaviors (suggested options,
      *                    STREAM gating)
      * @param effectivePersona the post-walk persona (single resolution per §I.5 step 2)
+     * @param toolsInPlay T1004 — whether this turn actually carries tool callbacks,
+     *                    after the T11 node check and the T647 untrusted-caller strip.
+     *                    Passed rather than read back off {@code initialOptions}: the
+     *                    options are the provider's concrete type by then, and asking
+     *                    them would couple this gate to which provider built them.
+     *                    Only {@link TurAgentChatMode#AUTO} consults it.
      */
     public Flux<ChatResponse> dispatch(TurChatTurnContext turn,
             String decryptedApiKey,
@@ -167,7 +173,8 @@ public class TurChatStreamingDispatcher {
             List<Message> messages,
             ChatOptions initialOptions,
             TurAgentChatFlowContext flowContext,
-            TurPersona effectivePersona) {
+            TurPersona effectivePersona,
+            boolean toolsInPlay) {
         TurAIAgent agent = turn.agent();
 
         // T618 — capture the exact assembled prompt (system message + whole
@@ -187,13 +194,51 @@ public class TurChatStreamingDispatcher {
         // returns a sanitizedText that may differ from what was streamed —
         // we can't retro-sanitize tokens already on the wire. Agents that
         // rely on persona forbidden-term enforcement should stay on CALL.
-        boolean useStreaming = agent.getChatMode() == TurAgentChatMode.STREAM
-                && flowContext == null;
+        //
+        // T1004 — AUTO decides the same question per turn instead of per agent.
+        // It streams only when neither of the two things STREAM gives up is on
+        // the table: no flow to rewrite the bubble for, and no tool callback to
+        // drop. That is what makes it safe as a default for a public site chat,
+        // whose callbacks are stripped anyway for an untrusted caller (T647),
+        // while an admin turn on the same agent still gets its tools through
+        // CALL. STREAM's own semantics are deliberately unchanged: an operator
+        // who chose it chose the documented trade-off, and quietly redirecting
+        // that choice to CALL whenever a tool appeared would be a different
+        // behaviour than the one they picked.
+        boolean useStreaming = shouldStream(agent.getChatMode(), flowContext != null, toolsInPlay);
         if (useStreaming) {
             return dispatchStream(turn, decryptedApiKey, messages);
         }
         return dispatchCall(turn, chatModel, messages, initialOptions,
                 flowContext, effectivePersona);
+    }
+
+    /**
+     * Whether this turn takes the streaming branch.
+     *
+     * <p>Extracted from {@code dispatch} and package-visible so the decision can
+     * be asserted on its own: it is three booleans wide, and reaching it through
+     * the dispatcher would mean standing up ten collaborators to observe one
+     * branch.
+     *
+     * @param mode the agent's configured mode
+     * @param hasFlow whether a chat flow governs this turn — a streamed bubble
+     *                cannot be un-emitted, and the post-LLM advance/regen
+     *                pipeline needs the whole text before it decides to rewrite
+     * @param toolsInPlay whether the turn carries tool callbacks after the T647
+     *                    untrusted-caller strip and the T11 node check
+     * @since 2026.3.4
+     */
+    static boolean shouldStream(TurAgentChatMode mode, boolean hasFlow, boolean toolsInPlay) {
+        return switch (mode) {
+            // STREAM keeps the semantics an operator opted into: it streams
+            // whenever no flow governs the turn, and gives the tools up. Adding
+            // the tool condition here would silently turn their choice into CALL.
+            case STREAM -> !hasFlow;
+            // AUTO streams only when neither trade-off applies.
+            case AUTO -> !hasFlow && !toolsInPlay;
+            case CALL -> false;
+        };
     }
 
     private Flux<ChatResponse> dispatchStream(TurChatTurnContext turn,

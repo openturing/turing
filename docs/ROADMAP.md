@@ -20,7 +20,7 @@
 
 ## Block AR — Live-demo search & chat quality (Lucene parity gaps, §XLI)
 
-- 📋 **T1004** (deps: —) **site chat emits the whole answer in one SSE content event, so no consumer can render it progressively** — Measured on turing-demo: two events 0.7s apart, sources then the entire text, so a consumer that streams correctly still shows nothing until the answer is done. → §XCVII
+- ⏳ **T1004** (deps: —) **site chat emits the whole answer in one SSE content event, so no consumer can render it progressively** — The measurement that opened this has not been repeated against the demo. → §XCVII
 
 ## Block S — SDK / client parity (vanilla + React)
 
