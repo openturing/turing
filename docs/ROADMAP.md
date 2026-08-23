@@ -10,8 +10,7 @@
 
 ## Block BX — The bento layer leaves the product it grew in (§XCVI)
 
-- 📋 **T988** (deps: viglet-design-system VDS8) **nothing here imports the design system bento subpath, so the shared layer is installed and unproven** — Every deletion below assumes the package renders identically, and that must be true before a local file goes. → §XCVI.1
-- 📋 **T989** (deps: T988) **nine bento leaf components are declared here and now also in the package, so the same tile exists twice** — The 118 bento pages must keep compiling untouched, which the one-line shim already does for 39 primitives. → §XCVI.2
+- 📋 **T989** (deps: T988 ✅) **nine bento leaf components are declared here and now also in the package, so the same tile exists twice** — The 118 bento pages must keep compiling untouched, which the one-line shim already does for 39 primitives. → §XCVI.2
 - 📋 **T990** (deps: T989) **the entity shell, form hero, list page and save-bar morph are declared here and now also in the package** — These four are the layer's compounds; leaving local copies means a fix has two homes and lands in one. → §XCVI.3
 - 📋 **T991** (deps: T990) **twelve RTL suites test components that now live in the package, so a green run here proves nothing about them** — A suite left behind asserts a shim; the coverage has to follow the code it covers. → §XCVI.6
 - 📋 **T992** (deps: T990) **the nav rail, user menu and back-to-top are declared here, and bento-nav.config mixes behaviour with 29 surfaces** — The config has to become data over the package schema, or a second console inherits this one's routes. → §XCVI.4
@@ -24,12 +23,6 @@
 - 📋 **T999** (deps: viglet-design-system VDS20) **CONVENTIONS.md is the layer's authoring contract and it lives in the product that no longer owns the layer** — Two copies of a contract drift exactly as two copies of a component do. → §XCVI.12
 - 📋 **T1000** (deps: T995) **40 console pages still render beside the 118 bento ones, so two chromes and two component sets stay alive** — The cutover was declared and never finished, and every unmigrated page is a reason to keep the old exports. → §XCVI.13
 - 📋 **T1001** (deps: viglet-design-system VDS25) **nothing here proves a page renders the same after its components moved out of the repository** — The whole block is a claim about appearance, and appearance is the one thing this suite never checks. → §XCVI.14
-
-## Done when — T988
-
-- **Representative pages render from the package, not the local folder** The subpath and
-  its stylesheet are wired, a handful of pages are compared against their current
-  rendering, and the differences are none or named.
 
 ## Done when — T989
 

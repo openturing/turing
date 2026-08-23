@@ -2102,19 +2102,6 @@ and only then delete anything. Three tasks are instruments rather than moves - a
 duplication lint, a working local-dev path and a render digest - because every deletion
 here is justified by an assertion this repository currently cannot check.
 
-### XCVI.1 Install the layer before deleting anything of it (T988)
-
-Turing depends on the design system by caret range and already imports 39 primitives
-through one-line shims, so the mechanism is familiar. What is new is a second entry
-point and a stylesheet: the bento subpath and its CSS carry the frosted surface, the
-hover lift, the staggered grid and the fade custom property that drives the save-bar
-morph. Wire both, render a handful of representative pages against the package rather
-than the local folder, and compare. Nothing below this line is safe until that
-comparison has been made once, because every task in the block is a deletion justified
-by the claim that the package does the same thing. The 118 bento pages are the corpus
-that says whether it does, and they are also the corpus that nobody will edit if the
-shims hold.
-
 ### XCVI.2 The leaves become shims, and 118 pages need no edit (T989)
 
 BentoHero, BentoFormSection, BentoTile, BentoEntityTile, BentoSection, BentoCountTile,

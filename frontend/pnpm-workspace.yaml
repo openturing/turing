@@ -104,6 +104,7 @@ minimumReleaseAgeExclude:
   # tripping minimumReleaseAge. Vetted group bump — waive the age guard.
   - '@testing-library/jest-dom@7.0.0'
   - 'recharts@3.10.0'
+  - '@viglet/viglet-design-system@2026.3.3'
 
 # Force a single @codemirror/view copy. @codemirror/language@6.12.3 pulled in
 # 6.41.1 while @uiw/react-codemirror / codemirror@6.0.2 used 6.43.0. Two view
@@ -168,8 +169,8 @@ overrides:
 # NEW high in another package still fails `pnpm audit --audit-level high`.
 auditConfig:
   ignoreGhsas:
-    - GHSA-5pgg-2g8v-p4x9   # xlsx ReDoS (parse-path, unreachable — export only)
-    - GHSA-4r6h-8v6p-xvw6   # xlsx prototype pollution (parse-path, unreachable)
+    - GHSA-5pgg-2g8v-p4x9 # xlsx ReDoS (parse-path, unreachable — export only)
+    - GHSA-4r6h-8v6p-xvw6 # xlsx prototype pollution (parse-path, unreachable)
     # T927 — react-router "RSC Mode CSRF Bypass Allows Action Execution Before
     # 400 Response". The flaw is in the RSC request handler: an action runs before
     # the origin check rejects the request. Unreachable here, and not merely
@@ -187,4 +188,4 @@ auditConfig:
     #
     # REVISIT if any app adopts react-router framework/RSC mode, i.e. the moment a
     # `@react-router/*` dependency or a `react-router.config.*` appears.
-    - GHSA-qwww-vcr4-c8h2   # react-router RSC CSRF (RSC mode not installed)
+    - GHSA-qwww-vcr4-c8h2 # react-router RSC CSRF (RSC mode not installed)

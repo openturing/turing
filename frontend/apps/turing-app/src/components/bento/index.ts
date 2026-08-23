@@ -1,12 +1,26 @@
 // Importing the stylesheet here means any consumer of a Bento component
 // automatically pulls in the iOS-flavored animations and frosted-glass
 // utilities — no separate CSS import to remember.
-import "./bento.styles.css";
+//
+// T988 — the sheet now comes from the package. Its bento.css is a strict
+// superset of the local bento.styles.css that stood here: every class, custom
+// property and keyframe this product declared is in it, and none is missing.
+// The local file is left in place for the deletions T989 and T990 own.
+import "@viglet/viglet-design-system/bento.css";
 
-export { BentoTile, type BentoTileProps } from "./bento-tile";
-export { BentoCountTile, type BentoCountTileProps } from "./bento-count-tile";
-export { BentoSection, type BentoSectionProps } from "./bento-section";
-export { BentoHero, BentoBackLink, type BentoHeroProps } from "./bento-hero";
+// T988 — representative re-points, ahead of the wholesale ones. These four
+// cover the risks the block is a bet on: the frosted surface and the hover
+// lift on a tile, the section and hero that frame every bento page, and the
+// fade custom property that drives the save-bar morph. The 118 pages import
+// from this barrel and do not change.
+export { BentoTile, type BentoTileProps } from "@viglet/viglet-design-system/bento";
+export { BentoCountTile, type BentoCountTileProps } from "@viglet/viglet-design-system/bento";
+export { BentoSection, type BentoSectionProps } from "@viglet/viglet-design-system/bento";
+export {
+  BentoHero,
+  BentoBackLink,
+  type BentoHeroProps,
+} from "@viglet/viglet-design-system/bento";
 export { BENTO_TONE_GRADIENTS, type BentoTone } from "./bento-tones";
 export { BentoUserMenu } from "./bento-user-menu";
 export { BentoBackToTop } from "./bento-back-to-top";
@@ -29,7 +43,7 @@ export { BentoFormSection, type BentoFormSectionProps } from "./bento-form-secti
 export { BentoSaveBar, type BentoSaveBarProps } from "./bento-save-bar";
 export { BentoScrollSaveBar } from "./bento-scroll-save-bar";
 export { BentoFormHero, type BentoFormHeroProps } from "./bento-form-hero";
-export { useBentoScrollFade } from "./bento-scroll-fade";
+export { useBentoScrollFade } from "@viglet/viglet-design-system/bento";
 export { BentoStatusMarker, type BentoStatusMarkerProps } from "./bento-status-marker";
 export { BentoHeroIconPicker, type BentoHeroIconPickerProps } from "./bento-hero-icon-picker";
 export { BentoInlineEdit, type BentoInlineEditProps } from "./bento-inline-edit";
