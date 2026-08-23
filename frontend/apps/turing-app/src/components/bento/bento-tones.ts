@@ -1,28 +1,22 @@
-// T1002 — half a shim, which is the honest shape of this file.
+// T996 — shim, and now a whole one. The tone vocabulary and the class that
+// carries it are the design system's; nothing here names a hue any more.
 //
-// `BentoTone` is the package's: VDS9 made a tone a token, so the vocabulary of
-// tones is shared and re-exported here. `BENTO_TONE_GRADIENTS` is not, because
-// the package deliberately does not ship a Tailwind gradient map — a shared
-// component that names its own colours makes one of two products look wrong,
-// and the package's answer is `bentoChipClass(tone)` over CSS custom properties.
+// T1002 left `BENTO_TONE_GRADIENTS` declared here, a Record<BentoTone, string>
+// of Tailwind class pairs, because two heroes indexed it directly and replacing
+// them was this task. They now call `bentoChipClass(tone)`, which resolves
+// `--bento-tone-from/-to` from the preset — so a product re-keys a tone by
+// redefining two custom properties instead of forking a component that named
+// blue.
 //
-// Two heroes here still index this map directly. Replacing them with the token
-// path is T996, which owes a proof that the swap is invisible in this product;
-// until then the map is declared here and nowhere else.
-export { type BentoTone } from "@viglet/viglet-design-system/bento";
-
-import type { BentoTone } from "@viglet/viglet-design-system/bento";
-
-/**
- * Tailwind gradients per tone, applied to a tile's icon chip — the surface
- * itself stays neutral (frosted glass) so colours do not visually compete.
- */
-export const BENTO_TONE_GRADIENTS: Record<BentoTone, string> = {
-  blue:    "from-blue-600 to-indigo-600",
-  indigo:  "from-indigo-600 to-fuchsia-600",
-  violet:  "from-violet-600 to-purple-600",
-  emerald: "from-emerald-600 to-teal-600",
-  amber:   "from-amber-500 to-orange-500",
-  rose:    "from-rose-600 to-pink-600",
-  slate:   "from-slate-600 to-slate-700",
-};
+// The swap is invisible in this product, which is what T996 asked to be shown
+// rather than assumed. All fourteen preset values are exactly the Tailwind
+// colours the deleted map named, tone for tone: blue 600→indigo 600, indigo
+// 600→fuchsia 600, violet 600→purple 600, emerald 600→teal 600, amber 500→orange
+// 500, rose 600→pink 600, slate 600→700. `.bento-chip` also defaults its angle
+// to `to bottom right`, which is the `bg-linear-to-br` the call sites dropped.
+export {
+  BENTO_TONES,
+  BENTO_TONE_CLASS,
+  bentoChipClass,
+  type BentoTone,
+} from "@viglet/viglet-design-system/bento";

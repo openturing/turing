@@ -1,6 +1,6 @@
 import { useCreateLlmInstance } from "@/api/queries/llm-instance.queries";
 import { ROUTES } from "@/app/routes.const";
-import { BENTO_TONE_GRADIENTS, BentoHero } from "@/components/bento";
+import { bentoChipClass, BentoHero } from "@/components/bento";
 import { Button } from "@/components/ui/button";
 import { GradientButton } from "@/components/ui/gradient-button";
 import { Input } from "@/components/ui/input";
@@ -55,7 +55,8 @@ export default function BentoLLMAdvisorPage() {
     vendorService.query().then(setVendors).catch(() => setVendors([]));
   }, []);
 
-  const gradient = BENTO_TONE_GRADIENTS.indigo;
+  // T996 — see the agent sub-hero: the tone is a token, not a class pair.
+  const chipClass = bentoChipClass("indigo");
 
   const toggleCap = (cap: string) =>
     setCaps((prev) => {
@@ -129,7 +130,7 @@ export default function BentoLLMAdvisorPage() {
         title={t("modelAdvisor.title")}
         subtitle={t("modelAdvisor.subtitle")}
         leading={
-          <span className={`grid h-12 w-12 place-items-center rounded-2xl bg-linear-to-br ${gradient} text-white shadow-md`}>
+          <span className={`grid h-12 w-12 place-items-center rounded-2xl ${chipClass} text-white shadow-md`}>
             <IconWand size={24} />
           </span>
         }

@@ -2102,17 +2102,6 @@ and only then delete anything. Three tasks are instruments rather than moves - a
 duplication lint, a working local-dev path and a render digest - because every deletion
 here is justified by an assertion this repository currently cannot check.
 
-### XCVI.9 Prove the token swap changed nothing here (T996)
-
-Tile tones and the brand hue are currently Tailwind class strings inside components.
-Once those components belong to the package, the classes are the package's opinion about
-this product's colour, and the fix is a token: tone palettes and a brand accent defined
-once in the preset and re-keyed per product. The risk of that change is almost entirely
-on this side. Turing has 118 pages drawing those tones today, and a token migration that
-shifts a chip a shade off is a regression nobody files because nobody can point at it.
-Take the digest before and after over a fixed set of surfaces, and treat any difference
-outside the intended accent as a failure rather than as taste.
-
 ### XCVI.12 The contract goes where the components went (T999)
 
 CONVENTIONS.md is why the bento layer stayed internally consistent across 118 pages:
@@ -2161,6 +2150,28 @@ none to render a group label, showOnNew is gone, outletContext is gone -- and th
 what shares one form instance across the LLM editor's section sub-pages -- and the
 padding differs, which is visible. Each needs the product concern lifted to a prop in
 the package, or the page retired to the bento layer. Neither is a rename.
+
+### XCVI.20 The hues the pages kept (T1013)
+
+T996 removed the last hue from the shared components: a tone is a token now, and
+bentoChipClass resolves it. It also showed where the hues went instead. Fifty files
+under app/bento write a gradient straight into a hero chip's class list, and between
+them they use twenty-one distinct colour pairs. The tone vocabulary offers seven, and
+only four of the twenty-one match one exactly.
+
+So the palette a reader sees is not the palette either repository declares. It is
+whatever each page's author picked, which is why amber-500 to rose-500 appears on six
+eval surfaces and nowhere else, and why the same conceptual thing gets blue-500 to
+indigo-600 on one page and blue-600 to indigo-600 on another. Nothing is broken and
+nothing looks wrong, which is exactly why it survived: a shade of drift per page is
+invisible until the pages are seen together.
+
+The decision is which of the two this is. Either those pages should pass a tone and lose
+the choice -- seven names, re-keyable, consistent -- or a hero legitimately needs
+colours a tone map should not hold, in which case the extra pairs deserve names of their
+own rather than being spelled out at each call site. What should not stand is twenty-one
+anonymous pairs that no token can re-key, because that is the fork T996 just finished
+removing, one page at a time.
 
 ## XCVII Site chat aggregates the answer before emitting it (T1004)
 

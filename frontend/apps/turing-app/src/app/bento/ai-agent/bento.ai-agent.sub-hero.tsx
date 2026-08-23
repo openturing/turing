@@ -1,5 +1,5 @@
 import { ROUTES } from "@/app/routes.const";
-import { BentoFormHero, BentoHero, BENTO_TONE_GRADIENTS, type BentoTone } from "@/components/bento";
+import { BentoFormHero, BentoHero, bentoChipClass, type BentoTone } from "@/components/bento";
 import { type Icon as TablerIcon } from "@tabler/icons-react";
 import type { ReactNode } from "react";
 
@@ -50,10 +50,13 @@ export function BentoAgentSubHero({
   titleMissing,
   saveDisabled,
 }: Readonly<BentoAgentSubHeroProps>) {
-  const gradient = BENTO_TONE_GRADIENTS[tone];
+  // T996 — the tone is a token now: `bento-chip` paints the gradient from
+  // --bento-tone-from/-to, which the tone class points at. Same fourteen
+  // colours as the Tailwind classes this replaces, and no hue named here.
+  const chipClass = bentoChipClass(tone);
   const backTo = `${ROUTES.BENTO_AI_AGENT_INSTANCE}/${agentId}`;
   const leading = (
-    <span className={`grid h-12 w-12 place-items-center rounded-2xl bg-linear-to-br ${gradient} text-white shadow-md`}>
+    <span className={`grid h-12 w-12 place-items-center rounded-2xl ${chipClass} text-white shadow-md`}>
       <Icon size={24} />
     </span>
   );
