@@ -8,6 +8,14 @@
 // The local file is left in place for the deletions T989 and T990 own.
 import "@viglet/viglet-design-system/bento.css";
 
+// T995 — the four commercial tiles and the first-run tour left this barrel for
+// `@/components/turing-bento`: they were never the layer, and once the shared
+// components had gone this directory's name was the only thing saying they were.
+// What is still declared here rather than re-exported belongs to T1000 (the user
+// menu waits for its provider, T1003), T1002 (the layout maths, the tone map and
+// the two leaves neither migration list caught) and the nav array, which is this
+// product's map of itself and stays wherever the pages import it from.
+//
 // T989 — these names come from the package now, but the barrel still names the
 // local module: each of the nine leaves is a one-line re-export, so the shim is
 // the single seam and both `@/components/bento` and `../bento-<x>` reach the
@@ -20,20 +28,7 @@ export { BENTO_TONE_GRADIENTS, type BentoTone } from "./bento-tones";
 export { BentoUserMenu } from "./bento-user-menu";
 export { BentoBackToTop } from "./bento-back-to-top";
 export { BentoEmptyState, type BentoEmptyStateProps } from "./bento-empty-state";
-export { BentoActivationCard, type BentoActivationCardProps } from "./bento-activation-card";
-export { BentoNoLlmState, type BentoNoLlmStateProps } from "./bento-no-llm-state";
-export { BentoQuotaBanner, useQuotaRefusal } from "./bento-quota-banner";
-export {
-  BentoVigletActivationDialog,
-  type BentoVigletActivationDialogProps,
-} from "./bento-viglet-activation-dialog";
 export { BentoShortcutsDialog, type BentoShortcutsDialogProps } from "./bento-shortcuts-dialog";
-export {
-  BentoFirstRunTour,
-  type BentoFirstRunTourProps,
-  BENTO_TOUR_SEEN_KEY,
-  hasSeenBentoTour,
-} from "./bento-first-run-tour";
 export { BentoFormSection, type BentoFormSectionProps } from "./bento-form-section";
 export { BentoSaveBar, type BentoSaveBarProps } from "./bento-save-bar";
 export { BentoScrollSaveBar } from "./bento-scroll-save-bar";

@@ -1,5 +1,6 @@
 import { useAiActivation } from "@/api/queries/viglet-ai.queries";
-import { BentoHero, BentoNoLlmState } from "@/components/bento";
+import { BentoHero } from "@/components/bento";
+import { BentoNoLlmState } from "@/components/turing-bento";
 import { ROUTES } from "@/app/routes.const";
 import ChatPage from "@/app/console/chat/chat.page";
 import { IconMessageChatbot } from "@tabler/icons-react";

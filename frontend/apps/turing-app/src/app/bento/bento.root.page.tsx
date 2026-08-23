@@ -4,16 +4,18 @@ import {
   BENTO_NAV_SECTIONS,
   BentoBackToTop,
   BentoCommandPalette,
-  BentoFirstRunTour,
   BentoNavRail,
-  BentoQuotaBanner,
   BentoShortcutsDialog,
   BentoUserMenu,
   bentoSectionAreaRoute,
-  hasSeenBentoTour,
   useVisibleBentoNav,
   useVisibleBentoSections,
 } from "@/components/bento";
+import {
+  BentoFirstRunTour,
+  BentoQuotaBanner,
+  hasSeenBentoTour,
+} from "@/components/turing-bento";
 import { TurLogo } from "@/components/logo/tur-logo";
 import { ModeToggle } from "@/components/mode-toggle";
 import { UserProvider } from "@/contexts/user.context";

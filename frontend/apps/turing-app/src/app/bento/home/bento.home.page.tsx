@@ -4,13 +4,13 @@ import { useAiActivation } from "@/api/queries/viglet-ai.queries";
 import {
   BENTO_SPAN_FEATURED,
   BENTO_SPAN_SQUARE,
-  BentoActivationCard,
   BentoHero,
   BentoSection,
   BentoTile,
   bentoNavTarget,
   useVisibleBentoSections,
 } from "@/components/bento";
+import { BentoActivationCard } from "@/components/turing-bento";
 import { TurLogo } from "@/components/logo/tur-logo";
 import { useCurrentUser } from "@/contexts/user.context";
 import type { TurAIAgent } from "@/models/agent/ai-agent.model";

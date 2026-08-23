@@ -1,6 +1,6 @@
 import { useAiActivation } from "@/api/queries/viglet-ai.queries";
 import { ROUTES } from "@/app/routes.const";
-import { BentoNoLlmState } from "@/components/bento";
+import { BentoNoLlmState } from "@/components/turing-bento";
 import { LoadProvider } from "@/components/loading-provider";
 import { SNSiteGenAiForm } from "@/components/sn/genai/sn.site.genai.form";
 import type { TurSNSite } from "@/models/sn/sn-site.model";

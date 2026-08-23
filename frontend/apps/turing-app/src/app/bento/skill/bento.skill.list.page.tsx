@@ -1,7 +1,8 @@
 import { useCreateSkill, useImportSkillZip, useSkills } from "@/api/queries/skill.queries";
 import { useAiActivation } from "@/api/queries/viglet-ai.queries";
 import { ROUTES } from "@/app/routes.const";
-import { BentoHero, BentoNoLlmState } from "@/components/bento";
+import { BentoHero } from "@/components/bento";
+import { BentoNoLlmState } from "@/components/turing-bento";
 import { LoadProvider } from "@/components/loading-provider";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";

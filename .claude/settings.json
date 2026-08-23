@@ -6,7 +6,8 @@
       "mcp__plugin_roadkeep_roadkeep",
       "Edit(/.claude/skills/turing-roadmap-docs/**)",
       "Bash(cd \"D:/Git/viglet/turing/2026.3\" && sed -n '/## Propagating to end-user documentation/,/^## /p' .claude/skills/turing-roadmap-docs/SKILL.md | head -45)",
-      "Bash(cd \"D:/Git/viglet/turing/2026.3\" && sed -n '/^5\\\\. \\\\*\\\\*Product name/,/^---/p' .claude/skills/turing-roadmap-docs/SKILL.md | tail -12)"
+      "Bash(cd \"D:/Git/viglet/turing/2026.3\" && sed -n '/^5\\\\. \\\\*\\\\*Product name/,/^---/p' .claude/skills/turing-roadmap-docs/SKILL.md | tail -12)",
+      "Edit(/.claude/skills/turing-bento-ui/**)"
     ],
     "additionalDirectories": [
       "D:\\Git\\viglet\\turing\\2026.3\\.claude\\skills\\turing-roadmap-docs"

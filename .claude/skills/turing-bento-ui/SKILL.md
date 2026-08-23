@@ -278,6 +278,11 @@ field sub-components.
   [`bento-nav.config.ts`](../../frontend/apps/turing-app/src/components/bento/bento-nav.config.ts)
   so it appears on the rail + `⌘K`. (All ~29 nav surfaces are migrated as of Block AG
   Phase 4 — the `⌘K` "Opens in console" fallback no longer fires.)
+- **Which folder** (T995): shared bento chrome is the design system's, reached through the
+  shims in `components/bento/`. This product's *commercial* tiles — the activation card,
+  quota banner, Viglet activation dialog, no-LLM state and first-run tour — live in
+  [`components/turing-bento/`](../../frontend/apps/turing-app/src/components/turing-bento/).
+  A new tile whose subject is what a licence buys goes there, never in `components/bento/`.
 - **a11y**: icon-only controls need `aria-label`; ARIA values are string literals; new
   animations go under the reduced-motion guard.
 - **TDZ**: place `useCallback`/`useMemo` after the hooks they depend on.
@@ -286,8 +291,9 @@ field sub-components.
 
 - `cd frontend/apps/turing-app && pnpm exec tsc -b --noEmit` (Windows EBUSY → rely on
   IDE diagnostics; see agents.md).
-- `pnpm exec vitest run src/components/bento` — the shared components have RTL coverage;
-  keep it green. New shared components need a test under `components/bento/__tests__/`.
+- `pnpm exec vitest run src/components/bento src/components/turing-bento` — both have RTL
+  coverage; keep it green. New shared components need a test under
+  `components/bento/__tests__/`, product tiles under `components/turing-bento/__tests__/`.
 - Then click through the real page in the dev server (`/bento/...`) — confirm the hero,
   the frosted hover cards, save-bar morph on scroll, and that nothing links back to the
   console.

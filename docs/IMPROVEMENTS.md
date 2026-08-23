@@ -2114,18 +2114,6 @@ are the largest forms it has, and a parallel bento route would otherwise fork al
 Move it beside the two components it switches between, and leave the local file as a
 shim.
 
-### XCVI.8 Say which tiles are the product (T995)
-
-Four components in components/bento are not the layer: the activation card, the quota
-banner, the Viglet activation dialog and the no-LLM state. They are this product's
-commercial offer drawn as bento tiles. After the shared components leave, the folder
-holds almost nothing else, and its name is then actively misleading - a reader takes the
-directory for the layer, and so takes a product concern for shared chrome. Move them to
-a product-named folder that composes the package's primitives, and let components/bento
-disappear or shrink to the shims. The first-run tour goes with them unless it has been
-generalised, which is a decision the package's own boundary task settles rather than
-this one.
-
 ### XCVI.9 Prove the token swap changed nothing here (T996)
 
 Tile tones and the brand hue are currently Tailwind class strings inside components.

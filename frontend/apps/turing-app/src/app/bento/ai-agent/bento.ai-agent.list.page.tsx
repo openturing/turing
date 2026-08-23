@@ -1,7 +1,8 @@
 import { useAiAgents } from "@/api/queries/ai-agent.queries";
 import { useAiActivation } from "@/api/queries/viglet-ai.queries";
 import { ROUTES } from "@/app/routes.const";
-import { BentoEntityTile, BentoListPage, BentoNoLlmState } from "@/components/bento";
+import { BentoEntityTile, BentoListPage } from "@/components/bento";
+import { BentoNoLlmState } from "@/components/turing-bento";
 import { IconRobot } from "@tabler/icons-react";
 import { useTranslation } from "react-i18next";
 
