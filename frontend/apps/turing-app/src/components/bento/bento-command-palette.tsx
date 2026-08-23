@@ -1,3 +1,7 @@
+// T997 -- the export-manifest lint runs in CI now, and these names are also
+// exported by @viglet/viglet-design-system. Allowed until T993: generic once its data is split out.
+// viglet-ds-allow-duplicate BentoCommandPaletteProps -- T993 removes it
+// viglet-ds-allow-duplicate BentoCommandPalette -- T993 removes it
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import { IconArrowRight, IconExternalLink, IconSearch } from "@tabler/icons-react";
 import { useEffect, useMemo, useRef, useState } from "react";

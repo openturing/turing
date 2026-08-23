@@ -1,3 +1,7 @@
+// T997 -- the export-manifest lint runs in CI now, and these names are also
+// exported by @viglet/viglet-design-system. Allowed until T1000: console-era, and 40 console pages still render it.
+// viglet-ds-allow-duplicate IconPickerDialogProps -- T1000 removes it
+// viglet-ds-allow-duplicate IconPickerDialog -- T1000 removes it
 "use client";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { GradientButton } from "@/components/ui/gradient-button";

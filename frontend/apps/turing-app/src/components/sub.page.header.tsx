@@ -1,3 +1,6 @@
+// T997 -- the export-manifest lint runs in CI now, and these names are also
+// exported by @viglet/viglet-design-system. Allowed until T1000: console-era, and 40 console pages still render it.
+// viglet-ds-allow-duplicate SubPageHeader -- T1000 removes it
 import { IconDotsVertical, IconPlus } from "@tabler/icons-react";
 import React from "react";
 import { NavLink, useNavigate } from "react-router-dom";

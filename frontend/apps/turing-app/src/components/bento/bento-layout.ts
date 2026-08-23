@@ -1,3 +1,14 @@
+// T997 -- the export-manifest lint runs in CI now, and these names are also
+// exported by @viglet/viglet-design-system. Allowed until T1002: in neither the leaf list nor the compound list.
+// viglet-ds-allow-duplicate BentoEmphasis -- T1002 removes it
+// viglet-ds-allow-duplicate BentoLayoutSource -- T1002 removes it
+// viglet-ds-allow-duplicate BentoLayoutEntry -- T1002 removes it
+// viglet-ds-allow-duplicate BentoLayoutResponse -- T1002 removes it
+// viglet-ds-allow-duplicate BENTO_EMPHASIS_SPAN -- T1002 removes it
+// viglet-ds-allow-duplicate BENTO_EMPHASIS_NEXT -- T1002 removes it
+// viglet-ds-allow-duplicate ResolvedBentoItem -- T1002 removes it
+// viglet-ds-allow-duplicate resolveBentoLayout -- T1002 removes it
+// viglet-ds-allow-duplicate toBentoLayoutEntries -- T1002 removes it
 /**
  * T575 / §XXXI.11 — the shared layout vocabulary for customizable Bento lists:
  * the {@link BentoEmphasis} sizes, the persisted layout shape (mirrors the T574

@@ -1,3 +1,6 @@
+// T997 -- the export-manifest lint runs in CI now, and these names are also
+// exported by @viglet/viglet-design-system. Allowed until T1000: console-era, and 40 console pages still render it.
+// viglet-ds-allow-duplicate InternalSidebar -- T1000 removes it
 import { IconDownload } from "@tabler/icons-react";
 import React, { type ReactNode } from "react";
 import { useTranslation } from "react-i18next";

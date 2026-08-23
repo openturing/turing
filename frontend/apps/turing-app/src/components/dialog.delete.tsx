@@ -1,3 +1,6 @@
+// T997 -- the export-manifest lint runs in CI now, and these names are also
+// exported by @viglet/viglet-design-system. Allowed until T1000: console-era, and 40 console pages still render it.
+// viglet-ds-allow-duplicate DialogDelete -- T1000 removes it
 import { ROUTES } from "@/app/routes.const";
 import type { TurSECoreSiteUsage } from "@/models/se/se-core-site-usage.model";
 import { IconAlertTriangle, IconTrash } from "@tabler/icons-react";

@@ -1,3 +1,7 @@
+// T997 -- the export-manifest lint runs in CI now, and these names are also
+// exported by @viglet/viglet-design-system. Allowed until T992: the rail, the user menu and back-to-top move together.
+// viglet-ds-allow-duplicate BentoUserMenuProps -- T992 removes it
+// viglet-ds-allow-duplicate BentoUserMenu -- T992 removes it
 import {
   DropdownMenu,
   DropdownMenuContent,

@@ -1,3 +1,10 @@
+// T997 -- the export-manifest lint runs in CI now, and these names are also
+// exported by @viglet/viglet-design-system. Allowed until T992: the config must become data over the package schema first.
+// viglet-ds-allow-duplicate BentoNavSectionId -- T992 removes it
+// viglet-ds-allow-duplicate BentoNavSection -- T992 removes it
+// viglet-ds-allow-duplicate BentoNavItem -- T992 removes it
+// viglet-ds-allow-duplicate BentoNavGroup -- T992 removes it
+// viglet-ds-allow-duplicate bentoNavTarget -- T992 removes it
 import { ROUTES } from "@/app/routes.const";
 import { useCurrentUser } from "@/contexts/user.context";
 import type { Icon as TablerIcon } from "@tabler/icons-react";

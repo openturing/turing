@@ -1,3 +1,7 @@
+// T997 -- the export-manifest lint runs in CI now, and these names are also
+// exported by @viglet/viglet-design-system. Allowed until T1002: in neither the leaf list nor the compound list.
+// viglet-ds-allow-duplicate BentoInlineEditProps -- T1002 removes it
+// viglet-ds-allow-duplicate BentoInlineEdit -- T1002 removes it
 import { Input } from "@/components/ui/input";
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";

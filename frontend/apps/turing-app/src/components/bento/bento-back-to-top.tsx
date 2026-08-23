@@ -1,3 +1,6 @@
+// T997 -- the export-manifest lint runs in CI now, and these names are also
+// exported by @viglet/viglet-design-system. Allowed until T992: the rail, the user menu and this move together.
+// viglet-ds-allow-duplicate BentoBackToTop -- T992 removes it
 import { IconArrowUp } from "@tabler/icons-react";
 import { useEffect, useState } from "react";
 

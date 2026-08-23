@@ -1,3 +1,7 @@
+// T997 -- the export-manifest lint runs in CI now, and these names are also
+// exported by @viglet/viglet-design-system. Allowed until T1002: in neither the leaf list nor the compound list.
+// viglet-ds-allow-duplicate BentoHeroIconPickerProps -- T1002 removes it
+// viglet-ds-allow-duplicate BentoHeroIconPicker -- T1002 removes it
 import { IconPickerDialog } from "@/components/ui/icon-picker-dialog";
 import { Icon } from "@iconify/react";
 import { IconPalette, IconX } from "@tabler/icons-react";

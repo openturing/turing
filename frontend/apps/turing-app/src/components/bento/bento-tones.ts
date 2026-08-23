@@ -1,3 +1,6 @@
+// T997 -- the export-manifest lint runs in CI now, and these names are also
+// exported by @viglet/viglet-design-system. Allowed until T1002: only BentoTone can leave; the gradient map stays.
+// viglet-ds-allow-duplicate BentoTone -- T1002 removes it
 /**
  * Color tones for Bento tiles. Each tone maps to a Tailwind gradient
  * applied to the icon chip — keeping the surface itself neutral

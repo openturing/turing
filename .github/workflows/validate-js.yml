@@ -117,3 +117,16 @@ jobs:
       - name: Test
         working-directory: frontend
         run: pnpm --filter "${{ matrix.workspace }}" run --if-present test
+
+      # T997: the export-manifest lint the design system ships. Nothing here
+      # failed when a component was re-declared instead of imported, and the
+      # bento layer is what that costs — an entire design language grew inside
+      # this app while a design system sat next to it. The check reads
+      # `@viglet/viglet-design-system/exports.json` from the installed package
+      # and names the import that replaces each local copy. Known duplicates
+      # carry a `viglet-ds-allow-duplicate` line naming the task that removes
+      # them (T992, T993, T1000, T1002), so what fails here is a *new* one.
+      - name: No component re-declared from the design system
+        if: matrix.workspace == 'turing-app'
+        working-directory: frontend
+        run: pnpm --filter turing-app run check:duplicates

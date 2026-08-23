@@ -2160,18 +2160,6 @@ shifts a chip a shade off is a regression nobody files because nobody can point 
 Take the digest before and after over a fixed set of surfaces, and treat any difference
 outside the intended accent as a failure rather than as taste.
 
-### XCVI.10 A lint, because discipline is not an instrument (T997)
-
-Thirty-nine of the 59 files under components/ui are one-line re-exports and the rest are
-genuinely product-specific. Nothing enforces that split. It held because the people
-writing it knew the rule, and the bento layer is the proof of what happens when a rule
-is not enforced: an entire design language grew here while a design system sat next to
-it exporting console chrome. Adopt the export-manifest lint the package ships - for
-every component declared locally, if the package exports that name, fail and name the
-import that replaces it - and run it in this repository's CI. Land it inside this block
-rather than after it, so the deletions above are checked by something other than a
-reviewer's memory.
-
 ### XCVI.11 The path to try a package change (T998)
 
 copy-ds.cmd builds the design system and copies its dist into node_modules under

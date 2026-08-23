@@ -10,6 +10,7 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
+    "check:duplicates": "viglet-ds-check-duplicates src",
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest"

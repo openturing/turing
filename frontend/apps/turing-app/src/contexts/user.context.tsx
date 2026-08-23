@@ -1,3 +1,7 @@
+// T997 -- the export-manifest lint runs in CI now, and these names are also
+// exported by @viglet/viglet-design-system. Allowed until T1000: console-era, and 40 console pages still render it.
+// viglet-ds-allow-duplicate UserProvider -- T1000 removes it
+// viglet-ds-allow-duplicate useCurrentUser -- T1000 removes it
 import type { TurUser } from "@/models/auth/user"
 import { TurUserService } from "@/services/auth/user.service"
 import React from "react"

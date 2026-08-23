@@ -1,3 +1,6 @@
+// T997 -- the export-manifest lint runs in CI now, and these names are also
+// exported by @viglet/viglet-design-system. Allowed until T992: the rail, the user menu and back-to-top move together.
+// viglet-ds-allow-duplicate BentoNavRail -- T992 removes it
 import { ROUTES } from "@/app/routes.const";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import type { Icon as TablerIcon } from "@tabler/icons-react";

@@ -1,3 +1,7 @@
+// T997 -- the export-manifest lint runs in CI now, and these names are also
+// exported by @viglet/viglet-design-system. Allowed until T993: generic once its data is split out.
+// viglet-ds-allow-duplicate BentoShortcutsDialogProps -- T993 removes it
+// viglet-ds-allow-duplicate BentoShortcutsDialog -- T993 removes it
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { IconKeyboard } from "@tabler/icons-react";
 import { useTranslation } from "react-i18next";
