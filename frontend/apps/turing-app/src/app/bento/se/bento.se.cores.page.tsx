@@ -1,6 +1,6 @@
 import { ROUTES } from "@/app/routes.const";
 import SEInstanceCoresPage from "@/app/console/se/cores/se.instance.cores.page";
-import { BentoHero } from "@/components/bento";
+import { BentoHero, bentoChipClass } from "@/components/bento";
 import { IconDatabase } from "@tabler/icons-react";
 import { useTranslation } from "react-i18next";
 import { useParams } from "react-router-dom";
@@ -23,7 +23,7 @@ export default function BentoSECoresPage() {
           backTo={instanceRoute}
           backLabel={t("se.title")}
           leading={
-            <span className="grid h-12 w-12 place-items-center rounded-2xl bg-linear-to-br from-emerald-500 to-teal-600 text-white shadow-md">
+            <span className={`grid h-12 w-12 place-items-center rounded-2xl ${bentoChipClass("emerald")} text-white shadow-md`}>
               <IconDatabase size={24} />
             </span>
           }

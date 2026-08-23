@@ -1,5 +1,5 @@
 import { ROUTES } from "@/app/routes.const";
-import { BentoHero } from "@/components/bento";
+import { BentoHero, bentoChipClass } from "@/components/bento";
 import { AssetBrowser } from "@/components/asset/asset-browser";
 import { IconFolder } from "@tabler/icons-react";
 import { useTranslation } from "react-i18next";
@@ -19,7 +19,7 @@ export default function BentoAssetPage() {
         backTo={ROUTES.BENTO_AREA_MANAGEMENT}
         backLabel={t("home.sections.management.label")}
         leading={
-          <span className="grid h-12 w-12 place-items-center rounded-2xl bg-linear-to-br from-amber-500 to-orange-600 text-white shadow-md">
+          <span className={`grid h-12 w-12 place-items-center rounded-2xl ${bentoChipClass("amber")} text-white shadow-md`}>
             <IconFolder size={24} />
           </span>
         }

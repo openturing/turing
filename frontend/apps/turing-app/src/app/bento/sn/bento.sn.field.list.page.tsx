@@ -1,7 +1,7 @@
 import * as React from "react";
 
 import { ROUTES } from "@/app/routes.const";
-import { BentoHero } from "@/components/bento";
+import { BentoHero, bentoChipClass } from "@/components/bento";
 import { LoadProvider } from "@/components/loading-provider";
 import { SNSiteFieldGridList } from "@/components/sn/fields/field.grid.list";
 import { SNFieldWizardDialog } from "@/components/sn/fields/sn.field.wizard.dialog";
@@ -61,7 +61,7 @@ export default function BentoSNFieldListPage() {
             backTo={instanceRoute}
             backLabel={t("sn.title")}
             leading={
-              <span className="grid h-12 w-12 place-items-center rounded-2xl bg-linear-to-br from-emerald-500 to-teal-600 text-white shadow-md">
+              <span className={`grid h-12 w-12 place-items-center rounded-2xl ${bentoChipClass("emerald")} text-white shadow-md`}>
                 <IconAlignBoxCenterStretch size={24} />
               </span>
             }

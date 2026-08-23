@@ -2131,24 +2131,26 @@ the package, or the page retired to the bento layer. Neither is a rename.
 ### XCVI.20 The hues the pages kept (T1013)
 
 T996 removed the last hue from the shared components: a tone is a token now, and
-bentoChipClass resolves it. It also showed where the hues went instead. Fifty files
-under app/bento write a gradient straight into a hero chip's class list, and between
-them they use twenty-one distinct colour pairs. The tone vocabulary offers seven, and
-only four of the twenty-one match one exactly.
+`bentoChipClass` resolves it. It also showed where the hues went instead. Fifty files
+under `app/bento` wrote a gradient straight into a chip's class list, and between them
+they used twenty-one distinct colour pairs against a vocabulary of seven.
 
-So the palette a reader sees is not the palette either repository declares. It is
-whatever each page's author picked, which is why amber-500 to rose-500 appears on six
-eval surfaces and nowhere else, and why the same conceptual thing gets blue-500 to
-indigo-600 on one page and blue-600 to indigo-600 on another. Nothing is broken and
-nothing looks wrong, which is exactly why it survived: a shade of drift per page is
-invisible until the pages are seen together.
+T1013b closed the ten a tone already answered: four spelled one exactly, six were a
+shade off one. Fifteen files and eight pairs are left, and none of them is a drift.
+`amber-500` to `rose-500` on six eval surfaces, `violet-600` to `fuchsia-600` on six
+more, `fuchsia-500` to `violet-600`, `indigo-500` to `blue-600`, and four one-offs —
+each a combination the seven tones do not offer, so snapping one moves a hue.
 
-The decision is which of the two this is. Either those pages should pass a tone and lose
-the choice -- seven names, re-keyable, consistent -- or a hero legitimately needs
-colours a tone map should not hold, in which case the extra pairs deserve names of their
-own rather than being spelled out at each call site. What should not stand is twenty-one
-anonymous pairs that no token can re-key, because that is the fork T996 just finished
-removing, one page at a time.
+The decision is which of two things this is. Either those pages pass a tone and lose the
+choice — seven names, re-keyable, at the cost of a visible change on twenty-one surfaces
+— or a hero legitimately needs colours a tone map should not hold, in which case the
+extra pairs deserve names of their own in the design system rather than being spelled
+out at each call site. What should not stand is eight anonymous pairs no token can
+re-key, because that is the fork T996 finished removing.
+
+Acceptance:
+- Each of the eight pairs either resolves through a tone or has a name declared for it.
+- No file under `app/bento` spells a `from-* to-*` pair a token could have carried.
 
 ## XCVII Site chat aggregates the answer before emitting it (T1004)
 

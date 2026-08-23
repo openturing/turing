@@ -12,6 +12,7 @@ import {
   IconUsers,
 } from "@tabler/icons-react";
 
+import { bentoChipClass } from "@/components/bento";
 import { useAiAgents } from "@/api/queries/ai-agent.queries";
 import {
   useEvalAgreement,
@@ -418,7 +419,7 @@ function ReviewDetail({
                 onClick={() =>
                   promote.mutate({ taskId: task.id, datasetId }, { onSuccess: onDone })
                 }
-                className="inline-flex items-center gap-1.5 rounded-lg bg-gradient-to-br from-emerald-600 to-teal-600 px-3.5 py-1.5 text-sm font-medium text-white shadow disabled:opacity-50"
+                className={`inline-flex items-center gap-1.5 rounded-lg ${bentoChipClass("emerald")} px-3.5 py-1.5 text-sm font-medium text-white shadow disabled:opacity-50`}
               >
                 <IconTargetArrow size={16} />
                 {t("evalStudio.review.promoteAction", { defaultValue: "Promote" })}
@@ -502,7 +503,7 @@ function ReviewDetail({
               type="button"
               disabled={submit.isPending}
               onClick={handleSubmit}
-              className="inline-flex items-center gap-1.5 rounded-lg bg-gradient-to-br from-blue-600 to-indigo-600 px-3.5 py-1.5 text-sm font-medium text-white shadow disabled:opacity-50"
+              className={`inline-flex items-center gap-1.5 rounded-lg ${bentoChipClass("blue")} px-3.5 py-1.5 text-sm font-medium text-white shadow disabled:opacity-50`}
             >
               <IconSend size={16} />
               {t("evalStudio.review.submit", { defaultValue: "Submit verdict" })}

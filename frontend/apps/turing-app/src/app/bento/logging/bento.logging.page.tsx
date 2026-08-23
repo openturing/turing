@@ -1,5 +1,5 @@
 import { ROUTES } from "@/app/routes.const";
-import { BentoEntityTile, BentoHero, BentoTileGrid } from "@/components/bento";
+import { BentoEntityTile, BentoHero, BentoTileGrid, bentoChipClass } from "@/components/bento";
 import type { BentoTone } from "@/components/bento";
 import { IconDatabaseSearch, IconPlugConnected, IconReceiptRupee, IconServer } from "@tabler/icons-react";
 import type { Icon as TablerIcon } from "@tabler/icons-react";
@@ -55,7 +55,7 @@ export default function BentoLoggingPage() {
         backTo={ROUTES.BENTO_AREA_MANAGEMENT}
         backLabel={t("home.sections.management.label")}
         leading={
-          <span className="grid h-12 w-12 place-items-center rounded-2xl bg-linear-to-br from-rose-500 to-pink-600 text-white shadow-md">
+          <span className={`grid h-12 w-12 place-items-center rounded-2xl ${bentoChipClass("rose")} text-white shadow-md`}>
             <IconReceiptRupee size={24} />
           </span>
         }

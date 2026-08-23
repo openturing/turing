@@ -1,6 +1,6 @@
 import { ROUTES } from "@/app/routes.const";
 import StoreInstanceCollectionImportPage from "@/app/console/store/collections/store.instance.collection.import.page";
-import { BentoHero } from "@/components/bento";
+import { BentoHero, bentoChipClass } from "@/components/bento";
 import { IconPackageImport } from "@tabler/icons-react";
 import { useTranslation } from "react-i18next";
 import { useParams } from "react-router-dom";
@@ -24,7 +24,7 @@ export default function BentoStoreCollectionImportPage() {
           backTo={instanceRoute}
           backLabel={t("store.title")}
           leading={
-            <span className="grid h-12 w-12 place-items-center rounded-2xl bg-linear-to-br from-violet-500 to-purple-600 text-white shadow-md">
+            <span className={`grid h-12 w-12 place-items-center rounded-2xl ${bentoChipClass("violet")} text-white shadow-md`}>
               <IconPackageImport size={24} />
             </span>
           }

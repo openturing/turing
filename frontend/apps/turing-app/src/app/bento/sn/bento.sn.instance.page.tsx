@@ -1,6 +1,6 @@
 import { useDeleteSnSite, useSnSite, useUpdateSnSite } from "@/api/queries/sn-site.queries";
 import { ROUTES } from "@/app/routes.const";
-import { BentoEntityShell } from "@/components/bento";
+import { BentoEntityShell, bentoChipClass } from "@/components/bento";
 import { LoadProvider } from "@/components/loading-provider";
 import type { TurSNSite } from "@/models/sn/sn-site.model.ts";
 import {
@@ -89,7 +89,7 @@ function SNSectionsPanel({ siteId }: Readonly<{ siteId: string }>) {
             to={`${ROUTES.BENTO_SN_INSTANCE}/${siteId}/${path}`}
             className="bento-tile bento-tile-clickable bento-glass flex items-center gap-3 rounded-2xl p-4"
           >
-            <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-linear-to-br from-emerald-500 to-teal-600 text-white shadow-sm">
+            <span className={`grid h-9 w-9 shrink-0 place-items-center rounded-xl ${bentoChipClass("emerald")} text-white shadow-sm`}>
               <Icon size={18} />
             </span>
             <span className="text-sm font-medium">{t(labelKey)}</span>

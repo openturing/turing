@@ -1,4 +1,4 @@
-import { BentoHero } from "@/components/bento";
+import { BentoHero, bentoChipClass } from "@/components/bento";
 import { ROUTES } from "@/app/routes.const";
 import ExchangeImportPage from "@/app/console/exchange/exchange.import.page";
 import { IconFileImport } from "@tabler/icons-react";
@@ -18,7 +18,7 @@ export default function BentoImportPage() {
         backTo={ROUTES.BENTO_AREA_MANAGEMENT}
         backLabel={t("home.sections.management.label")}
         leading={
-          <span className="grid h-12 w-12 place-items-center rounded-2xl bg-linear-to-br from-blue-500 to-indigo-600 text-white shadow-md">
+          <span className={`grid h-12 w-12 place-items-center rounded-2xl ${bentoChipClass("blue")} text-white shadow-md`}>
             <IconFileImport size={24} />
           </span>
         }

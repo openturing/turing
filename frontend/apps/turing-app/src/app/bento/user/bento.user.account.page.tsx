@@ -1,5 +1,5 @@
 import { ROUTES } from "@/app/routes.const";
-import { BentoHero } from "@/components/bento";
+import { BentoHero, bentoChipClass } from "@/components/bento";
 import { IconUserCog, IconUserCircle, IconWorld } from "@tabler/icons-react";
 import { useTranslation } from "react-i18next";
 import { NavLink, Outlet } from "react-router-dom";
@@ -24,7 +24,7 @@ export default function BentoUserAccountPage() {
       <BentoHero
         eyebrow={t("account.feature")}
         leading={
-          <span className="grid h-12 w-12 place-items-center rounded-2xl bg-linear-to-br from-blue-500 to-indigo-600 text-white shadow-md">
+          <span className={`grid h-12 w-12 place-items-center rounded-2xl ${bentoChipClass("blue")} text-white shadow-md`}>
             <IconUserCog size={24} />
           </span>
         }

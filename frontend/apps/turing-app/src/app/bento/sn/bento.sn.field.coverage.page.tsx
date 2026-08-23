@@ -1,5 +1,5 @@
 import { ROUTES } from "@/app/routes.const";
-import { BentoHero } from "@/components/bento";
+import { BentoHero, bentoChipClass } from "@/components/bento";
 import { SNFieldCoveragePanel } from "@/components/sn/field-coverage/sn.field.coverage.panel";
 import { IconChartHistogram } from "@tabler/icons-react";
 import { useTranslation } from "react-i18next";
@@ -20,7 +20,7 @@ export default function BentoSNFieldCoveragePage() {
         backTo={instanceRoute}
         backLabel={t("sn.title")}
         leading={
-          <span className="grid h-12 w-12 place-items-center rounded-2xl bg-linear-to-br from-emerald-500 to-teal-600 text-white shadow-md">
+          <span className={`grid h-12 w-12 place-items-center rounded-2xl ${bentoChipClass("emerald")} text-white shadow-md`}>
             <IconChartHistogram size={24} />
           </span>
         }

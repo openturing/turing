@@ -12,7 +12,7 @@
 
 - ⏳ **T1000** (deps: T1008 ⏳) **40 console pages still render beside the 118 bento ones, so two chromes and two component sets stay alive** — The package cannot deprecate its console entry point while this product still declares four of its components. → §XCVI.13
 - ⏳ **T1008** (deps: viglet-design-system VDS76) **four console-chrome components stay declared here because each package copy dropped something this product renders** — The package's SubPage drops outletContext, which shares one form instance across the persona editor's section sub-pages. → §XCVI.18
-- ⏳ **T1013** (deps: —) **fifty bento pages write a hero gradient inline, using twenty-one colour pairs where the tones offer seven** — Twenty pairs remain, each a shade off a declared tone, and closing that gap changes what a page looks like. → §XCVI.20
+- ⏳ **T1013** (deps: —) **fifteen bento pages write a hero gradient inline, using eight colour pairs no tone offers** — Eight pairs remain, each a combination no tone offers rather than a shade of drift, so closing one changes a hue. → §XCVI.20
 
 ## Block AR — Live-demo search & chat quality (Lucene parity gaps, §XLI)
 

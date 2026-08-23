@@ -1,5 +1,5 @@
 import { ROUTES } from "@/app/routes.const";
-import { BentoHero } from "@/components/bento";
+import { BentoHero, bentoChipClass } from "@/components/bento";
 import type { PersonaAudioJobStatus } from "@/models/persona/persona-audio.model.ts";
 import type { TurPersona } from "@/models/persona/persona.model.ts";
 import { TurPersonaAudioService } from "@/services/persona/persona-audio.service";
@@ -95,7 +95,7 @@ export function BentoPersonaCreateChooser({ setPersona }: Readonly<{ setPersona:
         backTo={ROUTES.BENTO_PERSONA_INSTANCE}
         backLabel={t("persona.title")}
         leading={
-          <span className="grid h-12 w-12 place-items-center rounded-2xl bg-linear-to-br from-rose-500 to-pink-600 text-white shadow-md">
+          <span className={`grid h-12 w-12 place-items-center rounded-2xl ${bentoChipClass("rose")} text-white shadow-md`}>
             <IconUserCircle size={24} />
           </span>
         }
@@ -113,7 +113,7 @@ export function BentoPersonaCreateChooser({ setPersona }: Readonly<{ setPersona:
           onClick={() => navigate("general")}
           className="bento-tile bento-tile-clickable bento-glass flex flex-col items-start gap-3 rounded-3xl p-6 text-left disabled:opacity-50"
         >
-          <span className="grid h-11 w-11 place-items-center rounded-2xl bg-linear-to-br from-blue-500 to-indigo-600 text-white shadow-md">
+          <span className={`grid h-11 w-11 place-items-center rounded-2xl ${bentoChipClass("blue")} text-white shadow-md`}>
             <IconForms size={22} />
           </span>
           <span className="text-base font-semibold tracking-tight md:text-lg">

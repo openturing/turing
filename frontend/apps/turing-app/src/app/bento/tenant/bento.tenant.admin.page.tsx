@@ -1,4 +1,4 @@
-import { BentoHero } from "@/components/bento";
+import { BentoHero, bentoChipClass } from "@/components/bento";
 import { ROUTES } from "@/app/routes.const";
 import PlatformTenantAdminPage from "@/app/console/tenant/platform-tenant-admin.page";
 import { IconBuildingSkyscraper } from "@tabler/icons-react";
@@ -18,7 +18,7 @@ export default function BentoTenantAdminPage() {
         backTo={ROUTES.BENTO_AREA_MANAGEMENT}
         backLabel={t("home.sections.management.label")}
         leading={
-          <span className="grid h-12 w-12 place-items-center rounded-2xl bg-linear-to-br from-slate-500 to-slate-700 text-white shadow-md">
+          <span className={`grid h-12 w-12 place-items-center rounded-2xl ${bentoChipClass("slate")} text-white shadow-md`}>
             <IconBuildingSkyscraper size={24} />
           </span>
         }

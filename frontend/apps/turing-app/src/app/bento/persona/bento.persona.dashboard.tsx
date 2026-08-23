@@ -1,7 +1,7 @@
 import { useDeletePersona, useUpdatePersona } from "@/api/queries/persona.queries";
 import { CHAT_INITIAL_PROMPT_KEY } from "@/app/console/chat/chat.types";
 import { ROUTES } from "@/app/routes.const";
-import { BentoActionsMenu, BentoHero, BentoInlineEdit, BentoTile } from "@/components/bento";
+import { BentoActionsMenu, BentoHero, BentoInlineEdit, BentoTile, bentoChipClass } from "@/components/bento";
 import { DialogDelete } from "@/components/dialog.delete";
 import type { TurPersona } from "@/models/persona/persona.model.ts";
 import { toast } from "@viglet/viglet-design-system";
@@ -102,7 +102,7 @@ export default function BentoPersonaDashboard() {
         backTo={ROUTES.BENTO_PERSONA_INSTANCE}
         backLabel={t("persona.title")}
         leading={
-          <span className="grid h-12 w-12 place-items-center rounded-2xl bg-linear-to-br from-blue-500 to-indigo-600 text-white shadow-md">
+          <span className={`grid h-12 w-12 place-items-center rounded-2xl ${bentoChipClass("blue")} text-white shadow-md`}>
             <IconUserCircle size={24} />
           </span>
         }

@@ -1,4 +1,4 @@
-import { BentoHero } from "@/components/bento";
+import { BentoHero, bentoChipClass } from "@/components/bento";
 import { ROUTES } from "@/app/routes.const";
 import { SectionCardChromeProvider } from "@/components/ui/section-card";
 import SystemInfoPage from "@/app/console/system/system-info.page";
@@ -25,7 +25,7 @@ export default function BentoSystemInfoPage() {
             backTo={ROUTES.BENTO_AREA_MANAGEMENT}
             backLabel={t("home.sections.management.label")}
             leading={
-              <span className="grid h-12 w-12 place-items-center rounded-2xl bg-linear-to-br from-slate-500 to-slate-700 text-white shadow-md">
+              <span className={`grid h-12 w-12 place-items-center rounded-2xl ${bentoChipClass("slate")} text-white shadow-md`}>
                 <IconInfoCircle size={24} />
               </span>
             }

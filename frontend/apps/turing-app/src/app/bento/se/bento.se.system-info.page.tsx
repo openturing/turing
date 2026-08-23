@@ -1,6 +1,6 @@
 import { ROUTES } from "@/app/routes.const";
 import SEInstanceSystemInfoPage from "@/app/console/se/system-info/se.instance.system-info.page";
-import { BentoHero } from "@/components/bento";
+import { BentoHero, bentoChipClass } from "@/components/bento";
 import { SectionCardChromeProvider } from "@/components/ui/section-card";
 import { IconInfoCircle } from "@tabler/icons-react";
 import { useTranslation } from "react-i18next";
@@ -23,7 +23,7 @@ export default function BentoSESystemInfoPage() {
             backTo={instanceRoute}
             backLabel={t("se.title")}
             leading={
-              <span className="grid h-12 w-12 place-items-center rounded-2xl bg-linear-to-br from-emerald-500 to-teal-600 text-white shadow-md">
+              <span className={`grid h-12 w-12 place-items-center rounded-2xl ${bentoChipClass("emerald")} text-white shadow-md`}>
                 <IconInfoCircle size={24} />
               </span>
             }

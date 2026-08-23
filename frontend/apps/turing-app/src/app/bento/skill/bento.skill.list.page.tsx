@@ -1,7 +1,7 @@
 import { useCreateSkill, useImportSkillZip, useSkills } from "@/api/queries/skill.queries";
 import { useAiActivation } from "@/api/queries/viglet-ai.queries";
 import { ROUTES } from "@/app/routes.const";
-import { BentoHero } from "@/components/bento";
+import { BentoHero, bentoChipClass } from "@/components/bento";
 import { BentoNoLlmState } from "@/components/turing-bento";
 import { LoadProvider } from "@/components/loading-provider";
 import { Badge } from "@/components/ui/badge";
@@ -87,7 +87,7 @@ export default function BentoSkillListPage() {
         backTo={ROUTES.BENTO_AREA_GENERATIVE_AI}
         backLabel={t("home.sections.generativeAi.label")}
         leading={
-          <span className="grid h-12 w-12 place-items-center rounded-2xl bg-linear-to-br from-violet-500 to-purple-600 text-white shadow-md">
+          <span className={`grid h-12 w-12 place-items-center rounded-2xl ${bentoChipClass("violet")} text-white shadow-md`}>
             <IconSparkles size={24} />
           </span>
         }
@@ -137,7 +137,7 @@ export default function BentoSkillListPage() {
               onKeyDown={(e) => { if (e.key === "Enter") navigate(`${ROUTES.BENTO_SKILL}/${skill.id}`); }}
               className="bento-tile bento-tile-clickable bento-glass group flex cursor-pointer items-center gap-3 rounded-2xl p-4 text-left"
             >
-              <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-linear-to-br from-violet-500 to-purple-600 text-white shadow-sm">
+              <span className={`grid size-9 shrink-0 place-items-center rounded-xl ${bentoChipClass("violet")} text-white shadow-sm`}>
                 <IconSparkles className="size-4.5" />
               </span>
               <span className="min-w-0 flex-1">

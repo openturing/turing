@@ -1,6 +1,6 @@
 import { ROUTES } from "@/app/routes.const";
 import { useDeleteSynonym, useSaveSynonym, useSynonym } from "@/api/queries/sn-synonym.queries";
-import { BentoFormHero, BentoFormSection } from "@/components/bento";
+import { BentoFormHero, BentoFormSection, bentoChipClass } from "@/components/bento";
 import { GradientButton } from "@/components/ui/gradient-button";
 import { GradientSwitch } from "@/components/ui/gradient-switch";
 import { Input } from "@/components/ui/input";
@@ -157,7 +157,7 @@ export default function BentoSNSynonymPage() {
         backTo={listRoute}
         backLabel={t("sn.synonym.title")}
         leading={
-          <span className="grid h-12 w-12 place-items-center rounded-2xl bg-linear-to-br from-emerald-500 to-teal-600 text-white shadow-sm">
+          <span className={`grid h-12 w-12 place-items-center rounded-2xl ${bentoChipClass("emerald")} text-white shadow-sm`}>
             <IconArrowsShuffle size={24} />
           </span>
         }

@@ -5,6 +5,7 @@ import {
   buildSnSearchLaunchers,
   type SnLauncher,
 } from "@/components/sn/sn-search-launchers";
+import { bentoChipClass, type BentoTone } from "@/components/bento";
 import type { TurSNSite } from "@/models/sn/sn-site.model.ts";
 import type { Icon as TablerIcon } from "@tabler/icons-react";
 import { IconAtom, IconChevronDown, IconExternalLink, IconSearch, IconSparkles } from "@tabler/icons-react";
@@ -15,10 +16,10 @@ const TILE = "bento-tile bento-tile-clickable bento-glass inline-flex items-cent
 function LauncherTile({
   launcher,
   icon: Icon,
-  gradient,
-}: Readonly<{ launcher: SnLauncher; icon: TablerIcon; gradient: string }>) {
+  tone,
+}: Readonly<{ launcher: SnLauncher; icon: TablerIcon; tone: BentoTone }>) {
   const chip = (
-    <span className={`grid h-8 w-8 shrink-0 place-items-center rounded-xl bg-linear-to-br ${gradient} text-white shadow-sm`}>
+    <span className={`grid h-8 w-8 shrink-0 place-items-center rounded-xl ${bentoChipClass(tone)} text-white shadow-sm`}>
       <Icon size={16} />
     </span>
   );
@@ -144,10 +145,10 @@ export function SnLaunchBar({ site }: Readonly<{ site: TurSNSite }>) {
         {t("sn.launch.title", { defaultValue: "Live search" })}
       </h2>
       <div className="flex flex-wrap gap-3">
-        <LauncherTile launcher={search} icon={IconSearch} gradient="from-emerald-500 to-teal-600" />
-        {ann && <LauncherTile launcher={ann} icon={IconAtom} gradient="from-indigo-600 to-fuchsia-600" />}
+        <LauncherTile launcher={search} icon={IconSearch} tone="emerald" />
+        {ann && <LauncherTile launcher={ann} icon={IconAtom} tone="indigo" />}
         {answer && (
-          <LauncherTile launcher={answer} icon={IconSparkles} gradient="from-blue-600 to-indigo-600" />
+          <LauncherTile launcher={answer} icon={IconSparkles} tone="blue" />
         )}
         {!answer && !probing && (
           <DisabledTile

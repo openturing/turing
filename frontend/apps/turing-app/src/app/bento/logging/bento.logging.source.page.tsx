@@ -1,5 +1,5 @@
 import { ROUTES } from "@/app/routes.const";
-import { BentoHero } from "@/components/bento";
+import { BentoHero, bentoChipClass } from "@/components/bento";
 import LoggingAemPage from "@/app/console/logging/instance/logging.aem.page";
 import LoggingIndexingPage from "@/app/console/logging/instance/logging.indexing.page";
 import LoggingServerPage from "@/app/console/logging/instance/logging.server.page";
@@ -16,8 +16,13 @@ export type LoggingSource = "server" | "indexing" | "aem";
 
 interface SourceMeta {
   icon: TablerIcon;
-  /** Tailwind gradient for the hero leading chip. */
-  gradient: string;
+  /**
+   * The full class list painting the hero's leading chip. A tone resolves it
+   * (`bentoChipClass`); the one source still spelling a pair does so here
+   * rather than at the render site, so the exception is visible next to the
+   * two that are not.
+   */
+  chip: string;
   titleKey: string;
   descKey: string;
   Page: ComponentType;
@@ -26,21 +31,24 @@ interface SourceMeta {
 const SOURCES: Record<LoggingSource, SourceMeta> = {
   server: {
     icon: IconServer,
-    gradient: "from-rose-500 to-pink-600",
+    chip: bentoChipClass("rose"),
     titleKey: "logging.turingServer",
     descKey: "logging.turingServerDesc",
     Page: LoggingServerPage,
   },
   indexing: {
     icon: IconDatabaseSearch,
-    gradient: "from-amber-500 to-orange-600",
+    chip: bentoChipClass("amber"),
     titleKey: "logging.indexing",
     descKey: "logging.indexingDesc",
     Page: LoggingIndexingPage,
   },
   aem: {
     icon: IconPlugConnected,
-    gradient: "from-indigo-500 to-violet-600",
+    // T1013 left this pair open: indigo-500 to violet-600 is not a shade off a
+    // declared tone but a combination none of the seven offers, so snapping it
+    // would change the hue rather than settle a drift.
+    chip: "bg-linear-to-br from-indigo-500 to-violet-600",
     titleKey: "logging.aem",
     descKey: "logging.aemDesc",
     Page: LoggingAemPage,
@@ -66,7 +74,7 @@ export default function BentoLoggingSourcePage({ source }: Readonly<{ source: Lo
         backTo={ROUTES.BENTO_LOGGING}
         backLabel={t("home.features.logging.title")}
         leading={
-          <span className={`grid h-12 w-12 place-items-center rounded-2xl bg-linear-to-br ${meta.gradient} text-white shadow-md`}>
+          <span className={`grid h-12 w-12 place-items-center rounded-2xl ${meta.chip} text-white shadow-md`}>
             <Icon size={24} />
           </span>
         }

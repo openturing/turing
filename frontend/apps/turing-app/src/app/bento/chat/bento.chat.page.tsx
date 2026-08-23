@@ -1,5 +1,5 @@
 import { useAiActivation } from "@/api/queries/viglet-ai.queries";
-import { BentoHero } from "@/components/bento";
+import { BentoHero, bentoChipClass } from "@/components/bento";
 import { BentoNoLlmState } from "@/components/turing-bento";
 import { ROUTES } from "@/app/routes.const";
 import ChatPage from "@/app/console/chat/chat.page";
@@ -31,7 +31,7 @@ export default function BentoChatPage() {
       backTo={ROUTES.BENTO_AREA_GENERATIVE_AI}
       backLabel={t("home.sections.generativeAi.label")}
       leading={
-        <span className="grid h-12 w-12 place-items-center rounded-2xl bg-linear-to-br from-blue-500 to-indigo-600 text-white shadow-md">
+        <span className={`grid h-12 w-12 place-items-center rounded-2xl ${bentoChipClass("blue")} text-white shadow-md`}>
           <IconMessageChatbot size={24} />
         </span>
       }

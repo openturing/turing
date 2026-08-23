@@ -9,6 +9,7 @@ import {
   IconWand,
 } from "@tabler/icons-react";
 
+import { bentoChipClass } from "@/components/bento";
 import { useAiAgents } from "@/api/queries/ai-agent.queries";
 import {
   useAugmentDataset,
@@ -388,7 +389,7 @@ export function BentoEvalGeneratePanel() {
               type="button"
               disabled={save.isPending}
               onClick={runSave}
-              className="inline-flex items-center gap-1.5 rounded-lg bg-gradient-to-br from-emerald-600 to-teal-600 px-3.5 py-1.5 text-sm font-medium text-white shadow disabled:opacity-50"
+              className={`inline-flex items-center gap-1.5 rounded-lg ${bentoChipClass("emerald")} px-3.5 py-1.5 text-sm font-medium text-white shadow disabled:opacity-50`}
             >
               <IconDeviceFloppy size={16} />
               {t("evalStudio.generate.save", { defaultValue: "Save reviewed rows" })}
