@@ -74,8 +74,11 @@ The shared scaffold (`BentoEntityShell`, `BentoListPage`, `BentoEntityTile`,
   attribute or a `{boolean}` expression is flagged.
 - **Reduced motion**: every bento animation (`.bento-tile`, `.bento-pulse`,
   `.bento-blob*`, `.bento-shell-header`, `.bento-save-bar-enter`) is disabled
-  under `@media (prefers-reduced-motion: reduce)` in `bento.styles.css`. Any new
-  keyframe animation must be added to that guard.
+  under `@media (prefers-reduced-motion: reduce)`. That guard is in the design
+  system's `src/bento/bento.css` (T1007 — the local `bento.styles.css` this used
+  to name was orphaned by T988 and deleted), so a new keyframe animation on a
+  shared class is added there, in that repository. A keyframe on a class only
+  this product renders belongs in this product's own CSS, under its own guard.
 
 ## 4. Responsive
 

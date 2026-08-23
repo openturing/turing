@@ -48,13 +48,15 @@ Three things, in order of how often they're the missing piece:
    `SidebarTrigger`, `PageHeader`) renders blank or crashes. `useSubPageBreadcrumb` is
    harmless (the `BreadcrumbProvider` wraps the whole app) but its output isn't shown.
 
-The frosted look + animation come from the CSS classes in
-[`components/bento/bento.styles.css`](../../frontend/apps/turing-app/src/components/bento/bento.styles.css):
+The frosted look + animation come from CSS classes the design system ships and
+`components/bento/index.ts` imports as `@viglet/viglet-design-system/bento.css` (T1007 —
+the local `bento.styles.css` this used to name was orphaned by T988 and deleted):
 `bento-tile` (hover-lift + spring entrance), `bento-glass` (frosted surface),
 `bento-tile-clickable` (cursor + press), `bento-grid` (staggered children). `BentoHero`,
 `BentoFormSection`, `BentoEntityTile`, `BentoTile` already apply them — use those
 components and you inherit the animation. All animations are disabled under
-`prefers-reduced-motion`; any new keyframe must be added to that guard.
+`prefers-reduced-motion`; a new keyframe on a shared class is added to that guard **in
+the design system**, not here.
 
 ## The three page shapes
 

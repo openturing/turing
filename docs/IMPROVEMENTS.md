@@ -2174,19 +2174,6 @@ under one shell, each fetching the same user. So the menu keeps its local copy, 
 allow-duplicate line naming the provider move rather than T992, and follows once T1000
 has retired the console-era one.
 
-### XCVI.17 The stylesheet nothing imports (T1007)
-
-T988 replaced this file's import with the package's bento.css, having established that
-the package sheet is a strict superset -- every class, custom property and keyframe this
-product declared is in it. The local file was then left on disk deliberately, for T989
-and T990 to delete along with the components that used it. Both shipped and neither did.
-So the repository now holds two full copies of the bento language, one of which no build
-reads, and the dead one is the one a grep for bento-tile finds first. CONVENTIONS.md
-still points at it for the reduced-motion rule, which is the concrete failure: a reader
-told to add a keyframe under that guard adds it to a file with no consumer, sees nothing
-change, and has no reason to suspect the file rather than the change. Delete it and
-repoint the sentence, or keep it and say in one line what still reads it.
-
 ## XCVII Site chat aggregates the answer before emitting it (T1004)
 
 Measured against `turing-demo.viglet.org` on 2026-08-23, reading the raw SSE with curl:

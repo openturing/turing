@@ -2,10 +2,14 @@
 // automatically pulls in the iOS-flavored animations and frosted-glass
 // utilities — no separate CSS import to remember.
 //
-// T988 — the sheet now comes from the package. Its bento.css is a strict
-// superset of the local bento.styles.css that stood here: every class, custom
-// property and keyframe this product declared is in it, and none is missing.
-// The local file is left in place for the deletions T989 and T990 own.
+// T988 — the sheet comes from the package. Its bento.css is a strict superset of
+// the local bento.styles.css that stood here: every class, custom property and
+// keyframe this product declared is in it, and none is missing.
+//
+// T1007 — that local file is now gone. T988 left it on disk for T989 and T990 to
+// delete along with the components that read it; both shipped and neither did,
+// so the repository carried two full copies of the bento language with only one
+// of them in a build, and a grep for `bento-tile` found the dead one first.
 import "@viglet/viglet-design-system/bento.css";
 
 // T995 — the four commercial tiles and the first-run tour left this barrel for
