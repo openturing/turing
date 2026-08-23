@@ -8,19 +8,14 @@
 // The local file is left in place for the deletions T989 and T990 own.
 import "@viglet/viglet-design-system/bento.css";
 
-// T988 — representative re-points, ahead of the wholesale ones. These four
-// cover the risks the block is a bet on: the frosted surface and the hover
-// lift on a tile, the section and hero that frame every bento page, and the
-// fade custom property that drives the save-bar morph. The 118 pages import
-// from this barrel and do not change.
-export { BentoTile, type BentoTileProps } from "@viglet/viglet-design-system/bento";
-export { BentoCountTile, type BentoCountTileProps } from "@viglet/viglet-design-system/bento";
-export { BentoSection, type BentoSectionProps } from "@viglet/viglet-design-system/bento";
-export {
-  BentoHero,
-  BentoBackLink,
-  type BentoHeroProps,
-} from "@viglet/viglet-design-system/bento";
+// T989 — these names come from the package now, but the barrel still names the
+// local module: each of the nine leaves is a one-line re-export, so the shim is
+// the single seam and both `@/components/bento` and `../bento-<x>` reach the
+// same implementation.
+export { BentoTile, type BentoTileProps } from "./bento-tile";
+export { BentoCountTile, type BentoCountTileProps } from "./bento-count-tile";
+export { BentoSection, type BentoSectionProps } from "./bento-section";
+export { BentoHero, BentoBackLink, type BentoHeroProps } from "./bento-hero";
 export { BENTO_TONE_GRADIENTS, type BentoTone } from "./bento-tones";
 export { BentoUserMenu } from "./bento-user-menu";
 export { BentoBackToTop } from "./bento-back-to-top";
@@ -59,9 +54,15 @@ export {
   type BentoListPageProps,
   BentoTileGrid,
   type BentoTileGridProps,
+} from "./bento-list-page";
+// T989 — the ninth leaf. Unlike the other eight it has no module of its own to
+// shim: it is declared inside bento-list-page, which is a compound T990 owns.
+// So it is re-pointed here instead, and the local declaration leaves with that
+// file rather than becoming a one-line re-export nothing would import.
+export {
   BentoEntityTile,
   type BentoEntityTileProps,
-} from "./bento-list-page";
+} from "@viglet/viglet-design-system/bento";
 export {
   BENTO_EMPHASIS_SPAN,
   BENTO_EMPHASIS_NEXT,

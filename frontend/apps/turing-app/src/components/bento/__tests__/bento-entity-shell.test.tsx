@@ -79,13 +79,13 @@ describe("BentoEntityShell", () => {
     const saveBefore = screen.getByRole("button", { name: "forms.formActions.saveChanges" });
     expect(saveBefore).toBeInTheDocument();
     expect(saveBefore).toBeDisabled();
-    expect(screen.queryByText("bento.saveBar.unsaved")).not.toBeInTheDocument();
+    expect(screen.queryByText("Unsaved changes")).not.toBeInTheDocument();
 
     fireEvent.click(screen.getByText("make-dirty"));
 
     // Once the form reports dirty, Save enables and the eyebrow marks it unsaved.
     expect(screen.getByRole("button", { name: "forms.formActions.saveChanges" })).toBeEnabled();
-    expect(screen.getByText("bento.saveBar.unsaved")).toBeInTheDocument();
+    expect(screen.getByText("Unsaved changes")).toBeInTheDocument();
   });
 
   it("autosaveOnly hides the inert Save on an existing entity but keeps it in new mode", () => {
@@ -127,7 +127,7 @@ describe("BentoEntityShell", () => {
     });
 
     // Empty title in new mode → the required blocker is surfaced in the hero.
-    expect(screen.getByText("bento.saveBar.titleRequired")).toBeInTheDocument();
+    expect(screen.getByText("Title required")).toBeInTheDocument();
   });
 
   it("in read-only mode suppresses Save even when the form reports dirty, and renders badge + notice", () => {

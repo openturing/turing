@@ -2102,18 +2102,6 @@ and only then delete anything. Three tasks are instruments rather than moves - a
 duplication lint, a working local-dev path and a render digest - because every deletion
 here is justified by an assertion this repository currently cannot check.
 
-### XCVI.2 The leaves become shims, and 118 pages need no edit (T989)
-
-BentoHero, BentoFormSection, BentoTile, BentoEntityTile, BentoSection, BentoCountTile,
-BentoEmptyState, BentoStatusMarker and BentoActionsMenu are the vocabulary every bento
-page is written in, which is exactly why this step must not require touching the pages.
-The pattern is already established here: 39 of the 59 files under components/ui are
-single-line re-exports of a design-system component, and nothing in the application
-knows the difference. Do the same for the leaves - the local module keeps its path and
-its name and re-exports from the subpath - then delete the implementations. The import
-sites can migrate later, or never; a shim that costs one line is not debt in the way a
-forked component is.
-
 ### XCVI.3 The compounds, where a duplicate costs most (T990)
 
 BentoEntityShell, BentoFormHero, BentoListPage and the scroll-fade machinery behind

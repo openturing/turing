@@ -1335,3 +1335,4 @@
 ## Block BX — The bento layer leaves the product it grew in (§XCVI)
 
 - **T988** — turing-app installs 2026.3.3 and takes the bento subpath: the barrel imports the package stylesheet, five representative names resolve to the package, and a parity suite renders them from it and asserts the tile classes, the span passthrough and the --bento-fade property the save-bar morph reads.
+- **T989** — The nine leaves resolve to the package: eight local modules are one-line re-exports and BentoEntityTile is re-pointed in the barrel, 657 lines of duplicated implementation are gone, and no page under src/app was edited.
