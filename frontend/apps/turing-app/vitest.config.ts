@@ -9,14 +9,19 @@ import { defineConfig } from "vitest/config";
 // counter-productive) here. The `unit` project needs only the React transform
 // and the `@` path alias; the `parity` project adds Tailwind, because the whole
 // point of it is what the browser resolves out of this app's stylesheet chain.
-// T1001 — `vitest`, `@vitest/browser` and `@vitest/browser-playwright` are
-// pinned to an exact 4.1.10 in package.json, and the pin is load-bearing twice
-// over. Vitest refuses to run a browser project whose `@vitest/browser` is a
-// different patch from its own, and 4.1.11 breaks
-// `@testing-library/jest-dom@7.0.0`'s module augmentation — every
-// `toBeInTheDocument()` in the 46 unit files stops type-checking with TS2339
-// while the tests themselves still pass, so the break surfaces in `tsc -b` and
-// nowhere else. A caret range satisfies both today and either tomorrow.
+//
+// T1022 — the three vitest packages moved back to caret ranges. They were
+// pinned to an exact 4.1.10 because 4.1.11 broke
+// `@testing-library/jest-dom@7.0.0`'s module augmentation: every
+// `toBeInTheDocument()` stopped type-checking with TS2339 while the tests
+// themselves still passed, so it surfaced in `tsc -b` and nowhere else. The
+// fault was jest-dom's `vitest.d.ts`, and 7.0.1 fixes it — which is why the
+// floor here is `^7.0.1` and not `^7.0.0`: a fresh resolution landing on 7.0.0
+// would bring the break back.
+//
+// Vitest still wants `@vitest/browser` on its own patch. That is a warning
+// rather than a refusal, and a caret on all three moves them together.
+
 const srcDir = fileURLToPath(new URL("./src", import.meta.url));
 const alias = { "@": srcDir };
 

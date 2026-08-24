@@ -20,7 +20,6 @@
 ## Block BV — The quality gate stops at the package boundary
 
 - 📋 **T1021** (deps: —) **271 warnings sit under the ceiling as one number, and they are three unrelated jobs** — The compiler is not installed, so its 27 bailout notices are advisory; twelve of the rest are real whatever runs. → §CIV.2
-- 📋 **T1022** (deps: —) **three test packages are pinned exact with no expiry, so this app cannot take a vitest release** — 4.1.11 breaks jest-dom's type augmentation in tsc alone, and nothing rechecks whether it still does. → §CIV.3
 
 ## Done when — T1000
 
