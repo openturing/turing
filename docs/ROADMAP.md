@@ -10,7 +10,7 @@
 
 ## Block BX — The bento layer leaves the product it grew in (§XCVI)
 
-- ⏳ **T1000** (deps: T1008 ✅) **40 console pages still render beside the 118 bento ones, so two chromes and two component sets stay alive** — The package cannot deprecate its console entry point while this product still declares four of its components. → §XCVI.13
+- ⏳ **T1000** (deps: T1008 ✅) **36 files still branch on a chrome prop, so one implementation serves two shells** — No console route is mounted and no file there is dead, so what is left is a seam to keep or delete, not a migration. → §XCVI.13
 - ⏳ **T1013** (deps: —) **fifteen bento pages write a hero gradient inline, using eight colour pairs no tone offers** — Eight pairs remain, each a combination no tone offers rather than a shade of drift, so closing one changes a hue. → §XCVI.20
 
 ## Block AR — Live-demo search & chat quality (Lucene parity gaps, §XLI)
@@ -21,6 +21,7 @@
 
 - 📋 **T1021** (deps: —) **271 warnings sit under the ceiling as one number, and they are three unrelated jobs** — The compiler is not installed, so its 27 bailout notices are advisory; twelve of the rest are real whatever runs. → §CIV.2
 - 📋 **T1022** (deps: —) **three test packages are pinned exact with no expiry, so this app cannot take a vitest release** — 4.1.11 breaks jest-dom's type augmentation in tsc alone, and nothing rechecks whether it still does. → §CIV.3
+- 📋 **T1023** (deps: —) **pnpm add reintroduces the shadowed exclude line T1014 removed, and nothing notices** — The appended entry is unreachable rather than wrong, so the install succeeds and the refusal arrives later. → §CIV.4
 
 ## Done when — T1000
 
