@@ -2102,37 +2102,6 @@ and only then delete anything. Three tasks are instruments rather than moves - a
 duplication lint, a working local-dev path and a render digest - because every deletion
 here is justified by an assertion this repository currently cannot check.
 
-### XCVI.22 The same duality, spelled differently (T1026)
-
-T1000 deleted the `chrome` prop after measuring that no call site passed `"console"`.
-The same shell choice survives in thirteen files under a different name, and it measures
-the same way.
-
-Those files derive `const isBento = header !== undefined` (or `bentoHero !== undefined`)
-and render either a `BentoHero` the caller supplied or a `StickyPageHeader` they build
-themselves. Every mount was checked:
-
-| component | mounts | pass a header |
-| --- | --- | --- |
-| `AdminUserForm`, `AdminGroupForm`, `AdminRoleForm` | 3 | 3 |
-| `AdminKeycloakUserView`, `AdminKeycloakGroupView` | 2 | 2 |
-| `UserProfilePage`, `UserPreferencesPage` | 2 | 2 |
-| `SEInstanceSystemInfoPage`, `StoreInstanceSystemInfoPage` | 6 | 6 |
-| `SNSiteTopSearchTermsPage` | 1 | 1 |
-
-Fourteen mounts, fourteen headers. Two of them pass `header={null}` — which the
-condition reads as bento, because `null !== undefined` — so even the mount that wants no
-hero takes the bento arm. The console arm is unreachable by the same argument T1000
-made, and holds the last fifteen `<StickyPageHeader>` in the app.
-
-What is left after it goes is `components/sticky-page-header.tsx` itself, which nothing
-would import.
-
-Acceptance:
-- The `header !== undefined` shell choice is gone from all thirteen files, or a mount that
-  takes the console arm is named.
-- `StickyPageHeader` is deleted or its remaining callers are listed.
-
 ## XCVII Site chat aggregates the answer before emitting it (T1004)
 
 Measured against `turing-demo.viglet.org` on 2026-08-23, reading the raw SSE with curl:

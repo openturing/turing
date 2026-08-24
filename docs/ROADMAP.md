@@ -10,8 +10,6 @@
 
 ## Block BX — The bento layer leaves the product it grew in (§XCVI)
 
-- 📋 **T1026** (deps: —) **thirteen more files pick a shell from whether a header prop was passed, and every caller passes one** — T1000 deleted this branch under the name chrome; under this name it still compiles and still renders nothing. → §XCVI.22
-
 ## Block AR — Live-demo search & chat quality (Lucene parity gaps, §XLI)
 
 - ⏳ **T1004** (deps: —) **site chat emits the whole answer in one SSE content event, so no consumer can render it progressively** — The mode that streams it exists; the demo runs a build from before it, so the last acceptance bullet waits on a deploy. → §XCVII
