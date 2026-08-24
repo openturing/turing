@@ -60,8 +60,24 @@ export default tseslint.config([
       'react-hooks/refs': 'warn',
       'react-hooks/static-components': 'warn',
       'react-hooks/immutability': 'warn',
-      'react-hooks/preserve-manual-memoization': 'warn',
-      'react-hooks/incompatible-library': 'warn',
+
+      // T1021 — off, and the reason is that this app does not run the React
+      // Compiler: there is no `babel-plugin-react-compiler` and nothing in
+      // vite.config.ts turns one on. These two rules report only what the
+      // compiler would decline to memoise, so with it switched off they name an
+      // optimization that is not happening.
+      //
+      // The cost of obeying them anyway is the argument. Every one of the 25
+      // `incompatible-library` findings is react-hook-form's `form.watch()`; the
+      // fix is `useWatch`, which is 81 call sites across 31 forms, and 38 of
+      // those sit inside JSX, a callback or a `.map()` where a hook cannot go at
+      // all. That is the re-render behaviour of every form in the product,
+      // changed for a compiler that is not running.
+      //
+      // Turn these back on in the same change that adds the compiler, not
+      // before — they are how you would find the components it bails out of.
+      'react-hooks/preserve-manual-memoization': 'off',
+      'react-hooks/incompatible-library': 'off',
     },
   },
 ])

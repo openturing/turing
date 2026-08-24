@@ -68,6 +68,26 @@ export const PersonaSourcesSection: React.FC<{ personaId: string }> = ({
     refresh()
   }, [refresh])
 
+  // T1021 — declared above its three callers, and memoised. A function
+  // declaration is hoisted, so there was never a runtime dead zone; the ordering
+  // cost readability. Moving it then made the three callbacks below able to see
+  // it as a dependency, which is only listable if its identity is stable — hence
+  // the useCallback rather than a bare function.
+  const reportExtraction = useCallback((source: TurPersonaSource) => {
+    if (source.extractionStatus === "EXTRACTED") {
+      toast.success(
+        t("forms.persona.sources.extracted", {
+          count: source.cachedTextLength ?? 0,
+        })
+      )
+    } else {
+      toast.error(
+        source.extractionError ?? t("forms.persona.sources.addFailed")
+      )
+    }
+  }, [t])
+
+
   const onAdd = useCallback(async () => {
     if (!ref.trim()) {
       toast.error(t("forms.persona.sources.refRequired"))
@@ -95,7 +115,7 @@ export const PersonaSourcesSection: React.FC<{ personaId: string }> = ({
     } finally {
       setBusy(false)
     }
-  }, [addType, personaId, ref, siteName, sourceName, refresh, t])
+  }, [addType, personaId, ref, siteName, sourceName, refresh, reportExtraction, t])
 
   const onUpload = useCallback(
     async (file: File) => {
@@ -111,7 +131,7 @@ export const PersonaSourcesSection: React.FC<{ personaId: string }> = ({
         if (fileInputRef.current) fileInputRef.current.value = ""
       }
     },
-    [personaId, refresh, t]
+    [personaId, refresh, reportExtraction, t]
   )
 
   const onReextract = useCallback(
@@ -124,7 +144,7 @@ export const PersonaSourcesSection: React.FC<{ personaId: string }> = ({
         setBusy(false)
       }
     },
-    [personaId, refresh]
+    [personaId, refresh, reportExtraction]
   )
 
   const onDelete = useCallback(
@@ -139,20 +159,6 @@ export const PersonaSourcesSection: React.FC<{ personaId: string }> = ({
     },
     [personaId, refresh]
   )
-
-  function reportExtraction(source: TurPersonaSource) {
-    if (source.extractionStatus === "EXTRACTED") {
-      toast.success(
-        t("forms.persona.sources.extracted", {
-          count: source.cachedTextLength ?? 0,
-        })
-      )
-    } else {
-      toast.error(
-        source.extractionError ?? t("forms.persona.sources.addFailed")
-      )
-    }
-  }
 
   return (
     <SectionCard variant="cyan">

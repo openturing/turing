@@ -94,6 +94,17 @@ export function DiceBearAvatarPicker({
 
   const debouncedSeed = useDebounce(seed, 400)
 
+  // T1021 — declared above the effect that calls it. A `const` is not hoisted,
+  // so reading it earlier in the source is a temporal dead zone the moment
+  // anything moves that call out of the effect body — the hazard agents.md
+  // names. It works today only because an effect runs after the whole
+  // component body has.
+  const generatePreviewSeeds = useCallback(() => {
+    const seeds = Array.from({ length: 12 }, () => generateRandomSeed())
+    setPreviewSeeds(seeds)
+    setImgKey((k) => k + 1)
+  }, [])
+
   // T1017 — the effect is the right place: this reacts to the dialog being
   // opened, and `open` is the parent's state, so there is no event handler here
   // to hang it on. It seeds the editor from whatever avatar the entity already
@@ -113,12 +124,6 @@ export function DiceBearAvatarPicker({
     }
   }, [open])
   /* eslint-enable react-hooks/set-state-in-effect */
-
-  const generatePreviewSeeds = useCallback(() => {
-    const seeds = Array.from({ length: 12 }, () => generateRandomSeed())
-    setPreviewSeeds(seeds)
-    setImgKey((k) => k + 1)
-  }, [])
 
   const mainPreviewUrl = useMemo(
     () => buildDiceBearUrl(selectedStyle, debouncedSeed),

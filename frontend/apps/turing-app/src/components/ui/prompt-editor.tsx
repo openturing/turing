@@ -115,6 +115,12 @@ export const PromptEditor: React.FC<PromptEditorProps> = ({
   // the prompt, where reading the full text at once beats scrolling a box.
   const [expanded, setExpanded] = useState(defaultExpanded);
 
+  // T1021 — the two writes below are a ref callback, which React invokes at
+  // commit, not during render. Merging a forwarded ref with a local one is the
+  // documented way to hold both, and writing `.current` is the whole of what a
+  // ref callback does; the rule reads the assignment without seeing where it
+  // runs. There is no render-time mutation here to remove.
+  /* eslint-disable react-hooks/immutability */
   const setRef = useCallback((el: HTMLTextAreaElement | null) => {
     (internalRef as React.MutableRefObject<HTMLTextAreaElement | null>).current = el;
     if (typeof fieldRef === "function") {
@@ -123,6 +129,7 @@ export const PromptEditor: React.FC<PromptEditorProps> = ({
       (fieldRef as React.MutableRefObject<HTMLTextAreaElement | null>).current = el;
     }
   }, [fieldRef]);
+  /* eslint-enable react-hooks/immutability */
 
   const insertVariable = useCallback((token: string) => {
     const textarea = internalRef.current;

@@ -158,18 +158,9 @@ export default function SkillEditorPage({
   const tree = useMemo(() => buildTree(files ?? []), [files])
   const editorExtensions = useMemo(() => (selectedPath ? languageFor(selectedPath) : []), [selectedPath])
 
-  // Auto-open SKILL.md when the file list first arrives and nothing is selected.
-  useEffect(() => {
-    if (!files || selectedPath) return
-    const first = files.find((f) => f.path === "SKILL.md") ?? files.find((f) => !f.directory)
-    if (first) void openFile(first.path)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [files])
-
-  const reloadFiles = () => {
-    if (id) queryClient.invalidateQueries({ queryKey: queryKeys.skills.files(id) })
-  }
-
+  // T1021 — declared above the effect that calls it. A `const` is not hoisted,
+  // so the reference below is a temporal dead zone the moment that call stops
+  // being deferred to an effect body.
   const openFile = async (path: string) => {
     if (!id) return
     if (dirtyRef.current && !window.confirm("Discard unsaved changes?")) return
@@ -184,6 +175,27 @@ export default function SkillEditorPage({
     } finally {
       setLoadingFile(false)
     }
+  }
+
+  // Auto-open SKILL.md when the file list first arrives and nothing is selected.
+  //
+  // T1021 — the effect is the right place, and it only looks like a default
+  // selection. Opening a file fetches its contents, so this is a request made
+  // once when the listing arrives, not a value this render could derive. The
+  // rule sees the setState because `openFile` is now declared above it, which
+  // is the point of that move: the call was always here, the temporal dead
+  // zone was what hid it.
+  /* eslint-disable react-hooks/set-state-in-effect */
+  useEffect(() => {
+    if (!files || selectedPath) return
+    const first = files.find((f) => f.path === "SKILL.md") ?? files.find((f) => !f.directory)
+    if (first) void openFile(first.path)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [files])
+  /* eslint-enable react-hooks/set-state-in-effect */
+
+  const reloadFiles = () => {
+    if (id) queryClient.invalidateQueries({ queryKey: queryKeys.skills.files(id) })
   }
 
   const handleSave = async () => {

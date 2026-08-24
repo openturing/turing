@@ -2184,31 +2184,29 @@ Acceptance:
 - A consumer counting `onToken` calls for a multi-sentence answer sees more than one.
 - Verified on the demo, with the event timings recorded.
 
-## CIV The quality gate stops at the package boundary
+## CV The quality gate stops at the package boundary
 
-### CIV.2 What the ceiling still holds (T1021)
+### CV.1 The two rules the ceiling still holds (T1024)
 
-271 warnings sit under T1016's ceiling. Reading them sorts into three jobs, and the one
-that looked largest is the one that should not be done.
+The ceiling is 228 and holds exactly two rules. Everything else that stood under it has
+been read: the correctness findings are fixed, and the rules that only speak for a
+compiler this app does not run are off with the argument written.
 
-**The React Compiler is not installed here.** No `babel-plugin-react-compiler`, nothing
-in `vite.config.ts`. So its bailout notices — 25 `incompatible-library`, 2
-`preserve-manual-memoization` — report an optimization that is not running. Every one of
-the 25 is `form.watch()`, and the fix is `useWatch`, which is 81 call sites across 31
-forms; 38 of them sit inside JSX, callbacks or a `.map()` where a hook cannot go at all.
-Changing the re-render behaviour of every form in the product to satisfy a compiler that
-is switched off is work with risk and no benefit. These want a reasoned `off`.
+**188 `react-refresh/only-export-components`, over 33 files.** A module exporting both a
+component and something else reloads whole instead of preserving state, so editing it
+during development loses whatever was on screen. Never a runtime bug. Each is one
+question: what should this file have been split into — a constant beside its component,
+a helper two files share, a type that could move to a `.ts`.
 
-**Twelve are real, compiler or not.** Eight `static-components` — a component declared
-inside a render body is a new type each pass, so React unmounts and remounts its whole
-subtree, losing focus and child state; all eight are the agent forms' inline `Section`,
-which duplicates `AdaptiveSectionCard` the design system already ships. Four
-`immutability` are the temporal-dead-zone hazard `agents.md` already warns about, plus
-two writes to a local after render.
+**40 `react-hooks/exhaustive-deps`, over 28.** The one rule here with a written
+convention already, in `agents.md`. Each is a dependency to read rather than a rule to
+obey: some are stale closures worth fixing, and some are deliberate, wanting the disable
+line and the sentence they currently lack. The count moved from 43 while T1021 worked,
+which is the sign that it tracks something real rather than a fixed backlog.
 
-**188 `react-refresh/only-export-components` and 43 `exhaustive-deps`** are unchanged: a
-module split and a dependency read, neither a runtime bug.
+Neither is urgent and neither should be swept. What they need is a pass with judgement,
+one file at a time, and the ceiling falling as it goes.
 
 Acceptance:
-- The eight static-components and four immutability findings are fixed.
-- The compiler-only rules are off with the reason written, as T1016 did for the rest.
+- Each of the 188 is split or given a reason to stay one module.
+- Each of the 40 is fixed or carries the sentence saying why the dependency is left out.

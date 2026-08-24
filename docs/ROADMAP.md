@@ -19,7 +19,7 @@
 
 ## Block BV — The quality gate stops at the package boundary
 
-- 📋 **T1021** (deps: —) **271 warnings sit under the ceiling as one number, and they are three unrelated jobs** — The compiler is not installed, so its 27 bailout notices are advisory; twelve of the rest are real whatever runs. → §CIV.2
+- 📋 **T1024** (deps: —) **228 warnings remain under the ceiling, and they are two rules nobody has read** — Both want judgement per file: one is a module split, the other a dependency to read. → §CV.1
 
 ## Done when — T1000
 
