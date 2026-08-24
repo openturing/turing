@@ -9,9 +9,8 @@ import { IconAlertTriangle, IconCheck, IconLock, IconSparkles } from "@tabler/ic
 import { useEffect, useMemo, useState } from "react"
 import { useTranslation } from "react-i18next"
 import { toast } from "@viglet/viglet-design-system"
-import { BentoFormSection } from "../bento"
 import { GradientButton } from "../ui/gradient-button"
-import { SectionCard } from "../ui/section-card"
+import { AgentFormSection } from "./agent-form-section"
 
 const capabilityService = new TurCapabilityRegistryService();
 
@@ -183,28 +182,19 @@ export const AIAgentCapabilitiesForm: React.FC<Props> = ({ value, chrome = "cons
     setSelectedCaps(new Set(savedCaps));
   }
 
-  const Section = ({ children }: { readonly children: React.ReactNode }) =>
-    isBento ? (
-      <BentoFormSection icon={IconSparkles} tone="blue"
-        title={t("forms.agentCapabilities.title")} description={t("forms.agentCapabilities.description")}>
-        {children}
-      </BentoFormSection>
-    ) : (
-      <SectionCard variant="blue">
-        <SectionCard.Header
-          icon={IconSparkles}
-          title={t("forms.agentCapabilities.title")}
-          description={t("forms.agentCapabilities.description")}
-        />
-        <SectionCard.Content>{children}</SectionCard.Content>
-      </SectionCard>
-    );
 
   return (
     <TooltipProvider>
       <div className={isBento ? "space-y-4 md:space-y-5" : "px-6"}>
         <div className={isBento ? "space-y-4 md:space-y-5" : "space-y-4 py-8"}>
-          <Section>
+          <AgentFormSection
+          bento={isBento}
+          icon={IconSparkles}
+          tone="blue"
+          variant="blue"
+          title={t("forms.agentCapabilities.title")}
+          description={t("forms.agentCapabilities.description")}
+        >
               {functionGroups.length === 0 ? (
                 <div className="text-center py-8">
                   <IconSparkles className="mx-auto size-10 text-muted-foreground/30 mb-3" />
@@ -270,7 +260,7 @@ export const AIAgentCapabilitiesForm: React.FC<Props> = ({ value, chrome = "cons
                   })}
                 </div>
               )}
-          </Section>
+          </AgentFormSection>
 
           <div className="flex items-center justify-end gap-3 pt-4 border-t">
             <GradientButton type="button" variant="outline" onClick={onReset} disabled={!isDirty}>

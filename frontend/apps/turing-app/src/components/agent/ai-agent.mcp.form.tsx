@@ -10,13 +10,37 @@ import { useTranslation } from "react-i18next"
 import { toast } from "@viglet/viglet-design-system"
 import { GradientButton } from "../ui/gradient-button"
 import { GradientSwitch } from "../ui/gradient-switch"
+import { AgentFormSection } from "./agent-form-section"
 import { SectionCard } from "../ui/section-card"
-import { BentoFormSection } from "../bento"
 
 interface Props {
   value: TurAIAgent;
   /** Render inside the bento shell (frosted BentoFormSection) instead of the console SectionCard. */
   chrome?: "console" | "bento";
+}
+
+/**
+ * T1021 — hoisted out of the render body. It has no header and a bespoke frosted
+ * shell, so it does not fit `AgentFormSection`; what it shares is the reason for
+ * moving: declared inside render it was a new component type every pass, and
+ * React remounted the federation switch instead of updating it.
+ */
+function FederationSection({
+  bento,
+  children,
+}: Readonly<{ bento: boolean; children: React.ReactNode }>) {
+  if (bento) {
+    return (
+      <section className="bento-tile bento-glass relative flex flex-col gap-5 overflow-hidden rounded-3xl p-5 md:p-6">
+        {children}
+      </section>
+    );
+  }
+  return (
+    <SectionCard variant="cyan">
+      <SectionCard.Content>{children}</SectionCard.Content>
+    </SectionCard>
+  );
 }
 
 export const AIAgentMcpForm: React.FC<Props> = ({ value, chrome = "console" }) => {
@@ -91,37 +115,19 @@ export const AIAgentMcpForm: React.FC<Props> = ({ value, chrome = "console" }) =
     return mcp.connectionType;
   }
 
-  const Section = ({ children }: { readonly children: React.ReactNode }) =>
-    chrome === "bento" ? (
-      <BentoFormSection icon={IconServer2} tone="amber" title={t("forms.agentMcp.available")} description={t("forms.agentMcp.availableDesc")}>
-        {children}
-      </BentoFormSection>
-    ) : (
-      <SectionCard variant="cyan">
-        <SectionCard.Header
-          icon={IconServer2}
-          title={t("forms.agentMcp.available")}
-          description={t("forms.agentMcp.availableDesc")}
-        />
-        <SectionCard.Content>{children}</SectionCard.Content>
-      </SectionCard>
-    );
 
-  const FederationSection = ({ children }: { readonly children: React.ReactNode }) =>
-    chrome === "bento" ? (
-      <section className="bento-tile bento-glass relative flex flex-col gap-5 overflow-hidden rounded-3xl p-5 md:p-6">
-        {children}
-      </section>
-    ) : (
-      <SectionCard variant="cyan">
-        <SectionCard.Content>{children}</SectionCard.Content>
-      </SectionCard>
-    );
 
   return (
     <div className={chrome === "bento" ? "space-y-4 md:space-y-5" : "px-6"}>
       <div className={chrome === "bento" ? "space-y-4 md:space-y-5" : "space-y-4 py-8"}>
-        <Section>
+        <AgentFormSection
+          bento={chrome === "bento"}
+          icon={IconServer2}
+          tone="amber"
+          variant="cyan"
+          title={t("forms.agentMcp.available")}
+          description={t("forms.agentMcp.availableDesc")}
+        >
             {mcpServers.length > 0 ? (
               <div className="space-y-2">
                 {mcpServers.map((mcp) => {
@@ -195,9 +201,9 @@ export const AIAgentMcpForm: React.FC<Props> = ({ value, chrome = "console" }) =
                 </div>
               </div>
             )}
-        </Section>
+        </AgentFormSection>
 
-        <FederationSection>
+        <FederationSection bento={chrome === "bento"}>
             <label className="flex items-start gap-4 cursor-pointer">
               <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-cyan-500/15 dark:bg-cyan-500/25">
                 <IconWorldBolt className="size-5 text-cyan-600 dark:text-cyan-400" />

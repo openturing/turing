@@ -9,8 +9,7 @@ import { useEffect, useState } from "react"
 import { useTranslation } from "react-i18next"
 import { toast } from "@viglet/viglet-design-system"
 import { GradientButton } from "../ui/gradient-button"
-import { SectionCard } from "../ui/section-card"
-import { BentoFormSection } from "../bento"
+import { AgentFormSection } from "./agent-form-section"
 
 const turNativeToolService = new TurNativeToolService();
 
@@ -118,26 +117,18 @@ export const AIAgentToolsForm: React.FC<Props> = ({ value, chrome = "console" })
 
   const totalTools = toolGroups.reduce((acc, g) => acc + g.tools.length, 0);
 
-  const Section = ({ children }: { readonly children: React.ReactNode }) =>
-    chrome === "bento" ? (
-      <BentoFormSection icon={IconTool} tone="emerald" title={t("forms.agentTools.available")} description={t("forms.agentTools.availableDesc")}>
-        {children}
-      </BentoFormSection>
-    ) : (
-      <SectionCard variant="blue">
-        <SectionCard.Header
-          icon={IconTool}
-          title={t("forms.agentTools.available")}
-          description={t("forms.agentTools.availableDesc")}
-        />
-        <SectionCard.Content>{children}</SectionCard.Content>
-      </SectionCard>
-    );
 
   return (
     <div className={chrome === "bento" ? "space-y-4 md:space-y-5" : "px-6"}>
       <div className={chrome === "bento" ? "space-y-4 md:space-y-5" : "space-y-4 py-8"}>
-        <Section>
+        <AgentFormSection
+          bento={chrome === "bento"}
+          icon={IconTool}
+          tone="emerald"
+          variant="blue"
+          title={t("forms.agentTools.available")}
+          description={t("forms.agentTools.availableDesc")}
+        >
             {toolGroups.length > 0 ? (
               <div className="space-y-4">
                 {toolGroups.map((group) => {
@@ -216,7 +207,7 @@ export const AIAgentToolsForm: React.FC<Props> = ({ value, chrome = "console" })
                 </div>
               </div>
             )}
-        </Section>
+        </AgentFormSection>
 
         <div className="flex items-center justify-end gap-3 pt-4 border-t">
           <GradientButton type="button" variant="outline" onClick={onReset} disabled={!isDirty}>

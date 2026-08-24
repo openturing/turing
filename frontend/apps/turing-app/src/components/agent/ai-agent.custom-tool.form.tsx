@@ -8,8 +8,7 @@ import { useState } from "react"
 import { useTranslation } from "react-i18next"
 import { toast } from "@viglet/viglet-design-system"
 import { GradientButton } from "../ui/gradient-button"
-import { SectionCard } from "../ui/section-card"
-import { BentoFormSection } from "../bento"
+import { AgentFormSection } from "./agent-form-section"
 
 /**
  * @since 2026.2.5
@@ -80,26 +79,18 @@ export const AIAgentCustomToolForm: React.FC<Props> = ({ value, chrome = "consol
     setSelectedIds(new Set(savedIds));
   }
 
-  const Section = ({ children }: { readonly children: React.ReactNode }) =>
-    chrome === "bento" ? (
-      <BentoFormSection icon={IconBraces} tone="rose" title={t("forms.agentCustomTool.available")} description={t("forms.agentCustomTool.availableDesc")}>
-        {children}
-      </BentoFormSection>
-    ) : (
-      <SectionCard variant="emerald">
-        <SectionCard.Header
-          icon={IconBraces}
-          title={t("forms.agentCustomTool.available")}
-          description={t("forms.agentCustomTool.availableDesc")}
-        />
-        <SectionCard.Content>{children}</SectionCard.Content>
-      </SectionCard>
-    );
 
   return (
     <div className={chrome === "bento" ? "space-y-4 md:space-y-5" : "px-6"}>
       <div className={chrome === "bento" ? "space-y-4 md:space-y-5" : "space-y-4 py-8"}>
-        <Section>
+        <AgentFormSection
+          bento={chrome === "bento"}
+          icon={IconBraces}
+          tone="rose"
+          variant="emerald"
+          title={t("forms.agentCustomTool.available")}
+          description={t("forms.agentCustomTool.availableDesc")}
+        >
             {tools.length > 0 ? (
               <div className="space-y-2">
                 {tools.map((tool) => {
@@ -173,7 +164,7 @@ export const AIAgentCustomToolForm: React.FC<Props> = ({ value, chrome = "consol
                 </div>
               </div>
             )}
-        </Section>
+        </AgentFormSection>
 
         <div className="flex items-center justify-end gap-3 pt-4 border-t">
           <GradientButton type="button" variant="outline" onClick={onReset} disabled={!isDirty}>

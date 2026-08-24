@@ -12,9 +12,8 @@ import { IconAdjustments, IconLock } from "@tabler/icons-react"
 import { useEffect, useMemo, useState } from "react"
 import { useTranslation } from "react-i18next"
 import { toast } from "@viglet/viglet-design-system"
-import { BentoFormSection } from "../bento"
 import { GradientButton } from "../ui/gradient-button"
-import { SectionCard } from "../ui/section-card"
+import { AgentFormSection } from "./agent-form-section"
 
 const capabilityService = new TurCapabilityRegistryService();
 
@@ -143,35 +142,30 @@ export const AIAgentRequestOptionsForm: React.FC<Props> = ({ value, chrome = "co
     setOptions(parseOptions(savedJson));
   }
 
-  const Section = ({ title, description, children }: {
-    readonly title: string; readonly description?: string; readonly children: React.ReactNode;
-  }) =>
-    isBento ? (
-      <BentoFormSection icon={IconAdjustments} tone="blue" title={title} description={description}>
-        {children}
-      </BentoFormSection>
-    ) : (
-      <SectionCard variant="blue">
-        <SectionCard.Header icon={IconAdjustments} title={title} description={description} />
-        <SectionCard.Content>{children}</SectionCard.Content>
-      </SectionCard>
-    );
 
   return (
     <TooltipProvider>
       <div className={isBento ? "space-y-4 md:space-y-5" : "px-6"}>
         <div className={isBento ? "space-y-4 md:space-y-5" : "space-y-4 py-8"}>
           {categories.length === 0 ? (
-            <Section title={t("forms.agentRequestOptions.title")}
+            <AgentFormSection
+          bento={isBento}
+          icon={IconAdjustments}
+          tone="blue"
+          variant="blue" title={t("forms.agentRequestOptions.title")}
               description={t("forms.agentRequestOptions.description")}>
               <div className="text-center py-8">
                 <IconAdjustments className="mx-auto size-10 text-muted-foreground/30 mb-3" />
                 <p className="text-sm text-muted-foreground">{t("forms.agentRequestOptions.empty")}</p>
               </div>
-            </Section>
+            </AgentFormSection>
           ) : (
             categories.map(({ category, list }) => (
-              <Section key={category} title={t(`forms.agentRequestOptions.categories.${category}`, { defaultValue: category })}
+              <AgentFormSection
+          bento={isBento}
+          icon={IconAdjustments}
+          tone="blue"
+          variant="blue" key={category} title={t(`forms.agentRequestOptions.categories.${category}`, { defaultValue: category })}
                 description={t("forms.agentRequestOptions.description")}>
                   <div className="space-y-1.5">
                     {list.map((d) => {
@@ -226,7 +220,7 @@ export const AIAgentRequestOptionsForm: React.FC<Props> = ({ value, chrome = "co
                       );
                     })}
                   </div>
-              </Section>
+              </AgentFormSection>
             ))
           )}
 

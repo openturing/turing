@@ -8,8 +8,7 @@ import { useState } from "react"
 import { useTranslation } from "react-i18next"
 import { toast } from "@viglet/viglet-design-system"
 import { GradientButton } from "../ui/gradient-button"
-import { SectionCard } from "../ui/section-card"
-import { BentoFormSection } from "../bento"
+import { AgentFormSection } from "./agent-form-section"
 
 interface Props {
   value: TurAIAgent;
@@ -76,26 +75,18 @@ export const AIAgentLlmForm: React.FC<Props> = ({ value, chrome = "console" }) =
     setSelectedIds(new Set(savedIds));
   }
 
-  const Section = ({ children }: { readonly children: React.ReactNode }) =>
-    chrome === "bento" ? (
-      <BentoFormSection icon={IconCpu2} tone="violet" title={t("forms.agentLlm.available")} description={t("forms.agentLlm.availableDesc")}>
-        {children}
-      </BentoFormSection>
-    ) : (
-      <SectionCard variant="violet">
-        <SectionCard.Header
-          icon={IconCpu2}
-          title={t("forms.agentLlm.available")}
-          description={t("forms.agentLlm.availableDesc")}
-        />
-        <SectionCard.Content>{children}</SectionCard.Content>
-      </SectionCard>
-    );
 
   return (
     <div className={chrome === "bento" ? "space-y-4 md:space-y-5" : "px-6"}>
       <div className={chrome === "bento" ? "space-y-4 md:space-y-5" : "space-y-4 py-8"}>
-        <Section>
+        <AgentFormSection
+          bento={chrome === "bento"}
+          icon={IconCpu2}
+          tone="violet"
+          variant="violet"
+          title={t("forms.agentLlm.available")}
+          description={t("forms.agentLlm.availableDesc")}
+        >
             {llmInstances.length > 0 ? (
               <div className="space-y-2">
                 {llmInstances.map((llm) => {
@@ -163,7 +154,7 @@ export const AIAgentLlmForm: React.FC<Props> = ({ value, chrome = "console" }) =
                 </div>
               </div>
             )}
-        </Section>
+        </AgentFormSection>
 
         <div className="flex items-center justify-end gap-3 pt-4 border-t">
           <GradientButton type="button" variant="outline" onClick={onReset} disabled={!isDirty}>
