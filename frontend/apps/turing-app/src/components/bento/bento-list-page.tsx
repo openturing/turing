@@ -1,5 +1,12 @@
 // T990 -- adapter, not a copy.
 //
+// viglet-ds-allow-duplicate BentoListPage
+// viglet-ds-allow-duplicate BentoListPageProps
+// VDS74 -- the gate used to skip this whole file for containing a re-export,
+// which is the hole it closed. Both names are re-declared on purpose and the
+// note below says why; the markers are what makes that deliberate rather than
+// merely unreported.
+//
 // The other compounds in this block became one-line shims. This one cannot,
 // and the reason is the whole point of moving it: the package's BentoListPage
 // does not fetch the layout. Where a layout is stored is the product's
