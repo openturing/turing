@@ -80,4 +80,16 @@ export default tseslint.config([
       'react-hooks/incompatible-library': 'off',
     },
   },
+  // T1024 — a route table is not a component module.
+  //
+  // `*.routes.tsx` exports one JSX `<Route>` tree and declares the lazy page
+  // constants that tree points at. Fast Refresh's rule is about preserving
+  // component state across an edit, and there is no state to preserve in a
+  // route table: editing it remounts the tree either way. Left on, the rule
+  // reported 139 findings in one file — every lazy import — which is most of
+  // what stood under this app's warning ceiling and none of it actionable.
+  {
+    files: ['src/app/routes/*.routes.tsx'],
+    rules: { 'react-refresh/only-export-components': 'off' },
+  },
 ])
