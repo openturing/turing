@@ -18,7 +18,6 @@ export default function BentoPersonaEditor() {
       value={persona}
       isNew={isNew}
       baseRoute={ROUTES.BENTO_PERSONA_INSTANCE}
-      chrome="bento"
     />
   );
 }

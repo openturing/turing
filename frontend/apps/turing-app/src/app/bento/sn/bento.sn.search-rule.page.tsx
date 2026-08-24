@@ -58,7 +58,6 @@ export default function BentoSNSearchRulePage() {
           open={open}
           setOpen={setOpen}
           baseRoute={ROUTES.BENTO_SN_INSTANCE}
-          chrome="bento"
         />
       )}
     </LoadProvider>

@@ -15,8 +15,6 @@ const turNativeToolService = new TurNativeToolService();
 
 interface Props {
   value: TurAIAgent;
-  /** Render inside the bento shell (frosted BentoFormSection) instead of the console SectionCard. */
-  chrome?: "console" | "bento";
 }
 
 function parseNativeTools(nativeTools?: string | null): Set<string> {
@@ -30,7 +28,7 @@ function serializeNativeTools(tools: Set<string>): string {
   return Array.from(tools).sort().join(",");
 }
 
-export const AIAgentToolsForm: React.FC<Props> = ({ value, chrome = "console" }) => {
+export const AIAgentToolsForm: React.FC<Props> = ({ value }) => {
   const { t } = useTranslation();
   const [toolGroups, setToolGroups] = useState<NativeToolGroup[]>([]);
   const [selectedTools, setSelectedTools] = useState<Set<string>>(new Set());
@@ -117,12 +115,11 @@ export const AIAgentToolsForm: React.FC<Props> = ({ value, chrome = "console" })
 
   const totalTools = toolGroups.reduce((acc, g) => acc + g.tools.length, 0);
 
-
   return (
-    <div className={chrome === "bento" ? "space-y-4 md:space-y-5" : "px-6"}>
-      <div className={chrome === "bento" ? "space-y-4 md:space-y-5" : "space-y-4 py-8"}>
+    <div className="space-y-4 md:space-y-5">
+      <div className="space-y-4 md:space-y-5">
         <AgentFormSection
-          bento={chrome === "bento"}
+          bento
           icon={IconTool}
           tone="emerald"
           variant="blue"

@@ -21,15 +21,13 @@ import {
   IconSparkles,
   IconUpload,
 } from "@tabler/icons-react";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { toast } from "@viglet/viglet-design-system";
 
 import { ROUTES } from "@/app/routes.const";
 import { LoadProvider } from "@/components/loading-provider";
-import { SubPageHeader } from "@/components/sub.page.header";
-import { useSidebar } from "@/components/ui/sidebar";
 import { BentoHero } from "@/components/bento";
 import { GradientButton } from "@/components/ui/gradient-button";
 import { DialogDelete } from "@/components/dialog.delete";
@@ -75,33 +73,14 @@ import type { FlowNodeData, FlowNodeType } from "./types";
  * @since 2026.2.5
  */
 
-
 interface InnerProps {
   agentId: string;
   flow: TurChatFlow;
   isNew: boolean;
   baseRoute: string;
-  chrome: "console" | "bento";
 }
 
-/**
- * Auto-collapses the AI Agent's console sidebar so the canvas gets the extra
- * horizontal space. Rendered only under the console chrome — the bento shell
- * has no `SidebarProvider`, so `useSidebar()` would throw there. Isolating the
- * hook in a conditionally-mounted child keeps the rule-of-hooks intact.
- */
-function AutoCollapseSidebar() {
-  const { setOpen } = useSidebar();
-  const autoCollapsedRef = useRef(false);
-  useEffect(() => {
-    if (autoCollapsedRef.current) return;
-    autoCollapsedRef.current = true;
-    setOpen(false);
-  }, [setOpen]);
-  return null;
-}
-
-function ChatFlowInner({ agentId, flow, isNew, baseRoute, chrome }: InnerProps) {
+function ChatFlowInner({ agentId, flow, isNew, baseRoute }: InnerProps) {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const wrapperRef = useRef<HTMLDivElement>(null);
@@ -428,70 +407,23 @@ function ChatFlowInner({ agentId, flow, isNew, baseRoute, chrome }: InnerProps) 
 
   return (
     <div className="flex h-full min-h-0 flex-1 flex-col">
-      {chrome === "console" && <AutoCollapseSidebar />}
-      {chrome === "bento" ? (
-        <div className="px-1 pt-1">
-          <BentoHero
-            eyebrow={
-              <Link to={listUrl} className="hover:text-foreground">
-                {t("chatFlow.title")}
-              </Link>
-            }
-            leading={
-              <span className="grid h-12 w-12 place-items-center rounded-2xl bg-linear-to-br from-indigo-600 to-fuchsia-600 text-white shadow-md">
-                <IconSitemap size={24} />
-              </span>
-            }
-            title={flow.name || t("chatFlow.newInstance")}
-            subtitle={t("chatFlow.description")}
-            trailing={<div className="flex flex-wrap items-center justify-end gap-2">{actionButtons}</div>}
-          />
-        </div>
-      ) : (
-        <SubPageHeader
-          icon={IconSitemap}
-          feature={t("chatFlow.title")}
-          name={flow.name ?? t("chatFlow.newInstance")}
-          description={t("chatFlow.description")}
-          urlBase={listUrl}
-          onDelete={isNew ? undefined : onDelete}
-          open={isNew ? undefined : open}
-          setOpen={isNew ? undefined : setDialogOpen}
-        >
-          <SubPageHeader.Action
-            label={saving ? t("chatFlow.actions.saving") : t("chatFlow.actions.save")}
-            icon={IconDeviceFloppy}
-            onClick={onSave}
-            disabled={saving}
-          />
-          <SubPageHeader.Action
-            label={t("chatFlow.actions.livePreview", {
-              defaultValue: "Live preview",
-            })}
-            icon={IconBolt}
-            onClick={() => setLivePreviewOpen((open) => !open)}
-          />
-          {!isNew && (
-            <SubPageHeader.Action
-              label={t("chatFlow.actions.generateVariant", {
-                defaultValue: "Generate variant",
-              })}
-              icon={IconSparkles}
-              onClick={() => setVariantSource(flow)}
-            />
-          )}
-          <SubPageHeader.Action
-            label={t("chatFlow.actions.exportJson")}
-            icon={IconDownload}
-            onClick={onExport}
-          />
-          <SubPageHeader.Action
-            label={t("chatFlow.actions.importJson")}
-            icon={IconUpload}
-            onClick={onImportClick}
-          />
-        </SubPageHeader>
-      )}
+      <div className="px-1 pt-1">
+        <BentoHero
+          eyebrow={
+            <Link to={listUrl} className="hover:text-foreground">
+              {t("chatFlow.title")}
+            </Link>
+          }
+          leading={
+            <span className="grid h-12 w-12 place-items-center rounded-2xl bg-linear-to-br from-indigo-600 to-fuchsia-600 text-white shadow-md">
+              <IconSitemap size={24} />
+            </span>
+          }
+          title={flow.name || t("chatFlow.newInstance")}
+          subtitle={t("chatFlow.description")}
+          trailing={<div className="flex flex-wrap items-center justify-end gap-2">{actionButtons}</div>}
+        />
+      </div>
 
       <input
         ref={fileInputRef}
@@ -613,10 +545,9 @@ interface ChatFlowPageProps {
   /** Base route for navigation (defaults to the console AI agent list). */
   readonly baseRoute?: string;
   /** Render inside the bento shell (no console sidebar / SubPageHeader). */
-  readonly chrome?: "console" | "bento";
 }
 
-export default function ChatFlowPage({ baseRoute = ROUTES.AI_AGENT_INSTANCE, chrome = "console" }: ChatFlowPageProps = {}) {
+export default function ChatFlowPage({ baseRoute = ROUTES.AI_AGENT_INSTANCE }: ChatFlowPageProps = {}) {
   const { id: agentId, flowId } = useParams() as { id: string; flowId: string };
   const { t } = useTranslation();
   const isNew = flowId === "new";
@@ -630,7 +561,6 @@ export default function ChatFlowPage({ baseRoute = ROUTES.AI_AGENT_INSTANCE, chr
     ? t("common.connectionError", { resource: t("chatFlow.title").toLowerCase() })
     : null;
 
-
   return (
     <LoadProvider checkIsNotUndefined={flow} error={error} tryAgainUrl={tryAgainUrl}>
       <ReactFlowProvider>
@@ -638,7 +568,7 @@ export default function ChatFlowPage({ baseRoute = ROUTES.AI_AGENT_INSTANCE, chr
           /* `key` forces a remount whenever the flow changes (after a save the
              URL flips from `new` to the persisted UUID). Without it, the inner
              `useState` initial values from the previous render would stick. */
-          <ChatFlowInner key={flowId} agentId={agentId} flow={flow} isNew={isNew} baseRoute={baseRoute} chrome={chrome} />
+          <ChatFlowInner key={flowId} agentId={agentId} flow={flow} isNew={isNew} baseRoute={baseRoute} />
         )}
       </ReactFlowProvider>
     </LoadProvider>

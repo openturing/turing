@@ -25,7 +25,7 @@ export default function BentoSNBehaviorPage() {
 
   return (
     <LoadProvider checkIsNotUndefined={snSite} error={error} tryAgainUrl={`${ROUTES.BENTO_SN_INSTANCE}/${id}/behavior`}>
-      {snSite && <SNSiteBehaviorForm value={snSite} isNew={false} baseRoute={ROUTES.BENTO_SN_INSTANCE} chrome="bento" />}
+      {snSite && <SNSiteBehaviorForm value={snSite} isNew={false} baseRoute={ROUTES.BENTO_SN_INSTANCE} />}
     </LoadProvider>
   );
 }

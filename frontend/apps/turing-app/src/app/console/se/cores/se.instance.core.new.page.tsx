@@ -1,7 +1,6 @@
 import { ROUTES } from "@/app/routes.const";
 import { BentoFormHero } from "@/components/bento";
 import { LanguageSelect } from "@/components/language-select";
-import { StickyPageHeader } from "@/components/sticky-page-header";
 import {
   Form,
   FormControl,
@@ -19,8 +18,7 @@ import type { TurLocale } from "@/models/locale/locale.model";
 import { TurLocaleService } from "@/services/locale/locale.service";
 import { useCreateSeCore } from "@/api/queries/se-core.queries";
 import { useSubPageBreadcrumb } from "@/hooks/use-sub-page-breadcrumb";
-import { IconDatabase, IconDeviceFloppy, IconInfoCircle, IconX } from "@tabler/icons-react";
-import { GradientButton } from "@/components/ui/gradient-button";
+import { IconDatabase, IconInfoCircle } from "@tabler/icons-react";
 
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
@@ -50,12 +48,11 @@ interface SEInstanceCoreNewPageProps {
    * {@link BentoFormHero} (hero → sticky-save-bar morph + `←` breadcrumb) and
    * the frosted body comes from the enclosing `SectionCardChromeProvider`.
    */
-  chrome?: "console" | "bento";
   /** Route base for cores navigation; defaults to the console SE instance route. */
   baseRoute?: string;
 }
 
-export default function SEInstanceCoreNewPage({ chrome = "console", baseRoute = ROUTES.SE_INSTANCE }: Readonly<SEInstanceCoreNewPageProps>) {
+export default function SEInstanceCoreNewPage({ baseRoute = ROUTES.SE_INSTANCE }: Readonly<SEInstanceCoreNewPageProps>) {
   const { t } = useTranslation();
   const { id } = useParams() as { id: string };
   const navigate = useNavigate();
@@ -97,49 +94,25 @@ export default function SEInstanceCoreNewPage({ chrome = "console", baseRoute = 
     }
   }
 
-  const actions = (
-    <>
-      <GradientButton type="submit" size="sm">
-        <IconDeviceFloppy className="size-4" />
-        {t("forms.formActions.saveChanges")}
-      </GradientButton>
-      <GradientButton type="button" variant="outline" size="sm" onClick={() => navigate(coresRoute)}>
-        <IconX className="size-4" />
-        {t("forms.formActions.cancel")}
-      </GradientButton>
-    </>
-  );
-
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className={chrome === "bento" ? "space-y-4 md:space-y-5 pb-8" : "space-y-4 px-4 lg:px-6 pb-8"}>
-        {chrome === "bento" ? (
-          <BentoFormHero
-            backTo={coresRoute}
-            backLabel={t("se.cores.title")}
-            leading={
-              <span className="grid h-12 w-12 place-items-center rounded-2xl bg-linear-to-br from-emerald-500 to-teal-600 text-white shadow-md">
-                <IconDatabase size={24} />
-              </span>
-            }
-            title={t("se.newCore.title")}
-            subtitle={t("se.newCore.description")}
-            onCancel={() => navigate(coresRoute)}
-            loading={createCoreMutation.isPending}
-            dirty={form.formState.isDirty}
-            titleMissing={!finalCoreName}
-            stickyTitle={t("se.newCore.title")}
-          />
-        ) : (
-          <StickyPageHeader>
-            <StickyPageHeader.Title
-              icon={IconDatabase}
-              feature={t("se.cores.title")}
-              description={t("se.newCore.description")}
-            />
-            <StickyPageHeader.Actions>{actions}</StickyPageHeader.Actions>
-          </StickyPageHeader>
-        )}
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 md:space-y-5 pb-8">
+        <BentoFormHero
+          backTo={coresRoute}
+          backLabel={t("se.cores.title")}
+          leading={
+            <span className="grid h-12 w-12 place-items-center rounded-2xl bg-linear-to-br from-emerald-500 to-teal-600 text-white shadow-md">
+              <IconDatabase size={24} />
+            </span>
+          }
+          title={t("se.newCore.title")}
+          subtitle={t("se.newCore.description")}
+          onCancel={() => navigate(coresRoute)}
+          loading={createCoreMutation.isPending}
+          dirty={form.formState.isDirty}
+          titleMissing={!finalCoreName}
+          stickyTitle={t("se.newCore.title")}
+        />
           <SectionCard variant="blue">
             <SectionCard.Header
               icon={IconInfoCircle}

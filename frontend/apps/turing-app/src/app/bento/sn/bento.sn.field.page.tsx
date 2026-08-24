@@ -61,7 +61,7 @@ export default function BentoSNFieldPage() {
           snField={snField}
           isNew={isNew}
           baseRoute={ROUTES.BENTO_SN_INSTANCE}
-          chrome="bento"
+         
           onDelete={isNew ? undefined : onDelete}
           open={open}
           setOpen={setOpen}

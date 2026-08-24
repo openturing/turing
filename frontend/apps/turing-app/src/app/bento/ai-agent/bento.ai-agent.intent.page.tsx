@@ -43,7 +43,6 @@ export default function BentoAIAgentIntentPage() {
           isNew={isNew}
           agentId={agentId}
           agentTitle={agent?.title ?? t("aiAgent.title")}
-          chrome="bento"
           baseRoute={ROUTES.BENTO_AI_AGENT_INSTANCE}
         />
       )}

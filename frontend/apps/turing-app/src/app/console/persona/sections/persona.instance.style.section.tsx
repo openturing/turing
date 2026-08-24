@@ -10,7 +10,7 @@ import {
 import { FormItemTwoColumns } from "@/components/ui/form-item-two-columns"
 import { GradientSwitch } from "@/components/ui/gradient-switch"
 import { Input } from "@/components/ui/input"
-import { SectionCard, useSectionChrome } from "@/components/ui/section-card"
+import { SectionCard } from "@/components/ui/section-card"
 import {
   Select,
   SelectContent,
@@ -57,11 +57,10 @@ const TRAIT_DEFAULT = 50
 export default function PersonaInstanceStyleSection() {
   const { t } = useTranslation()
   const { form } = useOutletContext<PersonaFormContext>()
-  const chrome = useSectionChrome()
   useSubPageBreadcrumb(t("persona.sidebar.style"))
 
   return (
-    <div className={`w-full px-2 md:px-6 py-2 md:py-8 flex flex-col gap-4${chrome === "bento" ? "" : " max-w-2xl mx-auto"}`}>
+    <div className={`w-full px-2 md:px-6 py-2 md:py-8 flex flex-col gap-4${""}`}>
       <SectionCard variant="emerald">
         <SectionCard.Header
           icon={IconPalette}

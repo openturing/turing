@@ -13,9 +13,7 @@ import { TurMcpServerService } from "@/services/mcp/mcp-server.service"
 import { TurStoreInstanceService } from "@/services/store/store.service"
 import {
   IconBook2,
-  IconNotebook,
   IconPalette,
-  IconReportAnalytics,
   IconSettings,
   IconSparkles,
   IconTrash,
@@ -30,8 +28,6 @@ import { toast } from "@viglet/viglet-design-system"
 import { BentoActionsMenu, BentoFormHero } from "@/components/bento"
 import { DialogDelete } from "@/components/dialog.delete"
 import { SectionCardChromeProvider } from "@/components/ui/section-card"
-import { SubPage } from "../sub.page"
-import { StickySaveBar } from "../ui/sticky-save-bar"
 
 const turStoreInstanceService = new TurStoreInstanceService()
 const turMcpServerService = new TurMcpServerService()
@@ -49,7 +45,6 @@ interface Props {
    * Chrome around the shared form: the console `SubPage` sidebar (default) or
    * the Bento hero + pill tab-bar (matches the AI-agent surface, no sidebar).
    */
-  chrome?: "console" | "bento"
 }
 
 /**
@@ -110,7 +105,7 @@ const linesToTerms = (text: string) =>
  * @author Alexandre Oliveira
  * @since 2026.3.4
  */
-export const PersonaInstanceFormLayout: React.FC<Props> = ({ value, isNew, baseRoute = ROUTES.PERSONA_INSTANCE, chrome = "console" }) => {
+export const PersonaInstanceFormLayout: React.FC<Props> = ({ value, isNew, baseRoute = ROUTES.PERSONA_INSTANCE }) => {
   const { t } = useTranslation()
   const navigate = useNavigate()
   const urlBase = baseRoute
@@ -243,24 +238,6 @@ export const PersonaInstanceFormLayout: React.FC<Props> = ({ value, isNew, baseR
         icon: IconUsers,
         showOnNew: true,
       })
-      // Notebook + content-fit report need a saved persona (FK). In the Bento
-      // shell they're reached through the "Validate content" launch surface
-      // (T584), so we don't duplicate them as editor tabs there; the legacy
-      // console editor keeps them inline.
-      if (!isNew && value.id && chrome === "console") {
-        navMain.push({
-          title: t("persona.sidebar.notebook"),
-          url: "/notebook",
-          icon: IconNotebook,
-          showOnNew: false,
-        })
-        navMain.push({
-          title: t("persona.sidebar.fitReport"),
-          url: "/fit-report",
-          icon: IconReportAnalytics,
-          showOnNew: false,
-        })
-      }
     }
     navMain.push({
       title: t("persona.sidebar.guidelines"),
@@ -269,7 +246,7 @@ export const PersonaInstanceFormLayout: React.FC<Props> = ({ value, isNew, baseR
       showOnNew: true,
     })
     return { navMain }
-  }, [isNew, showAudience, value.id, chrome, t])
+  }, [showAudience, t])
 
   const outletContext: PersonaFormContext = {
     form,
@@ -289,106 +266,85 @@ export const PersonaInstanceFormLayout: React.FC<Props> = ({ value, isNew, baseR
         className="space-y-4 md:space-y-6"
         autoComplete="off"
       >
-        {chrome === "bento" ? (
-          <>
-            {/*
-             * Single-component "hero → sticky save bar" morph (matches the LLM
-             * instance surface): Save/Cancel live in the hero and fade away as
-             * you scroll; a fixed frosted bar fades in below the shell header.
-             * Rendered inside the <form>, so both Save buttons submit it.
-             */}
-            <BentoFormHero
-              backTo={isNew ? baseRoute : instanceUrlBase}
-              backLabel={isNew ? t("persona.title") : (value.name || t("persona.title"))}
-              leading={
-                <span className="grid h-12 w-12 place-items-center rounded-2xl bg-linear-to-br from-blue-500 to-indigo-600 text-white shadow-md">
-                  <IconUserCircle size={24} />
-                </span>
-              }
-              // Match the "Configure persona" dashboard card that opens this
-              // editor: the persona name is the eyebrow breadcrumb (back to the
-              // dashboard), so the title is the section — not the name again
-              // (which read as a duplicate of the eyebrow).
-              title={isNew ? t("persona.newInstance") : t("persona.dashboard.configureTitle")}
-              subtitle={t("persona.dashboard.configureHint")}
-              trailing={
-                !isNew ? (
-                  <BentoActionsMenu
-                    actions={[
-                      {
-                        label: t("forms.formActions.delete"),
-                        icon: IconTrash,
-                        tone: "destructive",
-                        onSelect: () => setDeleteOpen(true),
-                      },
-                    ]}
-                  />
-                ) : undefined
-              }
-              onCancel={() => navigate(urlBase)}
-              loading={form.formState.isSubmitting}
-              dirty={isNew || form.formState.isDirty}
-              titleMissing={!watchedName?.trim()}
-              stickyTitle={watchedName || value.name || (isNew ? t("persona.newInstance") : t("persona.title"))}
-            />
+        <>
+          {/*
+           * Single-component "hero → sticky save bar" morph (matches the LLM
+           * instance surface): Save/Cancel live in the hero and fade away as
+           * you scroll; a fixed frosted bar fades in below the shell header.
+           * Rendered inside the <form>, so both Save buttons submit it.
+           */}
+          <BentoFormHero
+            backTo={isNew ? baseRoute : instanceUrlBase}
+            backLabel={isNew ? t("persona.title") : (value.name || t("persona.title"))}
+            leading={
+              <span className="grid h-12 w-12 place-items-center rounded-2xl bg-linear-to-br from-blue-500 to-indigo-600 text-white shadow-md">
+                <IconUserCircle size={24} />
+              </span>
+            }
+            // Match the "Configure persona" dashboard card that opens this
+            // editor: the persona name is the eyebrow breadcrumb (back to the
+            // dashboard), so the title is the section — not the name again
+            // (which read as a duplicate of the eyebrow).
+            title={isNew ? t("persona.newInstance") : t("persona.dashboard.configureTitle")}
+            subtitle={t("persona.dashboard.configureHint")}
+            trailing={
+              !isNew ? (
+                <BentoActionsMenu
+                  actions={[
+                    {
+                      label: t("forms.formActions.delete"),
+                      icon: IconTrash,
+                      tone: "destructive",
+                      onSelect: () => setDeleteOpen(true),
+                    },
+                  ]}
+                />
+              ) : undefined
+            }
+            onCancel={() => navigate(urlBase)}
+            loading={form.formState.isSubmitting}
+            dirty={isNew || form.formState.isDirty}
+            titleMissing={!watchedName?.trim()}
+            stickyTitle={watchedName || value.name || (isNew ? t("persona.newInstance") : t("persona.title"))}
+          />
 
-            <nav className="mb-6 flex flex-wrap gap-2">
-              {navData.navMain.map((item) => {
-                const ItemIcon = item.icon
-                return (
-                  <NavLink
-                    key={item.url}
-                    to={`${instanceUrlBase}${item.url}`}
-                    className={({ isActive }) =>
-                      `bento-tile bento-tile-clickable inline-flex items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-sm backdrop-blur transition-colors ${
-                        isActive
-                          ? "border-primary/40 bg-primary text-primary-foreground"
-                          : "border-border/60 bg-card/60 text-muted-foreground hover:text-foreground"
-                      }`
-                    }
-                  >
-                    <ItemIcon size={16} />
-                    {item.title}
-                  </NavLink>
-                )
-              })}
-            </nav>
+          <nav className="mb-6 flex flex-wrap gap-2">
+            {navData.navMain.map((item) => {
+              const ItemIcon = item.icon
+              return (
+                <NavLink
+                  key={item.url}
+                  to={`${instanceUrlBase}${item.url}`}
+                  className={({ isActive }) =>
+                    `bento-tile bento-tile-clickable inline-flex items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-sm backdrop-blur transition-colors ${
+                      isActive
+                        ? "border-primary/40 bg-primary text-primary-foreground"
+                        : "border-border/60 bg-card/60 text-muted-foreground hover:text-foreground"
+                    }`
+                  }
+                >
+                  <ItemIcon size={16} />
+                  {item.title}
+                </NavLink>
+              )
+            })}
+          </nav>
 
-            <SectionCardChromeProvider chrome="bento">
-              <Outlet context={outletContext} />
-            </SectionCardChromeProvider>
+          <SectionCardChromeProvider chrome="bento">
+            <Outlet context={outletContext} />
+          </SectionCardChromeProvider>
 
-            {!isNew && (
-              <DialogDelete
-                feature={t("persona.title")}
-                name={value.name}
-                onDelete={onDelete}
-                open={deleteOpen}
-                setOpen={setDeleteOpen}
-                trigger={<span className="hidden" aria-hidden />}
-              />
-            )}
-          </>
-        ) : (
-          <>
-            <StickySaveBar
-              title={watchedName || (isNew ? t("persona.newInstance") : t("persona.title"))}
-              onCancel={() => navigate(urlBase)}
-            />
-            <SubPage
-              icon={IconUserCircle}
+          {!isNew && (
+            <DialogDelete
               feature={t("persona.title")}
-              name={watchedName || value.name || t("persona.title")}
-              urlBase={instanceUrlBase}
-              isNew={isNew}
-              data={navData}
+              name={value.name}
+              onDelete={onDelete}
               open={deleteOpen}
               setOpen={setDeleteOpen}
-              onDelete={onDelete}
-              outletContext={outletContext}
+              trigger={<span className="hidden" aria-hidden />}
             />
-          </>
-        )}
+          )}
+        </>
       </form>
     </Form>
   )

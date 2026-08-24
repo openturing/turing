@@ -28,7 +28,7 @@ export default function BentoAIAgentCapabilitiesPage() {
         title={t("aiAgent.nav.capabilities")}
         subtitle={t("forms.agentCapabilities.description")}
       />
-      {agent && <AIAgentCapabilitiesForm value={agent} chrome="bento" />}
+      {agent && <AIAgentCapabilitiesForm value={agent} />}
     </LoadProvider>
   );
 }

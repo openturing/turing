@@ -18,7 +18,7 @@ export default function BentoAIAgentSettingsPage() {
   return (
     <LoadProvider checkIsNotUndefined={value} error={error} tryAgainUrl={`${ROUTES.BENTO_AI_AGENT_INSTANCE}/${id}/settings`}>
       {value && (
-        <AIAgentSettingsForm value={value} isNew={isNew} chrome="bento" baseRoute={ROUTES.BENTO_AI_AGENT_INSTANCE} />
+        <AIAgentSettingsForm value={value} isNew={isNew} baseRoute={ROUTES.BENTO_AI_AGENT_INSTANCE} />
       )}
     </LoadProvider>
   );

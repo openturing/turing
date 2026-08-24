@@ -11,7 +11,6 @@ import {
   parseRangeValue,
 } from "@/components/sn/facet/sn.site.custom.facet.form.utils";
 import { BentoFormHero } from "@/components/bento";
-import { StickyPageHeader } from "@/components/sticky-page-header";
 import { SectionCard } from "@/components/ui/section-card";
 import { GradientButton } from "@/components/ui/gradient-button";
 import { type BreadcrumbItem } from "@/contexts/breadcrumb.context";
@@ -59,7 +58,7 @@ const EMPTY_ITEM: TurSNSiteCustomFacetItem = {
  *   {@link BentoFormHero} (T738) so the surface stays clear of `useSidebar` and
  *   gets the standard hero → sticky-save-bar morph.
  */
-export default function SNSiteCustomFacetItemPage({ baseRoute = ROUTES.SN_INSTANCE, chrome = "console" }: Readonly<{ baseRoute?: string; chrome?: "console" | "bento" }> = {}) {
+export default function SNSiteCustomFacetItemPage({ baseRoute = ROUTES.SN_INSTANCE }: Readonly<{ baseRoute?: string }> = {}) {
   const navigate = useNavigate();
   const { id, customFacetId, itemIndex } = useParams() as {
     id: string;
@@ -77,7 +76,6 @@ export default function SNSiteCustomFacetItemPage({ baseRoute = ROUTES.SN_INSTAN
 
   const isNewItem = itemIndex === "new";
   const editingIndex = isNewItem ? null : Number(itemIndex);
-  const isBento = chrome === "bento";
 
   useEffect(() => {
     customFacetService
@@ -229,54 +227,25 @@ export default function SNSiteCustomFacetItemPage({ baseRoute = ROUTES.SN_INSTAN
       tryAgainUrl={`${baseRoute}/${id}/facet/custom/${customFacetId}/item/${itemIndex}`}
     >
       {customFacet && (
-        <div className={isBento ? "flex flex-col gap-5 pb-8" : "space-y-4 px-4 lg:px-6 pb-8"}>
-          {isBento ? (
-            /* T738: the canonical BentoFormHero owns both halves of the morph.
-               This page saves imperatively (onClick, no form submit), so it
-               passes its own `actions` — the escape hatch that replaces the
-               default `type="submit"` Save/Cancel in the hero *and* the
-               sticky bar. */
-            <BentoFormHero
-              backTo={`${baseRoute}/${id}/facet/custom/${customFacetId}`}
-              backLabel={t("sn.facets.title")}
-              leading={
-                <span className="grid h-12 w-12 place-items-center rounded-2xl bg-linear-to-br from-amber-500 to-orange-500 text-white shadow-md">
-                  <IconListDetails size={24} />
-                </span>
-              }
-              title={t("forms.snCustomFacet.facetItems")}
-              subtitle={t("forms.snCustomFacet.itemDesc")}
-              actions={facetItemActions}
-              onCancel={backToFacet}
-            />
-          ) : (
-            <StickyPageHeader>
-              <StickyPageHeader.Title
-                icon={IconListDetails}
-                feature={
-                  isNewItem
-                    ? t("forms.snCustomFacet.addItemTitle")
-                    : t("forms.snCustomFacet.editItem")
-                }
-                description={customFacet.defaultLabel ?? customFacet.name ?? ""}
-              />
-              <StickyPageHeader.Actions>
-                <GradientButton type="button" size="sm" onClick={onSave}>
-                  <IconDeviceFloppy className="size-4" />
-                  {t("forms.formActions.saveChanges")}
-                </GradientButton>
-                <GradientButton
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={backToFacet}
-                >
-                  <IconX className="size-4" />
-                  {t("forms.formActions.cancel")}
-                </GradientButton>
-              </StickyPageHeader.Actions>
-            </StickyPageHeader>
-          )}
+        <div className="flex flex-col gap-5 pb-8">
+          /* T738: the canonical BentoFormHero owns both halves of the morph.
+             This page saves imperatively (onClick, no form submit), so it
+             passes its own `actions` — the escape hatch that replaces the
+             default `type="submit"` Save/Cancel in the hero *and* the
+             sticky bar. */
+          <BentoFormHero
+            backTo={`${baseRoute}/${id}/facet/custom/${customFacetId}`}
+            backLabel={t("sn.facets.title")}
+            leading={
+              <span className="grid h-12 w-12 place-items-center rounded-2xl bg-linear-to-br from-amber-500 to-orange-500 text-white shadow-md">
+                <IconListDetails size={24} />
+              </span>
+            }
+            title={t("forms.snCustomFacet.facetItems")}
+            subtitle={t("forms.snCustomFacet.itemDesc")}
+            actions={facetItemActions}
+            onCancel={backToFacet}
+          />
 
           <SectionCard variant="amber">
             <SectionCard.Header

@@ -15,18 +15,17 @@ import { IconGavel } from "@tabler/icons-react"
 import React from "react"
 import { useTranslation } from "react-i18next"
 import type { UseFormReturn } from "react-hook-form"
-import { SNSiteSearchRuleSection, type SNSectionChrome } from "./sn.site.search.rule.section"
+import { SNSiteSearchRuleSection } from "./sn.site.search.rule.section"
 
 interface Props {
     form: UseFormReturn<TurSNSiteSearchRule>;
-    chrome?: SNSectionChrome;
 }
 
-export const SNSiteSearchRuleDetails: React.FC<Props> = ({ form, chrome = "console" }) => {
+export const SNSiteSearchRuleDetails: React.FC<Props> = ({ form }) => {
     const { t } = useTranslation();
 
     return (
-        <SNSiteSearchRuleSection chrome={chrome} icon={IconGavel} tone="blue" title={t("sn.searchRule.details")} description={t("sn.searchRule.detailsDesc")}>
+        <SNSiteSearchRuleSection icon={IconGavel} tone="blue" title={t("sn.searchRule.details")} description={t("sn.searchRule.detailsDesc")}>
                 <FormField
                     control={form.control}
                     name="name"

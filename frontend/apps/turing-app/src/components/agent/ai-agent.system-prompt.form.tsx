@@ -13,14 +13,12 @@ import {
 import { PromptEditor } from "@/components/ui/prompt-editor"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import type { TurAIAgent } from "@/models/agent/ai-agent.model.ts"
-import { IconDeviceFloppy, IconFileText, IconX } from "@tabler/icons-react"
+import { IconFileText } from "@tabler/icons-react"
 import { toast } from "@viglet/viglet-design-system"
 import { useEffect } from "react"
 import { useForm } from "react-hook-form"
 import { useTranslation } from "react-i18next"
 import { useNavigate } from "react-router-dom"
-import { StickyPageHeader } from "../sticky-page-header"
-import { GradientButton } from "../ui/gradient-button"
 import { SectionCard } from "../ui/section-card"
 import { BentoAgentSubHero } from "@/app/bento/ai-agent/bento.ai-agent.sub-hero"
 import { SystemPromptWarningsPanel } from "./system-prompt-warnings-panel"
@@ -34,7 +32,6 @@ interface Props {
    * is dropped (the bento page supplies its own `BentoHero`) and Save/Cancel
    * render as a footer action row instead.
    */
-  chrome?: "console" | "bento";
   /** Route base for the Cancel navigation — defaults to the console list. */
   baseRoute?: string;
 }
@@ -75,24 +72,10 @@ function buildSystemPromptFieldInstruction(spec: {
   ].join("\n");
 }
 
-export const AIAgentSystemPromptForm: React.FC<Props> = ({ value, chrome = "console", baseRoute = urlBase }) => {
+export const AIAgentSystemPromptForm: React.FC<Props> = ({ value, baseRoute = urlBase }) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const updateMutation = useUpdateAiAgent();
-  const isBento = chrome === "bento";
-
-  const actions = (
-    <>
-      <GradientButton type="submit" size="sm">
-        <IconDeviceFloppy className="size-4" />
-        {t("forms.formActions.saveChanges")}
-      </GradientButton>
-      <GradientButton type="button" variant="outline" size="sm" onClick={() => navigate(baseRoute)}>
-        <IconX className="size-4" />
-        {t("forms.formActions.cancel")}
-      </GradientButton>
-    </>
-  );
 
   // Whole agent in form state (defaultValues) so a save round-trips every
   // field the update endpoint reads — we only render the systemPrompt field.
@@ -123,35 +106,22 @@ export const AIAgentSystemPromptForm: React.FC<Props> = ({ value, chrome = "cons
     <div className="space-y-4 px-4 lg:px-6 pb-8">
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-          {isBento ? (
-            /* Standard agent form-hero (T736): Save/Cancel live in the hero and
-               fade into a fixed sticky save-bar on scroll — matching every
-               sibling agent sub-page (settings/intent/…). */
-            <BentoAgentSubHero
-              agentId={value.id}
-              agentTitle={value.title || t("aiAgent.title")}
-              icon={IconFileText}
-              tone="violet"
-              title={t("aiAgent.systemPrompt.title", { defaultValue: "System Prompt" })}
-              subtitle={t("aiAgent.systemPrompt.description", {
-                defaultValue: "The behavioral contract sent to the model on every turn.",
-              })}
-              onCancel={() => navigate(baseRoute)}
-              loading={updateMutation.isPending}
-              dirty={form.formState.isDirty}
-            />
-          ) : (
-            <StickyPageHeader>
-              <StickyPageHeader.Title
-                icon={IconFileText}
-                feature={t("aiAgent.systemPrompt.title", { defaultValue: "System Prompt" })}
-                description={t("aiAgent.systemPrompt.description", {
-                  defaultValue: "The behavioral contract sent to the model on every turn.",
-                })}
-              />
-              <StickyPageHeader.Actions>{actions}</StickyPageHeader.Actions>
-            </StickyPageHeader>
-          )}
+          /* Standard agent form-hero (T736): Save/Cancel live in the hero and
+             fade into a fixed sticky save-bar on scroll — matching every
+             sibling agent sub-page (settings/intent/…). */
+          <BentoAgentSubHero
+            agentId={value.id}
+            agentTitle={value.title || t("aiAgent.title")}
+            icon={IconFileText}
+            tone="violet"
+            title={t("aiAgent.systemPrompt.title", { defaultValue: "System Prompt" })}
+            subtitle={t("aiAgent.systemPrompt.description", {
+              defaultValue: "The behavioral contract sent to the model on every turn.",
+            })}
+            onCancel={() => navigate(baseRoute)}
+            loading={updateMutation.isPending}
+            dirty={form.formState.isDirty}
+          />
 
           <Tabs defaultValue="editor" className="space-y-4">
             <TabsList>

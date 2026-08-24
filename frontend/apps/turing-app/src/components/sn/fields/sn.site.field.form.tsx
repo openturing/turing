@@ -10,9 +10,8 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form"
-import { StickyPageHeader } from "@/components/sticky-page-header"
 import { BentoFormHero } from "@/components/bento"
-import { SNFormSection, type SNFormChrome } from "@/components/sn/sn-form-section"
+import { SNFormSection } from "@/components/sn/sn-form-section"
 import { FormItemTwoColumns } from "@/components/ui/form-item-two-columns"
 import { GradientSwitch } from "@/components/ui/gradient-switch"
 import {
@@ -32,8 +31,7 @@ import type { TurSNFieldType } from "@/models/sn/sn-field-type.model"
 import type { TurSNSiteField } from "@/models/sn/sn-site-field.model"
 import { TurSNFieldService } from "@/services/sn/sn.field.service"
 import { TurSNFieldTypeService } from "@/services/sn/sn.field.type.service"
-import { IconAlignBoxCenterStretch, IconDeviceFloppy, IconSettings, IconX } from "@tabler/icons-react"
-import { GradientButton } from "@/components/ui/gradient-button"
+import { IconAlignBoxCenterStretch, IconSettings } from "@tabler/icons-react"
 import { DialogDelete } from "@/components/dialog.delete"
 import axios from "axios"
 import { useEffect, useMemo, useState } from "react"
@@ -58,12 +56,9 @@ interface Props {
    * `ROUTES.BENTO_SN_INSTANCE` so save/cancel navigate back inside the shell.
    */
   baseRoute?: string;
-  /** Render chrome. `console` = StickyPageHeader + SectionCards; `bento` =
-   *  BentoHero + frosted BentoFormSection cards (T576). Defaults to console. */
-  chrome?: SNFormChrome;
 }
 
-export const SNSiteFieldForm: React.FC<Props> = ({ snSiteId, snField, isNew, onDelete, open, setOpen, baseRoute = ROUTES.SN_INSTANCE, chrome = "console" }) => {
+export const SNSiteFieldForm: React.FC<Props> = ({ snSiteId, snField, isNew, onDelete, open, setOpen, baseRoute = ROUTES.SN_INSTANCE }) => {
   const { t } = useTranslation();
   const normalizedField = useMemo(() => ({
     ...snField,
@@ -122,7 +117,6 @@ export const SNSiteFieldForm: React.FC<Props> = ({ snSiteId, snField, isNew, onD
     form.reset(normalizedField);
   }, [normalizedField, form]);
 
-
   async function onSubmit(snField: TurSNSiteField) {
     setIsSubmitting(true);
     try {
@@ -172,25 +166,9 @@ export const SNSiteFieldForm: React.FC<Props> = ({ snSiteId, snField, isNew, onD
     }
   }
 
-  const isBento = chrome === "bento";
-
   // Destructive action — in bento it lives in the hero `trailing` (never in
   // the save bar, which would mount the controlled dialog twice).
   const deleteDialog = onDelete && open !== undefined && setOpen && <DialogDelete feature={t("sn.fields.feature")} name={snField.name} onDelete={onDelete} open={open} setOpen={setOpen} />;
-
-  const actions = (
-    <>
-      {deleteDialog}
-      <GradientButton type="submit" size="sm" loading={isSubmitting} disabled={isSubmitting}>
-        <IconDeviceFloppy className="size-4" />
-        {t("forms.formActions.saveChanges")}
-      </GradientButton>
-      <GradientButton type="button" variant="outline" size="sm" disabled={isSubmitting} onClick={() => navigate(urlBase)}>
-        <IconX className="size-4" />
-        {t("forms.formActions.cancel")}
-      </GradientButton>
-    </>
-  );
 
   return (
     <>
@@ -219,38 +197,27 @@ export const SNSiteFieldForm: React.FC<Props> = ({ snSiteId, snField, isNew, onD
         </div>
       ) : (
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className={isBento ? "space-y-5 pb-8" : "space-y-4 px-4 lg:px-6 pb-8"}>
-            {isBento ? (
-              // T738: one BentoFormHero owns both halves of the morph.
-              // `saveDisabled` mirrors the console Save (disabled only while
-              // submitting) — this form doesn't track dirty state.
-              <BentoFormHero
-                backTo={urlBase}
-                backLabel={t("sn.fields.title")}
-                leading={
-                  <span className="grid h-12 w-12 place-items-center rounded-2xl bg-linear-to-br from-emerald-500 to-teal-600 text-white shadow-md">
-                    <IconAlignBoxCenterStretch size={24} />
-                  </span>
-                }
-                title={snField.name || t("common.new")}
-                subtitle={t("sn.fields.description")}
-                trailing={deleteDialog}
-                onCancel={() => navigate(urlBase)}
-                loading={isSubmitting}
-                saveDisabled={isSubmitting}
-              />
-            ) : (
-              <StickyPageHeader>
-                <StickyPageHeader.Title
-                  icon={IconAlignBoxCenterStretch}
-                  feature={t("sn.fields.feature")}
-                  description={snField.description}
-                />
-                <StickyPageHeader.Actions>{actions}</StickyPageHeader.Actions>
-              </StickyPageHeader>
-            )}
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5 pb-8">
+            {/* T738: one BentoFormHero owns both halves of the morph.
+                `saveDisabled` mirrors the console Save (disabled only while
+                submitting) — this form doesn't track dirty state. */}
+            <BentoFormHero
+              backTo={urlBase}
+              backLabel={t("sn.fields.title")}
+              leading={
+                <span className="grid h-12 w-12 place-items-center rounded-2xl bg-linear-to-br from-emerald-500 to-teal-600 text-white shadow-md">
+                  <IconAlignBoxCenterStretch size={24} />
+                </span>
+              }
+              title={snField.name || t("common.new")}
+              subtitle={t("sn.fields.description")}
+              trailing={deleteDialog}
+              onCancel={() => navigate(urlBase)}
+              loading={isSubmitting}
+              saveDisabled={isSubmitting}
+            />
             {/* General Configuration */}
-            <SNFormSection chrome={chrome} icon={IconSettings} tone="blue" title={t("forms.snField.generalConfig")} description={t("forms.snField.generalConfigDesc")}>
+            <SNFormSection icon={IconSettings} tone="blue" title={t("forms.snField.generalConfig")} description={t("forms.snField.generalConfigDesc")}>
                 {/* Name */}
                 <FormField
                   control={form.control}

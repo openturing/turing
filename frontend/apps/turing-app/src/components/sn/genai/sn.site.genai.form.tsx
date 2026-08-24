@@ -47,15 +47,14 @@ import {
 } from "@/services/sn/sn.ranking-lexicon.service"
 import { TurSNSiteService } from "@/services/sn/sn.service"
 import { TurGlobalSettingsService } from "@/services/system/global-settings.service"
-import { IconArrowsSort, IconBrain, IconCpu2, IconDatabaseSearch, IconDeviceFloppy, IconFileDescription, IconLoader2, IconMovie, IconRefresh, IconRouteAltLeft, IconSparkles, IconUserSearch, IconX } from "@tabler/icons-react"
+import { IconArrowsSort, IconBrain, IconCpu2, IconDatabaseSearch, IconFileDescription, IconLoader2, IconMovie, IconRefresh, IconRouteAltLeft, IconSparkles, IconUserSearch } from "@tabler/icons-react"
 import React, { useCallback, useEffect, useState } from "react"
 import { useForm } from "react-hook-form"
 import { useTranslation } from "react-i18next"
 import { toast } from "@viglet/viglet-design-system"
 import { BentoFormHero } from "@/components/bento"
-import { SNFormSection, type SNFormChrome } from "@/components/sn/sn-form-section"
+import { SNFormSection } from "@/components/sn/sn-form-section"
 import { Button } from "../../ui/button"
-import { StickyPageHeader } from "../../sticky-page-header"
 import { GradientButton } from "../../ui/gradient-button"
 import { Textarea } from "../../ui/textarea"
 
@@ -72,12 +71,9 @@ interface Props {
     snSite: TurSNSite;
     /** SN instance base route for the bento back-link. Defaults to console. */
     baseRoute?: string;
-    /** Render chrome. `console` = StickyPageHeader + SectionCards; `bento` =
-     *  BentoHero + frosted BentoFormSection cards (T576). Defaults to console. */
-    chrome?: SNFormChrome;
 }
 
-export const SNSiteGenAiForm: React.FC<Props> = ({ snSite, baseRoute = ROUTES.SN_INSTANCE, chrome = "console" }) => {
+export const SNSiteGenAiForm: React.FC<Props> = ({ snSite, baseRoute = ROUTES.SN_INSTANCE }) => {
     const { t } = useTranslation();
     const updateMutation = useUpdateSnSite();
     const form = useForm<TurSNSiteGenAi>({
@@ -400,55 +396,29 @@ export const SNSiteGenAiForm: React.FC<Props> = ({ snSite, baseRoute = ROUTES.SN
 
     const canGenerate = !!defaultLlmId && !!snSite.description && !isGenerating;
 
-    const isBento = chrome === "bento";
-
-    const actions = (
-        <>
-            <GradientButton type="submit" size="sm">
-                <IconDeviceFloppy className="size-4" />
-                {t("forms.formActions.saveChanges")}
-            </GradientButton>
-            <GradientButton type="button" variant="outline" size="sm" onClick={() => form.reset(snSite.turSNSiteGenAi)}>
-                <IconX className="size-4" />
-                {t("forms.formActions.cancel")}
-            </GradientButton>
-        </>
-    );
-
     return (
         <>
         <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className={isBento ? "space-y-5 pb-8" : "space-y-4 px-4 lg:px-6 pb-8"}>
-                {isBento ? (
-                    // T738: one BentoFormHero owns both halves of the morph.
-                    // `saveDisabled={false}` keeps Save always-enabled (this
-                    // form doesn't track dirty state).
-                    <BentoFormHero
-                        backTo={`${baseRoute}/${snSite.id}`}
-                        backLabel={t("sn.title")}
-                        leading={
-                            <span className="grid h-12 w-12 place-items-center rounded-2xl bg-linear-to-br from-emerald-500 to-teal-600 text-white shadow-md">
-                                <IconCpu2 size={24} />
-                            </span>
-                        }
-                        title={t("sn.genai.title")}
-                        subtitle={t("sn.genai.description")}
-                        onCancel={() => form.reset(snSite.turSNSiteGenAi)}
-                        saveDisabled={false}
-                    />
-                ) : (
-                    <StickyPageHeader>
-                        <StickyPageHeader.Title
-                            icon={IconCpu2}
-                            feature={t("sn.genai.title")}
-                            description={t("sn.genai.description")}
-                        />
-                        <StickyPageHeader.Actions>{actions}</StickyPageHeader.Actions>
-                    </StickyPageHeader>
-                )}
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5 pb-8">
+                {/* T738: one BentoFormHero owns both halves of the morph.
+                    `saveDisabled={false}` keeps Save always-enabled (this
+                    form doesn't track dirty state). */}
+                  <BentoFormHero
+                      backTo={`${baseRoute}/${snSite.id}`}
+                      backLabel={t("sn.title")}
+                      leading={
+                          <span className="grid h-12 w-12 place-items-center rounded-2xl bg-linear-to-br from-emerald-500 to-teal-600 text-white shadow-md">
+                              <IconCpu2 size={24} />
+                          </span>
+                      }
+                      title={t("sn.genai.title")}
+                      subtitle={t("sn.genai.description")}
+                      onCancel={() => form.reset(snSite.turSNSiteGenAi)}
+                      saveDisabled={false}
+                  />
                     <div className="space-y-4">
                         {/* Section 1: Site Prompt */}
-                        <SNFormSection chrome={chrome} icon={IconFileDescription} tone="amber" title={t("forms.snGenai.sitePrompt")} description={t("forms.snGenai.sitePromptDesc")}>
+                        <SNFormSection icon={IconFileDescription} tone="amber" title={t("forms.snGenai.sitePrompt")} description={t("forms.snGenai.sitePromptDesc")}>
                                 <FormField
                                     control={form.control}
                                     name="sitePrompt"
@@ -496,7 +466,7 @@ export const SNSiteGenAiForm: React.FC<Props> = ({ snSite, baseRoute = ROUTES.SN
                         </SNFormSection>
 
                         {/* Section 2: AI Agent (single source of truth for LLM, embedding, store and RAG flag) */}
-                        <SNFormSection chrome={chrome} icon={IconBrain} tone="violet" title={t("forms.snGenai.aiAgent")} description={t("forms.snGenai.aiAgentDesc")}>
+                        <SNFormSection icon={IconBrain} tone="violet" title={t("forms.snGenai.aiAgent")} description={t("forms.snGenai.aiAgentDesc")}>
                                 <FormField
                                     control={form.control}
                                     name="turAIAgent"
@@ -622,7 +592,7 @@ export const SNSiteGenAiForm: React.FC<Props> = ({ snSite, baseRoute = ROUTES.SN
                             catalog copilot — NL→DSL over the declared field
                             schema, needs only a default LLM), or HYBRID (both).
                             Naming it makes the vectorless path discoverable. */}
-                        <SNFormSection chrome={chrome} icon={IconDatabaseSearch} tone="violet" title={t("forms.snGenai.kbModeTitle")} description={t("forms.snGenai.kbModeDesc")}>
+                        <SNFormSection icon={IconDatabaseSearch} tone="violet" title={t("forms.snGenai.kbModeTitle")} description={t("forms.snGenai.kbModeDesc")}>
                                 <FormField
                                     control={form.control}
                                     name="knowledgeBaseMode"
@@ -693,7 +663,7 @@ export const SNSiteGenAiForm: React.FC<Props> = ({ snSite, baseRoute = ROUTES.SN
                             degenerate result). "Default" pins nothing and inherits
                             turing.genai.copilot.planning.*. Only meaningful once the
                             copilot is reachable — i.e. a vectorless/hybrid KB mode. */}
-                        <SNFormSection chrome={chrome} icon={IconRouteAltLeft} tone="violet" title={t("forms.snGenai.copilotPlanningTitle")} description={t("forms.snGenai.copilotPlanningDesc")}>
+                        <SNFormSection icon={IconRouteAltLeft} tone="violet" title={t("forms.snGenai.copilotPlanningTitle")} description={t("forms.snGenai.copilotPlanningDesc")}>
                                 <FormField
                                     control={form.control}
                                     name="copilotPlanningStrategy"
@@ -914,7 +884,7 @@ export const SNSiteGenAiForm: React.FC<Props> = ({ snSite, baseRoute = ROUTES.SN
                             Only meaningful when the bound agent has RAG enabled;
                             disabled state when ragEnabled is false makes the
                             UI track the runtime gating exactly. */}
-                        <SNFormSection chrome={chrome} icon={IconSparkles} tone="blue" title={t("forms.snGenai.hybridTitle")} description={t("forms.snGenai.hybridDesc")}>
+                        <SNFormSection icon={IconSparkles} tone="blue" title={t("forms.snGenai.hybridTitle")} description={t("forms.snGenai.hybridDesc")}>
                                 <FormField
                                     control={form.control}
                                     name="ragBm25Fallback"
@@ -1208,7 +1178,7 @@ export const SNSiteGenAiForm: React.FC<Props> = ({ snSite, baseRoute = ROUTES.SN
                             documents are embedded into a per-site collection as
                             they are indexed, and fused with BM25 via RRF when the
                             sort is relevance. */}
-                        <SNFormSection chrome={chrome} icon={IconArrowsSort} tone="blue" title={t("forms.snGenai.snRankingTitle")} description={t("forms.snGenai.snRankingDesc")}>
+                        <SNFormSection icon={IconArrowsSort} tone="blue" title={t("forms.snGenai.snRankingTitle")} description={t("forms.snGenai.snRankingDesc")}>
                                 <FormField
                                     control={form.control}
                                     name="snRankingMode"
@@ -1311,7 +1281,7 @@ export const SNSiteGenAiForm: React.FC<Props> = ({ snSite, baseRoute = ROUTES.SN
                             persona as it is indexed and stores content_fit_score;
                             surfaced in the Field Coverage dashboard. Independent of
                             the RAG / ranking cards above. */}
-                        <SNFormSection chrome={chrome} icon={IconUserSearch} tone="emerald" title={t("forms.snGenai.contentFitTitle")} description={t("forms.snGenai.contentFitDesc")}>
+                        <SNFormSection icon={IconUserSearch} tone="emerald" title={t("forms.snGenai.contentFitTitle")} description={t("forms.snGenai.contentFitDesc")}>
                                 <FormField
                                     control={form.control}
                                     name="contentFitIndexingEnabled"
@@ -1395,7 +1365,7 @@ export const SNSiteGenAiForm: React.FC<Props> = ({ snSite, baseRoute = ROUTES.SN
                             document's clip is transcribed + scene-described as it is
                             indexed and appended to the text field, so the clip's
                             content is searchable. Gemini-only, fail-open, off by default. */}
-                        <SNFormSection chrome={chrome} icon={IconMovie} tone="emerald" title={t("forms.snGenai.mediaUnderstandingTitle")} description={t("forms.snGenai.mediaUnderstandingDesc")}>
+                        <SNFormSection icon={IconMovie} tone="emerald" title={t("forms.snGenai.mediaUnderstandingTitle")} description={t("forms.snGenai.mediaUnderstandingDesc")}>
                                 <FormField
                                     control={form.control}
                                     name="mediaUnderstandingIndexingEnabled"

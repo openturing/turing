@@ -11,9 +11,8 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form"
-import { StickyPageHeader } from "@/components/sticky-page-header"
 import { BentoFormHero } from "@/components/bento"
-import { SNFormSection, type SNFormChrome } from "@/components/sn/sn-form-section"
+import { SNFormSection } from "@/components/sn/sn-form-section"
 import { FormItemTwoColumns } from "@/components/ui/form-item-two-columns"
 import { GradientSwitch } from "@/components/ui/gradient-switch"
 import {
@@ -21,8 +20,7 @@ import {
 } from "@/components/ui/input"
 import type { TurSNSiteLocale } from "@/models/sn/sn-site-locale.model"
 import { TurSNSiteLocaleService } from "@/services/sn/sn.site.locale.service"
-import { IconDatabase, IconDeviceFloppy, IconExternalLink, IconLanguage, IconX } from "@tabler/icons-react"
-import { GradientButton } from "@/components/ui/gradient-button"
+import { IconDatabase, IconExternalLink, IconLanguage } from "@tabler/icons-react"
 import { DialogDelete } from "@/components/dialog.delete"
 import { useGlobalLocales } from "@/api/queries/locale.queries"
 import { useState } from "react"
@@ -32,7 +30,6 @@ import {
 import { useTranslation } from "react-i18next"
 import { useNavigate } from "react-router-dom"
 import { toast } from "@viglet/viglet-design-system"
-
 
 interface Props {
   snSiteId: string;
@@ -44,12 +41,10 @@ interface Props {
   /** SN instance base route for save/cancel navigation. Defaults to the
    *  console; the Bento surface passes `ROUTES.BENTO_SN_INSTANCE` (T576). */
   baseRoute?: string;
-  /** Render chrome. console = StickyPageHeader + SectionCards; bento = BentoHero + frosted BentoFormSection cards (T576). Defaults to console. */
-  chrome?: SNFormChrome;
 }
 const turSNSiteLocaleService = new TurSNSiteLocaleService();
 
-export const SNSiteLocaleForm: React.FC<Props> = ({ snSiteId, snLocale, isNew, onDelete, open, setOpen, baseRoute = ROUTES.SN_INSTANCE, chrome = "console" }) => {
+export const SNSiteLocaleForm: React.FC<Props> = ({ snSiteId, snLocale, isNew, onDelete, open, setOpen, baseRoute = ROUTES.SN_INSTANCE }) => {
   const { t } = useTranslation();
   // T1018 — the global locale catalogue comes from the shared cache; every form
   // that offers a language reads the same entry instead of fetching its own.
@@ -103,59 +98,32 @@ export const SNSiteLocaleForm: React.FC<Props> = ({ snSiteId, snLocale, isNew, o
     }
   }
 
-  const isBento = chrome === "bento";
-
   // Destructive action — in bento it lives in the hero `trailing` (never in
   // the save bar, which would mount the controlled dialog twice).
   const deleteDialog = onDelete && open !== undefined && setOpen && <DialogDelete feature={t("sn.multiLanguage.feature")} name={isNew ? t("sn.multiLanguage.feature") : snLocale.language} onDelete={onDelete} open={open} setOpen={setOpen} />;
 
-  const actions = (
-    <>
-      {deleteDialog}
-      <GradientButton type="submit" size="sm">
-        <IconDeviceFloppy className="size-4" />
-        {t("forms.formActions.saveChanges")}
-      </GradientButton>
-      <GradientButton type="button" variant="outline" size="sm" onClick={() => navigate(urlBase)}>
-        <IconX className="size-4" />
-        {t("forms.formActions.cancel")}
-      </GradientButton>
-    </>
-  );
-
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className={isBento ? "space-y-5 pb-8" : "space-y-4 px-4 lg:px-6 pb-8"}>
-        {isBento ? (
-          // T738: one BentoFormHero owns both halves of the morph.
-          // `saveDisabled={false}` keeps Save always-enabled (this form doesn't
-          // track dirty state).
-          <BentoFormHero
-            backTo={urlBase}
-            backLabel={t("sn.multiLanguage.feature")}
-            leading={
-              <span className="grid h-12 w-12 place-items-center rounded-2xl bg-linear-to-br from-emerald-500 to-teal-600 text-white shadow-md">
-                <IconLanguage size={24} />
-              </span>
-            }
-            title={isNew ? t("sn.multiLanguage.feature") : (snLocale.language || snLocale.core)}
-            subtitle={isNew ? t("sn.multiLanguage.description") : snLocale.core}
-            trailing={deleteDialog}
-            onCancel={() => navigate(urlBase)}
-            saveDisabled={false}
-          />
-        ) : (
-          <StickyPageHeader>
-            <StickyPageHeader.Title
-              icon={IconLanguage}
-              feature={t("sn.multiLanguage.feature")}
-              description={isNew ? t("sn.multiLanguage.description") : snLocale.core}
-            />
-            <StickyPageHeader.Actions>{actions}</StickyPageHeader.Actions>
-          </StickyPageHeader>
-        )}
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5 pb-8">
+        {/* T738: one BentoFormHero owns both halves of the morph.
+            `saveDisabled={false}` keeps Save always-enabled (this form doesn't
+            track dirty state). */}
+        <BentoFormHero
+          backTo={urlBase}
+          backLabel={t("sn.multiLanguage.feature")}
+          leading={
+            <span className="grid h-12 w-12 place-items-center rounded-2xl bg-linear-to-br from-emerald-500 to-teal-600 text-white shadow-md">
+              <IconLanguage size={24} />
+            </span>
+          }
+          title={isNew ? t("sn.multiLanguage.feature") : (snLocale.language || snLocale.core)}
+          subtitle={isNew ? t("sn.multiLanguage.description") : snLocale.core}
+          trailing={deleteDialog}
+          onCancel={() => navigate(urlBase)}
+          saveDisabled={false}
+        />
         {/* Language Section */}
-        <SNFormSection chrome={chrome} icon={IconLanguage} tone="blue" title={t("forms.snLocale.languageSettings")} description={t("forms.snLocale.languageSettingsDesc")}>
+        <SNFormSection icon={IconLanguage} tone="blue" title={t("forms.snLocale.languageSettings")} description={t("forms.snLocale.languageSettingsDesc")}>
             <FormField
               control={form.control}
               name="language"
@@ -189,7 +157,7 @@ export const SNSiteLocaleForm: React.FC<Props> = ({ snSiteId, snLocale, isNew, o
         </SNFormSection>
 
         {/* Core Section */}
-        <SNFormSection chrome={chrome} icon={IconDatabase} tone="violet" title={t("forms.snLocale.coreConfig")} description={t("forms.snLocale.coreConfigDesc")}>
+        <SNFormSection icon={IconDatabase} tone="violet" title={t("forms.snLocale.coreConfig")} description={t("forms.snLocale.coreConfigDesc")}>
             {isNew && (
               <FormItemTwoColumns>
                 <FormItemTwoColumns.Left>

@@ -19,15 +19,12 @@ import { IconPicker } from "@/components/ui/icon-picker"
 import { SmartDescription } from "@/components/ui/smart-description"
 import {
   IconBulb,
-  IconDeviceFloppy,
   IconGripVertical,
   IconInfoCircle,
   IconList,
   IconPlus,
-  IconSettings,
   IconToggleLeft,
   IconTrash,
-  IconX,
 } from "@tabler/icons-react"
 import { useEffect, useState } from "react"
 import { useFieldArray, useForm } from "react-hook-form"
@@ -35,11 +32,9 @@ import { useTranslation } from "react-i18next"
 import { useNavigate } from "react-router-dom"
 import { toast } from "@viglet/viglet-design-system"
 import { DialogDelete } from "../dialog.delete"
-import { StickyPageHeader } from "../sticky-page-header"
 import { FormItemTwoColumns } from "../ui/form-item-two-columns"
 import { GradientButton } from "../ui/gradient-button"
 import { GradientSwitch } from "../ui/gradient-switch"
-import { SectionCard } from "../ui/section-card"
 import { BentoActionsMenu, BentoFormSection, type BentoTone } from "../bento"
 import { BentoAgentSubHero } from "@/app/bento/ai-agent/bento.ai-agent.sub-hero"
 import type { ComponentType, ReactNode } from "react"
@@ -50,41 +45,31 @@ interface Props {
   agentId: string
   /** Parent agent title — shown as the bento hero breadcrumb back-link. */
   agentTitle?: string
-  /** Render inside the bento shell (frosted BentoFormSection + BentoFormHero) instead of console chrome. */
-  chrome?: "console" | "bento"
   /** Base route for navigation after save/cancel (defaults to the console AI agent list). */
   baseRoute?: string
 }
 
-export const IntentSettingsForm: React.FC<Props> = ({ value, isNew, agentId, agentTitle, chrome = "console", baseRoute }) => {
+export const IntentSettingsForm: React.FC<Props> = ({ value, isNew, agentId, agentTitle, baseRoute }) => {
   const urlBase = `${baseRoute ?? ROUTES.AI_AGENT_INSTANCE}/${agentId}/intent`
   const { t } = useTranslation();
 
   const Section = ({
-    variant,
     tone,
     icon,
     title,
     description,
     children,
   }: {
-    readonly variant?: "blue" | "violet" | "slate"
     readonly tone: BentoTone
     readonly icon: ComponentType<{ size?: number }>
     readonly title: string
     readonly description?: string
     readonly children: ReactNode
-  }) =>
-    chrome === "bento" ? (
-      <BentoFormSection icon={icon} tone={tone} title={title} description={description}>
-        {children}
-      </BentoFormSection>
-    ) : (
-      <SectionCard variant={variant}>
-        <SectionCard.Header icon={icon} title={title} description={description} />
-        <SectionCard.Content>{children}</SectionCard.Content>
-      </SectionCard>
-    );
+  }) => (
+    <BentoFormSection icon={icon} tone={tone} title={title} description={description}>
+      {children}
+    </BentoFormSection>
+  );
   const form = useForm<TurIntent>({
     defaultValues: value,
   })
@@ -201,69 +186,38 @@ export const IntentSettingsForm: React.FC<Props> = ({ value, isNew, agentId, age
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className={chrome === "bento" ? "space-y-4 md:space-y-5 pb-8" : "space-y-4 px-4 lg:px-6 pb-8"}>
-        {chrome === "bento" ? (
-          <>
-            <BentoAgentSubHero
-              agentId={agentId}
-              agentTitle={agentTitle ?? t("aiAgent.title")}
-              icon={IconBulb}
-              tone="amber"
-              title={isNew ? t("intent.newInstance") : (value.title || t("intent.title"))}
-              subtitle={t("intent.settings.description")}
-              onCancel={() => navigate(urlBase)}
-              saveDisabled={false}
-              trailing={!isNew ? (
-                <BentoActionsMenu
-                  actions={[{
-                    label: t("forms.formActions.delete"),
-                    icon: IconTrash,
-                    tone: "destructive",
-                    onSelect: () => setDeleteOpen(true),
-                  }]}
-                />
-              ) : undefined}
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 md:space-y-5 pb-8">
+        <BentoAgentSubHero
+          agentId={agentId}
+          agentTitle={agentTitle ?? t("aiAgent.title")}
+          icon={IconBulb}
+          tone="amber"
+          title={isNew ? t("intent.newInstance") : (value.title || t("intent.title"))}
+          subtitle={t("intent.settings.description")}
+          onCancel={() => navigate(urlBase)}
+          saveDisabled={false}
+          trailing={!isNew ? (
+            <BentoActionsMenu
+              actions={[{
+                label: t("forms.formActions.delete"),
+                icon: IconTrash,
+                tone: "destructive",
+                onSelect: () => setDeleteOpen(true),
+              }]}
             />
-            {!isNew && (
-              <DialogDelete
-                feature={t("intent.title")}
-                name={value.title}
-                onDelete={onDelete}
-                open={deleteOpen}
-                setOpen={setDeleteOpen}
-                trigger={<span className="hidden" aria-hidden />}
-              />
-            )}
-          </>
-        ) : (
-          <StickyPageHeader>
-            <StickyPageHeader.Title
-              icon={IconSettings}
-              feature={t("intent.settings.title")}
-              description={t("intent.settings.description")}
-            />
-            <StickyPageHeader.Actions>
-              <GradientButton type="submit" size="sm">
-                <IconDeviceFloppy className="size-4" />
-                {t("forms.formActions.saveChanges")}
-              </GradientButton>
-              <GradientButton type="button" variant="outline" size="sm" onClick={() => navigate(urlBase)}>
-                <IconX className="size-4" />
-                {t("forms.formActions.cancel")}
-              </GradientButton>
-              {!isNew && (
-                <DialogDelete
-                  feature={t("intent.title")}
-                  name={value.title}
-                  onDelete={onDelete}
-                  open={deleteOpen}
-                  setOpen={setDeleteOpen}
-                />
-              )}
-            </StickyPageHeader.Actions>
-          </StickyPageHeader>
+          ) : undefined}
+        />
+        {!isNew && (
+          <DialogDelete
+            feature={t("intent.title")}
+            name={value.title}
+            onDelete={onDelete}
+            open={deleteOpen}
+            setOpen={setDeleteOpen}
+            trigger={<span className="hidden" aria-hidden />}
+          />
         )}
-          <Section variant="blue" tone="blue" icon={IconInfoCircle} title={t("forms.common.generalInfo")} description={t("forms.intentSettings.generalDesc")}>
+          <Section tone="blue" icon={IconInfoCircle} title={t("forms.common.generalInfo")} description={t("forms.intentSettings.generalDesc")}>
               <FormField
                 control={form.control}
                 name="title"
@@ -338,7 +292,7 @@ export const IntentSettingsForm: React.FC<Props> = ({ value, isNew, agentId, age
               />
         </Section>
 
-          <Section variant="violet" tone="violet" icon={IconList} title={t("forms.intentSettings.actions")} description={t("forms.intentSettings.actionsDesc")}>
+          <Section tone="violet" icon={IconList} title={t("forms.intentSettings.actions")} description={t("forms.intentSettings.actionsDesc")}>
               <div className="space-y-3">
                 {fields.map((field, index) => (
                   <div
@@ -416,7 +370,7 @@ export const IntentSettingsForm: React.FC<Props> = ({ value, isNew, agentId, age
               </div>
         </Section>
 
-          <Section variant="slate" tone="slate" icon={IconToggleLeft} title={t("forms.common.status")} description={t("forms.intentSettings.statusDesc")}>
+          <Section tone="slate" icon={IconToggleLeft} title={t("forms.common.status")} description={t("forms.intentSettings.statusDesc")}>
               <FormField
                 control={form.control}
                 name="enabled"

@@ -18,9 +18,8 @@ import {
     FormLabel,
     FormMessage,
 } from "@/components/ui/form"
-import { StickyPageHeader } from "@/components/sticky-page-header"
 import { BentoFormHero } from "@/components/bento"
-import { SNFormSection, type SNFormChrome } from "@/components/sn/sn-form-section"
+import { SNFormSection } from "@/components/sn/sn-form-section"
 import { GradientButton } from "@/components/ui/gradient-button"
 import { Input } from "@/components/ui/input"
 import { SmartDescription } from "@/components/ui/smart-description"
@@ -36,7 +35,7 @@ import {
 import type { TurSNSiteMergeField } from "@/models/sn/sn-site-merge-field.model"
 import type { TurSNSiteMerge } from "@/models/sn/sn-site-merge.model"
 import { TurSNSiteMergeService } from "@/services/sn/sn.site.merge.service"
-import { IconCirclePlus, IconDeviceFloppy, IconFileText, IconGitMerge, IconLink, IconReplace, IconTrash, IconX } from "@tabler/icons-react"
+import { IconCirclePlus, IconFileText, IconGitMerge, IconLink, IconReplace, IconTrash } from "@tabler/icons-react"
 import { DialogDelete } from "@/components/dialog.delete"
 import React, { useEffect, useState } from "react"
 import { useForm } from "react-hook-form"
@@ -56,11 +55,9 @@ interface Props {
     /** SN instance base route for save/cancel navigation. Defaults to the
      *  console; the Bento surface passes `ROUTES.BENTO_SN_INSTANCE` (T576). */
     baseRoute?: string;
-    /** Render chrome. console = StickyPageHeader + SectionCards; bento = BentoHero + frosted BentoFormSection cards (T576). Defaults to console. */
-    chrome?: SNFormChrome;
 }
 
-export const SNSiteMergeForm: React.FC<Props> = ({ snSiteId, value, isNew, onDelete, open, setOpen, baseRoute = ROUTES.SN_INSTANCE, chrome = "console" }) => {
+export const SNSiteMergeForm: React.FC<Props> = ({ snSiteId, value, isNew, onDelete, open, setOpen, baseRoute = ROUTES.SN_INSTANCE }) => {
     const { t } = useTranslation();
     const form = useForm<TurSNSiteMerge>({
         defaultValues: value,
@@ -117,59 +114,32 @@ export const SNSiteMergeForm: React.FC<Props> = ({ snSiteId, value, isNew, onDel
 
     const overwrittenFields = form.watch("overwrittenFields") || [];
 
-    const isBento = chrome === "bento";
-
     // Destructive action — in bento it lives in the hero `trailing` (never in
     // the save bar, which would mount the controlled dialog twice).
     const deleteDialog = onDelete && open !== undefined && setOpen && <DialogDelete feature={t("sn.mergeProviders.feature")} name={value?.providerFrom && value?.providerTo ? `${value.providerFrom} → ${value.providerTo}` : t("sn.mergeProviders.newMergeProvider")} onDelete={onDelete} open={open} setOpen={setOpen} />;
 
-    const actions = (
-        <>
-            {deleteDialog}
-            <GradientButton type="submit" size="sm">
-                <IconDeviceFloppy className="size-4" />
-                {t("forms.formActions.saveChanges")}
-            </GradientButton>
-            <GradientButton type="button" variant="outline" size="sm" onClick={() => navigate(urlBase)}>
-                <IconX className="size-4" />
-                {t("forms.formActions.cancel")}
-            </GradientButton>
-        </>
-    );
-
     return (
         <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className={isBento ? "space-y-5 pb-8" : "space-y-4 px-4 lg:px-6 pb-8"}>
-                {isBento ? (
-                    // T738: one BentoFormHero owns both halves of the morph.
-                    // `saveDisabled={false}` keeps Save always-enabled (this
-                    // form doesn't track dirty state).
-                    <BentoFormHero
-                        backTo={urlBase}
-                        backLabel={t("sn.mergeProviders.feature")}
-                        leading={
-                            <span className="grid h-12 w-12 place-items-center rounded-2xl bg-linear-to-br from-emerald-500 to-teal-600 text-white shadow-md">
-                                <IconGitMerge size={24} />
-                            </span>
-                        }
-                        title={value?.providerFrom && value?.providerTo ? `${value.providerFrom} → ${value.providerTo}` : t("sn.mergeProviders.newMergeProvider")}
-                        subtitle={t("sn.mergeProviders.description")}
-                        trailing={deleteDialog}
-                        onCancel={() => navigate(urlBase)}
-                        saveDisabled={false}
-                    />
-                ) : (
-                    <StickyPageHeader>
-                        <StickyPageHeader.Title
-                            icon={IconGitMerge}
-                            feature={t("sn.mergeProviders.feature")}
-                            description={t("sn.mergeProviders.description")}
-                        />
-                        <StickyPageHeader.Actions>{actions}</StickyPageHeader.Actions>
-                    </StickyPageHeader>
-                )}
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5 pb-8">
+                {/* T738: one BentoFormHero owns both halves of the morph.
+                    `saveDisabled={false}` keeps Save always-enabled (this
+                    form doesn't track dirty state). */}
+                  <BentoFormHero
+                      backTo={urlBase}
+                      backLabel={t("sn.mergeProviders.feature")}
+                      leading={
+                          <span className="grid h-12 w-12 place-items-center rounded-2xl bg-linear-to-br from-emerald-500 to-teal-600 text-white shadow-md">
+                              <IconGitMerge size={24} />
+                          </span>
+                      }
+                      title={value?.providerFrom && value?.providerTo ? `${value.providerFrom} → ${value.providerTo}` : t("sn.mergeProviders.newMergeProvider")}
+                      subtitle={t("sn.mergeProviders.description")}
+                      trailing={deleteDialog}
+                      onCancel={() => navigate(urlBase)}
+                      saveDisabled={false}
+                  />
                 {/* Providers Section */}
-                <SNFormSection chrome={chrome} icon={IconGitMerge} tone="blue" title={t("forms.snMerge.providerDetails")} description={t("forms.snMerge.providerDetailsDesc")}>
+                <SNFormSection icon={IconGitMerge} tone="blue" title={t("forms.snMerge.providerDetails")} description={t("forms.snMerge.providerDetailsDesc")}>
                         <FormField
                             control={form.control}
                             name="providerFrom"
@@ -207,7 +177,7 @@ export const SNSiteMergeForm: React.FC<Props> = ({ snSiteId, value, isNew, onDel
                 </SNFormSection>
 
                 {/* Relations Section */}
-                <SNFormSection chrome={chrome} icon={IconLink} tone="violet" title={t("forms.snMerge.relationMapping")} description={t("forms.snMerge.relationMappingDesc")}>
+                <SNFormSection icon={IconLink} tone="violet" title={t("forms.snMerge.relationMapping")} description={t("forms.snMerge.relationMappingDesc")}>
                         <FormField
                             control={form.control}
                             name="relationFrom"
@@ -245,7 +215,7 @@ export const SNSiteMergeForm: React.FC<Props> = ({ snSiteId, value, isNew, onDel
                 </SNFormSection>
 
                 {/* Description Section */}
-                <SNFormSection chrome={chrome} icon={IconFileText} tone="emerald" title={t("forms.snMerge.aboutMerge")} description={t("forms.snMerge.aboutMergeDesc")}>
+                <SNFormSection icon={IconFileText} tone="emerald" title={t("forms.snMerge.aboutMerge")} description={t("forms.snMerge.aboutMergeDesc")}>
                         <FormField
                             control={form.control}
                             name="description"
@@ -273,7 +243,7 @@ export const SNSiteMergeForm: React.FC<Props> = ({ snSiteId, value, isNew, onDel
                 </SNFormSection>
 
                 {/* Overwritten Fields Section */}
-                <SNFormSection chrome={chrome} icon={IconReplace} tone="amber" title={t("forms.snMerge.fieldsToOverwrite")} description={t("forms.snMerge.fieldsToOverwriteDesc")}>
+                <SNFormSection icon={IconReplace} tone="amber" title={t("forms.snMerge.fieldsToOverwrite")} description={t("forms.snMerge.fieldsToOverwriteDesc")}>
                         <div className="flex items-center justify-between mb-4">
                             <Dialog open={addFieldOpen} onOpenChange={setAddFieldOpen}>
                                 <DialogTrigger asChild>

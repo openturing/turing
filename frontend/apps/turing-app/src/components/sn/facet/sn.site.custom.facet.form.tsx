@@ -50,23 +50,19 @@ import {
 import {
   IconAlertTriangle,
   IconCirclePlus,
-  IconDeviceFloppy,
   IconFilter,
   IconInfoCircle,
   IconLanguage,
   IconListDetails,
-  IconX,
 } from "@tabler/icons-react"
-import { GradientButton } from "@/components/ui/gradient-button"
 import { DialogDelete } from "@/components/dialog.delete"
 import { useEffect, useState } from "react"
 import { useForm } from "react-hook-form"
 import { useTranslation } from "react-i18next"
 import { useNavigate } from "react-router-dom"
 import { toast } from "@viglet/viglet-design-system"
-import { StickyPageHeader } from "../../sticky-page-header"
 import { BentoFormHero } from "@/components/bento"
-import { SNFormSection, type SNFormChrome } from "@/components/sn/sn-form-section"
+import { SNFormSection } from "@/components/sn/sn-form-section"
 import { CustomFacetFieldChangeDialog } from "./sn.site.custom.facet.field-change-dialog"
 import { CustomFacetItemRow } from "./sn.site.custom.facet.item-row"
 import {
@@ -95,11 +91,9 @@ interface Props {
   /** SN instance base route for navigation (item editor + save/cancel).
    *  Defaults to the console; Bento passes `ROUTES.BENTO_SN_INSTANCE` (T576). */
   baseRoute?: string;
-  /** Render chrome. console = StickyPageHeader + SectionCards; bento = BentoHero + frosted BentoFormSection cards (T576). Defaults to console. */
-  chrome?: SNFormChrome;
 }
 
-export const SNSiteCustomFacetForm: React.FC<Props> = ({ snSiteId, value, isNew, onDelete, open, setOpen, baseRoute = ROUTES.SN_INSTANCE, chrome = "console" }) => {
+export const SNSiteCustomFacetForm: React.FC<Props> = ({ snSiteId, value, isNew, onDelete, open, setOpen, baseRoute = ROUTES.SN_INSTANCE }) => {
   const { t } = useTranslation();
   const form = useForm<TurSNSiteCustomFacet>({
     defaultValues: {
@@ -285,8 +279,6 @@ export const SNSiteCustomFacetForm: React.FC<Props> = ({ snSiteId, value, isNew,
     }
   }
 
-  const isBento = chrome === "bento";
-
   // Destructive action — in bento it lives in the hero `trailing` (never in
   // the save bar, which would mount the controlled dialog twice).
   const deleteDialog = onDelete && open !== undefined && setOpen && (
@@ -299,25 +291,6 @@ export const SNSiteCustomFacetForm: React.FC<Props> = ({ snSiteId, value, isNew,
     />
   );
 
-  const actions = (
-    <>
-      {deleteDialog}
-      <GradientButton type="submit" size="sm">
-        <IconDeviceFloppy className="size-4" />
-        {t("forms.formActions.saveChanges")}
-      </GradientButton>
-      <GradientButton
-        type="button"
-        variant="outline"
-        size="sm"
-        onClick={() => navigate(`${baseRoute}/${snSiteId}/facet`)}
-      >
-        <IconX className="size-4" />
-        {t("forms.formActions.cancel")}
-      </GradientButton>
-    </>
-  );
-
   return (
     <>
       <CustomFacetFieldChangeDialog
@@ -327,39 +300,28 @@ export const SNSiteCustomFacetForm: React.FC<Props> = ({ snSiteId, value, isNew,
         onCancel={onCancelFieldChange}
       />
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className={isBento ? "space-y-5 pb-8" : "space-y-4 px-4 lg:px-6 pb-8"}>
-          {isBento ? (
-            // T738: one BentoFormHero owns both halves of the morph.
-            // `saveDisabled={false}` keeps Save always-enabled (this form
-            // doesn't track dirty state).
-            <BentoFormHero
-              backTo={`${baseRoute}/${snSiteId}/facet`}
-              backLabel={t("sn.facets.title")}
-              leading={
-                <span className="grid h-12 w-12 place-items-center rounded-2xl bg-linear-to-br from-emerald-500 to-teal-600 text-white shadow-md">
-                  <IconFilter size={24} />
-                </span>
-              }
-              title={value.name || t("sn.facets.customField")}
-              subtitle={value.defaultLabel || t("sn.facets.customField")}
-              trailing={deleteDialog}
-              onCancel={() => navigate(`${baseRoute}/${snSiteId}/facet`)}
-              saveDisabled={false}
-            />
-          ) : (
-            <StickyPageHeader>
-              <StickyPageHeader.Title
-                icon={IconFilter}
-                feature={t("sn.facets.customField")}
-                description={value.defaultLabel ?? ""}
-              />
-              <StickyPageHeader.Actions>{actions}</StickyPageHeader.Actions>
-            </StickyPageHeader>
-          )}
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5 pb-8">
+          {/* T738: one BentoFormHero owns both halves of the morph.
+              `saveDisabled={false}` keeps Save always-enabled (this form
+              doesn't track dirty state). */}
+          <BentoFormHero
+            backTo={`${baseRoute}/${snSiteId}/facet`}
+            backLabel={t("sn.facets.title")}
+            leading={
+              <span className="grid h-12 w-12 place-items-center rounded-2xl bg-linear-to-br from-emerald-500 to-teal-600 text-white shadow-md">
+                <IconFilter size={24} />
+              </span>
+            }
+            title={value.name || t("sn.facets.customField")}
+            subtitle={value.defaultLabel || t("sn.facets.customField")}
+            trailing={deleteDialog}
+            onCancel={() => navigate(`${baseRoute}/${snSiteId}/facet`)}
+            saveDisabled={false}
+          />
 
           {/* Basic Information Section */}
           <SNFormSection
-            chrome={chrome}
+           
             icon={IconInfoCircle}
             tone="blue"
             title={t("forms.snCustomFacet.basicInfo")}
@@ -394,7 +356,7 @@ export const SNSiteCustomFacetForm: React.FC<Props> = ({ snSiteId, value, isNew,
 
           {/* Labels Section */}
           <SNFormSection
-            chrome={chrome}
+           
             icon={IconLanguage}
             tone="violet"
             title={t("forms.snCustomFacet.displayLabels")}
@@ -433,7 +395,7 @@ export const SNSiteCustomFacetForm: React.FC<Props> = ({ snSiteId, value, isNew,
 
           {/* Facet Configuration Section */}
           <SNFormSection
-            chrome={chrome}
+           
             icon={IconFilter}
             tone="emerald"
             title={t("forms.snCustomFacet.facetConfig")}
@@ -548,7 +510,7 @@ export const SNSiteCustomFacetForm: React.FC<Props> = ({ snSiteId, value, isNew,
 
           {/* Facet Items Section */}
           <SNFormSection
-            chrome={chrome}
+           
             icon={IconListDetails}
             tone="amber"
             title={t("forms.snCustomFacet.facetItems")}

@@ -7,7 +7,7 @@ import {
   FormMessage,
 } from "@/components/ui/form"
 import { PromptEditor } from "@/components/ui/prompt-editor"
-import { SectionCard, useSectionChrome } from "@/components/ui/section-card"
+import { SectionCard } from "@/components/ui/section-card"
 import { useSubPageBreadcrumb } from "@/hooks/use-sub-page-breadcrumb"
 import { IconSparkles } from "@tabler/icons-react"
 import { useTranslation } from "react-i18next"
@@ -61,11 +61,10 @@ function buildPersonaSystemInstructionFieldInstruction(spec: {
 export default function PersonaInstanceSystemInstructionSection() {
   const { t } = useTranslation()
   const { form } = useOutletContext<PersonaFormContext>()
-  const chrome = useSectionChrome()
   useSubPageBreadcrumb(t("persona.sidebar.systemInstruction"))
 
   return (
-    <div className={`w-full px-2 md:px-6 py-2 md:py-8 flex flex-col gap-4${chrome === "bento" ? "" : " max-w-2xl mx-auto"}`}>
+    <div className={`w-full px-2 md:px-6 py-2 md:py-8 flex flex-col gap-4${""}`}>
       <SectionCard variant="violet">
         <SectionCard.Header
           icon={IconSparkles}

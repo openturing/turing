@@ -11,7 +11,7 @@ import { SectionCardChromeProvider } from "@/components/ui/section-card";
 export default function BentoSECoreNewPage() {
   return (
     <SectionCardChromeProvider chrome="bento">
-      <SEInstanceCoreNewPage chrome="bento" baseRoute={ROUTES.BENTO_SE_INSTANCE} />
+      <SEInstanceCoreNewPage baseRoute={ROUTES.BENTO_SE_INSTANCE} />
     </SectionCardChromeProvider>
   );
 }

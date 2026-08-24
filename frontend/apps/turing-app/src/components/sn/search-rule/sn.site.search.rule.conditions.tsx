@@ -30,7 +30,7 @@ import { IconCirclePlus, IconFilter, IconTrash, IconX } from "@tabler/icons-reac
 import React, { useMemo, useState } from "react"
 import { useTranslation } from "react-i18next"
 import type { UseFormReturn } from "react-hook-form"
-import { SNSiteSearchRuleSection, type SNSectionChrome } from "./sn.site.search.rule.section"
+import { SNSiteSearchRuleSection } from "./sn.site.search.rule.section"
 
 const ALL_PARAMETERS: TurSNSiteSearchRuleParameter[] = ["QUERY", "FILTER_QUERY", "SORT", "LOCALE"];
 const OPERATORS: TurSNSiteSearchRuleOperator[] = ["EQUALS", "CONTAINS", "STARTS_WITH", "MATCHES_ANY", "IS_EMPTY"];
@@ -180,7 +180,6 @@ interface Props {
     fieldOptions: TurSNSiteSearchRuleFieldOption[];
     customSorts: TurSNSiteCustomSort[];
     siteLocales: TurSNSiteLocale[];
-    chrome?: SNSectionChrome;
 }
 
 // T1024 — a stable empty array. `watch()` returning nothing used to fall back to
@@ -188,7 +187,7 @@ interface Props {
 // is what the rule was reporting: the dependency was new each time, not the data.
 const NO_CONDITIONS: never[] = [];
 
-export const SNSiteSearchRuleConditions: React.FC<Props> = ({ form, fieldOptions, customSorts, siteLocales, chrome = "console" }) => {
+export const SNSiteSearchRuleConditions: React.FC<Props> = ({ form, fieldOptions, customSorts, siteLocales }) => {
     const { t } = useTranslation();
     const conditions = form.watch("conditions") ?? NO_CONDITIONS;
 
@@ -323,7 +322,7 @@ export const SNSiteSearchRuleConditions: React.FC<Props> = ({ form, fieldOptions
     }
 
     return (
-        <SNSiteSearchRuleSection chrome={chrome} icon={IconFilter} tone="amber" title={t("sn.searchRule.conditions")} description={t("sn.searchRule.conditionsDesc")}>
+        <SNSiteSearchRuleSection icon={IconFilter} tone="amber" title={t("sn.searchRule.conditions")} description={t("sn.searchRule.conditionsDesc")}>
                 <div className="space-y-4">
                     {groupedConditions.map((group, groupIdx) => {
                         const hasCustomLayout = group.parameter === "SORT" || group.parameter === "LOCALE";

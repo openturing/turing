@@ -160,7 +160,7 @@ export default function BentoIntegrationInstancePage() {
          * nav rail and does not, so we scope a provider here. With no `<Sidebar>`
          * mounted the trigger is a harmless no-op toggle.
          */}
-        <SidebarProvider defaultOpen={false} className="min-h-0 block">
+        <SidebarProvider className="min-h-0 block">
           <Suspense fallback={<div className="flex items-center justify-center py-12 text-muted-foreground">{t("common.loading", { defaultValue: "Loading…" })}</div>}>
             <RemoteDumontRoutes />
           </Suspense>

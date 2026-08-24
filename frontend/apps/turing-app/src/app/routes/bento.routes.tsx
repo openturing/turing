@@ -200,12 +200,12 @@ export const BentoRoutes = (
     <Route path="ai-agent/instance/:id/custom-tool" element={<BentoAIAgentCustomToolPage />} />
     <Route path="ai-agent/instance/:id/history" element={<BentoAIAgentHistoryPage />} />
     <Route path="ai-agent/instance/:id/intent" element={<BentoAIAgentIntentListPage />} />
-    <Route path="ai-agent/instance/:id/intent/new/ai-chat" element={<IntentAiChatPage baseRoute={ROUTES.BENTO_AI_AGENT_INSTANCE} chrome="bento" />} />
+    <Route path="ai-agent/instance/:id/intent/new/ai-chat" element={<IntentAiChatPage baseRoute={ROUTES.BENTO_AI_AGENT_INSTANCE} />} />
     <Route path="ai-agent/instance/:id/intent/:intentId" element={<RedirectToBentoIntentSettings />} />
     <Route path="ai-agent/instance/:id/intent/:intentId/settings" element={<BentoAIAgentIntentPage />} />
     <Route path="ai-agent/instance/:id/chat-flow" element={<BentoAIAgentChatFlowListPage />} />
     <Route path="ai-agent/instance/:id/chat-flow/new/ai-chat" element={<ChatFlowAiChatPage baseRoute={ROUTES.BENTO_AI_AGENT_INSTANCE} />} />
-    <Route path="ai-agent/instance/:id/chat-flow/:flowId" element={<ChatFlowPage baseRoute={ROUTES.BENTO_AI_AGENT_INSTANCE} chrome="bento" />} />
+    <Route path="ai-agent/instance/:id/chat-flow/:flowId" element={<ChatFlowPage baseRoute={ROUTES.BENTO_AI_AGENT_INSTANCE} />} />
     <Route path="ai-agent/instance/:id/live-preview" element={<BentoAIAgentLivePreviewPage />} />
     <Route path="ai-agent/instance/:id/trigger-conflicts" element={<BentoAIAgentTriggerConflictsPage />} />
     <Route path="ai-agent/instance/:id/analytics-intent" element={<BentoAIAgentAnalyticsIntentPage />} />

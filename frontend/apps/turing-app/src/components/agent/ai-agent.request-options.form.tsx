@@ -19,8 +19,6 @@ const capabilityService = new TurCapabilityRegistryService();
 
 interface Props {
   value: TurAIAgent;
-  /** Render inside the bento shell (frosted BentoFormSection) instead of the console SectionCard. */
-  chrome?: "console" | "bento";
 }
 
 function providerLabel(provider: TurCapabilityProvider): string {
@@ -56,9 +54,8 @@ function serializeOptions(map: Record<string, string>): string {
   return JSON.stringify(cleaned);
 }
 
-export const AIAgentRequestOptionsForm: React.FC<Props> = ({ value, chrome = "console" }) => {
+export const AIAgentRequestOptionsForm: React.FC<Props> = ({ value }) => {
   const { t } = useTranslation();
-  const isBento = chrome === "bento";
   const [descriptors, setDescriptors] = useState<TurCapabilityDescriptor[]>([]);
   const [options, setOptions] = useState<Record<string, string>>({});
   const [savedJson, setSavedJson] = useState<string>("");
@@ -142,14 +139,13 @@ export const AIAgentRequestOptionsForm: React.FC<Props> = ({ value, chrome = "co
     setOptions(parseOptions(savedJson));
   }
 
-
   return (
     <TooltipProvider>
-      <div className={isBento ? "space-y-4 md:space-y-5" : "px-6"}>
-        <div className={isBento ? "space-y-4 md:space-y-5" : "space-y-4 py-8"}>
+      <div className="space-y-4 md:space-y-5">
+        <div className="space-y-4 md:space-y-5">
           {categories.length === 0 ? (
             <AgentFormSection
-          bento={isBento}
+          bento
           icon={IconAdjustments}
           tone="blue"
           variant="blue" title={t("forms.agentRequestOptions.title")}
@@ -162,7 +158,7 @@ export const AIAgentRequestOptionsForm: React.FC<Props> = ({ value, chrome = "co
           ) : (
             categories.map(({ category, list }) => (
               <AgentFormSection
-          bento={isBento}
+          bento
           icon={IconAdjustments}
           tone="blue"
           variant="blue" key={category} title={t(`forms.agentRequestOptions.categories.${category}`, { defaultValue: category })}

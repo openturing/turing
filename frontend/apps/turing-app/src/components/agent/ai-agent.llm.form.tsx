@@ -12,11 +12,9 @@ import { AgentFormSection } from "./agent-form-section"
 
 interface Props {
   value: TurAIAgent;
-  /** Render inside the bento shell (frosted BentoFormSection) instead of the console SectionCard. */
-  chrome?: "console" | "bento";
 }
 
-export const AIAgentLlmForm: React.FC<Props> = ({ value, chrome = "console" }) => {
+export const AIAgentLlmForm: React.FC<Props> = ({ value }) => {
   const { t } = useTranslation();
   const { data: llmInstances = [] } = useLlmInstances();
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
@@ -75,12 +73,11 @@ export const AIAgentLlmForm: React.FC<Props> = ({ value, chrome = "console" }) =
     setSelectedIds(new Set(savedIds));
   }
 
-
   return (
-    <div className={chrome === "bento" ? "space-y-4 md:space-y-5" : "px-6"}>
-      <div className={chrome === "bento" ? "space-y-4 md:space-y-5" : "space-y-4 py-8"}>
+    <div className="space-y-4 md:space-y-5">
+      <div className="space-y-4 md:space-y-5">
         <AgentFormSection
-          bento={chrome === "bento"}
+          bento
           icon={IconCpu2}
           tone="violet"
           variant="violet"

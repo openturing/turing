@@ -11,9 +11,8 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form"
-import { StickyPageHeader } from "@/components/sticky-page-header"
 import { BentoFormHero } from "@/components/bento"
-import { SNFormSection, type SNFormChrome } from "@/components/sn/sn-form-section"
+import { SNFormSection } from "@/components/sn/sn-form-section"
 import { FormItemTwoColumns } from "@/components/ui/form-item-two-columns"
 import { GradientSwitch } from "@/components/ui/gradient-switch"
 import {
@@ -30,8 +29,7 @@ import { Skeleton } from "@/components/ui/skeleton"
 import type { TurSNSiteField } from "@/models/sn/sn-site-field.model"
 import { TurSNFieldService } from "@/services/sn/sn.field.service"
 import { TurSNFieldTypeService } from "@/services/sn/sn.field.type.service"
-import { IconAdjustmentsHorizontal, IconDeviceFloppy, IconFilter, IconId, IconLanguage, IconX } from "@tabler/icons-react"
-import { GradientButton } from "@/components/ui/gradient-button"
+import { IconAdjustmentsHorizontal, IconFilter, IconId, IconLanguage } from "@tabler/icons-react"
 import axios from "axios"
 import { useEffect, useMemo, useState } from "react"
 import {
@@ -52,11 +50,9 @@ interface Props {
   /** SN instance base route for save/cancel navigation. Defaults to the
    *  console; the Bento surface passes `ROUTES.BENTO_SN_INSTANCE` (T576). */
   baseRoute?: string;
-  /** Render chrome. console = StickyPageHeader + SectionCards; bento = BentoHero + frosted BentoFormSection cards (T576). Defaults to console. */
-  chrome?: SNFormChrome;
 }
 
-export const SNSiteFacetedFieldForm: React.FC<Props> = ({ snSiteId, snField, isNew, baseRoute = ROUTES.SN_INSTANCE, chrome = "console" }) => {
+export const SNSiteFacetedFieldForm: React.FC<Props> = ({ snSiteId, snField, isNew, baseRoute = ROUTES.SN_INSTANCE }) => {
   const { t } = useTranslation();
   const normalizedField = useMemo(() => ({
     ...snField,
@@ -89,20 +85,6 @@ export const SNSiteFacetedFieldForm: React.FC<Props> = ({ snSiteId, snField, isN
   const [labelEntries, setLabelEntries] = useState<Array<{ locale: string; label: string }>>([]);
   const urlBase = `${baseRoute}/${snSiteId}/field`;
   const navigate = useNavigate()
-  const isBento = chrome === "bento";
-
-  const actions = (
-    <>
-      <GradientButton type="submit" size="sm" loading={isLoading}>
-        <IconDeviceFloppy className="size-4" />
-        {t("forms.formActions.saveChanges")}
-      </GradientButton>
-      <GradientButton type="button" variant="outline" size="sm" onClick={() => navigate(urlBase)}>
-        <IconX className="size-4" />
-        {t("forms.formActions.cancel")}
-      </GradientButton>
-    </>
-  );
 
   const facetRanges = [
     { value: "DISABLED", name: t("forms.snFacetedField.disabled") },
@@ -141,7 +123,6 @@ export const SNSiteFacetedFieldForm: React.FC<Props> = ({ snSiteId, snField, isN
     );
   }
 
-
   function addLabelEntry() {
     setLabelEntries((currentEntries) => [...currentEntries, { locale: "", label: "" }]);
   }
@@ -157,7 +138,6 @@ export const SNSiteFacetedFieldForm: React.FC<Props> = ({ snSiteId, snField, isN
         : entry
     )));
   }
-
 
   async function onSubmit(snField: TurSNSiteField) {
     try {
@@ -239,37 +219,26 @@ export const SNSiteFacetedFieldForm: React.FC<Props> = ({ snSiteId, snField, isN
         </div>
       ) : (
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className={isBento ? "space-y-5 pb-8" : "space-y-4 px-4 lg:px-6 pb-8"}>
-            {isBento ? (
-              // T738: one BentoFormHero owns both halves of the morph.
-              // `saveDisabled={false}` keeps Save always-enabled (this form
-              // doesn't track dirty state).
-              <BentoFormHero
-                backTo={urlBase}
-                backLabel={t("sn.facets.facetedField")}
-                leading={
-                  <span className="grid h-12 w-12 place-items-center rounded-2xl bg-linear-to-br from-emerald-500 to-teal-600 text-white shadow-md">
-                    <IconFilter size={24} />
-                  </span>
-                }
-                title={snField.name || t("sn.facets.facetedField")}
-                subtitle={snField.description}
-                onCancel={() => navigate(urlBase)}
-                loading={isLoading}
-                saveDisabled={false}
-              />
-            ) : (
-              <StickyPageHeader>
-                <StickyPageHeader.Title
-                  icon={IconFilter}
-                  feature={t("sn.facets.facetedField")}
-                  description={snField.description}
-                />
-                <StickyPageHeader.Actions>{actions}</StickyPageHeader.Actions>
-              </StickyPageHeader>
-            )}
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5 pb-8">
+            {/* T738: one BentoFormHero owns both halves of the morph.
+                `saveDisabled={false}` keeps Save always-enabled (this form
+                doesn't track dirty state). */}
+            <BentoFormHero
+              backTo={urlBase}
+              backLabel={t("sn.facets.facetedField")}
+              leading={
+                <span className="grid h-12 w-12 place-items-center rounded-2xl bg-linear-to-br from-emerald-500 to-teal-600 text-white shadow-md">
+                  <IconFilter size={24} />
+                </span>
+              }
+              title={snField.name || t("sn.facets.facetedField")}
+              subtitle={snField.description}
+              onCancel={() => navigate(urlBase)}
+              loading={isLoading}
+              saveDisabled={false}
+            />
             {/* Basic Information */}
-            <SNFormSection chrome={chrome} icon={IconId} tone="blue" title={t("forms.snFacetedField.basicInfo")} description={t("forms.snFacetedField.basicInfoDesc")}>
+            <SNFormSection icon={IconId} tone="blue" title={t("forms.snFacetedField.basicInfo")} description={t("forms.snFacetedField.basicInfoDesc")}>
                 {/* Identifier */}
                 <FormField
                   control={form.control}
@@ -298,7 +267,7 @@ export const SNSiteFacetedFieldForm: React.FC<Props> = ({ snSiteId, snField, isN
             </SNFormSection>
 
             {/* Labels Section */}
-            <SNFormSection chrome={chrome} icon={IconLanguage} tone="violet" title={t("forms.snFacetedField.displayLabels")} description={t("forms.snFacetedField.displayLabelsDesc")}>
+            <SNFormSection icon={IconLanguage} tone="violet" title={t("forms.snFacetedField.displayLabels")} description={t("forms.snFacetedField.displayLabelsDesc")}>
                 <div>
                   <FormField
                     control={control}
@@ -333,7 +302,7 @@ export const SNSiteFacetedFieldForm: React.FC<Props> = ({ snSiteId, snField, isN
             </SNFormSection>
 
             {/* Facet Configuration */}
-            <SNFormSection chrome={chrome} icon={IconAdjustmentsHorizontal} tone="emerald" title={t("forms.snFacetedField.facetConfig")} description={t("forms.snFacetedField.facetConfigDesc")}>
+            <SNFormSection icon={IconAdjustmentsHorizontal} tone="emerald" title={t("forms.snFacetedField.facetConfig")} description={t("forms.snFacetedField.facetConfigDesc")}>
                 {/* Secondary Facet Switch */}
                 <FormField
                   control={form.control}

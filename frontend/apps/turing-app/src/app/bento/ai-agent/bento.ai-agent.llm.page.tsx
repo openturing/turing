@@ -23,7 +23,7 @@ export default function BentoAIAgentLlmPage() {
         title={t("aiAgent.llm.title")}
         subtitle={t("aiAgent.llm.description")}
       />
-      {agent && <AIAgentLlmForm value={agent} chrome="bento" />}
+      {agent && <AIAgentLlmForm value={agent} />}
     </LoadProvider>
   );
 }

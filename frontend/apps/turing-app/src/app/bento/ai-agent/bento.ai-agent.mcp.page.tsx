@@ -23,7 +23,7 @@ export default function BentoAIAgentMcpPage() {
         title={t("aiAgent.mcp.title")}
         subtitle={t("aiAgent.mcp.description")}
       />
-      {agent && <AIAgentMcpForm value={agent} chrome="bento" />}
+      {agent && <AIAgentMcpForm value={agent} />}
     </LoadProvider>
   );
 }

@@ -29,11 +29,9 @@ const turIntentService = new TurIntentService();
 interface IntentAiChatPageProps {
   /** Base route for navigation (defaults to the console AI agent list). */
   readonly baseRoute?: string;
-  /** Render the embedded form with bento chrome. */
-  readonly chrome?: "console" | "bento";
 }
 
-export default function IntentAiChatPage({ baseRoute = ROUTES.AI_AGENT_INSTANCE, chrome = "console" }: IntentAiChatPageProps = {}) {
+export default function IntentAiChatPage({ baseRoute = ROUTES.AI_AGENT_INSTANCE }: IntentAiChatPageProps = {}) {
   const { id: agentId } = useParams() as { id: string };
   const { t } = useTranslation();
   const [intent, setIntent] = useState<TurIntent>(emptyIntent());
@@ -93,7 +91,7 @@ export default function IntentAiChatPage({ baseRoute = ROUTES.AI_AGENT_INSTANCE,
           />
         }
       >
-        <IntentSettingsForm value={intent} isNew={true} agentId={agentId} chrome={chrome} baseRoute={baseRoute} />
+        <IntentSettingsForm value={intent} isNew={true} agentId={agentId} baseRoute={baseRoute} />
       </AiAuthoringLayout>
     </LoadProvider>
   );

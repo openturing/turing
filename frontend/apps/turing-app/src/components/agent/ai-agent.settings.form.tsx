@@ -28,18 +28,15 @@ import { TurSEInstanceService } from "@/services/se/se.service"
 import { TurStoreInstanceService } from "@/services/store/store.service"
 import { TurFeaturesService, type LoggingEngine } from "@/services/system/features.service"
 import { TurGlobalSettingsService } from "@/services/system/global-settings.service"
-import { IconActivity, IconBolt, IconBrain, IconBrandPython, IconDatabase, IconDeviceFloppy, IconHeadset, IconHistory, IconInfoCircle, IconMoon, IconPlug, IconPower, IconSettings, IconShieldLock, IconSparkles, IconWorldSearch, IconX } from "@tabler/icons-react"
-import { GradientButton } from "../ui/gradient-button"
+import { IconActivity, IconBolt, IconBrain, IconBrandPython, IconDatabase, IconHeadset, IconHistory, IconInfoCircle, IconMoon, IconPlug, IconPower, IconSettings, IconShieldLock, IconSparkles, IconWorldSearch } from "@tabler/icons-react"
 import { useCallback, useEffect, useState } from "react"
 import { useForm } from "react-hook-form"
 import { useTranslation } from "react-i18next"
 import { useNavigate } from "react-router-dom"
 import { toast } from "@viglet/viglet-design-system"
-import { StickyPageHeader } from "../sticky-page-header"
 import { FormItemTwoColumns } from "../ui/form-item-two-columns"
 import { GradientSwitch } from "../ui/gradient-switch"
 import { IconPicker } from "../ui/icon-picker"
-import { SectionCard } from "../ui/section-card"
 import { SmartDescription } from "../ui/smart-description"
 import { BentoFormSection, type BentoTone } from "../bento"
 import { BentoAgentSubHero } from "@/app/bento/ai-agent/bento.ai-agent.sub-hero"
@@ -68,8 +65,6 @@ const NONE_VALUE = "__none__";
 interface Props {
   value: TurAIAgent;
   isNew: boolean;
-  /** Render inside the bento shell (frosted BentoFormSection + BentoSaveBar) instead of console chrome. */
-  chrome?: "console" | "bento";
   /** Base route for navigation after save/cancel (defaults to the console AI agent list). */
   baseRoute?: string;
 }
@@ -90,36 +85,28 @@ type SectionProps = {
 // /api/system/global-settings fetches from the remounting SmartDescription /
 // IconPicker children. Switches each field group between the console
 // SectionCard and the frosted bento card, keeping the field bodies identical.
-const AgentFormSection: React.FC<SectionProps & { readonly chrome: "console" | "bento" }> = ({
-  chrome,
-  variant,
+const AgentFormSection: React.FC<SectionProps> = ({
   tone,
   icon,
   title,
   description,
   children,
-}) =>
-  chrome === "bento" ? (
-    <BentoFormSection icon={icon} tone={tone} title={title} description={description}>
-      {children}
-    </BentoFormSection>
-  ) : (
-    <SectionCard variant={variant}>
-      <SectionCard.Header icon={icon} title={title} description={description} />
-      <SectionCard.Content>{children}</SectionCard.Content>
-    </SectionCard>
-  );
+}) => (
+  <BentoFormSection icon={icon} tone={tone} title={title} description={description}>
+    {children}
+  </BentoFormSection>
+);
 
-export const AIAgentSettingsForm: React.FC<Props> = ({ value, isNew, chrome = "console", baseRoute }) => {
+export const AIAgentSettingsForm: React.FC<Props> = ({ value, isNew, baseRoute }) => {
   const { t } = useTranslation();
   const urlBase = baseRoute ?? ROUTES.AI_AGENT_INSTANCE;
 
-  // Stable alias so the ~15 <Section> call sites below stay unchanged. The
-  // identity only changes with `chrome` (which is fixed for the form's life),
-  // so children never remount on keystroke re-renders. See AgentFormSection.
+  // Stable alias so the ~15 <Section> call sites below stay unchanged. Its
+  // identity never changes, so children never remount on keystroke
+  // re-renders. See AgentFormSection.
   const Section = useCallback(
-    (props: SectionProps) => <AgentFormSection chrome={chrome} {...props} />,
-    [chrome],
+    (props: SectionProps) => <AgentFormSection {...props} />,
+    [],
   );
   const form = useForm<TurAIAgent>({
     defaultValues: value
@@ -330,39 +317,19 @@ export const AIAgentSettingsForm: React.FC<Props> = ({ value, isNew, chrome = "c
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className={chrome === "bento" ? "space-y-4 md:space-y-5 pb-8" : "space-y-4 px-4 lg:px-6 pb-8"}>
-        {chrome === "bento" ? (
-          <BentoAgentSubHero
-            agentId={isNew ? "new" : (value.id ?? "new")}
-            agentTitle={isNew ? t("aiAgent.newInstance") : (value.title || t("aiAgent.title"))}
-            icon={IconSettings}
-            tone="blue"
-            title={t("aiAgent.settings.title")}
-            subtitle={t("aiAgent.settings.description")}
-            onCancel={() => navigate(urlBase)}
-            loading={createMutation.isPending || updateMutation.isPending}
-            titleMissing={!form.watch("title")?.trim()}
-            dirty={isNew || form.formState.isDirty}
-          />
-        ) : (
-          <StickyPageHeader>
-            <StickyPageHeader.Title
-              icon={IconSettings}
-              feature={t("aiAgent.settings.title")}
-              description={t("aiAgent.settings.description")}
-            />
-            <StickyPageHeader.Actions>
-              <GradientButton type="submit" size="sm">
-                <IconDeviceFloppy className="size-4" />
-                {t("forms.formActions.saveChanges")}
-              </GradientButton>
-              <GradientButton type="button" variant="outline" size="sm" onClick={() => navigate(urlBase)}>
-                <IconX className="size-4" />
-                {t("forms.formActions.cancel")}
-              </GradientButton>
-            </StickyPageHeader.Actions>
-          </StickyPageHeader>
-        )}
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 md:space-y-5 pb-8">
+        <BentoAgentSubHero
+          agentId={isNew ? "new" : (value.id ?? "new")}
+          agentTitle={isNew ? t("aiAgent.newInstance") : (value.title || t("aiAgent.title"))}
+          icon={IconSettings}
+          tone="blue"
+          title={t("aiAgent.settings.title")}
+          subtitle={t("aiAgent.settings.description")}
+          onCancel={() => navigate(urlBase)}
+          loading={createMutation.isPending || updateMutation.isPending}
+          titleMissing={!form.watch("title")?.trim()}
+          dirty={isNew || form.formState.isDirty}
+        />
           <Section variant="blue" tone="blue" icon={IconInfoCircle} title={t("forms.common.generalInfo")} description={t("forms.agentSettings.generalDesc")}>
               <FormField
                 control={form.control}

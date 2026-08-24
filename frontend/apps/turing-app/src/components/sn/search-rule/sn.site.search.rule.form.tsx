@@ -1,7 +1,6 @@
 "use client"
 import { ROUTES } from "@/app/routes.const"
 import { Form } from "@/components/ui/form"
-import { StickyPageHeader } from "@/components/sticky-page-header"
 import { BentoFormHero } from "@/components/bento"
 import type {
     TurSNSiteSearchRule,
@@ -15,8 +14,7 @@ import { TurSNSiteCustomSortService } from "@/services/sn/sn.site.custom.sort.se
 import { TurSNSiteLocaleService } from "@/services/sn/sn.site.locale.service"
 import { TurSNFacetedFieldService } from "@/services/sn/sn.faceted.field.service"
 import React, { useEffect, useState } from "react"
-import { IconDeviceFloppy, IconGavel, IconX } from "@tabler/icons-react"
-import { GradientButton } from "@/components/ui/gradient-button"
+import { IconGavel } from "@tabler/icons-react"
 import { DialogDelete } from "@/components/dialog.delete"
 import { useForm } from "react-hook-form"
 import { useTranslation } from "react-i18next"
@@ -25,7 +23,6 @@ import { toast } from "@viglet/viglet-design-system"
 import { SNSiteSearchRuleDetails } from "./sn.site.search.rule.details"
 import { SNSiteSearchRuleConditions } from "./sn.site.search.rule.conditions"
 import { SNSiteSearchRuleActions } from "./sn.site.search.rule.actions"
-import type { SNSectionChrome } from "./sn.site.search.rule.section"
 
 const turSNSiteSearchRuleService = new TurSNSiteSearchRuleService();
 const turSNSiteCustomSortService = new TurSNSiteCustomSortService();
@@ -42,12 +39,9 @@ interface Props {
     /** SN instance base route for save/cancel navigation. Defaults to the
      *  console; the Bento surface passes `ROUTES.BENTO_SN_INSTANCE` (T576). */
     baseRoute?: string;
-    /** Render chrome. `console` = StickyPageHeader + SectionCards; `bento` =
-     *  BentoHero + frosted BentoFormSection cards (T576). Defaults to console. */
-    chrome?: SNSectionChrome;
 }
 
-export const SNSiteSearchRuleForm: React.FC<Props> = ({ snSiteId, value, isNew, onDelete, open, setOpen, baseRoute = ROUTES.SN_INSTANCE, chrome = "console" }) => {
+export const SNSiteSearchRuleForm: React.FC<Props> = ({ snSiteId, value, isNew, onDelete, open, setOpen, baseRoute = ROUTES.SN_INSTANCE }) => {
     const { t } = useTranslation();
     const form = useForm<TurSNSiteSearchRule>({ defaultValues: value });
     const navigate = useNavigate();
@@ -92,71 +86,44 @@ export const SNSiteSearchRuleForm: React.FC<Props> = ({ snSiteId, value, isNew, 
         }
     }
 
-    const isBento = chrome === "bento";
-
     // Destructive action — in bento it lives in the hero `trailing` (never in
     // the save bar, which would mount the controlled dialog twice).
     const deleteDialog = onDelete && open !== undefined && setOpen && <DialogDelete feature={t("sn.searchRule.title")} name={value?.name || t("sn.searchRule.newSearchRule")} onDelete={onDelete} open={open} setOpen={setOpen} />;
 
-    const actions = (
-        <>
-            {deleteDialog}
-            <GradientButton type="submit" size="sm">
-                <IconDeviceFloppy className="size-4" />
-                {t("forms.formActions.saveChanges")}
-            </GradientButton>
-            <GradientButton type="button" variant="outline" size="sm" onClick={() => navigate(urlBase)}>
-                <IconX className="size-4" />
-                {t("forms.formActions.cancel")}
-            </GradientButton>
-        </>
-    );
-
     return (
         <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className={isBento ? "space-y-5 pb-8" : "space-y-4 px-4 lg:px-6 pb-8"}>
-                {isBento ? (
-                    // T738: one BentoFormHero owns both halves of the morph.
-                    // `saveDisabled={false}` keeps Save always-enabled (this
-                    // form doesn't track dirty state).
-                    <BentoFormHero
-                        backTo={urlBase}
-                        backLabel={t("sn.searchRule.title")}
-                        leading={
-                            <span className="grid h-12 w-12 place-items-center rounded-2xl bg-linear-to-br from-emerald-500 to-teal-600 text-white shadow-md">
-                                <IconGavel size={24} />
-                            </span>
-                        }
-                        title={value?.name || t("sn.searchRule.newSearchRule")}
-                        subtitle={t("sn.searchRule.description")}
-                        trailing={deleteDialog}
-                        onCancel={() => navigate(urlBase)}
-                        saveDisabled={false}
-                    />
-                ) : (
-                    <StickyPageHeader>
-                        <StickyPageHeader.Title
-                            icon={IconGavel}
-                            feature={t("sn.searchRule.title")}
-                            description={t("sn.searchRule.description")}
-                        />
-                        <StickyPageHeader.Actions>{actions}</StickyPageHeader.Actions>
-                    </StickyPageHeader>
-                )}
-                <SNSiteSearchRuleDetails form={form} chrome={chrome} />
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5 pb-8">
+                {/* T738: one BentoFormHero owns both halves of the morph.
+                    `saveDisabled={false}` keeps Save always-enabled (this
+                    form doesn't track dirty state). */}
+                  <BentoFormHero
+                      backTo={urlBase}
+                      backLabel={t("sn.searchRule.title")}
+                      leading={
+                          <span className="grid h-12 w-12 place-items-center rounded-2xl bg-linear-to-br from-emerald-500 to-teal-600 text-white shadow-md">
+                              <IconGavel size={24} />
+                          </span>
+                      }
+                      title={value?.name || t("sn.searchRule.newSearchRule")}
+                      subtitle={t("sn.searchRule.description")}
+                      trailing={deleteDialog}
+                      onCancel={() => navigate(urlBase)}
+                      saveDisabled={false}
+                  />
+                <SNSiteSearchRuleDetails form={form} />
                 <SNSiteSearchRuleConditions
                     form={form}
                     fieldOptions={fieldOptions}
                     customSorts={customSorts}
                     siteLocales={siteLocales}
-                    chrome={chrome}
+                   
                 />
                 <SNSiteSearchRuleActions
                     form={form}
                     fieldOptions={fieldOptions}
                     customSorts={customSorts}
                     facets={facets}
-                    chrome={chrome}
+                   
                 />
             </form>
         </Form>

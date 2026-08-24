@@ -16,8 +16,6 @@ const capabilityService = new TurCapabilityRegistryService();
 
 interface Props {
   value: TurAIAgent;
-  /** Render inside the bento shell (frosted BentoFormSection) instead of the console SectionCard. */
-  chrome?: "console" | "bento";
 }
 
 function parseCsv(csv?: string | null): Set<string> {
@@ -39,9 +37,8 @@ function providerLabel(provider: TurCapabilityProvider): string {
   }
 }
 
-export const AIAgentCapabilitiesForm: React.FC<Props> = ({ value, chrome = "console" }) => {
+export const AIAgentCapabilitiesForm: React.FC<Props> = ({ value }) => {
   const { t } = useTranslation();
-  const isBento = chrome === "bento";
   const [descriptors, setDescriptors] = useState<TurCapabilityDescriptor[]>([]);
   const [selectedTools, setSelectedTools] = useState<Set<string>>(new Set());
   const [selectedCaps, setSelectedCaps] = useState<Set<string>>(new Set());
@@ -182,13 +179,12 @@ export const AIAgentCapabilitiesForm: React.FC<Props> = ({ value, chrome = "cons
     setSelectedCaps(new Set(savedCaps));
   }
 
-
   return (
     <TooltipProvider>
-      <div className={isBento ? "space-y-4 md:space-y-5" : "px-6"}>
-        <div className={isBento ? "space-y-4 md:space-y-5" : "space-y-4 py-8"}>
+      <div className="space-y-4 md:space-y-5">
+        <div className="space-y-4 md:space-y-5">
           <AgentFormSection
-          bento={isBento}
+          bento
           icon={IconSparkles}
           tone="blue"
           variant="blue"

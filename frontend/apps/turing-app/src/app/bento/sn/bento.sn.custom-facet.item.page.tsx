@@ -14,7 +14,7 @@ import { SectionCardChromeProvider } from "@/components/ui/section-card";
 export default function BentoSNCustomFacetItemPage() {
   return (
     <SectionCardChromeProvider chrome="bento">
-      <SNSiteCustomFacetItemPage baseRoute={ROUTES.BENTO_SN_INSTANCE} chrome="bento" />
+      <SNSiteCustomFacetItemPage baseRoute={ROUTES.BENTO_SN_INSTANCE} />
     </SectionCardChromeProvider>
   );
 }

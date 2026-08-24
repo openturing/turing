@@ -39,15 +39,14 @@ import { TurSNSiteSpotlightService } from "@/services/sn/sn.site.spotlight.servi
 import { fetchSearch, type TurDocument, type TurSearchResponse } from "@viglet/turing-react-sdk"
 import { isAxiosError } from "axios"
 import { toast } from "@viglet/viglet-design-system"
-import { IconCirclePlus, IconDeviceFloppy, IconFileText, IconHelp, IconSearch, IconSpeakerphone, IconTags, IconTrash, IconX } from "@tabler/icons-react"
+import { IconCirclePlus, IconFileText, IconHelp, IconSearch, IconSpeakerphone, IconTags, IconTrash } from "@tabler/icons-react"
 import { DialogDelete } from "@/components/dialog.delete"
 import React, { useEffect, useState } from "react"
 import { useForm } from "react-hook-form"
 import { useTranslation } from "react-i18next"
 import { useNavigate } from "react-router-dom"
-import { StickyPageHeader } from "../../sticky-page-header"
 import { BentoFormHero } from "@/components/bento"
-import { SNFormSection, type SNFormChrome } from "@/components/sn/sn-form-section"
+import { SNFormSection } from "@/components/sn/sn-form-section"
 
 const turSNSiteSpotlightService = new TurSNSiteSpotlightService();
 const turSNSiteLocaleService = new TurSNSiteLocaleService();
@@ -62,11 +61,9 @@ interface Props {
     /** SN instance base route for save/cancel navigation. Defaults to the
      *  console; the Bento surface passes `ROUTES.BENTO_SN_INSTANCE` (T576). */
     baseRoute?: string;
-    /** Render chrome. console = StickyPageHeader + SectionCards; bento = BentoHero + frosted BentoFormSection cards (T576). Defaults to console. */
-    chrome?: SNFormChrome;
 }
 
-export const SNSiteSpotlightForm: React.FC<Props> = ({ snSiteId, value, isNew, onDelete, open, setOpen, baseRoute = ROUTES.SN_INSTANCE, chrome = "console" }) => {
+export const SNSiteSpotlightForm: React.FC<Props> = ({ snSiteId, value, isNew, onDelete, open, setOpen, baseRoute = ROUTES.SN_INSTANCE }) => {
     const { t } = useTranslation();
     const form = useForm<TurSNSiteSpotlight>({
         defaultValues: value,
@@ -241,60 +238,33 @@ export const SNSiteSpotlightForm: React.FC<Props> = ({ snSiteId, value, isNew, o
         form.handleSubmit(onSubmit)(e);
     }
 
-    const isBento = chrome === "bento";
-
     // Destructive action — in bento it lives in the hero `trailing` (never in
     // the save bar, which would mount the controlled dialog twice).
     const deleteDialog = onDelete && open !== undefined && setOpen && <DialogDelete feature={t("sn.spotlight.title")} name={value?.name || t("sn.spotlight.newSpotlight")} onDelete={onDelete} open={open} setOpen={setOpen} />;
 
-    const actions = (
-        <>
-            {deleteDialog}
-            <GradientButton type="submit" size="sm">
-                <IconDeviceFloppy className="size-4" />
-                {t("forms.formActions.saveChanges")}
-            </GradientButton>
-            <GradientButton type="button" variant="outline" size="sm" onClick={() => navigate(urlBase)}>
-                <IconX className="size-4" />
-                {t("forms.formActions.cancel")}
-            </GradientButton>
-        </>
-    );
-
     return (
 
         <Form {...form}>
-            <form onSubmit={handleFormSubmit} className={isBento ? "space-y-5 pb-8" : "space-y-4 px-4 lg:px-6 pb-8"}>
-                {isBento ? (
-                    // T738: one BentoFormHero owns both halves of the morph.
-                    // `saveDisabled={false}` keeps Save always-enabled (this
-                    // form doesn't track dirty state).
-                    <BentoFormHero
-                        backTo={urlBase}
-                        backLabel={t("sn.spotlight.title")}
-                        leading={
-                            <span className="grid h-12 w-12 place-items-center rounded-2xl bg-linear-to-br from-emerald-500 to-teal-600 text-white shadow-md">
-                                <IconSpeakerphone size={24} />
-                            </span>
-                        }
-                        title={value?.name || t("sn.spotlight.newSpotlight")}
-                        subtitle={t("sn.spotlight.description")}
-                        trailing={deleteDialog}
-                        onCancel={() => navigate(urlBase)}
-                        saveDisabled={false}
-                    />
-                ) : (
-                    <StickyPageHeader>
-                        <StickyPageHeader.Title
-                            icon={IconSpeakerphone}
-                            feature={t("sn.spotlight.title")}
-                            description={t("sn.spotlight.description")}
-                        />
-                        <StickyPageHeader.Actions>{actions}</StickyPageHeader.Actions>
-                    </StickyPageHeader>
-                )}
+            <form onSubmit={handleFormSubmit} className="space-y-5 pb-8">
+                {/* T738: one BentoFormHero owns both halves of the morph.
+                    `saveDisabled={false}` keeps Save always-enabled (this
+                    form doesn't track dirty state). */}
+                  <BentoFormHero
+                      backTo={urlBase}
+                      backLabel={t("sn.spotlight.title")}
+                      leading={
+                          <span className="grid h-12 w-12 place-items-center rounded-2xl bg-linear-to-br from-emerald-500 to-teal-600 text-white shadow-md">
+                              <IconSpeakerphone size={24} />
+                          </span>
+                      }
+                      title={value?.name || t("sn.spotlight.newSpotlight")}
+                      subtitle={t("sn.spotlight.description")}
+                      trailing={deleteDialog}
+                      onCancel={() => navigate(urlBase)}
+                      saveDisabled={false}
+                  />
                 {/* General Section */}
-                <SNFormSection chrome={chrome} icon={IconSpeakerphone} tone="blue" title={t("forms.snSpotlight.details")} description={t("forms.snSpotlight.detailsDesc")}>
+                <SNFormSection icon={IconSpeakerphone} tone="blue" title={t("forms.snSpotlight.details")} description={t("forms.snSpotlight.detailsDesc")}>
                         {/* Name */}
                         <FormField
                             control={form.control}
@@ -375,7 +345,7 @@ export const SNSiteSpotlightForm: React.FC<Props> = ({ snSiteId, value, isNew, o
                 </SNFormSection>
 
                 {/* Terms Section */}
-                <SNFormSection chrome={chrome} icon={IconTags} tone="violet" title={t("forms.snSpotlight.triggerTerms")} description={t("forms.snSpotlight.triggerTermsDesc")}>
+                <SNFormSection icon={IconTags} tone="violet" title={t("forms.snSpotlight.triggerTerms")} description={t("forms.snSpotlight.triggerTermsDesc")}>
                         <div>
                             <div className="mb-2 font-medium">{t("forms.snSpotlight.whenSearched")}</div>
                             <div className="text-sm text-muted-foreground mb-2">
@@ -469,7 +439,7 @@ export const SNSiteSpotlightForm: React.FC<Props> = ({ snSiteId, value, isNew, o
                 </SNFormSection>
 
                 {/* Documents Section */}
-                <SNFormSection chrome={chrome} icon={IconFileText} tone="emerald" title={t("forms.snSpotlight.documents")} description={t("forms.snSpotlight.documentsDesc")}>
+                <SNFormSection icon={IconFileText} tone="emerald" title={t("forms.snSpotlight.documents")} description={t("forms.snSpotlight.documentsDesc")}>
                         <div>
                             <div className="mb-2 font-medium">{t("forms.snSpotlight.showDocuments")}</div>
                             <div className="text-sm text-muted-foreground mb-4">

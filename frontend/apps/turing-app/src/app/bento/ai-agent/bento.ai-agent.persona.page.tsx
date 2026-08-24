@@ -28,7 +28,7 @@ export default function BentoAIAgentPersonaPage() {
         title={t("aiAgent.persona.title")}
         subtitle={t("aiAgent.persona.description")}
       />
-      {agent && <AIAgentPersonaForm value={agent} chrome="bento" />}
+      {agent && <AIAgentPersonaForm value={agent} />}
     </LoadProvider>
   );
 }

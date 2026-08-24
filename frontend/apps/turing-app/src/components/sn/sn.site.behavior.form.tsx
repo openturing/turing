@@ -23,7 +23,6 @@ import type { TurSNSite } from "@/models/sn/sn-site.model.ts"
 import {
   IconCodeAsterisk,
   IconCopy,
-  IconDeviceFloppy,
   IconHighlight,
   IconLayoutListFilled,
   IconListDetails,
@@ -32,9 +31,7 @@ import {
   IconScale,
   IconSettings,
   IconSpeakerphone,
-  IconX,
 } from "@tabler/icons-react"
-import { GradientButton } from "../ui/gradient-button"
 import { useEffect } from "react"
 import {
   useForm
@@ -43,10 +40,9 @@ import { useTranslation } from "react-i18next"
 import { useNavigate } from "react-router-dom"
 import { toast } from "@viglet/viglet-design-system"
 import { FormItemTwoColumns } from "../ui/form-item-two-columns"
-import { StickyPageHeader } from "../sticky-page-header"
 import { GradientSwitch } from "../ui/gradient-switch"
 import { BentoFormHero } from "@/components/bento"
-import { SNFormSection, type SNFormChrome } from "@/components/sn/sn-form-section"
+import { SNFormSection } from "@/components/sn/sn-form-section"
 
 interface Props {
   value: TurSNSite;
@@ -57,19 +53,17 @@ interface Props {
   /** Which shell chrome to render. `console` (default) uses the sticky page
    *  header + collapsible SectionCards; `bento` uses the BentoHero + frosted
    *  BentoFormSection tiles so the page matches the /bento standard. */
-  chrome?: SNFormChrome;
 }
 
-export const SNSiteBehaviorForm: React.FC<Props> = ({ value, isNew, baseRoute = ROUTES.SN_INSTANCE, chrome = "console" }) => {
+export const SNSiteBehaviorForm: React.FC<Props> = ({ value, isNew, baseRoute = ROUTES.SN_INSTANCE }) => {
   const { t } = useTranslation();
   const form = useForm<TurSNSite>({
     defaultValues: value
   });
-  const isBento = chrome === "bento";
   const urlBase = baseRoute;
   // In bento the section is reached from the SN instance detail, so cancel /
   // back returns there; in console it falls back to the SN instance list.
-  const backRoute = isBento && value.id ? `${baseRoute}/${value.id}` : urlBase;
+  const backRoute = value.id ? `${baseRoute}/${value.id}` : urlBase;
   const navigate = useNavigate()
   const createMutation = useCreateSnSite();
   const updateMutation = useUpdateSnSite();
@@ -94,55 +88,31 @@ export const SNSiteBehaviorForm: React.FC<Props> = ({ value, isNew, baseRoute = 
     }
   }
 
-  const actions = (
-    <>
-      <GradientButton type="submit" size="sm">
-        <IconDeviceFloppy className="size-4" />
-        {t("forms.formActions.saveChanges")}
-      </GradientButton>
-      <GradientButton type="button" variant="outline" size="sm" onClick={() => navigate(backRoute)}>
-        <IconX className="size-4" />
-        {t("forms.formActions.cancel")}
-      </GradientButton>
-    </>
-  );
-
   return (
     <Form {...form}>
       <form
         onSubmit={form.handleSubmit(onSubmit)}
-        className={isBento ? "flex flex-col gap-5" : "space-y-4 px-4 lg:px-6 pb-8"}
+        className="flex flex-col gap-5"
       >
-        {isBento ? (
-          // T738: one BentoFormHero owns both halves of the morph (hero
-          // Save/Cancel + sticky bar). `saveDisabled={false}` keeps Save
-          // always-enabled — this form doesn't track dirty state.
-          <BentoFormHero
-            backTo={backRoute}
-            backLabel={value.name ?? t("sn.title")}
-            leading={
-              <span className="grid h-12 w-12 place-items-center rounded-2xl bg-linear-to-br from-emerald-600 to-teal-600 text-white shadow-md">
-                <IconScale size={24} />
-              </span>
-            }
-            title={t("sn.behavior.title")}
-            subtitle={t("sn.behavior.description")}
-            onCancel={() => navigate(backRoute)}
-            saveDisabled={false}
-          />
-        ) : (
-          <StickyPageHeader>
-            <StickyPageHeader.Title
-              icon={IconScale}
-              feature={t("sn.behavior.title")}
-              description={t("sn.behavior.description")}
-            />
-            <StickyPageHeader.Actions>{actions}</StickyPageHeader.Actions>
-          </StickyPageHeader>
-        )}
+        {/* T738: one BentoFormHero owns both halves of the morph (hero
+            Save/Cancel + sticky bar). `saveDisabled={false}` keeps Save
+            always-enabled — this form doesn't track dirty state. */}
+        <BentoFormHero
+          backTo={backRoute}
+          backLabel={value.name ?? t("sn.title")}
+          leading={
+            <span className="grid h-12 w-12 place-items-center rounded-2xl bg-linear-to-br from-emerald-600 to-teal-600 text-white shadow-md">
+              <IconScale size={24} />
+            </span>
+          }
+          title={t("sn.behavior.title")}
+          subtitle={t("sn.behavior.description")}
+          onCancel={() => navigate(backRoute)}
+          saveDisabled={false}
+        />
 
         {/* General */}
-        <SNFormSection chrome={chrome} icon={IconSettings} tone="blue" title={t("forms.snBehavior.general")} description={t("forms.snBehavior.generalDesc")}>
+        <SNFormSection icon={IconSettings} tone="blue" title={t("forms.snBehavior.general")} description={t("forms.snBehavior.generalDesc")}>
           <FormField
             control={form.control}
             name="rowsPerPage"
@@ -191,7 +161,7 @@ export const SNSiteBehaviorForm: React.FC<Props> = ({ value, isNew, baseRoute = 
         </SNFormSection>
 
         {/* API Access — T233 / §VII.6.h: public vs API-key for the visitor-facing API */}
-        <SNFormSection chrome={chrome} icon={IconLock} tone="slate" title={t("forms.snBehavior.apiAccess")} description={t("forms.snBehavior.apiAccessDesc")}>
+        <SNFormSection icon={IconLock} tone="slate" title={t("forms.snBehavior.apiAccess")} description={t("forms.snBehavior.apiAccessDesc")}>
           <FormField
             control={form.control}
             name="apiAuthMode"
@@ -221,7 +191,7 @@ export const SNSiteBehaviorForm: React.FC<Props> = ({ value, isNew, baseRoute = 
         </SNFormSection>
 
         {/* Wildcard */}
-        <SNFormSection chrome={chrome} icon={IconCodeAsterisk} tone="violet" title={t("forms.snBehavior.wildcard")} description={t("forms.snBehavior.wildcardDesc")}>
+        <SNFormSection icon={IconCodeAsterisk} tone="violet" title={t("forms.snBehavior.wildcard")} description={t("forms.snBehavior.wildcardDesc")}>
           <FormField
             control={form.control}
             name="wildcardNoResults"
@@ -273,7 +243,7 @@ export const SNSiteBehaviorForm: React.FC<Props> = ({ value, isNew, baseRoute = 
         </SNFormSection>
 
         {/* Facets */}
-        <SNFormSection chrome={chrome} icon={IconLayoutListFilled} tone="emerald" title={t("forms.snBehavior.facets")} description={t("forms.snBehavior.facetsDesc")}>
+        <SNFormSection icon={IconLayoutListFilled} tone="emerald" title={t("forms.snBehavior.facets")} description={t("forms.snBehavior.facetsDesc")}>
           <FormField
             control={form.control}
             name="facet"
@@ -387,7 +357,7 @@ export const SNSiteBehaviorForm: React.FC<Props> = ({ value, isNew, baseRoute = 
         </SNFormSection>
 
         {/* Highlighting */}
-        <SNFormSection chrome={chrome} icon={IconHighlight} tone="amber" title={t("forms.snBehavior.highlighting")} description={t("forms.snBehavior.highlightingDesc")}>
+        <SNFormSection icon={IconHighlight} tone="amber" title={t("forms.snBehavior.highlighting")} description={t("forms.snBehavior.highlightingDesc")}>
           <FormField
             control={form.control}
             name="hl"
@@ -449,7 +419,7 @@ export const SNSiteBehaviorForm: React.FC<Props> = ({ value, isNew, baseRoute = 
         </SNFormSection>
 
         {/* Spelling Suggestions */}
-        <SNFormSection chrome={chrome} icon={IconProgressHelp} tone="rose" title={t("forms.snBehavior.spellingSuggestions")} description={t("forms.snBehavior.spellingSuggestionsDesc")}>
+        <SNFormSection icon={IconProgressHelp} tone="rose" title={t("forms.snBehavior.spellingSuggestions")} description={t("forms.snBehavior.spellingSuggestionsDesc")}>
           <FormField
             control={form.control}
             name="spellCheck"
@@ -501,7 +471,7 @@ export const SNSiteBehaviorForm: React.FC<Props> = ({ value, isNew, baseRoute = 
         </SNFormSection>
 
         {/* More Like This */}
-        <SNFormSection chrome={chrome} icon={IconCopy} tone="cyan" title={t("forms.snBehavior.mlt")} description={t("forms.snBehavior.mltDesc")}>
+        <SNFormSection icon={IconCopy} tone="cyan" title={t("forms.snBehavior.mlt")} description={t("forms.snBehavior.mltDesc")}>
           <FormField
             control={form.control}
             name="mlt"
@@ -529,7 +499,7 @@ export const SNSiteBehaviorForm: React.FC<Props> = ({ value, isNew, baseRoute = 
         </SNFormSection>
 
         {/* Spotlight */}
-        <SNFormSection chrome={chrome} icon={IconSpeakerphone} tone="orange" title={t("forms.snBehavior.spotlightSection")} description={t("forms.snBehavior.spotlightDesc")}>
+        <SNFormSection icon={IconSpeakerphone} tone="orange" title={t("forms.snBehavior.spotlightSection")} description={t("forms.snBehavior.spotlightDesc")}>
           <FormField
             control={form.control}
             name="spotlightWithResults"
@@ -557,7 +527,7 @@ export const SNSiteBehaviorForm: React.FC<Props> = ({ value, isNew, baseRoute = 
         </SNFormSection>
 
         {/* Default Fields */}
-        <SNFormSection chrome={chrome} icon={IconListDetails} tone="slate" defaultOpen={false} title={t("forms.snBehavior.defaultFields")} description={t("forms.snBehavior.defaultFieldsDesc")}>
+        <SNFormSection icon={IconListDetails} tone="slate" title={t("forms.snBehavior.defaultFields")} description={t("forms.snBehavior.defaultFieldsDesc")}>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-5">
             <FormField
               control={form.control}

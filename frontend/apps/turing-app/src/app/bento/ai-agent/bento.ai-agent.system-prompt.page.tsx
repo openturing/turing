@@ -19,7 +19,7 @@ export default function BentoAIAgentSystemPromptPage() {
   return (
     <LoadProvider checkIsNotUndefined={agent} error={error} tryAgainUrl={`${ROUTES.BENTO_AI_AGENT_INSTANCE}/${id}/system-prompt`}>
       {agent && (
-        <AIAgentSystemPromptForm value={agent} chrome="bento" baseRoute={ROUTES.BENTO_AI_AGENT_INSTANCE} />
+        <AIAgentSystemPromptForm value={agent} baseRoute={ROUTES.BENTO_AI_AGENT_INSTANCE} />
       )}
     </LoadProvider>
   );

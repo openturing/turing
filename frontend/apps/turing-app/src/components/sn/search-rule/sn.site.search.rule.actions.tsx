@@ -29,7 +29,7 @@ import { IconBolt, IconCirclePlus, IconTrash } from "@tabler/icons-react"
 import React, { useMemo } from "react"
 import { useTranslation } from "react-i18next"
 import type { UseFormReturn } from "react-hook-form"
-import { SNSiteSearchRuleSection, type SNSectionChrome } from "./sn.site.search.rule.section"
+import { SNSiteSearchRuleSection } from "./sn.site.search.rule.section"
 
 const ACTION_TYPES: TurSNSiteSearchRuleActionType[] = [
     "SET_SORT", "ADD_FACETS", "REMOVE_FACETS",
@@ -153,7 +153,6 @@ interface Props {
     fieldOptions: TurSNSiteSearchRuleFieldOption[];
     customSorts: TurSNSiteCustomSort[];
     facets: TurSNSiteFacetOrdering[];
-    chrome?: SNSectionChrome;
 }
 
 // T1024 — a stable empty array. `watch()` returning nothing used to fall back to
@@ -161,7 +160,7 @@ interface Props {
 // is what the rule was reporting: the dependency was new each time, not the data.
 const NO_ACTIONS: never[] = [];
 
-export const SNSiteSearchRuleActions: React.FC<Props> = ({ form, fieldOptions, customSorts, facets, chrome = "console" }) => {
+export const SNSiteSearchRuleActions: React.FC<Props> = ({ form, fieldOptions, customSorts, facets }) => {
     const { t } = useTranslation();
     const actions = form.watch("actions") ?? NO_ACTIONS;
 
@@ -273,7 +272,7 @@ export const SNSiteSearchRuleActions: React.FC<Props> = ({ form, fieldOptions, c
     }
 
     return (
-        <SNSiteSearchRuleSection chrome={chrome} icon={IconBolt} tone="violet" title={t("sn.searchRule.actions")} description={t("sn.searchRule.actionsDesc")}>
+        <SNSiteSearchRuleSection icon={IconBolt} tone="violet" title={t("sn.searchRule.actions")} description={t("sn.searchRule.actionsDesc")}>
                 <div className="flex items-center justify-between mb-4">
                     <GradientButton variant="outline" type="button" onClick={addAction}>
                         <IconCirclePlus className="h-4 w-4 mr-2" />

@@ -40,7 +40,7 @@ export default function BentoSNGenAiPage() {
           })}
         />
       )}
-      {snSite && <SNSiteGenAiForm snSite={snSite} baseRoute={ROUTES.BENTO_SN_INSTANCE} chrome="bento" />}
+      {snSite && <SNSiteGenAiForm snSite={snSite} baseRoute={ROUTES.BENTO_SN_INSTANCE} />}
     </LoadProvider>
   );
 }

@@ -15,8 +15,6 @@ import { SectionCard } from "../ui/section-card"
 
 interface Props {
   value: TurAIAgent;
-  /** Render inside the bento shell (frosted BentoFormSection) instead of the console SectionCard. */
-  chrome?: "console" | "bento";
 }
 
 /**
@@ -43,7 +41,7 @@ function FederationSection({
   );
 }
 
-export const AIAgentMcpForm: React.FC<Props> = ({ value, chrome = "console" }) => {
+export const AIAgentMcpForm: React.FC<Props> = ({ value }) => {
   const { t } = useTranslation();
   const { data: mcpServers = [] } = useMcpServers();
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
@@ -115,13 +113,11 @@ export const AIAgentMcpForm: React.FC<Props> = ({ value, chrome = "console" }) =
     return mcp.connectionType;
   }
 
-
-
   return (
-    <div className={chrome === "bento" ? "space-y-4 md:space-y-5" : "px-6"}>
-      <div className={chrome === "bento" ? "space-y-4 md:space-y-5" : "space-y-4 py-8"}>
+    <div className="space-y-4 md:space-y-5">
+      <div className="space-y-4 md:space-y-5">
         <AgentFormSection
-          bento={chrome === "bento"}
+          bento
           icon={IconServer2}
           tone="amber"
           variant="cyan"
@@ -203,7 +199,7 @@ export const AIAgentMcpForm: React.FC<Props> = ({ value, chrome = "console" }) =
             )}
         </AgentFormSection>
 
-        <FederationSection bento={chrome === "bento"}>
+        <FederationSection bento>
             <label className="flex items-start gap-4 cursor-pointer">
               <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-cyan-500/15 dark:bg-cyan-500/25">
                 <IconWorldBolt className="size-5 text-cyan-600 dark:text-cyan-400" />

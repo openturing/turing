@@ -23,7 +23,7 @@ export default function BentoAIAgentToolsPage() {
         title={t("aiAgent.tools.title")}
         subtitle={t("aiAgent.tools.description")}
       />
-      {agent && <AIAgentToolsForm value={agent} chrome="bento" />}
+      {agent && <AIAgentToolsForm value={agent} />}
     </LoadProvider>
   );
 }

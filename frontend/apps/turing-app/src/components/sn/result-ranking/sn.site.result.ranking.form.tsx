@@ -15,8 +15,7 @@ import {
 import { SmartDescription } from "@/components/ui/smart-description"
 import type { TurSNRankingExpression } from "@/models/sn/sn-ranking-expression.model"
 import { TurSNRankingExpressionService } from "@/services/sn/sn.site.result.ranking.service"
-import { IconDeviceFloppy, IconFilter, IconInfoCircle, IconNumber123, IconScale, IconX } from "@tabler/icons-react"
-import { GradientButton } from "@/components/ui/gradient-button"
+import { IconFilter, IconInfoCircle, IconNumber123, IconScale } from "@tabler/icons-react"
 import { DialogDelete } from "@/components/dialog.delete"
 import React, { useEffect } from "react"
 import {
@@ -25,9 +24,8 @@ import {
 import { useTranslation } from "react-i18next"
 import { useNavigate } from "react-router-dom"
 import { toast } from "@viglet/viglet-design-system"
-import { StickyPageHeader } from "../../sticky-page-header"
 import { BentoFormHero } from "@/components/bento"
-import { SNFormSection, type SNFormChrome } from "@/components/sn/sn-form-section"
+import { SNFormSection } from "@/components/sn/sn-form-section"
 import { Slider } from "../../ui/slider"
 import { DynamicResultRankingFields } from "./dynamic-result-ranking-field"
 const turSNRankingExpressionService = new TurSNRankingExpressionService();
@@ -41,11 +39,9 @@ interface Props {
   /** SN instance base route for save/cancel navigation. Defaults to the
    *  console; the Bento surface passes `ROUTES.BENTO_SN_INSTANCE` (T576). */
   baseRoute?: string;
-  /** Render chrome. console = StickyPageHeader + SectionCards; bento = BentoHero + frosted BentoFormSection cards (T576). Defaults to console. */
-  chrome?: SNFormChrome;
 }
 
-export const SNSiteResultRankingForm: React.FC<Props> = ({ snSiteId, value, isNew, onDelete, open, setOpen, baseRoute = ROUTES.SN_INSTANCE, chrome = "console" }) => {
+export const SNSiteResultRankingForm: React.FC<Props> = ({ snSiteId, value, isNew, onDelete, open, setOpen, baseRoute = ROUTES.SN_INSTANCE }) => {
   const { t } = useTranslation();
   const form = useForm<TurSNRankingExpression>({
     defaultValues: value
@@ -62,7 +58,6 @@ export const SNSiteResultRankingForm: React.FC<Props> = ({ snSiteId, value, isNe
     form.reset(nextValue);
     setSlideValue([nextValue.weight ?? 4]);
   }, [form, value, isNew]);
-
 
   async function onSubmit(snRankingExpression: TurSNRankingExpression) {
     try {
@@ -89,59 +84,32 @@ export const SNSiteResultRankingForm: React.FC<Props> = ({ snSiteId, value, isNe
     }
   }
 
-  const isBento = chrome === "bento";
-
   // Destructive action — in bento it lives in the hero `trailing` (never in
   // the save bar, which would mount the controlled dialog twice).
   const deleteDialog = onDelete && open !== undefined && setOpen && <DialogDelete feature={t("sn.resultRanking.title")} name={value.name} onDelete={onDelete} open={open} setOpen={setOpen} />;
 
-  const actions = (
-    <>
-      {deleteDialog}
-      <GradientButton type="submit" size="sm">
-        <IconDeviceFloppy className="size-4" />
-        {t("forms.formActions.saveChanges")}
-      </GradientButton>
-      <GradientButton type="button" variant="outline" size="sm" onClick={() => navigate(urlBase)}>
-        <IconX className="size-4" />
-        {t("forms.formActions.cancel")}
-      </GradientButton>
-    </>
-  );
-
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className={isBento ? "space-y-5 pb-8" : "space-y-4 px-4 lg:px-6 pb-8"}>
-        {isBento ? (
-          // T738: one BentoFormHero owns both halves of the morph.
-          // `saveDisabled={false}` keeps Save always-enabled (this form doesn't
-          // track dirty state).
-          <BentoFormHero
-            backTo={urlBase}
-            backLabel={t("sn.resultRanking.title")}
-            leading={
-              <span className="grid h-12 w-12 place-items-center rounded-2xl bg-linear-to-br from-emerald-500 to-teal-600 text-white shadow-md">
-                <IconNumber123 size={24} />
-              </span>
-            }
-            title={value.name || t("sn.resultRanking.title")}
-            subtitle={t("sn.resultRanking.description")}
-            trailing={deleteDialog}
-            onCancel={() => navigate(urlBase)}
-            saveDisabled={false}
-          />
-        ) : (
-          <StickyPageHeader>
-            <StickyPageHeader.Title
-              icon={IconNumber123}
-              feature={t("sn.resultRanking.title")}
-              description={t("sn.resultRanking.description")}
-            />
-            <StickyPageHeader.Actions>{actions}</StickyPageHeader.Actions>
-          </StickyPageHeader>
-        )}
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5 pb-8">
+        {/* T738: one BentoFormHero owns both halves of the morph.
+            `saveDisabled={false}` keeps Save always-enabled (this form doesn't
+            track dirty state). */}
+        <BentoFormHero
+          backTo={urlBase}
+          backLabel={t("sn.resultRanking.title")}
+          leading={
+            <span className="grid h-12 w-12 place-items-center rounded-2xl bg-linear-to-br from-emerald-500 to-teal-600 text-white shadow-md">
+              <IconNumber123 size={24} />
+            </span>
+          }
+          title={value.name || t("sn.resultRanking.title")}
+          subtitle={t("sn.resultRanking.description")}
+          trailing={deleteDialog}
+          onCancel={() => navigate(urlBase)}
+          saveDisabled={false}
+        />
             {/* General Information Section */}
-            <SNFormSection chrome={chrome} icon={IconInfoCircle} tone="blue" title={t("forms.common.generalInfo")} description={t("forms.snResultRanking.generalDesc")}>
+            <SNFormSection icon={IconInfoCircle} tone="blue" title={t("forms.common.generalInfo")} description={t("forms.snResultRanking.generalDesc")}>
                 <FormField
                   control={form.control}
                   name="name"
@@ -191,7 +159,7 @@ export const SNSiteResultRankingForm: React.FC<Props> = ({ snSiteId, value, isNe
             </SNFormSection>
 
             {/* Ranking Conditions Section */}
-            <SNFormSection chrome={chrome} icon={IconFilter} tone="violet" title={t("forms.snResultRanking.conditions")} description={t("forms.snResultRanking.conditionsDesc")}>
+            <SNFormSection icon={IconFilter} tone="violet" title={t("forms.snResultRanking.conditions")} description={t("forms.snResultRanking.conditionsDesc")}>
                 <FormItem>
                   <FormLabel>
                     {t("forms.snResultRanking.contentFilter")} <span className="text-destructive">*</span>
@@ -212,7 +180,7 @@ export const SNSiteResultRankingForm: React.FC<Props> = ({ snSiteId, value, isNe
             </SNFormSection>
 
             {/* Ranking Weight Section */}
-            <SNFormSection chrome={chrome} icon={IconScale} tone="emerald" title={t("forms.snResultRanking.weight")} description={t("forms.snResultRanking.weightDesc")}>
+            <SNFormSection icon={IconScale} tone="emerald" title={t("forms.snResultRanking.weight")} description={t("forms.snResultRanking.weightDesc")}>
                 <FormField
                   control={form.control}
                   name="weight"

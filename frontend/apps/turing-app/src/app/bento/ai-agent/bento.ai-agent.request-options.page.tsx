@@ -30,7 +30,7 @@ export default function BentoAIAgentRequestOptionsPage() {
           defaultValue: "Provider-specific request parameters sent with every model call.",
         })}
       />
-      {agent && <AIAgentRequestOptionsForm value={agent} chrome="bento" />}
+      {agent && <AIAgentRequestOptionsForm value={agent} />}
     </LoadProvider>
   );
 }

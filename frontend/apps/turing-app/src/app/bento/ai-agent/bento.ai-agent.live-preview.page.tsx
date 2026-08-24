@@ -29,7 +29,7 @@ export default function BentoAIAgentLivePreviewPage() {
             "Everything below is concatenated into one system message before it reaches the model. Each block is tagged with where it comes from.",
         })}
       />
-      <AIAgentLivePreviewContent chrome="bento" />
+      <AIAgentLivePreviewContent />
     </>
   );
 }
