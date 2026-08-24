@@ -410,6 +410,14 @@ public class TurAIAgentImportService {
         agent.setGroundingMode(a.getGroundingMode() == null
                 ? com.viglet.turing.persistence.model.agent.TurAgentGroundingMode.OPEN
                 : a.getGroundingMode());
+        // T1004 — chat mode travels with the agent, null-guarded the same way: a
+        // bundle written before this field existed keeps CALL, and one that asks
+        // for AUTO now gets it instead of being silently dropped on the way in.
+        // Like every scalar here, this only reaches an existing agent under
+        // overwrite=true — without it the agent is skipped whole (see caller).
+        agent.setChatMode(a.getChatMode() == null
+                ? com.viglet.turing.persistence.model.agent.TurAgentChatMode.CALL
+                : a.getChatMode());
         // T632 / T295 — rich-content rendering travels with the agent. Primitive
         // boolean: a pre-T632 export that omits it deserializes to false, which
         // matches the entity default, so old bundles are unaffected.

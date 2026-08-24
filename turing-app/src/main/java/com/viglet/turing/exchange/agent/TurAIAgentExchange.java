@@ -50,6 +50,12 @@ public class TurAIAgentExchange {
     // round-trip (e.g. the public demo ships its agent locked to site content).
     // Null on a pre-existing export that omits it → import falls back to OPEN.
     private com.viglet.turing.persistence.model.agent.TurAgentGroundingMode groundingMode;
+    // T1004 — per-agent chat mode. Carried for the same reason as groundingMode:
+    // a seeded demo agent that is meant to stream its answer has to arrive that
+    // way, and without this field the import silently produced the CALL default
+    // no matter what the bundle said. Null on an export that omits it → import
+    // falls back to the entity default.
+    private com.viglet.turing.persistence.model.agent.TurAgentChatMode chatMode;
     // T295 / render.md — per-agent rich-content rendering (```html/```d2/charts).
     // Carried so the capability survives an export/import round-trip (e.g. the
     // public demo ships its agent with this on). Primitive default (false)
@@ -116,6 +122,7 @@ public class TurAIAgentExchange {
         e.enabled = agent.getEnabled();
         e.ragEnabled = agent.isRagEnabled();
         e.groundingMode = agent.getGroundingMode();
+        e.chatMode = agent.getChatMode();
         e.richContentEnabled = agent.isRichContentEnabled();
         e.discloseKnowledgeCutoff = agent.isDiscloseKnowledgeCutoff();
         e.chatMemoryEnabled = agent.isChatMemoryEnabled();
