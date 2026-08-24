@@ -21,6 +21,11 @@ const providerMeta: Record<string, { icon: string; label: string }> = {
     github: { icon: "mdi:github", label: "GitHub" },
 };
 
+// T1024 — module scope, not the component body. A new client per render is an
+// allocation nobody needs and a dependency every hook below has to name; the
+// service is stateless, so one instance serves the module.
+const authorization = new TurAuthorizationService()
+
 export function LoginForm({
     className,
     ...props
@@ -33,7 +38,6 @@ export function LoginForm({
     const [isLoading, setIsLoading] = useState(false);
     const [oauth2Providers, setOauth2Providers] = useState<string[]>([]);
     const [selfRegistration, setSelfRegistration] = useState(false);
-    const authorization = new TurAuthorizationService()
 
     useEffect(() => {
         new TurSetupService().status().then((status) => {

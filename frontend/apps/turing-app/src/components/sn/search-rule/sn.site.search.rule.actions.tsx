@@ -156,9 +156,14 @@ interface Props {
     chrome?: SNSectionChrome;
 }
 
+// T1024 — a stable empty array. `watch()` returning nothing used to fall back to
+// a fresh `[]` every render, which made the memo below recompute on every pass and
+// is what the rule was reporting: the dependency was new each time, not the data.
+const NO_ACTIONS: never[] = [];
+
 export const SNSiteSearchRuleActions: React.FC<Props> = ({ form, fieldOptions, customSorts, facets, chrome = "console" }) => {
     const { t } = useTranslation();
-    const actions = form.watch("actions") || [];
+    const actions = form.watch("actions") ?? NO_ACTIONS;
 
     const nonFacetFields = useMemo(() =>
         fieldOptions.filter(f => !f.facet),

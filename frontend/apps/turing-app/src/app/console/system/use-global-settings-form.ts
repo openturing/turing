@@ -180,6 +180,12 @@ export function useGlobalSettingsForm(): GlobalSettingsFormState {
                 toast.error(t("globalSettings.loadFailed"));
             })
             .finally(() => setIsLoading(false));
+    // T1024 — mounted once, deliberately. `t` appears only inside the failure
+    // toast, and listing it would re-run this fetch every time the reader
+    // switches language: a network call to re-render a message that is already
+    // on screen. The toast reads whatever `t` was captured, which is the one the
+    // page was rendered with.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     const onRotateUrlSigningSecret = async () => {

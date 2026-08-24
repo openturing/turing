@@ -453,7 +453,7 @@ export const SNSiteFieldGridList: React.FC<PropsWithChildren<Props>> = ({ status
                     setFieldSaving(fieldId, false);
                 });
         },
-        [data, id, setFieldSaving]
+        [data, id, setFieldSaving, setSnField]
     );
 
     const setFieldRepairing = React.useCallback((fieldId: string, repairing: boolean) => {

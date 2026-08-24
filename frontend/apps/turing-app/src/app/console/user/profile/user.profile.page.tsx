@@ -60,6 +60,12 @@ export default function UserProfilePage({ header }: Readonly<{ header?: ReactNod
             toast.error(t("account.loadFailed"));
             setLoading(false);
         });
+    // T1024 — mounted once, deliberately. `t` appears only inside the failure
+    // toast, and listing it would re-run this fetch every time the reader
+    // switches language: a network call to re-render a message that is already
+    // on screen. The toast reads whatever `t` was captured, which is the one the
+    // page was rendered with.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     const initials = (() => {
@@ -81,7 +87,7 @@ export default function UserProfilePage({ header }: Readonly<{ header?: ReactNod
         } catch {
             toast.error(t("account.avatarFailed"));
         }
-    }, [user]);
+    }, [user, refreshUser, t]);
 
     const handleAvatarRemove = useCallback(async () => {
         if (!user) return;
@@ -93,7 +99,7 @@ export default function UserProfilePage({ header }: Readonly<{ header?: ReactNod
         } catch {
             toast.error(t("account.avatarRemoveFailed"));
         }
-    }, [user]);
+    }, [user, refreshUser, t]);
 
     const handleSave = async () => {
         if (!user) return;

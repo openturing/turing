@@ -15,6 +15,11 @@ interface SetupFormValues {
     confirmPassword: string;
 }
 
+// T1024 — module scope, not the component body. A new client per render is an
+// allocation nobody needs and a dependency every hook below has to name; the
+// service is stateless, so one instance serves the module.
+const setupService = new TurSetupService();
+
 export function SetupForm({
     className,
     ...props
@@ -25,7 +30,6 @@ export function SetupForm({
     });
     const [error, setError] = useState('');
     const [isLoading, setIsLoading] = useState(false);
-    const setupService = new TurSetupService();
 
     useEffect(() => {
         setupService.status().then((status) => {

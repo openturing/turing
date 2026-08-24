@@ -67,6 +67,10 @@ export default function BentoPersonaValidatePage() {
         navigate(ROUTES.BENTO_PERSONA_MATCH, { replace: true });
       }
     })();
+  // T1024 — `t` is read only for the name this page gives a project it creates,
+  // and the effect is guarded to act once. Listing it would let a language
+  // switch re-enter a branch that navigates away or creates a project.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [personaId, persona, projects, markerName, navigate]);
 
   if (!personaId) {

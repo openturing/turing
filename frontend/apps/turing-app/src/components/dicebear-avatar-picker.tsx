@@ -122,6 +122,11 @@ export function DiceBearAvatarPicker({
       }
       generatePreviewSeeds()
     }
+  // T1024 — keyed on `open` alone, deliberately. This seeds the editor from the
+  // avatar the entity already has, once per opening. Listing `currentAvatarUrl`
+  // would re-seed while the dialog is open — throwing away the style and seed
+  // the reader has been adjusting the moment the entity saves underneath them.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open])
   /* eslint-enable react-hooks/set-state-in-effect */
 
