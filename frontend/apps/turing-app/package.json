@@ -9,7 +9,7 @@
     "prebuild": "node check-node.cjs",
     "dev": "vite",
     "build": "tsc -b && vite build",
-    "lint": "eslint . --max-warnings 30",
+    "lint": "eslint . --max-warnings 23",
     "check:duplicates": "viglet-ds-check-duplicates src",
     "preview": "vite preview",
     "test": "vitest run --project unit",

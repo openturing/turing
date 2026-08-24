@@ -13,7 +13,6 @@ import { BentoRoutes, VoiceKioskRoutes } from "./app/routes"
 import { ROUTES } from "./app/routes.const"
 import { ThemeProvider } from "./components/theme-provider"
 import { Toaster } from "./components/ui/sonner"
-import { TuringServiceProvider } from "./contexts/TuringServiceContext"
 import { BreadcrumbProvider } from "./contexts/breadcrumb.context"
 const AnnSearchPage = lazy(() => import("./search/pages/ann-search.page"))
 const AnswerSearchPage = lazy(() => import("./search/pages/answer-search.page"))
@@ -25,29 +24,27 @@ function App() {
     <div className="App">
       <ThemeProvider defaultTheme="dark" storageKey="vite-ui-theme">
         <BreadcrumbProvider>
-          <TuringServiceProvider>
-            <Toaster />
-            <Suspense fallback={<div className="h-screen w-screen" aria-busy="true" />}>
-            <Routes>
-              <Route path={ROUTES.ROOT} element={<Navigate to={ROUTES.BENTO_HOME} replace />} />
-              <Route path={ROUTES.LOGIN} element={<LoginPage />} />
-              <Route path={ROUTES.REGISTER} element={<RegisterPage />} />
-              <Route path={ROUTES.SETUP} element={<SetupPage />} />
-              <Route path={`${ROUTES.SN_SEARCH}/:siteName`} element={<SearchPage />} />
-              <Route path={`${ROUTES.ANN_SEARCH}/:siteName`} element={<AnnSearchPage />} />
-              {/* T890 — the share permalink is more specific than the lens route. */}
-              <Route
-                path={`${ROUTES.ANSWER_SEARCH}/:siteName/share/:shareId`}
-                element={<AnswerSharePage />}
-              />
-              <Route path={`${ROUTES.ANSWER_SEARCH}/:siteName`} element={<AnswerSearchPage />} />
-              {BentoRoutes}
-              {VoiceKioskRoutes}
-              {/* Retired console deep-links resolve to their bento equivalent. */}
-              <Route path={`${ROUTES.CONSOLE}/*`} element={<ConsoleToBentoRedirect />} />
-            </Routes>
-            </Suspense>
-          </TuringServiceProvider>
+          <Toaster />
+          <Suspense fallback={<div className="h-screen w-screen" aria-busy="true" />}>
+          <Routes>
+            <Route path={ROUTES.ROOT} element={<Navigate to={ROUTES.BENTO_HOME} replace />} />
+            <Route path={ROUTES.LOGIN} element={<LoginPage />} />
+            <Route path={ROUTES.REGISTER} element={<RegisterPage />} />
+            <Route path={ROUTES.SETUP} element={<SetupPage />} />
+            <Route path={`${ROUTES.SN_SEARCH}/:siteName`} element={<SearchPage />} />
+            <Route path={`${ROUTES.ANN_SEARCH}/:siteName`} element={<AnnSearchPage />} />
+            {/* T890 — the share permalink is more specific than the lens route. */}
+            <Route
+              path={`${ROUTES.ANSWER_SEARCH}/:siteName/share/:shareId`}
+              element={<AnswerSharePage />}
+            />
+            <Route path={`${ROUTES.ANSWER_SEARCH}/:siteName`} element={<AnswerSearchPage />} />
+            {BentoRoutes}
+            {VoiceKioskRoutes}
+            {/* Retired console deep-links resolve to their bento equivalent. */}
+            <Route path={`${ROUTES.CONSOLE}/*`} element={<ConsoleToBentoRedirect />} />
+          </Routes>
+          </Suspense>
         </BreadcrumbProvider>
       </ThemeProvider>
     </div>
