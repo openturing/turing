@@ -48,6 +48,17 @@ jobs:
         working-directory: frontend
         run: pnpm run check:overrides
 
+      # T1023 — the release-age waiver list answers on the first rule whose
+      # package name matches, so a second line for a name already listed waives
+      # nothing. `pnpm add` writes exactly that when it upgrades a package
+      # already in the list, and the install that writes it succeeds: the entry
+      # is unreachable rather than wrong, and the refusal lands on some later
+      # install. This runs beside the overrides check for the same reason — both
+      # are config claiming a thing pnpm never verifies.
+      - name: Release-age waivers are reachable
+        working-directory: frontend
+        run: pnpm run check:waivers
+
       # Fail on any high/critical advisory. Known transitive lows/mediums are
       # tracked by Dependabot. The `overrides` block in frontend/pnpm-workspace.yaml
       # remediates the open highs, and `auditConfig.ignoreGhsas` records the two

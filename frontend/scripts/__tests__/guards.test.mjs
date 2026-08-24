@@ -337,3 +337,76 @@ describe("the scripts under test", () => {
     );
   });
 });
+
+// ── check-release-age-waivers.mjs ────────────────────────────────────────────
+
+/** A workspace file whose exclude block holds exactly these specs. */
+function waiversFixture(specs, tail = "") {
+  const dir = fixture("waivers");
+  const block = specs.map((s) => `  - '${s}'`).join("\n");
+  write(
+    dir,
+    "pnpm-workspace.yaml",
+    `packages:\n  - "apps/*"\n\nminimumReleaseAgeExclude:\n${block}\n${tail}\noverrides:\n  "x": "1"\n`,
+  );
+  return dir;
+}
+
+describe("check-release-age-waivers", () => {
+  it("passes when every package is named once", () => {
+    const dir = waiversFixture(["a@1.0.0", "@scope/b@2.0.0", "c@3.0.0"]);
+    const { code, out } = run("check-release-age-waivers.mjs", dir);
+    strictEqual(code, 0);
+    match(out, /3 waiver\(s\), 3 package\(s\)/);
+  });
+
+  it("fails on the duplicate `pnpm add` writes, and names both lines", () => {
+    // The real shape from T1023: a union line, then a fresh single-version line
+    // appended below it for a version the union may already carry.
+    const dir = waiversFixture([
+      "@scope/ds@1.0.0||1.1.0",
+      "other@9.9.9",
+      "@scope/ds@1.2.0",
+    ]);
+    const { code, out } = run("check-release-age-waivers.mjs", dir);
+    strictEqual(code, 1);
+    match(out, /@scope\/ds is named 2 times/);
+    // Both offending lines are located, so the reader does not go hunting.
+    match(out, /pnpm-workspace\.yaml:5\b/);
+    match(out, /pnpm-workspace\.yaml:7\b/);
+  });
+
+  it("suggests a merged line that names each version once", () => {
+    // 1.1.0 is on both lines; the merged form must not repeat it.
+    const dir = waiversFixture(["@scope/ds@1.0.0||1.1.0", "@scope/ds@1.1.0"]);
+    const { out } = run("check-release-age-waivers.mjs", dir);
+    match(out, /merge them into: {2}'@scope\/ds@1\.0\.0\|\|1\.1\.0'/);
+  });
+
+  it("reads a scoped name past its own leading @", () => {
+    // `@scope/a` and `@scope/b` are different packages; splitting on the first
+    // `@` of the string would call them both "" and report a false duplicate.
+    const dir = waiversFixture(["@scope/a@1.0.0", "@scope/b@1.0.0"]);
+    strictEqual(run("check-release-age-waivers.mjs", dir).code, 0);
+  });
+
+  it("refuses a line under the block it cannot parse, rather than dropping it", () => {
+    const dir = fixture("waivers-malformed");
+    write(
+      dir,
+      "pnpm-workspace.yaml",
+      `minimumReleaseAgeExclude:\n  - 'a@1.0.0'\n  - { name: b }\n`,
+    );
+    const { code, out } = run("check-release-age-waivers.mjs", dir);
+    strictEqual(code, 1);
+    match(out, /not list entries/);
+  });
+
+  it("passes a workspace that declares no exclude block at all", () => {
+    const dir = fixture("waivers-absent");
+    write(dir, "pnpm-workspace.yaml", `packages:\n  - "apps/*"\n`);
+    const { code, out } = run("check-release-age-waivers.mjs", dir);
+    strictEqual(code, 0);
+    match(out, /declares no minimumReleaseAgeExclude/);
+  });
+});

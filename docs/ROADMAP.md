@@ -21,7 +21,6 @@
 
 - 📋 **T1021** (deps: —) **271 warnings sit under the ceiling as one number, and they are three unrelated jobs** — The compiler is not installed, so its 27 bailout notices are advisory; twelve of the rest are real whatever runs. → §CIV.2
 - 📋 **T1022** (deps: —) **three test packages are pinned exact with no expiry, so this app cannot take a vitest release** — 4.1.11 breaks jest-dom's type augmentation in tsc alone, and nothing rechecks whether it still does. → §CIV.3
-- 📋 **T1023** (deps: —) **pnpm add reintroduces the shadowed exclude line T1014 removed, and nothing notices** — The appended entry is unreachable rather than wrong, so the install succeeds and the refusal arrives later. → §CIV.4
 
 ## Done when — T1000
 

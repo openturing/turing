@@ -3,10 +3,11 @@
   "private": true,
   "version": "2026.3.1",
   "packageManager": "pnpm@11.8.0",
-  "description": "Viglet Turing ES \u2014 unified JavaScript monorepo (dashboard, SDK, marketplace apps)",
+  "description": "Viglet Turing ES — unified JavaScript monorepo (dashboard, SDK, marketplace apps)",
   "scripts": {
     "postinstall": "node scripts/workspace-status.mjs",
     "check:overrides": "node scripts/check-overrides.mjs",
+    "check:waivers": "node scripts/check-release-age-waivers.mjs",
     "test:scripts": "node --test \"scripts/__tests__/*.test.mjs\"",
     "bump:patch": "pnpm -r --include-workspace-root exec -- npm version patch --no-git-tag-version",
     "bump:minor": "pnpm -r --include-workspace-root exec -- npm version minor --no-git-tag-version",
