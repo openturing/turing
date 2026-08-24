@@ -2102,34 +2102,4 @@ and only then delete anything. Three tasks are instruments rather than moves - a
 duplication lint, a working local-dev path and a render digest - because every deletion
 here is justified by an assertion this repository currently cannot check.
 
-## XCVII Site chat aggregates the answer before emitting it (T1004)
-
-Measured against `turing-demo.viglet.org`: `POST /api/sn/{site}/chat/conversation` emits
-a `sources` payload and then the whole answer as a single event.
-
-The consequence is not cosmetic. `consumeAssistantStream` in the vanilla SDK reads the
-body with a stream reader and calls `onToken` per event, so a correctly written consumer
-receives exactly one token and renders nothing until the answer is complete.
-
-`AUTO` settled the engine half: it streams whenever no flow and no tool are in play,
-which is every anonymous SN turn, since T647 strips the callbacks.
-
-Two further causes, found 2026-08-24, neither in the streaming code:
-
-- **Proxy buffering — fixed.** `sources` is emitted before the LLM call and `token` after
-  it, yet both once arrived 2ms apart, headers included, 5s in — nothing reached the client
-  until the backend finished. Turing sent no anti-buffering header; it now sends `X-Accel-Buffering: no` and `Cache-Control: no-cache`
-  on every SSE endpoint. Post-deploy the two events arrive 6.6s and 8.0s apart, `sources`
-  at 1.8s.
-- **The seeded agent's mode.** The demo's site chat is served by the bundled `Admissoes
-  Criaturas`, not by the provisioned default. `chatMode` was absent from
-  `TurAIAgentExchange`, so a bundle asking for `AUTO` produced `CALL` silently. The field
-  now travels and the cloud seed declares `AUTO`; it needs a build carrying that, then a
-  reset to re-import.
-
-Acceptance:
-- Site chat emits incremental `content` events as the model produces them.
-- A consumer counting `onToken` calls sees more than one.
-- Verified on the demo, with the timings recorded.
-
 ## CV The quality gate stops at the package boundary
