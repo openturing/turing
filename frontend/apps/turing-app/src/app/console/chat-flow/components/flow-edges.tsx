@@ -1,3 +1,11 @@
+/* eslint-disable react-refresh/only-export-components --
+ * T1024 — a registry module. The components here exist to be named in the map
+ * this file exports; React Flow resolves a node's `type` string through it, so
+ * the registry is the module's whole purpose and the components are its
+ * entries. They are local on purpose — nothing outside imports one — and Fast
+ * Refresh has no state to preserve across an edit that changes which component
+ * a type resolves to, because the flow remounts either way.
+ */
 import {
   BaseEdge,
   MarkerType,
@@ -23,15 +31,15 @@ import {
  * Pinned by {@code AdvanceOnFailureTest} — changing this would orphan every
  * persisted failure edge.
  */
-export const FAILURE_HANDLE = "failure";
+const FAILURE_HANDLE = "failure";
 
 /** React Flow {@code edgeTypes} key for failure edges. */
-export const FAILURE_EDGE_TYPE = "failure";
+const FAILURE_EDGE_TYPE = "failure";
 
 /** Default edge type for non-failure connections (matches the legacy default). */
-export const DEFAULT_EDGE_TYPE = "smoothstep";
+const DEFAULT_EDGE_TYPE = "smoothstep";
 
-export function isFailureSourceHandle(handle: string | null | undefined): boolean {
+function isFailureSourceHandle(handle: string | null | undefined): boolean {
   return typeof handle === "string" && handle.toLowerCase() === FAILURE_HANDLE;
 }
 

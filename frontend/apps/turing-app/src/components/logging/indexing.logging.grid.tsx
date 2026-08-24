@@ -64,7 +64,7 @@ interface Props {
     onUrlChange: (url: string) => void;
 }
 
-export const buildIndexingColumns = (t: (key: string) => string, dateLocale: Locale): ColumnDef<TurLoggingIndexing>[] => [
+const buildIndexingColumns = (t: (key: string) => string, dateLocale: Locale): ColumnDef<TurLoggingIndexing>[] => [
     {
         accessorKey: "date",
         header: t("forms.indexingLoggingGrid.date"),

@@ -17,7 +17,7 @@ const LANGUAGES = [
 
 const STORAGE_KEY = "turing-login-settings";
 
-export interface LoginAnimationSettings {
+interface LoginAnimationSettings {
   animations: boolean;
   explosion: boolean;
   formulas: boolean;

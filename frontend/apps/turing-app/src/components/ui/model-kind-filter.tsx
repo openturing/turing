@@ -11,7 +11,7 @@ import { MODEL_KIND_ORDER, ModelKindDot, modelKindLabelKey, resolveModelKind } f
 export type ModelKindFilterValue = TurLlmModelKind | "ALL"
 
 /** Distinct kinds present in a set of options, in canonical display order. */
-export function distinctKinds(options: TurLlmModelOption[]): TurLlmModelKind[] {
+function distinctKinds(options: TurLlmModelOption[]): TurLlmModelKind[] {
   const present = new Set(options.map(resolveModelKind))
   return MODEL_KIND_ORDER.filter((k) => present.has(k))
 }

@@ -1,3 +1,11 @@
+/* eslint-disable react-refresh/only-export-components --
+ * T1024 — this module exports one thing and it is a component. The rule cannot
+ * see that: `Object.assign(Component, { Sub })` is how a compound component
+ * attaches its statics, and what gets flagged are the local functions the
+ * assignment composes, none of which is exported. Splitting them out would mean
+ * a component and its own sub-parts living in different files to satisfy a
+ * reading of the module that is wrong.
+ */
 "use client"
 import { Icon } from "@iconify/react"
 import { IconPalette, IconSearch, IconTrash } from "@tabler/icons-react"

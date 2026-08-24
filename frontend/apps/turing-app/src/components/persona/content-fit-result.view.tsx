@@ -5,7 +5,7 @@ import { useTranslation } from "react-i18next"
 
 /** Red < 40 ≤ amber < 70 ≤ green. Shared by the fit report (T468) and the
  * auto-suggest ranking (T471). */
-export function fitBand(score: number): { bar: string; text: string } {
+function fitBand(score: number): { bar: string; text: string } {
   if (score >= 70)
     return { bar: "bg-emerald-500", text: "text-emerald-700 dark:text-emerald-400" }
   if (score >= 40)

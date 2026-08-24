@@ -66,7 +66,7 @@ type StackTraceContextType = {
 };
 const StackTraceContext = createContext<StackTraceContextType>({ openStackTrace: () => { } });
 
-export const buildLoggingColumns = (t: (key: string, opts?: Record<string, unknown>) => string, dateLocale: Locale): ColumnDef<TurLoggingGeneral>[] => [
+const buildLoggingColumns = (t: (key: string, opts?: Record<string, unknown>) => string, dateLocale: Locale): ColumnDef<TurLoggingGeneral>[] => [
     {
         accessorKey: "date",
         header: t("forms.loggingGrid.date"),

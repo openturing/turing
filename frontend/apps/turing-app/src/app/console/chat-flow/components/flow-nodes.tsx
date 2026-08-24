@@ -1,3 +1,11 @@
+/* eslint-disable react-refresh/only-export-components --
+ * T1024 — a registry module. The components here exist to be named in the map
+ * this file exports; React Flow resolves a node's `type` string through it, so
+ * the registry is the module's whole purpose and the components are its
+ * entries. They are local on purpose — nothing outside imports one — and Fast
+ * Refresh has no state to preserve across an edit that changes which component
+ * a type resolves to, because the flow remounts either way.
+ */
 import { Handle, Position, type NodeProps } from "@xyflow/react";
 import {
   IconArrowRight,
@@ -35,7 +43,7 @@ import { ensureSwitchOptions } from "../chat-flow.serialize";
 
 type ChatFlowNodeProps = NodeProps & { data: FlowNodeData };
 
-export function StartNode(_props: ChatFlowNodeProps) {
+function StartNode(_props: ChatFlowNodeProps) {
   return (
     <div className="flex size-16 items-center justify-center rounded-full bg-emerald-500 text-white shadow-md ring-2 ring-emerald-600 ring-offset-2 ring-offset-background">
       <IconPlayerPlayFilled className="size-6" />
@@ -44,7 +52,7 @@ export function StartNode(_props: ChatFlowNodeProps) {
   );
 }
 
-export function EndNode(_props: ChatFlowNodeProps) {
+function EndNode(_props: ChatFlowNodeProps) {
   return (
     <div className="flex size-16 items-center justify-center rounded-full bg-rose-500 text-white shadow-md ring-2 ring-rose-600 ring-offset-2 ring-offset-background">
       <IconFlag3 className="size-6" />
@@ -53,7 +61,7 @@ export function EndNode(_props: ChatFlowNodeProps) {
   );
 }
 
-export function AIQuestionNode({ data }: ChatFlowNodeProps) {
+function AIQuestionNode({ data }: ChatFlowNodeProps) {
   return (
     <div className="w-64 overflow-hidden rounded-lg border-2 border-blue-500 bg-background shadow-md">
       <div className="flex items-center gap-2 bg-blue-500 px-3 py-2 text-white">
@@ -70,7 +78,7 @@ export function AIQuestionNode({ data }: ChatFlowNodeProps) {
   );
 }
 
-export function ConditionNode({ data }: ChatFlowNodeProps) {
+function ConditionNode({ data }: ChatFlowNodeProps) {
   return (
     <div className="relative size-48">
       <div
@@ -89,7 +97,7 @@ export function ConditionNode({ data }: ChatFlowNodeProps) {
   );
 }
 
-export function FunctionCallNode({ data }: ChatFlowNodeProps) {
+function FunctionCallNode({ data }: ChatFlowNodeProps) {
   const source = data.toolSource ?? "NATIVE";
   const target = source === "MCP" ? data.mcpServerId : data.functionName;
   return (
@@ -135,7 +143,7 @@ export function FunctionCallNode({ data }: ChatFlowNodeProps) {
   );
 }
 
-export function SubFlowNode({ data }: ChatFlowNodeProps) {
+function SubFlowNode({ data }: ChatFlowNodeProps) {
   const subFlowName =
     typeof data.subFlowName === "string" && data.subFlowName.trim().length > 0
       ? data.subFlowName
@@ -163,7 +171,7 @@ export function SubFlowNode({ data }: ChatFlowNodeProps) {
   );
 }
 
-export function PersonaNode({ data }: ChatFlowNodeProps) {
+function PersonaNode({ data }: ChatFlowNodeProps) {
   // Prefer the cached display name — same pattern as SubFlowNode. Falls back to the raw uuid only
   // when the node was wired without going through the properties panel (e.g. legacy imports).
   const personaName =
@@ -193,7 +201,7 @@ export function PersonaNode({ data }: ChatFlowNodeProps) {
   );
 }
 
-export function SwitchNode({ data }: ChatFlowNodeProps) {
+function SwitchNode({ data }: ChatFlowNodeProps) {
   const options = ensureSwitchOptions(data);
   // We make the wrapper itself the positioned ancestor so each handle's `top: Npx` is measured
   // from the wrapper's padding-box (inside the border) — that anchors `right: 0` at the wrapper's
@@ -257,7 +265,7 @@ export function SwitchNode({ data }: ChatFlowNodeProps) {
   );
 }
 
-export function SubFlowSwitchNode({ data }: ChatFlowNodeProps) {
+function SubFlowSwitchNode({ data }: ChatFlowNodeProps) {
   // Mirrors SwitchNode's per-option row layout so the two read as siblings,
   // but the consequence column shows the linked sub-flow name (or "—" when
   // unset) instead of an outgoing-edge arrow. There's a single source handle
@@ -309,7 +317,7 @@ export function SubFlowSwitchNode({ data }: ChatFlowNodeProps) {
   );
 }
 
-export function SlotNode({ data }: ChatFlowNodeProps) {
+function SlotNode({ data }: ChatFlowNodeProps) {
   const operation = data.slotOperation ?? "SET";
   const slotName = typeof data.slotName === "string" && data.slotName.trim().length > 0
     ? data.slotName
@@ -364,7 +372,7 @@ export function SlotNode({ data }: ChatFlowNodeProps) {
  *
  * @since 2026.2.7
  */
-export function WriteSlotNode({ data }: ChatFlowNodeProps) {
+function WriteSlotNode({ data }: ChatFlowNodeProps) {
   const slotName = typeof data.slotName === "string" && data.slotName.trim().length > 0
     ? data.slotName
     : null;
@@ -415,7 +423,7 @@ export function WriteSlotNode({ data }: ChatFlowNodeProps) {
  *
  * @since 2026.2.7
  */
-export function FormCaptureNode({ data }: ChatFlowNodeProps) {
+function FormCaptureNode({ data }: ChatFlowNodeProps) {
   const rule = typeof data.validationRule === "string" && data.validationRule.trim().length > 0
     ? data.validationRule
     : null;
@@ -452,7 +460,7 @@ export function FormCaptureNode({ data }: ChatFlowNodeProps) {
   );
 }
 
-export function ScheduleAgentNode({ data }: ChatFlowNodeProps) {
+function ScheduleAgentNode({ data }: ChatFlowNodeProps) {
   const routineName =
     typeof data.routineName === "string" && data.routineName.trim().length > 0
       ? data.routineName
@@ -528,7 +536,7 @@ export function ScheduleAgentNode({ data }: ChatFlowNodeProps) {
  *
  * @since 2026.3.1
  */
-export function SuspendNode({ data }: ChatFlowNodeProps) {
+function SuspendNode({ data }: ChatFlowNodeProps) {
   const reason =
     typeof data.label === "string" && data.label.trim().length > 0
       ? data.label
@@ -552,7 +560,7 @@ export function SuspendNode({ data }: ChatFlowNodeProps) {
   );
 }
 
-export function WebhookNode({ data }: ChatFlowNodeProps) {
+function WebhookNode({ data }: ChatFlowNodeProps) {
   // The webhook node carries the chosen webhook name in `functionName`
   // (no schema column added — same reuse trick as functionCall). T62.
   const target = typeof data.functionName === "string" ? data.functionName.trim() : "";
@@ -596,7 +604,7 @@ export function WebhookNode({ data }: ChatFlowNodeProps) {
  *
  * @since 2026.3.1
  */
-export function PlanningStepNode({ data }: ChatFlowNodeProps) {
+function PlanningStepNode({ data }: ChatFlowNodeProps) {
   const planSlot =
     typeof data.outputVariable === "string" && data.outputVariable.trim().length > 0
       ? data.outputVariable.trim()
@@ -633,7 +641,7 @@ export function PlanningStepNode({ data }: ChatFlowNodeProps) {
  *
  * @since 2026.3.1
  */
-export function IteratePlanNode({ data }: ChatFlowNodeProps) {
+function IteratePlanNode({ data }: ChatFlowNodeProps) {
   const planSlot =
     typeof data.outputVariable === "string" && data.outputVariable.trim().length > 0
       ? data.outputVariable.trim()
@@ -687,7 +695,7 @@ export function IteratePlanNode({ data }: ChatFlowNodeProps) {
  *
  * @since 2026.3.1
  */
-export function HumanApprovalNode({ data }: ChatFlowNodeProps) {
+function HumanApprovalNode({ data }: ChatFlowNodeProps) {
   const config = data.humanApproval ?? {};
   const channel = typeof config.channel === "string" ? config.channel : null;
   const slot =

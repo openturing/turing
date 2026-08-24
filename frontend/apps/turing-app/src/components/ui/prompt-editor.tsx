@@ -10,7 +10,7 @@ import { Textarea } from "./textarea";
 // Variable
 // ---------------------------------------------------------------------------
 
-export interface PromptVariable {
+interface PromptVariable {
   /** The variable token, e.g. "{{question}}" */
   token: string;
   /** Short label shown in the badge, e.g. "question" */
@@ -27,7 +27,7 @@ export interface PromptVariable {
  * opens a {@link MetaPromptSheet} streaming directly into the editor's value.
  * Omit to render the editor without the AI helper.
  */
-export interface PromptEditorMetaPrompt {
+interface PromptEditorMetaPrompt {
   /** Persisted user brief; null/empty starts the sheet blank. */
   brief?: string | null;
   /** When provided, the brief is saved each time Generate runs. */
@@ -282,9 +282,3 @@ export const PromptEditor: React.FC<PromptEditorProps> = ({
   );
 };
 
-/**
- * Helper: returns true when all required variables are present in the prompt.
- */
-export function allVariablesPresent(prompt: string, variables: PromptVariable[]): boolean {
-  return variables.every((v) => prompt.includes(v.token));
-}
