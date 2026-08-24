@@ -2192,8 +2192,8 @@ what is left, so the phase-out has no end and no measure.
 Reading T1017's 72 `set-state-in-effect` findings supplied one. Once that task had
 rewritten or answered its own 30, the 42 left across 36 files were all one thing: a
 component holding its own `data`/`loading`/`error` triple and filling it from a service
-inside an effect. The dashboard and the SN rule families have moved; 33 findings across
-28 files have not, and most need a hook nobody has written yet.
+inside an effect. The dashboard, the SN rule families, the admin trio and both
+system-info pages have moved; 29 findings across 23 files have not.
 
 So the largest single group of findings under T1016's ceiling is not a lint problem. It
 is the migration already declared, seen from the other end — and rewriting those effects
@@ -2205,5 +2205,5 @@ invalidation on write that these pages do by hand or not at all, and one fewer
 `useState` triple per page.
 
 Acceptance:
-- The 28 files read through `api/queries/*.queries.ts` hooks.
-- The `--max-warnings` ceiling falls by the 34 findings they carry.
+- The 23 files read through `api/queries/*.queries.ts` hooks.
+- The `--max-warnings` ceiling falls by the 29 findings they carry.
