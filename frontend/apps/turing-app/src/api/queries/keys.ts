@@ -51,6 +51,14 @@ export const queryKeys = {
     // widget reads as a single unit.
     withStatus: () => [...queryKeys.snSites.all(), 'with-status'] as const,
   },
+  // T1018 — the asset browser: one listing per folder prefix, and the training
+  // records for whatever files that listing shows.
+  assets: {
+    all: () => ['assets'] as const,
+    list: (prefix: string) => [...queryKeys.assets.all(), 'list', prefix] as const,
+    trainingRecords: (names: string[]) =>
+      [...queryKeys.assets.all(), 'training-records', [...names].sort().join('|')] as const,
+  },
   // T1018 — the Git surface: the repository list, and one repo's branches and
   // tree. The tree is keyed by branch and path because that is what identifies
   // a listing.

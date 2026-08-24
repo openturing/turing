@@ -1,4 +1,6 @@
 import { AssetPreviewPanel } from "@/app/console/asset/asset-preview-panel"
+import { useAssetTrainingRecords, useAssets, useInvalidateAssets } from "@/api/queries/asset.queries"
+import { useFeatures } from "@/api/queries/features.queries"
 import { LoadProvider } from "@/components/loading-provider"
 import { Button } from "@/components/ui/button"
 import {
@@ -27,7 +29,6 @@ import { cn } from "@/lib/utils"
 import type { TurAssetItem } from "@/models/asset/asset-item.model"
 import type { TurAssetTrainingStatus } from "@/models/asset/asset-training-status.model"
 import { TurAssetService } from "@/services/asset/asset.service"
-import { TurFeaturesService } from "@/services/system/features.service"
 import {
   IconBrain,
   IconCheck,
@@ -41,11 +42,10 @@ import {
   IconLoader2,
   IconTrash,
 } from "@tabler/icons-react"
-import { useCallback, useEffect, useRef, useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 import { toast } from "@viglet/viglet-design-system"
 
 const turAssetService = new TurAssetService()
-const turFeaturesService = new TurFeaturesService()
 
 function formatFileSize(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`
@@ -88,45 +88,45 @@ interface AssetBrowserProps {
  * agnostic; the caller owns the surrounding header/padding chrome.
  */
 export function AssetBrowser({ tryAgainUrl, className }: Readonly<AssetBrowserProps>) {
-  const [assets, setAssets] = useState<TurAssetItem[]>()
-  const [error, setError] = useState<string | null>(null)
-  const [uploading, setUploading] = useState(false)
   const [prefix, setPrefix] = useState("")
+  const [uploading, setUploading] = useState(false)
   const [folderDialogOpen, setFolderDialogOpen] = useState(false)
   const [newFolderName, setNewFolderName] = useState("")
   const [selectedAsset, setSelectedAsset] = useState<TurAssetItem | null>(null)
-  const [ragEnabled, setRagEnabled] = useState(false)
   const [trainingStatus, setTrainingStatus] = useState<TurAssetTrainingStatus | null>(null)
-  const [trainedMap, setTrainedMap] = useState<Record<string, string>>({})
   const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
-  const loadAssets = useCallback(() => {
-    setError(null)
-    setAssets(undefined)
-    turAssetService.query(prefix).then(setAssets).catch(() => setError("Failed to load assets. Check MinIO connection."))
-  }, [prefix])
+  // T1018 — three effects became three cached reads. The listing is keyed by
+  // folder prefix, so stepping back up a tree is served from cache instead of
+  // re-listed; the feature flags are the same entry every other surface reads;
+  // and the training records are a dependent query over the file names this
+  // listing shows, disabled when RAG is off or the folder holds no files, which
+  // is what the two early returns did.
+  const { data: assets, isError } = useAssets(prefix)
+  const error = isError ? "Failed to load assets. Check MinIO connection." : null
+  const { data: features } = useFeatures()
+  const ragEnabled = features?.ragEnabled ?? false
 
-  useEffect(() => { loadAssets() }, [loadAssets])
+  const fileNames = useMemo(
+    () => (assets ?? []).filter((a) => !a.directory).map((a) => a.name),
+    [assets],
+  )
+  const { data: trainedRecords } = useAssetTrainingRecords(fileNames, ragEnabled)
+  const trainedMap = trainedRecords ?? {}
 
-  // Load training records for visible files
-  useEffect(() => {
-    if (!assets || !ragEnabled) return
-    const fileNames = assets.filter(a => !a.directory).map(a => a.name)
-    if (fileNames.length === 0) { setTrainedMap({}); return }
-    turAssetService.getTrainingRecords(fileNames).then(setTrainedMap).catch(() => setTrainedMap({}))
-  }, [assets, ragEnabled])
-
-  // Load feature flags
-  useEffect(() => {
-    turFeaturesService.getFeatures().then((f) => setRagEnabled(f.ragEnabled)).catch(() => setRagEnabled(false))
-  }, [])
+  const loadAssets = useInvalidateAssets()
 
   // Stop polling on unmount
   useEffect(() => () => { if (pollingRef.current) clearInterval(pollingRef.current) }, [])
 
-  // Close preview when navigating folders
-  useEffect(() => { setSelectedAsset(null) }, [prefix])
+  // Close preview when navigating folders. T1017 — during render, so the
+  // previous folder's preview never paints over the new folder's listing.
+  const [syncedPrefix, setSyncedPrefix] = useState(prefix)
+  if (syncedPrefix !== prefix) {
+    setSyncedPrefix(prefix)
+    setSelectedAsset(null)
+  }
 
   const handleUpload = async (files: FileList | null) => {
     if (!files || files.length === 0) return
