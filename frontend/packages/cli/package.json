@@ -1,6 +1,6 @@
 {
   "name": "@viglet/turing-cli",
-  "version": "2026.3.9",
+  "version": "2026.3.11",
   "description": "turing — the Viglet Turing ES developer CLI: scaffold, run a full local stack, deploy agents/flows/tools/skills, tail chat events, and run YAML eval suites.",
   "type": "module",
   "main": "dist/src/index.js",

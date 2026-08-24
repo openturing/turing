@@ -1,11 +1,4 @@
-/* eslint-disable react-hooks/refs --
- * T1027 — a ref mirror, written during render on purpose. React queues state
- * updates rather than applying them, so a callback created this render would
- * otherwise close over the previous value; the mirror is how this SDK reads
- * the current one synchronously. `react-hooks/refs` reports what the React
- * Compiler would decline, and no package here runs it. Turn this back on in
- * the change that adds the compiler.
- */
+/* eslint-disable react-hooks/refs -- T1027; rationale in eslint.config.js */
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
   applyFacetAction,

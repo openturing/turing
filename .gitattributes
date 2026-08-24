@@ -1,0 +1,14 @@
+# Windows batch scripts MUST be checked out with CRLF.
+#
+# cmd.exe locates a `call :label` / `goto :label` by seeking in the file, and on
+# an LF-only .cmd that seek drifts once the file is a few KB long: the parser
+# resumes mid-line and starts executing fragments. publish-js.cmd (11 KB) failed
+# with "The system cannot find the batch label specified - publish" for exactly
+# this reason — the byte-identical CRLF copy runs clean.
+*.cmd text eol=crlf
+*.bat text eol=crlf
+
+# Shell scripts and the Maven wrapper stay LF even on a Windows checkout —
+# a CRLF shebang line breaks them under bash/sh.
+*.sh text eol=lf
+mvnw text eol=lf

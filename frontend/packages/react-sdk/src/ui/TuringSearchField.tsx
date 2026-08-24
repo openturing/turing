@@ -1,10 +1,4 @@
-/* eslint-disable react-refresh/only-export-components --
- * T1027 — a compound component. `TuringSearchField.Input` and its siblings are
- * attached with `Object.assign`, so the export is a const rather than a
- * function declaration and Fast Refresh cannot see a component in it. Splitting
- * would put the root and its parts in different modules, which is the one thing
- * a compound component must not be.
- */
+/* eslint-disable react-refresh/only-export-components -- T1027; rationale in eslint.config.js */
 import { useCallback, useEffect, useRef, useState, type FC, type ReactNode } from "react";
 import {
   TuringSearchFieldView,
