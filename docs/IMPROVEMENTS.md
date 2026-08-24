@@ -2102,30 +2102,6 @@ and only then delete anything. Three tasks are instruments rather than moves - a
 duplication lint, a working local-dev path and a render digest - because every deletion
 here is justified by an assertion this repository currently cannot check.
 
-### XCVI.20 The hues the pages kept (T1013)
-
-T996 removed the last hue from the shared components: a tone is a token now, and
-`bentoChipClass` resolves it. It also showed where the hues went instead. Fifty files
-under `app/bento` wrote a gradient straight into a chip's class list, and between them
-they used twenty-one distinct colour pairs against a vocabulary of seven.
-
-T1013b closed the ten a tone already answered: four spelled one exactly, six were a
-shade off one. Fifteen files and eight pairs are left, and none of them is a drift.
-`amber-500` to `rose-500` on six eval surfaces, `violet-600` to `fuchsia-600` on six
-more, `fuchsia-500` to `violet-600`, `indigo-500` to `blue-600`, and four one-offs —
-each a combination the seven tones do not offer, so snapping one moves a hue.
-
-The decision is which of two things this is. Either those pages pass a tone and lose the
-choice — seven names, re-keyable, at the cost of a visible change on twenty-one surfaces
-— or a hero legitimately needs colours a tone map should not hold, in which case the
-extra pairs deserve names of their own in the design system rather than being spelled
-out at each call site. What should not stand is eight anonymous pairs no token can
-re-key, because that is the fork T996 finished removing.
-
-Acceptance:
-- Each of the eight pairs either resolves through a tone or has a name declared for it.
-- No file under `app/bento` spells a `from-* to-*` pair a token could have carried.
-
 ## XCVII Site chat aggregates the answer before emitting it (T1004)
 
 Measured against `turing-demo.viglet.org` on 2026-08-23, reading the raw SSE with curl:

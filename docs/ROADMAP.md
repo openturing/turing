@@ -10,8 +10,6 @@
 
 ## Block BX — The bento layer leaves the product it grew in (§XCVI)
 
-- ⏳ **T1013** (deps: —) **fifteen bento pages write a hero gradient inline, using eight colour pairs no tone offers** — Eight pairs remain, each a combination no tone offers rather than a shade of drift, so closing one changes a hue. → §XCVI.20
-
 ## Block AR — Live-demo search & chat quality (Lucene parity gaps, §XLI)
 
 - ⏳ **T1004** (deps: —) **site chat emits the whole answer in one SSE content event, so no consumer can render it progressively** — The mode that streams it exists; the demo runs a build from before it, so the last acceptance bullet waits on a deploy. → §XCVII
