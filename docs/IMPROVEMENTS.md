@@ -2104,31 +2104,34 @@ here is justified by an assertion this repository currently cannot check.
 
 ## XCVII Site chat aggregates the answer before emitting it (T1004)
 
-Measured against `turing-demo.viglet.org` on 2026-08-23, reading the raw SSE with curl:
-`POST /api/sn/mythical-creatures/chat/conversation` emits exactly two events — a
-`sources` payload, then a single `content` event carrying the entire answer text — 0.7s
-apart.
+Measured against `turing-demo.viglet.org`: `POST /api/sn/{site}/chat/conversation` emits
+a `sources` payload and then the whole answer as a single event.
 
-Two events arriving separately ruled nginx out: it passed the first through before the
-second existed. The engine aggregates the answer before it emits it, because the agent
-serving that site is on chat mode `call`.
+The consequence is not cosmetic. `consumeAssistantStream` in the vanilla SDK reads the
+body with a stream reader and calls `onToken` per event, so a correctly written consumer
+receives exactly one token and renders nothing until the answer is complete.
 
-The consequence is not cosmetic for a consumer. `consumeAssistantStream` in the vanilla
-SDK reads the body with a stream reader and a streaming `TextDecoder` and calls
-`onToken` per event, so a correctly written consumer still receives exactly one token
-and can render nothing until the answer is complete. T684 added a typing indicator for
-the wait before the first token; this is the wait *being* the whole answer.
+`AUTO` settled the engine half: it streams whenever no flow and no tool are in play,
+which is every anonymous SN turn, since T647 strips the callbacks. New installs get that
+mode.
 
-Found while building the `schools` admissions app, whose acceptance requires an answer
-that arrives token by token; that app verified its own framework does not buffer.
+Re-measured 2026-08-24, once the demo was updated. Two findings, neither in the
+streaming code:
 
-Re-measured on 2026-08-23 once `AUTO` landed: the demo still emits the same two events,
-33ms apart. The demo runs a build from before that mode existed, so the last bullet
-below is waiting on a deploy rather than on anything left to write here.
+- The demo's agent predates `AUTO`, and provisioning never overwrites an existing agent,
+  so it is still on `CALL`. Setting Chat mode to Auto in the admin moves it.
+- The response is buffered end to end. `sources` is emitted before the LLM call and
+  `token` seconds after it, yet both arrived 2ms apart — headers included, 5s in. Nothing
+  reaches the client until the backend finishes, so no mode looks different from outside.
+  The demo sits behind Cloudflare and Turing sent no anti-buffering header; it now sends
+  `X-Accel-Buffering: no` and `Cache-Control: no-cache` on every SSE endpoint.
+
+The earlier note ruled the proxy out because the events arrived apart; they no longer
+do.
 
 Acceptance:
-- Site-scoped chat emits incremental `content` events as the model produces them.
-- A consumer counting `onToken` calls for a multi-sentence answer sees more than one.
-- Verified on the demo, with the event timings recorded.
+- Site chat emits incremental `content` events as the model produces them.
+- A consumer counting `onToken` calls sees more than one.
+- Verified on the demo, with the timings recorded.
 
 ## CV The quality gate stops at the package boundary

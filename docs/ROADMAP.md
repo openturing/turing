@@ -12,7 +12,7 @@
 
 ## Block AR — Live-demo search & chat quality (Lucene parity gaps, §XLI)
 
-- ⏳ **T1004** (deps: —) **site chat emits the whole answer in one SSE content event, so no consumer can render it progressively** — The mode that streams it exists; the demo runs a build from before it, so the last acceptance bullet waits on a deploy. → §XCVII
+- ⏳ **T1004** (deps: —) **site chat emits the whole answer in one SSE content event, so no consumer can render it progressively** — Two causes measured on the updated demo, neither in the streaming code: its agent predates AUTO and provisioning never overwrites one, and the response is buffered at the edge. → §XCVII
 
 ## Block BV — The quality gate stops at the package boundary
 
