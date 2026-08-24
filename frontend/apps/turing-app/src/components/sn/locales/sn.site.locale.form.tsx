@@ -19,14 +19,13 @@ import { GradientSwitch } from "@/components/ui/gradient-switch"
 import {
   Input
 } from "@/components/ui/input"
-import type { TurLocale } from "@/models/locale/locale.model"
 import type { TurSNSiteLocale } from "@/models/sn/sn-site-locale.model"
-import { TurLocaleService } from "@/services/locale/locale.service"
 import { TurSNSiteLocaleService } from "@/services/sn/sn.site.locale.service"
 import { IconDatabase, IconDeviceFloppy, IconExternalLink, IconLanguage, IconX } from "@tabler/icons-react"
 import { GradientButton } from "@/components/ui/gradient-button"
 import { DialogDelete } from "@/components/dialog.delete"
-import { useEffect, useState } from "react"
+import { useGlobalLocales } from "@/api/queries/locale.queries"
+import { useState } from "react"
 import {
   useForm
 } from "react-hook-form"
@@ -52,7 +51,9 @@ const turSNSiteLocaleService = new TurSNSiteLocaleService();
 
 export const SNSiteLocaleForm: React.FC<Props> = ({ snSiteId, snLocale, isNew, onDelete, open, setOpen, baseRoute = ROUTES.SN_INSTANCE, chrome = "console" }) => {
   const { t } = useTranslation();
-  const [locales, setLocales] = useState<TurLocale[]>([]);
+  // T1018 — the global locale catalogue comes from the shared cache; every form
+  // that offers a language reads the same entry instead of fetching its own.
+  const { data: locales = [] } = useGlobalLocales();
   const [useCustomCore, setUseCustomCore] = useState(isNew && !!snLocale.core);
   const form = useForm<TurSNSiteLocale>({
     defaultValues: snLocale
@@ -60,18 +61,16 @@ export const SNSiteLocaleForm: React.FC<Props> = ({ snSiteId, snLocale, isNew, o
   const urlBase = `${baseRoute}/${snSiteId}/locale`;
   const navigate = useNavigate()
 
-  useEffect(() => {
+  // T1017/T1018 — re-seeded during render rather than in an effect. `form.reset`
+  // is react-hook-form's own imperative call and stays exactly where it was; the
+  // toggle beside it is React state, and setting it in an effect showed the
+  // previous record's answer for one committed render.
+  const [syncedLocale, setSyncedLocale] = useState(snLocale);
+  if (syncedLocale !== snLocale) {
+    setSyncedLocale(snLocale);
     form.reset(snLocale);
     setUseCustomCore(isNew && !!snLocale.core);
-  }, [form, isNew, snLocale]);
-
-  useEffect(() => {
-    const fetchLocales = async () => {
-      const result = await new TurLocaleService().query();
-      setLocales(result);
-    };
-    fetchLocales();
-  }, []);
+  }
 
   async function onSubmit(snLocale: TurSNSiteLocale) {
     const payload = {

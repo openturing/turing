@@ -1,3 +1,4 @@
+import { useSnSiteLocales } from "@/api/queries/locale.queries";
 import { ROUTES } from "@/app/routes.const";
 import { useDeleteSynonym, useSaveSynonym, useSynonym } from "@/api/queries/sn-synonym.queries";
 import { BentoFormHero, BentoFormSection, bentoChipClass } from "@/components/bento";
@@ -16,10 +17,8 @@ import type {
   TurSNSynonym,
   TurSNSynonymType,
 } from "@/models/sn/sn-site-synonym.model";
-import type { TurSNSiteLocale } from "@/models/sn/sn-site-locale.model";
-import { TurSNSiteLocaleService } from "@/services/sn/sn.site.locale.service";
 import { IconArrowsShuffle, IconTrash, IconX } from "@tabler/icons-react";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate, useParams } from "react-router-dom";
 import { toast } from "@viglet/viglet-design-system";
@@ -31,8 +30,6 @@ const SYNONYM_TYPES: TurSNSynonymType[] = [
   "ALTERNATIVE_CORRECTION_2",
   "PLACEHOLDER",
 ];
-
-const localeService = new TurSNSiteLocaleService();
 
 /** Bento SN synonym editor — T666. Per-type editor for one synonym rule. */
 export default function BentoSNSynonymPage() {
@@ -46,7 +43,9 @@ export default function BentoSNSynonymPage() {
   const saveMutation = useSaveSynonym(id);
   const deleteMutation = useDeleteSynonym(id);
 
-  const [locales, setLocales] = useState<TurSNSiteLocale[]>([]);
+  // T1018 — the site's locales from the shared cache, the same entry the SN
+  // locale pages fill.
+  const { data: locales = [] } = useSnSiteLocales(id);
   const [type, setType] = useState<TurSNSynonymType>("REGULAR");
   const [language, setLanguage] = useState("en-US");
   const [name, setName] = useState("");
@@ -56,26 +55,24 @@ export default function BentoSNSynonymPage() {
   const [termDraft, setTermDraft] = useState("");
   const [dirty, setDirty] = useState(false);
 
-  useEffect(() => {
-    localeService.query(id).then((ls) => {
-      setLocales(ls);
-      if (isNew && ls.length > 0) {
-        setLanguage((prev) => (prev === "en-US" ? ls[0].language : prev));
-      }
-    });
-  }, [id, isNew]);
-
-  useEffect(() => {
-    if (loaded) {
-      setType(loaded.type);
-      setLanguage(loaded.language);
-      setName(loaded.name ?? "");
-      setInput(loaded.input ?? "");
-      setTerms(loaded.terms ?? []);
-      setEnabled(loaded.enabled);
-      setDirty(false);
-    }
-  }, [loaded]);
+  // T1017/T1018 — both seeds happen during render. The record fills the editable
+  // fields when it arrives; on the `new` route there is no record, and the
+  // language falls to the site's first locale instead of the "en-US" placeholder
+  // — the same substitution the effect made, one committed render earlier.
+  const [synced, setSynced] = useState<{ loaded?: typeof loaded; localeCount: number } | null>(null);
+  if (loaded && synced?.loaded !== loaded) {
+    setSynced({ loaded, localeCount: locales.length });
+    setType(loaded.type);
+    setLanguage(loaded.language);
+    setName(loaded.name ?? "");
+    setInput(loaded.input ?? "");
+    setTerms(loaded.terms ?? []);
+    setEnabled(loaded.enabled);
+    setDirty(false);
+  } else if (isNew && locales.length > 0 && synced?.localeCount !== locales.length) {
+    setSynced({ localeCount: locales.length });
+    setLanguage((prev) => (prev === "en-US" ? locales[0].language : prev));
+  }
 
   const isDirectional = type !== "REGULAR";
   const inputLabel = useMemo(() => {

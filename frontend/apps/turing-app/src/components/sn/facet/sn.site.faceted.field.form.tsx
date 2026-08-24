@@ -1,4 +1,5 @@
 "use client"
+import { useGlobalLocales } from "@/api/queries/locale.queries"
 import { ROUTES } from "@/app/routes.const"
 import { SNSiteLabelTranslations } from "@/components/sn/facet/sn.site.label.translations"
 import {
@@ -26,9 +27,7 @@ import {
   SelectValue
 } from "@/components/ui/select"
 import { Skeleton } from "@/components/ui/skeleton"
-import type { TurLocale } from "@/models/locale/locale.model"
 import type { TurSNSiteField } from "@/models/sn/sn-site-field.model"
-import { TurLocaleService } from "@/services/locale/locale.service"
 import { TurSNFieldService } from "@/services/sn/sn.field.service"
 import { TurSNFieldTypeService } from "@/services/sn/sn.field.type.service"
 import { IconAdjustmentsHorizontal, IconDeviceFloppy, IconFilter, IconId, IconLanguage, IconX } from "@tabler/icons-react"
@@ -42,7 +41,6 @@ import { useTranslation } from "react-i18next"
 import { useNavigate } from "react-router-dom"
 import { toast } from "@viglet/viglet-design-system"
 
-const turLocaleService = new TurLocaleService();
 const turSNFieldService = new TurSNFieldService();
 const turSNFieldTypeService = new TurSNFieldTypeService();
 interface Props {
@@ -85,7 +83,9 @@ export const SNSiteFacetedFieldForm: React.FC<Props> = ({ snSiteId, snField, isN
   });
   const { control } = form;
   const [isLoading, setIsLoading] = useState<boolean>(true);
-  const [availableLocales, setAvailableLocales] = useState<TurLocale[]>([]);
+  // T1018 — the global locale catalogue from the shared cache, so this form and
+  // the SN locale form beside it read one entry instead of two fetches.
+  const { data: availableLocales = [] } = useGlobalLocales();
   const [labelEntries, setLabelEntries] = useState<Array<{ locale: string; label: string }>>([]);
   const urlBase = `${baseRoute}/${snSiteId}/field`;
   const navigate = useNavigate()
@@ -126,18 +126,21 @@ export const SNSiteFacetedFieldForm: React.FC<Props> = ({ snSiteId, snField, isN
     });
   }, []);
 
-  useEffect(() => {
+  // T1017/T1018 — re-seeded during render. `form.reset` is react-hook-form's own
+  // imperative call and stays; the label rows beside it are React state, and an
+  // effect published the previous field's rows for one committed render.
+  const [syncedField, setSyncedField] = useState(normalizedField);
+  if (syncedField !== normalizedField) {
+    setSyncedField(normalizedField);
     form.reset(normalizedField);
-    const entries = (normalizedField.facetLocales ?? []).map((facetLocale) => ({
-      locale: facetLocale.locale ?? "",
-      label: facetLocale.label ?? "",
-    }));
-    setLabelEntries(entries);
-  }, [normalizedField, form]);
+    setLabelEntries(
+      (normalizedField.facetLocales ?? []).map((facetLocale) => ({
+        locale: facetLocale.locale ?? "",
+        label: facetLocale.label ?? "",
+      })),
+    );
+  }
 
-  useEffect(() => {
-    turLocaleService.query().then(setAvailableLocales);
-  }, []);
 
   function addLabelEntry() {
     setLabelEntries((currentEntries) => [...currentEntries, { locale: "", label: "" }]);
