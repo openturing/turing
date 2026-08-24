@@ -2112,22 +2112,20 @@ body with a stream reader and calls `onToken` per event, so a correctly written 
 receives exactly one token and renders nothing until the answer is complete.
 
 `AUTO` settled the engine half: it streams whenever no flow and no tool are in play,
-which is every anonymous SN turn, since T647 strips the callbacks. New installs get that
-mode.
+which is every anonymous SN turn, since T647 strips the callbacks.
 
-Re-measured 2026-08-24, once the demo was updated. Two findings, neither in the
-streaming code:
+Two further causes, found 2026-08-24, neither in the streaming code:
 
-- The demo's agent predates `AUTO`, and provisioning never overwrites an existing agent,
-  so it is still on `CALL`. Setting Chat mode to Auto in the admin moves it.
-- The response is buffered end to end. `sources` is emitted before the LLM call and
-  `token` seconds after it, yet both arrived 2ms apart — headers included, 5s in. Nothing
-  reaches the client until the backend finishes, so no mode looks different from outside.
-  The demo sits behind Cloudflare and Turing sent no anti-buffering header; it now sends
-  `X-Accel-Buffering: no` and `Cache-Control: no-cache` on every SSE endpoint.
-
-The earlier note ruled the proxy out because the events arrived apart; they no longer
-do.
+- **Proxy buffering — fixed.** `sources` is emitted before the LLM call and `token` after
+  it, yet both once arrived 2ms apart, headers included, 5s in — nothing reached the client
+  until the backend finished. Turing sent no anti-buffering header; it now sends `X-Accel-Buffering: no` and `Cache-Control: no-cache`
+  on every SSE endpoint. Post-deploy the two events arrive 6.6s and 8.0s apart, `sources`
+  at 1.8s.
+- **The seeded agent's mode.** The demo's site chat is served by the bundled `Admissoes
+  Criaturas`, not by the provisioned default. `chatMode` was absent from
+  `TurAIAgentExchange`, so a bundle asking for `AUTO` produced `CALL` silently. The field
+  now travels and the cloud seed declares `AUTO`; it needs a build carrying that, then a
+  reset to re-import.
 
 Acceptance:
 - Site chat emits incremental `content` events as the model produces them.

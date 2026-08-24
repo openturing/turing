@@ -12,7 +12,7 @@
 
 ## Block AR — Live-demo search & chat quality (Lucene parity gaps, §XLI)
 
-- ⏳ **T1004** (deps: —) **site chat emits the whole answer in one SSE content event, so no consumer can render it progressively** — Two causes measured on the updated demo, neither in the streaming code: its agent predates AUTO and provisioning never overwrites one, and the response is buffered at the edge. → §XCVII
+- ⏳ **T1004** (deps: —) **site chat emits the whole answer in one SSE content event, so no consumer can render it progressively** — Buffering is fixed and measured — events now arrive 6.6-8.0s apart rather than 2ms — leaving the seeded agent's mode, which needs a build carrying the exchange field. → §XCVII
 
 ## Block BV — The quality gate stops at the package boundary
 
