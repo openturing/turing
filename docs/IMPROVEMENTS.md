@@ -2185,3 +2185,36 @@ Acceptance:
 - Verified on the demo, with the event timings recorded.
 
 ## CV The quality gate stops at the package boundary
+
+### CV.2 The gate that stops at one package (T1025)
+
+The block this is filed under is called "the quality gate stops at the package
+boundary", and it closed with the boundary still there. `turing-app` now lints at
+`--max-warnings 0`. It is also the only package in the monorepo that lints at all:
+`frontend` holds exactly one `eslint.config.js`.
+
+What sits outside it, measured:
+
+| package | files | lines | published |
+| --- | --- | --- | --- |
+| `packages/react-sdk` | 111 | 30,145 | yes |
+| `packages/sdk` | 46 | 10,938 | yes |
+| `packages/react-ui` | 50 | 6,932 | yes |
+| `apps/site` | 47 | 7,296 | no |
+| `apps/showcase` | 34 | 3,135 | no |
+
+288 files and roughly 58,000 lines, three of the five published to consumers.
+`apps/site` runs `tsc -b --noEmit` and calls it lint; the other four run nothing. So the
+rules T1016 and T1021 spent their argument on — which effects may set state, which
+module may export both a component and a helper, which dependency may be left out and
+why — hold in one app and are unenforced in the packages that app imports.
+
+The shape of the work is a shared flat config the packages extend, not five copies. The
+severities are already reasoned in `apps/turing-app/eslint.config.js`; what a package
+needs on top is its own environment (the SDK is not a browser app) and its own ceiling,
+ratcheted the same way.
+
+Acceptance:
+- One shared config the five extend, with the reasoned severities in it rather than copied.
+- Each of the five runs `lint` in its own `package.json`, with a `--max-warnings` ceiling that is its measured count.
+- `turbo lint` runs them all, and the dependency-audit workflow calls it.
