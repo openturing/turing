@@ -21,6 +21,19 @@ export function useChatFlows(agentId: string | undefined) {
   });
 }
 
+/**
+ * T1018 — one chat flow. The `detail` key had been declared for it since the
+ * module was written; the page fetched through the service in an effect
+ * instead. Disabled on the `new` route, which has no flow to ask for.
+ */
+export function useChatFlow(agentId: string | undefined, flowId: string | undefined) {
+  return useQuery<TurChatFlow>({
+    queryKey: flowId ? queryKeys.chatFlows.detail(flowId) : ['chat-flows', 'detail', 'pending'],
+    queryFn: () => service.get(agentId as string, flowId as string),
+    enabled: Boolean(agentId) && Boolean(flowId) && flowId !== 'new',
+  });
+}
+
 function invalidateChatFlows(queryClient: ReturnType<typeof useQueryClient>) {
   // `chatFlows.all()` covers list, detail, the T91 trigger-conflicts cache
   // AND the T94 lint cache, so a save/delete that changed a trigger

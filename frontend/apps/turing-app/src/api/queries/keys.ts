@@ -51,6 +51,19 @@ export const queryKeys = {
     // widget reads as a single unit.
     withStatus: () => [...queryKeys.snSites.all(), 'with-status'] as const,
   },
+  // T1018 — the AI-spend dashboard. The summary and the timeseries share a date
+  // range, so both are keyed by it; the price table and its two lookup maps are
+  // range-independent.
+  costGovernance: {
+    all: () => ['cost-governance'] as const,
+    summary: (from: string, to: string) =>
+      [...queryKeys.costGovernance.all(), 'summary', from, to] as const,
+    timeseries: (from: string, to: string) =>
+      [...queryKeys.costGovernance.all(), 'timeseries', from, to] as const,
+    prices: () => [...queryKeys.costGovernance.all(), 'prices'] as const,
+    providerLinks: () => [...queryKeys.costGovernance.all(), 'provider-links'] as const,
+    consumerPlans: () => [...queryKeys.costGovernance.all(), 'consumer-plans'] as const,
+  },
   // T1018 — the asset browser: one listing per folder prefix, and the training
   // records for whatever files that listing shows.
   assets: {

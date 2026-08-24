@@ -17,7 +17,6 @@ import {
     TableRow,
 } from "@/components/ui/table";
 import type {
-    TurCostReport,
     TurDailyCostPoint,
     TurLLMConsumerPlan,
     TurLLMPrice,
@@ -34,7 +33,16 @@ import {
     IconPlus,
     IconTrash,
 } from "@tabler/icons-react";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
+import {
+    useConsumerPlans,
+    useCostSummary,
+    useCostTimeseries,
+    useLlmPrices,
+    useProviderLinks,
+} from "@/api/queries/cost-governance.queries";
+import { useQueryClient } from "@tanstack/react-query";
+import { queryKeys } from "@/api/queries/keys";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import {
@@ -197,7 +205,12 @@ function PriceEditor({ prices, providerLinks, onChanged }: Readonly<{
     const [newRow, setNewRow] = useState({ vendorId: "", modelName: "", input: "", output: "" });
 
     // Seed the editable draft from the loaded prices whenever they change.
-    useEffect(() => {
+    // T1017 — during render: an effect published the previous price list's
+    // draft for one committed pass, which on a table of number inputs is the old
+    // figures briefly showing under the new ones.
+    const [syncedPrices, setSyncedPrices] = useState(prices);
+    if (syncedPrices !== prices) {
+        setSyncedPrices(prices);
         const seeded: Record<string, { input: string; output: string }> = {};
         for (const p of prices) {
             if (p.id) {
@@ -208,7 +221,7 @@ function PriceEditor({ prices, providerLinks, onChanged }: Readonly<{
             }
         }
         setDraft(seeded);
-    }, [prices]);
+    }
 
     const draftFor = (p: TurLLMPrice) =>
         draft[p.id ?? ""] ?? { input: String(p.inputPricePerMillion), output: String(p.outputPricePerMillion) };
@@ -351,40 +364,25 @@ export default function CostGovernancePage() {
     const { t } = useTranslation();
     const [from, setFrom] = useState(isoDaysAgo(30));
     const [to, setTo] = useState(todayIso());
-    const [report, setReport] = useState<TurCostReport | null>(null);
-    const [points, setPoints] = useState<TurDailyCostPoint[]>([]);
-    const [prices, setPrices] = useState<TurLLMPrice[]>([]);
-    const [providerLinks, setProviderLinks] = useState<Record<string, string>>({});
-    const [consumerPlans, setConsumerPlans] = useState<Record<string, TurLLMConsumerPlan[]>>({});
-    const [loading, setLoading] = useState(true);
+    // T1018 — five reads, five cache entries. The summary and the series are
+    // keyed by the date range, so moving the dates asks for the new range and
+    // stepping back to an old one is served from cache; the price table and its
+    // two lookup maps are range-independent and must not re-fetch when the range
+    // moves, which is why they are separate entries rather than one bundle.
+    const summaryQuery = useCostSummary(from, to);
+    const timeseriesQuery = useCostTimeseries(from, to);
+    const report = summaryQuery.data ?? null;
+    const points = timeseriesQuery.data ?? [];
+    const loading = summaryQuery.isPending || timeseriesQuery.isPending;
+    const { data: prices = [] } = useLlmPrices();
+    const { data: providerLinks = {} } = useProviderLinks();
+    const { data: consumerPlans = {} } = useConsumerPlans();
 
-    const load = useCallback((f: string, t: string) => {
-        setLoading(true);
-        Promise.all([service.getSummary(f, t), service.getTimeseries(f, t)])
-            .then(([rep, ts]) => {
-                setReport(rep);
-                setPoints(ts);
-            })
-            .catch(() => {
-                setReport(null);
-                setPoints([]);
-            })
-            .finally(() => setLoading(false));
-    }, []);
-
-    const loadPrices = useCallback(() => {
-        service.listPrices().then(setPrices).catch(() => setPrices([]));
-    }, []);
-
-    useEffect(() => {
-        load(from, to);
-    }, [from, to, load]);
-
-    useEffect(() => {
-        loadPrices();
-        service.getProviderLinks().then(setProviderLinks).catch(() => setProviderLinks({}));
-        service.getConsumerPlans().then(setConsumerPlans).catch(() => setConsumerPlans({}));
-    }, [loadPrices]);
+    const queryClient = useQueryClient();
+    const refreshCosts = useCallback(
+        () => queryClient.invalidateQueries({ queryKey: queryKeys.costGovernance.all() }),
+        [queryClient],
+    );
 
     const avgPerRequest = useMemo(() => {
         if (!report || report.totalRequests === 0) return 0;
@@ -550,7 +548,7 @@ export default function CostGovernancePage() {
                 </CardHeader>
                 <CardContent>
                     <PriceEditor prices={prices} providerLinks={providerLinks}
-                        onChanged={() => { loadPrices(); load(from, to); }} />
+                        onChanged={() => void refreshCosts()} />
                 </CardContent>
             </Card>
 

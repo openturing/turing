@@ -1650,11 +1650,17 @@ function ConvertToFormDialog({ open, plan, agentId, onOpenChange, onConfirm }: C
   const [tidyError, setTidyError] = useState<string | null>(null);
   const [tidyNote, setTidyNote] = useState<string | null>(null);
 
-  useEffect(() => {
+  // T1017 — re-seeded during render. The working copy exists so the AI tidy pass
+  // can rewrite labels without rebuilding the memoised plan, so it is state; an
+  // effect published the previous plan's fields, and the last run's tidy error,
+  // for one committed render after a new plan arrived.
+  const [syncedPlan, setSyncedPlan] = useState(plan);
+  if (syncedPlan !== plan) {
+    setSyncedPlan(plan);
     setFields(plan.fields);
     setTidyError(null);
     setTidyNote(null);
-  }, [plan]);
+  }
 
   const stopReasonText = t(`chatFlow.properties.formConvertStop.${plan.stopReason}`, {
     defaultValue: "the run reached a node that can't be part of a form",

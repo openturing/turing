@@ -43,13 +43,13 @@ import {
 } from "@/models/agent/chat-flow.model";
 import { useAIAgentSlots } from "@/api/queries/ai-agent-slot.queries";
 import {
+  useChatFlow,
   useCreateChatFlow,
   useDeleteChatFlow,
   useImportChatFlow,
   useImportChatFlowBundle,
   useUpdateChatFlow,
 } from "@/api/queries/chat-flow.queries";
-import { TurChatFlowService } from "@/services/agent/chat-flow.service";
 
 import { buildImportPayloadFromExport } from "./chat-flow.import";
 import { ChatFlowAnalysisTab } from "./components/chat-flow.analysis-tab";
@@ -75,7 +75,6 @@ import type { FlowNodeData, FlowNodeType } from "./types";
  * @since 2026.2.5
  */
 
-const turChatFlowService = new TurChatFlowService();
 
 interface InnerProps {
   agentId: string;
@@ -595,6 +594,21 @@ function ChatFlowInner({ agentId, flow, isNew, baseRoute, chrome }: InnerProps) 
   );
 }
 
+/**
+ * The record the `new` route edits. `id` is deliberately absent: the backend's
+ * UUID generator preserves any pre-assigned one, including the empty string, so
+ * it must be omitted on creation rather than set to "".
+ */
+const NEW_FLOW: TurChatFlow = {
+  name: "",
+  description: "",
+  definitionJson: "",
+  enabled: 1,
+  guardrailMethod: "LLM_JUDGE",
+  triggerDescription: "",
+  triggerMode: "ONCE",
+} as TurChatFlow;
+
 interface ChatFlowPageProps {
   /** Base route for navigation (defaults to the console AI agent list). */
   readonly baseRoute?: string;
@@ -605,32 +619,17 @@ interface ChatFlowPageProps {
 export default function ChatFlowPage({ baseRoute = ROUTES.AI_AGENT_INSTANCE, chrome = "console" }: ChatFlowPageProps = {}) {
   const { id: agentId, flowId } = useParams() as { id: string; flowId: string };
   const { t } = useTranslation();
-  const [flow, setFlow] = useState<TurChatFlow>();
-  const [error, setError] = useState<string | null>(null);
   const isNew = flowId === "new";
   const tryAgainUrl = `${baseRoute}/${agentId}/chat-flow/${flowId}`;
 
-  useEffect(() => {
-    if (!agentId) return;
-    if (isNew) {
-      // Leave `id` undefined — the backend's UUID generator preserves any
-      // pre-assigned id (including ""), so we must omit it on creation.
-      setFlow({
-        name: "",
-        description: "",
-        definitionJson: "",
-        enabled: 1,
-        guardrailMethod: "LLM_JUDGE",
-        triggerDescription: "",
-        triggerMode: "ONCE",
-      });
-      return;
-    }
-    turChatFlowService
-      .get(agentId, flowId)
-      .then(setFlow)
-      .catch(() => setError(t("common.connectionError", { resource: t("chatFlow.title").toLowerCase() })));
-  }, [agentId, flowId, isNew, t]);
+  // T1018 — the flow comes from the query cache; on the `new` route the seed
+  // above is the whole record.
+  const { data: fetched, isError } = useChatFlow(agentId, flowId);
+  const flow = isNew ? NEW_FLOW : fetched;
+  const error = isError
+    ? t("common.connectionError", { resource: t("chatFlow.title").toLowerCase() })
+    : null;
+
 
   return (
     <LoadProvider checkIsNotUndefined={flow} error={error} tryAgainUrl={tryAgainUrl}>
