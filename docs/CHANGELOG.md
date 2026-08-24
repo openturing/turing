@@ -1308,6 +1308,7 @@
 - **T1021** — The twelve real ones are fixed and the compiler-only ones are off with the argument written beside them. Eight were a component declared inside a render body, which is a new type every pass and cost the agent forms a remount of the whole section on every keystroke; they share one module-scope wrapper now. Five were ordering: three functions called above their own const or function declaration, moved up -- and moving one exposed three dependencies the dead zone had been hiding, so it is memoised and they list it. The two in the prompt editor are a ref callback merging a forwarded ref with a local one, which React invokes at commit, and carry a line saying so. The 27 compiler notices are off because this app runs no React Compiler: obeying them means 81 call sites across 31 forms, 38 of them where a hook cannot go, for an optimization that is not happening. The ceiling is 228.
 - **T1024** — The ceiling is 0: the 188 splits are done and every one of the 40 dependencies is fixed or carries its sentence.
 - **T1025** — All twelve packages lint against one shared config, errors at zero everywhere and each ceiling its measured count.
+- **T1027** — All twelve packages run --max-warnings 0: react-sdk's 58 read through, the rest split or given the sentence.
 
 ## Block BW — What the link-free response and its consumers still lack (§LXX)
 

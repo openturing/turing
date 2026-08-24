@@ -16,8 +16,6 @@
 
 ## Block BV — The quality gate stops at the package boundary
 
-- 📋 **T1027** (deps: —) **the eleven packages T1025 put a gate on carry 103 warnings pinned at whatever they already reported** — A ceiling set to today's count stops the backlog growing and reads none of it; half of it is in the package consumers import. → §CV.3
-
 ## Non-goals (do NOT add as tasks)
 
 Binding constraints — see [IMPROVEMENTS.md](IMPROVEMENTS.md) §I.6 (What NOT to
