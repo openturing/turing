@@ -55,7 +55,7 @@
     "@uiw/react-codemirror": "^4.25.11",
     "@viglet/turing-react-sdk": "workspace:*",
     "@viglet/turing-react-ui": "workspace:*",
-    "@viglet/viglet-design-system": "^2026.3.3",
+    "@viglet/viglet-design-system": "^2026.3.4",
     "@xyflow/react": "^12.11.2",
     "axios": "^1.18.1",
     "class-variance-authority": "^0.7.1",

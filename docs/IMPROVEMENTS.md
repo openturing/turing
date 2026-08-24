@@ -2114,20 +2114,6 @@ temporary version look normal. Migrate or retire the remaining forty, drop the r
 and the console shell, and the package's deprecation of the console era stops being
 blocked on this repository.
 
-### XCVI.18 Where the package's copy is narrower (T1008)
-
-T1000 swapped the five whose package counterpart was a strict superset. These four are
-the opposite case, and each is specific. PageHeader there has no user menu, app
-switcher, language switcher or discovery call -- taking it would blank four controls.
-IconPickerDialog there has no LLM suggestion path, so the icon picker would quietly stop
-suggesting. DialogDelete generalised its blocked-by item to VigBlockedByItem and dropped
-the ROUTES import, so a caller must now pass both. SubPage and its InternalSidebar are
-narrower twice over: NavMainItem requires a url where this product deliberately allows
-none to render a group label, showOnNew is gone, outletContext is gone -- and that is
-what shares one form instance across the LLM editor's section sub-pages -- and the
-padding differs, which is visible. Each needs the product concern lifted to a prop in
-the package, or the page retired to the bento layer. Neither is a rename.
-
 ### XCVI.20 The hues the pages kept (T1013)
 
 T996 removed the last hue from the shared components: a tone is a token now, and

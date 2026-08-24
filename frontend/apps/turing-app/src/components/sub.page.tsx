@@ -1,74 +1,26 @@
-// T997 -- the export-manifest lint runs in CI now, and these names are also
-// exported by @viglet/viglet-design-system. The console routes went in T570 and
-// T1000 swapped the five whose package copy was a superset; this one is T1008's.
-// viglet-ds-allow-duplicate SubPage -- T994: the persona chrome adapter renders it, and the package's drops outletContext
-import React, { type Dispatch, type SetStateAction } from "react";
-import { Outlet } from "react-router-dom";
-import { InternalSidebar } from "./internal.sidebar";
-import { SidebarInset, SidebarProvider } from "./ui/sidebar";
+// T1008 -- a shim now, not a copy.
+//
+// This file carried a fork of the design system's SubPage because the package's
+// copy was narrower in three ways and differed in a fourth: it had no
+// outletContext, its NavMainItem required a url, it had no showOnNew, and its
+// spacing was the roomier console default. VDS76 closed all four -- the first
+// three additively, the last as a `density` prop whose default is the package's
+// own spacing, so no other console moved.
+//
+// This product renders the tighter one, which is what the local copy always
+// did, so the density is bound here rather than at the single call site: it is
+// a property of this console's shell, not of the persona editor that happens to
+// be the only page mounting it.
+import { SubPage as SharedSubPage } from "@viglet/viglet-design-system/router";
 
-interface NavMainItem {
-  title: string;
-  /** Navigable URL fragment. When omitted *and* `children` is set, the item
-   *  is rendered as a SidebarGroupLabel heading the children — useful for
-   *  grouping related sub-pages without introducing a clickable parent. */
-  url?: string;
-  icon?: React.ElementType;
-  children?: NavMainItem[];
-  /** When true, the item stays visible while creating a new entity (`isNew`).
-   *  Defaults to the legacy `url === "/detail"` heuristic when omitted. */
-  showOnNew?: boolean;
-}
+// viglet-ds-allow-duplicate SubPage
+// The name is deliberately re-declared: this is the adapter that binds this
+// product's density, not a second implementation.
+export type SubPageProps = Omit<
+  React.ComponentProps<typeof SharedSubPage>,
+  "density"
+>;
 
-interface NavCountItem {
-  title: string;
-  icon?: React.ElementType;
-  count?: number;
-}
-
-interface DataType {
-  navMain: NavMainItem[];
-  counts?: NavCountItem[];
-}
-
-interface Props {
-  icon: React.ElementType
-  feature: string;
-  name: string;
-  urlBase?: string;
-  isNew?: boolean;
-  data?: DataType;
-  open?: boolean;
-  setOpen?: Dispatch<SetStateAction<boolean>>
-  onDelete?: () => void;
-  onExport?: () => void;
-  /** Value passed to the nested `<Outlet context={...}>`; child routes read it
-   *  via `useOutletContext()`. Used to share a single form instance across
-   *  section sub-pages (e.g. the LLM instance editor). */
-  outletContext?: unknown;
-}
-
-export const SubPage: React.FC<Props> = ({ outletContext, ...props }) => {
-  return (
-    <div className="w-full px-0 py-0 min-h-[calc(100svh-10.5rem)]">
-      <div className="flex min-h-full w-full md:rounded-xl md:border md:bg-sidebar md:shadow-sm">
-        <SidebarProvider
-          defaultOpen={true}
-          className="min-h-0!"
-          style={{
-            "--sidebar-width": "calc(var(--spacing) * 72)",
-            "--header-height": "calc(var(--spacing) * 12)",
-            minHeight: 0,
-          } as React.CSSProperties}
-        >
-          <InternalSidebar {...props} />
-          <SidebarInset className="min-w-0 md:mx-1.5 md:rounded-xl md:border bg-background md:shadow-sm">
-            <main className="flex flex-1 flex-col pt-1 md:pt-2 max-md:[&_.px-6]:px-2">
-              <Outlet context={outletContext} />
-            </main>
-          </SidebarInset>
-        </SidebarProvider>
-      </div>
-    </div>
-  );
-};
+export const SubPage: React.FC<SubPageProps> = (props) => (
+  <SharedSubPage density="compact" {...props} />
+);
