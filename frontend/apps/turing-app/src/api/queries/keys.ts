@@ -47,6 +47,15 @@ export const queryKeys = {
     all: () => ['sn-sites'] as const,
     list: () => [...queryKeys.snSites.all(), 'list'] as const,
     detail: (id: string) => [...queryKeys.snSites.all(), 'detail', id] as const,
+    // T1018 — the list plus one monitoring status per site, which the dashboard
+    // widget reads as a single unit.
+    withStatus: () => [...queryKeys.snSites.all(), 'with-status'] as const,
+  },
+  // T1018 — search metrics per SN site: the top-terms bar chart reads these.
+  snSiteMetrics: {
+    all: () => ['sn-site-metrics'] as const,
+    topTerms: (siteId: string, period: string, rows: number) =>
+      [...queryKeys.snSiteMetrics.all(), 'top-terms', siteId, period, rows] as const,
   },
   snSiteFieldCoverage: {
     all: () => ['sn-site-field-coverage'] as const,
@@ -345,6 +354,13 @@ export const queryKeys = {
   bentoLayout: {
     all: () => ['bento-layout'] as const,
     byList: (listId: string) => [...queryKeys.bentoLayout.all(), listId] as const,
+  },
+  // T1018 — the JVM's own memory/disk/database reading, shared by the dashboard
+  // health widget and the System Info page rather than fetched twice.
+  systemInfo: {
+    all: () => ['system-info'] as const,
+    info: () => [...queryKeys.systemInfo.all(), 'info'] as const,
+    variables: () => [...queryKeys.systemInfo.all(), 'variables'] as const,
   },
   // T662–T666 (Block AP) — engine-agnostic synonyms per SN site.
   synonyms: {

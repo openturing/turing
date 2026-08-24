@@ -1,16 +1,11 @@
-import { TurSNSiteMetricsService } from "@/services/sn/sn.site.metrics.service";
-import { TurSNSiteService } from "@/services/sn/sn.service";
-import type { TurSNSiteListItem } from "@/models/sn/sn-site-list-item.model";
-import type { TurSNSiteMetricsTopTerm } from "@/models/sn/sn-site-metrics-top-term.model";
+import { useSnSites } from "@/api/queries/sn-site.queries";
+import { useSnTopTerms } from "@/api/queries/sn-site-metrics.queries";
 import { IconTrendingUp, IconRefresh } from "@tabler/icons-react";
-import { useCallback, useEffect, useState } from "react";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Bar, BarChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import type { WidgetId } from "../use-dashboard";
 import { WidgetWrapper } from "./widget-wrapper";
-
-const turSNSiteMetricsService = new TurSNSiteMetricsService();
-const turSNSiteService = new TurSNSiteService();
 
 type Period = "today" | "this-week" | "this-month" | "all-time";
 
@@ -21,35 +16,18 @@ interface TopTermsWidgetProps {
 
 export function TopTermsWidget({ onHide, colSpan }: TopTermsWidgetProps) {
   const { t } = useTranslation();
-  const [sites, setSites] = useState<TurSNSiteListItem[]>([]);
-  const [selectedSiteId, setSelectedSiteId] = useState<string>("");
+  // T1018 — both reads go through hooks now. The site list was fetched here and
+  // its first entry written into the selection by an effect; an unpicked
+  // selection is just the first site, so it is derived. The terms query is
+  // disabled until there is one, which is what the `if (!selectedSiteId) return`
+  // guard did.
+  const { data: sites = [] } = useSnSites();
+  const [pickedSiteId, setPickedSiteId] = useState<string>("");
   const [period, setPeriod] = useState<Period>("today");
-  const [terms, setTerms] = useState<TurSNSiteMetricsTopTerm[]>([]);
-  const [loading, setLoading] = useState(false);
+  const selectedSiteId = pickedSiteId || sites[0]?.id || "";
 
-  useEffect(() => {
-    turSNSiteService.query().then((list) => {
-      setSites(list);
-      if (list.length > 0) setSelectedSiteId(list[0].id);
-    }).catch(() => {});
-  }, []);
-
-  const load = useCallback(async () => {
-    if (!selectedSiteId) return;
-    setLoading(true);
-    try {
-      const result = await turSNSiteMetricsService.topTermsByPeriod(selectedSiteId, period, 10);
-      setTerms(result.topTerms ?? []);
-    } catch {
-      setTerms([]);
-    } finally {
-      setLoading(false);
-    }
-  }, [selectedSiteId, period]);
-
-  useEffect(() => {
-    load();
-  }, [load]);
+  const { data: topTerms, isLoading: loading, refetch } = useSnTopTerms(selectedSiteId, period, 10);
+  const terms = topTerms?.topTerms ?? [];
 
   const periodOptions: { value: Period; labelKey: string }[] = [
     { value: "today", labelKey: "dashboard.widgets.topTerms.today" },
@@ -72,7 +50,7 @@ export function TopTermsWidget({ onHide, colSpan }: TopTermsWidgetProps) {
           {sites.length > 1 && (
             <select
               value={selectedSiteId}
-              onChange={(e) => setSelectedSiteId(e.target.value)}
+              onChange={(e) => setPickedSiteId(e.target.value)}
               className="text-xs border rounded px-2 py-1 bg-background text-foreground"
             >
               {sites.map((s) => (
@@ -132,7 +110,7 @@ export function TopTermsWidget({ onHide, colSpan }: TopTermsWidgetProps) {
         )}
 
         <button
-          onClick={load}
+          onClick={() => void refetch()}
           className="flex items-center gap-1 text-[10px] text-muted-foreground hover:text-foreground transition-colors"
         >
           <IconRefresh className="size-3" />

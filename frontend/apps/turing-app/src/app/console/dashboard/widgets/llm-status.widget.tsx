@@ -1,14 +1,10 @@
-import { TurLLMInstanceService } from "@/services/llm/llm.service";
-import type { TurLLMInstance } from "@/models/llm/llm-instance.model";
+import { useLlmInstances } from "@/api/queries/llm-instance.queries";
 import { IconCpu2, IconRefresh } from "@tabler/icons-react";
-import { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { NavLink } from "react-router-dom";
 import { ROUTES } from "@/app/routes.const";
 import type { WidgetId } from "../use-dashboard";
 import { WidgetWrapper } from "./widget-wrapper";
-
-const turLLMInstanceService = new TurLLMInstanceService();
 
 interface LLMStatusWidgetProps {
   onHide: (id: WidgetId) => void;
@@ -17,24 +13,12 @@ interface LLMStatusWidgetProps {
 
 export function LLMStatusWidget({ onHide, colSpan }: LLMStatusWidgetProps) {
   const { t } = useTranslation();
-  const [instances, setInstances] = useState<TurLLMInstance[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  const load = useCallback(async () => {
-    setLoading(true);
-    try {
-      const list = await turLLMInstanceService.query();
-      setInstances(list);
-    } catch {
-      // silently fail
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    load();
-  }, [load]);
+  // T1018 — read through the shared hook. This widget kept its own
+  // instances/loading pair and filled it from the service in an effect; the
+  // query cache already holds this list for the LLM pages, so the dashboard now
+  // reads the same entry instead of re-fetching one of its own. A failure still
+  // renders the empty state, which is what the swallowed catch did.
+  const { data: instances = [], isLoading, refetch } = useLlmInstances();
 
   const enabledCount = instances.filter((i) => i.enabled === 1).length;
   const totalCount = instances.length;
@@ -48,7 +32,7 @@ export function LLMStatusWidget({ onHide, colSpan }: LLMStatusWidgetProps) {
       colSpan={colSpan}
       onHide={onHide}
     >
-      {loading ? (
+      {isLoading ? (
         <div className="text-xs text-muted-foreground">{t("dashboard.loading")}</div>
       ) : instances.length === 0 ? (
         <div className="flex flex-col items-center justify-center h-full gap-2 text-center py-4">
@@ -97,7 +81,7 @@ export function LLMStatusWidget({ onHide, colSpan }: LLMStatusWidgetProps) {
           ))}
 
           <button
-            onClick={load}
+            onClick={() => void refetch()}
             className="flex items-center gap-1 text-[10px] text-muted-foreground hover:text-foreground transition-colors mt-1"
           >
             <IconRefresh className="size-3" />

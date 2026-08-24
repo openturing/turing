@@ -3,6 +3,7 @@ import type { TurSNSite } from '@/models/sn/sn-site.model';
 import type { TurSNSiteListItem } from '@/models/sn/sn-site-list-item.model.ts';
 import type { TurSNFieldCoverageReport } from '@/models/sn/sn-field-coverage.model.ts';
 import type { TurSNContentFitReport } from '@/models/sn/sn-content-fit.model.ts';
+import type { TurSNSiteStatus } from '@/models/sn/sn-site-monitoring.model';
 import { TurSNSiteService } from '@/services/sn/sn.service';
 import { queryKeys } from './keys';
 
@@ -35,6 +36,36 @@ export function useSnSites() {
   return useQuery<TurSNSiteListItem[]>({
     queryKey: queryKeys.snSites.list(),
     queryFn: () => service.query(),
+  });
+}
+
+export interface TurSNSiteWithStatus {
+  site: TurSNSiteListItem;
+  status: TurSNSiteStatus | null;
+}
+
+/**
+ * T1018 — every SN site with its monitoring status attached.
+ *
+ * The fan-out lives here rather than in the caller: a status call that fails
+ * yields a `null` status for that site instead of failing the whole read, which
+ * is what the dashboard widget did by hand before this hook existed.
+ */
+export function useSnSitesWithStatus() {
+  return useQuery<TurSNSiteWithStatus[]>({
+    queryKey: queryKeys.snSites.withStatus(),
+    queryFn: async () => {
+      const list = await service.query();
+      return Promise.all(
+        list.map(async (site) => {
+          try {
+            return { site, status: await service.getStatus(site.id) };
+          } catch {
+            return { site, status: null };
+          }
+        }),
+      );
+    },
   });
 }
 

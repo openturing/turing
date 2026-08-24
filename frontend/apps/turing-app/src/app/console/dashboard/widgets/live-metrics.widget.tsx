@@ -1,6 +1,5 @@
 import { TurSNSiteMetricsService } from "@/services/sn/sn.site.metrics.service";
-import { TurSNSiteService } from "@/services/sn/sn.service";
-import type { TurSNSiteListItem } from "@/models/sn/sn-site-list-item.model";
+import { useSnSites } from "@/api/queries/sn-site.queries";
 import { IconChartLine } from "@tabler/icons-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -17,7 +16,6 @@ import type { WidgetId } from "../use-dashboard";
 import { WidgetWrapper } from "./widget-wrapper";
 
 const turSNSiteMetricsService = new TurSNSiteMetricsService();
-const turSNSiteService = new TurSNSiteService();
 
 interface LivePoint {
   time: number;
@@ -32,19 +30,16 @@ interface LiveMetricsWidgetProps {
 export function LiveMetricsWidget({ onHide, colSpan }: LiveMetricsWidgetProps) {
   const { t } = useTranslation();
   const [data, setData] = useState<LivePoint[]>([]);
-  const [sites, setSites] = useState<TurSNSiteListItem[]>([]);
-  const [selectedSiteId, setSelectedSiteId] = useState<string>("");
+  // T1018 — the site list comes from the shared hook, and the selection is
+  // derived: an unpicked one is the first site. The effect that fetched the list
+  // also wrote that default into state, which is the pattern this task removes.
+  // The rolling window below stays local — it accumulates 60 points from a 2s
+  // poll, which is not a cacheable read.
+  const { data: sites = [] } = useSnSites();
+  const [pickedSiteId, setPickedSiteId] = useState<string>("");
+  const selectedSiteId = pickedSiteId || sites[0]?.id || "";
   const selectedRef = useRef(selectedSiteId);
   selectedRef.current = selectedSiteId;
-
-  useEffect(() => {
-    turSNSiteService.query().then((list) => {
-      setSites(list);
-      if (list.length > 0) {
-        setSelectedSiteId((prev) => prev || list[0].id);
-      }
-    }).catch(() => {});
-  }, []);
 
   const fetchMetrics = useCallback(async () => {
     const siteId = selectedRef.current;
@@ -66,6 +61,12 @@ export function LiveMetricsWidget({ onHide, colSpan }: LiveMetricsWidgetProps) {
     }
   }, []);
 
+  // T1018 — this one stays an effect. It owns a 2s interval, which is the
+  // external system effects are for, and the synchronous `setData([])` empties
+  // the rolling window because those sixty points belong to the site being left.
+  // Doing it anywhere later would chart the previous site's traffic under the
+  // new one's name.
+  /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
     if (!selectedSiteId) return;
     setData([]);
@@ -73,6 +74,7 @@ export function LiveMetricsWidget({ onHide, colSpan }: LiveMetricsWidgetProps) {
     const interval = setInterval(fetchMetrics, 2000);
     return () => clearInterval(interval);
   }, [selectedSiteId, fetchMetrics]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   return (
     <WidgetWrapper
@@ -87,7 +89,7 @@ export function LiveMetricsWidget({ onHide, colSpan }: LiveMetricsWidgetProps) {
         {sites.length > 1 && (
           <select
             value={selectedSiteId}
-            onChange={(e) => setSelectedSiteId(e.target.value)}
+            onChange={(e) => setPickedSiteId(e.target.value)}
             className="w-full text-xs border rounded px-2 py-1 bg-background text-foreground"
           >
             {sites.map((s) => (

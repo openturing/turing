@@ -1,11 +1,9 @@
-import { TurSystemInfoService } from "@/services/system/system-info.service";
+import { useSystemInfo } from "@/api/queries/system-info.queries";
 import { IconCpu, IconDatabase, IconDeviceFloppy, IconRefresh } from "@tabler/icons-react";
-import { useCallback, useEffect, useState } from "react";
+import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import type { WidgetId } from "../use-dashboard";
 import { WidgetWrapper } from "./widget-wrapper";
-
-const turSystemInfoService = new TurSystemInfoService();
 
 interface SystemHealthData {
   memoryUsedPct: number;
@@ -41,37 +39,28 @@ function getBarColor(pct: number): string {
 
 export function SystemHealthWidget({ onHide, colSpan }: SystemHealthWidgetProps) {
   const { t } = useTranslation();
-  const [data, setData] = useState<SystemHealthData | null>(null);
-  const [loading, setLoading] = useState(true);
+  // T1018 — read through the shared hook, which also owns the 15s poll this
+  // widget ran with its own setInterval. The System Info page reads the same
+  // cache entry, so an open dashboard keeps it fresh instead of the two
+  // fetching the same reading separately.
+  const { data: info, isLoading, refetch } = useSystemInfo({ refetchInterval: 15000 });
 
-  const load = useCallback(async () => {
-    try {
-      const info = await turSystemInfoService.getInfo();
-      const memUsed = info.memory.usedMemory;
-      const memTotal = info.memory.maxMemory;
-      const diskUsed = info.disk.usedSpace;
-      const diskTotal = info.disk.totalSpace;
-      setData({
-        memoryUsedPct: Math.round((memUsed / memTotal) * 100),
-        diskUsedPct: Math.round((diskUsed / diskTotal) * 100),
-        memoryUsedMb: Math.round(memUsed / 1048576),
-        memoryTotalMb: Math.round(memTotal / 1048576),
-        diskUsedGb: Math.round((diskUsed / 1073741824) * 10) / 10,
-        diskTotalGb: Math.round((diskTotal / 1073741824) * 10) / 10,
-        dbStatus: info.database.status,
-      });
-    } catch {
-      // silently fail
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    load();
-    const interval = setInterval(load, 15000);
-    return () => clearInterval(interval);
-  }, [load]);
+  const data: SystemHealthData | null = useMemo(() => {
+    if (!info) return null;
+    const memUsed = info.memory.usedMemory;
+    const memTotal = info.memory.maxMemory;
+    const diskUsed = info.disk.usedSpace;
+    const diskTotal = info.disk.totalSpace;
+    return {
+      memoryUsedPct: Math.round((memUsed / memTotal) * 100),
+      diskUsedPct: Math.round((diskUsed / diskTotal) * 100),
+      memoryUsedMb: Math.round(memUsed / 1048576),
+      memoryTotalMb: Math.round(memTotal / 1048576),
+      diskUsedGb: Math.round((diskUsed / 1073741824) * 10) / 10,
+      diskTotalGb: Math.round((diskTotal / 1073741824) * 10) / 10,
+      dbStatus: info.database.status,
+    };
+  }, [info]);
 
   return (
     <WidgetWrapper
@@ -82,7 +71,7 @@ export function SystemHealthWidget({ onHide, colSpan }: SystemHealthWidgetProps)
       colSpan={colSpan}
       onHide={onHide}
     >
-      {loading ? (
+      {isLoading ? (
         <div className="flex items-center justify-center h-full text-muted-foreground text-xs">
           {t("dashboard.loading")}
         </div>
@@ -127,7 +116,7 @@ export function SystemHealthWidget({ onHide, colSpan }: SystemHealthWidgetProps)
           </div>
 
           <button
-            onClick={load}
+            onClick={() => void refetch()}
             className="flex items-center gap-1 text-[10px] text-muted-foreground hover:text-foreground transition-colors"
           >
             <IconRefresh className="size-3" />

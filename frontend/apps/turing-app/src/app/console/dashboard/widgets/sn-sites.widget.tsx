@@ -1,20 +1,10 @@
-import { TurSNSiteService } from "@/services/sn/sn.service";
-import type { TurSNSiteListItem } from "@/models/sn/sn-site-list-item.model";
-import type { TurSNSiteStatus } from "@/models/sn/sn-site-monitoring.model";
+import { useSnSitesWithStatus } from "@/api/queries/sn-site.queries";
 import { IconCompass, IconRefresh } from "@tabler/icons-react";
-import { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { NavLink } from "react-router-dom";
 import { ROUTES } from "@/app/routes.const";
 import type { WidgetId } from "../use-dashboard";
 import { WidgetWrapper } from "./widget-wrapper";
-
-const turSNSiteService = new TurSNSiteService();
-
-interface SiteWithStatus {
-  site: TurSNSiteListItem;
-  status: TurSNSiteStatus | null;
-}
 
 interface SNSitesWidgetProps {
   onHide: (id: WidgetId) => void;
@@ -23,34 +13,10 @@ interface SNSitesWidgetProps {
 
 export function SNSitesWidget({ onHide, colSpan }: SNSitesWidgetProps) {
   const { t } = useTranslation();
-  const [sites, setSites] = useState<SiteWithStatus[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  const load = useCallback(async () => {
-    setLoading(true);
-    try {
-      const list = await turSNSiteService.query();
-      const withStatus = await Promise.all(
-        list.map(async (site) => {
-          try {
-            const status = await turSNSiteService.getStatus(site.id);
-            return { site, status };
-          } catch {
-            return { site, status: null };
-          }
-        })
-      );
-      setSites(withStatus);
-    } catch {
-      // silently fail
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    load();
-  }, [load]);
+  // T1018 — read through the shared hook, which owns the list-then-status
+  // fan-out this widget used to run inline. A status call that fails still
+  // leaves that one site statusless rather than emptying the widget.
+  const { data: sites = [], isLoading, refetch } = useSnSitesWithStatus();
 
   return (
     <WidgetWrapper
@@ -61,7 +27,7 @@ export function SNSitesWidget({ onHide, colSpan }: SNSitesWidgetProps) {
       colSpan={colSpan}
       onHide={onHide}
     >
-      {loading ? (
+      {isLoading ? (
         <div className="text-xs text-muted-foreground">{t("dashboard.loading")}</div>
       ) : sites.length === 0 ? (
         <div className="flex flex-col items-center justify-center h-full gap-2 text-center py-4">
@@ -105,7 +71,7 @@ export function SNSitesWidget({ onHide, colSpan }: SNSitesWidgetProps) {
             </div>
           ))}
           <button
-            onClick={load}
+            onClick={() => void refetch()}
             className="flex items-center gap-1 text-[10px] text-muted-foreground hover:text-foreground transition-colors mt-1"
           >
             <IconRefresh className="size-3" />
