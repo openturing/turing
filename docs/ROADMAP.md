@@ -19,8 +19,6 @@
 
 ## Block BV — The quality gate stops at the package boundary
 
-- 📋 **T1025** (deps: —) **eslint covers one of the seven packages in the monorepo, and three of the six it misses are published** — The severities T1016 and T1021 argued for hold in one app and are unenforced in the packages that app imports. → §CV.2
-
 ## Done when — T1000
 
 - **One chrome renders and the console routes are gone** The forty console pages are
