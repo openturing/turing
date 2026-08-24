@@ -2185,28 +2185,3 @@ Acceptance:
 - Verified on the demo, with the event timings recorded.
 
 ## CV The quality gate stops at the package boundary
-
-### CV.1 The two rules the ceiling still holds (T1024)
-
-The ceiling is 228 and holds exactly two rules. Everything else that stood under it has
-been read: the correctness findings are fixed, and the rules that only speak for a
-compiler this app does not run are off with the argument written.
-
-**188 `react-refresh/only-export-components`, over 33 files.** A module exporting both a
-component and something else reloads whole instead of preserving state, so editing it
-during development loses whatever was on screen. Never a runtime bug. Each is one
-question: what should this file have been split into — a constant beside its component,
-a helper two files share, a type that could move to a `.ts`.
-
-**40 `react-hooks/exhaustive-deps`, over 28.** The one rule here with a written
-convention already, in `agents.md`. Each is a dependency to read rather than a rule to
-obey: some are stale closures worth fixing, and some are deliberate, wanting the disable
-line and the sentence they currently lack. The count moved from 43 while T1021 worked,
-which is the sign that it tracks something real rather than a fixed backlog.
-
-Neither is urgent and neither should be swept. What they need is a pass with judgement,
-one file at a time, and the ceiling falling as it goes.
-
-Acceptance:
-- Each of the 188 is split or given a reason to stay one module.
-- Each of the 40 is fixed or carries the sentence saying why the dependency is left out.

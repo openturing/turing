@@ -19,8 +19,6 @@
 
 ## Block BV — The quality gate stops at the package boundary
 
-- 📋 **T1024** (deps: —) **228 warnings remain under the ceiling, and they are two rules nobody has read** — Both want judgement per file: one is a module split, the other a dependency to read. → §CV.1
-
 ## Done when — T1000
 
 - **One chrome renders and the console routes are gone** The forty console pages are
