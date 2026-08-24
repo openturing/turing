@@ -1,7 +1,7 @@
 {
   "name": "@viglet/turing-flow-dsl",
-  "version": "2026.3.3",
-  "description": "TypeScript DSL for Viglet Turing ES chat flows \u2014 author flows as typed source, transpile to the editor's JSON wire format. Catches enum typos (tone, guardrail, trigger) at compile time.",
+  "version": "2026.3.4",
+  "description": "TypeScript DSL for Viglet Turing ES chat flows — author flows as typed source, transpile to the editor's JSON wire format. Catches enum typos (tone, guardrail, trigger) at compile time.",
   "type": "module",
   "main": "dist/src/index.js",
   "types": "dist/src/index.d.ts",

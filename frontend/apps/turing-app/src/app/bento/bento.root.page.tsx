@@ -85,7 +85,22 @@ function resolveBentoParent(pathname: string): string | null {
   return null;
 }
 
+/**
+ * The provider has to sit **above** the shell, not inside it: `BentoShell`
+ * reads the current user (the privilege-filtered nav, T992/T993) during its own
+ * render, and a component never sees the context it mounts itself. Keeping the
+ * two in one component threw `useCurrentUser must be used within UserProvider`
+ * on every bento route.
+ */
 export default function BentoRootPage() {
+  return (
+    <UserProvider fetchUser={fetchCurrentUser}>
+      <BentoShell />
+    </UserProvider>
+  );
+}
+
+function BentoShell() {
   const { pathname } = useLocation();
   const { t } = useTranslation();
   const parentPath = resolveBentoParent(pathname);
@@ -167,7 +182,7 @@ export default function BentoRootPage() {
   }, [pathname]);
 
   return (
-    <UserProvider fetchUser={fetchCurrentUser}>
+    <>
       {/*
        * No `overflow-hidden` on this wrapper — that turns it into a
        * scroll container which prevents `position: sticky` on the
@@ -282,7 +297,7 @@ export default function BentoRootPage() {
         <BentoShortcutsDialog open={shortcutsOpen} onOpenChange={setShortcutsOpen} isMac={IS_MAC} />
         <BentoFirstRunTour open={tourOpen} onOpenChange={setTourOpen} />
       </div>
-    </UserProvider>
+    </>
   );
 }
 
