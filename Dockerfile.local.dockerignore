@@ -1,9 +1,18 @@
 # Per-Dockerfile ignore for Dockerfile.local (BuildKit uses <dockerfile>.dockerignore
-# in preference to .dockerignore). The runtime-only image needs ONLY the
-# host-built fat-jar, so exclude everything else and keep the build context tiny.
+# in preference to .dockerignore). The runtime-only image needs the host-built
+# fat-jar and the seed defaults, so exclude everything else and keep the build
+# context tiny.
 *
 !turing-app/
 turing-app/*
 !turing-app/target/
 turing-app/target/*
 !turing-app/target/viglet-turing.jar
+
+# T373 added a `seed` build stage that runs `COPY seed/defaults /seed/defaults`,
+# and this file — written before it — still allowed the jar alone, so the build
+# failed with `"/seed/defaults": not found` on a path that exists in the repo.
+# An allowlist has to be re-opened for every new COPY source; this is that entry.
+!seed/
+seed/*
+!seed/defaults/
