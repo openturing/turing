@@ -88,9 +88,16 @@ export const AiModeChat = forwardRef<AiModeChatHandle, AiModeChatProps>(function
   const endRef = useRef<HTMLDivElement>(null);
   const autoSentRef = useRef(false);
   const initialQueryRef = useRef(initialQuery);
-  initialQueryRef.current = initialQuery;
   const onInitialQueryConsumedRef = useRef(onInitialQueryConsumed);
-  onInitialQueryConsumedRef.current = onInitialQueryConsumed;
+  // T1020 — both mirrors are written after commit rather than during render. A
+  // render React starts and abandons still runs the component body, so writing
+  // them inline could leave either holding a value no commit produced. Both are
+  // read from the auto-send effect below, which runs after a commit, so it sees
+  // the same values it would have.
+  useEffect(() => {
+    initialQueryRef.current = initialQuery;
+    onInitialQueryConsumedRef.current = onInitialQueryConsumed;
+  }, [initialQuery, onInitialQueryConsumed]);
 
   useEffect(() => {
     endRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });

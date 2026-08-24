@@ -1,5 +1,5 @@
 import { IconCheck, IconDice5, IconSearch, IconPalette } from "@tabler/icons-react"
-import { useCallback, useEffect, useMemo, useRef, useState } from "react"
+import { useCallback, useEffect, useMemo, useState } from "react"
 import { useTranslation } from "react-i18next"
 
 import { Button } from "@/components/ui/button"
@@ -84,7 +84,13 @@ export function DiceBearAvatarPicker({
   const [seed, setSeed] = useState(defaultSeed || generateRandomSeed())
   const [previewSeeds, setPreviewSeeds] = useState<string[]>([])
   const [selectedUrl, setSelectedUrl] = useState("")
-  const imgKeyRef = useRef(0)
+  // T1020 — state, not a ref. This counter is read in the preview `key` below
+  // so a reshuffle remounts the images even when the same seed comes back, and
+  // a value the render output depends on is state by definition: read from a
+  // ref, a render React abandons and restarts could key off a bump the commit
+  // never kept. It is only ever bumped beside `setPreviewSeeds`, so the two
+  // batch into one update.
+  const [imgKey, setImgKey] = useState(0)
 
   const debouncedSeed = useDebounce(seed, 400)
 
@@ -111,7 +117,7 @@ export function DiceBearAvatarPicker({
   const generatePreviewSeeds = useCallback(() => {
     const seeds = Array.from({ length: 12 }, () => generateRandomSeed())
     setPreviewSeeds(seeds)
-    imgKeyRef.current += 1
+    setImgKey((k) => k + 1)
   }, [])
 
   const mainPreviewUrl = useMemo(
@@ -277,7 +283,7 @@ export function DiceBearAvatarPicker({
                 const isActive = url === selectedUrl
                 return (
                   <button
-                    key={`${s}-${imgKeyRef.current}`}
+                    key={`${s}-${imgKey}`}
                     type="button"
                     onClick={() => {
                       setSelectedUrl(url)

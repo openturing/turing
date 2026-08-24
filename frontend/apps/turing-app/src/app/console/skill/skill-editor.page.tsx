@@ -144,7 +144,14 @@ export default function SkillEditorPage({
   const [dialog, setDialog] = useState<null | "file" | "folder">(null)
   const [dialogName, setDialogName] = useState("")
   const dirtyRef = useRef(dirty)
-  dirtyRef.current = dirty
+  // T1020 — the mirror is written after commit, not during render. A render
+  // React starts and abandons still runs this line, so writing it inline could
+  // leave the ref holding a value no commit ever produced; an effect only runs
+  // for the render that won. What reads it below runs after a commit too, so it
+  // still sees the latest value.
+  useEffect(() => {
+    dirtyRef.current = dirty
+  }, [dirty])
 
   useSubPageBreadcrumb(skill?.name ?? "Skill")
 

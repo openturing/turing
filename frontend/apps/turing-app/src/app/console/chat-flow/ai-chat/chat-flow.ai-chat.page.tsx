@@ -26,7 +26,7 @@ import {
   IconFlag3,
   IconPlayerPlayFilled,
 } from "@tabler/icons-react";
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate, useParams } from "react-router-dom";
 import { toast } from "@viglet/viglet-design-system";
@@ -68,7 +68,14 @@ export default function ChatFlowAiChatPage({ baseRoute = ROUTES.AI_AGENT_INSTANC
   useSubPageBreadcrumb(breadcrumb);
 
   const flowRef = useRef<ChatFlowGeneration>(flow);
-  flowRef.current = flow;
+  // T1020 — the mirror is written after commit, not during render. A render
+  // React starts and abandons still runs this line, so writing it inline could
+  // leave the ref holding a value no commit ever produced; an effect only runs
+  // for the render that won. What reads it below runs after a commit too, so it
+  // still sees the latest value.
+  useEffect(() => {
+    flowRef.current = flow
+  }, [flow])
 
   const getCurrentState = useCallback(() => flowRef.current, []);
   const applyState = useCallback((state: ChatFlowGeneration) => setFlow(state), []);

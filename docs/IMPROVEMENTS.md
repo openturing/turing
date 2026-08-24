@@ -2183,33 +2183,6 @@ Acceptance:
 
 ## CIV The quality gate stops at the package boundary
 
-### CIV.1 Refs read during render (T1020)
-
-Nine findings across eight files say `Cannot access refs during render`. They are the
-one group under T1016's ceiling that is about correctness rather than shape, and they
-were left when T1017 read the `setState`-in-effect pile beside them.
-
-A ref is not render state. Reading `ref.current` while rendering makes the output depend
-on something React does not track, so two renders of the same props can disagree — and
-under a concurrent render that React starts, abandons and restarts, the second pass
-reads what the first left behind. The places this lands are telling: four chat surfaces
-(`agent-chat-tab`, `persona-chat-tab`, two `ai-chat` pages), the live-metrics widget,
-`ai-mode-chat` twice, the skill editor, the avatar picker. Streaming surfaces, where a
-ref is the natural place to keep what has arrived so far.
-
-Each needs reading on its own, because the honest answers differ: some will be a value
-that belongs in state, some a read that belongs in an effect or an event handler, and
-some a ref that is genuinely only touched after commit and is flagged because the rule
-cannot see that.
-
-What makes it worth doing now rather than later: these are the surfaces where a
-half-rendered answer is visible to a user, and the streaming ones are exactly where a
-torn read shows.
-
-Acceptance:
-- Each of the nine is rewritten, or carries a line saying why the read is safe.
-- The `--max-warnings` ceiling falls by whatever is removed.
-
 ### CIV.2 What the ceiling still holds (T1021)
 
 With the 42 `setState`-in-effect findings answered, 280 warnings remain under T1016's

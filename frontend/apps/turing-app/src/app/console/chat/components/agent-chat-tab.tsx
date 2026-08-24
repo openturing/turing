@@ -205,7 +205,14 @@ export function AgentChatTab({
   // Keep a synchronous mirror so the turn-complete effect saves the final
   // transcript without re-subscribing on every token.
   const messagesRef = useRef(messages)
-  messagesRef.current = messages
+  // T1020 — the mirror is written after commit, not during render. A render
+  // React starts and abandons still runs this line, so writing it inline could
+  // leave the ref holding a value no commit ever produced; an effect only runs
+  // for the render that won. What reads it below runs after a commit too, so it
+  // still sees the latest value.
+  useEffect(() => {
+    messagesRef.current = messages
+  }, [messages])
 
   // Auto-scroll to the latest message.
   useEffect(() => {

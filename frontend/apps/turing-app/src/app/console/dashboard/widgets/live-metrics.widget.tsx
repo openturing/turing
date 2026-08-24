@@ -39,7 +39,14 @@ export function LiveMetricsWidget({ onHide, colSpan }: LiveMetricsWidgetProps) {
   const [pickedSiteId, setPickedSiteId] = useState<string>("");
   const selectedSiteId = pickedSiteId || sites[0]?.id || "";
   const selectedRef = useRef(selectedSiteId);
-  selectedRef.current = selectedSiteId;
+  // T1020 — the mirror is written after commit, not during render. A render
+  // React starts and abandons still runs this line, so writing it inline could
+  // leave the ref holding a value no commit ever produced; an effect only runs
+  // for the render that won. What reads it below runs after a commit too, so it
+  // still sees the latest value.
+  useEffect(() => {
+    selectedRef.current = selectedSiteId
+  }, [selectedSiteId])
 
   const fetchMetrics = useCallback(async () => {
     const siteId = selectedRef.current;
