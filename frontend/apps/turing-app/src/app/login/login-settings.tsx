@@ -1,4 +1,4 @@
-import { useCallback, useState } from "react";
+import type { LoginAnimationSettings } from "./use-login-settings";
 import { IconRun } from "@tabler/icons-react";
 import { GradientButton } from "@/components/ui/gradient-button";
 import {
@@ -15,45 +15,6 @@ const LANGUAGES = [
   { code: "pt", label: "Português" },
 ] as const;
 
-const STORAGE_KEY = "turing-login-settings";
-
-interface LoginAnimationSettings {
-  animations: boolean;
-  explosion: boolean;
-  formulas: boolean;
-}
-
-const DEFAULTS: LoginAnimationSettings = {
-  animations: true,
-  explosion: false,
-  formulas: true,
-};
-
-function loadSettings(): LoginAnimationSettings {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (raw) return { ...DEFAULTS, ...JSON.parse(raw) };
-  } catch { /* ignore */ }
-  return { ...DEFAULTS };
-}
-
-function saveSettings(settings: LoginAnimationSettings) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
-}
-
-export function useLoginSettings() {
-  const [settings, setSettings] = useState<LoginAnimationSettings>(loadSettings);
-
-  const update = useCallback((patch: Partial<LoginAnimationSettings>) => {
-    setSettings(prev => {
-      const next = { ...prev, ...patch };
-      saveSettings(next);
-      return next;
-    });
-  }, []);
-
-  return { settings, update };
-}
 
 interface LoginSettingsButtonProps {
   readonly settings: LoginAnimationSettings;

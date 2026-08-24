@@ -8,10 +8,8 @@ import { createContext, useContext, useEffect, useState, type PropsWithChildren 
 import { useTranslation } from "react-i18next";
 
 import { Card } from "@/components/ui/card";
-import {
-    GridColumnVisibilityMenu,
-    usePersistedColumnVisibility,
-} from "@/components/ui/grid-column-visibility-menu";
+import { GridColumnVisibilityMenu } from "@/components/ui/grid-column-visibility-menu"
+import { usePersistedColumnVisibility } from "@/components/ui/use-persisted-column-visibility";
 import { Input } from "@/components/ui/input";
 import {
     ResizableHandle,

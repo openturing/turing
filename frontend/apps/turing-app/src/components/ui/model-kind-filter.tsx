@@ -5,7 +5,8 @@ import type {
 } from "@/models/llm/llm-model-option.model.ts"
 import { cn } from "@/lib/utils"
 import { useTranslation } from "react-i18next"
-import { MODEL_KIND_ORDER, ModelKindDot, modelKindLabelKey, resolveModelKind } from "./model-kind-badge"
+import { ModelKindDot } from "./model-kind-badge"
+import { MODEL_KIND_ORDER, modelKindLabelKey, resolveModelKind } from "./model-kind-badge.utils"
 
 /** The active filter — a specific kind, or "ALL" for everything. */
 export type ModelKindFilterValue = TurLlmModelKind | "ALL"

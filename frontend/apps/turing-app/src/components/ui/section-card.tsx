@@ -1,3 +1,8 @@
+/* eslint-disable react-refresh/only-export-components --
+ * T1024 — a re-export shim: the component, its chrome provider and the hook that
+ * reads it come from one package entry point because that is how the design
+ * system ships them. Nothing is declared here to split.
+ */
 // T994 — shim. The chrome adapter lives in the design system as
 // `AdaptiveSectionCard`; this module keeps its path and its local name so the
 // nineteen files composing `SectionCard`, `SectionCardChromeProvider` and

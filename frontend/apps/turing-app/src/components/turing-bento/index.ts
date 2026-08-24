@@ -22,7 +22,7 @@ import "@viglet/viglet-design-system/bento.css";
 
 export { BentoActivationCard, type BentoActivationCardProps } from "./bento-activation-card";
 export { BentoNoLlmState, type BentoNoLlmStateProps } from "./bento-no-llm-state";
-export { BentoQuotaBanner, useQuotaRefusal } from "./bento-quota-banner";
+export { BentoQuotaBanner } from "./bento-quota-banner";
 export {
   BentoVigletActivationDialog,
   type BentoVigletActivationDialogProps,
@@ -30,6 +30,8 @@ export {
 export {
   BentoFirstRunTour,
   type BentoFirstRunTourProps,
+} from "./bento-first-run-tour";
+export {
   BENTO_TOUR_SEEN_KEY,
   hasSeenBentoTour,
-} from "./bento-first-run-tour";
+} from "./bento-first-run-tour.storage";

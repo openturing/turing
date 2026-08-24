@@ -13,7 +13,7 @@ import {
 import { cn } from "@/lib/utils";
 
 /** Subscribes to the refusal published by the axios interceptor (T959). */
-export function useQuotaRefusal(): QuotaRefusal | null {
+function useQuotaRefusal(): QuotaRefusal | null {
   return useSyncExternalStore(subscribeQuotaRefusal, getQuotaRefusal, getQuotaRefusal);
 }
 

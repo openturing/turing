@@ -1,3 +1,4 @@
+import { markBentoTourSeen } from "./bento-first-run-tour.storage";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import { TurLogo } from "@/components/logo/tur-logo";
@@ -19,24 +20,6 @@ import { useTranslation } from "react-i18next";
  * mentions the one thing blocking the product is a tour worth re-showing, so
  * existing installs see it once more.
  */
-export const BENTO_TOUR_SEEN_KEY = "turing.bento.tour.v2";
-
-/** Read the "seen" flag defensively — private-mode / disabled storage must never break the shell. */
-export function hasSeenBentoTour(): boolean {
-  try {
-    return globalThis.localStorage?.getItem(BENTO_TOUR_SEEN_KEY) === "1";
-  } catch {
-    return true; // storage unavailable → treat as seen so the tour never nags in a loop.
-  }
-}
-
-function markBentoTourSeen() {
-  try {
-    globalThis.localStorage?.setItem(BENTO_TOUR_SEEN_KEY, "1");
-  } catch {
-    /* no-op: nothing to persist to, the in-memory `open=false` still dismisses this session. */
-  }
-}
 
 export interface BentoFirstRunTourProps {
   open: boolean;

@@ -88,5 +88,5 @@ function GradientAvatarFallback({
     )
 }
 
-export { GradientAvatar, GradientAvatarFallback, gradientAvatarFallbackVariants, GradientAvatarImage }
+export { GradientAvatar, GradientAvatarFallback, GradientAvatarImage }
 

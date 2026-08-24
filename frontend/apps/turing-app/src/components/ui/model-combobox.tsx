@@ -6,7 +6,8 @@ import type {
   TurLlmModelOption,
   TurLlmModelSource,
 } from "@/models/llm/llm-model-option.model.ts"
-import { ModelKindBadge, resolveModelKind } from "@/components/ui/model-kind-badge"
+import { ModelKindBadge } from "@/components/ui/model-kind-badge"
+import { resolveModelKind } from "@/components/ui/model-kind-badge.utils"
 import { ModelKindFilter, type ModelKindFilterValue } from "@/components/ui/model-kind-filter"
 import { ModelDeprecatedBadge, ModelMetaLine, ModelSortSelect, ModelTierBadge } from "@/components/ui/model-meta"
 import { sortModelOptions, type ModelSortValue } from "@/components/ui/model-meta.utils"

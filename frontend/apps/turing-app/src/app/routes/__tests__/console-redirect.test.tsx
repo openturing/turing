@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { consoleSuffixToBento } from "../console-redirect";
+import { consoleSuffixToBento } from "../console-suffix-to-bento";
 
 /**
  * T569 cutover redirect logic (T571 smoke). `consoleSuffixToBento` maps a

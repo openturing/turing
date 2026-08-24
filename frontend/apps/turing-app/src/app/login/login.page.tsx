@@ -4,7 +4,8 @@ import { TurLogo } from "@/components/logo/tur-logo"
 import { ModeToggle } from "@/components/mode-toggle"
 import { Login } from "@viglet/viglet-design-system"
 import { useTranslation } from "react-i18next"
-import { LoginSettingsButton, useLoginSettings } from "./login-settings"
+import { LoginSettingsButton } from "./login-settings"
+import { useLoginSettings } from "./use-login-settings"
 
 const LoginPage = () => {
   const { t } = useTranslation()

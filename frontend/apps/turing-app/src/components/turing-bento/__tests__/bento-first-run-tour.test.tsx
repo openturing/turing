@@ -1,10 +1,7 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import {
-  BENTO_TOUR_SEEN_KEY,
-  BentoFirstRunTour,
-  hasSeenBentoTour,
-} from "../bento-first-run-tour";
+import { BentoFirstRunTour } from "../bento-first-run-tour"
+import { BENTO_TOUR_SEEN_KEY, hasSeenBentoTour } from "../bento-first-run-tour.storage";
 
 // The tour uses the TurLogo, which pulls the design system; stub it to a marker.
 vi.mock("@/components/logo/tur-logo", () => ({
