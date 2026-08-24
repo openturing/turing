@@ -10,11 +10,15 @@
 
 ## Block BX — The bento layer leaves the product it grew in (§XCVI)
 
+- 📋 **T1026** (deps: —) **thirteen more files pick a shell from whether a header prop was passed, and every caller passes one** — T1000 deleted this branch under the name chrome; under this name it still compiles and still renders nothing. → §XCVI.22
+
 ## Block AR — Live-demo search & chat quality (Lucene parity gaps, §XLI)
 
 - ⏳ **T1004** (deps: —) **site chat emits the whole answer in one SSE content event, so no consumer can render it progressively** — The mode that streams it exists; the demo runs a build from before it, so the last acceptance bullet waits on a deploy. → §XCVII
 
 ## Block BV — The quality gate stops at the package boundary
+
+- 📋 **T1027** (deps: —) **the eleven packages T1025 put a gate on carry 103 warnings pinned at whatever they already reported** — A ceiling set to today's count stops the backlog growing and reads none of it; half of it is in the package consumers import. → §CV.3
 
 ## Non-goals (do NOT add as tasks)
 

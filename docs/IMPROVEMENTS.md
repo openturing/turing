@@ -2102,6 +2102,37 @@ and only then delete anything. Three tasks are instruments rather than moves - a
 duplication lint, a working local-dev path and a render digest - because every deletion
 here is justified by an assertion this repository currently cannot check.
 
+### XCVI.22 The same duality, spelled differently (T1026)
+
+T1000 deleted the `chrome` prop after measuring that no call site passed `"console"`.
+The same shell choice survives in thirteen files under a different name, and it measures
+the same way.
+
+Those files derive `const isBento = header !== undefined` (or `bentoHero !== undefined`)
+and render either a `BentoHero` the caller supplied or a `StickyPageHeader` they build
+themselves. Every mount was checked:
+
+| component | mounts | pass a header |
+| --- | --- | --- |
+| `AdminUserForm`, `AdminGroupForm`, `AdminRoleForm` | 3 | 3 |
+| `AdminKeycloakUserView`, `AdminKeycloakGroupView` | 2 | 2 |
+| `UserProfilePage`, `UserPreferencesPage` | 2 | 2 |
+| `SEInstanceSystemInfoPage`, `StoreInstanceSystemInfoPage` | 6 | 6 |
+| `SNSiteTopSearchTermsPage` | 1 | 1 |
+
+Fourteen mounts, fourteen headers. Two of them pass `header={null}` — which the
+condition reads as bento, because `null !== undefined` — so even the mount that wants no
+hero takes the bento arm. The console arm is unreachable by the same argument T1000
+made, and holds the last fifteen `<StickyPageHeader>` in the app.
+
+What is left after it goes is `components/sticky-page-header.tsx` itself, which nothing
+would import.
+
+Acceptance:
+- The `header !== undefined` shell choice is gone from all thirteen files, or a mount that
+  takes the console arm is named.
+- `StickyPageHeader` is deleted or its remaining callers are listed.
+
 ## XCVII Site chat aggregates the answer before emitting it (T1004)
 
 Measured against `turing-demo.viglet.org` on 2026-08-23, reading the raw SSE with curl:
@@ -2132,3 +2163,33 @@ Acceptance:
 - Verified on the demo, with the event timings recorded.
 
 ## CV The quality gate stops at the package boundary
+
+### CV.3 The 103 the new gates froze (T1027)
+
+T1025 put a lint gate on eleven packages that had none. The gate holds — zero errors
+everywhere — but it went up with each package's ceiling pinned to whatever it already
+reported, which is 103 warnings nobody has read.
+
+Where they are, and what they are:
+
+| package | warnings | files | the shape of them |
+| --- | --- | --- | --- |
+| `packages/react-sdk` | 58 | 30 | 25 `set-state-in-effect`, 24 `refs`, 6 `exhaustive-deps` |
+| `packages/react-ui` | 22 | 10 | 20 `only-export-components` |
+| `apps/site` | 9 | 7 | 6 `only-export-components`, 2 `refs` |
+| `apps/showcase` | 5 | 5 | 4 `only-export-components` |
+| three marketplace examples | 9 | 3+ | `only-export-components` |
+
+The 51 `only-export-components` and the react-sdk's 49 hook findings are the two halves
+of what T1024 read through in `turing-app`, and the arguments there transfer: a module
+split is a design question per file, and a rewritten effect is where regressions live.
+
+What does not transfer is the audience. `react-sdk` is imported by consumers, so its 25
+`set-state-in-effect` are cascading renders in *their* pages, and its 24 `refs` are
+reads during render in a library they cannot patch. That is the package to read first,
+and the one where a finding is most likely to be real rather than stylistic.
+
+Acceptance:
+- Each package's ceiling is lower than the count T1025 pinned, or its findings carry the
+  sentence saying why they stay.
+- `packages/react-sdk` reaches zero, since it is the one consumers run.
