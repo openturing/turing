@@ -45,7 +45,6 @@ export default function UserProfilePage({ header }: Readonly<{ header?: ReactNod
     // Bento surfaces pass an explicit `header` (a BentoHero or `null`); the
     // console leaves it undefined. In bento the body is a frosted card instead
     // of a bare centered column.
-    const isBento = header !== undefined;
     const isOAuth2 = !!user?.realm;
 
     useEffect(() => {
@@ -156,7 +155,7 @@ export default function UserProfilePage({ header }: Readonly<{ header?: ReactNod
                     description={isOAuth2 ? t("account.profile.descriptionOAuth2") : t("account.profile.description")}
                 />
             )}
-            <div className={isBento ? "bento-tile bento-glass rounded-3xl p-6 md:p-8" : "max-w-2xl mx-auto py-8 px-6"}>
+            <div className="bento-tile bento-glass rounded-3xl p-6 md:p-8">
                 {/* Avatar + username */}
                 <AvatarField
                     avatarUrl={avatarUrl}

@@ -1,7 +1,6 @@
 import { useSeInstanceSystemInfo } from "@/api/queries/se-instance.queries";
 import { BentoFormSection } from "@/components/bento";
 import { SubPageHeader } from "@/components/sub.page.header";
-import { SectionCard } from "@/components/ui/section-card";
 import { useSubPageBreadcrumb } from "@/hooks/use-sub-page-breadcrumb";
 import { IconInfoCircle, IconLoader2, IconServer } from "@tabler/icons-react";
 import type { ReactNode } from "react";
@@ -95,7 +94,6 @@ export default function SEInstanceSystemInfoPage({ header }: Readonly<SEInstance
     };
 
     const entries = Object.entries(info).filter(([key]) => key !== "status");
-    const isBento = header !== undefined;
 
     const details = (
         <>
@@ -122,29 +120,16 @@ export default function SEInstanceSystemInfoPage({ header }: Readonly<SEInstance
     return (
         <>
             {headerNode}
-            {isBento ? (
-                <div className="space-y-4">
-                    <BentoFormSection
-                        icon={IconServer}
-                        tone="emerald"
-                        title={t("se.systemInfo.details")}
-                        description={t("se.systemInfo.detailsDesc")}
-                    >
-                        {details}
-                    </BentoFormSection>
-                </div>
-            ) : (
-                <div className="py-6 px-6 space-y-4">
-                    <SectionCard variant="blue">
-                        <SectionCard.StaticHeader
-                            icon={IconServer}
-                            title={t("se.systemInfo.details")}
-                            description={t("se.systemInfo.detailsDesc")}
-                        />
-                        <SectionCard.Content>{details}</SectionCard.Content>
-                    </SectionCard>
-                </div>
-            )}
+              <div className="space-y-4">
+                  <BentoFormSection
+                      icon={IconServer}
+                      tone="emerald"
+                      title={t("se.systemInfo.details")}
+                      description={t("se.systemInfo.detailsDesc")}
+                  >
+                      {details}
+                  </BentoFormSection>
+              </div>
         </>
     );
 }

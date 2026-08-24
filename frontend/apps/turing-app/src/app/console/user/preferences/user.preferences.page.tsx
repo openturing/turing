@@ -27,7 +27,6 @@ export default function UserPreferencesPage({ header }: Readonly<{ header?: Reac
     // Bento surfaces pass an explicit `header` (a BentoHero or `null`); the
     // console leaves it undefined. In bento the body is a frosted card instead
     // of a bare centered column.
-    const isBento = header !== undefined;
 
     useSubPageBreadcrumb(t("account.preferences.title"));
 
@@ -46,7 +45,7 @@ export default function UserPreferencesPage({ header }: Readonly<{ header?: Reac
                     description={t("account.preferences.description")}
                 />
             )}
-            <div className={isBento ? "bento-tile bento-glass rounded-3xl p-6 md:p-8" : "max-w-2xl mx-auto py-8 px-6"}>
+            <div className="bento-tile bento-glass rounded-3xl p-6 md:p-8">
                 <div className="space-y-2">
                     <Label htmlFor="language">{t("account.preferences.language")}</Label>
                     <p className="text-sm text-muted-foreground mb-2">

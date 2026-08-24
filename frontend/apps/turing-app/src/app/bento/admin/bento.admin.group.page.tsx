@@ -96,7 +96,6 @@ export default function BentoAdminGroupPage() {
           {keycloakGroup && (
             <AdminKeycloakGroupView
               value={keycloakGroup}
-              listRoute={ROUTES.BENTO_ADMIN_GROUPS}
               header={hero(keycloakGroup.name, t("admin.groups.keycloakViewDescription"))}
             />
           )}

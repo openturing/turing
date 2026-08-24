@@ -1,50 +1,27 @@
-import { ROUTES } from "@/app/routes.const";
-import { StickyPageHeader } from "@/components/sticky-page-header";
 import { SectionCard } from "@/components/ui/section-card";
-import { GradientButton } from "@/components/ui/gradient-button";
 import { Badge } from "@/components/ui/badge";
 import type { TurKeycloakUser } from "@/models/auth/keycloak-user";
 import {
-    IconArrowLeft, IconKey, IconMail, IconShieldCheck, IconUser, IconUsersGroup, IconUserShield,
+    IconKey, IconMail, IconShieldCheck, IconUsersGroup, IconUserShield,
 } from "@tabler/icons-react";
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
-import { useNavigate } from "react-router-dom";
 
 interface Props {
     value: TurKeycloakUser;
-    /** List route the Back button returns to. Defaults to the console admin
-     *  users list; the Bento surface passes its own route (T567). */
-    listRoute?: string;
-    /** Optional header override. The console renders its own sidebar-coupled
-     *  {@link StickyPageHeader}; Bento passes a `BentoHero` (T567). */
+    /** The page hero. T1026: it used to be optional, and omitting it selected a
+     *  console header no caller ever asked for. */
     header?: ReactNode;
 }
 
-export const AdminKeycloakUserView: React.FC<Props> = ({ value, listRoute = ROUTES.ADMIN_USERS, header }) => {
+export const AdminKeycloakUserView: React.FC<Props> = ({ value, header }) => {
     const { t } = useTranslation();
-    const navigate = useNavigate();
-    const isBento = header !== undefined;
 
     const fullName = [value.firstName, value.lastName].filter(Boolean).join(" ");
 
     return (
-        <div className={isBento ? "flex flex-col gap-5 pb-8" : "space-y-4 px-4 lg:px-6 pb-8"}>
-            {isBento ? header : (
-                <StickyPageHeader>
-                    <StickyPageHeader.Title
-                        icon={IconUser}
-                        feature="User"
-                        description={t("admin.users.keycloakViewDescription")}
-                    />
-                    <StickyPageHeader.Actions>
-                        <GradientButton type="button" variant="outline" size="sm" onClick={() => navigate(listRoute)}>
-                            <IconArrowLeft className="size-4" />
-                            {t("forms.formActions.back", "Back")}
-                        </GradientButton>
-                    </StickyPageHeader.Actions>
-                </StickyPageHeader>
-            )}
+        <div className="flex flex-col gap-5 pb-8">
+            {header}
 
             <SectionCard variant="blue">
                 <SectionCard.Header

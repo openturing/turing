@@ -55,7 +55,6 @@ export default function SNSiteTopSearchTermsPage({ baseRoute = ROUTES.SN_INSTANC
   const { t } = useTranslation();
   useSubPageBreadcrumb(t("sn.topSearchTerms.title"));
 
-
   const resolvedPeriod = useMemo<TurSNTopTermsPeriod>(() => {
     if (isValidPeriod(periodParam)) {
       return periodParam;
@@ -83,8 +82,7 @@ export default function SNSiteTopSearchTermsPage({ baseRoute = ROUTES.SN_INSTANC
 
   // Bento passes an explicit `header`; the console leaves it undefined. In bento
   // the neutral shadcn Cards get a frosted surface so they match the shell.
-  const isBento = header !== undefined;
-  const cardClass = isBento ? "border-border/50 bg-transparent shadow-md bento-glass rounded-3xl" : undefined;
+  const cardClass = "border-border/50 bg-transparent shadow-md bento-glass rounded-3xl";
 
   const renderContent = () => {
     if (isLoading) {

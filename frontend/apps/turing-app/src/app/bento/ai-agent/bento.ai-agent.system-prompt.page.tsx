@@ -7,7 +7,7 @@ import { useParams } from "react-router-dom";
 
 /**
  * Bento wrapper for the agent's system-prompt editor + conflict-check. The
- * form drops its console StickyPageHeader under `chrome="bento"` (the hero
+ * form renders under the hero this page supplies (the hero
  * below stands in) and routes Cancel back into the bento shell via baseRoute.
  */
 export default function BentoAIAgentSystemPromptPage() {

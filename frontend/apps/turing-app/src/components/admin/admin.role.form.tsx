@@ -5,14 +5,12 @@ import {
 import { Input } from "@/components/ui/input";
 import { SmartDescription } from "@/components/ui/smart-description";
 import { BentoFormHero } from "@/components/bento";
-import { StickyPageHeader } from "@/components/sticky-page-header";
 import { GradientSwitch } from "@/components/ui/gradient-switch";
 import { SectionCard } from "@/components/ui/section-card";
 import type { TurPrivilege, TurRole } from "@/models/auth/role";
 import { TurRoleService } from "@/services/auth/role.service";
 import { TurPrivilegeService } from "@/services/auth/privilege.service";
-import { IconDeviceFloppy, IconLock, IconNotes, IconUserShield, IconX } from "@tabler/icons-react";
-import { GradientButton } from "@/components/ui/gradient-button";
+import { IconLock, IconNotes, IconUserShield } from "@tabler/icons-react";
 import { Fragment, type ReactNode, useCallback, useEffect, useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
@@ -46,10 +44,7 @@ interface Props {
     /** List route to return to on save/cancel. Defaults to the console admin
      *  roles list; the Bento surface passes its own route (T567). */
     listRoute?: string;
-    /** Bento hero descriptor. When set, the form renders the standard
-     *  {@link BentoFormHero} (Save/Cancel in the hero + scroll-linked sticky
-     *  save-bar morph); otherwise it renders the console {@link StickyPageHeader}. */
-    bentoHero?: {
+    bentoHero: {
         backTo: string;
         backLabel: string;
         leading: ReactNode;
@@ -62,7 +57,6 @@ export const AdminRoleForm: React.FC<Props> = ({ value, isNew, listRoute = ROUTE
     const { t } = useTranslation();
     const form = useForm<TurRole>({ defaultValues: value });
     const navigate = useNavigate();
-    const isBento = bentoHero !== undefined;
     const [allPrivileges, setAllPrivileges] = useState<TurPrivilege[]>([]);
 
     useEffect(() => {
@@ -154,37 +148,17 @@ export const AdminRoleForm: React.FC<Props> = ({ value, isNew, listRoute = ROUTE
 
     return (
         <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className={isBento ? "flex flex-col gap-5 pb-8" : "space-y-4 px-4 lg:px-6 pb-8"}>
-                {bentoHero ? (
-                    <BentoFormHero
-                        backTo={bentoHero.backTo}
-                        backLabel={bentoHero.backLabel}
-                        leading={bentoHero.leading}
-                        title={bentoHero.title}
-                        subtitle={bentoHero.subtitle}
-                        stickyTitle={bentoHero.title}
-                        onCancel={() => navigate(listRoute)}
-                        saveDisabled={false}
-                    />
-                ) : (
-                    <StickyPageHeader>
-                        <StickyPageHeader.Title
-                            icon={IconUserShield}
-                            feature={isNew ? t("admin.roles.newRole") : "Role"}
-                            description={isNew ? t("admin.roles.createDescription") : t("admin.roles.editDescription")}
-                        />
-                        <StickyPageHeader.Actions>
-                            <GradientButton type="submit" size="sm">
-                                <IconDeviceFloppy className="size-4" />
-                                {t("forms.formActions.saveChanges")}
-                            </GradientButton>
-                            <GradientButton type="button" variant="outline" size="sm" onClick={() => navigate(listRoute)}>
-                                <IconX className="size-4" />
-                                {t("forms.formActions.cancel")}
-                            </GradientButton>
-                        </StickyPageHeader.Actions>
-                    </StickyPageHeader>
-                )}
+            <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col gap-5 pb-8">
+                  <BentoFormHero
+                      backTo={bentoHero.backTo}
+                      backLabel={bentoHero.backLabel}
+                      leading={bentoHero.leading}
+                      title={bentoHero.title}
+                      subtitle={bentoHero.subtitle}
+                      stickyTitle={bentoHero.title}
+                      onCancel={() => navigate(listRoute)}
+                      saveDisabled={false}
+                  />
                     <SectionCard variant="blue">
                         <SectionCard.Header icon={IconUserShield} title={t("forms.adminRole.roleDetails")} description={t("forms.adminRole.roleDetailsDesc")} />
                         <SectionCard.Content>

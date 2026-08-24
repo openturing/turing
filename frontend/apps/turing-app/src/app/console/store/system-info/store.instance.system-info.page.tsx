@@ -1,7 +1,6 @@
 import { useStoreInstanceSystemInfo } from "@/api/queries/store-instance.queries";
 import { BentoFormSection } from "@/components/bento";
 import { SubPageHeader } from "@/components/sub.page.header";
-import { SectionCard } from "@/components/ui/section-card";
 import { useSubPageBreadcrumb } from "@/hooks/use-sub-page-breadcrumb";
 import { IconDatabase, IconInfoCircle, IconLoader2 } from "@tabler/icons-react";
 import type { ReactNode } from "react";
@@ -88,7 +87,6 @@ export default function StoreInstanceSystemInfoPage({ header }: Readonly<StoreIn
     };
 
     const entries = Object.entries(info).filter(([key]) => key !== "status");
-    const isBento = header !== undefined;
 
     const details = (
         <>
@@ -115,29 +113,16 @@ export default function StoreInstanceSystemInfoPage({ header }: Readonly<StoreIn
     return (
         <>
             {headerNode}
-            {isBento ? (
-                <div className="space-y-4">
-                    <BentoFormSection
-                        icon={IconDatabase}
-                        tone="violet"
-                        title={t("store.systemInfo.details")}
-                        description={t("store.systemInfo.detailsDesc")}
-                    >
-                        {details}
-                    </BentoFormSection>
-                </div>
-            ) : (
-                <div className="py-6 px-6 space-y-4">
-                    <SectionCard variant="violet">
-                        <SectionCard.StaticHeader
-                            icon={IconDatabase}
-                            title={t("store.systemInfo.details")}
-                            description={t("store.systemInfo.detailsDesc")}
-                        />
-                        <SectionCard.Content>{details}</SectionCard.Content>
-                    </SectionCard>
-                </div>
-            )}
+              <div className="space-y-4">
+                  <BentoFormSection
+                      icon={IconDatabase}
+                      tone="violet"
+                      title={t("store.systemInfo.details")}
+                      description={t("store.systemInfo.detailsDesc")}
+                  >
+                      {details}
+                  </BentoFormSection>
+              </div>
         </>
     );
 }

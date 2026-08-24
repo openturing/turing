@@ -5,7 +5,6 @@ import {
 import { Input } from "@/components/ui/input";
 import { SmartDescription } from "@/components/ui/smart-description";
 import { BentoActionsMenu, BentoFormHero } from "@/components/bento";
-import { StickyPageHeader } from "@/components/sticky-page-header";
 import { SectionCard } from "@/components/ui/section-card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { TurGroup } from "@/models/auth/group";
@@ -15,9 +14,8 @@ import { TurGroupService } from "@/services/auth/group.service";
 import { TurRoleService } from "@/services/auth/role.service";
 import { TurAdminUserService } from "@/services/auth/admin-user.service";
 import {
-    IconCheck, IconDeviceFloppy, IconNotes, IconPlus, IconSearch, IconTrash, IconUserShield, IconUsers, IconUsersGroup, IconX,
+    IconCheck, IconNotes, IconPlus, IconSearch, IconTrash, IconUserShield, IconUsers, IconUsersGroup, IconX,
 } from "@tabler/icons-react";
-import { GradientButton } from "@/components/ui/gradient-button";
 import { DialogDelete } from "@/components/dialog.delete";
 import { type ReactNode, useEffect, useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
@@ -38,10 +36,7 @@ interface Props {
     /** List route to return to on save/cancel. Defaults to the console admin
      *  groups list; the Bento surface passes its own route (T567). */
     listRoute?: string;
-    /** Bento hero descriptor. When set, the form renders the standard
-     *  {@link BentoFormHero} (Save/Cancel in the hero + scroll-linked sticky
-     *  save-bar morph); otherwise it renders the console {@link StickyPageHeader}. */
-    bentoHero?: {
+    bentoHero: {
         backTo: string;
         backLabel: string;
         leading: ReactNode;
@@ -54,7 +49,6 @@ export const AdminGroupForm: React.FC<Props> = ({ value, isNew, onDelete, open, 
     const { t } = useTranslation();
     const form = useForm<TurGroup>({ defaultValues: value });
     const navigate = useNavigate();
-    const isBento = bentoHero !== undefined;
     const [allRoles, setAllRoles] = useState<TurRole[]>([]);
     const [allUsers, setAllUsers] = useState<TurUser[]>([]);
     const [groupRoles, setGroupRoles] = useState<TurRole[]>([]);
@@ -149,53 +143,32 @@ export const AdminGroupForm: React.FC<Props> = ({ value, isNew, onDelete, open, 
 
     return (
         <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className={isBento ? "flex flex-col gap-5 pb-8" : "space-y-4 px-4 lg:px-6 pb-8"}>
-                {bentoHero ? (
-                    <>
-                        <BentoFormHero
-                            backTo={bentoHero.backTo}
-                            backLabel={bentoHero.backLabel}
-                            leading={bentoHero.leading}
-                            title={bentoHero.title}
-                            subtitle={bentoHero.subtitle}
-                            stickyTitle={bentoHero.title}
-                            onCancel={() => navigate(listRoute)}
-                            saveDisabled={false}
-                            trailing={onDelete && open !== undefined && setOpen ? (
-                                <BentoActionsMenu
-                                    actions={[{
-                                        label: t("forms.formActions.delete"),
-                                        icon: IconTrash,
-                                        tone: "destructive",
-                                        onSelect: () => setOpen(true),
-                                    }]}
-                                />
-                            ) : undefined}
-                        />
-                        {onDelete && open !== undefined && setOpen && (
-                            <DialogDelete feature="Group" name={isNew ? t("admin.groups.newGroup") : (value?.name ?? "")} onDelete={onDelete} open={open} setOpen={setOpen} trigger={<span className="hidden" aria-hidden />} />
-                        )}
-                    </>
-                ) : (
-                    <StickyPageHeader>
-                        <StickyPageHeader.Title
-                            icon={IconUsersGroup}
-                            feature="Group"
-                            description={isNew ? t("admin.groups.createDescription") : t("admin.groups.editDescription")}
-                        />
-                        <StickyPageHeader.Actions>
-                            {onDelete && open !== undefined && setOpen && <DialogDelete feature="Group" name={isNew ? t("admin.groups.newGroup") : (value?.name ?? "")} onDelete={onDelete} open={open} setOpen={setOpen} />}
-                            <GradientButton type="submit" size="sm">
-                                <IconDeviceFloppy className="size-4" />
-                                {t("forms.formActions.saveChanges")}
-                            </GradientButton>
-                            <GradientButton type="button" variant="outline" size="sm" onClick={() => navigate(listRoute)}>
-                                <IconX className="size-4" />
-                                {t("forms.formActions.cancel")}
-                            </GradientButton>
-                        </StickyPageHeader.Actions>
-                    </StickyPageHeader>
-                )}
+            <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col gap-5 pb-8">
+                  <>
+                      <BentoFormHero
+                          backTo={bentoHero.backTo}
+                          backLabel={bentoHero.backLabel}
+                          leading={bentoHero.leading}
+                          title={bentoHero.title}
+                          subtitle={bentoHero.subtitle}
+                          stickyTitle={bentoHero.title}
+                          onCancel={() => navigate(listRoute)}
+                          saveDisabled={false}
+                          trailing={onDelete && open !== undefined && setOpen ? (
+                              <BentoActionsMenu
+                                  actions={[{
+                                      label: t("forms.formActions.delete"),
+                                      icon: IconTrash,
+                                      tone: "destructive",
+                                      onSelect: () => setOpen(true),
+                                  }]}
+                              />
+                          ) : undefined}
+                      />
+                      {onDelete && open !== undefined && setOpen && (
+                          <DialogDelete feature="Group" name={isNew ? t("admin.groups.newGroup") : (value?.name ?? "")} onDelete={onDelete} open={open} setOpen={setOpen} trigger={<span className="hidden" aria-hidden />} />
+                      )}
+                  </>
                     {/* Group Details */}
                     <SectionCard variant="blue">
                         <SectionCard.Header icon={IconUsersGroup} title={t("forms.adminGroup.groupDetails")} description={t("forms.adminGroup.groupDetailsDesc")} />

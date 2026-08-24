@@ -16,6 +16,17 @@ import { consoleSuffixToBento } from "./console-suffix-to-bento";
  * implementation of every form in the product, kept compiling and read by
  * everyone who opened those files. What is left is this file: old bookmarks
  * still answer, at the cost of one lazy route.
+ *
+ * T1026 — the same branch survived in thirteen more files under a different
+ * name: `header !== undefined` and `bentoHero !== undefined`. Fourteen mounts,
+ * fourteen headers, two of them `header={null}` — which the condition read as
+ * bento, because `null !== undefined`. That arm held the app's last fifteen
+ * `<StickyPageHeader>`, and `components/sticky-page-header.tsx` went with it.
+ * The component itself is still the design system's, where Shio reaches it.
+ *
+ * The lesson worth keeping is that both were found by counting call sites, not
+ * by reading the components. A branch that no caller takes reads exactly like
+ * one that every caller takes.
  */
 export default function ConsoleToBentoRedirect() {
   const { pathname, search, hash } = useLocation();

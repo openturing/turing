@@ -97,7 +97,6 @@ export default function BentoAdminUserPage() {
           {keycloakUser && (
             <AdminKeycloakUserView
               value={keycloakUser}
-              listRoute={ROUTES.BENTO_ADMIN_USERS}
               header={hero(keycloakUser.username, t("admin.users.keycloakViewDescription"))}
             />
           )}

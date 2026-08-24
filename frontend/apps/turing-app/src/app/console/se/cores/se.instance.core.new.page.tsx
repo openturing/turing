@@ -44,7 +44,7 @@ function buildCoreName(name: string, locale: string, appendLocale: boolean): str
 
 interface SEInstanceCoreNewPageProps {
   /**
-   * Render inside the bento shell — the `StickyPageHeader` is replaced by a
+   * Render inside the bento shell — the page supplies a
    * {@link BentoFormHero} (hero → sticky-save-bar morph + `←` breadcrumb) and
    * the frosted body comes from the enclosing `SectionCardChromeProvider`.
    */
