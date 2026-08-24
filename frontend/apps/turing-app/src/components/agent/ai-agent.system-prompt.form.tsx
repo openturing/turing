@@ -103,7 +103,7 @@ export const AIAgentSystemPromptForm: React.FC<Props> = ({ value, chrome = "cons
       ...value,
       systemPrompt: value.systemPrompt ?? "",
     });
-  }, [value]);
+  }, [form, value]);
 
   async function onSubmit(agent: TurAIAgent) {
     try {

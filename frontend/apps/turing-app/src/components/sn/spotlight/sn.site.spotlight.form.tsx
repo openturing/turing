@@ -86,7 +86,7 @@ export const SNSiteSpotlightForm: React.FC<Props> = ({ snSiteId, value, isNew, o
 
     useEffect(() => {
         form.reset(value);
-    }, [value]);
+    }, [form, value]);
 
     // Default the language to the site's first available locale when none is set
     // yet (new spotlight). The document search is scoped by locale, and a site is
@@ -96,7 +96,7 @@ export const SNSiteSpotlightForm: React.FC<Props> = ({ snSiteId, value, isNew, o
         if (locales.length > 0 && !form.getValues("language")) {
             form.setValue("language", locales[0].language);
         }
-    }, [locales, value]);
+    }, [form, locales, value]);
 
     async function onSubmit(data: TurSNSiteSpotlight) {
         let hasError = false;

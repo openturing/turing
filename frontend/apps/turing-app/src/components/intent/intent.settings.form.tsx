@@ -111,7 +111,7 @@ export const IntentSettingsForm: React.FC<Props> = ({ value, isNew, agentId, age
         sortOrder: a.sortOrder ?? i,
       })),
     })
-  }, [value])
+  }, [form, value])
 
   const [dragIndex, setDragIndex] = useState<number | null>(null)
 

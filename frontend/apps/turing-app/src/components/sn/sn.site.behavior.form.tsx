@@ -75,7 +75,7 @@ export const SNSiteBehaviorForm: React.FC<Props> = ({ value, isNew, baseRoute = 
   const updateMutation = useUpdateSnSite();
   useEffect(() => {
     form.reset(value);
-  }, [value]);
+  }, [form, value]);
 
   function onSubmit(snSite: TurSNSite) {
     try {

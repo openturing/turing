@@ -72,7 +72,7 @@ export const SNSiteMergeForm: React.FC<Props> = ({ snSiteId, value, isNew, onDel
 
     useEffect(() => {
         form.reset(value);
-    }, [value]);
+    }, [form, value]);
 
     async function onSubmit(data: TurSNSiteMerge) {
         try {

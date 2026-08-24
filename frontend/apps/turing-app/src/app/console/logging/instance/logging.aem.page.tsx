@@ -30,6 +30,11 @@ export default function LoggingAemPage() {
     filterDeps: [level, dateFrom, dateTo],
   });
 
+  // T1024 — destructured so the callback below can name a stable dependency.
+  // `logging.resetPage` as a dep is a member of an object rebuilt every render,
+  // which the rule cannot treat as stable even though the function is.
+  const { resetPage } = logging;
+
   // Debounced text search
   useEffect(() => {
     if (logging.initialLoad) return;
@@ -42,12 +47,19 @@ export default function LoggingAemPage() {
     return () => {
       if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current);
     };
+  // T1024 — keyed on the search text alone, deliberately. This is a debounce:
+  // it must restart when what the reader typed changes and at no other time.
+  // `logging` is a fresh object every render, so listing it would rebuild the
+  // timer on every state change the page makes — including the ones this very
+  // effect causes. The members it calls are stable; the values it reads are not,
+  // and re-running on those would fire a search nobody asked for.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [search]);
 
   const handleLevelChange = useCallback((newLevel: string) => {
     setLevel(newLevel === "all" ? "" : newLevel);
-    logging.resetPage();
-  }, [logging.resetPage]);
+    resetPage();
+  }, [resetPage]);
 
   return (
     <LoggingPageLayout
@@ -70,8 +82,8 @@ export default function LoggingAemPage() {
         onPageChange={logging.setPage}
         onPageSizeChange={logging.handlePageSizeChange}
         onLevelChange={handleLevelChange}
-        onDateFromChange={(v) => { setDateFrom(v); logging.resetPage(); }}
-        onDateToChange={(v) => { setDateTo(v); logging.resetPage(); }}
+        onDateFromChange={(v) => { setDateFrom(v); resetPage(); }}
+        onDateToChange={(v) => { setDateTo(v); resetPage(); }}
         onSearchChange={setSearch}
       />
     </LoggingPageLayout>

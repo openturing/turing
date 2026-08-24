@@ -77,7 +77,7 @@ export const SNSiteCustomSortForm: React.FC<Props> = ({ snSiteId, value, isNew, 
 
     useEffect(() => {
         form.reset(value);
-    }, [value]);
+    }, [form, value]);
 
     useEffect(() => {
         turSNSiteCustomSortService.getFieldOptions(snSiteId).then(setFieldOptions).catch(console.error);

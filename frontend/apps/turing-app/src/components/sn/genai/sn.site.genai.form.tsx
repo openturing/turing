@@ -182,7 +182,7 @@ export const SNSiteGenAiForm: React.FC<Props> = ({ snSite, baseRoute = ROUTES.SN
             mediaUnderstandingIndexingEnabled:
                 snSite.turSNSiteGenAi?.mediaUnderstandingIndexingEnabled ?? false,
         });
-    }, [snSite]);
+    }, [form, snSite]);
 
     // T24b — load the per-locale core status table whenever the site id
     // changes, plus on focus (admin may provision in another tab). The

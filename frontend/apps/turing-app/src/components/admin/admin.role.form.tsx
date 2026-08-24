@@ -67,7 +67,7 @@ export const AdminRoleForm: React.FC<Props> = ({ value, isNew, listRoute = ROUTE
 
     useEffect(() => {
         form.reset({ ...value, turPrivileges: value.turPrivileges ?? [] });
-    }, [value]);
+    }, [form, value]);
 
     useEffect(() => {
         turPrivilegeService.query().then(setAllPrivileges);

@@ -59,7 +59,7 @@ export const SNSiteSearchRuleForm: React.FC<Props> = ({ snSiteId, value, isNew, 
 
     useEffect(() => {
         form.reset(value);
-    }, [value]);
+    }, [form, value]);
 
     useEffect(() => {
         turSNSiteSearchRuleService.getFieldOptions(snSiteId).then(setFieldOptions).catch(console.error);

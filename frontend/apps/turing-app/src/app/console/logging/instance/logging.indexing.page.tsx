@@ -36,6 +36,9 @@ export default function LoggingIndexingPage() {
     filterDeps: [dateFrom, dateTo, status, resultStatus],
   });
 
+  // T1024 — destructured so the two callbacks below name a stable dependency.
+  const { resetPage } = logging;
+
   // Debounced contentId search
   useEffect(() => {
     if (logging.initialLoad) return;
@@ -48,6 +51,12 @@ export default function LoggingIndexingPage() {
     return () => {
       if (contentIdTimeoutRef.current) clearTimeout(contentIdTimeoutRef.current);
     };
+  // T1024 — keyed on the typed text alone, deliberately. This is a debounce: it
+  // must restart when what the reader typed changes and at no other time.
+  // `logging` is a fresh object every render, so listing it would rebuild the
+  // timer on every state change the page makes, including the ones this effect
+  // causes. The members it calls are stable; the values it reads are not.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [contentId]);
 
   // Debounced URL search
@@ -62,17 +71,23 @@ export default function LoggingIndexingPage() {
     return () => {
       if (urlTimeoutRef.current) clearTimeout(urlTimeoutRef.current);
     };
+  // T1024 — keyed on the typed text alone, deliberately. This is a debounce: it
+  // must restart when what the reader typed changes and at no other time.
+  // `logging` is a fresh object every render, so listing it would rebuild the
+  // timer on every state change the page makes, including the ones this effect
+  // causes. The members it calls are stable; the values it reads are not.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [url]);
 
   const handleStatusChange = useCallback((newStatus: string) => {
     setStatus(newStatus === "all" ? "" : newStatus);
-    logging.resetPage();
-  }, [logging.resetPage]);
+    resetPage();
+  }, [resetPage]);
 
   const handleResultStatusChange = useCallback((newResultStatus: string) => {
     setResultStatus(newResultStatus === "all" ? "" : newResultStatus);
-    logging.resetPage();
-  }, [logging.resetPage]);
+    resetPage();
+  }, [resetPage]);
 
   return (
     <LoggingPageLayout

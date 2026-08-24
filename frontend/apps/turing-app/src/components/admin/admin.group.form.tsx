@@ -66,7 +66,7 @@ export const AdminGroupForm: React.FC<Props> = ({ value, isNew, onDelete, open, 
         form.reset(value);
         setGroupRoles(value.turRoles ?? []);
         setGroupUsers(value.turUsers ?? []);
-    }, [value]);
+    }, [form, value]);
 
     useEffect(() => {
         turRoleService.query().then(setAllRoles);

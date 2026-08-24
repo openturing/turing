@@ -61,7 +61,7 @@ export const SNSiteResultRankingForm: React.FC<Props> = ({ snSiteId, value, isNe
 
     form.reset(nextValue);
     setSlideValue([nextValue.weight ?? 4]);
-  }, [value, isNew]);
+  }, [form, value, isNew]);
 
 
   async function onSubmit(snRankingExpression: TurSNRankingExpression) {

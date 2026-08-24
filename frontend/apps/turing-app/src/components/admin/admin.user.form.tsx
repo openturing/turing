@@ -65,7 +65,7 @@ export const AdminUserForm: React.FC<Props> = ({ value, isNew, onDelete, open, s
         form.reset(value);
         setAvatarUrl(value.avatarUrl ?? undefined);
         setUserGroups(value.turGroups ?? []);
-    }, [value]);
+    }, [form, value]);
 
     useEffect(() => {
         turGroupService.query().then(setAllGroups);
@@ -97,7 +97,7 @@ export const AdminUserForm: React.FC<Props> = ({ value, isNew, onDelete, open, s
                 toast.error(t("forms.adminUser.avatarFailed"));
             }
         }
-    }, [value, isNew, t]);
+    }, [form, value, isNew, t]);
 
     const handleAvatarRemove = useCallback(async () => {
         if (isNew) {
@@ -114,7 +114,7 @@ export const AdminUserForm: React.FC<Props> = ({ value, isNew, onDelete, open, s
                 toast.error(t("forms.adminUser.avatarRemoveFailed"));
             }
         }
-    }, [value, isNew, t]);
+    }, [form, value, isNew, t]);
 
     // Groups: search filters available (unassigned) groups
     const assignedGroupIds = useMemo(() => new Set(userGroups.map(g => g.id)), [userGroups]);

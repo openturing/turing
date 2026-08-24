@@ -245,7 +245,7 @@ export const AIAgentSettingsForm: React.FC<Props> = ({ value, isNew, chrome = "c
       // global default (property / first registered SE).
       analyticsSeInstance: value.analyticsSeInstance ?? null,
     });
-  }, [value])
+  }, [form, value])
 
   useEffect(() => {
     turEmbeddingModelService.query().then(setEmbeddingModels);
