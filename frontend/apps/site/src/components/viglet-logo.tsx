@@ -17,11 +17,7 @@
  * `glow` requires the `.vg-logo-glow` keyframes in index.css.
  */
 
-export const PRODUCT_COLORS: Record<string, string> = {
-  dumont: "#006400", // darkgreen
-  shio: "#FF6347", // tomato
-  turing: "#4169E1", // royalblue
-};
+import { PRODUCT_COLORS } from "./product-colors";
 
 const PRODUCT_META: Record<string, { acronym: string; section: string }> = {
   dumont: { acronym: "Du", section: "DEP" },

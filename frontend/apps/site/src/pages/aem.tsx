@@ -5,7 +5,8 @@ import { CodeBlock } from "@/components/code-block";
 import { WkndPlayground } from "@/components/sections/wknd-playground";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Container, LINKS, TableScroll } from "@/components/brand";
+import { Container, TableScroll } from "@/components/brand";
+import { LINKS } from "@/components/brand-links";
 import {
   AEM_CODE,
   AEM_COLUMNS,

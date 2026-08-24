@@ -14,7 +14,7 @@
     "build": "npm run gen-catalog && npm run gen-manifest && tsc -b && vite build && node gen-manifest.mjs --dist",
     "test": "vitest run",
     "test:watch": "vitest",
-    "lint": "eslint . --max-warnings 5"
+    "lint": "eslint . --max-warnings 0"
   },
   "dependencies": {
     "@radix-ui/react-dropdown-menu": "^2.1.21",

@@ -8,7 +8,8 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { ModeToggle } from "@/components/mode-toggle";
-import { Container, Logo, LINKS } from "@/components/brand";
+import { Container, Logo } from "@/components/brand";
+import { LINKS } from "@/components/brand-links";
 import { cn } from "@/lib/utils";
 
 // Hrefs are root-anchored ("/#…") so they also work from the feature pages —

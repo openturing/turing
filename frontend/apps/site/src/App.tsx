@@ -7,6 +7,7 @@ import { AemPage } from "@/pages/aem";
 import { PersonaPage } from "@/pages/persona";
 import { SecurityPage } from "@/pages/security";
 import { FEATURE_DETAILS } from "@/lib/site-content";
+import { matchRoute } from "./route-match";
 
 /** Standalone (non-feature) routes with their own page component. */
 export const MIGRATE_PATH = "/migrate";
@@ -14,17 +15,6 @@ export const COMPARE_PATH = "/compare";
 export const AEM_PATH = "/aem-search";
 export const PERSONA_PATH = "/persona";
 export const SECURITY_PATH = "/security";
-
-/**
- * Resolve a pathname to a feature slug, or null for the landing page.
- * Kept dependency-free (no react-router) so the SSG prerender and the client
- * agree on a single, trivial routing rule. Navigation between pages uses plain
- * `<a href>` full loads — every route is prerendered to its own static HTML.
- */
-export function matchRoute(path: string): string | null {
-  const m = /^\/features\/([a-z-]+)\/?$/.exec(path);
-  return m && FEATURE_DETAILS[m[1]] ? m[1] : null;
-}
 
 export default function App({ path = "/" }: Readonly<{ path?: string }>) {
   // Cross-page links to a home anchor (e.g. "/#playground") full-load "/" and

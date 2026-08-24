@@ -1,6 +1,7 @@
 import { ArrowRight, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Container, LINKS } from "@/components/brand";
+import { Container } from "@/components/brand";
+import { LINKS } from "@/components/brand-links";
 import { CopyCommand } from "@/components/copy-command";
 import { SearchDemo } from "@/components/sections/search-demo";
 

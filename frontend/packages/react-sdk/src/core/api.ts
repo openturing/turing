@@ -224,7 +224,7 @@ export async function postClick(site: string, params: ClickTrackParams): Promise
     await axios.post(`/sn/${site}/click`, params);
   } catch (error) {
     if (typeof console !== "undefined") {
-      // eslint-disable-next-line no-console
+       
       console.warn("[Turing] click tracking failed", error);
     }
   }

@@ -1,6 +1,6 @@
-import { createContext, useContext, useEffect, useState } from "react";
+import { ThemeProviderContext, type Theme } from "./theme-context";
+import { useEffect, useState } from "react";
 
-type Theme = "dark" | "light" | "system";
 
 interface ThemeProviderProps {
   children: React.ReactNode;
@@ -8,17 +8,7 @@ interface ThemeProviderProps {
   storageKey?: string;
 }
 
-interface ThemeProviderState {
-  theme: Theme;
-  setTheme: (theme: Theme) => void;
-}
 
-const initialState: ThemeProviderState = {
-  theme: "system",
-  setTheme: () => null,
-};
-
-const ThemeProviderContext = createContext<ThemeProviderState>(initialState);
 
 export function ThemeProvider({
   children,
@@ -34,6 +24,12 @@ export function ThemeProvider({
 
   useEffect(() => {
     const stored = localStorage.getItem(storageKey) as Theme | null;
+    // T1027 — the one place this app has to reconcile with something React
+    // cannot see: `localStorage` does not exist during the SSG prerender, so
+    // both renders start from `defaultTheme` and this effect corrects the
+    // client. The inline boot script in index.html already painted the right
+    // class, so there is no flash to see.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     if (stored && stored !== theme) setTheme(stored);
     // run once on mount to hydrate from storage
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -69,10 +65,3 @@ export function ThemeProvider({
     </ThemeProviderContext.Provider>
   );
 }
-
-export const useTheme = () => {
-  const context = useContext(ThemeProviderContext);
-  if (context === undefined)
-    throw new Error("useTheme must be used within a ThemeProvider");
-  return context;
-};

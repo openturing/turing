@@ -1,4 +1,5 @@
-import { Container, Logo, LINKS } from "@/components/brand";
+import { Container, Logo } from "@/components/brand";
+import { LINKS } from "@/components/brand-links";
 
 const COLUMNS: { heading: string; links: { label: string; href: string }[] }[] = [
   {

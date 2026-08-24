@@ -4,7 +4,8 @@ import { SiteFooter } from "@/components/sections/site-footer";
 import { ContentFitDemo } from "@/components/sections/content-fit-demo";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Container, LINKS } from "@/components/brand";
+import { Container } from "@/components/brand";
+import { LINKS } from "@/components/brand-links";
 import {
   PERSONA_COLUMNS,
   PERSONA_FAQ,

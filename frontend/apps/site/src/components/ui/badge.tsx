@@ -44,4 +44,7 @@ function Badge({
   );
 }
 
-export { Badge, badgeVariants };
+// T1027 — `badgeVariants` is not exported. shadcn ships the cva beside the
+// component and this app never imported it; exporting it only cost the
+// module its Fast Refresh. Export it again when something needs it.
+export { Badge };

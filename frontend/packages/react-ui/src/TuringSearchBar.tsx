@@ -74,6 +74,10 @@ export function TuringSearchBar({
 
   return (
     <form onSubmit={handleSubmit} className={className} role="search">
+      {/* T1027 — `inputProps` carries the ref to whatever renders the input,
+          which is the point of a render prop. The rule sees a ref object read
+          during render and cannot tell handing one on from dereferencing it. */}
+      {/* eslint-disable-next-line react-hooks/refs */}
       {renderInput ? renderInput(inputProps) : <input {...inputProps} />}
       {renderButton
         ? renderButton({ onClick: () => onSearch(value || "*") })

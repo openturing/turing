@@ -1,3 +1,9 @@
+/* eslint-disable react-hooks/refs --
+ * T1027 — the ref is read during render deliberately, and the comment beside
+ * it says why: rebuilding this value when the caller's object literal changes
+ * identity would discard accumulated state. `react-hooks/refs` reports what
+ * the React Compiler would decline, and no package here runs it.
+ */
 import { useMemo, useRef } from "react";
 import {
   createTuringAnalytics,

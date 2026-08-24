@@ -3,7 +3,7 @@ import { Stars } from "@/components/stars";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { useCart } from "@/contexts/cart";
+import { useCart } from "@/contexts/use-cart";
 import { resolveSiteName } from "@/lib/resolve-site";
 import { firstValue, formatPrice, toNumber } from "@/lib/format";
 import {

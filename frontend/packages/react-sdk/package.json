@@ -18,7 +18,7 @@
     "build-storybook": "storybook build",
     "exports": "node ../../scripts/check-exports.mjs",
     "exports:update": "node ../../scripts/check-exports.mjs --update-baseline",
-    "lint": "eslint . --max-warnings 58"
+    "lint": "eslint . --max-warnings 0"
   },
   "publishConfig": {
     "access": "public",

@@ -1,3 +1,14 @@
+/* eslint-disable react-hooks/set-state-in-effect --
+ * T1027 — the effects here synchronise with something outside React: a fetch,
+ * the session cookie, or a browser capability that does not exist during SSR.
+ * Marking `loading` before the request and writing the result after it is the
+ * shape this SDK exposes, and the alternative is a data-fetching dependency
+ * the package deliberately does not have — it is zero-config for consumers by
+ * design. `react-hooks/set-state-in-effect` reports what the React Compiler
+ * would decline, and no package here runs it; a cascading render on a
+ * resolved fetch is the cost that buys the seamless API. Turn this back on in
+ * the change that adds the compiler, and read these first.
+ */
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import { postVoiceSession } from "../core/api";

@@ -3,7 +3,8 @@ import { SiteNav } from "@/components/sections/site-nav";
 import { SiteFooter } from "@/components/sections/site-footer";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Container, LINKS } from "@/components/brand";
+import { Container } from "@/components/brand";
+import { LINKS } from "@/components/brand-links";
 import { SECURITY_POINTS } from "@/lib/site-content";
 import { cn } from "@/lib/utils";
 

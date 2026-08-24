@@ -1,4 +1,4 @@
-import type { CartItem } from "@/contexts/cart";
+import type { CartItem } from "@/contexts/cart-context";
 
 /** A client-tool handler: receives the agent's JSON args, returns a result. */
 type ClientToolHandler = (args: unknown) => unknown | Promise<unknown>;

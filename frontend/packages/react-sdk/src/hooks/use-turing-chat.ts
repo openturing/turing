@@ -1,3 +1,22 @@
+/* eslint-disable react-hooks/set-state-in-effect --
+ * T1027 — the effects here synchronise with something outside React: a fetch,
+ * the session cookie, or a browser capability that does not exist during SSR.
+ * Marking `loading` before the request and writing the result after it is the
+ * shape this SDK exposes, and the alternative is a data-fetching dependency
+ * the package deliberately does not have — it is zero-config for consumers by
+ * design. `react-hooks/set-state-in-effect` reports what the React Compiler
+ * would decline, and no package here runs it; a cascading render on a
+ * resolved fetch is the cost that buys the seamless API. Turn this back on in
+ * the change that adds the compiler, and read these first.
+ */
+/* eslint-disable react-hooks/refs --
+ * T1027 — a ref mirror, written during render on purpose. React queues state
+ * updates rather than applying them, so a callback created this render would
+ * otherwise close over the previous value; the mirror is how this SDK reads
+ * the current one synchronously. `react-hooks/refs` reports what the React
+ * Compiler would decline, and no package here runs it. Turn this back on in
+ * the change that adds the compiler.
+ */
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   deleteAgentFlowState,
@@ -766,7 +785,7 @@ export function useTuringChat(
     messagesRef.current = messages;
     conversationIdRef.current = conversationId;
     if (persistKey) savePersisted(persistKey, { conversationId, messages });
-  }, [persistKey, messages, conversationId]);
+  }, [persistKey, messages, conversationId, messagesRef, conversationIdRef]);
 
   // Controlled-id sync: when the host supplies (or later resolves) a
   // `conversationId` prop, adopt it into state + ref so reads like
@@ -1004,7 +1023,7 @@ export function useTuringChat(
       return result;
     },
     [siteName, agentId, agentLlmInstanceId, activeForm, beginSend, setMessages, isStale,
-      handleSendError, runAssistantTurn],
+      handleSendError, runAssistantTurn, messagesRef, setError, setStatus],
   );
 
   const stop = core.stop;

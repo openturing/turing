@@ -37,6 +37,13 @@ export interface UseTuringPaginationReturn {
   hasPages: boolean;
 }
 
+// T1027 — one frozen empty array, shared. `?? []` builds a new array every
+// render on a site that has none of whatever it fell back for, which gives the
+// `useMemo` below it a dependency that changes each pass — so the memo runs
+// every render and returns a new list, and so does everything downstream of it.
+// A stable identity is the whole fix.
+const EMPTY: never[] = [];
+
 /**
  * Provides pagination data with action helpers.
  * Reads from the shared search store (requires `urlSync` on TuringProvider).
@@ -74,7 +81,7 @@ export function useTuringPagination(): UseTuringPaginationReturn {
   // T710 — POST-native the pagination and counters come from the link-free
   // response; the legacy bean is the fallback.
   const rawItems: (TurPaginationItem | TurStructuredPage)[] =
-    structuredItems ?? store.data?.pagination ?? [];
+    structuredItems ?? store.data?.pagination ?? EMPTY;
   const queryContext = store.structured?.queryContext ?? store.data?.queryContext;
   const { navigate, goToPage } = store;
 

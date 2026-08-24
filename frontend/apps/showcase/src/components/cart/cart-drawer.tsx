@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { useCart } from "@/contexts/cart";
+import { useCart } from "@/contexts/use-cart";
 import { formatPrice } from "@/lib/format";
 import { IconShoppingCart, IconTrash, IconX } from "@tabler/icons-react";
 import { useState } from "react";

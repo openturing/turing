@@ -1,3 +1,14 @@
+/* eslint-disable react-hooks/set-state-in-effect --
+ * T1027 — the effects here synchronise with something outside React: a fetch,
+ * the session cookie, or a browser capability that does not exist during SSR.
+ * Marking `loading` before the request and writing the result after it is the
+ * shape this SDK exposes, and the alternative is a data-fetching dependency
+ * the package deliberately does not have — it is zero-config for consumers by
+ * design. `react-hooks/set-state-in-effect` reports what the React Compiler
+ * would decline, and no package here runs it; a cascading render on a
+ * resolved fetch is the cost that buys the seamless API. Turn this back on in
+ * the change that adds the compiler, and read these first.
+ */
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { TuringContext, SearchStoreContext, type SearchStoreValue } from "./context";
 import {
@@ -266,6 +277,10 @@ function UrlSyncSearchStore({
         setError(err instanceof Error ? err.message : "Search failed");
         setStatus("error");
       });
+  // T1027 — `paramsKey` is the serialisation of `params`, and it is the dependency
+  // on purpose: `params` is rebuilt every render, so listing it would run this
+  // search on every pass. `config.site` is fixed for the provider's life.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [paramsKey, postNative]);
 
   // ── URL mutation helpers (operate on explicit params only) ──

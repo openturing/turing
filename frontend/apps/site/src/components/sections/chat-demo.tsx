@@ -183,8 +183,18 @@ export function ChatDemo({
   // so the subscribe effect can read the latest values without re-subscribing
   // (and re-creating the controller) on every render.
   const scriptRef = useRef(script);
+  // T1027 — the mirror is the point. These props are new objects every render;
+  // reading them from a ref is what keeps the subscribe effect from re-creating
+  // its controller each pass. The rule reports what the React Compiler would
+  // decline, and no app here runs it.
+  // eslint-disable-next-line react-hooks/refs
   scriptRef.current = script;
   const fallbackRef = useRef(fallback);
+  // T1027 — the mirror is the point. These props are new objects every render;
+  // reading them from a ref is what keeps the subscribe effect from re-creating
+  // its controller each pass. The rule reports what the React Compiler would
+  // decline, and no app here runs it.
+  // eslint-disable-next-line react-hooks/refs
   fallbackRef.current = fallback;
 
   // Rich pivot: when a seeded "Ask about this page" comes back as a refusal

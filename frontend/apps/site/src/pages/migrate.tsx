@@ -4,7 +4,8 @@ import { SiteFooter } from "@/components/sections/site-footer";
 import { CodeBlock } from "@/components/code-block";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Container, LINKS, TableScroll } from "@/components/brand";
+import { Container, TableScroll } from "@/components/brand";
+import { LINKS } from "@/components/brand-links";
 import {
   MIGRATION_CLI_CODE,
   MIGRATION_CLI_FEATURES,

@@ -110,8 +110,13 @@ export function TuringD2Diagram({
     "loading",
   );
 
+  // T1027 — the effect loads a WASM renderer and reports what it is doing.
+  // `loading` before the import and `ready` after it is the state a caller
+  // renders a spinner from; there is nothing to synchronise it with but the
+  // import itself.
   useEffect(() => {
     let cancelled = false;
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setStatus("loading");
     setSvg(null);
     const renderer = render ?? ((c: string) => defaultRender(c, sketch));

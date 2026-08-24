@@ -3,7 +3,8 @@ import { SiteNav } from "@/components/sections/site-nav";
 import { SiteFooter } from "@/components/sections/site-footer";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Container, LINKS, TableScroll } from "@/components/brand";
+import { Container, TableScroll } from "@/components/brand";
+import { LINKS } from "@/components/brand-links";
 import {
   COMPARE_COLUMNS,
   COMPARE_MATRIX,

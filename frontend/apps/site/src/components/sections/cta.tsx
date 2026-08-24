@@ -1,6 +1,7 @@
 import { ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Container, LINKS } from "@/components/brand";
+import { Container } from "@/components/brand";
+import { LINKS } from "@/components/brand-links";
 
 export function CallToAction() {
   return (

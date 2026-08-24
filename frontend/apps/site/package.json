@@ -11,7 +11,7 @@
     "build:client": "vite build",
     "build:ssr": "vite build --ssr src/entry-server.tsx --outDir dist-ssr",
     "prerender": "node scripts/prerender.mjs",
-    "lint": "eslint . --max-warnings 9"
+    "lint": "eslint . --max-warnings 0"
   },
   "dependencies": {
     "@radix-ui/react-dropdown-menu": "^2.1.21",

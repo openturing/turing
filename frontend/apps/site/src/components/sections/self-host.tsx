@@ -1,6 +1,7 @@
 import { ArrowRight, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Container, Eyebrow, LINKS } from "@/components/brand";
+import { Container, Eyebrow } from "@/components/brand";
+import { LINKS } from "@/components/brand-links";
 import { CopyCommand } from "@/components/copy-command";
 
 const POINTS = [

@@ -1,32 +1,13 @@
+import { CartContext, type CartItem, type CartState } from "./cart-context";
 import {
-  createContext,
   useCallback,
-  useContext,
   useEffect,
   useMemo,
   useState,
   type ReactNode,
 } from "react";
 
-export interface CartItem {
-  sku: string;
-  title: string;
-  price: number;
-  currency: string;
-  image?: string;
-  qty: number;
-}
 
-interface CartState {
-  items: CartItem[];
-  count: number;
-  total: number;
-  add: (item: Omit<CartItem, "qty">, qty?: number) => void;
-  remove: (sku: string) => void;
-  clear: () => void;
-}
-
-const CartContext = createContext<CartState | null>(null);
 const STORAGE_KEY = "atlas-store-cart";
 
 export function CartProvider({ children }: Readonly<{ children: ReactNode }>) {
@@ -70,10 +51,4 @@ export function CartProvider({ children }: Readonly<{ children: ReactNode }>) {
   }, [items, add, remove, clear]);
 
   return <CartContext.Provider value={value}>{children}</CartContext.Provider>;
-}
-
-export function useCart(): CartState {
-  const ctx = useContext(CartContext);
-  if (!ctx) throw new Error("useCart must be used within a CartProvider");
-  return ctx;
 }

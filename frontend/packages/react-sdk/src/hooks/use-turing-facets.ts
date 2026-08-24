@@ -62,6 +62,13 @@ export interface UseTuringFacetsReturn {
   rawSecondary: TurFacetGroup[];
 }
 
+// T1027 — one frozen empty array, shared. `?? []` builds a new array every
+// render on a site that has none of whatever it fell back for, which gives the
+// `useMemo` below it a dependency that changes each pass — so the memo runs
+// every render and returns a new list, and so does everything downstream of it.
+// A stable identity is the whole fix.
+const EMPTY: never[] = [];
+
 /**
  * Provides facet data with action helpers attached to each item.
  * Reads from the shared search store (requires `urlSync` on TuringProvider).
@@ -106,8 +113,8 @@ export function useTuringFacets(): UseTuringFacetsReturn {
   // T936 — `undefined` on a site with no secondary rail, which is what keeps the
   // structured/legacy switch below reading `structuredFacets` and not this one.
   const structuredSecondary = store.structured?.secondaryFacets;
-  const rawGroups = store.data?.widget?.facet ?? [];
-  const rawSecondary = store.data?.widget?.secondaryFacet ?? [];
+  const rawGroups = store.data?.widget?.facet ?? EMPTY;
+  const rawSecondary = store.data?.widget?.secondaryFacet ?? EMPTY;
   const cleanUpLink = store.data?.widget?.cleanUpFacets;
 
   const { navigate, toggleFacet, clearFacet, clearAllFilters } = store;

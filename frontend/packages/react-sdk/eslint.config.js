@@ -20,6 +20,13 @@ export default [
   // error, which is what it should be.
   {
     files: ['src/stories/**/*.{ts,tsx}', 'src/**/*.stories.tsx'],
-    rules: { 'react-hooks/purity': 'off' },
+    rules: {
+      'react-hooks/purity': 'off',
+      // T1027 — and the same for the two rules that speak for the compiler. A
+      // story mounts a scripted conversation and steps it forward on a timer:
+      // `setState` in an effect is the demonstration, not a defect in it.
+      'react-hooks/set-state-in-effect': 'off',
+      'react-hooks/refs': 'off',
+    },
   },
 ]

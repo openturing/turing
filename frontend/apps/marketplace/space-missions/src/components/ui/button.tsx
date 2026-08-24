@@ -55,4 +55,6 @@ function Button({
   );
 }
 
-export { Button, buttonVariants };
+// T1027 — `buttonVariants` is not exported. shadcn ships the cva beside the
+// component and this example never imported it.
+export { Button };

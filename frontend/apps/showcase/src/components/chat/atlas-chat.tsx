@@ -1,6 +1,6 @@
 import { NativeForm } from "@/components/chat/native-form";
 import { Button } from "@/components/ui/button";
-import { useCart } from "@/contexts/cart";
+import { useCart } from "@/contexts/use-cart";
 import { createCartClientTools } from "@/lib/cart-tools";
 import { MarkdownBlock, D2Block } from "@/lib/markdown";
 import { cn } from "@/lib/utils";
@@ -233,6 +233,10 @@ export function AtlasChatPanel({
   // auto-send once the utterance is final.
   const lastFinalRef = useRef("");
   useEffect(() => {
+    // T1027 — speech recognition is the external system this effect exists to
+    // synchronise with: the transcript arrives from the browser, not from React,
+    // and the input box has to show it as it lands.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     if (voice.transcript) setInput(voice.transcript);
     if (voice.isFinal && voice.transcript.trim() && voice.transcript !== lastFinalRef.current) {
       lastFinalRef.current = voice.transcript;
