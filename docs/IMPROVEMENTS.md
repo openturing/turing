@@ -2185,33 +2185,30 @@ Acceptance:
 
 ### CIV.2 What the ceiling still holds (T1021)
 
-With the 42 `setState`-in-effect findings answered, 280 warnings remain under T1016's
-ceiling, and reading them shows they are four jobs rather than one pile.
+271 warnings sit under T1016's ceiling. Reading them sorts into three jobs, and the one
+that looked largest is the one that should not be done.
 
-**188 `react-refresh/only-export-components`, over 33 files.** A Fast Refresh
-constraint, never a runtime bug: a module exporting both a component and something else
-reloads whole instead of preserving state. The fix per file is deciding what it should
-have been split into.
+**The React Compiler is not installed here.** No `babel-plugin-react-compiler`, nothing
+in `vite.config.ts`. So its bailout notices — 25 `incompatible-library`, 2
+`preserve-manual-memoization` — report an optimization that is not running. Every one of
+the 25 is `form.watch()`, and the fix is `useWatch`, which is 81 call sites across 31
+forms; 38 of them sit inside JSX, callbacks or a `.map()` where a hook cannot go at all.
+Changing the re-render behaviour of every form in the product to satisfy a compiler that
+is switched off is work with risk and no benefit. These want a reasoned `off`.
 
-**43 `exhaustive-deps`, over 28.** The one rule here with a written convention already,
-in `agents.md`. Each is a dependency to read: some are stale closures, some are
-deliberate and want the disable line they lack.
+**Twelve are real, compiler or not.** Eight `static-components` — a component declared
+inside a render body is a new type each pass, so React unmounts and remounts its whole
+subtree, losing focus and child state; all eight are the agent forms' inline `Section`,
+which duplicates `AdaptiveSectionCard` the design system already ships. Four
+`immutability` are the temporal-dead-zone hazard `agents.md` already warns about, plus
+two writes to a local after render.
 
-**25 `incompatible-library`, over 25 files — and all one cause.** Every finding is
-react-hook-form: the React Compiler cannot memoise across an API returning functions.
-Twenty-five files, one decision, and it is probably a config entry rather than
-twenty-five edits.
-
-**15 across `static-components`, `immutability` and `preserve-manual-memoization`.** The
-small tail, each its own read.
-
-Sequenced that way the count is misleading: the 25 are one answer, and the 188 are a
-mechanical split. The nine `refs` findings are not here because they are correctness and
-have their own line.
+**188 `react-refresh/only-export-components` and 43 `exhaustive-deps`** are unchanged: a
+module split and a dependency read, neither a runtime bug.
 
 Acceptance:
-- Each rule is driven to zero or given a reasoned severity, as T1016 did for the rest.
-- The ceiling falls to what survives.
+- The eight static-components and four immutability findings are fixed.
+- The compiler-only rules are off with the reason written, as T1016 did for the rest.
 
 ### CIV.3 The pin with no expiry (T1022)
 
