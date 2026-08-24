@@ -1,43 +1,40 @@
+import { useSnSearchRule, useDeleteSnSearchRule } from "@/api/queries/sn-search-rule.queries";
 import { ROUTES } from "@/app/routes.const";
 import { LoadProvider } from "@/components/loading-provider";
 import { SNSiteSearchRuleForm } from "@/components/sn/search-rule/sn.site.search.rule.form";
 import type { TurSNSiteSearchRule } from "@/models/sn/sn-site-search-rule.model";
-import { TurSNSiteSearchRuleService } from "@/services/sn/sn.site.search.rule.service";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate, useParams } from "react-router-dom";
 import { toast } from "@viglet/viglet-design-system";
 
-const service = new TurSNSiteSearchRuleService();
+const NEW_RECORD: TurSNSiteSearchRule = { name: "", position: 0, enabled: true, conditions: [], actions: [] };
 
 /** Bento SN search-rule detail — T576. */
 export default function BentoSNSearchRulePage() {
   const { id, searchRuleId } = useParams() as { id: string; searchRuleId: string };
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const [value, setValue] = useState<TurSNSiteSearchRule>();
   // T1017 — derived, not stored. `isNew` was state that an effect wrote to
   // `searchRuleId === "new"`, which is the same value the router already has: holding it
   // meant a route change from an existing record to "new" rendered one pass
   // with the previous answer before the effect corrected it.
   const isNew = searchRuleId === "new";
   const [open, setOpen] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const listRoute = `${ROUTES.BENTO_SN_INSTANCE}/${id}/search-rule`;
 
-  useEffect(() => {
-    if (searchRuleId === "new") {
-      setValue({ name: "", position: 0, enabled: true, conditions: [], actions: [] });
-    } else {
-      service.get(id, searchRuleId).then((s) => { setValue(s); })
-        .catch(() => setError(t("common.connectionError", { resource: t("sn.searchRule.title") })));
-    }
-  }, [id, searchRuleId, t]);
+  // T1018 — the record comes from the query cache instead of a private copy
+  // filled by an effect. The hook is disabled on the `new` route, where the seed
+  // above is the whole of what there is to show.
+  const { data: fetched, isError } = useSnSearchRule(id, searchRuleId);
+  const value = isNew ? NEW_RECORD : fetched;
+  const error = isError ? t("common.connectionError", { resource: t("sn.searchRule.title") }) : null;
+  const deleteMutation = useDeleteSnSearchRule(id);
 
   async function onDelete() {
     if (!value?.id) return;
     try {
-      if (await service.delete(id, value.id)) {
+      if (await deleteMutation.mutateAsync(value.id)) {
         toast.success(t("sn.searchRule.deleted"));
         navigate(listRoute);
       } else {

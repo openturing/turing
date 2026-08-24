@@ -1,14 +1,14 @@
+import { useSnCustomSort, useDeleteSnCustomSort } from "@/api/queries/sn-custom-sort.queries";
 import { ROUTES } from "@/app/routes.const";
 import { LoadProvider } from "@/components/loading-provider";
 import { SNSiteCustomSortForm } from "@/components/sn/custom-sort/sn.site.custom.sort.form";
 import type { TurSNSiteCustomSort } from "@/models/sn/sn-site-custom-sort.model";
-import { TurSNSiteCustomSortService } from "@/services/sn/sn.site.custom.sort.service";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate, useParams } from "react-router-dom";
 import { toast } from "@viglet/viglet-design-system";
 
-const service = new TurSNSiteCustomSortService();
+const NEW_RECORD: TurSNSiteCustomSort = { name: "", items: [] };
 
 /** Bento SN custom-sort detail — T576. Reuses `SNSiteCustomSortForm` with the
  *  bento base route so save/cancel/delete stay inside the shell. */
@@ -16,29 +16,26 @@ export default function BentoSNCustomSortPage() {
   const { id, customSortId } = useParams() as { id: string; customSortId: string };
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const [value, setValue] = useState<TurSNSiteCustomSort>();
   // T1017 — derived, not stored. `isNew` was state that an effect wrote to
   // `customSortId === "new"`, which is the same value the router already has: holding it
   // meant a route change from an existing record to "new" rendered one pass
   // with the previous answer before the effect corrected it.
   const isNew = customSortId === "new";
   const [open, setOpen] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const listRoute = `${ROUTES.BENTO_SN_INSTANCE}/${id}/custom-sort`;
 
-  useEffect(() => {
-    if (customSortId === "new") {
-      setValue({ name: "", items: [] });
-    } else {
-      service.get(id, customSortId).then((s) => { setValue(s); })
-        .catch(() => setError(t("common.connectionError", { resource: t("sn.customSort.title") })));
-    }
-  }, [id, customSortId, t]);
+  // T1018 — the record comes from the query cache instead of a private copy
+  // filled by an effect. The hook is disabled on the `new` route, where the seed
+  // above is the whole of what there is to show.
+  const { data: fetched, isError } = useSnCustomSort(id, customSortId);
+  const value = isNew ? NEW_RECORD : fetched;
+  const error = isError ? t("common.connectionError", { resource: t("sn.customSort.title") }) : null;
+  const deleteMutation = useDeleteSnCustomSort(id);
 
   async function onDelete() {
     if (!value?.id) return;
     try {
-      if (await service.delete(id, value.id)) {
+      if (await deleteMutation.mutateAsync(value.id)) {
         toast.success(t("sn.customSort.deleted"));
         navigate(listRoute);
       } else {

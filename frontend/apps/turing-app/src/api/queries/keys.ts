@@ -51,6 +51,26 @@ export const queryKeys = {
     // widget reads as a single unit.
     withStatus: () => [...queryKeys.snSites.all(), 'with-status'] as const,
   },
+  // T1018 — the SN site's three rule families. Same shape each: a list and a
+  // detail, both scoped by the site they belong to.
+  snCustomFacets: {
+    all: () => ['sn-custom-facets'] as const,
+    list: (siteId: string) => [...queryKeys.snCustomFacets.all(), 'list', siteId] as const,
+    detail: (siteId: string, id: string) =>
+      [...queryKeys.snCustomFacets.all(), 'detail', siteId, id] as const,
+  },
+  snCustomSorts: {
+    all: () => ['sn-custom-sorts'] as const,
+    list: (siteId: string) => [...queryKeys.snCustomSorts.all(), 'list', siteId] as const,
+    detail: (siteId: string, id: string) =>
+      [...queryKeys.snCustomSorts.all(), 'detail', siteId, id] as const,
+  },
+  snSearchRules: {
+    all: () => ['sn-search-rules'] as const,
+    list: (siteId: string) => [...queryKeys.snSearchRules.all(), 'list', siteId] as const,
+    detail: (siteId: string, id: string) =>
+      [...queryKeys.snSearchRules.all(), 'detail', siteId, id] as const,
+  },
   // T1018 — search metrics per SN site: the top-terms bar chart reads these.
   snSiteMetrics: {
     all: () => ['sn-site-metrics'] as const,

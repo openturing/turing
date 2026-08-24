@@ -1,23 +1,17 @@
-import type { TurSNSiteCustomSort } from "@/models/sn/sn-site-custom-sort.model";
-import { TurSNSiteCustomSortService } from "@/services/sn/sn.site.custom.sort.service";
+import { useSnCustomSorts } from "@/api/queries/sn-custom-sort.queries";
 import { IconArrowsSort } from "@tabler/icons-react";
-import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useParams } from "react-router-dom";
 import { BentoSnSectionList } from "./bento.sn.section-list";
-
-const service = new TurSNSiteCustomSortService();
 
 /** Bento SN custom-sort list — T576. */
 export default function BentoSNCustomSortListPage() {
   const { id } = useParams() as { id: string };
   const { t } = useTranslation();
-  const [items, setItems] = useState<TurSNSiteCustomSort[]>();
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    service.query(id).then(setItems).catch(() => setError(t("common.connectionError", { resource: t("sn.customSort.title") })));
-  }, [id, t]);
+  // T1018 — read through the hook, so deleting one from the detail page
+  // invalidates this list instead of leaving the removed row on screen.
+  const { data: items, isError } = useSnCustomSorts(id);
+  const error = isError ? t("common.connectionError", { resource: t("sn.customSort.title") }) : null;
 
   return (
     <BentoSnSectionList
