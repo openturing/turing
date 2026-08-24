@@ -96,3 +96,51 @@ export function useAdminRoles() {
     queryFn: () => roleService.query(),
   });
 }
+
+/**
+ * T1018 — one user from whichever backend is live.
+ *
+ * The two sources return different shapes, so this returns the raw record and
+ * the caller renders the form it already has for that source. Disabled while
+ * discovery is pending and on the `new` route, which is what the detail page's
+ * two guards did inside an effect.
+ */
+export function useAdminUser(username: string | undefined, keycloak: boolean | null) {
+  const source = keycloak ? 'keycloak' : 'jpa';
+  return useQuery<TurUser | TurKeycloakUser>({
+    queryKey:
+      keycloak === null || !username
+        ? ['admin-users', 'detail', 'pending']
+        : queryKeys.adminUsers.detail(source, username),
+    queryFn: () =>
+      keycloak
+        ? keycloakAdminService.getUser(username as string)
+        : userService.get(username as string),
+    enabled: keycloak !== null && Boolean(username) && username !== 'new',
+  });
+}
+
+/** T1018 — one group, from whichever backend is live. See {@link useAdminUser}. */
+export function useAdminGroup(groupId: string | undefined, keycloak: boolean | null) {
+  const source = keycloak ? 'keycloak' : 'jpa';
+  return useQuery<TurGroup | TurKeycloakGroup>({
+    queryKey:
+      keycloak === null || !groupId
+        ? ['admin-groups', 'detail', 'pending']
+        : queryKeys.adminGroups.detail(source, groupId),
+    queryFn: () =>
+      keycloak
+        ? keycloakAdminService.getGroup(groupId as string)
+        : groupService.get(groupId as string),
+    enabled: keycloak !== null && Boolean(groupId) && groupId !== 'new',
+  });
+}
+
+/** T1018 — one role. Roles are JPA-only, so there is no source to split on. */
+export function useAdminRole(roleId: string | undefined) {
+  return useQuery<TurRole>({
+    queryKey: roleId ? queryKeys.adminRoles.detail(roleId) : ['admin-roles', 'detail', 'pending'],
+    queryFn: () => roleService.get(roleId as string),
+    enabled: Boolean(roleId) && roleId !== 'new',
+  });
+}

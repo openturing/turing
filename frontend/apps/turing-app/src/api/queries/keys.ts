@@ -186,6 +186,8 @@ export const queryKeys = {
     all: () => ['se-instances'] as const,
     list: () => [...queryKeys.seInstances.all(), 'list'] as const,
     detail: (id: string) => [...queryKeys.seInstances.all(), 'detail', id] as const,
+    // T1018 — the engine's own version/health reading, per instance.
+    systemInfo: (id: string) => [...queryKeys.seInstances.all(), 'system-info', id] as const,
   },
   seCores: {
     all: () => ['se-cores'] as const,
@@ -287,6 +289,8 @@ export const queryKeys = {
     all: () => ['store-instances'] as const,
     list: () => [...queryKeys.storeInstances.all(), 'list'] as const,
     detail: (id: string) => [...queryKeys.storeInstances.all(), 'detail', id] as const,
+    // T1018 — the store's own version/health reading, per instance.
+    systemInfo: (id: string) => [...queryKeys.storeInstances.all(), 'system-info', id] as const,
   },
   storeCollections: {
     all: () => ['store-collections'] as const,
@@ -333,14 +337,20 @@ export const queryKeys = {
   adminUsers: {
     all: () => ['admin-users'] as const,
     list: (source: 'jpa' | 'keycloak') => [...queryKeys.adminUsers.all(), 'list', source] as const,
+    // T1018 — one user, keyed by backend for the same reason the list is.
+    detail: (source: 'jpa' | 'keycloak', username: string) =>
+      [...queryKeys.adminUsers.all(), 'detail', source, username] as const,
   },
   adminGroups: {
     all: () => ['admin-groups'] as const,
     list: (source: 'jpa' | 'keycloak') => [...queryKeys.adminGroups.all(), 'list', source] as const,
+    detail: (source: 'jpa' | 'keycloak', id: string) =>
+      [...queryKeys.adminGroups.all(), 'detail', source, id] as const,
   },
   adminRoles: {
     all: () => ['admin-roles'] as const,
     list: () => [...queryKeys.adminRoles.all(), 'list'] as const,
+    detail: (id: string) => [...queryKeys.adminRoles.all(), 'detail', id] as const,
   },
   chatSessions: {
     all: () => ['chat-sessions'] as const,

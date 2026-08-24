@@ -1,3 +1,5 @@
+import { useAdminGroup } from "@/api/queries/admin.queries";
+import { useAuthDiscovery } from "@/api/queries/auth.queries";
 import { ROUTES } from "@/app/routes.const";
 import { AdminGroupForm } from "@/components/admin/admin.group.form";
 import { AdminKeycloakGroupView } from "@/components/admin/admin.keycloak.group.view";
@@ -6,18 +8,14 @@ import { LoadProvider } from "@/components/loading-provider";
 import { SectionCardChromeProvider } from "@/components/ui/section-card";
 import type { TurGroup } from "@/models/auth/group";
 import type { TurKeycloakGroup } from "@/models/auth/keycloak-group";
-import { TurAuthorizationService } from "@/services/auth/authorization.service";
 import { TurGroupService } from "@/services/auth/group.service";
-import { TurKeycloakAdminService } from "@/services/auth/keycloak-admin.service";
 import { IconUsersGroup } from "@tabler/icons-react";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate, useParams } from "react-router-dom";
 import { toast } from "@viglet/viglet-design-system";
 
 const turGroupService = new TurGroupService();
-const turKeycloakAdminService = new TurKeycloakAdminService();
-const turAuthorizationService = new TurAuthorizationService();
 
 /**
  * Bento admin group detail — T567. Replicates the console detail loader
@@ -25,14 +23,17 @@ const turAuthorizationService = new TurAuthorizationService();
  * `AdminKeycloakGroupView` with the Bento list route so save/cancel/back/delete
  * stay inside the Bento shell.
  */
+const NEW_GROUP = { id: "", name: "", description: "" } as TurGroup;
+
 export default function BentoAdminGroupPage() {
   const { t } = useTranslation();
   const { groupId } = useParams() as { groupId: string };
-  const [group, setGroup] = useState<TurGroup>();
-  const [keycloakGroup, setKeycloakGroup] = useState<TurKeycloakGroup>();
-  const [error, setError] = useState<string | null>(null);
   const [open, setOpen] = useState(false);
-  const [keycloak, setKeycloak] = useState<boolean | null>(null);
+  // T1018 — discovery and the record both come from the cache. Discovery is one
+  // query shared with the other admin pages rather than an effect per page, and
+  // `keycloak` stays `null` until it answers, which is what gates the read.
+  const { data: discovery } = useAuthDiscovery();
+  const keycloak = discovery === undefined ? null : Boolean(discovery.keycloak);
   // T1017 — derived, not stored. `isNew` was state an effect wrote, and the two
   // things it wrote from are both already here: the route param, and whether the
   // backend is Keycloak. A Keycloak-backed record is never new, which is why the
@@ -42,33 +43,16 @@ export default function BentoAdminGroupPage() {
   const isNew = !keycloak && groupId === "new";
   const navigate = useNavigate();
 
-  useEffect(() => {
-    turAuthorizationService
-      .discovery()
-      .then((d) => setKeycloak(!!d.keycloak))
-      .catch(() => setKeycloak(false));
-  }, []);
-
-  useEffect(() => {
-    if (keycloak === null) return;
-
-    if (keycloak) {
-      turKeycloakAdminService
-        .getGroup(groupId)
-        .then(setKeycloakGroup)
-        .catch(() => setError(t("admin.groups.loadOneFailed")));
-      return;
-    }
-
-    if (groupId === "new") {
-      setGroup({ id: "", name: "", description: "" } as TurGroup);
-    } else {
-      turGroupService
-        .get(groupId)
-        .then(setGroup)
-        .catch(() => setError(t("admin.groups.loadOneFailed")));
-    }
-  }, [groupId, keycloak, t]);
+  // The two backends return different shapes, so the record is read once and
+  // narrowed here; the `new` route has no record to read and uses the seed.
+  const { data: record, isError } = useAdminGroup(groupId, keycloak);
+  const keycloakGroup = keycloak ? (record as TurKeycloakGroup | undefined) : undefined;
+  const group = keycloak
+    ? undefined
+    : isNew
+      ? NEW_GROUP
+      : (record as TurGroup | undefined);
+  const error = isError ? t("admin.groups.loadOneFailed") : null;
 
   function onDelete() {
     turGroupService

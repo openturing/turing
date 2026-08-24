@@ -1,15 +1,12 @@
+import { useSeInstanceSystemInfo } from "@/api/queries/se-instance.queries";
 import { BentoFormSection } from "@/components/bento";
 import { SubPageHeader } from "@/components/sub.page.header";
 import { SectionCard } from "@/components/ui/section-card";
 import { useSubPageBreadcrumb } from "@/hooks/use-sub-page-breadcrumb";
-import { TurSEInstanceService } from "@/services/se/se.service";
 import { IconInfoCircle, IconLoader2, IconServer } from "@tabler/icons-react";
-import { type ReactNode, useEffect, useState } from "react";
+import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { useParams } from "react-router-dom";
-import { toast } from "@viglet/viglet-design-system";
-
-const turSEInstanceService = new TurSEInstanceService();
 
 function InfoRow({ label, value }: Readonly<{ label: string; value: string }>) {
     return (
@@ -45,8 +42,11 @@ export default function SEInstanceSystemInfoPage({ header }: Readonly<SEInstance
     const { id } = useParams() as { id: string };
     useSubPageBreadcrumb(t("se.systemInfo.title"));
 
-    const [info, setInfo] = useState<Record<string, string>>({});
-    const [isLoading, setIsLoading] = useState(true);
+    // T1018 — read through the hook. The page kept its own info/loading pair and
+    // filled it from the service in an effect; the hook is disabled for the
+    // `new` route, which is what the `id !== "new"` guard did, and reports the
+    // failure the same way through `isError`.
+    const { data: info = {}, isLoading, isError } = useSeInstanceSystemInfo(id);
     const headerNode = header !== undefined ? header : (
         <SubPageHeader
             icon={IconInfoCircle}
@@ -56,17 +56,19 @@ export default function SEInstanceSystemInfoPage({ header }: Readonly<SEInstance
         />
     );
 
-    useEffect(() => {
-        if (id && id !== "new") {
-            turSEInstanceService
-                .getSystemInfo(id)
-                .then(setInfo)
-                .catch(() => toast.error(t("se.systemInfo.loadFailed")))
-                .finally(() => setIsLoading(false));
-        } else {
-            setIsLoading(false);
-        }
-    }, [id]);
+    // The failure is rendered rather than toasted. A toast fired from the render
+    // body would repeat on every pass while the query stays in error, and the
+    // page has room to say what went wrong where the reading would have been.
+    if (isError) {
+        return (
+            <>
+                {headerNode}
+                <div className="py-20 text-center text-sm text-muted-foreground">
+                    {t("se.systemInfo.loadFailed")}
+                </div>
+            </>
+        );
+    }
 
     if (isLoading) {
         return (

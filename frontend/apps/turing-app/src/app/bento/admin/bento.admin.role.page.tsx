@@ -1,16 +1,15 @@
+import { useAdminRole } from "@/api/queries/admin.queries";
 import { ROUTES } from "@/app/routes.const";
 import { bentoChipClass } from "@/components/bento";
 import { AdminRoleForm } from "@/components/admin/admin.role.form";
 import { LoadProvider } from "@/components/loading-provider";
 import { SectionCardChromeProvider } from "@/components/ui/section-card";
 import type { TurRole } from "@/models/auth/role";
-import { TurRoleService } from "@/services/auth/role.service";
 import { IconUserShield } from "@tabler/icons-react";
-import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useParams } from "react-router-dom";
 
-const turRoleService = new TurRoleService();
+const NEW_ROLE = { id: "", name: "", description: "" } as TurRole;
 
 /**
  * Bento admin role detail — T567. Roles are always JPA-backed (no Keycloak
@@ -20,24 +19,17 @@ const turRoleService = new TurRoleService();
 export default function BentoAdminRolePage() {
   const { t } = useTranslation();
   const { roleId } = useParams() as { roleId: string };
-  const [role, setRole] = useState<TurRole>();
   // T1017 — derived, not stored. `isNew` was state that an effect wrote to
   // `roleId === "new"`, which is the same value the router already has: holding it
   // meant a route change from an existing record to "new" rendered one pass
   // with the previous answer before the effect corrected it.
   const isNew = roleId === "new";
-  const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (roleId === "new") {
-      setRole({ id: "", name: "", description: "" } as TurRole);
-    } else {
-      turRoleService
-        .get(roleId)
-        .then(setRole)
-        .catch(() => setError(t("admin.roles.loadOneFailed")));
-    }
-  }, [roleId, t]);
+  // T1018 — the role comes from the query cache. The hook is disabled on the
+  // `new` route, where the seed above is the whole record.
+  const { data: fetched, isError } = useAdminRole(roleId);
+  const role = isNew ? NEW_ROLE : fetched;
+  const error = isError ? t("admin.roles.loadOneFailed") : null;
 
   return (
     <SectionCardChromeProvider chrome="bento">

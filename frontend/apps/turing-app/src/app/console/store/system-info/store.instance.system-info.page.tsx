@@ -1,15 +1,12 @@
+import { useStoreInstanceSystemInfo } from "@/api/queries/store-instance.queries";
 import { BentoFormSection } from "@/components/bento";
 import { SubPageHeader } from "@/components/sub.page.header";
 import { SectionCard } from "@/components/ui/section-card";
 import { useSubPageBreadcrumb } from "@/hooks/use-sub-page-breadcrumb";
-import { TurStoreInstanceService } from "@/services/store/store.service";
 import { IconDatabase, IconInfoCircle, IconLoader2 } from "@tabler/icons-react";
-import { type ReactNode, useEffect, useState } from "react";
+import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { useParams } from "react-router-dom";
-import { toast } from "@viglet/viglet-design-system";
-
-const turStoreInstanceService = new TurStoreInstanceService();
 
 function InfoRow({ label, value }: Readonly<{ label: string; value: string }>) {
     return (
@@ -45,8 +42,11 @@ export default function StoreInstanceSystemInfoPage({ header }: Readonly<StoreIn
     const { id } = useParams() as { id: string };
     useSubPageBreadcrumb(t("store.systemInfo.title"));
 
-    const [info, setInfo] = useState<Record<string, string>>({});
-    const [isLoading, setIsLoading] = useState(true);
+    // T1018 — read through the hook. The page kept its own info/loading pair and
+    // filled it from the service in an effect; the hook is disabled for the
+    // `new` route, which is what the `id !== "new"` guard did, and reports the
+    // failure the same way through `isError`.
+    const { data: info = {}, isLoading, isError } = useStoreInstanceSystemInfo(id);
     const headerNode = header !== undefined ? header : (
         <SubPageHeader
             icon={IconInfoCircle}
@@ -56,17 +56,19 @@ export default function StoreInstanceSystemInfoPage({ header }: Readonly<StoreIn
         />
     );
 
-    useEffect(() => {
-        if (id && id !== "new") {
-            turStoreInstanceService
-                .getSystemInfo(id)
-                .then(setInfo)
-                .catch(() => toast.error(t("store.systemInfo.loadFailed")))
-                .finally(() => setIsLoading(false));
-        } else {
-            setIsLoading(false);
-        }
-    }, [id]);
+    // The failure is rendered rather than toasted. A toast fired from the render
+    // body would repeat on every pass while the query stays in error, and the
+    // page has room to say what went wrong where the reading would have been.
+    if (isError) {
+        return (
+            <>
+                {headerNode}
+                <div className="py-20 text-center text-sm text-muted-foreground">
+                    {t("store.systemInfo.loadFailed")}
+                </div>
+            </>
+        );
+    }
 
     if (isLoading) {
         return (

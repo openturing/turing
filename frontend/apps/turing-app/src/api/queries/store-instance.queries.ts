@@ -24,6 +24,20 @@ function invalidateStoreInstances(queryClient: ReturnType<typeof useQueryClient>
   queryClient.invalidateQueries({ queryKey: queryKeys.storeInstances.all() });
 }
 
+/**
+ * T1018 — the instance's own system-info reading, straight off the backend it
+ * points at. Disabled for the `new` route, which has no instance to ask.
+ */
+export function useStoreInstanceSystemInfo(id: string | undefined) {
+  return useQuery({
+    queryKey: id
+      ? queryKeys.storeInstances.systemInfo(id)
+      : ['storeInstances', 'system-info', 'pending'],
+    queryFn: () => service.getSystemInfo(id as string),
+    enabled: Boolean(id) && id !== 'new',
+  });
+}
+
 export function useCreateStoreInstance() {
   const queryClient = useQueryClient();
   return useMutation<TurStoreInstance, Error, TurStoreInstance>({

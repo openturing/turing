@@ -24,6 +24,20 @@ function invalidateSeInstances(queryClient: ReturnType<typeof useQueryClient>) {
   queryClient.invalidateQueries({ queryKey: queryKeys.seInstances.all() });
 }
 
+/**
+ * T1018 — the instance's own system-info reading, straight off the backend it
+ * points at. Disabled for the `new` route, which has no instance to ask.
+ */
+export function useSeInstanceSystemInfo(id: string | undefined) {
+  return useQuery({
+    queryKey: id
+      ? queryKeys.seInstances.systemInfo(id)
+      : ['seInstances', 'system-info', 'pending'],
+    queryFn: () => service.getSystemInfo(id as string),
+    enabled: Boolean(id) && id !== 'new',
+  });
+}
+
 export function useCreateSeInstance() {
   const queryClient = useQueryClient();
   return useMutation<TurSEInstance, Error, TurSEInstance>({

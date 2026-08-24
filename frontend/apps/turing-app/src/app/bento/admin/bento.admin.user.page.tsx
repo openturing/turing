@@ -1,3 +1,5 @@
+import { useAdminUser } from "@/api/queries/admin.queries";
+import { useAuthDiscovery } from "@/api/queries/auth.queries";
 import { ROUTES } from "@/app/routes.const";
 import { AdminKeycloakUserView } from "@/components/admin/admin.keycloak.user.view";
 import { AdminUserForm } from "@/components/admin/admin.user.form";
@@ -7,17 +9,13 @@ import { SectionCardChromeProvider } from "@/components/ui/section-card";
 import type { TurKeycloakUser } from "@/models/auth/keycloak-user";
 import type { TurUser } from "@/models/auth/user";
 import { TurAdminUserService } from "@/services/auth/admin-user.service";
-import { TurAuthorizationService } from "@/services/auth/authorization.service";
-import { TurKeycloakAdminService } from "@/services/auth/keycloak-admin.service";
 import { IconUser } from "@tabler/icons-react";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate, useParams } from "react-router-dom";
 import { toast } from "@viglet/viglet-design-system";
 
 const turAdminUserService = new TurAdminUserService();
-const turKeycloakAdminService = new TurKeycloakAdminService();
-const turAuthorizationService = new TurAuthorizationService();
 
 /**
  * Bento admin user detail — T567. Replicates the console detail loader
@@ -25,14 +23,18 @@ const turAuthorizationService = new TurAuthorizationService();
  * `AdminKeycloakUserView` with the Bento list route so save/cancel/back/delete
  * stay inside the Bento shell.
  */
+const NEW_USER = { username: "", firstName: "", lastName: "", email: "", admin: false } as TurUser;
+
 export default function BentoAdminUserPage() {
   const { t } = useTranslation();
   const { username } = useParams() as { username: string };
-  const [user, setUser] = useState<TurUser>();
-  const [keycloakUser, setKeycloakUser] = useState<TurKeycloakUser>();
-  const [error, setError] = useState<string | null>(null);
   const [open, setOpen] = useState(false);
-  const [keycloak, setKeycloak] = useState<boolean | null>(null);
+  // T1018 — discovery and the record both come from the cache now. Discovery was
+  // its own effect in every admin page; it is one query with a ten-minute
+  // staleTime, so the three of them ask once between them. `keycloak` stays
+  // `null` until it answers, which is what gates the record read below.
+  const { data: discovery } = useAuthDiscovery();
+  const keycloak = discovery === undefined ? null : Boolean(discovery.keycloak);
   // T1017 — derived, not stored. `isNew` was state an effect wrote, and the two
   // things it wrote from are both already here: the route param, and whether the
   // backend is Keycloak. A Keycloak-backed record is never new, which is why the
@@ -42,33 +44,16 @@ export default function BentoAdminUserPage() {
   const isNew = !keycloak && username === "new";
   const navigate = useNavigate();
 
-  useEffect(() => {
-    turAuthorizationService
-      .discovery()
-      .then((d) => setKeycloak(!!d.keycloak))
-      .catch(() => setKeycloak(false));
-  }, []);
-
-  useEffect(() => {
-    if (keycloak === null) return;
-
-    if (keycloak) {
-      turKeycloakAdminService
-        .getUser(username)
-        .then(setKeycloakUser)
-        .catch(() => setError(t("admin.users.loadOneFailed")));
-      return;
-    }
-
-    if (username === "new") {
-      setUser({ username: "", firstName: "", lastName: "", email: "", admin: false } as TurUser);
-    } else {
-      turAdminUserService
-        .get(username)
-        .then(setUser)
-        .catch(() => setError(t("admin.users.loadOneFailed")));
-    }
-  }, [username, keycloak, t]);
+  // The two backends return different shapes, so the record is read once and
+  // narrowed here; the `new` route has no record to read and uses the seed.
+  const { data: record, isError } = useAdminUser(username, keycloak);
+  const keycloakUser = keycloak ? (record as TurKeycloakUser | undefined) : undefined;
+  const user = keycloak
+    ? undefined
+    : isNew
+      ? NEW_USER
+      : (record as TurUser | undefined);
+  const error = isError ? t("admin.users.loadOneFailed") : null;
 
   function onDelete() {
     turAdminUserService
