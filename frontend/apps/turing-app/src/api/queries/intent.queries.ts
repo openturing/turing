@@ -14,6 +14,21 @@ export function useIntents(agentId: string | undefined) {
   });
 }
 
+/**
+ * T1018 — only the agent's enabled intents, which is a separate endpoint from
+ * {@link useIntents} and therefore a separate cache entry. Read by the chat
+ * suggestion chips, which must not offer a disabled intent.
+ */
+export function useEnabledIntents(agentId: string | undefined) {
+  return useQuery<TurIntent[]>({
+    queryKey: agentId
+      ? queryKeys.intents.enabledByAgent(agentId)
+      : ['intents', 'list', 'enabled', 'pending'],
+    queryFn: () => service.queryEnabled(agentId as string),
+    enabled: Boolean(agentId),
+  });
+}
+
 function invalidateIntents(queryClient: ReturnType<typeof useQueryClient>) {
   queryClient.invalidateQueries({ queryKey: queryKeys.intents.all() });
 }

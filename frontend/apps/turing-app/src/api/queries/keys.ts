@@ -286,6 +286,9 @@ export const queryKeys = {
   intents: {
     all: () => ['intents'] as const,
     listByAgent: (agentId: string) => [...queryKeys.intents.all(), 'list', 'agent', agentId] as const,
+    // T1018 — the enabled subset is its own endpoint, so its own entry.
+    enabledByAgent: (agentId: string) =>
+      [...queryKeys.intents.all(), 'list', 'enabled', agentId] as const,
     detail: (id: string) => [...queryKeys.intents.all(), 'detail', id] as const,
   },
   analyticsIntents: {

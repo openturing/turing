@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react"
+import { useState } from "react"
 import { Icon } from "@iconify/react"
 import { IconArrowRight, IconBulb, IconLoader2 } from "@tabler/icons-react"
 import {
@@ -8,9 +8,8 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import type { TurIntent } from "@/models/intent/intent.model"
-import { TurIntentService } from "@/services/intent/intent.service"
+import { useEnabledIntents } from "@/api/queries/intent.queries"
 
-const turIntentService = new TurIntentService()
 
 interface ChatSuggestionsProps {
   onSelectPrompt: (prompt: string) => void
@@ -22,22 +21,12 @@ interface ChatSuggestionsProps {
 }
 
 export function ChatSuggestions({ onSelectPrompt, agentId }: ChatSuggestionsProps) {
-  const [intents, setIntents] = useState<TurIntent[]>([])
-  const [loading, setLoading] = useState(true)
+  // T1018 — the agent's enabled intents come from the query cache. The hook is
+  // disabled without an agent, so no chips render and nothing is asked, which is
+  // what the early return did; a failure leaves the list empty as before.
+  const { data: intents = [], isPending } = useEnabledIntents(agentId)
+  const loading = Boolean(agentId) && isPending
   const [selectedIntent, setSelectedIntent] = useState<TurIntent | null>(null)
-
-  useEffect(() => {
-    if (!agentId) {
-      setIntents([])
-      setLoading(false)
-      return
-    }
-    setLoading(true)
-    turIntentService.queryEnabled(agentId)
-      .then(setIntents)
-      .catch(() => setIntents([]))
-      .finally(() => setLoading(false))
-  }, [agentId])
 
   if (loading) {
     return (

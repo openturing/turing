@@ -12,17 +12,17 @@ import {
 import { toast } from "@viglet/viglet-design-system"
 import "./chat-highlight.css"
 
+import { useAiAgents } from "@/api/queries/ai-agent.queries"
+import { useGlobalSettings } from "@/api/queries/viglet-ai.queries"
 import { ROUTES } from "@/app/routes.const"
 import { BlankSlate } from "@/components/blank-slate"
 import { GradientButton } from "@/components/ui/gradient-button"
 import type { TurAIAgent } from "@/models/agent/ai-agent.model"
 import type { TurChatFlow } from "@/models/agent/chat-flow.model"
 import type { TurSkillSummary } from "@/models/skill/skill.model"
-import { TurAIAgentService } from "@/services/agent/ai-agent.service"
 import { TurChatFlowService } from "@/services/agent/chat-flow.service"
 import type { ChatSession } from "@/services/chat/chat-session.service"
 import { TurSkillService } from "@/services/skill/skill.service"
-import { TurGlobalSettingsService } from "@/services/system/global-settings.service"
 import { IconHistory, IconMessageChatbot, IconPlus, IconRobot } from "@tabler/icons-react"
 import { useTranslation } from "react-i18next"
 import {
@@ -44,8 +44,6 @@ import { ChatSessionSidebar } from "./components/chat-session-sidebar"
 import { AgentChatTab, AgentNoLlmFallback, FLOW_AUTO, SKILL_NONE } from "./components/agent-chat-tab"
 import { useChatSession } from "./hooks/use-chat-session"
 
-const turAIAgentService = new TurAIAgentService()
-const turGlobalSettingsService = new TurGlobalSettingsService()
 const turChatFlowService = new TurChatFlowService()
 const turSkillService = new TurSkillService()
 
@@ -66,14 +64,39 @@ export default function ChatPage({
   initialAgentId,
 }: Readonly<{ emptyStateHeader: ReactNode; initialAgentId?: string }>) {
   const { t } = useTranslation()
-  // Empty until agents load — then becomes `agent:<id>` of the default or first agent.
-  const [activeTab, setActiveTab] = useState<string>("")
+  // Empty until the reader picks one — the tab actually shown is derived below.
+  const [pickedTab, setPickedTab] = useState<string>("")
   const [sidebarOpen, setSidebarOpen] = useState(false)
 
-  // AI Agents
-  const [agents, setAgents] = useState<TurAIAgent[]>([])
-  const [agentsLoaded, setAgentsLoaded] = useState(false)
-  const [defaultAgentId, setDefaultAgentId] = useState<string>("")
+  // T1018 — agents and the global default both come from the query cache, which
+  // the agent pages already fill. Two effects used to fetch them together and
+  // write three pieces of state; the ordering that put the default agent first
+  // is a sort over the two answers and belongs here rather than in an effect.
+  const { data: allAgents, isPending: agentsPending } = useAiAgents()
+  const { data: globalSettings, isPending: settingsPending } = useGlobalSettings()
+  const agentsLoaded = !agentsPending && !settingsPending
+  const defaultAgentId = globalSettings?.defaultAiAgentId ?? ""
+  const agents = useMemo<TurAIAgent[]>(() => {
+    const enabled = (allAgents ?? []).filter((a) => a.enabled === 1)
+    return defaultAgentId
+      ? [
+          ...enabled.filter((a) => a.id === defaultAgentId),
+          ...enabled.filter((a) => a.id !== defaultAgentId),
+        ]
+      : enabled
+  }, [allAgents, defaultAgentId])
+
+  // The active tab is a derivation with an override: whatever the reader last
+  // picked, else the agent named in the URL (T580), else the global default,
+  // else the first. An effect used to write that answer into state one render
+  // after the agents arrived, which is a render of the empty chat shell.
+  const activeTab = pickedTab || (agents.length > 0
+    ? `agent:${
+        (initialAgentId ? agents.find((a) => a.id === initialAgentId) : null)?.id
+        ?? agents.find((a) => a.id === defaultAgentId)?.id
+        ?? agents[0].id
+      }`
+    : "")
 
   // Per-agent: list of flows fetched on demand + the currently selected flow.
   const [flowsByAgent, setFlowsByAgent] = useState<Record<string, TurChatFlow[]>>({})
@@ -237,7 +260,7 @@ export default function ChatPage({
         // Old chat/semantic sessions are no longer rendered — ignore.
         return
       }
-      setActiveTab(session.tab)
+      setPickedTab(session.tab)
       setActiveSessionId(session.id)
       setSeedMessages(toTuringMessages(session.messages as ChatMessage[]))
       setHasMessages(session.messages.length > 0)
@@ -270,25 +293,6 @@ export default function ChatPage({
 
   // ── Effects ──
 
-  // Load AI Agents + global default agent. Default agent appears first.
-  useEffect(() => {
-    Promise.all([
-      turAIAgentService.query().catch(() => [] as TurAIAgent[]),
-      turGlobalSettingsService.query().catch(() => null),
-    ]).then(([all, settings]) => {
-      const enabled = all.filter((a) => a.enabled === 1)
-      const defaultId = settings?.defaultAiAgentId ?? ""
-      setDefaultAgentId(defaultId)
-      const sorted = defaultId
-        ? [
-            ...enabled.filter((a) => a.id === defaultId),
-            ...enabled.filter((a) => a.id !== defaultId),
-          ]
-        : enabled
-      setAgents(sorted)
-      setAgentsLoaded(true)
-    })
-  }, [])
 
   // T325 — load the enabled skill catalog once. Degrades to [] when storage is
   // disabled or the endpoint errors, so the skill-mode selector simply hides.
@@ -299,18 +303,15 @@ export default function ChatPage({
       .catch(() => setSkills([]))
   }, [])
 
-  // Once agents have loaded, pick the initial active tab.
-  // Priority: agent from the URL (T580) → global default → first agent.
-  useEffect(() => {
-    if (!agentsLoaded || activeTab) return
-    if (agents.length === 0) return
-    const routedAgent = initialAgentId ? agents.find((a) => a.id === initialAgentId) : null
-    const target = routedAgent ?? agents.find((a) => a.id === defaultAgentId) ?? agents[0]
-    setActiveTab(`agent:${target.id}`)
-  }, [agentsLoaded, agents, activeTab, defaultAgentId, initialAgentId])
 
   // Capture the initial prompt forwarded from the home page ChatStarter. The
   // active tab's AgentChatTab auto-sends it once the LLM resolves.
+  //
+  // T1018 — the effect is the right place: this reads `sessionStorage` and
+  // deletes what it read, so it is a one-shot handoff rather than a value this
+  // render can derive. Consuming it during render would spend the prompt on a
+  // pass React is free to discard.
+  /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
     const prompt = sessionStorage.getItem(CHAT_INITIAL_PROMPT_KEY)
     if (prompt) {
@@ -318,6 +319,7 @@ export default function ChatPage({
       setPendingAutoSend(prompt)
     }
   }, [])
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   // Lazily fetch the agent's flows the first time it becomes active.
   useEffect(() => {
