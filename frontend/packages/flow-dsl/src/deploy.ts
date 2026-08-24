@@ -187,7 +187,7 @@ export async function promptPassword(promptText: string): Promise<string> {
   const muted = new MutedStdout(process.stdout);
   // readline's `output` property is typed as a full writable stream, but
   // at runtime it only invokes `.write()`. Cast to keep tsc happy.
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+   
   (rl as unknown as { output: NodeJS.WritableStream }).output = muted as unknown as NodeJS.WritableStream;
   return new Promise<string>((accept, reject) => {
     rl.question("", (answer) => {
@@ -317,7 +317,7 @@ export class TuringClient {
     // node:fetch exposes Set-Cookie via getSetCookie() (Node 20+). We
     // collapse the cookies we care about (JSESSIONID + XSRF-TOKEN) into a
     // single Cookie header string used for the next request.
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+     
     const getSetCookie = (response.headers as unknown as { getSetCookie?: () => string[] }).getSetCookie;
     const cookies: string[] = typeof getSetCookie === "function" ? getSetCookie.call(response.headers) : [];
     if (cookies.length === 0) return;

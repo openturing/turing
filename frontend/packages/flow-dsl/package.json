@@ -1,7 +1,7 @@
 {
   "name": "@viglet/turing-flow-dsl",
   "version": "2026.3.3",
-  "description": "TypeScript DSL for Viglet Turing ES chat flows — author flows as typed source, transpile to the editor's JSON wire format. Catches enum typos (tone, guardrail, trigger) at compile time.",
+  "description": "TypeScript DSL for Viglet Turing ES chat flows \u2014 author flows as typed source, transpile to the editor's JSON wire format. Catches enum typos (tone, guardrail, trigger) at compile time.",
   "type": "module",
   "main": "dist/src/index.js",
   "types": "dist/src/index.d.ts",
@@ -15,7 +15,8 @@
     "size:update": "node ../../scripts/check-size.mjs --update-baseline",
     "contents": "node ../../scripts/check-package-contents.mjs",
     "exports": "node ../../scripts/check-exports.mjs",
-    "exports:update": "node ../../scripts/check-exports.mjs --update-baseline"
+    "exports:update": "node ../../scripts/check-exports.mjs --update-baseline",
+    "lint": "eslint . --max-warnings 0"
   },
   "keywords": [
     "turing",
@@ -45,6 +46,9 @@
   },
   "devDependencies": {
     "@types/node": "^26.1.1",
+    "@viglet/eslint-config": "workspace:*",
+    "eslint": "^10.7.0",
+    "globals": "^17.7.0",
     "typescript": "^5.9.3"
   },
   "sizeBudget": {

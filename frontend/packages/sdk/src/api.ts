@@ -116,7 +116,7 @@ export function fetchSearch(
  * deep-linkable / bookmarkable / no-JS search URLs.
  *
  * **No CSRF priming.** The server lists `/api/sn/**` as CSRF-exempt and
- * `/api/sn/*​/search/**` as anonymous, so this POST is sent with `csrf: false` —
+ * `/api/sn/{site}/search/**` as anonymous, so this POST is sent with `csrf: false` —
  * it costs exactly one round-trip, the same as the GET it replaces. Priming
  * `/csrf` here would add a request for nothing.
  *

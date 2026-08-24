@@ -25,5 +25,5 @@ const out = resolve(
 
 const bundle = transpileBundle([...chaoticBundle]);
 writeFileSync(out, JSON.stringify(bundle, null, 2) + "\n", "utf8");
-// eslint-disable-next-line no-console
+ 
 console.log(`wrote ${out} (${bundle.length} flows)`);

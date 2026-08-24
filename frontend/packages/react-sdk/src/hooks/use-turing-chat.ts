@@ -901,7 +901,7 @@ export function useTuringChat(
       // A controlled `conversationId` (host owns the session lifecycle) always
       // wins — we never mint a cookie id over it. Otherwise fall back to the
       // cookie-minted id exactly as before.
-      let activeConversationId =
+      const activeConversationId =
         controlledConversationId ??
         getOrCreateTurSession({
           name: sessionCookieNameRef.current,
@@ -974,7 +974,7 @@ export function useTuringChat(
       setActiveForm(null);
       setMessages((prev) => prev.map((m) => (m.form ? { ...m, form: undefined } : m)));
 
-      let result: TurChatFormSubmitResponse | null = null;
+      let result: TurChatFormSubmitResponse | null;
       try {
         result = await postSiteFormSubmit(siteName, cid, values, pendingForm?.nodeId);
       } catch (err) {

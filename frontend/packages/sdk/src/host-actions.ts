@@ -128,7 +128,7 @@ export function createHostActions(options: HostActionsOptions = {}): HostActions
     if (!scope) return { success: false, error: "no DOM available" };
     const selector = String((args as { selector?: unknown })?.selector ?? "").trim();
     if (!selector) return { success: false, error: "selector is required" };
-    let el: HTMLElement | null = null;
+    let el: HTMLElement | null;
     try {
       el = scope.querySelector<HTMLElement>(selector);
     } catch {

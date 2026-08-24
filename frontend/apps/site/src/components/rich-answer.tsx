@@ -19,15 +19,22 @@ import { DEMO_ORIGIN } from "@/lib/turing-demo";
 // code-split into its own chunk and only fetched when an answer actually
 // contains a ```d2 block — heavy optional dep, zero cost otherwise.
 
-/** Tag-level styling for the markdown the assistant emits. */
+/**
+ * Tag-level styling for the markdown the assistant emits.
+ *
+ * `node` is destructured out of every one of these and never read: react-markdown
+ * passes the mdast node alongside the DOM props, and spreading it onto the element
+ * would put a `node` attribute in the HTML. The leading underscore is this
+ * codebase's way of saying a binding exists to be discarded (T1025).
+ */
 const MD_COMPONENTS: Components = {
-  p: ({ node, ...p }) => <p className="leading-relaxed" {...p} />,
-  ol: ({ node, ...p }) => (
+  p: ({ node: _node, ...p }) => <p className="leading-relaxed" {...p} />,
+  ol: ({ node: _node, ...p }) => (
     <ol className="list-decimal space-y-1 pl-5" {...p} />
   ),
-  ul: ({ node, ...p }) => <ul className="list-disc space-y-1 pl-5" {...p} />,
-  li: ({ node, ...p }) => <li className="leading-relaxed" {...p} />,
-  a: ({ node, ...p }) => (
+  ul: ({ node: _node, ...p }) => <ul className="list-disc space-y-1 pl-5" {...p} />,
+  li: ({ node: _node, ...p }) => <li className="leading-relaxed" {...p} />,
+  a: ({ node: _node, ...p }) => (
     <a
       className="text-primary underline underline-offset-2"
       target="_blank"
@@ -35,34 +42,34 @@ const MD_COMPONENTS: Components = {
       {...p}
     />
   ),
-  strong: ({ node, ...p }) => <strong className="font-semibold" {...p} />,
-  h1: ({ node, ...p }) => <h3 className="mt-1 text-base font-bold" {...p} />,
-  h2: ({ node, ...p }) => <h3 className="mt-1 text-base font-bold" {...p} />,
-  h3: ({ node, ...p }) => <h4 className="mt-1 text-sm font-bold" {...p} />,
-  blockquote: ({ node, ...p }) => (
+  strong: ({ node: _node, ...p }) => <strong className="font-semibold" {...p} />,
+  h1: ({ node: _node, ...p }) => <h3 className="mt-1 text-base font-bold" {...p} />,
+  h2: ({ node: _node, ...p }) => <h3 className="mt-1 text-base font-bold" {...p} />,
+  h3: ({ node: _node, ...p }) => <h4 className="mt-1 text-sm font-bold" {...p} />,
+  blockquote: ({ node: _node, ...p }) => (
     <blockquote className="border-l-2 border-primary/40 pl-3 italic" {...p} />
   ),
-  code: ({ node, ...p }) => (
+  code: ({ node: _node, ...p }) => (
     <code
       className="rounded bg-background/70 px-1 py-0.5 font-mono text-[0.85em]"
       {...p}
     />
   ),
-  pre: ({ node, ...p }) => (
+  pre: ({ node: _node, ...p }) => (
     <pre
       className="my-1.5 overflow-x-auto rounded-md bg-background/70 p-2.5 font-mono text-[0.8em] leading-relaxed [&>code]:bg-transparent [&>code]:p-0"
       {...p}
     />
   ),
-  table: ({ node, ...p }) => (
+  table: ({ node: _node, ...p }) => (
     <div className="overflow-x-auto">
       <table className="w-full border-collapse text-[0.85em]" {...p} />
     </div>
   ),
-  th: ({ node, ...p }) => (
+  th: ({ node: _node, ...p }) => (
     <th className="border border-border px-2 py-1 text-left font-semibold" {...p} />
   ),
-  td: ({ node, ...p }) => (
+  td: ({ node: _node, ...p }) => (
     <td className="border border-border px-2 py-1" {...p} />
   ),
 };

@@ -83,7 +83,7 @@ function parseArgs(argv: readonly string[]): CliArgs {
 }
 
 function printHelp(): void {
-  // eslint-disable-next-line no-console
+   
   console.log(
     [
       "turing-flow-dsl — typed chat-flow sources for Viglet Turing ES.",
@@ -140,18 +140,18 @@ export async function build(inputDir: string, outputDir: string): Promise<{ ok: 
         const outName = `${baseName(entry, transpiled.name)}.chat-flow.json`;
         const outPath = join(resolvedOutput, outName);
         writeFileSync(outPath, JSON.stringify(transpiled, null, 2) + "\n", "utf8");
-        // eslint-disable-next-line no-console
+         
         console.log(`✓ ${relative(process.cwd(), absolute)} → ${relative(process.cwd(), outPath)}`);
       }
       ok++;
     } catch (err) {
       failed++;
       const message = err instanceof FlowSpecError ? err.message : (err as Error).message;
-      // eslint-disable-next-line no-console
+       
       console.error(`✗ ${relative(process.cwd(), absolute)}: ${message}`);
     }
   }
-  // eslint-disable-next-line no-console
+   
   console.log(`\n${ok} flow(s) transpiled, ${failed} failed.`);
   return { ok, failed };
 }
@@ -293,7 +293,7 @@ async function main(): Promise<void> {
       process.exitCode = 1;
     }
   } catch (err) {
-    // eslint-disable-next-line no-console
+     
     console.error(`turing-flow-dsl: ${(err as Error).message}`);
     process.exitCode = 1;
   }

@@ -1,0 +1,27 @@
+{
+  "name": "@viglet/eslint-config",
+  "version": "2026.3.1",
+  "private": true,
+  "description": "The reasoned eslint severities, shared by every package in the monorepo (T1025)",
+  "type": "module",
+  "exports": {
+    ".": "./index.js",
+    "./react": "./react.js",
+    "./library": "./library.js"
+  },
+  "files": [
+    "index.js",
+    "react.js",
+    "library.js"
+  ],
+  "dependencies": {
+    "@eslint/js": "^10.0.1",
+    "eslint-plugin-react-hooks": "^7.1.1",
+    "eslint-plugin-react-refresh": "^0.5.3",
+    "globals": "^17.7.0",
+    "typescript-eslint": "^8.65.0"
+  },
+  "peerDependencies": {
+    "eslint": "^10.7.0"
+  }
+}

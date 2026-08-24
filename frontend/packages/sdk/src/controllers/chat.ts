@@ -892,7 +892,7 @@ export function createChatController(
     store.setState({ activeForm: null });
     commitMessages(messages.map((m) => (m.form ? { ...m, form: undefined } : m)));
 
-    let result: TurChatFormSubmitResponse | null = null;
+    let result: TurChatFormSubmitResponse | null;
     try {
       result = await postSiteFormSubmit(client, site, cid, values, pendingForm?.nodeId);
     } catch (err) {

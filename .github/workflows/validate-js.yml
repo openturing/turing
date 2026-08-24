@@ -136,6 +136,13 @@ jobs:
       # `--max-warnings` to the count that existed when the gate went up, so a
       # commit may reduce the backlog and may not add to it; the errors are
       # already zero and stay that way.
+      #
+      # T1025: `--if-present` used to mean this step ran for exactly one entry in
+      # the matrix, because `turing-app` was the only package in the monorepo
+      # with a `lint` script — the other eleven had nothing to run. All twelve
+      # have one now, extending `@viglet/eslint-config`, each with its own
+      # measured ceiling. Nothing changed in this step; what changed is how much
+      # of the repo it reaches.
       - name: Lint
         working-directory: frontend
         run: pnpm --filter "${{ matrix.workspace }}" run --if-present lint

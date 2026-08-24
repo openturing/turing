@@ -83,6 +83,14 @@ export interface TurSearchResults {
 
 export interface TurDocument {
   elevate: boolean;
+  /**
+   * The indexed fields, whose value types are whatever the site's schema
+   * declares — a string, a number, a date, an array of any of them. `unknown`
+   * would be the honest type and the wrong one to publish: every consumer
+   * reading `doc.fields.title` would have to narrow first, for a value the
+   * schema already guarantees. T1025 kept the `any` and wrote down why.
+   */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   fields: Record<string, any>;
   metadata: TurDocumentMetadata[];
   /**

@@ -1,7 +1,7 @@
 {
   "name": "@viglet/turing-react-ui",
   "version": "2026.3.5",
-  "description": "Headless React UI primitives for Viglet Turing ES — design-agnostic chat / rich-content components (e.g. TuringHtmlSandbox) shared across the admin console and viglet.com. No API or axios dependency; skin via classNames / labels / icons.",
+  "description": "Headless React UI primitives for Viglet Turing ES \u2014 design-agnostic chat / rich-content components (e.g. TuringHtmlSandbox) shared across the admin console and viglet.com. No API or axios dependency; skin via classNames / labels / icons.",
   "type": "module",
   "main": "dist/index.js",
   "module": "dist/index.js",
@@ -113,7 +113,8 @@
     "build-storybook": "storybook build",
     "prepublishOnly": "npm run build && npm run size",
     "exports": "node ../../scripts/check-exports.mjs",
-    "exports:update": "node ../../scripts/check-exports.mjs --update-baseline"
+    "exports:update": "node ../../scripts/check-exports.mjs --update-baseline",
+    "lint": "eslint . --max-warnings 22"
   },
   "peerDependencies": {
     "react": "^18.0.0 || ^19.0.0",
@@ -138,7 +139,9 @@
     "@testing-library/react": "^16.3.0",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
+    "@viglet/eslint-config": "workspace:*",
     "@vitejs/plugin-react": "^6.0.3",
+    "eslint": "^10.7.0",
     "jsdom": "^29.1.1",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",

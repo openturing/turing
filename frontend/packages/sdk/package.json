@@ -24,7 +24,8 @@
     "size:update": "node ../../scripts/check-size.mjs --update-baseline",
     "prepublishOnly": "npm run build && npm run size",
     "exports": "node ../../scripts/check-exports.mjs",
-    "exports:update": "node ../../scripts/check-exports.mjs --update-baseline"
+    "exports:update": "node ../../scripts/check-exports.mjs --update-baseline",
+    "lint": "eslint . --max-warnings 0"
   },
   "publishConfig": {
     "access": "public",
@@ -45,6 +46,8 @@
   "author": "Viglet",
   "license": "Apache-2.0",
   "devDependencies": {
+    "@viglet/eslint-config": "workspace:*",
+    "eslint": "^10.7.0",
     "jsdom": "^29.1.1",
     "typescript": "^6.0.2",
     "vite": "^8.0.16",

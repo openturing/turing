@@ -171,7 +171,7 @@ export function AtlasChatPanel({
 }>) {
   const cart = useCart();
   const store = useSearchStore();
-  const visitorId = useMemo(getVisitorId, []);
+  const visitorId = useMemo(() => getVisitorId(), []);
   // Answer-as-app generative UI (T442) + cart client tools (T438/T439) +
   // co-browse search-driving tools (T443) + cross-conversation memory tools
   // (T446), merged into one client-tool map.

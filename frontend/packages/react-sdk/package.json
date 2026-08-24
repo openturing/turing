@@ -17,7 +17,8 @@
     "storybook": "storybook dev -p 6006",
     "build-storybook": "storybook build",
     "exports": "node ../../scripts/check-exports.mjs",
-    "exports:update": "node ../../scripts/check-exports.mjs --update-baseline"
+    "exports:update": "node ../../scripts/check-exports.mjs --update-baseline",
+    "lint": "eslint . --max-warnings 58"
   },
   "publishConfig": {
     "access": "public",
@@ -62,8 +63,10 @@
     "@testing-library/react": "^16.3.0",
     "@types/react": "^19.2.17",
     "@types/react-dom": "^19.0.0",
+    "@viglet/eslint-config": "workspace:*",
     "@vitejs/plugin-react": "^6.0.3",
     "axios": "^1.18.1",
+    "eslint": "^10.7.0",
     "jsdom": "^29.1.1",
     "react": "^19.2.7",
     "react-dom": "^19.2.7",
