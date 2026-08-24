@@ -10,7 +10,6 @@
 
 ## Block BX — The bento layer leaves the product it grew in (§XCVI)
 
-- ⏳ **T1000** (deps: T1008 ✅) **36 files still branch on a chrome prop, so one implementation serves two shells** — No console route is mounted and no file there is dead, so what is left is a seam to keep or delete, not a migration. → §XCVI.13
 - ⏳ **T1013** (deps: —) **fifteen bento pages write a hero gradient inline, using eight colour pairs no tone offers** — Eight pairs remain, each a combination no tone offers rather than a shade of drift, so closing one changes a hue. → §XCVI.20
 
 ## Block AR — Live-demo search & chat quality (Lucene parity gaps, §XLI)
@@ -18,12 +17,6 @@
 - ⏳ **T1004** (deps: —) **site chat emits the whole answer in one SSE content event, so no consumer can render it progressively** — The mode that streams it exists; the demo runs a build from before it, so the last acceptance bullet waits on a deploy. → §XCVII
 
 ## Block BV — The quality gate stops at the package boundary
-
-## Done when — T1000
-
-- **One chrome renders and the console routes are gone** The forty console pages are
-  migrated or retired, the redirect and the console shell are removed, and nothing
-  imports a console-era export.
 
 ## Non-goals (do NOT add as tasks)
 

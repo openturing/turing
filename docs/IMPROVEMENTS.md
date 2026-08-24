@@ -2102,35 +2102,6 @@ and only then delete anything. Three tasks are instruments rather than moves - a
 duplication lint, a working local-dev path and a render digest - because every deletion
 here is justified by an assertion this repository currently cannot check.
 
-### XCVI.13 Finish the cutover that was declared (T1000)
-
-Measured rather than assumed, because the count this line was written from is no longer
-what the tree holds.
-
-**No console route is mounted.** `App.tsx` routes `/admin/*` to the redirect and nothing
-else; the console tree left the router in T569/T570. So nothing renders "beside" the 118
-bento pages.
-
-**No file under `app/console` is dead.** Of its 104 `.tsx`, 65 are referenced from
-outside that directory, 28 only from within it, and the 11 with no referent are all test
-files, which nothing imports by design. The directory is not a parallel application but
-the shared implementation the bento pages wrap: `SEInstanceSystemInfoPage` and the three
-logging viewers take a `header` prop so a `BentoHero` can replace the console one.
-
-What is actually left is a duality, not a migration. Thirty-six files branch on a
-`chrome` prop; 74 reference `SectionCard`, whose bento counterpart is
-`BentoFormSection`. `SubPage` survives at one call site, the persona editor, and
-`SubPageHeader` at sixteen — both now shims onto the package.
-
-So the work is neither "migrate forty pages" nor "retire them". It is: decide whether
-the `chrome` branch stays as the seam that lets one implementation serve both shells, or
-the console arm is deleted and those 36 files lose a prop. The redirect is separate and
-cheap — it answers old bookmarks and costs one lazy route.
-
-Acceptance:
-- The `chrome` duality is either kept deliberately, with the reason written, or removed.
-- `app/console` is named for what it holds, or its contents move.
-
 ### XCVI.20 The hues the pages kept (T1013)
 
 T996 removed the last hue from the shared components: a tone is a token now, and
