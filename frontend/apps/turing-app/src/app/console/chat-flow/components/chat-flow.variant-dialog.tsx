@@ -5,7 +5,7 @@ import {
   IconSparkles,
   IconWand,
 } from "@tabler/icons-react";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import { toast } from "@viglet/viglet-design-system";
@@ -77,17 +77,19 @@ export function ChatFlowVariantDialog({
   const [generating, setGenerating] = useState(false);
   const [saving, setSaving] = useState(false);
 
-  // Reset whenever the dialog opens on a new source — stale candidate from a
-  // prior session must not bleed into the next author's brief.
-  useEffect(() => {
-    if (source) {
-      setInstructions("");
-      setTargetName("");
-      setCandidate(null);
-      setGenerating(false);
-      setSaving(false);
-    }
-  }, [source]);
+  // Reset whenever the dialog opens on a new source — a stale candidate from a
+  // prior session must not bleed into the next author's brief. T1017 — done
+  // during render rather than in an effect, which used to paint the previous
+  // brief once before clearing it.
+  const [syncedSource, setSyncedSource] = useState(source);
+  if (source && syncedSource !== source) {
+    setSyncedSource(source);
+    setInstructions("");
+    setTargetName("");
+    setCandidate(null);
+    setGenerating(false);
+    setSaving(false);
+  }
 
   const handleGenerate = useCallback(async () => {
     if (!source?.id || !instructions.trim()) return;

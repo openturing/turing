@@ -2183,41 +2183,18 @@ Acceptance:
 
 ## CIII The quality gate stops at the package boundary
 
-### CIII.3 The backlog the ceiling holds (T1017)
-
-T1016 put the gate up and pinned the number it found. The reading that followed sorted
-all 72 `set-state-in-effect` findings, and most of them left: 45 across 39 files are the
-`useState` + `useEffect` + service fetch that `agents.md` already declares obsolete, so
-they are T1018 and not a rewrite worth doing twice. Thirteen entity pages lost `isNew`,
-which was state an effect wrote from a value the router already had.
-
-Twenty-seven are left, and they are the two groups no other task covers.
-
-Nineteen sit on pages that already use React Query, so the effect is syncing something
-other than a fetch — mostly a selection or a form value mirrored from a prop, with a
-second copy kept alongside it to compute dirtiness. That shape is what React's own
-guidance calls adjusting state during render, and each is a judgement about what the
-component should reset on.
-
-Eight have no fetch at all: a smoothed ETA driven by refs and a timer, a duration input
-re-deriving its unit from a prop, an avatar picker. Some of these are the effect being
-the right place, and what they need is the line saying so rather than a rewrite.
-
-Acceptance:
-- Each of the 27 is either rewritten or carries a line saying why the effect is right.
-- The `--max-warnings` ceiling falls by whatever the rewrites remove.
-
 ### CIII.4 The migration nobody was counting (T1018)
 
 `agents.md` says read paths use React Query and that `useState` + `useEffect` +
 `service.then()` "is being phased out". It has been since 2026.2.6, and nothing counts
 what is left, so the phase-out has no end and no measure.
 
-Reading T1017's 72 `set-state-in-effect` findings supplied one. Thirty-nine of the 59
-files carry 45 of them, and every one is that pattern: a component holding its own
-`data`/`loading`/`error` triple and filling it from a service inside an effect. Nine of
-them set a loading flag synchronously before the await, which is the shape the rule
-names outright; the other thirty do the same thing without the flag.
+Reading T1017's 72 `set-state-in-effect` findings supplied one. Once that task had
+rewritten or answered its own 30, the 42 left across 36 files were all one thing: a
+component holding its own `data`/`loading`/`error` triple and filling it from a service
+inside an effect. Nine of them set a loading flag synchronously before the await, which
+is the shape the rule names outright; the other thirty-three do the same thing without
+the flag.
 
 So the largest single group of findings under T1016's ceiling is not a lint problem. It
 is the migration already declared, seen from the other end — and rewriting those effects
@@ -2229,5 +2206,5 @@ invalidation on write that these pages do by hand or not at all, and one fewer
 `useState` triple per page.
 
 Acceptance:
-- The 39 files read through `api/queries/*.queries.ts` hooks.
-- The `--max-warnings` ceiling falls by the 45 findings they carry.
+- The 36 files read through `api/queries/*.queries.ts` hooks.
+- The `--max-warnings` ceiling falls by the 42 findings they carry.

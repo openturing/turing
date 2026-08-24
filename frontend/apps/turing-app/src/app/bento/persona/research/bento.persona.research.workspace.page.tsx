@@ -305,9 +305,12 @@ function StudyWorkspace({ studyId }: Readonly<{ studyId: string }>) {
   const personas = useMemo(() => study?.personas ?? [], [study]);
   const everRun = Boolean(study?.lastRunAt);
 
-  // Seed local state from the loaded study.
-  useEffect(() => {
-    if (!study) return;
+  // Seed local state from the loaded study. T1017 — during render rather than in
+  // an effect: twelve fields of an editable copy, published one committed render
+  // late, which is a whole empty form painted after the study had arrived.
+  const [syncedStudy, setSyncedStudy] = useState(study);
+  if (study && syncedStudy !== study) {
+    setSyncedStudy(study);
     setName(study.name);
     setGoal(study.goal ?? "");
     setHypothesis(study.hypothesis ?? "");
@@ -321,15 +324,21 @@ function StudyWorkspace({ studyId }: Readonly<{ studyId: string }>) {
     setSynthesisLlm(study.synthesisLlmInstanceId ?? "");
     setDefaultLlm(study.llmInstanceId ?? "");
     setSchedule(study.schedule);
-  }, [study]);
+  }
 
-  // Seed the feed from persisted interviews (unless a run is in flight).
+  // Seed the feed from persisted interviews (unless a run is in flight). T1017 —
+  // kept as an effect: unlike the seed above this is ordered against the live
+  // run that streams into `feed`, and its own guard is that run's flag. Running
+  // it during render would put it in the passes the stream triggers, which is
+  // where a partial feed would be replaced by the server's older copy.
+  /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
     if (!study || running) return;
     const map = new Map<string, ResearchInterview>();
     (study.interviews ?? []).forEach((i) => map.set(i.id || i.personaId, i));
     setFeed(map);
   }, [study, running]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   useEffect(() => () => abortRef.current?.abort(), []);
 

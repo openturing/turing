@@ -170,14 +170,18 @@ function DialogueEditor({ projectId, isNew, project, staged, onStateChange }: Re
     }
   }, [turnsList.length, running, started]);
 
-  // Seed local state from the loaded project.
-  useEffect(() => {
-    if (!project) return;
+  // Seed local state from the loaded project. T1017 — during render rather than
+  // in an effect: these four are the editable copy of the saved project, so they
+  // are state, but the effect published the empty form for one committed render
+  // after the project had already arrived.
+  const [syncedProject, setSyncedProject] = useState(project);
+  if (project && syncedProject !== project) {
+    setSyncedProject(project);
     setTopic(project.topic ?? "");
     setTurns(project.turns);
     setLlmInstanceId(project.llmInstanceId ?? "");
     setSpeakerIds(project.speakers.map((s) => s.id));
-  }, [project]);
+  }
 
   useEffect(() => () => abortRef.current?.abort(), []);
 

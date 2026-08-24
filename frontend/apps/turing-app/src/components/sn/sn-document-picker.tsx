@@ -27,7 +27,7 @@ import { sanitizeHighlight } from "@/lib/sanitize-html";
 import { fetchSearch, type TurDocument, type TurSearchResponse } from "@viglet/turing-react-sdk";
 import { IconLoader2, IconSearch } from "@tabler/icons-react";
 import { isAxiosError } from "axios";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 /** Strip search-highlight (`<mark>`) and any other markup for stored plain text. */
@@ -74,33 +74,32 @@ const EMPTY_RESULT = { results: { document: [] } } as unknown as TurSearchRespon
 export function SnDocumentPicker({ open, onOpenChange, onPick }: Readonly<Props>) {
   const { t } = useTranslation();
   const { data: sites } = useSnSites();
-  const [siteId, setSiteId] = useState("");
-  const [language, setLanguage] = useState("");
+  const [pickedSiteId, setPickedSiteId] = useState("");
+  const [pickedLanguage, setPickedLanguage] = useState("");
   const [query, setQuery] = useState("");
   const [result, setResult] = useState<TurSearchResponse | null>(null);
   const [searching, setSearching] = useState(false);
 
+  // T1017 — the site and the language are derived, not defaulted by an effect.
+  // Empty state meant "nothing picked yet", which resolves to the first site;
+  // a language that the newly picked site does not offer resolves to that
+  // site's first. Written as effects, each rendered the invalid combination
+  // once — an empty site select, or a language belonging to the previous site —
+  // before correcting itself, and the search below could fire against it.
+  const siteId = pickedSiteId || sites?.[0]?.id || "";
   const site = useMemo(() => sites?.find((s) => s.id === siteId), [sites, siteId]);
   const locales = useMemo(() => {
     const langs = (site?.turSNSiteLocales ?? []).map((l) => l.language).filter(Boolean);
     return Array.from(new Set(langs));
   }, [site]);
+  const language = locales.includes(pickedLanguage) ? pickedLanguage : (locales[0] ?? "");
 
-  // Default the site to the first available.
-  useEffect(() => {
-    if (!siteId && sites && sites.length > 0) setSiteId(sites[0].id);
-  }, [sites, siteId]);
-
-  // Keep the language valid for the current site; reset stale results.
-  useEffect(() => {
-    if (locales.length > 0 && !locales.includes(language)) {
-      setLanguage(locales[0]);
-    }
-  }, [locales, language]);
-
-  useEffect(() => {
+  // Results belong to the site they came from, so a change of site drops them.
+  const [syncedSiteId, setSyncedSiteId] = useState(siteId);
+  if (syncedSiteId !== siteId) {
+    setSyncedSiteId(siteId);
     setResult(null);
-  }, [siteId]);
+  }
 
   async function search(page: number) {
     const siteName = site?.name;
@@ -164,7 +163,7 @@ export function SnDocumentPicker({ open, onOpenChange, onPick }: Readonly<Props>
         <div className="grid gap-3 sm:grid-cols-2">
           <label className="flex flex-col gap-1.5">
             <span className="text-sm font-medium">{t("forms.snDocumentPicker.site")}</span>
-            <Select value={siteId} onValueChange={setSiteId}>
+            <Select value={siteId} onValueChange={setPickedSiteId}>
               <SelectTrigger>
                 <SelectValue placeholder={t("forms.snDocumentPicker.selectSite")} />
               </SelectTrigger>
@@ -179,7 +178,7 @@ export function SnDocumentPicker({ open, onOpenChange, onPick }: Readonly<Props>
           </label>
           <label className="flex flex-col gap-1.5">
             <span className="text-sm font-medium">{t("forms.snDocumentPicker.language")}</span>
-            <Select value={language} onValueChange={setLanguage} disabled={locales.length === 0}>
+            <Select value={language} onValueChange={setPickedLanguage} disabled={locales.length === 0}>
               <SelectTrigger>
                 <SelectValue placeholder={t("forms.snDocumentPicker.selectLanguage")} />
               </SelectTrigger>

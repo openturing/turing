@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
   IconAlertTriangle,
@@ -41,10 +41,16 @@ export function BentoEvalRunHistory() {
   const { t } = useTranslation();
   const { data: agents } = useAiAgents();
   const [agentId, setAgentId] = useState<string>("");
-  const [selectedReportId, setSelectedReportId] = useState<string | null>(null);
+  // `null` means "no explicit pick", which resolves to the newest run below —
+  // T1017. An effect used to write the default into this state instead, which
+  // both rendered the empty drill-down once before correcting it and made the
+  // two meanings of `null` indistinguishable a moment later.
+  const [pickedReportId, setPickedReportId] = useState<string | null>(null);
 
   const { data: reports, isError } = useEvalRunHistory(agentId || undefined);
   const run = useRunEval(agentId || undefined);
+
+  const selectedReportId = pickedReportId ?? reports?.[0]?.reportId ?? null;
 
   const selected = useMemo(
     () => (reports ?? []).find((r) => r.reportId === selectedReportId) ?? null,
@@ -64,13 +70,6 @@ export function BentoEvalRunHistory() {
     [reports],
   );
 
-  // Once an agent's runs load, default the drill-down to the newest run.
-  useEffect(() => {
-    if (reports && reports.length > 0 && selectedReportId === null) {
-      setSelectedReportId(reports[0].reportId);
-    }
-  }, [reports, selectedReportId]);
-
   return (
     <div className="space-y-4">
       <div className="bento-tile bento-glass flex flex-wrap items-center gap-3 rounded-2xl border border-border/60 p-4">
@@ -83,7 +82,7 @@ export function BentoEvalRunHistory() {
           value={agentId}
           onChange={(event) => {
             setAgentId(event.target.value);
-            setSelectedReportId(null);
+            setPickedReportId(null);
           }}
           className="min-w-56 rounded-lg border border-border/60 bg-card/60 px-3 py-1.5 text-sm"
         >
@@ -103,7 +102,7 @@ export function BentoEvalRunHistory() {
             disabled={run.isPending}
             onClick={() =>
               run.mutate(undefined, {
-                onSuccess: (report) => setSelectedReportId(report.reportId),
+                onSuccess: (report) => setPickedReportId(report.reportId),
               })
             }
             className="ml-auto inline-flex items-center gap-1.5 rounded-lg bg-gradient-to-br from-amber-500 to-rose-500 px-3.5 py-1.5 text-sm font-medium text-white shadow disabled:opacity-50"
@@ -187,7 +186,7 @@ export function BentoEvalRunHistory() {
                   <RunListItem
                     report={report}
                     active={report.reportId === selectedReportId}
-                    onSelect={() => setSelectedReportId(report.reportId)}
+                    onSelect={() => setPickedReportId(report.reportId)}
                   />
                 </li>
               ))}

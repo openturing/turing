@@ -118,10 +118,18 @@ function MicroForm({ kbId, value, staged, onStateChange }: MicroFormProps) {
   const [domain, setDomain] = useState(value.domain ?? "GENERAL");
   const [submitting, setSubmitting] = useState(false);
 
-  useEffect(() => {
+  // T1017 — re-seeded during render rather than in an effect. Both fields are
+  // edited here, so they are state and not derivations; what they need is to
+  // follow the record when a different one is opened. The effect showed the
+  // previous microthesaurus's language and domain for one committed render, and
+  // `dirty` below compared against the new record while the inputs still held
+  // the old one.
+  const [syncedValue, setSyncedValue] = useState(value);
+  if (syncedValue !== value) {
+    setSyncedValue(value);
     setLanguage(value.language ?? "pt");
     setDomain(value.domain ?? "GENERAL");
-  }, [value]);
+  }
 
   const dirty = language !== (value.language ?? "pt") || domain !== (value.domain ?? "GENERAL");
   useEffect(() => {

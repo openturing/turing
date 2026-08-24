@@ -650,6 +650,13 @@ function ReplayTimeline({
   // Auto-advance: one step per REPLAY_PLAY_INTERVAL_MS while playing; stop at
   // the end. Keyed on revealedCount so each tick schedules the next single
   // step rather than a runaway interval.
+  //
+  // T1017 — the effect is the right place. This drives a timer, which is the
+  // external system effects exist for, and the one synchronous setState is the
+  // machine stopping itself at the end of the replay: there is no later moment
+  // to do it in, because the run that reaches the end is the run that schedules
+  // nothing.
+  /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
     if (!playing) return undefined;
     if (revealedCount >= total) {
@@ -659,6 +666,7 @@ function ReplayTimeline({
     const id = setTimeout(() => setCursor(revealedCount + 1), REPLAY_PLAY_INTERVAL_MS);
     return () => clearTimeout(id);
   }, [playing, revealedCount, total]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   if (total === 0) {
     return (

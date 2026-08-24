@@ -30,7 +30,7 @@ import {
 } from "@/components/ui/table";
 import type { TurAnalyticsIntent } from "@/models/analytics-intent/analytics-intent.model";
 import { IconChartBar, IconPencil, IconPlus, IconRefresh, IconTrash } from "@tabler/icons-react";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useParams } from "react-router-dom";
 import { toast } from "@viglet/viglet-design-system";
@@ -251,7 +251,13 @@ function AnalyticsIntentDialog({ open, onOpenChange, intent, onChange, onSave }:
   // parent on every keystroke. Synced when the parent's intent ref
   // changes (open / edit-different-row).
   const [local, setLocal] = useState<TurAnalyticsIntent | null>(intent);
-  useEffect(() => setLocal(intent), [intent]);
+  // T1017 — re-seeded during render rather than in an effect, which rendered the
+  // previously edited row once before the new one replaced it.
+  const [syncedIntent, setSyncedIntent] = useState(intent);
+  if (syncedIntent !== intent) {
+    setSyncedIntent(intent);
+    setLocal(intent);
+  }
 
   if (!local) return null;
 

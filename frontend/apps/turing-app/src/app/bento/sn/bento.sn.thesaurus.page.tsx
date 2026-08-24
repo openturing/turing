@@ -21,7 +21,7 @@ import {
   IconTrash,
 } from "@tabler/icons-react";
 import { toast } from "@viglet/viglet-design-system";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useParams } from "react-router-dom";
 
@@ -68,9 +68,15 @@ function ConfigSection({ siteId }: { siteId: string }) {
     pathFieldName: "microthesaurus_path",
   });
 
-  useEffect(() => {
-    if (config) setDraft(config);
-  }, [config]);
+  // T1017 — adjusted during render. `draft` is the edited copy of the server's
+  // config, so it cannot be derived, but it does have to re-seed when a fetch
+  // lands. In an effect that showed the placeholder defaults for one committed
+  // render after the real config had already arrived.
+  const [syncedConfig, setSyncedConfig] = useState(config);
+  if (config && syncedConfig !== config) {
+    setSyncedConfig(config);
+    setDraft(config);
+  }
 
   async function save() {
     try {

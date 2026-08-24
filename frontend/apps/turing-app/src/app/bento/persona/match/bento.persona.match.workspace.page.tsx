@@ -413,19 +413,31 @@ function ProjectWorkspace({ projectId }: Readonly<{ projectId: string }>) {
    */
   const fitThreshold = project?.effectiveFitThreshold ?? GOOD_FIT_THRESHOLD;
 
-  useEffect(() => {
-    if (!project) return;
+  // T1017 — seeded during render. These three are the editable copy of the saved
+  // project, so they stay state; the effect just published the empty header for
+  // one committed render after the project had already loaded.
+  const [syncedProject, setSyncedProject] = useState(project);
+  if (project && syncedProject !== project) {
+    setSyncedProject(project);
     setName(project.name);
     setDescription(project.description ?? "");
     setThresholdInput(project.fitThreshold === null ? "" : String(project.fitThreshold));
-  }, [project]);
+  }
 
+  // T1017 — kept as an effect deliberately. Unlike the seed above, this one is
+  // ordered against a live run: the streamed cells write `cells` as they arrive,
+  // and this replaces the whole map from the server's copy whenever the fetch
+  // lands or a run ends. Hoisting it into render would run it during the passes
+  // the stream itself triggers, which is where a half-streamed matrix would be
+  // overwritten by a stale fetch.
+  /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
     if (!matrixData) return;
     const map = buildMatrixMap(matrixData.cells);
     setCells(map);
     if (!running) setRevealed(new Set(map.keys()));
   }, [matrixData, running]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   const matrix = cells;
   const total = sources.length * personas.length;
@@ -1076,13 +1088,18 @@ function DriftAlertSection({
     project.driftWebhookAvgDrop === null ? "" : String(project.driftWebhookAvgDrop),
   );
 
-  useEffect(() => {
+  // T1017 — seeded during render; the effect showed the previous project's
+  // webhook for one committed pass. `auth` clears rather than seeds: it is a
+  // secret the server never returns.
+  const [syncedProject, setSyncedProject] = useState(project);
+  if (syncedProject !== project) {
+    setSyncedProject(project);
     setUrl(project.driftWebhookUrl ?? "");
     setAvgDrop(
       project.driftWebhookAvgDrop === null ? "" : String(project.driftWebhookAvgDrop),
     );
     setAuth("");
-  }, [project]);
+  }
 
   const enabled = Boolean(url.trim());
 
