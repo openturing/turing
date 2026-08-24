@@ -20,7 +20,8 @@
 
 ## Block BV — The quality gate stops at the package boundary
 
-- ⏳ **T1018** (deps: —) **16 files still fetch with useState and useEffect, and most need a query hook that does not exist** — Thirty-one files still hold a data-loading-error triple of their own, and most need a hook that does not exist yet. → §CIII.4
+- ⏳ **T1018** (deps: —) **14 files still fetch with useState and useEffect, and most need a query hook that does not exist** — Thirty-one files still hold a data-loading-error triple of their own, and most need a hook that does not exist yet. → §CIII.4
+- 📋 **T1019** (deps: —) **a run of the frontend suite failed one test and printed nothing saying which** — The summary counted the failure and the reporter emitted no failure block, so a rerun erased the only evidence. → §CIII.5
 
 ## Done when — T1000
 

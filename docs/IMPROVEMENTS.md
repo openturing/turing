@@ -2192,9 +2192,9 @@ what is left, so the phase-out has no end and no measure.
 Reading T1017's 72 `set-state-in-effect` findings supplied one. Once that task had
 rewritten or answered its own 30, the 42 left across 36 files were all one thing: a
 component holding its own `data`/`loading`/`error` triple and filling it from a service
-inside an effect. Seven clusters have moved -- the dashboard, the SN rule families and
-locale forms, the admin trio, both system-info pages, the personas and the custom tool.
-Twenty-two findings across 16 files have not.
+inside an effect. Eight clusters have moved -- the dashboard, the SN rule families and
+locale forms, the admin trio, both system-info pages, the personas, the custom tool and
+Git. Nineteen findings across 14 files have not.
 
 So the largest single group of findings under T1016's ceiling is not a lint problem. It
 is the migration already declared, seen from the other end — and rewriting those effects
@@ -2206,5 +2206,30 @@ invalidation on write that these pages do by hand or not at all, and one fewer
 `useState` triple per page.
 
 Acceptance:
-- The 16 files read through `api/queries/*.queries.ts` hooks.
-- The `--max-warnings` ceiling falls by the 22 findings they carry.
+- The 14 files read through `api/queries/*.queries.ts` hooks.
+- The `--max-warnings` ceiling falls by the 19 findings they carry.
+
+### CIII.5 The flake that would not name itself (T1019)
+
+One run of `pnpm --filter turing-app test` during T1018 finished `1 failed | 262 passed
+(263)`. Five runs before and after it, same working tree, were 263 passed. So the suite
+is not deterministic, and nothing in the change under it could make one test fail and
+then pass.
+
+The worse half is that the run said nothing else. Vitest printed the summary line and no
+failure block: no test name, no file, no assertion, no stack. The one signal a flake
+gives you — which test — was not in the output, and re-running erased the evidence.
+
+That reporter behaviour is independent of whichever test it was, and it is what makes
+this a task rather than a note. A flake that names itself is a bug report; one that does
+not is a suite nobody can fix. T1016 put this suite in CI, so the same run there is a
+red build with nothing to read.
+
+Two things to find out, in order: whether the missing failure block is a reporter
+setting this repo chose (`vitest.config.ts` sets none) or a vitest bug, and only then
+which test is unstable — the suites touching fake timers, IndexedDB and the SSE fetch
+stub first.
+
+Acceptance:
+- A failing run in this suite prints the test that failed.
+- The unstable test is named, and either fixed or quarantined with the reason.
