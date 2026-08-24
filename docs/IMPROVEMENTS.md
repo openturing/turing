@@ -2180,3 +2180,89 @@ Acceptance:
 - Site-scoped chat emits incremental `content` events as the model produces them.
 - A consumer counting `onToken` calls for a multi-sentence answer sees more than one.
 - Verified on the demo, with the event timings recorded.
+
+## CIV The quality gate stops at the package boundary
+
+### CIV.1 Refs read during render (T1020)
+
+Nine findings across eight files say `Cannot access refs during render`. They are the
+one group under T1016's ceiling that is about correctness rather than shape, and they
+were left when T1017 read the `setState`-in-effect pile beside them.
+
+A ref is not render state. Reading `ref.current` while rendering makes the output depend
+on something React does not track, so two renders of the same props can disagree — and
+under a concurrent render that React starts, abandons and restarts, the second pass
+reads what the first left behind. The places this lands are telling: four chat surfaces
+(`agent-chat-tab`, `persona-chat-tab`, two `ai-chat` pages), the live-metrics widget,
+`ai-mode-chat` twice, the skill editor, the avatar picker. Streaming surfaces, where a
+ref is the natural place to keep what has arrived so far.
+
+Each needs reading on its own, because the honest answers differ: some will be a value
+that belongs in state, some a read that belongs in an effect or an event handler, and
+some a ref that is genuinely only touched after commit and is flagged because the rule
+cannot see that.
+
+What makes it worth doing now rather than later: these are the surfaces where a
+half-rendered answer is visible to a user, and the streaming ones are exactly where a
+torn read shows.
+
+Acceptance:
+- Each of the nine is rewritten, or carries a line saying why the read is safe.
+- The `--max-warnings` ceiling falls by whatever is removed.
+
+### CIV.2 What the ceiling still holds (T1021)
+
+With the 42 `setState`-in-effect findings answered, 280 warnings remain under T1016's
+ceiling, and reading them shows they are four jobs rather than one pile.
+
+**188 `react-refresh/only-export-components`, over 33 files.** A Fast Refresh
+constraint, never a runtime bug: a module exporting both a component and something else
+reloads whole instead of preserving state. The fix per file is deciding what it should
+have been split into.
+
+**43 `exhaustive-deps`, over 28.** The one rule here with a written convention already,
+in `agents.md`. Each is a dependency to read: some are stale closures, some are
+deliberate and want the disable line they lack.
+
+**25 `incompatible-library`, over 25 files — and all one cause.** Every finding is
+react-hook-form: the React Compiler cannot memoise across an API returning functions.
+Twenty-five files, one decision, and it is probably a config entry rather than
+twenty-five edits.
+
+**15 across `static-components`, `immutability` and `preserve-manual-memoization`.** The
+small tail, each its own read.
+
+Sequenced that way the count is misleading: the 25 are one answer, and the 188 are a
+mechanical split. The nine `refs` findings are not here because they are correctness and
+have their own line.
+
+Acceptance:
+- Each rule is driven to zero or given a reasoned severity, as T1016 did for the rest.
+- The ceiling falls to what survives.
+
+### CIV.3 The pin with no expiry (T1022)
+
+`vitest`, `@vitest/browser` and `@vitest/browser-playwright` are pinned to an exact
+4.1.10 in `turing-app`, and the pin is load-bearing twice over. Vitest refuses to run a
+browser project whose `@vitest/browser` is a different patch from its own, so the three
+move together. And 4.1.11 — the current release — breaks
+`@testing-library/jest-dom@7.0.0`'s module augmentation: every `toBeInTheDocument()` in
+the 46 unit files stops type-checking with TS2339 while the tests themselves still pass.
+
+That second half is what makes this worth a line rather than a comment. The break is
+invisible to `vitest run` and shows only in `tsc -b`, so a caret range would have let a
+lockfile refresh turn the type-check red for a reason nobody would look for in a test
+runner. T1001 found it by upgrading and watching 46 files fail at once.
+
+The cost is that the pin is now the reason this app cannot take a vitest release, and it
+carries no expiry. Nothing rechecks whether the augmentation still breaks, so the pin
+outlives its cause silently — which is how a deliberate pin becomes an accidental
+freeze.
+
+What to establish: whether the fault is jest-dom's `vitest.d.ts` or vitest's `Assertion`
+interface moving, whether a jest-dom release after 7.0.0 fixes it, and then either lift
+the pin or record upstream where it is tracked.
+
+Acceptance:
+- The cause is identified upstream, in jest-dom or in vitest.
+- The three pins are lifted, or the line says what they wait on.

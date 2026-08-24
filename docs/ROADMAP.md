@@ -20,6 +20,10 @@
 
 ## Block BV — The quality gate stops at the package boundary
 
+- 📋 **T1020** (deps: —) **nine reads of a ref during render, on the streaming surfaces where a torn read shows** — A ref is not tracked by React, so a restarted concurrent render reads what the abandoned one left. → §CIV.1
+- 📋 **T1021** (deps: —) **271 warnings sit under the ceiling as one number, and they are four unrelated jobs** — The 25 react-hook-form findings are one decision and the 188 Fast-Refresh ones a mechanical split, so the count misreads the work. → §CIV.2
+- 📋 **T1022** (deps: —) **three test packages are pinned exact with no expiry, so this app cannot take a vitest release** — 4.1.11 breaks jest-dom's type augmentation in tsc alone, and nothing rechecks whether it still does. → §CIV.3
+
 ## Done when — T1000
 
 - **One chrome renders and the console routes are gone** The forty console pages are
