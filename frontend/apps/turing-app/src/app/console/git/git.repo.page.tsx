@@ -15,11 +15,8 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
-import {
-  TurGitService,
-  type TurGitBranch,
-  type TurGitTreeEntry,
-} from "@/services/git/git.service"
+import { useGitBranches, useGitTree } from "@/api/queries/git.queries"
+import { TurGitService, type TurGitTreeEntry } from "@/services/git/git.service"
 import {
   IconFile,
   IconFolder,
@@ -28,7 +25,7 @@ import {
   IconChevronRight,
   IconLoader2,
 } from "@tabler/icons-react"
-import { useCallback, useEffect, useState } from "react"
+import { useState } from "react"
 import { useTranslation } from "react-i18next"
 import { useParams } from "react-router-dom"
 
@@ -45,54 +42,21 @@ export default function GitRepoPage() {
   const { t } = useTranslation()
   const { name } = useParams<{ name: string }>()
 
-  const [branches, setBranches] = useState<TurGitBranch[]>([])
-  const [currentBranch, setCurrentBranch] = useState<string>("")
-  const [entries, setEntries] = useState<TurGitTreeEntry[]>([])
+  // T1018 — branches and the tree both come from the query cache. The branch a
+  // page shows is derived: an unpicked one is the repository's default, or its
+  // first if none is marked. The tree query is keyed by branch and path, so
+  // walking back up a directory is served from cache instead of re-listed.
+  const { data: branches = [], isLoading: branchesLoading } = useGitBranches(name)
+  const [pickedBranch, setPickedBranch] = useState<string>("")
+  const defaultBranch = branches.find((b) => b.isDefault)?.name ?? branches[0]?.name ?? ""
+  const currentBranch = pickedBranch || defaultBranch
   const [currentPath, setCurrentPath] = useState("")
-  const [loading, setLoading] = useState(true)
+  const { data: entries = [], isLoading: treeLoading } = useGitTree(name, currentBranch, currentPath)
+  // An empty repository has no branches and therefore nothing to list, so it
+  // must not sit on the spinner the tree query never starts.
+  const loading = branchesLoading || (branches.length > 0 && treeLoading)
   const [fileContent, setFileContent] = useState<string | null>(null)
   const [fileName, setFileName] = useState<string | null>(null)
-
-  const loadBranches = useCallback(async () => {
-    if (!name) return
-    try {
-      const branchList = await turGitService.listBranches(name)
-      setBranches(branchList)
-      if (branchList.length === 0) {
-        // Empty repo — no branches, no commits
-        setLoading(false)
-        return
-      }
-      const defaultBranch = branchList.find((b) => b.isDefault)
-      setCurrentBranch(defaultBranch?.name || branchList[0]?.name || "")
-    } catch {
-      setBranches([])
-      setLoading(false)
-    }
-  }, [name])
-
-  const loadTree = useCallback(async () => {
-    if (!name || !currentBranch) return
-    setLoading(true)
-    setFileContent(null)
-    setFileName(null)
-    try {
-      const tree = await turGitService.listTree(name, currentBranch, currentPath || undefined)
-      setEntries(tree)
-    } catch {
-      setEntries([])
-    } finally {
-      setLoading(false)
-    }
-  }, [name, currentBranch, currentPath])
-
-  useEffect(() => {
-    loadBranches()
-  }, [loadBranches])
-
-  useEffect(() => {
-    if (currentBranch) loadTree()
-  }, [currentBranch, currentPath, loadTree])
 
   const handleEntryClick = async (entry: TurGitTreeEntry) => {
     if (entry.type === "tree") {
@@ -138,7 +102,7 @@ export default function GitRepoPage() {
         {/* Toolbar: branch selector + breadcrumb */}
         <div className="flex items-center gap-3 flex-wrap">
           {branches.length > 0 && (
-            <Select value={currentBranch} onValueChange={(v) => { setCurrentBranch(v); setCurrentPath(""); setFileContent(null); }}>
+            <Select value={currentBranch} onValueChange={(v) => { setPickedBranch(v); setCurrentPath(""); setFileContent(null); }}>
               <SelectTrigger className="w-48">
                 <IconGitBranch className="size-4 mr-1.5 text-muted-foreground" />
                 <SelectValue />

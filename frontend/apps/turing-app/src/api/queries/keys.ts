@@ -51,6 +51,16 @@ export const queryKeys = {
     // widget reads as a single unit.
     withStatus: () => [...queryKeys.snSites.all(), 'with-status'] as const,
   },
+  // T1018 — the Git surface: the repository list, and one repo's branches and
+  // tree. The tree is keyed by branch and path because that is what identifies
+  // a listing.
+  git: {
+    all: () => ['git'] as const,
+    repositories: () => [...queryKeys.git.all(), 'repositories'] as const,
+    branches: (name: string) => [...queryKeys.git.all(), 'branches', name] as const,
+    tree: (name: string, ref: string, path: string) =>
+      [...queryKeys.git.all(), 'tree', name, ref, path] as const,
+  },
   // T1018 — the SN site's three rule families. Same shape each: a list and a
   // detail, both scoped by the site they belong to.
   snCustomFacets: {

@@ -1,3 +1,8 @@
+import {
+  useCreateGitRepository,
+  useDeleteGitRepository,
+  useGitRepositories,
+} from "@/api/queries/git.queries"
 import { ROUTES } from "@/app/routes.const"
 import { BentoHero, bentoChipClass } from "@/components/bento"
 import { LoadProvider } from "@/components/loading-provider"
@@ -43,8 +48,13 @@ function getPageUrl(siteName: string): string {
 export default function BentoGitPage() {
   const { t } = useTranslation()
   const navigate = useNavigate()
-  const [repositories, setRepositories] = useState<TurGitRepository[] | undefined>(undefined)
-  const [error, setError] = useState<string | null>(null)
+  // T1018 — the repository list comes from the query cache, and create/delete go
+  // through mutations that invalidate it. The page used to re-list by hand after
+  // each write, which is the same refresh with nothing enforcing it.
+  const { data: repositories, isError } = useGitRepositories()
+  const error = isError ? t("git.loadError") : null
+  const createMutation = useCreateGitRepository()
+  const deleteMutation = useDeleteGitRepository()
   const [createDialogOpen, setCreateDialogOpen] = useState(false)
   const [newRepoName, setNewRepoName] = useState("")
   const [infoRepo, setInfoRepo] = useState<TurGitRepository | null>(null)
@@ -52,14 +62,6 @@ export default function BentoGitPage() {
   const [buildLogRepo, setBuildLogRepo] = useState<string | null>(null)
   const pollingRefs = useRef<Record<string, ReturnType<typeof setInterval>>>({})
   const logEndRef = useRef<HTMLDivElement>(null)
-
-  const loadRepositories = useCallback(() => {
-    setError(null)
-    setRepositories(undefined)
-    turGitService.list().then(setRepositories).catch(() => setError(t("git.loadError")))
-  }, [t])
-
-  useEffect(() => { loadRepositories() }, [loadRepositories])
 
   useEffect(() => {
     logEndRef.current?.scrollIntoView({ behavior: "smooth" })
@@ -108,11 +110,10 @@ export default function BentoGitPage() {
     const name = newRepoName.trim()
     if (!name) return
     try {
-      await turGitService.create(name)
+      await createMutation.mutateAsync(name)
       toast.success(t("git.createSuccess", { name }))
       setCreateDialogOpen(false)
       setNewRepoName("")
-      loadRepositories()
     } catch {
       toast.error(t("git.createError"))
     }
@@ -120,11 +121,10 @@ export default function BentoGitPage() {
 
   const handleDelete = async (name: string) => {
     try {
-      await turGitService.delete(name)
+      await deleteMutation.mutateAsync(name)
       toast.success(t("git.deleteSuccess", { name }))
       if (infoRepo?.name === name) setInfoRepo(null)
       stopPolling(name)
-      loadRepositories()
     } catch {
       toast.error(t("git.deleteError"))
     }
