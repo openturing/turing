@@ -1,11 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import {
-  catalogSupportsFileInput,
-  catalogSupportsTools,
-  isDeprecatedModel,
-  sortModelOptions,
-} from "../model-meta";
+import { catalogSupportsFileInput, catalogSupportsTools, isDeprecatedModel, sortModelOptions } from "../model-meta.utils";
 import type { TurLlmModelOption } from "@/models/llm/llm-model-option.model.ts";
 
 const opt = (id: string, meta: TurLlmModelOption["metadata"]): TurLlmModelOption => ({

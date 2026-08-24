@@ -8,14 +8,8 @@ import type {
 } from "@/models/llm/llm-model-option.model.ts"
 import { ModelKindBadge, resolveModelKind } from "@/components/ui/model-kind-badge"
 import { ModelKindFilter, type ModelKindFilterValue } from "@/components/ui/model-kind-filter"
-import {
-  ModelDeprecatedBadge,
-  ModelMetaLine,
-  ModelSortSelect,
-  ModelTierBadge,
-  sortModelOptions,
-  type ModelSortValue,
-} from "@/components/ui/model-meta"
+import { ModelDeprecatedBadge, ModelMetaLine, ModelSortSelect, ModelTierBadge } from "@/components/ui/model-meta"
+import { sortModelOptions, type ModelSortValue } from "@/components/ui/model-meta.utils"
 import { cn } from "@/lib/utils"
 import { IconCheck, IconChevronDown, IconLoader2 } from "@tabler/icons-react"
 import { useMemo, useState } from "react"
