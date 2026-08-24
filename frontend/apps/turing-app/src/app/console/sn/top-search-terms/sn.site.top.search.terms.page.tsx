@@ -6,15 +6,14 @@ import { GradientAvatar, GradientAvatarFallback } from "@/components/ui/gradient
 import { Skeleton } from "@/components/ui/skeleton";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import type { TurSNSiteMetricsTerm } from "@/models/sn/sn-site-metrics-term.model";
-import { TurSNSiteMetricsService, type TurSNTopTermsPeriod } from "@/services/sn/sn.site.metrics.service";
+import { useSnTopTerms } from "@/api/queries/sn-site-metrics.queries";
+import { type TurSNTopTermsPeriod } from "@/services/sn/sn.site.metrics.service";
 import { useSubPageBreadcrumb } from "@/hooks/use-sub-page-breadcrumb";
 import { IconArrowDown, IconArrowUp, IconChartBar, IconSearch } from "@tabler/icons-react";
-import { type ReactNode, useEffect, useMemo, useState } from "react";
+import { type ReactNode, useEffect, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate, useParams } from "react-router-dom";
 
-const turSNSiteMetricsService = new TurSNSiteMetricsService();
 const rows = 50;
 const periodValues: TurSNTopTermsPeriod[] = ["today", "this-week", "this-month", "all-time"];
 
@@ -56,9 +55,6 @@ export default function SNSiteTopSearchTermsPage({ baseRoute = ROUTES.SN_INSTANC
   const { t } = useTranslation();
   useSubPageBreadcrumb(t("sn.topSearchTerms.title"));
 
-  const [topTerms, setTopTerms] = useState<TurSNSiteMetricsTerm | null>(null);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string | null>(null);
 
   const resolvedPeriod = useMemo<TurSNTopTermsPeriod>(() => {
     if (isValidPeriod(periodParam)) {
@@ -76,21 +72,11 @@ export default function SNSiteTopSearchTermsPage({ baseRoute = ROUTES.SN_INSTANC
     }
   }, [periodParam, id, navigate, baseRoute]);
 
-  useEffect(() => {
-    if (!id) {
-      return;
-    }
-    setIsLoading(true);
-    setError(null);
-    turSNSiteMetricsService
-      .topTermsByPeriod(id, resolvedPeriod, rows)
-      .then(setTopTerms)
-      .catch((fetchError) => {
-        console.error("Failed to load top search terms", fetchError);
-        setError("Unable to load top search terms right now.");
-      })
-      .finally(() => setIsLoading(false));
-  }, [id, resolvedPeriod]);
+  // T1018 — the same hook the dashboard's top-terms widget reads, so opening one
+  // after the other for the same site and period hits the cache. It is disabled
+  // until there is a site id, which is what the `if (!id) return` guard was.
+  const { data: topTerms, isLoading, isError } = useSnTopTerms(id, resolvedPeriod, rows);
+  const error = isError ? "Unable to load top search terms right now." : null;
 
   const hasResults = (topTerms?.topTerms?.length ?? 0) > 0;
   const variation = topTerms?.variationPeriod ?? 0;

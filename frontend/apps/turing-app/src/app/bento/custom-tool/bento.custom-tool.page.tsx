@@ -1,16 +1,17 @@
-import { useCustomTools, useDeleteCustomTool, useUpdateCustomTool } from "@/api/queries/custom-tool.queries";
+import {
+  useCustomTool,
+  useCustomTools,
+  useDeleteCustomTool,
+  useUpdateCustomTool,
+} from "@/api/queries/custom-tool.queries";
 import { ROUTES } from "@/app/routes.const";
 import { BentoEntityShell } from "@/components/bento";
 import { LoadProvider } from "@/components/loading-provider";
 import type { TurCustomTool } from "@/models/customtool/custom-tool.model.ts";
-import { TurCustomToolService } from "@/services/customtool/custom-tool.service";
 import { IconBraces } from "@tabler/icons-react";
-import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useParams } from "react-router-dom";
 import { BENTO_CUSTOM_TOOL_FORM_ID, BentoCustomToolForm } from "./bento.custom-tool.form";
-
-const service = new TurCustomToolService();
 
 /**
  * Bento Custom Tool detail — T554. Identity in the hero; the LLM description,
@@ -22,24 +23,19 @@ export default function BentoCustomToolPage() {
   const { t } = useTranslation();
   const isNew = id === "new";
 
-  const [tool, setTool] = useState<TurCustomTool | undefined>(isNew ? ({} as TurCustomTool) : undefined);
-  const [error, setError] = useState<string | null>(null);
 
   const updateMutation = useUpdateCustomTool();
   const deleteMutation = useDeleteCustomTool();
   // Warm the list cache so navigating back is instant.
   useCustomTools();
 
-  useEffect(() => {
-    if (isNew) {
-      setTool({} as TurCustomTool);
-      return;
-    }
-    service.get(id)
-      .then(setTool)
-      .catch(() => setError(t("common.connectionError", { resource: t("customTool.title") })));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [id]);
+  // T1018 — the record comes from the query cache. The hook is disabled on the
+  // `new` route, where an empty tool is the whole of what there is to edit.
+  const { data: fetched, isError } = useCustomTool(id);
+  const tool = isNew ? ({} as TurCustomTool) : fetched;
+  const error = isError
+    ? t("common.connectionError", { resource: t("customTool.title") })
+    : null;
 
   function shell(entity: TurCustomTool, headlineFallback: string) {
     return (

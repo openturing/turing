@@ -19,6 +19,19 @@ export function useCustomTools() {
 }
 
 /**
+ * T1018 — one custom tool. The `detail` key was declared long before anything
+ * read it; the page fetched through the service in an effect instead. Disabled
+ * on the `new` route, which has no record to ask for.
+ */
+export function useCustomTool(id: string | undefined) {
+  return useQuery<TurCustomTool>({
+    queryKey: id ? queryKeys.customTools.detail(id) : ['custom-tools', 'detail', 'pending'],
+    queryFn: () => service.get(id as string),
+    enabled: Boolean(id) && id !== 'new',
+  });
+}
+
+/**
  * T40: descriptor is a static catalogue at runtime (the binding set isn't
  * dynamic), so we treat it as immutable for the session — `staleTime: Infinity`
  * means the editor never re-fetches mid-edit.

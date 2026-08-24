@@ -14,8 +14,8 @@ import "./chat-highlight.css"
 import { ROUTES } from "@/app/routes.const"
 import { BlankSlate } from "@/components/blank-slate"
 import { GradientButton } from "@/components/ui/gradient-button"
+import { usePersona } from "@/api/queries/persona.queries"
 import type { TurPersona } from "@/models/persona/persona.model"
-import { TurPersonaService } from "@/services/persona/persona.service"
 import type { ChatSession } from "@/services/chat/chat-session.service"
 import { IconHistory, IconMasksTheater, IconMessageChatbot, IconPlus } from "@tabler/icons-react"
 import { useTranslation } from "react-i18next"
@@ -38,8 +38,6 @@ import { ChatSessionSidebar } from "./components/chat-session-sidebar"
 import { PersonaChatTab } from "./components/persona-chat-tab"
 import { useChatSession } from "./hooks/use-chat-session"
 
-const turPersonaService = new TurPersonaService()
-
 /**
  * Block AI / §XXXII.4 (T581) — the persona chat workspace. The persona-mode
  * peer of {@link ChatPage}: it reuses the same session sidebar, model picker
@@ -58,8 +56,13 @@ export default function PersonaChatPage({
   const { t } = useTranslation()
   const tabId = `persona:${personaId}`
 
-  const [persona, setPersona] = useState<TurPersona | null>(null)
-  const [personaLoaded, setPersonaLoaded] = useState(false)
+  // T1018 — the persona comes from the query cache, shared with the editor and
+  // the launchpad rather than fetched again here. `personaLoaded` was the
+  // effect's own `finally`; the query says the same thing, and a failure still
+  // resolves to `null` so the "no such persona" branch renders as it did.
+  const { data: fetchedPersona, isPending, isError } = usePersona(personaId)
+  const persona: TurPersona | null = isError ? null : (fetchedPersona ?? null)
+  const personaLoaded = !isPending
   const [sidebarOpen, setSidebarOpen] = useState(false)
 
   // Per-tab chat hosting — same remount-on-epoch pattern as ChatPage.
@@ -191,18 +194,15 @@ export default function PersonaChatPage({
 
   // ── Effects ──
 
-  // Load the persona. A remount (key on personaId) re-runs this cleanly.
-  useEffect(() => {
-    let alive = true
-    turPersonaService
-      .get(personaId)
-      .then((p) => { if (alive) setPersona(p) })
-      .catch(() => { if (alive) setPersona(null) })
-      .finally(() => { if (alive) setPersonaLoaded(true) })
-    return () => { alive = false }
-  }, [personaId])
 
   // Capture the initial prompt forwarded from a launch surface (auto-send once).
+  //
+  // T1018 — the effect is the right place. This reads `sessionStorage` and
+  // deletes what it read, so it is a one-shot handoff from another surface
+  // rather than a value this render can derive: doing it during render would
+  // consume the prompt on a pass React is free to discard, and the launch would
+  // arrive with nothing to send.
+  /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
     const prompt = sessionStorage.getItem(CHAT_INITIAL_PROMPT_KEY)
     if (prompt) {
@@ -210,6 +210,7 @@ export default function PersonaChatPage({
       setPendingAutoSend(prompt)
     }
   }, [])
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   // Eagerly mint a session id so the child's controlled conversationId is
   // stable for the local session store from the first turn.

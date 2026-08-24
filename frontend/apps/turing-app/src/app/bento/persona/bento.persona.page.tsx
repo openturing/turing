@@ -1,12 +1,10 @@
+import { usePersona } from "@/api/queries/persona.queries";
 import { ROUTES } from "@/app/routes.const";
 import { LoadProvider } from "@/components/loading-provider";
 import type { TurPersona } from "@/models/persona/persona.model.ts";
-import { TurPersonaService } from "@/services/persona/persona.service";
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Outlet, useLocation, useParams } from "react-router-dom";
-
-const turPersonaService = new TurPersonaService();
 
 /**
  * Context threaded from the Bento persona loader to its child routes (the
@@ -44,34 +42,32 @@ export default function BentoPersonaPage() {
   // meant a route change from an existing record to "new" rendered one pass
   // with the previous answer before the effect corrected it.
   const isNew = id === "new";
-  const [error, setError] = useState<string | null>(null);
-  // The persona section sub-routes (/new/general, /new/system-instruction, …)
-  // are separate URLs that don't carry router state, so an audio-derived draft
-  // lives only in the state of the FIRST /new navigation. Seed it exactly once
-  // per "new" session — re-running on a stateless section switch would wipe the
-  // draft back to an empty persona.
-  const seededNewRef = useRef(false);
+  // T1018 — the saved persona comes from the query cache; this page keeps an
+  // editable copy because the section sub-routes write to it through the Outlet
+  // context. The hook is disabled on the `new` route, which has nothing to read.
+  const { data: fetched, isError } = usePersona(isNew ? undefined : id);
+  const error = isError
+    ? t("common.connectionError", { resource: t("persona.title") })
+    : null;
 
-  useEffect(() => {
-    if (id === "new") {
-      if (seededNewRef.current) {
-        return;
-      }
-      seededNewRef.current = true;
-      if (draft) {
-        const seeded = { ...draft };
-        delete (seeded as Partial<TurPersona>).id;
-        setPersona(seeded as TurPersona);
-      } else {
-        setPersona({ name: "", verbosity: 3, enabled: 1 } as TurPersona);
-      }
-    } else {
-      seededNewRef.current = false;
-      turPersonaService.get(id)
-        .then(setPersona)
-        .catch(() => setError(t("common.connectionError", { resource: t("persona.title") })));
+  // Seeding, adjusted during render rather than in an effect. `synced` is the
+  // whole of what the old `seededNewRef` did: the section sub-routes
+  // (/new/general, /new/system-instruction, …) are separate URLs that carry no
+  // router state, so an audio-derived draft lives only in the state of the FIRST
+  // /new navigation. `id` stays "new" across all of them, so this seeds exactly
+  // once per "new" session and re-seeds when the route moves to another record.
+  const [synced, setSynced] = useState<{ id: string; record?: TurPersona } | null>(null);
+  if (isNew) {
+    if (synced?.id !== id) {
+      setSynced({ id });
+      const seeded = draft ? { ...draft } : ({ name: "", verbosity: 3, enabled: 1 } as TurPersona);
+      if (draft) delete (seeded as Partial<TurPersona>).id;
+      setPersona(seeded as TurPersona);
     }
-  }, [id, t, draft]);
+  } else if (fetched && (synced?.id !== id || synced.record !== fetched)) {
+    setSynced({ id, record: fetched });
+    setPersona(fetched);
+  }
 
   return (
     <LoadProvider checkIsNotUndefined={persona} error={error} tryAgainUrl={`${ROUTES.BENTO_PERSONA_INSTANCE}/${id}`}>
