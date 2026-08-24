@@ -14,7 +14,7 @@ import {
 } from "@tabler/icons-react";
 
 import { useEvalDatasets, useEvalGraderStacks } from "@/api/queries/eval-studio.queries";
-import { BentoHero } from "@/components/bento";
+import { BentoHero, bentoChipClass } from "@/components/bento";
 import { BentoEvalGeneratePanel } from "./bento.eval.generate-panel";
 import { BentoEvalNLFacetPanel } from "./bento.eval.nl-facet-panel";
 import { BentoEvalOnlinePanel } from "./bento.eval.online-panel";
@@ -88,7 +88,7 @@ export default function BentoEvalPage() {
             "Reusable datasets and grader stacks for the evaluation platform — provide a dataset, compose a grader stack, and share them across agents.",
         })}
         leading={
-          <div className="flex size-12 items-center justify-center rounded-2xl bg-gradient-to-br from-amber-500 to-rose-500 text-white shadow-lg">
+          <div className={`flex size-12 items-center justify-center rounded-2xl ${bentoChipClass('amber')} text-white shadow-lg`}>
             <IconFlask2 size={24} />
           </div>
         }

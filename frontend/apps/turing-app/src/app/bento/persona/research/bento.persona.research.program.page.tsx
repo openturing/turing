@@ -1,6 +1,6 @@
 import { personaResearchService, useResearchStudies } from "@/api/queries/persona-research.queries";
 import { ROUTES } from "@/app/routes.const";
-import { BentoFormSection, BentoHero } from "@/components/bento";
+import { BentoFormSection, BentoHero, bentoChipClass } from "@/components/bento";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import type { ResearchProgramRollup } from "@/models/persona/persona-research.model";
@@ -86,7 +86,7 @@ export default function BentoPersonaResearchProgramPage() {
         backTo={ROUTES.BENTO_PERSONA_RESEARCH}
         backLabel={t("persona.research.program.back")}
         leading={
-          <span className="grid h-12 w-12 place-items-center rounded-2xl bg-linear-to-br from-violet-600 to-fuchsia-600 text-white shadow-md">
+          <span className={`grid h-12 w-12 place-items-center rounded-2xl ${bentoChipClass('violet')} text-white shadow-md`}>
             <IconStack2 size={24} />
           </span>
         }
@@ -121,7 +121,7 @@ export default function BentoPersonaResearchProgramPage() {
                   >
                     <span
                       className={`grid size-8 shrink-0 place-items-center rounded-lg text-sm ${
-                        isSelected ? "bg-linear-to-br from-violet-600 to-fuchsia-600 text-white" : "bg-muted text-muted-foreground"
+                        isSelected ? `${bentoChipClass('violet')} text-white` : "bg-muted text-muted-foreground"
                       }`}
                     >
                       {isSelected ? <IconCheck size={16} /> : <IconUsersGroup size={16} />}

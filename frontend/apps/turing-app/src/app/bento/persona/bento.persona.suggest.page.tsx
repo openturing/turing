@@ -1,6 +1,6 @@
 import { usePersonas } from "@/api/queries/persona.queries";
 import { ROUTES } from "@/app/routes.const";
-import { BentoFormSection, BentoHero } from "@/components/bento";
+import { BentoFormSection, BentoHero, bentoChipClass } from "@/components/bento";
 import {
   ContentFitDetails,
   FitBar,
@@ -86,7 +86,7 @@ export default function BentoPersonaSuggestPage() {
         backTo={ROUTES.BENTO_PERSONA_INSTANCE}
         backLabel={t("persona.title")}
         leading={
-          <span className="grid h-12 w-12 place-items-center rounded-2xl bg-linear-to-br from-violet-500 to-fuchsia-600 text-white shadow-md">
+          <span className={`grid h-12 w-12 place-items-center rounded-2xl ${bentoChipClass('violet')} text-white shadow-md`}>
             <IconTargetArrow size={24} />
           </span>
         }

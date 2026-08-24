@@ -46,9 +46,7 @@ const SOURCES: Record<LoggingSource, SourceMeta> = {
   aem: {
     icon: IconPlugConnected,
     // T1013 left this pair open: indigo-500 to violet-600 is not a shade off a
-    // declared tone but a combination none of the seven offers, so snapping it
-    // would change the hue rather than settle a drift.
-    chip: "bg-linear-to-br from-indigo-500 to-violet-600",
+    chip: bentoChipClass('indigo'),
     titleKey: "logging.aem",
     descKey: "logging.aemDesc",
     Page: LoggingAemPage,

@@ -1,6 +1,6 @@
 import { ROUTES } from "@/app/routes.const";
 import { useAiAnalyticsNav } from "@/app/console/ai-analytics/use-ai-analytics-nav";
-import { BentoHero } from "@/components/bento";
+import { BentoHero, bentoChipClass } from "@/components/bento";
 import { IconReportAnalytics } from "@tabler/icons-react";
 import { useTranslation } from "react-i18next";
 import { NavLink, Outlet } from "react-router-dom";
@@ -24,7 +24,7 @@ export default function BentoAiAnalyticsPage() {
         backTo={ROUTES.BENTO_AREA_GENERATIVE_AI}
         backLabel={t("home.sections.generativeAi.label")}
         leading={
-          <span className="grid h-12 w-12 place-items-center rounded-2xl bg-linear-to-br from-indigo-500 to-blue-600 text-white shadow-md">
+          <span className={`grid h-12 w-12 place-items-center rounded-2xl ${bentoChipClass('blue')} text-white shadow-md`}>
             <IconReportAnalytics size={24} />
           </span>
         }

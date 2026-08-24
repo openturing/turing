@@ -145,7 +145,7 @@ function CreateStudyCard() {
         backTo={ROUTES.BENTO_PERSONA_RESEARCH}
         backLabel={t("persona.research.back")}
         leading={
-          <span className="grid h-12 w-12 place-items-center rounded-2xl bg-linear-to-br from-violet-600 to-fuchsia-600 text-white shadow-md">
+          <span className={`grid h-12 w-12 place-items-center rounded-2xl ${bentoChipClass('violet')} text-white shadow-md`}>
             <IconUsersGroup size={24} />
           </span>
         }
@@ -501,7 +501,7 @@ function StudyWorkspace({ studyId }: Readonly<{ studyId: string }>) {
         backTo={ROUTES.BENTO_PERSONA_RESEARCH}
         backLabel={t("persona.research.back")}
         leading={
-          <span className="grid h-12 w-12 place-items-center rounded-2xl bg-linear-to-br from-violet-600 to-fuchsia-600 text-white shadow-md">
+          <span className={`grid h-12 w-12 place-items-center rounded-2xl ${bentoChipClass('violet')} text-white shadow-md`}>
             <IconUsersGroup size={24} />
           </span>
         }

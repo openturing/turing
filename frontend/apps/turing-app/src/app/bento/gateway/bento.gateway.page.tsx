@@ -12,7 +12,7 @@ import {
 } from "@tabler/icons-react";
 
 import { ROUTES } from "@/app/routes.const";
-import { BentoFormSection, BentoHero } from "@/components/bento";
+import { BentoFormSection, BentoHero, bentoChipClass } from "@/components/bento";
 import { GatewayModelPicker } from "@/components/gateway/gateway-model-picker";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -102,7 +102,7 @@ export default function BentoGatewayPage() {
         backTo={ROUTES.BENTO_AREA_MANAGEMENT}
         backLabel={t("home.sections.management.label")}
         leading={
-          <span className="grid h-12 w-12 place-items-center rounded-2xl bg-linear-to-br from-indigo-500 to-blue-600 text-white shadow-md">
+          <span className={`grid h-12 w-12 place-items-center rounded-2xl ${bentoChipClass('blue')} text-white shadow-md`}>
             <IconApi size={24} />
           </span>
         }

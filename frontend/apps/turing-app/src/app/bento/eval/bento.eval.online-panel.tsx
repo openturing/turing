@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { bentoChipClass } from "@/components/bento";
 import { useTranslation } from "react-i18next";
 import {
   IconActivityHeartbeat,
@@ -93,7 +94,7 @@ export function BentoEvalOnlinePanel() {
             type="button"
             disabled={run.isPending}
             onClick={() => run.mutate()}
-            className="ml-auto inline-flex items-center gap-1.5 rounded-lg bg-gradient-to-br from-amber-500 to-rose-500 px-3.5 py-1.5 text-sm font-medium text-white shadow disabled:opacity-50"
+            className={`ml-auto inline-flex items-center gap-1.5 rounded-lg ${bentoChipClass('amber')} px-3.5 py-1.5 text-sm font-medium text-white shadow disabled:opacity-50`}
           >
             <IconPlayerPlay size={16} />
             {run.isPending

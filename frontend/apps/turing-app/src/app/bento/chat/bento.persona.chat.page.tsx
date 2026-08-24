@@ -1,4 +1,4 @@
-import { BentoHero } from "@/components/bento";
+import { BentoHero, bentoChipClass } from "@/components/bento";
 import PersonaChatPage from "@/app/console/chat/persona-chat.page";
 import { IconMasksTheater } from "@tabler/icons-react";
 import { useTranslation } from "react-i18next";
@@ -30,7 +30,7 @@ export default function BentoPersonaChatPage() {
           backTo={ROUTES.BENTO_AREA_GENERATIVE_AI}
           backLabel={t("home.sections.generativeAi.label")}
           leading={
-            <span className="grid h-12 w-12 place-items-center rounded-2xl bg-linear-to-br from-fuchsia-500 to-pink-600 text-white shadow-md">
+            <span className={`grid h-12 w-12 place-items-center rounded-2xl ${bentoChipClass('rose')} text-white shadow-md`}>
               <IconMasksTheater size={24} />
             </span>
           }

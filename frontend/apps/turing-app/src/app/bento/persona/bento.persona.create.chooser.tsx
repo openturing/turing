@@ -133,7 +133,7 @@ export function BentoPersonaCreateChooser({ setPersona }: Readonly<{ setPersona:
           onClick={() => fileInputRef.current?.click()}
           className="bento-tile bento-tile-clickable bento-glass flex flex-col items-start gap-3 rounded-3xl p-6 text-left disabled:cursor-progress disabled:opacity-90"
         >
-          <span className="grid h-11 w-11 place-items-center rounded-2xl bg-linear-to-br from-fuchsia-500 to-violet-600 text-white shadow-md">
+          <span className={`grid h-11 w-11 place-items-center rounded-2xl ${bentoChipClass('violet')} text-white shadow-md`}>
             {busy ? <IconLoader2 size={22} className="animate-spin" /> : <IconMicrophone size={22} />}
           </span>
           <span className="text-base font-semibold tracking-tight md:text-lg">
@@ -158,12 +158,12 @@ export function BentoPersonaCreateChooser({ setPersona }: Readonly<{ setPersona:
               <style>{"@keyframes tur-indeterminate{0%{transform:translateX(-110%)}100%{transform:translateX(260%)}}"}</style>
               {indeterminate ? (
                 <div
-                  className="absolute inset-y-0 left-0 w-2/5 rounded-full bg-gradient-to-r from-fuchsia-500 to-violet-600"
+                  className={`absolute inset-y-0 left-0 w-2/5 rounded-full ${bentoChipClass('violet')} [--bento-tone-angle:to_right]`}
                   style={{ animation: "tur-indeterminate 1.3s ease-in-out infinite" }}
                 />
               ) : (
                 <div
-                  className="h-full rounded-full bg-gradient-to-r from-fuchsia-500 to-violet-600 transition-[width] duration-300"
+                  className={`h-full rounded-full ${bentoChipClass('violet')} [--bento-tone-angle:to_right] transition-[width] duration-300`}
                   style={{ width: `${percent}%` }}
                 />
               )}

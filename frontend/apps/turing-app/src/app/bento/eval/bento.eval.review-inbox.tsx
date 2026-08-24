@@ -274,7 +274,7 @@ function CalibrationPanel({ agentId }: Readonly<{ agentId: string }>) {
               requiredReviewers: Math.max(1, Number(reviewers) || 1),
             })
           }
-          className="inline-flex items-center gap-1.5 rounded-lg bg-gradient-to-br from-amber-500 to-rose-500 px-3.5 py-1.5 text-sm font-medium text-white shadow disabled:opacity-50"
+          className={`inline-flex items-center gap-1.5 rounded-lg ${bentoChipClass('amber')} px-3.5 py-1.5 text-sm font-medium text-white shadow disabled:opacity-50`}
         >
           <IconFlask size={16} />
           {t("evalStudio.calibration.sample", { defaultValue: "Audit MODEL-graded run" })}

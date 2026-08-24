@@ -1,5 +1,5 @@
 import { ROUTES } from "@/app/routes.const";
-import { BentoFormSection, BentoHero } from "@/components/bento";
+import { BentoFormSection, BentoHero, bentoChipClass } from "@/components/bento";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -89,7 +89,7 @@ export default function BentoPersonaCohortPage() {
         backTo={ROUTES.BENTO_PERSONA_RESEARCH}
         backLabel={t("persona.cohort.back")}
         leading={
-          <span className="grid h-12 w-12 place-items-center rounded-2xl bg-linear-to-br from-violet-600 to-fuchsia-600 text-white shadow-md">
+          <span className={`grid h-12 w-12 place-items-center rounded-2xl ${bentoChipClass('violet')} text-white shadow-md`}>
             <IconUsersGroup size={24} />
           </span>
         }
@@ -179,7 +179,7 @@ function CohortCard({
   return (
     <div className="bento-tile bento-glass flex flex-col gap-3 rounded-2xl p-4">
       <div className="flex items-start gap-3">
-        <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-linear-to-br from-violet-600 to-fuchsia-600 text-xs font-bold text-white">
+        <span className={`grid size-9 shrink-0 place-items-center rounded-xl ${bentoChipClass('violet')} text-xs font-bold text-white`}>
           {(draft.name || "?").slice(0, 2).toUpperCase()}
         </span>
         <div className="min-w-0 flex-1">

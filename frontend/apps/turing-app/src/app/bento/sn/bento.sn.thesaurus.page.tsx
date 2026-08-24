@@ -9,7 +9,7 @@ import {
   useSiteSelections,
 } from "@/api/queries/thesaurus.queries";
 import { ROUTES } from "@/app/routes.const";
-import { BentoFormSection, BentoHero } from "@/components/bento";
+import { BentoFormSection, BentoHero, bentoChipClass } from "@/components/bento";
 import { GradientButton } from "@/components/ui/gradient-button";
 import { GradientSwitch } from "@/components/ui/gradient-switch";
 import { Input } from "@/components/ui/input";
@@ -41,7 +41,7 @@ export default function BentoSNThesaurusPage() {
         backTo={instanceRoute}
         backLabel={t("sn.title")}
         leading={
-          <span className="grid h-12 w-12 place-items-center rounded-2xl bg-linear-to-br from-violet-500 to-indigo-600 text-white shadow-md">
+          <span className={`grid h-12 w-12 place-items-center rounded-2xl ${bentoChipClass('violet')} text-white shadow-md`}>
             <IconSitemap size={24} />
           </span>
         }
