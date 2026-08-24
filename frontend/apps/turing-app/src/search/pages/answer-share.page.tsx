@@ -1,8 +1,7 @@
 import { Badge } from "@/components/ui/badge";
-import { fetchAnswerShare, type TurAnswerShareView } from "@viglet/turing-react-sdk";
+import { useAnswerShare } from "@/api/queries/answer-share.queries";
 import { TuringMarkdown } from "@viglet/turing-react-ui";
 import { IconExternalLink, IconLoader2, IconSparkles } from "@tabler/icons-react";
-import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link, useParams } from "react-router-dom";
 import { lensHref } from "../lib/search-lens";
@@ -46,23 +45,11 @@ export default function AnswerSharePage() {
   const site = siteName || "";
   const { t } = useTranslation();
 
-  const [view, setView] = useState<TurAnswerShareView | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    let current = true;
-    setLoading(true);
-    // fetchAnswerShare swallows its own errors and resolves null, so a missing or
-    // expired id lands in the not-found branch rather than an unhandled rejection.
-    void fetchAnswerShare(site, shareId ?? "").then((data) => {
-      if (!current) return;
-      setView(data);
-      setLoading(false);
-    });
-    return () => {
-      current = false;
-    };
-  }, [site, shareId]);
+  // T1018 — read through the hook, which keeps `fetchAnswerShare`'s contract of
+  // resolving `null` for a missing or expired id rather than rejecting, so the
+  // not-found branch below is reached the same way.
+  const { data: view = null, isPending } = useAnswerShare(site, shareId);
+  const loading = Boolean(site) && Boolean(shareId) && isPending;
 
   const sources = parseJson<SnapshotSource[]>(view?.sourcesJson, []);
   const filters = parseJson<Record<string, string[]>>(view?.filtersJson, {});

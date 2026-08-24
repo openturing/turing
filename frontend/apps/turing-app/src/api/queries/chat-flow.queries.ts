@@ -7,6 +7,7 @@ import type {
   TurChatFlowVariantRequest,
   TurChatFlowVariantResponse,
 } from '@/models/agent/chat-flow.model';
+import type { TurChatFlowSubmission } from '@/models/agent/chat-flow-submission.model';
 import { TurChatFlowService, type TurChatFlowImportPayload } from '@/services/agent/chat-flow.service';
 import { queryKeys } from './keys';
 
@@ -31,6 +32,20 @@ export function useChatFlow(agentId: string | undefined, flowId: string | undefi
     queryKey: flowId ? queryKeys.chatFlows.detail(flowId) : ['chat-flows', 'detail', 'pending'],
     queryFn: () => service.get(agentId as string, flowId as string),
     enabled: Boolean(agentId) && Boolean(flowId) && flowId !== 'new',
+  });
+}
+
+/**
+ * T1018 — the submissions one flow has collected. Disabled until a flow is
+ * chosen, which is what the history page's `if (!selectedFlowId) return` did.
+ */
+export function useChatFlowSubmissions(agentId: string | undefined, flowId: string | undefined) {
+  return useQuery<TurChatFlowSubmission[]>({
+    queryKey: agentId && flowId
+      ? queryKeys.chatFlows.submissions(agentId, flowId)
+      : ['chat-flows', 'submissions', 'pending'],
+    queryFn: () => service.submissions(agentId as string, flowId as string),
+    enabled: Boolean(agentId) && Boolean(flowId),
   });
 }
 

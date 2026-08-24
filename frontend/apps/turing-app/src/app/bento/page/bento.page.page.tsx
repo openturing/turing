@@ -1,3 +1,4 @@
+import { useInvalidatePageSites, usePageSites } from "@/api/queries/page.queries";
 import { ROUTES } from "@/app/routes.const";
 import { BentoHero, bentoChipClass } from "@/components/bento";
 import { DialogDelete } from "@/components/dialog.delete";
@@ -7,10 +8,9 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { GradientButton } from "@/components/ui/gradient-button";
 import { Input } from "@/components/ui/input";
-import type { TurPageSite } from "@/models/page/page-site.model";
 import { TurPageService } from "@/services/page/page.service";
 import { IconCode, IconFileZip, IconGlobe, IconTag, IconTrash, IconUpload, IconUser } from "@tabler/icons-react";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "@viglet/viglet-design-system";
 
@@ -24,8 +24,6 @@ const pageService = new TurPageService();
  */
 export default function BentoPagePage() {
   const { t } = useTranslation();
-  const [sites, setSites] = useState<TurPageSite[]>();
-  const [error, setError] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [deleteOpenFor, setDeleteOpenFor] = useState<string | null>(null);
@@ -33,16 +31,10 @@ export default function BentoPagePage() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const loadSites = useCallback(async () => {
-    setError(null);
-    try {
-      setSites(await pageService.query());
-    } catch {
-      setError(t("page.loadError"));
-    }
-  }, [t]);
-
-  useEffect(() => { loadSites(); }, [loadSites]);
+  // T1018 — the listing comes from the query cache, and each write invalidates
+  // it rather than calling a loader by hand.
+  const { data: sites, isError } = usePageSites();
+  const loadSites = useInvalidatePageSites();
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -83,7 +75,7 @@ export default function BentoPagePage() {
   };
 
   return (
-    <LoadProvider checkIsNotUndefined={sites} error={error} tryAgainUrl={ROUTES.BENTO_PAGE}>
+    <LoadProvider checkIsNotUndefined={sites} error={isError ? t("page.loadError") : null} tryAgainUrl={ROUTES.BENTO_PAGE}>
       <input
         ref={fileInputRef}
         type="file"

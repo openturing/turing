@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
+import { useChatFlowSubmissions, useChatFlows } from "@/api/queries/chat-flow.queries";
 import { useTranslation } from "react-i18next";
 import { useParams } from "react-router-dom";
 
@@ -20,9 +21,6 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { exportToXlsx } from "@/lib/export-xlsx";
-import type { TurChatFlow } from "@/models/agent/chat-flow.model";
-import type { TurChatFlowSubmission } from "@/models/agent/chat-flow-submission.model";
-import { TurChatFlowService } from "@/services/agent/chat-flow.service";
 import { IconDownload, IconInbox } from "@tabler/icons-react";
 
 /**
@@ -34,8 +32,6 @@ import { IconDownload, IconInbox } from "@tabler/icons-react";
  *
  * @since 2026.2.5
  */
-const turChatFlowService = new TurChatFlowService();
-
 const formatDateTime = (iso: string) => {
   if (!iso) return "";
   try {
@@ -49,43 +45,17 @@ export default function AIAgentHistoryPage() {
   const { id: agentId } = useParams() as { id: string };
   const { t } = useTranslation();
 
-  const [flows, setFlows] = useState<TurChatFlow[]>([]);
-  const [selectedFlowId, setSelectedFlowId] = useState<string>("");
-  const [submissions, setSubmissions] = useState<TurChatFlowSubmission[]>([]);
-  const [loadingFlows, setLoadingFlows] = useState(true);
-  const [loadingSubmissions, setLoadingSubmissions] = useState(false);
-
-  // Load flows of this agent once.
-  useEffect(() => {
-    if (!agentId) return;
-    setLoadingFlows(true);
-    turChatFlowService
-      .query(agentId)
-      .then((list) => {
-        setFlows(list);
-        // Auto-select the first flow so the user has data to look at on
-        // landing — most agents will only have one flow anyway.
-        if (list.length > 0 && list[0].id) {
-          setSelectedFlowId(list[0].id);
-        }
-      })
-      .catch(() => setFlows([]))
-      .finally(() => setLoadingFlows(false));
-  }, [agentId]);
-
-  // Load submissions whenever the selected flow changes.
-  useEffect(() => {
-    if (!agentId || !selectedFlowId) {
-      setSubmissions([]);
-      return;
-    }
-    setLoadingSubmissions(true);
-    turChatFlowService
-      .submissions(agentId, selectedFlowId)
-      .then(setSubmissions)
-      .catch(() => setSubmissions([]))
-      .finally(() => setLoadingSubmissions(false));
-  }, [agentId, selectedFlowId]);
+  // T1018 — both reads come from the query cache, and the selection between
+  // them is derived. The first flow is auto-selected so the page lands on data
+  // rather than an empty table; an effect wrote that choice into state one
+  // render after the flows arrived, and it could not tell "nothing picked yet"
+  // from "picked nothing". The submissions query is disabled until there is a
+  // flow, which is what its early return did.
+  const { data: flows = [], isPending: loadingFlows } = useChatFlows(agentId);
+  const [pickedFlowId, setPickedFlowId] = useState<string>("");
+  const selectedFlowId = pickedFlowId || flows[0]?.id || "";
+  const { data: submissions = [], isFetching: loadingSubmissions } =
+    useChatFlowSubmissions(agentId, selectedFlowId || undefined);
 
   // Variable keys are dynamic — take the union of keys across submissions
   // so a row missing one of the columns doesn't drop it from the table.
@@ -140,7 +110,7 @@ export default function AIAgentHistoryPage() {
             </span>
             <Select
               value={selectedFlowId}
-              onValueChange={setSelectedFlowId}
+              onValueChange={setPickedFlowId}
               disabled={loadingFlows || flows.length === 0}
             >
               <SelectTrigger className="h-8 text-xs flex-1">

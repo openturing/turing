@@ -1,3 +1,4 @@
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { render, screen } from "@testing-library/react";
 import axios from "axios";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
@@ -13,12 +14,19 @@ import AnswerSharePage from "../pages/answer-share.page";
  */
 
 function renderShare(id = "shr-42") {
+  // T1018 — the page reads its snapshot through a React Query hook now, so it
+  // needs a client. A fresh one per render keeps each case's mocked response
+  // from being answered out of the previous case's cache; `retry: false` keeps
+  // the not-found case from being retried before it is asserted on.
+  const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   return render(
-    <MemoryRouter initialEntries={[`/answer/Sample/share/${id}`]}>
-      <Routes>
-        <Route path="/answer/:siteName/share/:shareId" element={<AnswerSharePage />} />
-      </Routes>
-    </MemoryRouter>,
+    <QueryClientProvider client={queryClient}>
+      <MemoryRouter initialEntries={[`/answer/Sample/share/${id}`]}>
+        <Routes>
+          <Route path="/answer/:siteName/share/:shareId" element={<AnswerSharePage />} />
+        </Routes>
+      </MemoryRouter>
+    </QueryClientProvider>,
   );
 }
 

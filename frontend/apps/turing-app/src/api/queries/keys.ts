@@ -51,6 +51,20 @@ export const queryKeys = {
     // widget reads as a single unit.
     withStatus: () => [...queryKeys.snSites.all(), 'with-status'] as const,
   },
+  // T1018 — a vector search is identified by the site and the whole request,
+  // which is what the URL encodes.
+  annSearch: {
+    all: () => ['ann-search'] as const,
+    query: (site: string, request: unknown) =>
+      [...queryKeys.annSearch.all(), site, request] as const,
+  },
+  // T1018 — one shared answer, identified by the site it belongs to and the
+  // share id in the link.
+  answerShares: {
+    all: () => ['answer-shares'] as const,
+    detail: (site: string, shareId: string) =>
+      [...queryKeys.answerShares.all(), site, shareId] as const,
+  },
   // T1018 — the AI-spend dashboard. The summary and the timeseries share a date
   // range, so both are keyed by it; the price table and its two lookup maps are
   // range-independent.
@@ -63,6 +77,9 @@ export const queryKeys = {
     prices: () => [...queryKeys.costGovernance.all(), 'prices'] as const,
     providerLinks: () => [...queryKeys.costGovernance.all(), 'provider-links'] as const,
     consumerPlans: () => [...queryKeys.costGovernance.all(), 'consumer-plans'] as const,
+    // T1018 — a preflight estimate is identified by the request it prices.
+    batchPreflight: (request: unknown) =>
+      [...queryKeys.costGovernance.all(), 'batch-preflight', request] as const,
   },
   // T1018 — the asset browser: one listing per folder prefix, and the training
   // records for whatever files that listing shows.
@@ -71,6 +88,17 @@ export const queryKeys = {
     list: (prefix: string) => [...queryKeys.assets.all(), 'list', prefix] as const,
     trainingRecords: (names: string[]) =>
       [...queryKeys.assets.all(), 'training-records', [...names].sort().join('|')] as const,
+  },
+  // T1018 — an SN site's fields, and the engine-side status of each.
+  snFields: {
+    all: () => ['sn-fields'] as const,
+    list: (siteId: string) => [...queryKeys.snFields.all(), 'list', siteId] as const,
+    status: (siteId: string) => [...queryKeys.snFields.all(), 'status', siteId] as const,
+  },
+  // T1018 — the static sites the page manager serves.
+  pages: {
+    all: () => ['pages'] as const,
+    list: () => [...queryKeys.pages.all(), 'list'] as const,
   },
   // T1018 — the Git surface: the repository list, and one repo's branches and
   // tree. The tree is keyed by branch and path because that is what identifies
@@ -238,6 +266,9 @@ export const queryKeys = {
     detail: (id: string) => [...queryKeys.chatFlows.all(), 'detail', id] as const,
     triggerConflicts: (agentId: string) =>
       [...queryKeys.chatFlows.all(), 'trigger-conflicts', agentId] as const,
+    // T1018 — the form submissions a flow has collected.
+    submissions: (agentId: string, flowId: string) =>
+      [...queryKeys.chatFlows.all(), 'submissions', agentId, flowId] as const,
     lint: (agentId: string, flowId: string) =>
       [...queryKeys.chatFlows.all(), 'lint', agentId, flowId] as const,
     funnel: (agentId: string, flowId: string) =>

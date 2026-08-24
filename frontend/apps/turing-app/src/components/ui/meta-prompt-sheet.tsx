@@ -1,5 +1,6 @@
 "use client"
-import { useEffect, useRef, useState } from "react"
+import { useGlobalSettings } from "@/api/queries/viglet-ai.queries"
+import { useRef, useState } from "react"
 import { useTranslation } from "react-i18next"
 import {
   IconLoader2,
@@ -20,7 +21,6 @@ import {
 import { Textarea } from "@/components/ui/textarea"
 import { cn } from "@/lib/utils"
 import { postLlmChat, type TurChatConversationMessage } from "@viglet/turing-react-sdk"
-import { TurGlobalSettingsService } from "@/services/system/global-settings.service"
 
 /**
  * Reusable "Help me write" / "Vibe coding" affordance: opens a side
@@ -41,7 +41,6 @@ import { TurGlobalSettingsService } from "@/services/system/global-settings.serv
  * @since 2026.2.5
  */
 
-const globalSettingsService = new TurGlobalSettingsService()
 
 export type MetaPromptTone = "violet" | "fuchsia" | "blue" | "emerald"
 
@@ -156,22 +155,24 @@ export function MetaPromptSheet({
   const [open, setOpen] = useState(false)
   const [draft, setDraft] = useState(metaPrompt ?? "")
   const [running, setRunning] = useState(false)
-  const [defaultLlmId, setDefaultLlmId] = useState<string | null>(null)
+  // T1018 — the default LLM comes from the shared settings cache, which every
+  // other surface reading it already fills.
+  const { data: globalSettings } = useGlobalSettings()
+  const defaultLlmId = globalSettings?.defaultLlmId ?? null
   const textareaRef = useRef<HTMLTextAreaElement>(null)
 
   const TriggerIcon = triggerIcon ?? IconWand
   const hasBrief = !!metaPrompt?.trim() || !!draft.trim()
 
-  useEffect(() => {
-    globalSettingsService.query()
-      .then((s) => setDefaultLlmId(s.defaultLlmId ?? null))
-      .catch(() => setDefaultLlmId(null))
-  }, [])
 
   // Re-sync local draft when the parent prop changes (e.g. form reset).
-  useEffect(() => {
+  // T1017 — during render, so a form reset does not leave the previous brief
+  // on screen for a committed pass before the new one replaces it.
+  const [syncedMetaPrompt, setSyncedMetaPrompt] = useState(metaPrompt)
+  if (syncedMetaPrompt !== metaPrompt) {
+    setSyncedMetaPrompt(metaPrompt)
     setDraft(metaPrompt ?? "")
-  }, [metaPrompt])
+  }
 
   async function handleRun() {
     if (!defaultLlmId || running) return

@@ -2,12 +2,6 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
-  TurAnnSearchService,
-  type TurAnnFacetItem,
-  type TurAnnResultItem,
-  type TurAnnSearchResponse,
-} from "@/services/ann/ann.search.service";
-import {
   IconAtom,
   IconBraces,
   IconChevronDown,
@@ -17,14 +11,19 @@ import {
   IconLoader2,
   IconSearch,
 } from "@tabler/icons-react";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useMemo, useState } from "react";
+import { useAnnSearch } from "@/api/queries/ann-search.queries";
+import type {
+  TurAnnFacetItem,
+  TurAnnResultItem,
+  TurAnnSearchResponse,
+} from "@/services/ann/ann.search.service";
 import { useTranslation } from "react-i18next";
 import { useParams, useSearchParams } from "react-router-dom";
 import { JsonSheet } from "../components/json-sheet";
 import { SearchLensSwitcher } from "../components/search-lens-switcher";
 import { readLensQuery } from "../lib/search-lens";
 
-const annSearchService = new TurAnnSearchService();
 
 const DEFAULT_TOP_K = 20;
 const DEFAULT_PAGE_SIZE = 20;
@@ -44,11 +43,7 @@ export default function AnnSearchPage() {
   const currentPage = Math.max(0, Number(searchParams.get("page") ?? 0) || 0);
 
   const [inputValue, setInputValue] = useState(initialQuery);
-  const [response, setResponse] = useState<TurAnnSearchResponse | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const [jsonView, setJsonView] = useState<Record<string, unknown> | null>(null);
-  const lastQueryRef = useRef<string>("");
 
   // T855 — the lens-independent question the switcher carries to `/sn` / `/answer`.
   const lensQuery = useMemo(() => readLensQuery("vector", searchParams), [searchParams]);
@@ -63,43 +58,33 @@ export default function AnnSearchPage() {
     return result;
   }, [searchParams]);
 
-  const runSearch = useCallback(
-    async (query: string, filters: SelectedFilters, locale: string, page: number) => {
-      const isBrowseAll = !query.trim() || query.trim() === "*";
-      setLoading(true);
-      setError(null);
-      try {
-        const data = await annSearchService.search(site, {
-          query: isBrowseAll ? "*" : query,
-          locale: locale || undefined,
-          topK: DEFAULT_TOP_K,
-          page,
-          pageSize: DEFAULT_PAGE_SIZE,
-          filters: Object.keys(filters).length > 0 ? filters : undefined,
-        });
-        setResponse(data);
-        lastQueryRef.current = query;
-      } catch (e) {
-        const status = (e as { response?: { status?: number } })?.response?.status;
-        if (status === 403) {
-          setError(t("ann.notAvailable"));
-        } else if (status === 404) {
-          setError(t("ann.siteNotFound"));
-        } else {
-          setError(t("ann.error"));
-        }
-        setResponse(null);
-      } finally {
-        setLoading(false);
-      }
-    },
-    [site, t],
-  );
+  // T1018 — the search is a cached read keyed by the site and the request, and
+  // the URL is what builds that request. An effect used to run it on every
+  // `searchParams` change and write the answer into state, so paging back to a
+  // page already seen re-searched it; now that is a cache hit. A blank or `*`
+  // query is the browse-all request rather than no request, which is why the
+  // query is not disabled for it.
+  const request = useMemo(() => {
+    const isBrowseAll = !initialQuery.trim() || initialQuery.trim() === "*";
+    return {
+      query: isBrowseAll ? "*" : initialQuery,
+      locale: initialLocale || undefined,
+      topK: DEFAULT_TOP_K,
+      page: currentPage,
+      pageSize: DEFAULT_PAGE_SIZE,
+      filters: Object.keys(selectedFilters).length > 0 ? selectedFilters : undefined,
+    };
+  }, [initialQuery, initialLocale, currentPage, selectedFilters]);
 
-  useEffect(() => {
-    runSearch(initialQuery, selectedFilters, initialLocale, currentPage);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchParams]);
+  const { data, isFetching: loading, error: searchError } = useAnnSearch(site, request);
+  const response = searchError ? null : (data ?? null);
+  const error = (() => {
+    if (!searchError) return null;
+    const status = (searchError as { response?: { status?: number } })?.response?.status;
+    if (status === 403) return t("ann.notAvailable");
+    if (status === 404) return t("ann.siteNotFound");
+    return t("ann.error");
+  })();
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();

@@ -9,16 +9,10 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { GradientButton } from "@/components/ui/gradient-button";
-import type {
-  TurBatchCostEstimate,
-  TurBatchCostRequest,
-} from "@/models/cost-governance/cost-governance.model";
-import { TurCostGovernanceService } from "@/services/cost-governance/cost-governance.service";
+import type { TurBatchCostRequest } from "@/models/cost-governance/cost-governance.model";
 import { IconAlertTriangle, IconLoader2 } from "@tabler/icons-react";
-import { useEffect, useState } from "react";
+import { useBatchCostPreflight } from "@/api/queries/cost-governance.queries";
 import { useTranslation } from "react-i18next";
-
-const service = new TurCostGovernanceService();
 
 function formatUsd(n: number): string {
   if (n === 0) return "$0.00";
@@ -47,31 +41,12 @@ export function BatchCostConfirmDialog({
   onCancel: () => void;
 }>) {
   const { t } = useTranslation();
-  const [estimate, setEstimate] = useState<TurBatchCostEstimate | null>(null);
-  const [loading, setLoading] = useState(false);
-
-  useEffect(() => {
-    if (!open || !params) {
-      setEstimate(null);
-      return;
-    }
-    let cancelled = false;
-    setLoading(true);
-    service
-      .preflightBatch(params)
-      .then((e) => {
-        if (!cancelled) setEstimate(e);
-      })
-      .catch(() => {
-        if (!cancelled) setEstimate(null);
-      })
-      .finally(() => {
-        if (!cancelled) setLoading(false);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [open, params]);
+  // T1018 — the estimate comes from the query cache, keyed by the request it
+  // prices, so confirming the same batch twice does not price it twice. The
+  // query is disabled while the dialog is shut, which is what the early return
+  // in the effect did.
+  const { data: estimate = null, isPending } = useBatchCostPreflight(params, open);
+  const loading = open && params !== null && isPending;
 
   return (
     <Dialog open={open} onOpenChange={(next) => !next && onCancel()}>

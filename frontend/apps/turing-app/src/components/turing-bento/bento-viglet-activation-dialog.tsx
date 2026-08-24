@@ -63,6 +63,12 @@ export function BentoVigletActivationDialog({
    */
   const cancelledRef = useRef(false);
 
+  // T1018 — the effect is the right place, and this one has no cached read in
+  // it. It drives a device-authorization poll: a chain of timeouts that can
+  // widen on a SLOW_DOWN, cancelled through the ref above. The synchronous
+  // resets at the top are the machine returning to its start state each time
+  // the dialog opens, which is an event and not something this render derives.
+  /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
     if (!open) return;
 
@@ -130,6 +136,7 @@ export function BentoVigletActivationDialog({
       if (timer !== undefined) window.clearTimeout(timer);
     };
   }, [open, refreshAfterActivation]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   const verificationUrl = session?.verificationUriComplete || session?.verificationUri;
 

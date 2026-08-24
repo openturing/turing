@@ -20,8 +20,6 @@
 
 ## Block BV — The quality gate stops at the package boundary
 
-- ⏳ **T1018** (deps: —) **8 files still fetch with useState and useEffect, and most need a query hook that does not exist** — Thirty-one files still hold a data-loading-error triple of their own, and most need a hook that does not exist yet. → §CIII.4
-
 ## Done when — T1000
 
 - **One chrome renders and the console routes are gone** The forty console pages are
