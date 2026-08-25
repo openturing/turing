@@ -46,7 +46,7 @@
     "@tanstack/react-query-devtools": "^5.100.11",
     "@tanstack/react-table": "^8.21.3",
     "@viglet/turing-react-sdk": "workspace:*",
-    "@viglet/viglet-design-system": "^2026.2.55",
+    "@viglet/viglet-design-system": "~2026.2.58",
     "@xyflow/react": "^12.10.2",
     "axios": "^1.16.1",
     "class-variance-authority": "^0.7.1",

@@ -86,6 +86,13 @@
                 </executions>
                 <configuration>
                     <generateGitPropertiesFile>false</generateGitPropertiesFile>
+                    <!--
+                        Use the git CLI instead of the bundled JGit: JGit 5.x (shipped with
+                        4.9.10) does not understand the `commondir` indirection of git worktrees,
+                        so building from a linked worktree fails with
+                        "Could not get HEAD Ref, are you sure you have some commits...".
+                    -->
+                    <useNativeGit>true</useNativeGit>
                 </configuration>
             </plugin>
             <plugin>
