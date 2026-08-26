@@ -1316,6 +1316,81 @@ neutral grounding + manifest kernel is now `viglet-core-manifest`; see CHANGELOG
 these block the Dumont collection work — a sidecar
 (D10) can index into a hand-provisioned site before T382 lands.
 
+### XX.16 The half of the audit loop Turing cannot answer (T1029)
+
+Dumont's `DumConnectorContentAuditTask` already audits a source on a schedule: it calls
+`discoverContentIds`, creates a NOT_PROCESSED record for anything the connector never
+queued, and drops records whose environment no longer exists. That closes one loop — the
+source against the connector's own indexing ledger (`DumConnectorIndexingModel`).
+
+It never asks Turing what the SN index actually holds. So the second loop stays open: a
+document Dumont believes it published, whose write failed or whose delete never arrived,
+is invisible to both products. The connector's ledger says processed, the index says
+otherwise, and no scheduled job on either side compares the two.
+
+That gap is Turing's to close, and the cheap form is **not** a sweep of its own —
+building one here would duplicate the audit Dumont already runs. What is missing is the
+read that audit cannot make: a per-source enumeration of the ids the index currently
+holds, with a version or checksum per id, paged and cheap enough to run against a large
+site.
+
+With it, Dumont's existing audit gains a third comparison and reports the three real
+differences — in the index but not the source, in the source but not the index, and in
+both at different versions. Applying the repair stays with the connector, which already
+owns the queue. Turing's half is the honest answer to "what do you have", which today it
+cannot give.
+
+### XX.17 A manifest client for the Java SDK (T1030)
+
+Dumont already declares its schema. `DumStructuredSchema` is an ordered, immutable
+manifest of fields that publishes `TurSNJobAttributeSpec`s with every document and
+enforces the absent-versus-empty grounding contract (T381) at the record boundary. The
+connector knows each field's type, cardinality and whether it is mandatory before it
+sends anything.
+
+Turing already accepts that shape: `POST /api/sn/manifest` (T382) converges a site and
+its field schema from one declarative manifest, idempotently.
+
+The two ends do not meet, because `turing-java-sdk` has no manifest client. It ships
+`TurSNJobAttributeSpec` and the job/queue surface and nothing that provisions. A Java
+connector wanting to converge the site it is about to index has to hand-roll HTTP
+against the endpoint, guess the payload shape, and re-derive the auth and CSRF handling
+the SDK already does for indexing.
+
+So in practice nobody provisions up front. Fields are created at index time from the
+first document that carries them, which infers a type from a single value and leaves an
+optional field absent from early documents with no declaration at all — the failure T382
+was built to remove.
+
+The work is a manifest client in the SDK: build a `VigletFieldManifest` from declared
+attribute specs, POST it, and surface the plan diff and the 409 a breaking change
+returns. That is what makes "configure the source and the site provisions itself" true
+for any Java connector, not only for AEM.
+
+### XX.18 Federating to a vendor's own retrieval (T1031)
+
+Adobe's AEM Content AI vectorizes AEM sources itself and exposes Foundational Services
+APIs for retrieval and answers, plus MCP agents. A customer running it pays a separate
+AI SKU for a vector index over exactly the content a Turing deployment would otherwise
+embed a second time.
+
+Turing already has both seams. `TurSearchEnginePlugin` abstracts Solr, Elasticsearch and
+Lucene behind one lifecycle, and the agent stack reaches any remote MCP server as a
+tool. A Content AI retriever is a third implementation of the first, or a tool
+registration of the second, and neither involves a Turing document store.
+
+The value is commercial rather than technical: the customer keeps the index they are
+already paying for and buys Turing for the layer above it — multi-turn chat, agents,
+skills, facets, its own analytics, and every non-AEM source Content AI does not reach.
+It also turns a competing product into a source, which is a better posture than asking a
+customer to re-ingest what they just finished ingesting.
+
+The trade-offs are real and belong in the record before any code: the embedding model
+becomes Adobe's, ranking is not tunable, retrieval adds a network hop, and the SKU
+becomes a hard dependency of the answer path. This is filed as an idea and not a plan
+for that reason. The first step is a spike against a real Content AI tenant to see what
+the retrieval API actually returns.
+
 ## XXII. Agent↔UI transparency & client tools — AG-UI parity (Block W)
 
 > **Why now.** A capability review against CopilotKit's **AG-UI** protocol

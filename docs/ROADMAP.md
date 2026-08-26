@@ -12,6 +12,12 @@
 
 ## Block BV — The quality gate stops at the package boundary
 
+## Block R.1 — Event-driven ingestion from enterprise CMS platforms (AEM as the reference)
+
+- 📋 **T1029** (deps: —) **No audit can compare what the SN index holds against its source** — Dumont's content audit only reaches its own indexing ledger, so a document that never landed in the SN index is invisible to both sides. → §XX.16
+- 📋 **T1030** (deps: T382 ✅) **The Java SDK cannot provision a site from a connector's declared schema** — A connector declaring TurSNJobAttributeSpec has no SDK path to the manifest endpoint, so fields are auto-created at index time by guess. → §XX.17
+- 💭 **T1031** (deps: —) **A Turing agent cannot query an existing Adobe Content AI index** — A customer already paying the Content AI SKU cannot reuse that retrieval and has to re-vectorize the same published content in Turing. → §XX.18
+
 ## Non-goals (do NOT add as tasks)
 
 Binding constraints — see [IMPROVEMENTS.md](IMPROVEMENTS.md) §I.6 (What NOT to

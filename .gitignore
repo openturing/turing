@@ -82,6 +82,7 @@ __pycache__/
 turing-react-sdk/debug-storybook.log
 **/storybook-static/
 /.github/modernize
+/.turbo
 /frontend/.turbo
 frontend/apps/marketplace/space-missions/space-missions.zip
 /frontend/apps/showcase/.turbo
