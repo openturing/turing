@@ -1,0 +1,31 @@
+databaseChangeLog:
+  # T1032 / §D.12 (Block D.11) — per-server credential for the outbound MCP
+  # client. Both HTTP transports were built from the URL alone and mcp_server had
+  # no field for a credential, so an authenticated remote MCP server (which is
+  # what every commercial one is) failed at initialize() with a 401 and its tools
+  # silently vanished from the agent.
+  #
+  # Nullable with no default: a null token is an unauthenticated server, which is
+  # what every existing row is, so the transport keeps sending no Authorization
+  # header and legacy setups are unaffected.
+  #
+  # Idempotent (columnExists + MARK_RAN) because the app runs between changeset
+  # authoring; portable lowercase `longtext` (never `clob`) since the value is
+  # AES/GCM ciphertext whose length is not worth guessing a VARCHAR for.
+
+  - changeSet:
+      id: v2026.3.1.126-add-auth_token_encrypted-to-mcp_server
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - columnExists:
+                tableName: mcp_server
+                columnName: auth_token_encrypted
+      changes:
+        - addColumn:
+            tableName: mcp_server
+            columns:
+              - column:
+                  name: auth_token_encrypted
+                  type: longtext

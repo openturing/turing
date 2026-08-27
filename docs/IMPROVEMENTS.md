@@ -2154,35 +2154,6 @@ here is justified by an assertion this repository currently cannot check.
 
 ## D Tracked follow-ups
 
-### D.12 The outbound MCP client has nowhere to keep a credential (T1032)
-
-`TurMcpToolCallbackService.createTransport` builds both HTTP transports from the URL
-alone: `HttpClientStreamableHttpTransport.builder(server.url()).build()` and the SSE
-equivalent. Neither carries a header, and `TurMcpServer` has no field to put one in — it
-stores `url`, `command`, `args`, `connectionType` and `transportType`, and nothing else
-about the connection.
-
-So the outbound MCP path reaches unauthenticated servers only. That is the smaller half
-of the population: a remote MCP server on the public internet is authenticated by a
-bearer token as a matter of course, and the ones a customer would actually register —
-GitHub, Atlassian, Linear, Adobe's Foundational Services agents — all are. The failure
-is not graceful either: `initialize()` gets a 401, the client is dropped with a warning,
-and the agent simply has fewer tools than the admin configured.
-
-Turing already knows this is how remote MCP works. `TurMcpClientConfigService` (T255)
-generates client snippets for Turing's *own* MCP server carrying an `Authorization:
-Bearer <YOUR_ACCESS_TOKEN>` header. The inbound direction models the credential; the
-outbound direction has nowhere to keep one.
-
-The work is a per-server credential on `TurMcpServer`, encrypted at rest through
-`TurSecretCryptoService` the way every other stored secret is, applied as a request
-header when the transport is built. A static bearer token is the whole of it — an OAuth
-client-credentials flow is a larger question and should not be smuggled in behind this
-one.
-
-Until it exists, T1031's "or a tool registration of the second" is not a path for any
-commercial vendor's MCP server, Adobe's included.
-
 ### D.13 The content export got the paging T1029 had to avoid (T1033)
 
 `TurSNSiteContentExchangeService.exportContent` walks a locale with

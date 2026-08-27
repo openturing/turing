@@ -64,7 +64,11 @@ import tools.jackson.databind.json.JsonMapper;
  * <p>Secrets are not stripped explicitly: {@link TurLLMInstance#apiKey} is
  * {@code @Transient} + {@code @JsonProperty(WRITE_ONLY)} and
  * {@code apiKeyEncrypted} is {@code @JsonIgnore}, so neither leaves the
- * serializer. {@link TurMcpServer} carries no credential field.
+ * serializer. {@link TurMcpServer} gained a credential in T1032 and follows the
+ * same pattern for the same reason — {@code authToken} is transient and
+ * write-only, {@code authTokenEncrypted} is {@code @JsonIgnore} — so an exported
+ * agent names its MCP servers without carrying their tokens, and importing one
+ * elsewhere requires re-entering them.
  *
  * @author Alexandre Oliveira
  * @since 2026.2.8

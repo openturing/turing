@@ -19,7 +19,6 @@
 
 ## Block D.11 — Tracked follow-ups
 
-- 📋 **T1032** (deps: —) **An agent cannot reach a remote MCP server that requires authentication** — Both HTTP transports are built from the URL alone and TurMcpServer has no field for a credential, so initialize() gets a 401 and the tools silently vanish. → §D.12
 - 📋 **T1033** (deps: —) **A large SN site cannot be exported without quadratic engine work and holding it all in memory** — exportContent pages by offset, which costs the engine every prior page again, and buffers every stored document of a locale before writing any of it. → §D.13
 
 ## Non-goals (do NOT add as tasks)

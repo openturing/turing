@@ -7,7 +7,7 @@ import { FormItemTwoColumns } from "@/components/ui/form-item-two-columns"
 import { Input } from "@/components/ui/input"
 import { PromptEditor } from "@/components/ui/prompt-editor"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import type { TurMcpServer } from "@/models/mcp/mcp-server.model.ts"
+import { MCP_AUTH_TOKEN_CLEAR, type TurMcpServer } from "@/models/mcp/mcp-server.model.ts"
 import { IconBraces, IconPlug, IconServer2, IconTerminal2 } from "@tabler/icons-react"
 import { toast } from "@viglet/viglet-design-system"
 import { useEffect } from "react"
@@ -54,6 +54,9 @@ export const BentoMcpServerForm: React.FC<Props> = ({ value, isNew, readOnly = f
       type: value.type ?? "SYNC",
       connectionType: value.connectionType ?? "HTTP",
       transportType: value.transportType ?? "SSE",
+      // T1032 — the stored token is never sent to the browser, so the field
+      // always starts empty; leaving it that way keeps the credential.
+      authToken: "",
     }, { keepDirtyValues: true })
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [value])
@@ -69,6 +72,9 @@ export const BentoMcpServerForm: React.FC<Props> = ({ value, isNew, readOnly = f
       url: mcpServer.url?.trim() || undefined,
       command: mcpServer.command?.trim() || undefined,
       args: mcpServer.args?.trim() || undefined,
+      // T1032 — a blank field means "keep the stored token", so send nothing
+      // rather than an empty string the server would have to interpret.
+      authToken: mcpServer.authToken?.trim() || undefined,
     }
     try {
       if (isNew) {
@@ -273,6 +279,44 @@ export const BentoMcpServerForm: React.FC<Props> = ({ value, isNew, readOnly = f
                   <FormControl>
                     <Input placeholder={t("forms.mcp.urlPlaceholder")} type="text" className="w-full" readOnly={readOnly} {...field} value={field.value ?? ""} />
                   </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          )}
+          {/* T1032 — bearer token for an authenticated remote MCP server. Never
+              rendered back: the field shows blank whether or not one is stored,
+              and the badge below says which. */}
+          {selectedConnectionType === "HTTP" && (
+            <FormField
+              control={form.control}
+              name="authToken"
+              render={({ field }) => (
+                <FormItem className="w-full">
+                  <FormLabel>{t("forms.mcp.authToken")}</FormLabel>
+                  <p className="text-sm text-muted-foreground">
+                    {value.authTokenSet ? t("forms.mcp.authTokenSetDesc") : t("forms.mcp.authTokenDesc")}
+                  </p>
+                  <FormControl>
+                    <Input
+                      placeholder={value.authTokenSet ? t("forms.mcp.authTokenSetPlaceholder") : t("forms.mcp.authTokenPlaceholder")}
+                      type="password"
+                      autoComplete="off"
+                      className="w-full"
+                      readOnly={readOnly}
+                      {...field}
+                      value={field.value ?? ""}
+                    />
+                  </FormControl>
+                  {value.authTokenSet && !readOnly && (
+                    <button
+                      type="button"
+                      className="self-start text-sm text-destructive underline-offset-4 hover:underline"
+                      onClick={() => form.setValue("authToken", MCP_AUTH_TOKEN_CLEAR, { shouldDirty: true })}
+                    >
+                      {t("forms.mcp.authTokenClear")}
+                    </button>
+                  )}
                   <FormMessage />
                 </FormItem>
               )}

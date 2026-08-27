@@ -39,11 +39,25 @@ public record TurMcpServerDomain(
         TurMcpServerType type,
         TurMcpServerConnectionType connectionType,
         TurMcpServerTransportType transportType,
+        String authTokenEncrypted,
         int enabled) {
 
     /** True when the MCP server is enabled for runtime use (admin toggle). */
     public boolean isEnabled() {
         return enabled == 1;
+    }
+
+    /**
+     * T1032 / §D.12 — true when this server declares a bearer token, so the
+     * transport should carry an {@code Authorization} header.
+     *
+     * <p>The record deliberately holds the <em>ciphertext</em>: a domain record
+     * is a read-model that may be listed, logged or cached, and none of those is
+     * a place for a plaintext credential. Decryption happens once, where the
+     * transport is built.
+     */
+    public boolean hasAuthToken() {
+        return authTokenEncrypted != null && !authTokenEncrypted.isBlank();
     }
 
     /**

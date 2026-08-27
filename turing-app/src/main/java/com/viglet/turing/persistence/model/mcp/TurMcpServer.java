@@ -3,6 +3,8 @@ package com.viglet.turing.persistence.model.mcp;
 import java.io.Serial;
 import java.io.Serializable;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.viglet.core.jpa.VigletAssignableUuidGenerator;
 import com.viglet.core.tenancy.VigletTenantOwnedInfra;
 
@@ -12,6 +14,7 @@ import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import jakarta.persistence.Transient;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -99,4 +102,35 @@ public class TurMcpServer implements Serializable, VigletTenantOwnedInfra {
 
     @Column(nullable = false)
     private int enabled;
+
+    /**
+     * T1032 / §D.12 — bearer token for an authenticated HTTP MCP server, stored
+     * encrypted through {@code TurSecretCryptoService} like every other secret.
+     *
+     * <p>Nullable: a {@code null} value is an unauthenticated server (and every
+     * {@code COMMAND} server), which is what every row was before this column
+     * existed — so the transport sends no {@code Authorization} header and the
+     * legacy behaviour is unchanged.
+     *
+     * <p>Never leaves the server: {@code @JsonIgnore} keeps the ciphertext out
+     * of the admin API's responses, and the write side arrives on the transient
+     * {@link #authToken} instead.
+     *
+     * @since 2026.3.4
+     */
+    @Column(name = "auth_token_encrypted", columnDefinition = "longtext")
+    @JsonIgnore
+    private String authTokenEncrypted;
+
+    /**
+     * T1032 / §D.12 — write-only inbound token from the admin form. Encrypted
+     * into {@link #authTokenEncrypted} by the API and never persisted or
+     * serialised itself; a payload that omits it leaves the stored token alone,
+     * so editing any other field does not erase the credential.
+     *
+     * @since 2026.3.4
+     */
+    @Transient
+    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
+    private String authToken;
 }
