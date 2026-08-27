@@ -1,13 +1,18 @@
-# Next block letter — `BX` · last task number — `T939`
+# Next block letter — `BZ`
 
 > **The task number is no longer kept here.** `roadkeep next-id` derives it from the
-> roadmap, the ledger and `agents.md` — it answers `T940` today, agreeing with the
-> number above, which is why the hand-kept counter could retire. Never bump a number
-> here and then trust it over the tool; `roadkeep add` assigns the id itself. What
-> stays below is the **block letter** (the one label `roadkeep block add` cannot
-> derive) and the one-line-per-task log.
+> roadmap, the ledger and `agents.md`. Never bump a number here and then trust it over
+> the tool; `roadkeep add` assigns the id itself. What stays below is the **block
+> letter** (the one label `roadkeep block add` cannot derive) and the
+> one-line-per-task log.
 >
-> ⛔ **`BX` is a reservation, not a queue to advance.** New functionality is filed under
+> **`BX` and `BY` are spent** — `BX` by "The bento layer leaves the product it grew
+> in" (§XCVI) and `BY` by "Startup provisioning: seeded catalogs, defaults and the
+> upgrade path" (§CVII, T1043). The reservation below said `BX` long after `BX` had a
+> title, which is the failure mode this line has: `roadkeep block list` is
+> authoritative, and it reads all four governed files.
+>
+> ⛔ **`BZ` is a reservation, not a queue to advance.** New functionality is filed under
 > a block that already exists — including one pruned from `ROADMAP.md` but still declared
 > in `CHANGELOG.md`, which `block add <same letter>` reopens — and a genuinely new theme
 > is named generically so the next cluster of its kind lands in it too. This letter is
@@ -302,6 +307,9 @@ number" looked free but wasn't. Grepping three files (`ROADMAP.md`,
 
 ## Log (most recent first)
 
+- **T1045 FILED** (Block R.1 §XX.22 — a misnamed Content AI source is indistinguishable from an empty index) — 2026-08-27.
+- **T1044 FILED** (Block R.1 §XX.21 — the matched Content AI passage arrives and is thrown away) — 2026-08-27.
+- **T1043 FILED** (Block BY §CVII.1 — store-vendor and locale catalogs still seed only into an empty table) — 2026-08-27.
 - **T1031 SHIPPED** (Block R.1 §XX.18 — read-only Content AI plugin; block closed and heading dropped) — 2026-08-27.
 - **T966 SHIPPED** (Block AN §LXXV — answer+copilot added to both filters; PUBLIC_SN_LLM_COST/CHEAP classification in the security config enforced by TurLlmCostSurfaceCoverageTest; stale /api/genai/chat CSRF matcher removed) (Block AN §LXXV — the two LLM-cost path regexes have drifted: /answer, the /v1 gateway and /api/v2/ai-agent/{id}/chat are ungated; plus a CSRF exemption for a route with no controller) — 2026-08-16.
 - **T968 FILED** (Block J.10 §LXXVII — no contract test for the managed wire; every test stubs the one network hop while Viglet Cloud C125–C131 implements the other half from prose) — 2026-08-19.

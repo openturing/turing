@@ -1316,6 +1316,55 @@ neutral grounding + manifest kernel is now `viglet-core-manifest`; see CHANGELOG
 these block the Dumont collection work — a sidecar
 (D10) can index into a hand-provisioned site before T382 lands.
 
+### XX.21 The matched passage arrives and is thrown away (T1044)
+
+Adobe returns the matched chunks alongside each document — `chunks[]`, each with an id,
+its own score and `chunkData.text` — when a vector query asks for them. T1031 wired the
+switch (`turing.content-ai.include-chunks`) and then dropped what came back, because
+`TurSEResult` has one field map and no place for a passage.
+
+For a lexical site that loses nothing. For a federated one it loses the point. Turing
+cannot re-chunk an index it does not own, so the passage Adobe matched is the only
+sub-document grounding available anywhere: a RAG answer over a Content AI site is
+grounded on whole documents, and a whole AEM page is the payload chunking existed to
+avoid sending to an LLM.
+
+It is also already paid for — the chunk text arrives on the same response, so the SKU
+call is spent whether or not anything reads it. The flag defaults off because the bytes
+are wasted, which is a symptom of the gap rather than a reason for it.
+
+What this needs is a decision about where a passage lives, not a Content AI change.
+`TurSEResult` keeps `rankingExplanation` and `duplicateCluster` deliberately apart from
+the search-engine field map, which is the precedent: a third such field, populated only
+by engines that return passages, would let the RAG path prefer a chunk over a document
+body without every other engine growing a concept it cannot answer for. Whether the
+vector store's own chunk shape is the one to reuse is open.
+
+### XX.22 A wrong source name is indistinguishable from an empty index (T1045)
+
+The content source a site queries is `turing.content-ai.sources.<site>`, falling back to
+the (site, locale) core name. Both halves can be wrong in the same silent way: a typo in
+the mapping, or no mapping at all against an Adobe source that was never named after the
+Turing core.
+
+Adobe answers a query against a source it does not have, and the answer is
+`totalResults: 0`. So a misconfiguration and a genuinely empty index are the same
+observation, and the plugin offers nothing that separates them — `indexExists` returns
+whether the plugin is enabled and credentialled, a fact about the configuration file
+rather than about Adobe, and `getSystemInfo` reports `UP` on the same basis.
+
+The API has the read this needs. `GET /content-sources` lists every source regardless of
+type, and each exposes its available spaces and its searchable and filterable fields;
+`GET /content-sources/{type}/{source}` addresses one. A source name that resolves to
+nothing becomes a statement rather than an inference.
+
+There is more than a diagnostic in that listing. The filterable fields are what a facet
+request has to be built from — T1031 sends a `termBuckets` aggregate for every enabled
+Turing facet field and relies on Adobe returning an empty bucket list for a field its
+index lacks, which is tolerant but makes a mistyped facet invisible too. The same read
+would let the admin UI show what the federated source can actually filter on, rather
+than the Turing site's field list standing in.
+
 ## XXII. Agent↔UI transparency & client tools — AG-UI parity (Block W)
 
 > **Why now.** A capability review against CopilotKit's **AG-UI** protocol
@@ -2117,3 +2166,33 @@ has used is spent for good — so the block lost its family and the next follow-
 open a new one. A standing block needs a standing address. Empty here means the
 follow-ups filed so far are done, not that the heading is finished; the next one goes
 under this address.
+
+## CVII Startup provisioning: seeded catalogs, defaults and the upgrade path
+
+### CVII.1 Seeded catalogs with no upgrade path (T1043)
+
+Eleven classes under `onstartup/` seed rows a fresh installation needs: vendors,
+locales, privileges, groups, config vars, the default RAG infra, the default LLM
+instance. Two still gate the **whole catalog** on `findAll().isEmpty()` —
+`TurStoreVendorOnStartup` and `TurLocaleOnStartup`.
+
+That makes the catalog a fresh-install-only write. A row added in a later release
+reaches a database that has never started the application and no other, so the vendor or
+locale it names cannot be selected anywhere it matters: every existing installation,
+which is every installation an upgrade lands on.
+
+T1031 hit this with the search-engine vendors. `CONTENTAI` was the first row added to
+`se_vendor` since the table existed, and would have been unreachable on every upgraded
+install — the feature present in the jar, absent from the picker, the guard reading like
+deliberate restraint rather than a bug. The fix was to check per id, which is idempotent
+and leaves an operator's edits to a row alone, and the codebase already had that shape:
+`TurConfigVarOnStartup` seeds through `findById(id).isEmpty()` and
+`TurPrivilegeOnStartup` diffs what is missing.
+
+`TurGroupOnStartup` carries the same guard and is deliberately out of scope: a group
+list is an operator's, not a catalog, and re-creating a group somebody deleted deserves
+its own line.
+
+The block exists so the next seeded default has a home. The recurring shape is not "a
+vendor was missing" — it is that a row added after a table's first release has an
+upgrade path only where its seeder was written to have one, which nothing checks.

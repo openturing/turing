@@ -12,6 +12,15 @@
 
 ## Block BV — The quality gate stops at the package boundary
 
+## Block R.1 — Event-driven ingestion from enterprise CMS platforms (AEM as the reference)
+
+- 📋 **T1044** (deps: —) **A federated Content AI site can only ground an answer on whole documents, not the passage Adobe matched** — The plugin can ask for chunks but TurSEResult has no field for a passage, so include-chunks pays for text it then drops. → §XX.21
+- 📋 **T1045** (deps: —) **A misnamed Content AI source returns zero results with nothing saying the name is wrong** — Adobe answers an unknown source with totalResults 0 and indexExists answers from configuration, so a typo and an empty index look identical. → §XX.22
+
+## Block BY — Startup provisioning: seeded catalogs, defaults and the upgrade path
+
+- 📋 **T1043** (deps: —) **A store vendor or locale added in a later release cannot be selected on an existing installation** — TurStoreVendorOnStartup and TurLocaleOnStartup still gate the whole catalog on findAll().isEmpty(), the guard T1031 had to remove from the SE vendor seeder. → §CVII.1
+
 ## Non-goals (do NOT add as tasks)
 
 Binding constraints — see [IMPROVEMENTS.md](IMPROVEMENTS.md) §I.6 (What NOT to
