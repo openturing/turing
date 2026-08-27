@@ -412,6 +412,49 @@ public interface TurSearchEnginePlugin {
         return List.of();
     }
 
+    // ---- Index inventory (T1029 / §XX.16) ---------------------------------
+
+    /**
+     * T1029 / §XX.16 — enumerates what the (site, locale) index currently holds
+     * for one source, as {@code (id, version)} pairs. This is the read an
+     * external content audit cannot make for itself: a connector knows what it
+     * published and what its own ledger recorded, but not what survived in the
+     * index, so a failed write or a lost delete is invisible to both sides.
+     * With this the connector gains the third comparison — in the index but not
+     * the source, in the source but not the index, and in both at different
+     * versions.
+     *
+     * <p>It is deliberately <em>not</em> a document export: only the id, the
+     * {@code type} and the version fields are fetched, so a full-site sweep
+     * costs a fraction of {@link #retrieveDocumentPage}. Paging is a keyset
+     * cursor on the id ({@code after}), not an offset, because an audit reads
+     * every page and deep offsets get more expensive the further in they go.
+     *
+     * <p>{@code sourceApp} filters on the multi-valued
+     * {@link com.viglet.turing.commons.sn.field.TurSNFieldName#SOURCE_APPS}
+     * field — the same value the connector stamps at index time. A blank or
+     * {@code null} value enumerates the whole index, which is what a
+     * single-source site wants.
+     *
+     * <p>Default returns {@link TurSEInventoryPage#unsupported()} so an engine
+     * without the capability reports that honestly rather than returning an
+     * empty page a caller would read as "the index holds nothing" and act on by
+     * republishing the whole source.
+     *
+     * @param turSNSiteLocale the (site, locale) index to enumerate
+     * @param sourceApp       the {@code source_apps} value to filter by, or
+     *                        {@code null}/blank for every document
+     * @param after           the last id from the previous page; {@code null}
+     *                        starts at the beginning
+     * @param rows            maximum rows on this page
+     * @return the page; never {@code null}
+     * @since 2026.3.4
+     */
+    default TurSEInventoryPage retrieveInventoryPage(TurSNSiteLocale turSNSiteLocale,
+            String sourceApp, String after, int rows) {
+        return TurSEInventoryPage.unsupported();
+    }
+
     // ---- Autocomplete -----------------------------------------------------
 
     /**

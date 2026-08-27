@@ -814,6 +814,139 @@ public class TurLuceneSearchEnginePlugin implements TurSearchEnginePlugin {
         return null;
     }
 
+    // ---- Index inventory (T1029 / §XX.16) ---------------------------------
+
+    @Override
+    public com.viglet.turing.plugins.se.TurSEInventoryPage retrieveInventoryPage(
+            TurSNSiteLocale turSNSiteLocale, String sourceApp, String after, int rows) {
+        return turLuceneInstanceProcess.initLuceneInstance(turSNSiteLocale)
+                .map(instance -> {
+                    try {
+                        return scanInventory(instance, sourceApp, after, rows);
+                    } catch (Exception e) {
+                        log.warn("[Lucene] Inventory scan failed: {}", e.getMessage());
+                        return com.viglet.turing.plugins.se.TurSEInventoryPage.empty();
+                    }
+                })
+                .orElseGet(com.viglet.turing.plugins.se.TurSEInventoryPage::unsupported);
+    }
+
+    /**
+     * Walks the {@code id} term dictionary, which Lucene already keeps in
+     * lexicographic order, so the keyset cursor is a {@code seekCeil} and the
+     * page costs {@code rows} document reads rather than a full-index sort. The
+     * documents themselves are resolved one {@link TermQuery} at a time, which
+     * also drops any id whose only document has since been deleted.
+     */
+    private com.viglet.turing.plugins.se.TurSEInventoryPage scanInventory(
+            TurLuceneInstance instance, String sourceApp, String after, int rows)
+            throws IOException {
+        IndexSearcher searcher = instance.getSearcher();
+        org.apache.lucene.index.Terms terms = org.apache.lucene.index.MultiTerms
+                .getTerms(searcher.getIndexReader(), TurSNFieldName.ID);
+        if (terms == null) {
+            return com.viglet.turing.plugins.se.TurSEInventoryPage.empty();
+        }
+        long remaining = searcher.count(inventoryCountQuery(sourceApp, after));
+        org.apache.lucene.index.TermsEnum termsEnum = terms.iterator();
+        if (!seekPastCursor(termsEnum, after)) {
+            return com.viglet.turing.plugins.se.TurSEInventoryPage.empty();
+        }
+        List<com.viglet.turing.plugins.se.TurSEInventoryEntry> entries = new ArrayList<>();
+        do {
+            String id = termsEnum.term().utf8ToString();
+            Document doc = inventoryDocument(searcher, id);
+            if (doc != null && matchesSource(doc, sourceApp)) {
+                entries.add(com.viglet.turing.plugins.se.TurSEInventoryEntry
+                        .from(id, inventoryFields(doc)));
+            }
+        } while (entries.size() < rows && termsEnum.next() != null);
+        return com.viglet.turing.plugins.se.TurSEInventoryPage.of(entries, remaining);
+    }
+
+    /**
+     * Positions the enumerator on the first id strictly after {@code cursor}
+     * (or on the first id at all when there is no cursor).
+     *
+     * @return {@code false} when the dictionary is exhausted
+     */
+    private static boolean seekPastCursor(org.apache.lucene.index.TermsEnum termsEnum,
+            String cursor) throws IOException {
+        if (cursor == null || cursor.isBlank()) {
+            return termsEnum.next() != null;
+        }
+        var status = termsEnum.seekCeil(new org.apache.lucene.util.BytesRef(cursor));
+        if (status == org.apache.lucene.index.TermsEnum.SeekStatus.END) {
+            return false;
+        }
+        // FOUND lands *on* the cursor, which the caller has already read.
+        return status != org.apache.lucene.index.TermsEnum.SeekStatus.FOUND
+                || termsEnum.next() != null;
+    }
+
+    /** The query behind {@code remaining}: the cursor's tail, narrowed to the source. */
+    private static Query inventoryCountQuery(String sourceApp, String after) {
+        var builder = new org.apache.lucene.search.BooleanQuery.Builder();
+        boolean bounded = false;
+        if (after != null && !after.isBlank()) {
+            builder.add(org.apache.lucene.search.TermRangeQuery.newStringRange(
+                            TurSNFieldName.ID, after, null, false, true),
+                    org.apache.lucene.search.BooleanClause.Occur.FILTER);
+            bounded = true;
+        }
+        if (sourceApp != null && !sourceApp.isBlank()) {
+            builder.add(new TermQuery(new Term(TurSNFieldName.SOURCE_APPS, sourceApp)),
+                    org.apache.lucene.search.BooleanClause.Occur.FILTER);
+            bounded = true;
+        }
+        if (!bounded) {
+            return org.apache.lucene.search.MatchAllDocsQuery.INSTANCE;
+        }
+        return builder.build();
+    }
+
+    /** Resolves one id to its live document, or {@code null} when nothing holds it. */
+    private static Document inventoryDocument(IndexSearcher searcher, String id)
+            throws IOException {
+        TopDocs hits = searcher.search(new TermQuery(new Term(TurSNFieldName.ID, id)), 1);
+        if (hits.scoreDocs.length == 0) {
+            return null;
+        }
+        return searcher.storedFields().document(hits.scoreDocs[0].doc);
+    }
+
+    private static boolean matchesSource(Document doc, String sourceApp) {
+        if (sourceApp == null || sourceApp.isBlank()) {
+            return true;
+        }
+        for (String value : doc.getValues(TurSNFieldName.SOURCE_APPS)) {
+            if (sourceApp.equals(value)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /** Projects only the fields the inventory reads: {@code type} and the version candidates. */
+    private static Map<String, Object> inventoryFields(Document doc) {
+        Map<String, Object> fields = new LinkedHashMap<>();
+        String type = doc.get(TurSNFieldName.TYPE);
+        if (type != null) {
+            fields.put(TurSNFieldName.TYPE, type);
+        }
+        for (String field : com.viglet.turing.plugins.se.TurSEInventoryEntry.VERSION_FIELDS) {
+            var value = doc.getField(field);
+            if (value != null) {
+                // DATE fields are stored as epoch millis (StoredField long); an
+                // unparsable source date falls back to a StringField.
+                fields.put(field, value.numericValue() != null
+                        ? value.numericValue()
+                        : value.stringValue());
+            }
+        }
+        return fields;
+    }
+
     // ---- Monitoring ------------------------------------------------------
 
     @Override

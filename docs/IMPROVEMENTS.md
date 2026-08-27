@@ -1316,30 +1316,6 @@ neutral grounding + manifest kernel is now `viglet-core-manifest`; see CHANGELOG
 these block the Dumont collection work — a sidecar
 (D10) can index into a hand-provisioned site before T382 lands.
 
-### XX.16 The half of the audit loop Turing cannot answer (T1029)
-
-Dumont's `DumConnectorContentAuditTask` already audits a source on a schedule: it calls
-`discoverContentIds`, creates a NOT_PROCESSED record for anything the connector never
-queued, and drops records whose environment no longer exists. That closes one loop — the
-source against the connector's own indexing ledger (`DumConnectorIndexingModel`).
-
-It never asks Turing what the SN index actually holds. So the second loop stays open: a
-document Dumont believes it published, whose write failed or whose delete never arrived,
-is invisible to both products. The connector's ledger says processed, the index says
-otherwise, and no scheduled job on either side compares the two.
-
-That gap is Turing's to close, and the cheap form is **not** a sweep of its own —
-building one here would duplicate the audit Dumont already runs. What is missing is the
-read that audit cannot make: a per-source enumeration of the ids the index currently
-holds, with a version or checksum per id, paged and cheap enough to run against a large
-site.
-
-With it, Dumont's existing audit gains a third comparison and reports the three real
-differences — in the index but not the source, in the source but not the index, and in
-both at different versions. Applying the repair stays with the connector, which already
-owns the queue. Turing's half is the honest answer to "what do you have", which today it
-cannot give.
-
 ### XX.17 A manifest client for the Java SDK (T1030)
 
 Dumont already declares its schema. `DumStructuredSchema` is an ordered, immutable

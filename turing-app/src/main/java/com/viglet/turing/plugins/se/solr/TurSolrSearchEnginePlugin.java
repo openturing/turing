@@ -818,6 +818,63 @@ public class TurSolrSearchEnginePlugin implements TurSearchEnginePlugin {
         return false;
     }
 
+    // ---- Index inventory (T1029 / §XX.16) ---------------------------------
+
+    @Override
+    public com.viglet.turing.plugins.se.TurSEInventoryPage retrieveInventoryPage(
+            TurSNSiteLocale turSNSiteLocale, String sourceApp, String after, int rows) {
+        return turSolrInstanceProcess.initSolrInstance(turSNSiteLocale)
+                .map(instance -> {
+                    SolrQuery query = new SolrQuery()
+                            .setQuery("*:*")
+                            .setRows(rows)
+                            .addSort(TurSNFieldName.ID, SolrQuery.ORDER.asc);
+                    query.setFields(inventoryFields());
+                    if (sourceApp != null && !sourceApp.isBlank()) {
+                        query.addFilterQuery(
+                                TurSNFieldName.SOURCE_APPS + ":" + escapeSolr(sourceApp));
+                    }
+                    if (after != null && !after.isBlank()) {
+                        // Exclusive lower bound: the keyset cursor, so the engine
+                        // never pays for the pages already read.
+                        query.addFilterQuery(
+                                TurSNFieldName.ID + ":{" + escapeSolr(after) + " TO *]");
+                    }
+                    return TurSolr.executeSolrQuery(instance, query)
+                            .map(TurSolrSearchEnginePlugin::toInventoryPage)
+                            .orElseGet(com.viglet.turing.plugins.se.TurSEInventoryPage::empty);
+                })
+                .orElseGet(com.viglet.turing.plugins.se.TurSEInventoryPage::unsupported);
+    }
+
+    private static String[] inventoryFields() {
+        List<String> fields = new ArrayList<>(
+                List.of(TurSNFieldName.ID, TurSNFieldName.TYPE));
+        fields.addAll(com.viglet.turing.plugins.se.TurSEInventoryEntry.VERSION_FIELDS);
+        return fields.toArray(new String[0]);
+    }
+
+    private static com.viglet.turing.plugins.se.TurSEInventoryPage toInventoryPage(
+            org.apache.solr.client.solrj.response.QueryResponse response) {
+        var docs = response.getResults();
+        if (docs == null) {
+            return com.viglet.turing.plugins.se.TurSEInventoryPage.empty();
+        }
+        List<com.viglet.turing.plugins.se.TurSEInventoryEntry> entries = new ArrayList<>();
+        for (org.apache.solr.common.SolrDocument doc : docs) {
+            String id = firstString(doc, TurSNFieldName.ID);
+            if (id == null || id.isBlank()) {
+                continue;
+            }
+            Map<String, Object> fields = new HashMap<>();
+            for (String name : doc.getFieldNames()) {
+                fields.put(name, doc.getFieldValue(name));
+            }
+            entries.add(com.viglet.turing.plugins.se.TurSEInventoryEntry.from(id, fields));
+        }
+        return com.viglet.turing.plugins.se.TurSEInventoryPage.of(entries, docs.getNumFound());
+    }
+
     // ---- Monitoring ------------------------------------------------------
 
     @Override

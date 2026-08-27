@@ -720,6 +720,86 @@ public class TurElasticsearchSearchEnginePlugin implements TurSearchEnginePlugin
                 }).orElse(List.of());
     }
 
+    // ---- Index inventory (T1029 / §XX.16) ---------------------------------
+
+    @Override
+    public com.viglet.turing.plugins.se.TurSEInventoryPage retrieveInventoryPage(
+            TurSNSiteLocale turSNSiteLocale, String sourceApp, String after, int rows) {
+        return turElasticsearchInstanceProcess.initElasticsearchInstance(turSNSiteLocale)
+                .map(instance -> {
+                    try {
+                        var response = instance.getClient().search(s -> s
+                                .index(instance.getIndex())
+                                .query(inventoryQuery(sourceApp, after))
+                                .size(rows)
+                                .trackTotalHits(t -> t.enabled(true))
+                                .source(src -> src.filter(f -> f.includes(inventoryFields())))
+                                .sort(so -> so.field(f -> f
+                                        .field(com.viglet.turing.commons.sn.field.TurSNFieldName.ID)
+                                        .order(co.elastic.clients.elasticsearch._types.SortOrder.Asc))),
+                                (java.lang.reflect.Type) Map.class);
+                        return toInventoryPage(response);
+                    } catch (Exception e) {
+                        log.warn("[Elasticsearch] Inventory scan failed: {}", e.getMessage());
+                        return com.viglet.turing.plugins.se.TurSEInventoryPage.empty();
+                    }
+                })
+                .orElseGet(com.viglet.turing.plugins.se.TurSEInventoryPage::unsupported);
+    }
+
+    /** The source filter plus the keyset cursor, as a filter-only bool (no scoring to pay for). */
+    private static co.elastic.clients.elasticsearch._types.query_dsl.Query inventoryQuery(
+            String sourceApp, String after) {
+        List<co.elastic.clients.elasticsearch._types.query_dsl.Query> filters =
+                new java.util.ArrayList<>();
+        if (sourceApp != null && !sourceApp.isBlank()) {
+            filters.add(co.elastic.clients.elasticsearch._types.query_dsl.Query.of(q -> q
+                    .term(t -> t
+                            .field(com.viglet.turing.commons.sn.field.TurSNFieldName.SOURCE_APPS)
+                            .value(sourceApp))));
+        }
+        if (after != null && !after.isBlank()) {
+            filters.add(co.elastic.clients.elasticsearch._types.query_dsl.Query.of(q -> q
+                    .range(r -> r.untyped(u -> u
+                            .field(com.viglet.turing.commons.sn.field.TurSNFieldName.ID)
+                            .gt(co.elastic.clients.json.JsonData.of(after))))));
+        }
+        if (filters.isEmpty()) {
+            return co.elastic.clients.elasticsearch._types.query_dsl.Query.of(q -> q
+                    .matchAll(m -> m));
+        }
+        return co.elastic.clients.elasticsearch._types.query_dsl.Query.of(q -> q
+                .bool(b -> b.filter(filters)));
+    }
+
+    private static List<String> inventoryFields() {
+        List<String> fields = new java.util.ArrayList<>(List.of(
+                com.viglet.turing.commons.sn.field.TurSNFieldName.ID,
+                com.viglet.turing.commons.sn.field.TurSNFieldName.TYPE));
+        fields.addAll(com.viglet.turing.plugins.se.TurSEInventoryEntry.VERSION_FIELDS);
+        return fields;
+    }
+
+    private static com.viglet.turing.plugins.se.TurSEInventoryPage toInventoryPage(
+            co.elastic.clients.elasticsearch.core.SearchResponse<?> response) {
+        List<com.viglet.turing.plugins.se.TurSEInventoryEntry> entries = new java.util.ArrayList<>();
+        for (var hit : response.hits().hits()) {
+            @SuppressWarnings("unchecked")
+            Map<String, Object> source = (Map<String, Object>) hit.source();
+            String id = firstString(source, com.viglet.turing.commons.sn.field.TurSNFieldName.ID,
+                    hit.id());
+            if (id == null || id.isBlank()) {
+                continue;
+            }
+            entries.add(com.viglet.turing.plugins.se.TurSEInventoryEntry.from(id,
+                    source == null ? Map.of() : source));
+        }
+        long remaining = response.hits().total() != null
+                ? response.hits().total().value()
+                : entries.size();
+        return com.viglet.turing.plugins.se.TurSEInventoryPage.of(entries, remaining);
+    }
+
     // ---- Monitoring ------------------------------------------------------
 
     @Override
