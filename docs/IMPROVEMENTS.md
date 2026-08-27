@@ -2141,3 +2141,31 @@ has used is spent for good — so the block lost its family and the next follow-
 open a new one. A standing block needs a standing address. Empty here means the
 follow-ups filed so far are done, not that the heading is finished; the next one goes
 under this address.
+
+### CVI.5 The two engines have never been asked (T1040)
+
+Of 57 `*IT` classes, Testcontainers runs MinIO, Mongo, Redis and Chroma. None runs a
+search engine. The only integration test that exercises a `TurSearchEnginePlugin` at all
+does it over the embedded Lucene one (`TurSdkContractIT`).
+
+So every engine-specific string the Solr and Elasticsearch plugins build — filter
+queries, range bounds, field lists, sort clauses, the managed-schema and synonyms calls
+— is verified only against a mock that asserts what we constructed, never that the
+engine agrees. The mock and the code are written from the same understanding, so a wrong
+understanding passes both.
+
+T1039 is what that costs. A malformed range bound was rejected by Solr, the rejection
+came back as an empty result, and an empty page reads to a cursor sweep as
+end-of-source: a truncated export and an audit that blamed the source. Every unit test
+passed. One Solr container paging a cursor over an id containing a space would have
+failed immediately.
+
+The class recurs: a query string an engine rejects, or silently answers differently than
+intended, where the caller's error path is an empty result rather than a throw. Neither
+engine has ever been asked, so nobody knows how many others there are.
+
+The work is one Solr and one Elasticsearch container, and the paths worth the round trip
+first: the T1029 inventory cursor, the T1033 export cursor, `getDocumentCountWithField`,
+`retrieveDocumentPageAfter` ordering, and the exclusive-bound semantics both plugins
+claim. Ids with spaces, punctuation and path shapes belong in the fixture, not in a
+comment.

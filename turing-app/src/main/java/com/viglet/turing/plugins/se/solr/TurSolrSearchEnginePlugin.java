@@ -467,6 +467,37 @@ public class TurSolrSearchEnginePlugin implements TurSearchEnginePlugin {
     }
 
     /**
+     * T1039 / §CVI.4 — escapes a value that must reach Solr as <b>one term</b>: a
+     * document id, or a range bound.
+     *
+     * <p>{@link #escapeSolr} deliberately leaves whitespace alone, because it also
+     * escapes free text ({@code title:(two words)}) where a space is the operator
+     * separating terms. A single term is the opposite case: an unescaped space
+     * ends it. {@code id:{my doc TO *]} is not a range Solr can read, and the
+     * rejection comes back through {@code executeSolrQuery} as an empty result —
+     * which a cursor sweep reads as "fully enumerated", silently truncating an
+     * export and making the T1029 audit blame the source for what it never read.
+     *
+     * <p>Escaping the space rather than quoting the value keeps this composable
+     * with the specials above: inside quotes their backslashes would themselves
+     * need different treatment.
+     *
+     * @since 2026.3.4
+     */
+    static String escapeSolrTerm(String term) {
+        return escapeSolr(term).replaceAll("(\\s)", "\\\\$1");
+    }
+
+    /**
+     * T1039 / §CVI.4 — the keyset cursor's filter query: ids strictly greater than
+     * {@code afterId}. Package-visible so the exact string is asserted directly;
+     * a malformed bound here does not fail loudly, it ends the sweep.
+     */
+    static String idAfterFilterQuery(String afterId) {
+        return TurSNFieldName.ID + ":{" + escapeSolrTerm(afterId) + " TO *]";
+    }
+
+    /**
      * T28 / §III.5 — Solr {@code MoreLikeThis} backend for
      * {@code TurSeMltIntentClassifier}. Targets the {@code /mlt} request
      * handler with {@code stream.body=<text>}; Solr 9 disables the
@@ -596,7 +627,7 @@ public class TurSolrSearchEnginePlugin implements TurSearchEnginePlugin {
         try {
             SolrQuery query = new SolrQuery();
             query.set("qt", "/mlt");
-            query.setQuery(TurSNFieldName.ID + ":" + escapeSolr(id));
+            query.setQuery(TurSNFieldName.ID + ":" + escapeSolrTerm(id));
             query.set("mlt.fl", SIMILAR_MLT_FIELDS);
             query.set("mlt.mintf", "1");
             query.set("mlt.mindf", "1");
@@ -659,7 +690,7 @@ public class TurSolrSearchEnginePlugin implements TurSearchEnginePlugin {
             List<String> ids) {
         String q = ids.stream()
                 .filter(s -> s != null && !s.isBlank())
-                .map(s -> TurSNFieldName.ID + ":" + escapeSolr(s))
+                .map(s -> TurSNFieldName.ID + ":" + escapeSolrTerm(s))
                 .collect(java.util.stream.Collectors.joining(" OR "));
         if (q.isEmpty()) {
             return List.of();
@@ -805,7 +836,7 @@ public class TurSolrSearchEnginePlugin implements TurSearchEnginePlugin {
                             .addSort(TurSNFieldName.ID, SolrQuery.ORDER.asc);
                     if (afterId != null && !afterId.isBlank()) {
                         query.addFilterQuery(
-                                TurSNFieldName.ID + ":{" + escapeSolr(afterId) + " TO *]");
+                                idAfterFilterQuery(afterId));
                     }
                     return TurSolr.executeSolrQuery(instance, query)
                             .map(response -> {
@@ -863,13 +894,13 @@ public class TurSolrSearchEnginePlugin implements TurSearchEnginePlugin {
                     query.setFields(inventoryFields());
                     if (sourceApp != null && !sourceApp.isBlank()) {
                         query.addFilterQuery(
-                                TurSNFieldName.SOURCE_APPS + ":" + escapeSolr(sourceApp));
+                                TurSNFieldName.SOURCE_APPS + ":" + escapeSolrTerm(sourceApp));
                     }
                     if (after != null && !after.isBlank()) {
                         // Exclusive lower bound: the keyset cursor, so the engine
                         // never pays for the pages already read.
                         query.addFilterQuery(
-                                TurSNFieldName.ID + ":{" + escapeSolr(after) + " TO *]");
+                                idAfterFilterQuery(after));
                     }
                     return TurSolr.executeSolrQuery(instance, query)
                             .map(TurSolrSearchEnginePlugin::toInventoryPage)
