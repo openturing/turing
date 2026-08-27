@@ -1316,6 +1316,32 @@ neutral grounding + manifest kernel is now `viglet-core-manifest`; see CHANGELOG
 these block the Dumont collection work — a sidecar
 (D10) can index into a hand-provisioned site before T382 lands.
 
+### XX.25 The stub answers 200 to a body Adobe would refuse (T1048)
+
+The Content AI tests stand Adobe's endpoint in miniature: a loopback `HttpServer` that
+records the request body and replies with a canned response. That was the right call —
+the translation is the whole of the feature, and a mocked client proves nothing about
+the body. But the stub replies `200` to **anything**, so a test catches only what its
+author thought to assert.
+
+T1047 found what that costs. T1031's `match_all` was an empty `FilterGroup` over `AND`,
+on the reasoning that no constraints means no exclusions. `FilterGroup.filters` carries
+`minItems: 1`, so Adobe would have refused every `getDocumentTotal` and every
+blank-query search. It shipped, survived T1044, T1045 and T1046, and was found by
+re-reading the spec rather than by a failing test — which had in fact asserted the
+invalid shape by name.
+
+Nor is that constraint alone. The spec bounds `pagination.limit` at 50,
+`FilterGroup.filters` at 25, `aggregates` at 50, a `composite`'s `queries` at 2–10 and a
+`termBuckets` `size` at 2000, and requires non-empty `text` on a vector or fulltext
+query. Each is a body Turing could emit and no test would refuse.
+
+An engine Turing owns gets a container and is asked directly (T1040–T1042). Content AI
+cannot be containerised, so the equivalent is its published contract: validate each
+recorded body against the OpenAPI bundle in the stub, so a request Adobe would reject
+fails the test that produced it. That means vendoring the bundle, pinned — which also
+makes a Sunset visible at build time rather than at runtime.
+
 ## XXII. Agent↔UI transparency & client tools — AG-UI parity (Block W)
 
 > **Why now.** A capability review against CopilotKit's **AG-UI** protocol

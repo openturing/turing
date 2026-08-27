@@ -12,6 +12,10 @@
 
 ## Block BV — The quality gate stops at the package boundary
 
+## Block R.1 — Event-driven ingestion from enterprise CMS platforms (AEM as the reference)
+
+- 📋 **T1048** (deps: —) **A Content AI request body Adobe would reject passes every test** — The stub replies 200 to anything, so T1031's invalid empty FilterGroup shipped and survived three tasks until the spec was re-read. → §XX.25
+
 ## Non-goals (do NOT add as tasks)
 
 Binding constraints — see [IMPROVEMENTS.md](IMPROVEMENTS.md) §I.6 (What NOT to

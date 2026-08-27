@@ -307,6 +307,7 @@ number" looked free but wasn't. Grepping three files (`ROADMAP.md`,
 
 ## Log (most recent first)
 
+- **T1048 FILED** (Block R.1 §XX.25 — the Content AI stub replies 200 to a body Adobe would reject; validate against the OpenAPI bundle) — 2026-08-27.
 - **T1047 SHIPPED** (Block R.1 §XX.24 — Content AI DSL executor; vectorless copilot reaches a federated site; block closed and heading dropped) — 2026-08-27.
 - **T1046 SHIPPED** (Block R.1 §XX.23 — the DSL dispatch refuses an engine with no executor, 501, instead of using Solr's) — 2026-08-27.
 - **T1045 SHIPPED** (Block R.1 §XX.22 — GET /content-sources checks the source name, type, spaces and filterable fields) — 2026-08-27.
