@@ -1316,33 +1316,6 @@ neutral grounding + manifest kernel is now `viglet-core-manifest`; see CHANGELOG
 these block the Dumont collection work — a sidecar
 (D10) can index into a hand-provisioned site before T382 lands.
 
-### XX.17 A manifest client for the Java SDK (T1030)
-
-Dumont already declares its schema. `DumStructuredSchema` is an ordered, immutable
-manifest of fields that publishes `TurSNJobAttributeSpec`s with every document and
-enforces the absent-versus-empty grounding contract (T381) at the record boundary. The
-connector knows each field's type, cardinality and whether it is mandatory before it
-sends anything.
-
-Turing already accepts that shape: `POST /api/sn/manifest` (T382) converges a site and
-its field schema from one declarative manifest, idempotently.
-
-The two ends do not meet, because `turing-java-sdk` has no manifest client. It ships
-`TurSNJobAttributeSpec` and the job/queue surface and nothing that provisions. A Java
-connector wanting to converge the site it is about to index has to hand-roll HTTP
-against the endpoint, guess the payload shape, and re-derive the auth and CSRF handling
-the SDK already does for indexing.
-
-So in practice nobody provisions up front. Fields are created at index time from the
-first document that carries them, which infers a type from a single value and leaves an
-optional field absent from early documents with no declaration at all — the failure T382
-was built to remove.
-
-The work is a manifest client in the SDK: build a `VigletFieldManifest` from declared
-attribute specs, POST it, and surface the plan diff and the 409 a breaking change
-returns. That is what makes "configure the source and the site provisions itself" true
-for any Java connector, not only for AEM.
-
 ### XX.18 Federating to a vendor's own retrieval (T1031)
 
 Adobe's AEM Content AI vectorizes AEM sources itself and exposes Foundational Services

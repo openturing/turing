@@ -57,6 +57,10 @@ import com.viglet.turing.commons.sn.bean.TurSNSiteSearchBean;
 import com.viglet.turing.commons.sn.bean.TurSNSiteSearchQueryContextBean;
 import com.viglet.turing.commons.sn.bean.TurSNSiteSearchResultsBean;
 import com.viglet.turing.commons.sn.bean.TurSNSiteSpotlightDocumentBean;
+import com.viglet.turing.client.sn.manifest.TurSNManifest;
+import com.viglet.turing.client.sn.manifest.TurSNManifestClient;
+import com.viglet.turing.client.sn.manifest.TurSNManifestDiff;
+import com.viglet.turing.client.sn.manifest.TurSNManifestResult;
 import com.viglet.turing.commons.sn.search.TurSNParamType;
 
 import lombok.Getter;
@@ -217,6 +221,35 @@ public class TurSNServer {
         } else {
             log.error("No credentials to delete items by {} type", typeName);
         }
+    }
+
+    /**
+     * T1030 / §XX.17 — converges this server's site and field schema to the
+     * manifest before anything is indexed. Idempotent: re-posting an unchanged
+     * manifest changes nothing.
+     *
+     * <p>It sits beside {@link #importItems} on purpose — a connector that knows
+     * how to publish documents should not have to discover a second client to
+     * declare the schema those documents assume.
+     *
+     * @throws com.viglet.turing.client.sn.manifest.TurSNManifestException when the
+     *         site did not converge, including the HTTP 409 an undeclared breaking
+     *         change returns. Unlike an indexing job, this is not retried: every
+     *         document that followed would be indexed against an undeclared schema
+     * @since 2026.3.4
+     */
+    public TurSNManifestResult provision(TurSNManifest manifest) {
+        return new TurSNManifestClient(this).provision(manifest);
+    }
+
+    /**
+     * T1030 / §XX.17 — the dry-run half of {@link #provision}: the diff the
+     * manifest would apply, computed without mutating anything.
+     *
+     * @since 2026.3.4
+     */
+    public TurSNManifestDiff planManifest(TurSNManifest manifest) {
+        return new TurSNManifestClient(this).plan(manifest);
     }
 
     public List<TurSNLocale> getLocales() {
