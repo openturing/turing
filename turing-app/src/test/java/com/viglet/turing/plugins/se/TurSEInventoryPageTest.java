@@ -34,7 +34,7 @@ import org.junit.jupiter.api.Test;
 class TurSEInventoryPageTest {
 
     private static TurSEInventoryEntry entry(String id) {
-        return new TurSEInventoryEntry(id, "Page", 1L, "modification_date");
+        return new TurSEInventoryEntry(id, "Page", 1L, "modification_date", null);
     }
 
     @Test

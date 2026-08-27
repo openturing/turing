@@ -149,4 +149,47 @@ class TurSEInventoryEntryTest {
         assertThat(TurSEInventoryEntry.toEpochMs(List.of())).isNull();
         assertThat(TurSEInventoryEntry.toEpochMs(null)).isNull();
     }
+
+    // ---- T1034 / §XX.19 — the exact identity ------------------------------
+
+    @Test
+    @DisplayName("An indexed checksum is reported alongside the version, not instead of it")
+    void checksumIsReportedWithTheVersion() {
+        var entry = TurSEInventoryEntry.from("doc-1", Map.of(
+                TurSNFieldName.MODIFICATION_DATE, EPOCH_MS,
+                TurSNFieldName.CHECKSUM, "sha256:abc123"));
+
+        assertThat(entry.checksum()).isEqualTo("sha256:abc123");
+        assertThat(entry.version()).isEqualTo(EPOCH_MS);
+    }
+
+    @Test
+    @DisplayName("A document with a checksum but no date is still comparable — that was the point")
+    void checksumWithoutADateIsStillReported() {
+        var entry = TurSEInventoryEntry.from("doc-1",
+                Map.of(TurSNFieldName.CHECKSUM, "sha256:abc123"));
+
+        assertThat(entry.checksum()).isEqualTo("sha256:abc123");
+        assertThat(entry.version()).isNull();
+        assertThat(entry.versionField()).isNull();
+    }
+
+    @Test
+    @DisplayName("A document indexed before T1034 reports no checksum, and the version still carries it")
+    void documentWithoutChecksumFallsBackToTheVersion() {
+        var entry = TurSEInventoryEntry.from("doc-1",
+                Map.of(TurSNFieldName.MODIFICATION_DATE, EPOCH_MS));
+
+        assertThat(entry.checksum()).isNull();
+        assertThat(entry.version()).isEqualTo(EPOCH_MS);
+    }
+
+    @Test
+    @DisplayName("A multi-valued checksum takes its first value")
+    void multiValuedChecksumTakesTheFirst() {
+        var entry = TurSEInventoryEntry.from("doc-1",
+                Map.of(TurSNFieldName.CHECKSUM, List.of("sha256:abc123", "stale")));
+
+        assertThat(entry.checksum()).isEqualTo("sha256:abc123");
+    }
 }

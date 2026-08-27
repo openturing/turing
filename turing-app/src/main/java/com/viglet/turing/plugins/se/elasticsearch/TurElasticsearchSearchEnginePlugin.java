@@ -838,7 +838,8 @@ public class TurElasticsearchSearchEnginePlugin implements TurSearchEnginePlugin
     private static List<String> inventoryFields() {
         List<String> fields = new java.util.ArrayList<>(List.of(
                 com.viglet.turing.commons.sn.field.TurSNFieldName.ID,
-                com.viglet.turing.commons.sn.field.TurSNFieldName.TYPE));
+                com.viglet.turing.commons.sn.field.TurSNFieldName.TYPE,
+                com.viglet.turing.commons.sn.field.TurSNFieldName.CHECKSUM));
         fields.addAll(com.viglet.turing.plugins.se.TurSEInventoryEntry.VERSION_FIELDS);
         return fields;
     }

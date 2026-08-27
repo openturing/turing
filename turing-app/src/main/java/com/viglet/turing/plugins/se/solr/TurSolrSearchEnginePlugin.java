@@ -880,7 +880,7 @@ public class TurSolrSearchEnginePlugin implements TurSearchEnginePlugin {
 
     private static String[] inventoryFields() {
         List<String> fields = new ArrayList<>(
-                List.of(TurSNFieldName.ID, TurSNFieldName.TYPE));
+                List.of(TurSNFieldName.ID, TurSNFieldName.TYPE, TurSNFieldName.CHECKSUM));
         fields.addAll(com.viglet.turing.plugins.se.TurSEInventoryEntry.VERSION_FIELDS);
         return fields.toArray(new String[0]);
     }

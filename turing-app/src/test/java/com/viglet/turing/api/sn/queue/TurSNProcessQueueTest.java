@@ -72,6 +72,8 @@ class TurSNProcessQueueTest {
     @Mock
     private com.viglet.turing.sn.kb.TurSNMicrothesaurusIndexer turSNMicrothesaurusIndexer;
     @Mock
+    private com.viglet.turing.sn.checksum.TurSNChecksumIndexer turSNChecksumIndexer;
+    @Mock
     private com.viglet.turing.api.sn.search.TurSNSearchCacheEvictor turSNSearchCacheEvictor;
     @Mock
     private TurSNProcessQueue self;

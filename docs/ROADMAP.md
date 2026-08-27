@@ -15,7 +15,6 @@
 ## Block R.1 — Event-driven ingestion from enterprise CMS platforms (AEM as the reference)
 
 - 💭 **T1031** (deps: —) **A Turing agent cannot query an existing Adobe Content AI index** — A customer already paying the Content AI SKU cannot reuse that retrieval and has to re-vectorize the same published content in Turing. → §XX.18
-- 📋 **T1034** (deps: —) **An audit cannot compare a document's content, only a date the source may never stamp** — The checksum a connector publishes on every job item reaches the indexing log and never the document, so the index has no exact per-document identity to report. → §XX.19
 
 ## Non-goals (do NOT add as tasks)
 

@@ -71,15 +71,15 @@ class TurLuceneSearchEnginePluginInventoryTest {
     private static TurLuceneInstance inMemoryInstance() throws Exception {
         Directory dir = new ByteBuffersDirectory();
         IndexWriter writer = new IndexWriter(dir, new IndexWriterConfig(new StandardAnalyzer()));
-        addDoc(writer, "a-page", "Page", "aem", JAN);
-        addDoc(writer, "b-page", "Page", "aem", FEB);
-        addDoc(writer, "c-asset", "Asset", "sharepoint", null);
+        addDoc(writer, "a-page", "Page", "aem", JAN, "sha256:aaa");
+        addDoc(writer, "b-page", "Page", "aem", FEB, null);
+        addDoc(writer, "c-asset", "Asset", "sharepoint", null, "sha256:ccc");
         writer.commit();
         return new TurLuceneInstance(writer, dir, Path.of("mem-inventory"), new FacetsConfig());
     }
 
     private static void addDoc(IndexWriter writer, String id, String type, String source,
-            Long modifiedEpochMs) throws Exception {
+            Long modifiedEpochMs, String checksum) throws Exception {
         Document doc = new Document();
         doc.add(new StringField("id", id, Field.Store.YES));
         doc.add(new StringField("type", type, Field.Store.YES));
@@ -87,6 +87,9 @@ class TurLuceneSearchEnginePluginInventoryTest {
         if (modifiedEpochMs != null) {
             // Mirrors TurLuceneDocumentHandler: DATE fields are stored as epoch millis.
             doc.add(new StoredField("modification_date", modifiedEpochMs));
+        }
+        if (checksum != null) {
+            doc.add(new StringField("checksum", checksum, Field.Store.YES));
         }
         writer.addDocument(doc);
     }
@@ -171,6 +174,35 @@ class TurLuceneSearchEnginePluginInventoryTest {
 
         assertThat(page.entries()).extracting("id").containsExactly("a-page", "c-asset");
         assertThat(page.remaining()).isEqualTo(2L);
+    }
+
+    // ---- T1034 / §XX.19 — the indexed checksum ------------------------------
+
+    @Test
+    @DisplayName("An indexed checksum is reported per document, and its absence is honest")
+    void inventoryReportsTheChecksum() throws Exception {
+        var siteLocale = givenIndex(inMemoryInstance());
+
+        var page = plugin.retrieveInventoryPage(siteLocale, null, null, 10);
+
+        assertThat(page.entries()).extracting("id", "checksum").containsExactly(
+                org.assertj.core.groups.Tuple.tuple("a-page", "sha256:aaa"),
+                // Indexed before T1034, or by a connector that computes none.
+                org.assertj.core.groups.Tuple.tuple("b-page", null),
+                org.assertj.core.groups.Tuple.tuple("c-asset", "sha256:ccc"));
+    }
+
+    @Test
+    @DisplayName("A document with a checksum and no date is comparable on the checksum alone")
+    void checksumCarriesADocumentWithNoDate() throws Exception {
+        var siteLocale = givenIndex(inMemoryInstance());
+
+        var page = plugin.retrieveInventoryPage(siteLocale, "sharepoint", null, 10);
+
+        var entry = page.entries().get(0);
+        assertThat(entry.id()).isEqualTo("c-asset");
+        assertThat(entry.version()).isNull();
+        assertThat(entry.checksum()).isEqualTo("sha256:ccc");
     }
 
     // ---- T1033 / §D.13 — cursor-paged export read ---------------------------

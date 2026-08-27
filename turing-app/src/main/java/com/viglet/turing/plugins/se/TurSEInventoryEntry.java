@@ -40,14 +40,17 @@ import com.viglet.turing.commons.sn.field.TurSNFieldName;
  * whether it is looking at a modification or a publication date. {@code null}
  * whenever {@code version} is.
  *
- * <p>The index holds no checksum — {@code TurSNJobItem.checksum} reaches the
- * indexing log and never the document — so the version is the strongest
- * per-document identity Turing can honestly report today.
+ * <p><b>checksum</b> (T1034) is the source-computed content checksum the
+ * connector published on its job item, and the identity to prefer when it is
+ * there: it is exact, and comparing it needs no agreement about what a timestamp
+ * means. {@code null} for a document indexed before T1034 or by a connector that
+ * computes none — which is why the version stays, rather than being replaced.
  *
  * @author Alexandre Oliveira
  * @since 2026.3.4
  */
-public record TurSEInventoryEntry(String id, String type, Long version, String versionField) {
+public record TurSEInventoryEntry(String id, String type, Long version, String versionField,
+        String checksum) {
 
     /**
      * The document fields consulted for a version, in precedence order: a
@@ -66,13 +69,14 @@ public record TurSEInventoryEntry(String id, String type, Long version, String v
      */
     public static TurSEInventoryEntry from(String id, Map<String, Object> fields) {
         String type = firstString(fields, TurSNFieldName.TYPE);
+        String checksum = firstString(fields, TurSNFieldName.CHECKSUM);
         for (String field : VERSION_FIELDS) {
             Long epochMs = toEpochMs(fields.get(field));
             if (epochMs != null) {
-                return new TurSEInventoryEntry(id, type, epochMs, field);
+                return new TurSEInventoryEntry(id, type, epochMs, field, checksum);
             }
         }
-        return new TurSEInventoryEntry(id, type, null, null);
+        return new TurSEInventoryEntry(id, type, null, null, checksum);
     }
 
     /**

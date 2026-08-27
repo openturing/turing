@@ -1340,30 +1340,6 @@ becomes a hard dependency of the answer path. This is filed as an idea and not a
 for that reason. The first step is a spike against a real Content AI tenant to see what
 the retrieval API actually returns.
 
-### XX.19 The checksum stops at the log (T1034)
-
-`TurSNJobItem` carries a `checksum` and a connector fills it in. `TurLoggingUtils`
-copies it onto the `TurLoggingIndexing` record and there the value stops: no indexing
-path writes it to a document, and no search-engine schema has a field for it. The one
-piece of per-document identity the source computed itself is kept only in a log.
-
-T1029 shipped the index inventory around that absence. It reports a version resolved
-from `modification_date`, falling back to `publication_date`, and `null` when a document
-carries neither. That is honest but weak in two ways a real audit meets immediately: a
-source that stamps no date gets no version at all, so the third comparison — in both at
-different versions — is simply unavailable for it; and a date the source rewrites
-without changing content reports drift that is not there.
-
-A checksum has neither problem. It is exact, the connector already computes it, and
-comparing it needs no agreement about what a timestamp means.
-
-The work is to index it: a `checksum` field written when the job item carries one, added
-to the Solr schemas alongside the other reserved fields, and returned by
-`retrieveInventoryPage` as a third component on `TurSEInventoryEntry`. The version stays
-— a document indexed before this exists, or by a connector that sends no checksum, still
-has to be comparable — so the entry reports whichever identity it has and says which,
-exactly as it already does for the two date fields.
-
 ## XXII. Agent↔UI transparency & client tools — AG-UI parity (Block W)
 
 > **Why now.** A capability review against CopilotKit's **AG-UI** protocol

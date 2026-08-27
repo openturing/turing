@@ -80,6 +80,7 @@ public class TurSNProcessQueue {
     private final TurSNContentFitIndexer turSNContentFitIndexer;
     private final TurSNGeminiMediaIndexer turSNGeminiMediaIndexer;
     private final com.viglet.turing.sn.kb.TurSNMicrothesaurusIndexer turSNMicrothesaurusIndexer;
+    private final com.viglet.turing.sn.checksum.TurSNChecksumIndexer turSNChecksumIndexer;
     private final TurSNSearchCacheEvictor turSNSearchCacheEvictor;
     private final TurSNProcessQueue self;
 
@@ -95,6 +96,7 @@ public class TurSNProcessQueue {
             TurSNContentFitIndexer turSNContentFitIndexer,
             TurSNGeminiMediaIndexer turSNGeminiMediaIndexer,
             com.viglet.turing.sn.kb.TurSNMicrothesaurusIndexer turSNMicrothesaurusIndexer,
+            com.viglet.turing.sn.checksum.TurSNChecksumIndexer turSNChecksumIndexer,
             TurSNSearchCacheEvictor turSNSearchCacheEvictor,
             @org.springframework.context.annotation.Lazy TurSNProcessQueue self) {
         this.pluginFactory = pluginFactory;
@@ -109,6 +111,7 @@ public class TurSNProcessQueue {
         this.turSNContentFitIndexer = turSNContentFitIndexer;
         this.turSNGeminiMediaIndexer = turSNGeminiMediaIndexer;
         this.turSNMicrothesaurusIndexer = turSNMicrothesaurusIndexer;
+        this.turSNChecksumIndexer = turSNChecksumIndexer;
         this.turSNSearchCacheEvictor = turSNSearchCacheEvictor;
         this.self = self;
     }
@@ -435,6 +438,10 @@ public class TurSNProcessQueue {
         // T672 / §XL — expand the document with the hierarchical path of each
         // controlled-vocabulary term it mentions (opt-in; no-op otherwise). Never throws.
         turSNMicrothesaurusIndexer.enrich(turSNSite, turSNJobItem.getLocale(), attributes);
+        // T1034 / §XX.19 — carry the source-computed checksum onto the document so
+        // the index inventory can report exact content identity, not just a date.
+        // No checksum on the job item is byte-for-byte the legacy path.
+        turSNChecksumIndexer.enrich(turSNSite, turSNJobItem, attributes);
         return attributes;
     }
 

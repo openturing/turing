@@ -975,12 +975,19 @@ public class TurLuceneSearchEnginePlugin implements TurSearchEnginePlugin {
         return false;
     }
 
-    /** Projects only the fields the inventory reads: {@code type} and the version candidates. */
+    /**
+     * Projects only the fields the inventory reads: {@code type}, the T1034
+     * {@code checksum} and the version candidates.
+     */
     private static Map<String, Object> inventoryFields(Document doc) {
         Map<String, Object> fields = new LinkedHashMap<>();
         String type = doc.get(TurSNFieldName.TYPE);
         if (type != null) {
             fields.put(TurSNFieldName.TYPE, type);
+        }
+        String checksum = doc.get(TurSNFieldName.CHECKSUM);
+        if (checksum != null) {
+            fields.put(TurSNFieldName.CHECKSUM, checksum);
         }
         for (String field : com.viglet.turing.plugins.se.TurSEInventoryEntry.VERSION_FIELDS) {
             var value = doc.getField(field);

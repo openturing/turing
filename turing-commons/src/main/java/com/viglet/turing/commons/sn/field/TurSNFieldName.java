@@ -43,6 +43,16 @@ public class TurSNFieldName {
     public static final String EXACT_MATCH = "exact_match";
 
     /**
+     * T1034 — the source-computed content checksum a connector publishes on its
+     * job item. Indexed so an external content audit can compare a document's
+     * <em>content</em> rather than a timestamp the source may never stamp; see
+     * the index inventory (T1029).
+     *
+     * @since 2026.3.4
+     */
+    public static final String CHECKSUM = "checksum";
+
+    /**
      * Fields whose value is an identifier or URL consumed programmatically by
      * clients (the {@code id} feeds {@code GET /search/similar} — a {@code <mark>}
      * highlight tag injected into it breaks the "Related" lookup; {@code url} feeds

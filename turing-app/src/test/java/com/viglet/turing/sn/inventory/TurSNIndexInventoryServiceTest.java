@@ -99,7 +99,7 @@ class TurSNIndexInventoryServiceTest {
     void defaultsToTheFirstLocale() {
         givenLocales(enLocale, ptLocale);
         givenPage(TurSEInventoryPage.of(
-                List.of(new TurSEInventoryEntry("a", "Page", 5L, "modification_date")), 1));
+                List.of(new TurSEInventoryEntry("a", "Page", 5L, "modification_date", "sum-a")), 1));
 
         var response = service.inventory(site, null, "aem", null, 0);
 
@@ -195,8 +195,8 @@ class TurSNIndexInventoryServiceTest {
     void pageFieldsArePassedThrough() {
         givenLocales(enLocale);
         givenPage(TurSEInventoryPage.of(List.of(
-                new TurSEInventoryEntry("a", "Page", 1L, "modification_date"),
-                new TurSEInventoryEntry("b", null, null, null)), 42));
+                new TurSEInventoryEntry("a", "Page", 1L, "modification_date", "sum-a"),
+                new TurSEInventoryEntry("b", null, null, null, null)), 42));
 
         var response = service.inventory(site, null, null, "previous", 2);
 
