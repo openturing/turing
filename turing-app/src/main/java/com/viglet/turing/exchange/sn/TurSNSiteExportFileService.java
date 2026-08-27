@@ -135,8 +135,13 @@ public class TurSNSiteExportFileService {
 		this.storageService = storageService;
 	}
 
-	public Path exportSNSitesToZip(List<TurSNSite> turSNSites,
-			Map<String, Map<String, List<Map<String, Object>>>> contentMap,
+	/**
+	 * T1033 / §D.13 — {@code content} is now a lazily paged
+	 * {@link TurSNSiteContentPages} rather than a materialised map: the content
+	 * file is written page by page, so exporting a large site no longer needs the
+	 * whole site in memory first. The file's shape is unchanged.
+	 */
+	public Path exportSNSitesToZip(List<TurSNSite> turSNSites, TurSNSiteContentPages content,
 			boolean includeTemplate) {
 		File tmpDir = getOrCreateTmpDir();
 		String folderName = "SNSite_" + System.currentTimeMillis();
@@ -160,8 +165,8 @@ public class TurSNSiteExportFileService {
 		exportValidator.validate(turExchange);
 		File exportFile = prepareExportFile(tmpDir, folderName, turExchange);
 
-		if (contentMap != null && !contentMap.isEmpty()) {
-			writeContentFile(exportFile.getParentFile(), contentMap);
+		if (content != null && !content.locales().isEmpty()) {
+			writeContentFile(exportFile.getParentFile(), content);
 		}
 
 		if (includeTemplate) {
@@ -174,19 +179,41 @@ public class TurSNSiteExportFileService {
 		return zipFile.toPath();
 	}
 
-	private void writeContentFile(File exportDir,
-			Map<String, Map<String, List<Map<String, Object>>>> contentMap) {
-		for (var entry : contentMap.entrySet()) {
-			String siteName = entry.getKey().replaceAll("[^a-zA-Z0-9_-]", "_");
-			File contentFile = new File(exportDir, siteName + "_content.json");
-			try {
-				JsonMapper mapper = JsonMapper.builder()
-						.configure(SerializationFeature.INDENT_OUTPUT, true)
-						.build();
-				mapper.writer().writeValue(contentFile, Map.of(entry.getKey(), entry.getValue()));
-			} catch (Exception e) {
-				log.error("Error writing content file for site '{}': {}", entry.getKey(), e.getMessage(), e);
+	/**
+	 * T1033 / §D.13 — writes {@code <site>_content.json} straight from the page
+	 * iterators, so at most one page is in memory at a time.
+	 *
+	 * <p>Uses a {@code JsonGenerator} rather than {@code writeValue} on a
+	 * materialised map, but emits the identical structure —
+	 * <code>{ "&lt;site&gt;": { "&lt;locale&gt;": [ … ] } }</code>, still
+	 * indented — so an export produced this way imports exactly as before. A
+	 * locale with no documents keeps its empty array, as it did.
+	 */
+	private void writeContentFile(File exportDir, TurSNSiteContentPages content) {
+		String fileName = content.siteName().replaceAll("[^a-zA-Z0-9_-]", "_") + "_content.json";
+		File contentFile = new File(exportDir, fileName);
+		JsonMapper mapper = JsonMapper.builder()
+				.configure(SerializationFeature.INDENT_OUTPUT, true)
+				.build();
+		try (var generator = mapper.createGenerator(contentFile, tools.jackson.core.JsonEncoding.UTF8)) {
+			generator.writeStartObject();
+			generator.writeName(content.siteName());
+			generator.writeStartObject();
+			for (var locale : content.locales()) {
+				generator.writeName(locale.localeKey());
+				generator.writeStartArray();
+				while (locale.pages().hasNext()) {
+					for (Map<String, Object> document : locale.pages().next()) {
+						generator.writePOJO(document);
+					}
+				}
+				generator.writeEndArray();
 			}
+			generator.writeEndObject();
+			generator.writeEndObject();
+		} catch (Exception e) {
+			log.error("Error writing content file for site '{}': {}", content.siteName(),
+					e.getMessage(), e);
 		}
 	}
 

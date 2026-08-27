@@ -412,6 +412,50 @@ public interface TurSearchEnginePlugin {
         return List.of();
     }
 
+    /**
+     * T1033 / §D.13 — whether this engine can page documents by a <em>keyset
+     * cursor</em> on the id ({@link #retrieveDocumentPageAfter}) rather than by
+     * offset.
+     *
+     * <p>The distinction is not cosmetic. An offset makes the engine collect and
+     * discard everything before it, so page N costs N pages of work and a full
+     * export is quadratic in the number of pages — Lucene most visibly, since
+     * {@code searcher.search(query, start + rows)} materialises {@code start +
+     * rows} hits to return the last {@code rows} of them. A cursor makes every
+     * page cost what the first one did.
+     *
+     * <p>Default {@code false} so an engine that has not implemented it keeps
+     * being paged by offset, which is slow but correct.
+     *
+     * @since 2026.3.4
+     */
+    default boolean supportsCursorPaging() {
+        return false;
+    }
+
+    /**
+     * T1033 / §D.13 — the cursor-paged counterpart of
+     * {@link #retrieveDocumentPage}: the next {@code rows} documents whose id is
+     * strictly greater than {@code afterId}, id-ascending, projected onto the
+     * same export fields.
+     *
+     * <p>The ordering is part of the contract, not an implementation detail: the
+     * caller derives the next cursor from the last row's {@code id}, so a page
+     * returned in any other order would skip documents.
+     *
+     * <p>Only meaningful when {@link #supportsCursorPaging()} is {@code true};
+     * the default returns an empty list, which a caller that checked the flag
+     * never sees.
+     *
+     * @param afterId the previous page's last id; {@code null} starts at the
+     *                beginning
+     * @since 2026.3.4
+     */
+    default List<Map<String, Object>> retrieveDocumentPageAfter(TurSNSiteLocale turSNSiteLocale,
+            Map<String, ?> siteFieldMap, String afterId, int rows) {
+        return List.of();
+    }
+
     // ---- Index inventory (T1029 / §XX.16) ---------------------------------
 
     /**

@@ -173,6 +173,52 @@ class TurLuceneSearchEnginePluginInventoryTest {
         assertThat(page.remaining()).isEqualTo(2L);
     }
 
+    // ---- T1033 / §D.13 — cursor-paged export read ---------------------------
+
+    @Test
+    @DisplayName("The export page comes back id-ascending, so the last id is a valid cursor")
+    void exportPageIsIdAscending() throws Exception {
+        var siteLocale = givenIndex(inMemoryInstance());
+
+        var page = plugin.retrieveDocumentPageAfter(siteLocale, java.util.Map.of(), null, 10);
+
+        assertThat(page).extracting(doc -> doc.get("id"))
+                .containsExactly("a-page", "b-page", "c-asset");
+        assertThat(page.get(0)).containsEntry("type", "Page");
+    }
+
+    @Test
+    @DisplayName("The cursor resumes strictly after the id it names")
+    void exportCursorResumes() throws Exception {
+        var siteLocale = givenIndex(inMemoryInstance());
+
+        var first = plugin.retrieveDocumentPageAfter(siteLocale, java.util.Map.of(), null, 2);
+        assertThat(first).extracting(doc -> doc.get("id")).containsExactly("a-page", "b-page");
+
+        var second = plugin.retrieveDocumentPageAfter(siteLocale, java.util.Map.of(), "b-page", 2);
+        assertThat(second).extracting(doc -> doc.get("id")).containsExactly("c-asset");
+
+        assertThat(plugin.retrieveDocumentPageAfter(siteLocale, java.util.Map.of(), "c-asset", 2))
+                .isEmpty();
+    }
+
+    @Test
+    @DisplayName("Only the site's declared fields are projected, plus id and type")
+    void exportPageProjectsDeclaredFieldsOnly() throws Exception {
+        var siteLocale = givenIndex(inMemoryInstance());
+
+        var page = plugin.retrieveDocumentPageAfter(siteLocale, java.util.Map.of(), null, 1);
+
+        // source_apps is indexed but not declared on the site, so it is left out.
+        assertThat(page.get(0)).containsOnlyKeys("id", "type");
+    }
+
+    @Test
+    @DisplayName("Lucene advertises cursor paging, so the export never falls back to offsets")
+    void luceneAdvertisesCursorPaging() {
+        assertThat(plugin.supportsCursorPaging()).isTrue();
+    }
+
     @Test
     @DisplayName("An empty index answers empty, and a missing one answers unsupported")
     void emptyAndMissingIndexesAreDistinct() throws Exception {

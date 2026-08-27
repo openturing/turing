@@ -113,13 +113,15 @@ public class TurSNSiteExport {
 			return null;
 		}
 
-		Map<String, Map<String, List<Map<String, Object>>>> contentMap = null;
-		if (includeContent) {
-			contentMap = contentExchangeService.exportContent(siteId, taskId != null ? taskId : siteId);
-		}
+		// T1033 / §D.13 — opened, not built: the pages are pulled while the
+		// content file is written, so a large site is never held in memory.
+		TurSNSiteContentPages content = includeContent
+				? contentExchangeService.openContentExport(siteId, taskId != null ? taskId : siteId)
+						.orElse(null)
+				: null;
 
 		return createSNSiteZipResponse(response, turSNSites,
-				"sn-site-" + turSNSites.get(0).getName(), contentMap, includeTemplate);
+				"sn-site-" + turSNSites.get(0).getName(), content, includeTemplate);
 	}
 
 	private void hydrateExportCollections(TurSNSite turSNSite) {
@@ -153,12 +155,12 @@ public class TurSNSiteExport {
 	}
 
 	private StreamingResponseBody createSNSiteZipResponse(HttpServletResponse response, List<TurSNSite> turSNSites,
-			String prefixZipFileName, Map<String, Map<String, List<Map<String, Object>>>> contentMap,
+			String prefixZipFileName, TurSNSiteContentPages content,
 			boolean includeTemplate) {
 		try {
 			String strDate = new SimpleDateFormat("yyyy-MM-dd_HHmmss").format(new Date());
 			String zipFileName = prefixZipFileName + "_" + strDate + ".zip";
-			Path zipFilePath = exportFileService.exportSNSitesToZip(turSNSites, contentMap, includeTemplate);
+			Path zipFilePath = exportFileService.exportSNSitesToZip(turSNSites, content, includeTemplate);
 
 			response.addHeader("Content-disposition", "attachment;filename=" + zipFileName);
 			response.setContentType("application/octet-stream");
@@ -197,13 +199,14 @@ public class TurSNSiteExport {
 			return;
 		}
 
-		Map<String, Map<String, List<Map<String, Object>>>> contentMap = null;
-		if (includeContent) {
-			contentMap = contentExchangeService.exportContent(siteId, taskId);
-		}
+		// T1033 / §D.13 — the pages are pulled during packaging, which is also
+		// when the "exporting" progress now advances.
+		TurSNSiteContentPages content = includeContent
+				? contentExchangeService.openContentExport(siteId, taskId).orElse(null)
+				: null;
 
 		contentExchangeService.updatePhase(taskId, "packaging");
-		Path zipFilePath = exportFileService.exportSNSitesToZip(turSNSites, contentMap, includeTemplate);
+		Path zipFilePath = exportFileService.exportSNSitesToZip(turSNSites, content, includeTemplate);
 		asyncExportFiles.put(taskId, zipFilePath);
 		contentExchangeService.updatePhase(taskId, "completed");
 	}

@@ -814,6 +814,54 @@ public class TurLuceneSearchEnginePlugin implements TurSearchEnginePlugin {
         return null;
     }
 
+    @Override
+    public boolean supportsCursorPaging() {
+        return true;
+    }
+
+    /**
+     * T1033 / §D.13 — the cursor-paged export read. The offset version had to
+     * call {@code searcher.search(query, start + rows)}, materialising every hit
+     * up to the offset to keep the last page's worth; walking the {@code id} term
+     * dictionary from a {@code seekCeil} costs {@code rows} document reads no
+     * matter how far into the index the page sits.
+     */
+    @Override
+    public List<Map<String, Object>> retrieveDocumentPageAfter(TurSNSiteLocale turSNSiteLocale,
+            Map<String, ?> siteFieldMap, String afterId, int rows) {
+        return turLuceneInstanceProcess.initLuceneInstance(turSNSiteLocale)
+                .map(instance -> {
+                    try {
+                        return scanDocumentPage(instance, siteFieldMap, afterId, rows);
+                    } catch (Exception e) {
+                        log.warn("[Lucene] Failed to retrieve cursor page: {}", e.getMessage());
+                        return List.<Map<String, Object>>of();
+                    }
+                }).orElse(List.of());
+    }
+
+    private List<Map<String, Object>> scanDocumentPage(TurLuceneInstance instance,
+            Map<String, ?> siteFieldMap, String afterId, int rows) throws IOException {
+        IndexSearcher searcher = instance.getSearcher();
+        org.apache.lucene.index.Terms terms = org.apache.lucene.index.MultiTerms
+                .getTerms(searcher.getIndexReader(), TurSNFieldName.ID);
+        if (terms == null) {
+            return List.of();
+        }
+        org.apache.lucene.index.TermsEnum termsEnum = terms.iterator();
+        if (!seekPastCursor(termsEnum, afterId)) {
+            return List.of();
+        }
+        List<Map<String, Object>> docs = new ArrayList<>();
+        do {
+            Document doc = inventoryDocument(searcher, termsEnum.term().utf8ToString());
+            if (doc != null) {
+                docs.add(extractDocFields(doc, siteFieldMap));
+            }
+        } while (docs.size() < rows && termsEnum.next() != null);
+        return docs;
+    }
+
     // ---- Index inventory (T1029 / §XX.16) ---------------------------------
 
     @Override

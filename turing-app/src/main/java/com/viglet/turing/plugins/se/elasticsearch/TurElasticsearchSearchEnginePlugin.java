@@ -720,6 +720,69 @@ public class TurElasticsearchSearchEnginePlugin implements TurSearchEnginePlugin
                 }).orElse(List.of());
     }
 
+    @Override
+    public boolean supportsCursorPaging() {
+        return true;
+    }
+
+    @Override
+    public List<Map<String, Object>> retrieveDocumentPageAfter(TurSNSiteLocale turSNSiteLocale,
+            Map<String, ?> siteFieldMap, String afterId, int rows) {
+        return turElasticsearchInstanceProcess.initElasticsearchInstance(turSNSiteLocale)
+                .map(instance -> {
+                    try {
+                        var response = instance.getClient().search(s -> s
+                                .index(instance.getIndex())
+                                .query(afterIdQuery(afterId))
+                                .size(rows)
+                                .sort(so -> so.field(f -> f
+                                        .field(com.viglet.turing.commons.sn.field.TurSNFieldName.ID)
+                                        .order(co.elastic.clients.elasticsearch._types.SortOrder.Asc))),
+                                (java.lang.reflect.Type) Map.class);
+                        List<Map<String, Object>> docs = new java.util.ArrayList<>();
+                        for (var hit : response.hits().hits()) {
+                            @SuppressWarnings("unchecked")
+                            Map<String, Object> source = (Map<String, Object>) hit.source();
+                            if (source == null) {
+                                continue;
+                            }
+                            docs.add(projectExportFields(source, siteFieldMap));
+                        }
+                        return docs;
+                    } catch (Exception e) {
+                        log.warn("[Elasticsearch] Failed to retrieve cursor page: {}", e.getMessage());
+                        return List.<Map<String, Object>>of();
+                    }
+                }).orElse(List.of());
+    }
+
+    /** Everything, or everything past the cursor — the keyset bound as a filter-only query. */
+    private static co.elastic.clients.elasticsearch._types.query_dsl.Query afterIdQuery(
+            String afterId) {
+        if (afterId == null || afterId.isBlank()) {
+            return co.elastic.clients.elasticsearch._types.query_dsl.Query.of(q -> q
+                    .matchAll(m -> m));
+        }
+        return co.elastic.clients.elasticsearch._types.query_dsl.Query.of(q -> q
+                .range(r -> r.untyped(u -> u
+                        .field(com.viglet.turing.commons.sn.field.TurSNFieldName.ID)
+                        .gt(co.elastic.clients.json.JsonData.of(afterId)))));
+    }
+
+    /** Keeps only the site's declared export fields, plus the always-exported id and type. */
+    private static Map<String, Object> projectExportFields(Map<String, Object> source,
+            Map<String, ?> siteFieldMap) {
+        Map<String, Object> fields = new java.util.LinkedHashMap<>();
+        for (var entry : source.entrySet()) {
+            if (siteFieldMap.containsKey(entry.getKey())
+                    || com.viglet.turing.commons.sn.field.TurSNFieldName.ID.equals(entry.getKey())
+                    || com.viglet.turing.commons.sn.field.TurSNFieldName.TYPE.equals(entry.getKey())) {
+                fields.put(entry.getKey(), entry.getValue());
+            }
+        }
+        return fields;
+    }
+
     // ---- Index inventory (T1029 / §XX.16) ---------------------------------
 
     @Override

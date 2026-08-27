@@ -22,6 +22,7 @@
 package com.viglet.turing.exchange.sn;
 
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
@@ -184,19 +185,27 @@ public class TurSNSiteContentExchangeService {
     }
 
     /**
-     * Exports all indexed content for a site, organized by locale.
-     * Structure: { "siteName": { "en_US": [ {doc1}, {doc2}, ... ], "pt_BR": [...] } }
+     * T1033 / §D.13 — opens a site's indexed content for export as lazily paged
+     * locales. Nothing is read until the returned iterators are advanced, and
+     * nothing is retained past the page being written.
+     *
+     * <p>Replaces the map-building {@code exportContent}, which held every
+     * document of every locale — full stored text included — until the site was
+     * finished. The written structure is unchanged:
+     * <code>{ "siteName": { "en_US": [ {doc1}, {doc2}, … ], "pt_BR": […] } }</code>.
+     *
+     * @return empty when the site id resolves to nothing
      */
-    public Map<String, Map<String, List<Map<String, Object>>>> exportContent(String siteId, String taskId) {
+    public Optional<TurSNSiteContentPages> openContentExport(String siteId, String taskId) {
         return turSNSiteRepository.findById(siteId).map(turSNSite -> {
-            Map<String, Map<String, List<Map<String, Object>>>> contentMap = new LinkedHashMap<>();
             List<TurSNSiteLocale> locales = turSNSiteLocaleRepository.findByTurSNSite(turSNSite);
             TurSearchEnginePlugin plugin = pluginFactory.getPluginForSite(turSNSite);
             Map<String, TurSNSiteField> siteFieldMap = turSNSiteFieldService.toMap(turSNSite);
 
             long totalDocs = 0;
-            log.info("Exporting content for site '{}': plugin={}, locales={}, siteFields={}",
-                    turSNSite.getName(), plugin.getClass().getSimpleName(), locales.size(), siteFieldMap.size());
+            log.info("Exporting content for site '{}': plugin={}, cursorPaging={}, locales={}, siteFields={}",
+                    turSNSite.getName(), plugin.getClass().getSimpleName(),
+                    plugin.supportsCursorPaging(), locales.size(), siteFieldMap.size());
             for (TurSNSiteLocale locale : locales) {
                 long localeCount = plugin.getDocumentTotal(locale);
                 log.info("  Locale '{}' (core='{}'): {} documents", locale.getLanguage(), locale.getCore(), localeCount);
@@ -206,36 +215,95 @@ public class TurSNSiteContentExchangeService {
             progressMap.put(taskId, new ContentExchangeProgress(
                     (int) totalDocs, 0, "", "counting", System.currentTimeMillis()));
 
-            Map<String, List<Map<String, Object>>> localeContent = new LinkedHashMap<>();
-            int processedSoFar = 0;
+            // Shared across locales so the progress counter keeps climbing as the
+            // writer moves from one to the next.
+            AtomicInteger processed = new AtomicInteger();
             long startTime = System.currentTimeMillis();
+            int total = (int) totalDocs;
 
+            List<TurSNSiteContentPages.LocalePages> localePages = new ArrayList<>(locales.size());
             for (TurSNSiteLocale locale : locales) {
                 String localeKey = locale.getLanguage().toString();
-                List<Map<String, Object>> documents = new ArrayList<>();
-
-                progressMap.put(taskId, new ContentExchangeProgress(
-                        (int) totalDocs, processedSoFar, localeKey, "exporting", startTime));
-
-                int start = 0;
-                boolean hasMore = true;
-                while (hasMore) {
-                    List<Map<String, Object>> page = plugin.retrieveDocumentPage(locale, siteFieldMap, start, EXPORT_PAGE_SIZE);
-                    documents.addAll(page);
-                    processedSoFar += page.size();
-
-                    progressMap.put(taskId, new ContentExchangeProgress(
-                            (int) totalDocs, processedSoFar, localeKey, "exporting", startTime));
-
-                    start += EXPORT_PAGE_SIZE;
-                    hasMore = page.size() == EXPORT_PAGE_SIZE;
-                }
-                localeContent.put(localeKey, documents);
+                Iterator<List<Map<String, Object>>> pages = documentPages(plugin, locale, siteFieldMap,
+                        page -> progressMap.put(taskId, new ContentExchangeProgress(
+                                total, processed.addAndGet(page.size()), localeKey, "exporting",
+                                startTime)));
+                localePages.add(new TurSNSiteContentPages.LocalePages(localeKey, pages));
             }
-            contentMap.put(turSNSite.getName(), localeContent);
+            return new TurSNSiteContentPages(turSNSite.getName(), localePages);
+        });
+    }
 
-            return contentMap;
-        }).orElse(Map.of());
+    /**
+     * T1033 / §D.13 — a single-pass walk over one locale's indexed documents,
+     * one page per {@code next()}.
+     *
+     * <p>Prefers the keyset cursor when the engine has one
+     * ({@link TurSearchEnginePlugin#supportsCursorPaging()}), because an offset
+     * makes the engine redo every prior page — quadratic over a full export, and
+     * on Lucene an allocation of {@code start + rows} hits to keep {@code rows}
+     * of them. An engine without a cursor keeps the offset loop, which is slow
+     * but correct.
+     *
+     * @param onPage called with each page as it is fetched, for progress
+     */
+    private Iterator<List<Map<String, Object>>> documentPages(TurSearchEnginePlugin plugin,
+            TurSNSiteLocale locale, Map<String, TurSNSiteField> siteFieldMap,
+            java.util.function.Consumer<List<Map<String, Object>>> onPage) {
+        return new Iterator<>() {
+            private List<Map<String, Object>> nextPage;
+            private boolean exhausted;
+            private int offset;
+            private String cursor;
+
+            @Override
+            public boolean hasNext() {
+                if (nextPage == null && !exhausted) {
+                    fetch();
+                }
+                return nextPage != null;
+            }
+
+            @Override
+            public List<Map<String, Object>> next() {
+                if (!hasNext()) {
+                    throw new java.util.NoSuchElementException();
+                }
+                List<Map<String, Object>> page = nextPage;
+                nextPage = null;
+                return page;
+            }
+
+            private void fetch() {
+                List<Map<String, Object>> page = plugin.supportsCursorPaging()
+                        ? plugin.retrieveDocumentPageAfter(locale, siteFieldMap, cursor,
+                                EXPORT_PAGE_SIZE)
+                        : plugin.retrieveDocumentPage(locale, siteFieldMap, offset,
+                                EXPORT_PAGE_SIZE);
+                if (page.isEmpty()) {
+                    exhausted = true;
+                    return;
+                }
+                offset += EXPORT_PAGE_SIZE;
+                cursor = lastId(page);
+                // A short page is the last page; a cursor we cannot advance would
+                // otherwise re-serve the same rows forever.
+                if (page.size() < EXPORT_PAGE_SIZE || cursor == null) {
+                    exhausted = true;
+                }
+                onPage.accept(page);
+                nextPage = page;
+            }
+        };
+    }
+
+    /** The cursor for the next page: the id of the last document on this one. */
+    private static String lastId(List<Map<String, Object>> page) {
+        Object id = page.get(page.size() - 1).get("id");
+        if (id instanceof java.util.Collection<?> col) {
+            id = col.isEmpty() ? null : col.iterator().next();
+        }
+        return id == null || id.toString().isBlank() ? null : id.toString();
     }
 
     /**
@@ -474,15 +542,14 @@ public class TurSNSiteContentExchangeService {
         progressMap.put(run.taskId(), new ContentExchangeProgress(
                 run.totalDocs(), run.processedCounter().get(), localeKey, "reindexing", run.startTime()));
 
-        int start = 0;
-        boolean hasMore = true;
-        while (hasMore) {
-            List<Map<String, Object>> page = plugin.retrieveDocumentPage(siteLocale, siteFieldMap,
-                    start, EXPORT_PAGE_SIZE);
-            List<Future<?>> futures = submitReindexPage(page, locale, context, localeKey, run);
+        // T1033 / §D.13 — same cursor-paged walk as the export. This loop already
+        // drained each page before advancing, so only the offset cost was here;
+        // the shared iterator removes it and keeps one paging rule in the file.
+        Iterator<List<Map<String, Object>>> pages = documentPages(plugin, siteLocale, siteFieldMap,
+                page -> { /* progress is counted per document below, not per page */ });
+        while (pages.hasNext()) {
+            List<Future<?>> futures = submitReindexPage(pages.next(), locale, context, localeKey, run);
             drainReindexFutures(futures);
-            start += EXPORT_PAGE_SIZE;
-            hasMore = page.size() == EXPORT_PAGE_SIZE;
         }
     }
 

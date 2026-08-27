@@ -2151,30 +2151,3 @@ duplication lint, a working local-dev path and a render digest - because every d
 here is justified by an assertion this repository currently cannot check.
 
 ## CV The quality gate stops at the package boundary
-
-## D Tracked follow-ups
-
-### D.13 The content export got the paging T1029 had to avoid (T1033)
-
-`TurSNSiteContentExchangeService.exportContent` walks a locale with
-`retrieveDocumentPage(locale, fields, start, EXPORT_PAGE_SIZE)` and `start +=
-EXPORT_PAGE_SIZE`, accumulating every page into one `List` that is only handed over once
-the locale is finished. Two costs compound, and both grow with the site rather than with
-the page.
-
-The offset is the first. Solr's `start`/`rows` and Elasticsearch's `from`/`size` both
-make the engine collect and discard everything before the offset, so page N costs the
-engine N pages of work; a full export is quadratic in the number of pages. Lucene is
-worse because it is explicit: `searcher.search(query, start + rows)` materialises `start
-+ rows` `ScoreDoc`s to return the last `rows` of them, so exporting the 500th page of a
-100k-document site allocates a 100k-entry array to keep 200 documents.
-
-The buffering is the second. Every exported document — with its full stored text, which
-is the largest field a site has — is held in memory until the locale ends, and every
-locale until the site does. A site large enough for the offset to hurt is a site large
-enough for this to be the failure the operator actually sees.
-
-T1029 already built the shape of the fix and proved it on all three engines: a keyset
-cursor on the id (`retrieveInventoryPage`, `TurSEInventoryPage.nextCursor`), where each
-page costs the same as the first. The export wants the same paging and a consumer it can
-stream into rather than a list it fills.

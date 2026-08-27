@@ -789,6 +789,37 @@ public class TurSolrSearchEnginePlugin implements TurSearchEnginePlugin {
                 .orElse(List.of());
     }
 
+    @Override
+    public boolean supportsCursorPaging() {
+        return true;
+    }
+
+    @Override
+    public List<Map<String, Object>> retrieveDocumentPageAfter(TurSNSiteLocale turSNSiteLocale,
+            Map<String, ?> siteFieldMap, String afterId, int rows) {
+        return turSolrInstanceProcess.initSolrInstance(turSNSiteLocale)
+                .map(instance -> {
+                    SolrQuery query = new SolrQuery()
+                            .setQuery("*:*")
+                            .setRows(rows)
+                            .addSort(TurSNFieldName.ID, SolrQuery.ORDER.asc);
+                    if (afterId != null && !afterId.isBlank()) {
+                        query.addFilterQuery(
+                                TurSNFieldName.ID + ":{" + escapeSolr(afterId) + " TO *]");
+                    }
+                    return TurSolr.executeSolrQuery(instance, query)
+                            .map(response -> {
+                                List<Map<String, Object>> docs = new ArrayList<>();
+                                for (var doc : response.getResults()) {
+                                    docs.add(extractExportFields(doc, siteFieldMap));
+                                }
+                                return docs;
+                            })
+                            .orElse(List.<Map<String, Object>>of());
+                })
+                .orElse(List.of());
+    }
+
     /** Projects one Solr doc into the requested export fields (id/type always), collapsing single-value multis. */
     private Map<String, Object> extractExportFields(org.apache.solr.common.SolrDocument doc,
             Map<String, ?> siteFieldMap) {
