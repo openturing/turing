@@ -15,7 +15,6 @@
 ## Block R.1 — Event-driven ingestion from enterprise CMS platforms (AEM as the reference)
 
 - 💭 **T1031** (deps: —) **A Turing agent cannot query an existing Adobe Content AI index** — A customer already paying the Content AI SKU cannot reuse that retrieval and has to re-vectorize the same published content in Turing. → §XX.18
-- 📋 **T1035** (deps: —) **A connector cannot read the index inventory without writing its own HTTP client and cursor loop** — T1029 shipped the endpoint and T1030 shipped a manifest client, but the inventory has none, so the audit that needs it re-derives auth, types and paging by hand. → §XX.20
 
 ## Block D.11 — Tracked follow-ups
 

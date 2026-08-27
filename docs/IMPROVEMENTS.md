@@ -1340,31 +1340,6 @@ becomes a hard dependency of the answer path. This is filed as an idea and not a
 for that reason. The first step is a spike against a real Content AI tenant to see what
 the retrieval API actually returns.
 
-### XX.20 The inventory endpoint has no SDK client (T1035)
-
-T1029 built the read Dumont's content audit needs — `GET /api/sn/{snSiteId}/inventory`,
-paging `(id, version, checksum)` by a keyset cursor — and T1030 established what a
-connector needs on top of an endpoint before it can use one: a client that knows the
-payload shape, reuses the SDK's auth, and surfaces the failures as something other than
-a status code. The inventory endpoint got the first half and not the second.
-
-So the audit is back where the manifest was. A Java connector wanting the third
-comparison has to hand-roll HTTP against `/inventory`, re-derive the auth the indexing
-path already does, parse the response into types it declares itself, and — the part that
-is easy to get wrong — drive the cursor loop: read `nextCursor`, pass it back as
-`after`, stop on `hasMore`, and distinguish `supported=false` from an empty index. That
-last one is not a nicety. Reading "cannot answer" as "the index holds nothing" is what
-makes a connector republish an entire source.
-
-The work is the mirror of T1030: a `TurSNInventoryClient` over the endpoint, records for
-the page and the entry, and an iterator or stream that walks the whole source so the
-caller writes a for-each rather than a cursor loop. Locales are part of it — the
-response already lists them, so the sweep is one pass per locale and the client can do
-that walking itself.
-
-With it, "audit the source against the index" is a call a connector makes, not an
-integration it writes.
-
 ## XXII. Agent↔UI transparency & client tools — AG-UI parity (Block W)
 
 > **Why now.** A capability review against CopilotKit's **AG-UI** protocol

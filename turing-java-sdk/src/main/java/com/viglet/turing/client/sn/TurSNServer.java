@@ -57,6 +57,8 @@ import com.viglet.turing.commons.sn.bean.TurSNSiteSearchBean;
 import com.viglet.turing.commons.sn.bean.TurSNSiteSearchQueryContextBean;
 import com.viglet.turing.commons.sn.bean.TurSNSiteSearchResultsBean;
 import com.viglet.turing.commons.sn.bean.TurSNSiteSpotlightDocumentBean;
+import com.viglet.turing.client.sn.inventory.TurSNInventoryClient;
+import com.viglet.turing.client.sn.inventory.TurSNInventoryEntry;
 import com.viglet.turing.client.sn.manifest.TurSNManifest;
 import com.viglet.turing.client.sn.manifest.TurSNManifestClient;
 import com.viglet.turing.client.sn.manifest.TurSNManifestDiff;
@@ -250,6 +252,27 @@ public class TurSNServer {
      */
     public TurSNManifestDiff planManifest(TurSNManifest manifest) {
         return new TurSNManifestClient(this).plan(manifest);
+    }
+
+    /**
+     * T1035 / §XX.20 — every {@code (id, version, checksum)} row this server's
+     * index holds for {@code source}, across every locale of the site, walking
+     * the cursor as the iteration advances.
+     *
+     * <p>The half of a content audit only Turing can answer: the connector knows
+     * what it published and what its ledger recorded, and this says what
+     * survived. Sits beside {@link #importItems} because it is the same
+     * connector's other loop.
+     *
+     * @param source the {@code source_apps} value the connector stamps at index
+     *               time, or {@code null} for every document on the site
+     * @throws com.viglet.turing.client.sn.inventory.TurSNInventoryException when
+     *         the index cannot be read — never an empty iteration, which an audit
+     *         would act on by republishing the whole source
+     * @since 2026.3.4
+     */
+    public Iterable<TurSNInventoryEntry> indexInventory(String source) {
+        return new TurSNInventoryClient(this).allLocales(source);
     }
 
     public List<TurSNLocale> getLocales() {

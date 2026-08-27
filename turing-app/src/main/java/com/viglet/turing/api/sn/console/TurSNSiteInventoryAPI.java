@@ -61,7 +61,7 @@ public class TurSNSiteInventoryAPI {
     private final TurSNSiteRepository snSiteRepository;
     private final TurSNIndexInventoryService inventoryService;
 
-    @Operation(summary = "One page of (id, version) pairs the index holds for a source")
+    @Operation(summary = "One page of (id, version, checksum) rows the index holds for a source")
     @GetMapping
     @Transactional(readOnly = true)
     public ResponseEntity<TurSNIndexInventoryResponse> inventory(
@@ -72,10 +72,23 @@ public class TurSNSiteInventoryAPI {
             @RequestParam(required = false, defaultValue = "0") int rows) {
         // Read inside the transaction so the service can resolve the site's
         // lazy locale association through the open session.
-        TurSNSite site = snSiteRepository.findById(snSiteId).orElse(null);
+        TurSNSite site = resolveSite(snSiteId);
         if (site == null) {
             return ResponseEntity.notFound().build();
         }
         return ResponseEntity.ok(inventoryService.inventory(site, locale, source, after, rows));
+    }
+
+    /**
+     * T1035 — accepts a site <em>name</em> as well as an id. A connector holds the
+     * name it publishes to ({@code TurSNServer.siteName}) and not the row's uuid,
+     * so requiring the id here meant every audit needed a lookup Turing exposes
+     * nowhere convenient. The id is tried first, so nothing about an existing
+     * caller changes.
+     */
+    private TurSNSite resolveSite(String snSiteIdOrName) {
+        return snSiteRepository.findById(snSiteIdOrName)
+                .or(() -> snSiteRepository.findByNameIgnoreCase(snSiteIdOrName))
+                .orElse(null);
     }
 }
