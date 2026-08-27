@@ -17,12 +17,14 @@
 package com.viglet.turing.contentai;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
 import org.springframework.stereotype.Component;
 
+import com.viglet.turing.commons.se.passage.TurSEPassage;
 import com.viglet.turing.commons.sn.field.TurSNFieldName;
 import com.viglet.turing.persistence.model.sn.field.TurSNSiteFieldExt;
 import com.viglet.turing.se.facet.TurSEFacetResult;
@@ -62,6 +64,9 @@ public class TurContentAiResponseMapper {
     private static final String NODE_BUCKETS = "buckets";
     private static final String NODE_VALUES = "values";
     private static final String NODE_TOTAL = "totalResults";
+    private static final String NODE_CHUNKS = "chunks";
+    private static final String NODE_CHUNK_DATA = "chunkData";
+    private static final String NODE_TEXT = "text";
     private static final String NODE_CURSOR = "cursor";
     private static final String FIELD_SCORE = "score";
     private static final String FIELD_LABEL = "label";
@@ -102,9 +107,42 @@ public class TurContentAiResponseMapper {
             if (hit.has(TurSNFieldName.ID)) {
                 fields.put(TurSNFieldName.ID, hit.get(TurSNFieldName.ID).asString());
             }
-            results.add(TurSEResult.builder().fields(fields).build());
+            results.add(TurSEResult.builder()
+                    .fields(fields)
+                    .passages(passages(hit))
+                    .build());
         }
         return results;
+    }
+
+    /**
+     * T1044 / §XX.21 — the document's matched chunks as passages, highest score
+     * first. Empty (not {@code null}) when Adobe returned {@code "chunks": []},
+     * which it does for a document that matched lexically rather than
+     * semantically; {@code null} when the request never asked for chunks, so a
+     * caller can tell "not requested" from "none matched".
+     */
+    private List<TurSEPassage> passages(JsonNode hit) {
+        JsonNode chunks = hit.get(NODE_CHUNKS);
+        if (chunks == null || !chunks.isArray()) {
+            return null;
+        }
+        List<TurSEPassage> passages = new ArrayList<>();
+        for (JsonNode chunk : chunks) {
+            JsonNode id = chunk.get(TurSNFieldName.ID);
+            Double score = chunk.has(FIELD_SCORE) ? chunk.get(FIELD_SCORE).asDouble() : null;
+            JsonNode chunkData = chunk.get(NODE_CHUNK_DATA);
+            String text = chunkData != null && chunkData.has(NODE_TEXT)
+                    ? chunkData.get(NODE_TEXT).asString()
+                    : null;
+            passages.add(new TurSEPassage(id != null ? id.asString() : null, score, text));
+        }
+        // Adobe documents no ordering guarantee on chunks[], and its own example
+        // happens to be descending. Sorting here means the "best passage" a
+        // caller grounds on does not depend on that happening to stay true.
+        passages.sort(Comparator.comparingDouble(
+                passage -> passage.score() != null ? -passage.score() : 0d));
+        return passages;
     }
 
     /**

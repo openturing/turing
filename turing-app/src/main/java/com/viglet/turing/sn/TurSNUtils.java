@@ -250,6 +250,9 @@ public class TurSNUtils {
                         // T390 — carry the per-result duplicate cluster (absent unless the
                         // site has MoreLikeThis enabled on a hybrid ranking mode).
                         .duplicateCluster(result.getDuplicateCluster())
+                        // T1044 — carry the engine's matched passages (absent unless the
+                        // engine returns chunk-level hits and was asked for them).
+                        .passages(result.getPassages())
                         .build())
                 .orElse(TurSNSiteSearchDocumentBean.builder().build());
     }

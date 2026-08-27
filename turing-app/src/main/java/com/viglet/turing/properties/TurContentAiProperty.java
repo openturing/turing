@@ -113,9 +113,14 @@ public class TurContentAiProperty {
     private int timeoutSeconds = 10;
 
     /**
-     * Ask for the matched chunks alongside each document. Off by default: the
-     * chunk text multiplies response size and Turing's result contract has no
-     * field for it yet.
+     * T1044 — ask Adobe for the matched chunks alongside each document, and carry
+     * them as {@code TurSEResult.passages}. An agent grounding through
+     * {@code turingSearch.sn(...)} then reads the matched passage as the hit's
+     * {@code content} instead of a whole AEM page.
+     *
+     * <p>Off by default because it multiplies response size, and because the
+     * passage becomes the {@code content} an existing script may already read —
+     * a behaviour change, which this project ships behind a flag.
      */
     private boolean includeChunks = false;
 }

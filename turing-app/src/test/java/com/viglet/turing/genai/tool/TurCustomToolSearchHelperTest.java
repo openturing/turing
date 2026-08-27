@@ -304,6 +304,78 @@ class TurCustomToolSearchHelperTest {
     }
 
     @Test
+    void toSnHitList_bestPassageBecomesContent() {
+        // T1044 — a federated engine (Content AI) returns the sub-document passage
+        // it matched. It lands on the same `content` key ann() uses for chunk text,
+        // so a script reading hit.content gets a passage from either surface
+        // instead of one meaning on ann() and nothing on sn().
+        var doc = new com.viglet.turing.commons.sn.bean.TurSNSiteSearchDocumentBean();
+        doc.setSource("contentai");
+        Map<String, Object> fields = new java.util.LinkedHashMap<>();
+        fields.put("id", "doc_1");
+        fields.put("title", "The Benefits of Electric Cars");
+        fields.put("text", "A whole AEM page of prose about several unrelated things.");
+        doc.setFields(fields);
+        doc.setPassages(List.of(
+                new com.viglet.turing.commons.se.passage.TurSEPassage("chunk_1", 0.75,
+                        "They reduce pollution and save money on fuel."),
+                new com.viglet.turing.commons.se.passage.TurSEPassage("chunk_2", 0.55,
+                        "Some challenges remain, such as charging stations.")));
+
+        Map<String, Object> hit = TurCustomToolSearchHelper.toSnHitList(List.of(doc)).get(0);
+
+        assertThat(hit).containsEntry("content",
+                "They reduce pollution and save money on fuel.");
+        // The document's own fields are untouched: the passage is added beside
+        // them, never merged over one the source declared.
+        assertThat(hit).containsEntry("text",
+                "A whole AEM page of prose about several unrelated things.");
+    }
+
+    @Test
+    void toSnHitList_noPassagesLeavesContentAbsent() {
+        // Every engine whose index Turing filled returns no passages, so the key
+        // must stay absent rather than appearing as null or an empty string —
+        // a script testing `if (hit.content)` would otherwise change behaviour.
+        var doc = new com.viglet.turing.commons.sn.bean.TurSNSiteSearchDocumentBean();
+        doc.setSource("solr");
+        doc.setFields(Map.of("id", "doc-1", "title", "T"));
+
+        assertThat(TurCustomToolSearchHelper.toSnHitList(List.of(doc)).get(0))
+                .doesNotContainKey("content");
+    }
+
+    @Test
+    void toSnHitList_passageWithoutTextIsSkipped() {
+        // Content AI can return a scored chunk reference with no chunkData.text.
+        // Falling back to the next passage that has text beats putting an empty
+        // string under `content`, which reads as "the passage was empty".
+        var doc = new com.viglet.turing.commons.sn.bean.TurSNSiteSearchDocumentBean();
+        doc.setSource("contentai");
+        doc.setFields(Map.of("id", "doc-1"));
+        doc.setPassages(List.of(
+                new com.viglet.turing.commons.se.passage.TurSEPassage("chunk_1", 0.9, null),
+                new com.viglet.turing.commons.se.passage.TurSEPassage("chunk_2", 0.8, "   "),
+                new com.viglet.turing.commons.se.passage.TurSEPassage("chunk_3", 0.7, "Real text.")));
+
+        assertThat(TurCustomToolSearchHelper.toSnHitList(List.of(doc)).get(0))
+                .containsEntry("content", "Real text.");
+    }
+
+    @Test
+    void toSnHitList_emptyPassageListLeavesContentAbsent() {
+        // Adobe returns "chunks": [] for a document that matched lexically rather
+        // than semantically. That is "none matched", not "here is an empty one".
+        var doc = new com.viglet.turing.commons.sn.bean.TurSNSiteSearchDocumentBean();
+        doc.setSource("contentai");
+        doc.setFields(Map.of("id", "doc-1"));
+        doc.setPassages(List.of());
+
+        assertThat(TurCustomToolSearchHelper.toSnHitList(List.of(doc)).get(0))
+                .doesNotContainKey("content");
+    }
+
+    @Test
     void toSnHitList_idAliasResolvesFromFieldsMap() {
         // When the stored {@code id} field is present, the helper aliases it
         // to the top-level "id" key so {@code hit.id} works identically to

@@ -176,6 +176,30 @@ What the mapping looks like:
 | `sort=field asc` | `queryOptions.sort[].orderBy` (passed through verbatim; `relevance` sends none, since Adobe already sorts by score) |
 | `rows` | `pagination.limit`, **clamped to 50** — the API's own maximum |
 | `p` (page) | an opaque cursor walked one request per page, bounded by `max-page-walk` |
+| `TurSEResult.passages` | `chunks[]` (`chunkData.text` + score), sorted best-first, when `include-chunks` is on |
+
+#### Passages: the one thing only a federated engine can tell you (T1044)
+
+Every other plugin returns whole documents, because Turing chunked the content
+itself and a caller wanting a passage can re-chunk the body. Content AI cannot work
+that way: Adobe embedded the content with its own chunker, so the passage it names
+is the only sub-document grounding that exists.
+
+`turing.content-ai.include-chunks: true` asks for them, and they arrive as
+`TurSEResult.passages` — a list of `TurSEPassage(id, score, text)` kept *beside* the
+field map, never merged into it, for the same reason `rankingExplanation` is (a
+passage is not a field the source declared). `supportsPassages()` on the plugin
+interface says whether asking is worth it; it defaults to `false`.
+
+A passage is **not** a highlight. Turing's Solr path merges a highlight back over the
+field's own value, which is why highlighting needs no type of its own. A passage is a
+separately-embedded fragment with its own score, and the document's fields say nothing
+about which fragment matched.
+
+The consumer is `TurCustomToolSearchHelper.toSnHitList`: the best passage becomes the
+hit's `content`, which is the key the ANN surface already fills with chunk text. So a
+Groovy tool reading `hit.content` gets a passage from `sn()` and from `ann()` alike,
+instead of one meaning on one surface and nothing on the other.
 
 Two properties of Adobe's API drive the awkward parts and are worth knowing before
 reading the code: pagination has **no offset**, only a cursor, so page N costs N

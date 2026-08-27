@@ -122,6 +122,19 @@ public class TurContentAiSearchEnginePlugin implements TurSearchEnginePlugin {
         return PLUGIN_TYPE;
     }
 
+    /**
+     * T1044 / §XX.21 — Adobe embedded this content with its own chunker, so the
+     * passages it returns are the only sub-document grounding that exists for a
+     * federated site. True only when the deployment asked for them: the chunk text
+     * rides on the same response either way, but a plugin claiming the capability
+     * while the request omits {@code chunks.includeInResponse} would promise
+     * passages that never arrive.
+     */
+    @Override
+    public boolean supportsPassages() {
+        return property.isEnabled() && property.isIncludeChunks();
+    }
+
     // ---- Search ----------------------------------------------------------
 
     @Override

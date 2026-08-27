@@ -22,6 +22,7 @@ import java.util.Map;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.viglet.turing.commons.se.passage.TurSEPassage;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -69,5 +70,21 @@ public class TurSNSiteSearchDocumentBean implements Serializable {
 	 */
 	@JsonInclude(JsonInclude.Include.NON_NULL)
 	private TurSNDuplicateCluster duplicateCluster;
+
+	/**
+	 * T1044 / §XX.21 — the sub-document passages the engine matched, most relevant
+	 * first, on an engine that returns chunk-level hits and was asked for them
+	 * (today Adobe AEM Content AI with {@code turing.content-ai.include-chunks}).
+	 * Omitted from the JSON when empty, so every other engine's response is
+	 * byte-for-byte unchanged.
+	 *
+	 * <p>An agent grounding through {@code turingSearch.sn(...)} reads the best of
+	 * these as the hit's {@code content}, which is the same key the ANN surface
+	 * already uses for chunk text — so a federated index grounds on the passage
+	 * rather than on a whole page.
+	 */
+	@SuppressWarnings("java:S1948")
+	@JsonInclude(JsonInclude.Include.NON_EMPTY)
+	private List<TurSEPassage> passages;
 
 }

@@ -307,6 +307,7 @@ number" looked free but wasn't. Grepping three files (`ROADMAP.md`,
 
 ## Log (most recent first)
 
+- **T1044 SHIPPED** (Block R.1 §XX.21 — TurSEPassage carries Adobe's matched chunk; best one becomes the turingSearch hit's `content`) — 2026-08-27.
 - **T1043 SHIPPED** (Block BY §CVII.1 — store-vendor and locale seeders now diff per id; block closed and heading dropped) — 2026-08-27.
 - **T1045 FILED** (Block R.1 §XX.22 — a misnamed Content AI source is indistinguishable from an empty index) — 2026-08-27.
 - **T1044 FILED** (Block R.1 §XX.21 — the matched Content AI passage arrives and is thrown away) — 2026-08-27.

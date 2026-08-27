@@ -343,6 +343,30 @@ public interface TurSearchEnginePlugin {
         return List.of();
     }
 
+    /**
+     * T1044 / §XX.21 — whether this engine returns <em>sub-document passages</em>
+     * alongside each result, populating
+     * {@link com.viglet.turing.se.result.TurSEResult#getPassages()}.
+     *
+     * <p>The distinction is about who owns the chunking. On an index Turing filled
+     * it does, so a caller wanting a passage re-chunks the document body and this
+     * stays {@code false} — there is nothing the engine knows that Turing does
+     * not. On a federated index it does not: Adobe AEM Content AI embedded the
+     * content with its own chunker, so the passage it names is the only
+     * sub-document grounding that exists, and a caller has to ask rather than
+     * derive it.
+     *
+     * <p>Default {@code false} so an engine that returns whole documents says so
+     * rather than leaving a caller to infer it from an empty list, which is also
+     * what a passage-capable engine returns for a document that matched on a
+     * field.
+     *
+     * @since 2026.3.4
+     */
+    default boolean supportsPassages() {
+        return false;
+    }
+
     // ---- Synonyms (T663 / §XXXIX, Block AP) ------------------------------
 
     /**

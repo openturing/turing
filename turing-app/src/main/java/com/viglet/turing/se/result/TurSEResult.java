@@ -23,8 +23,10 @@ package com.viglet.turing.se.result;
 import lombok.*;
 import lombok.experimental.Tolerate;
 
+import java.util.List;
 import java.util.Map;
 
+import com.viglet.turing.commons.se.passage.TurSEPassage;
 import com.viglet.turing.commons.sn.bean.TurSNDuplicateCluster;
 
 @Builder
@@ -47,6 +49,22 @@ public class TurSEResult {
 	 * MoreLikeThis enabled. {@code null} when the result has no duplicate.
 	 */
 	private TurSNDuplicateCluster duplicateCluster;
+
+	/**
+	 * T1044 / §XX.21 — optional sub-document passages the engine matched, most
+	 * relevant first. Populated only by an engine that returns chunk-level hits
+	 * and only when asked — today Adobe AEM Content AI with
+	 * {@code turing.content-ai.include-chunks} — so it is {@code null} on every
+	 * engine whose index Turing filled itself, where the caller can re-chunk the
+	 * document body instead.
+	 *
+	 * <p>Kept apart from {@link #fields} for the same reason
+	 * {@link #rankingExplanation} is: a passage is not a field of the document,
+	 * and merging it into the map would make it indistinguishable from one the
+	 * source actually declared. {@link com.viglet.turing.commons.se.passage.TurSEPassage}
+	 * explains why it is also not a highlight.
+	 */
+	private List<TurSEPassage> passages;
 
 	@Tolerate
 	TurSEResult() {}

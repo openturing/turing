@@ -47,6 +47,7 @@ import org.mockito.quality.Strictness;
 
 import com.sun.net.httpserver.HttpServer;
 import com.viglet.turing.commons.se.TurSEParameters;
+import com.viglet.turing.commons.se.passage.TurSEPassage;
 import com.viglet.turing.commons.sn.bean.TurSNFilterParams;
 import com.viglet.turing.commons.sn.bean.TurSNSearchParams;
 import com.viglet.turing.commons.sn.search.TurSNSiteSearchContext;
@@ -61,6 +62,7 @@ import com.viglet.turing.persistence.model.sn.locale.TurSNSiteLocale;
 import com.viglet.turing.persistence.repository.sn.TurSNSiteRepository;
 import com.viglet.turing.persistence.repository.sn.field.TurSNSiteFieldExtRepository;
 import com.viglet.turing.persistence.repository.sn.locale.TurSNSiteLocaleRepository;
+import com.viglet.turing.plugins.se.TurSearchEnginePlugin;
 import com.viglet.turing.properties.TurContentAiProperty;
 import com.viglet.turing.se.result.TurSEResults;
 
@@ -411,6 +413,120 @@ class TurContentAiSearchEnginePluginTest {
         assertThat(fields.get("title")).isEqualTo("T");
         assertThat(fields.get("score")).isEqualTo(0.75);
         assertThat(fields.get("tags")).isEqualTo(List.of("a", "b"));
+    }
+
+    // ---- passages (T1044) -------------------------------------------------
+
+    @Test
+    @DisplayName("Matched chunks become passages, best score first whatever order Adobe sent")
+    void mapsChunksToPassages() throws IOException {
+        // Adobe's search-response-002, with the chunks deliberately ascending:
+        // the spec documents no ordering guarantee, so the mapper must not
+        // inherit whichever order the example happens to use.
+        String endpoint = startStub("""
+                {
+                  "totalResults": 5,
+                  "results": [
+                    {
+                      "id": "doc_1", "score": 0.75,
+                      "data": {"title": "The Benefits of Electric Cars"},
+                      "chunks": [
+                        {"id": "chunk_2", "score": 0.5514963709,
+                         "chunkData": {"text": "It also mentions some challenges."}},
+                        {"id": "chunk_1", "score": 0.7514963709,
+                         "chunkData": {"text": "They reduce pollution and save money on fuel."}}
+                      ]
+                    }
+                  ]
+                }
+                """);
+        var plugin = plugin(endpoint, TurSNSiteFacetFieldEnum.AND);
+        property.setIncludeChunks(true);
+
+        var results = plugin.retrieveSearchResults(context("electric cars", 1, 10, null))
+                .orElseThrow();
+
+        var passages = results.getResults().getFirst().getPassages();
+        assertThat(passages).extracting(TurSEPassage::id).containsExactly("chunk_1", "chunk_2");
+        assertThat(passages.getFirst().text())
+                .isEqualTo("They reduce pollution and save money on fuel.");
+        assertThat(passages.getFirst().hasText()).isTrue();
+        // The passage is not merged into the field map — a caller must never
+        // mistake it for a field the source declared.
+        assertThat(results.getResults().getFirst().getFields()).doesNotContainKey("chunks");
+    }
+
+    @Test
+    @DisplayName("A request that asked for chunks distinguishes none-matched from not-requested")
+    void distinguishesEmptyChunksFromAbsentChunks() throws IOException {
+        String endpoint = startStub("""
+                {"totalResults": 2, "results": [
+                  {"id": "a", "score": 0.9, "data": {"title": "A"}, "chunks": []},
+                  {"id": "b", "score": 0.8, "data": {"title": "B"}}
+                ]}
+                """);
+
+        var results = plugin(endpoint, TurSNSiteFacetFieldEnum.AND)
+                .retrieveSearchResults(context("cars", 1, 10, null)).orElseThrow();
+
+        // "chunks": [] is Adobe saying this document matched on a field, not a
+        // passage. An absent key is Adobe never being asked.
+        assertThat(results.getResults().get(0).getPassages()).isEmpty();
+        assertThat(results.getResults().get(1).getPassages()).isNull();
+    }
+
+    @Test
+    @DisplayName("include-chunks reaches the wire, and gates the passage capability")
+    void includeChunksIsRequestedAndAdvertised() throws IOException {
+        String endpoint = startStub(RESPONSE_ONE_HIT);
+        var plugin = plugin(endpoint, TurSNSiteFacetFieldEnum.AND);
+
+        assertThat(plugin.supportsPassages()).isFalse();
+        plugin.retrieveSearchResults(context("cars", 1, 10, null));
+        JsonNode vectorArm = lastBody().get("query").get("queries").get(0);
+        assertThat(vectorArm.get("options").has("chunks")).isFalse();
+
+        property.setIncludeChunks(true);
+        assertThat(plugin.supportsPassages()).isTrue();
+        plugin.retrieveSearchResults(context("cars", 1, 10, null));
+        JsonNode chunks = lastBody().get("query").get("queries").get(0).get("options")
+                .get("chunks");
+        assertThat(chunks.get("includeInResponse").asBoolean()).isTrue();
+        assertThat(chunks.get("scoreMode").asString()).isEqualTo("MAX");
+
+        // A disabled plugin advertises nothing, whatever the chunk flag says.
+        property.setEnabled(false);
+        assertThat(plugin.supportsPassages()).isFalse();
+    }
+
+    @Test
+    @DisplayName("A chunk with no text still becomes a scored passage")
+    void mapsChunkWithoutText() throws IOException {
+        String endpoint = startStub("""
+                {"totalResults": 1, "results": [
+                  {"id": "a", "score": 0.9, "data": {"title": "A"},
+                   "chunks": [{"id": "chunk_1", "score": 0.4}]}
+                ]}
+                """);
+
+        var results = plugin(endpoint, TurSNSiteFacetFieldEnum.AND)
+                .retrieveSearchResults(context("cars", 1, 10, null)).orElseThrow();
+
+        var passage = results.getResults().getFirst().getPassages().getFirst();
+        assertThat(passage.id()).isEqualTo("chunk_1");
+        assertThat(passage.score()).isEqualTo(0.4);
+        assertThat(passage.hasText()).isFalse();
+    }
+
+    @Test
+    @DisplayName("The interface default is no passage support")
+    void otherEnginesDoNotSupportPassages() {
+        // What keeps the field null on an index Turing filled: there the caller
+        // can re-chunk the document body, so there is nothing to ask the engine.
+        TurSearchEnginePlugin anyEngine = org.mockito.Mockito.mock(TurSearchEnginePlugin.class,
+                org.mockito.Mockito.CALLS_REAL_METHODS);
+
+        assertThat(anyEngine.supportsPassages()).isFalse();
     }
 
     @Test

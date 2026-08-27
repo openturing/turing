@@ -1316,30 +1316,6 @@ neutral grounding + manifest kernel is now `viglet-core-manifest`; see CHANGELOG
 these block the Dumont collection work — a sidecar
 (D10) can index into a hand-provisioned site before T382 lands.
 
-### XX.21 The matched passage arrives and is thrown away (T1044)
-
-Adobe returns the matched chunks alongside each document — `chunks[]`, each with an id,
-its own score and `chunkData.text` — when a vector query asks for them. T1031 wired the
-switch (`turing.content-ai.include-chunks`) and then dropped what came back, because
-`TurSEResult` has one field map and no place for a passage.
-
-For a lexical site that loses nothing. For a federated one it loses the point. Turing
-cannot re-chunk an index it does not own, so the passage Adobe matched is the only
-sub-document grounding available anywhere: a RAG answer over a Content AI site is
-grounded on whole documents, and a whole AEM page is the payload chunking existed to
-avoid sending to an LLM.
-
-It is also already paid for — the chunk text arrives on the same response, so the SKU
-call is spent whether or not anything reads it. The flag defaults off because the bytes
-are wasted, which is a symptom of the gap rather than a reason for it.
-
-What this needs is a decision about where a passage lives, not a Content AI change.
-`TurSEResult` keeps `rankingExplanation` and `duplicateCluster` deliberately apart from
-the search-engine field map, which is the precedent: a third such field, populated only
-by engines that return passages, would let the RAG path prefer a chunk over a document
-body without every other engine growing a concept it cannot answer for. Whether the
-vector store's own chunk shape is the one to reuse is open.
-
 ### XX.22 A wrong source name is indistinguishable from an empty index (T1045)
 
 The content source a site queries is `turing.content-ai.sources.<site>`, falling back to

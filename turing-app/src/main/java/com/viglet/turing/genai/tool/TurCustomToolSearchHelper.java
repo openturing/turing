@@ -16,6 +16,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Optional;
 
 import org.apache.commons.lang3.LocaleUtils;
 import org.slf4j.Logger;
@@ -27,6 +28,7 @@ import org.springframework.stereotype.Service;
 
 import com.viglet.turing.api.sn.search.TurSNSiteSearchService;
 import com.viglet.turing.commons.se.TurSEParameters;
+import com.viglet.turing.commons.se.passage.TurSEPassage;
 import com.viglet.turing.commons.sn.TurSNConfig;
 import com.viglet.turing.commons.sn.bean.TurSNSearchParams;
 import com.viglet.turing.commons.sn.bean.TurSNSiteSearchBean;
@@ -79,6 +81,8 @@ public class TurCustomToolSearchHelper {
 
     // --- S1192: extracted duplicated literals ---
     private static final String TEMPLATE_NAME = "templateName";
+    /** Hit key carrying a sub-document passage: a chunk on ann(), a matched passage on sn(). */
+    private static final String CONTENT_KEY = "content";
 
 
     private static final Logger log = LoggerFactory.getLogger(TurCustomToolSearchHelper.class);
@@ -522,9 +526,35 @@ public class TurCustomToolSearchHelper {
             }
             hit.put("source", doc.getSource());
             hit.put("elevate", doc.isElevate());
+            bestPassage(doc).ifPresent(text -> hit.put(CONTENT_KEY, text));
             out.add(hit);
         }
         return out;
+    }
+
+    /**
+     * T1044 / §XX.21 — the best passage the engine matched, for the hit's
+     * {@code content}.
+     *
+     * <p>{@code content} is the key {@link #toHitList} already fills with a
+     * chunk's text on the ANN surface, so a script reading {@code hit.content}
+     * gets the same thing from either surface — a sub-document passage — rather
+     * than one meaning on {@code ann()} and nothing on {@code sn()}. On an index
+     * Turing filled there are no passages and the key stays absent exactly as
+     * before; it appears only on a federated engine that returned them
+     * ({@code TurSearchEnginePlugin.supportsPassages}).
+     *
+     * <p>The first passage is the best one: the mapper sorts by score descending
+     * rather than trusting the engine's order.
+     */
+    private static Optional<String> bestPassage(TurSNSiteSearchDocumentBean doc) {
+        if (doc.getPassages() == null) {
+            return Optional.empty();
+        }
+        return doc.getPassages().stream()
+                .filter(passage -> passage != null && passage.hasText())
+                .map(TurSEPassage::text)
+                .findFirst();
     }
 
     private static String firstNonBlankString(String... values) {
@@ -626,7 +656,7 @@ public class TurCustomToolSearchHelper {
             // metadata key happens to use one of these names.
             hit.put("id", doc.getId());
             hit.put("score", doc.getScore());
-            hit.put("content", doc.getText());
+            hit.put(CONTENT_KEY, doc.getText());
             out.add(hit);
         }
         return out;
