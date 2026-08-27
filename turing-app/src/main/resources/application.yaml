@@ -232,6 +232,45 @@ turing:
       region: us-east-1
       # knowledge-base-id: <kb id>   # blank falls back to the built-in backend
       # access-key-id / secret-access-key: omit for the AWS default chain (IAM role)
+  # T1031 / §XX.18 — federating retrieval to an Adobe AEM Content AI index Turing
+  # does not own. A site whose SE vendor is CONTENTAI queries Adobe's vector index
+  # instead of one Turing filled, so a customer already paying the Content AI SKU
+  # stops embedding the same published AEM content twice. Read-only by design:
+  # every write, schema and lifecycle call on the plugin refuses by name.
+  content-ai:
+    # Off until a credential exists. With this false the plugin registers, reports
+    # its capabilities and refuses to call Adobe.
+    enabled: false
+    # token: <bearer>     # Adobe Developer Console, "AEM Content AI" card
+    # api-key: <x-api-key>  # the alternative the search endpoints accept
+    # The endpoint is NOT here — it is the SE instance's endpoint URL, so a
+    # per-tenant BYO-infra bucket keeps working. Adobe's is versioned and dated:
+    # https://{bucket}.adobeaemcloud.com/adobe/experimental/aemcontentai-expires-20261231/contentAI
+    #
+    # contentSource.type: ACQUISITION (the API default), AEM_AUTHOR, AEM_PUBLISH or CUSTOM.
+    source-type: ACQUISITION
+    # Content source name per SN site; unmapped sites fall back to the
+    # (site, locale) core name.
+    # sources:
+    #   my-site: content-ai-articles-index
+    #
+    # Compose Adobe's own hybrid shape — a composite OR over a vector arm and a
+    # fulltext arm. false sends fulltext alone, which is the BM25 comparison.
+    hybrid: true
+    vector-boost: 1.0
+    fulltext-boost: 1.0
+    # vector-space / lexical-space: names from the source's IndexConfig; blank
+    # uses Adobe's default space.
+    #
+    # Facet values per field (`size` on each termBuckets aggregate).
+    facet-size: 10
+    # Adobe paginates by opaque cursor with no offset, so page N costs N round
+    # trips. Past this, the plugin returns an empty page carrying the true total.
+    max-page-walk: 10
+    timeout-seconds: 10
+    # Matched chunks alongside each document. Off: Turing's result contract has no
+    # field for them yet and they multiply the response size.
+    include-chunks: false
   # Block AO / §XXXVIII — the source-engine migration importers (Elasticsearch
   # T657, Algolia T658): how a source index is read and pushed through the
   # existing import queue.

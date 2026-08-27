@@ -302,6 +302,7 @@ number" looked free but wasn't. Grepping three files (`ROADMAP.md`,
 
 ## Log (most recent first)
 
+- **T1031 SHIPPED** (Block R.1 §XX.18 — read-only Content AI plugin; block closed and heading dropped) — 2026-08-27.
 - **T966 SHIPPED** (Block AN §LXXV — answer+copilot added to both filters; PUBLIC_SN_LLM_COST/CHEAP classification in the security config enforced by TurLlmCostSurfaceCoverageTest; stale /api/genai/chat CSRF matcher removed) (Block AN §LXXV — the two LLM-cost path regexes have drifted: /answer, the /v1 gateway and /api/v2/ai-agent/{id}/chat are ungated; plus a CSRF exemption for a route with no controller) — 2026-08-16.
 - **T968 FILED** (Block J.10 §LXXVII — no contract test for the managed wire; every test stubs the one network hop while Viglet Cloud C125–C131 implements the other half from prose) — 2026-08-19.
 - **T985 FILED** (Block J.10 §XCIV — first real handshake against the live endpoint; needs a person to approve the device code, and spends real credit) — 2026-08-19.

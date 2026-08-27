@@ -135,7 +135,8 @@ class TurConfigurationSurfaceTest {
      */
     private static final java.util.Set<String> DOCUMENTED_PREFIXES = java.util.Set.of(
             "turing.mcp-client", "turing.abuse", "turing.safety.guardrail", "turing.gateway",
-            "turing.retrieval", "turing.migration", "turing.viglet-ai", "turing.prompt.capture");
+            "turing.retrieval", "turing.migration", "turing.viglet-ai", "turing.prompt.capture",
+            "turing.content-ai");
 
     @Test
     @DisplayName("What the documented blocks state binds to exactly the code defaults — they are inert")
@@ -204,6 +205,15 @@ class TurConfigurationSurfaceTest {
                 .orElseThrow(() -> new AssertionError("no turing.safety.guardrail block"));
         var retrieval = binder.bind("turing.retrieval", TurRetrievalProperty.class)
                 .orElseThrow(() -> new AssertionError("no turing.retrieval block"));
+        var contentAi = binder.bind("turing.content-ai", TurContentAiProperty.class)
+                .orElseThrow(() -> new AssertionError("no turing.content-ai block"));
+
+        // T1031 — the Content AI bearer token and api key are the newest secrets on
+        // this surface, and the plugin refuses to call Adobe without one, so a
+        // committed placeholder would be the difference between inert and live.
+        assertThat(contentAi.getToken()).isNull();
+        assertThat(contentAi.getApiKey()).isNull();
+        assertThat(contentAi.isEnabled()).isFalse();
 
         assertThat(guardrail.getBedrock().getAccessKeyId()).isNull();
         assertThat(guardrail.getBedrock().getSecretAccessKey()).isNull();

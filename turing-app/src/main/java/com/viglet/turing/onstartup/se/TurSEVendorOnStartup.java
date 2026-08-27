@@ -36,32 +36,40 @@ public class TurSEVendorOnStartup {
 		this.turSEVendorRepository = turSEVendorRepository;
 	}
 
+	/**
+	 * Seeds the search-engine vendor catalog, one row at a time.
+	 *
+	 * <p>This used to be guarded by {@code findAll().isEmpty()}, which made the
+	 * whole catalog a fresh-install-only write: a vendor added in a later release
+	 * — T1031's {@code CONTENTAI} is the first — never reached an existing
+	 * installation, so the engine it names could not be selected on any database
+	 * that had ever started the application. Checking per id fixes that and stays
+	 * idempotent; an operator's edits to a row's title or description are left
+	 * alone, because a row that exists is never rewritten.
+	 */
 	public void createDefaultRows() {
+		createIfAbsent("SOLR", "Apache Solr", "solr", "Apache Solr",
+				"https://solr.apache.org");
+		createIfAbsent("LUCENE", "Apache Lucene", "lucene", "Apache Lucene",
+				"https://lucene.apache.org");
+		createIfAbsent("ES", "Elasticsearch", "elasticsearch", "Elasticsearch",
+				"https://www.elastic.co");
+		createIfAbsent("CONTENTAI", "Adobe AEM Content AI (federated, read-only)", "contentai",
+				"Adobe AEM Content AI",
+				"https://experienceleague.adobe.com/en/docs/experience-manager-content-ai/using/introduction");
+	}
 
-		if (turSEVendorRepository.findAll().isEmpty()) {
-			TurSEVendor solr = new TurSEVendor();
-			solr.setId("SOLR");
-			solr.setDescription("Apache Solr");
-			solr.setPlugin("solr");
-			solr.setTitle("Apache Solr");
-			solr.setWebsite("https://solr.apache.org");
-			turSEVendorRepository.save(solr);
-
-			TurSEVendor lucene = new TurSEVendor();
-			lucene.setId("LUCENE");
-			lucene.setDescription("Apache Lucene");
-			lucene.setPlugin("lucene");
-			lucene.setTitle("Apache Lucene");
-			lucene.setWebsite("https://lucene.apache.org");
-			turSEVendorRepository.save(lucene);
-
-			TurSEVendor elastic = new TurSEVendor();
-			elastic.setId("ES");
-			elastic.setDescription("Elasticsearch");
-			elastic.setPlugin("elasticsearch");
-			elastic.setTitle("Elasticsearch");
-			elastic.setWebsite("https://www.elastic.co");
-			turSEVendorRepository.save(elastic);
+	private void createIfAbsent(String id, String description, String plugin, String title,
+			String website) {
+		if (turSEVendorRepository.existsById(id)) {
+			return;
 		}
+		TurSEVendor vendor = new TurSEVendor();
+		vendor.setId(id);
+		vendor.setDescription(description);
+		vendor.setPlugin(plugin);
+		vendor.setTitle(title);
+		vendor.setWebsite(website);
+		turSEVendorRepository.save(vendor);
 	}
 }

@@ -1316,30 +1316,6 @@ neutral grounding + manifest kernel is now `viglet-core-manifest`; see CHANGELOG
 these block the Dumont collection work — a sidecar
 (D10) can index into a hand-provisioned site before T382 lands.
 
-### XX.18 Federating to a vendor's own retrieval (T1031)
-
-Adobe's AEM Content AI vectorizes AEM sources itself and exposes Foundational Services
-APIs for retrieval and answers, plus MCP agents. A customer running it pays a separate
-AI SKU for a vector index over exactly the content a Turing deployment would otherwise
-embed a second time.
-
-Turing already has both seams. `TurSearchEnginePlugin` abstracts Solr, Elasticsearch and
-Lucene behind one lifecycle, and the agent stack reaches any remote MCP server as a
-tool. A Content AI retriever is a third implementation of the first, or a tool
-registration of the second, and neither involves a Turing document store.
-
-The value is commercial rather than technical: the customer keeps the index they are
-already paying for and buys Turing for the layer above it — multi-turn chat, agents,
-skills, facets, its own analytics, and every non-AEM source Content AI does not reach.
-It also turns a competing product into a source, which is a better posture than asking a
-customer to re-ingest what they just finished ingesting.
-
-The trade-offs are real and belong in the record before any code: the embedding model
-becomes Adobe's, ranking is not tunable, retrieval adds a network hop, and the SKU
-becomes a hard dependency of the answer path. This is filed as an idea and not a plan
-for that reason. The first step is a spike against a real Content AI tenant to see what
-the retrieval API actually returns.
-
 ## XXII. Agent↔UI transparency & client tools — AG-UI parity (Block W)
 
 > **Why now.** A capability review against CopilotKit's **AG-UI** protocol

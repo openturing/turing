@@ -149,6 +149,53 @@ public void performSearch() {
 
 - ✅ **Solr Plugin** - Fully implemented and functional
 - ✅ **Elasticsearch Plugin** - Implemented with basic functionality (search, pagination, sorting)
+- ✅ **Content AI Plugin** - Read-only federation to an Adobe index (see below)
+
+### Adobe AEM Content AI (`contentai`) — a federated, read-only engine
+
+`TurContentAiSearchEnginePlugin` is the one plugin here that does **not** own its
+index. A site whose SE vendor is `CONTENTAI` queries Adobe's own vector index
+through the Content AI `POST /content-sources/search` API, so a customer already
+paying the Content AI SKU stops embedding the same published AEM content a second
+time. Turing sells the layer above it — multi-turn chat, agents, skills, facets,
+its own analytics, and every non-AEM source Content AI does not reach.
+
+Because Turing does not own the index, the plugin is read-only **by design**:
+`createIndex`, `indexDocument`, `deIndex`, `addOrUpdateField` and the rest throw
+`UnsupportedOperationException` with a sentence saying why. A no-op would be
+worse than a failure — it would let the indexer report a successful publish into
+a store that never received the document.
+
+What the mapping looks like:
+
+| Turing | Content AI |
+| ------ | ---------- |
+| `q` | `composite` query over `OR` of a `vector` arm and a `fulltext` arm |
+| `fq=field:value` | `FilterGroup`: values of one field union (`InFilter`) only where the site declares the facet multi-select, fields intersect (`AND`) |
+| facet field | `termBuckets` aggregate whose `id` is the field name |
+| `sort=field asc` | `queryOptions.sort[].orderBy` (passed through verbatim; `relevance` sends none, since Adobe already sorts by score) |
+| `rows` | `pagination.limit`, **clamped to 50** — the API's own maximum |
+| `p` (page) | an opaque cursor walked one request per page, bounded by `max-page-walk` |
+
+Two properties of Adobe's API drive the awkward parts and are worth knowing before
+reading the code: pagination has **no offset**, only a cursor, so page N costs N
+round trips; and the endpoint is versioned *and dated*
+(`/adobe/experimental/aemcontentai-expires-20261231/contentAI`), so the SE
+instance's endpoint URL is used verbatim rather than rebuilt from parts, and a
+`Sunset` response header is logged at WARN the moment it appears.
+
+Configuration is `turing.content-ai.*` in `application.yaml` (credential, source
+mapping, hybrid on/off, boosts, facet size, page-walk ceiling). The **endpoint**
+is not there — it comes from the SE instance, so a per-tenant BYO-infra bucket
+keeps working. The plugin is inert until a credential is set: with none, it
+registers, reports `status: DOWN` from `getSystemInfo` and refuses to call Adobe
+rather than sending an unauthenticated request that returns a 401 reading like an
+outage.
+
+Wire coverage is `TurContentAiSearchEnginePluginTest`, which stands the Content AI
+endpoint in miniature and asserts the request bodies against Adobe's published
+OpenAPI examples — a mocked client would prove nothing about the translation,
+which is the whole of the feature.
 
 ### Elasticsearch Implementation Notes
 
