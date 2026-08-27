@@ -14,7 +14,11 @@
 
 ## Block R.1 — Event-driven ingestion from enterprise CMS platforms (AEM as the reference)
 
-- 💭 **T1031** (deps: —) **A Turing agent cannot query an existing Adobe Content AI index** — A customer already paying the Content AI SKU cannot reuse that retrieval and has to re-vectorize the same published content in Turing. → §XX.18
+- ⏳ **T1031** (deps: —) **A Turing agent cannot query an existing Adobe Content AI index** — A customer already paying the Content AI SKU cannot reuse that retrieval and has to re-vectorize the same published content in Turing. → §XX.18
+
+## Block D.11 — Tracked follow-ups
+
+- 📋 **T1037** (deps: —) **One unreachable MCP server adds thirty seconds to every chat turn of every agent that has it attached** — The client's request timeout is a hardcoded 30s and a failed client is dropped from the cache, so the next turn pays it again with no backoff. → §CVI.2
 
 ## Non-goals (do NOT add as tasks)
 
