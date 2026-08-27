@@ -16,10 +16,6 @@
 
 - 💭 **T1031** (deps: —) **A Turing agent cannot query an existing Adobe Content AI index** — A customer already paying the Content AI SKU cannot reuse that retrieval and has to re-vectorize the same published content in Turing. → §XX.18
 
-## Block D.11 — Tracked follow-ups
-
-- 📋 **T1036** (deps: —) **A content file the export can now produce is too large for the import to read back** — importContentFiles deserializes the whole file into a nested map before indexing any of it, so a round trip fails on the size of site T1033 just made exportable. → §CVI.1
-
 ## Non-goals (do NOT add as tasks)
 
 Binding constraints — see [IMPROVEMENTS.md](IMPROVEMENTS.md) §I.6 (What NOT to

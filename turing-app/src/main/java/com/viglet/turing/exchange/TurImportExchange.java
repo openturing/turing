@@ -20,6 +20,7 @@ package com.viglet.turing.exchange;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -42,6 +43,8 @@ import com.viglet.turing.service.storage.TurStorageService;
 import com.viglet.turing.spring.utils.TurSpringUtils;
 
 import lombok.extern.slf4j.Slf4j;
+import tools.jackson.core.JsonParser;
+import tools.jackson.core.JsonToken;
 import tools.jackson.core.type.TypeReference;
 import tools.jackson.databind.ObjectMapper;
 import tools.jackson.databind.json.JsonMapper;
@@ -52,6 +55,15 @@ public class TurImportExchange {
 
     // --- S1192: extracted duplicated literals ---
     private static final String CLEANUP_FAILED = "Cleanup failed: {}";
+
+    /**
+     * T1036 / §CVI.1 — one indexable document, the unit the streaming content
+     * reader binds. Static because a {@code TypeReference} is stateless and
+     * building one per document would be the only allocation the stream adds.
+     */
+    private static final TypeReference<Map<String, Object>> DOCUMENT_TYPE =
+            new TypeReference<>() {
+            };
 
 
 	private final TurSNSiteImport turSNSiteImport;
@@ -551,12 +563,11 @@ public class TurImportExchange {
 		ObjectMapper mapper = JsonMapper.builder().build();
 		for (File contentFile : contentFiles) {
 			log.info("Processing content file: {}", contentFile.getName());
-			try (FileInputStream fis = new FileInputStream(contentFile)) {
-				Map<String, Map<String, List<Map<String, Object>>>> contentMap =
-						mapper.readValue(fis, new TypeReference<>() {});
-				for (var siteEntry : contentMap.entrySet()) {
-					totalDocuments += importSiteContent(siteEntry, taskId);
-				}
+			try {
+				// T1036 / §CVI.1 — streamed, not deserialized into a map: the file
+				// this reads is the one T1033 made exportable at any site size, and
+				// a round trip has to hold both halves on the same heap.
+				totalDocuments += streamContentFile(mapper, contentFile, taskId);
 			} catch (CallNotPermittedException e) {
 				searchEngineAvailable = false;
 				log.warn("Search engine unavailable while importing content from '{}': {}",
@@ -575,23 +586,106 @@ public class TurImportExchange {
 	}
 
 	/**
-	 * Imports the content for a single site entry. Returns the number of
-	 * documents indexed, or 0 when the referenced site is not found.
+	 * T1036 / §CVI.1 — walks a content file token by token, handing each document
+	 * to the site's import sink as it is parsed.
+	 *
+	 * <p>The file's shape is
+	 * <code>{ "&lt;site&gt;": { "&lt;locale&gt;": [ {doc}, … ] } }</code> — the same
+	 * one the export writes — so a parser can descend it without holding more than
+	 * one document. Only the read changed: the chunking, the site lookup, the
+	 * vector-store feed and the progress channel all still live in
+	 * {@code TurSNSiteContentExchangeService}.
+	 *
+	 * <p>Documents are counted in a cheap first pass so the progress percentage
+	 * survives. That pass allocates nothing per document — it skips children by
+	 * token — and reading a local file twice costs far less than materialising it
+	 * once.
+	 *
+	 * <p>Package-visible so the parse can be exercised on a file directly rather
+	 * than through a whole import bundle.
+	 *
+	 * @return the number of documents indexed across every site in the file
 	 */
-	private int importSiteContent(
-			Map.Entry<String, Map<String, List<Map<String, Object>>>> siteEntry, String taskId) {
-		var siteOpt = turSNSiteRepository.findByNameIgnoreCase(siteEntry.getKey());
-		if (siteOpt.isEmpty()) {
-			log.warn("Content references site '{}' but no matching SN Site found in database.",
-					siteEntry.getKey());
-			return 0;
+	int streamContentFile(ObjectMapper mapper, File contentFile, String taskId)
+			throws IOException {
+		Map<String, Integer> countsBySite = countDocumentsPerSite(mapper, contentFile);
+		int totalIndexed = 0;
+		try (var parser = mapper.createParser(contentFile)) {
+			expect(parser.nextToken(), JsonToken.START_OBJECT, contentFile);
+			while (parser.nextToken() == JsonToken.PROPERTY_NAME) {
+				String siteName = parser.currentName();
+				var siteOpt = turSNSiteRepository.findByNameIgnoreCase(siteName);
+				if (siteOpt.isEmpty()) {
+					log.warn("Content references site '{}' but no matching SN Site found in database.",
+							siteName);
+					parser.nextToken();
+					parser.skipChildren();
+					continue;
+				}
+				TurSNSite turSNSite = siteOpt.get();
+				String effectiveTaskId = taskId != null ? taskId : turSNSite.getId();
+				int indexed = streamSiteLocales(parser, turSNSite, effectiveTaskId,
+						countsBySite.getOrDefault(siteName, 0));
+				log.info("Imported {} documents for site '{}'", indexed, siteName);
+				totalIndexed += indexed;
+			}
 		}
-		TurSNSite turSNSite = siteOpt.get();
-		String effectiveTaskId = taskId != null ? taskId : turSNSite.getId();
-		int indexed = contentExchangeService.importContent(
-				turSNSite, Map.of(siteEntry.getKey(), siteEntry.getValue()), effectiveTaskId);
-		log.info("Imported {} documents for site '{}'", indexed, siteEntry.getKey());
-		return indexed;
+		return totalIndexed;
+	}
+
+	/** Reads one site's `{ locale: [docs] }` object into the sink, locale by locale. */
+	private int streamSiteLocales(JsonParser parser, TurSNSite turSNSite,
+			String taskId, int expectedDocuments) throws IOException {
+		var sink = contentExchangeService.openContentImport(turSNSite, taskId, expectedDocuments);
+		expect(parser.nextToken(), JsonToken.START_OBJECT, (File) null);
+		while (parser.nextToken() == JsonToken.PROPERTY_NAME) {
+			String localeKey = parser.currentName();
+			if (parser.nextToken() != JsonToken.START_ARRAY) {
+				parser.skipChildren();
+				continue;
+			}
+			while (parser.nextToken() == JsonToken.START_OBJECT) {
+				sink.document(localeKey, parser.readValueAs(DOCUMENT_TYPE));
+			}
+		}
+		return sink.finish();
+	}
+
+	/**
+	 * Counts the documents each site declares, without building any of them — the
+	 * numerator the progress percentage needs, at the cost of one extra scan.
+	 */
+	private static Map<String, Integer> countDocumentsPerSite(ObjectMapper mapper, File contentFile)
+			throws IOException {
+		Map<String, Integer> counts = new LinkedHashMap<>();
+		try (var parser = mapper.createParser(contentFile)) {
+			expect(parser.nextToken(), JsonToken.START_OBJECT, contentFile);
+			while (parser.nextToken() == JsonToken.PROPERTY_NAME) {
+				String siteName = parser.currentName();
+				int siteCount = 0;
+				expect(parser.nextToken(), JsonToken.START_OBJECT, contentFile);
+				while (parser.nextToken() == JsonToken.PROPERTY_NAME) {
+					if (parser.nextToken() != JsonToken.START_ARRAY) {
+						parser.skipChildren();
+						continue;
+					}
+					while (parser.nextToken() != JsonToken.END_ARRAY) {
+						parser.skipChildren();
+						siteCount++;
+					}
+				}
+				counts.put(siteName, siteCount);
+			}
+		}
+		return counts;
+	}
+
+	private static void expect(JsonToken actual, JsonToken expected, File contentFile) {
+		if (actual != expected) {
+			throw new IllegalStateException("Malformed content%s: expected %s but found %s"
+					.formatted(contentFile == null ? "" : " in " + contentFile.getName(), expected,
+							actual));
+		}
 	}
 
 	/**

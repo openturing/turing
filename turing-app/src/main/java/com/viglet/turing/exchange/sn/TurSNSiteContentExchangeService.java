@@ -307,8 +307,113 @@ public class TurSNSiteContentExchangeService {
     }
 
     /**
+     * T1036 / §CVI.1 — opens a streaming import for one site: hand it documents
+     * one at a time and it indexes them in {@link #IMPORT_CHUNK_SIZE} chunks,
+     * exactly as {@link #importContent} does, without the caller having read the
+     * whole file into a map first.
+     *
+     * <p>The chunking, the vector-store feed and the progress channel are the
+     * same; only the source of the documents changes.
+     *
+     * @param totalDocuments the expected document count, for the progress
+     *                       percentage. Pass a non-positive value when unknown —
+     *                       progress then reports the count without a percentage
+     *                       rather than a misleading one.
+     */
+    public TurSNContentImportSink openContentImport(TurSNSite turSNSite, String taskId,
+            int totalDocuments) {
+        return new TurSNContentImportSink(turSNSite, taskId, totalDocuments);
+    }
+
+    /**
+     * T1036 / §CVI.1 — accepts a site's documents locale by locale and indexes
+     * them in chunks, holding at most one chunk.
+     *
+     * <p>Single-pass and stateful: documents must arrive grouped by locale (which
+     * the content file's shape guarantees), and a locale change flushes the
+     * pending chunk before the next locale starts, so a chunk is never indexed
+     * against the wrong locale.
+     */
+    public final class TurSNContentImportSink {
+
+        private final TurSNSite turSNSite;
+        private final String taskId;
+        private final int totalDocuments;
+        private final TurSearchEnginePlugin plugin;
+        private final long startTime = System.currentTimeMillis();
+        private final List<Map<String, Object>> pending = new ArrayList<>(IMPORT_CHUNK_SIZE);
+
+        private String currentLocaleKey;
+        private Locale currentLocale;
+        private int processed;
+        private int indexed;
+
+        private TurSNContentImportSink(TurSNSite turSNSite, String taskId, int totalDocuments) {
+            this.turSNSite = turSNSite;
+            this.taskId = taskId;
+            this.totalDocuments = Math.max(totalDocuments, 0);
+            this.plugin = pluginFactory.getPluginForSite(turSNSite);
+            publishProgress("");
+        }
+
+        /**
+         * Accepts one document for {@code localeKey}, flushing a full chunk (and
+         * the previous locale's tail when the locale changes).
+         */
+        public void document(String localeKey, Map<String, Object> document) {
+            if (document == null || document.isEmpty()) {
+                return;
+            }
+            if (!java.util.Objects.equals(localeKey, currentLocaleKey)) {
+                flush();
+                currentLocaleKey = localeKey;
+                // The content file writes a locale as en_US; Locale wants en-US.
+                currentLocale = Locale.forLanguageTag(localeKey.replace("_", "-"));
+                publishProgress(localeKey);
+            }
+            pending.add(document);
+            if (pending.size() >= IMPORT_CHUNK_SIZE) {
+                flush();
+            }
+        }
+
+        /**
+         * Flushes the tail and reports the total indexed. Safe to call twice.
+         */
+        public int finish() {
+            flush();
+            progressMap.put(taskId, new ContentExchangeProgress(
+                    totalDocuments, processed, "", COMPLETED, startTime));
+            return indexed;
+        }
+
+        private void flush() {
+            if (pending.isEmpty()) {
+                return;
+            }
+            List<Map<String, Object>> chunk = List.copyOf(pending);
+            pending.clear();
+            indexed += indexChunk(plugin, turSNSite, currentLocale, chunk);
+            feedChunkToVectorStore(turSNSite, currentLocale, chunk);
+            processed += chunk.size();
+            plugin.commit(turSNSite, currentLocale);
+            publishProgress(currentLocaleKey);
+        }
+
+        private void publishProgress(String localeKey) {
+            progressMap.put(taskId, new ContentExchangeProgress(
+                    totalDocuments, processed, localeKey == null ? "" : localeKey, INDEXING,
+                    startTime));
+        }
+    }
+
+    /**
      * Imports content from the content map, indexing documents in chunks of 50.
      * Returns total documents indexed.
+     *
+     * <p>Kept for callers that already hold the whole map; the import path reads
+     * the file with {@link #openContentImport} instead (T1036 / §CVI.1), which
+     * never materialises one.
      */
     public int importContent(TurSNSite turSNSite,
             Map<String, Map<String, List<Map<String, Object>>>> contentMap, String taskId) {

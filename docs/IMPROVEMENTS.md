@@ -2135,31 +2135,8 @@ work exposed, a half deliberately left out of scope, or a symmetry the fix broke
 entries have nothing in common but their origin, which is why the block carries no theme
 of its own.
 
-It had a family before, dropped when a ship left that heading childless. That was the
-wrong repair — an address a heading has used is spent for good, so the block needed a
-new one. This is it, and it stays even when the last line under it ships.
-
-### CVI.1 The import kept the buffering the export lost (T1036)
-
-T1033 fixed the export: it pages the index by a keyset cursor and writes the content
-file straight from the page iterators, so a large site is never held in memory. The
-import side was left exactly as it was, and it is the same shape of problem pointing the
-other way.
-
-`TurImportExchange.importContentFiles` does `mapper.readValue(fis, new
-TypeReference<Map<String, Map<String, List<Map<String, Object>>>>>() {})` — the whole
-content file, every locale, every document with its full stored text, materialised
-before the first one is indexed. `importSiteContent` then walks that map in
-`IMPORT_CHUNK_SIZE` chunks, so the chunking is already there; only the read is not.
-
-Which makes the failure sharper than a general inefficiency: the export that now
-succeeds on a large site produces a file the import cannot read back on the same heap. A
-round trip is the whole point of an export, so the two halves have to hold the same size
-of site.
-
-The fix has no format change in it and no new contract, because the file's shape is
-unchanged: a Jackson `JsonParser` walking `{ site: { locale: [ … ] } }` token by token,
-handing each document to the existing chunk buffer and flushing at `IMPORT_CHUNK_SIZE`.
-The site lookup, the vector-store feed, the progress counters and the
-search-engine-unavailable handling all stay where they are — they already operate per
-chunk.
+This family stays even with nothing open under it, and that is the point of it. Its
+predecessor was dropped the moment a ship left it childless, and an address a heading
+has used is spent for good — so the block lost its family and the next follow-up had to
+open a new one. A standing block needs a standing address; when a line lands here again
+it goes under this one.
