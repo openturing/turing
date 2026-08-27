@@ -18,7 +18,7 @@
 
 ## Block D.11 — Tracked follow-ups
 
-- 📋 **T1040** (deps: —) **No test ever asks Solr or Elasticsearch whether the queries their plugins build are the ones they meant** — Of 57 ITs none runs a search-engine container, so every engine-specific string is checked against a mock written from the same understanding as the code. → §CVI.5
+- ⏳ **T1040** (deps: —) **No test ever asks Solr or Elasticsearch whether the queries their plugins build are the ones they meant** — Of 57 ITs none runs a search-engine container, so every engine-specific string is checked against a mock written from the same understanding as the code. → §CVI.5
 
 ## Non-goals (do NOT add as tasks)
 

@@ -484,8 +484,8 @@ public class TurSolrSearchEnginePlugin implements TurSearchEnginePlugin {
      *
      * @since 2026.3.4
      */
-    static String escapeSolrTerm(String term) {
-        return escapeSolr(term).replaceAll("(\\s)", "\\\\$1");
+    static String solrQuotedTerm(String term) {
+        return "\"" + term.replace("\\", "\\\\").replace("\"", "\\\"") + "\"";
     }
 
     /**
@@ -494,7 +494,7 @@ public class TurSolrSearchEnginePlugin implements TurSearchEnginePlugin {
      * a malformed bound here does not fail loudly, it ends the sweep.
      */
     static String idAfterFilterQuery(String afterId) {
-        return TurSNFieldName.ID + ":{" + escapeSolrTerm(afterId) + " TO *]";
+        return TurSNFieldName.ID + ":{" + solrQuotedTerm(afterId) + " TO *]";
     }
 
     /**
@@ -627,7 +627,7 @@ public class TurSolrSearchEnginePlugin implements TurSearchEnginePlugin {
         try {
             SolrQuery query = new SolrQuery();
             query.set("qt", "/mlt");
-            query.setQuery(TurSNFieldName.ID + ":" + escapeSolrTerm(id));
+            query.setQuery(TurSNFieldName.ID + ":" + solrQuotedTerm(id));
             query.set("mlt.fl", SIMILAR_MLT_FIELDS);
             query.set("mlt.mintf", "1");
             query.set("mlt.mindf", "1");
@@ -690,7 +690,7 @@ public class TurSolrSearchEnginePlugin implements TurSearchEnginePlugin {
             List<String> ids) {
         String q = ids.stream()
                 .filter(s -> s != null && !s.isBlank())
-                .map(s -> TurSNFieldName.ID + ":" + escapeSolrTerm(s))
+                .map(s -> TurSNFieldName.ID + ":" + solrQuotedTerm(s))
                 .collect(java.util.stream.Collectors.joining(" OR "));
         if (q.isEmpty()) {
             return List.of();
@@ -894,7 +894,7 @@ public class TurSolrSearchEnginePlugin implements TurSearchEnginePlugin {
                     query.setFields(inventoryFields());
                     if (sourceApp != null && !sourceApp.isBlank()) {
                         query.addFilterQuery(
-                                TurSNFieldName.SOURCE_APPS + ":" + escapeSolrTerm(sourceApp));
+                                TurSNFieldName.SOURCE_APPS + ":" + solrQuotedTerm(sourceApp));
                     }
                     if (after != null && !after.isBlank()) {
                         // Exclusive lower bound: the keyset cursor, so the engine
