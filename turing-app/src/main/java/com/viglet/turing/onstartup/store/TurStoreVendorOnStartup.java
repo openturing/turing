@@ -36,40 +36,42 @@ public class TurStoreVendorOnStartup {
 		this.turStoreVendorRepository = turStoreVendorRepository;
 	}
 
+	/**
+	 * Seeds the vector-store vendor catalog, one row at a time.
+	 *
+	 * <p>This used to be guarded by {@code findAll().isEmpty()}, which made the
+	 * whole catalog a fresh-install-only write: a vendor added in a later release
+	 * reached a database that had never started the application and no other, so
+	 * the store plugin it names could not be selected on any existing
+	 * installation. T1031 hit exactly that with the search-engine vendors, where
+	 * {@code CONTENTAI} was the first row added since the table existed; T1043
+	 * removes the same guard here before it costs a release. Checking per id stays
+	 * idempotent and never rewrites a row an operator has edited.
+	 *
+	 * @since 2026.3.4
+	 */
 	public void createDefaultRows() {
+		createIfAbsent("CHROMA", "Chroma", "chroma", "Chroma",
+				"https://www.trychroma.com/");
+		createIfAbsent("MILVUS", "Milvus", "milvus", "Milvus",
+				"https://milvus.io/");
+		createIfAbsent("PGVECTOR", "PGVector", "pgvector", "PGVector",
+				"https://github.com/pgvector/pgvector");
+		createIfAbsent("LUCENE", "Apache Lucene (embedded vector store)", "lucene", "Lucene",
+				"https://lucene.apache.org/");
+	}
 
-		if (turStoreVendorRepository.findAll().isEmpty()) {
-			TurStoreVendor chroma = new TurStoreVendor();
-			chroma.setId("CHROMA");
-			chroma.setDescription("Chroma");
-			chroma.setPlugin("chroma");
-			chroma.setTitle("Chroma");
-			chroma.setWebsite("https://www.trychroma.com/");
-			turStoreVendorRepository.save(chroma);
-
-			TurStoreVendor milvus = new TurStoreVendor();
-			milvus.setId("MILVUS");
-			milvus.setDescription("Milvus");
-			milvus.setPlugin("milvus");
-			milvus.setTitle("Milvus");
-			milvus.setWebsite("https://milvus.io/");
-			turStoreVendorRepository.save(milvus);
-
-			TurStoreVendor pgvector = new TurStoreVendor();
-			pgvector.setId("PGVECTOR");
-			pgvector.setDescription("PGVector");
-			pgvector.setPlugin("pgvector");
-			pgvector.setTitle("PGVector");
-			pgvector.setWebsite("https://github.com/pgvector/pgvector");
-			turStoreVendorRepository.save(pgvector);
-
-			TurStoreVendor lucene = new TurStoreVendor();
-			lucene.setId("LUCENE");
-			lucene.setDescription("Apache Lucene (embedded vector store)");
-			lucene.setPlugin("lucene");
-			lucene.setTitle("Lucene");
-			lucene.setWebsite("https://lucene.apache.org/");
-			turStoreVendorRepository.save(lucene);
+	private void createIfAbsent(String id, String description, String plugin, String title,
+			String website) {
+		if (turStoreVendorRepository.existsById(id)) {
+			return;
 		}
+		TurStoreVendor vendor = new TurStoreVendor();
+		vendor.setId(id);
+		vendor.setDescription(description);
+		vendor.setPlugin(plugin);
+		vendor.setTitle(title);
+		vendor.setWebsite(website);
+		turStoreVendorRepository.save(vendor);
 	}
 }

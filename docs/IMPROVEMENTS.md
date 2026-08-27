@@ -2166,33 +2166,3 @@ has used is spent for good — so the block lost its family and the next follow-
 open a new one. A standing block needs a standing address. Empty here means the
 follow-ups filed so far are done, not that the heading is finished; the next one goes
 under this address.
-
-## CVII Startup provisioning: seeded catalogs, defaults and the upgrade path
-
-### CVII.1 Seeded catalogs with no upgrade path (T1043)
-
-Eleven classes under `onstartup/` seed rows a fresh installation needs: vendors,
-locales, privileges, groups, config vars, the default RAG infra, the default LLM
-instance. Two still gate the **whole catalog** on `findAll().isEmpty()` —
-`TurStoreVendorOnStartup` and `TurLocaleOnStartup`.
-
-That makes the catalog a fresh-install-only write. A row added in a later release
-reaches a database that has never started the application and no other, so the vendor or
-locale it names cannot be selected anywhere it matters: every existing installation,
-which is every installation an upgrade lands on.
-
-T1031 hit this with the search-engine vendors. `CONTENTAI` was the first row added to
-`se_vendor` since the table existed, and would have been unreachable on every upgraded
-install — the feature present in the jar, absent from the picker, the guard reading like
-deliberate restraint rather than a bug. The fix was to check per id, which is idempotent
-and leaves an operator's edits to a row alone, and the codebase already had that shape:
-`TurConfigVarOnStartup` seeds through `findById(id).isEmpty()` and
-`TurPrivilegeOnStartup` diffs what is missing.
-
-`TurGroupOnStartup` carries the same guard and is deliberately out of scope: a group
-list is an operator's, not a catalog, and re-creating a group somebody deleted deserves
-its own line.
-
-The block exists so the next seeded default has a home. The recurring shape is not "a
-vendor was missing" — it is that a row added after a table's first release has an
-upgrade path only where its seeder was written to have one, which nothing checks.
