@@ -15,6 +15,12 @@
 ## Block R.1 — Event-driven ingestion from enterprise CMS platforms (AEM as the reference)
 
 - 💭 **T1031** (deps: —) **A Turing agent cannot query an existing Adobe Content AI index** — A customer already paying the Content AI SKU cannot reuse that retrieval and has to re-vectorize the same published content in Turing. → §XX.18
+- 📋 **T1034** (deps: —) **An audit cannot compare a document's content, only a date the source may never stamp** — The checksum a connector publishes on every job item reaches the indexing log and never the document, so the index has no exact per-document identity to report. → §XX.19
+
+## Block D.11 — Tracked follow-ups
+
+- 📋 **T1032** (deps: —) **An agent cannot reach a remote MCP server that requires authentication** — Both HTTP transports are built from the URL alone and TurMcpServer has no field for a credential, so initialize() gets a 401 and the tools silently vanish. → §D.12
+- 📋 **T1033** (deps: —) **A large SN site cannot be exported without quadratic engine work and holding it all in memory** — exportContent pages by offset, which costs the engine every prior page again, and buffers every stored document of a locale before writing any of it. → §D.13
 
 ## Non-goals (do NOT add as tasks)
 

@@ -1340,6 +1340,30 @@ becomes a hard dependency of the answer path. This is filed as an idea and not a
 for that reason. The first step is a spike against a real Content AI tenant to see what
 the retrieval API actually returns.
 
+### XX.19 The checksum stops at the log (T1034)
+
+`TurSNJobItem` carries a `checksum` and a connector fills it in. `TurLoggingUtils`
+copies it onto the `TurLoggingIndexing` record and there the value stops: no indexing
+path writes it to a document, and no search-engine schema has a field for it. The one
+piece of per-document identity the source computed itself is kept only in a log.
+
+T1029 shipped the index inventory around that absence. It reports a version resolved
+from `modification_date`, falling back to `publication_date`, and `null` when a document
+carries neither. That is honest but weak in two ways a real audit meets immediately: a
+source that stamps no date gets no version at all, so the third comparison — in both at
+different versions — is simply unavailable for it; and a date the source rewrites
+without changing content reports drift that is not there.
+
+A checksum has neither problem. It is exact, the connector already computes it, and
+comparing it needs no agreement about what a timestamp means.
+
+The work is to index it: a `checksum` field written when the job item carries one, added
+to the Solr schemas alongside the other reserved fields, and returned by
+`retrieveInventoryPage` as a third component on `TurSEInventoryEntry`. The version stays
+— a document indexed before this exists, or by a connector that sends no checksum, still
+has to be comparable — so the entry reports whichever identity it has and says which,
+exactly as it already does for the two date fields.
+
 ## XXII. Agent↔UI transparency & client tools — AG-UI parity (Block W)
 
 > **Why now.** A capability review against CopilotKit's **AG-UI** protocol
@@ -2127,3 +2151,59 @@ duplication lint, a working local-dev path and a render digest - because every d
 here is justified by an assertion this repository currently cannot check.
 
 ## CV The quality gate stops at the package boundary
+
+## D Tracked follow-ups
+
+### D.12 The outbound MCP client has nowhere to keep a credential (T1032)
+
+`TurMcpToolCallbackService.createTransport` builds both HTTP transports from the URL
+alone: `HttpClientStreamableHttpTransport.builder(server.url()).build()` and the SSE
+equivalent. Neither carries a header, and `TurMcpServer` has no field to put one in — it
+stores `url`, `command`, `args`, `connectionType` and `transportType`, and nothing else
+about the connection.
+
+So the outbound MCP path reaches unauthenticated servers only. That is the smaller half
+of the population: a remote MCP server on the public internet is authenticated by a
+bearer token as a matter of course, and the ones a customer would actually register —
+GitHub, Atlassian, Linear, Adobe's Foundational Services agents — all are. The failure
+is not graceful either: `initialize()` gets a 401, the client is dropped with a warning,
+and the agent simply has fewer tools than the admin configured.
+
+Turing already knows this is how remote MCP works. `TurMcpClientConfigService` (T255)
+generates client snippets for Turing's *own* MCP server carrying an `Authorization:
+Bearer <YOUR_ACCESS_TOKEN>` header. The inbound direction models the credential; the
+outbound direction has nowhere to keep one.
+
+The work is a per-server credential on `TurMcpServer`, encrypted at rest through
+`TurSecretCryptoService` the way every other stored secret is, applied as a request
+header when the transport is built. A static bearer token is the whole of it — an OAuth
+client-credentials flow is a larger question and should not be smuggled in behind this
+one.
+
+Until it exists, T1031's "or a tool registration of the second" is not a path for any
+commercial vendor's MCP server, Adobe's included.
+
+### D.13 The content export got the paging T1029 had to avoid (T1033)
+
+`TurSNSiteContentExchangeService.exportContent` walks a locale with
+`retrieveDocumentPage(locale, fields, start, EXPORT_PAGE_SIZE)` and `start +=
+EXPORT_PAGE_SIZE`, accumulating every page into one `List` that is only handed over once
+the locale is finished. Two costs compound, and both grow with the site rather than with
+the page.
+
+The offset is the first. Solr's `start`/`rows` and Elasticsearch's `from`/`size` both
+make the engine collect and discard everything before the offset, so page N costs the
+engine N pages of work; a full export is quadratic in the number of pages. Lucene is
+worse because it is explicit: `searcher.search(query, start + rows)` materialises `start
++ rows` `ScoreDoc`s to return the last `rows` of them, so exporting the 500th page of a
+100k-document site allocates a 100k-entry array to keep 200 documents.
+
+The buffering is the second. Every exported document — with its full stored text, which
+is the largest field a site has — is held in memory until the locale ends, and every
+locale until the site does. A site large enough for the offset to hurt is a site large
+enough for this to be the failure the operator actually sees.
+
+T1029 already built the shape of the fix and proved it on all three engines: a keyset
+cursor on the id (`retrieveInventoryPage`, `TurSEInventoryPage.nextCursor`), where each
+page costs the same as the first. The export wants the same paging and a consumer it can
+stream into rather than a list it fills.
