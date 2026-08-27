@@ -142,6 +142,140 @@ turing:
     # local-process execution by configuration — a COMMAND-type MCP server whose
     # command is not listed is refused.
     allowed-stdio-commands: []
+  # T1038 / §CVI.3 — the six blocks below had never appeared in this file: their
+  # prefixes were declared in Java and discoverable only by reading it, which for
+  # abuse control and guardrails meant the safety surface was folklore. Every
+  # value written here is the code default, so the blocks change no behaviour.
+  # Credentials are deliberately left as comments rather than empty keys — an
+  # empty YAML value binds "" where the code expects null, and the two are not
+  # always the same thing to a blank check.
+  #
+  # T641 / §XXXVII.3 — app-layer abuse controls for the anonymous public chat and
+  # search surface. Those SN endpoints are permitAll by design, so without these a
+  # loop of POST /api/sn/{site}/chat/conversation could drive unbounded LLM spend.
+  # The rate limiter is ON by default; the USD ceiling is off because a spend cap
+  # is deployment-specific.
+  abuse:
+    chat:
+      rate-limit-enabled: true
+      requests-per-minute-per-ip: 60
+      requests-per-minute-per-session: 30
+      window-seconds: 60
+      # Hard month-to-date LLM spend ceiling (USD) for anonymous SN chat. When > 0
+      # and reached, new anonymous conversations are refused and NO upstream LLM
+      # call fires — a kill switch, unlike the soft per-agent budget gate.
+      hard-monthly-cap-usd: 0
+      # T647 / §XXXVII.9 — tool trust boundary. True (legacy) lets an anonymous
+      # visitor's turn invoke the agent's tools. Set false so an untrusted visitor,
+      # or an injection payload in retrieved content, cannot trigger tool execution
+      # with system authority. Authenticated agent/persona chat is unaffected.
+      anonymous-tools-enabled: true
+      # T648 / §XXXVII.10 — input / DoS caps. Each <= 0 disables that one gate.
+      max-upload-bytes: 10485760
+      max-messages-per-turn: 100
+      max-message-chars: 24000
+      max-zip-entries: 5000
+      max-zip-entry-bytes: 52428800
+      max-zip-total-bytes: 262144000
+  # T-guardrail / §XXXVII — answer-grounding guardrail: verifies a RAG answer is
+  # actually grounded in the retrieved context (and screens it for unsafe content
+  # / PII) before it reaches the user. Off by default: with enabled=false, or a
+  # strategy resolving to NONE, the chat path is byte-for-byte unchanged. Fully
+  # fail-open — any guardrail error degrades to "no verdict", never a blocked
+  # answer.
+  safety:
+    guardrail:
+      enabled: false
+      # NONE | BEDROCK | OPENAI_MODERATION | MISTRAL_MODERATION. Parsed leniently;
+      # an unknown value disables.
+      strategy: NONE
+      # False (default) delivers the answer and surfaces the verdict beside it as
+      # a confidence signal. True replaces a flagged answer with blocked-message.
+      block-on-violation: false
+      blocked-message: "This answer could not be verified against the available sources."
+      bedrock:
+        guardrail-version: DRAFT
+        region: us-east-1
+        # guardrail-id: <id or ARN>   # blank leaves the adapter inert
+        # access-key-id / secret-access-key: omit for the AWS default chain (IAM role)
+      mistral:
+        model: mistral-moderation-latest
+        endpoint: https://api.mistral.ai/v1/moderations
+        timeout-seconds: 30
+        # api-key: ${MISTRAL_API_KEY}   # blank leaves the adapter inert
+  # T740 / §XLIX — the Governed LLM Gateway (Block AZ): the OpenAI-compatible
+  # inbound surface (/v1/chat/completions, /v1/embeddings, /v1/models). The
+  # controllers are @ConditionalOnProperty on enabled, so while it is false the
+  # endpoints do not exist at all. Turn it on to let any OpenAI-compatible client
+  # point its base_url at Turing.
+  gateway:
+    enabled: false
+    # T741 — require a virtual key (Authorization: Bearer sk-turing-...). Set false
+    # only in a network-isolated deployment where /v1/* is reachable solely by
+    # already-authenticated callers.
+    require-virtual-key: true
+    # T743 — the x-turing-cache: semantic response cache.
+    cache-ttl-seconds: 300
+    cache-max-entries: 1000
+    # T746 — capture inbound gateway traffic as an eval dataset so production
+    # traffic can be replayed through the graders. Off: capturing prompts and
+    # answers is opt-in and admin-managed.
+    capture-traffic: false
+    capture-dataset-name: Gateway Traffic
+  # T520 / §XXVIII.16 — which backend serves RAG passages. A deploy-time infra
+  # choice, like storage above. BUILT_IN leaves the retrieval core byte-for-byte
+  # unchanged; BEDROCK_KB plus a knowledge-base id routes retrieval at an AWS
+  # Bedrock Knowledge Base instead.
+  retrieval:
+    backend: BUILT_IN
+    bedrock-kb:
+      region: us-east-1
+      # knowledge-base-id: <kb id>   # blank falls back to the built-in backend
+      # access-key-id / secret-access-key: omit for the AWS default chain (IAM role)
+  # Block AO / §XXXVIII — the source-engine migration importers (Elasticsearch
+  # T657, Algolia T658): how a source index is read and pushed through the
+  # existing import queue.
+  migration:
+    batch-size: 500
+    timeout-seconds: 30
+    # Hard cap on documents per run; 0 imports the whole index.
+    max-documents: 0
+    # Elasticsearch scroll keep-alive held open on the source cluster between pages.
+    es-scroll-keep-alive: 1m
+    # Documents sampled from the first page to detect multi-valued fields, since
+    # neither an ES _mapping nor Algolia settings declare cardinality.
+    sample-size: 20
+  # T956 / §XIV.10.1 — Viglet AI, the managed LLM endpoint behind the onboarding
+  # credit (Block J.10). Deployment-level on purpose: the point of the `viglet`
+  # provider is that an operator never types an endpoint or a model name. These
+  # exist so a Viglet-side staging environment can be pointed elsewhere.
+  viglet-ai:
+    base-url: https://llm.viglet.cloud/v1
+    # The single opaque alias the managed endpoint serves. Naming the vendor model
+    # would pin Turing to one vendor's price sheet.
+    model-alias: viglet-fast
+    # T957 — device-code pairing: the install posts to {pairing-base-url}/device/code
+    # and polls /device/token until the credential arrives.
+    pairing-base-url: https://llm.viglet.cloud/pair
+    # T959 — where a quota refusal points the operator. Blank disables the paid
+    # exit entirely; the refusal still states what ran out and offers their own key.
+    upgrade-base-url: https://viglet.cloud/upgrade
+    # upgrade-signing-secret: <hmac key>   # blank signs with the T957 pairing credential
+  # T618 / §XXXIV.6 — bounds for the per-turn assembled-prompt capture store.
+  # Capture itself is per-agent opt-in (TurAIAgent.promptCaptureEnabled); these
+  # keep it from growing without limit — a per-conversation ring, a per-entry cap,
+  # and a retention window swept on a schedule.
+  prompt:
+    capture:
+      # Newest N turns kept per conversation; older ones pruned after each write.
+      max-turns-per-conversation: 50
+      # A serialized capture larger than this is skipped, so a runaway prompt
+      # never lands a giant blob.
+      max-bytes-per-entry: 262144
+      # The scheduled sweep prunes captures older than this across every
+      # conversation, bounding the store globally over time.
+      retention-days: 30
+      cleanup-cron: "0 40 3 * * *"
   # E.8 / §IX.9 — observability interop (opt-in, fail-open trace exports). Lock in
   # via capability, never via format: both are off by default and never disturb a
   # chat turn when the backend is slow or unreachable.

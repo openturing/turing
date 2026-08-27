@@ -16,10 +16,6 @@
 
 - ⏳ **T1031** (deps: —) **A Turing agent cannot query an existing Adobe Content AI index** — A customer already paying the Content AI SKU cannot reuse that retrieval and has to re-vectorize the same published content in Turing. → §XX.18
 
-## Block D.11 — Tracked follow-ups
-
-- 📋 **T1038** (deps: —) **An operator cannot discover what is tunable under six turing.* prefixes without reading Java** — Six of the ten @ConfigurationProperties prefixes never appear in application.yaml, hiding 52 knobs including 15 guardrail and 13 abuse-control ones. → §CVI.3
-
 ## Non-goals (do NOT add as tasks)
 
 Binding constraints — see [IMPROVEMENTS.md](IMPROVEMENTS.md) §I.6 (What NOT to

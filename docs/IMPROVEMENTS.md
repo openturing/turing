@@ -2141,29 +2141,3 @@ has used is spent for good — so the block lost its family and the next follow-
 open a new one. A standing block needs a standing address. Empty here means the
 follow-ups filed so far are done, not that the heading is finished; the next one goes
 under this address.
-
-### CVI.3 Half the configuration surface is not in the configuration file (T1038)
-
-T1037 needed a documented `turing.mcp-client` block and found the prefix had existed
-since T650 and never appeared in `application.yaml` at all — its SSRF guard and stdio
-allowlist were reachable only by reading `TurMcpClientProperty`. Fixing that one raised
-the question of whether it was isolated. It is not.
-
-Ten classes declare `@ConfigurationProperties` under `turing.*`. Four are in the file.
-Six are absent entirely, no key and not even commented: `turing.abuse`,
-`turing.gateway`, `turing.migration`, `turing.retrieval`, `turing.safety.guardrail` and
-`turing.viglet-ai`. Between them 52 properties, and two of the six are the surfaces
-least suited to being folklore: 15 knobs of guardrail configuration and 13 of abuse
-control.
-
-The cost is not a missing default — the defaults are fine and the app runs. It is that
-an operator tuning safety, rate limits or the governed gateway cannot learn what is
-tunable short of reading Java, and a knob nobody can find is a knob that does not exist.
-`mcp-server` in the same file shows the alternative: every flag written with the reason
-it is off.
-
-Two parts. Write the six blocks the way T1037 wrote its one — code defaults, so adding
-them changes no behaviour, each comment saying what the knob is for. Then keep it that
-way: `TurMcpClientPropertyBindingTest` binds the shipped yaml and asserts what arrives,
-and the same shape generalises into a guard that fails when a declared prefix is missing
-from the file, catching the next one at the commit that adds it.
