@@ -107,6 +107,41 @@ turing:
     # reindex_site). Default false: they are not even registered. When true they
     # appear but still require the mcp:write scope per call. Read-only by default.
     write-enabled: false
+  # T1037 / §CVI.2 — Turing as an MCP *client*: the outbound path where an agent
+  # calls a remote MCP server's tools. The other direction is mcp-server above.
+  # Every value here is the code default, so writing the block changes nothing —
+  # it exists because these knobs were reachable only from Javadoc before.
+  #
+  # A per-server URL/transport/credential is admin data, not configuration: it
+  # lives on the MCP Server entity (/bento/mcp). This block is the deployment-wide
+  # posture around it.
+  mcp-client:
+    # How long to wait for a remote MCP server to answer. Tool discovery runs on
+    # the CHAT PATH — an agent's tools are resolved per turn — so this is paid by
+    # every turn of every conversation on every agent holding an unreachable
+    # server. It was a hardcoded 30s, which a user experiences as a chat that
+    # stopped responding. Raise it for a slow-but-alive server behind a distant
+    # hop; lower it on a local one.
+    request-timeout: 10s
+    # How long a server that just failed to connect is skipped before being tried
+    # again. A failed client is dropped from the cache (a half-built one must not
+    # be served to the next caller), so without this the next turn paid the whole
+    # timeout again. The agent loses that server's tools either way. An admin edit
+    # to the server's URL, transport or credential cancels the skip immediately,
+    # so fixing a rotated token does not mean waiting this out. Set to 0s to
+    # restore the legacy retry-every-turn behaviour.
+    failure-backoff: 60s
+    # T650 / §XXXVII.12 — SSRF guard on the outbound URL. When true, an MCP client
+    # URL resolving to a private/loopback/link-local address is refused. Default
+    # false because a legitimate MCP server often lives on an internal network;
+    # turn on for an internet-only egress posture.
+    block-private-urls: false
+    # T650 / §XXXVII.12 — allowlist of permitted stdio `command` executables,
+    # matched on the base name, case-insensitively (e.g. [npx, uvx, python]).
+    # EMPTY means any command is allowed (legacy). Non-empty blocks arbitrary
+    # local-process execution by configuration — a COMMAND-type MCP server whose
+    # command is not listed is refused.
+    allowed-stdio-commands: []
   # E.8 / §IX.9 — observability interop (opt-in, fail-open trace exports). Lock in
   # via capability, never via format: both are off by default and never disturb a
   # chat turn when the backend is slow or unreachable.

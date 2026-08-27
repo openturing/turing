@@ -2135,36 +2135,9 @@ work exposed, a half deliberately left out of scope, or a symmetry the fix broke
 entries have nothing in common but their origin, which is why the block carries no theme
 of its own.
 
-This family stays even with nothing open under it, and that is the point of it. Its
+This family stays with nothing open under it, and that is the point of it. Its
 predecessor was dropped the moment a ship left it childless, and an address a heading
 has used is spent for good — so the block lost its family and the next follow-up had to
-open a new one. A standing block needs a standing address; when a line lands here again
-it goes under this one.
-
-### CVI.2 An unreachable MCP server is billed to the chat path, every turn (T1037)
-
-`TurMcpToolCallbackService.createAndInitClient` builds every client with
-`.requestTimeout(Duration.ofSeconds(30))` and calls `client.initialize()` inline. A
-server that answers is cached and costs nothing again. A server that does not answer
-compounds twice.
-
-`getToolCallbacksForServers` catches the failure and does `clientCache.remove(id)`,
-which is right — a half-built client must not be served to the next caller. But the next
-resolve then tries from scratch and pays the same 30 seconds. There is no backoff and no
-memory of the failure.
-
-And this runs on the chat path: an agent's tools are resolved per turn from
-`agent.getMcpServers()`. So one unreachable server — a rotated token, a dropped VPN, a
-host restarting — adds up to 30 seconds to every turn of every conversation on every
-agent that has it attached. The user sees a chat that stopped responding; the log says
-one line about a connection.
-
-T1031 walked into this: a stub that accepted the request and then did not speak MCP took
-a four-test class from 5 seconds to 47. A test noticing what a customer would experience
-as an outage.
-
-Two separable fixes. The timeout should be configurable (`turing.mcp-client.*` already
-exists for this kind of knob) and default far below 30 seconds, because tool discovery
-on an interactive path is not a batch job. And a server that just failed should be
-remembered briefly and skipped rather than retried next turn: the agent loses its tools
-either way, and paying the timeout again buys nothing.
+open a new one. A standing block needs a standing address. Empty here means the
+follow-ups filed so far are done, not that the heading is finished; the next one goes
+under this address.

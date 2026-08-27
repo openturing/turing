@@ -37,11 +37,22 @@ public class TurMcpToolCallbackService {
     private static final String AUTHORIZATION_HEADER = "Authorization";
     private static final String BEARER_PREFIX = "Bearer ";
 
+    /** T1037 / §CVI.2 — used when the configured timeout is absent or nonsensical. */
+    private static final Duration DEFAULT_REQUEST_TIMEOUT = Duration.ofSeconds(10);
+
     private final TurMcpServerRepositoryPort mcpServerRepositoryPort;
     private final com.viglet.turing.properties.TurMcpClientProperty mcpClientProperty;
     private final com.viglet.turing.spring.security.ssrf.TurSsrfGuard ssrfGuard;
     private final com.viglet.turing.system.security.TurSecretCryptoService secretCryptoService;
     private final ConcurrentHashMap<String, CachedClient> clientCache = new ConcurrentHashMap<>();
+
+    /**
+     * T1037 / §CVI.2 — servers whose last connect failed, and until when they are
+     * skipped. Keyed by server id; the entry carries the fingerprint that failed
+     * so an admin's fix cancels the skip rather than having to outlive it.
+     */
+    private final ConcurrentHashMap<String, FailedConnection> recentFailures =
+            new ConcurrentHashMap<>();
 
     public TurMcpToolCallbackService(TurMcpServerRepositoryPort mcpServerRepositoryPort,
             com.viglet.turing.properties.TurMcpClientProperty mcpClientProperty,
@@ -58,6 +69,13 @@ public class TurMcpToolCallbackService {
      * for, so an edit to that connection is detected rather than outlived.
      */
     private record CachedClient(String fingerprint, McpSyncClient client) {
+    }
+
+    /**
+     * T1037 / §CVI.2 — a connect that failed: which connection it was, and when
+     * it may be tried again.
+     */
+    private record FailedConnection(String fingerprint, long retryAfterMillis) {
     }
 
     /**
@@ -101,11 +119,19 @@ public class TurMcpToolCallbackService {
 
         List<McpSyncClient> activeClients = new ArrayList<>();
         for (TurMcpServerDomain server : enabledServers) {
+            // T1037 / §CVI.2 — a server that just failed is skipped rather than
+            // retried on this turn: the agent loses its tools either way, and
+            // paying the connect timeout again on the chat path buys nothing.
+            if (isBackingOff(server)) {
+                continue;
+            }
             try {
                 activeClients.add(resolveClient(server));
+                recentFailures.remove(server.id());
             } catch (Exception e) {
                 log.warn("[MCP] Failed to connect to MCP server '{}': {}", server.title(), e.getMessage());
                 clientCache.remove(server.id());
+                rememberFailure(server);
             }
         }
 
@@ -146,6 +172,61 @@ public class TurMcpToolCallbackService {
         return client;
     }
 
+    /**
+     * T1037 / §CVI.2 — the configured connect/request timeout, falling back to
+     * the property's own default when a deployment set it to nothing sensible.
+     * Never zero or negative: that would make every server unreachable.
+     */
+    private Duration requestTimeout() {
+        Duration configured = mcpClientProperty.getRequestTimeout();
+        return configured == null || configured.isZero() || configured.isNegative()
+                ? DEFAULT_REQUEST_TIMEOUT
+                : configured;
+    }
+
+    /**
+     * T1037 / §CVI.2 — true when this server failed recently enough that it
+     * should be skipped instead of retried.
+     *
+     * <p>The skip is bound to the <em>connection</em> that failed, not to the
+     * server: an admin who corrects the URL, transport or credential changes the
+     * fingerprint, and the next resolve tries immediately. Fixing a rotated token
+     * must not mean waiting out a backoff.
+     */
+    private boolean isBackingOff(TurMcpServerDomain server) {
+        FailedConnection failure = recentFailures.get(server.id());
+        if (failure == null) {
+            return false;
+        }
+        if (!failure.fingerprint().equals(connectionFingerprint(server))) {
+            log.info("[MCP] Connection details changed for MCP server '{}' — retrying now",
+                    server.title());
+            recentFailures.remove(server.id());
+            return false;
+        }
+        if (System.currentTimeMillis() >= failure.retryAfterMillis()) {
+            recentFailures.remove(server.id());
+            return false;
+        }
+        log.debug("[MCP] Skipping MCP server '{}' — it failed recently and is backing off",
+                server.title());
+        return true;
+    }
+
+    /** Records a failed connect so the next turn skips it for the configured window. */
+    private void rememberFailure(TurMcpServerDomain server) {
+        long backoffMillis = mcpClientProperty.getFailureBackoff() == null
+                ? 0L
+                : mcpClientProperty.getFailureBackoff().toMillis();
+        if (backoffMillis <= 0) {
+            // Legacy: retry on every turn.
+            recentFailures.remove(server.id());
+            return;
+        }
+        recentFailures.put(server.id(), new FailedConnection(connectionFingerprint(server),
+                System.currentTimeMillis() + backoffMillis));
+    }
+
     /** Drops a cached client and closes its transport. */
     private void evict(String serverId) {
         CachedClient removed = clientCache.remove(serverId);
@@ -160,7 +241,9 @@ public class TurMcpToolCallbackService {
                 // MCP SDK 2.0.0-RC1 deprecated the Implementation(name, version)
                 // constructor in favour of the builder.
                 .clientInfo(McpSchema.Implementation.builder("turing", "2026.1").build())
-                .requestTimeout(Duration.ofSeconds(30))
+                // T1037 / §CVI.2 — was a hardcoded 30 seconds, paid on the chat
+                // path by every turn of every agent holding an unreachable server.
+                .requestTimeout(requestTimeout())
                 .build();
         client.initialize();
         log.info("[MCP] Connected to MCP server '{}' ({})", server.title(), server.connectionType());
@@ -307,6 +390,7 @@ public class TurMcpToolCallbackService {
     public void cleanup() {
         clientCache.values().forEach(cached -> closeClient(cached.client()));
         clientCache.clear();
+        recentFailures.clear();
         log.info("[MCP] All MCP clients closed");
     }
 

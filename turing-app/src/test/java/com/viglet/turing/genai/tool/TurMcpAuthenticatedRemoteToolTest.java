@@ -76,6 +76,7 @@ class TurMcpAuthenticatedRemoteToolTest {
     private TurSecretCryptoService secretCryptoService;
 
     private TurMcpToolCallbackService service;
+    private com.viglet.turing.properties.TurMcpClientProperty clientProperty;
     private HttpServer server;
 
     /** Every Authorization header the client presented, in order. */
@@ -85,8 +86,11 @@ class TurMcpAuthenticatedRemoteToolTest {
 
     @BeforeEach
     void setUp() throws IOException {
-        service = new TurMcpToolCallbackService(mcpServerRepositoryPort,
-                new com.viglet.turing.properties.TurMcpClientProperty(),
+        clientProperty = new com.viglet.turing.properties.TurMcpClientProperty();
+        // T1037 — retry every turn by default here, so the credential assertions
+        // below are not confounded by the new backoff. Its own tests set it.
+        clientProperty.setFailureBackoff(java.time.Duration.ZERO);
+        service = new TurMcpToolCallbackService(mcpServerRepositoryPort, clientProperty,
                 new com.viglet.turing.spring.security.ssrf.TurSsrfGuard(),
                 secretCryptoService);
         server = HttpServer.create(new InetSocketAddress("127.0.0.1", 0), 0);
@@ -163,6 +167,92 @@ class TurMcpAuthenticatedRemoteToolTest {
 
         assertThat(service.getToolCallbacks()).isEmpty();
         assertThat(presentedAuth).containsOnly("Bearer stale-token");
+    }
+
+    // ---- T1037 / §CVI.2 — the chat path stops paying for a dead server -------
+
+    @Test
+    @DisplayName("With a backoff, a server that just failed is not contacted again next turn")
+    void failedServerIsSkippedOnTheNextTurn() {
+        clientProperty.setFailureBackoff(java.time.Duration.ofHours(1));
+        when(secretCryptoService.decrypt("cipher")).thenReturn(TOKEN);
+        when(mcpServerRepositoryPort.findAllEnabled())
+                .thenReturn(List.of(remoteServer("cipher")));
+
+        service.getToolCallbacks();
+        int afterFirstTurn = requests.size();
+        assertThat(afterFirstTurn).isPositive();
+
+        // The second turn must not touch the endpoint at all — that is the whole
+        // point: the agent has no tools from it either way.
+        assertThat(service.getToolCallbacks()).isEmpty();
+        assertThat(requests).hasSize(afterFirstTurn);
+    }
+
+    @Test
+    @DisplayName("A zero backoff keeps the legacy behaviour of retrying every turn")
+    void zeroBackoffRetriesEveryTurn() {
+        clientProperty.setFailureBackoff(java.time.Duration.ZERO);
+        when(secretCryptoService.decrypt("cipher")).thenReturn(TOKEN);
+        when(mcpServerRepositoryPort.findAllEnabled())
+                .thenReturn(List.of(remoteServer("cipher")));
+
+        service.getToolCallbacks();
+        int afterFirstTurn = requests.size();
+        service.getToolCallbacks();
+
+        assertThat(requests).hasSizeGreaterThan(afterFirstTurn);
+    }
+
+    @Test
+    @DisplayName("Fixing the credential cancels the backoff, so an admin's edit takes effect at once")
+    void fixingTheConnectionCancelsTheBackoff() {
+        clientProperty.setFailureBackoff(java.time.Duration.ofHours(1));
+        when(secretCryptoService.decrypt("cipher-bad")).thenReturn("stale-token");
+        when(secretCryptoService.decrypt("cipher-good")).thenReturn(TOKEN);
+
+        when(mcpServerRepositoryPort.findAllEnabled())
+                .thenReturn(List.of(remoteServer("cipher-bad")));
+        service.getToolCallbacks();
+        int afterFailure = requests.size();
+        assertThat(afterFailure).isPositive();
+
+        // Same server, corrected credential: waiting out the hour would be the
+        // wrong answer to somebody who just fixed the problem.
+        when(mcpServerRepositoryPort.findAllEnabled())
+                .thenReturn(List.of(remoteServer("cipher-good")));
+        service.getToolCallbacks();
+
+        assertThat(requests).hasSizeGreaterThan(afterFailure);
+        assertThat(presentedAuth).contains("Bearer " + TOKEN);
+    }
+
+    @Test
+    @DisplayName("The default timeout is well under the 30 seconds the chat path used to pay")
+    void defaultTimeoutIsShort() {
+        var defaults = new com.viglet.turing.properties.TurMcpClientProperty();
+
+        assertThat(defaults.getRequestTimeout()).isLessThan(java.time.Duration.ofSeconds(30));
+        assertThat(defaults.getFailureBackoff()).isPositive();
+    }
+
+    @Test
+    @DisplayName("A nonsensical configured timeout falls back rather than making every server unreachable")
+    void nonsensicalTimeoutFallsBack() {
+        for (java.time.Duration bad : new java.time.Duration[] {null, java.time.Duration.ZERO,
+                java.time.Duration.ofSeconds(-5)}) {
+            clientProperty.setRequestTimeout(bad);
+            when(secretCryptoService.decrypt("cipher")).thenReturn(TOKEN);
+            when(mcpServerRepositoryPort.findAllEnabled())
+                    .thenReturn(List.of(remoteServer("cipher")));
+
+            // A zero or negative timeout would reject before the socket opened;
+            // the request reaching the stub is the proof it fell back.
+            int before = requests.size();
+            service.getToolCallbacks();
+            assertThat(requests).as("timeout %s must not stop the client connecting", bad)
+                    .hasSizeGreaterThan(before);
+        }
     }
 
     @Test
