@@ -216,6 +216,43 @@ registers, reports `status: DOWN` from `getSystemInfo` and refuses to call Adobe
 rather than sending an unauthenticated request that returns a 401 reading like an
 outage.
 
+#### The configuration cannot be checked against the index, so ask (T1045)
+
+Adobe answers a query naming a source it does not have with `totalResults: 0` — the
+same answer as a source that exists and matched nothing. So a typo in
+`turing.content-ai.sources.<site>` was indistinguishable from an empty index, and
+three sibling settings fail the same silent way: a `source-type` that does not match
+the source resolves against the wrong index, a `vector-space`/`lexical-space` the
+IndexConfig does not declare makes Adobe fall back to its default, and a facet field
+the source will not filter on returns an empty bucket list.
+
+`TurContentAiSourceCatalog` reads `GET /content-sources` and checks all four. Note it
+is the **list** endpoint, not a per-name lookup: the spec states that
+`GET /content-sources/acquisition/{name}` addresses one source only when it *is* an
+acquisition source, and that `AEM_AUTHOR`, `AEM_PUBLISH` and `CUSTOM` sources are
+"accessible through this list endpoint only" — so a per-name lookup would 404 on three
+of the four types, reading exactly like the misconfiguration it was meant to diagnose.
+
+Where the read happens, and what it costs:
+
+| Trigger | Behaviour |
+| ------- | --------- |
+| A search returns **zero results** | Diagnose once per endpoint+source and log WARN naming the available sources. A misconfiguration is permanent until somebody changes it, so repeating would bury it. A search that finds something never pays. |
+| `indexExists` | Resolves the name against the listing. An **unreadable** listing reports the source *present* — "Adobe could not be reached" is not "no such source". |
+| `listIndexes` | The real source names, with `numDocs = -1`; a `0` would read as "this source is empty". |
+| `getSystemInfo` | The tenant's sources beside the configured mapping, each marked `(NOT FOUND)` when it does not resolve. |
+
+The listing is cached per endpoint for `source-cache-seconds` (default 300) in a plain
+map rather than a Spring cache: the value is a small immutable snapshot with no
+eviction event to hook, and a cache wants a paired eviction to be worth declaring. A
+transport failure is **not** memoized — it says nothing about the source, so the next
+empty search retries.
+
+One subtlety in reading the listing: a field is filterable only when
+`filter.enabled` is `true`. Adobe's own example carries a `description` field with
+`filter: {enabled: false}`, so presence in a lexical space's `fields` array is not the
+answer.
+
 Wire coverage is `TurContentAiSearchEnginePluginTest`, which stands the Content AI
 endpoint in miniature and asserts the request bodies against Adobe's published
 OpenAPI examples — a mocked client would prove nothing about the translation,

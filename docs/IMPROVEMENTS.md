@@ -1316,31 +1316,6 @@ neutral grounding + manifest kernel is now `viglet-core-manifest`; see CHANGELOG
 these block the Dumont collection work — a sidecar
 (D10) can index into a hand-provisioned site before T382 lands.
 
-### XX.22 A wrong source name is indistinguishable from an empty index (T1045)
-
-The content source a site queries is `turing.content-ai.sources.<site>`, falling back to
-the (site, locale) core name. Both halves can be wrong in the same silent way: a typo in
-the mapping, or no mapping at all against an Adobe source that was never named after the
-Turing core.
-
-Adobe answers a query against a source it does not have, and the answer is
-`totalResults: 0`. So a misconfiguration and a genuinely empty index are the same
-observation, and the plugin offers nothing that separates them — `indexExists` returns
-whether the plugin is enabled and credentialled, a fact about the configuration file
-rather than about Adobe, and `getSystemInfo` reports `UP` on the same basis.
-
-The API has the read this needs. `GET /content-sources` lists every source regardless of
-type, and each exposes its available spaces and its searchable and filterable fields;
-`GET /content-sources/{type}/{source}` addresses one. A source name that resolves to
-nothing becomes a statement rather than an inference.
-
-There is more than a diagnostic in that listing. The filterable fields are what a facet
-request has to be built from — T1031 sends a `termBuckets` aggregate for every enabled
-Turing facet field and relies on Adobe returning an empty bucket list for a field its
-index lacks, which is tolerant but makes a mistyped facet invisible too. The same read
-would let the admin UI show what the federated source can actually filter on, rather
-than the Turing site's field list standing in.
-
 ### XX.23 The DSL fallback picks the wrong engine, quietly (T1046)
 
 `TurDslSearchService` resolves an engine's executor with

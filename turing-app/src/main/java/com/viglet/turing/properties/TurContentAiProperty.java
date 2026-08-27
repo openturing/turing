@@ -113,6 +113,14 @@ public class TurContentAiProperty {
     private int timeoutSeconds = 10;
 
     /**
+     * T1045 — how long the {@code GET /content-sources} listing is reused before
+     * being re-read. It answers a question about configuration rather than about
+     * content: the set of sources changes when somebody creates one, not when a
+     * document is published.
+     */
+    private int sourceCacheSeconds = 300;
+
+    /**
      * T1044 — ask Adobe for the matched chunks alongside each document, and carry
      * them as {@code TurSEResult.passages}. An agent grounding through
      * {@code turingSearch.sn(...)} then reads the matched passage as the hit's

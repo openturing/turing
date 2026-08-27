@@ -22,6 +22,8 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Component;
@@ -32,6 +34,8 @@ import com.viglet.turing.commons.sn.search.TurSNSiteSearchContext;
 import com.viglet.turing.contentai.TurContentAiClient;
 import com.viglet.turing.contentai.TurContentAiQueryBuilder;
 import com.viglet.turing.contentai.TurContentAiResponseMapper;
+import com.viglet.turing.contentai.TurContentAiSource;
+import com.viglet.turing.contentai.TurContentAiSourceCatalog;
 import com.viglet.turing.persistence.model.se.TurSEInstance;
 import com.viglet.turing.persistence.model.sn.TurSNSite;
 import com.viglet.turing.persistence.model.sn.field.TurSNSiteFieldExt;
@@ -98,19 +102,30 @@ public class TurContentAiSearchEnginePlugin implements TurSearchEnginePlugin {
     private final TurContentAiClient client;
     private final TurContentAiQueryBuilder queryBuilder;
     private final TurContentAiResponseMapper responseMapper;
+    private final TurContentAiSourceCatalog sourceCatalog;
     private final TurContentAiProperty property;
     private final TurSNSiteRepository turSNSiteRepository;
     private final TurSNSiteLocaleRepository turSNSiteLocaleRepository;
     private final TurSNSiteFieldExtRepository turSNSiteFieldExtRepository;
 
+    /**
+     * T1045 — endpoints whose configured source has already been diagnosed, so the
+     * zero-result check costs one listing per endpoint+source rather than one per
+     * empty search. A misconfiguration is permanent until somebody changes the
+     * configuration; repeating the warning would only bury it.
+     */
+    private final Set<String> diagnosed = ConcurrentHashMap.newKeySet();
+
     public TurContentAiSearchEnginePlugin(TurContentAiClient client,
             TurContentAiQueryBuilder queryBuilder, TurContentAiResponseMapper responseMapper,
+            TurContentAiSourceCatalog sourceCatalog,
             TurContentAiProperty property, TurSNSiteRepository turSNSiteRepository,
             TurSNSiteLocaleRepository turSNSiteLocaleRepository,
             TurSNSiteFieldExtRepository turSNSiteFieldExtRepository) {
         this.client = client;
         this.queryBuilder = queryBuilder;
         this.responseMapper = responseMapper;
+        this.sourceCatalog = sourceCatalog;
         this.property = property;
         this.turSNSiteRepository = turSNSiteRepository;
         this.turSNSiteLocaleRepository = turSNSiteLocaleRepository;
@@ -160,6 +175,10 @@ public class TurContentAiSearchEnginePlugin implements TurSearchEnginePlugin {
                     : Collections.emptyList();
             List<TurSEFacetResult> facetResults =
                     responseMapper.facetResults(response, facetFields);
+
+            if (numFound == 0) {
+                diagnoseEmptyResult(target, facetFields);
+            }
 
             return Optional.of(TurSEResults.builder()
                     .numFound(numFound)
@@ -226,6 +245,102 @@ public class TurContentAiSearchEnginePlugin implements TurSearchEnginePlugin {
     private record PagedResponse(JsonNode response, boolean reached) {
     }
 
+    // ---- Configuration diagnostics (T1045) --------------------------------
+
+    /**
+     * T1045 / §XX.22 — says why a search found nothing, once per endpoint+source.
+     *
+     * <p>Adobe answers a query naming a source it does not have with
+     * {@code totalResults: 0}, which is also what a source that exists and matched
+     * nothing answers. The two are opposite facts and the plugin could not tell
+     * them apart, so a typo in {@code turing.content-ai.sources.<site>} looked
+     * exactly like an empty index. {@code GET /content-sources} separates them, and
+     * while it is being read the rest of the configuration is worth checking
+     * against the same response — the source's type, the space names, and whether
+     * the site's facet fields are filterable at all, each of which fails the same
+     * silent way.
+     *
+     * <p>It runs on an empty result rather than on every search, and at most once
+     * per endpoint+source: a misconfiguration is permanent until the configuration
+     * changes, so repeating the warning would bury it. A failure to reach the
+     * listing is logged and forgotten — a diagnostic that throws would turn a
+     * search returning nothing into a search returning an error.
+     */
+    private void diagnoseEmptyResult(Target target, List<TurSNSiteFieldExt> facetFields) {
+        String key = target.endpointUrl() + " " + target.sourceName();
+        if (!diagnosed.add(key)) {
+            return;
+        }
+        try {
+            List<TurContentAiSource> available =
+                    sourceCatalog.sources(target.endpointUrl(), property);
+            Optional<TurContentAiSource> resolved = available.stream()
+                    .filter(source -> target.sourceName().equals(source.name()))
+                    .findFirst();
+
+            if (resolved.isEmpty()) {
+                log.warn("Content AI site '{}' searches source '{}', which this tenant does not "
+                        + "have — an empty result set here is a configuration error, not an empty "
+                        + "index. Available sources: {}. Set turing.content-ai.sources.{} to one "
+                        + "of them.", target.site().getName(), target.sourceName(),
+                        available.stream().map(TurContentAiSource::name).toList(),
+                        target.site().getName());
+                return;
+            }
+            warnOnConfigurationMismatch(target, resolved.get(), facetFields);
+        } catch (TurContentAiClient.TurContentAiException e) {
+            // Allow a retry: the listing failing is not evidence about the source.
+            diagnosed.remove(key);
+            log.warn("Content AI site '{}' returned no results and the content-source listing "
+                    + "could not be read to say why: {}", target.site().getName(), e.getMessage());
+        }
+    }
+
+    /**
+     * The three other ways the configuration can be wrong while every request
+     * still succeeds: a source type that does not match the source, a space name
+     * the source's IndexConfig does not declare (Adobe silently uses its default),
+     * and a Turing facet field the index will not filter on (Adobe returns an empty
+     * bucket list, so the facet renders as having no values).
+     */
+    private void warnOnConfigurationMismatch(Target target, TurContentAiSource source,
+            List<TurSNSiteFieldExt> facetFields) {
+        String site = target.site().getName();
+        if (StringUtils.isNotBlank(source.type())
+                && !source.type().equals(property.getSourceType())) {
+            log.warn("Content AI source '{}' is of type {} but turing.content-ai.source-type is "
+                    + "{}; a search names the type and resolves against the wrong index",
+                    source.name(), source.type(), property.getSourceType());
+        }
+        warnUnknownSpace(source.name(), "vector-space", property.getVectorSpace(),
+                source.vectorSpaces());
+        warnUnknownSpace(source.name(), "lexical-space", property.getLexicalSpace(),
+                source.lexicalSpaces());
+
+        if (!source.filterFields().isEmpty()) {
+            List<String> notFilterable = facetFields.stream()
+                    .map(TurSNSiteFieldExt::getName)
+                    .filter(name -> !source.filterFields().contains(name))
+                    .toList();
+            if (!notFilterable.isEmpty()) {
+                log.warn("Content AI source '{}' does not filter on {}, so those facets of site "
+                        + "'{}' will always render with no values. Filterable fields: {}",
+                        source.name(), notFilterable, site, source.filterFields());
+            }
+        }
+    }
+
+    private void warnUnknownSpace(String sourceName, String setting, String configured,
+            List<String> declared) {
+        if (StringUtils.isBlank(configured) || declared.isEmpty()
+                || declared.contains(configured)) {
+            return;
+        }
+        log.warn("Content AI source '{}' declares no {} named '{}' (turing.content-ai.{}); Adobe "
+                + "falls back to its default space, so relevance is not what was configured. "
+                + "Declared: {}", sourceName, setting, configured, setting, declared);
+    }
+
     @Override
     public Optional<TurSEResults> retrieveFacetResults(TurSNSiteSearchContext context,
             String facetName) {
@@ -287,7 +402,35 @@ public class TurContentAiSearchEnginePlugin implements TurSearchEnginePlugin {
         info.put("hybrid", String.valueOf(property.isHybrid()));
         info.put("maxLimit", String.valueOf(TurContentAiQueryBuilder.MAX_LIMIT));
         info.put("status", property.isEnabled() && credentialConfigured() ? "UP" : "DOWN");
+        addSourceInfo(info, seInstance);
         return info;
+    }
+
+    /**
+     * T1045 — what the tenant actually has, beside what the file says it should.
+     * This is the read an operator makes to find out that a source name is wrong,
+     * so the two are reported together and never merged: {@code sources} is
+     * Adobe's answer, {@code sourceType} is the file's.
+     */
+    private void addSourceInfo(Map<String, String> info, TurSEInstance seInstance) {
+        info.put("sourceType", property.getSourceType());
+        if (!property.isEnabled() || !credentialConfigured() || seInstance == null) {
+            return;
+        }
+        try {
+            List<TurContentAiSource> sources =
+                    sourceCatalog.sources(seInstance.getEndpointUrl(), property);
+            info.put("sources", sources.stream().map(TurContentAiSource::name)
+                    .collect(java.util.stream.Collectors.joining(", ")));
+            info.put("sourceCount", String.valueOf(sources.size()));
+            property.getSources().forEach((site, sourceName) -> {
+                boolean resolves = sources.stream()
+                        .anyMatch(source -> sourceName.equals(source.name()));
+                info.put("source." + site, sourceName + (resolves ? "" : " (NOT FOUND)"));
+            });
+        } catch (TurContentAiClient.TurContentAiException e) {
+            info.put("sources", "unavailable: " + e.getMessage());
+        }
     }
 
     private boolean credentialConfigured() {
@@ -373,20 +516,59 @@ public class TurContentAiSearchEnginePlugin implements TurSearchEnginePlugin {
     }
 
     /**
-     * Answered rather than refused: a caller asking whether the source exists is
-     * making a read, and the honest answer is that a configured, credentialled
-     * plugin can reach one. It does not probe — {@code /content-sources/{name}}
-     * would, and the callers of this method use it as a create-if-absent guard
-     * whose create arm this plugin refuses anyway.
+     * T1045 / §XX.22 — asks Adobe, rather than answering from the configuration
+     * file.
+     *
+     * <p>This used to return "the plugin is enabled and has a credential", which is
+     * a fact about {@code application.yaml} and says nothing about whether the
+     * source exists. It now resolves {@code indexName} against
+     * {@code GET /content-sources}, so a name that resolves to nothing is
+     * reportable rather than inferable from an empty result set.
+     *
+     * <p>A listing that cannot be read is <em>not</em> reported as absent: the
+     * caller would read that as "no such source" when the truth is "Adobe could
+     * not be reached", so an unreachable tenant falls back to the old
+     * configuration-level answer with a warning.
      */
     @Override
     public boolean indexExists(TurSEInstance seInstance, String indexName) {
-        return property.isEnabled() && credentialConfigured();
+        if (!property.isEnabled() || !credentialConfigured() || seInstance == null) {
+            return false;
+        }
+        try {
+            return sourceCatalog.find(seInstance.getEndpointUrl(), indexName, property).isPresent();
+        } catch (TurContentAiClient.TurContentAiException e) {
+            log.warn("Content AI content-source listing at {} could not be read, so whether '{}' "
+                    + "exists is unknown; reporting it as present rather than as missing: {}",
+                    seInstance.getEndpointUrl(), indexName, e.getMessage());
+            return true;
+        }
     }
 
+    /**
+     * T1045 — the tenant's content sources, so an admin choosing a source name can
+     * see the real ones instead of typing one.
+     *
+     * <p>{@code numDocs} is reported as {@code -1} rather than 0. Counting would
+     * mean one search per source, and a 0 here would be read as "this source is
+     * empty" — the very confusion this task exists to remove. {@code usedBySites}
+     * is empty: Turing does not own these indexes and cannot say who else queries
+     * them.
+     */
     @Override
     public List<TurSECoreInfo> listIndexes(TurSEInstance seInstance) {
-        return List.of();
+        if (!property.isEnabled() || !credentialConfigured() || seInstance == null) {
+            return List.of();
+        }
+        try {
+            return sourceCatalog.sources(seInstance.getEndpointUrl(), property).stream()
+                    .map(source -> new TurSECoreInfo(source.name(), -1L, List.of()))
+                    .toList();
+        } catch (TurContentAiClient.TurContentAiException e) {
+            log.warn("Content AI content-source listing at {} failed: {}",
+                    seInstance.getEndpointUrl(), e.getMessage());
+            return List.of();
+        }
     }
 
     @Override

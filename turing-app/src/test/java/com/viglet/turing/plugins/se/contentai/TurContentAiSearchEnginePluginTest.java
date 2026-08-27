@@ -35,6 +35,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
@@ -54,6 +55,7 @@ import com.viglet.turing.commons.sn.search.TurSNSiteSearchContext;
 import com.viglet.turing.contentai.TurContentAiClient;
 import com.viglet.turing.contentai.TurContentAiQueryBuilder;
 import com.viglet.turing.contentai.TurContentAiResponseMapper;
+import com.viglet.turing.contentai.TurContentAiSourceCatalog;
 import com.viglet.turing.persistence.model.se.TurSEInstance;
 import com.viglet.turing.persistence.model.sn.TurSNSite;
 import com.viglet.turing.persistence.model.sn.field.TurSNSiteFacetFieldEnum;
@@ -65,6 +67,7 @@ import com.viglet.turing.persistence.repository.sn.locale.TurSNSiteLocaleReposit
 import com.viglet.turing.plugins.se.TurSearchEnginePlugin;
 import com.viglet.turing.properties.TurContentAiProperty;
 import com.viglet.turing.se.result.TurSEResults;
+import com.viglet.turing.solr.bean.TurSECoreInfo;
 
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.json.JsonMapper;
@@ -143,9 +146,28 @@ class TurContentAiSearchEnginePluginTest {
     private final List<String> authHeaders = new ArrayList<>();
     private final Deque<String> responses = new ArrayDeque<>();
 
+    /** What GET /content-sources answers; a test overrides it before calling. */
+    private String sourceListing = """
+            {"items": [
+              {"name": "content-ai-articles-index", "type": "ACQUISITION",
+               "search": {
+                 "vectorSpaces": {"semantic": {"default": true}},
+                 "lexicalSpaces": {"fulltext": {"default": true, "fields": [
+                   {"field": "category", "type": "STRING", "filter": {"enabled": true}},
+                   {"field": "description", "type": "STRING", "filter": {"enabled": false},
+                    "fulltext": {"enabled": true}}
+                 ]}}
+               }},
+              {"name": "aem-assets", "type": "AEM_PUBLISH", "search": {}}
+            ]}
+            """;
+    private int sourceListingStatus = 200;
+    private final AtomicInteger sourceListingCalls = new AtomicInteger();
+
     private final TurContentAiClient client = new TurContentAiClient();
     private final TurContentAiQueryBuilder queryBuilder = new TurContentAiQueryBuilder();
     private final TurContentAiResponseMapper responseMapper = new TurContentAiResponseMapper();
+    private final TurContentAiSourceCatalog sourceCatalog = new TurContentAiSourceCatalog(client);
     private final TurContentAiProperty property = new TurContentAiProperty();
 
     @AfterEach
@@ -175,6 +197,15 @@ class TurContentAiSearchEnginePluginTest {
             byte[] payload = (body == null ? "{}" : body).getBytes(StandardCharsets.UTF_8);
             exchange.getResponseHeaders().add("Content-Type", "application/json");
             exchange.sendResponseHeaders(200, payload.length);
+            try (OutputStream out = exchange.getResponseBody()) {
+                out.write(payload);
+            }
+        });
+        server.createContext(TurContentAiClient.SOURCES_PATH, exchange -> {
+            sourceListingCalls.incrementAndGet();
+            byte[] payload = sourceListing.getBytes(StandardCharsets.UTF_8);
+            exchange.getResponseHeaders().add("Content-Type", "application/json");
+            exchange.sendResponseHeaders(sourceListingStatus, payload.length);
             try (OutputStream out = exchange.getResponseBody()) {
                 out.write(payload);
             }
@@ -209,8 +240,9 @@ class TurContentAiSearchEnginePluginTest {
         property.setToken("adobe-token");
         property.getSources().put(SITE, SOURCE);
 
-        return new TurContentAiSearchEnginePlugin(client, queryBuilder, responseMapper, property,
-                turSNSiteRepository, turSNSiteLocaleRepository, turSNSiteFieldExtRepository);
+        return new TurContentAiSearchEnginePlugin(client, queryBuilder, responseMapper,
+                sourceCatalog, property, turSNSiteRepository, turSNSiteLocaleRepository,
+                turSNSiteFieldExtRepository);
     }
 
     private static TurSNSiteFieldExt facetField(String name, int position,
@@ -667,6 +699,199 @@ class TurContentAiSearchEnginePluginTest {
         assertThat(bodies).hasSize(1);
         assertThat(results.getResults()).isEmpty();
         assertThat(results.getNumFound()).isEqualTo(5000L);
+    }
+
+    // ---- configuration diagnostics (T1045) -------------------------------
+
+    @Test
+    @DisplayName("indexExists asks Adobe rather than answering from the config file")
+    void indexExistsResolvesAgainstTheSourceListing() throws IOException {
+        String endpoint = startStub(RESPONSE_ONE_HIT);
+        var plugin = plugin(endpoint, TurSNSiteFacetFieldEnum.AND);
+        TurSEInstance instance = new TurSEInstance();
+        instance.setEndpointUrl(endpoint);
+
+        assertThat(plugin.indexExists(instance, SOURCE)).isTrue();
+        assertThat(plugin.indexExists(instance, "aem-assets")).isTrue();
+        assertThat(plugin.indexExists(instance, "a-source-nobody-created")).isFalse();
+        // One listing served all three: it is cached per endpoint.
+        assertThat(sourceListingCalls.get()).isEqualTo(1);
+    }
+
+    @Test
+    @DisplayName("An unreadable listing reports the source present, never missing")
+    void unreadableListingDoesNotReportTheSourceMissing() throws IOException {
+        String endpoint = startStub(RESPONSE_ONE_HIT);
+        var plugin = plugin(endpoint, TurSNSiteFacetFieldEnum.AND);
+        sourceListingStatus = 503;
+        TurSEInstance instance = new TurSEInstance();
+        instance.setEndpointUrl(endpoint);
+
+        // "Adobe could not be reached" is not "no such source"; a caller reading
+        // false would conclude the configuration is wrong when it may be right.
+        assertThat(plugin.indexExists(instance, SOURCE)).isTrue();
+    }
+
+    @Test
+    @DisplayName("listIndexes names the real sources, with an unknown count rather than zero")
+    void listIndexesNamesTheTenantsSources() throws IOException {
+        String endpoint = startStub(RESPONSE_ONE_HIT);
+        var plugin = plugin(endpoint, TurSNSiteFacetFieldEnum.AND);
+        TurSEInstance instance = new TurSEInstance();
+        instance.setEndpointUrl(endpoint);
+
+        var cores = plugin.listIndexes(instance);
+
+        assertThat(cores).extracting(TurSECoreInfo::name)
+                .containsExactly("content-ai-articles-index", "aem-assets");
+        // -1, not 0: a 0 would read as "this source is empty", which is the
+        // confusion this task exists to remove.
+        assertThat(cores).allSatisfy(core -> assertThat(core.numDocs()).isEqualTo(-1L));
+        assertThat(cores).allSatisfy(core -> assertThat(core.usedBySites()).isEmpty());
+    }
+
+    @Test
+    @DisplayName("An empty result on a misnamed source reads the listing once, then stops")
+    void emptyResultDiagnosesTheSourceNameOnce() throws IOException {
+        String endpoint = startStub("""
+                {"totalResults": 0, "results": []}
+                """);
+        var plugin = plugin(endpoint, TurSNSiteFacetFieldEnum.AND);
+        property.getSources().put(SITE, "content-ai-articels-index"); // transposed
+
+        plugin.retrieveSearchResults(context("cars", 1, 10, null));
+        plugin.retrieveSearchResults(context("bikes", 1, 10, null));
+        plugin.retrieveSearchResults(context("trains", 1, 10, null));
+
+        // Three empty searches, one listing: a misconfiguration is permanent until
+        // somebody changes it, so repeating the diagnostic would only bury it.
+        assertThat(sourceListingCalls.get()).isEqualTo(1);
+        assertThat(bodies).hasSize(3);
+    }
+
+    @Test
+    @DisplayName("A source that exists and matched nothing costs the same one listing")
+    void emptyResultOnAValidSourceStillChecksTheRestOfTheConfig() throws IOException {
+        String endpoint = startStub("""
+                {"totalResults": 0, "results": []}
+                """);
+        var plugin = plugin(endpoint, TurSNSiteFacetFieldEnum.AND,
+                facetField("category", 1, TurSNSiteFacetFieldEnum.DEFAULT),
+                facetField("author", 2, TurSNSiteFacetFieldEnum.DEFAULT));
+        // The listing says this source filters on `category` but not `author`, and
+        // declares no vector space called `nonexistent`.
+        property.setVectorSpace("nonexistent");
+
+        var results = plugin.retrieveSearchResults(context("cars", 1, 10, null));
+
+        assertThat(results).isPresent();
+        assertThat(results.get().getResults()).isEmpty();
+        assertThat(sourceListingCalls.get()).isEqualTo(1);
+    }
+
+    @Test
+    @DisplayName("A failed diagnostic is retried, since it says nothing about the source")
+    void failedDiagnosticIsNotRemembered() throws IOException {
+        String endpoint = startStub("""
+                {"totalResults": 0, "results": []}
+                """);
+        var plugin = plugin(endpoint, TurSNSiteFacetFieldEnum.AND);
+        sourceListingStatus = 503;
+
+        plugin.retrieveSearchResults(context("cars", 1, 10, null));
+        plugin.retrieveSearchResults(context("bikes", 1, 10, null));
+
+        // Marking it diagnosed on a transport failure would suppress the real
+        // answer for the rest of the process's life.
+        assertThat(sourceListingCalls.get()).isEqualTo(2);
+    }
+
+    @Test
+    @DisplayName("A search that finds something never pays for the listing")
+    void nonEmptyResultSkipsTheDiagnostic() throws IOException {
+        String endpoint = startStub(RESPONSE_ONE_HIT);
+
+        plugin(endpoint, TurSNSiteFacetFieldEnum.AND)
+                .retrieveSearchResults(context("cars", 1, 10, null));
+
+        assertThat(sourceListingCalls.get()).isZero();
+    }
+
+    @Test
+    @DisplayName("System info reports the real sources beside the configured mapping")
+    void systemInfoReportsSourceResolution() throws IOException {
+        String endpoint = startStub(RESPONSE_ONE_HIT);
+        var plugin = plugin(endpoint, TurSNSiteFacetFieldEnum.AND);
+        TurSEInstance instance = new TurSEInstance();
+        instance.setEndpointUrl(endpoint);
+
+        assertThat(plugin.getSystemInfo(instance))
+                .containsEntry("sourceCount", "2")
+                .containsEntry("sources", "content-ai-articles-index, aem-assets")
+                .containsEntry("source." + SITE, SOURCE)
+                .containsEntry("sourceType", "ACQUISITION");
+
+        property.getSources().put(SITE, "typo-index");
+        sourceCatalog.invalidate(endpoint);
+        assertThat(plugin.getSystemInfo(instance))
+                .containsEntry("source." + SITE, "typo-index (NOT FOUND)");
+    }
+
+    @Test
+    @DisplayName("The listing's filterable fields honour filter.enabled, not mere presence")
+    void filterableFieldsRespectTheEnabledFlag() throws IOException {
+        String endpoint = startStub(RESPONSE_ONE_HIT);
+        plugin(endpoint, TurSNSiteFacetFieldEnum.AND);
+
+        var source = sourceCatalog.find(endpoint, SOURCE, property).orElseThrow();
+
+        // Adobe's own example carries a `description` field with
+        // filter.enabled=false; counting it as filterable would report a facet as
+        // available that then renders with no values.
+        assertThat(source.filterFields()).containsExactly("category");
+        assertThat(source.fulltextFields()).containsExactly("description");
+        assertThat(source.vectorSpaces()).containsExactly("semantic");
+        assertThat(source.lexicalSpaces()).containsExactly("fulltext");
+        assertThat(source.type()).isEqualTo("ACQUISITION");
+    }
+
+    @Test
+    @DisplayName("A source with no search block yields empty spaces, not a failure")
+    void sourceWithoutSearchMetadataIsTolerated() throws IOException {
+        String endpoint = startStub(RESPONSE_ONE_HIT);
+        plugin(endpoint, TurSNSiteFacetFieldEnum.AND);
+
+        var source = sourceCatalog.find(endpoint, "aem-assets", property).orElseThrow();
+
+        assertThat(source.vectorSpaces()).isEmpty();
+        assertThat(source.filterFields()).isEmpty();
+        assertThat(source.type()).isEqualTo("AEM_PUBLISH");
+    }
+
+    @Test
+    @DisplayName("The listing is walked by cursor until it runs out")
+    void listingIsPagedByCursor() throws IOException {
+        // Two pages: the first carries a cursor, the second does not.
+        String endpoint = startStub(RESPONSE_ONE_HIT);
+        AtomicInteger page = new AtomicInteger();
+        server.removeContext(TurContentAiClient.SOURCES_PATH);
+        server.createContext(TurContentAiClient.SOURCES_PATH, exchange -> {
+            sourceListingCalls.incrementAndGet();
+            String body = page.getAndIncrement() == 0
+                    ? "{\"items\":[{\"name\":\"first\",\"type\":\"CUSTOM\"}],\"cursor\":\"c1\"}"
+                    : "{\"items\":[{\"name\":\"second\",\"type\":\"CUSTOM\"}]}";
+            byte[] payload = body.getBytes(StandardCharsets.UTF_8);
+            exchange.sendResponseHeaders(200, payload.length);
+            try (OutputStream out = exchange.getResponseBody()) {
+                out.write(payload);
+            }
+        });
+        plugin(endpoint, TurSNSiteFacetFieldEnum.AND);
+
+        assertThat(sourceCatalog.sources(endpoint, property))
+                .extracting(com.viglet.turing.contentai.TurContentAiSource::name)
+                .containsExactly("first", "second");
+        assertThat(sourceListingCalls.get()).isEqualTo(2);
     }
 
     // ---- honest refusals -------------------------------------------------

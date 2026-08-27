@@ -268,6 +268,11 @@ turing:
     # trips. Past this, the plugin returns an empty page carrying the true total.
     max-page-walk: 10
     timeout-seconds: 10
+    # T1045 — how long GET /content-sources is reused. It answers a question about
+    # configuration (which sources exist, their spaces and filterable fields), not
+    # about content, so it is read rarely: on an empty result set, and on the admin
+    # reads (source listing, system info).
+    source-cache-seconds: 300
     # T1044 — matched chunks alongside each document, carried as TurSEResult
     # passages. An agent grounding through turingSearch.sn(...) then reads the
     # matched passage as the hit's `content` rather than a whole AEM page. Off by

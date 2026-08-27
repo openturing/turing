@@ -17,10 +17,13 @@
 package com.viglet.turing.contentai;
 
 import java.net.URI;
+import java.net.URLEncoder;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.nio.charset.StandardCharsets;
 import java.time.Duration;
+import java.util.function.UnaryOperator;
 
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Component;
@@ -59,6 +62,20 @@ public class TurContentAiClient {
     /** The retrieval endpoint, appended to the SE instance's endpoint URL. */
     public static final String SEARCH_PATH = "/content-sources/search";
 
+    /**
+     * T1045 / §XX.22 — the content-source listing, appended to the same base URL.
+     *
+     * <p>This is the <em>only</em> read that answers "does this source exist" for
+     * every type. The spec is explicit that
+     * {@code GET /content-sources/acquisition/{name}} addresses one source only
+     * when it is an acquisition source: "AEM_AUTHOR, AEM_PUBLISH, and Custom
+     * sources surface automatically and are accessible through this list endpoint
+     * only". So a per-name lookup would answer for one of the four types and 404
+     * on the rest, which reads exactly like the misconfiguration it was meant to
+     * diagnose.
+     */
+    public static final String SOURCES_PATH = "/content-sources";
+
     private static final String HEADER_SUNSET = "Sunset";
 
     private final ObjectMapper objectMapper = JsonMapper.builder().build();
@@ -87,16 +104,54 @@ public class TurContentAiClient {
      *                               to "no results" instead of a 500
      */
     public JsonNode search(String baseUrl, ObjectNode body, TurContentAiProperty property) {
-        String credential = credential(property);
         String url = stripTrailingSlash(baseUrl) + SEARCH_PATH;
+        return send(url, property, request -> request
+                .header("Content-Type", "application/json")
+                .POST(HttpRequest.BodyPublishers.ofString(objectMapper.writeValueAsString(body))));
+    }
+
+    /**
+     * T1045 / §XX.22 — one page of {@code GET /content-sources}.
+     *
+     * <p>Reach for {@link TurContentAiSourceCatalog} rather than this: the listing
+     * is paginated by cursor and a caller wants the whole set, which is the
+     * catalog's job.
+     *
+     * @param cursor the {@code cursor} from the previous page, or {@code null} for
+     *               the first
+     * @param limit  page size; the API's own default applies when non-positive
+     */
+    public JsonNode listSources(String baseUrl, String cursor, int limit,
+            TurContentAiProperty property) {
+        StringBuilder url = new StringBuilder(stripTrailingSlash(baseUrl)).append(SOURCES_PATH);
+        String separator = "?";
+        if (limit > 0) {
+            url.append(separator).append("limit=").append(limit);
+            separator = "&";
+        }
+        if (StringUtils.isNotBlank(cursor)) {
+            url.append(separator).append("cursor=")
+                    .append(URLEncoder.encode(cursor, StandardCharsets.UTF_8));
+        }
+        return send(url.toString(), property, HttpRequest.Builder::GET);
+    }
+
+    /**
+     * The shared wire: credential, timeout, {@code Sunset} warning, status check
+     * and parse. The caller supplies only the method and any body, so the search
+     * POST and the source-listing GET cannot drift apart on the parts that matter
+     * — most of all the credential, where a second copy is a second place to
+     * forget it.
+     */
+    private JsonNode send(String url, TurContentAiProperty property,
+            UnaryOperator<HttpRequest.Builder> method) {
+        String credential = credential(property);
         Duration timeout = Duration.ofSeconds(Math.max(1, property.getTimeoutSeconds()));
 
-        HttpRequest.Builder request = HttpRequest.newBuilder()
+        HttpRequest.Builder request = method.apply(HttpRequest.newBuilder()
                 .uri(URI.create(url))
                 .timeout(timeout)
-                .header("Content-Type", "application/json")
-                .header("Accept", "application/json")
-                .POST(HttpRequest.BodyPublishers.ofString(objectMapper.writeValueAsString(body)));
+                .header("Accept", "application/json"));
         if (StringUtils.isNotBlank(property.getToken())) {
             request.header("Authorization", "Bearer " + property.getToken());
         } else {
