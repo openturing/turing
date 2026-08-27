@@ -253,6 +253,37 @@ One subtlety in reading the listing: a field is filterable only when
 `filter: {enabled: false}`, so presence in a lexical space's `fields` array is not the
 answer.
 
+#### The DSL executor, and the vectorless copilot (T1047)
+
+`TurDslContentAiExecutor` (in `sn/dsl/`, not here) is the fourth
+`TurDslSearchEngineExecutor`. It exists so the **vectorless copilot** reaches a
+federated site: that surface needs no embeddings — prose becomes a grounded DSL query
+over the declared field schema, the engine runs it, the LLM answers from the cited
+rows — and it was the one answer surface a Content AI site could not use, because
+everything the copilot does goes through the DSL layer.
+
+It translates what the copilot generates (`match_all`, `match`, `term`, `terms`,
+`range`, `bool`, plus `terms` aggregations) and **refuses the rest by name**. Two
+structural mismatches drive the translation:
+
+- **Scoring and filtering are separate query types.** An Elasticsearch `bool` mixes
+  them; Content AI has a non-scoring `filter` query and scoring `fulltext`/`vector`
+  queries joined by `composite`. So a `bool` is split — text clauses become the
+  composite's arms, the rest becomes one `FilterGroup` hung off them as a pre-filter.
+  A `bool` of pure filters collapses to a single `filter` query.
+- **There is no offset.** A non-zero `from` is refused rather than answered with page
+  one, which the caller could not detect.
+
+`minimum_should_match > 1` and a negated text match are refused too: a `FilterGroup`
+has no threshold, and there is no filter form of a text query. Approximating either
+changes the result set.
+
+**`match_all` is `NOT exists("__turing_match_all__")`.** The obvious shape — an empty
+`FilterGroup` — is invalid: `filters` carries `minItems: 1`. T1031 shipped that empty
+group, and nothing caught it because its only callers were `getDocumentTotal` and a
+blank query, and the test stub accepts any body. Negating a field no source can declare
+is one filter, legal, and universally true.
+
 Wire coverage is `TurContentAiSearchEnginePluginTest`, which stands the Content AI
 endpoint in miniature and asserts the request bodies against Adobe's published
 OpenAPI examples — a mocked client would prove nothing about the translation,

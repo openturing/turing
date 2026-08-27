@@ -39,6 +39,21 @@ public class TurUnsupportedEngineException extends TurApiException {
         this.engine = engine;
     }
 
+    /**
+     * T1047 — the variant for one <em>clause</em> of an API the engine otherwise
+     * serves: a Content AI site runs a DSL query, but a {@code knn} clause in it
+     * has no expression in Content AI's query DSL.
+     *
+     * <p>It names no alternative engines on purpose. Which engines support a given
+     * clause is what the compatibility matrix is for, and a list guessed here would
+     * be wrong for exactly the clauses that differ between them.
+     */
+    public TurUnsupportedEngineException(String what, String engine) {
+        super(HttpStatus.NOT_IMPLEMENTED, TurErrorTypes.UNSUPPORTED_ENGINE,
+                "%s cannot be expressed on the '%s' search engine.".formatted(what, engine));
+        this.engine = engine;
+    }
+
     /** The engine that has no implementation, for the response body. */
     public String getEngine() {
         return engine;

@@ -82,6 +82,14 @@ public class TurContentAiQueryBuilder {
     private static final String TYPE_FILTER_GROUP = "FilterGroup";
     private static final String OPERATOR_AND = "AND";
     private static final String OPERATOR_OR = "OR";
+    private static final String OPERATOR_NOT = "NOT";
+
+    /**
+     * T1047 — the field name whose <em>absence</em> stands for "every document".
+     * Chosen to be one no source could declare, so {@code NOT exists(sentinel)}
+     * cannot stop being universally true.
+     */
+    public static final String MATCH_ALL_SENTINEL = "__turing_match_all__";
 
     private final JsonNodeFactory nodes = JsonNodeFactory.instance;
 
@@ -237,15 +245,34 @@ public class TurContentAiQueryBuilder {
     }
 
     /**
-     * A "match everything" stand-in. The API has no match-all query type, so an
-     * empty {@code FilterGroup} over {@code AND} is the shape that selects every
-     * document — the same trick a SQL {@code WHERE 1=1} plays.
+     * A "match everything" stand-in. The API has no match-all query type, so this
+     * is built out of the filter DSL.
+     *
+     * <p>T1047 — it used to be an empty {@code FilterGroup} over {@code AND}, on the
+     * reasoning that no constraints means no exclusions, the way SQL's
+     * {@code WHERE 1=1} works. That is <b>invalid</b>: {@code FilterGroup.filters}
+     * carries {@code minItems: 1}, so Adobe refuses the request. Nothing caught it
+     * because the only callers were {@code getDocumentTotal} and a blank query, and
+     * the stub in the tests accepts any body.
+     *
+     * <p>What works is the negation of an impossibility: {@code NOT} over
+     * "documents that have a field called {@value #MATCH_ALL_SENTINEL}". No
+     * document has that field, so its negation is every document — one filter, and
+     * the group is legal. The sentinel is deliberately unusable as a real field
+     * name so the predicate cannot become accidentally true.
      */
     private ObjectNode matchAllQuery(TurContentAiProperty property) {
+        ObjectNode exists = nodes.objectNode();
+        exists.put(FIELD_TYPE, "ExistsFilter");
+        exists.put(FIELD_FIELD, MATCH_ALL_SENTINEL);
+
         ObjectNode group = nodes.objectNode();
         group.put(FIELD_TYPE, TYPE_FILTER_GROUP);
-        group.put(FIELD_OPERATOR, OPERATOR_AND);
-        group.set(FIELD_FILTERS, nodes.arrayNode());
+        group.put(FIELD_OPERATOR, OPERATOR_NOT);
+        ArrayNode filters = nodes.arrayNode();
+        filters.add(exists);
+        group.set(FIELD_FILTERS, filters);
+
         ObjectNode wrapper = nodes.objectNode();
         wrapper.set("filterComponent", group);
         return filterQuery(wrapper, property);

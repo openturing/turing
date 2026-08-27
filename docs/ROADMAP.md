@@ -12,10 +12,6 @@
 
 ## Block BV — The quality gate stops at the package boundary
 
-## Block R.1 — Event-driven ingestion from enterprise CMS platforms (AEM as the reference)
-
-- 📋 **T1047** (deps: T1046 ✅) **The vectorless copilot is unavailable on a federated site, the one answer surface it should fit** — The copilot runs through the DSL layer, which has no Content AI executor, so a customer gets grounded answers only by authoring a Groovy tool. → §XX.24
-
 ## Non-goals (do NOT add as tasks)
 
 Binding constraints — see [IMPROVEMENTS.md](IMPROVEMENTS.md) §I.6 (What NOT to

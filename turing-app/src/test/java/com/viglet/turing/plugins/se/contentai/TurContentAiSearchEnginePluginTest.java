@@ -316,7 +316,7 @@ class TurContentAiSearchEnginePluginTest {
     }
 
     @Test
-    @DisplayName("An empty query selects everything through an empty AND FilterGroup")
+    @DisplayName("An empty query selects everything by negating an impossibility")
     void blankQueryMatchesAll() throws IOException {
         String endpoint = startStub(RESPONSE_ONE_HIT);
 
@@ -327,8 +327,15 @@ class TurContentAiSearchEnginePluginTest {
         assertThat(query.get("type").asString()).isEqualTo("filter");
         JsonNode component = query.get("filter").get("filterComponent");
         assertThat(component.get("type").asString()).isEqualTo("FilterGroup");
-        assertThat(component.get("operator").asString()).isEqualTo("AND");
-        assertThat(component.get("filters")).isEmpty();
+
+        // T1047 — this asserted an empty `AND` group, on the reasoning that no
+        // constraints means no exclusions. Adobe would have refused it:
+        // FilterGroup.filters carries minItems: 1. The stub accepts any body, so
+        // nothing here caught it. What is valid is negating an impossibility.
+        assertThat(component.get("operator").asString()).isEqualTo("NOT");
+        assertThat(component.get("filters")).hasSize(1);
+        assertThat(component.get("filters").get(0).get("field").asString())
+                .isEqualTo(TurContentAiQueryBuilder.MATCH_ALL_SENTINEL);
     }
 
     @Test

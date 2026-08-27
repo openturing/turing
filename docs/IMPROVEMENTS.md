@@ -1316,34 +1316,6 @@ neutral grounding + manifest kernel is now `viglet-core-manifest`; see CHANGELOG
 these block the Dumont collection work — a sidecar
 (D10) can index into a hand-provisioned site before T382 lands.
 
-### XX.24 The answer surface built for this case is the one that cannot reach it (T1047)
-
-Turing ships three grounded-answer surfaces, and a federated site reaches one of them by
-accident rather than by design.
-
-`TurSNAnswerService` and the RAG chat retrieve from a **vector-store collection**.
-Nothing indexes into it on a Content AI site — Adobe holds the embeddings — so the store
-is empty and `TurDefaultAgentResolver.isRagReady` correctly reports the surface
-unavailable. That is the right answer, not a defect.
-
-The **vectorless copilot** (`TurSNKnowledgeBaseMode.VECTORLESS_STRUCTURED`) should work.
-It needs no embeddings: prose becomes a grounded DSL query over the declared field
-schema, the engine executes it, and the LLM answers strictly from the cited rows — the
-shape a federated index supports. It is unreachable: the DSL layer has no Content AI
-executor. Since T1046 that is at least *stated*, as a 501 naming the engine rather than
-a Solr query whose swallowed failure rendered as a 404.
-
-The one that does work was not designed for it. A Custom Tool calling
-`turingSearch.sn(...)` reaches the SE plugin directly, so an agent grounds on the site's
-search results, and T1044 made those carry Adobe's matched passage — but that path needs
-somebody to author a Groovy tool.
-
-So the gap is "answers only for a customer who writes a tool". What remains is the
-executor, and what to establish first is whether Content AI's query DSL can express what
-`TurDslQuery` translates to: its filter DSL is rich (`FilterGroup`, `StringFilter`,
-`NumberFilter`, `InFilter`, `ExistsFilter`) but is not Lucene syntax, and the three
-existing executors are 782, 1152 and 1506 lines.
-
 ## XXII. Agent↔UI transparency & client tools — AG-UI parity (Block W)
 
 > **Why now.** A capability review against CopilotKit's **AG-UI** protocol
