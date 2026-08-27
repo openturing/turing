@@ -84,6 +84,11 @@ public class TurGlobalExceptionHandler {
         if (ex instanceof TurProviderException tpe) {
             problem.setProperty("provider", tpe.getProvider());
         }
+        if (ex instanceof TurUnsupportedEngineException uee) {
+            // T1046 — the engine is the one fact a caller needs to act on, and
+            // parsing it back out of the message would be the wrong contract.
+            problem.setProperty("engine", uee.getEngine());
+        }
         if (ex instanceof TurQuotaExhaustedException qee) {
             // T959 — the refusal carries the exit: what ran out, when it comes
             // back, and where to go. `upgradeUrl` is absent rather than blank

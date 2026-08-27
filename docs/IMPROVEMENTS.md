@@ -1316,35 +1316,6 @@ neutral grounding + manifest kernel is now `viglet-core-manifest`; see CHANGELOG
 these block the Dumont collection work — a sidecar
 (D10) can index into a hand-provisioned site before T382 lands.
 
-### XX.23 The DSL fallback picks the wrong engine, quietly (T1046)
-
-`TurDslSearchService` resolves an engine's executor with
-`executorMap.getOrDefault(engineType, executorMap.get("solr"))`. There are three
-executors — Solr, Elasticsearch, Lucene — and the fallback exists so an unrecognised
-engine still answers.
-
-For an engine that has no executor, that fallback is not a degradation, it is the wrong
-engine. `TurDslSolrExecutor.execute` calls `initSolrInstance(siteName, locale)`, which
-builds a Solr client from **the site's own SE instance endpoint URL**. On a Content AI
-site that URL is Adobe's, so Turing issues a Solr query against Adobe's REST API.
-
-Then it disappears. The executor catches `Exception` and returns `Optional.empty()`, so
-the DSL endpoint answers exactly as it would for a site holding no matching documents.
-This is the shape T1040 found in the Elasticsearch cursor methods, where a swallowed
-refusal made an index of seven documents report as empty and an audit read that as every
-document missing.
-
-The fallback is also right in the place it was copied from.
-`TurSearchEnginePluginFactory.getPlugin` falls back to Solr with a warning, and there it
-is defensible: every plugin implements one interface, so the fallback answers the same
-questions. A DSL executor translates to a *native* query language, which is
-engine-specific by definition.
-
-So the fix is a refusal, not a better default: an engine with no executor should be
-named and refused, and the caller told which engines the DSL API serves. Whether Content
-AI then gets an executor is a separate question, and a much larger one — the three
-existing executors are 782, 1152 and 1506 lines.
-
 ### XX.24 The answer surface built for this case is the one that cannot reach it (T1047)
 
 Turing ships three grounded-answer surfaces, and a federated site reaches one of them by
@@ -1356,20 +1327,22 @@ is empty and `TurDefaultAgentResolver.isRagReady` correctly reports the surface
 unavailable. That is the right answer, not a defect.
 
 The **vectorless copilot** (`TurSNKnowledgeBaseMode.VECTORLESS_STRUCTURED`) should work.
-It needs no embeddings: prose becomes a grounded DSL query over the site's declared
-field schema, the engine executes it, and the LLM answers strictly from the cited rows —
-the shape a federated index supports. It is unreachable because it runs through the DSL
-layer, which has no Content AI executor (T1046).
+It needs no embeddings: prose becomes a grounded DSL query over the declared field
+schema, the engine executes it, and the LLM answers strictly from the cited rows — the
+shape a federated index supports. It is unreachable: the DSL layer has no Content AI
+executor. Since T1046 that is at least *stated*, as a 501 naming the engine rather than
+a Solr query whose swallowed failure rendered as a 404.
 
 The one that does work was not designed for it. A Custom Tool calling
 `turingSearch.sn(...)` reaches the SE plugin directly, so an agent grounds on the site's
-search results, and T1044 made those carry Adobe's matched passage. That path requires
+search results, and T1044 made those carry Adobe's matched passage — but that path needs
 somebody to author a Groovy tool.
 
-So the gap is not "no answers" but "answers only for a customer who writes a tool",
-while the surface built for this case sits behind a missing executor. T1046 comes first:
-a refusal beats a wrong engine. Whether Content AI's query DSL can express what
-`TurDslQuery` translates to is the thing to establish before committing.
+So the gap is "answers only for a customer who writes a tool". What remains is the
+executor, and what to establish first is whether Content AI's query DSL can express what
+`TurDslQuery` translates to: its filter DSL is rich (`FilterGroup`, `StringFilter`,
+`NumberFilter`, `InFilter`, `ExistsFilter`) but is not Lucene syntax, and the three
+existing executors are 782, 1152 and 1506 lines.
 
 ## XXII. Agent↔UI transparency & client tools — AG-UI parity (Block W)
 

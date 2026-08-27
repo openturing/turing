@@ -28,6 +28,7 @@ import org.springframework.ai.chat.prompt.Prompt;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
+import com.viglet.turing.api.exception.TurUnsupportedEngineException;
 import com.viglet.turing.commons.se.field.TurSEFieldType;
 import com.viglet.turing.commons.sn.field.TurSNFieldName;
 import com.viglet.turing.genai.catalog.planning.TurCopilotQueryPlan;
@@ -423,6 +424,12 @@ public class TurCatalogCopilotService {
                 return List.of();
             }
             return responseOpt.get().hits().hits();
+        } catch (TurUnsupportedEngineException e) {
+            // T1046 — a fail-open is right for a query that failed and wrong for
+            // an engine that cannot run queries at all: swallowing this would
+            // answer "nothing matched" for every sub-query, on every request,
+            // forever. Let it out so the caller sees the 501.
+            throw e;
         } catch (RuntimeException e) {
             log.warn("[CatalogCopilot] fan-out sub-query '{}' failed: {}", subQuery, e.getMessage());
             return List.of();

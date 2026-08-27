@@ -307,6 +307,7 @@ number" looked free but wasn't. Grepping three files (`ROADMAP.md`,
 
 ## Log (most recent first)
 
+- **T1046 SHIPPED** (Block R.1 §XX.23 — the DSL dispatch refuses an engine with no executor, 501, instead of using Solr's) — 2026-08-27.
 - **T1045 SHIPPED** (Block R.1 §XX.22 — GET /content-sources checks the source name, type, spaces and filterable fields) — 2026-08-27.
 - **T1047 FILED** (Block R.1 §XX.24 — the vectorless copilot cannot reach a federated site; deps T1046) — 2026-08-27.
 - **T1046 FILED** (Block R.1 §XX.23 — the DSL fallback answers with the Solr executor for an engine that has none) — 2026-08-27.

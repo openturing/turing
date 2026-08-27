@@ -62,6 +62,15 @@ public final class TurErrorTypes {
      * @since 2026.3.4
      */
     public static final String QUOTA_EXHAUSTED = BASE + "quota-exhausted";
+    /**
+     * T1046 — the request is well-formed and the site exists, but the search
+     * engine bound to that site has no implementation of the requested API. The
+     * response body carries {@code engine}, and the message names the engines
+     * that do serve it.
+     *
+     * @since 2026.3.4
+     */
+    public static final String UNSUPPORTED_ENGINE = BASE + "unsupported-engine";
     public static final String INTERNAL = BASE + "internal";
 
     private TurErrorTypes() {}

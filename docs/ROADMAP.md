@@ -14,8 +14,7 @@
 
 ## Block R.1 — Event-driven ingestion from enterprise CMS platforms (AEM as the reference)
 
-- 📋 **T1046** (deps: —) **A DSL query on an engine with no executor is silently answered by the Solr one** — TurDslSearchService falls back to Solr, which builds a Solr client from the site's endpoint URL and swallows the failure, so the API answers as if nothing matched. → §XX.23
-- 📋 **T1047** (deps: T1046) **The vectorless copilot is unavailable on a federated site, the one answer surface it should fit** — The copilot runs through the DSL layer, which has no Content AI executor, so a customer gets grounded answers only by authoring a Groovy tool. → §XX.24
+- 📋 **T1047** (deps: T1046 ✅) **The vectorless copilot is unavailable on a federated site, the one answer surface it should fit** — The copilot runs through the DSL layer, which has no Content AI executor, so a customer gets grounded answers only by authoring a Groovy tool. → §XX.24
 
 ## Non-goals (do NOT add as tasks)
 
