@@ -65,6 +65,30 @@ public class TurElasticsearchSearchEnginePlugin implements TurSearchEnginePlugin
     private static final String STATUS = "status";
 
 
+    /**
+     * T1040 / §CVI.5 — the field a keyset cursor sorts on.
+     *
+     * <p>Not {@code id}. {@code TurElasticsearchUtils.createIndex} maps a
+     * {@code STRING} field as {@code text} with the {@code keyword} analyzer plus a
+     * {@code .keyword} sub-field, and Elasticsearch refuses to sort on a
+     * {@code text} field at all — fielddata is disabled on them by default. Both
+     * cursor methods catch {@code Exception} and return an empty page, so the
+     * refusal did not surface as an error: the inventory reported an index holding
+     * seven documents as holding none, and an audit reads that as every document
+     * missing from the index.
+     *
+     * <p>The <em>range</em> bound deliberately stays on {@code id} itself. The
+     * sub-field carries {@code ignore_above: 256}, so an id longer than that has no
+     * keyword value and a range over the sub-field would never match it; the text
+     * field has no such limit and, with the keyword analyzer, holds the whole id as
+     * one term. Asked directly, Elasticsearch accepts a range on either and a sort
+     * on only one.
+     *
+     * @since 2026.3.4
+     */
+    private static final String ID_SORT_FIELD =
+            com.viglet.turing.commons.sn.field.TurSNFieldName.ID + ".keyword";
+
     private final TurElasticsearch turElasticsearch;
     private final TurElasticsearchInstanceProcess turElasticsearchInstanceProcess;
     private final TurSNSiteFieldExtRepository turSNSiteFieldExtRepository;
@@ -736,7 +760,7 @@ public class TurElasticsearchSearchEnginePlugin implements TurSearchEnginePlugin
                                 .query(afterIdQuery(afterId))
                                 .size(rows)
                                 .sort(so -> so.field(f -> f
-                                        .field(com.viglet.turing.commons.sn.field.TurSNFieldName.ID)
+                                        .field(ID_SORT_FIELD)
                                         .order(co.elastic.clients.elasticsearch._types.SortOrder.Asc))),
                                 (java.lang.reflect.Type) Map.class);
                         List<Map<String, Object>> docs = new java.util.ArrayList<>();
@@ -798,7 +822,7 @@ public class TurElasticsearchSearchEnginePlugin implements TurSearchEnginePlugin
                                 .trackTotalHits(t -> t.enabled(true))
                                 .source(src -> src.filter(f -> f.includes(inventoryFields())))
                                 .sort(so -> so.field(f -> f
-                                        .field(com.viglet.turing.commons.sn.field.TurSNFieldName.ID)
+                                        .field(ID_SORT_FIELD)
                                         .order(co.elastic.clients.elasticsearch._types.SortOrder.Asc))),
                                 (java.lang.reflect.Type) Map.class);
                         return toInventoryPage(response);

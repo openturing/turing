@@ -16,10 +16,6 @@
 
 - ⏳ **T1031** (deps: —) **A Turing agent cannot query an existing Adobe Content AI index** — A customer already paying the Content AI SKU cannot reuse that retrieval and has to re-vectorize the same published content in Turing. → §XX.18
 
-## Block D.11 — Tracked follow-ups
-
-- ⏳ **T1040** (deps: —) **No test ever asks Solr or Elasticsearch whether the queries their plugins build are the ones they meant** — Of 57 ITs none runs a search-engine container, so every engine-specific string is checked against a mock written from the same understanding as the code. → §CVI.5
-
 ## Non-goals (do NOT add as tasks)
 
 Binding constraints — see [IMPROVEMENTS.md](IMPROVEMENTS.md) §I.6 (What NOT to
