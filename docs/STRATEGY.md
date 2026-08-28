@@ -147,26 +147,29 @@ Cutting saves ciclo. Hesitation costs forever-maintenance.
 
 ### VIII.7 Sequencing — what to start this quarter
 
-**Convicted choices, not exhaustive list** (revised 2026-06-03):
+**Convicted choices, not exhaustive list** (revised 2026-06-03; delivery re-checked
+2026-08-28):
 
 1. ✅ **Block K — Agent CI (T285–T288)** — **shipped 2026-06-05.**
    Turned capabilities already shipped (LLM-judge + analytics + transcripts
    + T94 lint) into the trust unlock for regulated verticals: a
    non-engineer changes a prompt and a golden-set eval gate proves no
-   regression before publish. The next live anchor is now Block M (#3).
+   regression before publish.
 2. ✅/✖ **MCP pillar (Block I)** — the both-ways `/mcp` core **shipped**
    (T245–T253 + T146 + the §S:VIII.4 Groovy→MCP exporter); the *remaining*
    expansion (per-tenant SaaS endpoints + the federation directory) is
-   **cancelled** — see §S:VIII.9. The distribution bet is realized by
-   the shipped surface; no further Block I build is scheduled.
-3. **Block M — Verifiable answers (T292–T293)** — provider-agnostic
-   provenance UI over existing RAG hits. Cheap, visible, and the
-   Education/Finance trust differentiator vs source-less ChatGPT.
-4. **Block L — Cost governance (T289–T291)** — the screen that proves
-   "the bill drops 50%." Provider-agnostic, pairs with multi-tenancy (J).
-5. **T60 + T61 — Slot audit log + PII prefix** — compliance pre-req for
-   any bank/hospital conversation; also seeds Agent CI's anonymized
-   golden sets.
+   **cancelled** — see §S:VIII.9. No further Block I build is scheduled.
+3. ✅ **Block M — Verifiable answers (T292–T293)** — **shipped**, 8 entries.
+   Provider-agnostic provenance over existing RAG hits: the Education and
+   Finance trust differentiator against source-less ChatGPT.
+4. ✅ **Block L — Cost governance (T289–T291)** — **shipped**, 3 entries.
+   The screen that proves "the bill drops 50%", pairing with multi-tenancy (J).
+5. ✅ **T60 + T61 — Slot audit log + PII prefix** — **shipped** under Block
+   D.3. Compliance pre-req for any bank or hospital conversation, and the
+   seed of Agent CI's anonymized golden sets.
+
+Every convicted choice here is delivered, so this records what was bet rather than what
+is next.
 
 **Defer**: T80–T82 (Code Interpreter sandbox) shipped. Most remaining Block D/F items
 wait on a customer to ask for them twice before scheduling. Note F.6/F.13 (vendor
