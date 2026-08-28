@@ -1316,6 +1316,59 @@ neutral grounding + manifest kernel is now `viglet-core-manifest`; see CHANGELOG
 these block the Dumont collection work — a sidecar
 (D10) can index into a hand-provisioned site before T382 lands.
 
+### XX.26 Three spec bounds the translation never enforces (T1049)
+
+T1048 vendored Adobe's spec and pointed it at every body the Content AI tests produce.
+That closes the gap for shapes a test happens to build, and leaves open the one that
+matters more: the bounds the *production* translation never enforces, on input a test
+never thought to supply.
+
+Two are guarded. `TurContentAiQueryBuilder.clampLimit` holds `pagination.limit` to 50,
+and `TurDslContentAiExecutor` refuses a `FilterGroup` over 25 filters by name. Three are
+not, and each takes its value straight from a caller:
+
+- `aggregates` carries `maxItems: 50`. One aggregate is written per facet field
+  on the plugin path and per `aggs` entry on the DSL path, so a site with 51
+  facet fields emits a body Adobe refuses.
+- `composite.queries` carries `maxItems: 10`. One arm is written per
+  text-matching clause of a `bool`, so eleven `should` text clauses breach it.
+  Its `minItems: 2` end is already handled — a single arm is returned
+  unwrapped — which is why only the ceiling is left.
+- `TermBucketsAggregate.size` carries `maximum: 2000`. It is `terms.size()` from
+  the DSL request when set and the admin-configured `property.getFacetSize()`
+  otherwise, and neither is bounded anywhere.
+
+The fix should match what is there rather than invent a third convention: the executor
+throws for the filter ceiling because a query that cannot be expressed is an error,
+while the builder clamps the limit because asking for more rows than exist is not. A
+field count and a bucket size are the clamping kind; an arm the caller wrote is the
+refusing kind.
+
+### XX.27 The response half of the stub is still a yes-man (T1050)
+
+T1048 fixed one half of the wire. The Content AI stubs now refuse a request body Adobe
+would refuse, because the vendored bundle says what a request is. That same bundle
+declares `ContentSourceSearchResponse`, and nothing reads it.
+
+So the responses those stubs return are still whatever their author typed. Every test of
+`TurContentAiResponseMapper` — the hit list, the passages T1044 added, the aggregate
+buckets, `totalResults`, the paging cursor — asserts that the mapper reads a shape
+invented alongside the code that reads it. That is the exact defect T1031 shipped,
+mirrored: a test proving Turing agrees with itself.
+
+The failure it hides is quieter than a rejected request. A request Adobe refuses returns
+an error somebody sees. A response field the mapper looks for under the wrong name
+returns zero hits, an empty facet, or a cursor that never advances — a federated site
+that simply looks empty, with no exception and no log line. T1045 was filed because a
+source name resolving to nothing was an inference rather than a statement; this is the
+same silence one layer down.
+
+The direction is the mirror of T1048: validate each canned response against
+`ContentSourceSearchResponse` before the stub sends it, so a fixture that drifts from
+the contract fails at the fixture rather than in the assertion. The validator already
+takes a schema name, so this is a second constant and a call site, not a second
+mechanism.
+
 ## XXII. Agent↔UI transparency & client tools — AG-UI parity (Block W)
 
 > **Why now.** A capability review against CopilotKit's **AG-UI** protocol

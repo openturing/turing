@@ -10,6 +10,11 @@
 
 ## Block BX — The bento layer leaves the product it grew in (§XCVI)
 
+## Block R.1 — Event-driven ingestion from enterprise CMS platforms (AEM as the reference)
+
+- 📋 **T1049** (deps: —) **Three of Content AI's array bounds are unguarded, so Turing can emit a body Adobe refuses** — Only pagination.limit and FilterGroup.filters are clamped; aggregates, composite.queries and termBuckets.size take caller input verbatim, and T1048's check only sees bodies a test builds. → §XX.26
+- 📋 **T1050** (deps: —) **Every canned Content AI response a test asserts against is a shape Adobe may never send** — T1048 validates requests against the vendored bundle, which also declares ContentSourceSearchResponse; TurContentAiResponseMapper is proven only against JSON its own test author invented. → §XX.27
+
 ## Block BV — The quality gate stops at the package boundary
 
 ## Non-goals (do NOT add as tasks)
