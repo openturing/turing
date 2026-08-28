@@ -43,6 +43,7 @@ import org.mockito.quality.Strictness;
 import org.springframework.http.HttpStatus;
 
 import com.sun.net.httpserver.HttpServer;
+import com.viglet.testsupport.contentai.TurContentAiSpecValidator;
 import com.viglet.turing.api.exception.TurUnsupportedEngineException;
 import com.viglet.turing.contentai.TurContentAiClient;
 import com.viglet.turing.contentai.TurContentAiQueryBuilder;
@@ -106,8 +107,12 @@ class TurDslContentAiExecutorTest {
     void start() throws IOException {
         server = HttpServer.create(new InetSocketAddress("127.0.0.1", 0), 0);
         server.createContext(TurContentAiClient.SEARCH_PATH, exchange -> {
-            bodies.add(new String(exchange.getRequestBody().readAllBytes(),
-                    StandardCharsets.UTF_8));
+            String body = new String(exchange.getRequestBody().readAllBytes(),
+                    StandardCharsets.UTF_8);
+            // T1048 — every translated body is checked against Adobe's schema, so a
+            // translation that is merely plausible fails here rather than in production.
+            TurContentAiSpecValidator.assertValid(body, TurContentAiSpecValidator.SEARCH_REQUEST);
+            bodies.add(body);
             byte[] payload = response.getBytes(StandardCharsets.UTF_8);
             exchange.getResponseHeaders().add("Content-Type", "application/json");
             exchange.sendResponseHeaders(200, payload.length);
@@ -269,14 +274,28 @@ class TurDslContentAiExecutorTest {
     }
 
     @Test
-    @DisplayName("A non-numeric range bound is a DateFilter, taken verbatim")
+    @DisplayName("A date-only bound is widened to the instant DateFilter's format requires")
     void dateRangeBound() {
         executor.execute(SITE, LOCALE,
                 request(new TurDslQuery.Range("createdAt", "2026-01-01", null, null, null)));
 
         JsonNode filter = component(lastQuery());
         assertThat(filter.get("type").asString()).isEqualTo("DateFilter");
-        assertThat(filter.get("value").asString()).isEqualTo("2026-01-01");
+        // `DateFilter.value` is format: date-time. An Elasticsearch range on a date
+        // field is routinely written "2026-01-01" — the DSL API's own docs do — and
+        // Adobe refuses it. Sending it verbatim was this executor's first attempt;
+        // the T1048 schema check is what caught it.
+        assertThat(filter.get("value").asString()).isEqualTo("2026-01-01T00:00:00Z");
+    }
+
+    @Test
+    @DisplayName("A bound that already carries a time is passed through untouched")
+    void instantRangeBoundIsNotRewritten() {
+        executor.execute(SITE, LOCALE, request(
+                new TurDslQuery.Range("createdAt", null, null, "2026-03-01T14:30:00Z", null)));
+
+        assertThat(component(lastQuery()).get("value").asString())
+                .isEqualTo("2026-03-01T14:30:00Z");
     }
 
     @Test

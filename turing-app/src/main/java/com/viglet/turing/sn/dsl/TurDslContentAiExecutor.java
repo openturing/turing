@@ -22,6 +22,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
+import java.util.regex.Pattern;
 
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Component;
@@ -110,6 +111,9 @@ public class TurDslContentAiExecutor implements TurDslSearchEngineExecutor<Objec
 
     /** {@code FilterGroup.filters} carries {@code maxItems: 25}. */
     private static final int MAX_GROUP_FILTERS = 25;
+
+    /** A bound carrying no time, which {@code DateFilter}'s {@code date-time} refuses. */
+    private static final Pattern DATE_ONLY = Pattern.compile("\\d{4}-\\d{2}-\\d{2}");
 
     private final JsonNodeFactory nodes = JsonNodeFactory.instance;
 
@@ -469,11 +473,31 @@ public class TurDslContentAiExecutor implements TurDslSearchEngineExecutor<Objec
             filter.put(FIELD_TYPE, TYPE_NUMBER_FILTER);
             filter.put(FIELD_VALUE, number.doubleValue());
         } else {
-            // A date bound arrives as a string; DateFilter takes it verbatim.
             filter.put(FIELD_TYPE, "DateFilter");
-            filter.put(FIELD_VALUE, String.valueOf(value));
+            filter.put(FIELD_VALUE, dateTime(String.valueOf(value)));
         }
         bounds.add(filter);
+    }
+
+    /**
+     * Widens a date-only bound to the instant Content AI accepts.
+     *
+     * <p>{@code DateFilter.value} is {@code format: date-time}, and the spec spells
+     * the two forms it takes: {@code YYYY-MM-DDTHH:mm:ssZ} and
+     * {@code YYYY-MM-DDTHH:mm:ss.SSSZ}. An Elasticsearch {@code range} on a date
+     * field is routinely written {@code "gte": "2025-01-01"} — the DSL API's own
+     * documentation does — which Adobe would refuse. Sending it verbatim was this
+     * executor's first translation, and the schema check T1048 added is what
+     * caught it.
+     *
+     * <p>Midnight UTC is the right widening for both ends: {@code gte} then includes
+     * the whole named day, and {@code lt} excludes it, which is what the same bound
+     * means to Elasticsearch. Anything already carrying a time is passed through —
+     * Adobe validates the exact shape, and second-guessing a caller's instant would
+     * be worse than letting it say so.
+     */
+    private static String dateTime(String value) {
+        return DATE_ONLY.matcher(value).matches() ? value + "T00:00:00Z" : value;
     }
 
     // ---- building blocks --------------------------------------------------

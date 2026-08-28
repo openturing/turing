@@ -1,0 +1,4128 @@
+openapi: 3.0.3
+info:
+  title: Content AI APIs
+  description: |
+    API definitions for Content AI services. To configure a client to access these APIs, visit the Adobe Developer Console
+    and add the "AEM Content AI" card to your project.
+
+    **Note:** These endpoints replace the previous APIs. For documentation on the legacy endpoints, please visit [API documentation](https://developer.adobe.com/experience-cloud/experience-manager-apis/api/experimental/contentai-legacy/)
+
+    `Note : The use of these APIs is subject to co-innovation arrangements with Adobe or licensing once available for public use. Please contact your Adobe representative for more details.`
+  version: 2026.07-experimental
+servers:
+  - url: https://{bucket}.adobeaemcloud.com/adobe/experimental/aemcontentai-expires-20261231/contentAI
+    variables:
+      bucket:
+        default: ''
+        description: The bucket to use for this request, e.g. author-p12345-e123456
+security:
+  - BearerAuth: []
+tags:
+  - name: Content Sources API
+    description: |
+      The `Content Sources API` provides a unified view and lifecycle management for all searchable
+      content managed by Content AI.
+
+      **Content Source Types**:
+      * **AEM_AUTHOR**: Content sourced from an AEM Author instance (pre-publication, draft content). Surfaces automatically; no lifecycle management required.
+      * **AEM_PUBLISH**: Content sourced from an AEM Publish instance (live, published content). Surfaces automatically; no lifecycle management required.
+      * **ACQUISITION**: Content acquired using the Content AI acquisition service. Lifecycle is managed through
+        the `/content-sources/acquisition` endpoints. Removal is performed by archiving (PATCH with
+        `acquisitionConfig.status: ARCHIVED`) — content is retained for a grace period and then deleted by the system.
+      * **CUSTOM**: Content pushed directly by your systems via direct index ingestion.
+
+      **Key Features**:
+      * **Unified Discovery**: `GET /content-sources` lists all sources regardless of type — a single
+        consistent view across all Content AI-powered features.
+      * **Typed Paths**: Operations specific to a particular type of content source are grouped under
+        `/content-sources/{content-source type}`. For instance, acquisition-specific operations (runs,
+        archiving) are grouped under `/content-sources/acquisition`, making the type self-evident from the URL.
+      * **Search Metadata**: Each content source exposes its available spaces, searchable fields, and
+        filterable fields — everything needed to construct effective search queries.
+  - name: Discovery API
+    description: |
+      The `Discovery API` provides tooling to probe and validate a target site's sitemap
+      availability before creating an acquisition source.
+  - name: AI Search API
+    description: |
+      The `AI Search API` enables powerful retrieval of content from any content source.
+      It supports fulltext, semantic, and hybrid (composed) queries, with flexible filtering
+      and cursor-based pagination for navigating large result sets.
+
+      **Key Features**:
+      * **Multiple Query Types**:
+        Supports `semantic`, `fulltext`, and `filter` queries individually or in combination,
+        allowing retrieval by meaning, keywords, or structured criteria.
+
+      * **Query Composition**:
+        Enables hybrid searches by composing multiple queries — such as combining filters with
+        fulltext and vector searches — for highly precise and relevant results.
+
+      * **Flexible Filtering**:
+        Define filter groups, apply filters standalone, or combine them as pre-filters within
+        vector or fulltext queries for targeted results.
+
+      * **Cursor-Based Pagination**:
+        Efficiently navigate large result sets and sort results as needed (by score, timestamp, etc).
+
+      * **Vector Query Enhancements**:
+        For semantic queries, supports retrieval of both original documents and chunked
+        (subdocument) representations for richer result detail.
+  - name: Generative Search API
+    description: |
+      The Generative Search API provides generative search over content sources registered in the system.
+
+      Users can use this API to submit questions and get AI generated answers that are grounded in the knowledge derived from the provided content-source. 
+      There are 2 response modes that the users can choose from - blocking (synchronous) and streaming (SSE).
+paths:
+  /content-sources:
+    get:
+      security:
+        - BearerAuth: []
+        - ApiKeyAuth: []
+      operationId: listContentSources
+      summary: List content sources
+      description: |
+        Retrieve a paginated list of all content sources available for the current tenant.
+        Returns sources across all content source types (AEM_AUTHOR, AEM_PUBLISH, ACQUISITION, CUSTOM).
+        Use the `type` filter to restrict results to a specific type.
+
+        Note: only acquisition-type sources can be retrieved individually (via
+        `GET /content-sources/acquisition/{name}`). AEM_AUTHOR, AEM_PUBLISH, and Custom sources
+        surface automatically and are accessible through this list endpoint only.
+      parameters:
+        - $ref: '#/components/parameters/if-none-match'
+        - $ref: '#/components/parameters/cursor'
+        - $ref: '#/components/parameters/limit'
+        - name: type
+          in: query
+          required: false
+          description: Filter content sources by type.
+          schema:
+            $ref: '#/components/schemas/ContentSourceType'
+      responses:
+        '200':
+          description: Paginated list of content sources.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ContentSourceListPage'
+              examples:
+                content sources:
+                  $ref: '#/components/examples/list-content-sources-response'
+          headers:
+            ETag:
+              $ref: '#/components/headers/ETag'
+            Sunset:
+              $ref: '#/components/headers/SunsetHeader'
+        '304':
+          $ref: '#/components/responses/304_NotModified'
+        '401':
+          $ref: '#/components/responses/401_Unauthorized'
+        '403':
+          $ref: '#/components/responses/403_Forbidden'
+        '406':
+          $ref: '#/components/responses/406_Unacceptable'
+        '500':
+          $ref: '#/components/responses/500_InternalServerError'
+        '503':
+          $ref: '#/components/responses/503_ServiceUnavailable'
+      tags:
+        - Content Sources API
+  /content-sources/acquisition:
+    post:
+      security:
+        - BearerAuth: []
+      operationId: createAcquisitionContentSource
+      summary: Create an acquisition content source
+      description: |
+        Creates and validates a new acquisition-managed content source. The crawler will begin
+        running on the configured schedule (if enabled), or when an immediate run is triggered
+        via `POST /content-sources/acquisition/{name}/runs`.
+      requestBody:
+        description: Acquisition content source configuration.
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateAcquisitionContentSourceRequest'
+            examples:
+              create acquisition source:
+                $ref: '#/components/examples/create-acquisition-source-request'
+      responses:
+        '201':
+          description: Acquisition content source created.
+          headers:
+            Location:
+              description: URI of the created acquisition content source.
+              schema:
+                type: string
+                format: uri
+            Sunset:
+              $ref: '#/components/headers/SunsetHeader'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AcquisitionContentSource'
+              examples:
+                acquisition source:
+                  $ref: '#/components/examples/acquisition-source-response'
+        '400':
+          $ref: '#/components/responses/400_BadRequest'
+        '401':
+          $ref: '#/components/responses/401_Unauthorized'
+        '403':
+          $ref: '#/components/responses/403_Forbidden'
+        '406':
+          $ref: '#/components/responses/406_Unacceptable'
+        '409':
+          $ref: '#/components/responses/409_Conflict'
+        '415':
+          $ref: '#/components/responses/415_UnsupportedMediaType'
+        '422':
+          $ref: '#/components/responses/422_UnprocessableEntity'
+        '500':
+          $ref: '#/components/responses/500_InternalServerError'
+        '503':
+          $ref: '#/components/responses/503_ServiceUnavailable'
+      tags:
+        - Content Sources API
+    get:
+      security:
+        - BearerAuth: []
+        - ApiKeyAuth: []
+      operationId: listAcquisitionContentSources
+      summary: List acquisition content sources
+      description: |
+        Retrieve a paginated list of all acquisition-managed content sources for the current tenant.
+        Equivalent to `GET /content-sources?type=ACQUISITION` but returns the full
+        `acquisitionConfig` on each item.
+        Read operations support both IMS Bearer token (`BearerAuth`) and API key (`ApiKeyAuth`)
+        authentication, consistent with the other read operations in this API.
+      parameters:
+        - $ref: '#/components/parameters/if-none-match'
+        - $ref: '#/components/parameters/cursor'
+        - $ref: '#/components/parameters/limit'
+        - name: status
+          in: query
+          required: false
+          description: Filter by acquisition status.
+          schema:
+            $ref: '#/components/schemas/AcquisitionStatus'
+      responses:
+        '200':
+          description: Paginated list of acquisition content sources.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AcquisitionContentSourceListPage'
+          headers:
+            ETag:
+              $ref: '#/components/headers/ETag'
+            Sunset:
+              $ref: '#/components/headers/SunsetHeader'
+        '304':
+          $ref: '#/components/responses/304_NotModified'
+        '401':
+          $ref: '#/components/responses/401_Unauthorized'
+        '403':
+          $ref: '#/components/responses/403_Forbidden'
+        '406':
+          $ref: '#/components/responses/406_Unacceptable'
+        '500':
+          $ref: '#/components/responses/500_InternalServerError'
+        '503':
+          $ref: '#/components/responses/503_ServiceUnavailable'
+      tags:
+        - Content Sources API
+  /content-sources/acquisition/{name}:
+    description: |
+      Operations on a single acquisition-managed content source identified by `{name}`.
+
+      **Deletion**: There is no `DELETE` verb on this path. Removal is performed via a
+      soft-delete: PATCH `acquisitionConfig.status` to `ARCHIVED`. The system will compute
+      `deletesAt` and schedule deletion after a grace period. This design allows callers
+      to observe the archived state and confirm before content is permanently removed.
+    parameters:
+      - $ref: '#/components/parameters/contentSourceId'
+    get:
+      security:
+        - BearerAuth: []
+        - ApiKeyAuth: []
+      operationId: getAcquisitionContentSource
+      summary: Get an acquisition content source
+      description: |
+        Retrieve a single acquisition-managed content source by name, including its full
+        `acquisitionConfig`, available spaces, and searchable fields.
+      parameters:
+        - $ref: '#/components/parameters/if-none-match'
+      responses:
+        '200':
+          description: Acquisition content source details.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AcquisitionContentSource'
+              examples:
+                acquisition source:
+                  $ref: '#/components/examples/acquisition-source-response'
+          headers:
+            ETag:
+              $ref: '#/components/headers/ETag'
+            Sunset:
+              $ref: '#/components/headers/SunsetHeader'
+        '304':
+          $ref: '#/components/responses/304_NotModified'
+        '401':
+          $ref: '#/components/responses/401_Unauthorized'
+        '403':
+          $ref: '#/components/responses/403_Forbidden'
+        '404':
+          $ref: '#/components/responses/404_NotFound'
+        '406':
+          $ref: '#/components/responses/406_Unacceptable'
+        '500':
+          $ref: '#/components/responses/500_InternalServerError'
+        '503':
+          $ref: '#/components/responses/503_ServiceUnavailable'
+      tags:
+        - Content Sources API
+    put:
+      security:
+        - BearerAuth: []
+      operationId: updateAcquisitionContentSource
+      summary: Update an acquisition content source
+      description: |
+        Perform a full replacement update of an acquisition content source.
+        All mutable fields are replaced with the values provided. Fields not included in the request
+        body are cleared to their defaults.
+
+        The `name` is immutable and cannot be changed. To rename, delete and recreate.
+
+        Configuration changes take effect on the next acquisition run; see
+        `GET /content-sources/acquisition/{name}/runs/latest` for the most recent run's status.
+      parameters:
+        - $ref: '#/components/parameters/If-Match'
+      requestBody:
+        description: Updated acquisition content source configuration.
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateAcquisitionContentSourceRequest'
+      responses:
+        '200':
+          description: Updated acquisition content source.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AcquisitionContentSource'
+              examples:
+                acquisition source:
+                  $ref: '#/components/examples/acquisition-source-response'
+          headers:
+            ETag:
+              $ref: '#/components/headers/ETag'
+            Sunset:
+              $ref: '#/components/headers/SunsetHeader'
+        '400':
+          $ref: '#/components/responses/400_BadRequest'
+        '401':
+          $ref: '#/components/responses/401_Unauthorized'
+        '403':
+          $ref: '#/components/responses/403_Forbidden'
+        '404':
+          $ref: '#/components/responses/404_NotFound'
+        '406':
+          $ref: '#/components/responses/406_Unacceptable'
+        '412':
+          $ref: '#/components/responses/412_PreconditionFailed'
+        '415':
+          $ref: '#/components/responses/415_UnsupportedMediaType'
+        '422':
+          $ref: '#/components/responses/422_UnprocessableEntity'
+        '428':
+          $ref: '#/components/responses/428_PreconditionRequired'
+        '500':
+          $ref: '#/components/responses/500_InternalServerError'
+        '503':
+          $ref: '#/components/responses/503_ServiceUnavailable'
+      tags:
+        - Content Sources API
+    patch:
+      security:
+        - BearerAuth: []
+      operationId: patchAcquisitionContentSource
+      summary: Partially update an acquisition content source
+      description: |
+        Apply a partial update (JSON Merge Patch, RFC 7396) to an acquisition content source.
+        Only the fields provided in the request body are modified; all others retain their current values.
+
+        To archive a content source and stop future crawls, set `acquisitionConfig.status` to `ARCHIVED`.
+        The system will compute and set `deletesAt` automatically.
+
+        Configuration changes take effect on the next acquisition run; see
+        `GET /content-sources/acquisition/{name}/runs/latest` for the most recent run's status.
+      parameters:
+        - $ref: '#/components/parameters/If-Match'
+      requestBody:
+        description: Partial acquisition content source update.
+        required: true
+        content:
+          application/merge-patch+json:
+            schema:
+              $ref: '#/components/schemas/PatchAcquisitionContentSourceRequest'
+      responses:
+        '200':
+          description: Updated acquisition content source.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AcquisitionContentSource'
+              examples:
+                acquisition source:
+                  $ref: '#/components/examples/acquisition-source-response'
+          headers:
+            ETag:
+              $ref: '#/components/headers/ETag'
+            Sunset:
+              $ref: '#/components/headers/SunsetHeader'
+        '400':
+          $ref: '#/components/responses/400_BadRequest'
+        '401':
+          $ref: '#/components/responses/401_Unauthorized'
+        '403':
+          $ref: '#/components/responses/403_Forbidden'
+        '404':
+          $ref: '#/components/responses/404_NotFound'
+        '406':
+          $ref: '#/components/responses/406_Unacceptable'
+        '412':
+          $ref: '#/components/responses/412_PreconditionFailed'
+        '415':
+          $ref: '#/components/responses/415_UnsupportedMediaType'
+        '422':
+          $ref: '#/components/responses/422_UnprocessableEntity'
+        '428':
+          $ref: '#/components/responses/428_PreconditionRequired'
+        '500':
+          $ref: '#/components/responses/500_InternalServerError'
+        '503':
+          $ref: '#/components/responses/503_ServiceUnavailable'
+      tags:
+        - Content Sources API
+  /content-sources/acquisition/{name}/runs:
+    parameters:
+      - $ref: '#/components/parameters/contentSourceId'
+    post:
+      security:
+        - BearerAuth: []
+      operationId: triggerAcquisitionRun
+      summary: Trigger an acquisition run
+      description: |
+        Immediately trigger a crawl run for an acquisition content source, outside of its
+        configured schedule. The run will be queued and start as soon as a crawler slot is available.
+        Returns 409 if an acquisition run for this source is already in progress — concurrent runs
+        are not permitted. Wait for the current run to reach a terminal state (`COMPLETED`,
+        `COMPLETED_WITH_ERRORS`, or `FAILED`) before triggering another.
+      responses:
+        '202':
+          description: Run accepted and queued. Poll the URI in the `Location` header for status.
+          headers:
+            Location:
+              description: |
+                URI of the latest-run resource for this acquisition. Clients SHOULD poll this
+                URI to track the run's progress.
+                Note: this URI always reflects the most recent run. If a new run is triggered
+                while polling, the response will silently shift to that run's state. The 409
+                on concurrent `POST /runs` guarantees at most one run per source at a time,
+                bounding the window in which this shift can occur.
+              schema:
+                type: string
+                format: uri
+            Retry-After:
+              description: Suggested polling interval, in seconds.
+              schema:
+                type: integer
+                format: int32
+                minimum: 1
+                example: 30
+            Sunset:
+              $ref: '#/components/headers/SunsetHeader'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AcquisitionRun'
+              examples:
+                run queued:
+                  $ref: '#/components/examples/acquisition-run-queued-response'
+        '401':
+          $ref: '#/components/responses/401_Unauthorized'
+        '403':
+          $ref: '#/components/responses/403_Forbidden'
+        '404':
+          $ref: '#/components/responses/404_NotFound'
+        '406':
+          $ref: '#/components/responses/406_Unacceptable'
+        '409':
+          $ref: '#/components/responses/409_Conflict'
+        '500':
+          $ref: '#/components/responses/500_InternalServerError'
+        '503':
+          $ref: '#/components/responses/503_ServiceUnavailable'
+      tags:
+        - Content Sources API
+  /content-sources/acquisition/{name}/runs/latest:
+    parameters:
+      - $ref: '#/components/parameters/contentSourceId'
+    get:
+      security:
+        - BearerAuth: []
+        - ApiKeyAuth: []
+      operationId: getLatestAcquisitionRun
+      summary: Get the latest acquisition run
+      description: |
+        Retrieve the status and outcome of the most recent crawl run for an acquisition content source.
+        Use this to monitor progress after triggering a manual run or to check the last scheduled run.
+        Returns 204 if no acquisition run has been triggered yet for this source. Clients in the 204
+        state cannot use conditional GET (`If-None-Match`) until they receive a 200 response and
+        record its ETag.
+      parameters:
+        - $ref: '#/components/parameters/if-none-match'
+      responses:
+        '200':
+          description: Latest run details.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AcquisitionRun'
+              examples:
+                latest run:
+                  $ref: '#/components/examples/acquisition-run-response'
+          headers:
+            ETag:
+              $ref: '#/components/headers/ETag'
+            Sunset:
+              $ref: '#/components/headers/SunsetHeader'
+        '204':
+          $ref: '#/components/responses/204_NoContent'
+        '304':
+          $ref: '#/components/responses/304_NotModified'
+        '401':
+          $ref: '#/components/responses/401_Unauthorized'
+        '403':
+          $ref: '#/components/responses/403_Forbidden'
+        '404':
+          $ref: '#/components/responses/404_NotFound'
+        '406':
+          $ref: '#/components/responses/406_Unacceptable'
+        '500':
+          $ref: '#/components/responses/500_InternalServerError'
+        '503':
+          $ref: '#/components/responses/503_ServiceUnavailable'
+      tags:
+        - Content Sources API
+  /content-sources/aem-author:
+    get:
+      security:
+        - BearerAuth: []
+        - ApiKeyAuth: []
+      x-adobe-experimental: true
+      operationId: listAemAuthorContentSources
+      summary: List AEM Author content sources
+      description: |
+        Retrieve a paginated list of AEM Author content sources.
+
+        <table><tbody style="border-color: silver; border-style: outset; padding: 5px">
+          <tr>
+            <td bgcolor="powderblue">
+              <strong>This API is currently in Experimental.</strong>
+            </td>
+          </tr>
+          <tr>
+            <td>
+              Click <a href="https://developer.adobe.com/experience-cloud/experience-manager-apis/guides/how-to/#experimental-apis">here</a> to learn more about experimental APIs.
+            </td>
+          </tr>
+        </tbody></table>
+      parameters:
+        - $ref: '#/components/parameters/cursor'
+        - $ref: '#/components/parameters/limit'
+      responses:
+        '200':
+          description: Paginated list of AEM content sources.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AemAuthorContentSourceListPage'
+          headers:
+            Sunset:
+              $ref: '#/components/headers/SunsetHeader'
+        '400':
+          $ref: '#/components/responses/400_BadRequest'
+        '401':
+          $ref: '#/components/responses/401_Unauthorized'
+        '403':
+          $ref: '#/components/responses/403_Forbidden'
+        '406':
+          $ref: '#/components/responses/406_Unacceptable'
+        '500':
+          $ref: '#/components/responses/500_InternalServerError'
+        '503':
+          $ref: '#/components/responses/503_ServiceUnavailable'
+      tags:
+        - Content Sources API
+  /content-sources/aem-publish:
+    get:
+      security:
+        - BearerAuth: []
+        - ApiKeyAuth: []
+      x-adobe-experimental: true
+      operationId: listAemPublishContentSources
+      summary: List AEM Publish content sources
+      description: |
+        Retrieve a paginated list of AEM Publish content sources.
+
+        <table><tbody style="border-color: silver; border-style: outset; padding: 5px">
+          <tr>
+            <td bgcolor="powderblue">
+              <strong>This API is currently in Experimental.</strong>
+            </td>
+          </tr>
+          <tr>
+            <td>
+              Click <a href="https://developer.adobe.com/experience-cloud/experience-manager-apis/guides/how-to/#experimental-apis">here</a> to learn more about experimental APIs.
+            </td>
+          </tr>
+        </tbody></table>
+      parameters:
+        - $ref: '#/components/parameters/cursor'
+        - $ref: '#/components/parameters/limit'
+      responses:
+        '200':
+          description: Paginated list of AEM content sources.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AemPublishContentSourceListPage'
+          headers:
+            Sunset:
+              $ref: '#/components/headers/SunsetHeader'
+        '400':
+          $ref: '#/components/responses/400_BadRequest'
+        '401':
+          $ref: '#/components/responses/401_Unauthorized'
+        '403':
+          $ref: '#/components/responses/403_Forbidden'
+        '406':
+          $ref: '#/components/responses/406_Unacceptable'
+        '500':
+          $ref: '#/components/responses/500_InternalServerError'
+        '503':
+          $ref: '#/components/responses/503_ServiceUnavailable'
+      tags:
+        - Content Sources API
+  /content-sources/aem-author/{source}:
+    parameters:
+      - name: source
+        in: path
+        required: true
+        description: Name of the AEM content source.
+        schema:
+          type: string
+    get:
+      security:
+        - BearerAuth: []
+        - ApiKeyAuth: []
+      x-adobe-experimental: true
+      operationId: getAemAuthorContentSource
+      summary: Get AEM Author content source
+      description: |
+        Retrieve an AEM Author content source.
+
+        <table><tbody style="border-color: silver; border-style: outset; padding: 5px">
+          <tr>
+            <td bgcolor="powderblue">
+              <strong>This API is currently in Experimental.</strong>
+            </td>
+          </tr>
+          <tr>
+            <td>
+              Click <a href="https://developer.adobe.com/experience-cloud/experience-manager-apis/guides/how-to/#experimental-apis">here</a> to learn more about experimental APIs.
+            </td>
+          </tr>
+        </tbody></table>
+      responses:
+        '200':
+          description: The AEM content source.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AemAuthorContentSource'
+          headers:
+            Sunset:
+              $ref: '#/components/headers/SunsetHeader'
+        '401':
+          $ref: '#/components/responses/401_Unauthorized'
+        '403':
+          $ref: '#/components/responses/403_Forbidden'
+        '404':
+          $ref: '#/components/responses/404_NotFound'
+        '406':
+          $ref: '#/components/responses/406_Unacceptable'
+        '500':
+          $ref: '#/components/responses/500_InternalServerError'
+        '503':
+          $ref: '#/components/responses/503_ServiceUnavailable'
+      tags:
+        - Content Sources API
+  /content-sources/aem-author/{source}/access:
+    parameters:
+      - name: source
+        in: path
+        required: true
+        description: Name of the AEM content source.
+        schema:
+          type: string
+    put:
+      security:
+        - BearerAuth: []
+      x-adobe-experimental: true
+      operationId: setAemAuthorContentSourceAccess
+      summary: Set AEM Author content source access
+      description: |
+        Set an AEM Author content source's access. Setting `public` to `true` marks the content
+        source as public and searchable, making all of its content searchable. Setting it to `false`
+        restricts the source and excludes it from search.
+
+        <table><tbody style="border-color: silver; border-style: outset; padding: 5px">
+          <tr>
+            <td bgcolor="powderblue">
+              <strong>This API is currently in Experimental.</strong>
+            </td>
+          </tr>
+          <tr>
+            <td>
+              Click <a href="https://developer.adobe.com/experience-cloud/experience-manager-apis/guides/how-to/#experimental-apis">here</a> to learn more about experimental APIs.
+            </td>
+          </tr>
+        </tbody></table>
+      requestBody:
+        description: AEM content source access to set.
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/IndexAccess'
+      responses:
+        '204':
+          description: AEM content source access set.
+          headers:
+            Sunset:
+              $ref: '#/components/headers/SunsetHeader'
+        '400':
+          $ref: '#/components/responses/400_BadRequest'
+        '401':
+          $ref: '#/components/responses/401_Unauthorized'
+        '403':
+          $ref: '#/components/responses/403_Forbidden'
+        '404':
+          $ref: '#/components/responses/404_NotFound'
+        '415':
+          $ref: '#/components/responses/415_UnsupportedMediaType'
+        '500':
+          $ref: '#/components/responses/500_InternalServerError'
+        '503':
+          $ref: '#/components/responses/503_ServiceUnavailable'
+      tags:
+        - Content Sources API
+  /content-sources/aem-publish/{source}:
+    parameters:
+      - name: source
+        in: path
+        required: true
+        description: Name of the AEM content source.
+        schema:
+          type: string
+    get:
+      security:
+        - BearerAuth: []
+        - ApiKeyAuth: []
+      x-adobe-experimental: true
+      operationId: getAemPublishContentSource
+      summary: Get AEM Publish content source
+      description: |
+        Retrieve an AEM Publish content source.
+
+        <table><tbody style="border-color: silver; border-style: outset; padding: 5px">
+          <tr>
+            <td bgcolor="powderblue">
+              <strong>This API is currently in Experimental.</strong>
+            </td>
+          </tr>
+          <tr>
+            <td>
+              Click <a href="https://developer.adobe.com/experience-cloud/experience-manager-apis/guides/how-to/#experimental-apis">here</a> to learn more about experimental APIs.
+            </td>
+          </tr>
+        </tbody></table>
+      responses:
+        '200':
+          description: The AEM content source.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AemPublishContentSource'
+          headers:
+            Sunset:
+              $ref: '#/components/headers/SunsetHeader'
+        '401':
+          $ref: '#/components/responses/401_Unauthorized'
+        '403':
+          $ref: '#/components/responses/403_Forbidden'
+        '404':
+          $ref: '#/components/responses/404_NotFound'
+        '406':
+          $ref: '#/components/responses/406_Unacceptable'
+        '500':
+          $ref: '#/components/responses/500_InternalServerError'
+        '503':
+          $ref: '#/components/responses/503_ServiceUnavailable'
+      tags:
+        - Content Sources API
+  /content-sources/aem-publish/{source}/access:
+    parameters:
+      - name: source
+        in: path
+        required: true
+        description: Name of the AEM content source.
+        schema:
+          type: string
+    put:
+      security:
+        - BearerAuth: []
+      x-adobe-experimental: true
+      operationId: setAemPublishContentSourceAccess
+      summary: Set AEM Publish content source access
+      description: |
+        Set an AEM Publish content source's access. Setting `public` to `true` marks the content
+        source as public and searchable, making all of its content searchable. Setting it to `false`
+        restricts the source and excludes it from search.
+
+        <table><tbody style="border-color: silver; border-style: outset; padding: 5px">
+          <tr>
+            <td bgcolor="powderblue">
+              <strong>This API is currently in Experimental.</strong>
+            </td>
+          </tr>
+          <tr>
+            <td>
+              Click <a href="https://developer.adobe.com/experience-cloud/experience-manager-apis/guides/how-to/#experimental-apis">here</a> to learn more about experimental APIs.
+            </td>
+          </tr>
+        </tbody></table>
+      requestBody:
+        description: AEM content source access to set.
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/IndexAccess'
+      responses:
+        '204':
+          description: AEM content source access set.
+          headers:
+            Sunset:
+              $ref: '#/components/headers/SunsetHeader'
+        '400':
+          $ref: '#/components/responses/400_BadRequest'
+        '401':
+          $ref: '#/components/responses/401_Unauthorized'
+        '403':
+          $ref: '#/components/responses/403_Forbidden'
+        '404':
+          $ref: '#/components/responses/404_NotFound'
+        '415':
+          $ref: '#/components/responses/415_UnsupportedMediaType'
+        '500':
+          $ref: '#/components/responses/500_InternalServerError'
+        '503':
+          $ref: '#/components/responses/503_ServiceUnavailable'
+      tags:
+        - Content Sources API
+  /discovery-previews:
+    post:
+      security:
+        - BearerAuth: []
+      x-adobe-experimental: true
+      operationId: previewDiscovery
+      summary: Probe a URL for sitemaps
+      description: |
+        Probe a base URL to discover which sitemaps are available (via `robots.txt` or
+        well-known conventions) before creating an acquisition source.
+        Use this during the setup wizard to validate site coverage and confirm sitemap availability.
+
+        The probe runs synchronously and the result is ephemeral — it is not persisted
+        and cannot be retrieved via a follow-up GET. The server enforces a wall-clock budget
+        (well under 10 seconds); probes not completed within that budget produce a `PROBE_TIMEOUT`
+        or `PARTIAL` outcome in the `status` field.
+
+        <table><tbody style="border-color: silver; border-style: outset; padding: 5px">
+          <tr>
+            <td bgcolor="powderblue">
+              <strong>This API is currently in Experimental.</strong>
+            </td>
+          </tr>
+          <tr>
+            <td>
+              Click <a href="https://developer.adobe.com/experience-cloud/experience-manager-apis/guides/how-to/#experimental-apis">here</a> to learn more about experimental APIs.
+            </td>
+          </tr>
+        </tbody></table>
+      requestBody:
+        description: Discovery preview parameters.
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DiscoveryPreviewRequest'
+            examples:
+              preview:
+                $ref: '#/components/examples/discovery-preview-request'
+      responses:
+        '200':
+          description: Discovery preview result.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DiscoveryPreviewResponse'
+              examples:
+                preview result:
+                  $ref: '#/components/examples/discovery-preview-response'
+          headers:
+            Sunset:
+              $ref: '#/components/headers/SunsetHeader'
+        '400':
+          $ref: '#/components/responses/400_BadRequest'
+        '401':
+          $ref: '#/components/responses/401_Unauthorized'
+        '403':
+          $ref: '#/components/responses/403_Forbidden'
+        '406':
+          $ref: '#/components/responses/406_Unacceptable'
+        '415':
+          $ref: '#/components/responses/415_UnsupportedMediaType'
+        '422':
+          $ref: '#/components/responses/422_UnprocessableEntity'
+        '500':
+          $ref: '#/components/responses/500_InternalServerError'
+        '503':
+          $ref: '#/components/responses/503_ServiceUnavailable'
+      tags:
+        - Discovery API
+  /content-sources/search:
+    post:
+      security:
+        - BearerAuth: []
+        - ApiKeyAuth: []
+      operationId: searchContentSource
+      summary: Execute Search on a Content Source
+      description: |
+        Search for content within a specific content source using hybrid, vector, filter or fulltext search.
+
+        The content source is provided in the contentSource field in the payload and maps directly to an underlying
+        search index.
+      requestBody:
+        description: Content AI search query
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ContentSourceSearchRequest'
+            examples:
+              hybrid query:
+                $ref: '#/components/examples/search-001'
+              vector query with chunks in response:
+                $ref: '#/components/examples/search-002'
+              filter query:
+                $ref: '#/components/examples/search-003'
+        required: true
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ContentSourceSearchResponse'
+              examples:
+                search-response-001:
+                  $ref: '#/components/examples/search-response-001'
+                search-response-002:
+                  $ref: '#/components/examples/search-response-002'
+          headers:
+            Sunset:
+              $ref: '#/components/headers/SunsetHeader'
+        '400':
+          $ref: '#/components/responses/400_BadRequest'
+        '401':
+          $ref: '#/components/responses/401_Unauthorized'
+        '403':
+          $ref: '#/components/responses/403_Forbidden'
+        '406':
+          $ref: '#/components/responses/406_Unacceptable'
+        '415':
+          $ref: '#/components/responses/415_UnsupportedMediaType'
+        '422':
+          $ref: '#/components/responses/422_UnprocessableEntity'
+        '429':
+          $ref: '#/components/responses/429_TooManyRequests'
+        '500':
+          $ref: '#/components/responses/500_InternalServerError'
+        '503':
+          $ref: '#/components/responses/503_ServiceUnavailable'
+      tags:
+        - AI Search API
+  /content-sources/gensearch:
+    post:
+      security:
+        - BearerAuth: []
+        - ApiKeyAuth: []
+      operationId: genSearchContentSource
+      summary: Execute Generative Search on a Content Source
+      description: |
+        Submit a blocking generative query against a named content source.
+      requestBody:
+        description: Content source generative search request
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ContentSourceQueryRequest'
+            examples:
+              basic:
+                $ref: '#/components/examples/gensearch-request-001'
+      responses:
+        '200':
+          description: Successful generative search response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ContentSourceQueryResult'
+              examples:
+                response:
+                  $ref: '#/components/examples/gensearch-response-001'
+          headers:
+            Sunset:
+              $ref: '#/components/headers/SunsetHeader'
+        '400':
+          $ref: '#/components/responses/400_BadRequest'
+        '401':
+          $ref: '#/components/responses/401_Unauthorized'
+        '403':
+          $ref: '#/components/responses/403_Forbidden'
+        '406':
+          $ref: '#/components/responses/406_Unacceptable'
+        '415':
+          $ref: '#/components/responses/415_UnsupportedMediaType'
+        '422':
+          $ref: '#/components/responses/422_UnprocessableEntity'
+        '429':
+          $ref: '#/components/responses/429_TooManyRequests'
+        '500':
+          $ref: '#/components/responses/500_InternalServerError'
+        '503':
+          $ref: '#/components/responses/503_ServiceUnavailable'
+      tags:
+        - Generative Search API
+  /content-sources/gensearch/stream:
+    post:
+      security:
+        - BearerAuth: []
+        - ApiKeyAuth: []
+      operationId: genSearchStreamContentSource
+      summary: Execute Generative Search Stream on a Content Source
+      description: |
+        Submit a streaming generative query against a named content source via Server-Sent Events (SSE).
+      requestBody:
+        description: Content source generative search request
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ContentSourceQueryRequest'
+            examples:
+              basic:
+                $ref: '#/components/examples/gensearch-request-001'
+      responses:
+        '200':
+          description: |
+            Server-Sent Events stream containing `data` object with:
+            - `type="START"` — initial event with query
+            - `type="STREAMING"` — partial answer chunks
+            - `type="END"` — final result with links
+            - `type="ERROR"` — error message in `result`
+          content:
+            text/event-stream:
+              schema:
+                type: string
+                description: |
+                  Stream of Server-Sent Events where each event contains:
+                  - event: "message"
+                  - data: JSON-serialized result object
+              examples:
+                start:
+                  $ref: '#/components/examples/gensearch-stream-start'
+                streaming:
+                  $ref: '#/components/examples/gensearch-stream-streaming'
+                end:
+                  $ref: '#/components/examples/gensearch-stream-end'
+                error:
+                  $ref: '#/components/examples/gensearch-stream-error'
+          headers:
+            Sunset:
+              $ref: '#/components/headers/SunsetHeader'
+        '400':
+          $ref: '#/components/responses/400_BadRequest'
+        '401':
+          $ref: '#/components/responses/401_Unauthorized'
+        '403':
+          $ref: '#/components/responses/403_Forbidden'
+        '406':
+          $ref: '#/components/responses/406_Unacceptable'
+        '415':
+          $ref: '#/components/responses/415_UnsupportedMediaType'
+        '422':
+          $ref: '#/components/responses/422_UnprocessableEntity'
+        '429':
+          $ref: '#/components/responses/429_TooManyRequests'
+        '500':
+          $ref: '#/components/responses/500_InternalServerError'
+        '503':
+          $ref: '#/components/responses/503_ServiceUnavailable'
+      tags:
+        - Generative Search API
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: |
+        Bearer token authentication for full access.
+        Returns all content sources - all public and the private ones accessible to the user.
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-Api-Key
+      description: |
+        API key authentication for read-only access to public content sources.
+        Returns only content sources with public access enabled.
+  parameters:
+    if-none-match:
+      name: If-None-Match
+      description: |
+        The `If-None-Match` header field makes the request method conditional on a recipient cache or origin server either
+        not having any current representation of the target resource, when the field value is "*", or having a selected
+        representation with an entity tag that does not match any of those listed in the field value.
+
+        For more details, please head over to [RFC9110](https://www.rfc-editor.org/rfc/rfc9110.html#name-if-none-match).
+      in: header
+      required: false
+      schema:
+        type: string
+    cursor:
+      in: query
+      name: cursor
+      description: |
+        When the number of results for a request exceeds the allowed limit, the response will include a `cursor`.  That value can then be sent via this parameter on a subsequent request to retrieve the next set of items.
+      schema:
+        $ref: '#/components/schemas/Cursor'
+    limit:
+      in: query
+      name: limit
+      description: |
+        For a paginated request, this parameter defines the maximum number of items to retrieve.
+      schema:
+        $ref: '#/components/schemas/Limit'
+    contentSourceId:
+      name: name
+      in: path
+      required: true
+      description: Name of the content source.
+      schema:
+        type: string
+        example: my-website
+    If-Match:
+      name: If-Match
+      description: |
+        The `If-Match` header field makes the request method conditional on the recipient origin server either having at least
+        one current representation of the target resource, when the field value is "*", or having a current representation of
+        the target resource that has an entity tag matching a member of the list of entity tags provided in the field value.
+
+        For more details, please head over to [RFC9110](https://www.rfc-editor.org/rfc/rfc9110.html#name-if-match).
+      in: header
+      required: true
+      schema:
+        type: string
+        description: The value of an `ETag` received for a previous `HEAD` or `GET` request to this resource.
+  schemas:
+    Cursor:
+      description: |
+        A cursor is an opaque string that can be used in API calls which support paginating the response. A non-existent cursor
+        signifies that the returned list does not have more elements.
+      type: string
+      minLength: 1
+    Limit:
+      description: |
+        For a paginated request, this parameter defines the maximum number of items to retrieve.
+      type: integer
+      format: int32
+      minimum: 1
+      maximum: 50
+    ContentSourceType:
+      type: string
+      minLength: 1
+      description: |
+        The type of the content source.
+        * AEM_AUTHOR: Content sourced from an AEM Author instance (pre-publication, draft content).
+        * AEM_PUBLISH: Content sourced from an AEM Publish instance (live, published content).
+        * ACQUISITION: Content acquired using the Content AI acquisition service, ingested based on
+                       acquisition configs defined for the tenant.
+        * CUSTOM: Content pushed by the client through direct index ingestion.
+      enum:
+        - AEM_AUTHOR
+        - AEM_PUBLISH
+        - ACQUISITION
+        - CUSTOM
+    VectorSpaceView:
+      type: object
+      description: Public view of a vector space configuration
+      properties:
+        description:
+          type: string
+          description: |
+            A short summary to describe the space. This will be used to determine if a
+            given space can be used for a query or not.
+        default:
+          type: boolean
+          description: |
+            Whether this is the default space. Exactly one space must be marked as
+            default. If only one space is configured, it will be marked as default
+            automatically.
+    PublicFieldConfig:
+      type: object
+      required:
+        - type
+        - field
+      discriminator:
+        propertyName: type
+        mapping:
+          STRING: '#/components/schemas/PublicStringFieldConfig'
+          BOOLEAN: '#/components/schemas/PublicFieldConfig'
+          DOUBLE: '#/components/schemas/PublicFieldConfig'
+          LONG: '#/components/schemas/PublicFieldConfig'
+          DATE: '#/components/schemas/PublicFieldConfig'
+      properties:
+        type:
+          $ref: '#/components/schemas/IndexFieldType'
+          type: string
+          description: Data type of the field
+        field:
+          type: string
+          minLength: 1
+          description: |
+            Name of the field to be used in search.  
+            **NOTE: field name should not start with `:`**
+    FilterConfig:
+      type: object
+      required:
+        - enabled
+      description: Filter Configuration for an index field
+      properties:
+        enabled:
+          type: boolean
+          description: Enable filter on this field
+    StringFilterConfig:
+      type: object
+      allOf:
+        - $ref: '#/components/schemas/FilterConfig'
+    Analyzers:
+      type: string
+      minLength: 1
+      description: |
+        Available analyzers:
+        - STANDARD: Based on "Unicode Text Segmentation algorithm"
+        - FULLTEXT_ANALYZER: Custom word delimiter tokenization for enhanced search matching.  
+            
+            How it works:  
+            1. Grammar based Tokenization (based on the Unicode Text Segmentation algorithm, as specified in [Unicode Standard Annex #29](https://unicode.org/reports/tr29/)) is performed
+            2. For Latin scripts, the tokenized sections are converted to lowercase text
+            3. Text is split on punctuations (`.`, `_`, `-`, `/`, `'`, ` `, etc.), and the English-language possessive (`'s`) is dropped altogether
+            
+            Examples:  
+            - "iPhone12Pro" -> ["iphone12pro"]
+            - "MacBook-Pro" -> ["macbook", "pro"]
+            - "WiFi2.4GHz" -> ["wifi2", "4ghz"]
+            - "HTTP/HTTPS" -> ["http", "https"]
+            - "user_id" -> ["user", "id"]
+            - "getUserProfile" -> ["getuserprofile"]
+            - "John's" -> ["john"]
+            - "iPhone ANDROID Samsung" -> ["iphone", "android", "samsung"]
+        - FULLTEXT_ANALYZER_WITH_STEMMER: Fulltext analyzer with stemming.
+
+            How it works:
+            This analyzer is same as FULLTEXT_ANALYZER, but with an additional stemming step.
+            Stemming reduces words to their root form, which can improve search matching by allowing different forms of a word to be treated as equivalent.
+            Examples:
+            - "the foxes jumping quickly" -> ["the", "fox", "jump", "quick"]
+            - "running" -> ["run"]
+            
+      enum:
+        - STANDARD
+        - FULLTEXT_ANALYZER
+        - FULLTEXT_ANALYZER_WITH_STEMMER
+    AnalyzerConfig:
+      type: object
+      required:
+        - name
+      description: 'Analyzer configuration for index field.  '
+      properties:
+        name:
+          $ref: '#/components/schemas/Analyzers'
+          type: string
+          default: STANDARD
+    FulltextConfig:
+      type: object
+      required:
+        - enabled
+      description: Configure fulltext search on the field
+      properties:
+        enabled:
+          type: boolean
+          description: Enable fulltext query on this field
+        analyzer:
+          $ref: '#/components/schemas/AnalyzerConfig'
+    SubfieldConfig:
+      type: object
+      required:
+        - name
+      properties:
+        name:
+          type: string
+          minLength: 1
+          description: |
+            Name of the subfield. This will be used in queries to search content analysed by different analysers.
+            Refer search query example.  
+            **NOTE: field name should not start with `:`**
+        analyzer:
+          $ref: '#/components/schemas/AnalyzerConfig'
+    PublicStringFieldConfig:
+      type: object
+      allOf:
+        - $ref: '#/components/schemas/PublicFieldConfig'
+      properties:
+        filter:
+          $ref: '#/components/schemas/StringFilterConfig'
+        fulltext:
+          $ref: '#/components/schemas/FulltextConfig'
+        subfields:
+          type: array
+          items:
+            $ref: '#/components/schemas/SubfieldConfig'
+          description: To configure multiple analyzers on a field we can configure subfields. These subfields then can be used to query on content analysed by different analyzers
+    IndexFieldType:
+      type: string
+      enum:
+        - STRING
+        - BOOLEAN
+        - DOUBLE
+        - DATE
+        - LONG
+    LexicalSpaceView:
+      type: object
+      description: Public view of a lexical space configuration
+      properties:
+        description:
+          type: string
+          description: |
+            A short summary to describe the space. This will be used to determine if a
+            given space can be used for a query or not.
+        fields:
+          type: array
+          items:
+            $ref: '#/components/schemas/PublicFieldConfig'
+          description: |
+            List of fields to be used for lexical search. If not specified, all fields
+            will be used for lexical search.
+        default:
+          type: boolean
+          description: |
+            Whether this is the default space. Exactly one space must be marked as
+            default. If only one space is configured, it will be marked as default
+            automatically.
+    IndexAccess:
+      type: object
+      properties:
+        public:
+          type: boolean
+          description: |
+            Whether this index is publicly accessible (anonymous access allowed).
+            When true, the index can be accessed by anonymous users (with X-Api-Key only, no Bearer token).
+            When false (default), the index requires authentication via Bearer token.
+    SourceConfig:
+      type: object
+      description: Public view of an index configuration
+      properties:
+        vectorSpaces:
+          type: object
+          additionalProperties:
+            $ref: '#/components/schemas/VectorSpaceView'
+          description: Vector spaces configuration
+        lexicalSpaces:
+          type: object
+          additionalProperties:
+            $ref: '#/components/schemas/LexicalSpaceView'
+          description: Lexical spaces configuration
+        version:
+          type: string
+          description: Version of the IndexConfig
+        access:
+          $ref: '#/components/schemas/IndexAccess'
+          type: object
+          description: |
+            Access control configuration for this index.
+            If not set (null), defaults to private access (public=false).
+            An index can be declared public only at the time of creation. If an index has been created as private, 
+            it cannot be changed to public later. The opposite however is allowed.
+    ContentSource:
+      type: object
+      description: |
+        A unified view of a searchable content source managed by Content AI.
+        Acquisition-type sources can be created and managed via
+        `/content-sources/acquisition`; AEM and Custom sources surface automatically
+        based on their type and are not modified through this API.
+      required:
+        - name
+        - type
+      properties:
+        name:
+          type: string
+          minLength: 1
+          description: |
+            Slug identifier for the content source.
+            Used as the unique key in paths and references.
+          example: example-website
+        description:
+          type: string
+          maxLength: 500
+          description: Human-readable description of this content source.
+          example: Crawls marketing pages of example.com for product content.
+        type:
+          readOnly: true
+          allOf:
+            - $ref: '#/components/schemas/ContentSourceType'
+          description: |
+            Discriminator for the kind of content source. Set by the server based on the
+            creation path; never accepted in request bodies.
+        createdAt:
+          type: string
+          format: date-time
+          minLength: 1
+          description: Timestamp when the content source was created.
+          example: '2026-02-15T10:00:00Z'
+        updatedAt:
+          type: string
+          format: date-time
+          minLength: 1
+          description: Timestamp of the last modification.
+          example: '2026-03-01T14:30:00Z'
+        config:
+          type: object
+          description: |
+            Configuration for this content source, including available spaces and
+            searchable fields. This is a read-only view of the search capabilities
+            configured for this content source.
+          $ref: '#/components/schemas/SourceConfig'
+    ContentSourceListPage:
+      type: object
+      description: Paginated list of content sources.
+      required:
+        - items
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/ContentSource'
+        cursor:
+          $ref: '#/components/schemas/Cursor'
+    ProblemDetails:
+      description: A [RFC7807](https://www.rfc-editor.org/rfc/rfc7807) JSON Problem Details Object
+      type: object
+      properties:
+        type:
+          type: string
+          description: A URI reference [RFC3986](https://www.rfc-editor.org/rfc/rfc3986) to a URL, which, when dereferenced, provides human readable documentation for the problem type.  The problem type may be equivalent to the `status` or may be a "sub-type".  This URI is not intended to be parsed by clients; rather it should be treated as an opaque string that uniquely represents the error condition as-is.
+          minLength: 1
+        title:
+          type: string
+          description: A short, human-readable summary of the problem type.
+          minLength: 1
+        status:
+          type: integer
+          description: The HTTP status code ([RFC9110], Section 15) generated by the origin server for this occurrence of the problem.
+          minLength: 1
+        detail:
+          type: string
+          description: A human-readable explanation specific to this occurrence of the problem.
+          minLength: 1
+        requestId:
+          type: string
+          description: |
+            A unique identifier that is assigned to the request, either by the API caller or by the service itself.
+          minLength: 1
+      required:
+        - type
+        - title
+        - status
+        - detail
+    AcquisitionStatus:
+      type: string
+      description: Lifecycle status of the acquisition config.
+      enum:
+        - ACTIVE
+        - ARCHIVED
+    FilterLinksConfig:
+      type: object
+      description: |
+        URL filtering rules applied to links discovered during crawl. When enabled,
+        discovered URLs must match at least one `include` pattern (if any are given)
+        and must not match any `exclude` pattern.
+      properties:
+        enabled:
+          type: boolean
+          description: Whether URL filtering is active.
+          default: true
+        include:
+          type: array
+          description: Regex patterns for URLs to include.
+          maxItems: 100
+          items:
+            type: string
+            minLength: 1
+            maxLength: 500
+          example:
+            - ^https://example\.com/.*
+        exclude:
+          type: array
+          description: Regex patterns for URLs to exclude.
+          maxItems: 100
+          items:
+            type: string
+            minLength: 1
+            maxLength: 500
+          example:
+            - .*\/login$
+            - .*\/admin$
+    DiscoverLinksConfig:
+      type: object
+      description: |
+        Link-following discovery settings. When enabled, the crawler follows links
+        found in fetched pages up to `maxDepth` levels from the seed URLs.
+      properties:
+        enabled:
+          type: boolean
+          description: Whether to discover pages by following links.
+          default: false
+        maxDepth:
+          type: integer
+          format: int32
+          description: |
+            Maximum link depth to follow. Capped at 3 to bound crawl fan-out; cap may
+            be raised in future without breaking changes.
+          minimum: 1
+          maximum: 3
+          default: 1
+          example: 2
+    FetchMode:
+      type: string
+      description: |
+        Controls how the acquisition worker fetches web pages during content discovery.
+
+        - `LIGHTWEIGHT_HTTP` (default): Standard HTTP fetch using simple GET requests.
+          Suitable for most server-rendered websites. Fast and resource-efficient.
+        - `HEADLESS`: Fetches pages using a headless Chromium browser (Playwright).
+          Required for JavaScript-heavy sites (SPAs, React/Angular/Vue) where content
+          is rendered client-side. More resource-intensive than lightweight HTTP.
+        - `ADAPTIVE`: Automatically determines the optimal fetch mode per site. The
+          acquisition worker samples a subset of URLs using both modes, compares the
+          results, and selects the mode that yields the most complete content.
+      enum:
+        - LIGHTWEIGHT_HTTP
+        - HEADLESS
+        - ADAPTIVE
+      default: LIGHTWEIGHT_HTTP
+      example: LIGHTWEIGHT_HTTP
+    Discovery:
+      type: object
+      description: |
+        Discovery configuration for content acquisition. Controls how the
+        acquisition worker enumerates which URLs to crawl before any page is
+        fetched. You can supply explicit sitemap URLs, a list of seed
+        `sourceUrls`, or enable link discovery to follow links from the seeds
+        up to a bounded depth. At least one of `sitemaps`, `sourceUrls`, or
+        `discoverLinks.enabled` must yield URLs, otherwise the run produces
+        zero pages.
+      properties:
+        sitemaps:
+          type: array
+          description: Explicit sitemap URLs. If omitted, the crawler auto-discovers sitemaps via robots.txt.
+          maxItems: 50
+          items:
+            type: string
+            minLength: 1
+            format: uri
+          example:
+            - https://example.com/sitemap.xml
+        sourceUrls:
+          type: array
+          description: Additional URLs to include in acquisition beyond sitemap and link discovery.
+          maxItems: 1000
+          items:
+            type: string
+            minLength: 1
+            format: uri
+          example:
+            - https://example.com/products/special-page
+        filterLinks:
+          $ref: '#/components/schemas/FilterLinksConfig'
+        discoverLinks:
+          $ref: '#/components/schemas/DiscoverLinksConfig'
+        fetchMode:
+          $ref: '#/components/schemas/FetchMode'
+        includePdfs:
+          type: boolean
+          description: Whether to include PDF documents in the acquisition.
+          default: false
+        customHeaders:
+          type: object
+          description: |
+            Custom HTTP headers sent with crawler requests.
+            Allowed header names are `User-Agent` and `X-Api-Key` (case-insensitive).
+            Header names not on this allowlist will be rejected by the server with a 400 error.
+          additionalProperties:
+            type: string
+        maxResourcesPerRun:
+          type: integer
+          format: int32
+          minimum: 1
+          maximum: 10000
+          description: |
+            Per-run upper bound on resources (URLs for website sources) processed.
+            Useful for sampling a site before committing to a full acquisition, or
+            for permanently capping crawl scope on large sites. Discovery is not
+            resumed across runs — each run starts from `baseUrl`, so this is an
+            upper bound per run, not a paging window into the site.
+          example: 1000
+    Schedule:
+      type: object
+      description: |
+        Scheduling configuration for periodic content acquisition. Optional — when
+        omitted or `enabled: false` (the default), acquisition only runs on-demand
+        via `POST /content-sources/acquisition/{name}/runs`.
+      properties:
+        enabled:
+          type: boolean
+          description: Whether the schedule is active.
+          default: false
+        cronSchedule:
+          type: string
+          minLength: 1
+          description: |
+            Cron expression (UTC, 5-field: minute hour day-of-month month day-of-week)
+            defining when to start a run. Examples:
+              * `0 2 * * *`   — daily at 02:00 UTC
+              * `0 2 * * 0`   — weekly, Sundays at 02:00 UTC
+              * `0 */6 * * *` — every 6 hours
+            Only honoured when `enabled: true`; otherwise runs must be started via
+            `POST /content-sources/acquisition/{name}/runs`.
+          example: 0 2 * * 0
+    FieldSpec:
+      type: object
+      description: |
+        Explicit field-with-type entry used in `FieldMapping`. Use this form to
+        override the type inferred from the extracted value — for example, force a
+        numeric-looking string like an SKU to be indexed as `STRING` for exact-match
+        filtering.
+      required:
+        - field
+      properties:
+        field:
+          type: string
+          minLength: 1
+          description: Name of the extracted property.
+        type:
+          $ref: '#/components/schemas/IndexFieldType'
+    FieldMapping:
+      type: object
+      description: |
+        Selects which page-level fields the acquisition worker extracts from each crawled
+        resource and how they are indexed. Field names refer to **named properties produced
+        by the extraction layer** — not to raw HTML tags or CSS selectors. For HTML pages, the
+        worker derives these from standard metadata: `title` from `<title>` and Open Graph
+        fallbacks; `description` from `<meta name="description">` and Open Graph fallbacks;
+        `source` from the page URL; structured metadata fields (`author`, `published`,
+        `category`, …) from `<meta>` tags, JSON-LD and Open Graph. For PDF resources, the
+        worker derives them from the document metadata. Custom fields exposed by the worker
+        can also be referenced by name.
+
+        The split between `contentFields` and `properties` controls **how** each value is
+        indexed:
+        * `contentFields` are fulltext-analyzed (tokenized, stemmed) and queryable via
+          fulltext or semantic search.
+        * `properties` are stored as exact-match values and queryable via filters, equality,
+          range, prefix, and used for faceting.
+
+        When omitted on create, the API defaults `contentFields` to `["title","description"]`
+        and `properties` to `["source"]`.
+
+        Each entry is either a **string** (the property name; type is inferred — `STRING`
+        for textual fields, `LONG`/`DOUBLE` for numeric, `DATE` for ISO-8601 timestamps,
+        `BOOLEAN` for boolean) or an **object** `{ field, type }` that overrides the
+        inferred type. Supported `type` values: `STRING`, `LONG`, `DOUBLE`, `DATE`, `BOOLEAN`.
+        Use the object form when the extracted value's natural type does not match how you
+        want to query it — for example, forcing a numeric-looking string like an SKU to be
+        indexed as `STRING` for exact-match filtering.
+
+        The authoritative catalog of extractable field names — including fields surfaced by
+        worker plugins — is documented separately in the acquisition worker's extraction
+        reference; that catalog can grow over time without a spec change.
+      properties:
+        contentFields:
+          type: array
+          description: |
+            Fields indexed for fulltext / semantic search (tokenized and analyzed).
+            Each entry names an extracted property; use the `{ field, type }` form to
+            override the inferred type.
+          items:
+            oneOf:
+              - type: string
+                minLength: 1
+              - $ref: '#/components/schemas/FieldSpec'
+          default:
+            - title
+            - description
+          example:
+            - title
+            - description
+            - field: body
+              type: STRING
+        properties:
+          type: array
+          description: |
+            Fields indexed for exact-match filtering and faceting. Each entry names an
+            extracted property; use the `{ field, type }` form to override the inferred
+            type (e.g. force a date-looking string to be indexed as `STRING`).
+          items:
+            oneOf:
+              - type: string
+                minLength: 1
+              - $ref: '#/components/schemas/FieldSpec'
+          default:
+            - source
+          example:
+            - source
+            - author
+            - category
+            - field: published
+              type: DATE
+    AcquisitionConfig:
+      type: object
+      description: |
+        Acquisition configuration controlling how content is crawled and ingested.
+        Read-only fields (status, deletesAt) are set by the system and reflect lifecycle state.
+      required:
+        - baseUrl
+      properties:
+        status:
+          readOnly: true
+          allOf:
+            - $ref: '#/components/schemas/AcquisitionStatus'
+        deletesAt:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+          description: |
+            Timestamp when the archived acquisition content will be deleted.
+            Null for ACTIVE acquisitions.
+          example: null
+        baseUrl:
+          type: string
+          minLength: 1
+          format: uri
+          description: Root URL for the website to crawl.
+          example: https://example.com
+        discovery:
+          $ref: '#/components/schemas/Discovery'
+        schedule:
+          $ref: '#/components/schemas/Schedule'
+        fieldMapping:
+          $ref: '#/components/schemas/FieldMapping'
+    AcquisitionContentSource:
+      description: |
+        A content source managed by the Content AI Acquisition service.
+        Extends the base content source with acquisition-specific configuration.
+      allOf:
+        - $ref: '#/components/schemas/ContentSource'
+        - type: object
+          required:
+            - acquisitionConfig
+            - createdAt
+            - updatedAt
+          properties:
+            type:
+              enum:
+                - ACQUISITION
+            acquisitionConfig:
+              $ref: '#/components/schemas/AcquisitionConfig'
+    AcquisitionContentSourceListPage:
+      type: object
+      description: Paginated list of acquisition content sources.
+      required:
+        - items
+      properties:
+        items:
+          type: array
+          description: The acquisition content sources on this page.
+          items:
+            $ref: '#/components/schemas/AcquisitionContentSource'
+        cursor:
+          $ref: '#/components/schemas/Cursor'
+    CreateAcquisitionContentSourceRequest:
+      type: object
+      description: Request body for creating a new acquisition type content source.
+      required:
+        - name
+        - acquisitionConfig
+      properties:
+        name:
+          type: string
+          minLength: 1
+          description: |
+            Display name for the content source.
+            The backend normalizes it to a lowercase-alphanumeric-hyphen slug
+            used as the resource identifier in all subsequent path references
+            (e.g. `Test Site` becomes `test-site`).
+          example: Test Site
+        description:
+          type: string
+          maxLength: 500
+          description: Human-readable description of this content source.
+          example: Crawls marketing pages of example.com for product content.
+        acquisitionConfig:
+          $ref: '#/components/schemas/AcquisitionConfig'
+    UpdateAcquisitionContentSourceRequest:
+      type: object
+      description: |
+        Request body for a full update (PUT) of an acquisition-managed content source.
+        Replaces all mutable fields. `acquisitionConfig` is required to prevent
+        silently clearing the crawl configuration; `description` may be omitted to
+        clear it. Name is immutable and supplied in the path, not the body.
+      required:
+        - acquisitionConfig
+      properties:
+        description:
+          type: string
+          maxLength: 500
+          description: Human-readable description of this content source.
+          example: Crawls marketing pages of example.com for product content.
+        acquisitionConfig:
+          $ref: '#/components/schemas/AcquisitionConfig'
+    PatchAcquisitionConfig:
+      type: object
+      description: |
+        Partial acquisition configuration. Only supplied fields are applied.
+        Object-typed sub-fields (`discovery`, `schedule`, `fieldMapping`) may be set
+        to `null` to clear them. `status` and `baseUrl` are non-nullable.
+      properties:
+        status:
+          $ref: '#/components/schemas/AcquisitionStatus'
+        baseUrl:
+          type: string
+          minLength: 1
+          format: uri
+          description: Updated root crawl URL.
+          example: https://example.com
+        discovery:
+          type: object
+          nullable: true
+          allOf:
+            - $ref: '#/components/schemas/Discovery'
+        schedule:
+          type: object
+          nullable: true
+          allOf:
+            - $ref: '#/components/schemas/Schedule'
+        fieldMapping:
+          type: object
+          nullable: true
+          allOf:
+            - $ref: '#/components/schemas/FieldMapping'
+    PatchAcquisitionContentSourceRequest:
+      type: object
+      description: |
+        Partial update for an acquisition-managed content source (JSON Merge Patch, RFC 7396).
+        Only supplied fields are updated; omitted fields retain their current values.
+        Fields explicitly set to `null` are cleared (where the schema permits).
+        To archive: set `acquisitionConfig.status` to `ARCHIVED`. The `deletesAt` timestamp is computed by the system.
+      properties:
+        description:
+          type: string
+          maxLength: 500
+          nullable: true
+          description: Updated human-readable description. Set to null to clear.
+          example: Updated description for the content source.
+        acquisitionConfig:
+          $ref: '#/components/schemas/PatchAcquisitionConfig'
+    RunType:
+      type: string
+      minLength: 1
+      description: How the acquisition run was triggered.
+      enum:
+        - ON_DEMAND
+        - SCHEDULED
+    RunState:
+      type: string
+      minLength: 1
+      description: Current state of an acquisition run.
+      enum:
+        - QUEUED
+        - PROCESSING
+        - COMPLETED
+        - COMPLETED_WITH_ERRORS
+        - FAILED
+    ConcreteFetchMode:
+      type: string
+      minLength: 1
+      description: |
+        Concrete fetch mode selected by the adaptive evaluation — always one of the
+        real fetcher implementations, never `ADAPTIVE` itself. The corresponding
+        configuration value lives in `FetchMode`.
+        - `LIGHTWEIGHT_HTTP`: server-rendered HTTP fetch (no JavaScript execution).
+        - `HEADLESS`: headless-browser fetch with JavaScript execution.
+      enum:
+        - LIGHTWEIGHT_HTTP
+        - HEADLESS
+      example: HEADLESS
+    AdaptiveStrategyDecision:
+      type: object
+      description: |
+        Result of the adaptive fetch mode evaluation. Populated after an `ADAPTIVE` run completes.
+        The acquisition worker samples a subset of URLs with both lightweight HTTP and headless
+        fetchers, compares the rendered content, and selects the mode that produces the most
+        complete results.
+      required:
+        - globalDecision
+        - counter
+      properties:
+        globalDecision:
+          $ref: '#/components/schemas/ConcreteFetchMode'
+        counter:
+          type: integer
+          description: Number of representative URLs evaluated during the adaptive sampling phase.
+          format: int32
+          example: 2
+    RunMetric:
+      type: object
+      description: A single progress metric recorded for an acquisition run.
+      required:
+        - name
+        - value
+      properties:
+        name:
+          type: string
+          minLength: 1
+          description: |
+            Metric identifier. The set is intentionally open-ended to allow worker plugins to
+            emit custom metrics without a spec change; all names follow camelCase convention.
+            Well-known names: `pagesDiscovered`, `pagesParsed`, `indexedDocuments`.
+            Clients SHOULD handle unknown names gracefully.
+          example: indexedDocuments
+        value:
+          type: integer
+          format: int32
+          description: Metric value.
+          example: 1247
+    AcquisitionRun:
+      type: object
+      description: |
+        Status and progress of an acquisition run. All properties are server-assigned
+        and read-only — this schema is only valid in response bodies.
+      required:
+        - id
+        - acquisitionName
+        - type
+        - state
+        - createdAt
+      properties:
+        id:
+          type: string
+          readOnly: true
+          minLength: 1
+          description: Unique run identifier.
+          example: run-x9y8z7
+        acquisitionName:
+          type: string
+          readOnly: true
+          minLength: 1
+          description: Name of the acquisition config this run belongs to.
+          example: my-website
+        type:
+          readOnly: true
+          allOf:
+            - $ref: '#/components/schemas/RunType'
+        state:
+          readOnly: true
+          allOf:
+            - $ref: '#/components/schemas/RunState'
+        createdAt:
+          type: string
+          readOnly: true
+          format: date-time
+          minLength: 1
+          description: Timestamp when the run was queued.
+          example: '2026-03-01T14:30:00Z'
+        startedAt:
+          type: string
+          readOnly: true
+          format: date-time
+          description: Timestamp when processing started.
+          example: '2026-03-01T14:30:15Z'
+        completedAt:
+          type: string
+          readOnly: true
+          format: date-time
+          description: Timestamp when the run finished.
+          example: '2026-03-01T14:45:00Z'
+        errorMessage:
+          type: string
+          readOnly: true
+          description: Error message if the run failed. Null for successful or in-progress runs.
+          example: 'Discovery source unreachable: Connection timeout after 30s'
+        adaptiveStrategyDecision:
+          readOnly: true
+          allOf:
+            - $ref: '#/components/schemas/AdaptiveStrategyDecision'
+        metrics:
+          type: array
+          readOnly: true
+          description: Progress metrics and statistics. Updated dynamically as the run progresses.
+          items:
+            $ref: '#/components/schemas/RunMetric'
+    AemAuthorContentSource:
+      description: |
+        An AEM Author content source.
+      allOf:
+        - $ref: '#/components/schemas/ContentSource'
+        - type: object
+          properties:
+            type:
+              enum:
+                - AEM_AUTHOR
+    AemAuthorContentSourceListPage:
+      type: object
+      description: Paginated list of AEM Author content sources.
+      required:
+        - items
+      properties:
+        items:
+          type: array
+          description: The AEM Author content sources on this page.
+          items:
+            $ref: '#/components/schemas/AemAuthorContentSource'
+        cursor:
+          $ref: '#/components/schemas/Cursor'
+    AemPublishContentSource:
+      description: |
+        An AEM Publish content source.
+      allOf:
+        - $ref: '#/components/schemas/ContentSource'
+        - type: object
+          properties:
+            type:
+              enum:
+                - AEM_PUBLISH
+    AemPublishContentSourceListPage:
+      type: object
+      description: Paginated list of AEM Publish content sources.
+      required:
+        - items
+      properties:
+        items:
+          type: array
+          description: The AEM Publish content sources on this page.
+          items:
+            $ref: '#/components/schemas/AemPublishContentSource'
+        cursor:
+          $ref: '#/components/schemas/Cursor'
+    DiscoveryPreviewRequest:
+      type: object
+      description: Request to probe a base URL for sitemaps.
+      required:
+        - baseUrl
+      properties:
+        baseUrl:
+          type: string
+          minLength: 1
+          format: uri
+          description: The base URL to probe for sitemap locations.
+          example: https://example.com
+    DiscoveryStatus:
+      type: string
+      minLength: 1
+      description: |
+        Outcome discriminator for the sitemap discovery endpoint.
+
+        The endpoint always returns HTTP 200 for completed probe sequences; callers
+        MUST branch on this field — do not rely solely on whether `sitemaps` is empty.
+
+        | Value | Meaning |
+        |---|---|
+        | `DISCOVERED` | At least one sitemap was found. `sitemaps` is non-empty. |
+        | `NONE_FOUND` | All probes completed but no sitemaps were found. `sitemaps` is empty. |
+        | `UNREACHABLE` | Target host DNS resolution or TCP connection failed. `sitemaps` is empty. |
+        | `PROBE_TIMEOUT` | All probes timed out before the wall-clock budget was exhausted. |
+        | `PARTIAL` | Some probes succeeded and some timed out. Partial results in `sitemaps`; `detail` describes skipped probes. |
+      enum:
+        - DISCOVERED
+        - NONE_FOUND
+        - UNREACHABLE
+        - PROBE_TIMEOUT
+        - PARTIAL
+      example: DISCOVERED
+    SitemapSource:
+      type: string
+      minLength: 1
+      description: |
+        How a sitemap was discovered for a given base URL.
+        - `ROBOTS_TXT`: declared via a `Sitemap:` directive in the site's `robots.txt`.
+        - `CONVENTION`: located at a conventional path (e.g. `/sitemap.xml`, `/sitemap_index.xml`).
+      enum:
+        - ROBOTS_TXT
+        - CONVENTION
+      example: ROBOTS_TXT
+    Sitemap:
+      type: object
+      description: A sitemap discovered for a given base URL.
+      required:
+        - url
+        - source
+      properties:
+        url:
+          type: string
+          minLength: 1
+          format: uri
+          description: URL of the discovered sitemap.
+          example: https://example.com/sitemap.xml
+        source:
+          $ref: '#/components/schemas/SitemapSource'
+    DiscoveryPreviewResponse:
+      type: object
+      description: Result of sitemap discovery for a given base URL.
+      required:
+        - baseUrl
+        - status
+        - sitemaps
+      properties:
+        baseUrl:
+          type: string
+          minLength: 1
+          format: uri
+          description: The base URL that was probed.
+          example: https://example.com
+        status:
+          $ref: '#/components/schemas/DiscoveryStatus'
+        sitemaps:
+          type: array
+          description: |
+            List of discovered sitemaps. Empty for non-DISCOVERED outcomes.
+            Callers MUST branch on `status`, not solely on whether this array is empty.
+          items:
+            $ref: '#/components/schemas/Sitemap'
+        detail:
+          type: string
+          nullable: true
+          minLength: 1
+          description: |
+            Human-readable explanation for non-DISCOVERED outcomes (NONE_FOUND, UNREACHABLE,
+            PROBE_TIMEOUT, PARTIAL). Absent when status is DISCOVERED.
+    ContentSourceSearchConfig:
+      type: object
+      required:
+        - name
+      properties:
+        name:
+          description: Name of the content source.
+          type: string
+        type:
+          allOf:
+            - $ref: '#/components/schemas/ContentSourceType'
+          description: Type of the content source. Defaults to `ACQUISITION` if not specified.
+          default: ACQUISITION
+    ContentAIQuery:
+      type: object
+      required:
+        - type
+      discriminator:
+        propertyName: type
+        mapping:
+          vector: '#/components/schemas/VectorQuery'
+          fulltext: '#/components/schemas/FullTextQuery'
+          filter: '#/components/schemas/FilterQuery'
+          composite: '#/components/schemas/CompositeQuery'
+      properties:
+        type:
+          type: string
+          minLength: 1
+          enum:
+            - vector
+            - fulltext
+            - filter
+            - composite
+          description: |
+            Type of the query that determines how the search will be performed:
+            - vector: Semantic search using vector embeddings.
+            - fulltext: Traditional fulltext search.
+            - filter: Search for exact matches using filters.
+            - composite: Combination of multiple query types. This can be used as a combination of vector and fulltext queries to perform a hybrid search.
+    FilterComponent:
+      type: object
+      required:
+        - type
+      discriminator:
+        propertyName: type
+        mapping:
+          StringFilter: '#/components/schemas/StringFilter'
+          NumberFilter: '#/components/schemas/NumberFilter'
+          DateFilter: '#/components/schemas/DateFilter'
+          LongFilter: '#/components/schemas/LongFilter'
+          DoubleFilter: '#/components/schemas/DoubleFilter'
+          BooleanFilter: '#/components/schemas/BooleanFilter'
+          PrefixFilter: '#/components/schemas/PrefixFilter'
+          InFilter: '#/components/schemas/InFilter'
+          ExistsFilter: '#/components/schemas/ExistsFilter'
+          FilterGroup: '#/components/schemas/FilterGroup'
+      properties:
+        type:
+          type: string
+          minLength: 1
+          description: Type of the filter component
+    StringFilterOperator:
+      type: string
+      minLength: 1
+      description: |
+        Operator to be used for filtering string fields.
+        * `EQ`: Equals. The field value must be equal to the specified value.
+        * `NE`: Not Equals. The field value must not be equal to the specified value.
+      enum:
+        - EQ
+        - NE
+    StringFilter:
+      type: object
+      required:
+        - field
+        - operator
+        - value
+      description: Filter component for fields of type string
+      title: StringFilter
+      allOf:
+        - $ref: '#/components/schemas/FilterComponent'
+      properties:
+        field:
+          type: string
+          minLength: 1
+          description: Field to apply filter on
+        value:
+          type: string
+          minLength: 1
+          description: Filter value
+        operator:
+          $ref: '#/components/schemas/StringFilterOperator'
+    NumberFilterOperator:
+      type: string
+      minLength: 1
+      description: |
+        Operator to be used for filtering Double, Long, Date fields.
+        * `EQ`: Equals. The field value must be equal to the specified value.
+        * `NE`: Not Equals. The field value must not be equal to the specified value.
+        * `GT`: Greater Than. The field value must be greater than the specified value.
+        * `GTE`: Greater Than or Equal To. The field value must be greater than or equal to the specified value.
+        * `LT`: Less Than. The field value must be less than the specified value.
+        * `LTE`: Less Than or Equal To. The field value must be less than or equal to the specified value.
+      enum:
+        - EQ
+        - NE
+        - GT
+        - GTE
+        - LT
+        - LTE
+    NumberFilter:
+      type: object
+      required:
+        - field
+        - value
+        - operator
+        - value
+      description: Filter component for fields of type number
+      title: NumberFilter
+      allOf:
+        - $ref: '#/components/schemas/FilterComponent'
+      properties:
+        field:
+          type: string
+          minLength: 1
+          description: Field to apply filter on
+        value:
+          type: number
+          format: float
+          description: Filter value
+        operator:
+          $ref: '#/components/schemas/NumberFilterOperator'
+    DateFilter:
+      type: object
+      required:
+        - field
+        - operator
+        - value
+      description: Filter component for fields of type Date
+      title: DateFilter
+      allOf:
+        - $ref: '#/components/schemas/FilterComponent'
+      properties:
+        field:
+          type: string
+          minLength: 1
+          description: Field to apply filter on
+        value:
+          type: string
+          minLength: 1
+          format: date-time
+          description: |
+            Filter value.  
+            **NOTE: Supported date formats are:**  
+             - "YYYY-MM-DDTHH:mm:ssZ"
+             - "YYYY-MM-DDTHH:mm:ss.SSSZ"
+        operator:
+          $ref: '#/components/schemas/NumberFilterOperator'
+    LongFilter:
+      type: object
+      required:
+        - field
+        - operator
+        - value
+      description: Filter component for fields of type Long
+      title: LongFilter
+      allOf:
+        - $ref: '#/components/schemas/FilterComponent'
+      properties:
+        field:
+          type: string
+          minLength: 1
+          description: Field to apply filter on
+        value:
+          type: integer
+          format: int64
+          description: Filter value
+        operator:
+          $ref: '#/components/schemas/NumberFilterOperator'
+    DoubleFilter:
+      type: object
+      required:
+        - field
+        - operator
+        - value
+      description: Filter component for fields of type Double
+      title: DoubleFilter
+      allOf:
+        - $ref: '#/components/schemas/FilterComponent'
+      properties:
+        field:
+          type: string
+          minLength: 1
+          description: Field to apply filter on
+        value:
+          type: number
+          format: double
+          description: Filter value
+        operator:
+          $ref: '#/components/schemas/NumberFilterOperator'
+    BooleanFilterOperator:
+      type: string
+      minLength: 1
+      description: |
+        Operator to be used for filtering Boolean fields.
+        * `EQ`: Equals. The field value must be equal to the specified value.
+      enum:
+        - EQ
+    BooleanFilter:
+      type: object
+      required:
+        - field
+        - operator
+        - value
+      description: Filter component for fields of type Boolean
+      title: BooleanFilter
+      allOf:
+        - $ref: '#/components/schemas/FilterComponent'
+      properties:
+        field:
+          type: string
+          minLength: 1
+          description: Field to apply filter on
+        value:
+          type: boolean
+          description: Filter value
+        operator:
+          $ref: '#/components/schemas/BooleanFilterOperator'
+    PrefixFilter:
+      type: object
+      required:
+        - field
+        - value
+      description: Filter component to perform prefix string filter on fields of type string
+      title: PrefixFilter
+      allOf:
+        - $ref: '#/components/schemas/FilterComponent'
+      properties:
+        field:
+          type: string
+          minLength: 1
+          description: Field to apply filter on
+        value:
+          type: string
+          minLength: 1
+          description: |
+            The prefix value for the filter. This can be used to filter the documents that start with the specified prefix.
+
+            Example:
+              Given a dataset:
+                
+                Doc1:  {"name": "Alice"}
+                Doc2:  {"name": "Alex"}
+                Doc3:  {"name": "Bob"}
+                
+              And a filter: { "field": "name", "value": "Al" }
+
+              Only "Alice" and "Alex" will match, as their names start with the prefix "Al".
+    InFilter:
+      type: object
+      required:
+        - field
+        - values
+      description: Filter component for multiple values of various types (bool, string, long, date, double)
+      title: InFilter
+      allOf:
+        - $ref: '#/components/schemas/FilterComponent'
+      properties:
+        field:
+          type: string
+          minLength: 1
+          description: Field to apply filter on
+        values:
+          description: |
+            To filter on multiple values. If any of the values match, the document will be included in the search results.
+
+            Example:
+              Given a dataset:
+
+                Car1: {"type": "sedan"},  
+                Car2: {"type": "suv", "color": "blue"},  
+                Car3: {"type": "hatchback", "owner": "alice"},  
+                Car4: {"type": "convertible"},  
+                Car5: {"type": "sedan", "color": "red"},  
+                Car6: {"type": ["sedan", "electric"]},  
+                Car7: {"type": ["hatchback", "hybrid"]}
+
+              And a filter:
+              ```json
+              {
+                "field": "type",
+                "values": ["sedan", "hatchback"]
+              }
+              ```
+              
+              For above example, Car1, Car3, Car6 and Car7 will be returned as result as they have "type"
+              field with value "sedan" or "hatchback" (either as a single value or in an array).
+          type: array
+          minItems: 1
+          items:
+            oneOf:
+              - type: boolean
+              - type: string
+              - type: integer
+                format: int64
+              - type: string
+                format: date-time
+              - type: number
+                format: double
+    ExistsFilter:
+      type: object
+      required:
+        - field
+      description: Filter component to check if a field exists
+      title: ExistsFilter
+      allOf:
+        - $ref: '#/components/schemas/FilterComponent'
+      properties:
+        field:
+          type: string
+          minLength: 1
+          description: Field to check for existence
+    FilterGroupOperator:
+      type: string
+      minLength: 1
+      enum:
+        - AND
+        - OR
+        - NOT
+    FilterGroup:
+      type: object
+      required:
+        - filters
+        - operator
+      description: A recursive filter group consisting of string, number, boolean, and date filters
+      title: FilterGroup
+      allOf:
+        - $ref: '#/components/schemas/FilterComponent'
+      properties:
+        filters:
+          type: array
+          maxItems: 25
+          minItems: 1
+          items:
+            $ref: '#/components/schemas/FilterComponent'
+        operator:
+          $ref: '#/components/schemas/FilterGroupOperator'
+    ContentAIQueryFilter:
+      type: object
+      required:
+        - filterComponent
+      properties:
+        filterComponent:
+          $ref: '#/components/schemas/FilterComponent'
+          type: object
+          description: |
+            Filter component to define filters on string, number, boolean, or date fields.
+            The filter can be a single filter or a group of filters combined with AND/OR/NOT operators.
+    BaseQueryOptions:
+      type: object
+      description: Base query options for all queries types
+      properties:
+        boost:
+          type: number
+          format: float
+          description: |-
+            Boost value for the query. This can be used to manage relevance/weight of a particular query
+            when using a composition of queries.
+            A boost value between 0 and 1.0 decreases the relevance score.
+            A value greater than 1.0 increases the relevance score.
+    SpaceSelection:
+      type: object
+      properties:
+        space:
+          type: string
+          description: |-
+            Name of the space to be used across all the indexes being queried upon.
+            The value should be from one of the spaces defined in the IndexConfig.
+            If not provided, default space will be used.
+    QualityConfig:
+      type: object
+      description: |
+        Configuration to control the trade-off between search accuracy and performance.
+
+        Higher quality means the search will examine more candidates to find better matches,
+        but will be slower. Lower quality prioritizes speed over finding the absolute best matches.
+
+        Choose based on your use case:
+        * FAST: Real-time autocomplete, quick exploration (2-3x faster)
+        * BALANCED: Most common use cases, good accuracy with reasonable speed (default)
+        * ACCURATE: Critical searches where accuracy matters more than speed
+        * MAXIMUM: Research, offline analysis where you need the best possible results
+
+        The 'size' parameter controls how many results the search should optimize for finding.
+      properties:
+        quality:
+          type: string
+          enum:
+            - FAST
+            - BALANCED
+            - ACCURATE
+            - MAXIMUM
+          default: BALANCED
+          description: |
+            Quality level determining accuracy vs performance trade-off.
+             * FAST: Optimized for speed, examines fewer candidates
+               Good for: Interactive search, autocomplete, quick exploration
+             * BALANCED: Good balance of accuracy and speed [DEFAULT]
+               Good for: Most production use cases, general semantic search
+             * ACCURATE: Prioritizes finding the best matches
+               Good for: Important searches, recommendations, content discovery
+             * MAXIMUM: Exhaustive search for best possible accuracy
+               Good for: Research, offline analysis, quality benchmarking
+            Default: BALANCED
+        size:
+          type: integer
+          format: int32
+          minimum: 1
+          maximum: 100
+          default: 20
+          description: |
+            Number of results the search should optimize for finding.
+            This influences the internal search parameters to find the best matches
+            for this many results. The actual number of results returned is controlled
+            by the pagination limit in queryOptions.
+            Guidelines:
+            * Use default (10-20) for typical searches
+            * Use higher values (50-100) for clustering or bulk analysis
+            * Use lower values (1-5) for "find the single best match" scenarios
+            The quality level ensures enough candidates are examined relative to this size.
+            Default: 20
+            Range: 1-100
+    ScoreMode:
+      type: string
+      minLength: 1
+      enum:
+        - MAX
+        - NONE
+      description: |-
+        The scoring mode to use for the query. This is used to determine how the
+        scores of the chunks are combined to produce the final score for the document.
+        The default value is `MAX`, which means that the maximum score of all chunks
+        will be used. The `NONE` value means that no scoring will be applied and all
+        chunks will be treated equally.
+      default: MAX
+    ChunksConfiguration:
+      type: object
+      required:
+        - includeInResponse
+      properties:
+        includeInResponse:
+          type: boolean
+          description: |-
+            Flag to include chunks in the response, if chunking has been
+            enabled in the vector embedding step for the requested space.
+        scoreMode:
+          $ref: '#/components/schemas/ScoreMode'
+    VectorQueryOptions:
+      type: object
+      description: Vector query options
+      allOf:
+        - $ref: '#/components/schemas/BaseQueryOptions'
+      properties:
+        vectorSpaceSelection:
+          $ref: '#/components/schemas/SpaceSelection'
+          type: object
+          description: Vector Space selection for the query.
+        lexicalSpaceSelection:
+          $ref: '#/components/schemas/SpaceSelection'
+          type: object
+          description: Lexical Space selection for the query.
+        qualityConfig:
+          $ref: '#/components/schemas/QualityConfig'
+          type: object
+          description: |
+            Quality configuration to control the accuracy vs performance trade-off. If not specified, uses balanced defaults suitable for most use cases.
+        numCandidates:
+          type: integer
+          deprecated: true
+          format: int32
+          description: |
+            [DEPRECATED] Low-level search parameter for backward compatibility only.
+            Use 'qualityConfig' instead for better control over search quality and performance.
+            This parameter directly maps to search engine internals and will be ignored
+            if 'qualityConfig' is provided and will be removed in future.
+
+            The number of nearest neighbor candidates to consider while doing knn
+            search.
+            Cannot exceed 10,000. Increasing numCandidates tends to improve the
+            accuracy of the final results.
+
+            A lower value leads to faster search, but at the cost of potentially less
+            accurate results.
+          maximum: 10000
+          minimum: 1
+        chunks:
+          $ref: '#/components/schemas/ChunksConfiguration'
+          type: object
+          description: Chunks configuration for the query.
+    VectorQuery:
+      type: object
+      required:
+        - text
+        - options
+      description: Query for vector search
+      title: vector
+      allOf:
+        - $ref: '#/components/schemas/ContentAIQuery'
+      properties:
+        text:
+          type: string
+          minLength: 1
+          description: The text to search for
+        filter:
+          $ref: '#/components/schemas/ContentAIQueryFilter'
+          type: object
+          description: Pre-filters for the query. This is to limit the search space prior to executing the vector query.
+        options:
+          $ref: '#/components/schemas/VectorQueryOptions'
+    SearchSubfield:
+      type: object
+      required:
+        - name
+      description: |
+        Subfield to query on. A subfield is an additional indexed variant of a field that uses a different analyzer.  
+
+        While a field represents the primary indexed data (e.g., "title"), subfields allow querying the same data in different ways
+        by applying alternative analyzers. For example, a "data" field might be indexed as full-text searchable,
+        while "data.casesensitive" subfield might be indexed to support case-sensitive search.
+         
+      properties:
+        name:
+          type: string
+          minLength: 1
+          description: Name of the subfield
+    SearchField:
+      type: object
+      required:
+        - name
+      description: |
+        Defines field to query on.  
+        If not defined, all fulltext enabled fields are queried.
+      properties:
+        name:
+          type: string
+          minLength: 1
+          description: Name of the field
+        boost:
+          type: number
+          format: float
+          default: 1
+          description: |
+            Boost value for this specific field.
+            Controls the relative importance/weight of matches in this field.
+            A boost value between 0 and 1.0 decreases the relevance score.
+            A value greater than 1.0 increases the relevance score.
+            If not provided, defaults to 1.0.
+            The same boosting will apply to the subfield as well, if it is defined.
+        subfield:
+          $ref: '#/components/schemas/SearchSubfield'
+          type: object
+    MatchStrategy:
+      type: string
+      minLength: 1
+      enum:
+        - INDEPENDENT_FIELDS
+        - COMBINED_FIELDS
+      description: |-
+        Strategy for fulltext matching across the specified fields. Default is `INDEPENDENT_FIELDS`
+        * INDEPENDENT_FIELDS: Each field is scored independently and scores are combined.
+                              A document matches if the query terms are found within any single field.
+                              This is the default behavior.
+        * COMBINED_FIELDS: All fields with same analyzers are treated as one combined field.
+                             Query terms can be distributed across different fields.
+                             Useful with AND operator: requires all terms to appear, but each term can match in a different field.
+    FuzzinessConfiguration:
+      type: object
+      description: Configuration for fuzzy matching in the query.
+      properties:
+        enabled:
+          type: boolean
+          description: Flag to enable or disable fuzzy matching. If true, the query will match terms that are similar to the provided text.
+          default: false
+    FullTextQueryOptions:
+      type: object
+      description: Fulltext query options
+      allOf:
+        - $ref: '#/components/schemas/BaseQueryOptions'
+      properties:
+        fields:
+          type: array
+          minItems: 1
+          maxItems: 20
+          items:
+            $ref: '#/components/schemas/SearchField'
+          description: Defines a list of fields to query on. Logical OR is applied across the fields. If not defined, all fulltext enabled fields are queried.
+        matchStrategy:
+          $ref: '#/components/schemas/MatchStrategy'
+          type: object
+        fuzziness:
+          $ref: '#/components/schemas/FuzzinessConfiguration'
+        lexicalSpaceSelection:
+          $ref: '#/components/schemas/SpaceSelection'
+          type: object
+          description: Lexical Space selection for the query.
+        operator:
+          type: string
+          description: |
+            Boolean operator used to interpret multiple terms in the query text.
+            Possible values are "AND" and "OR". Default is "OR".
+
+            Example : If operator is "AND" and the query text is "quick brown fox",
+                      the search will return documents that contain all three terms: "quick", "brown", and "fox".
+                      If operator is "OR", the search will return documents that contain at least one of the terms,
+                      while scoring higher for documents with multiple terms matching.
+          enum:
+            - AND
+            - OR
+          default: OR
+        negateQuery:
+          type: boolean
+          description: When true, results NOT matching the query text are returned. Default is false.
+          default: false
+    FullTextQuery:
+      type: object
+      required:
+        - text
+      description: Query for fulltext search
+      title: fulltext
+      allOf:
+        - $ref: '#/components/schemas/ContentAIQuery'
+      properties:
+        text:
+          type: string
+          minLength: 1
+          description: The text to search for
+        filter:
+          $ref: '#/components/schemas/ContentAIQueryFilter'
+          type: object
+          description: Pre-filters for the query. This is to limit the search space prior to executing the fulltext query.
+        options:
+          $ref: '#/components/schemas/FullTextQueryOptions'
+    FilterQueryOptions:
+      type: object
+      description: Filter query options
+      allOf:
+        - $ref: '#/components/schemas/BaseQueryOptions'
+      properties:
+        lexicalSpaceSelection:
+          $ref: '#/components/schemas/SpaceSelection'
+          type: object
+          description: Lexical Space selection for the query.
+    FilterQuery:
+      type: object
+      required:
+        - filter
+      description: Query for filter/term search
+      title: filter
+      allOf:
+        - $ref: '#/components/schemas/ContentAIQuery'
+      properties:
+        filter:
+          $ref: '#/components/schemas/ContentAIQueryFilter'
+        options:
+          $ref: '#/components/schemas/FilterQueryOptions'
+    CompositeOperator:
+      type: string
+      minLength: 1
+      enum:
+        - AND
+        - OR
+      description: Operator to be applied across the list of queries provided in CompositeQuery.
+    CompositeQuery:
+      type: object
+      required:
+        - queries
+        - operator
+      description: Composite query combining multiple queries over AND/OR operator
+      title: composite
+      allOf:
+        - $ref: '#/components/schemas/ContentAIQuery'
+      properties:
+        queries:
+          type: array
+          maxItems: 10
+          minItems: 2
+          items:
+            $ref: '#/components/schemas/ContentAIQuery'
+          description: List of Content AI Queries.
+        operator:
+          $ref: '#/components/schemas/CompositeOperator'
+    PaginationOptions:
+      type: object
+      properties:
+        limit:
+          type: integer
+          format: int32
+          description: The maximum number of items to return
+          default: 10
+          maximum: 50
+        cursor:
+          type: string
+          minLength: 1
+          description: |
+            A cursor is an opaque string that can be used in API calls which support paginating the response.
+            A non-existent cursor signifies that the returned list does not have more elements.
+    QuerySort:
+      type: object
+      required:
+        - orderBy
+      properties:
+        orderBy:
+          description: |
+            The value of an `orderBy` parameter contains an expression used to sort the search results.
+
+            The expression may include the suffix `asc` for ascending or `desc` for descending, separated from the property
+            name by one or more spaces. If `asc` or `desc` is not specified, the service will order by the specified
+            property in ascending order.
+          type: string
+          minLength: 1
+          example: width asc
+        lexicalSpaceSelection:
+          $ref: '#/components/schemas/SpaceSelection'
+          type: object
+          description: Lexical Space selection for the query.
+    ContentAIQueryOptions:
+      type: object
+      properties:
+        pagination:
+          $ref: '#/components/schemas/PaginationOptions'
+          type: object
+          description: Options to control paginated search results.
+        sort:
+          type: array
+          items:
+            $ref: '#/components/schemas/QuerySort'
+          description: |
+            List of sort objects for the query.
+            Default sort is on DESC score of a document, with the document id (ASC) as a tiebreaker.
+            Document id (ASC) is always added as a tiebreaker for any sorts specified.
+        eTag:
+          type: boolean
+          description: |
+            When set to true, each document in the search results will include an `eTag` field.
+            This `eTag` represents the current entity tag for that specific document, allowing clients to use it for optimistic
+            concurrency control during document updates. This is useful if documents returned as part of the search request are
+            going to be used to form update requests.
+            If not specified or set to false, the `eTag` field will not be included in the search results.
+          default: false
+        resultFields:
+          type: object
+          description: |
+            This can be used to control the fields returned in the result documents.
+            If the `includes` property is specified, only source fields that match one of its patterns are returned. 
+            You can exclude fields from this subset using the `excludes` property.
+            So, first the `includes` is evaluated and then `excludes` is applied on the subset of fields selected by `includes`.
+            If the `includes` property is not specified, the entire document source is returned, excluding any fields that match a pattern in the `excludes` property.
+            If both `includes` and `excludes` have the same field, the field is excluded.
+            Each value in the includes or excludes field can be a full field name or a wildcard pattern, e.g., `field*` (matching `field1`, `fieldXYZ`, etc.).
+          properties:
+            includes:
+              type: array
+              minItems: 1
+              maxItems: 20
+              items:
+                type: string
+            excludes:
+              type: array
+              minItems: 1
+              maxItems: 20
+              items:
+                type: string
+    AggregatesFieldConfig:
+      type: object
+      required:
+        - type
+        - id
+        - field
+      discriminator:
+        propertyName: type
+        mapping:
+          termBuckets: '#/components/schemas/TermBucketAggregatesConfig'
+          numberStats: '#/components/schemas/NumberStatsAggregatesConfig'
+      properties:
+        field:
+          $ref: '#/components/schemas/AggregatesField'
+        type:
+          $ref: '#/components/schemas/AggregatesType'
+        id:
+          type: string
+          minLength: 1
+          description: |
+            A unique identifier for this aggregate configuration. This id will be returned in the response to identify the aggregate results.
+            It is recommended to use a meaningful name that reflects the purpose of the aggregate.
+            For example, `categoryBucket`, `priceStats` etc.
+        filter:
+          $ref: '#/components/schemas/ContentAIQueryFilter'
+          type: object
+          description: |
+            Pre-filters for the aggregation. This is to limit the search space prior to calculating the aggregates for this particular field.
+            Aggregation would be performed only on the docs that match the filter criteria.
+            This can be useful for dynamic aggregation, where you want to calculate aggregate based on some selected filters on fields other than this one.
+            For example, consider you have 3 indexed fields - `title`, `modifiedDate` and `category`. Filters have been applied on `category = news` and `modifiedDate > 2023-01-01`.
+            Now, if you want to calculate the aggregation for the `title` field, you would specify the `filter` with the filters on `category` and `modifiedDate`
+            so that the aggregations for the `title` field accommodate the filters applied for other fields.
+            - Without filter: aggregations always mirror the current query result set (aggregation done on the main search results).  
+            - With filter: buckets can be scoped to a different context (dynamic aggregation), meaning each aggregation can compute results independently of the global search filters.
+            To limit the documents on which all aggregations in a search run, use a top-level `query filter`. This is faster than a single filter aggregation.
+        lexicalSpaceSelection:
+          $ref: '#/components/schemas/SpaceSelection'
+          type: object
+          description: |
+            Lexical Space selection for calculating the aggregates. This will be used for the filters
+            applied in context of the aggregates.
+            Use the lexical space that has the required fields mapped in relevant filters.
+            If not provided, default lexical space will be used.
+    AggregatesField:
+      type: object
+      description: |
+        Field to be used for aggregation. Depending on the type of aggregation, this can have additional properties to control different aspects.
+      required:
+        - name
+      properties:
+        name:
+          type: string
+          minLength: 1
+          description: |
+            The name of the field to be used for the aggregation. This is typically a field in the document that you want to either filter on (bucket aggregation) or get the stats for.
+            For example, if you want to filter documents based on their `category`, you would specify the `category` field here.
+            Similarly if you want to get stats like min, max, avg for a numerical field like `price`, you would specify the `price` field here.
+            The field should have been indexed in the search index as a filter and should be suitable for aggregation.
+            If the field is not indexed, the underlying implementation will usually send an empty result. However in some cases
+            it can also result in an error, for instance if the field type is not suitable for the requested aggregation (string field for number stats aggregation).
+    BucketValueQuery:
+      type: object
+      description: |
+        This allows for filtering bucket values based on specific criteria, such as regular expressions or absolute values.
+        This is useful in determining the buckets values for which the document count would be calculated.
+      properties:
+        include:
+          oneOf:
+            - type: string
+              description: |
+                A regular expression to match the bucket values. This is useful when you want to 
+                include bucket values based on a pattern.
+                This is only valid for string bucket values. For numeric values, use the array option to specify absolute values.
+
+                **Note:** Anchor operators (^ for beginning of line, $ for end of line) are not supported.
+                The regex pattern must match the entire string by default.
+                For example, if you want to include categories that start with "Tech", you would specify a
+                regex like "Tech.*" (not "^Tech.*"). Similarly, to match values ending with "ics", use ".*ics" (not ".*ics$").
+            - type: array
+              items:
+                oneOf:
+                  - type: string
+                    description: |
+                      A string representing a string bucket value.
+                  - type: number
+                    description: |
+                      A number representing a double numerical bucket value.
+                  - type: integer
+                    format: int64
+                    description: |
+                      A number representing a long numerical bucket value.
+        exclude:
+          oneOf:
+            - type: string
+              description: |
+                A regular expression to match the bucket values that should be excluded from the search results.
+                This is useful when you want to filter out certain bucket values based on a pattern.
+                This is only valid for string bucket values. For numeric values, use the array option to specify absolute values.
+
+                **Note:** Anchor operators (^ for beginning of line, $ for end of line) are not supported.
+                The regex pattern must match the entire string by default.
+                For example, if you want to exclude categories that start with "Old", you would specify a regex
+                like "Old.*" (not "^Old.*"). Similarly, to exclude values ending with "Test", use ".*Test" (not ".*Test$").
+            - type: array
+              description: |
+                A list of absolute bucket values to exclude from the search results.
+                For example, if you want to exclude documents that belong to the "Archived" category, you would specify that value here.
+              items:
+                oneOf:
+                  - type: string
+                    description: |
+                      A string representing a string bucket value.
+                  - type: number
+                    description: |
+                      A number representing a double numerical bucket value.
+                  - type: integer
+                    format: int64
+                    description: |
+                      A number representing a long numerical bucket value.
+    TermBucketAggregatesField:
+      type: object
+      description: |
+        Configuration for the field to be used for the aggregation.
+        The field name plus include/exclude filters for the field values to be included in the aggregation results can be specified here.
+      allOf:
+        - $ref: '#/components/schemas/AggregatesField'
+      properties:
+        values:
+          $ref: '#/components/schemas/BucketValueQuery'
+    TermBucketAggregatesConfig:
+      type: object
+      description: |
+        Configuration for term bucketing on a field. This extends the basic aggregates field configuration to include properties specific to term bucketing.
+        Use this to get the unique values for a field and their respective counts.
+      allOf:
+        - $ref: '#/components/schemas/AggregatesFieldConfig'
+      properties:
+        field:
+          $ref: '#/components/schemas/TermBucketAggregatesField'
+        size:
+          type: integer
+          description: |
+            The maximum number of buckets to return. This is useful when you want to limit the number of bucket values returned in the search results.
+            For example, if you only want to show the top 10 categories based on the number of documents, you would set this to 10. Larger the value of this parameter,
+            larger would be the memory consumption and slower the response time.
+          default: 10
+          maximum: 2000
+        orderBy:
+          type: string
+          minLength: 1
+          description: |
+            The value of an `orderBy` is used to sort the bucket values.
+            If orderBy is not specified, the service will order by the count of bucket values in descending order.
+            The supported fields for specifying ordering are `count` or `value`. `count` refers to the document count for each bucket, when using the `value` order,
+            bucket results are ordered by the actual term values, such as lexicographic order for keywords or numerically for numbers
+
+            It is highly recommended to use the default ordering.
+          enum:
+            - COUNT_DESC
+            - VALUE_ASC
+            - VALUE_DESC
+          default: COUNT_DESC
+    NumberStatsAggregatesConfig:
+      type: object
+      description: |
+        Configuration for number statistics aggregates on a numerical or a date field.
+        The stats that are returned consist of: `min`, `max`, `sum`, `count` and `avg`.
+        In case of date fields, the `min`, `max`, `sum` and `avg` values are represented as epoch values.
+        Also, for date fields, optionally a `min_as_string` and `max_as_string` properties may be returned. These provide a
+        human-readable, formatted version of the date values
+      allOf:
+        - $ref: '#/components/schemas/AggregatesFieldConfig'
+    AggregatesType:
+      type: string
+      minLength: 1
+      description: |
+        The type of aggregation required on the specified field.
+        - `termBuckets`: Term bucketing is used to get the unique values for a field and their respective counts.
+                         This is applicable for both string fields and non string (boolean, number and date) fields.
+        - `numberStats`: Number stats aggregation is used to get statistical information field,
+                         such as count, min, max, average, and sum. This is applicable only for non string fields like number,
+                         boolean and date fields.
+                         Requesting this aggregation on a string field will result in an error.
+      enum:
+        - termBuckets
+        - numberStats
+    ContentSourceSearchRequest:
+      type: object
+      required:
+        - contentSource
+      properties:
+        contentSource:
+          allOf:
+            - $ref: '#/components/schemas/ContentSourceSearchConfig'
+          description: Config for the content source to search in
+        query:
+          allOf:
+            - $ref: '#/components/schemas/ContentAIQuery'
+          description: |
+            Content AI query. This describes the the search query to be executed.
+            - If you need to get only the search results, use just the `query` field along with the `queryOptions` (if needed).
+            - Use both `query` and `aggregates` to get search results with aggregations calculated on them.
+            - To get only the aggregations, set the `limit` in `queryOptions.pagination` to 0, if you specify a `query` with `aggregates`,
+              you will get the aggregations calculated on the results of the `query`, otherwise, they will be calculated on all the documents
+              in the index.
+            - Not supplying either will result in a `Bad Request`.
+        boostQuery:
+          allOf:
+            - $ref: '#/components/schemas/ContentAIQuery'
+          description: |
+            Content AI boost query. This query will be used to boost the relevance score of matched documents using the `query` field.
+            Use this if you need to influence the relevance of matched documents based on certain criteria. This can only be provided
+            when a `query` is also provided. Request would fail if this is provided without a `query`.
+        queryOptions:
+          allOf:
+            - $ref: '#/components/schemas/ContentAIQueryOptions'
+          description: |
+            Content AI query options. These can be used to control various aspects of the query like pagination, sort etc.
+        aggregates:
+          description: |
+            Aggregates are useful for analysing the indexed data in your Content AI index.
+            These include buckets and metric calculation. These are calculated on the
+            search results and can be used in data analytics and also to filter content (using buckets).
+            In order to get just the aggregate results without the actual documents,
+            set the `limit` in `queryOptions.pagination` to 0.
+
+            Multiple aggregations can be requested in this list. Each item in this list can specify the `field` and the `type`
+            of aggregation being requested.
+            Based on the `type` of aggregates requested, additional properties can/should be specified.
+
+            The maximum number of buckets returned for a single search across all the aggregates is not unlimited.
+            Underlying implementation can fail a request if the number of buckets to be returned is too high.
+            This number would be (sum of the size of each term bucket aggregation in this array)
+            and should be kept below 10,000. Any request breaching this limit would fail.
+          type: array
+          minItems: 1
+          maxItems: 50
+          items:
+            $ref: '#/components/schemas/AggregatesFieldConfig'
+    ChunkResultData:
+      type: object
+      required:
+        - id
+        - score
+      properties:
+        id:
+          type: string
+          minLength: 1
+          description: ID of the chunk/vector document
+        score:
+          type: number
+          format: double
+          description: Relevance score of the chunk
+        chunkData:
+          type: object
+          additionalProperties: {}
+          description: Metadata of the chunk
+    ContentResultData:
+      type: object
+      required:
+        - id
+        - score
+        - data
+      properties:
+        id:
+          type: string
+          minLength: 1
+          description: ID of the returned document. This is the same id provided at the time of ingestion.
+        score:
+          type: number
+          format: double
+          description: Relevance score of the document.
+        data:
+          type: object
+          additionalProperties: {}
+          description: Original content of the document that was ingested.
+        chunks:
+          type: array
+          items:
+            $ref: '#/components/schemas/ChunkResultData'
+          description: List of chunks from the document. Only populated for vector queries if configured in the query options.
+        eTag:
+          type: string
+          description: The current entity tag for the document, allowing clients to use it for optimistic concurrency control during document updates. This field is included only if the `eTag` option is set to true in the query options.
+    AggregatesResultData:
+      type: object
+      required:
+        - field
+        - type
+        - id
+      discriminator:
+        propertyName: type
+        mapping:
+          termBuckets: '#/components/schemas/TermBucketResultData'
+          numberStats: '#/components/schemas/NumberStatsResultData'
+      properties:
+        type:
+          $ref: '#/components/schemas/AggregatesType'
+        id:
+          type: string
+          minLength: 1
+          description: |
+            A unique identifier for this aggregate configuration. This id was specified in the search request to identify which aggregate this result corresponds to.
+        field:
+          type: string
+          minLength: 1
+          description: |
+            The field on which aggregation was performed. This is typically a field in the document that you want to either filter on (bucket aggregation) or get the stats for.
+    BucketValueItem:
+      type: object
+      required:
+        - label
+        - count
+      properties:
+        label:
+          description: |
+            A label representing the value of the bucket.
+            For example, if the bucket is on a `category` field and one of the unique values is `Technology`, the label would be `Technology`.
+            In case of a numerical bucket on a `price` field with a unique value of `19.99`, the label would be `19.99`.
+            For date fields, the label would be in supported date format.
+          type: string
+          minLength: 1
+        count:
+          description: |
+            The count of documents that match the bucket value.
+            This indicates how many documents are associated with the specified bucket value.
+            For example, if the value is `Technology` and the count is 150, it means there are 150 documents (from the search result set)
+            categorized under `Technology`.
+          type: integer
+    TermBucketResultData:
+      type: object
+      required:
+        - values
+      description: |
+        Result data for a term bucket on a field.
+      allOf:
+        - $ref: '#/components/schemas/AggregatesResultData'
+      properties:
+        buckets:
+          type: array
+          description: |
+            The list of bucket values along with their counts for the specified field.
+            Each item in the array is a BucketValueItem object that contains the value and its count.
+            This allows you to see how many documents match each bucket value for the given field.
+          items:
+            $ref: '#/components/schemas/BucketValueItem'
+    NumberStatsResultData:
+      type: object
+      required:
+        - stats
+      description: |
+        Result data for a number statistics aggregate on a numerical or date field.
+        The stats that are returned consist of: `min`, `max`, `sum`, `count` and `avg`.
+        In case of date fields, the `min`, `max`, `sum` and `avg` values are represented as epoch values.
+        Also, for date fields, optionally a `minAsString` and `maxAsString` properties may be returned. These provide a
+        human-readable, formatted version of the date values
+      allOf:
+        - $ref: '#/components/schemas/AggregatesResultData'
+      properties:
+        stats:
+          type: object
+          description: |
+            The statistical data for the specified numerical field.
+          properties:
+            min:
+              type: number
+              description: The minimum value in the field across all documents.
+            max:
+              type: number
+              description: The maximum value in the field across all documents.
+            sum:
+              type: number
+              description: The sum of all values in the field across all documents.
+            count:
+              type: integer
+              description: The count of documents that have a value for the specified field.
+            avg:
+              type: number
+              description: The average value in the field across all documents.
+            minAsString:
+              type: string
+              description: |
+                The string representation for the min value.
+            maxAsString:
+              type: string
+              description: |
+                The string representation for the max value.
+    ContentSourceSearchResponse:
+      type: object
+      required:
+        - totalResults
+        - results
+      properties:
+        totalResults:
+          type: integer
+          format: int64
+          description: |
+            Total number of results matching for the given query.
+
+            The totalResults count is only guaranteed to be accurate up to 10,000 documents. Beyond that threshold, the count should be treated as an upper-bound indicator rather than an exact value.
+
+            This value can be greater than the number of results fetched as part of
+            the query execution based on the
+
+            pagination options defined in the query.
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/ContentResultData'
+        cursor:
+          type: string
+          description: |
+            The cursor to be used for the next page of results.
+
+            It is an opaque string that can be used in API calls which support
+            paginating the response.
+
+            A non-existent cursor signifies that the returned list does not have more
+            elements.
+        aggregates:
+          description: |
+            Aggregates calculated for the query. These aggregates are calculated on the
+            search results and can be used to either filter the results (based on bucket aggregation) or get stats of particular fields (using stats aggregation).
+
+            The aggregates are returned as a list which can comprise of different type of aggregate result objects like term buckets or number stats.
+            Each result object will have a `id` which is a unique identifier for that aggregate configuration as specified in the search request.
+            Based on the type of aggregates result, the object will have additional properties.
+          type: array
+          items:
+            $ref: '#/components/schemas/AggregatesResultData'
+    ContentSourceQueryRequest:
+      title: ContentSourceQueryRequest
+      description: Request payload for content-source generative search.
+      type: object
+      required:
+        - query
+        - contentSource
+      properties:
+        query:
+          type: string
+          minLength: 3
+          title: Query
+          description: Natural language user query
+        contentSource:
+          allOf:
+            - $ref: '#/components/schemas/ContentSourceSearchConfig'
+          description: The content source to run generative search against.
+    ContentSourceHit:
+      title: ContentSourceHit
+      description: A source document retrieved during generative search.
+      type: object
+      required:
+        - id
+      properties:
+        id:
+          type: string
+          minLength: 1
+          description: Identifier of the retrieved source document.
+        metadata:
+          type: object
+          description: Optional key-value metadata associated with the source document.
+          additionalProperties: true
+    ContentSourceQueryResultBase:
+      title: ContentSourceQueryResultBase
+      description: Common fields shared by blocking and streaming generative search responses.
+      type: object
+      required:
+        - query
+      properties:
+        query:
+          type: string
+          minLength: 3
+          description: The original natural language query
+        result:
+          type: string
+          default: ''
+          description: The generated answer
+        hits:
+          type: array
+          default: []
+          description: Retrieved source documents.
+          items:
+            $ref: '#/components/schemas/ContentSourceHit'
+    ContentSourceQueryResult:
+      title: ContentSourceQueryResult
+      description: Response model for blocking generative search over a content source.
+      allOf:
+        - $ref: '#/components/schemas/ContentSourceQueryResultBase'
+  headers:
+    ETag:
+      schema:
+        type: string
+      description: |
+        The `ETag` field in a response provides the current entity tag for the selected representation, as determined at the
+        conclusion of handling the request. An entity tag is an opaque validator for differentiating between multiple
+        representations of the same resource, regardless of whether those multiple representations are due to resource state
+        changes over time, content negotiation resulting in multiple representations being valid at the same time, or both.
+        An entity tag consists of an opaque quoted string, possibly prefixed by a weakness indicator.
+
+        For more details, please head over to [RFC9110](https://www.rfc-editor.org/rfc/rfc9110.html#name-etag).
+      required: true
+    SunsetHeader:
+      schema:
+        type: string
+      description: |
+        The `Sunset` field in a response provides allows a server to communicate
+        the fact that a resource is expected to become unresponsive at a
+        specific point in time.  It provides information for clients that
+        they can use to control their usage of the resource.
+
+        The Sunset header field contains a single timestamp that advertises
+        the point in time when the resource is expected to become
+        unresponsive.
+
+        It is safest to consider timestamps in the past mean the present
+        time, meaning that the resource is expected to become unavailable at
+        any time.
+
+        For more details, please head over to [RFC9594](https://www.rfc-editor.org/rfc/rfc8594.html).
+      required: true
+    Last-Modified:
+      schema:
+        type: string
+      description: |
+        The "Last-Modified" header field in a response provides a timestamp indicating the date and time at which the origin
+        server believes the selected representation was last modified, as determined at the conclusion of handling the
+        request.
+
+        For more details, please head over to [RFC9110](https://www.rfc-editor.org/rfc/rfc9110.html#name-last-modified).
+      required: true
+    Retry-After:
+      schema:
+        anyOf:
+          - type: string
+            pattern: ^(Mon|Tue|Wed|Thu|Fri|Sat|Sun), (([0-2][0-9]|3[01] Jan)|([0-2][0-9] Feb)|([0-2][0-9]|3[01] Mar)|([0-2][0-9]|30 Apr)|([0-2][0-9]|3[01] May)|([0-2][0-9]|30 Jun)|([0-2][0-9]|3[01] Jul)|([0-2][0-9]|3[01] Aug)|([0-2][0-9]|30 Sep)|([0-2][0-9]|3[01] Oct)|([0-2][0-9]|30 Nov)|([0-2][0-9]|3[01] Dec)) ([0-9]{4}) ([01][0-9]|2[0-3]):([0-5][0-9]):([0-5][0-9]) GMT$
+            example: Fri, 31 Dec 1999 23:59:59 GMT
+            description: The HTTP-date to which the user agent should wait to make a follow up request
+          - type: integer
+            format: int32
+            minimum: 0
+            example: 120
+            description: The number of seconds the user agent should wait to make a follow up request
+      description: |
+        The `Retry-After` header indicates how long the user agent should wait before making a follow-up request.
+
+        The Retry-After value can be either an HTTP-date or a number of seconds to delay after receiving the response.
+
+        For more details, please head over to [RFC9110](https://datatracker.ietf.org/doc/html/rfc9110#name-retry-after).
+  examples:
+    list-content-sources-response:
+      summary: List of content sources across all types
+      value:
+        items:
+          - name: example-website
+            description: Crawls marketing pages of example.com for product content.
+            type: ACQUISITION
+            search:
+              vectorSpaces:
+                semantic-search-title:
+                  description: |
+                    vector space used to enrich the title using the text-embedding-ada-002
+                    model
+                  default: true
+              lexicalSpaces:
+                fulltext-title-description-concat:
+                  description: |
+                    lexical space used for fulltext search on a concatenation of title and
+                    description
+                  fields:
+                    - field: createdAt
+                      type: DATE
+                    - field: description
+                      type: STRING
+                      filter:
+                        enabled: false
+                      fulltext:
+                        enabled: true
+                  default: true
+            createdAt: '2026-02-15T10:00:00Z'
+            updatedAt: '2026-03-01T14:30:00Z'
+          - name: aem-assets
+            description: AEM-managed digital assets and content fragments.
+            type: AEM_PUBLISH
+            search:
+              vectorSpaces:
+                semantic-search-description:
+                  description: |
+                    vector space used to enrich the description using the
+                    text-embedding-ada-002 model
+                  default: true
+              lexicalSpaces:
+                fulltext-title-description-concat:
+                  description: |
+                    lexical space used for fulltext search on a concatenation of title and
+                    description
+                  fields:
+                    - field: createdAt
+                      type: DATE
+                    - field: description
+                      type: STRING
+                      filter:
+                        enabled: true
+                      fulltext:
+                        enabled: false
+                  default: true
+            createdAt: '2026-01-01T00:00:00Z'
+            updatedAt: '2026-03-15T08:00:00Z'
+          - name: product-catalog
+            description: Searchable product catalog with pricing and categories.
+            type: CUSTOM
+            search:
+              vectorSpaces:
+                semantic-search-title:
+                  description: |
+                    vector space used to enrich the title using the text-embedding-ada-002
+                    model
+                  default: false
+                semantic-search-description:
+                  description: |
+                    vector space used to enrich the description using the
+                    text-embedding-ada-002 model
+                  default: true
+              lexicalSpaces:
+                fulltext-title-description-concat:
+                  description: |
+                    lexical space used for fulltext search on a concatenation of title and
+                    description
+                  fields:
+                    - field: createdAt
+                      type: DATE
+                    - field: description
+                      type: STRING
+                      filter:
+                        enabled: true
+                      fulltext:
+                        enabled: true
+                  default: true
+            createdAt: '2026-03-01T12:00:00Z'
+            updatedAt: '2026-03-10T09:00:00Z'
+            _links: null
+        cursor: eyJsYXN0SWQiOiJjcy1pOWowazFsMiJ9
+    create-acquisition-source-request:
+      summary: Create an acquisition content source
+      value:
+        name: example-website
+        description: Crawls marketing pages of example.com for product content.
+        acquisitionConfig:
+          baseUrl: https://example.com
+          schedule:
+            enabled: true
+            cronSchedule: 0 2 * * 0
+          discovery:
+            sitemaps:
+              - https://example.com/sitemap.xml
+            discoverLinks:
+              enabled: true
+              maxDepth: 3
+            maxResourcesPerRun: 5000
+    acquisition-source-response:
+      summary: Acquisition content source response
+      value:
+        name: example-website
+        description: Crawls marketing pages of example.com for product content.
+        type: ACQUISITION
+        createdAt: '2026-02-15T10:00:00Z'
+        updatedAt: '2026-03-01T14:30:00Z'
+        config:
+          vectorSpaces:
+            semantic-search:
+              description: Default semantic vector space
+              default: true
+          lexicalSpaces:
+            fulltext:
+              description: Full-text search space
+              default: true
+        acquisitionConfig:
+          status: ACTIVE
+          deletesAt: null
+          baseUrl: https://example.com
+          schedule:
+            enabled: true
+            cronSchedule: 0 2 * * 0
+          discovery:
+            sitemaps:
+              - https://example.com/sitemap.xml
+            discoverLinks:
+              enabled: true
+              maxDepth: 3
+            maxResourcesPerRun: 1000
+    acquisition-run-queued-response:
+      summary: Newly queued acquisition run
+      value:
+        id: run-x9y8z7
+        acquisitionName: example-website
+        type: ON_DEMAND
+        state: QUEUED
+        createdAt: '2026-03-18T02:00:00Z'
+    acquisition-run-response:
+      summary: Latest acquisition run status
+      value:
+        id: run-x9y8z7
+        acquisitionName: example-website
+        type: ON_DEMAND
+        state: COMPLETED
+        createdAt: '2026-03-18T02:00:00Z'
+        startedAt: '2026-03-18T02:00:15Z'
+        completedAt: '2026-03-18T02:47:23Z'
+        adaptiveStrategyDecision:
+          globalDecision: HEADLESS
+          counter: 2
+        metrics:
+          - name: pagesDiscovered
+            value: 1260
+          - name: pagesParsed
+            value: 1247
+          - name: pagesErrored
+            value: 2
+          - name: indexedDocuments
+            value: 1247
+    discovery-preview-request:
+      summary: Probe for sitemaps
+      value:
+        baseUrl: https://example.com
+    discovery-preview-response:
+      summary: Sitemaps discovered
+      value:
+        baseUrl: https://example.com
+        status: DISCOVERED
+        sitemaps:
+          - url: https://example.com/sitemap.xml
+            source: ROBOTS_TXT
+          - url: https://example.com/sitemap_index.xml
+            source: CONVENTION
+    search-001:
+      description: This example demonstrates query composition with vector and fulltext queries. It combines a vector search for the phrase "What are the benefits of electric cars" with a fulltext search for the word "recycled". The queries are executed under OR operator which means results from both the queries would be returned based on score for each document.
+      value:
+        contentSource:
+          name: content-ai-articles-index
+        query:
+          type: composite
+          operator: OR
+          queries:
+            - type: vector
+              text: What are the benefits of electric cars
+              options:
+                numCandidates: 3
+                boost: 1
+            - type: fulltext
+              text: recycled
+              options:
+                lexicalSpaceSelection:
+                  space: fulltext
+                boost: 1.5
+        queryOptions:
+          pagination:
+            limit: 1
+          sort:
+            - orderBy: width asc
+              lexicalSpaceSelection:
+                space: fulltext-title-description-concat
+            - orderBy: height desc
+              lexicalSpaceSelection:
+                space: semantic-search-title
+    search-002:
+      description: This example demonstrates a vector search query. The query retrieves results based on semantic similarity. The results also include the chunks of the original source document.
+      value:
+        contentSource:
+          name: content-ai-articles-index
+        query:
+          type: vector
+          text: What are the benefits of electric cars
+          options:
+            vectorSpaceSelection:
+              space: semantic
+            numCandidates: 3
+            boost: 1
+            chunks:
+              includeInResponse: true
+              scoreMode: MAX
+        queryOptions:
+          pagination:
+            limit: 1
+    search-003:
+      description: |-
+        This example demonstrates a filter query. The query retrieves results based on specific filter criteria. The filter criteria includes a filter group composed of 2 filters over an `OR` condition. Filter 1 again is a filter group with 4 filters over an `AND` condition, four conditions are:  
+          1. string equality filter to filter documents where the title field is equal to "How Self-Driving Cars Work".  
+          2. number filter checking a GTE condition to filter documents where the width field is greater than or equal to 2.  
+          3. InFilter to filter documents where the tags field contains either "electric" or "autonomous".  
+          4. prefix filter to filter documents where the author field starts with "joh".  
+
+        Filter 2 is an exists filter checking for the existence of a field. These translates to `(title = "How Self-Driving Cars Work" AND width >= 2 AND (tags = "electric" OR tags = "autonomous") AND author LIKE "joh%") OR (description EXISTS)`.
+      value:
+        contentSource:
+          name: content-ai-articles-index
+        query:
+          type: filter
+          filter:
+            filterComponent:
+              type: FilterGroup
+              filters:
+                - type: FilterGroup
+                  filters:
+                    - type: StringFilter
+                      field: title
+                      value: How Self-Driving Cars Work
+                      operator: EQ
+                    - type: NumberFilter
+                      field: width
+                      value: 2
+                      operator: GTE
+                    - type: InFilter
+                      field: tags
+                      values:
+                        - electric
+                        - autonomous
+                    - type: PrefixFilter
+                      field: author
+                      value: joh
+                  operator: AND
+                - type: ExistsFilter
+                  field: description
+              operator: OR
+          options:
+            lexicalSpaceSelection:
+              space: fulltext
+            boost: 1
+        queryOptions:
+          pagination:
+            limit: 1
+    search-response-001:
+      description: Example of a Content AI Response for a search query.
+      value:
+        totalResults: 5
+        results:
+          - id: doc_1
+            score: 0.7514963709
+            data:
+              title: The Benefits of Electric Cars
+              description: This document talks about the advantages of electric cars, like how they reduce pollution and save money on fuel. It also mentions some challenges, such as the need for charging stations.
+              tags:
+                - pollution
+                - electric
+              metadata:
+                reference: http://xyz.com
+                rank: 1
+                docNumber: 22
+            chunks: []
+        cursor: WzAuMDAxNDk2MzcwOSwibXNjX2ZhbnRhc2lhX21lZGl0ZXJyYW5lYW5fXzV3cCJd
+    search-response-002:
+      description: Example of a Content AI Response for a search query with chunks included in the response.
+      value:
+        totalResults: 5
+        results:
+          - id: doc_1
+            score: 0.7514963709
+            data:
+              title: The Benefits of Electric Cars
+              description: This document talks about the advantages of electric cars, like how they reduce pollution and save money on fuel. It also mentions some challenges, such as the need for charging stations.
+              tags:
+                - pollution
+                - electric
+              metadata:
+                reference: http://xyz.com
+                rank: 1
+                docNumber: 22
+            chunks:
+              - id: chunk_1
+                score: 0.7514963709
+                chunkData:
+                  text: This document talks about the advantages of electrica cars, like how they reduce pollution and save money on fuel.
+              - id: chunk_2
+                score: 0.5514963709
+                chunkData:
+                  text: It also mentions some challenges, such as the need for charging stations.
+        cursor: WzAuMDAxNDk2MzcwOSwibXNjX2ZhbnRhc2lhX21lZGl0ZXJyYW5lYW5fXzV3cCJd
+    gensearch-request-001:
+      summary: Basic generative search query against a content source
+      value:
+        query: What are the benefits of electric cars?
+        contentSource:
+          name: example-website
+    gensearch-response-001:
+      summary: Successful generative search response
+      value:
+        query: What are the benefits of electric cars?
+        result: Electric cars offer lower operating costs, reduced emissions, and quieter operation compared to traditional vehicles.
+        hits:
+          - id: doc_1
+          - id: doc_2
+    gensearch-stream-start:
+      summary: Initial start event
+      value: |
+        event: message
+        data: {"type":"START","query":"What are the benefits of electric cars?"}
+    gensearch-stream-streaming:
+      summary: Streaming response chunk
+      value: |
+        event: message
+        data: {"type":"STREAMING","query":"What are the benefits of electric cars?","result":"# Benefits of Electric Cars\n\nElectric cars offer..."}
+    gensearch-stream-end:
+      summary: Final response with citations
+      value: |
+        event: message
+        data: {"type":"END","query":"What are the benefits of electric cars?","result":"# Benefits of Electric Cars\n\nElectric cars offer several key advantages...","hits":[{"id":"doc_1"},{"id":"doc_2"}]}
+    gensearch-stream-error:
+      summary: Error during streaming
+      value: |
+        event: message
+        data: {"type":"ERROR","query":"What are the benefits of electric cars?","result":"Content source not found","hits":[]}
+  responses:
+    304_NotModified:
+      description: Not Modified
+      content: {}
+      headers:
+        ETag:
+          $ref: '#/components/headers/ETag'
+        Last-Modified:
+          $ref: '#/components/headers/Last-Modified'
+    401_Unauthorized:
+      description: Unauthorized
+      content:
+        application/problem+json:
+          schema:
+            allOf:
+              - $ref: '#/components/schemas/ProblemDetails'
+              - type: object
+                properties:
+                  status:
+                    type: integer
+                    default: 401
+                  title:
+                    type: string
+                    default: Unauthorized
+          example:
+            type: http://api.adobeaemcloud.com/adobe/meta/errors/unauthorized
+            title: Unauthorized
+            status: 401
+            detail: The request did not contain a valid Authorization header.
+    403_Forbidden:
+      description: Forbidden
+      content:
+        application/problem+json:
+          schema:
+            allOf:
+              - $ref: '#/components/schemas/ProblemDetails'
+              - type: object
+                properties:
+                  status:
+                    type: integer
+                    default: 403
+                  title:
+                    type: string
+                    default: Forbidden
+          example:
+            type: http://api.adobeaemcloud.com/adobe/meta/errors/forbidden
+            title: Forbidden
+            status: 403
+            detail: The credentials provided do not have sufficient permissions to access this resource.
+    406_Unacceptable:
+      description: |
+        Unacceptable. Indicates that the target resource does not have a current representation that would be acceptable to the user agent,
+        according to the proactive negotiation header fields received in the request.
+      content:
+        application/problem+json:
+          schema:
+            allOf:
+              - $ref: '#/components/schemas/ProblemDetails'
+              - type: object
+                properties:
+                  title:
+                    type: string
+                    example: Unacceptable
+                  status:
+                    type: integer
+                    default: 406
+          example:
+            type: http://api.adobeaemcloud.com/adobe/meta/errors/not_acceptable
+            title: Not Acceptable
+            status: 406
+            detail: |
+              The target resource does not have a current representation that would be acceptable to the user agent, 
+              according to the proactive negotiation header fields received in the request.
+    500_InternalServerError:
+      description: |
+        The server encountered an unexpected error. Retrying the request after a certain time could help.
+      content:
+        application/problem+json:
+          schema:
+            allOf:
+              - $ref: '#/components/schemas/ProblemDetails'
+              - type: object
+                properties:
+                  status:
+                    type: integer
+                    default: 500
+                  title:
+                    type: string
+                    default: Internal Server Error
+          example:
+            type: http://api.adobeaemcloud.com/adobe/meta/errors/internal_server_error
+            title: Internal Server Error
+            status: 500
+            detail: The server encountered an unexpected condition that prevented it from fulfilling the request.
+    503_ServiceUnavailable:
+      description: |
+        The service is temporarily unavailable. Please try again later.
+      content:
+        application/problem+json:
+          schema:
+            allOf:
+              - $ref: '#/components/schemas/ProblemDetails'
+              - type: object
+                properties:
+                  status:
+                    type: integer
+                    default: 503
+                  title:
+                    type: string
+                    default: Service Unavailable
+          example:
+            type: http://api.adobeaemcloud.com/adobe/meta/errors/service_unavailable
+            title: Service Unavailable
+            status: 503
+            detail: The service is temporarily unavailable. Please try again later.
+    400_BadRequest:
+      description: Bad Request. The Problem Details object will provide more information about the exact cause.
+      content:
+        application/problem+json:
+          schema:
+            allOf:
+              - $ref: '#/components/schemas/ProblemDetails'
+              - type: object
+                properties:
+                  status:
+                    type: integer
+                    default: 400
+                  title:
+                    type: string
+                    default: Bad Request
+          example:
+            type: http://api.adobeaemcloud.com/adobe/meta/errors/bad_request
+            title: Bad Request
+            status: 400
+            detail: Bad request, please check that you have provided the correct parameters and that they are valid.
+    409_Conflict:
+      description: Conflict
+      content:
+        application/problem+json:
+          schema:
+            allOf:
+              - $ref: '#/components/schemas/ProblemDetails'
+              - type: object
+                properties:
+                  status:
+                    type: integer
+                    default: 409
+                  title:
+                    type: string
+                    default: Conflict
+          example:
+            type: http://api.adobeaemcloud.com/adobe/meta/errors/conflict
+            title: Conflict
+            status: 409
+            detail: The current state of the resource on the server is incompatible with your request.
+    415_UnsupportedMediaType:
+      description: |
+        Unsupported Media Type. When provided as a response to a `PATCH` request,
+        the response will provide an `Accept-Patch` response header to notify
+        the client what patch document media types are supported.
+      content:
+        application/problem+json:
+          schema:
+            allOf:
+              - $ref: '#/components/schemas/ProblemDetails'
+              - type: object
+                properties:
+                  title:
+                    type: string
+                    example: Unsupported Media Type
+                  status:
+                    type: integer
+                    default: 415
+          example:
+            type: http://api.adobeaemcloud.com/adobe/meta/errors/unsupported_media_type
+            title: Unsupported Media Type
+            status: 415
+            detail: This request is not acceptable because the payload is in an unsupported format.
+    422_UnprocessableEntity:
+      description: |
+        Unprocessable Entity. The server understands the patch document and the
+        syntax of the patch document appears to be valid, but the server is
+        incapable of processing the request. This might include attempts to
+        modify a resource in a way that would cause the resource to become invalid.
+      content:
+        application/problem+json:
+          schema:
+            allOf:
+              - $ref: '#/components/schemas/ProblemDetails'
+              - type: object
+                properties:
+                  status:
+                    type: integer
+                    default: 422
+                  title:
+                    type: string
+                    default: Unprocessable Entity
+          example:
+            type: http://api.adobeaemcloud.com/adobe/meta/errors/unprocessable_entity
+            title: Unprocessable Entity
+            status: 422
+            detail: |
+              The syntax of the request entity is correct, but we are unable to process the contained instructions. This
+              request should not be repeated without modification.
+    404_NotFound:
+      description: Not Found
+      content:
+        application/problem+json:
+          schema:
+            allOf:
+              - $ref: '#/components/schemas/ProblemDetails'
+              - type: object
+                properties:
+                  status:
+                    type: integer
+                    default: 404
+                  title:
+                    type: string
+                    default: Not Found
+          example:
+            type: http://api.adobeaemcloud.com/adobe/meta/errors/not_found
+            title: Not Found
+            status: 404
+            detail: The requested resource could not be found.
+    412_PreconditionFailed:
+      description: Precondition Failed
+      content:
+        application/problem+json:
+          schema:
+            allOf:
+              - $ref: '#/components/schemas/ProblemDetails'
+              - type: object
+                properties:
+                  title:
+                    type: string
+                    default: Precondition Failed
+                  status:
+                    type: integer
+                    default: 412
+          example:
+            type: http://api.adobeaemcloud.com/adobe/meta/errors/precondition_failed
+            title: Precondition Failed
+            status: 412
+            detail: The provided conditional header was not fulfilled.
+    428_PreconditionRequired:
+      description: Precondition Required
+      content:
+        application/problem+json:
+          schema:
+            allOf:
+              - $ref: '#/components/schemas/ProblemDetails'
+              - type: object
+                properties:
+                  title:
+                    type: string
+                    default: Precondition Required
+                  status:
+                    type: integer
+                    default: 428
+          example:
+            type: http://api.adobeaemcloud.com/adobe/meta/errors/precondition_required
+            title: Precondition Required
+            status: 428
+            detail: This operation requires the use of a conditional header.
+    204_NoContent:
+      description: No Content
+    429_TooManyRequests:
+      description: Too Many Requests
+      headers:
+        Retry-After:
+          $ref: '#/components/headers/Retry-After'
+      content:
+        application/problem+json:
+          schema:
+            allOf:
+              - $ref: '#/components/schemas/ProblemDetails'
+              - type: object
+                properties:
+                  title:
+                    type: string
+                    default: Too Many Requests
+                  status:
+                    type: integer
+                    default: 429
+          example:
+            type: http://api.adobeaemcloud.com/adobe/meta/errors/too_many_requests
+            title: Too Many Requests
+            status: 429
+            detail: This indicates the user has sent too many requests in a given amount of time.

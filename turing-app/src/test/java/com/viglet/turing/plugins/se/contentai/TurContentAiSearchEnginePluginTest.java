@@ -47,6 +47,7 @@ import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
 
 import com.sun.net.httpserver.HttpServer;
+import com.viglet.testsupport.contentai.TurContentAiSpecValidator;
 import com.viglet.turing.commons.se.TurSEParameters;
 import com.viglet.turing.commons.se.passage.TurSEPassage;
 import com.viglet.turing.commons.sn.bean.TurSNFilterParams;
@@ -191,7 +192,14 @@ class TurContentAiSearchEnginePluginTest {
         }
         server = HttpServer.create(new InetSocketAddress("127.0.0.1", 0), 0);
         server.createContext(TurContentAiClient.SEARCH_PATH, exchange -> {
-            bodies.add(new String(exchange.getRequestBody().readAllBytes(), StandardCharsets.UTF_8));
+            String requestBody = new String(exchange.getRequestBody().readAllBytes(),
+                    StandardCharsets.UTF_8);
+            // T1048 — every body this suite produces is validated against Adobe's
+            // published schema, not only the parts a test remembered to assert. This
+            // is what makes the stub a contract rather than a yes-man.
+            TurContentAiSpecValidator.assertValid(requestBody,
+                    TurContentAiSpecValidator.SEARCH_REQUEST);
+            bodies.add(requestBody);
             authHeaders.add(exchange.getRequestHeaders().getFirst("Authorization"));
             String body = responses.size() > 1 ? responses.removeFirst() : responses.peekFirst();
             byte[] payload = (body == null ? "{}" : body).getBytes(StandardCharsets.UTF_8);

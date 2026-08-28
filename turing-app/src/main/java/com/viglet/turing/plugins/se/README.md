@@ -289,6 +289,35 @@ endpoint in miniature and asserts the request bodies against Adobe's published
 OpenAPI examples — a mocked client would prove nothing about the translation,
 which is the whole of the feature.
 
+#### Every request body is checked against Adobe's schema (T1048)
+
+A stub that replies `200` to anything makes a test catch only what its author thought
+to assert, and that is not hypothetical: T1031's `match_all` was an empty
+`FilterGroup`, which `minItems: 1` forbids, and it survived T1044, T1045 and T1046
+because the test asserting it asserted the *invalid* shape by name.
+
+So both stubs now call `TurContentAiSpecValidator.assertValid(...)` on **every**
+recorded body. The spec is vendored and pinned at
+`src/test/resources/contentai/openapi.yaml`; refreshing it is a deliberate act, since
+the API is experimental and dated and a diff against a newer bundle is a thing to
+read. No new dependency — `com.networknt:json-schema-validator` was already on the
+classpath.
+
+One thing makes it work, and it was measured rather than assumed. Adobe's schemas use
+OpenAPI `discriminator` + `allOf` inheritance: `FilterComponent` declares only `type`
+plus a `mapping`, and each concrete filter references it. There is no `oneOf` for the
+discriminator to select from, so a validator checks `type` is a string and descends no
+further — **before the transform, the empty group produced zero violations**. The
+validator therefore rewrites each discriminated parent into a `oneOf` over its mapped
+children, derived from the spec's own `discriminator.mapping` and never from a
+hand-typed list; each child absorbs the parent's constraints in place of the
+back-reference (breaking the cycle) and gains an `enum` pinning its discriminator
+value. The empty group then produces 114 violations.
+
+It found a bug on its first run: `DateFilter.value` is `format: date-time`, so T1047's
+pass-through of an Elasticsearch-style `"gte": "2026-01-01"` would have been refused.
+Date-only bounds are now widened to midnight UTC.
+
 ### Elasticsearch Implementation Notes
 
 The Elasticsearch plugin includes:
