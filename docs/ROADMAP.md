@@ -10,10 +10,6 @@
 
 ## Block BX — The bento layer leaves the product it grew in (§XCVI)
 
-## Block BV — The quality gate stops at the package boundary
-
-- 📋 **T1055** (deps: —) **The source-encoding gate walks turing-app only, leaving 227 Java files in three modules unchecked** — T1053's test resolves its roots against its own module's basedir, so turing-commons, turing-java-sdk and turing-spring are outside a gate whose defect has occurred nine times here. → §CIX
-
 ## Non-goals (do NOT add as tasks)
 
 Binding constraints — see [IMPROVEMENTS.md](IMPROVEMENTS.md) §I.6 (What NOT to
