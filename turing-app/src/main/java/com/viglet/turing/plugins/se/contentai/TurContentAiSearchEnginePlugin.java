@@ -267,7 +267,7 @@ public class TurContentAiSearchEnginePlugin implements TurSearchEnginePlugin {
      * search returning nothing into a search returning an error.
      */
     private void diagnoseEmptyResult(Target target, List<TurSNSiteFieldExt> facetFields) {
-        String key = target.endpointUrl() + " " + target.sourceName();
+        String key = target.endpointUrl() + "\0" + target.sourceName();
         if (!diagnosed.add(key)) {
             return;
         }

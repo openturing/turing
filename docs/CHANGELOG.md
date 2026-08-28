@@ -1318,6 +1318,7 @@
 - **T1024** — The ceiling is 0: the 188 splits are done and every one of the 40 dependencies is fixed or carries its sentence.
 - **T1025** — All twelve packages lint against one shared config, errors at zero everywhere and each ceiling its measured count.
 - **T1027** — All twelve packages run --max-warnings 0: react-sdk's 58 read through, the rest split or given the sentence.
+- **T1053** — The nine raw NUL bytes across seven Java sources are now the escape they should always have been. The value was never wrong -- a NUL cannot occur in either half of a composite key, which is what TurClientToolParkRegistry, TurCitationDriftService, TurRagSource, TurWorkspaceTextEditor, TurGeminiContextCacheProvider and TurContentAiSearchEnginePlugin all wanted one for, and TurCodeInterpreterTenantPathTest needs a real one as the injection input its sanitizePathSegment guard is asserted against. Writing it as 0x00 instead of the escape is what cost: ripgrep classifies such a file as binary, so a content search answers binary file matches and no lines, which is how this was found -- a search for a method in the Content AI plugin came back empty while the method was there. Same byte at runtime, so no behaviour changed. New TurSourceEncodingTest walks both source roots and names any file carrying one, which is the part that belongs to this block: the fix was nine edits and the gate is what keeps the tenth from landing. It was proven to fail on a planted NUL rather than assumed to.
 
 ## Block BW — What the link-free response and its consumers still lack (§LXX)
 
