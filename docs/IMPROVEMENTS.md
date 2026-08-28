@@ -2117,3 +2117,34 @@ has used is spent for good — so the block lost its family and the next follow-
 open a new one. A standing block needs a standing address. Empty here means the
 follow-ups filed so far are done, not that the heading is finished; the next one goes
 under this address.
+
+## CIX The encoding gate stops at one module (T1055)
+
+T1053 removed nine raw NUL bytes and left `TurSourceEncodingTest` behind so a tenth
+fails at build time. The gate works — it was checked against a planted NUL, and it names
+the file and offset. It only walks **one module**.
+
+The test lives in `turing-app` and resolves `src/main/java` and `src/test/java` against
+that module's basedir, which is right for a surefire test and wrong for the claim the
+block makes. Three modules are outside it:
+
+| Module | Java files |
+| ------ | ---------- |
+| `turing-java-sdk` | 116 |
+| `turing-commons` | 107 |
+| `turing-spring` | 4 |
+
+None carries a NUL today — that was measured, so this is a gate that is narrower than
+its subject rather than a defect already present. It is still worth closing, because the
+defect it guards has occurred nine times in this repository and nothing about
+`turing-commons` makes it immune; the separator idiom that produced every one of them is
+exactly the kind of thing a shared module attracts.
+
+`turing-utils` has no `src` at all, which is why it is not in the table.
+
+The shape is the open question, and is why this is a task and not a one-line edit. A
+copy per module is three more files to keep in step. Walking up to the reactor root
+makes one module's test assert something about its siblings — a dependency the build
+does not otherwise have, and one that breaks when the test runs from another working
+directory. Either way, the same argument applies to the sibling gates in `turing-app`
+that scan a source tree.
