@@ -1316,6 +1316,62 @@ neutral grounding + manifest kernel is now `viglet-core-manifest`; see CHANGELOG
 these block the Dumont collection work — a sidecar
 (D10) can index into a hand-provisioned site before T382 lands.
 
+### XX.28 The bucket budget no schema can express (T1051)
+
+T1049 enforced the four bounds the schema states, and T1048 built the check that proves
+they are stated. Neither reaches this one, because it is not a schema constraint at all
+— it is a sentence in the `aggregates` description:
+
+> This number would be (sum of the size of each term bucket aggregation in this
+> array) and should be kept below 10,000. Any request breaching this limit would
+> fail.
+
+No JSON Schema keyword expresses a sum across siblings, so `TurContentAiSpecValidator`
+will never catch it however good the bundle gets. The only place to enforce it is where
+the body is built.
+
+It is reachable, and T1049 is part of why. A term bucket `size` now clamps to 2000, so
+six `terms` aggregations at that ceiling are a valid body under every schema rule and
+12,000 buckets against this one. The plugin path is further away — `facetSize` defaults
+to 10, so 50 fields spend 500 — but it is one admin edit from the same place:
+`facetSize` at 250 across 40 fields is 10,000 exactly.
+
+The failure is the kind worth guarding, because it is not the aggregate that breaks.
+Adobe fails the *request*, so a site whose facet configuration crossed the line stops
+returning results at all, and the cause is a number nobody typed — a product of two
+settings neither of which looks wrong alone.
+
+Which way it should go follows T1049's own split, and the answer is not the same on both
+paths: a DSL request naming its aggregations by name should be refused, and a site's
+facet configuration should be scaled down to fit, since losing precision on every facet
+beats losing the search.
+
+### XX.29 The second endpoint is still a yes-man (T1052)
+
+T1048 and T1050 made the search stub a contract in both directions. The same suite
+stands a second Adobe endpoint — `GET /content-sources`, which T1045 added so a source
+name that resolves to nothing is a statement rather than an inference — and that one is
+still a yes-man in both directions.
+
+Its fixture is the `sourceListing` field: a hand-written page of two sources with their
+`search` blocks, vector spaces, lexical spaces and per-field filter flags.
+`TurContentAiSourceCatalog` and `TurContentAiSource` are proven entirely against it. The
+bundle declares `ContentSourceListPage` — `items` required, each item a `ContentSource`
+— so nothing new has to be vendored or written: it is the schema name and a call,
+exactly as `SEARCH_RESPONSE` was.
+
+The reason to close it is that this fixture carries more invented structure than the
+search one did. A search hit is three required fields; a content source is a nested
+capability description that Turing *reads to decide what it can do* — which vector space
+to query, which fields are filterable. Getting a name wrong there does not fail: it
+produces a source Turing believes has no filterable fields, and the facets quietly stop
+working on a federated site.
+
+Worth checking in the same pass whether the catalog tolerates a source that is valid but
+sparse — `{"name": …, "type": …}` with no `search` block at all, which the second
+fixture entry already approximates and the schema permits. That is the shape an AEM
+source would take before its index is configured.
+
 ## XXII. Agent↔UI transparency & client tools — AG-UI parity (Block W)
 
 > **Why now.** A capability review against CopilotKit's **AG-UI** protocol

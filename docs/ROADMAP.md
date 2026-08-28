@@ -10,6 +10,11 @@
 
 ## Block BX — The bento layer leaves the product it grew in (§XCVI)
 
+## Block R.1 — Event-driven ingestion from enterprise CMS platforms (AEM as the reference)
+
+- 📋 **T1051** (deps: —) **Nothing bounds the total buckets a Content AI search asks for, which Adobe fails the whole request over** — The 10,000 cap is prose in the aggregates description, not a schema keyword, so T1048's validator cannot reach it and T1049 left it: six aggs at the clamped 2000 is 12,000. → §XX.28
+- 📋 **T1052** (deps: —) **The content-source listing the source catalog is proven against is a page nobody checked against Adobe** — T1048 and T1050 made the search stub a contract both ways; GET /content-sources kept its hand-written fixture, and the bundle declares ContentSourceListPage for it. → §XX.29
+
 ## Block BV — The quality gate stops at the package boundary
 
 ## Non-goals (do NOT add as tasks)
