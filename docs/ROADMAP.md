@@ -10,10 +10,6 @@
 
 ## Block BX — The bento layer leaves the product it grew in (§XCVI)
 
-## Block R.1 — Event-driven ingestion from enterprise CMS platforms (AEM as the reference)
-
-- 📋 **T1050** (deps: —) **Every canned Content AI response a test asserts against is a shape Adobe may never send** — T1048 validates requests against the vendored bundle, which also declares ContentSourceSearchResponse; TurContentAiResponseMapper is proven only against JSON its own test author invented. → §XX.27
-
 ## Block BV — The quality gate stops at the package boundary
 
 ## Non-goals (do NOT add as tasks)

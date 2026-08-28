@@ -46,6 +46,14 @@ import tools.jackson.dataformat.yaml.YAMLMapper;
  * happens to remember would repeat that mistake one level up, so this validates
  * against the whole contract instead.
  *
+ * <p>T1050 — it validates the <b>reply</b> too. A stub answering with a shape its
+ * own author invented proves the mapper agrees with itself, and the failure that
+ * hides is quieter than a rejected request: a field read under the wrong name is
+ * zero hits, an empty facet or a cursor that never advances, with no exception and
+ * no log line. Pointing {@link #SEARCH_RESPONSE} at every canned response found two
+ * fixtures short of what Adobe sends, and one contradiction in the bundle itself —
+ * see {@link #reconcileBucketArray}.
+ *
  * <p>The spec is <b>vendored and pinned</b> at
  * {@code src/test/resources/contentai/openapi.yaml} ({@code 2026.07-experimental}).
  * That is deliberate: fetching it at test time would make the build depend on
@@ -85,6 +93,13 @@ public final class TurContentAiSpecValidator {
     /** The schema a {@code POST /content-sources/search} body must satisfy. */
     public static final String SEARCH_REQUEST = "ContentSourceSearchRequest";
 
+    /**
+     * T1050 — the schema a {@code POST /content-sources/search} <em>reply</em>
+     * must satisfy, so a canned fixture is a contract rather than a shape its own
+     * author invented.
+     */
+    public static final String SEARCH_RESPONSE = "ContentSourceSearchResponse";
+
     /** How many violations a failure message lists before summarising the rest. */
     private static final int REPORTED_VIOLATIONS = 12;
 
@@ -106,11 +121,48 @@ public final class TurContentAiSpecValidator {
                         "Vendored Content AI spec not found at " + SPEC_RESOURCE);
             }
             ObjectNode document = (ObjectNode) YAML.readTree(in);
-            flattenInheritance((ObjectNode) document.at("/components/schemas"));
+            ObjectNode schemas = (ObjectNode) document.at("/components/schemas");
+            reconcileBucketArray(schemas);
+            flattenInheritance(schemas);
             return document;
         } catch (IOException e) {
             throw new IllegalStateException("Content AI spec could not be read", e);
         }
+    }
+
+    /**
+     * The one place the bundle contradicts itself, corrected in the one way that
+     * states the contradiction instead of erasing it.
+     *
+     * <p>{@code TermBucketResultData} declares {@code required: [values]} while the
+     * only bucket property it defines is {@code buckets}. Both cannot be right, and
+     * Adobe publishes no example response for aggregates to settle it. Reading it
+     * literally would refuse every aggregate response Turing has ever seen —
+     * {@code TurContentAiResponseMapper} accepts either key precisely because that
+     * disagreement was found before this validator existed.
+     *
+     * <p>So the requirement becomes "one of the two" rather than being dropped: a
+     * response carrying neither is still refused, which is the part that has value,
+     * and a response carrying either passes. This is the only hand-authored
+     * departure from the bundle, and it is narrow on purpose — one field of one
+     * schema, asserted by its own test, so if Adobe reconciles the two this becomes
+     * visible rather than silently redundant.
+     */
+    private static void reconcileBucketArray(ObjectNode schemas) {
+        JsonNode termBuckets = schemas.get("TermBucketResultData");
+        if (termBuckets == null || !termBuckets.has("required")) {
+            throw new IllegalStateException(
+                    "TermBucketResultData no longer declares a required bucket array; "
+                            + "re-read the bundle before keeping this exception");
+        }
+        ObjectNode node = (ObjectNode) termBuckets;
+        node.remove("required");
+        ArrayNode anyOf = schemas.arrayNode();
+        for (String key : List.of("values", "buckets")) {
+            anyOf.add(schemas.objectNode()
+                    .set("required", schemas.arrayNode().add(key)));
+        }
+        node.set("anyOf", anyOf);
     }
 
     /**

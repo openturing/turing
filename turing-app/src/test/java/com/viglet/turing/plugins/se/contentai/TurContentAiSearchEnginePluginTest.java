@@ -202,6 +202,13 @@ class TurContentAiSearchEnginePluginTest {
             bodies.add(requestBody);
             authHeaders.add(exchange.getRequestHeaders().getFirst("Authorization"));
             String body = responses.size() > 1 ? responses.removeFirst() : responses.peekFirst();
+            // T1050 — the reply half of the contract. A fixture a test author
+            // invented proves the mapper agrees with itself; this makes it prove
+            // the mapper agrees with Adobe.
+            if (body != null) {
+                TurContentAiSpecValidator.assertValid(body,
+                        TurContentAiSpecValidator.SEARCH_RESPONSE);
+            }
             byte[] payload = (body == null ? "{}" : body).getBytes(StandardCharsets.UTF_8);
             exchange.getResponseHeaders().add("Content-Type", "application/json");
             exchange.sendResponseHeaders(200, payload.length);

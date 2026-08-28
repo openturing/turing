@@ -341,6 +341,25 @@ every search it runs — the fields arrive in facet-position order, so what surv
 what the site put first. A `size` is clamped either way: it is a ceiling on what comes
 back, not a request for something specific.
 
+#### The reply is checked too, and the bundle contradicts itself once (T1050)
+
+A stub whose *response* is whatever its author typed proves the mapper agrees with
+itself. That failure is quieter than a rejected request — a field read under the wrong
+name is zero hits, an empty facet or a cursor that never advances, with no exception
+and no log line — so both stubs now validate each canned response against
+`ContentSourceSearchResponse` before sending it.
+
+It found two fixtures short of what Adobe sends (a `termBuckets` aggregate with no
+`field`, which `AggregatesResultData` requires) and one defect in the bundle itself:
+**`TermBucketResultData` declares `required: [values]` while the only bucket property
+it defines is `buckets`**, and Adobe publishes no example aggregate response to settle
+it. `TurContentAiResponseMapper` already read either key for exactly that reason.
+
+So the validator makes that requirement "one of the two" rather than dropping it — a
+response carrying neither is still refused. It is the only hand-authored departure from
+the bundle, deliberately one field of one schema and pinned by its own test, so if
+Adobe reconciles the two the exception becomes visible instead of silently redundant.
+
 ### Elasticsearch Implementation Notes
 
 The Elasticsearch plugin includes:

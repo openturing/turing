@@ -114,6 +114,10 @@ class TurDslContentAiExecutorTest {
             // translation that is merely plausible fails here rather than in production.
             TurContentAiSpecValidator.assertValid(body, TurContentAiSpecValidator.SEARCH_REQUEST);
             bodies.add(body);
+            // T1050 — the reply half of the contract: a fixture the test author
+            // invented proves only that the mapper agrees with itself.
+            TurContentAiSpecValidator.assertValid(response,
+                    TurContentAiSpecValidator.SEARCH_RESPONSE);
             byte[] payload = response.getBytes(StandardCharsets.UTF_8);
             exchange.getResponseHeaders().add("Content-Type", "application/json");
             exchange.sendResponseHeaders(200, payload.length);
@@ -528,9 +532,12 @@ class TurDslContentAiExecutorTest {
     @Test
     @DisplayName("A terms agg becomes termBuckets and reads back as buckets")
     void translatesTermsAggregation() {
+        // `field` is required on AggregatesResultData and Adobe always sends it;
+        // this fixture omitted it until T1050 pointed the response schema at it.
         response = """
                 {"totalResults": 3, "results": [],
                  "aggregates": [{"type": "termBuckets", "id": "by_category",
+                   "field": "category",
                    "buckets": [{"label": "news", "count": 2}, {"label": "blog", "count": 1}]}]}
                 """;
 

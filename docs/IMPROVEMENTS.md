@@ -1316,31 +1316,6 @@ neutral grounding + manifest kernel is now `viglet-core-manifest`; see CHANGELOG
 these block the Dumont collection work — a sidecar
 (D10) can index into a hand-provisioned site before T382 lands.
 
-### XX.27 The response half of the stub is still a yes-man (T1050)
-
-T1048 fixed one half of the wire. The Content AI stubs now refuse a request body Adobe
-would refuse, because the vendored bundle says what a request is. That same bundle
-declares `ContentSourceSearchResponse`, and nothing reads it.
-
-So the responses those stubs return are still whatever their author typed. Every test of
-`TurContentAiResponseMapper` — the hit list, the passages T1044 added, the aggregate
-buckets, `totalResults`, the paging cursor — asserts that the mapper reads a shape
-invented alongside the code that reads it. That is the exact defect T1031 shipped,
-mirrored: a test proving Turing agrees with itself.
-
-The failure it hides is quieter than a rejected request. A request Adobe refuses returns
-an error somebody sees. A response field the mapper looks for under the wrong name
-returns zero hits, an empty facet, or a cursor that never advances — a federated site
-that simply looks empty, with no exception and no log line. T1045 was filed because a
-source name resolving to nothing was an inference rather than a statement; this is the
-same silence one layer down.
-
-The direction is the mirror of T1048: validate each canned response against
-`ContentSourceSearchResponse` before the stub sends it, so a fixture that drifts from
-the contract fails at the fixture rather than in the assertion. The validator already
-takes a schema name, so this is a second constant and a call site, not a second
-mechanism.
-
 ## XXII. Agent↔UI transparency & client tools — AG-UI parity (Block W)
 
 > **Why now.** A capability review against CopilotKit's **AG-UI** protocol

@@ -167,6 +167,59 @@ class TurContentAiSpecValidatorTest {
                 SEARCH_REQUEST);
     }
 
+    // ---- the reply half of the contract (T1050) --------------------------
+
+    @Test
+    @DisplayName("It rejects a result missing the id, score or data the schema requires")
+    void rejectsAnIncompleteResult() {
+        assertThat(TurContentAiSpecValidator.violations("""
+                {"totalResults": 1, "results": [{"id": "doc_1", "score": 0.5}]}
+                """, TurContentAiSpecValidator.SEARCH_RESPONSE)).isNotEmpty();
+    }
+
+    @Test
+    @DisplayName("It rejects a response with no totalResults, which the mapper reads as a count")
+    void rejectsAMissingTotal() {
+        assertThat(TurContentAiSpecValidator.violations("{\"results\": []}",
+                TurContentAiSpecValidator.SEARCH_RESPONSE)).isNotEmpty();
+    }
+
+    @Test
+    @DisplayName("It rejects an aggregate with no field, which every real one carries")
+    void rejectsAnAggregateWithNoField() {
+        assertThat(TurContentAiSpecValidator.violations("""
+                {"totalResults": 0, "results": [], "aggregates": [
+                  {"type": "termBuckets", "id": "by_category",
+                   "buckets": [{"label": "news", "count": 2}]}]}
+                """, TurContentAiSpecValidator.SEARCH_RESPONSE)).isNotEmpty();
+    }
+
+    /**
+     * The bundle's one self-contradiction: {@code TermBucketResultData} requires
+     * {@code values} and defines {@code buckets}. Both keys are accepted and
+     * neither is not, which is the reading {@code TurContentAiResponseMapper}
+     * already implements. If Adobe reconciles the two, one of these three fails
+     * and the exception in the validator is what to revisit.
+     */
+    @Test
+    @DisplayName("A term bucket result may carry 'buckets' or 'values', but not neither")
+    void acceptsEitherBucketKey() {
+        TurContentAiSpecValidator.assertValid(bucketResult("\"buckets\": [] "),
+                TurContentAiSpecValidator.SEARCH_RESPONSE);
+        TurContentAiSpecValidator.assertValid(bucketResult("\"values\": [] "),
+                TurContentAiSpecValidator.SEARCH_RESPONSE);
+
+        assertThat(TurContentAiSpecValidator.violations(bucketResult("\"id\": \"by_category\""),
+                TurContentAiSpecValidator.SEARCH_RESPONSE)).isNotEmpty();
+    }
+
+    private static String bucketResult(String bucketKey) {
+        return """
+                {"totalResults": 0, "results": [], "aggregates": [
+                  {"type": "termBuckets", "id": "by_category", "field": "category", %s}]}
+                """.formatted(bucketKey);
+    }
+
     private static String aggregate(String id, String field, int size) {
         return """
                 {"type": "termBuckets", "id": "%s", "field": {"name": "%s"}, "size": %d}"""
