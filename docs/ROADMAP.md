@@ -10,10 +10,6 @@
 
 ## Block BX — The bento layer leaves the product it grew in (§XCVI)
 
-## Block R.1 — Event-driven ingestion from enterprise CMS platforms (AEM as the reference)
-
-- 📋 **T1054** (deps: —) **The spec transform has no test of its own, so a refreshed bundle can silently narrow what the validator checks** — Both holes so far surfaced as a StackOverflow and a bare continue when a third endpoint was added, not as a failing test; five discriminated parents are covered today. → §XX.30
-
 ## Non-goals (do NOT add as tasks)
 
 Binding constraints — see [IMPROVEMENTS.md](IMPROVEMENTS.md) §I.6 (What NOT to

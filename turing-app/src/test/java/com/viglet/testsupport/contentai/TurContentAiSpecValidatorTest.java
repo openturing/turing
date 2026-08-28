@@ -18,6 +18,7 @@ package com.viglet.testsupport.contentai;
 
 import static com.viglet.testsupport.contentai.TurContentAiSpecValidator.SEARCH_REQUEST;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import org.junit.jupiter.api.DisplayName;
@@ -218,6 +219,55 @@ class TurContentAiSpecValidatorTest {
                 {"totalResults": 0, "results": [], "aggregates": [
                   {"type": "termBuckets", "id": "by_category", "field": "category", %s}]}
                 """.formatted(bucketKey);
+    }
+
+    // ---- the transform's own coverage (T1054) ----------------------------
+
+    /**
+     * The transform is what makes every other test here mean anything, and it had
+     * nothing asserting it — both holes found in it surfaced as a
+     * {@code StackOverflowError} and a silently dropped branch when a third
+     * endpoint was added. These four hold it to the bundle it actually loaded, so
+     * a refresh fails here rather than several tasks later.
+     */
+    @Test
+    @DisplayName("Every discriminated parent in the bundle was rewritten, none skipped")
+    void everyDiscriminatedParentIsFlattened() {
+        var report = TurContentAiSpecValidator.transformReport();
+
+        assertThat(report.discriminated()).isNotEmpty();
+        assertThat(report.flattened())
+                .as("a parent left unflattened is one the validator descends no further than")
+                .containsExactlyInAnyOrderElementsOf(report.discriminated());
+    }
+
+    @Test
+    @DisplayName("No discriminator mapping names a schema the bundle does not define")
+    void noMappingTargetIsMissing() {
+        // A dropped branch is a legitimate body refused with no clue why. It used
+        // to be a bare `continue`; it is now recorded so this can refuse it.
+        assertThat(TurContentAiSpecValidator.transformReport().missingTargets()).isEmpty();
+    }
+
+    @Test
+    @DisplayName("The self-mapped types are inlined, which is the StackOverflow T1052 hit")
+    void selfMappedTypesAreInlined() {
+        assertThat(TurContentAiSpecValidator.transformReport().inlinedSelf())
+                .contains("PublicFieldConfig.BOOLEAN", "PublicFieldConfig.DOUBLE",
+                        "PublicFieldConfig.LONG", "PublicFieldConfig.DATE");
+    }
+
+    @Test
+    @DisplayName("Every rewritten parent validates without recursing")
+    void everyRewrittenParentIsUsable() {
+        // The check that would have caught T1052's StackOverflowError before an
+        // endpoint did: an empty object against each parent exercises every branch
+        // of its oneOf, so a branch containing itself blows up here.
+        for (String parent : TurContentAiSpecValidator.transformReport().flattened()) {
+            assertThatCode(() -> TurContentAiSpecValidator.violations("{}", parent))
+                    .as("%s recurses", parent)
+                    .doesNotThrowAnyException();
+        }
     }
 
     // ---- the second endpoint (T1052) -------------------------------------

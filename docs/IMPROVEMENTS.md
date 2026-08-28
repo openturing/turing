@@ -1316,32 +1316,6 @@ neutral grounding + manifest kernel is now `viglet-core-manifest`; see CHANGELOG
 these block the Dumont collection work — a sidecar
 (D10) can index into a hand-provisioned site before T382 lands.
 
-### XX.30 The transform that nothing checks (T1054)
-
-`TurContentAiSpecValidator.flattenInheritance` is what makes the whole check work:
-without it a validator descends no further than `type` and T1031's empty `FilterGroup`
-produces zero violations. It is also the part with no test of its own — it is exercised
-only through whichever schemas the suite happens to validate, and every hole in it has
-been found by accident.
-
-Two have been, both by adding an endpoint rather than by a failing test. T1052 pointed
-it at `ContentSourceListPage` and hit a `StackOverflowError`: `PublicFieldConfig` maps
-`BOOLEAN`, `DOUBLE`, `LONG` and `DATE` back at itself, so the `oneOf` of `$ref`s held a
-branch containing itself. The other is still open: a mapping naming a schema the bundle
-does not define is skipped with a bare `continue`, so the `oneOf` loses a branch and a
-legitimate body is refused with no clue why.
-
-The bundle is pinned and refreshing it is a deliberate act, which is the whole argument
-here. Today it declares five discriminated parents, all covered; the thing that would
-tell somebody a newer bundle broke that is currently nothing at all, and the failure
-mode is the one T1048 exists to prevent — a validator that silently checks less than it
-claims.
-
-So the transform should assert its own coverage over whatever document it loaded: every
-discriminated parent rewritten, every mapping target resolved or named, no `$ref` left
-pointing at a schema that is now a `oneOf` containing it. A refresh then fails at the
-fixture rather than four tasks later.
-
 ## XXII. Agent↔UI transparency & client tools — AG-UI parity (Block W)
 
 > **Why now.** A capability review against CopilotKit's **AG-UI** protocol

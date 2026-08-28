@@ -112,11 +112,49 @@ public final class TurContentAiSpecValidator {
     private static final ObjectMapper JSON = JsonMapper.builder().build();
     private static final ObjectMapper YAML = YAMLMapper.builder().build();
 
+    /**
+     * T1054 — what {@link #flattenInheritance} did to the document it loaded.
+     *
+     * <p>The transform is what makes the whole check work, and it was the one part
+     * with nothing asserting it: it is exercised only through whichever schemas the
+     * suite happens to validate, so both holes found in it surfaced by adding an
+     * endpoint rather than by a failing test. This is the transform stating its own
+     * coverage over whatever bundle it was handed, so a refresh — a deliberate act —
+     * fails here rather than four tasks later.
+     *
+     * @param discriminated every schema the document declares with a
+     *                      {@code discriminator.mapping}, whether or not it was
+     *                      rewritten
+     * @param flattened     the parents actually rewritten into a {@code oneOf}
+     * @param inlinedSelf   {@code Parent.VALUE} for each mapping pointing back at
+     *                      its own parent, inlined rather than referenced — a
+     *                      {@code $ref} there is the {@code StackOverflowError}
+     *                      T1052 hit
+     * @param missingTargets {@code Parent.VALUE -> Child} for each mapping naming a
+     *                      schema the bundle does not define. A dropped branch means
+     *                      a legitimate body is refused with no clue why, so it is
+     *                      named rather than skipped
+     */
+    public record TransformReport(List<String> discriminated, List<String> flattened,
+            List<String> inlinedSelf, List<String> missingTargets) {
+    }
+
+    private static final List<String> DISCRIMINATED = new ArrayList<>();
+    private static final List<String> FLATTENED = new ArrayList<>();
+    private static final List<String> INLINED_SELF = new ArrayList<>();
+    private static final List<String> MISSING_TARGETS = new ArrayList<>();
+
     private static final JsonNode SPEC = loadSpec();
     private static final SchemaRegistry REGISTRY =
             SchemaRegistry.withDefaultDialect(OpenApi30.getInstance());
 
     private TurContentAiSpecValidator() {
+    }
+
+    /** What the transform did to the vendored bundle. See {@link TransformReport}. */
+    public static TransformReport transformReport() {
+        return new TransformReport(List.copyOf(DISCRIMINATED), List.copyOf(FLATTENED),
+                List.copyOf(INLINED_SELF), List.copyOf(MISSING_TARGETS));
     }
 
     private static JsonNode loadSpec() {
@@ -187,6 +225,7 @@ public final class TurContentAiSpecValidator {
                 parents.add(entry.getKey());
             }
         }
+        DISCRIMINATED.addAll(parents);
         for (String parentName : parents) {
             ObjectNode parent = (ObjectNode) schemas.get(parentName);
             JsonNode discriminator = parent.get("discriminator");
@@ -199,6 +238,7 @@ public final class TurContentAiSpecValidator {
                 String ref = mapped.getValue().asString();
                 String childName = ref.substring(ref.lastIndexOf('/') + 1);
                 if (childName.equals(parentName)) {
+                    INLINED_SELF.add(parentName + "." + mapped.getKey());
                     // T1052 — a value mapped back at the parent, which
                     // PublicFieldConfig does for BOOLEAN, DOUBLE, LONG and DATE:
                     // those types add nothing to the base. It must be inlined rather
@@ -210,6 +250,10 @@ public final class TurContentAiSpecValidator {
                 }
                 JsonNode child = schemas.get(childName);
                 if (child == null) {
+                    // Dropping the branch silently would refuse a legitimate body
+                    // with no clue why, so it is recorded for the coverage test.
+                    MISSING_TARGETS.add("%s.%s -> %s".formatted(parentName, mapped.getKey(),
+                            childName));
                     continue;
                 }
                 absorbParent((ObjectNode) child, parentName, inherited, propertyName,
@@ -219,6 +263,7 @@ public final class TurContentAiSpecValidator {
             ObjectNode replacement = schemas.objectNode();
             replacement.set("oneOf", oneOf);
             schemas.set(parentName, replacement);
+            FLATTENED.add(parentName);
         }
     }
 

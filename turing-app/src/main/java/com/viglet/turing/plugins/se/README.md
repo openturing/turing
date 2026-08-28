@@ -400,6 +400,24 @@ parent into a `oneOf` of `$ref`s produced a branch containing itself and a
 `StackOverflowError`. Those values are now inlined as the parent's own constraints
 plus the discriminator pin.
 
+#### The transform states its own coverage (T1054)
+
+Both holes above surfaced by adding an endpoint, never as a failing test — the
+transform is what makes every other check mean anything and it was the one part
+nothing asserted. `transformReport()` now describes what it did to the bundle it
+loaded: which schemas declare a `discriminator.mapping`, which were rewritten,
+which values were inlined because they map back at their own parent, and which
+mapping targets the bundle does not define. That last one used to be a bare
+`continue` — a `oneOf` quietly missing a branch, so a legitimate body is refused
+with no clue why.
+
+Four tests hold it to that report, and the load-bearing one validates `{}` against
+**every** rewritten parent: a branch containing itself blows up there, naming the
+schema. Reverting the inline fix makes it fail with `PublicFieldConfig recurses`,
+which is how it was checked rather than assumed. The bundle is pinned and
+refreshing it is a deliberate act — this is what makes a refresh that outgrows the
+transform fail at the fixture instead of several tasks later.
+
 ### Elasticsearch Implementation Notes
 
 The Elasticsearch plugin includes:
