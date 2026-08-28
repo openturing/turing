@@ -1316,34 +1316,6 @@ neutral grounding + manifest kernel is now `viglet-core-manifest`; see CHANGELOG
 these block the Dumont collection work — a sidecar
 (D10) can index into a hand-provisioned site before T382 lands.
 
-### XX.26 Three spec bounds the translation never enforces (T1049)
-
-T1048 vendored Adobe's spec and pointed it at every body the Content AI tests produce.
-That closes the gap for shapes a test happens to build, and leaves open the one that
-matters more: the bounds the *production* translation never enforces, on input a test
-never thought to supply.
-
-Two are guarded. `TurContentAiQueryBuilder.clampLimit` holds `pagination.limit` to 50,
-and `TurDslContentAiExecutor` refuses a `FilterGroup` over 25 filters by name. Three are
-not, and each takes its value straight from a caller:
-
-- `aggregates` carries `maxItems: 50`. One aggregate is written per facet field
-  on the plugin path and per `aggs` entry on the DSL path, so a site with 51
-  facet fields emits a body Adobe refuses.
-- `composite.queries` carries `maxItems: 10`. One arm is written per
-  text-matching clause of a `bool`, so eleven `should` text clauses breach it.
-  Its `minItems: 2` end is already handled — a single arm is returned
-  unwrapped — which is why only the ceiling is left.
-- `TermBucketsAggregate.size` carries `maximum: 2000`. It is `terms.size()` from
-  the DSL request when set and the admin-configured `property.getFacetSize()`
-  otherwise, and neither is bounded anywhere.
-
-The fix should match what is there rather than invent a third convention: the executor
-throws for the filter ceiling because a query that cannot be expressed is an error,
-while the builder clamps the limit because asking for more rows than exist is not. A
-field count and a bucket size are the clamping kind; an arm the caller wrote is the
-refusing kind.
-
 ### XX.27 The response half of the stub is still a yes-man (T1050)
 
 T1048 fixed one half of the wire. The Content AI stubs now refuse a request body Adobe

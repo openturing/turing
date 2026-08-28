@@ -84,6 +84,14 @@ import tools.jackson.databind.node.ObjectNode;
  *       refused. The copilot always asks for one page, so this costs it nothing.</li>
  * </ul>
  *
+ * <p>T1049 — the spec's array bounds are enforced here rather than discovered as a
+ * 400. Three of them are reachable from a DSL query: {@code FilterGroup.filters}
+ * (25), {@code composite.queries} (10) and the {@code aggregates} array (50). All
+ * three are refused by name, because each counts something the query asked for and
+ * answering with a subset would be a plausible answer to a different question. A
+ * term bucket's {@code size} is the exception and is clamped: it is a ceiling on
+ * what comes back, so asking for more buckets than exist is not an error.
+ *
  * @author Alexandre Oliveira
  * @since 2026.3.4
  */
@@ -111,6 +119,12 @@ public class TurDslContentAiExecutor implements TurDslSearchEngineExecutor<Objec
 
     /** {@code FilterGroup.filters} carries {@code maxItems: 25}. */
     private static final int MAX_GROUP_FILTERS = 25;
+
+    /** {@code CompositeQuery.queries} carries {@code maxItems: 10}. */
+    private static final int MAX_COMPOSITE_ARMS = 10;
+
+    /** The {@code aggregates} array carries {@code maxItems: 50}. */
+    private static final int MAX_AGGREGATES = TurContentAiQueryBuilder.MAX_AGGREGATES;
 
     /** A bound carrying no time, which {@code DateFilter}'s {@code date-time} refuses. */
     private static final Pattern DATE_ONLY = Pattern.compile("\\d{4}-\\d{2}-\\d{2}");
@@ -330,6 +344,15 @@ public class TurDslContentAiExecutor implements TurDslSearchEngineExecutor<Objec
                 arm.set("filter", filter);
             }
             return arm;
+        }
+        // T1049 — `composite.queries` carries maxItems: 10, and one arm is written
+        // per text-matching clause, so a `bool` with eleven of them cannot be
+        // expressed. Refusing is right where dropping would not be: the arms are
+        // what the caller asked to match on, and silently searching ten of eleven
+        // returns a plausible answer to a question nobody asked.
+        if (textArms.size() > MAX_COMPOSITE_ARMS) {
+            throw refuse("A DSL 'bool' with more than %d text clauses"
+                    .formatted(MAX_COMPOSITE_ARMS));
         }
         ObjectNode composite = nodes.objectNode();
         composite.put(FIELD_TYPE, "composite");
@@ -690,6 +713,14 @@ public class TurDslContentAiExecutor implements TurDslSearchEngineExecutor<Objec
         if (aggs == null || aggs.isEmpty()) {
             return null;
         }
+        // T1049 — the array carries maxItems: 50. Unlike the plugin path, where the
+        // aggregates come from site configuration and the surplus is dropped, these
+        // are aggregations the query asked for by name: returning 50 of 51 would
+        // answer with a facet map missing an entry the caller is about to read.
+        if (aggs.size() > MAX_AGGREGATES) {
+            throw refuse("A DSL request with more than %d aggregations"
+                    .formatted(MAX_AGGREGATES));
+        }
         ArrayNode array = nodes.arrayNode();
         for (Map.Entry<String, TurDslAggregation> entry : aggs.entrySet()) {
             if (!(entry.getValue() instanceof TurDslAggregation.TermsAgg terms)) {
@@ -702,8 +733,11 @@ public class TurDslContentAiExecutor implements TurDslSearchEngineExecutor<Objec
             ObjectNode field = nodes.objectNode();
             field.put("name", terms.field());
             aggregate.set(FIELD_FIELD, field);
-            aggregate.put("size", terms.size() != null && terms.size() > 0 ? terms.size()
-                    : property.getFacetSize());
+            // A bucket count is the clamping kind: `size` is a ceiling on what comes
+            // back, so asking for more buckets than exist is not an error.
+            aggregate.put("size", queryBuilder.clampBucketSize(
+                    terms.size() != null && terms.size() > 0 ? terms.size()
+                            : property.getFacetSize()));
             array.add(aggregate);
         }
         return array;

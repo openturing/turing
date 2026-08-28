@@ -654,6 +654,45 @@ class TurContentAiSearchEnginePluginTest {
                 .getCount()).isEqualTo(9);
     }
 
+    @Test
+    @DisplayName("A site with more facet fields than the API's 50 aggregates loses the surplus, "
+            + "not the search")
+    void surplusFacetFieldsAreDropped() throws IOException {
+        String endpoint = startStub("""
+                {"totalResults": 0, "results": []}
+                """);
+        TurSNSiteFieldExt[] fields =
+                new TurSNSiteFieldExt[TurContentAiQueryBuilder.MAX_AGGREGATES + 5];
+        for (int i = 0; i < fields.length; i++) {
+            fields[i] = facetField("field_" + i, i + 1, TurSNSiteFacetFieldEnum.DEFAULT);
+        }
+
+        // A facet count is an admin decision, so refusing would take every search
+        // on the site with it — the fields arrive in facet-position order, so what
+        // survives is what the site put first.
+        plugin(endpoint, TurSNSiteFacetFieldEnum.AND, fields)
+                .retrieveSearchResults(context("cars", 1, 10, null));
+
+        assertThat(lastBody().get("aggregates"))
+                .hasSize(TurContentAiQueryBuilder.MAX_AGGREGATES);
+    }
+
+    @Test
+    @DisplayName("A configured facet size over the API's 2000 is clamped before it is sent")
+    void surplusFacetSizeIsClamped() throws IOException {
+        String endpoint = startStub("""
+                {"totalResults": 0, "results": []}
+                """);
+        property.setFacetSize(50_000);
+
+        plugin(endpoint, TurSNSiteFacetFieldEnum.AND,
+                facetField("category", 1, TurSNSiteFacetFieldEnum.DEFAULT))
+                        .retrieveSearchResults(context("cars", 1, 10, null));
+
+        assertThat(lastBody().get("aggregates").get(0).get("size").asInt())
+                .isEqualTo(TurContentAiQueryBuilder.MAX_BUCKET_SIZE);
+    }
+
     // ---- cursor paging ---------------------------------------------------
 
     @Test

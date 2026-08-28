@@ -114,6 +114,70 @@ class TurContentAiSpecValidatorTest {
                         """), SEARCH_REQUEST)).isNotEmpty();
     }
 
+    /**
+     * T1049 — the three bounds nothing in the translation enforced. Each is
+     * asserted here so the guard added for it is load-bearing rather than
+     * decorative: if a bound stops being checked, this fails before the guard's
+     * own test starts passing for the wrong reason.
+     */
+    @Test
+    @DisplayName("It rejects a composite with more than ten arms")
+    void rejectsAnOverfullComposite() {
+        StringBuilder arms = new StringBuilder();
+        for (int i = 0; i <= 10; i++) {
+            arms.append(i == 0 ? "" : ",")
+                    .append("{\"type\": \"fulltext\", \"text\": \"term %d\"}".formatted(i));
+        }
+
+        assertThat(TurContentAiSpecValidator.violations(
+                body("{\"type\": \"composite\", \"operator\": \"OR\", \"queries\": ["
+                        + arms + "]}"),
+                SEARCH_REQUEST)).isNotEmpty();
+    }
+
+    @Test
+    @DisplayName("It rejects more than fifty aggregates")
+    void rejectsTooManyAggregates() {
+        StringBuilder aggregates = new StringBuilder();
+        for (int i = 0; i <= 50; i++) {
+            aggregates.append(i == 0 ? "" : ",").append(aggregate("agg_" + i, "field_" + i, 5));
+        }
+
+        assertThat(TurContentAiSpecValidator.violations(withAggregates(aggregates.toString()),
+                SEARCH_REQUEST)).isNotEmpty();
+    }
+
+    @Test
+    @DisplayName("It rejects a term bucket size above the API's 2000")
+    void rejectsAnOversizedBucketCount() {
+        assertThat(TurContentAiSpecValidator.violations(
+                withAggregates(aggregate("by_category", "category", 9000)),
+                SEARCH_REQUEST)).isNotEmpty();
+    }
+
+    @Test
+    @DisplayName("It accepts fifty aggregates each at the 2000 ceiling")
+    void acceptsTheAggregateCeilings() {
+        StringBuilder aggregates = new StringBuilder();
+        for (int i = 0; i < 50; i++) {
+            aggregates.append(i == 0 ? "" : ",").append(aggregate("agg_" + i, "field_" + i, 2000));
+        }
+
+        TurContentAiSpecValidator.assertValid(withAggregates(aggregates.toString()),
+                SEARCH_REQUEST);
+    }
+
+    private static String aggregate(String id, String field, int size) {
+        return """
+                {"type": "termBuckets", "id": "%s", "field": {"name": "%s"}, "size": %d}"""
+                .formatted(id, field, size);
+    }
+
+    private static String withAggregates(String aggregates) {
+        return "{" + SOURCE + ", \"query\": {\"type\": \"fulltext\", \"text\": \"cars\"}"
+                + ", \"aggregates\": [" + aggregates + "]}";
+    }
+
     @Test
     @DisplayName("It rejects a request naming no content source")
     void rejectsAMissingContentSource() {

@@ -58,6 +58,13 @@ import tools.jackson.databind.node.ObjectNode;
  * opaque cursor — so the caller walks cursors and this class only accepts the
  * one it was handed.
  *
+ * <p>T1049 — two more of the spec's bounds are enforced here, both on values a
+ * site's own configuration supplies and nothing else limits: the
+ * {@code aggregates} array takes at most {@link #MAX_AGGREGATES} entries, and a
+ * term bucket's {@code size} at most {@link #MAX_BUCKET_SIZE}. Both clamp for
+ * {@code limit}'s reason — a site with 51 facet fields asking for one facet too
+ * many should lose that facet, not every search it runs.
+ *
  * @author Alexandre Oliveira
  * @since 2026.3.4
  */
@@ -68,7 +75,16 @@ public class TurContentAiQueryBuilder {
     /** {@code PaginationOptions.limit} carries {@code maximum: 50} in the spec. */
     public static final int MAX_LIMIT = 50;
 
+    /** The {@code aggregates} array carries {@code maxItems: 50}. */
+    public static final int MAX_AGGREGATES = 50;
+
+    /** {@code TermBucketAggregatesConfig.size} carries {@code maximum: 2000}. */
+    public static final int MAX_BUCKET_SIZE = 2000;
+
     private static final int DEFAULT_LIMIT = 10;
+
+    /** {@code TermBucketAggregatesConfig.size} declares {@code default: 10}. */
+    private static final int DEFAULT_BUCKET_SIZE = 10;
 
     private static final String FIELD_TYPE = "type";
     private static final String FIELD_TEXT = "text";
@@ -439,9 +455,24 @@ public class TurContentAiQueryBuilder {
         return Optional.of(array);
     }
 
+    /**
+     * One {@code termBuckets} aggregate per facet field, up to what the API takes.
+     *
+     * <p>The array carries {@code maxItems: 50}, and a site's facet count is an
+     * admin decision nothing bounds — so a site declaring 51 facet fields would
+     * emit a body Adobe refuses, losing the whole search rather than one facet.
+     * Dropping the surplus is the same trade {@link #clampLimit} makes: the fields
+     * are in facet-position order, so what survives is what the site put first.
+     */
     private ArrayNode aggregates(List<TurSNSiteFieldExt> facetFields, int size) {
         ArrayNode array = nodes.arrayNode();
-        facetFields.forEach(field -> array.add(termBucketAggregate(field.getName(), size)));
+        if (facetFields.size() > MAX_AGGREGATES) {
+            log.warn("Content AI takes at most {} aggregates; site declares {} facet fields, "
+                    + "so the last {} are not requested", MAX_AGGREGATES, facetFields.size(),
+                    facetFields.size() - MAX_AGGREGATES);
+        }
+        facetFields.stream().limit(MAX_AGGREGATES)
+                .forEach(field -> array.add(termBucketAggregate(field.getName(), size)));
         return array;
     }
 
@@ -457,8 +488,29 @@ public class TurContentAiQueryBuilder {
         ObjectNode field = nodes.objectNode();
         field.put(FIELD_NAME, fieldName);
         aggregate.set(FIELD_FIELD, field);
-        aggregate.put("size", size);
+        aggregate.put("size", clampBucketSize(size));
         return aggregate;
+    }
+
+    /**
+     * Clamps {@code size} to what a term-bucket aggregate accepts.
+     *
+     * <p>The value is {@code turing.contentai.facet-size} on the plugin path and
+     * the DSL request's own {@code terms.size} on the other, so both ends are
+     * caller input. A non-positive one means "the API default", which the spec
+     * spells as 10 — sending {@code 0} would ask for no buckets at all, which is
+     * not what an unset facet size means.
+     */
+    public int clampBucketSize(int size) {
+        if (size <= 0) {
+            return DEFAULT_BUCKET_SIZE;
+        }
+        if (size > MAX_BUCKET_SIZE) {
+            log.debug("Content AI caps a term bucket size at {}; {} was requested",
+                    MAX_BUCKET_SIZE, size);
+            return MAX_BUCKET_SIZE;
+        }
+        return size;
     }
 
     /**

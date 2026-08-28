@@ -318,6 +318,29 @@ It found a bug on its first run: `DateFilter.value` is `format: date-time`, so T
 pass-through of an Elasticsearch-style `"gte": "2026-01-01"` would have been refused.
 Date-only bounds are now widened to midnight UTC.
 
+#### The spec's array bounds are enforced, and which way (T1049)
+
+The check above only ever sees bodies a test happens to build, so the bounds still had
+to be enforced where the body is built. Four are, and the split between refusing and
+clamping is the point:
+
+| Bound | Where | What happens |
+| ----- | ----- | ------------ |
+| `pagination.limit` ≤ 50 | both paths | clamped |
+| `FilterGroup.filters` ≤ 25 | DSL executor | refused |
+| `composite.queries` ≤ 10 | DSL executor | refused |
+| `aggregates` ≤ 50 | DSL executor | refused |
+| `aggregates` ≤ 50 | plugin | clamped (surplus facet fields dropped) |
+| `termBuckets.size` ≤ 2000 | both paths | clamped |
+
+A count of things the *query asked for* is refused: dropping the eleventh text clause
+or the fifty-first named aggregation returns a plausible answer to a different
+question, and the caller cannot tell. A count of things the *site is configured with*
+is clamped, because a site declaring 51 facet fields should lose one facet rather than
+every search it runs — the fields arrive in facet-position order, so what survives is
+what the site put first. A `size` is clamped either way: it is a ceiling on what comes
+back, not a request for something specific.
+
 ### Elasticsearch Implementation Notes
 
 The Elasticsearch plugin includes:

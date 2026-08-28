@@ -27,6 +27,7 @@ import java.io.OutputStream;
 import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -427,6 +428,39 @@ class TurDslContentAiExecutorTest {
     }
 
     @Test
+    @DisplayName("A bool with more text clauses than composite.queries takes is refused")
+    void tooManyCompositeArmsAreRefused() {
+        List<TurDslQuery> clauses = new ArrayList<>();
+        for (int i = 0; i <= 10; i++) {
+            clauses.add(new TurDslQuery.Match("title", "term " + i, null));
+        }
+        var bool = new TurDslQuery.Bool(null, clauses, null, null, null);
+
+        // Searching ten of eleven arms returns a plausible answer to a question
+        // nobody asked; Adobe refuses the body anyway.
+        assertThatThrownBy(() -> executor.execute(SITE, LOCALE, request(bool)))
+                .isInstanceOf(TurUnsupportedEngineException.class)
+                .hasMessageContaining("text clauses");
+        assertThat(bodies).isEmpty();
+    }
+
+    @Test
+    @DisplayName("Exactly 10 text clauses is the ceiling and is served")
+    void tenCompositeArmsAreServed() {
+        List<TurDslQuery> clauses = new ArrayList<>();
+        for (int i = 0; i < 10; i++) {
+            clauses.add(new TurDslQuery.Match("title", "term " + i, null));
+        }
+
+        executor.execute(SITE, LOCALE,
+                request(new TurDslQuery.Bool(null, clauses, null, null, null)));
+
+        JsonNode query = lastQuery();
+        assertThat(query.get("type").asString()).isEqualTo("composite");
+        assertThat(query.get("queries")).hasSize(10);
+    }
+
+    @Test
     @DisplayName("A negated text match is refused: there is no filter form of a text query")
     void mustNotOverTextIsRefused() {
         var bool = new TurDslQuery.Bool(null, null,
@@ -525,6 +559,48 @@ class TurDslContentAiExecutorTest {
                         Map.of("stats", new TurDslAggregation.AvgAgg("price")))))
                                 .isInstanceOf(TurUnsupportedEngineException.class)
                                 .hasMessageContaining("aggregation");
+    }
+
+    @Test
+    @DisplayName("A bucket size over the API's 2000 is clamped, not sent")
+    void bucketSizeIsClamped() {
+        executor.execute(SITE, LOCALE, request(new TurDslQuery.MatchAll(), null, 10, null,
+                Map.of("by_category", new TurDslAggregation.TermsAgg("category", 9000))));
+
+        assertThat(MAPPER.readTree(bodies.getLast()).get("aggregates").get(0).get("size").asInt())
+                .isEqualTo(TurContentAiQueryBuilder.MAX_BUCKET_SIZE);
+    }
+
+    @Test
+    @DisplayName("More aggregations than the API's 50 is refused, not silently truncated")
+    void tooManyAggregationsAreRefused() {
+        Map<String, TurDslAggregation> aggs = new LinkedHashMap<>();
+        for (int i = 0; i <= TurContentAiQueryBuilder.MAX_AGGREGATES; i++) {
+            aggs.put("agg_" + i, new TurDslAggregation.TermsAgg("field_" + i, 5));
+        }
+
+        // Answering with 50 of 51 returns a facet map missing an entry the caller
+        // is about to read by name, which is worse than saying so.
+        assertThatThrownBy(() -> executor.execute(SITE, LOCALE,
+                request(new TurDslQuery.MatchAll(), null, 10, null, aggs)))
+                        .isInstanceOf(TurUnsupportedEngineException.class)
+                        .hasMessageContaining("aggregations");
+        assertThat(bodies).isEmpty();
+    }
+
+    @Test
+    @DisplayName("Exactly 50 aggregations is the ceiling and is served")
+    void fiftyAggregationsIsServed() {
+        Map<String, TurDslAggregation> aggs = new LinkedHashMap<>();
+        for (int i = 0; i < TurContentAiQueryBuilder.MAX_AGGREGATES; i++) {
+            aggs.put("agg_" + i, new TurDslAggregation.TermsAgg("field_" + i, 5));
+        }
+
+        executor.execute(SITE, LOCALE,
+                request(new TurDslQuery.MatchAll(), null, 10, null, aggs));
+
+        assertThat(MAPPER.readTree(bodies.getLast()).get("aggregates"))
+                .hasSize(TurContentAiQueryBuilder.MAX_AGGREGATES);
     }
 
     // ---- response --------------------------------------------------------
