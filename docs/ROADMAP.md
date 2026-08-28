@@ -10,7 +10,13 @@
 
 ## Block BX — The bento layer leaves the product it grew in (§XCVI)
 
+## Block R.1 — Event-driven ingestion from enterprise CMS platforms (AEM as the reference)
+
+- 📋 **T1054** (deps: —) **The spec transform has no test of its own, so a refreshed bundle can silently narrow what the validator checks** — Both holes so far surfaced as a StackOverflow and a bare continue when a third endpoint was added, not as a failing test; five discriminated parents are covered today. → §XX.30
+
 ## Block BV — The quality gate stops at the package boundary
+
+- 📋 **T1053** (deps: —) **Seven Java sources hold a raw NUL byte, so a code search reports them binary and returns no lines** — The separator and the injection input are right; writing them as 0x00 rather than the escape makes ripgrep skip the file, which is how a search in that plugin came back empty. → §CVIII
 
 ## Non-goals (do NOT add as tasks)
 

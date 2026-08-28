@@ -1316,6 +1316,32 @@ neutral grounding + manifest kernel is now `viglet-core-manifest`; see CHANGELOG
 these block the Dumont collection work — a sidecar
 (D10) can index into a hand-provisioned site before T382 lands.
 
+### XX.30 The transform that nothing checks (T1054)
+
+`TurContentAiSpecValidator.flattenInheritance` is what makes the whole check work:
+without it a validator descends no further than `type` and T1031's empty `FilterGroup`
+produces zero violations. It is also the part with no test of its own — it is exercised
+only through whichever schemas the suite happens to validate, and every hole in it has
+been found by accident.
+
+Two have been, both by adding an endpoint rather than by a failing test. T1052 pointed
+it at `ContentSourceListPage` and hit a `StackOverflowError`: `PublicFieldConfig` maps
+`BOOLEAN`, `DOUBLE`, `LONG` and `DATE` back at itself, so the `oneOf` of `$ref`s held a
+branch containing itself. The other is still open: a mapping naming a schema the bundle
+does not define is skipped with a bare `continue`, so the `oneOf` loses a branch and a
+legitimate body is refused with no clue why.
+
+The bundle is pinned and refreshing it is a deliberate act, which is the whole argument
+here. Today it declares five discriminated parents, all covered; the thing that would
+tell somebody a newer bundle broke that is currently nothing at all, and the failure
+mode is the one T1048 exists to prevent — a validator that silently checks less than it
+claims.
+
+So the transform should assert its own coverage over whatever document it loaded: every
+discriminated parent rewritten, every mapping target resolved or named, no `$ref` left
+pointing at a schema that is now a `oneOf` containing it. A refresh then fails at the
+fixture rather than four tasks later.
+
 ## XXII. Agent↔UI transparency & client tools — AG-UI parity (Block W)
 
 > **Why now.** A capability review against CopilotKit's **AG-UI** protocol
@@ -2117,3 +2143,32 @@ has used is spent for good — so the block lost its family and the next follow-
 open a new one. A standing block needs a standing address. Empty here means the
 follow-ups filed so far are done, not that the heading is finished; the next one goes
 under this address.
+
+## CVIII The NUL byte that makes a source file binary (T1053)
+
+Seven Java sources carry a literal NUL byte, written as a raw `0x00` in the file rather
+than as the `\0` escape:
+
+- `TurContentAiSearchEnginePlugin`, `TurClientToolParkRegistry` and
+  `TurRagSource` use it as a composite-key separator
+  (`conversationId + "\0" + callId`)
+- `TurCitationDriftService`, `TurWorkspaceTextEditor` and
+  `TurGeminiContextCacheProvider` do the same
+- `TurCodeInterpreterTenantPathTest` uses one as the injection input its
+  `sanitizePathSegment` guard is asserted against
+
+**The choice is right and the encoding is not.** A NUL cannot appear in either half of a
+composite key, which is exactly what a separator wants, and the injection test needs a
+real one. Nothing about the behaviour should change: `"\0"` compiles to the same byte.
+
+What the raw byte costs is that ripgrep classifies the file as **binary**. A content
+search over these seven returns `binary file matches` and no lines — the finding that
+produced this task, hit while reading the Content AI plugin, where a search for a method
+name came back empty and the file had to be read another way. A code search that
+silently skips seven files is worse than one that fails.
+
+It is also fragile in a way plain text is not: any tool that reads and rewrites the file
+can drop or transform the byte invisibly, and neither a diff nor a review would show it.
+
+Nothing checks for this. That is the part that belongs to this block — the fix is seven
+edits, and the value is the gate that keeps the eighth from landing.
