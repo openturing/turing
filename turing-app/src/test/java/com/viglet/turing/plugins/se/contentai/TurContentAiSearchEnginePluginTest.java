@@ -148,10 +148,16 @@ class TurContentAiSearchEnginePluginTest {
     private final Deque<String> responses = new ArrayDeque<>();
 
     /** What GET /content-sources answers; a test overrides it before calling. */
+    /**
+     * T1052 — the capability block is {@code config} ({@code SourceConfig}), which
+     * is what Adobe's bundle declares. It read {@code search} until the listing was
+     * checked against {@code ContentSourceListPage}: an extra key the schema
+     * tolerates, so the fixture agreed with the catalog and both were wrong.
+     */
     private String sourceListing = """
             {"items": [
               {"name": "content-ai-articles-index", "type": "ACQUISITION",
-               "search": {
+               "config": {
                  "vectorSpaces": {"semantic": {"default": true}},
                  "lexicalSpaces": {"fulltext": {"default": true, "fields": [
                    {"field": "category", "type": "STRING", "filter": {"enabled": true}},
@@ -159,7 +165,7 @@ class TurContentAiSearchEnginePluginTest {
                     "fulltext": {"enabled": true}}
                  ]}}
                }},
-              {"name": "aem-assets", "type": "AEM_PUBLISH", "search": {}}
+              {"name": "aem-assets", "type": "AEM_PUBLISH", "config": {}}
             ]}
             """;
     private int sourceListingStatus = 200;
@@ -218,6 +224,12 @@ class TurContentAiSearchEnginePluginTest {
         });
         server.createContext(TurContentAiClient.SOURCES_PATH, exchange -> {
             sourceListingCalls.incrementAndGet();
+            // T1052 — the second endpoint's fixture, held to the same contract. Only
+            // a 200 claims to be a listing; the error paths queue a problem body.
+            if (sourceListingStatus == 200) {
+                TurContentAiSpecValidator.assertValid(sourceListing,
+                        TurContentAiSpecValidator.SOURCE_LIST);
+            }
             byte[] payload = sourceListing.getBytes(StandardCharsets.UTF_8);
             exchange.getResponseHeaders().add("Content-Type", "application/json");
             exchange.sendResponseHeaders(sourceListingStatus, payload.length);
@@ -957,6 +969,43 @@ class TurContentAiSearchEnginePluginTest {
         assertThat(source.vectorSpaces()).containsExactly("semantic");
         assertThat(source.lexicalSpaces()).containsExactly("fulltext");
         assertThat(source.type()).isEqualTo("ACQUISITION");
+    }
+
+    @Test
+    @DisplayName("A listing keyed 'search' rather than 'config' is still read")
+    void theLegacySearchKeyIsStillRead() throws IOException {
+        // `config` is what the bundle declares and what T1052 switched to. This is
+        // one get() against a live third-party endpoint nothing here can query, so
+        // the older key stays readable rather than being deleted on a guess — the
+        // schema tolerates it either way, which is how it went unnoticed.
+        sourceListing = """
+                {"items": [
+                  {"name": "content-ai-articles-index", "type": "ACQUISITION",
+                   "search": {"vectorSpaces": {"semantic": {"default": true}}}}
+                ]}
+                """;
+        String endpoint = startStub(RESPONSE_ONE_HIT);
+        plugin(endpoint, TurSNSiteFacetFieldEnum.AND);
+
+        assertThat(sourceCatalog.find(endpoint, SOURCE, property).orElseThrow().vectorSpaces())
+                .containsExactly("semantic");
+    }
+
+    @Test
+    @DisplayName("config wins over a stale search block when a source carries both")
+    void configWinsOverSearch() throws IOException {
+        sourceListing = """
+                {"items": [
+                  {"name": "content-ai-articles-index", "type": "ACQUISITION",
+                   "config": {"vectorSpaces": {"current": {"default": true}}},
+                   "search": {"vectorSpaces": {"stale": {"default": true}}}}
+                ]}
+                """;
+        String endpoint = startStub(RESPONSE_ONE_HIT);
+        plugin(endpoint, TurSNSiteFacetFieldEnum.AND);
+
+        assertThat(sourceCatalog.find(endpoint, SOURCE, property).orElseThrow().vectorSpaces())
+                .containsExactly("current");
     }
 
     @Test

@@ -100,6 +100,12 @@ public final class TurContentAiSpecValidator {
      */
     public static final String SEARCH_RESPONSE = "ContentSourceSearchResponse";
 
+    /**
+     * T1052 — the schema a {@code GET /content-sources} page must satisfy, which is
+     * the second endpoint this suite stands in miniature.
+     */
+    public static final String SOURCE_LIST = "ContentSourceListPage";
+
     /** How many violations a failure message lists before summarising the rest. */
     private static final int REPORTED_VIOLATIONS = 12;
 
@@ -191,7 +197,18 @@ public final class TurContentAiSpecValidator {
             ArrayNode oneOf = schemas.arrayNode();
             for (Map.Entry<String, JsonNode> mapped : discriminator.get("mapping").properties()) {
                 String ref = mapped.getValue().asString();
-                JsonNode child = schemas.get(ref.substring(ref.lastIndexOf('/') + 1));
+                String childName = ref.substring(ref.lastIndexOf('/') + 1);
+                if (childName.equals(parentName)) {
+                    // T1052 — a value mapped back at the parent, which
+                    // PublicFieldConfig does for BOOLEAN, DOUBLE, LONG and DATE:
+                    // those types add nothing to the base. It must be inlined rather
+                    // than referenced, because the parent is about to *become* this
+                    // oneOf and a $ref to it would be a branch containing itself —
+                    // a StackOverflow, and the reason this branch exists.
+                    oneOf.add(selfBranch(inherited, propertyName, mapped.getKey(), schemas));
+                    continue;
+                }
+                JsonNode child = schemas.get(childName);
                 if (child == null) {
                     continue;
                 }
@@ -203,6 +220,31 @@ public final class TurContentAiSpecValidator {
             replacement.set("oneOf", oneOf);
             schemas.set(parentName, replacement);
         }
+    }
+
+    /**
+     * The branch for a discriminator value the mapping points back at its own
+     * parent: the parent's inherited constraints plus the {@code enum} pinning that
+     * value, inlined so no {@code $ref} closes a cycle.
+     */
+    private static ObjectNode selfBranch(ObjectNode inherited, String propertyName,
+            String discriminatorValue, ObjectNode schemas) {
+        ObjectNode branch = schemas.objectNode();
+        ArrayNode allOf = schemas.arrayNode();
+        allOf.add(inherited);
+        allOf.add(discriminatorPin(propertyName, discriminatorValue, schemas));
+        branch.set("allOf", allOf);
+        return branch;
+    }
+
+    private static ObjectNode discriminatorPin(String propertyName, String discriminatorValue,
+            ObjectNode schemas) {
+        ObjectNode pin = schemas.objectNode();
+        ObjectNode properties = schemas.objectNode();
+        properties.set(propertyName,
+                schemas.objectNode().set("enum", schemas.arrayNode().add(discriminatorValue)));
+        pin.set("properties", properties);
+        return pin;
     }
 
     /**
@@ -232,12 +274,7 @@ public final class TurContentAiSpecValidator {
             return;
         }
         kept.add(inherited);
-        ObjectNode pin = schemas.objectNode();
-        ObjectNode properties = schemas.objectNode();
-        properties.set(propertyName,
-                schemas.objectNode().set("enum", schemas.arrayNode().add(discriminatorValue)));
-        pin.set("properties", properties);
-        kept.add(pin);
+        kept.add(discriminatorPin(propertyName, discriminatorValue, schemas));
         child.set("allOf", kept);
     }
 

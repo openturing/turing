@@ -220,6 +220,40 @@ class TurContentAiSpecValidatorTest {
                 """.formatted(bucketKey);
     }
 
+    // ---- the second endpoint (T1052) -------------------------------------
+
+    @Test
+    @DisplayName("It accepts a content-source page carrying a config block")
+    void acceptsASourceListing() {
+        TurContentAiSpecValidator.assertValid("""
+                {"items": [
+                  {"name": "content-ai-articles-index", "type": "ACQUISITION",
+                   "config": {
+                     "vectorSpaces": {"semantic": {"default": true}},
+                     "lexicalSpaces": {"fulltext": {"default": true, "fields": [
+                       {"field": "category", "type": "STRING", "filter": {"enabled": true}}
+                     ]}}
+                   }},
+                  {"name": "aem-assets", "type": "AEM_PUBLISH", "config": {}}
+                ]}
+                """, TurContentAiSpecValidator.SOURCE_LIST);
+    }
+
+    @Test
+    @DisplayName("It rejects a listing with no items, which the catalog reads as a page")
+    void rejectsAListingWithNoItems() {
+        assertThat(TurContentAiSpecValidator.violations("{\"cursor\": \"c1\"}",
+                TurContentAiSpecValidator.SOURCE_LIST)).isNotEmpty();
+    }
+
+    @Test
+    @DisplayName("It rejects a source with no name, which the catalog keys everything by")
+    void rejectsANamelessSource() {
+        assertThat(TurContentAiSpecValidator.violations(
+                "{\"items\": [{\"type\": \"ACQUISITION\"}]}",
+                TurContentAiSpecValidator.SOURCE_LIST)).isNotEmpty();
+    }
+
     private static String aggregate(String id, String field, int size) {
         return """
                 {"type": "termBuckets", "id": "%s", "field": {"name": "%s"}, "size": %d}"""

@@ -372,6 +372,34 @@ response carrying neither is still refused. It is the only hand-authored departu
 the bundle, deliberately one field of one schema and pinned by its own test, so if
 Adobe reconciles the two the exception becomes visible instead of silently redundant.
 
+#### The source listing was reading a key Adobe does not send (T1052)
+
+`GET /content-sources` is the second endpoint the suite stands in miniature — T1045
+added it so a source name that resolves to nothing is a statement rather than an
+inference. Its fixture was hand-written and unchecked, and pointing
+`ContentSourceListPage` at it found a live bug rather than a fixture typo.
+
+`TurContentAiSourceCatalog` read the capability block as **`search`**. The bundle
+declares it as **`config`** (a `SourceConfig` carrying `vectorSpaces` and
+`lexicalSpaces`). Validation alone does not catch that — `ContentSource` permits extra
+properties, so a `search`-keyed page is schema-valid — which is exactly why it went
+unnoticed: the fixture and the reader agreed with each other and neither agreed with
+Adobe. **The fixture had to say what Adobe sends before the bug became a failing
+test**; correcting it broke seven.
+
+The failure it was producing does not throw. Every source parsed with no vector
+spaces, no lexical spaces and no filterable fields, so facets quietly stop working on
+a federated site and `indexExists` answers from a listing it cannot read. `config` is
+now preferred and `search` kept as a fallback — one `get()` against a live third-party
+endpoint this project cannot query to prove what the deployed version sends, and
+reading both beats being wrong in either direction.
+
+It also exposed a hole in the T1048 transform: `PublicFieldConfig`'s discriminator
+maps `BOOLEAN`, `DOUBLE`, `LONG` and `DATE` **back at itself**, so rewriting the
+parent into a `oneOf` of `$ref`s produced a branch containing itself and a
+`StackOverflowError`. Those values are now inlined as the parent's own constraints
+plus the discriminator pin.
+
 ### Elasticsearch Implementation Notes
 
 The Elasticsearch plugin includes:

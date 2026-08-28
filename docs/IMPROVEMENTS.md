@@ -1316,32 +1316,6 @@ neutral grounding + manifest kernel is now `viglet-core-manifest`; see CHANGELOG
 these block the Dumont collection work — a sidecar
 (D10) can index into a hand-provisioned site before T382 lands.
 
-### XX.29 The second endpoint is still a yes-man (T1052)
-
-T1048 and T1050 made the search stub a contract in both directions. The same suite
-stands a second Adobe endpoint — `GET /content-sources`, which T1045 added so a source
-name that resolves to nothing is a statement rather than an inference — and that one is
-still a yes-man in both directions.
-
-Its fixture is the `sourceListing` field: a hand-written page of two sources with their
-`search` blocks, vector spaces, lexical spaces and per-field filter flags.
-`TurContentAiSourceCatalog` and `TurContentAiSource` are proven entirely against it. The
-bundle declares `ContentSourceListPage` — `items` required, each item a `ContentSource`
-— so nothing new has to be vendored or written: it is the schema name and a call,
-exactly as `SEARCH_RESPONSE` was.
-
-The reason to close it is that this fixture carries more invented structure than the
-search one did. A search hit is three required fields; a content source is a nested
-capability description that Turing *reads to decide what it can do* — which vector space
-to query, which fields are filterable. Getting a name wrong there does not fail: it
-produces a source Turing believes has no filterable fields, and the facets quietly stop
-working on a federated site.
-
-Worth checking in the same pass whether the catalog tolerates a source that is valid but
-sparse — `{"name": …, "type": …}` with no `search` block at all, which the second
-fixture entry already approximates and the schema permits. That is the shape an AEM
-source would take before its index is configured.
-
 ## XXII. Agent↔UI transparency & client tools — AG-UI parity (Block W)
 
 > **Why now.** A capability review against CopilotKit's **AG-UI** protocol

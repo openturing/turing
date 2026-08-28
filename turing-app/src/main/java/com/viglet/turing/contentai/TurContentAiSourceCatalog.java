@@ -68,6 +68,10 @@ public class TurContentAiSourceCatalog {
 
     private static final String NODE_ITEMS = "items";
     private static final String NODE_CURSOR = "cursor";
+    /** {@code ContentSource.config}, the {@code SourceConfig} the bundle declares. */
+    private static final String NODE_CONFIG = "config";
+
+    /** What T1045 read instead — kept as a fallback, see {@link #capabilities}. */
     private static final String NODE_SEARCH = "search";
     private static final String NODE_VECTOR_SPACES = "vectorSpaces";
     private static final String NODE_LEXICAL_SPACES = "lexicalSpaces";
@@ -149,8 +153,30 @@ public class TurContentAiSourceCatalog {
         return all;
     }
 
+    /**
+     * The capability block Turing reads to decide what a source supports.
+     *
+     * <p>T1052 — Adobe's bundle declares it as {@code config}, a {@code SourceConfig}
+     * carrying {@code vectorSpaces} and {@code lexicalSpaces}. T1045 read it as
+     * {@code search}, and nothing caught that: {@code ContentSource} permits extra
+     * properties, so the hand-written fixture and this reader agreed with each other
+     * and neither agreed with Adobe. The failure it produced does not throw — a
+     * source parses with no spaces and no filterable fields, so facets quietly stop
+     * working on a federated site.
+     *
+     * <p>{@code search} is still read as a fallback rather than deleted. It is one
+     * {@code get} against a live third-party endpoint this project cannot query to
+     * prove which key the deployed version sends, and reading both is strictly
+     * better than being wrong in either direction — the same bargain
+     * {@code TurContentAiResponseMapper} takes over {@code buckets}/{@code values}.
+     */
+    private JsonNode capabilities(JsonNode item) {
+        JsonNode config = item.get(NODE_CONFIG);
+        return config != null ? config : item.get(NODE_SEARCH);
+    }
+
     private TurContentAiSource toSource(JsonNode item) {
-        JsonNode search = item.get(NODE_SEARCH);
+        JsonNode search = capabilities(item);
         Set<String> filterFields = new LinkedHashSet<>();
         Set<String> fulltextFields = new LinkedHashSet<>();
         List<String> lexicalSpaces = spaceNames(search, NODE_LEXICAL_SPACES);

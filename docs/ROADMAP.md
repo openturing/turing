@@ -10,10 +10,6 @@
 
 ## Block BX — The bento layer leaves the product it grew in (§XCVI)
 
-## Block R.1 — Event-driven ingestion from enterprise CMS platforms (AEM as the reference)
-
-- 📋 **T1052** (deps: —) **The content-source listing the source catalog is proven against is a page nobody checked against Adobe** — T1048 and T1050 made the search stub a contract both ways; GET /content-sources kept its hand-written fixture, and the bundle declares ContentSourceListPage for it. → §XX.29
-
 ## Block BV — The quality gate stops at the package boundary
 
 ## Non-goals (do NOT add as tasks)
