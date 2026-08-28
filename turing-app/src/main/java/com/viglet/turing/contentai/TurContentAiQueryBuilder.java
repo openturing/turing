@@ -81,6 +81,13 @@ public class TurContentAiQueryBuilder {
     /** {@code TermBucketAggregatesConfig.size} carries {@code maximum: 2000}. */
     public static final int MAX_BUCKET_SIZE = 2000;
 
+    /**
+     * The total buckets one search may ask for across every aggregate. Stated as
+     * prose in the {@code aggregates} description, not as a schema keyword — see
+     * {@link #fitBucketBudget}.
+     */
+    public static final int MAX_TOTAL_BUCKETS = 10_000;
+
     private static final int DEFAULT_LIMIT = 10;
 
     /** {@code TermBucketAggregatesConfig.size} declares {@code default: 10}. */
@@ -471,9 +478,38 @@ public class TurContentAiQueryBuilder {
                     + "so the last {} are not requested", MAX_AGGREGATES, facetFields.size(),
                     facetFields.size() - MAX_AGGREGATES);
         }
-        facetFields.stream().limit(MAX_AGGREGATES)
-                .forEach(field -> array.add(termBucketAggregate(field.getName(), size)));
+        List<TurSNSiteFieldExt> requested = facetFields.stream().limit(MAX_AGGREGATES).toList();
+        int perField = fitBucketBudget(requested.size(), size);
+        requested.forEach(field -> array.add(termBucketAggregate(field.getName(), perField)));
         return array;
+    }
+
+    /**
+     * T1051 — the per-field bucket count that keeps the whole request inside
+     * Adobe's total-bucket budget.
+     *
+     * <p>The bound is prose in the {@code aggregates} description rather than a
+     * schema keyword — "(sum of the size of each term bucket aggregation in this
+     * array) … should be kept below 10,000. Any request breaching this limit would
+     * fail" — so no JSON Schema validator can express it and it has to be enforced
+     * here. It bites on a product of two settings, neither of which looks wrong
+     * alone: {@code facet-size} at 250 across 40 facet fields is exactly 10,000.
+     *
+     * <p>Scaling every field down is the right trade on this path for the reason
+     * dropping the 51st facet field is: Adobe fails the <em>request</em>, so a site
+     * that crossed the line stops returning results at all. Fewer facet values on
+     * each facet is a visible, proportionate loss; no search is not.
+     */
+    public int fitBucketBudget(int aggregateCount, int size) {
+        int clamped = clampBucketSize(size);
+        if (aggregateCount <= 0 || (long) aggregateCount * clamped <= MAX_TOTAL_BUCKETS) {
+            return clamped;
+        }
+        int perField = Math.max(1, MAX_TOTAL_BUCKETS / aggregateCount);
+        log.warn("Content AI keeps the total bucket count below {}; {} aggregates at size {} "
+                + "would ask for {}, so each is reduced to {}", MAX_TOTAL_BUCKETS,
+                aggregateCount, clamped, (long) aggregateCount * clamped, perField);
+        return perField;
     }
 
     /**

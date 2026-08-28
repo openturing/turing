@@ -341,6 +341,18 @@ every search it runs — the fields arrive in facet-position order, so what surv
 what the site put first. A `size` is clamped either way: it is a ceiling on what comes
 back, not a request for something specific.
 
+A fifth bound is not in the table because no schema states it (T1051). The
+`aggregates` description says in prose that the **sum** of every term bucket `size`
+must stay below 10,000, and that a request breaching it fails — so the T1048 check can
+never reach it, JSON Schema having no keyword for a sum across siblings. It is
+reachable precisely because `size` now clamps to 2000: six aggregations at that
+ceiling is a body every schema rule accepts and 12,000 buckets against this one. On
+the plugin path `fitBucketBudget` scales every facet down to fit (`facet-size` 500
+across 50 fields becomes 200 each); on the DSL path it is refused with the total
+named. Both follow the same split as the rest — and the trade is worth restating,
+because Adobe fails the **request**, not the aggregate: a site that crossed the line
+stops returning results at all.
+
 #### The reply is checked too, and the bundle contradicts itself once (T1050)
 
 A stub whose *response* is whatever its author typed proves the mapper agrees with

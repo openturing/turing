@@ -596,6 +596,41 @@ class TurDslContentAiExecutorTest {
     }
 
     @Test
+    @DisplayName("Asking for more term buckets in total than the API's 10,000 is refused")
+    void tooManyTotalBucketsAreRefused() {
+        Map<String, TurDslAggregation> aggs = new LinkedHashMap<>();
+        for (int i = 0; i < 6; i++) {
+            aggs.put("agg_" + i,
+                    new TurDslAggregation.TermsAgg("field_" + i,
+                            TurContentAiQueryBuilder.MAX_BUCKET_SIZE));
+        }
+
+        // 6 x 2000 = 12,000. Every size is legal on its own and the body satisfies
+        // the whole schema; Adobe fails the request on a rule only prose states.
+        assertThatThrownBy(() -> executor.execute(SITE, LOCALE,
+                request(new TurDslQuery.MatchAll(), null, 10, null, aggs)))
+                        .isInstanceOf(TurUnsupportedEngineException.class)
+                        .hasMessageContaining("12000");
+        assertThat(bodies).isEmpty();
+    }
+
+    @Test
+    @DisplayName("Exactly the 10,000-bucket budget is served")
+    void theBucketBudgetCeilingIsServed() {
+        Map<String, TurDslAggregation> aggs = new LinkedHashMap<>();
+        for (int i = 0; i < 5; i++) {
+            aggs.put("agg_" + i,
+                    new TurDslAggregation.TermsAgg("field_" + i,
+                            TurContentAiQueryBuilder.MAX_BUCKET_SIZE));
+        }
+
+        executor.execute(SITE, LOCALE,
+                request(new TurDslQuery.MatchAll(), null, 10, null, aggs));
+
+        assertThat(MAPPER.readTree(bodies.getLast()).get("aggregates")).hasSize(5);
+    }
+
+    @Test
     @DisplayName("Exactly 50 aggregations is the ceiling and is served")
     void fiftyAggregationsIsServed() {
         Map<String, TurDslAggregation> aggs = new LinkedHashMap<>();

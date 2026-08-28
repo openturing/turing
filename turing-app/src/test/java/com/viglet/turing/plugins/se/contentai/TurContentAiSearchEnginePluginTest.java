@@ -700,6 +700,49 @@ class TurContentAiSearchEnginePluginTest {
                 .isEqualTo(TurContentAiQueryBuilder.MAX_BUCKET_SIZE);
     }
 
+    @Test
+    @DisplayName("A facet configuration over the total-bucket budget scales down, "
+            + "so the search still runs")
+    void facetSizeIsScaledToTheBucketBudget() throws IOException {
+        String endpoint = startStub("""
+                {"totalResults": 0, "results": []}
+                """);
+        TurSNSiteFieldExt[] fields = new TurSNSiteFieldExt[50];
+        for (int i = 0; i < fields.length; i++) {
+            fields[i] = facetField("field_" + i, i + 1, TurSNSiteFacetFieldEnum.DEFAULT);
+        }
+        property.setFacetSize(500);
+
+        // 50 x 500 = 25,000 buckets. Adobe fails the request, not the aggregate, so
+        // fewer values on every facet beats no results at all.
+        plugin(endpoint, TurSNSiteFacetFieldEnum.AND, fields)
+                .retrieveSearchResults(context("cars", 1, 10, null));
+
+        JsonNode aggregates = lastBody().get("aggregates");
+        assertThat(aggregates).hasSize(50);
+        assertThat(aggregates.get(0).get("size").asInt())
+                .isEqualTo(TurContentAiQueryBuilder.MAX_TOTAL_BUCKETS / 50);
+    }
+
+    @Test
+    @DisplayName("A facet configuration inside the budget is sent as configured")
+    void facetSizeInsideTheBudgetIsUntouched() throws IOException {
+        String endpoint = startStub("""
+                {"totalResults": 0, "results": []}
+                """);
+        TurSNSiteFieldExt[] fields = new TurSNSiteFieldExt[40];
+        for (int i = 0; i < fields.length; i++) {
+            fields[i] = facetField("field_" + i, i + 1, TurSNSiteFacetFieldEnum.DEFAULT);
+        }
+        property.setFacetSize(250);
+
+        // 40 x 250 = 10,000 exactly, which is the budget and not over it.
+        plugin(endpoint, TurSNSiteFacetFieldEnum.AND, fields)
+                .retrieveSearchResults(context("cars", 1, 10, null));
+
+        assertThat(lastBody().get("aggregates").get(0).get("size").asInt()).isEqualTo(250);
+    }
+
     // ---- cursor paging ---------------------------------------------------
 
     @Test

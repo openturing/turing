@@ -92,6 +92,10 @@ import tools.jackson.databind.node.ObjectNode;
  * term bucket's {@code size} is the exception and is clamped: it is a ceiling on
  * what comes back, so asking for more buckets than exist is not an error.
  *
+ * <p>T1051 — the total bucket count across every aggregate is refused the same way.
+ * That one is prose in the spec rather than a schema keyword, so no validator can
+ * reach it and Adobe fails the whole request over it.
+ *
  * @author Alexandre Oliveira
  * @since 2026.3.4
  */
@@ -722,6 +726,7 @@ public class TurDslContentAiExecutor implements TurDslSearchEngineExecutor<Objec
                     .formatted(MAX_AGGREGATES));
         }
         ArrayNode array = nodes.arrayNode();
+        long totalBuckets = 0;
         for (Map.Entry<String, TurDslAggregation> entry : aggs.entrySet()) {
             if (!(entry.getValue() instanceof TurDslAggregation.TermsAgg terms)) {
                 throw refuse("The DSL '%s' aggregation"
@@ -735,10 +740,21 @@ public class TurDslContentAiExecutor implements TurDslSearchEngineExecutor<Objec
             aggregate.set(FIELD_FIELD, field);
             // A bucket count is the clamping kind: `size` is a ceiling on what comes
             // back, so asking for more buckets than exist is not an error.
-            aggregate.put("size", queryBuilder.clampBucketSize(
+            int size = queryBuilder.clampBucketSize(
                     terms.size() != null && terms.size() > 0 ? terms.size()
-                            : property.getFacetSize()));
+                            : property.getFacetSize());
+            aggregate.put("size", size);
+            totalBuckets += size;
             array.add(aggregate);
+        }
+        // T1051 — Adobe fails the whole request over the total, which is prose in the
+        // spec rather than a schema keyword and so is invisible to the T1048 check.
+        // The plugin path scales its facets down to fit; here every size was either
+        // named by the caller or is the configured default, and quietly returning
+        // fewer values than asked for is a wrong answer the caller cannot detect.
+        if (totalBuckets > TurContentAiQueryBuilder.MAX_TOTAL_BUCKETS) {
+            throw refuse("A DSL request asking for %d term buckets, over the API's %d"
+                    .formatted(totalBuckets, TurContentAiQueryBuilder.MAX_TOTAL_BUCKETS));
         }
         return array;
     }
