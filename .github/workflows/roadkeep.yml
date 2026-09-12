@@ -19,7 +19,7 @@
 # baseline: both moved, and only new findings mattered. Absolute, an unpinned gate
 # means a rule added upstream turns this build red on prose nobody here touched,
 # and roadkeep's main moves several times a day — 0.1.678 to 0.1.1026 inside one
-# afternoon. The pin below is roadkeep 0.1.1026, verified to lint this corpus
+# afternoon. The pin below is roadkeep 0.2.473, verified to lint this corpus
 # clean before it was written down.
 #
 # To bump: pick the new SHA, run `roadkeep lint` from that revision against this
@@ -47,5 +47,5 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
-      # roadkeep 0.1.1026 — see the note above before changing this SHA.
-      - uses: alegauss/roadkeep@8da282ca31c9e4ad5368c00fa6cb10681230674c
+      # roadkeep 0.2.473 — see the note above before changing this SHA.
+      - uses: alegauss/roadkeep@8e48bd3f38c257b85cb413077f29a92a734d030d
