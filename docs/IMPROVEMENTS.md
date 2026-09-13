@@ -2057,37 +2057,14 @@ leaves vectorless sites without a tile. The block adds **no backend**.
 
 ## LXX. What the link-free response and its consumers still lack (Block BW)
 
-> Block BT migrated the three `turing-app` consumers off `store.data`. What it did
-> not do is finish the **shape** they were reading it for, or extend the fix past
-> the one app. Every item below was read out of the code while shipping T865–T869.
+Block BT migrated the three `turing-app` consumers off `store.data`. What it did not do
+was finish the **shape** they were reading it for, or extend the fix past the one app.
+The nine items that followed were read out of the code while shipping T865–T869, and all
+of them have shipped.
 
-### LXX.9 The data-destructured rule can be made to hang the scan (T1059)
-
-The `data-destructured` rule is
-`/\{[^}]*\bdata\b[^}]*\}\s*=\s*(?:useSearchStore|useTuringUrlSearch)\s*\(/`. Two
-unbounded `[^}]*` sit either side of `\bdata\b`, so on a line that never closes the
-brace the engine re-splits the run between them once per position. Measured on a line of
-repeated `data ` with no `}`: 5 KB takes 3 ms, 25 KB takes 84 ms, 100 KB takes 1.3 s and
-300 KB takes 18.4 s. Quadratic, and the scan runs this per line.
-
-No file in the workspace triggers it today, which is the whole problem — the surfaces
-include `.js` and `.mjs` under `apps/*/src`, `packages/*/src` and `packages/*/examples`,
-and one generated or vendored single-line bundle committed under any of them turns the
-guard into a hang. T1057 fixed this scanner being slow for a boring reason; this is the
-same guarantee failing for a sharper one, and a guard that hangs reads as a broken
-build, not as a violation.
-
-Split the quantifier pairing: match the braces with a single unbounded run,
-`/\{[^}]*\}\s*=\s*(?:useSearchStore|useTuringUrlSearch)\s*\(/`, then test `\bdata\b`
-against the destructured group on its own. One pass each, no re-splitting, and the two
-conditions stay exactly what the rule means.
-
-`search-contract.test.mjs` already pins the behaviour from both sides — the shape the
-bugs were written in must match, the innocent vocabulary must not — so the replacement
-is checkable against tests that exist.
-
-Done when the rule matches and misses everything it does now, and a pathological line
-scans in bounded time.
+What keeps them shipped is `frontend/scripts/search-contract-rules.mjs`: the contract as
+named rules, each paired with the surfaces it is checked on, run from the app suite, the
+SDK suite and the workspace scripts suite.
 
 ## XXXVII Security hardening (post-audit)
 

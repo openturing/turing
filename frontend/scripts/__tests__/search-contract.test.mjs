@@ -137,3 +137,36 @@ test("the exemption list stays empty, and each entry names a real rule", () => {
     );
   }
 });
+
+/**
+ * T1059 — the scan reads `.js` and `.mjs`, so one line of a vendored bundle is a
+ * legitimate input. Before the length caps the `data-destructured` rule took 8.5
+ * seconds on the first shape below and 96 seconds at 1 MB, which a reader meets
+ * as a hung build rather than as a violation.
+ *
+ * The budget is three orders of magnitude above what these now cost (single
+ * digit to tens of milliseconds), so this asserts the quadratic blowup is gone
+ * without asserting anything about how fast the machine is — the mistake T1057
+ * was.
+ */
+test("no rule backtracks its way out of a budget on a pathological line", () => {
+  // Each shape is sized so the pre-T1059 pattern blows the budget on its own —
+  // a size where only one of them did would let half the regression back in.
+  const shapes = {
+    "one brace, long run, never closed": "{" + "data ".repeat(60_000) + "= useSearchStoreX(",
+    "open braces, never closed": "{".repeat(150_000) + " data ",
+    "open braces, no `data`": "{".repeat(150_000) + " zzzz ",
+    "repeated `{data` groups": "{data ".repeat(150_000),
+    "minified bundle on one line": "const{a,b}=c;".repeat(60_000),
+  };
+
+  for (const [label, line] of Object.entries(shapes)) {
+    for (const rule of RULES) {
+      const started = performance.now();
+      rule.pattern.test(line);
+      if (rule.requires) rule.requires.test(line);
+      const spent = performance.now() - started;
+      assert.ok(spent < 2_000, `${rule.id} took ${spent.toFixed(0)}ms on ${label}`);
+    }
+  }
+});

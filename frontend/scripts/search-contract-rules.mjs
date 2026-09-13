@@ -92,7 +92,25 @@ export const RULES = [
   {
     id: "data-destructured",
     name: "destructures `data` out of the search store",
-    pattern: /\{[^}]*\bdata\b[^}]*\}\s*=\s*(?:useSearchStore|useTuringUrlSearch)\s*\(/,
+    // Both `[^}]` runs are bounded, and that bound is the fix (T1059). Written
+    // as `\{[^}]*\bdata\b[^}]*\}` the two unbounded runs could split the same
+    // text once per position: a 300 KB line that never closes the brace took
+    // 8.5s, a 1 MB one 96s — one vendored single-line bundle under a scanned
+    // surface and the guard hangs, which reads as a broken build rather than a
+    // violation.
+    //
+    // Asserting `data` in a lookahead instead of consuming it between the two
+    // runs fixes only that shape: with many `{` and no `}` the engine still
+    // rescans to end of line per open brace, and measured *worse* there (3.8s
+    // against 1.2s at 60 KB). The length cap is what actually bounds the work,
+    // because each `{` now costs at most 400 characters instead of the rest of
+    // the line. Linear on every shape tried: 0.2ms on the 300 KB line, 44ms on
+    // 60 KB of open braces, 8.5ms on a 780 KB minified bundle.
+    //
+    // 400 is chosen to be far past any real destructuring list; a longer one
+    // would not match. Fifteen real-shape samples match and miss exactly as the
+    // unbounded pattern did.
+    pattern: /\{(?=[^}]{0,400}\bdata\b)[^}]{0,400}\}\s*=\s*(?:useSearchStore|useTuringUrlSearch)\s*\(/,
     fix: "call `useSearchView()` instead of destructuring the store",
     surfaces: ["appSource", "examples", "packageReadmes"],
   },

@@ -10,10 +10,6 @@
 
 - 📋 **T1060** (deps: —) **every bento nav entry still carries a fallbackRoute into the deleted console tree** — The paragraph above the list tells a reader the console stays live until Phase 5, and twenty-nine values agree with it, after Phase 5 shipped. → §XXXI.14
 
-## Block BW — What the link-free response and its consumers still lack (§LXX)
-
-- 📋 **T1059** (deps: —) **one search-contract rule backtracks quadratically on a long unclosed-brace line** — The surfaces include .js and .mjs, so a single vendored one-line bundle would turn the guard into a hang that reads as a broken build. → §LXX.9
-
 ## Non-goals (do NOT add as tasks)
 
 Binding constraints — see [IMPROVEMENTS.md](IMPROVEMENTS.md) §I.6 (What NOT to
