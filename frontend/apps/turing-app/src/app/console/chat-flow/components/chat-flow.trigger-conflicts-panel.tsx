@@ -88,7 +88,7 @@ function ConflictRow({
   conflict: TurChatFlowTriggerConflict;
 }>) {
   const { t } = useTranslation();
-  const baseUrl = `${ROUTES.AI_AGENT_INSTANCE}/${agentId}/chat-flow`;
+  const baseUrl = `${ROUTES.BENTO_AI_AGENT_INSTANCE}/${agentId}/chat-flow`;
   // Surface the "other" flow first when we are inside the editor of one of
   // the two — the author already knows what they're editing, the actionable
   // bit is which OTHER flow is colliding.

@@ -1462,33 +1462,32 @@ rest cheap:
 The read paths already use React Query hooks (`api/queries/*.queries.ts`), which
 the bento pages consume directly — no data-layer work per screen.
 
-### XXXI.13 The bento chat CTAs still navigate by console route constants (T1058)
+### XXXI.14 The nav config's console fallback outlived the console (T1060)
 
-The two chat surfaces build their empty-state call-to-action out of console route
-constants: `chat.page.tsx` sends "create an LLM" to `ROUTES.LLM_INSTANCE + "/new"` and
-"create an agent" to `ROUTES.AI_AGENT_INSTANCE + "/new"`, and `persona-chat.page.tsx`
-repeats the LLM one. Those constants still resolve to the `${consolePath}` tree, which
-T569 replaced with a splat route rewriting a console deep-link to its bento equivalent.
-The buttons work only because that redirect catches them.
+Every entry in `BENTO_NAV_ITEMS` carries a `fallbackRoute`, the package's field for
+where a reader goes while a surface has no bento route of its own. Turing has no such
+surface left: all 29 have a `bentoRoute`, so the fallback never fires. Nothing in `src/`
+reads the field at all.
 
-`persona-chat.page.tsx` shows the inconsistency inside one file: its persona CTA points
-at `ROUTES.BENTO_PERSONA_INSTANCE` directly while its LLM CTA goes the long way round.
+What it still holds is addresses into a tree T570 deleted — `ROUTES.HOME`,
+`ROUTES.SKILL_ROOT`, hardcoded strings like `"/admin/ai-agent/instance"`. Two entries,
+`evalStudio` and `gateway`, already give their own bento route as the fallback, the tell
+that nobody reads it.
 
-This costs a redirect hop and a wrong URL in the address bar on the way, and it puts
-weight on `console-redirect.tsx`, meant as a compatibility shim for old bookmarks rather
-than the path in-app navigation takes. The T571 test locks the redirect's behaviour, so
-the hop is safe today; what it does not say is that these links were supposed to use it.
+The comment above the list is the part that misleads: it says the fallback is always the
+console route so the hubs reach every area "during the migration (per ADR 0002, the
+console stays live until Phase 5)". Phase 5 shipped — T569 made bento the default, T570
+deleted the tree — so a reader meets a paragraph describing a live console and 29 values
+agreeing with it.
 
-The swap is to constants that already exist — `ROUTES.BENTO_LLM_INSTANCE` and
-`ROUTES.BENTO_AI_AGENT_INSTANCE`. Both pages are reached only through bento, so no
-second caller wants the console target.
+`fallbackRoute` is required on the package's `BentoNavItem`, so it cannot simply be
+dropped here. The fix is two-sided: the design system makes it optional now its
+consumers have migrated, and Turing then deletes the field and the paragraph. That pairs
+with the console-era export removal already tracked there. Until then the cheap half
+stands alone — say in the comment that the field is vestigial, and why.
 
-Worth a sweep rather than three edits: other surviving `console/**` files that bento
-reuses may build links the same way, and finding them is a search for `ROUTES.` names
-that are not the `BENTO_` ones in files bento renders.
-
-Done when no file bento reaches navigates through a console route constant, the redirect
-keeps its T571 coverage for genuine old links, and build, lint and tests stay green.
+Done when no nav entry names a retired route, or the comment says plainly that the field
+is required by the package and unused here.
 
 ## XXXIII. Evaluation platform — pluggable graders + datasets (Block AJ)
 

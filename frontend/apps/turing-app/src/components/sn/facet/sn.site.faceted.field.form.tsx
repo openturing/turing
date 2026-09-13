@@ -52,7 +52,7 @@ interface Props {
   baseRoute?: string;
 }
 
-export const SNSiteFacetedFieldForm: React.FC<Props> = ({ snSiteId, snField, isNew, baseRoute = ROUTES.SN_INSTANCE }) => {
+export const SNSiteFacetedFieldForm: React.FC<Props> = ({ snSiteId, snField, isNew, baseRoute = ROUTES.BENTO_SN_INSTANCE }) => {
   const { t } = useTranslation();
   const normalizedField = useMemo(() => ({
     ...snField,

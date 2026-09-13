@@ -24,14 +24,14 @@ interface QuickLink {
 }
 
 const QUICK_LINKS: QuickLink[] = [
-  { titleKey: "home.features.chat.title", url: ROUTES.CHAT_ROOT, icon: IconMessageChatbot, gradient: "from-blue-600 to-indigo-600" },
-  { titleKey: "home.features.semanticNavigation.title", url: ROUTES.SN_ROOT, icon: IconCompass, gradient: "from-emerald-600 to-teal-600" },
-  { titleKey: "home.features.languageModel.title", url: ROUTES.LLM_ROOT, icon: IconCpu2, gradient: "from-blue-600 to-indigo-600" },
-  { titleKey: "home.features.costGovernance.title", url: ROUTES.COST_GOVERNANCE, icon: IconCoin, gradient: "from-amber-500 to-orange-500" },
-  { titleKey: "home.features.searchEngine.title", url: ROUTES.SE_ROOT, icon: IconZoomCode, gradient: "from-emerald-600 to-teal-600" },
-  { titleKey: "home.features.embeddingStore.title", url: ROUTES.STORE_ROOT, icon: IconDatabase, gradient: "from-purple-600 to-pink-600" },
-  { titleKey: "home.features.import.title", url: ROUTES.EXCHANGE_IMPORT, icon: IconFileImport, gradient: "from-slate-600 to-slate-700" },
-  { titleKey: "home.features.graphqlExplorer.title", url: ROUTES.GRAPHQL_ROOT, icon: IconBrandGraphql, gradient: "from-pink-600 to-rose-600" },
+  { titleKey: "home.features.chat.title", url: ROUTES.BENTO_CHAT, icon: IconMessageChatbot, gradient: "from-blue-600 to-indigo-600" },
+  { titleKey: "home.features.semanticNavigation.title", url: ROUTES.BENTO_SN, icon: IconCompass, gradient: "from-emerald-600 to-teal-600" },
+  { titleKey: "home.features.languageModel.title", url: ROUTES.BENTO_LLM, icon: IconCpu2, gradient: "from-blue-600 to-indigo-600" },
+  { titleKey: "home.features.costGovernance.title", url: ROUTES.BENTO_COST_GOVERNANCE, icon: IconCoin, gradient: "from-amber-500 to-orange-500" },
+  { titleKey: "home.features.searchEngine.title", url: ROUTES.BENTO_SE, icon: IconZoomCode, gradient: "from-emerald-600 to-teal-600" },
+  { titleKey: "home.features.embeddingStore.title", url: ROUTES.BENTO_STORE, icon: IconDatabase, gradient: "from-purple-600 to-pink-600" },
+  { titleKey: "home.features.import.title", url: ROUTES.BENTO_IMPORT, icon: IconFileImport, gradient: "from-slate-600 to-slate-700" },
+  { titleKey: "home.features.graphqlExplorer.title", url: ROUTES.BENTO_GRAPHQL, icon: IconBrandGraphql, gradient: "from-pink-600 to-rose-600" },
 ];
 
 interface QuickLinksWidgetProps {

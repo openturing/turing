@@ -41,7 +41,7 @@ interface Props {
     baseRoute?: string;
 }
 
-export const SNSiteSearchRuleForm: React.FC<Props> = ({ snSiteId, value, isNew, onDelete, open, setOpen, baseRoute = ROUTES.SN_INSTANCE }) => {
+export const SNSiteSearchRuleForm: React.FC<Props> = ({ snSiteId, value, isNew, onDelete, open, setOpen, baseRoute = ROUTES.BENTO_SN_INSTANCE }) => {
     const { t } = useTranslation();
     const form = useForm<TurSNSiteSearchRule>({ defaultValues: value });
     const navigate = useNavigate();

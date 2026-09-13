@@ -112,8 +112,8 @@ function buildTree(nodes: TurSkillFileNode[]): TreeNode[] {
 interface SkillEditorPageProps {
   /**
    * Skills list route the "back" button + save redirects navigate to. Defaults
-   * to the console (`ROUTES.SKILL_ROOT`); the Bento skill editor (T560) passes
-   * `ROUTES.BENTO_SKILL` so it stays inside the shell.
+   * to `ROUTES.BENTO_SKILL`, the only list there is since T570 retired the
+   * console tree.
    */
   baseRoute?: string
   /**
@@ -125,7 +125,7 @@ interface SkillEditorPageProps {
 }
 
 export default function SkillEditorPage({
-  baseRoute = ROUTES.SKILL_ROOT,
+  baseRoute = ROUTES.BENTO_SKILL,
   containerClassName = "flex flex-col h-[calc(100vh-3.5rem)]",
 }: Readonly<SkillEditorPageProps> = {}) {
   const { id } = useParams<{ id: string }>()

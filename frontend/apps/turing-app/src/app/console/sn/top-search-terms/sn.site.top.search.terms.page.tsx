@@ -47,7 +47,7 @@ function formatNumber(value: number | undefined): string {
  *   Bento passes `ROUTES.BENTO_SN_INSTANCE` (T576).
  * @param header Header for this surface — a `BentoHero`, or `null` to omit it.
  */
-export default function SNSiteTopSearchTermsPage({ baseRoute = ROUTES.SN_INSTANCE, header }: Readonly<{ baseRoute?: string; header?: ReactNode }> = {}) {
+export default function SNSiteTopSearchTermsPage({ baseRoute = ROUTES.BENTO_SN_INSTANCE, header }: Readonly<{ baseRoute?: string; header?: ReactNode }> = {}) {
   const { id, period: periodParam } = useParams() as { id: string; period?: string };
   const navigate = useNavigate();
   const { t } = useTranslation();

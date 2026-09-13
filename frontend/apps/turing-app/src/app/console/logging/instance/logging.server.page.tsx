@@ -65,7 +65,7 @@ export default function LoggingServerPage() {
     <LoggingPageLayout
       pageData={logging.pageData}
       error={logging.error}
-      tryAgainUrl={`${ROUTES.LOGGING_INSTANCE}/server`}
+      tryAgainUrl={`${ROUTES.BENTO_LOGGING}/server`}
       refreshInterval={logging.refreshInterval}
       onRefreshIntervalChange={logging.setRefreshInterval}
     >

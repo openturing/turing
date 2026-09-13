@@ -54,7 +54,7 @@ interface ChatFlowAiChatPageProps {
   readonly baseRoute?: string;
 }
 
-export default function ChatFlowAiChatPage({ baseRoute = ROUTES.AI_AGENT_INSTANCE }: ChatFlowAiChatPageProps = {}) {
+export default function ChatFlowAiChatPage({ baseRoute = ROUTES.BENTO_AI_AGENT_INSTANCE }: ChatFlowAiChatPageProps = {}) {
   const { id: agentId } = useParams() as { id: string };
   const { t } = useTranslation();
   const navigate = useNavigate();

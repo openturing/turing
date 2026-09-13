@@ -23,7 +23,7 @@ import { SectionCard } from "../ui/section-card"
 import { BentoAgentSubHero } from "@/app/bento/ai-agent/bento.ai-agent.sub-hero"
 import { SystemPromptWarningsPanel } from "./system-prompt-warnings-panel"
 
-const urlBase = ROUTES.AI_AGENT_INSTANCE
+const urlBase = ROUTES.BENTO_AI_AGENT_INSTANCE
 
 interface Props {
   value: TurAIAgent;

@@ -39,7 +39,7 @@ export function LLMStatusWidget({ onHide, colSpan }: LLMStatusWidgetProps) {
           <IconCpu2 className="size-8 text-muted-foreground/40" />
           <p className="text-xs text-muted-foreground">{t("dashboard.widgets.llmStatus.noInstances")}</p>
           <NavLink
-            to={ROUTES.LLM_ROOT}
+            to={ROUTES.BENTO_LLM}
             className="text-xs font-medium text-blue-600 dark:text-blue-400 hover:underline"
           >
             {t("dashboard.widgets.llmStatus.configure")}
@@ -72,7 +72,7 @@ export function LLMStatusWidget({ onHide, colSpan }: LLMStatusWidgetProps) {
                 <p className="text-[10px] text-muted-foreground truncate">{inst.modelName}</p>
               </div>
               <NavLink
-                to={`${ROUTES.LLM_ROOT}/instance/${inst.id}`}
+                to={`${ROUTES.BENTO_LLM}/instance/${inst.id}`}
                 className="text-[10px] text-muted-foreground hover:text-foreground shrink-0"
               >
                 {t("home.open")}

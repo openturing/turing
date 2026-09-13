@@ -44,7 +44,7 @@ interface Props {
 }
 const turSNSiteLocaleService = new TurSNSiteLocaleService();
 
-export const SNSiteLocaleForm: React.FC<Props> = ({ snSiteId, snLocale, isNew, onDelete, open, setOpen, baseRoute = ROUTES.SN_INSTANCE }) => {
+export const SNSiteLocaleForm: React.FC<Props> = ({ snSiteId, snLocale, isNew, onDelete, open, setOpen, baseRoute = ROUTES.BENTO_SN_INSTANCE }) => {
   const { t } = useTranslation();
   // T1018 — the global locale catalogue comes from the shared cache; every form
   // that offers a language reads the same entry instead of fetching its own.
@@ -189,7 +189,7 @@ export const SNSiteLocaleForm: React.FC<Props> = ({ snSiteId, snLocale, isNew, o
                   const seId = snLocale.turSNSite?.turSEInstance?.id;
                   const searchSuffix = field.value ? `?search=${encodeURIComponent(field.value)}` : "";
                   const coresUrl = seId
-                    ? `${ROUTES.SE_INSTANCE}/${seId}/cores${searchSuffix}`
+                    ? `${ROUTES.BENTO_SE_INSTANCE}/${seId}/cores${searchSuffix}`
                     : undefined;
                   return (
                     <FormItem>

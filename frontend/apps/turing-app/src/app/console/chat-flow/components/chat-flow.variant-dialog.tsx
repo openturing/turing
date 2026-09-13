@@ -141,7 +141,7 @@ export function ChatFlowVariantDialog({
       );
       onClose();
       if (created.id) {
-        navigate(`${ROUTES.AI_AGENT_INSTANCE}/${agentId}/chat-flow/${created.id}`);
+        navigate(`${ROUTES.BENTO_AI_AGENT_INSTANCE}/${agentId}/chat-flow/${created.id}`);
       }
     } catch (error) {
       console.error("Chat flow variant save failed", error);

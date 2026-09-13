@@ -50,7 +50,7 @@ interface Props {
 }
 
 export const IntentSettingsForm: React.FC<Props> = ({ value, isNew, agentId, agentTitle, baseRoute }) => {
-  const urlBase = `${baseRoute ?? ROUTES.AI_AGENT_INSTANCE}/${agentId}/intent`
+  const urlBase = `${baseRoute ?? ROUTES.BENTO_AI_AGENT_INSTANCE}/${agentId}/intent`
   const { t } = useTranslation();
 
   const Section = ({

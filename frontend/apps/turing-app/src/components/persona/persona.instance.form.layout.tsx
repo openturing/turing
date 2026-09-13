@@ -105,7 +105,7 @@ const linesToTerms = (text: string) =>
  * @author Alexandre Oliveira
  * @since 2026.3.4
  */
-export const PersonaInstanceFormLayout: React.FC<Props> = ({ value, isNew, baseRoute = ROUTES.PERSONA_INSTANCE }) => {
+export const PersonaInstanceFormLayout: React.FC<Props> = ({ value, isNew, baseRoute = ROUTES.BENTO_PERSONA_INSTANCE }) => {
   const { t } = useTranslation()
   const navigate = useNavigate()
   const urlBase = baseRoute

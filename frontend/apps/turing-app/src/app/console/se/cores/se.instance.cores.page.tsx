@@ -57,7 +57,7 @@ function toBlockedBy(usedBySites: TurSECoreSiteUsage[] | undefined): VigBlockedB
     id: usage.localeId,
     name: usage.siteName,
     language: usage.language,
-    href: `${ROUTES.SN_INSTANCE}/${usage.siteId}/locale/${usage.localeId}`,
+    href: `${ROUTES.BENTO_SN_INSTANCE}/${usage.siteId}/locale/${usage.localeId}`,
   }));
 }
 
@@ -114,7 +114,7 @@ function LocaleRow({ locale, coreInfo, onDelete, onClear }: Readonly<LocaleRowPr
               <BadgeColorful
                 key={usage.localeId}
                 text={usage.siteName}
-                href={`${ROUTES.SN_INSTANCE}/${usage.siteId}/locale/${usage.localeId}`}
+                href={`${ROUTES.BENTO_SN_INSTANCE}/${usage.siteId}/locale/${usage.localeId}`}
                 onClick={navigate}
                 prefix={countryCode ? (
                   <img
@@ -217,7 +217,7 @@ function CoreGroupRow({ group, onDelete, onClear }: Readonly<CoreGroupRowProps>)
                     <BadgeColorful
                       key={usage.localeId}
                       text={usage.siteName}
-                      href={`${ROUTES.SN_INSTANCE}/${usage.siteId}/locale/${usage.localeId}`}
+                      href={`${ROUTES.BENTO_SN_INSTANCE}/${usage.siteId}/locale/${usage.localeId}`}
                       onClick={navigate}
                       prefix={countryCode ? (
                         <img
@@ -296,7 +296,7 @@ interface SEInstanceCoresPageProps {
   baseRoute?: string;
 }
 
-export default function SEInstanceCoresPage({ header, baseRoute = ROUTES.SE_INSTANCE }: Readonly<SEInstanceCoresPageProps>) {
+export default function SEInstanceCoresPage({ header, baseRoute = ROUTES.BENTO_SE_INSTANCE }: Readonly<SEInstanceCoresPageProps>) {
   const { t } = useTranslation();
   const { id } = useParams() as { id: string };
   const navigate = useNavigate();

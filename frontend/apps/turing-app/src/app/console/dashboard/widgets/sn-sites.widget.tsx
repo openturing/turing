@@ -34,7 +34,7 @@ export function SNSitesWidget({ onHide, colSpan }: SNSitesWidgetProps) {
           <IconCompass className="size-8 text-muted-foreground/40" />
           <p className="text-xs text-muted-foreground">{t("dashboard.widgets.snSites.noSites")}</p>
           <NavLink
-            to={ROUTES.SN_ROOT}
+            to={ROUTES.BENTO_SN}
             className="text-xs font-medium text-blue-600 dark:text-blue-400 hover:underline"
           >
             {t("dashboard.widgets.snSites.createFirst")}
@@ -48,7 +48,7 @@ export function SNSitesWidget({ onHide, colSpan }: SNSitesWidgetProps) {
               className="flex items-center justify-between rounded-lg border border-border/50 px-3 py-2 bg-secondary/20 hover:bg-secondary/40 transition-colors"
             >
               <NavLink
-                to={`${ROUTES.SN_INSTANCE}/${site.id}/detail`}
+                to={`${ROUTES.BENTO_SN_INSTANCE}/${site.id}/detail`}
                 className="flex items-center gap-2 min-w-0"
               >
                 <span className="w-1.5 h-1.5 rounded-full bg-gradient-to-br from-emerald-500 to-teal-500 shrink-0" />

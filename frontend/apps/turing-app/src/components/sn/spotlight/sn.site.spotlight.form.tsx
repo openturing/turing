@@ -63,7 +63,7 @@ interface Props {
     baseRoute?: string;
 }
 
-export const SNSiteSpotlightForm: React.FC<Props> = ({ snSiteId, value, isNew, onDelete, open, setOpen, baseRoute = ROUTES.SN_INSTANCE }) => {
+export const SNSiteSpotlightForm: React.FC<Props> = ({ snSiteId, value, isNew, onDelete, open, setOpen, baseRoute = ROUTES.BENTO_SN_INSTANCE }) => {
     const { t } = useTranslation();
     const form = useForm<TurSNSiteSpotlight>({
         defaultValues: value,

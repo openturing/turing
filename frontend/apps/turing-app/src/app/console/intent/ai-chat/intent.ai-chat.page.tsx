@@ -31,7 +31,7 @@ interface IntentAiChatPageProps {
   readonly baseRoute?: string;
 }
 
-export default function IntentAiChatPage({ baseRoute = ROUTES.AI_AGENT_INSTANCE }: IntentAiChatPageProps = {}) {
+export default function IntentAiChatPage({ baseRoute = ROUTES.BENTO_AI_AGENT_INSTANCE }: IntentAiChatPageProps = {}) {
   const { id: agentId } = useParams() as { id: string };
   const { t } = useTranslation();
   const [intent, setIntent] = useState<TurIntent>(emptyIntent());

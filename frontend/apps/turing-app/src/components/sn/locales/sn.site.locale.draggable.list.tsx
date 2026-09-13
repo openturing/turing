@@ -162,7 +162,7 @@ export const SNSiteLocaleDraggableList: React.FC<SNSiteLocaleDraggableListProps>
     setTableData,
     storageEnabled = false,
     children,
-    baseRoute = ROUTES.SN_INSTANCE,
+    baseRoute = ROUTES.BENTO_SN_INSTANCE,
 }) => {
     const { t } = useTranslation();
     const sensors = useSensors(useSensor(PointerSensor));

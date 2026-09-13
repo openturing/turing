@@ -53,7 +53,7 @@ interface Props {
     };
 }
 
-export const AdminRoleForm: React.FC<Props> = ({ value, isNew, listRoute = ROUTES.ADMIN_ROLES, bentoHero }) => {
+export const AdminRoleForm: React.FC<Props> = ({ value, isNew, listRoute = ROUTES.BENTO_ADMIN_ROLES, bentoHero }) => {
     const { t } = useTranslation();
     const form = useForm<TurRole>({ defaultValues: value });
     const navigate = useNavigate();

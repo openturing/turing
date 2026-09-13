@@ -45,7 +45,7 @@ interface Props {
     };
 }
 
-export const AdminGroupForm: React.FC<Props> = ({ value, isNew, onDelete, open, setOpen, listRoute = ROUTES.ADMIN_GROUPS, bentoHero }) => {
+export const AdminGroupForm: React.FC<Props> = ({ value, isNew, onDelete, open, setOpen, listRoute = ROUTES.BENTO_ADMIN_GROUPS, bentoHero }) => {
     const { t } = useTranslation();
     const form = useForm<TurGroup>({ defaultValues: value });
     const navigate = useNavigate();

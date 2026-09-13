@@ -55,7 +55,7 @@ interface Props {
    *  BentoFormSection tiles so the page matches the /bento standard. */
 }
 
-export const SNSiteBehaviorForm: React.FC<Props> = ({ value, isNew, baseRoute = ROUTES.SN_INSTANCE }) => {
+export const SNSiteBehaviorForm: React.FC<Props> = ({ value, isNew, baseRoute = ROUTES.BENTO_SN_INSTANCE }) => {
   const { t } = useTranslation();
   const form = useForm<TurSNSite>({
     defaultValues: value

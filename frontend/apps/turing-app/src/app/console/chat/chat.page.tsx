@@ -408,7 +408,7 @@ export default function ChatPage({
           title={t("chat.noLlmAvailable")}
           description={t("chat.noLlmDescription")}
           action={
-            <GradientButtonLink to={ROUTES.LLM_INSTANCE + "/new"} size="sm">
+            <GradientButtonLink to={ROUTES.BENTO_LLM_INSTANCE + "/new"} size="sm">
               {t("chat.createLlmInstance")}
             </GradientButtonLink>
           }
@@ -427,7 +427,7 @@ export default function ChatPage({
           title={t("chat.noAgentAvailable")}
           description={t("chat.noAgentDescription")}
           action={
-            <GradientButtonLink to={ROUTES.AI_AGENT_INSTANCE + "/new"} size="sm">
+            <GradientButtonLink to={ROUTES.BENTO_AI_AGENT_INSTANCE + "/new"} size="sm">
               {t("chat.createAiAgent")}
             </GradientButtonLink>
           }

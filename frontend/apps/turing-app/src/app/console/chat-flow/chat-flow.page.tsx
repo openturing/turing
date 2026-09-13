@@ -547,7 +547,7 @@ interface ChatFlowPageProps {
   /** Render inside the bento shell (no console sidebar / SubPageHeader). */
 }
 
-export default function ChatFlowPage({ baseRoute = ROUTES.AI_AGENT_INSTANCE }: ChatFlowPageProps = {}) {
+export default function ChatFlowPage({ baseRoute = ROUTES.BENTO_AI_AGENT_INSTANCE }: ChatFlowPageProps = {}) {
   const { id: agentId, flowId } = useParams() as { id: string; flowId: string };
   const { t } = useTranslation();
   const isNew = flowId === "new";

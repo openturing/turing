@@ -73,7 +73,7 @@ interface Props {
     baseRoute?: string;
 }
 
-export const SNSiteGenAiForm: React.FC<Props> = ({ snSite, baseRoute = ROUTES.SN_INSTANCE }) => {
+export const SNSiteGenAiForm: React.FC<Props> = ({ snSite, baseRoute = ROUTES.BENTO_SN_INSTANCE }) => {
     const { t } = useTranslation();
     const updateMutation = useUpdateSnSite();
     const form = useForm<TurSNSiteGenAi>({

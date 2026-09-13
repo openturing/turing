@@ -8,7 +8,7 @@
 
 ## Block AG — Bento UI: complete the interface migration (§XXXI)
 
-- 📋 **T1058** (deps: —) **bento chat pages send their empty-state buttons through retired console routes** — The console redirect is a compatibility shim for old bookmarks, and in-app navigation leaning on it hides the day it is removed. → §XXXI.13
+- 📋 **T1060** (deps: —) **every bento nav entry still carries a fallbackRoute into the deleted console tree** — The paragraph above the list tells a reader the console stays live until Phase 5, and twenty-nine values agree with it, after Phase 5 shipped. → §XXXI.14
 
 ## Block BW — What the link-free response and its consumers still lack (§LXX)
 

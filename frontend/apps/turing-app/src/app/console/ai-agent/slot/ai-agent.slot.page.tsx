@@ -76,7 +76,7 @@ interface AIAgentSlotPageProps {
 export default function AIAgentSlotPage({ header }: Readonly<AIAgentSlotPageProps> = {}) {
   const { t } = useTranslation();
   const { id: agentId } = useParams() as { id: string };
-  const baseUrl = `${ROUTES.AI_AGENT_INSTANCE}/${agentId}/slot`;
+  const baseUrl = `${ROUTES.BENTO_AI_AGENT_INSTANCE}/${agentId}/slot`;
 
   const { data: slots, isError } = useAIAgentSlots(agentId);
   const createMutation = useCreateAIAgentSlot();

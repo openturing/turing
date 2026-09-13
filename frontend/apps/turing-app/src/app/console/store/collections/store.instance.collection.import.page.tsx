@@ -62,7 +62,7 @@ export default function StoreInstanceCollectionImportPage({
 
   useSubPageBreadcrumb(t("store.collections.importTitle", { name: collectionName }))
 
-  const collectionsHref = backHref ?? `${ROUTES.STORE_INSTANCE}/${id}/collections`
+  const collectionsHref = backHref ?? `${ROUTES.BENTO_STORE_INSTANCE}/${id}/collections`
   const headerNode = header
 
   const doImport = useCallback(

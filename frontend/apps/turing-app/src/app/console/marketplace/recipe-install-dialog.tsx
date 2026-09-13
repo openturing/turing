@@ -97,7 +97,7 @@ export function RecipeInstallDialog({
       onClose();
       if (created.length > 0) {
         navigate(
-          `${ROUTES.AI_AGENT_INSTANCE}/${selectedAgentId}/chat-flow/${created[0].id}`,
+          `${ROUTES.BENTO_AI_AGENT_INSTANCE}/${selectedAgentId}/chat-flow/${created[0].id}`,
         );
       }
     } catch (err) {

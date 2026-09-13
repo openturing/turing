@@ -65,7 +65,7 @@ export default function LoggingAemPage() {
     <LoggingPageLayout
       pageData={logging.pageData}
       error={logging.error}
-      tryAgainUrl={`${ROUTES.LOGGING_INSTANCE}/aem`}
+      tryAgainUrl={`${ROUTES.BENTO_LOGGING}/aem`}
       refreshInterval={logging.refreshInterval}
       onRefreshIntervalChange={logging.setRefreshInterval}
     >

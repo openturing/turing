@@ -52,7 +52,7 @@ interface SEInstanceCoreNewPageProps {
   baseRoute?: string;
 }
 
-export default function SEInstanceCoreNewPage({ baseRoute = ROUTES.SE_INSTANCE }: Readonly<SEInstanceCoreNewPageProps>) {
+export default function SEInstanceCoreNewPage({ baseRoute = ROUTES.BENTO_SE_INSTANCE }: Readonly<SEInstanceCoreNewPageProps>) {
   const { t } = useTranslation();
   const { id } = useParams() as { id: string };
   const navigate = useNavigate();

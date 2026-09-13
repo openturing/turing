@@ -58,7 +58,7 @@ const EMPTY_ITEM: TurSNSiteCustomFacetItem = {
  *   {@link BentoFormHero} (T738) so the surface stays clear of `useSidebar` and
  *   gets the standard hero → sticky-save-bar morph.
  */
-export default function SNSiteCustomFacetItemPage({ baseRoute = ROUTES.SN_INSTANCE }: Readonly<{ baseRoute?: string }> = {}) {
+export default function SNSiteCustomFacetItemPage({ baseRoute = ROUTES.BENTO_SN_INSTANCE }: Readonly<{ baseRoute?: string }> = {}) {
   const navigate = useNavigate();
   const { id, customFacetId, itemIndex } = useParams() as {
     id: string;
@@ -88,10 +88,10 @@ export default function SNSiteCustomFacetItemPage({ baseRoute = ROUTES.SN_INSTAN
           setEditingItem(EMPTY_ITEM);
         }
         setBreadcrumb([
-          { label: t("sn.facets.title"), href: `${ROUTES.SN_INSTANCE}/${id}/facet` },
+          { label: t("sn.facets.title"), href: `${ROUTES.BENTO_SN_INSTANCE}/${id}/facet` },
           {
             label: facet.name || customFacetId,
-            href: `${ROUTES.SN_INSTANCE}/${id}/facet/custom/${customFacetId}`,
+            href: `${ROUTES.BENTO_SN_INSTANCE}/${id}/facet/custom/${customFacetId}`,
           },
           {
             label: isNewItem

@@ -324,7 +324,7 @@ export default function SystemInfoPage({ header }: Readonly<{ header?: ReactNode
                                     )}
 
                                     <div className="pt-3">
-                                        <Link to={ROUTES.COST_GOVERNANCE} className="inline-flex items-center gap-1 text-sm text-blue-600 dark:text-blue-400 hover:underline">
+                                        <Link to={ROUTES.BENTO_COST_GOVERNANCE} className="inline-flex items-center gap-1 text-sm text-blue-600 dark:text-blue-400 hover:underline">
                                             {t("systemInfo.aiSpendViewFull")}
                                             <IconArrowRight className="size-4" />
                                         </Link>

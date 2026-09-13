@@ -99,7 +99,7 @@ const AgentFormSection: React.FC<SectionProps> = ({
 
 export const AIAgentSettingsForm: React.FC<Props> = ({ value, isNew, baseRoute }) => {
   const { t } = useTranslation();
-  const urlBase = baseRoute ?? ROUTES.AI_AGENT_INSTANCE;
+  const urlBase = baseRoute ?? ROUTES.BENTO_AI_AGENT_INSTANCE;
 
   // Stable alias so the ~15 <Section> call sites below stay unchanged. Its
   // identity never changes, so children never remount on keystroke

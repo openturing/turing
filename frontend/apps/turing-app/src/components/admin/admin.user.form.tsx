@@ -46,7 +46,7 @@ interface Props {
     };
 }
 
-export const AdminUserForm: React.FC<Props> = ({ value, isNew, onDelete, open, setOpen, listRoute = ROUTES.ADMIN_USERS, bentoHero }) => {
+export const AdminUserForm: React.FC<Props> = ({ value, isNew, onDelete, open, setOpen, listRoute = ROUTES.BENTO_ADMIN_USERS, bentoHero }) => {
     const { t } = useTranslation();
     const form = useForm<TurUser>({ defaultValues: value });
     const navigate = useNavigate();

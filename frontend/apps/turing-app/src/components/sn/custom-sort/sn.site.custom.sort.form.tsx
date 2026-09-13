@@ -57,7 +57,7 @@ interface Props {
     baseRoute?: string;
 }
 
-export const SNSiteCustomSortForm: React.FC<Props> = ({ snSiteId, value, isNew, onDelete, open, setOpen, baseRoute = ROUTES.SN_INSTANCE }) => {
+export const SNSiteCustomSortForm: React.FC<Props> = ({ snSiteId, value, isNew, onDelete, open, setOpen, baseRoute = ROUTES.BENTO_SN_INSTANCE }) => {
     const { t } = useTranslation();
     const form = useForm<TurSNSiteCustomSort>({
         defaultValues: value,

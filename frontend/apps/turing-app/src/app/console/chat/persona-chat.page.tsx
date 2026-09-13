@@ -274,7 +274,7 @@ export default function PersonaChatPage({
           title={t("chat.noLlmAvailable")}
           description={t("chat.noLlmDescription")}
           action={
-            <GradientButtonLink to={ROUTES.LLM_INSTANCE + "/new"} size="sm">
+            <GradientButtonLink to={ROUTES.BENTO_LLM_INSTANCE + "/new"} size="sm">
               {t("chat.createLlmInstance")}
             </GradientButtonLink>
           }

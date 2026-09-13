@@ -110,7 +110,7 @@ export default function ParkedConversationsPage() {
                   {/* T120 — open the live spectator/co-pilot view for this conversation. */}
                   <Button variant="ghost" size="sm" asChild>
                     <Link
-                      to={`${ROUTES.CONVERSATION_DETAIL}/${encodeURIComponent(row.conversationId)}?spectate=true${row.agentId ? `&agentId=${encodeURIComponent(row.agentId)}` : ""}`}>
+                      to={`${ROUTES.BENTO_CONVERSATION}/${encodeURIComponent(row.conversationId)}?spectate=true${row.agentId ? `&agentId=${encodeURIComponent(row.agentId)}` : ""}`}>
                       <IconBroadcast className="mr-2 h-4 w-4 text-blue-600" />
                       {t("parkedConversations.spectate", { defaultValue: "Spectate" })}
                     </Link>

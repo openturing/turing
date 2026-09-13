@@ -51,14 +51,13 @@ interface Props {
   open?: boolean;
   setOpen?: React.Dispatch<React.SetStateAction<boolean>>;
   /**
-   * Base SN instance route the field list lives under. Defaults to the console
-   * (`ROUTES.SN_INSTANCE`); the Bento field editor (T558) passes
-   * `ROUTES.BENTO_SN_INSTANCE` so save/cancel navigate back inside the shell.
+   * Base SN instance route the field list lives under. Defaults to
+   * `ROUTES.BENTO_SN_INSTANCE`, so save/cancel navigate back inside the shell.
    */
   baseRoute?: string;
 }
 
-export const SNSiteFieldForm: React.FC<Props> = ({ snSiteId, snField, isNew, onDelete, open, setOpen, baseRoute = ROUTES.SN_INSTANCE }) => {
+export const SNSiteFieldForm: React.FC<Props> = ({ snSiteId, snField, isNew, onDelete, open, setOpen, baseRoute = ROUTES.BENTO_SN_INSTANCE }) => {
   const { t } = useTranslation();
   const normalizedField = useMemo(() => ({
     ...snField,

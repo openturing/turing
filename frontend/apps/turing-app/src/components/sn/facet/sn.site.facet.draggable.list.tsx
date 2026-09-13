@@ -103,7 +103,7 @@ interface SNSiteFacetDraggableListProps {
     baseRoute?: string;
 }
 const turSNFacetedFieldService = new TurSNFacetedFieldService();
-export const SNSiteFacetDraggableList: React.FC<SNSiteFacetDraggableListProps> = ({ siteId, tableData, setTableData, children, baseRoute = ROUTES.SN_INSTANCE }) => {
+export const SNSiteFacetDraggableList: React.FC<SNSiteFacetDraggableListProps> = ({ siteId, tableData, setTableData, children, baseRoute = ROUTES.BENTO_SN_INSTANCE }) => {
     const { t } = useTranslation();
 
     const sensors = useSensors(useSensor(PointerSensor));

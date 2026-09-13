@@ -93,7 +93,7 @@ export default function LoggingIndexingPage() {
     <LoggingPageLayout
       pageData={logging.pageData}
       error={logging.error}
-      tryAgainUrl={`${ROUTES.LOGGING_INSTANCE}/indexing`}
+      tryAgainUrl={`${ROUTES.BENTO_LOGGING}/indexing`}
       refreshInterval={logging.refreshInterval}
       onRefreshIntervalChange={logging.setRefreshInterval}
     >
