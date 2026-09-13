@@ -12,7 +12,8 @@ import { toast } from "@viglet/viglet-design-system"
 import "./chat-highlight.css"
 
 import { ROUTES } from "@/app/routes.const"
-import { BlankSlate } from "@/components/blank-slate"
+import { BentoEmptyState } from "@/components/bento"
+import { GradientButtonLink } from "@viglet/viglet-design-system/router"
 import { GradientButton } from "@/components/ui/gradient-button"
 import { usePersona } from "@/api/queries/persona.queries"
 import type { TurPersona } from "@/models/persona/persona.model"
@@ -267,12 +268,16 @@ export default function PersonaChatPage({
     return (
       <>
         {blankSlateHeader}
-        <BlankSlate
+        <BentoEmptyState
           icon={IconMessageChatbot}
+          tone="indigo"
           title={t("chat.noLlmAvailable")}
           description={t("chat.noLlmDescription")}
-          buttonText={t("chat.createLlmInstance")}
-          urlNew={ROUTES.LLM_INSTANCE + "/new"}
+          action={
+            <GradientButtonLink to={ROUTES.LLM_INSTANCE + "/new"} size="sm">
+              {t("chat.createLlmInstance")}
+            </GradientButtonLink>
+          }
         />
       </>
     )
@@ -282,14 +287,18 @@ export default function PersonaChatPage({
     return (
       <>
         {blankSlateHeader}
-        <BlankSlate
+        <BentoEmptyState
           icon={IconMasksTheater}
+          tone="violet"
           title={t("persona.notFound.title", { defaultValue: "Persona not found" })}
           description={t("persona.notFound.description", {
             defaultValue: "This persona no longer exists or is not available.",
           })}
-          buttonText={t("persona.title", { defaultValue: "Personas" })}
-          urlNew={ROUTES.BENTO_PERSONA_INSTANCE}
+          action={
+            <GradientButtonLink to={ROUTES.BENTO_PERSONA_INSTANCE} size="sm">
+              {t("persona.title", { defaultValue: "Personas" })}
+            </GradientButtonLink>
+          }
         />
       </>
     )

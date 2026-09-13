@@ -1,4 +1,5 @@
-import { SubPageHeader } from "@/components/sub.page.header"
+import { ROUTES } from "@/app/routes.const"
+import { BentoHero, bentoChipClass } from "@/components/bento"
 import { Button } from "@/components/ui/button"
 import {
   Select,
@@ -91,11 +92,16 @@ export default function GitRepoPage() {
 
   return (
     <>
-      <SubPageHeader
-        icon={IconGitBranch}
-        feature={t("git.title")}
-        name={name || ""}
-        description={t("git.browser.description")}
+      <BentoHero
+        backTo={ROUTES.BENTO_GIT}
+        backLabel={t("git.title")}
+        leading={
+          <span className={`grid h-12 w-12 place-items-center rounded-2xl ${bentoChipClass("violet")} text-white shadow-md`}>
+            <IconGitBranch size={24} />
+          </span>
+        }
+        title={name || ""}
+        subtitle={t("git.browser.description")}
       />
 
       <div className="px-4 lg:px-6 space-y-4">

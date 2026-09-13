@@ -1,6 +1,5 @@
 import { ROUTES } from "@/app/routes.const";
-import { BentoHero, bentoChipClass } from "@/components/bento";
-import { BlankSlate } from "@/components/blank-slate";
+import { BentoEmptyState, BentoHero, bentoChipClass } from "@/components/bento";
 import { LoadProvider } from "@/components/loading-provider";
 import { SNSiteLocaleDraggableList } from "@/components/sn/locales/sn.site.locale.draggable.list";
 import { GradientButtonLink } from "@viglet/viglet-design-system/router";
@@ -59,12 +58,17 @@ export default function BentoSNLocaleListPage() {
           baseRoute={ROUTES.BENTO_SN_INSTANCE}
         />
       ) : (
-        <BlankSlate
+        <BentoEmptyState
           icon={IconLanguage}
+          tone="emerald"
           title={t("sn.multiLanguage.blankTitle")}
           description={t("sn.multiLanguage.blankDescription")}
-          buttonText={t("sn.multiLanguage.newLanguageBlank")}
-          urlNew={`${localeRoute}/new`}
+          action={
+            <GradientButtonLink to={`${localeRoute}/new`} size="sm">
+              <IconPlus className="size-4 mr-1.5" />
+              {t("sn.multiLanguage.newLanguageBlank")}
+            </GradientButtonLink>
+          }
         />
       )}
     </LoadProvider>

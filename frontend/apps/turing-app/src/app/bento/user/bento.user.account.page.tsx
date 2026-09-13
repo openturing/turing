@@ -8,8 +8,8 @@ import { NavLink, Outlet } from "react-router-dom";
  * Bento "Account" layout — T568. The user-account area (profile · preferences)
  * sits inside the shell per §XXXI.9 as a {@link BentoHero} + a frosted pill
  * tab-bar over the reused console profile/preferences content components
- * (rendered through the {@code <Outlet />} with `header={null}` so their
- * sidebar-coupled `SubPageHeader` is omitted).
+ * (rendered through the {@code <Outlet />} with `header={null}`, since the
+ * tab-bar already labels the section).
  */
 export default function BentoUserAccountPage() {
   const { t } = useTranslation();

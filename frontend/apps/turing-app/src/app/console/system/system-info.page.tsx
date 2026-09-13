@@ -1,4 +1,3 @@
-import { SubPageHeader } from "@/components/sub.page.header";
 import { SectionCard } from "@/components/ui/section-card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
@@ -27,7 +26,6 @@ import {
     IconDatabase,
     IconDeviceDesktop,
     IconDisc,
-    IconInfoCircle,
     IconLeaf,
     IconLoader2,
     IconRefresh,
@@ -121,23 +119,14 @@ function StatusBadge({ status }: Readonly<{ status: string | null | undefined }>
 }
 
 /**
- * @param header Optional header rendered above the content. Defaults to the
- * console {@link SubPageHeader}; the Bento shell (T566) passes its own frosted
- * header so the reused surface never pulls the console {@code useSidebar} into a
- * shell that has no SidebarProvider.
+ * @param header Header rendered above the content — the Bento shell (T566)
+ * passes its own frosted {@code BentoHero}, or {@code null} to omit it.
  */
 export default function SystemInfoPage({ header }: Readonly<{ header?: ReactNode }> = {}) {
     const { t } = useTranslation();
     useSubPageBreadcrumb(t("systemInfo.title"));
 
-    const headerNode: ReactNode = header ?? (
-        <SubPageHeader
-            icon={IconInfoCircle}
-            feature={t("systemInfo.title")}
-            name={t("systemInfo.title")}
-            description={t("systemInfo.description")}
-        />
-    );
+    const headerNode: ReactNode = header;
 
     const [info, setInfo] = useState<TurSystemInfo | null>(null);
     const [variables, setVariables] = useState<Record<string, string>>({});

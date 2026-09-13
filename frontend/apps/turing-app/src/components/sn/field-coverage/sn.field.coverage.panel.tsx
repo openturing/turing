@@ -1,5 +1,5 @@
 import { useSnSiteContentFit, useSnSiteFieldCoverage } from "@/api/queries/sn-site.queries";
-import { BlankSlate } from "@/components/blank-slate";
+import { BentoEmptyState } from "@/components/bento";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -182,11 +182,11 @@ export function SNFieldCoveragePanel({ siteId }: Readonly<{ siteId: string }>) {
 
     if (!report || report.fields.length === 0) {
       return (
-        <BlankSlate
+        <BentoEmptyState
           icon={IconChartBar}
+          tone="emerald"
           title={t("sn.fieldCoverage.empty")}
           description={t("sn.fieldCoverage.emptyDescription")}
-          buttonText=""
         />
       );
     }

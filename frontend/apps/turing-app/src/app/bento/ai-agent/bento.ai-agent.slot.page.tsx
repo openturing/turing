@@ -6,9 +6,8 @@ import { useParams } from "react-router-dom";
 import { BentoAgentSubHero } from "./bento.ai-agent.sub-hero";
 
 /**
- * Bento wrapper for the agent's typed-slot catalog. The console slot page owns
- * an inline (sidebar-coupled) SubPageHeader, so it accepts a `header` prop —
- * bento passes its own hero and the console chrome is dropped.
+ * Bento wrapper for the agent's typed-slot catalog. The slot page takes its
+ * header as a prop, so bento passes its own hero.
  */
 export default function BentoAIAgentSlotPage() {
   const { id } = useParams() as { id: string };

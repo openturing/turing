@@ -1462,6 +1462,34 @@ rest cheap:
 The read paths already use React Query hooks (`api/queries/*.queries.ts`), which
 the bento pages consume directly — no data-layer work per screen.
 
+### XXXI.13 The bento chat CTAs still navigate by console route constants (T1058)
+
+The two chat surfaces build their empty-state call-to-action out of console route
+constants: `chat.page.tsx` sends "create an LLM" to `ROUTES.LLM_INSTANCE + "/new"` and
+"create an agent" to `ROUTES.AI_AGENT_INSTANCE + "/new"`, and `persona-chat.page.tsx`
+repeats the LLM one. Those constants still resolve to the `${consolePath}` tree, which
+T569 replaced with a splat route rewriting a console deep-link to its bento equivalent.
+The buttons work only because that redirect catches them.
+
+`persona-chat.page.tsx` shows the inconsistency inside one file: its persona CTA points
+at `ROUTES.BENTO_PERSONA_INSTANCE` directly while its LLM CTA goes the long way round.
+
+This costs a redirect hop and a wrong URL in the address bar on the way, and it puts
+weight on `console-redirect.tsx`, meant as a compatibility shim for old bookmarks rather
+than the path in-app navigation takes. The T571 test locks the redirect's behaviour, so
+the hop is safe today; what it does not say is that these links were supposed to use it.
+
+The swap is to constants that already exist — `ROUTES.BENTO_LLM_INSTANCE` and
+`ROUTES.BENTO_AI_AGENT_INSTANCE`. Both pages are reached only through bento, so no
+second caller wants the console target.
+
+Worth a sweep rather than three edits: other surviving `console/**` files that bento
+reuses may build links the same way, and finding them is a search for `ROUTES.` names
+that are not the `BENTO_` ones in files bento renders.
+
+Done when no file bento reaches navigates through a console route constant, the redirect
+keeps its T571 coverage for genuine old links, and build, lint and tests stay green.
+
 ## XXXIII. Evaluation platform — pluggable graders + datasets (Block AJ)
 
 ### XXXIII.0 The problem — eval is two hard-wired islands
@@ -2033,6 +2061,32 @@ leaves vectorless sites without a tile. The block adds **no backend**.
 > Block BT migrated the three `turing-app` consumers off `store.data`. What it did
 > not do is finish the **shape** they were reading it for, or extend the fix past
 > the one app. Every item below was read out of the code while shipping T865–T869.
+
+### LXX.8 The search-contract guard fails on timing, not on violations (T1057)
+
+`search-store-boundary.test.ts` asserts the T885/T939/T948 contract by walking the
+frontend tree and running each rule's regex over every file. Alone it takes about 2.6
+seconds. Inside `pnpm --filter turing-app test` it crosses vitest's 5000 ms default and
+fails as a timeout — twice in a row on one machine, then green on the next three runs.
+Only the filesystem cache and what vitest had in flight differed.
+
+The cost is in `frontend/scripts/search-contract-rules.mjs`. `violations()` loops rules
+outside and calls `filesFor(surface)` inside, so the recursive walk — `readdirSync` plus
+a `statSync` per entry — is redone for every rule/surface pair instead of once per
+surface. Each file is then re-read and re-stripped of comments once per rule: four rules
+over four surfaces, the same bytes read several times.
+
+Hoist the walk: collect each surface's files once, read and strip each once, then test
+every rule naming that surface against text already in memory. The rule set is shared
+with the workspace scripts suite and the SDK contract test, so the change lands in the
+`.mjs` and all three callers get it.
+
+A guard that fails on timing is worse than a slow guard: the next person to see it red
+has no reason to think it means anything, and re-running until green is how a real
+violation gets through. Raising `testTimeout` hides it instead.
+
+Done when the test runs well inside the default timeout on a cold cache, reports the
+same violations, and the scripts suite stays green.
 
 ## XXXVII Security hardening (post-audit)
 

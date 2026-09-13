@@ -1,8 +1,6 @@
-import { SubPageHeader } from "@/components/sub.page.header";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useSubPageBreadcrumb } from "@/hooks/use-sub-page-breadcrumb";
-import { IconWorld } from "@tabler/icons-react";
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "@viglet/viglet-design-system";
@@ -18,15 +16,11 @@ const LANGUAGES = [
  * @since 2026.1.14
  */
 /**
- * @param header Optional header override. Console renders the default
- *   {@link SubPageHeader}; the Bento account surface (T568) passes `null`.
+ * @param header Header for this surface — the Bento account surface (T568)
+ *   passes `null`, its tab-bar already labelling the section.
  */
 export default function UserPreferencesPage({ header }: Readonly<{ header?: ReactNode }> = {}) {
     const { t, i18n } = useTranslation();
-
-    // Bento surfaces pass an explicit `header` (a BentoHero or `null`); the
-    // console leaves it undefined. In bento the body is a frosted card instead
-    // of a bare centered column.
 
     useSubPageBreadcrumb(t("account.preferences.title"));
 
@@ -37,14 +31,7 @@ export default function UserPreferencesPage({ header }: Readonly<{ header?: Reac
 
     return (
         <>
-            {header !== undefined ? header : (
-                <SubPageHeader
-                    icon={IconWorld}
-                    name={t("account.preferences.title")}
-                    feature={t("account.preferences.title")}
-                    description={t("account.preferences.description")}
-                />
-            )}
+            {header}
             <div className="bento-tile bento-glass rounded-3xl p-6 md:p-8">
                 <div className="space-y-2">
                     <Label htmlFor="language">{t("account.preferences.language")}</Label>

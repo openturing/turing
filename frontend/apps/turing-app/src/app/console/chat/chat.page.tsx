@@ -15,7 +15,8 @@ import "./chat-highlight.css"
 import { useAiAgents } from "@/api/queries/ai-agent.queries"
 import { useGlobalSettings } from "@/api/queries/viglet-ai.queries"
 import { ROUTES } from "@/app/routes.const"
-import { BlankSlate } from "@/components/blank-slate"
+import { BentoEmptyState } from "@/components/bento"
+import { GradientButtonLink } from "@viglet/viglet-design-system/router"
 import { GradientButton } from "@/components/ui/gradient-button"
 import type { TurAIAgent } from "@/models/agent/ai-agent.model"
 import type { TurChatFlow } from "@/models/agent/chat-flow.model"
@@ -401,12 +402,16 @@ export default function ChatPage({
     return (
       <>
         {blankSlateHeader}
-        <BlankSlate
+        <BentoEmptyState
           icon={IconMessageChatbot}
+          tone="indigo"
           title={t("chat.noLlmAvailable")}
           description={t("chat.noLlmDescription")}
-          buttonText={t("chat.createLlmInstance")}
-          urlNew={ROUTES.LLM_INSTANCE + "/new"}
+          action={
+            <GradientButtonLink to={ROUTES.LLM_INSTANCE + "/new"} size="sm">
+              {t("chat.createLlmInstance")}
+            </GradientButtonLink>
+          }
         />
       </>
     )
@@ -416,12 +421,16 @@ export default function ChatPage({
     return (
       <>
         {blankSlateHeader}
-        <BlankSlate
+        <BentoEmptyState
           icon={IconRobot}
+          tone="blue"
           title={t("chat.noAgentAvailable")}
           description={t("chat.noAgentDescription")}
-          buttonText={t("chat.createAiAgent")}
-          urlNew={ROUTES.AI_AGENT_INSTANCE + "/new"}
+          action={
+            <GradientButtonLink to={ROUTES.AI_AGENT_INSTANCE + "/new"} size="sm">
+              {t("chat.createAiAgent")}
+            </GradientButtonLink>
+          }
         />
       </>
     )

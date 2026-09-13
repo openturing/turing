@@ -1,10 +1,9 @@
 import { ROUTES } from "@/app/routes.const";
-import { BlankSlate } from "@/components/blank-slate";
+import { BentoEmptyState } from "@/components/bento";
 import { BadgeColorful } from "@/components/badge-colorful";
 import { BadgeLocale, getLocaleCountryCode } from "@/components/badge-locale";
 import { DialogDelete } from "@/components/dialog.delete";
 import { LoadProvider } from "@/components/loading-provider";
-import { SubPageHeader } from "@/components/sub.page.header";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import type { TurSECoreInfo } from "@/models/se/se-core-info.model.ts";
@@ -24,6 +23,7 @@ import { type ReactNode, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { toast } from "@viglet/viglet-design-system";
+import { GradientButtonLink } from "@viglet/viglet-design-system/router";
 
 // --- Core grouping ---
 
@@ -290,7 +290,7 @@ function CoreGroupRow({ group, onDelete, onClear }: Readonly<CoreGroupRowProps>)
 }
 
 interface SEInstanceCoresPageProps {
-  /** Override the console `SubPageHeader` (e.g. a `BentoHero` in the bento shell). */
+  /** Header for this surface — a `BentoHero`, or `null` to omit it. */
   header?: ReactNode;
   /** Route base for cores navigation; defaults to the console SE instance route. */
   baseRoute?: string;
@@ -350,14 +350,7 @@ export default function SEInstanceCoresPage({ header, baseRoute = ROUTES.SE_INST
     <LoadProvider checkIsNotUndefined={cores} error={error} tryAgainUrl={coresRoute}>
       {cores && cores.length > 0 ? (
         <>
-          {header !== undefined ? header : (
-            <SubPageHeader
-              icon={IconDatabase}
-              name={t("se.cores.title")}
-              feature={t("se.cores.title")}
-              description={t("se.cores.description")}
-            />
-          )}
+          {header}
           <div className="px-6 pb-6 space-y-4">
             <div className="flex items-center gap-3">
               <div className="relative flex-1">
@@ -403,12 +396,17 @@ export default function SEInstanceCoresPage({ header, baseRoute = ROUTES.SE_INST
           </div>
         </>
       ) : (
-        <BlankSlate
+        <BentoEmptyState
           icon={IconDatabase}
+          tone="blue"
           title={t("se.cores.blankTitle")}
           description={t("se.cores.blankDescription")}
-          buttonText={t("se.cores.newCore")}
-          urlNew={`${coresRoute}/new`}
+          action={
+            <GradientButtonLink to={`${coresRoute}/new`} size="sm">
+              <IconPlus className="size-4 mr-1.5" />
+              {t("se.cores.newCore")}
+            </GradientButtonLink>
+          }
         />
       )}
     </LoadProvider>

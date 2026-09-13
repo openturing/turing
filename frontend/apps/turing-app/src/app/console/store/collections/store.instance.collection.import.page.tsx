@@ -1,5 +1,4 @@
 import { ROUTES } from "@/app/routes.const"
-import { SubPageHeader } from "@/components/sub.page.header"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { FloatingFormulasBg } from "@/components/ui/floating-formulas-bg"
@@ -12,7 +11,6 @@ import {
   IconCloudUpload,
   IconFileText,
   IconLoader2,
-  IconPackageImport,
   IconX,
 } from "@tabler/icons-react"
 import { type ReactNode, useCallback, useRef, useState } from "react"
@@ -36,7 +34,7 @@ function formatFileSize(bytes: number): string {
 }
 
 interface StoreInstanceCollectionImportPageProps {
-  /** Override the console `SubPageHeader` (e.g. a `BentoHero` in the bento shell). */
+  /** Header for this surface — a `BentoHero`, or `null` to omit it. */
   header?: ReactNode
   /**
    * "Back to collections" target. Defaults to the console collections sub-page;
@@ -65,14 +63,7 @@ export default function StoreInstanceCollectionImportPage({
   useSubPageBreadcrumb(t("store.collections.importTitle", { name: collectionName }))
 
   const collectionsHref = backHref ?? `${ROUTES.STORE_INSTANCE}/${id}/collections`
-  const headerNode = header !== undefined ? header : (
-    <SubPageHeader
-      icon={IconPackageImport}
-      feature={t("store.title")}
-      name={t("store.collections.importTitle", { name: collectionName })}
-      description={t("store.collections.importDescription")}
-    />
-  )
+  const headerNode = header
 
   const doImport = useCallback(
     async (selected: File) => {

@@ -9,8 +9,7 @@ import { useTranslation } from "react-i18next";
  * Bento system info — T566. Runtime/environment dashboard (app · DB · memory ·
  * disk · AI spend + optional AI insights). Read-only, so per §XXXI.8 it sits
  * inside the shell: the reused {@link SystemInfoPage} renders under a
- * {@link BentoHero} passed as its `header` prop, which keeps the surface clear
- * of the console SubPageHeader (SidebarProvider-free shell). Wrapping it in a
+ * {@link BentoHero} passed as its `header` prop. Wrapping it in a
  * `bento` {@link SectionCardChromeProvider} also turns its `SectionCard` blocks
  * into frosted {@link BentoFormSection} cards so the body looks native, not
  * flat console cards under an airy hero.

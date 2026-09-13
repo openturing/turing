@@ -1,6 +1,5 @@
 import { ROUTES } from "@/app/routes.const";
-import { BlankSlate } from "@/components/blank-slate";
-import { SubPageHeader } from "@/components/sub.page.header";
+import { BentoEmptyState } from "@/components/bento";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { GradientAvatar, GradientAvatarFallback } from "@/components/ui/gradient-avatar";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -46,8 +45,7 @@ function formatNumber(value: number | undefined): string {
 /**
  * @param baseRoute SN instance base for tab navigation. Defaults to the console;
  *   Bento passes `ROUTES.BENTO_SN_INSTANCE` (T576).
- * @param header Optional header override — Bento passes a `BentoHero`; console
- *   falls back to the sidebar-coupled `SubPageHeader`.
+ * @param header Header for this surface — a `BentoHero`, or `null` to omit it.
  */
 export default function SNSiteTopSearchTermsPage({ baseRoute = ROUTES.SN_INSTANCE, header }: Readonly<{ baseRoute?: string; header?: ReactNode }> = {}) {
   const { id, period: periodParam } = useParams() as { id: string; period?: string };
@@ -80,8 +78,7 @@ export default function SNSiteTopSearchTermsPage({ baseRoute = ROUTES.SN_INSTANC
   const hasResults = (topTerms?.topTerms?.length ?? 0) > 0;
   const variation = topTerms?.variationPeriod ?? 0;
 
-  // Bento passes an explicit `header`; the console leaves it undefined. In bento
-  // the neutral shadcn Cards get a frosted surface so they match the shell.
+  // The neutral shadcn Cards get a frosted surface so they match the shell.
   const cardClass = "border-border/50 bg-transparent shadow-md bento-glass rounded-3xl";
 
   const renderContent = () => {
@@ -121,11 +118,11 @@ export default function SNSiteTopSearchTermsPage({ baseRoute = ROUTES.SN_INSTANC
 
     if (!hasResults) {
       return (
-        <BlankSlate
+        <BentoEmptyState
           icon={IconChartBar}
+          tone="emerald"
           title={t("sn.topSearchTerms.noTerms")}
           description={t("sn.topSearchTerms.noTermsDescription")}
-          buttonText=""
         />
       );
     }
@@ -206,14 +203,7 @@ export default function SNSiteTopSearchTermsPage({ baseRoute = ROUTES.SN_INSTANC
 
   return (
     <>
-      {header !== undefined ? header : (
-        <SubPageHeader
-          icon={IconChartBar}
-          name={t("sn.topSearchTerms.title")}
-          feature={t("sn.topSearchTerms.title")}
-          description={t("sn.topSearchTerms.description")}
-        />
-      )}
+      {header}
       <div className="px-6">
         <Tabs
           value={resolvedPeriod}

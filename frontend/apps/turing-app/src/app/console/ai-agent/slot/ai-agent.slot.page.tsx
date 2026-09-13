@@ -12,7 +12,6 @@ import {
 } from "@/api/queries/ai-agent-slot.queries";
 import { ROUTES } from "@/app/routes.const";
 import { LoadProvider } from "@/components/loading-provider";
-import { SubPageHeader } from "@/components/sub.page.header";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -68,9 +67,8 @@ const NAME_PATTERN = /^[A-Za-z_][A-Za-z0-9_]*$/;
  */
 interface AIAgentSlotPageProps {
   /**
-   * Header slot. When omitted (console) the page renders its own
-   * sidebar-coupled {@link SubPageHeader}; the bento shell passes its own
-   * {@code BentoHero} (or {@code null}) so the console chrome is dropped.
+   * Header slot — the bento shell passes a {@code BentoHero}, or {@code null}
+   * where its own hero already labels the section.
    */
   header?: ReactNode;
 }
@@ -168,16 +166,7 @@ export default function AIAgentSlotPage({ header }: Readonly<AIAgentSlotPageProp
 
   return (
     <LoadProvider checkIsNotUndefined={slots} error={error} tryAgainUrl={baseUrl}>
-      {header !== undefined ? (
-        header
-      ) : (
-        <SubPageHeader
-          icon={IconLayoutList}
-          feature={t("aiAgent.slot.title")}
-          name={t("aiAgent.slot.title")}
-          description={t("aiAgent.slot.description")}
-        />
-      )}
+      {header}
 
       <div className="px-4 lg:px-6">
         {hasSlots ? (

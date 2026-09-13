@@ -6,6 +6,14 @@
 > [STRATEGY.md](STRATEGY.md); the markers and limits are `roadkeep.toml`'s. Blocks are
 > reused, not minted — `roadkeep brief` picks the next task and states why.
 
+## Block AG — Bento UI: complete the interface migration (§XXXI)
+
+- 📋 **T1058** (deps: —) **bento chat pages send their empty-state buttons through retired console routes** — The console redirect is a compatibility shim for old bookmarks, and in-app navigation leaning on it hides the day it is removed. → §XXXI.13
+
+## Block BW — What the link-free response and its consumers still lack (§LXX)
+
+- 📋 **T1057** (deps: —) **the search-contract guard test times out in a full suite run but passes alone** — A guard that goes red on timing teaches the next reader to re-run until it passes, which is how a real violation gets through. → §LXX.8
+
 ## Non-goals (do NOT add as tasks)
 
 Binding constraints — see [IMPROVEMENTS.md](IMPROVEMENTS.md) §I.6 (What NOT to

@@ -1,8 +1,7 @@
 import { useSeInstanceSystemInfo } from "@/api/queries/se-instance.queries";
 import { BentoFormSection } from "@/components/bento";
-import { SubPageHeader } from "@/components/sub.page.header";
 import { useSubPageBreadcrumb } from "@/hooks/use-sub-page-breadcrumb";
-import { IconInfoCircle, IconLoader2, IconServer } from "@tabler/icons-react";
+import { IconLoader2, IconServer } from "@tabler/icons-react";
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { useParams } from "react-router-dom";
@@ -32,7 +31,7 @@ function StatusBadge({ status }: Readonly<{ status: string }>) {
 }
 
 interface SEInstanceSystemInfoPageProps {
-    /** Override the console `SubPageHeader` (e.g. a `BentoHero` in the bento shell). */
+    /** Header for this surface — a `BentoHero`, or `null` to omit it. */
     header?: ReactNode;
 }
 
@@ -46,14 +45,7 @@ export default function SEInstanceSystemInfoPage({ header }: Readonly<SEInstance
     // `new` route, which is what the `id !== "new"` guard did, and reports the
     // failure the same way through `isError`.
     const { data: info = {}, isLoading, isError } = useSeInstanceSystemInfo(id);
-    const headerNode = header !== undefined ? header : (
-        <SubPageHeader
-            icon={IconInfoCircle}
-            feature={t("se.systemInfo.title")}
-            name={t("se.systemInfo.title")}
-            description={t("se.systemInfo.description")}
-        />
-    );
+    const headerNode = header;
 
     // The failure is rendered rather than toasted. A toast fired from the render
     // body would repeat on every pass while the query stays in error, and the

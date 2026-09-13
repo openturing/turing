@@ -8,7 +8,7 @@ import { useParams } from "react-router-dom";
 /**
  * Bento SN top search terms — T576. Reuses the console page (self-contained
  * tabs + tables) with the bento base route (tab navigation stays in the shell)
- * and a `BentoHero` header instead of the sidebar-coupled `SubPageHeader`.
+ * and a `BentoHero` passed as its `header`.
  */
 export default function BentoSNTopTermsPage() {
   const { id } = useParams() as { id: string };
