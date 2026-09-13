@@ -6,10 +6,6 @@
 > [STRATEGY.md](STRATEGY.md); the markers and limits are `roadkeep.toml`'s. Blocks are
 > reused, not minted — `roadkeep brief` picks the next task and states why.
 
-## Block AG — Bento UI: complete the interface migration (§XXXI)
-
-- 📋 **T1060** (deps: —) **every bento nav entry still carries a fallbackRoute into the deleted console tree** — The paragraph above the list tells a reader the console stays live until Phase 5, and twenty-nine values agree with it, after Phase 5 shipped. → §XXXI.14
-
 ## Non-goals (do NOT add as tasks)
 
 Binding constraints — see [IMPROVEMENTS.md](IMPROVEMENTS.md) §I.6 (What NOT to

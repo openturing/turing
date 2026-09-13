@@ -138,37 +138,52 @@ export const BENTO_NAV_SECTIONS: readonly TurBentoNavSection[] = [
 ];
 
 /**
- * The single source of truth for Bento navigation (T573) — the rail, the three
- * area hubs, the home mosaic, and the `⌘K` palette all read from here. As each
- * Block AG phase migrates a surface, fill in its `bentoRoute` and the palette
- * navigates inside the shell instead of linking out.
+ * One migrated surface, with its `fallbackRoute` derived rather than written.
  *
- * `fallbackRoute` is the package's name for where a reader is sent while a
- * surface has no bento route of its own; here that is always its console route,
- * so `⌘K` and the hubs reach every area during the migration (per ADR 0002, the
- * console stays live until Phase 5).
+ * `fallbackRoute` is the package's field for where a reader goes while a surface
+ * has no bento route of its own, and `bentoNavTarget` reads it only when
+ * `bentoRoute` is absent. Turing has no such surface left, so it was never
+ * reached — and what it held was addresses into the console tree T570 deleted,
+ * kept alive by a required field nobody read (T1060). Deriving it from
+ * `bentoRoute` says that in the type: every item points at one route, and none
+ * can drift into naming a second that no longer exists.
+ *
+ * The package keeps the field required because other consumers are still
+ * migrating; when it goes optional there, this helper and the field go with it.
+ */
+function surface(
+  item: Omit<TurBentoNavItem, "fallbackRoute"> & { bentoRoute: string },
+): TurBentoNavItem {
+  return { ...item, fallbackRoute: item.bentoRoute };
+}
+
+/**
+ * The single source of truth for Bento navigation (T573) — the rail, the three
+ * area hubs, the home mosaic, and the `⌘K` palette all read from here. Every
+ * surface is migrated, so each entry names its `bentoRoute` and that is where
+ * the palette and the hubs send a reader.
  */
 export const BENTO_NAV_ITEMS: readonly TurBentoNavItem[] = [
   // --- primary (rail Home button + palette; not rendered as a hub) ---
-  { id: "home", titleKey: "home.title", descriptionKey: "home.welcome", icon: IconHome, section: "primary", tone: "blue", bentoRoute: ROUTES.BENTO_HOME, fallbackRoute: ROUTES.HOME },
-  { id: "dashboard", titleKey: "dashboard.title", descriptionKey: "dashboard.title", icon: IconLayoutDashboard, section: "primary", tone: "indigo", bentoRoute: ROUTES.BENTO_DASHBOARD, fallbackRoute: ROUTES.DASHBOARD },
+  surface({ id: "home", titleKey: "home.title", descriptionKey: "home.welcome", icon: IconHome, section: "primary", tone: "blue", bentoRoute: ROUTES.BENTO_HOME }),
+  surface({ id: "dashboard", titleKey: "dashboard.title", descriptionKey: "dashboard.title", icon: IconLayoutDashboard, section: "primary", tone: "indigo", bentoRoute: ROUTES.BENTO_DASHBOARD }),
 
   // --- generative AI ---
-  { id: "aiAgent", titleKey: "home.features.aiAgent.title", descriptionKey: "home.features.aiAgent.description", icon: IconRobot, section: "generativeAi", tone: "blue", span: BENTO_SPAN_FEATURED, bentoRoute: ROUTES.BENTO_AI_AGENT_INSTANCE, fallbackRoute: "/admin/ai-agent/instance", privilege: "AI_AGENT_VIEW" },
-  { id: "languageModel", titleKey: "home.features.languageModel.title", descriptionKey: "home.features.languageModel.description", icon: IconCpu2, section: "generativeAi", tone: "indigo", span: BENTO_SPAN_WIDE, bentoRoute: ROUTES.BENTO_LLM_INSTANCE, fallbackRoute: "/admin/llm/instance", privilege: "LLM_VIEW" },
-  { id: "persona", titleKey: "home.features.persona.title", descriptionKey: "home.features.persona.description", icon: IconUserCircle, section: "generativeAi", tone: "rose", span: BENTO_SPAN_WIDE, bentoRoute: ROUTES.BENTO_PERSONA_INSTANCE, fallbackRoute: ROUTES.PERSONA_INSTANCE, privilege: "AI_AGENT_VIEW" },
-  { id: "embeddingStore", titleKey: "home.features.embeddingStore.title", descriptionKey: "home.features.embeddingStore.description", icon: IconDatabase, section: "generativeAi", tone: "violet", bentoRoute: ROUTES.BENTO_STORE_INSTANCE, fallbackRoute: "/admin/store/instance", privilege: "STORE_VIEW" },
-  { id: "mcpServer", titleKey: "home.features.mcpServer.title", descriptionKey: "home.features.mcpServer.description", icon: IconServer2, section: "generativeAi", tone: "amber", bentoRoute: ROUTES.BENTO_MCP_INSTANCE, fallbackRoute: "/admin/mcp/instance" },
-  { id: "customTool", titleKey: "home.features.customTool.title", descriptionKey: "home.features.customTool.description", icon: IconBraces, section: "generativeAi", tone: "slate", bentoRoute: ROUTES.BENTO_CUSTOM_TOOL_INSTANCE, fallbackRoute: ROUTES.CUSTOM_TOOL_INSTANCE },
-  { id: "routine", titleKey: "home.features.routine.title", descriptionKey: "home.features.routine.description", icon: IconClock, section: "generativeAi", tone: "emerald", bentoRoute: ROUTES.BENTO_ROUTINE_INSTANCE, fallbackRoute: ROUTES.ROUTINE_INSTANCE },
-  { id: "chatWebhook", titleKey: "home.features.chatWebhook.title", descriptionKey: "home.features.chatWebhook.description", icon: IconWebhook, section: "generativeAi", tone: "rose", bentoRoute: ROUTES.BENTO_CHAT_WEBHOOK_INSTANCE, fallbackRoute: ROUTES.CHAT_WEBHOOK_INSTANCE },
-  { id: "evalStudio", titleKey: "home.features.evalStudio.title", descriptionKey: "home.features.evalStudio.description", icon: IconFlask2, section: "generativeAi", tone: "amber", bentoRoute: ROUTES.BENTO_EVAL, fallbackRoute: ROUTES.BENTO_EVAL, privilege: "AI_AGENT_VIEW" },
+  surface({ id: "aiAgent", titleKey: "home.features.aiAgent.title", descriptionKey: "home.features.aiAgent.description", icon: IconRobot, section: "generativeAi", tone: "blue", span: BENTO_SPAN_FEATURED, bentoRoute: ROUTES.BENTO_AI_AGENT_INSTANCE, privilege: "AI_AGENT_VIEW" }),
+  surface({ id: "languageModel", titleKey: "home.features.languageModel.title", descriptionKey: "home.features.languageModel.description", icon: IconCpu2, section: "generativeAi", tone: "indigo", span: BENTO_SPAN_WIDE, bentoRoute: ROUTES.BENTO_LLM_INSTANCE, privilege: "LLM_VIEW" }),
+  surface({ id: "persona", titleKey: "home.features.persona.title", descriptionKey: "home.features.persona.description", icon: IconUserCircle, section: "generativeAi", tone: "rose", span: BENTO_SPAN_WIDE, bentoRoute: ROUTES.BENTO_PERSONA_INSTANCE, privilege: "AI_AGENT_VIEW" }),
+  surface({ id: "embeddingStore", titleKey: "home.features.embeddingStore.title", descriptionKey: "home.features.embeddingStore.description", icon: IconDatabase, section: "generativeAi", tone: "violet", bentoRoute: ROUTES.BENTO_STORE_INSTANCE, privilege: "STORE_VIEW" }),
+  surface({ id: "mcpServer", titleKey: "home.features.mcpServer.title", descriptionKey: "home.features.mcpServer.description", icon: IconServer2, section: "generativeAi", tone: "amber", bentoRoute: ROUTES.BENTO_MCP_INSTANCE }),
+  surface({ id: "customTool", titleKey: "home.features.customTool.title", descriptionKey: "home.features.customTool.description", icon: IconBraces, section: "generativeAi", tone: "slate", bentoRoute: ROUTES.BENTO_CUSTOM_TOOL_INSTANCE }),
+  surface({ id: "routine", titleKey: "home.features.routine.title", descriptionKey: "home.features.routine.description", icon: IconClock, section: "generativeAi", tone: "emerald", bentoRoute: ROUTES.BENTO_ROUTINE_INSTANCE }),
+  surface({ id: "chatWebhook", titleKey: "home.features.chatWebhook.title", descriptionKey: "home.features.chatWebhook.description", icon: IconWebhook, section: "generativeAi", tone: "rose", bentoRoute: ROUTES.BENTO_CHAT_WEBHOOK_INSTANCE }),
+  surface({ id: "evalStudio", titleKey: "home.features.evalStudio.title", descriptionKey: "home.features.evalStudio.description", icon: IconFlask2, section: "generativeAi", tone: "amber", bentoRoute: ROUTES.BENTO_EVAL, privilege: "AI_AGENT_VIEW" }),
   // Cost Governance is intentionally NOT a top-level card here — it lives as a
   // tab inside "AI Analytics & Costs" (aiAnalytics → /cost-governance). A
   // standalone card duplicated the same surface on the Generative AI hub.
-  { id: "skills", titleKey: "home.features.skills.title", descriptionKey: "home.features.skills.description", icon: IconSparkles, section: "generativeAi", tone: "violet", bentoRoute: ROUTES.BENTO_SKILL, fallbackRoute: ROUTES.SKILL_ROOT },
-  { id: "aiAnalytics", titleKey: "home.features.aiAnalytics.title", descriptionKey: "home.features.aiAnalytics.description", icon: IconReportAnalytics, section: "generativeAi", tone: "indigo", bentoRoute: ROUTES.BENTO_AI_ANALYTICS, fallbackRoute: ROUTES.AI_ANALYTICS_ROOT },
-  { id: "gateway", titleKey: "gateway.title", descriptionKey: "gateway.description", icon: IconApi, section: "generativeAi", tone: "indigo", bentoRoute: ROUTES.BENTO_GATEWAY, fallbackRoute: ROUTES.BENTO_GATEWAY, privilege: "LLM_VIEW" },
+  surface({ id: "skills", titleKey: "home.features.skills.title", descriptionKey: "home.features.skills.description", icon: IconSparkles, section: "generativeAi", tone: "violet", bentoRoute: ROUTES.BENTO_SKILL }),
+  surface({ id: "aiAnalytics", titleKey: "home.features.aiAnalytics.title", descriptionKey: "home.features.aiAnalytics.description", icon: IconReportAnalytics, section: "generativeAi", tone: "indigo", bentoRoute: ROUTES.BENTO_AI_ANALYTICS }),
+  surface({ id: "gateway", titleKey: "gateway.title", descriptionKey: "gateway.description", icon: IconApi, section: "generativeAi", tone: "indigo", bentoRoute: ROUTES.BENTO_GATEWAY, privilege: "LLM_VIEW" }),
   // Chat is intentionally NOT a top-level card here — you enter chat from a
   // specific surface: the AI Agent card (opens `/bento/chat/agent/:id`) or the
   // Persona card (`/bento/chat/persona/:id`), and the home overview keeps its
@@ -176,25 +191,25 @@ export const BENTO_NAV_ITEMS: readonly TurBentoNavItem[] = [
   // The `/bento/chat` route (default agent) still works for deep links.
 
   // --- enterprise search ---
-  { id: "semanticNavigation", titleKey: "home.features.semanticNavigation.title", descriptionKey: "home.features.semanticNavigation.description", icon: IconCompass, section: "enterpriseSearch", tone: "emerald", span: BENTO_SPAN_FEATURED, bentoRoute: ROUTES.BENTO_SN_INSTANCE, fallbackRoute: "/admin/sn/instance", privilege: "SN_VIEW" },
-  { id: "searchEngine", titleKey: "home.features.searchEngine.title", descriptionKey: "home.features.searchEngine.description", icon: IconZoomCode, section: "enterpriseSearch", tone: "emerald", span: BENTO_SPAN_WIDE, bentoRoute: ROUTES.BENTO_SE_INSTANCE, fallbackRoute: "/admin/se/instance", privilege: "SE_VIEW" },
-  { id: "integration", titleKey: "home.features.integration.title", descriptionKey: "home.features.integration.description", icon: IconPlugConnectedX, section: "enterpriseSearch", tone: "amber", bentoRoute: ROUTES.BENTO_INTEGRATION_INSTANCE, fallbackRoute: "/admin/integration/instance" },
-  { id: "graphqlExplorer", titleKey: "home.features.graphqlExplorer.title", descriptionKey: "home.features.graphqlExplorer.description", icon: IconBrandGraphql, section: "enterpriseSearch", tone: "rose", bentoRoute: ROUTES.BENTO_GRAPHQL, fallbackRoute: ROUTES.GRAPHQL_ROOT },
-  { id: "thesaurus", titleKey: "thesaurus.title", descriptionKey: "thesaurus.description", icon: IconSitemap, section: "enterpriseSearch", tone: "violet", bentoRoute: ROUTES.BENTO_THESAURUS, fallbackRoute: ROUTES.BENTO_THESAURUS, privilege: "SN_VIEW" },
+  surface({ id: "semanticNavigation", titleKey: "home.features.semanticNavigation.title", descriptionKey: "home.features.semanticNavigation.description", icon: IconCompass, section: "enterpriseSearch", tone: "emerald", span: BENTO_SPAN_FEATURED, bentoRoute: ROUTES.BENTO_SN_INSTANCE, privilege: "SN_VIEW" }),
+  surface({ id: "searchEngine", titleKey: "home.features.searchEngine.title", descriptionKey: "home.features.searchEngine.description", icon: IconZoomCode, section: "enterpriseSearch", tone: "emerald", span: BENTO_SPAN_WIDE, bentoRoute: ROUTES.BENTO_SE_INSTANCE, privilege: "SE_VIEW" }),
+  surface({ id: "integration", titleKey: "home.features.integration.title", descriptionKey: "home.features.integration.description", icon: IconPlugConnectedX, section: "enterpriseSearch", tone: "amber", bentoRoute: ROUTES.BENTO_INTEGRATION_INSTANCE }),
+  surface({ id: "graphqlExplorer", titleKey: "home.features.graphqlExplorer.title", descriptionKey: "home.features.graphqlExplorer.description", icon: IconBrandGraphql, section: "enterpriseSearch", tone: "rose", bentoRoute: ROUTES.BENTO_GRAPHQL }),
+  surface({ id: "thesaurus", titleKey: "thesaurus.title", descriptionKey: "thesaurus.description", icon: IconSitemap, section: "enterpriseSearch", tone: "violet", bentoRoute: ROUTES.BENTO_THESAURUS, privilege: "SN_VIEW" }),
 
   // --- management ---
-  { id: "adminUsers", titleKey: "admin.users.title", descriptionKey: "admin.users.description", icon: IconUsers, section: "management", tone: "slate", bentoRoute: ROUTES.BENTO_ADMIN_USERS, fallbackRoute: ROUTES.BENTO_ADMIN_USERS, privilege: "__admin__" },
-  { id: "adminGroups", titleKey: "admin.groups.title", descriptionKey: "admin.groups.description", icon: IconUsersGroup, section: "management", tone: "slate", bentoRoute: ROUTES.BENTO_ADMIN_GROUPS, fallbackRoute: ROUTES.BENTO_ADMIN_GROUPS, privilege: "__admin__" },
-  { id: "adminRoles", titleKey: "admin.roles.title", descriptionKey: "admin.roles.description", icon: IconUserShield, section: "management", tone: "slate", bentoRoute: ROUTES.BENTO_ADMIN_ROLES, fallbackRoute: ROUTES.BENTO_ADMIN_ROLES, privilege: "__admin__" },
-  { id: "assets", titleKey: "home.features.assets.title", descriptionKey: "home.features.assets.description", icon: IconFolder, section: "management", tone: "amber", bentoRoute: ROUTES.BENTO_ASSET, fallbackRoute: ROUTES.ASSET_ROOT },
-  { id: "pages", titleKey: "home.features.pages.title", descriptionKey: "home.features.pages.description", icon: IconGlobe, section: "management", tone: "indigo", bentoRoute: ROUTES.BENTO_PAGE, fallbackRoute: ROUTES.PAGE_ROOT },
-  { id: "git", titleKey: "home.features.git.title", descriptionKey: "home.features.git.description", icon: IconGitBranch, section: "management", tone: "violet", bentoRoute: ROUTES.BENTO_GIT, fallbackRoute: ROUTES.GIT_ROOT },
-  { id: "apiToken", titleKey: "apiToken.title", descriptionKey: "apiToken.description", icon: IconCode, section: "management", tone: "slate", bentoRoute: ROUTES.BENTO_TOKEN_INSTANCE, fallbackRoute: ROUTES.ADMIN_TOKENS },
-  { id: "marketplace", titleKey: "home.features.marketplace.title", descriptionKey: "home.features.marketplace.description", icon: IconBuildingStore, section: "management", tone: "blue", bentoRoute: ROUTES.BENTO_MARKETPLACE, fallbackRoute: ROUTES.MARKETPLACE_ROOT },
-  { id: "import", titleKey: "home.features.import.title", descriptionKey: "home.features.import.description", icon: IconFileImport, section: "management", tone: "indigo", bentoRoute: ROUTES.BENTO_IMPORT, fallbackRoute: ROUTES.EXCHANGE_IMPORT },
-  { id: "logging", titleKey: "home.features.logging.title", descriptionKey: "home.features.logging.description", icon: IconReceiptRupee, section: "management", tone: "rose", bentoRoute: ROUTES.BENTO_LOGGING, fallbackRoute: ROUTES.LOGGING_INSTANCE },
-  { id: "globalSettings", titleKey: "globalSettings.breadcrumb", descriptionKey: "globalSettings.description", icon: IconSettings, section: "management", tone: "slate", bentoRoute: ROUTES.BENTO_GLOBAL_SETTINGS, fallbackRoute: ROUTES.GLOBAL_SETTINGS, privilege: "__admin__" },
-  { id: "systemInfo", titleKey: "systemInfo.title", descriptionKey: "systemInfo.description", icon: IconInfoCircle, section: "management", tone: "slate", bentoRoute: ROUTES.BENTO_SYSTEM_INFO, fallbackRoute: ROUTES.ADMIN_SYSTEM_INFO, privilege: "__admin__" },
+  surface({ id: "adminUsers", titleKey: "admin.users.title", descriptionKey: "admin.users.description", icon: IconUsers, section: "management", tone: "slate", bentoRoute: ROUTES.BENTO_ADMIN_USERS, privilege: "__admin__" }),
+  surface({ id: "adminGroups", titleKey: "admin.groups.title", descriptionKey: "admin.groups.description", icon: IconUsersGroup, section: "management", tone: "slate", bentoRoute: ROUTES.BENTO_ADMIN_GROUPS, privilege: "__admin__" }),
+  surface({ id: "adminRoles", titleKey: "admin.roles.title", descriptionKey: "admin.roles.description", icon: IconUserShield, section: "management", tone: "slate", bentoRoute: ROUTES.BENTO_ADMIN_ROLES, privilege: "__admin__" }),
+  surface({ id: "assets", titleKey: "home.features.assets.title", descriptionKey: "home.features.assets.description", icon: IconFolder, section: "management", tone: "amber", bentoRoute: ROUTES.BENTO_ASSET }),
+  surface({ id: "pages", titleKey: "home.features.pages.title", descriptionKey: "home.features.pages.description", icon: IconGlobe, section: "management", tone: "indigo", bentoRoute: ROUTES.BENTO_PAGE }),
+  surface({ id: "git", titleKey: "home.features.git.title", descriptionKey: "home.features.git.description", icon: IconGitBranch, section: "management", tone: "violet", bentoRoute: ROUTES.BENTO_GIT }),
+  surface({ id: "apiToken", titleKey: "apiToken.title", descriptionKey: "apiToken.description", icon: IconCode, section: "management", tone: "slate", bentoRoute: ROUTES.BENTO_TOKEN_INSTANCE }),
+  surface({ id: "marketplace", titleKey: "home.features.marketplace.title", descriptionKey: "home.features.marketplace.description", icon: IconBuildingStore, section: "management", tone: "blue", bentoRoute: ROUTES.BENTO_MARKETPLACE }),
+  surface({ id: "import", titleKey: "home.features.import.title", descriptionKey: "home.features.import.description", icon: IconFileImport, section: "management", tone: "indigo", bentoRoute: ROUTES.BENTO_IMPORT }),
+  surface({ id: "logging", titleKey: "home.features.logging.title", descriptionKey: "home.features.logging.description", icon: IconReceiptRupee, section: "management", tone: "rose", bentoRoute: ROUTES.BENTO_LOGGING }),
+  surface({ id: "globalSettings", titleKey: "globalSettings.breadcrumb", descriptionKey: "globalSettings.description", icon: IconSettings, section: "management", tone: "slate", bentoRoute: ROUTES.BENTO_GLOBAL_SETTINGS, privilege: "__admin__" }),
+  surface({ id: "systemInfo", titleKey: "systemInfo.title", descriptionKey: "systemInfo.description", icon: IconInfoCircle, section: "management", tone: "slate", bentoRoute: ROUTES.BENTO_SYSTEM_INFO, privilege: "__admin__" }),
 ];
 
 /**

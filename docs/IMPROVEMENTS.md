@@ -1462,33 +1462,6 @@ rest cheap:
 The read paths already use React Query hooks (`api/queries/*.queries.ts`), which
 the bento pages consume directly — no data-layer work per screen.
 
-### XXXI.14 The nav config's console fallback outlived the console (T1060)
-
-Every entry in `BENTO_NAV_ITEMS` carries a `fallbackRoute`, the package's field for
-where a reader goes while a surface has no bento route of its own. Turing has no such
-surface left: all 29 have a `bentoRoute`, so the fallback never fires. Nothing in `src/`
-reads the field at all.
-
-What it still holds is addresses into a tree T570 deleted — `ROUTES.HOME`,
-`ROUTES.SKILL_ROOT`, hardcoded strings like `"/admin/ai-agent/instance"`. Two entries,
-`evalStudio` and `gateway`, already give their own bento route as the fallback, the tell
-that nobody reads it.
-
-The comment above the list is the part that misleads: it says the fallback is always the
-console route so the hubs reach every area "during the migration (per ADR 0002, the
-console stays live until Phase 5)". Phase 5 shipped — T569 made bento the default, T570
-deleted the tree — so a reader meets a paragraph describing a live console and 29 values
-agreeing with it.
-
-`fallbackRoute` is required on the package's `BentoNavItem`, so it cannot simply be
-dropped here. The fix is two-sided: the design system makes it optional now its
-consumers have migrated, and Turing then deletes the field and the paragraph. That pairs
-with the console-era export removal already tracked there. Until then the cheap half
-stands alone — say in the comment that the field is vestigial, and why.
-
-Done when no nav entry names a retired route, or the comment says plainly that the field
-is required by the package and unused here.
-
 ## XXXIII. Evaluation platform — pluggable graders + datasets (Block AJ)
 
 ### XXXIII.0 The problem — eval is two hard-wired islands
