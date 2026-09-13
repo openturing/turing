@@ -196,33 +196,65 @@ function readForRule(file, kind) {
 /**
  * Every violation of every rule, as reportable strings.
  *
+ * <p>The surface is the outer loop, and that is load-bearing rather than
+ * cosmetic (T1057). Walking rules first meant `filesFor` — a recursive
+ * `readdirSync` with a `statSync` per entry — ran once per rule/surface pair,
+ * thirteen times for four rules, and every matched file was re-read and
+ * re-stripped of comments once per rule that named its surface. Reading the same
+ * bytes several times to answer one question left this scan close enough to
+ * vitest's 5000 ms default that a full suite run failed it as a timeout while it
+ * passed alone. Per surface the tree is now walked once and each file read,
+ * stripped and split once, with every rule that names that surface tested
+ * against the text already in memory.</p>
+ *
+ * <p>Order changed with it — by surface, then file, then rule, where it was by
+ * rule first. No caller depends on it: each asserts the list is empty, which is
+ * the only reading a guard has.</p>
+ *
  * @param {(path: string) => boolean} [skip] files to leave out — the caller's own
  *   test file states the forbidden shapes as literals to prove the rules match.
  */
 export function violations(skip = () => false) {
   const found = [];
-  for (const rule of RULES) {
-    for (const surfaceName of rule.surfaces) {
-      const kind = SURFACES[surfaceName].kind;
-      for (const file of filesFor(surfaceName)) {
-        const key = relative(FRONTEND, file).split(sep).join("/");
-        if (skip(key) || ALLOWED.includes(`${rule.id} ${key}`)) continue;
+  for (const surfaceName of SURFACE_NAMES) {
+    const rules = RULES.filter((rule) => rule.surfaces.includes(surfaceName));
+    if (rules.length === 0) continue;
 
-        const source = readForRule(file, kind);
-        if (rule.requires) {
-          // A companion rule: the shape is fine, alone it is not.
-          if (rule.pattern.test(source) && !rule.requires.test(source)) {
-            found.push(`${key} ${rule.name} — ${rule.fix}`);
-          }
-          continue;
-        }
-        source.split("\n").forEach((line, i) => {
-          if (rule.pattern.test(line)) {
-            found.push(`${key}:${i + 1} ${rule.name} — ${rule.fix}`);
-          }
-        });
-      }
+    const kind = SURFACES[surfaceName].kind;
+    for (const file of filesFor(surfaceName)) {
+      const key = relative(FRONTEND, file).split(sep).join("/");
+      if (skip(key)) continue;
+      found.push(...brokenBy(key, readForRule(file, kind), rules));
     }
+  }
+  return found;
+}
+
+/**
+ * What one already-read file breaks, over the rules that name its surface.
+ *
+ * <p>Split out of {@link violations} so neither half carries the whole nest: the
+ * caller owns which files a surface has, this owns what a file is guilty of.</p>
+ */
+function brokenBy(key, source, rules) {
+  const found = [];
+  const lines = source.split("\n");
+
+  for (const rule of rules) {
+    if (ALLOWED.includes(`${rule.id} ${key}`)) continue;
+
+    if (rule.requires) {
+      // A companion rule: the shape is fine, alone it is not.
+      if (rule.pattern.test(source) && !rule.requires.test(source)) {
+        found.push(`${key} ${rule.name} — ${rule.fix}`);
+      }
+      continue;
+    }
+    lines.forEach((line, i) => {
+      if (rule.pattern.test(line)) {
+        found.push(`${key}:${i + 1} ${rule.name} — ${rule.fix}`);
+      }
+    });
   }
   return found;
 }

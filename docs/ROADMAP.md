@@ -12,7 +12,7 @@
 
 ## Block BW — What the link-free response and its consumers still lack (§LXX)
 
-- 📋 **T1057** (deps: —) **the search-contract guard test times out in a full suite run but passes alone** — A guard that goes red on timing teaches the next reader to re-run until it passes, which is how a real violation gets through. → §LXX.8
+- 📋 **T1059** (deps: —) **one search-contract rule backtracks quadratically on a long unclosed-brace line** — The surfaces include .js and .mjs, so a single vendored one-line bundle would turn the guard into a hang that reads as a broken build. → §LXX.9
 
 ## Non-goals (do NOT add as tasks)
 

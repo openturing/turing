@@ -2062,31 +2062,33 @@ leaves vectorless sites without a tile. The block adds **no backend**.
 > not do is finish the **shape** they were reading it for, or extend the fix past
 > the one app. Every item below was read out of the code while shipping T865–T869.
 
-### LXX.8 The search-contract guard fails on timing, not on violations (T1057)
+### LXX.9 The data-destructured rule can be made to hang the scan (T1059)
 
-`search-store-boundary.test.ts` asserts the T885/T939/T948 contract by walking the
-frontend tree and running each rule's regex over every file. Alone it takes about 2.6
-seconds. Inside `pnpm --filter turing-app test` it crosses vitest's 5000 ms default and
-fails as a timeout — twice in a row on one machine, then green on the next three runs.
-Only the filesystem cache and what vitest had in flight differed.
+The `data-destructured` rule is
+`/\{[^}]*\bdata\b[^}]*\}\s*=\s*(?:useSearchStore|useTuringUrlSearch)\s*\(/`. Two
+unbounded `[^}]*` sit either side of `\bdata\b`, so on a line that never closes the
+brace the engine re-splits the run between them once per position. Measured on a line of
+repeated `data ` with no `}`: 5 KB takes 3 ms, 25 KB takes 84 ms, 100 KB takes 1.3 s and
+300 KB takes 18.4 s. Quadratic, and the scan runs this per line.
 
-The cost is in `frontend/scripts/search-contract-rules.mjs`. `violations()` loops rules
-outside and calls `filesFor(surface)` inside, so the recursive walk — `readdirSync` plus
-a `statSync` per entry — is redone for every rule/surface pair instead of once per
-surface. Each file is then re-read and re-stripped of comments once per rule: four rules
-over four surfaces, the same bytes read several times.
+No file in the workspace triggers it today, which is the whole problem — the surfaces
+include `.js` and `.mjs` under `apps/*/src`, `packages/*/src` and `packages/*/examples`,
+and one generated or vendored single-line bundle committed under any of them turns the
+guard into a hang. T1057 fixed this scanner being slow for a boring reason; this is the
+same guarantee failing for a sharper one, and a guard that hangs reads as a broken
+build, not as a violation.
 
-Hoist the walk: collect each surface's files once, read and strip each once, then test
-every rule naming that surface against text already in memory. The rule set is shared
-with the workspace scripts suite and the SDK contract test, so the change lands in the
-`.mjs` and all three callers get it.
+Split the quantifier pairing: match the braces with a single unbounded run,
+`/\{[^}]*\}\s*=\s*(?:useSearchStore|useTuringUrlSearch)\s*\(/`, then test `\bdata\b`
+against the destructured group on its own. One pass each, no re-splitting, and the two
+conditions stay exactly what the rule means.
 
-A guard that fails on timing is worse than a slow guard: the next person to see it red
-has no reason to think it means anything, and re-running until green is how a real
-violation gets through. Raising `testTimeout` hides it instead.
+`search-contract.test.mjs` already pins the behaviour from both sides — the shape the
+bugs were written in must match, the innocent vocabulary must not — so the replacement
+is checkable against tests that exist.
 
-Done when the test runs well inside the default timeout on a cold cache, reports the
-same violations, and the scripts suite stays green.
+Done when the rule matches and misses everything it does now, and a pathological line
+scans in bounded time.
 
 ## XXXVII Security hardening (post-audit)
 
