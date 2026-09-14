@@ -569,8 +569,8 @@ importers:
         specifier: workspace:*
         version: link:../../packages/react-ui
       '@viglet/viglet-design-system':
-        specifier: ^2026.3.4
-        version: 2026.3.4(@types/react-dom@19.2.3(@types/react@19.2.17))(@types/react@19.2.17)(i18next-browser-languagedetector@8.2.1)(i18next@26.3.6(typescript@5.8.3))(next-themes@0.4.6(react-dom@19.2.7(react@19.2.7))(react@19.2.7))(react-dom@19.2.7(react@19.2.7))(react-i18next@17.0.10(i18next@26.3.6(typescript@5.8.3))(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(typescript@5.8.3))(react-router-dom@7.18.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7))(react@19.2.7)(sonner@2.0.7(react-dom@19.2.7(react@19.2.7))(react@19.2.7))
+        specifier: ^2026.3.11
+        version: 2026.3.11(@types/react-dom@19.2.3(@types/react@19.2.17))(@types/react@19.2.17)(i18next-browser-languagedetector@8.2.1)(i18next@26.3.6(typescript@5.8.3))(next-themes@0.4.6(react-dom@19.2.7(react@19.2.7))(react@19.2.7))(react-dom@19.2.7(react@19.2.7))(react-hook-form@7.82.0(react@19.2.7))(react-i18next@17.0.10(i18next@26.3.6(typescript@5.8.3))(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(typescript@5.8.3))(react-router-dom@7.18.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7))(react@19.2.7)(sonner@2.0.7(react-dom@19.2.7(react@19.2.7))(react@19.2.7))
       '@xyflow/react':
         specifier: ^12.11.2
         version: 12.11.2(@types/react-dom@19.2.3(@types/react@19.2.17))(@types/react@19.2.17)(immer@11.1.15)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
@@ -3649,8 +3649,8 @@ packages:
     resolution: {integrity: sha512-WmoN8qaIAo7WTYWbAZuG8PYEhn5fkz7dZrqTBZ7dtt//lL2Gwms1IcnQ5yHqjDfX8Ft5j4YzDM23f87zBfDe9g==}
     deprecated: Potential CWE-502 - Update to 1.3.1 or higher
 
-  '@viglet/viglet-design-system@2026.3.4':
-    resolution: {integrity: sha512-ogl3T1GcqdRF+kXELQfxyCXT2sLqOZY/MgECS72n1OfPgFIevI//t147qGFoIjGT54wWf49Syq4lO6floi4kIg==}
+  '@viglet/viglet-design-system@2026.3.11':
+    resolution: {integrity: sha512-hI7KB9oc6TDUOContukkWOjS5dcQwNYj2PX2RR4mvREHuYOfROsAmViJVZi5IStWjziJta0W1kWu5XCs1KGyiw==}
     engines: {node: '>=26', pnpm: '>=11'}
     hasBin: true
     peerDependencies:
@@ -3659,6 +3659,7 @@ packages:
       next-themes: '>=0.4.0'
       react: ^18.0.0 || ^19.0.0
       react-dom: ^18.0.0 || ^19.0.0
+      react-hook-form: ^7.71.2
       react-i18next: '>=15.0.0'
       react-router-dom: ^7.0.0
       sonner: '>=2.0.0'
@@ -8968,7 +8969,7 @@ snapshots:
 
   '@ungap/structured-clone@1.3.0': {}
 
-  '@viglet/viglet-design-system@2026.3.4(@types/react-dom@19.2.3(@types/react@19.2.17))(@types/react@19.2.17)(i18next-browser-languagedetector@8.2.1)(i18next@26.3.6(typescript@5.8.3))(next-themes@0.4.6(react-dom@19.2.7(react@19.2.7))(react@19.2.7))(react-dom@19.2.7(react@19.2.7))(react-i18next@17.0.10(i18next@26.3.6(typescript@5.8.3))(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(typescript@5.8.3))(react-router-dom@7.18.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7))(react@19.2.7)(sonner@2.0.7(react-dom@19.2.7(react@19.2.7))(react@19.2.7))':
+  '@viglet/viglet-design-system@2026.3.11(@types/react-dom@19.2.3(@types/react@19.2.17))(@types/react@19.2.17)(i18next-browser-languagedetector@8.2.1)(i18next@26.3.6(typescript@5.8.3))(next-themes@0.4.6(react-dom@19.2.7(react@19.2.7))(react@19.2.7))(react-dom@19.2.7(react@19.2.7))(react-hook-form@7.82.0(react@19.2.7))(react-i18next@17.0.10(i18next@26.3.6(typescript@5.8.3))(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(typescript@5.8.3))(react-router-dom@7.18.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7))(react@19.2.7)(sonner@2.0.7(react-dom@19.2.7(react@19.2.7))(react@19.2.7))':
     dependencies:
       '@dnd-kit/core': 6.3.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
       '@dnd-kit/sortable': 10.0.0(@dnd-kit/core@6.3.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7))(react@19.2.7)

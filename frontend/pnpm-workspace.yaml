@@ -20,7 +20,7 @@ allowBuilds:
 # viglet-design-system@2026.3.3 stayed blocked while sitting in this list --
 # the 2026.3.2 line here answered for the name first.
 minimumReleaseAgeExclude:
-  - '@viglet/viglet-design-system@2026.3.2||2026.3.3||2026.3.4'
+  - '@viglet/viglet-design-system@2026.3.2||2026.3.3||2026.3.4||2026.3.11'
   - '@radix-ui/primitive@1.1.5'
   - '@radix-ui/react-accordion@1.2.16'
   - '@radix-ui/react-alert-dialog@1.1.19'
