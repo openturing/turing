@@ -15,12 +15,13 @@ import type { BentoTone } from "@/components/bento";
  * the section. Declared once, at module scope, the type is stable and the
  * subtree updates.
  *
- * The design system already ships the contextual version of this idea,
- * `AdaptiveSectionCard`, which reads the chrome off a
- * `SectionCardChromeProvider`. These forms take `chrome` as a prop and their
- * callers set no provider, so adopting it is a separate change to the plumbing
- * rather than a rename — that is where this should end up, not where it can go
- * today.
+ * The design system ships the shared version of this idea,
+ * `AdaptiveSectionCard`, which reads the same compound markup and renders it as
+ * a frosted section. It used to pick between two chromes and no longer does
+ * (VDS146), so what stands between this and adopting it is the `bento` prop
+ * below: these forms take the era as a prop where the shared one has none left
+ * to take. That is where this should end up, and getting there is its own
+ * change to the plumbing rather than a rename.
  */
 export interface AgentFormSectionProps {
   /** True under the bento shell; false renders the console card. */

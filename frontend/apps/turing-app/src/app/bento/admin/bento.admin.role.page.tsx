@@ -3,7 +3,6 @@ import { ROUTES } from "@/app/routes.const";
 import { bentoChipClass } from "@/components/bento";
 import { AdminRoleForm } from "@/components/admin/admin.role.form";
 import { LoadProvider } from "@/components/loading-provider";
-import { SectionCardChromeProvider } from "@/components/ui/section-card";
 import type { TurRole } from "@/models/auth/role";
 import { IconUserShield } from "@tabler/icons-react";
 import { useTranslation } from "react-i18next";
@@ -32,27 +31,25 @@ export default function BentoAdminRolePage() {
   const error = isError ? t("admin.roles.loadOneFailed") : null;
 
   return (
-    <SectionCardChromeProvider chrome="bento">
-      <LoadProvider checkIsNotUndefined={role} error={error} tryAgainUrl={`${ROUTES.BENTO_ADMIN_ROLES}/${roleId}`}>
-        {role && (
-          <AdminRoleForm
-            value={role}
-            isNew={isNew}
-            listRoute={ROUTES.BENTO_ADMIN_ROLES}
-            bentoHero={{
-              backTo: ROUTES.BENTO_ADMIN_ROLES,
-              backLabel: t("admin.roles.title"),
-              leading: (
-                <span className={`grid h-12 w-12 place-items-center rounded-2xl ${bentoChipClass('slate')} text-white shadow-md`}>
-                  <IconUserShield size={24} />
-                </span>
-              ),
-              title: isNew ? t("admin.roles.newRole") : (role.name || ""),
-              subtitle: isNew ? t("admin.roles.createDescription") : t("admin.roles.editDescription"),
-            }}
-          />
-        )}
-      </LoadProvider>
-    </SectionCardChromeProvider>
+    <LoadProvider checkIsNotUndefined={role} error={error} tryAgainUrl={`${ROUTES.BENTO_ADMIN_ROLES}/${roleId}`}>
+      {role && (
+        <AdminRoleForm
+          value={role}
+          isNew={isNew}
+          listRoute={ROUTES.BENTO_ADMIN_ROLES}
+          bentoHero={{
+            backTo: ROUTES.BENTO_ADMIN_ROLES,
+            backLabel: t("admin.roles.title"),
+            leading: (
+              <span className={`grid h-12 w-12 place-items-center rounded-2xl ${bentoChipClass('slate')} text-white shadow-md`}>
+                <IconUserShield size={24} />
+              </span>
+            ),
+            title: isNew ? t("admin.roles.newRole") : (role.name || ""),
+            subtitle: isNew ? t("admin.roles.createDescription") : t("admin.roles.editDescription"),
+          }}
+        />
+      )}
+    </LoadProvider>
   );
 }

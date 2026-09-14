@@ -5,7 +5,6 @@ import { AdminGroupForm } from "@/components/admin/admin.group.form";
 import { AdminKeycloakGroupView } from "@/components/admin/admin.keycloak.group.view";
 import { BentoHero, bentoChipClass } from "@/components/bento";
 import { LoadProvider } from "@/components/loading-provider";
-import { SectionCardChromeProvider } from "@/components/ui/section-card";
 import type { TurGroup } from "@/models/auth/group";
 import type { TurKeycloakGroup } from "@/models/auth/keycloak-group";
 import { TurGroupService } from "@/services/auth/group.service";
@@ -91,40 +90,36 @@ export default function BentoAdminGroupPage() {
 
   if (keycloak) {
     return (
-      <SectionCardChromeProvider chrome="bento">
-        <LoadProvider checkIsNotUndefined={keycloakGroup} error={error} tryAgainUrl={`${ROUTES.BENTO_ADMIN_GROUPS}/${groupId}`}>
-          {keycloakGroup && (
-            <AdminKeycloakGroupView
-              value={keycloakGroup}
-              header={hero(keycloakGroup.name, t("admin.groups.keycloakViewDescription"))}
-            />
-          )}
-        </LoadProvider>
-      </SectionCardChromeProvider>
+      <LoadProvider checkIsNotUndefined={keycloakGroup} error={error} tryAgainUrl={`${ROUTES.BENTO_ADMIN_GROUPS}/${groupId}`}>
+        {keycloakGroup && (
+          <AdminKeycloakGroupView
+            value={keycloakGroup}
+            header={hero(keycloakGroup.name, t("admin.groups.keycloakViewDescription"))}
+          />
+        )}
+      </LoadProvider>
     );
   }
 
   return (
-    <SectionCardChromeProvider chrome="bento">
-      <LoadProvider checkIsNotUndefined={group} error={error} tryAgainUrl={`${ROUTES.BENTO_ADMIN_GROUPS}/${groupId}`}>
-        {group && (
-          <AdminGroupForm
-            value={group}
-            isNew={isNew}
-            onDelete={isNew ? undefined : onDelete}
-            open={open}
-            setOpen={setOpen}
-            listRoute={ROUTES.BENTO_ADMIN_GROUPS}
-            bentoHero={{
-              backTo: ROUTES.BENTO_ADMIN_GROUPS,
-              backLabel: t("admin.groups.title"),
-              leading,
-              title: isNew ? t("admin.groups.newGroup") : (group.name || ""),
-              subtitle: isNew ? t("admin.groups.createDescription") : t("admin.groups.editDescription"),
-            }}
-          />
-        )}
-      </LoadProvider>
-    </SectionCardChromeProvider>
+    <LoadProvider checkIsNotUndefined={group} error={error} tryAgainUrl={`${ROUTES.BENTO_ADMIN_GROUPS}/${groupId}`}>
+      {group && (
+        <AdminGroupForm
+          value={group}
+          isNew={isNew}
+          onDelete={isNew ? undefined : onDelete}
+          open={open}
+          setOpen={setOpen}
+          listRoute={ROUTES.BENTO_ADMIN_GROUPS}
+          bentoHero={{
+            backTo: ROUTES.BENTO_ADMIN_GROUPS,
+            backLabel: t("admin.groups.title"),
+            leading,
+            title: isNew ? t("admin.groups.newGroup") : (group.name || ""),
+            subtitle: isNew ? t("admin.groups.createDescription") : t("admin.groups.editDescription"),
+          }}
+        />
+      )}
+    </LoadProvider>
   );
 }

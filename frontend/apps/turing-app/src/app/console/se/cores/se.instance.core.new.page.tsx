@@ -46,7 +46,8 @@ interface SEInstanceCoreNewPageProps {
   /**
    * Render inside the bento shell — the page supplies a
    * {@link BentoFormHero} (hero → sticky-save-bar morph + `←` breadcrumb) and
-   * the frosted body comes from the enclosing `SectionCardChromeProvider`.
+   * its section cards render as the frosted body, which is the only thing they
+   * render since VDS146 took the chrome switch out of the design system.
    */
   /** Route base for cores navigation; defaults to the console SE instance route. */
   baseRoute?: string;

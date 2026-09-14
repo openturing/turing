@@ -5,7 +5,6 @@ import { AdminKeycloakUserView } from "@/components/admin/admin.keycloak.user.vi
 import { AdminUserForm } from "@/components/admin/admin.user.form";
 import { BentoHero, bentoChipClass } from "@/components/bento";
 import { LoadProvider } from "@/components/loading-provider";
-import { SectionCardChromeProvider } from "@/components/ui/section-card";
 import type { TurKeycloakUser } from "@/models/auth/keycloak-user";
 import type { TurUser } from "@/models/auth/user";
 import { TurAdminUserService } from "@/services/auth/admin-user.service";
@@ -92,40 +91,36 @@ export default function BentoAdminUserPage() {
 
   if (keycloak) {
     return (
-      <SectionCardChromeProvider chrome="bento">
-        <LoadProvider checkIsNotUndefined={keycloakUser} error={error} tryAgainUrl={`${ROUTES.BENTO_ADMIN_USERS}/${username}`}>
-          {keycloakUser && (
-            <AdminKeycloakUserView
-              value={keycloakUser}
-              header={hero(keycloakUser.username, t("admin.users.keycloakViewDescription"))}
-            />
-          )}
-        </LoadProvider>
-      </SectionCardChromeProvider>
+      <LoadProvider checkIsNotUndefined={keycloakUser} error={error} tryAgainUrl={`${ROUTES.BENTO_ADMIN_USERS}/${username}`}>
+        {keycloakUser && (
+          <AdminKeycloakUserView
+            value={keycloakUser}
+            header={hero(keycloakUser.username, t("admin.users.keycloakViewDescription"))}
+          />
+        )}
+      </LoadProvider>
     );
   }
 
   return (
-    <SectionCardChromeProvider chrome="bento">
-      <LoadProvider checkIsNotUndefined={user} error={error} tryAgainUrl={`${ROUTES.BENTO_ADMIN_USERS}/${username}`}>
-        {user && (
-          <AdminUserForm
-            value={user}
-            isNew={isNew}
-            onDelete={isNew ? undefined : onDelete}
-            open={open}
-            setOpen={setOpen}
-            listRoute={ROUTES.BENTO_ADMIN_USERS}
-            bentoHero={{
-              backTo: ROUTES.BENTO_ADMIN_USERS,
-              backLabel: t("admin.users.title"),
-              leading,
-              title: isNew ? t("admin.users.newUser") : (user.username || username),
-              subtitle: isNew ? t("admin.users.createDescription") : t("admin.users.editDescription"),
-            }}
-          />
-        )}
-      </LoadProvider>
-    </SectionCardChromeProvider>
+    <LoadProvider checkIsNotUndefined={user} error={error} tryAgainUrl={`${ROUTES.BENTO_ADMIN_USERS}/${username}`}>
+      {user && (
+        <AdminUserForm
+          value={user}
+          isNew={isNew}
+          onDelete={isNew ? undefined : onDelete}
+          open={open}
+          setOpen={setOpen}
+          listRoute={ROUTES.BENTO_ADMIN_USERS}
+          bentoHero={{
+            backTo: ROUTES.BENTO_ADMIN_USERS,
+            backLabel: t("admin.users.title"),
+            leading,
+            title: isNew ? t("admin.users.newUser") : (user.username || username),
+            subtitle: isNew ? t("admin.users.createDescription") : t("admin.users.editDescription"),
+          }}
+        />
+      )}
+    </LoadProvider>
   );
 }

@@ -1,7 +1,6 @@
 import { BentoFormHero, bentoChipClass } from "@/components/bento";
 import { ROUTES } from "@/app/routes.const";
 import { Form } from "@/components/ui/form";
-import { SectionCardChromeProvider } from "@/components/ui/section-card";
 import { ContentIngestionSection } from "@/app/console/system/sections/content-ingestion.section";
 import { EmailSettingsSection } from "@/app/console/system/sections/email-settings.section";
 import { GeneralSettingsSection } from "@/app/console/system/sections/general-settings.section";
@@ -125,50 +124,48 @@ export default function BentoGlobalSettingsPage() {
           <p className="-mt-2 text-sm text-muted-foreground">{activeDescription}</p>
         )}
 
-        <SectionCardChromeProvider chrome="bento">
-          <div
-            role="tabpanel"
-            id="global-settings-panel-platform"
-            aria-labelledby="global-settings-tab-platform"
-            hidden={activeTab !== "platform"}
-            className="flex flex-col gap-5"
-          >
-            <GeneralSettingsSection state={state} />
-            <ContentIngestionSection state={state} />
-            <EmailSettingsSection state={state} />
-            <UrlSigningSecretSection state={state} />
-            {/*
-             * T965 — beside the other rotatable secret, and self-contained: it
-             * reads pairing status itself and renders nothing on an install
-             * that never paired, so it stays out of the single-form state.
-             */}
-            <VigletInstallKeySection />
-            <PiiSlotSection state={state} />
-          </div>
+        <div
+          role="tabpanel"
+          id="global-settings-panel-platform"
+          aria-labelledby="global-settings-tab-platform"
+          hidden={activeTab !== "platform"}
+          className="flex flex-col gap-5"
+        >
+          <GeneralSettingsSection state={state} />
+          <ContentIngestionSection state={state} />
+          <EmailSettingsSection state={state} />
+          <UrlSigningSecretSection state={state} />
+          {/*
+           * T965 — beside the other rotatable secret, and self-contained: it
+           * reads pairing status itself and renders nothing on an install
+           * that never paired, so it stays out of the single-form state.
+           */}
+          <VigletInstallKeySection />
+          <PiiSlotSection state={state} />
+        </div>
 
-          <div
-            role="tabpanel"
-            id="global-settings-panel-genai"
-            aria-labelledby="global-settings-tab-genai"
-            hidden={activeTab !== "genai"}
-            className="flex flex-col gap-5"
-          >
-            <LlmSettingsSection state={state} />
-            <RagSettingsSection state={state} />
-            <RagRerankSection state={state} />
-            <TranscriptionSection state={state} />
-          </div>
+        <div
+          role="tabpanel"
+          id="global-settings-panel-genai"
+          aria-labelledby="global-settings-tab-genai"
+          hidden={activeTab !== "genai"}
+          className="flex flex-col gap-5"
+        >
+          <LlmSettingsSection state={state} />
+          <RagSettingsSection state={state} />
+          <RagRerankSection state={state} />
+          <TranscriptionSection state={state} />
+        </div>
 
-          <div
-            role="tabpanel"
-            id="global-settings-panel-code"
-            aria-labelledby="global-settings-tab-code"
-            hidden={activeTab !== "code"}
-            className="flex flex-col gap-5"
-          >
-            <PythonSettingsSection state={state} />
-          </div>
-        </SectionCardChromeProvider>
+        <div
+          role="tabpanel"
+          id="global-settings-panel-code"
+          aria-labelledby="global-settings-tab-code"
+          hidden={activeTab !== "code"}
+          className="flex flex-col gap-5"
+        >
+          <PythonSettingsSection state={state} />
+        </div>
       </form>
     </Form>
   );

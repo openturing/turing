@@ -27,7 +27,6 @@ import { NavLink, Outlet, useNavigate } from "react-router-dom"
 import { toast } from "@viglet/viglet-design-system"
 import { BentoActionsMenu, BentoFormHero } from "@/components/bento"
 import { DialogDelete } from "@/components/dialog.delete"
-import { SectionCardChromeProvider } from "@/components/ui/section-card"
 
 const turStoreInstanceService = new TurStoreInstanceService()
 const turMcpServerService = new TurMcpServerService()
@@ -330,9 +329,7 @@ export const PersonaInstanceFormLayout: React.FC<Props> = ({ value, isNew, baseR
             })}
           </nav>
 
-          <SectionCardChromeProvider chrome="bento">
-            <Outlet context={outletContext} />
-          </SectionCardChromeProvider>
+          <Outlet context={outletContext} />
 
           {!isNew && (
             <DialogDelete
