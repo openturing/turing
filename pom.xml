@@ -49,12 +49,12 @@
         <gpg.keyname>30AA85DC937DA16691466FE2A0CCF43371503F2D</gpg.keyname>
         <gpg.passphrase>${env.GPG_PASSPHRASE}</gpg.passphrase>
         <!-- Versions not managed by Spring Boot BOM -->
-        <elasticsearch.version>9.5.3</elasticsearch.version>
+        <elasticsearch.version>9.5.4</elasticsearch.version>
         <imageio.version>1.4.0</imageio.version>
         <lucene.version>10.5.1</lucene.version>
         <mapstruct.version>1.6.3</mapstruct.version>
         <minio.version>9.0.3</minio.version>
-        <mongodb.version>5.11.1</mongodb.version>
+        <mongodb.version>5.12.0</mongodb.version>
         <okhttp.version>5.5.0</okhttp.version>
         <resilience4j.version>2.4.0</resilience4j.version>
         <shedlock.version>7.10.1</shedlock.version>
