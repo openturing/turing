@@ -54,13 +54,13 @@
         <lucene.version>10.5.1</lucene.version>
         <mapstruct.version>1.6.3</mapstruct.version>
         <minio.version>9.0.3</minio.version>
-        <mongodb.version>5.11.0</mongodb.version>
+        <mongodb.version>5.11.1</mongodb.version>
         <okhttp.version>5.5.0</okhttp.version>
         <resilience4j.version>2.4.0</resilience4j.version>
-        <shedlock.version>7.10.0</shedlock.version>
+        <shedlock.version>7.10.1</shedlock.version>
         <testcontainers.version>2.0.5</testcontainers.version>
         <tika.version>4.0.0</tika.version>
-        <jgit.version>7.7.1.202607240634-r</jgit.version>
+        <jgit.version>7.8.0.202609011348-r</jgit.version>
     </properties>
     <build>
         <plugins>
@@ -76,7 +76,7 @@
             <plugin>
                 <groupId>org.sonarsource.scanner.maven</groupId>
                 <artifactId>sonar-maven-plugin</artifactId>
-                <version>5.7.0.6970</version>
+                <version>5.8.0.7211</version>
             </plugin>
             <plugin>
                 <groupId>pl.project13.maven</groupId>
@@ -473,7 +473,7 @@
             <dependency>
                 <groupId>org.springdoc</groupId>
                 <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
-                <version>3.1.0</version>
+                <version>3.1.1</version>
             </dependency>
             <dependency>
                 <groupId>org.springframework.statemachine</groupId>
