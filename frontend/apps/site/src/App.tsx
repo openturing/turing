@@ -10,11 +10,11 @@ import { FEATURE_DETAILS } from "@/lib/site-content";
 import { matchRoute } from "./route-match";
 
 /** Standalone (non-feature) routes with their own page component. */
-export const MIGRATE_PATH = "/migrate";
-export const COMPARE_PATH = "/compare";
-export const AEM_PATH = "/aem-search";
-export const PERSONA_PATH = "/persona";
-export const SECURITY_PATH = "/security";
+export const MIGRATE_PATH = "/migrate/";
+export const COMPARE_PATH = "/compare/";
+export const AEM_PATH = "/aem-search/";
+export const PERSONA_PATH = "/persona/";
+export const SECURITY_PATH = "/security/";
 
 export default function App({ path = "/" }: Readonly<{ path?: string }>) {
   // Cross-page links to a home anchor (e.g. "/#playground") full-load "/" and

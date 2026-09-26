@@ -5,7 +5,7 @@
 > (AEM 6.5 and AEM as a Cloud Service) — indexed via the Dumont AEM connector,
 > self-hosted, open source (Apache 2.0). Deeper than an AEM-native add-on.
 
-Page: https://turing.viglet.org/aem-search
+Page: https://turing.viglet.org/aem-search/
 
 ## What is AEM search?
 
@@ -102,6 +102,6 @@ resolve on the public WKND site (wknd.site).
 
 ## Links
 
-- AEM Search page: https://turing.viglet.org/aem-search
+- AEM Search page: https://turing.viglet.org/aem-search/
 - AEM Connector docs (Dumont): https://docs.viglet.org/dumont/connectors/aem
 - Documentation: https://docs.viglet.org/turing/

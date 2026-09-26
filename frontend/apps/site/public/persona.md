@@ -6,7 +6,7 @@
 > senior, most on-brand representative. Swap the LLM, swap the tools — the voice
 > stays. Self-hosted, open source (Apache 2.0).
 
-Page: https://turing.viglet.org/persona
+Page: https://turing.viglet.org/persona/
 
 ## What is an AI persona?
 
@@ -74,7 +74,7 @@ the tools — change the LLM and the persona stays.
 
 ## Live demo
 
-A live content-fit demo runs on https://turing.viglet.org/persona — pick an
+A live content-fit demo runs on https://turing.viglet.org/persona/ — pick an
 audience persona, paste text, and get a fit verdict (readability + text-grounded
 AI review) against the demo backend.
 
@@ -86,7 +86,7 @@ sector, media) — is "The Persona Book": https://docs.viglet.org/turing/persona
 
 ## Links
 
-- Personas page: https://turing.viglet.org/persona
+- Personas page: https://turing.viglet.org/persona/
 - The Persona Book: https://docs.viglet.org/turing/persona-book
 - Personas reference: https://docs.viglet.org/turing/personas
 - Documentation: https://docs.viglet.org/turing/

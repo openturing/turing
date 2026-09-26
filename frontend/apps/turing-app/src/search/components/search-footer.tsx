@@ -9,9 +9,9 @@ const LINKS_LEFT = [
 ];
 
 const LINKS_RIGHT = [
-  { href: "https://docs.viglet.org/turing", label: "Docs", external: true },
-  { href: "https://viglet.org/#contact", label: "Contact", external: true },
-  { href: "https://viglet.org", label: "Viglet", external: true },
+  { href: "https://docs.viglet.org/turing/", label: "Docs", external: true },
+  { href: "https://www.viglet.org/#contact", label: "Contact", external: true },
+  { href: "https://www.viglet.org", label: "Viglet", external: true },
 ];
 
 export function SearchFooter() {

@@ -10,13 +10,13 @@
 
 package com.viglet.turing.genai;
 
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.ParseContext;
@@ -129,10 +129,10 @@ public class TurChatAttachmentService {
      * turn down.
      */
     public String extractTextFromFile(MultipartFile file) {
-        try (ByteArrayInputStream inputStream = new ByteArrayInputStream(file.getBytes())) {
+        Metadata metadata = new Metadata();
+        metadata.set(HttpHeaders.CONTENT_TYPE, file.getContentType());
+        try (TikaInputStream inputStream = TikaInputStream.get(file.getBytes(), metadata)) {
             BodyContentHandler handler = new BodyContentHandler(-1);
-            Metadata metadata = new Metadata();
-            metadata.set(HttpHeaders.CONTENT_TYPE, file.getContentType());
             new AutoDetectParser().parse(inputStream, handler, metadata, new ParseContext());
             return handler.toString().strip();
         } catch (IOException | TikaException | SAXException e) {

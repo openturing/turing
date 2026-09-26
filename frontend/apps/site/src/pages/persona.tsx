@@ -55,7 +55,7 @@ function PersonaJsonLd() {
             "@type": "ListItem",
             position: 2,
             name: "AI Personas",
-            item: "https://turing.viglet.org/persona",
+            item: "https://turing.viglet.org/persona/",
           },
         ],
       },
@@ -64,7 +64,7 @@ function PersonaJsonLd() {
         name: "Viglet Turing ES — AI Personas (brand voice)",
         applicationCategory: "BusinessApplication",
         operatingSystem: "Any (self-hosted, Docker)",
-        url: "https://turing.viglet.org/persona",
+        url: "https://turing.viglet.org/persona/",
         description:
           "Give your AI agents a governed brand voice. Personas turn a generic LLM into your most on-brand, most consistent representative — required and forbidden vocabulary enforced in two layers, live brand facts via MCP, audience content-fit scoring, Persona Match and synthetic user research. Self-hosted, open source (Apache 2.0).",
         offers: { "@type": "Offer", price: "0", priceCurrency: "USD" },

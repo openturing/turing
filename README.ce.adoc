@@ -321,4 +321,4 @@ Turing ES commercially, including in closed-source products.
 ---
 
 [.text-center]
-Built by the https://viglet.org[Viglet] Team · https://turing.viglet.org[turing.viglet.org]
+Built by the https://www.viglet.org[Viglet] Team · https://turing.viglet.org[turing.viglet.org]

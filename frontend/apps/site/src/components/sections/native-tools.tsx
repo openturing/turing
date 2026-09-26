@@ -59,7 +59,7 @@ export function NativeTools({ teaser = false }: Readonly<{ teaser?: boolean }>) 
         {teaser && (
           <div className="mt-8 flex justify-center">
             <Button asChild size="lg" variant="outline">
-              <a href="/features/automate">
+              <a href="/features/automate/">
                 See how agents use these <ArrowRight className="size-4" />
               </a>
             </Button>

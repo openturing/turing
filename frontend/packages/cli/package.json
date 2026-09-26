@@ -50,7 +50,7 @@
     "url": "https://github.com/openviglet/turing-ce.git",
     "directory": "frontend/packages/cli"
   },
-  "author": "Viglet <opensource@viglet.org> (https://viglet.org)",
+  "author": "Viglet <opensource@viglet.org> (https://www.viglet.org)",
   "license": "Apache-2.0",
   "devDependencies": {
     "@types/node": "^26.1.1",

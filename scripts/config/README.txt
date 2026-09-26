@@ -52,5 +52,5 @@ Create a Solr collection using the provided templates:
 
 Documentation
 -------------
-  https://viglet.org/turing/
+  https://www.viglet.org/turing/
   https://github.com/openviglet/turing

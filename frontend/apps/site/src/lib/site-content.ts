@@ -432,8 +432,8 @@ export const AUDIENCES: Audience[] = [
       "SSO, encrypted secrets, any LLM (including fully local)",
       "Cited, auditable answers — not black-box AI",
     ],
-    primary: { label: "AEM AI Search", href: "/aem-search" },
-    secondary: { label: "Security & data residency", href: "/security" },
+    primary: { label: "AEM AI Search", href: "/aem-search/" },
+    secondary: { label: "Security & data residency", href: "/security/" },
   },
 ];
 

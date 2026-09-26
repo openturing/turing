@@ -54,7 +54,7 @@ function AemJsonLd() {
             "@type": "ListItem",
             position: 2,
             name: "AEM Search",
-            item: "https://turing.viglet.org/aem-search",
+            item: "https://turing.viglet.org/aem-search/",
           },
         ],
       },
@@ -63,7 +63,7 @@ function AemJsonLd() {
         name: "Viglet Turing ES — AEM AI Search",
         applicationCategory: "BusinessApplication",
         operatingSystem: "Any (self-hosted, Docker)",
-        url: "https://turing.viglet.org/aem-search",
+        url: "https://turing.viglet.org/aem-search/",
         description:
           "AI search for Adobe Experience Manager: cited, streaming answers plus faceted keyword + semantic search over AEM 6.5 and AEM as a Cloud Service, indexed via the Dumont connector. Self-hosted, open source (Apache 2.0).",
         offers: { "@type": "Offer", price: "0", priceCurrency: "USD" },
@@ -345,7 +345,7 @@ export function AemPage() {
                   </a>
                 </Button>
                 <Button asChild size="lg" variant="outline">
-                  <a href="/compare">Compare the alternatives</a>
+                  <a href="/compare/">Compare the alternatives</a>
                 </Button>
               </div>
             </Card>

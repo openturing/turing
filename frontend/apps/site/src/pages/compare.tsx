@@ -101,7 +101,7 @@ export function ComparePage() {
                 variant="outline"
                 className="border-white/20 bg-white/10 text-white hover:bg-white/20 hover:text-white"
               >
-                <a href="/migrate">Switching from Algolia or Elastic?</a>
+                <a href="/migrate/">Switching from Algolia or Elastic?</a>
               </Button>
             </div>
           </Container>

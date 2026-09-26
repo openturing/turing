@@ -49,7 +49,7 @@ export function Pillars() {
                   ))}
                 </div>
                 <a
-                  href={`/features/${p.slug}`}
+                  href={`/features/${p.slug}/`}
                   className="mt-5 inline-flex items-center gap-1 text-sm font-semibold text-primary hover:underline"
                 >
                   Learn more

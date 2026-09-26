@@ -37,9 +37,9 @@ public class SwaggerConfig {
 				.info(new Info().title("Turing ES")
 						.description("Semantic Navigation, Chatbot using Search Engine.")
 						.version("v2.0")
-						.license(new License().name("Apache 2.0").url("http://viglet.org/turing")))
+						.license(new License().name("Apache 2.0").url("https://www.viglet.org/turing/")))
 				.externalDocs(new ExternalDocumentation()
 						.description("Turing ES Documentation")
-						.url("https://docs.viglet.org/turing"));
+						.url("https://docs.viglet.org/turing/"));
 	}
 }

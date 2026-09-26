@@ -148,12 +148,12 @@ export function SecurityPage() {
               </ul>
               <div className="mt-8 flex flex-wrap gap-3">
                 <Button asChild size="lg">
-                  <a href="/aem-search">
+                  <a href="/aem-search/">
                     See it for AEM <ArrowRight className="size-4" />
                   </a>
                 </Button>
                 <Button asChild size="lg" variant="outline">
-                  <a href="/compare">Compare the alternatives</a>
+                  <a href="/compare/">Compare the alternatives</a>
                 </Button>
               </div>
             </div>

@@ -98,7 +98,7 @@ export function FeaturePage({ detail }: Readonly<{ detail: FeatureDetail }>) {
             </h2>
             <div className="grid gap-5 sm:grid-cols-3">
               {others.map((o) => (
-                <a key={o.slug} href={`/features/${o.slug}`} className="group">
+                <a key={o.slug} href={`/features/${o.slug}/`} className="group">
                   <Card className="h-full gap-0 p-6 transition-all duration-200 hover:-translate-y-1 hover:border-primary/50 hover:shadow-lg hover:shadow-primary/10">
                     <span className="text-xs font-extrabold tracking-[0.1em] text-muted-foreground uppercase">
                       {o.eyebrow}
