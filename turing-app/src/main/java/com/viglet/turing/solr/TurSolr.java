@@ -383,16 +383,22 @@ public class TurSolr {
                 || !query.getQuery().endsWith("]") || !query.getQuery().endsWith(")");
     }
 
-    private static boolean noResults(QueryResponse queryResponse) {
-        return queryResponse.getResults() == null
-                || (queryResponse.getResults() != null && queryResponse.getResults().isEmpty());
+    /**
+     * "No results" means the query matched nothing at all ({@code numFound == 0}), not that the
+     * requested page came back empty. A page past the end of the pagination is empty too, and
+     * retrying it with a wildcard would return unrelated documents and keep an infinite scroll
+     * going forever.
+     */
+    static boolean noResults(QueryResponse queryResponse) {
+        return queryResponse.getResults() == null || queryResponse.getResults().getNumFound() == 0;
     }
 
-    private static boolean noResultGroups(QueryResponse queryResponse) {
+    /** Same rule as {@link #noResults} for grouped responses: decided by the total matches. */
+    static boolean noResultGroups(QueryResponse queryResponse) {
         GroupResponse groupResponse = queryResponse.getGroupResponse();
         return groupResponse == null || groupResponse.getValues().isEmpty()
                 || groupResponse.getValues().size() == 1
-                        && groupResponse.getValues().getFirst().getValues().isEmpty();
+                        && groupResponse.getValues().getFirst().getMatches() == 0;
     }
 
     private static void filterQueryRequest(TurSEParameters turSEParameters, SolrQuery query) {
