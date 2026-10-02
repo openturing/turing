@@ -30,7 +30,6 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.apache.hc.core5.http.NameValuePair;
-import org.apache.hc.core5.net.URIBuilder;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.http.server.ServletServerHttpRequest;
 import org.springframework.util.StringUtils;
@@ -125,7 +124,7 @@ public class TurSNUtils {
     }
 
     public static URI addFilterQuery(URI uri, String fq) {
-        List<NameValuePair> params = new URIBuilder(uri).getQueryParams();
+        List<NameValuePair> params = TurCommonsUtils.getQueryParams(uri);
         StringBuilder sbQueryString = new StringBuilder();
         AtomicBoolean alreadyExists = new AtomicBoolean(false);
         params.stream().filter(nameValuePair -> nameValuePair.getValue() != null)
@@ -146,7 +145,7 @@ public class TurSNUtils {
     }
 
     public static URI removeFilterQuery(URI uri, String fq) {
-        List<NameValuePair> params = new URIBuilder(uri).getQueryParams();
+        List<NameValuePair> params = TurCommonsUtils.getQueryParams(uri);
         StringBuilder sbQueryString = new StringBuilder();
         params.stream().filter(nameValuePair -> nameValuePair.getValue() != null)
                 .forEach(nameValuePair -> {
@@ -161,7 +160,7 @@ public class TurSNUtils {
     }
 
     public static URI removeFilterQueryByFieldNames(URI uri, List<String> fieldNames) {
-        List<NameValuePair> params = new URIBuilder(uri).getQueryParams();
+        List<NameValuePair> params = TurCommonsUtils.getQueryParams(uri);
         StringBuilder sbQueryString = new StringBuilder();
         params.forEach(nameValuePair -> {
             if (nameValuePair.getName().equals(TurSNParamType.FILTER_QUERIES_DEFAULT)) {
@@ -182,7 +181,7 @@ public class TurSNUtils {
 
     public static List<String> filterQueryByFieldNames(URI uri, List<String> fieldNames) {
         List<String> filterQueries = new ArrayList<>();
-        List<NameValuePair> params = new URIBuilder(uri).getQueryParams();
+        List<NameValuePair> params = TurCommonsUtils.getQueryParams(uri);
         params.forEach(nameValuePair -> {
             if (nameValuePair.getName().equals(TurSNParamType.FILTER_QUERIES_DEFAULT)) {
                 TurCommonsUtils.getKeyValueFromColon(nameValuePair.getValue()).ifPresent(kv -> {
@@ -205,7 +204,7 @@ public class TurSNUtils {
     }
 
     public static URI removeQueryStringParameter(URI uri, String field) {
-        List<NameValuePair> params = new URIBuilder(uri).getQueryParams();
+        List<NameValuePair> params = TurCommonsUtils.getQueryParams(uri);
         StringBuilder sbQueryString = new StringBuilder();
         params.stream().filter(nameValuePair -> !(nameValuePair.getName().equals(field)))
                 .forEach(nameValuePair -> TurCommonsUtils.addParameterToQueryString(sbQueryString,

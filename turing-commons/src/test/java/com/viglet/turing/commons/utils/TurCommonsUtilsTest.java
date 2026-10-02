@@ -216,6 +216,20 @@ class TurCommonsUtilsTest {
     }
 
     @Test
+    void testAddOrReplaceParameterKeepsAccentedValueAcrossTwoPasses() throws URISyntaxException {
+        // The spell-check "original" link replaces q and then adds nfpr. The first pass leaves
+        // "inovação" raw in the URI; parsing it again used to yield "inova��o".
+        URI uri = new URI("/api/sn/site/search?q=inova%C3%A7%C3%A3o&p=1");
+        URI firstPass = TurCommonsUtils.addOrReplaceParameter(uri, "q", "inovação", true);
+        URI result = TurCommonsUtils.addOrReplaceParameter(firstPass, "nfpr", "1", false);
+
+        assertThat(result.toASCIIString())
+                .contains("q=inova%C3%A7%C3%A3o")
+                .contains("nfpr=1")
+                .doesNotContain("%EF%BF%BD");
+    }
+
+    @Test
     void testAddOrReplaceParameterValueWithSpaceAndQuoteIsEncoded() throws URISyntaxException {
         URI uri = new URI("/api/search?p=1");
         URI result = TurCommonsUtils.addOrReplaceParameter(uri, "q", "hello \"world\"", false);

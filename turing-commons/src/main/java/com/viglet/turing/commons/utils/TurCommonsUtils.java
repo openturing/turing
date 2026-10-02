@@ -122,12 +122,7 @@ public class TurCommonsUtils {
 
     public static URI addOrReplaceParameter(URI uri, String paramName, String paramValue,
             boolean decoded) {
-        // The query string must be parsed as UTF-8: percent-encoded octets of non-ASCII values
-        // (profile/facet names such as "Padrão" -> "Padr%C3%A3o") are UTF-8. Reading them as
-        // ISO-8859-1 turned every accent into mojibake ("PadrÃ£o"), and the corrupted value was
-        // then carried over into the pagination/facet links, so following one of those links no
-        // longer matched the profile it came from.
-        List<NameValuePair> params = new URIBuilder(uri, StandardCharsets.UTF_8).getQueryParams();
+        List<NameValuePair> params = getQueryParams(uri);
         StringBuilder sbQueryString = new StringBuilder();
         boolean alreadyExists = false;
         for (NameValuePair nameValuePair : params) {
@@ -152,6 +147,21 @@ public class TurCommonsUtils {
         }
 
         return modifiedURI(uri, sbQueryString);
+    }
+
+    /**
+     * Parses the query string of a URI as UTF-8, whether its non-ASCII characters are
+     * percent-encoded ("Padr%C3%A3o") or raw ("Padrão").
+     * <p>
+     * Reading the octets as ISO-8859-1 turned every accent into mojibake ("PadrÃ£o"). And
+     * {@link #modifiedURI} leaves non-ASCII letters raw, so a link built in one pass and parsed
+     * again in a second one (AND facets, the spell-check "original" link) carries raw characters:
+     * URIBuilder narrows each of them to a single byte, which is not valid UTF-8 and comes out as
+     * U+FFFD ("inova��o"). Going through {@link URI#toASCIIString()} first percent-encodes them.
+     */
+    public static List<NameValuePair> getQueryParams(URI uri) {
+        return new URIBuilder(URI.create(uri.toASCIIString()), StandardCharsets.UTF_8)
+                .getQueryParams();
     }
 
     public static void addParameterToQueryString(StringBuilder sbQueryString, String name,
