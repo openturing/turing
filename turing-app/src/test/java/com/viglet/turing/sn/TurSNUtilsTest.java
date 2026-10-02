@@ -177,6 +177,21 @@ class TurSNUtilsTest {
     // --- addFilterQuery ---
 
     @Test
+    void addFilterQueryShouldKeepAccentedQueryWhenLinkIsBuiltInTwoPasses() {
+        // AND facets build their link in two passes (removeFilterQueryByFieldName, then
+        // addFilterQuery). A raw "inovação" in the request URI used to come out as "inova��o".
+        URI uri = URI.create(
+                "/api/sn/site/search?q=inovação&p=1&fq%5B%5D=templateName:docente");
+        URI firstPass = TurSNUtils.removeFilterQueryByFieldName(uri, "alphabet");
+        URI result = TurSNUtils.addFilterQuery(firstPass, "alphabet:A");
+
+        assertThat(result.toString())
+                .contains("q=inova%C3%A7%C3%A3o")
+                .contains("fq[]=alphabet:A")
+                .doesNotContain("%EF%BF%BD");
+    }
+
+    @Test
     void addFilterQueryShouldAddFqParam() {
         URI uri = URI.create("http://localhost/search?q=test");
         URI result = TurSNUtils.addFilterQuery(uri, "category:books");

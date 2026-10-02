@@ -108,7 +108,7 @@ public class TurCommonsUtils {
 
     public static URI addOrReplaceParameter(URI uri, String paramName, String paramValue,
             boolean decoded) {
-        List<NameValuePair> params = new URIBuilder(uri, StandardCharsets.ISO_8859_1).getQueryParams();
+        List<NameValuePair> params = getQueryParams(uri);
         StringBuilder sbQueryString = new StringBuilder();
         boolean alreadyExists = false;
         for (NameValuePair nameValuePair : params) {
@@ -133,6 +133,21 @@ public class TurCommonsUtils {
         }
 
         return modifiedURI(uri, sbQueryString);
+    }
+
+    /**
+     * Parses the query string of a URI as UTF-8, whether its non-ASCII characters are
+     * percent-encoded ("Padr%C3%A3o") or raw ("Padrão").
+     * <p>
+     * Reading the octets as ISO-8859-1 turned every accent into mojibake ("PadrÃ£o"), which
+     * was then carried into the pagination/locale/spell-check links. A raw non-ASCII character
+     * (a request URI that was not percent-encoded) is narrowed by URIBuilder to a single byte,
+     * which is not valid UTF-8 and comes out as U+FFFD ("inova��o"); going through
+     * {@link URI#toASCIIString()} first percent-encodes it.
+     */
+    public static List<NameValuePair> getQueryParams(URI uri) {
+        return new URIBuilder(URI.create(uri.toASCIIString()), StandardCharsets.UTF_8)
+                .getQueryParams();
     }
 
     public static void addParameterToQueryString(StringBuilder sbQueryString, String name,
