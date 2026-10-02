@@ -38,6 +38,8 @@ import org.apache.solr.client.solrj.SolrClient;
 import org.apache.solr.client.solrj.SolrServerException;
 import org.apache.solr.client.solrj.impl.HttpJdkSolrClient;
 import org.apache.solr.client.solrj.request.SolrQuery;
+import org.apache.solr.client.solrj.response.GroupCommand;
+import org.apache.solr.client.solrj.response.GroupResponse;
 import org.apache.solr.client.solrj.response.QueryResponse;
 import org.apache.solr.client.solrj.response.SpellCheckResponse;
 import org.apache.solr.common.SolrDocument;
@@ -151,6 +153,37 @@ class TurSolrTest {
 
         when(turSNSite.getWildcardNoResults()).thenReturn(null);
         assertThat(TurSolr.enabledWildcardNoResults(turSNSite)).isFalse();
+    }
+
+    @Test
+    void testNoResultsIsDecidedByNumFoundNotByEmptyPage() {
+        QueryResponse response = mock(QueryResponse.class);
+        SolrDocumentList pagePastTheEnd = new SolrDocumentList();
+        pagePastTheEnd.setNumFound(12);
+        when(response.getResults()).thenReturn(pagePastTheEnd);
+
+        assertThat(TurSolr.noResults(response)).isFalse();
+
+        SolrDocumentList nothingMatched = new SolrDocumentList();
+        nothingMatched.setNumFound(0);
+        when(response.getResults()).thenReturn(nothingMatched);
+
+        assertThat(TurSolr.noResults(response)).isTrue();
+    }
+
+    @Test
+    void testNoResultGroupsIsDecidedByMatchesNotByEmptyPage() {
+        GroupCommand groupCommand = mock(GroupCommand.class);
+        GroupResponse groupResponse = mock(GroupResponse.class);
+        when(groupResponse.getValues()).thenReturn(java.util.List.of(groupCommand));
+        QueryResponse response = mock(QueryResponse.class);
+        when(response.getGroupResponse()).thenReturn(groupResponse);
+
+        when(groupCommand.getMatches()).thenReturn(12);
+        assertThat(TurSolr.noResultGroups(response)).isFalse();
+
+        when(groupCommand.getMatches()).thenReturn(0);
+        assertThat(TurSolr.noResultGroups(response)).isTrue();
     }
 
     @Test

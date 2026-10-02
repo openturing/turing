@@ -83,8 +83,10 @@ public class TurLucene {
                     turLuceneQueryBuilder.getFacetFields(turSNSite),
                     hlFields, sort, startTime);
 
-            // Wildcard fallback when no results and site allows it
-            if (results.getResults().isEmpty()
+            // Wildcard fallback when the query matched nothing and the site allows it. Decided by
+            // the total hits, not by the page being empty: a page past the end of the pagination
+            // is empty too, and must not be retried with a wildcard.
+            if (results.getNumFound() == 0
                     && shouldApplyWildcard(turSNSite, params.getQuery())) {
                 Query wildcardQuery = turLuceneQueryBuilder.buildWildcardQuery(turSNSite, params);
                 results = turLuceneResultProcessor.getResults(
