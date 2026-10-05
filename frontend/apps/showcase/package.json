@@ -25,7 +25,7 @@
     "@viglet/turing-react-sdk": "workspace:*",
     "@viglet/turing-react-ui": "workspace:*",
     "@viglet/turing-sdk": "workspace:*",
-    "axios": "^1.18.1",
+    "axios": "^1.20.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "lucide-react": "^1.24.0",
