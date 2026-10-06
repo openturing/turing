@@ -42,7 +42,7 @@
         <spring-boot.version>4.1.1</spring-boot.version>
         <!-- viglet-core is now an external project (github.com/openviglet/viglet-core),
              published to GitHub Packages and versioned independently from Turing. -->
-        <viglet-core.version>2026.3.11</viglet-core.version>
+        <viglet-core.version>2026.3.12</viglet-core.version>
         <sonar.organization>viglet</sonar.organization>
         <sonar.host.url>https://sonarcloud.io</sonar.host.url>
         <maven.deploy.skip>true</maven.deploy.skip>
@@ -59,7 +59,7 @@
         <resilience4j.version>2.4.0</resilience4j.version>
         <shedlock.version>7.10.1</shedlock.version>
         <testcontainers.version>2.0.5</testcontainers.version>
-        <tika.version>4.0.0</tika.version>
+        <tika.version>4.1.0</tika.version>
         <jgit.version>7.8.0.202609011348-r</jgit.version>
     </properties>
     <build>
@@ -463,7 +463,7 @@
             <dependency>
                 <groupId>com.google.guava</groupId>
                 <artifactId>guava</artifactId>
-                <version>33.7.1-jre</version>
+                <version>33.7.2-jre</version>
             </dependency>
             <dependency>
                 <groupId>com.google.inject</groupId>
@@ -488,13 +488,13 @@
             <dependency>
                 <groupId>com.itextpdf</groupId>
                 <artifactId>itext-core</artifactId>
-                <version>9.7.1</version>
+                <version>9.8.0</version>
                 <type>pom</type>
             </dependency>
             <dependency>
                 <groupId>com.itextpdf</groupId>
                 <artifactId>cleanup</artifactId>
-                <version>5.0.7</version>
+                <version>5.0.8</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.commons</groupId>
