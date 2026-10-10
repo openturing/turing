@@ -2211,3 +2211,34 @@ ranking expressions.
 
 Workaround: trabalharei approximates "has salary" with one ranking expression per salary
 band (`src/lib/ranking.ts`) and leaves title-over-text weighting to the engine default.
+
+### CX.6 Multi-word synonyms on Lucene (T1066)
+
+Found while loading trabalharei's pt-BR job synonyms (trabalharei TRA12) on turing-ce
+2026.3.4, embedded Lucene, site locale `pt_BR`. `/synonym/support` reports
+`{"engine":"lucene","supported":true}`, and after `/synonym/batch` plus `/synonym/apply`
+single-word groups work: `teletrabalho` and `programador` find documents that only say
+`remoto` and `desenvolvedor`. Multi-word terms in the same REGULAR groups never match:
+`q=home office` and `q=carteira assinada` return 0, although `remoto` and `clt` (their
+group mates) each match documents.
+
+Expected: multi-word synonym terms expand at query time (Lucene's SynonymGraphFilter
+with phrase handling), as the synonym API and console let users enter them; or the API
+rejects multi-word terms on engines that cannot apply them.
+
+Workaround: none; trabalharei keeps the multi-word entries so they work once fixed.
+
+### CX.7 No empty spell-check corrections (T1067)
+
+Found while enabling "você quis dizer" for trabalharei (TRA12) on turing-ce 2026.3.4,
+embedded Lucene, spell-check and spell-check fixes on. A real typo works: `q=motorsta`
+answers `spellCheck.corrected = {"text":"motorista"}`. A correct word that simply is not
+in the index gets an empty correction: `q=home`, `q=home office` and `q=carteira
+assinada` answer `corrected = {"text":"", "link":"...search?q=&..."}`, so a UI that
+offers the correction proposes searching for nothing, and with fixes on the query may be
+rewritten to empty.
+
+Expected: when the spell checker has no suggestion, `corrected` is absent (or flagged as
+no correction), never an empty query.
+
+Workaround: trabalharei's search page will ignore a correction whose text is empty.
