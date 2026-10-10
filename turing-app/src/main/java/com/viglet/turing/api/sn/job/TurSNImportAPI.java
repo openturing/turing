@@ -51,6 +51,7 @@ import com.viglet.turing.sn.TurSNConstants;
 import com.viglet.turing.spring.utils.TurSpringUtils;
 import com.viglet.turing.utils.TurFileUtils;
 
+import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.extern.slf4j.Slf4j;
 import tools.jackson.databind.ObjectMapper;
@@ -79,10 +80,27 @@ public class TurSNImportAPI {
         this.turSNBulkImportService = turSNBulkImportService;
     }
 
+    @Operation(summary = "Queue documents for indexing",
+            description = "Body: {\"turingDocuments\": [{\"turSNJobAction\": \"CREATE\", \"siteNames\": [\"mysite\"], "
+                    + "\"locale\": \"en_US\", \"attributes\": {\"id\": \"1\", \"title\": \"...\"}}]}. "
+                    + "\"snJobItems\" is accepted as an alias; a body with no items answers 400.")
     @PostMapping
     public boolean turSNImportBroker(@RequestBody TurSNJobItems turSNJobItems) {
+        requireItems(turSNJobItems);
         send(turSNJobItems);
         return true;
+    }
+
+    /**
+     * T1062 — a body Jackson could not map to any item (an empty list, or the
+     * items under an unknown key, which Jackson 3 ignores) used to answer 200 and
+     * index nothing. Refuse it with a 400 that names the property expected.
+     */
+    private static void requireItems(TurSNJobItems turSNJobItems) {
+        if (turSNJobItems == null || turSNJobItems.size() == 0) {
+            throw new IllegalArgumentException(
+                    "Import body has no items: send them as {\"turingDocuments\": [ ... ]}");
+        }
     }
 
     /**
@@ -96,6 +114,7 @@ public class TurSNImportAPI {
      */
     @PostMapping("bulk")
     public boolean turSNImportBulkBroker(@RequestBody TurSNJobItems turSNJobItems) {
+        requireItems(turSNJobItems);
         if (turSNBulkImportService.isEligible(turSNJobItems)) {
             int processed = turSNBulkImportService.importDirect(turSNJobItems);
             log.info("Direct bulk import wrote {} items, bypassing the indexing queue", processed);

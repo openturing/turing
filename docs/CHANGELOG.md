@@ -1419,3 +1419,4 @@
 ## Block BZ — Indexing API trust for connectors: key auth, scripted login, request validation
 
 - **T1061** — POST /api/sn/import authenticated only by a Key header now succeeds: the token filter resolves authorities through TurAuthorityResolver's read-only transaction, covered by TurAuthTokenHeaderFilterIT.
+- **T1062** — An import body with no items, including items under an unknown key, now answers 400 naming turingDocuments; snJobItems is accepted as an alias, and the OpenAPI operation shows the body shape.

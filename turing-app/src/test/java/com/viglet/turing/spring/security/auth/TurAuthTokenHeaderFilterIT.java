@@ -46,6 +46,12 @@ import com.viglet.turing.testutil.AbstractTuringSpringIT;
         })
 class TurAuthTokenHeaderFilterIT extends AbstractTuringSpringIT {
 
+    // One item for a site that does not exist: the import is queued and the
+    // listener drops it, so the test exercises auth without indexing anything.
+    private static final String IMPORT_BODY = """
+            {"turingDocuments":[{"turSNJobAction":"CREATE","siteNames":["t1061-no-such-site"],\
+            "locale":"en_US","attributes":{"id":"t1061"}}]}""";
+
     @Value("${local.server.port}")
     private int port;
 
@@ -56,7 +62,7 @@ class TurAuthTokenHeaderFilterIT extends AbstractTuringSpringIT {
         HttpRequest.Builder builder = HttpRequest.newBuilder(
                 URI.create("http://localhost:" + port + "/api/sn/import"))
                 .header("Content-Type", "application/json")
-                .POST(BodyPublishers.ofString("{\"snJobItems\":[]}"));
+                .POST(BodyPublishers.ofString(IMPORT_BODY));
         if (key != null) {
             builder.header(TurAuthTokenHeaderFilter.KEY, key);
         }

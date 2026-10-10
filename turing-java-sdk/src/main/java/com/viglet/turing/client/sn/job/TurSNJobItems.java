@@ -22,6 +22,8 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 
+import com.fasterxml.jackson.annotation.JsonAlias;
+
 /**
  * Thread-safe list of jobs to index and deIndex in Turing ES.
  *
@@ -63,6 +65,11 @@ public class TurSNJobItems implements Iterable<TurSNJobItem>, Serializable {
 		snJobItems.clear();
 	}
 
+	/**
+	 * The JSON property is {@code turingDocuments}. {@code snJobItems}, the field
+	 * name a reader of this class sees first, is accepted as an alias (T1062).
+	 */
+	@JsonAlias("snJobItems")
 	public void setTuringDocuments(List<TurSNJobItem> jobItems) {
 		this.snJobItems = new CopyOnWriteArrayList<>(jobItems);
 	}

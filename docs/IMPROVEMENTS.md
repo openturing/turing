@@ -2130,21 +2130,6 @@ to work without a browser: a key that authenticates on its own, a scripted login
 works, and an import endpoint that refuses a body it cannot read instead of accepting it
 silently. Found while building trabalharei's local Turing and import proof.
 
-### CX.2 Import refuses a body it cannot read (T1062)
-
-Found while scripting imports for trabalharei (TRA67). `TurSNJobItems` serializes its
-list through `getTuringDocuments()` / `setTuringDocuments()`, so the JSON property is
-`turingDocuments`, while the private field (and the name a reader of the class sees
-first) is `snJobItems`. Posting `{"snJobItems": [...]}` to `/api/sn/import` or
-`/api/sn/import/bulk` returns HTTP 200 `true`, queues an empty batch (the listener logs
-`receiveQueue turSNJobItems: { }`) and indexes nothing, with no warning anywhere.
-
-Expected: an import body with no items, or with an unknown top-level property, is a 400
-naming the expected property, and the import API documents its body shape (OpenAPI
-example). Accepting `snJobItems` as an alias would remove the trap for existing callers.
-
-Workaround: trabalharei's scripts send `turingDocuments`, with a comment pointing here.
-
 ### CX.3 Scripted login for local users (T1063)
 
 Found while scripting the local Turing for trabalharei (TRA67) on turing-ce 2026.3.4

@@ -1,5 +1,6 @@
 package com.viglet.turing.api.sn.job;
 
+import static org.hamcrest.Matchers.containsString;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyMap;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -34,6 +35,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.viglet.turing.api.exception.TurGlobalExceptionHandler;
 import com.viglet.turing.client.sn.job.TurSNJobAction;
 import com.viglet.turing.client.sn.job.TurSNJobItem;
 import com.viglet.turing.client.sn.job.TurSNJobItems;
@@ -68,7 +70,46 @@ class TurSNImportAPITest {
     void setUp() {
         org.mockito.Mockito.lenient()
                 .when(turJmsTenantPropagation.headers()).thenReturn(java.util.Map.of());
-        mockMvc = MockMvcBuilders.standaloneSetup(api).build();
+        mockMvc = MockMvcBuilders.standaloneSetup(api)
+                .setControllerAdvice(new TurGlobalExceptionHandler())
+                .build();
+    }
+
+    @Test
+    void importWithNoItemsIsRejected() throws Exception {
+        mockMvc.perform(post("/api/sn/import")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"turingDocuments\": []}"))
+                .andExpect(status().isBadRequest())
+                .andExpect(content().string(containsString("turingDocuments")));
+
+        verify(jmsMessagingTemplate, never()).convertAndSend(anyString(), any(TurSNJobItems.class), anyMap());
+    }
+
+    @Test
+    void importWithItemsUnderAnUnknownKeyIsRejected() throws Exception {
+        mockMvc.perform(post("/api/sn/import/bulk")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"documents\": [{\"siteNames\": [\"site1\"]}]}"))
+                .andExpect(status().isBadRequest());
+
+        verify(jmsMessagingTemplate, never()).convertAndSend(anyString(), any(TurSNJobItems.class), anyMap());
+    }
+
+    @Test
+    void importAcceptsSnJobItemsAsAnAlias() throws Exception {
+        when(turSNSiteRepositoryPort.hasRagEnabledForSiteName("site1")).thenReturn(false);
+        when(turSNSiteRepositoryPort.findByNameIgnoreCase("site1"))
+                .thenReturn(Optional.of(siteDomain("site1")));
+
+        mockMvc.perform(post("/api/sn/import")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"snJobItems\": [{\"turSNJobAction\": \"CREATE\", \"siteNames\": [\"site1\"],"
+                        + " \"locale\": \"en_US\", \"attributes\": {\"id\": \"1\"}}]}"))
+                .andExpect(status().isOk())
+                .andExpect(content().string("true"));
+
+        verify(jmsMessagingTemplate, times(1)).convertAndSend(anyString(), any(TurSNJobItems.class), anyMap());
     }
 
     private static TurSNSiteDomain siteDomain(String name) {
