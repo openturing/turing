@@ -2122,3 +2122,59 @@ has used is spent for good — so the block lost its family and the next follow-
 open a new one. A standing block needs a standing address. Empty here means the
 follow-ups filed so far are done, not that the heading is finished; the next one goes
 under this address.
+
+## CX Indexing API trust for connectors
+
+What a connector (Dumont, an SDK script, CI) needs from Turing's indexing and admin APIs
+to work without a browser: a key that authenticates on its own, a scripted login that
+works, and an import endpoint that refuses a body it cannot read instead of accepting it
+silently. Found while building trabalharei's local Turing and import proof.
+
+### CX.1 Key-authenticated import without a session (T1061)
+
+Found while proving trabalharei's write path (trabalharei TRA8, TRA67) on
+`ghcr.io/openviglet/turing-ce:latest` (TuringES v2026.3.4-c5e01cd), run single-tenant with
+embedded Lucene. `POST /api/sn/import` authenticated only by a developer token in the `Key`
+header, the way Dumont's `DumTuringIndexingPlugin` and the Java SDK call it, answers HTTP
+500. The log shows `org.hibernate.LazyInitializationException: Cannot lazily initialize
+collection of role 'TurRole.turPrivileges' ... (no session)`, raised while the request's
+authorities are resolved outside a transaction. The same body sent with a console session
+cookie (after `POST /api/login`) is accepted and indexed.
+
+Expected: a valid `Key` alone authenticates the import, as the SDK assumes. Fetch the
+role's privileges eagerly (or resolve the authorities inside a transaction) on the key
+path, and cover it with a test that imports with a key and no session.
+
+Workaround: trabalharei's local setup script logs in with a session before importing;
+the production path through Dumont has no such workaround.
+
+### CX.2 Import refuses a body it cannot read (T1062)
+
+Found while scripting imports for trabalharei (TRA67). `TurSNJobItems` serializes its
+list through `getTuringDocuments()` / `setTuringDocuments()`, so the JSON property is
+`turingDocuments`, while the private field (and the name a reader of the class sees
+first) is `snJobItems`. Posting `{"snJobItems": [...]}` to `/api/sn/import` or
+`/api/sn/import/bulk` returns HTTP 200 `true`, queues an empty batch (the listener logs
+`receiveQueue turSNJobItems: { }`) and indexes nothing, with no warning anywhere.
+
+Expected: an import body with no items, or with an unknown top-level property, is a 400
+naming the expected property, and the import API documents its body shape (OpenAPI
+example). Accepting `snJobItems` as an alias would remove the trap for existing callers.
+
+Workaround: trabalharei's scripts send `turingDocuments`, with a comment pointing here.
+
+### CX.3 Scripted login for local users (T1063)
+
+Found while scripting the local Turing for trabalharei (TRA67) on turing-ce 2026.3.4
+with `TURING_ADMIN_PASSWORD` set and Keycloak off. `TurSecurityConfigProduction` enables
+`httpBasic`, but `curl -u admin:<password> /api/sn` answers 401. Startup logs Spring's
+warning that the global AuthenticationManager is configured with an
+AuthenticationProvider bean, so UserDetailsService beans are not used for
+username/password login, which is the likely reason basic credentials are never checked
+against the local user.
+
+Expected: either basic auth works for local users (scripts and CI can call admin APIs
+with one header), or it is not enabled and the docs name the supported scripted login.
+
+Workaround: trabalharei's setup script does what the console does: `GET /api/discovery`,
+`POST /api/login` with JSON credentials, then sends the session and XSRF cookies.
