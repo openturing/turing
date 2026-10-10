@@ -557,11 +557,15 @@
             the OkHttp client (com.openai.client.okhttp.OpenAIOkHttpClient) lives
             in the separate client-okhttp module, so declare it explicitly.
             Version matches the openai-java-core resolved via spring-ai-bom.
+            T1068: a newer client against the older core fails at runtime with
+            NoClassDefFoundError (com/openai/core/http/WebSocketClient), so this
+            moves only when Spring AI moves core. Dependabot ignores it for that
+            reason; check `mvn dependency:tree -Dincludes=com.openai` on a bump.
         -->
         <dependency>
             <groupId>com.openai</groupId>
             <artifactId>openai-java-client-okhttp</artifactId>
-            <version>4.69.3</version>
+            <version>4.49.0</version>
         </dependency>
         <dependency>
             <groupId>org.springframework.ai</groupId>

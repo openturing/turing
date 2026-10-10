@@ -14,6 +14,11 @@ updates:
       interval: "weekly"
     target-branch: "2026.3"
     open-pull-requests-limit: 15
+    ignore:
+      # T1068 — must equal the openai-java-core version spring-ai-openai
+      # resolves; a lone bump (4.69.3 over core 4.49.0) broke every OpenAI-family
+      # model with NoClassDefFoundError. Raise it by hand alongside Spring AI.
+      - dependency-name: "com.openai:openai-java-client-okhttp"
     groups:
       java:
         applies-to: version-updates
