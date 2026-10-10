@@ -2130,24 +2130,6 @@ to work without a browser: a key that authenticates on its own, a scripted login
 works, and an import endpoint that refuses a body it cannot read instead of accepting it
 silently. Found while building trabalharei's local Turing and import proof.
 
-### CX.1 Key-authenticated import without a session (T1061)
-
-Found while proving trabalharei's write path (trabalharei TRA8, TRA67) on
-`ghcr.io/openviglet/turing-ce:latest` (TuringES v2026.3.4-c5e01cd), run single-tenant with
-embedded Lucene. `POST /api/sn/import` authenticated only by a developer token in the `Key`
-header, the way Dumont's `DumTuringIndexingPlugin` and the Java SDK call it, answers HTTP
-500. The log shows `org.hibernate.LazyInitializationException: Cannot lazily initialize
-collection of role 'TurRole.turPrivileges' ... (no session)`, raised while the request's
-authorities are resolved outside a transaction. The same body sent with a console session
-cookie (after `POST /api/login`) is accepted and indexed.
-
-Expected: a valid `Key` alone authenticates the import, as the SDK assumes. Fetch the
-role's privileges eagerly (or resolve the authorities inside a transaction) on the key
-path, and cover it with a test that imports with a key and no session.
-
-Workaround: trabalharei's local setup script logs in with a session before importing;
-the production path through Dumont has no such workaround.
-
 ### CX.2 Import refuses a body it cannot read (T1062)
 
 Found while scripting imports for trabalharei (TRA67). `TurSNJobItems` serializes its

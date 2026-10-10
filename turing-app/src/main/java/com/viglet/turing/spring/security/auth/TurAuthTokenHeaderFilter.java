@@ -1,14 +1,12 @@
 package com.viglet.turing.spring.security.auth;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
+import java.util.HashSet;
+import java.util.Set;
 
 import org.jetbrains.annotations.NotNull;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
@@ -16,12 +14,9 @@ import org.springframework.web.filter.OncePerRequestFilter;
 
 import com.viglet.turing.persistence.model.auth.TurUser;
 import com.viglet.turing.persistence.model.dev.token.TurDevToken;
-import com.viglet.turing.persistence.repository.auth.TurGroupRepository;
-import com.viglet.turing.persistence.repository.auth.TurPrivilegeRepository;
-import com.viglet.turing.persistence.repository.auth.TurRoleRepository;
 import com.viglet.turing.persistence.repository.auth.TurUserRepository;
 import com.viglet.turing.persistence.repository.dev.token.TurDevTokenRepository;
-import com.viglet.turing.properties.TurConfigProperties;
+import com.viglet.turing.spring.security.TurAuthorityResolver;
 
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -31,27 +26,17 @@ import jakarta.servlet.http.HttpServletResponse;
 @Component
 public class TurAuthTokenHeaderFilter extends OncePerRequestFilter {
     public static final String KEY = "Key";
-    private static final String ROLE_ADMIN = "ROLE_ADMIN";
 
     private final TurUserRepository turUserRepository;
     private final TurDevTokenRepository turDevTokenRepository;
-    private final TurGroupRepository turGroupRepository;
-    private final TurRoleRepository turRoleRepository;
-    private final TurPrivilegeRepository turPrivilegeRepository;
-    private final TurConfigProperties turConfigProperties;
+    private final TurAuthorityResolver turAuthorityResolver;
 
     public TurAuthTokenHeaderFilter(TurUserRepository turUserRepository,
             TurDevTokenRepository turDevTokenRepository,
-            TurGroupRepository turGroupRepository,
-            TurRoleRepository turRoleRepository,
-            TurPrivilegeRepository turPrivilegeRepository,
-            TurConfigProperties turConfigProperties) {
+            TurAuthorityResolver turAuthorityResolver) {
         this.turUserRepository = turUserRepository;
         this.turDevTokenRepository = turDevTokenRepository;
-        this.turGroupRepository = turGroupRepository;
-        this.turRoleRepository = turRoleRepository;
-        this.turPrivilegeRepository = turPrivilegeRepository;
-        this.turConfigProperties = turConfigProperties;
+        this.turAuthorityResolver = turAuthorityResolver;
     }
 
     @Override
@@ -63,7 +48,11 @@ public class TurAuthTokenHeaderFilter extends OncePerRequestFilter {
             // T646 / §XXXVII.8 — reject disabled/expired tokens.
             turDevTokenRepository.findByToken(appId).filter(TurDevToken::isUsable).ifPresent(token -> {
                 TurUser turUser = turUserRepository.findByUsername(token.getCreatedBy());
-                Collection<GrantedAuthority> authorities = resolveAuthorities(turUser);
+                // T1061 — resolve through TurAuthorityResolver, whose transaction keeps
+                // the lazy role → privileges collection loadable. Walking it here, with
+                // no session open on a key-only request, threw LazyInitializationException.
+                Set<GrantedAuthority> authorities = new HashSet<>();
+                turAuthorityResolver.resolve(turUser != null ? turUser.getUsername() : null, authorities);
                 UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(
                         turUser, null, authorities);
                 authenticationToken.setDetails(
@@ -72,25 +61,5 @@ public class TurAuthTokenHeaderFilter extends OncePerRequestFilter {
             });
         }
         filterChain.doFilter(request, response);
-    }
-
-    private Collection<GrantedAuthority> resolveAuthorities(TurUser turUser) {
-        List<GrantedAuthority> authorities = new ArrayList<>();
-        if (!turConfigProperties.isPermissions()) {
-            authorities.add(new SimpleGrantedAuthority(ROLE_ADMIN));
-            turPrivilegeRepository.findAll()
-                    .forEach(p -> authorities.add(new SimpleGrantedAuthority(p.getName())));
-        } else if (turUser != null) {
-            var groups = turGroupRepository.findByTurUsersContaining(turUser);
-            for (var group : groups) {
-                for (var role : turRoleRepository.findByTurGroupsContaining(group)) {
-                    authorities.add(new SimpleGrantedAuthority(role.getName()));
-                    for (var privilege : role.getTurPrivileges()) {
-                        authorities.add(new SimpleGrantedAuthority(privilege.getName()));
-                    }
-                }
-            }
-        }
-        return authorities;
     }
 }

@@ -1417,3 +1417,4 @@
 
 ## Block BZ — Indexing API trust for connectors: key auth, scripted login, request validation
 
+- **T1061** — POST /api/sn/import authenticated only by a Key header now succeeds: the token filter resolves authorities through TurAuthorityResolver's read-only transaction, covered by TurAuthTokenHeaderFilterIT.

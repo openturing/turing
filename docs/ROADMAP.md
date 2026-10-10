@@ -8,7 +8,6 @@
 
 ## Block BZ — Indexing API trust for connectors: key auth, scripted login, request validation
 
-- 📋 **T1061** (deps: —) **Importing with only a Key header answers HTTP 500: role privileges fail to load lazily outside a session** — This is the path Dumont and the Java SDK use, so every key-authenticated connector import fails until it is fixed. → §CX.1
 - 📋 **T1062** (deps: —) **An import body with an unknown property, such as snJobItems, answers 200 and silently indexes nothing** — The JSON key differs from the field name a reader sees, and the API turns that mistake into lost data with no error. → §CX.2
 - 📋 **T1063** (deps: —) **Basic auth with a local admin password answers 401 though httpBasic is enabled, so scripts cannot call admin APIs** — Scripts and CI must mimic the console's cookie and XSRF login to provision a site, which nothing documents. → §CX.3
 - 📋 **T1064** (deps: —) **Sites on the embedded Lucene engine silently ignore ranking expressions, recency boost included** — The API and console accept the expressions, so a Lucene site ranks without them and nobody is told. → §CX.4
