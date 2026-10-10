@@ -1420,3 +1420,4 @@
 
 - **T1061** — POST /api/sn/import authenticated only by a Key header now succeeds: the token filter resolves authorities through TurAuthorityResolver's read-only transaction, covered by TurAuthTokenHeaderFilterIT.
 - **T1062** — An import body with no items, including items under an unknown key, now answers 400 naming turingDocuments; snJobItems is accepted as an alias, and the OpenAPI operation shows the body shape.
+- **T1063** — Basic auth with a local user's password is proven to work on admin APIs by TurBasicAuthIT, and the admin guide documents scripted access via Basic or a Key token (design §CX.3 superseded: the 401s were bad credentials from TURING_ADMIN_PASSWORD being ignored on a reused database, not the AuthenticationProvider warning).

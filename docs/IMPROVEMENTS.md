@@ -2130,22 +2130,6 @@ to work without a browser: a key that authenticates on its own, a scripted login
 works, and an import endpoint that refuses a body it cannot read instead of accepting it
 silently. Found while building trabalharei's local Turing and import proof.
 
-### CX.3 Scripted login for local users (T1063)
-
-Found while scripting the local Turing for trabalharei (TRA67) on turing-ce 2026.3.4
-with `TURING_ADMIN_PASSWORD` set and Keycloak off. `TurSecurityConfigProduction` enables
-`httpBasic`, but `curl -u admin:<password> /api/sn` answers 401. Startup logs Spring's
-warning that the global AuthenticationManager is configured with an
-AuthenticationProvider bean, so UserDetailsService beans are not used for
-username/password login, which is the likely reason basic credentials are never checked
-against the local user.
-
-Expected: either basic auth works for local users (scripts and CI can call admin APIs
-with one header), or it is not enabled and the docs name the supported scripted login.
-
-Workaround: trabalharei's setup script does what the console does: `GET /api/discovery`,
-`POST /api/login` with JSON credentials, then sends the session and XSRF cookies.
-
 ### CX.4 Ranking expressions on Lucene (T1064)
 
 Found while tuning trabalharei's job ranking (trabalharei TRA11). Ranking expressions
@@ -2209,3 +2193,21 @@ Expected: when the spell checker has no suggestion, `corrected` is absent (or fl
 no correction), never an empty query.
 
 Workaround: trabalharei's search page will ignore a correction whose text is empty.
+
+### CX.8 Rejected credentials answer 401 (T1069)
+
+Found while working T1063 against the trabalharei container (turing-ce 2026.3.4).
+`TurLoginAPI.login` calls `authenticationManager.authenticate(...)` directly. A wrong
+password throws `BadCredentialsException`. No handler maps Spring Security's
+`AuthenticationException`, so `TurGlobalExceptionHandler.handleUnexpected` catches it,
+answers 500 ("An unexpected error occurred") and logs it at ERROR with a full stack
+trace. That makes a mistyped password look like a server fault. A script retries a 500
+or reports an outage, and the log fills with stack traces for every failed login.
+
+Build: map `AuthenticationException` (at least `BadCredentialsException`,
+`DisabledException` and `LockedException`) to 401 with a `ProblemDetail` that says the
+credentials were rejected without saying which half was wrong. Either add a handler in
+`TurGlobalExceptionHandler` or catch the exception in `TurLoginAPI`. Log at WARN or
+DEBUG without the stack trace. Check that the console's login page still shows its
+"invalid credentials" message on a 401. Cover it with a test that posts a wrong password
+to `/api/login` and expects 401.

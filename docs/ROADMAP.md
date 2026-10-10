@@ -8,11 +8,11 @@
 
 ## Block BZ — Indexing API trust for connectors: key auth, scripted login, request validation
 
-- 📋 **T1063** (deps: —) **Basic auth with a local admin password answers 401 though httpBasic is enabled, so scripts cannot call admin APIs** — Scripts and CI must mimic the console's cookie and XSRF login to provision a site, which nothing documents. → §CX.3
 - 📋 **T1064** (deps: —) **Sites on the embedded Lucene engine silently ignore ranking expressions, recency boost included** — The API and console accept the expressions, so a Lucene site ranks without them and nobody is told. → §CX.4
 - 📋 **T1065** (deps: —) **No per-field search weight and no field-exists ranking condition, so title cannot outweigh body text** — Relevance for structured catalogs depends on which field matched, and connectors cannot declare it. → §CX.5
 - 📋 **T1066** (deps: —) **Multi-word synonym terms such as home office never match on Lucene sites, though single-word ones do** — Job and product vocabularies are full of two-word terms, and the API accepts them without saying they do nothing. → §CX.6
 - 📋 **T1067** (deps: —) **Spell-check answers an empty correction for a correct word that is missing from the index** — A did-you-mean link to an empty query, or a fix that blanks the query, is worse than no suggestion. → §CX.7
+- 📋 **T1069** (deps: —) **A wrong password on POST /api/login answers 500 and logs an ERROR stack trace instead of answering 401** — Scripts read a mistyped password as a server outage, and every failed login fills the log with stack traces. → §CX.8
 
 ## Non-goals (do NOT add as tasks)
 
