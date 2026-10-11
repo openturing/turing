@@ -6,6 +6,10 @@
 > [STRATEGY.md](STRATEGY.md); the markers and limits are `roadkeep.toml`'s. Blocks are
 > reused, not minted — `roadkeep brief` picks the next task and states why.
 
+## Block CA — Search response fields arrive as they were indexed
+
+- 📋 **T1074** (deps: —) **Search returns a document's text cut short with no marker, inside a UTF-8 character, so accented text arrives corrupted** — Any page that shows a result's text prints a replacement character and loses the rest of the description. → §CXI.1
+
 ## Non-goals (do NOT add as tasks)
 
 Binding constraints — see [IMPROVEMENTS.md](IMPROVEMENTS.md) §I.6 (What NOT to
