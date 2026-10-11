@@ -347,16 +347,10 @@ public class TurLuceneQueryBuilder {
      * (lowercase, tokenize) and matched against the ngram tokens in the index.
      */
     public Query buildAutoCompleteQuery(TurSNSite turSNSite, String term) {
-        String[] textFields = resolveTextFields(turSNSite);
         // Map to _ac suffixed fields for ngram matching
-        String[] acFields;
-        if (textFields.length == 0) {
-            acFields = new String[]{TurLuceneConstants.TITLE + TurLuceneConstants.AC_SUFFIX};
-        } else {
-            acFields = java.util.Arrays.stream(textFields)
-                    .map(f -> f + TurLuceneConstants.AC_SUFFIX)
-                    .toArray(String[]::new);
-        }
+        String[] acFields = java.util.Arrays.stream(resolveAutoCompleteFields(turSNSite))
+                .map(f -> f + TurLuceneConstants.AC_SUFFIX)
+                .toArray(String[]::new);
         try {
             // Use StandardAnalyzer for the query side (lowercase + tokenize, no ngrams)
             MultiFieldQueryParser parser = new MultiFieldQueryParser(acFields, new StandardAnalyzer());
@@ -490,6 +484,24 @@ public class TurLuceneQueryBuilder {
             }
         });
         return weights;
+    }
+
+    /**
+     * T1076 — the fields autocomplete matches and draws its suggestions from: the
+     * site's enabled free-text ({@link TurSEFieldType#TEXT}) fields, never the
+     * keyword ones (STRING/ARRAY hold slugs, codes and URLs nobody types) nor
+     * {@code id}/{@code url}. Falls back to {@code title} when the site has none.
+     */
+    public String[] resolveAutoCompleteFields(TurSNSite turSNSite) {
+        String[] fields = turSNSiteFieldExtRepository.findByTurSNSiteAndEnabled(turSNSite, 1)
+                .stream()
+                .filter(ext -> ext.getType() == TurSEFieldType.TEXT && ext.getName() != null)
+                .map(TurSNSiteFieldExt::getName)
+                .filter(name -> !TurLuceneConstants.ID.equals(name)
+                        && !TurLuceneConstants.URL.equals(name))
+                .distinct()
+                .toArray(String[]::new);
+        return fields.length > 0 ? fields : new String[] { TurLuceneConstants.TITLE };
     }
 
     private String[] resolveTextFields(TurSNSite turSNSite) {

@@ -494,6 +494,10 @@ public class TurLuceneSearchEnginePlugin implements TurSearchEnginePlugin {
 
             var query = turLuceneQueryBuilder.buildAutoCompleteQuery(turSNSite, term);
             var topDocs = searcher.search(query, maxHits * 5);
+            // T1076 — suggest only from the fields the query side matched on, so a
+            // slug, URL or id stored on the same document never becomes a suggestion.
+            Set<String> suggestionFields = Set.of(
+                    turLuceneQueryBuilder.resolveAutoCompleteFields(turSNSite));
 
             // Split query: leading completed words + last partial token
             String[] queryTokens = term.trim().toLowerCase().split("\\s+");
@@ -505,7 +509,7 @@ public class TurLuceneSearchEnginePlugin implements TurSearchEnginePlugin {
             Set<String> seen = new java.util.LinkedHashSet<>();
             for (var scoreDoc : topDocs.scoreDocs) {
                 var doc = searcher.storedFields().document(scoreDoc.doc);
-                collectPrefixMatches(doc, prefix, leadingContext, seen);
+                collectPrefixMatches(doc, suggestionFields, prefix, leadingContext, seen);
                 if (seen.size() >= maxHits * 2) break;
             }
 
@@ -517,9 +521,9 @@ public class TurLuceneSearchEnginePlugin implements TurSearchEnginePlugin {
     }
 
     /**
-     * Adds every stored-field word that starts with {@code prefix} (case
-     * insensitive) to {@code seen}, prepended with the already-typed
-     * {@code leadingContext}.
+     * Adds every word of the {@code suggestionFields} stored values that starts
+     * with {@code prefix} (case insensitive) to {@code seen}, prepended with the
+     * already-typed {@code leadingContext}.
      *
      * <p>Only <em>edge</em> punctuation is trimmed (a trailing comma/period,
      * surrounding quotes/parentheses); punctuation <em>inside</em> a token — the
@@ -530,9 +534,10 @@ public class TurLuceneSearchEnginePlugin implements TurSearchEnginePlugin {
      * {@code self}+{@code hosting}, so only the verbatim hyphenated term
      * round-trips through the main query analyzer back to real results.
      */
-    private void collectPrefixMatches(org.apache.lucene.document.Document doc, String prefix,
-            String leadingContext, Set<String> seen) {
+    private void collectPrefixMatches(org.apache.lucene.document.Document doc,
+            Set<String> suggestionFields, String prefix, String leadingContext, Set<String> seen) {
         for (var field : doc.getFields()) {
+            if (!suggestionFields.contains(field.name())) continue;
             String value = field.stringValue();
             if (value == null) continue;
             // Tokenize stored value and find words matching the prefix
