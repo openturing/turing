@@ -2217,35 +2217,6 @@ is a custom facet item whose bounds are date math instead of fixed instants.
 
 ## CXII SDK & frontend surface
 
-### CXII.1 Client timeouts on TurSNServer (T1081)
-
-Met in Dumont (D139, 2026.3) while a structured source ran against a paused Turing
-container.
-
-Dumont declares each source's schema before its documents through `new
-TurSNServer(URI.create(turingUrl), null, new
-TurApiKeyCredentials(apiKey)).provision(manifest)`
-(`DumTuringIndexingPlugin.provision`). With Turing unreachable the call failed only
-after about three minutes: `TurSNManifestException: Could not reach the manifest
-endpoint at http://turing:2700/api/sn/manifest`, caused by `SocketTimeoutException: Read
-timed out`. The connector run waits on it, so every site of every source adds three
-minutes to a run that cannot succeed anyway. `TurSNJobUtils.importItems` goes through
-the same client, so a batch delivery to a down Turing waits as long.
-
-Neither `TurSNServer` nor `TurSNManifestClient` takes a connect or read timeout: every
-public constructor is URI, site, locale and credentials, and nothing on the server sets
-one. A consumer cannot shorten it without wrapping each call in its own executor and
-abandoning the thread.
-
-Expected: `TurSNServer` accepts timeouts (a builder, or a
-`TurSNServer.withTimeouts(connect, read)`), applied to every call it makes (manifest,
-import, inventory, search), with defaults short enough for a batch caller (connect 10s,
-read 60s, say) and documented. Dumont would then set them from its own properties
-(`turing.timeout.connect`, `turing.timeout.read`).
-
-Workaround in Dumont: none. D139 records the refused provisioning as a run warning, but
-the run still waits the full three minutes for it.
-
 ### CXII.2 searchWeight on TurSNJobAttributeSpec (T1082)
 
 Met in Dumont (D140, 2026.3), which provisions each SN site from a structured source's

@@ -18,6 +18,7 @@ package com.viglet.turing.client.sn;
 
 import java.io.IOException;
 import java.net.URI;
+import java.time.Duration;
 import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
 import java.text.DateFormat;
@@ -33,7 +34,6 @@ import org.apache.hc.client5.http.classic.methods.HttpGet;
 import org.apache.hc.client5.http.classic.methods.HttpPost;
 import org.apache.hc.client5.http.classic.methods.HttpUriRequestBase;
 import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
-import org.apache.hc.client5.http.impl.classic.HttpClients;
 import org.apache.hc.core5.http.ContentType;
 import org.apache.hc.core5.http.HttpHeaders;
 import org.apache.hc.core5.http.io.entity.EntityUtils;
@@ -126,6 +126,9 @@ public class TurSNServer {
 
     private String providerName;
 
+    /** T1081 — connect/read limits for every call this server makes. */
+    private TurSNTimeouts timeouts = TurSNTimeouts.DEFAULTS;
+
     public TurSNServer(URI serverURL, String siteName, Locale locale, TurUsernamePasswordCredentials credentials,
             String userId) {
         super();
@@ -178,6 +181,18 @@ public class TurSNServer {
 
     public TurSNServer(URI serverURL, String siteName, TurApiKeyCredentials apiKeyCredentials) {
         this(serverURL, siteName, LOCALE_DEFAULT, apiKeyCredentials, null);
+    }
+
+    /**
+     * T1081 — sets how long each call may take to connect and to read, for every
+     * request this server makes (search, manifest, import, inventory). A call that
+     * runs over fails as an unreachable Turing does, instead of waiting minutes.
+     *
+     * @return this server, for chaining after the constructor
+     */
+    public TurSNServer withTimeouts(Duration connect, Duration read) {
+        this.timeouts = new TurSNTimeouts(connect, read);
+        return this;
     }
 
     public List<String> getLatestSearches(int rows) {
@@ -277,7 +292,7 @@ public class TurSNServer {
 
     public List<TurSNLocale> getLocales() {
 
-        try (CloseableHttpClient client = HttpClients.createDefault()) {
+        try (CloseableHttpClient client = TurSNTimeouts.httpClientFor(this)) {
             return executeLocaleRequest(prepareLocalesRequest(), client);
         } catch (IOException | URISyntaxException e) {
             log.error(e.getMessage(), e);
@@ -287,7 +302,7 @@ public class TurSNServer {
 
     public List<String> autoComplete(TurSNAutoCompleteQuery autoCompleteQuery) {
 
-        try (CloseableHttpClient client = HttpClients.createDefault()) {
+        try (CloseableHttpClient client = TurSNTimeouts.httpClientFor(this)) {
             return executeAutoCompleteRequest(prepareAutoCompleteRequest(autoCompleteQuery), client);
         } catch (IOException | URISyntaxException e) {
             log.error(e.getMessage(), e);
@@ -349,7 +364,7 @@ public class TurSNServer {
     }
 
     private String openConnectionAndRequest(HttpUriRequestBase httpRequestBase) {
-        try (CloseableHttpClient client = HttpClients.createDefault()) {
+        try (CloseableHttpClient client = TurSNTimeouts.httpClientFor(this)) {
             return executeQueryRequest(httpRequestBase, client);
         } catch (IOException e) {
             log.error(e.getMessage(), e);

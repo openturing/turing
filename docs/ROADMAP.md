@@ -14,7 +14,6 @@
 
 ## Block D.9 — SDK & frontend surface
 
-- 📋 **T1081** (deps: —) **The Java SDK's TurSNServer takes no connect or read timeout, so a call to a down Turing hangs about three minutes** — A batch caller such as Dumont waits minutes per site on a manifest or import that cannot succeed. → §CXII.1
 - 📋 **T1082** (deps: —) **The Java SDK's TurSNJobAttributeSpec has no searchWeight, so a manifest sent from Java leaves every field at weight 1** — A connector cannot rank a title above its body text, though the manifest endpoint reads the weight since T1072. → §CXII.2
 
 ## Done when — T1075

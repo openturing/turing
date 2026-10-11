@@ -25,7 +25,7 @@ import java.util.NoSuchElementException;
 
 import org.apache.hc.client5.http.classic.methods.HttpGet;
 import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
-import org.apache.hc.client5.http.impl.classic.HttpClients;
+import com.viglet.turing.client.sn.TurSNTimeouts;
 import org.apache.hc.core5.http.ClassicHttpResponse;
 import org.apache.hc.core5.http.ParseException;
 import org.apache.hc.core5.http.io.entity.EntityUtils;
@@ -125,7 +125,7 @@ public class TurSNInventoryClient {
      */
     public TurSNInventoryPage page(String source, String locale, String after) {
         String url = INVENTORY_CONTEXT.formatted(turSNServer.getServerURL(), siteNameOrId);
-        try (CloseableHttpClient client = HttpClients.createDefault()) {
+        try (CloseableHttpClient client = TurSNTimeouts.httpClientFor(turSNServer)) {
             URIBuilder uri = new URIBuilder(url).addParameter("rows", Integer.toString(rows));
             addIfPresent(uri, "source", source);
             addIfPresent(uri, "locale", locale);

@@ -22,7 +22,7 @@ import java.util.Map;
 
 import org.apache.hc.client5.http.classic.methods.HttpPost;
 import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
-import org.apache.hc.client5.http.impl.classic.HttpClients;
+import com.viglet.turing.client.sn.TurSNTimeouts;
 import org.apache.hc.core5.http.ClassicHttpResponse;
 import org.apache.hc.core5.http.ParseException;
 import org.apache.hc.core5.http.io.entity.EntityUtils;
@@ -138,7 +138,7 @@ public class TurSNManifestClient {
                     "Manifest needs a site name — it is what decides create vs. converge", 400,
                     List.of());
         }
-        try (CloseableHttpClient client = HttpClients.createDefault()) {
+        try (CloseableHttpClient client = TurSNTimeouts.httpClientFor(turSNServer)) {
             String payload = MAPPER.writeValueAsString(manifest);
             HttpPost httpPost = new HttpPost(url);
             httpPost.setEntity(new StringEntity(payload, StandardCharsets.UTF_8));
