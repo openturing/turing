@@ -58,6 +58,9 @@ public class TurSNRankingCondition extends TurAuditable<String> implements Seria
 	@Serial
 	private static final long serialVersionUID = 1L;
 
+	/** {@link #condition} value: the document has any value in {@link #attribute}; {@link #value} is unused (T1065). */
+	public static final int EXISTS = 3;
+
 	@Id
 	@VigletAssignableUuidGenerator
 	@Column(name = "id", updatable = false, nullable = false)

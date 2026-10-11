@@ -2133,27 +2133,29 @@ silently. Found while building trabalharei's local Turing and import proof.
 ### CX.5 Field weights and exists conditions (T1065)
 
 Found while tuning trabalharei's job ranking (trabalharei TRA11). A job site needs a
-match in `title` to outweigh the same word in `text`, and a small lift for documents
-that carry a `salaryMin`. `TurSNSiteFieldExt` has no weight, the field manifest's
-`VigletFieldSpec` has none either, and ranking conditions only test `field:"value"`
-equality, so neither a per-field query weight nor an "is present" condition can be
-expressed.
+match in `title` to outweigh the same word in `text`.
 
-Expected: a per-field search weight on the site's fields (manifest `boost`, applied as
-`qf` weights on Solr and per-field boosts on Lucene), and an `exists` condition for
-ranking expressions.
+Shipped: the `exists` ranking condition (`TurSNRankingCondition.EXISTS = 3`, "Exists" in
+the console). It is `attribute:[* TO *]` on Solr and `FieldExistsQuery` on Lucene, so
+"has a salary" no longer needs one expression per salary band.
 
-Where it plugs in since T1064: ranking conditions are translated in two places that must
-agree, `TurSolrQueryBuilder.boostQueryAttributes` and
-`TurLuceneRankingExpressions.conditionQuery`. An `exists` condition is `attribute:[* TO
-*]` on Solr and `FieldExistsQuery(attribute)` on Lucene. Numeric and date fields carry
-doc values, so it holds for them; check STRING and TEXT fields, which carry a
-`SortedSetDocValuesField` or norms. The per-field weight belongs in
-`TurLuceneQueryBuilder.buildMainQuery`, through the `boosts` map of
-`MultiFieldQueryParser`.
+Left: a per-field search weight. `TurSNSiteFieldExt` has no weight, and the field
+manifest's `VigletFieldSpec` (viglet-core, mapped by `TurSNManifestMapper`) has none
+either.
 
-Workaround: trabalharei approximates "has salary" with one ranking expression per salary
-band (`src/lib/ranking.ts`) and leaves title-over-text weighting to the engine default.
+Build:
+- a nullable `weight` column on the site field (Liquibase, its own changelog file)
+- the DTO and the console's field form
+- a manifest `boost`, which needs a viglet-core release first; that half can follow
+  separately
+- applied on Lucene through the `boosts` map of `MultiFieldQueryParser` in
+  `TurLuceneQueryBuilder.buildMainQuery`
+- applied on Solr as `qf` weights. Read the configset's `/select` defaults before
+  setting `qf` at query time, so the fields it already searches are kept.
+
+A missing weight means 1.0, so existing sites rank exactly as before.
+
+Workaround: trabalharei leaves title-over-text weighting to the engine default.
 
 ### CX.6 Multi-word synonyms on Lucene (T1066)
 

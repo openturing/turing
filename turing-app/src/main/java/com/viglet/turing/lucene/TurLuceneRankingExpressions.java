@@ -38,6 +38,7 @@ import org.apache.lucene.queryparser.classic.QueryParserBase;
 import org.apache.lucene.search.BooleanClause;
 import org.apache.lucene.search.BooleanQuery;
 import org.apache.lucene.search.BoostQuery;
+import org.apache.lucene.search.FieldExistsQuery;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.TermQuery;
 import org.springframework.stereotype.Component;
@@ -150,7 +151,15 @@ public class TurLuceneRankingExpressions {
     private static Query conditionQuery(TurSNRankingCondition condition, TurSEFieldType type, long origin) {
         String field = condition.getAttribute();
         String value = condition.getValue();
-        if (!StringUtils.hasText(field) || value == null) {
+        if (!StringUtils.hasText(field)) {
+            return null;
+        }
+        if (condition.getCondition() == TurSNRankingCondition.EXISTS) {
+            // Every indexed type carries doc values on the field's own name
+            // (TurLuceneDocumentHandler), which is what FieldExistsQuery reads.
+            return new FieldExistsQuery(field);
+        }
+        if (value == null) {
             return null;
         }
         if (type == null) {

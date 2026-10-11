@@ -1491,6 +1491,7 @@
       "attributeRequired": "Attribute is required.",
       "is": "Is",
       "isNot": "Is not",
+      "exists": "Exists",
       "conditionRequired": "Condition is required.",
       "valueRequired": "Value is required.",
       "removeCondition": "Remove condition",

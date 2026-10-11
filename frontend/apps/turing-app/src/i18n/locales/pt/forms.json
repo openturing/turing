@@ -1491,6 +1491,7 @@
       "attributeRequired": "Atributo é obrigatório.",
       "is": "É",
       "isNot": "Não é",
+      "exists": "Existe",
       "conditionRequired": "Condição é obrigatória.",
       "valueRequired": "Valor é obrigatório.",
       "removeCondition": "Remover condição",

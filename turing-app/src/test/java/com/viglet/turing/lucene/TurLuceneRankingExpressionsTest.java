@@ -105,7 +105,10 @@ class TurLuceneRankingExpressionsTest {
         Instant now = Instant.ofEpochMilli(NOW);
         try (Directory dir = new ByteBuffersDirectory()) {
             try (IndexWriter writer = new IndexWriter(dir, new IndexWriterConfig(new StandardAnalyzer()))) {
-                writer.addDocument(job("old-it", "it", now.minus(900, ChronoUnit.DAYS)));
+                Document oldIt = job("old-it", "it", now.minus(900, ChronoUnit.DAYS));
+                oldIt.add(new LongPoint("salaryMin", 5000));
+                oldIt.add(new NumericDocValuesField("salaryMin", 5000));
+                writer.addDocument(oldIt);
                 writer.addDocument(job("new-sales", "sales", now.minus(1, ChronoUnit.DAYS)));
                 writer.addDocument(job("mid-it", "it", now.minus(200, ChronoUnit.DAYS)));
             }
@@ -158,6 +161,24 @@ class TurLuceneRankingExpressionsTest {
 
         assertEquals("mid-it", ranked.getFirst());
         assertEquals("new-sales", ranked.getLast());
+    }
+
+    @Test
+    void existsConditionBoostsDocumentsThatCarryTheField() throws Exception {
+        fields("salaryMin", TurSEFieldType.LONG);
+        TurSNRankingExpression hasSalary = new TurSNRankingExpression();
+        hasSalary.setName("has-salary");
+        hasSalary.setWeight(4f);
+        TurSNRankingCondition exists = new TurSNRankingCondition();
+        exists.setAttribute("salaryMin");
+        exists.setCondition(TurSNRankingCondition.EXISTS);
+        when(conditionRepository.findByTurSNRankingExpression(hasSalary)).thenReturn(Set.of(exists));
+        when(expressionRepository.findByTurSNSite(any(), any())).thenReturn(Set.of(hasSalary));
+
+        List<String> ranked = rank(rankingExpressions().boostQueries(site, NOW));
+
+        // Only old-it carries salaryMin, so it outranks two newer jobs.
+        assertEquals("old-it", ranked.getFirst());
     }
 
     @Test

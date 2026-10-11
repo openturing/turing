@@ -1422,3 +1422,4 @@
 - **T1062** — An import body with no items, including items under an unknown key, now answers 400 naming turingDocuments; snJobItems is accepted as an alias, and the OpenAPI operation shows the body shape.
 - **T1063** — Basic auth with a local user's password is proven to work on admin APIs by TurBasicAuthIT, and the admin guide documents scripted access via Basic or a Key token (design §CX.3 superseded: the 401s were bad credentials from TURING_ADMIN_PASSWORD being ignored on a reused database, not the AuthenticationProvider warning).
 - **T1064** — Lucene sites apply ranking expressions: each becomes a weighted SHOULD boost, with Solr's recency curve for asc on a DATE field, so ranking matches Solr on both engines.
+- **T1065 (exists condition)** — Ranking expressions take an Exists condition (code 3) that boosts documents carrying a field, on Solr as field:[* TO *] and on Lucene as FieldExistsQuery, chosen in the console.

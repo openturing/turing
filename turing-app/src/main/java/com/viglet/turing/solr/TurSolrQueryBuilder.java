@@ -72,6 +72,7 @@ import com.viglet.turing.persistence.model.sn.field.TurSNSiteCustomFacetOperator
 import com.viglet.turing.persistence.model.sn.field.TurSNSiteFacetFieldEnum;
 import com.viglet.turing.persistence.model.sn.field.TurSNSiteFacetFieldSortEnum;
 import com.viglet.turing.persistence.model.sn.field.TurSNSiteFieldExt;
+import com.viglet.turing.persistence.model.sn.ranking.TurSNRankingCondition;
 import com.viglet.turing.persistence.model.sn.ranking.TurSNRankingExpression;
 import com.viglet.turing.persistence.model.sn.sort.TurSNSiteCustomSort;
 import com.viglet.turing.persistence.model.sn.sort.TurSNSiteCustomSortItem;
@@ -195,6 +196,9 @@ public class TurSolrQueryBuilder {
             List<TurSNSiteFieldExt> turSNSiteFieldExtList) {
         return turSNRankingConditionRepository.findByTurSNRankingExpression(expression).stream()
                 .map(condition -> {
+                    if (condition.getCondition() == TurSNRankingCondition.EXISTS) {
+                        return String.format("%s:[* TO *]", condition.getAttribute());
+                    }
                     TurSNSiteFieldExt turSNSiteFieldExt = turSNSiteFieldExtList.stream()
                             .filter(field -> field.getName().equals(condition.getAttribute()))
                             .findFirst().orElse(TurSNSiteFieldExt.builder().build());

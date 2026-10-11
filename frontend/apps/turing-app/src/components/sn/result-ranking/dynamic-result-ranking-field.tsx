@@ -34,6 +34,9 @@ interface DynamicResultRankingFieldsProps<TFieldValues extends FieldValues = Fie
 }
 const turSNFieldService = new TurSNFieldService();
 
+/** TurSNRankingCondition.EXISTS: the document has any value in the field (T1065). */
+const CONDITION_EXISTS = 3;
+
 export function DynamicResultRankingFields<TFieldValues extends FieldValues = FieldValues>({ control, register, fieldName, snSiteId, errors }: Readonly<DynamicResultRankingFieldsProps<TFieldValues>>) {
     const { t } = useTranslation();
     const { fields, append, remove } = useFieldArray({
@@ -107,6 +110,7 @@ export function DynamicResultRankingFields<TFieldValues extends FieldValues = Fi
                                             <SelectContent>
                                                 <SelectItem value="1">{t("forms.resultRankingField.is")}</SelectItem>
                                                 <SelectItem value="2">{t("forms.resultRankingField.isNot")}</SelectItem>
+                                                <SelectItem value={String(CONDITION_EXISTS)}>{t("forms.resultRankingField.exists")}</SelectItem>
                                             </SelectContent>
                                         </Select>
                                         {fieldErrors?.condition && (
@@ -121,7 +125,13 @@ export function DynamicResultRankingFields<TFieldValues extends FieldValues = Fi
                                 <Input
                                     className={fieldErrors?.value ? "border-destructive" : ""}
                                     placeholder={t("forms.common.value")}
-                                    {...register(`${fieldName}.${index}.value` as any, { required: t("forms.resultRankingField.valueRequired") })}
+                                    {...register(`${fieldName}.${index}.value` as any, {
+                                        // An Exists condition matches any value, so it needs none.
+                                        validate: (value: unknown, formValues: any) =>
+                                            Number(formValues?.[fieldName]?.[index]?.condition) === CONDITION_EXISTS
+                                            || (typeof value === "string" && value.trim() !== "")
+                                            || t("forms.resultRankingField.valueRequired"),
+                                    })}
                                 />
                                 {fieldErrors?.value && (
                                     <p className="text-xs text-destructive mt-1">{fieldErrors.value.message}</p>

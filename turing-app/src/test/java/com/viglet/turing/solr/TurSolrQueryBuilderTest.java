@@ -745,6 +745,38 @@ class TurSolrQueryBuilderTest {
         }
 
         @Test
+        void testPrepareSolrQueryBoostQueryWritesExistsConditionAsRangeQuery() {
+                TurSNSite site = new TurSNSite();
+                site.setRowsPerPage(10);
+                site.setSpellCheck(0);
+                site.setSpellCheckFixes(0);
+
+                TurSNRankingExpression expression = new TurSNRankingExpression();
+                expression.setId("expr-exists");
+                expression.setWeight(2.0f);
+                TurSNRankingCondition exists = new TurSNRankingCondition();
+                exists.setAttribute("salaryMin");
+                exists.setCondition(TurSNRankingCondition.EXISTS);
+
+                when(turSNSiteFieldExtRepository.findByTurSNSite(any(), eq(site))).thenReturn(List.of());
+                when(turSNRankingExpressionRepository.findByTurSNSite(any(), eq(site)))
+                                .thenReturn(Set.of(expression));
+                when(turSNRankingConditionRepository.findByTurSNRankingExpression(expression))
+                                .thenReturn(Set.of(exists));
+
+                TurSNSearchParams params = new TurSNSearchParams();
+                params.setQ("query");
+                params.setRows(10);
+                TurSEParameters seParameters = new TurSEParameters(params, new TurSNSitePostParamsBean());
+
+                SolrQuery query = builder().prepareSolrQuery(
+                                contextFrom(seParameters, new TurSNSitePostParamsBean()), site,
+                                seParameters, new TurSESpellCheckResult(false, ""));
+
+                assertThat(query.getParams("bq")).containsExactly("(salaryMin:[* TO *])^2.0");
+        }
+
+        @Test
         void testPrepareQueryFacetWithOneFacetHandlesDateRangeAndEntityPrefix() {
                 TurSNSite site = new TurSNSite();
                 site.setFacet(1);
