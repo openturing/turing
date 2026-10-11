@@ -18,19 +18,19 @@ package com.viglet.turing.lucene;
 
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.DelegatingAnalyzerWrapper;
-import org.apache.lucene.analysis.standard.StandardAnalyzer;
 
 /**
  * Per-field analyzer that routes {@code *_ac} fields to
  * {@link TurLuceneEdgeNGramAnalyzer} and all other fields
- * to {@link StandardAnalyzer}.
+ * to {@link TurLuceneFoldingAnalyzer} (T1080 — StandardAnalyzer plus the
+ * accent-folded form of each token).
  *
  * @author Alexandre Oliveira
  * @since 2026.2.4
  */
 public class TurLucenePerFieldAnalyzer extends DelegatingAnalyzerWrapper {
 
-    private final Analyzer defaultAnalyzer = new StandardAnalyzer();
+    private final Analyzer defaultAnalyzer = new TurLuceneFoldingAnalyzer();
     private final Analyzer edgeNGramAnalyzer = new TurLuceneEdgeNGramAnalyzer(
             TurLuceneConstants.AC_MIN_GRAM, TurLuceneConstants.AC_MAX_GRAM);
 

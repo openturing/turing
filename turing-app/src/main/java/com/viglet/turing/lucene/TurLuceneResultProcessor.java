@@ -25,7 +25,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.facet.FacetsCollector;
 import org.apache.lucene.facet.FacetsCollectorManager;
@@ -167,7 +166,10 @@ public class TurLuceneResultProcessor {
             // No match → no snippet, so the stored value is returned whole (as Solr does).
             // The default "summary" fallback would replace it with its first sentence,
             // silently dropping the rest of the text on a q=* search.
-            UnifiedHighlighter highlighter = new UnifiedHighlighter.Builder(searcher, new StandardAnalyzer())
+            // T1080 — the index analyzer, so an unaccented query term ("saude")
+            // highlights the stored, accented spelling ("Saúde").
+            UnifiedHighlighter highlighter = new UnifiedHighlighter.Builder(searcher,
+                    new TurLuceneFoldingAnalyzer())
                     .withMaxNoHighlightPassages(0)
                     .build();
 

@@ -47,6 +47,9 @@ public class TurLuceneSynonymAnalyzer extends Analyzer {
         Tokenizer source = new StandardTokenizer();
         TokenStream tokens = new LowerCaseFilter(source);
         tokens = new SynonymGraphFilter(tokens, synonymMap, true);
+        // T1080 — folded after the synonyms, so a rule keyed on an accented word
+        // still fires, and its output matches the folded index too.
+        tokens = com.viglet.turing.lucene.TurLuceneFoldingAnalyzer.fold(tokens);
         return new TokenStreamComponents(source, tokens);
     }
 }

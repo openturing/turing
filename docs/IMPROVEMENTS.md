@@ -2188,28 +2188,6 @@ shortest first, stopping at the first hit (`src/lib/jobPage.ts`); usually one re
 
 The same goes for `fieldList`: every stored field comes back (trabalharei TRA45).
 
-### CXI.7 Accent folding for pt-BR text (T1080)
-
-Met in trabalharei (TRA79) on the local turing-ce (Lucene engine), SN site
-`trabalharei-vagas`, locale `pt_BR`, documents published by Dumont.
-
-`GET /api/sn/trabalharei-vagas/search?q=boa%20sa%C3%BAde&_setlocale=pt_BR` finds the job
-of "Hospital Boa Saúde" (1), and `q=saude` finds nothing (0); `atlântica` finds 1,
-`atlantica` 0. Brazilian users type without accents most of the time (on phones above
-all), so "tecnico", "saude", "logistica", "sao paulo" miss the jobs that spell them
-"técnico", "saúde", "logística", "São Paulo". The text fields are indexed and queried
-through `StandardAnalyzer` (`TurLuceneQueryBuilder.queryAnalyzer`), which lower-cases
-but keeps diacritics.
-
-Expected: for a site's pt-BR (and es, fr) locale, TEXT fields are analyzed with ASCII
-folding on both the index and the query side (Lucene's `ASCIIFoldingFilter`, or a
-per-locale analyzer chain the site can choose), so an accented and an unaccented
-spelling match each other; highlighting still returns the stored spelling. Solr's pt-BR
-field types usually carry the same filter, so both engines should agree. A re-index of
-existing documents is part of the change.
-
-Workaround in trabalharei: none; the site sends the query as the user typed it.
-
 ### CXI.8 Custom facets on Lucene (T1083)
 
 Found while shipping the first part of T1075 (range filters on Lucene).

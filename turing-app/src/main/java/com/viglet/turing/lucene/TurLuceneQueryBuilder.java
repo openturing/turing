@@ -478,8 +478,10 @@ public class TurLuceneQueryBuilder {
      * locale/core lookup runs.
      */
     private Analyzer queryAnalyzer(TurSNSite turSNSite, Locale locale) {
+        // T1080 — both analyzers add the accent-folded form of each token, as the
+        // index side does, so "saude" and "saúde" find each other.
         if (locale == null || synonymRegistry == null || synonymRegistry.isEmpty()) {
-            return new StandardAnalyzer();
+            return new TurLuceneFoldingAnalyzer();
         }
         String core = turSNSiteLocaleRepository.findByTurSNSite(turSNSite).stream()
                 .filter(l -> locale.equals(l.getLanguage()))
@@ -487,7 +489,7 @@ public class TurLuceneQueryBuilder {
                 .findFirst()
                 .orElse(null);
         SynonymMap map = core == null ? null : synonymRegistry.get(core);
-        return map == null ? new StandardAnalyzer() : new TurLuceneSynonymAnalyzer(map);
+        return map == null ? new TurLuceneFoldingAnalyzer() : new TurLuceneSynonymAnalyzer(map);
     }
 
     /**
