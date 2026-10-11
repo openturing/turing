@@ -2158,3 +2158,31 @@ page needs the full description.
 
 Workaround in trabalharei: none. The result cards do not show `text`; the job page
 (TRA35) needs the full value.
+
+### CXI.2 Range filters and relative date facets (T1075)
+
+Met in trabalharei (TRA31, the job search filters) on a local turing-ce built from
+`0256a122dd`, Lucene engine, SN site `trabalharei-vagas` with a DATE field
+`publishedAt`.
+
+`POST /api/sn/trabalharei-vagas/search/query` with any of `fq: ["publishedAt:[NOW-1DAY
+TO NOW]"]`, `["publishedAt:[2026-10-10T00:00:00Z TO *]"]` or `["publishedAt:[NOW-7DAYS
+TO *]"]` answers `count: 0` while echoing the filter in `selectedFilterQueries`; six of
+the eleven jobs were published after 2026-10-10.
+`TurLuceneQueryBuilder.addFilterQueries` turns every `field:value` into a `TermQuery`,
+so a range is looked up as one literal term. The site's facet for `publishedAt` lists
+each distinct timestamp as its own value, and the field's `facetRange` (DAY, MONTH,
+YEAR) is read only by `TurSolrQueryBuilder`.
+
+So on Lucene no recency filter ("last 24 hours", "last 7 days") and no numeric range
+(salary from X) can be built, nothing says the filter was not understood, and on Solr
+the buckets are calendar days or months, not "the last N days".
+
+Expected: a filter query accepts a range, `field:[from TO to]` with `*` and `NOW-nDAYS`
+date math, on Lucene as on Solr (Lucene's point range queries for DATE, INT, LONG and
+FLOAT fields), and a DATE facet can declare relative buckets (`last 1, 3, 7, 30 days`)
+that answer as items with counts and a ready `filterQuery`. A filter that cannot be
+parsed for its field type is refused with a reason instead of matching nothing.
+
+Workaround in trabalharei: none. The posting-date filter waits on this line (TRA31's
+remainder).

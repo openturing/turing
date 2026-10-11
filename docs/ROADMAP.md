@@ -9,6 +9,7 @@
 ## Block CA — Search response fields arrive as they were indexed
 
 - 📋 **T1074** (deps: —) **Search returns a document's text cut short with no marker, inside a UTF-8 character, so accented text arrives corrupted** — Any page that shows a result's text prints a replacement character and loses the rest of the description. → §CXI.1
+- 📋 **T1075** (deps: —) **On Lucene a filter query is one exact term, so a date or number range matches nothing, and no relative date facet exists** — No recency or salary-from filter can be built on a Lucene site, and the empty result never says the filter was misread. → §CXI.2
 
 ## Non-goals (do NOT add as tasks)
 
