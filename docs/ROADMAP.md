@@ -8,7 +8,7 @@
 
 ## Block CA — Search response fields arrive as they were indexed
 
-- 📋 **T1075** (deps: —) **On Lucene a filter query is one exact term, so a date or number range matches nothing, and no relative date facet exists** — No recency or salary-from filter can be built on a Lucene site, and the empty result never says the filter was misread. → §CXI.2
+- ⏳ **T1075** (deps: —) **On Lucene a filter query is one exact term, so a date or number range matches nothing, and no relative date facet exists** — A DATE facet still offers no relative buckets, and a filter that does not parse for its field still matches nothing without saying why. → §CXI.2
 - 📋 **T1076** (deps: —) **Autocomplete on Lucene suggests words from every stored field, so slugs, URLs and ids come back as suggestions** — A visitor is offered terms nobody types, which crowd out the real completions on a small phone list. → §CXI.3
 - 📋 **T1077** (deps: —) **On Lucene a search request's fqOr and fqItemOperator are echoed and ignored, and no endpoint returns a document by id** — A detail page cannot fetch a job by one of several candidate ids in one call, and a silent no-op reads as success. → §CXI.4
 - 📋 **T1078** (deps: —) **Similar documents on a Lucene site answer 500: getSimilarDocuments opens the index with a null path** — No related-items rail can be built on Lucene, and the error gives the caller no reason. → §CXI.5
@@ -19,6 +19,14 @@
 
 - 📋 **T1081** (deps: —) **The Java SDK's TurSNServer takes no connect or read timeout, so a call to a down Turing hangs about three minutes** — A batch caller such as Dumont waits minutes per site on a manifest or import that cannot succeed. → §CXII.1
 - 📋 **T1082** (deps: —) **The Java SDK's TurSNJobAttributeSpec has no searchWeight, so a manifest sent from Java leaves every field at weight 1** — A connector cannot rank a title above its body text, though the manifest endpoint reads the weight since T1072. → §CXII.2
+
+## Done when — T1075
+
+- **A filter that does not parse for its field type answers a reason** A search with fq
+  salary:[lots TO more] answers the reason instead of an empty page.
+- **A DATE facet offers relative buckets (last N days) with counts and a filterQuery** A
+  Lucene search over the site lists the buckets with the counts the same range filter
+  returns.
 
 ## Non-goals (do NOT add as tasks)
 

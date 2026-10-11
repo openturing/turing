@@ -16,6 +16,7 @@
  */
 package com.viglet.turing.lucene;
 
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.LinkedHashMap;
@@ -162,27 +163,30 @@ public class TurLuceneQueryBuilder {
         }
 
         Map<String, TurSNSiteFieldExt> fieldsByName = enabledFieldsByName(turSNSite);
-        valuesByField.forEach((field, values) -> builder.add(
-                buildFieldFilterQuery(field, values,
-                        effectiveFacetItemType(fieldsByName.get(field), turSNSite)),
-                BooleanClause.Occur.FILTER));
+        Instant now = Instant.now();
+        valuesByField.forEach((field, values) -> {
+            TurSNSiteFieldExt ext = fieldsByName.get(field);
+            builder.add(buildFieldFilterQuery(field, values, ext != null ? ext.getType() : null,
+                    effectiveFacetItemType(ext, turSNSite), now), BooleanClause.Occur.FILTER);
+        });
     }
 
     /**
      * Combines the selected values of a single field into one query: OR
      * (SHOULD, min-should-match 1) for a multi-select facet, AND (MUST)
-     * otherwise. A single value collapses to a plain {@link TermQuery}.
+     * otherwise. Each value is read by the field's type (T1075), so a range or
+     * a numeric/date value matches the points the field was indexed as.
      */
-    private static Query buildFieldFilterQuery(String field, List<String> values,
-            TurSNSiteFacetFieldEnum itemType) {
+    private static Query buildFieldFilterQuery(String field, List<String> values, TurSEFieldType type,
+            TurSNSiteFacetFieldEnum itemType, Instant now) {
         if (values.size() == 1) {
-            return new TermQuery(new Term(field, values.getFirst()));
+            return TurLuceneFilterQueries.build(field, values.getFirst(), type, now);
         }
         BooleanQuery.Builder builder = new BooleanQuery.Builder();
         BooleanClause.Occur occur = itemType == TurSNSiteFacetFieldEnum.OR
                 ? BooleanClause.Occur.SHOULD
                 : BooleanClause.Occur.MUST;
-        values.forEach(value -> builder.add(new TermQuery(new Term(field, value)), occur));
+        values.forEach(value -> builder.add(TurLuceneFilterQueries.build(field, value, type, now), occur));
         if (occur == BooleanClause.Occur.SHOULD) {
             builder.setMinimumNumberShouldMatch(1);
         }

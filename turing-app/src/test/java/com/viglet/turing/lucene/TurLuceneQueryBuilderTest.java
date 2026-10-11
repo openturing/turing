@@ -277,6 +277,24 @@ class TurLuceneQueryBuilderTest {
         assertEquals(2, musts, "default facet values must AND (MUST)");
     }
 
+    @Test
+    void buildQueryDateRangeFilterShouldBeAPointRange() {
+        TurSNSite site = mock(TurSNSite.class);
+        TurSNSiteFieldExt publishedAt = mock(TurSNSiteFieldExt.class);
+        when(publishedAt.getName()).thenReturn("publishedAt");
+        when(publishedAt.getType()).thenReturn(com.viglet.turing.commons.se.field.TurSEFieldType.DATE);
+        when(turSNSiteFieldExtRepository.findByTurSNSiteAndEnabled(site, 1))
+                .thenReturn(List.of(publishedAt));
+
+        // T1075 — a DATE field is indexed as a LongPoint, so a range must be a
+        // point range query, not a TermQuery on the literal "[NOW-7DAYS TO *]".
+        TurSEParameters params = createParamsWithFilters("*",
+                List.of("publishedAt:[NOW-7DAYS TO *]"));
+        Query filter = filterClause((BooleanQuery) queryBuilder.buildQuery(site, params));
+
+        assertInstanceOf(org.apache.lucene.search.PointRangeQuery.class, filter);
+    }
+
     private static Query filterClause(BooleanQuery bq) {
         return bq.clauses().stream()
                 .filter(c -> c.occur() == BooleanClause.Occur.FILTER)
