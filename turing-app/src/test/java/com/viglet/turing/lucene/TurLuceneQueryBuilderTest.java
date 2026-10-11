@@ -39,8 +39,27 @@ class TurLuceneQueryBuilderTest {
     @Mock
     private TurSNSiteFieldExtRepository turSNSiteFieldExtRepository;
 
+    @Mock
+    private TurLuceneRankingExpressions rankingExpressions;
+
     @InjectMocks
     private TurLuceneQueryBuilder queryBuilder;
+
+    // ---- T1064: ranking expressions boost, they never filter ----
+
+    @Test
+    void buildQueryAddsRankingExpressionBoostsAsShouldClauses() {
+        TurSNSite site = mock(TurSNSite.class);
+        Query boost = new org.apache.lucene.search.BoostQuery(
+                new org.apache.lucene.search.TermQuery(new org.apache.lucene.index.Term("category", "it")), 5f);
+        when(rankingExpressions.boostQueries(site)).thenReturn(List.of(boost));
+
+        BooleanQuery query = (BooleanQuery) queryBuilder.buildQuery(site, createParams("*"));
+
+        assertTrue(query.clauses().stream().anyMatch(clause -> clause.query() == boost
+                && clause.occur() == BooleanClause.Occur.SHOULD));
+        assertEquals(BooleanClause.Occur.MUST, query.clauses().getFirst().occur());
+    }
 
     // ---- T707: reserved id/url fields are never highlightable ----
 

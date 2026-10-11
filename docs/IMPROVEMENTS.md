@@ -2130,23 +2130,6 @@ to work without a browser: a key that authenticates on its own, a scripted login
 works, and an import endpoint that refuses a body it cannot read instead of accepting it
 silently. Found while building trabalharei's local Turing and import proof.
 
-### CX.4 Ranking expressions on Lucene (T1064)
-
-Found while tuning trabalharei's job ranking (trabalharei TRA11). Ranking expressions
-(`/api/sn/{site}/ranking-expression`) are applied only by `TurSolrQueryBuilder
-.prepareBoostQuery`: a condition on a DATE field with value `asc` becomes the
-`recip(ms(NOW/DAY,field),...)` recency boost, and other conditions become boost queries.
-Nothing under `com.viglet.turing.lucene` reads ranking expressions, so a site on the
-embedded Lucene engine (the default `turing-ce` instance, and the engine `turing-demo`
-provisions) accepts them through the API and console and silently ranks without them.
-
-Expected: the Lucene query path applies the same expressions (a `FunctionScoreQuery`
-with a reciprocal decay on the date field for `asc`, boost clauses for value
-conditions), or the API refuses expressions on a Lucene site and the console says so.
-
-Workaround: none in trabalharei; its ranking is declared in `src/lib/ranking.ts` and
-only takes effect where the site runs on Solr.
-
 ### CX.5 Field weights and exists conditions (T1065)
 
 Found while tuning trabalharei's job ranking (trabalharei TRA11). A job site needs a
@@ -2159,6 +2142,15 @@ expressed.
 Expected: a per-field search weight on the site's fields (manifest `boost`, applied as
 `qf` weights on Solr and per-field boosts on Lucene), and an `exists` condition for
 ranking expressions.
+
+Where it plugs in since T1064: ranking conditions are translated in two places that must
+agree, `TurSolrQueryBuilder.boostQueryAttributes` and
+`TurLuceneRankingExpressions.conditionQuery`. An `exists` condition is `attribute:[* TO
+*]` on Solr and `FieldExistsQuery(attribute)` on Lucene. Numeric and date fields carry
+doc values, so it holds for them; check STRING and TEXT fields, which carry a
+`SortedSetDocValuesField` or norms. The per-field weight belongs in
+`TurLuceneQueryBuilder.buildMainQuery`, through the `boosts` map of
+`MultiFieldQueryParser`.
 
 Workaround: trabalharei approximates "has salary" with one ranking expression per salary
 band (`src/lib/ranking.ts`) and leaves title-over-text weighting to the engine default.
@@ -2211,3 +2203,24 @@ credentials were rejected without saying which half was wrong. Either add a hand
 DEBUG without the stack trace. Check that the console's login page still shows its
 "invalid credentials" message on a 401. Cover it with a test that posts a wrong password
 to `/api/login` and expects 401.
+
+### CX.9 Ranking conditions honour Is not (T1070)
+
+Found while porting ranking expressions to Lucene (T1064). The console's ranking
+condition form offers `Is` (stored as `condition = 1`) and `Is not` (`condition = 2`),
+and the end-user docs describe both. Neither engine reads the field.
+`TurSolrQueryBuilder.boostQueryAttributes` always writes `attribute:"value"`, and
+`TurLuceneRankingExpressions.conditionQuery` mirrors it with an exact match. So a rule
+meant to demote or exclude a value boosts that value.
+
+Build: honour `condition = 2` on both engines in one change, so they never disagree.
+
+- Solr: write `(*:* -attribute:"value")` for an `Is not` clause.
+- Lucene: a `BooleanQuery` with `MatchAllDocsQuery` MUST and the exact-match query
+  MUST_NOT.
+
+Inside an expression the clauses stay ANDed. `Is not` on the recency form (`asc` on a
+DATE field) has no meaning: skip that expression and log it, as the Lucene side already
+does for unusable conditions. Cover each engine with a test: a Lucene index test like
+`TurLuceneRankingExpressionsTest`, and a `TurSolrQueryBuilder` test asserting the `bq`
+string.

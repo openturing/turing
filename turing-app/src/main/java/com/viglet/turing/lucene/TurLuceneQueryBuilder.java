@@ -79,15 +79,18 @@ public class TurLuceneQueryBuilder {
     private final TurSNSiteCustomSortRepository turSNSiteCustomSortRepository;
     private final TurSNSiteLocaleRepository turSNSiteLocaleRepository;
     private final TurLuceneSynonymRegistry synonymRegistry;
+    private final TurLuceneRankingExpressions rankingExpressions;
 
     public TurLuceneQueryBuilder(TurSNSiteFieldExtRepository turSNSiteFieldExtRepository,
             TurSNSiteCustomSortRepository turSNSiteCustomSortRepository,
             TurSNSiteLocaleRepository turSNSiteLocaleRepository,
-            TurLuceneSynonymRegistry synonymRegistry) {
+            TurLuceneSynonymRegistry synonymRegistry,
+            TurLuceneRankingExpressions rankingExpressions) {
         this.turSNSiteFieldExtRepository = turSNSiteFieldExtRepository;
         this.turSNSiteCustomSortRepository = turSNSiteCustomSortRepository;
         this.turSNSiteLocaleRepository = turSNSiteLocaleRepository;
         this.synonymRegistry = synonymRegistry;
+        this.rankingExpressions = rankingExpressions;
     }
 
     // -------------------------------------------------------------------------
@@ -118,6 +121,13 @@ public class TurLuceneQueryBuilder {
         List<String> filterQueries = params.getTurSNFilterParams().getDefaultValues();
         if (!CollectionUtils.isEmpty(filterQueries)) {
             addFilterQueries(builder, turSNSite, filterQueries);
+        }
+
+        // T1064 — ranking expressions raise the score of the documents they
+        // describe (SHOULD beside the MUST main query), as Solr's bq does.
+        if (rankingExpressions != null) {
+            rankingExpressions.boostQueries(turSNSite)
+                    .forEach(boost -> builder.add(boost, BooleanClause.Occur.SHOULD));
         }
 
         return builder.build();
