@@ -2207,3 +2207,30 @@ manifest), so facet slugs, URLs and ids never surface.
 Workaround in trabalharei: the search box drops a suggestion that looks like a slug or a
 URL (a single token with two or more hyphens, or one containing `/` or `.`),
 `src/lib/suggestions.ts`, naming this id; removed when this ships.
+
+### CXI.4 OR filters ignored, no document by id (T1077)
+
+Met in trabalharei (TRA35, the job page, which looks a job up by the id at the end of
+its URL) on a local turing-ce built from `0256a122dd`, Lucene engine.
+
+The page's last path segment is `<title-slug>-<id>`, and ids contain hyphens, so the
+page has a few candidate ids and wanted one request for all of them. `POST
+/api/sn/trabalharei-vagas/search/query` with `fqOr:
+["id:entregador-fx-motorista-campinas", "id:fx-motorista-campinas", ...]` and
+`fqOperator: "OR"` answers all 11 documents of the site: `fqOr` is echoed on `request`
+and ignored. `fq` with the same three ids and `fqItemOperator: "OR"` answers 0: on
+Lucene `addFilterQueries` combines values of one field by the field's configured facet
+item type, and `id` is no facet, so it ANDs them whatever the request asks. Nothing in
+the response says either parameter was not applied.
+
+There is also no endpoint that returns one document by id; a detail page has to run a
+search with `fq: ["id:<id>"]`.
+
+Expected: on Lucene as on Solr, `fqOr` ORs its filters and `fqItemOperator` sets how the
+values of one field combine; a parameter an engine cannot apply is refused or reported
+on the response. And `GET /api/sn/{site}/document/{id}` (or a `ids` list on the
+structured request) returns stored documents by id, whole, which also serves T1074's
+need for the full text.
+
+Workaround in trabalharei: the job page tries each candidate id with its own `fq`,
+shortest first, stopping at the first hit (`src/lib/jobPage.ts`); usually one request.
