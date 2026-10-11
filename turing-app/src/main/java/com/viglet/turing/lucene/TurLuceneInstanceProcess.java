@@ -87,8 +87,31 @@ public class TurLuceneInstanceProcess {
     }
 
     public Optional<TurLuceneInstance> initLuceneInstance(TurSNSiteLocale turSNSiteLocale) {
-        return getLuceneInstance(turSNSiteLocale.getTurSNSite().getTurSEInstance(),
-                turSNSiteLocale.getCore());
+        return resolveSEInstance(turSNSiteLocale.getTurSNSite())
+                .flatMap(seInstance -> getLuceneInstance(seInstance, turSNSiteLocale.getCore()));
+    }
+
+    /**
+     * T1078 — the site a {@link TurSNSiteLocale} carries may be the transient one the
+     * search snapshot rebuilds, whose SE instance keeps only its id and vendor. The
+     * index path needs the endpoint, so such a site is reloaded by id first.
+     */
+    private Optional<TurSEInstance> resolveSEInstance(TurSNSite turSNSite) {
+        if (turSNSite == null) {
+            return Optional.empty();
+        }
+        TurSEInstance seInstance = turSNSite.getTurSEInstance();
+        if (seInstance != null && seInstance.getEndpointUrl() != null) {
+            return Optional.of(seInstance);
+        }
+        Optional<TurSEInstance> reloaded = Optional.ofNullable(turSNSite.getId())
+                .flatMap(turSNSiteRepository::findById)
+                .map(TurSNSite::getTurSEInstance)
+                .filter(instance -> instance.getEndpointUrl() != null);
+        if (reloaded.isEmpty()) {
+            log.warn("No Lucene endpoint for site '{}'", turSNSite.getName());
+        }
+        return reloaded;
     }
 
     private static final String LUCENE_BASE_DIR = "store/lucene";

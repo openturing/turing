@@ -1437,3 +1437,4 @@
 - **T1075 (filters by type, bad ranges refused)** — On Lucene a filter query reads its value by the field's type, so date math and numeric ranges and numeric or date facet clicks match, and an unparseable range is refused with a 400 saying why.
 - **T1076** — Lucene autocomplete matches and suggests only words of the site's text fields, falling back to title, so slugs, URLs and ids are never offered.
 - **T1077 (fq operators and fieldList)** — On Lucene fqOr, fqAnd, fqOperator and fqItemOperator combine filters as on Solr, and on every engine fieldList limits the fields each result carries.
+- **T1078** — Similar documents open a Lucene site's index from the snapshot's site locale, reloading the site when its SE instance has no endpoint, so MLT and VECTOR answer instead of a 500.

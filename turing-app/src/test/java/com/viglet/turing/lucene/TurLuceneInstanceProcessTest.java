@@ -155,6 +155,43 @@ class TurLuceneInstanceProcessTest {
         assertThat(result).isPresent();
     }
 
+    @Test
+    void initLuceneInstanceByLocaleEntityShouldReloadASnapshotSiteWithoutEndpoint() {
+        // T1078 — the search snapshot rebuilds the site with an SE instance that keeps
+        // only its id and vendor; Paths.get(null) used to throw on the similar path.
+        TurSEInstance snapshotInstance = new TurSEInstance();
+        snapshotInstance.setId("se-1");
+        TurSNSite snapshotSite = new TurSNSite();
+        snapshotSite.setId("site-1");
+        snapshotSite.setTurSEInstance(snapshotInstance);
+
+        TurSEInstance persistedInstance = new TurSEInstance();
+        persistedInstance.setEndpointUrl(tempDir.toString());
+        TurSNSite persistedSite = new TurSNSite();
+        persistedSite.setTurSEInstance(persistedInstance);
+        when(turSNSiteRepository.findById("site-1")).thenReturn(Optional.of(persistedSite));
+
+        TurSNSiteLocale siteLocale = new TurSNSiteLocale();
+        siteLocale.setCore("snapshot-core");
+        siteLocale.setTurSNSite(snapshotSite);
+
+        assertThat(process.initLuceneInstance(siteLocale)).isPresent();
+    }
+
+    @Test
+    void initLuceneInstanceByLocaleEntityShouldBeEmptyWhenNoEndpointResolves() {
+        TurSNSite site = new TurSNSite();
+        site.setId("gone");
+        site.setTurSEInstance(new TurSEInstance());
+        when(turSNSiteRepository.findById("gone")).thenReturn(Optional.empty());
+
+        TurSNSiteLocale siteLocale = new TurSNSiteLocale();
+        siteLocale.setCore("core");
+        siteLocale.setTurSNSite(site);
+
+        assertThat(process.initLuceneInstance(siteLocale)).isEmpty();
+    }
+
     // --- evict Tests ---
 
     @Test
