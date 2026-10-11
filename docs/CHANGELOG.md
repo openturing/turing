@@ -1425,3 +1425,4 @@
 - **T1064** — Lucene sites apply ranking expressions: each becomes a weighted SHOULD boost, with Solr's recency curve for asc on a DATE field, so ranking matches Solr on both engines.
 - **T1065** — Site fields take a search weight (1-100) that ranks a title match above the same word in body text: Lucene boosts the field clause, Solr adds a field-scoped edismax boost query.
 - **T1066** — Multi-word synonyms such as home office expand on Lucene sites in both directions: the query is also parsed per field without whitespace splitting, and expansions are phrases.
+- **T1067** — Spell-check leaves corrected absent when there is no suggestion or the correction is blank, so a correct word missing from the index no longer offers a search for nothing.

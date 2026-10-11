@@ -15,17 +15,43 @@ import com.viglet.turing.commons.sn.search.TurSNSiteSearchContext;
 
 class TurSNSiteSpellCheckBeanTest {
 
-    @Test
-    void shouldBuildFromContextAndSpellCheckResult() {
+    private static TurSNSiteSearchContext context(String q) {
         TurSNSearchParams searchParams = new TurSNSearchParams();
-        searchParams.setQ("machne");
-        TurSEParameters seParameters = new TurSEParameters(searchParams);
-        TurSNSiteSearchContext context = new TurSNSiteSearchContext(
+        searchParams.setQ(q);
+        return new TurSNSiteSearchContext(
                 "Sample",
                 new TurSNConfig(),
-                seParameters,
+                new TurSEParameters(searchParams),
                 Locale.US,
-                URI.create("http://localhost/search?q=machne"));
+                URI.create("http://localhost/search?q=" + q));
+    }
+
+    @Test
+    void noSuggestionLeavesCorrectedAbsent() {
+        TurSNSiteSpellCheckBean bean = new TurSNSiteSpellCheckBean(context("home"), new TurSESpellCheckResult());
+
+        // T1067 — no blank correction whose link would search for nothing.
+        assertThat(bean.isCorrectedText()).isFalse();
+        assertThat(bean.isUsingCorrectedText()).isFalse();
+        assertThat(bean.getCorrected()).isNull();
+        assertThat(bean.getOriginal().getText()).isEqualTo("home");
+    }
+
+    @Test
+    void aBlankCorrectionCountsAsNone() {
+        TurSESpellCheckResult result = new TurSESpellCheckResult(true, "  ");
+        result.setUsingCorrected(true);
+
+        TurSNSiteSpellCheckBean bean = new TurSNSiteSpellCheckBean(context("home"), result);
+
+        assertThat(bean.isCorrectedText()).isFalse();
+        assertThat(bean.isUsingCorrectedText()).isFalse();
+        assertThat(bean.getCorrected()).isNull();
+    }
+
+    @Test
+    void shouldBuildFromContextAndSpellCheckResult() {
+        TurSNSiteSearchContext context = context("machne");
 
         TurSESpellCheckResult result = new TurSESpellCheckResult(true, "machine");
         result.setUsingCorrected(true);

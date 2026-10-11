@@ -49,10 +49,17 @@ public class TurSNSiteSpellCheckBean implements Serializable {
 	
 	public TurSNSiteSpellCheckBean(TurSNSiteSearchContext context, TurSESpellCheckResult turSESpellCheckResult) {
 		super();
-		this.correctedText = turSESpellCheckResult.isCorrected();
+		String correctedValue = turSESpellCheckResult.getCorrectedText();
+		// T1067 — no suggestion means no correction: `corrected` stays absent rather
+		// than a blank text whose link searches for nothing.
+		boolean hasCorrection = turSESpellCheckResult.isCorrected()
+				&& correctedValue != null && !correctedValue.isBlank();
+		this.correctedText = hasCorrection;
 		this.original = new TurSNSiteSpellCheckText(context.getUri(), context.getTurSEParameters().getQuery(), true);
-		this.corrected = new TurSNSiteSpellCheckText(context.getUri(), turSESpellCheckResult.getCorrectedText(), false);
-		this.usingCorrectedText = turSESpellCheckResult.isUsingCorrected();
+		this.corrected = hasCorrection
+				? new TurSNSiteSpellCheckText(context.getUri(), correctedValue, false)
+				: null;
+		this.usingCorrectedText = hasCorrection && turSESpellCheckResult.isUsingCorrected();
 	}
 
 }

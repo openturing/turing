@@ -2130,21 +2130,6 @@ to work without a browser: a key that authenticates on its own, a scripted login
 works, and an import endpoint that refuses a body it cannot read instead of accepting it
 silently. Found while building trabalharei's local Turing and import proof.
 
-### CX.7 No empty spell-check corrections (T1067)
-
-Found while enabling "você quis dizer" for trabalharei (TRA12) on turing-ce 2026.3.4,
-embedded Lucene, spell-check and spell-check fixes on. A real typo works: `q=motorsta`
-answers `spellCheck.corrected = {"text":"motorista"}`. A correct word that simply is not
-in the index gets an empty correction: `q=home`, `q=home office` and `q=carteira
-assinada` answer `corrected = {"text":"", "link":"...search?q=&..."}`, so a UI that
-offers the correction proposes searching for nothing, and with fixes on the query may be
-rewritten to empty.
-
-Expected: when the spell checker has no suggestion, `corrected` is absent (or flagged as
-no correction), never an empty query.
-
-Workaround: trabalharei's search page will ignore a correction whose text is empty.
-
 ### CX.8 Rejected credentials answer 401 (T1069)
 
 Found while working T1063 against the trabalharei container (turing-ce 2026.3.4).
