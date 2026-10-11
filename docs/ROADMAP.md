@@ -8,16 +8,9 @@
 
 ## Block CA — Search response fields arrive as they were indexed
 
-- 🛠 **T1075** (deps: T1083 ✅) **On Lucene a filter query is one exact term, so a date or number range matches nothing, and no relative date facet exists** — A DATE facet still offers no relative buckets such as the last 7 days, so no recency facet can be listed with counts. → §CXI.2
 - 🛠 **T1077** (deps: —) **On Lucene a search request's fqOr and fqItemOperator are echoed and ignored, and no endpoint returns a document by id** — No endpoint returns stored documents by id, so a detail page still runs a search with fq id to read one document. → §CXI.4
 
 ## Block D.9 — SDK & frontend surface
-
-## Done when — T1075
-
-- **A DATE facet offers relative buckets (last N days) with counts and a filterQuery** A
-  Lucene search over the site lists the buckets with the counts the same range filter
-  returns.
 
 ## Done when — T1077
 

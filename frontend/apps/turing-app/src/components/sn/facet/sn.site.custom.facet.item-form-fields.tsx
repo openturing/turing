@@ -22,6 +22,7 @@ import {
   DEFAULT_OPERATOR,
   formatItemSummary,
   isBetweenOperator,
+  isDateMath,
   OPERATOR_TRANSLATION_KEYS,
   OPERATOR_VALUES,
   toDateTimeLocalValue,
@@ -174,77 +175,153 @@ export function CustomFacetItemFormFields({
         <div className="grid grid-cols-2 gap-4">
           <div className="space-y-2">
             <label className="text-sm font-medium">{t("forms.snCustomFacet.start")}</label>
-            <Input
-              type={isDateField ? "datetime-local" : "number"}
-              step={isDateField ? undefined : "any"}
-              value={
-                isDateField
-                  ? toDateTimeLocalValue(editingItem.rangeStartDate)
-                  : (editingItem.rangeStart ?? "")
-              }
-              onChange={(e) =>
-                onUpdate(isDateField ? "rangeStartDate" : "rangeStart", e.target.value)
-              }
-              placeholder={t("forms.snCustomFacet.startPlaceholder")}
-            />
+            {isDateField ? (
+              <DateBoundInput
+                value={editingItem.rangeStartDate}
+                onChange={(value) => onUpdate("rangeStartDate", value)}
+                placeholder={t("forms.snCustomFacet.startPlaceholder")}
+              />
+            ) : (
+              <Input
+                type="number"
+                step="any"
+                value={editingItem.rangeStart ?? ""}
+                onChange={(e) => onUpdate("rangeStart", e.target.value)}
+                placeholder={t("forms.snCustomFacet.startPlaceholder")}
+              />
+            )}
           </div>
           <div className="space-y-2">
             <label className="text-sm font-medium">{t("forms.snCustomFacet.end")}</label>
-            <Input
-              type={isDateField ? "datetime-local" : "number"}
-              step={isDateField ? undefined : "any"}
-              value={
-                isDateField
-                  ? toDateTimeLocalValue(editingItem.rangeEndDate)
-                  : (editingItem.rangeEnd ?? "")
-              }
-              onChange={(e) =>
-                onUpdate(isDateField ? "rangeEndDate" : "rangeEnd", e.target.value)
-              }
-              placeholder={t("forms.snCustomFacet.endPlaceholder")}
-            />
+            {isDateField ? (
+              <DateBoundInput
+                value={editingItem.rangeEndDate}
+                onChange={(value) => onUpdate("rangeEndDate", value)}
+                placeholder={t("forms.snCustomFacet.endPlaceholder")}
+              />
+            ) : (
+              <Input
+                type="number"
+                step="any"
+                value={editingItem.rangeEnd ?? ""}
+                onChange={(e) => onUpdate("rangeEnd", e.target.value)}
+                placeholder={t("forms.snCustomFacet.endPlaceholder")}
+              />
+            )}
           </div>
         </div>
       )}
       {usesOnlyStartValue(operator) && (
         <div className="space-y-2">
           <label className="text-sm font-medium">{t("forms.common.value")}</label>
-          <Input
-            type={isDateField ? "datetime-local" : "number"}
-            step={isDateField ? undefined : "any"}
-            value={
-              isDateField
-                ? toDateTimeLocalValue(editingItem.rangeStartDate)
-                : (editingItem.rangeStart ?? "")
-            }
-            onChange={(e) =>
-              onUpdate(isDateField ? "rangeStartDate" : "rangeStart", e.target.value)
-            }
-            placeholder={
-              operator === "EQUAL"
-                ? t("forms.snCustomFacet.exactValuePlaceholder")
-                : t("forms.snCustomFacet.minimumValuePlaceholder")
-            }
-          />
+          {isDateField ? (
+            <DateBoundInput
+              value={editingItem.rangeStartDate}
+              onChange={(value) => onUpdate("rangeStartDate", value)}
+              placeholder={
+                operator === "EQUAL"
+                  ? t("forms.snCustomFacet.exactValuePlaceholder")
+                  : t("forms.snCustomFacet.minimumValuePlaceholder")
+              }
+            />
+          ) : (
+            <Input
+              type="number"
+              step="any"
+              value={editingItem.rangeStart ?? ""}
+              onChange={(e) => onUpdate("rangeStart", e.target.value)}
+              placeholder={
+                operator === "EQUAL"
+                  ? t("forms.snCustomFacet.exactValuePlaceholder")
+                  : t("forms.snCustomFacet.minimumValuePlaceholder")
+              }
+            />
+          )}
         </div>
       )}
       {usesOnlyEndValue(operator) && (
         <div className="space-y-2">
           <label className="text-sm font-medium">{t("forms.common.value")}</label>
-          <Input
-            type={isDateField ? "datetime-local" : "number"}
-            step={isDateField ? undefined : "any"}
-            value={
-              isDateField
-                ? toDateTimeLocalValue(editingItem.rangeEndDate)
-                : (editingItem.rangeEnd ?? "")
-            }
-            onChange={(e) =>
-              onUpdate(isDateField ? "rangeEndDate" : "rangeEnd", e.target.value)
-            }
-            placeholder={t("forms.snCustomFacet.maximumValuePlaceholder")}
-          />
+          {isDateField ? (
+            <DateBoundInput
+              value={editingItem.rangeEndDate}
+              onChange={(value) => onUpdate("rangeEndDate", value)}
+              placeholder={t("forms.snCustomFacet.maximumValuePlaceholder")}
+            />
+          ) : (
+            <Input
+              type="number"
+              step="any"
+              value={editingItem.rangeEnd ?? ""}
+              onChange={(e) => onUpdate("rangeEnd", e.target.value)}
+              placeholder={t("forms.snCustomFacet.maximumValuePlaceholder")}
+            />
+          )}
         </div>
+      )}
+    </div>
+  );
+}
+
+interface DateBoundInputProps {
+  value?: string | null;
+  onChange: (rawValue: string) => void;
+  placeholder: string;
+}
+
+/**
+ * T1075 — one date bound of an item: a fixed date, or relative date math
+ * (`NOW-7DAYS`) that moves with today, which a "last 7 days" bucket needs.
+ * The relative text is kept locally so a half-typed expression is not cleared
+ * while the parent only stores values that already read as a bound.
+ */
+function DateBoundInput({ value, onChange, placeholder }: Readonly<DateBoundInputProps>) {
+  const { t } = useTranslation();
+  const [relative, setRelative] = useState(() => isDateMath(value));
+  const [text, setText] = useState(() => (isDateMath(value) ? value : ""));
+
+  function switchMode(mode: string) {
+    const nextRelative = mode === "relative";
+    setRelative(nextRelative);
+    const next = nextRelative ? t("forms.snCustomFacet.relativeDatePlaceholder") : "";
+    setText(next);
+    onChange(next);
+  }
+
+  return (
+    <div className="space-y-1">
+      <div className="flex gap-2">
+        <Select value={relative ? "relative" : "fixed"} onValueChange={switchMode}>
+          <SelectTrigger className="w-32 shrink-0">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="fixed">{t("forms.snCustomFacet.fixedDate")}</SelectItem>
+            <SelectItem value="relative">{t("forms.snCustomFacet.relativeDate")}</SelectItem>
+          </SelectContent>
+        </Select>
+        {relative ? (
+          <Input
+            className="flex-1 font-mono"
+            value={text}
+            onChange={(e) => {
+              setText(e.target.value);
+              onChange(e.target.value);
+            }}
+            placeholder={t("forms.snCustomFacet.relativeDatePlaceholder")}
+          />
+        ) : (
+          <Input
+            className="flex-1"
+            type="datetime-local"
+            value={toDateTimeLocalValue(value)}
+            onChange={(e) => onChange(e.target.value)}
+            placeholder={placeholder}
+          />
+        )}
+      </div>
+      {relative && (
+        <p className="text-xs text-muted-foreground">{t("forms.snCustomFacet.relativeDateHint")}</p>
       )}
     </div>
   );

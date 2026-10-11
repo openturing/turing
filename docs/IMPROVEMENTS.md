@@ -2132,33 +2132,6 @@ silently. Found while building trabalharei's local Turing and import proof.
 
 ## CXI Search response fields arrive as they were indexed
 
-### CXI.2 Range filters and relative date facets (T1075)
-
-Met in trabalharei (TRA31, the job search filters) on a local turing-ce built from
-`0256a122dd`, Lucene engine, SN site `trabalharei-vagas` with a DATE field
-`publishedAt`.
-
-Landed: a Lucene filter query reads its value by the field's type
-(`TurLuceneFilterQueries`), so `publishedAt:[NOW-7DAYS TO *]`, `[2026-10-10T00:00:00Z TO
-*]`, numeric ranges and numeric or date facet clicks match, and a range that does not
-parse for its field is refused with a 400 that says why.
-
-Left: a DATE facet cannot offer relative buckets ("last 24 hours", "last 7 days"). The
-field's `facetRange` (DAY, MONTH, YEAR) gives calendar buckets, and only on Solr;
-`TurSNSiteCustomFacetItem` gives labelled range buckets, but with fixed bounds
-(`rangeStartDate`/`rangeEndDate` are instants) and only on Solr (T1083).
-
-Build it on the custom facet, not a new facet kind: let an item's bound be date math (a
-`rangeStartExpression`/`rangeEndExpression` pair, or a relative mode that takes
-`NOW-7DAYS`), new nullable columns in a new Liquibase file, editable where the items are
-edited in the console. `buildFilterQueryByOperator` then writes `publishedAt:[NOW-7DAYS
-TO *]`, which Solr reads natively and Lucene reads since the first part of this line, so
-the item's `filterQuery` stays a plain filter the client sends back. Counts come from
-the custom-facet path T1083 adds to Lucene.
-
-Done when the trabalharei site lists "last 1, 3, 7, 30 days" items with counts on both
-engines, each `filterQuery` answering the same documents its count promised.
-
 ### CXI.4 OR filters ignored, no document by id (T1077)
 
 Met in trabalharei (TRA35, the job page, which looks a job up by the id at the end of

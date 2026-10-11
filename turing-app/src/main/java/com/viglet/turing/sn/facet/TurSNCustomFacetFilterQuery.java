@@ -44,13 +44,26 @@ public final class TurSNCustomFacetFilterQuery {
         TurSNSiteCustomFacetOperatorEnum operator = Optional.ofNullable(item.getOperator())
                 .orElse(TurSNSiteCustomFacetOperatorEnum.BETWEEN_INCLUSIVE);
         if (TurSEFieldType.DATE.equals(fieldType)) {
+            // T1075 — a relative bound (NOW-7DAYS) wins over a fixed instant
             return byOperator(fieldName, operator,
-                    Optional.ofNullable(item.getRangeStartDate()).map(Instant::toString).orElse(null),
-                    Optional.ofNullable(item.getRangeEndDate()).map(Instant::toString).orElse(null));
+                    dateBound(item.getRangeStartExpression(), item.getRangeStartDate()),
+                    dateBound(item.getRangeEndExpression(), item.getRangeEndDate()));
         }
         return byOperator(fieldName, operator,
                 Optional.ofNullable(item.getRangeStart()).map(Number::toString).orElse(null),
                 Optional.ofNullable(item.getRangeEnd()).map(Number::toString).orElse(null));
+    }
+
+    private static String dateBound(String expression, Instant instant) {
+        if (expression != null && !expression.isBlank()) {
+            return expression.trim();
+        }
+        return instant != null ? instant.toString() : null;
+    }
+
+    /** Whether {@code value} is Solr date math anchored on NOW, rather than a date. */
+    public static boolean isDateMath(String value) {
+        return value != null && value.trim().toUpperCase(java.util.Locale.ROOT).startsWith("NOW");
     }
 
     /** The filter query for an operator and its bounds; a missing bound is open. */

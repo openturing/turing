@@ -94,6 +94,17 @@ public class TurSNSiteCustomFacetItem implements Serializable {
     @Column(name = "range_end_date")
     private Instant rangeEndDate;
 
+    /**
+     * T1075 — a relative lower bound for a DATE field, in Solr date math
+     * ({@code NOW-7DAYS}, {@code NOW/DAY}); wins over {@link #rangeStartDate}.
+     */
+    @Column(name = "range_start_expression", length = 64)
+    private String rangeStartExpression;
+
+    /** T1075 — a relative upper bound for a DATE field; wins over {@link #rangeEndDate}. */
+    @Column(name = "range_end_expression", length = 64)
+    private String rangeEndExpression;
+
     @Enumerated(EnumType.STRING)
     @Column(name = "operator", length = 20)
     private TurSNSiteCustomFacetOperatorEnum operator;

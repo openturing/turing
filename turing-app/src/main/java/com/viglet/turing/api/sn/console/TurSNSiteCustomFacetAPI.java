@@ -33,6 +33,7 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -49,6 +50,9 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
+
+import com.viglet.turing.lucene.TurLuceneFilterQueries;
+import com.viglet.turing.sn.facet.TurSNCustomFacetFilterQuery;
 
 import com.viglet.turing.commons.se.field.TurSEFieldType;
 import com.viglet.turing.persistence.model.sn.TurSNSite;
@@ -255,13 +259,20 @@ public class TurSNSiteCustomFacetAPI {
         if (TurSEFieldType.DATE.equals(fieldType)) {
             item.setRangeStart(null);
             item.setRangeEnd(null);
-            item.setRangeStartDate(parseIsoDate(dto.getRangeStartDate()));
-            item.setRangeEndDate(parseIsoDate(dto.getRangeEndDate()));
+            // T1075 - a bound is either a date or relative date math (NOW-7DAYS)
+            item.setRangeStartExpression(dateMathOrNull(dto.getRangeStartDate()));
+            item.setRangeEndExpression(dateMathOrNull(dto.getRangeEndDate()));
+            item.setRangeStartDate(item.getRangeStartExpression() == null
+                    ? parseIsoDate(dto.getRangeStartDate()) : null);
+            item.setRangeEndDate(item.getRangeEndExpression() == null
+                    ? parseIsoDate(dto.getRangeEndDate()) : null);
         } else {
             item.setRangeStart(dto.getRangeStart());
             item.setRangeEnd(dto.getRangeEnd());
             item.setRangeStartDate(null);
             item.setRangeEndDate(null);
+            item.setRangeStartExpression(null);
+            item.setRangeEndExpression(null);
         }
         return item;
     }
@@ -284,8 +295,10 @@ public class TurSNSiteCustomFacetAPI {
                             .orElse(TurSNSiteCustomFacetOperatorEnum.BETWEEN_INCLUSIVE));
                     dto.setRangeStart(item.getRangeStart());
                     dto.setRangeEnd(item.getRangeEnd());
-                    dto.setRangeStartDate(formatIsoDate(item.getRangeStartDate()));
-                    dto.setRangeEndDate(formatIsoDate(item.getRangeEndDate()));
+                    dto.setRangeStartDate(item.getRangeStartExpression() != null
+                            ? item.getRangeStartExpression() : formatIsoDate(item.getRangeStartDate()));
+                    dto.setRangeEndDate(item.getRangeEndExpression() != null
+                            ? item.getRangeEndExpression() : formatIsoDate(item.getRangeEndDate()));
                     return dto;
                 })
                 .toList();
@@ -305,6 +318,28 @@ public class TurSNSiteCustomFacetAPI {
                 ? fieldExt.getType().toString()
                 : null);
         return dto;
+    }
+
+    /**
+     * T1075 - the bound as relative date math when it is one, validated by the
+     * same parser the Lucene engine reads a filter with; a malformed expression
+     * is refused here rather than at the first search.
+     */
+    private static String dateMathOrNull(String value) {
+        if (!TurSNCustomFacetFilterQuery.isDateMath(value)) {
+            return null;
+        }
+        String expression = value.trim().toUpperCase(Locale.ROOT);
+        if (expression.length() > 64) {
+            throw new ResponseStatusException(BAD_REQUEST, "Relative date is too long: " + value);
+        }
+        try {
+            TurLuceneFilterQueries.parseDate(expression, Instant.now());
+        } catch (java.time.format.DateTimeParseException e) {
+            throw new ResponseStatusException(BAD_REQUEST, "Invalid relative date '" + value
+                    + "': use NOW with steps such as NOW-7DAYS or NOW/DAY", e);
+        }
+        return expression;
     }
 
     private Instant parseIsoDate(String value) {

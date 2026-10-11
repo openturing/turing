@@ -196,7 +196,7 @@ public final class TurLuceneFilterQueries {
      * ISO instant or a {@code yyyy-MM-dd} day; each following step adds or
      * subtracts units ({@code -7DAYS}) or rounds down to one ({@code /DAY}).
      */
-    static Instant parseDate(String value, Instant now) {
+    public static Instant parseDate(String value, Instant now) {
         String upper = value.toUpperCase(Locale.ROOT);
         ZonedDateTime anchor;
         String math;

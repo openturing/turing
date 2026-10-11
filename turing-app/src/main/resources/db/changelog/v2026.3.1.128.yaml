@@ -1,0 +1,30 @@
+databaseChangeLog:
+  # T1075 (Block CA) - relative date bounds on a custom facet item. An item over a
+  # DATE field held fixed instants only (range_start_date / range_end_date), so a
+  # "last 7 days" bucket went stale the day after it was saved.
+  #
+  # Each bound may now be Solr date math instead (NOW-7DAYS, NOW/DAY), which both
+  # engines read in a filter query. Nullable with no default: every existing item
+  # keeps its fixed instants.
+  #
+  # Idempotent (columnExists + MARK_RAN); portable lowercase `varchar`.
+
+  - changeSet:
+      id: v2026.3.1.128-add-range-expressions-to-sn_site_custom_facet_item
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - columnExists:
+                tableName: sn_site_custom_facet_item
+                columnName: range_start_expression
+      changes:
+        - addColumn:
+            tableName: sn_site_custom_facet_item
+            columns:
+              - column:
+                  name: range_start_expression
+                  type: varchar(64)
+              - column:
+                  name: range_end_expression
+                  type: varchar(64)

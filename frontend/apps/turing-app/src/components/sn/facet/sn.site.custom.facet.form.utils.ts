@@ -63,10 +63,26 @@ export function parseRangeValue(value: unknown): number | null {
   return Number.isNaN(numericValue) ? null : numericValue;
 }
 
+/**
+ * T1075 — whether a date bound is relative date math anchored on NOW
+ * (`NOW-7DAYS`, `NOW/DAY`) rather than a fixed date. The server stores it as
+ * typed and both search engines resolve it at query time.
+ */
+export function isDateMath(value: unknown): value is string {
+  return typeof value === "string" && /^\s*now/i.test(value);
+}
+
 export function parseIsoDateValue(value: unknown): string | null {
   if (value === null || value === undefined || value === "") return null;
+  if (isDateMath(value)) return value.trim().toUpperCase();
   const parsedDate = new Date(String(value));
   return Number.isNaN(parsedDate.getTime()) ? null : parsedDate.toISOString();
+}
+
+/** A date bound for display: date math as typed, a fixed date in the user's locale. */
+function formatDateBound(value: string | null | undefined): string {
+  if (!value) return "—";
+  return isDateMath(value) ? value : new Date(value).toLocaleString();
 }
 
 export function toDateTimeLocalValue(value: string | null | undefined): string {
@@ -125,12 +141,8 @@ export function formatItemSummary(
   variable: string,
 ): string {
   const op = item.operator ?? DEFAULT_OPERATOR;
-  const startVal = isDateField
-    ? (item.rangeStartDate ? new Date(item.rangeStartDate).toLocaleString() : "—")
-    : (item.rangeStart ?? "—");
-  const endVal = isDateField
-    ? (item.rangeEndDate ? new Date(item.rangeEndDate).toLocaleString() : "—")
-    : (item.rangeEnd ?? "—");
+  const startVal = isDateField ? formatDateBound(item.rangeStartDate) : (item.rangeStart ?? "—");
+  const endVal = isDateField ? formatDateBound(item.rangeEndDate) : (item.rangeEnd ?? "—");
 
   switch (op) {
     case "EQUAL": return `${variable} = ${startVal}`;
@@ -156,7 +168,8 @@ type Interval = {
 export type OverlapPair = { indexA: number; indexB: number };
 
 function dateIsoToNumber(value: string | null | undefined): number | null {
-  if (!value) return null;
+  // a relative bound moves with today, so it takes no part in overlap checks
+  if (!value || isDateMath(value)) return null;
   const parsed = new Date(value);
   return Number.isNaN(parsed.getTime()) ? null : parsed.getTime();
 }

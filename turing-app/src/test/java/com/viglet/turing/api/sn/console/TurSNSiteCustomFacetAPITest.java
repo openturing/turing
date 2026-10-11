@@ -264,6 +264,54 @@ class TurSNSiteCustomFacetAPITest {
                 .isEqualTo(BAD_REQUEST);
     }
 
+    private TurSNSiteCustomFacet dateFacet;
+
+    private TurSNSiteCustomFacetAPI.TurSNSiteCustomFacetDto updateDateItem(String start, String end) {
+        TurSNSite site = site("site-1");
+        TurSNSiteCustomFacet facet = customFacet("facet-1", "posted", 1);
+        dateFacet = facet;
+        TurSNSiteFieldExt field = fieldExt("field-1", "publishedAt", TurSEFieldType.DATE, site, Set.of(facet));
+        when(turSNSiteRepository.findById("site-1")).thenReturn(Optional.of(site));
+        when(turSNSiteFieldExtRepository.findByTurSNSite(any(Sort.class), eq(site))).thenReturn(List.of(field));
+        when(turSNSiteFieldExtRepository.findById("field-1")).thenReturn(Optional.of(field));
+        when(turSNSiteCustomFacetRepository.findById("facet-1")).thenReturn(Optional.of(facet));
+        org.mockito.Mockito.lenient().when(turSNSiteFieldExtRepository.save(any(TurSNSiteFieldExt.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+        when(turSNSiteCustomFacetRepository.findByFieldExtsWithDetails(any())).thenReturn(List.of(facet));
+
+        TurSNSiteCustomFacetAPI.TurSNSiteCustomFacetItemDto item = new TurSNSiteCustomFacetAPI.TurSNSiteCustomFacetItemDto();
+        item.setLabel("Last 7 days");
+        item.setPosition(1);
+        item.setOperator(com.viglet.turing.persistence.model.sn.field.TurSNSiteCustomFacetOperatorEnum.GREATER_THAN_OR_EQUAL);
+        item.setRangeStartDate(start);
+        item.setRangeEndDate(end);
+        TurSNSiteCustomFacetAPI.TurSNSiteCustomFacetDto payload = new TurSNSiteCustomFacetAPI.TurSNSiteCustomFacetDto();
+        payload.setFieldExtId("field-1");
+        payload.setName("posted");
+        payload.setItems(List.of(item));
+        return api.update("site-1", "facet-1", payload);
+    }
+
+    @Test
+    void shouldKeepARelativeDateBoundAsDateMath() {
+        // T1075 — "last 7 days" stays the last 7 days instead of a fixed instant
+        TurSNSiteCustomFacetAPI.TurSNSiteCustomFacetDto result = updateDateItem("now-7days", null);
+
+        assertThat(result.getItems()).singleElement().satisfies(savedItem ->
+                assertThat(savedItem.getRangeStartDate()).isEqualTo("NOW-7DAYS"));
+        TurSNSiteCustomFacetItem stored = dateFacet.getItems().iterator().next();
+        assertThat(stored.getRangeStartExpression()).isEqualTo("NOW-7DAYS");
+        assertThat(stored.getRangeStartDate()).isNull();
+    }
+
+    @Test
+    void shouldRejectAMalformedRelativeDate() {
+        assertThatThrownBy(() -> updateDateItem("NOW-3FORTNIGHTS", null))
+                .isInstanceOf(ResponseStatusException.class)
+                .extracting("statusCode")
+                .isEqualTo(BAD_REQUEST);
+    }
+
     @Test
     void shouldDeleteFacetFromFieldAndPersistChanges() {
         TurSNSite site = site("site-1");
