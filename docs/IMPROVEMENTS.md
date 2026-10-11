@@ -2129,22 +2129,3 @@ What a connector (Dumont, an SDK script, CI) needs from Turing's indexing and ad
 to work without a browser: a key that authenticates on its own, a scripted login that
 works, and an import endpoint that refuses a body it cannot read instead of accepting it
 silently. Found while building trabalharei's local Turing and import proof.
-
-### CX.10 Field manifest carries the search weight (T1072)
-
-Left over from T1065. A site field now has a `searchWeight` (1 to 100, empty means 1)
-that both engines apply. Lucene multiplies the field's clause through the
-`MultiFieldQueryParser` boosts map. Solr adds a `{!edismax qf='field^(w-1)' v=$q}` boost
-query. The console and `PUT /api/sn/{site}/field` set it. The field manifest (`POST
-/api/sn/manifest`, T382) cannot, so a connector that provisions its site from a manifest
-(trabalharei, Dumont's structured connectors) still has to set weights by hand in the
-console after every converge.
-
-Build: add an optional `boost` (or `searchWeight`) to `VigletFieldSpec` in viglet-core.
-That is a separate repo published to GitHub Packages, so it needs a release before
-Turing can depend on it. Then map it in `TurSNManifestMapper` onto
-`TurSNSiteFieldExt.searchWeight`, validated by the same 1 to 100 rule as
-`TurSNSiteFieldExtAPI.validSearchWeight`. Let the T386 planner diff report a weight
-change as non-breaking. A weight changes ranking, not the schema, so it never needs
-RECREATE. Cover it with a manifest provisioning test that converges a weight and reads
-it back.

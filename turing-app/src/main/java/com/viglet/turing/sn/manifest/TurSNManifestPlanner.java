@@ -66,7 +66,8 @@ import lombok.RequiredArgsConstructor;
  *
  * <p>Facet/mandatory/description metadata is intentionally <em>not</em> treated
  * as a breaking change: it does not require reindexing and the indexing-time
- * auto-create path never rewrote it either.</p>
+ * auto-create path never rewrote it either. Nor is a {@code searchWeight}
+ * (T1072): it changes ranking at query time, not the schema.</p>
  *
  * @author Alexandre Oliveira
  * @since 2026.3.4

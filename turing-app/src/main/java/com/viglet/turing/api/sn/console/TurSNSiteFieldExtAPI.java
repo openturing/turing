@@ -169,9 +169,9 @@ public class TurSNSiteFieldExtAPI {
      * T1065 — a search weight is a multiplier from 1 (no change, the same as
      * empty) to 100. Below 1 is refused: Solr applies the weight as an extra boost
      * query, which can raise a field but never lower one, so a demotion would
-     * behave differently per engine.
+     * behave differently per engine. The field manifest (T1072) applies the same rule.
      */
-    static Float validSearchWeight(Float weight) {
+    public static Float validSearchWeight(Float weight) {
         if (weight == null) {
             return null;
         }

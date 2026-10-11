@@ -37,12 +37,15 @@ import com.viglet.core.manifest.VigletFieldSpec;
 import com.viglet.core.manifest.VigletManifestDiff;
 import com.viglet.core.manifest.VigletManifestFieldChange;
 import com.viglet.core.manifest.VigletManifestResult;
+import com.viglet.turing.api.sn.console.TurSNSiteFieldExtAPI;
 import com.viglet.turing.client.sn.job.TurSNJobAttributeSpec;
 import com.viglet.turing.domain.sn.SnSiteIndexInvalidatedEvent;
 import com.viglet.turing.persistence.model.se.TurSEInstance;
 import com.viglet.turing.persistence.model.sn.TurSNSite;
+import com.viglet.turing.persistence.model.sn.field.TurSNSiteFieldExt;
 import com.viglet.turing.persistence.repository.se.TurSEInstanceRepository;
 import com.viglet.turing.persistence.repository.sn.TurSNSiteRepository;
+import com.viglet.turing.persistence.repository.sn.field.TurSNSiteFieldExtRepository;
 import com.viglet.turing.persistence.repository.sn.locale.TurSNSiteLocaleRepository;
 import com.viglet.turing.sn.field.TurSNFieldProvisioner;
 import com.viglet.turing.sn.template.TurSNTemplate;
@@ -82,6 +85,7 @@ public class TurSNSiteManifestService {
     private final TurSNTemplate turSNTemplate;
     private final TurSNFieldProvisioner turSNFieldProvisioner;
     private final TurSNManifestPlanner turSNManifestPlanner;
+    private final TurSNSiteFieldExtRepository turSNSiteFieldExtRepository;
     private final ApplicationEventPublisher eventPublisher;
 
     /**
@@ -139,6 +143,7 @@ public class TurSNSiteManifestService {
         List<String> fieldsCreated = new ArrayList<>();
         List<String> fieldsSkipped = new ArrayList<>();
         applyFieldChanges(site, manifest, fieldsMigrated, fieldsCreated, fieldsSkipped);
+        applySearchWeights(site, manifest);
 
         eventPublisher.publishEvent(siteCreated
                 ? SnSiteIndexInvalidatedEvent.created(site.getId(), site.getName())
@@ -187,6 +192,28 @@ public class TurSNSiteManifestService {
                 fieldsCreated.add(field.name());
             } else {
                 fieldsSkipped.add(field.name());
+            }
+        }
+    }
+
+    /**
+     * Converges each declared search weight (T1072) onto the site field. A weight
+     * changes ranking, not the schema, so it never needs a migration; a field that
+     * declares none keeps whatever weight the console gave it.
+     */
+    private void applySearchWeights(TurSNSite site, VigletFieldManifest manifest) {
+        if (manifest.fields() == null) {
+            return;
+        }
+        for (VigletFieldSpec field : manifest.fields()) {
+            if (field.searchWeight() == null) {
+                continue;
+            }
+            for (TurSNSiteFieldExt ext : turSNSiteFieldExtRepository.findByTurSNSiteAndName(site, field.name())) {
+                if (!field.searchWeight().equals(ext.getSearchWeight())) {
+                    ext.setSearchWeight(field.searchWeight());
+                    turSNSiteFieldExtRepository.save(ext);
+                }
             }
         }
     }
@@ -256,6 +283,12 @@ public class TurSNSiteManifestService {
             if (spec.type() == null) {
                 throw new IllegalArgumentException(
                         "Manifest field '" + spec.name() + "' must declare a 'type'");
+            }
+            try {
+                TurSNSiteFieldExtAPI.validSearchWeight(spec.searchWeight());
+            } catch (IllegalArgumentException e) {
+                throw new IllegalArgumentException(
+                        "Manifest field '" + spec.name() + "': " + e.getMessage(), e);
             }
         }
     }

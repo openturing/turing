@@ -35,8 +35,10 @@ import com.viglet.turing.client.sn.job.TurSNJobAttributeSpec;
 import com.viglet.turing.domain.sn.SnSiteIndexInvalidatedEvent;
 import com.viglet.turing.persistence.model.se.TurSEInstance;
 import com.viglet.turing.persistence.model.sn.TurSNSite;
+import com.viglet.turing.persistence.model.sn.field.TurSNSiteFieldExt;
 import com.viglet.turing.persistence.repository.se.TurSEInstanceRepository;
 import com.viglet.turing.persistence.repository.sn.TurSNSiteRepository;
+import com.viglet.turing.persistence.repository.sn.field.TurSNSiteFieldExtRepository;
 import com.viglet.turing.persistence.repository.sn.locale.TurSNSiteLocaleRepository;
 import com.viglet.turing.sn.field.TurSNFieldProvisioner;
 import com.viglet.turing.sn.template.TurSNTemplate;
@@ -56,6 +58,8 @@ class TurSNSiteManifestServiceTest {
     private TurSNFieldProvisioner turSNFieldProvisioner;
     @Mock
     private TurSNManifestPlanner turSNManifestPlanner;
+    @Mock
+    private TurSNSiteFieldExtRepository turSNSiteFieldExtRepository;
     @Mock
     private ApplicationEventPublisher eventPublisher;
     @InjectMocks
@@ -198,6 +202,59 @@ class TurSNSiteManifestServiceTest {
         // Migrated field is converged by recreate, not re-created by ensureField.
         verify(turSNFieldProvisioner, never()).ensureField(eq(existing), named("mensalidade"));
         verify(eventPublisher).publishEvent(any(SnSiteIndexInvalidatedEvent.class));
+    }
+
+    @Test
+    void provisionConvergesDeclaredSearchWeight() {
+        TurSNSite existing = new TurSNSite();
+        existing.setName("courses");
+        VigletFieldSpec weighted = VigletFieldSpec.builder()
+                .name("title").type(VigletFieldType.TEXT).searchWeight(5f).build();
+        VigletFieldManifest manifest = new VigletFieldManifest(
+                "courses", null, null, null, List.of(weighted));
+        TurSNSiteFieldExt live = new TurSNSiteFieldExt();
+        live.setName("title");
+
+        when(turSNSiteRepository.findByNameIgnoreCase("courses")).thenReturn(Optional.of(existing));
+        when(turSNSiteRepository.findByIdWithGenAi(any())).thenReturn(Optional.of(existing));
+        when(turSNManifestPlanner.diff(manifest, existing)).thenReturn(cleanDiff());
+        when(turSNFieldProvisioner.ensureField(eq(existing), named("title"))).thenReturn(false);
+        when(turSNSiteFieldExtRepository.findByTurSNSiteAndName(existing, "title")).thenReturn(List.of(live));
+
+        service.provision(manifest);
+
+        assertEquals(5f, live.getSearchWeight());
+        verify(turSNSiteFieldExtRepository).save(live);
+    }
+
+    @Test
+    void provisionKeepsConsoleWeightWhenManifestDeclaresNone() {
+        TurSNSite existing = new TurSNSite();
+        existing.setName("courses");
+        VigletFieldManifest manifest = new VigletFieldManifest(
+                "courses", null, null, null, List.of(field("mensalidade")));
+
+        when(turSNSiteRepository.findByNameIgnoreCase("courses")).thenReturn(Optional.of(existing));
+        when(turSNSiteRepository.findByIdWithGenAi(any())).thenReturn(Optional.of(existing));
+        when(turSNManifestPlanner.diff(manifest, existing)).thenReturn(cleanDiff());
+        when(turSNFieldProvisioner.ensureField(eq(existing), named("mensalidade"))).thenReturn(false);
+
+        service.provision(manifest);
+
+        verify(turSNSiteFieldExtRepository, never()).findByTurSNSiteAndName(any(), any());
+        verify(turSNSiteFieldExtRepository, never()).save(any());
+    }
+
+    @Test
+    void provisionRejectsSearchWeightOutOfRange() {
+        VigletFieldSpec bad = VigletFieldSpec.builder()
+                .name("title").type(VigletFieldType.TEXT).searchWeight(0.5f).build();
+        VigletFieldManifest manifest = new VigletFieldManifest("courses", null, "se1", null, List.of(bad));
+
+        IllegalArgumentException e = assertThrows(IllegalArgumentException.class,
+                () -> service.provision(manifest));
+        assertTrue(e.getMessage().contains("title"));
+        verify(turSNFieldProvisioner, never()).ensureField(any(), any());
     }
 
     @Test

@@ -87,6 +87,25 @@ class TurSNManifestPlannerTest {
     }
 
     @Test
+    void searchWeightChangeIsNotBreaking() {
+        TurSNSite site = new TurSNSite();
+        VigletFieldManifest manifest = new VigletFieldManifest(
+                "courses", null, null, null,
+                List.of(VigletFieldSpec.builder().name("title").type(VigletFieldType.TEXT)
+                        .searchWeight(10f).build()));
+        TurSNSiteFieldExt live = liveField("title", TurSEFieldType.TEXT, false);
+        live.setSearchWeight(2f);
+
+        when(turSNSiteFieldExtRepository.findByTurSNSite(any(Sort.class), eq(site)))
+                .thenReturn(List.of(live));
+
+        VigletManifestDiff diff = planner.diff(manifest, site);
+
+        assertFalse(diff.hasBreakingChanges());
+        assertEquals(List.of("title"), diff.fieldsUnchanged());
+    }
+
+    @Test
     void typeChangeIsBreakingAndUndeclaredWithoutMigration() {
         TurSNSite site = new TurSNSite();
         VigletFieldManifest manifest = new VigletFieldManifest(

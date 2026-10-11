@@ -6,10 +6,6 @@
 > [STRATEGY.md](STRATEGY.md); the markers and limits are `roadkeep.toml`'s. Blocks are
 > reused, not minted — `roadkeep brief` picks the next task and states why.
 
-## Block BZ — Indexing API trust for connectors: key auth, scripted login, request validation
-
-- 🛠 **T1072** (deps: —) **A field manifest cannot set a field's search weight, so connectors re-weight fields by hand after each converge** — Weights exist on fields since T1065, but VigletFieldSpec in viglet-core has no slot for one. → §CX.10
-
 ## Non-goals (do NOT add as tasks)
 
 Binding constraints — see [IMPROVEMENTS.md](IMPROVEMENTS.md) §I.6 (What NOT to
