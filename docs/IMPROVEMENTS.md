@@ -2130,24 +2130,6 @@ to work without a browser: a key that authenticates on its own, a scripted login
 works, and an import endpoint that refuses a body it cannot read instead of accepting it
 silently. Found while building trabalharei's local Turing and import proof.
 
-### CX.8 Rejected credentials answer 401 (T1069)
-
-Found while working T1063 against the trabalharei container (turing-ce 2026.3.4).
-`TurLoginAPI.login` calls `authenticationManager.authenticate(...)` directly. A wrong
-password throws `BadCredentialsException`. No handler maps Spring Security's
-`AuthenticationException`, so `TurGlobalExceptionHandler.handleUnexpected` catches it,
-answers 500 ("An unexpected error occurred") and logs it at ERROR with a full stack
-trace. That makes a mistyped password look like a server fault. A script retries a 500
-or reports an outage, and the log fills with stack traces for every failed login.
-
-Build: map `AuthenticationException` (at least `BadCredentialsException`,
-`DisabledException` and `LockedException`) to 401 with a `ProblemDetail` that says the
-credentials were rejected without saying which half was wrong. Either add a handler in
-`TurGlobalExceptionHandler` or catch the exception in `TurLoginAPI`. Log at WARN or
-DEBUG without the stack trace. Check that the console's login page still shows its
-"invalid credentials" message on a 401. Cover it with a test that posts a wrong password
-to `/api/login` and expects 401.
-
 ### CX.9 Ranking conditions honour Is not (T1070)
 
 Found while porting ranking expressions to Lucene (T1064). The console's ranking

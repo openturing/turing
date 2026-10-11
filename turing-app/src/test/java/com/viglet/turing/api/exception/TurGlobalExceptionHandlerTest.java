@@ -74,6 +74,22 @@ class TurGlobalExceptionHandlerTest {
     }
 
     @Test
+    void badCredentials_mapsTo401WithoutNamingTheWrongHalf() throws Exception {
+        mvc.perform(get("/test/bad-credentials"))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.status", equalTo(401)))
+                .andExpect(jsonPath("$.detail", equalTo("The credentials were rejected.")))
+                .andExpect(jsonPath("$.type", startsWith("tag:viglet.com,2026:errors/unauthenticated")));
+    }
+
+    @Test
+    void disabledAccount_mapsTo401() throws Exception {
+        mvc.perform(get("/test/disabled"))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.detail", equalTo("The credentials were rejected.")));
+    }
+
+    @Test
     void provider_mapsTo502AndKeepsProviderField() throws Exception {
         mvc.perform(get("/test/provider"))
                 .andExpect(status().isBadGateway())
@@ -215,6 +231,16 @@ class TurGlobalExceptionHandlerTest {
         @GetMapping("/forbidden")
         public void forbidden() {
             throw new TurForbiddenException("read-only catalog");
+        }
+
+        @GetMapping("/bad-credentials")
+        public void badCredentials() {
+            throw new org.springframework.security.authentication.BadCredentialsException("Bad credentials");
+        }
+
+        @GetMapping("/disabled")
+        public void disabled() {
+            throw new org.springframework.security.authentication.DisabledException("User is disabled");
         }
 
         @GetMapping("/provider")

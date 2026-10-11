@@ -76,6 +76,21 @@ class TurBasicAuthIT extends AbstractTuringSpringIT {
         assertEquals(401, response.statusCode());
     }
 
+    /** T1069 — a wrong password on the console login is a 401, not a 500. */
+    @Test
+    void loginWithAWrongPasswordAnswers401() throws Exception {
+        HttpResponse<String> response = HttpClient.newHttpClient().send(
+                HttpRequest.newBuilder(URI.create("http://localhost:" + port + "/api/login"))
+                        .header("Content-Type", "application/json")
+                        .POST(HttpRequest.BodyPublishers.ofString(
+                                "{\"username\":\"admin\",\"password\":\"not-the-password\"}"))
+                        .build(),
+                BodyHandlers.ofString());
+
+        assertEquals(401, response.statusCode(),
+                () -> "a wrong password must be a 401; got " + response.statusCode() + " body=" + response.body());
+    }
+
     @Test
     void noCredentialsIsRejected() throws Exception {
         HttpResponse<String> response = getSites(null, null);

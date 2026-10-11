@@ -30,6 +30,7 @@ import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.HttpMediaTypeNotSupportedException;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
@@ -190,6 +191,21 @@ public class TurGlobalExceptionHandler {
         ProblemDetail problem = build(HttpStatus.FORBIDDEN, TurErrorTypes.FORBIDDEN, "Access denied.");
         log.warn("[GlobalEx] Access denied");
         return ResponseEntity.status(HttpStatus.FORBIDDEN).body(problem);
+    }
+
+    /**
+     * T1069 — a controller that authenticates on its own ({@code POST /api/login})
+     * gets {@link AuthenticationException} back from the manager for a wrong
+     * password, or a disabled or locked account. That is the caller's mistake, not a
+     * server fault: 401, and a one-line log instead of a stack trace. The message
+     * does not say which half of the credentials was wrong.
+     */
+    @ExceptionHandler(AuthenticationException.class)
+    public ResponseEntity<ProblemDetail> handleAuthentication(AuthenticationException ex) {
+        ProblemDetail problem = build(HttpStatus.UNAUTHORIZED, TurErrorTypes.UNAUTHENTICATED,
+                "The credentials were rejected.");
+        log.warn("[GlobalEx] Authentication rejected: {}", ex.getClass().getSimpleName());
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(problem);
     }
 
     /**

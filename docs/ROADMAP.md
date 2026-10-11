@@ -8,7 +8,6 @@
 
 ## Block BZ — Indexing API trust for connectors: key auth, scripted login, request validation
 
-- 📋 **T1069** (deps: —) **A wrong password on POST /api/login answers 500 and logs an ERROR stack trace instead of answering 401** — Scripts read a mistyped password as a server outage, and every failed login fills the log with stack traces. → §CX.8
 - 📋 **T1070** (deps: —) **A ranking condition set to Is not boosts the value instead, on Solr and on Lucene alike** — The console and docs offer Is not, but both engines ignore the condition field, so a demotion rule promotes what it meant to bury. → §CX.9
 - 📋 **T1072** (deps: viglet-core release with VigletFieldSpec boost) **A field manifest cannot set a field's search weight, so connectors re-weight fields by hand after each converge** — Weights exist on fields since T1065, but VigletFieldSpec in viglet-core has no slot for one. → §CX.10
 

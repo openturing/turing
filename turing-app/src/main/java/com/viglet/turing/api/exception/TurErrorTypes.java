@@ -35,6 +35,8 @@ public final class TurErrorTypes {
     public static final String VALIDATION = BASE + "validation";
     public static final String CONFLICT = BASE + "conflict";
     public static final String FORBIDDEN = BASE + "access-denied";
+    /** T1069 — credentials were rejected (wrong password, disabled or locked account). */
+    public static final String UNAUTHENTICATED = BASE + "unauthenticated";
     public static final String PROVIDER_FAILURE = BASE + "provider-failure";
     public static final String STORAGE_FAILURE = BASE + "storage-failure";
     public static final String INVALID_ARGUMENT = BASE + "invalid-argument";
