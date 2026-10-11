@@ -38,6 +38,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -194,11 +195,17 @@ public class TurSolrQueryBuilder {
                 .findByTurSNSite(TurPersistenceUtils.orderByNameIgnoreCase(), turSNSite);
         if (hasRankingConditions(turSNRankingExpression)) {
             String[] expressionString = turSNRankingExpression.stream()
-                    .map(expression -> String.format(Locale.US, "%s^%.1f",
-                            "(" + boostQueryAttributes(expression, turSNSiteFieldExtList) + ")",
-                            expression.getWeight()))
+                    .map(expression -> {
+                        String attributes = boostQueryAttributes(expression, turSNSiteFieldExtList);
+                        return attributes == null ? null
+                                : String.format(Locale.US, "%s^%.1f", "(" + attributes + ")",
+                                        expression.getWeight());
+                    })
+                    .filter(Objects::nonNull)
                     .toArray(String[]::new);
-            query.set(BOOST_QUERY, expressionString);
+            if (expressionString.length > 0) {
+                query.set(BOOST_QUERY, expressionString);
+            }
         }
     }
 
@@ -208,25 +215,40 @@ public class TurSolrQueryBuilder {
                         .findByTurSNRankingExpression(expressions).isEmpty());
     }
 
+    /**
+     * The ANDed conditions of one expression, or {@code null} when the expression
+     * cannot be applied (T1070: an {@code Is not} on the recency form, which has no
+     * meaning), so it is left out rather than widened.
+     */
     private String boostQueryAttributes(TurSNRankingExpression expression,
             List<TurSNSiteFieldExt> turSNSiteFieldExtList) {
-        return turSNRankingConditionRepository.findByTurSNRankingExpression(expression).stream()
-                .map(condition -> {
-                    if (condition.getCondition() == TurSNRankingCondition.EXISTS) {
-                        return String.format("%s:[* TO *]", condition.getAttribute());
-                    }
-                    TurSNSiteFieldExt turSNSiteFieldExt = turSNSiteFieldExtList.stream()
-                            .filter(field -> field.getName().equals(condition.getAttribute()))
-                            .findFirst().orElse(TurSNSiteFieldExt.builder().build());
-                    if (turSNSiteFieldExt.getType() != null
-                            && turSNSiteFieldExt.getType().equals(TurSEFieldType.DATE)
-                            && condition.getValue().equalsIgnoreCase(ASC)) {
-                        return String.format("_query_:\"" + RECENT_DATES + "\"",
-                                condition.getAttribute());
-                    }
-                    return String.format("%s:\"%s\"", condition.getAttribute(),
-                            condition.getValue());
-                }).collect(Collectors.joining(betweenSpaces(AND)));
+        List<String> clauses = new ArrayList<>();
+        for (TurSNRankingCondition condition : turSNRankingConditionRepository
+                .findByTurSNRankingExpression(expression)) {
+            if (condition.getCondition() == TurSNRankingCondition.EXISTS) {
+                clauses.add(String.format("%s:[* TO *]", condition.getAttribute()));
+                continue;
+            }
+            boolean negated = condition.getCondition() == TurSNRankingCondition.IS_NOT;
+            TurSNSiteFieldExt turSNSiteFieldExt = turSNSiteFieldExtList.stream()
+                    .filter(field -> field.getName().equals(condition.getAttribute()))
+                    .findFirst().orElse(TurSNSiteFieldExt.builder().build());
+            if (turSNSiteFieldExt.getType() != null
+                    && turSNSiteFieldExt.getType().equals(TurSEFieldType.DATE)
+                    && condition.getValue().equalsIgnoreCase(ASC)) {
+                if (negated) {
+                    log.debug("Ranking expression '{}' skipped: Is not has no meaning on the recency form",
+                            expression.getName());
+                    return null;
+                }
+                clauses.add(String.format("_query_:\"" + RECENT_DATES + "\"", condition.getAttribute()));
+                continue;
+            }
+            String match = String.format("%s:\"%s\"", condition.getAttribute(), condition.getValue());
+            // T1070 — Is not: every document except the ones with that value.
+            clauses.add(negated ? "(*:* -" + match + ")" : match);
+        }
+        return clauses.isEmpty() ? null : String.join(betweenSpaces(AND), clauses);
     }
 
     private void prepareGroup(TurSEParameters turSEParameters, SolrQuery query) {

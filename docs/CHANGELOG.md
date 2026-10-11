@@ -1427,3 +1427,4 @@
 - **T1066** — Multi-word synonyms such as home office expand on Lucene sites in both directions: the query is also parsed per field without whitespace splitting, and expansions are phrases.
 - **T1067** — Spell-check leaves corrected absent when there is no suggestion or the correction is blank, so a correct word missing from the index no longer offers a search for nothing.
 - **T1069** — A wrong password, disabled or locked account on POST /api/login answers 401 with a ProblemDetail and a one-line WARN, instead of a 500 with an ERROR stack trace.
+- **T1070** — A ranking condition set to Is not now boosts every document except that value, on Solr as (*:* -field:value) and on Lucene as MatchAll minus the match; Is not on the recency form is skipped.

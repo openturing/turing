@@ -745,6 +745,75 @@ class TurSolrQueryBuilderTest {
         }
 
         @Test
+        void testPrepareSolrQueryBoostQueryNegatesIsNotCondition() {
+                TurSNSite site = new TurSNSite();
+                site.setRowsPerPage(10);
+                site.setSpellCheck(0);
+                site.setSpellCheckFixes(0);
+
+                TurSNRankingExpression expression = new TurSNRankingExpression();
+                expression.setId("expr-not");
+                expression.setWeight(3.0f);
+                TurSNRankingCondition isNot = new TurSNRankingCondition();
+                isNot.setAttribute("type");
+                isNot.setValue("news");
+                isNot.setCondition(TurSNRankingCondition.IS_NOT);
+
+                when(turSNSiteFieldExtRepository.findByTurSNSite(any(), eq(site))).thenReturn(List.of());
+                when(turSNRankingExpressionRepository.findByTurSNSite(any(), eq(site)))
+                                .thenReturn(Set.of(expression));
+                when(turSNRankingConditionRepository.findByTurSNRankingExpression(expression))
+                                .thenReturn(Set.of(isNot));
+
+                TurSNSearchParams params = new TurSNSearchParams();
+                params.setQ("query");
+                params.setRows(10);
+                TurSEParameters seParameters = new TurSEParameters(params, new TurSNSitePostParamsBean());
+
+                SolrQuery query = builder().prepareSolrQuery(
+                                contextFrom(seParameters, new TurSNSitePostParamsBean()), site,
+                                seParameters, new TurSESpellCheckResult(false, ""));
+
+                // T1070 — before, Is not wrote type:"news" and boosted exactly what it meant to bury.
+                assertThat(query.getParams("bq")).containsExactly("((*:* -type:\"news\"))^3.0");
+        }
+
+        @Test
+        void testPrepareSolrQueryOmitsIsNotOnRecencyForm() {
+                TurSNSite site = new TurSNSite();
+                site.setRowsPerPage(10);
+                site.setSpellCheck(0);
+                site.setSpellCheckFixes(0);
+
+                TurSNRankingExpression expression = new TurSNRankingExpression();
+                expression.setId("expr-not-recent");
+                expression.setWeight(3.0f);
+                TurSNRankingCondition isNot = new TurSNRankingCondition();
+                isNot.setAttribute("published");
+                isNot.setValue("asc");
+                isNot.setCondition(TurSNRankingCondition.IS_NOT);
+
+                when(turSNSiteFieldExtRepository.findByTurSNSite(any(), eq(site))).thenReturn(List.of(
+                                TurSNSiteFieldExt.builder().name("published")
+                                                .type(com.viglet.turing.commons.se.field.TurSEFieldType.DATE).build()));
+                when(turSNRankingExpressionRepository.findByTurSNSite(any(), eq(site)))
+                                .thenReturn(Set.of(expression));
+                when(turSNRankingConditionRepository.findByTurSNRankingExpression(expression))
+                                .thenReturn(Set.of(isNot));
+
+                TurSNSearchParams params = new TurSNSearchParams();
+                params.setQ("query");
+                params.setRows(10);
+                TurSEParameters seParameters = new TurSEParameters(params, new TurSNSitePostParamsBean());
+
+                SolrQuery query = builder().prepareSolrQuery(
+                                contextFrom(seParameters, new TurSNSitePostParamsBean()), site,
+                                seParameters, new TurSESpellCheckResult(false, ""));
+
+                assertThat(query.getParams("bq")).isNull();
+        }
+
+        @Test
         void testPrepareSolrQueryAddsFieldWeightAsEdismaxBoostQuery() {
                 TurSNSite site = new TurSNSite();
                 site.setRowsPerPage(10);

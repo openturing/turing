@@ -2130,27 +2130,6 @@ to work without a browser: a key that authenticates on its own, a scripted login
 works, and an import endpoint that refuses a body it cannot read instead of accepting it
 silently. Found while building trabalharei's local Turing and import proof.
 
-### CX.9 Ranking conditions honour Is not (T1070)
-
-Found while porting ranking expressions to Lucene (T1064). The console's ranking
-condition form offers `Is` (stored as `condition = 1`) and `Is not` (`condition = 2`),
-and the end-user docs describe both. Neither engine reads the field.
-`TurSolrQueryBuilder.boostQueryAttributes` always writes `attribute:"value"`, and
-`TurLuceneRankingExpressions.conditionQuery` mirrors it with an exact match. So a rule
-meant to demote or exclude a value boosts that value.
-
-Build: honour `condition = 2` on both engines in one change, so they never disagree.
-
-- Solr: write `(*:* -attribute:"value")` for an `Is not` clause.
-- Lucene: a `BooleanQuery` with `MatchAllDocsQuery` MUST and the exact-match query
-  MUST_NOT.
-
-Inside an expression the clauses stay ANDed. `Is not` on the recency form (`asc` on a
-DATE field) has no meaning: skip that expression and log it, as the Lucene side already
-does for unusable conditions. Cover each engine with a test: a Lucene index test like
-`TurLuceneRankingExpressionsTest`, and a `TurSolrQueryBuilder` test asserting the `bq`
-string.
-
 ### CX.10 Field manifest carries the search weight (T1072)
 
 Left over from T1065. A site field now has a `searchWeight` (1 to 100, empty means 1)

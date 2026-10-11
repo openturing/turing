@@ -39,6 +39,7 @@ import org.apache.lucene.search.BooleanClause;
 import org.apache.lucene.search.BooleanQuery;
 import org.apache.lucene.search.BoostQuery;
 import org.apache.lucene.search.FieldExistsQuery;
+import org.apache.lucene.search.MatchAllDocsQuery;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.TermQuery;
 import org.springframework.stereotype.Component;
@@ -162,6 +163,22 @@ public class TurLuceneRankingExpressions {
         if (value == null) {
             return null;
         }
+        boolean negated = condition.getCondition() == TurSNRankingCondition.IS_NOT;
+        if (negated && type == TurSEFieldType.DATE && ASC.equalsIgnoreCase(value)) {
+            return null; // T1070 — Is not has no meaning on the recency form
+        }
+        Query match = matchQuery(field, value, type, origin);
+        if (match == null || !negated) {
+            return match;
+        }
+        // T1070 — Is not: every document except the ones with that value.
+        return new BooleanQuery.Builder()
+                .add(MatchAllDocsQuery.INSTANCE, BooleanClause.Occur.MUST)
+                .add(match, BooleanClause.Occur.MUST_NOT)
+                .build();
+    }
+
+    private static Query matchQuery(String field, String value, TurSEFieldType type, long origin) {
         if (type == null) {
             return new TermQuery(new Term(field, value));
         }

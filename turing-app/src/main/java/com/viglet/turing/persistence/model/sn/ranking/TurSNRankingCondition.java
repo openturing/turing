@@ -58,6 +58,10 @@ public class TurSNRankingCondition extends TurAuditable<String> implements Seria
 	@Serial
 	private static final long serialVersionUID = 1L;
 
+	/** {@link #condition} value: {@link #attribute} equals {@link #value}. */
+	public static final int IS = 1;
+	/** {@link #condition} value: {@link #attribute} does not equal {@link #value} (T1070). */
+	public static final int IS_NOT = 2;
 	/** {@link #condition} value: the document has any value in {@link #attribute}; {@link #value} is unused (T1065). */
 	public static final int EXISTS = 3;
 

@@ -182,6 +182,41 @@ class TurLuceneRankingExpressionsTest {
     }
 
     @Test
+    void isNotConditionBoostsEveryoneButThatValue() throws Exception {
+        fields("category", TurSEFieldType.STRING);
+        TurSNRankingExpression notIt = new TurSNRankingExpression();
+        notIt.setName("not-it");
+        notIt.setWeight(10f);
+        TurSNRankingCondition isNot = new TurSNRankingCondition();
+        isNot.setAttribute("category");
+        isNot.setValue("it");
+        isNot.setCondition(TurSNRankingCondition.IS_NOT);
+        when(conditionRepository.findByTurSNRankingExpression(notIt)).thenReturn(Set.of(isNot));
+        when(expressionRepository.findByTurSNSite(any(), any())).thenReturn(Set.of(notIt));
+
+        List<String> ranked = rank(rankingExpressions().boostQueries(site, NOW));
+
+        // T1070 — the sales job is boosted; before, Is not boosted the IT jobs instead.
+        assertEquals("new-sales", ranked.getFirst());
+    }
+
+    @Test
+    void isNotOnTheRecencyFormIsSkipped() {
+        fields("publicationDate", TurSEFieldType.DATE);
+        TurSNRankingExpression notRecent = new TurSNRankingExpression();
+        notRecent.setName("not-recent");
+        notRecent.setWeight(2f);
+        TurSNRankingCondition isNot = new TurSNRankingCondition();
+        isNot.setAttribute("publicationDate");
+        isNot.setValue("asc");
+        isNot.setCondition(TurSNRankingCondition.IS_NOT);
+        when(conditionRepository.findByTurSNRankingExpression(notRecent)).thenReturn(Set.of(isNot));
+        when(expressionRepository.findByTurSNSite(any(), any())).thenReturn(Set.of(notRecent));
+
+        assertTrue(rankingExpressions().boostQueries(site, NOW).isEmpty());
+    }
+
+    @Test
     void noExpressionsMeansNoBoosts() {
         when(expressionRepository.findByTurSNSite(any(), any())).thenReturn(Set.of());
 
