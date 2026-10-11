@@ -2235,6 +2235,8 @@ need for the full text.
 Workaround in trabalharei: the job page tries each candidate id with its own `fq`,
 shortest first, stopping at the first hit (`src/lib/jobPage.ts`); usually one request.
 
+The same goes for `fieldList`: every stored field comes back (trabalharei TRA45).
+
 ### CXI.5 Similar documents fail on Lucene (T1078)
 
 Met in trabalharei (TRA37, similar jobs on the job page) on a local turing-ce built from
