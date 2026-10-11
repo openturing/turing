@@ -565,7 +565,7 @@
         <dependency>
             <groupId>com.openai</groupId>
             <artifactId>openai-java-client-okhttp</artifactId>
-<version>4.75.1</version>
+            <version>4.49.0</version>
         </dependency>
         <dependency>
             <groupId>org.springframework.ai</groupId>
