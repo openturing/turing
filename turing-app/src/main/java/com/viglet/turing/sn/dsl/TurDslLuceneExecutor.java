@@ -1061,8 +1061,9 @@ public class TurDslLuceneExecutor implements TurDslSearchEngineExecutor<Query, T
 
         Map<Integer, Map<String, List<String>>> hlByDocId = new LinkedHashMap<>();
         try {
+            // No match → no highlight entry, as Elasticsearch does (no_match_size 0).
             UnifiedHighlighter highlighter = new UnifiedHighlighter.Builder(
-                    searcher, new StandardAnalyzer()).build();
+                    searcher, new StandardAnalyzer()).withMaxNoHighlightPassages(0).build();
 
             String preTag = (hl.preTags() != null && !hl.preTags().isEmpty())
                     ? hl.preTags().getFirst() : "<em>";
@@ -1095,7 +1096,7 @@ public class TurDslLuceneExecutor implements TurDslSearchEngineExecutor<Query, T
             String[] snippets = highlighter.highlight(fieldName, query, topDocs, tags.maxPassages());
             if (snippets == null) return;
             for (int i = 0; i < snippets.length && i < topDocs.scoreDocs.length; i++) {
-                if (snippets[i] == null) continue;
+                if (snippets[i] == null || snippets[i].isEmpty()) continue;
                 String highlighted = snippets[i]
                         .replace("<b>", tags.preTag()).replace("</b>", tags.postTag());
                 hlByDocId.computeIfAbsent(topDocs.scoreDocs[i].doc, k -> new LinkedHashMap<>())

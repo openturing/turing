@@ -452,6 +452,64 @@ class TurLuceneResultProcessorTest {
         }
     }
 
+    // ---- getResults: highlighting must not cut an unmatched field (T1074) ----
+
+    private static final String JOB_TEXT = "Entregas de mercadorias na região de Campinas com "
+            + "veículo da empresa. CNH categoria B.";
+
+    private com.viglet.turing.se.result.TurSEResults searchJobText(
+            org.apache.lucene.search.Query query) throws Exception {
+        org.apache.lucene.store.Directory directory =
+                new org.apache.lucene.store.ByteBuffersDirectory();
+        org.apache.lucene.index.IndexWriter writer = new org.apache.lucene.index.IndexWriter(directory,
+                new org.apache.lucene.index.IndexWriterConfig(
+                        new org.apache.lucene.analysis.standard.StandardAnalyzer()));
+        Document doc = new Document();
+        doc.add(new StringField("id", "fx-motorista-campinas", Field.Store.YES));
+        doc.add(new TextField("text", JOB_TEXT, Field.Store.YES));
+        writer.addDocument(doc);
+        writer.commit();
+
+        TurLuceneInstance instance = new TurLuceneInstance(writer, directory,
+                java.nio.file.Path.of("test-index"), new org.apache.lucene.facet.FacetsConfig());
+        com.viglet.turing.persistence.model.sn.TurSNSite site =
+                org.mockito.Mockito.mock(com.viglet.turing.persistence.model.sn.TurSNSite.class);
+        org.mockito.Mockito.when(site.getRowsPerPage()).thenReturn(10);
+        org.mockito.Mockito.when(site.getHl()).thenReturn(1);
+        com.viglet.turing.persistence.model.sn.field.TurSNSiteFieldExt textField =
+                new com.viglet.turing.persistence.model.sn.field.TurSNSiteFieldExt();
+        textField.setName("text");
+        textField.setType(com.viglet.turing.commons.se.field.TurSEFieldType.TEXT);
+        try {
+            return processor.getResults(new TurLuceneSearch(instance, site, query, paramsForPage(1)),
+                    List.of(), List.of(textField), null, 0L);
+        } finally {
+            instance.close();
+        }
+    }
+
+    @Test
+    void getResultsShouldReturnUnmatchedTextFieldWhole() throws Exception {
+        com.viglet.turing.se.result.TurSEResults results =
+                searchJobText(org.apache.lucene.search.MatchAllDocsQuery.INSTANCE);
+
+        // Before T1074 the highlighter's default summary replaced the field with its
+        // first sentence, losing "CNH categoria B." without any marker.
+        assertEquals(JOB_TEXT, results.getResults().getFirst().getFields().get("text"));
+    }
+
+    @Test
+    void getResultsShouldStillHighlightMatchedTextField() throws Exception {
+        com.viglet.turing.se.result.TurSEResults results = searchJobText(
+                new org.apache.lucene.search.TermQuery(
+                        new org.apache.lucene.index.Term("text", "campinas")));
+
+        Object text = results.getResults().getFirst().getFields().get("text");
+        assertInstanceOf(String.class, text);
+        assertTrue(((String) text).contains("<em>Campinas</em>"), () -> "got: " + text);
+        assertTrue(((String) text).contains("veículo"), () -> "got: " + text);
+    }
+
     private com.viglet.turing.commons.se.TurSEParameters paramsForPage(int page) {
         com.viglet.turing.commons.se.TurSEParameters params =
                 org.mockito.Mockito.mock(com.viglet.turing.commons.se.TurSEParameters.class);

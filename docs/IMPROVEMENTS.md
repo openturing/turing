@@ -2132,33 +2132,6 @@ silently. Found while building trabalharei's local Turing and import proof.
 
 ## CXI Search response fields arrive as they were indexed
 
-### CXI.1 Text field cut mid-character (T1074)
-
-Met in trabalharei (TRA30, the job search results page) on a local turing-ce built from
-`0256a122dd`, Lucene engine, SN site `trabalharei-vagas`, locale `pt_BR`.
-
-The document `fx-motorista-campinas` was imported with `text: "Entregas de mercadorias
-na região de Campinas com veículo da empresa. CNH categoria B."`. Both `GET
-/api/sn/trabalharei-vagas/search?q=*&_setlocale=pt_BR` and `POST
-/api/sn/trabalharei-vagas/search/query` (`responseFormat: STRUCTURED`) return it as
-
-    "Entregas de mercadorias na região de Campinas com ve�­culo da empresa. "
-
-The site's default text field comes back shortened, without saying so, and the cut lands
-inside a two-byte UTF-8 character: "í" is `C3 AD`, the first byte became U+FFFD and the
-second a stray soft hyphen. The same happens on a Dumont-published job ("com veículo da
-empresa"). It looks like a byte-length snippet over the stored value; any pt-BR text
-with an accent near the cut is corrupted, and the tail ("CNH categoria B.") is lost with
-no marker.
-
-Expected: a shortened field is cut on a character (code point, ideally a word) boundary
-and says it was shortened (an ellipsis, or a flag on the document); and a caller can ask
-for the stored value whole (`fieldList`, or a per-request snippet length), since a job
-page needs the full description.
-
-Workaround in trabalharei: none. The result cards do not show `text`; the job page
-(TRA35) needs the full value.
-
 ### CXI.2 Range filters and relative date facets (T1075)
 
 Met in trabalharei (TRA31, the job search filters) on a local turing-ce built from

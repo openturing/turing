@@ -1433,3 +1433,4 @@
 
 ## Block CA — Search response fields arrive as they were indexed
 
+- **T1074** — On Lucene a field the query did not match comes back whole instead of cut to its first sentence; the mid-character corruption did not reproduce in Turing.

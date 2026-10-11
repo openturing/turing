@@ -164,7 +164,11 @@ public class TurLuceneResultProcessor {
 
         HlTagPair tags = new HlTagPair(preTags, postTags);
         try {
+            // No match → no snippet, so the stored value is returned whole (as Solr does).
+            // The default "summary" fallback would replace it with its first sentence,
+            // silently dropping the rest of the text on a q=* search.
             UnifiedHighlighter highlighter = new UnifiedHighlighter.Builder(searcher, new StandardAnalyzer())
+                    .withMaxNoHighlightPassages(0)
                     .build();
 
             for (TurSNSiteFieldExt hlField : hlFields) {
@@ -196,7 +200,7 @@ public class TurLuceneResultProcessor {
             String[] snippets = highlighter.highlight(fieldName, query, topDocs, 1);
             if (snippets == null) return;
             for (int i = 0; i < snippets.length && i < topDocs.scoreDocs.length; i++) {
-                if (snippets[i] == null) continue;
+                if (snippets[i] == null || snippets[i].isEmpty()) continue;
                 // Replace default <b>/</b> tags with configured HL tags
                 String highlighted = snippets[i]
                         .replace("<b>", tags.preTags())
