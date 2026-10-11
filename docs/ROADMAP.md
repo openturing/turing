@@ -10,7 +10,6 @@
 
 - 🛠 **T1075** (deps: T1083) **On Lucene a filter query is one exact term, so a date or number range matches nothing, and no relative date facet exists** — A DATE facet still offers no relative buckets such as the last 7 days, so no recency facet can be listed with counts. → §CXI.2
 - 🛠 **T1077** (deps: —) **On Lucene a search request's fqOr and fqItemOperator are echoed and ignored, and no endpoint returns a document by id** — No endpoint returns stored documents by id, so a detail page still runs a search with fq id to read one document. → §CXI.4
-- ⏳ **T1079** (deps: —) **The JS SDK's API calls take no timeout or AbortSignal, so a stalled Turing hangs every server-rendered page** — The chat, slot and answer API functions still take no AbortSignal, so a caller can bound them only through the client timeout. → §CXI.6
 - 📋 **T1080** (deps: —) **On Lucene a pt-BR search keeps accents, so 'saude' or 'tecnico' never matches 'saúde' or 'técnico'** — Most Brazilian users type without accents, so their searches miss jobs that spell the word correctly. → §CXI.7
 - 📋 **T1083** (deps: —) **On Lucene a field's custom facets are never listed, so their range items count nothing and cannot be clicked** — A Lucene site cannot offer a salary band or a posting-date facet, though the same configuration works on Solr. → §CXI.8
 
@@ -29,12 +28,6 @@
 
 - **GET /api/sn/{site}/document/{id} answers the stored document whole** A request for
   an indexed id returns every stored field unshortened; an unknown id answers 404.
-
-## Done when — T1079
-
-- **Every exported API function takes an optional { signal } last argument** Each
-  function in api.ts passes the signal to client.request, which a test per family
-  checks.
 
 ## Non-goals (do NOT add as tasks)
 

@@ -74,6 +74,7 @@ describe("createSearchController — analytics (T462)", () => {
     expect((c.post as ReturnType<typeof vi.fn>)).toHaveBeenCalledWith(
       "/sn/s1/click",
       expect.objectContaining({ term: "boots", documentId: "doc-42", position: 2 }),
+      { signal: undefined },
     );
     const click = events.find((e) => e.name === "turing_search_result_click");
     expect(click?.params).toMatchObject({ query: "boots", document_id: "doc-42", position: 2 });

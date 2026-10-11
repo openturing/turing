@@ -51,8 +51,8 @@ await chat.send("How do I reset my password?");
 
 | Layer | Exports | Notes |
 |-------|---------|-------|
-| **Client** | `createTuringClient` | Owns `baseURL`, `credentials: "include"`, and CSRF priming via `GET /csrf`. |
-| **API** | `fetchSearch`, `postChatConversation`, `postAgentChat`, `postLlmChat`, `fetchIntents`, slot/handoff/flow functions, `parseHrefToParams`, … | Pure functions `(client, …args)`. `createTuringApi(client)` returns a client-bound object. |
+| **Client** | `createTuringClient` | Owns `baseURL`, `credentials: "include"`, and CSRF priming via `GET /csrf`. `timeoutMs` bounds every call; one that runs over rejects with `TuringTimeoutError`. |
+| **API** | `fetchSearch`, `postChatConversation`, `postAgentChat`, `postLlmChat`, `fetchIntents`, slot/handoff/flow functions, `parseHrefToParams`, … | Pure functions `(client, …args)`, each taking an optional `{ signal }` last (the SSE and slot functions read it from their options object). `createTuringApi(client)` returns a client-bound object that forwards every argument. |
 | **Controllers** | `createSearchController`, `createChatController`, `createAutoComplete`, `createSlotsController` | Observable (`getState` / `subscribe`); the vanilla equivalents of the React hooks. |
 | **Session / Resolve / SSE** | `getOrCreateTurSession`, `resolveDocuments`, `subscribeSlotsSse`, … | Browser helpers ported verbatim from the React SDK core. |
 

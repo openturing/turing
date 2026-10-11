@@ -212,9 +212,10 @@ export async function postClick(
   client: TuringClient,
   site: string,
   params: ClickTrackParams,
+  options: TuringCallOptions = {},
 ): Promise<void> {
   try {
-    await client.post(`/sn/${site}/click`, params);
+    await client.post(`/sn/${site}/click`, params, { signal: options.signal });
   } catch (error) {
     if (typeof console !== "undefined") {
       console.warn("[Turing] click tracking failed", error);
@@ -226,11 +227,12 @@ export function fetchChat(
   client: TuringClient,
   site: string,
   params: Pick<SearchParams, "q" | "_setlocale">,
+  options: TuringCallOptions = {},
 ): Promise<TurChatResponse> {
   const qs = new URLSearchParams();
   qs.append("q", params.q);
   if (params._setlocale) qs.append("_setlocale", params._setlocale);
-  return client.get<TurChatResponse>(`/sn/${site}/chat?${qs}`);
+  return client.get<TurChatResponse>(`/sn/${site}/chat?${qs}`, { signal: options.signal });
 }
 
 /**
@@ -286,8 +288,9 @@ export const CHAT_DISABLED_HINTS: Readonly<Record<ChatDisabledReason, string>> =
 export function fetchChatEnabled(
   client: TuringClient,
   site: string,
+  options: TuringCallOptions = {},
 ): Promise<ChatEnabledResponse> {
-  return client.get<ChatEnabledResponse>(`/sn/${site}/chat/enabled`);
+  return client.get<ChatEnabledResponse>(`/sn/${site}/chat/enabled`, { signal: options.signal });
 }
 
 export interface PostChatConversationOptions {
@@ -1053,12 +1056,13 @@ export function postSiteFormSubmit(
   conversationId: string,
   values: Record<string, string>,
   nodeId?: string,
+  options: TuringCallOptions = {},
 ): Promise<TurChatFormSubmitResponse> {
   return client.post<TurChatFormSubmitResponse>(`/sn/${site}/chat/form-submit`, {
     conversationId,
     nodeId,
     values,
-  });
+  }, { signal: options.signal });
 }
 
 export interface PostLlmChatOptions {
@@ -1153,10 +1157,12 @@ export async function deleteSiteConversationState(
   client: TuringClient,
   site: string,
   conversationId: string,
+  options: TuringCallOptions = {},
 ): Promise<number> {
   const params = new URLSearchParams({ conversationId });
   const data = await client.del<number>(
     `/sn/${site}/chat/conversation-state?${params}`,
+    { signal: options.signal },
   );
   return typeof data === "number" ? data : 0;
 }
@@ -1170,10 +1176,12 @@ export async function deleteAgentFlowState(
   agentId: string,
   flowId: string,
   conversationId: string,
+  options: TuringCallOptions = {},
 ): Promise<boolean> {
   const params = new URLSearchParams({ flowId, conversationId });
   const data = await client.del<boolean>(
     `/v2/ai-agent/${agentId}/chat-flow-state?${params}`,
+    { signal: options.signal },
   );
   return data === true;
 }
@@ -1182,8 +1190,12 @@ export async function deleteAgentFlowState(
  * Fetches the curated list of enabled Intents for the site's AI agent.
  * Returns an empty array when the site has no agent or no enabled intents.
  */
-export function fetchIntents(client: TuringClient, site: string): Promise<TurIntent[]> {
-  return client.get<TurIntent[]>(`/sn/${site}/chat/intents`);
+export function fetchIntents(
+  client: TuringClient,
+  site: string,
+  options: TuringCallOptions = {},
+): Promise<TurIntent[]> {
+  return client.get<TurIntent[]>(`/sn/${site}/chat/intents`, { signal: options.signal });
 }
 
 /**
@@ -1260,9 +1272,12 @@ export function fetchSiteChatSlots(
   client: TuringClient,
   site: string,
   conversationId: string,
+  options: TuringCallOptions = {},
 ): Promise<TurChatSessionSlots> {
   const qs = new URLSearchParams({ conversationId });
-  return client.get<TurChatSessionSlots>(`/sn/${site}/chat/slots?${qs}`);
+  return client.get<TurChatSessionSlots>(`/sn/${site}/chat/slots?${qs}`, {
+    signal: options.signal,
+  });
 }
 
 /**
@@ -1274,9 +1289,12 @@ export function fetchAgentChatSlots(
   client: TuringClient,
   agentId: string,
   conversationId: string,
+  options: TuringCallOptions = {},
 ): Promise<TurChatSessionSlots> {
   const qs = new URLSearchParams({ conversationId });
-  return client.get<TurChatSessionSlots>(`/v2/ai-agent/${agentId}/chat-slots?${qs}`);
+  return client.get<TurChatSessionSlots>(`/v2/ai-agent/${agentId}/chat-slots?${qs}`, {
+    signal: options.signal,
+  });
 }
 
 export interface TurChatSlotWriteResponse {
@@ -1295,10 +1313,12 @@ export async function postSiteChatSlot(
   conversationId: string,
   name: string,
   value: string,
+  options: TuringCallOptions = {},
 ): Promise<TurChatSlotWriteResponse> {
   const data = await client.post<TurChatSlotWriteResponse>(
     `/sn/${site}/chat/slots`,
     { conversationId, name, value },
+    { signal: options.signal },
   );
   return data ?? { updatedStates: 0 };
 }
@@ -1324,7 +1344,7 @@ export interface TurChatSlotExtractResponse {
 export const LOW_CONFIDENCE_THRESHOLD = 0.7;
 
 /** Optional toggles for the slot-extract endpoints. */
-export interface SlotExtractOptions {
+export interface SlotExtractOptions extends TuringCallOptions {
   /** T102 — ask the model for a `{value, confidence}` per slot (populates `confidences`). */
   readonly confidence?: boolean;
   /**
@@ -1368,6 +1388,7 @@ export async function postSiteSlotExtract(
   const data = await client.post<TurChatSlotExtractResponse>(
     `/sn/${site}/chat/slot-extract`,
     form,
+    { signal: options?.signal },
   );
   return data ?? { extracted: {}, slotsWritten: 0, extractedTextChars: 0 };
 }
@@ -1405,6 +1426,7 @@ export async function postSiteSlotExtractMulti(
   const data = await client.post<TurChatSlotExtractResponse>(
     `/sn/${site}/chat/slot-extract-multi`,
     form,
+    { signal: options?.signal },
   );
   return data ?? { extracted: {}, slotsWritten: 0, extractedTextChars: 0 };
 }
@@ -1436,9 +1458,12 @@ export function fetchSiteChatState(
   client: TuringClient,
   site: string,
   conversationId: string,
+  options: TuringCallOptions = {},
 ): Promise<TurChatConversationState> {
   const qs = new URLSearchParams({ conversationId });
-  return client.get<TurChatConversationState>(`/sn/${site}/chat/state?${qs}`);
+  return client.get<TurChatConversationState>(`/sn/${site}/chat/state?${qs}`, {
+    signal: options.signal,
+  });
 }
 
 export type TurChatHandoffChannel =
@@ -1471,6 +1496,7 @@ export async function postSiteHandoff(
     readonly intro?: string;
     readonly slotsToInclude?: ReadonlyArray<string>;
   },
+  options: TuringCallOptions = {},
 ): Promise<TurChatHandoffResponse> {
   const data = await client.post<TurChatHandoffResponse>(
     `/sn/${site}/chat/handoff`,
@@ -1481,6 +1507,7 @@ export async function postSiteHandoff(
       intro: params.intro,
       slotsToInclude: params.slotsToInclude,
     },
+    { signal: options.signal },
   );
   return data ?? { url: null, transcript: null, slotsIncluded: 0 };
 }
@@ -1504,12 +1531,14 @@ export async function postSiteFlowSelect(
   conversationId: string,
   flow: string,
   personaId?: string,
+  options: TuringCallOptions = {},
 ): Promise<TurChatFlowSelectResponse> {
   const data = await client.post<TurChatFlowSelectResponse>(
     `/sn/${site}/chat/flow-select`,
     // T635 — an optional persona is seeded into the pinned flow (validated
     // against the site agent's catalog server-side).
     { conversationId, flow, personaId },
+    { signal: options.signal },
   );
   return (
     data ?? {
@@ -1539,9 +1568,12 @@ export async function fetchPersonaContentFit(
   personaId: string,
   content: string,
   sourceName?: string,
+  options: TuringCallOptions = {},
 ): Promise<TurContentFit> {
   const path = `/sn/${site}/persona/${personaId}/content-fit`;
-  const data = await client.post<TurContentFit>(path, { content, sourceName });
+  const data = await client.post<TurContentFit>(path, { content, sourceName }, {
+    signal: options.signal,
+  });
   if (!data) {
     // T1005 — a 2xx with an empty body is the same decision for a caller as a
     // stream with no readable body, so it throws the same type rather than a
@@ -1557,8 +1589,11 @@ export async function fetchPersonaContentFit(
  *
  * Server endpoint: {@code GET /api/llm}.
  */
-export function fetchLlmInstances(client: TuringClient): Promise<TurLlmInstance[]> {
-  return client.get<TurLlmInstance[]>(`/llm`);
+export function fetchLlmInstances(
+  client: TuringClient,
+  options: TuringCallOptions = {},
+): Promise<TurLlmInstance[]> {
+  return client.get<TurLlmInstance[]>(`/llm`, { signal: options.signal });
 }
 
 /**
@@ -1569,8 +1604,11 @@ export function fetchLlmInstances(client: TuringClient): Promise<TurLlmInstance[
 export function fetchLlmContextInfo(
   client: TuringClient,
   llmInstanceId: string,
+  options: TuringCallOptions = {},
 ): Promise<TurLlmContextInfo> {
-  return client.get<TurLlmContextInfo>(`/v2/llm/${llmInstanceId}/chat/context-info`);
+  return client.get<TurLlmContextInfo>(`/v2/llm/${llmInstanceId}/chat/context-info`, {
+    signal: options.signal,
+  });
 }
 
 /**
@@ -1583,10 +1621,12 @@ export function fetchAgentContextInfo(
   client: TuringClient,
   agentId: string,
   llmInstanceId: string,
+  options: TuringCallOptions = {},
 ): Promise<TurLlmContextInfo> {
   const qs = new URLSearchParams({ llmInstanceId });
   return client.get<TurLlmContextInfo>(
     `/v2/ai-agent/${agentId}/chat/context-info?${qs}`,
+    { signal: options.signal },
   );
 }
 
@@ -1604,8 +1644,9 @@ export function fetchAutoComplete(
 export function fetchSortOptions(
   client: TuringClient,
   site: string,
+  options: TuringCallOptions = {},
 ): Promise<TurSortOption[]> {
-  return client.get<TurSortOption[]>(`/sn/${site}/search/sort-options`);
+  return client.get<TurSortOption[]>(`/sn/${site}/search/sort-options`, { signal: options.signal });
 }
 
 // ── T400: Similar documents ────────────────────────────────────────────────
@@ -1680,7 +1721,7 @@ export interface TurChatSlotUploadResponse {
   readonly error?: string | null;
 }
 
-export interface PostSlotUploadOptions {
+export interface PostSlotUploadOptions extends TuringCallOptions {
   /** Run a vision LLM over an image to fill scalar slots (T64). */
   readonly vision?: boolean;
   /** Scalar slot names to fill via vision when {@link vision} is on. */
@@ -1712,6 +1753,7 @@ export async function postSiteSlotUpload(
   const data = await client.post<TurChatSlotUploadResponse>(
     `/sn/${site}/chat/slot-upload`,
     form,
+    { signal: options?.signal },
   );
   return (
     data ?? {
@@ -1749,12 +1791,13 @@ export async function postSiteChatResume(
   conversationId: string,
   slotUpdates?: Readonly<Record<string, string>>,
   resumeReason?: string,
+  options: TuringCallOptions = {},
 ): Promise<TurChatResumeResponse> {
   const data = await client.post<TurChatResumeResponse>(`/sn/${site}/chat/resume`, {
     conversationId,
     slotUpdates,
     resumeReason,
-  });
+  }, { signal: options.signal });
   return data ?? { resumed: 0, wasParked: false, error: "empty response" };
 }
 
@@ -1771,9 +1814,12 @@ export function fetchSpellCheck(
   site: string,
   locale: string,
   q: string,
+  options: TuringCallOptions = {},
 ): Promise<TurSpellCheck> {
   const qs = new URLSearchParams({ q });
-  return client.get<TurSpellCheck>(`/sn/${site}/${locale}/spell-check?${qs}`);
+  return client.get<TurSpellCheck>(`/sn/${site}/${locale}/spell-check?${qs}`, {
+    signal: options.signal,
+  });
 }
 
 // ── T678: Related-concept suggestions (microthesaurus RT links) ─────────────
@@ -1791,10 +1837,12 @@ export function fetchRelatedTerms(
   site: string,
   locale: string,
   q: string,
+  options: TuringCallOptions = {},
 ): Promise<TurRelatedTermSuggestion[]> {
   const qs = new URLSearchParams({ q });
   return client.get<TurRelatedTermSuggestion[]>(
     `/sn/${site}/${locale}/related-terms?${qs}`,
+    { signal: options.signal },
   );
 }
 
@@ -1857,9 +1905,12 @@ export function dslSearch(
   site: string,
   request: TurDslSearchRequest,
   locale = "en",
+  options: TuringCallOptions = {},
 ): Promise<TurDslSearchResponse> {
   const qs = new URLSearchParams({ locale });
-  return client.post<TurDslSearchResponse>(`/sn/${site}/_search?${qs}`, request);
+  return client.post<TurDslSearchResponse>(`/sn/${site}/_search?${qs}`, request, {
+    signal: options.signal,
+  });
 }
 
 /**
@@ -1872,11 +1923,13 @@ export function dslQuery(
   site: string,
   query: Record<string, unknown> | string,
   locale: string,
+  options: TuringCallOptions = {},
 ): Promise<unknown> {
   const qs = new URLSearchParams({ locale });
   const body = typeof query === "string" ? query : JSON.stringify(query);
   return client.post<unknown>(`/sn/${site}/query?${qs}`, body, {
     headers: { "Content-Type": "application/json" },
+    signal: options.signal,
   });
 }
 
@@ -1933,23 +1986,35 @@ export interface TurSummaryResult {
 }
 
 /** T405 — platform identity / auth topology. Server: {@code GET /api/discovery}. */
-export function fetchDiscovery(client: TuringClient): Promise<TurDiscoveryInfo> {
-  return client.get<TurDiscoveryInfo>(`/discovery`);
+export function fetchDiscovery(
+  client: TuringClient,
+  options: TuringCallOptions = {},
+): Promise<TurDiscoveryInfo> {
+  return client.get<TurDiscoveryInfo>(`/discovery`, { signal: options.signal });
 }
 
 /** T405 — enabled platform capabilities. Server: {@code GET /api/features}. */
-export function fetchFeatures(client: TuringClient): Promise<TurFeaturesInfo> {
-  return client.get<TurFeaturesInfo>(`/features`);
+export function fetchFeatures(
+  client: TuringClient,
+  options: TuringCallOptions = {},
+): Promise<TurFeaturesInfo> {
+  return client.get<TurFeaturesInfo>(`/features`, { signal: options.signal });
 }
 
 /** T405 — supported system locales. Server: {@code GET /api/locale}. */
-export function fetchSystemLocales(client: TuringClient): Promise<TurSystemLocale[]> {
-  return client.get<TurSystemLocale[]>(`/locale`);
+export function fetchSystemLocales(
+  client: TuringClient,
+  options: TuringCallOptions = {},
+): Promise<TurSystemLocale[]> {
+  return client.get<TurSystemLocale[]>(`/locale`, { signal: options.signal });
 }
 
 /** T405 — configured LLM vendors. Server: {@code GET /api/llm/vendor}. */
-export function fetchLlmVendors(client: TuringClient): Promise<TurLlmVendor[]> {
-  return client.get<TurLlmVendor[]>(`/llm/vendor`);
+export function fetchLlmVendors(
+  client: TuringClient,
+  options: TuringCallOptions = {},
+): Promise<TurLlmVendor[]> {
+  return client.get<TurLlmVendor[]>(`/llm/vendor`, { signal: options.signal });
 }
 
 /**
@@ -1964,13 +2029,14 @@ export async function postSummary(
     readonly systemPrompt?: string;
     readonly regenerate?: boolean;
   },
+  options: TuringCallOptions = {},
 ): Promise<TurSummaryResult> {
   const path = params.regenerate ? `/v2/summary?regenerate=true` : `/v2/summary`;
   const data = await client.post<TurSummaryResult>(path, {
     cacheKey: params.cacheKey,
     data: params.data,
     systemPrompt: params.systemPrompt,
-  });
+  }, { signal: options.signal });
   return data ?? { success: false, error: "empty response", content: "", canRegenerate: false };
 }
 
@@ -2268,10 +2334,12 @@ export async function postAnswerFreshness(
   answeredAt: string,
   sources: TurAnswerFreshnessSource[],
   topK?: number,
+  options: TuringCallOptions = {},
 ): Promise<TurAnswerFreshnessVerdict[]> {
   const verdicts = await client.post<TurAnswerFreshnessVerdict[]>(
     `/sn/${encodeURIComponent(site)}/answer/freshness`,
     { q: question, answeredAt, topK, sources },
+    { signal: options.signal },
   );
   return verdicts ?? [];
 }
@@ -2294,6 +2362,7 @@ export async function createAnswerShare(
   client: TuringClient,
   site: string,
   snapshot: AnswerShareSnapshot,
+  options: TuringCallOptions = {},
 ): Promise<string> {
   const response = await client.post<{ id: string }>(
     `/sn/${encodeURIComponent(site)}/answer/share`,
@@ -2305,6 +2374,7 @@ export async function createAnswerShare(
       citationsJson: snapshot.citations ? JSON.stringify(snapshot.citations) : null,
       answeredAt: snapshot.answeredAt ?? null,
     },
+    { signal: options.signal },
   );
   return response?.id ?? "";
 }
@@ -2314,10 +2384,12 @@ export async function fetchAnswerShare(
   client: TuringClient,
   site: string,
   id: string,
+  options: TuringCallOptions = {},
 ): Promise<TurAnswerShareView | null> {
   try {
     const view = await client.get<TurAnswerShareView>(
       `/sn/${encodeURIComponent(site)}/answer/share/${encodeURIComponent(id)}`,
+      { signal: options.signal },
     );
     return view ?? null;
   } catch {
@@ -2347,122 +2419,65 @@ export async function recordAnswerSignal(
   client: TuringClient,
   site: string,
   payload: { signal: TurAnswerSignalKind; conversationId?: string | null; query?: string | null },
+  options: TuringCallOptions = {},
 ): Promise<void> {
   try {
     await client.post(`/sn/${encodeURIComponent(site)}/answer/signal`, {
       signal: payload.signal,
       conversationId: payload.conversationId ?? null,
       query: payload.query ?? null,
-    });
+    }, { signal: options.signal });
   } catch {
     // Fail-open: a dropped signal must never surface as a UI error.
   }
 }
 
 export function createTuringApi(client: TuringClient) {
+  // T1079 - every argument after the client is forwarded, the trailing
+  // { signal } included, so the bound form cannot fall behind the function.
+  const bind =
+    <A extends unknown[], R>(fn: (client: TuringClient, ...args: A) => R) =>
+    (...args: A): R =>
+      fn(client, ...args);
   return {
-    fetchSearch: (site: string, params: SearchParams) => fetchSearch(client, site, params),
-    postClick: (site: string, params: ClickTrackParams) => postClick(client, site, params),
-    fetchChat: (site: string, params: Pick<SearchParams, "q" | "_setlocale">) =>
-      fetchChat(client, site, params),
-    fetchChatEnabled: (site: string) => fetchChatEnabled(client, site),
-    postChatConversation: (
-      site: string,
-      messages: TurChatConversationMessage[],
-      locale?: string,
-      options?: PostChatConversationOptions,
-    ) => postChatConversation(client, site, messages, locale, options),
-    postAgentChat: (
-      agentId: string,
-      llmInstanceId: string,
-      messages: TurChatConversationMessage[],
-      options?: PostAgentChatOptions,
-    ) => postAgentChat(client, agentId, llmInstanceId, messages, options),
-    postPersonaChat: (
-      personaId: string,
-      llmInstanceId: string,
-      messages: TurChatConversationMessage[],
-      options?: PostPersonaChatOptions,
-    ) => postPersonaChat(client, personaId, llmInstanceId, messages, options),
-    postLlmChat: (
-      llmInstanceId: string,
-      messages: TurChatConversationMessage[],
-      options?: PostLlmChatOptions,
-    ) => postLlmChat(client, llmInstanceId, messages, options),
-    postSemanticChat: (
-      llmInstanceId: string,
-      messages: TurChatConversationMessage[],
-      options?: PostSemanticChatOptions,
-    ) => postSemanticChat(client, llmInstanceId, messages, options),
-    postAnswer: (site: string, query: string, locale?: string, options?: PostAnswerOptions) =>
-      postAnswer(client, site, query, locale, options),
-    deleteSiteConversationState: (site: string, conversationId: string) =>
-      deleteSiteConversationState(client, site, conversationId),
-    deleteAgentFlowState: (agentId: string, flowId: string, conversationId: string) =>
-      deleteAgentFlowState(client, agentId, flowId, conversationId),
-    fetchIntents: (site: string) => fetchIntents(client, site),
-    fetchSiteChatSlots: (site: string, conversationId: string) =>
-      fetchSiteChatSlots(client, site, conversationId),
-    fetchAgentChatSlots: (agentId: string, conversationId: string) =>
-      fetchAgentChatSlots(client, agentId, conversationId),
-    postSiteChatSlot: (site: string, conversationId: string, name: string, value: string) =>
-      postSiteChatSlot(client, site, conversationId, name, value),
-    postSiteSlotExtract: (
-      site: string,
-      file: File,
-      conversationId: string,
-      slotNames?: ReadonlyArray<string>,
-    ) => postSiteSlotExtract(client, site, file, conversationId, slotNames),
-    fetchSiteChatState: (site: string, conversationId: string) =>
-      fetchSiteChatState(client, site, conversationId),
-    postSiteHandoff: (
-      site: string,
-      params: Parameters<typeof postSiteHandoff>[2],
-    ) => postSiteHandoff(client, site, params),
-    postSiteFlowSelect: (site: string, conversationId: string, flow: string, personaId?: string) =>
-      postSiteFlowSelect(client, site, conversationId, flow, personaId),
-    fetchPersonaContentFit: (
-      site: string,
-      personaId: string,
-      content: string,
-      sourceName?: string,
-    ) => fetchPersonaContentFit(client, site, personaId, content, sourceName),
-    fetchLlmInstances: () => fetchLlmInstances(client),
-    fetchLlmContextInfo: (llmInstanceId: string) => fetchLlmContextInfo(client, llmInstanceId),
-    fetchAgentContextInfo: (agentId: string, llmInstanceId: string) =>
-      fetchAgentContextInfo(client, agentId, llmInstanceId),
-    fetchAutoComplete: (site: string, params: SearchParams) =>
-      fetchAutoComplete(client, site, params),
-    fetchSortOptions: (site: string) => fetchSortOptions(client, site),
-    fetchSimilar: (site: string, params: FetchSimilarParams) =>
-      fetchSimilar(client, site, params),
-    postSiteSlotUpload: (
-      site: string,
-      conversationId: string,
-      slotName: string,
-      file: File,
-      options?: PostSlotUploadOptions,
-    ) => postSiteSlotUpload(client, site, conversationId, slotName, file, options),
-    postSiteChatResume: (
-      site: string,
-      conversationId: string,
-      slotUpdates?: Readonly<Record<string, string>>,
-      resumeReason?: string,
-    ) => postSiteChatResume(client, site, conversationId, slotUpdates, resumeReason),
-    fetchSpellCheck: (site: string, locale: string, q: string) =>
-      fetchSpellCheck(client, site, locale, q),
-    fetchRelatedTerms: (site: string, locale: string, q: string) =>
-      fetchRelatedTerms(client, site, locale, q),
-    dslSearch: (site: string, request: TurDslSearchRequest, locale?: string) =>
-      dslSearch(client, site, request, locale),
-    dslQuery: (site: string, query: Record<string, unknown> | string, locale: string) =>
-      dslQuery(client, site, query, locale),
-    fetchDiscovery: () => fetchDiscovery(client),
-    fetchFeatures: () => fetchFeatures(client),
-    fetchSystemLocales: () => fetchSystemLocales(client),
-    fetchLlmVendors: () => fetchLlmVendors(client),
-    postSummary: (params: Parameters<typeof postSummary>[1]) =>
-      postSummary(client, params),
+    fetchSearch: bind(fetchSearch),
+    postClick: bind(postClick),
+    fetchChat: bind(fetchChat),
+    fetchChatEnabled: bind(fetchChatEnabled),
+    postChatConversation: bind(postChatConversation),
+    postAgentChat: bind(postAgentChat),
+    postPersonaChat: bind(postPersonaChat),
+    postLlmChat: bind(postLlmChat),
+    postSemanticChat: bind(postSemanticChat),
+    postAnswer: bind(postAnswer),
+    deleteSiteConversationState: bind(deleteSiteConversationState),
+    deleteAgentFlowState: bind(deleteAgentFlowState),
+    fetchIntents: bind(fetchIntents),
+    fetchSiteChatSlots: bind(fetchSiteChatSlots),
+    fetchAgentChatSlots: bind(fetchAgentChatSlots),
+    postSiteChatSlot: bind(postSiteChatSlot),
+    postSiteSlotExtract: bind(postSiteSlotExtract),
+    fetchSiteChatState: bind(fetchSiteChatState),
+    postSiteHandoff: bind(postSiteHandoff),
+    postSiteFlowSelect: bind(postSiteFlowSelect),
+    fetchPersonaContentFit: bind(fetchPersonaContentFit),
+    fetchLlmInstances: bind(fetchLlmInstances),
+    fetchLlmContextInfo: bind(fetchLlmContextInfo),
+    fetchAgentContextInfo: bind(fetchAgentContextInfo),
+    fetchAutoComplete: bind(fetchAutoComplete),
+    fetchSortOptions: bind(fetchSortOptions),
+    fetchSimilar: bind(fetchSimilar),
+    postSiteSlotUpload: bind(postSiteSlotUpload),
+    postSiteChatResume: bind(postSiteChatResume),
+    fetchSpellCheck: bind(fetchSpellCheck),
+    fetchRelatedTerms: bind(fetchRelatedTerms),
+    dslSearch: bind(dslSearch),
+    dslQuery: bind(dslQuery),
+    fetchDiscovery: bind(fetchDiscovery),
+    fetchFeatures: bind(fetchFeatures),
+    fetchSystemLocales: bind(fetchSystemLocales),
+    fetchLlmVendors: bind(fetchLlmVendors),
+    postSummary: bind(postSummary),
   };
 }
 

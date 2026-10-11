@@ -28,7 +28,7 @@ describe("fetchPersonaContentFit (T635)", () => {
     expect(post).toHaveBeenCalledWith("/sn/site1/persona/p1/content-fit", {
       content: "some copy",
       sourceName: "landing",
-    });
+    }, { signal: undefined });
     expect(result).toEqual(verdict);
   });
 
@@ -59,6 +59,6 @@ describe("fetchPersonaContentFit (T635)", () => {
       conversationId: "conv1",
       flow: "Flow",
       personaId: "p1",
-    });
+    }, { signal: undefined });
   });
 });

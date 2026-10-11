@@ -1,8 +1,13 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import {
+  createTuringApi,
   createTuringClient,
+  dslQuery,
+  fetchAnswerShare,
+  fetchChatEnabled,
   fetchSearch,
+  postSiteSlotUpload,
   postStructuredSearch,
   TuringTimeoutError,
   TuringTransportError,
@@ -73,6 +78,52 @@ describe("timeoutMs", () => {
 
     const init = (fetchMock.mock.calls[0] as unknown[])[1] as RequestInit;
     expect(init.signal).toBeUndefined();
+  });
+});
+
+describe("every API family passes { signal } down to fetch", () => {
+  function recordingClient() {
+    const fetchMock = vi.fn(async () => new Response("{}", { status: 200 }));
+    vi.stubGlobal("fetch", fetchMock);
+    const client = createTuringClient({ baseURL: BASE, getCsrfToken: () => undefined });
+    const signalOf = (call = 0) =>
+      ((fetchMock.mock.calls[call] as unknown[])[1] as RequestInit).signal;
+    return { client, signalOf };
+  }
+
+  it("chat", async () => {
+    const { client, signalOf } = recordingClient();
+    const { signal } = new AbortController();
+    await fetchChatEnabled(client, "vagas", { signal });
+    expect(signalOf()).toBe(signal);
+  });
+
+  it("slots, through their own options object", async () => {
+    const { client, signalOf } = recordingClient();
+    const { signal } = new AbortController();
+    await postSiteSlotUpload(client, "vagas", "c1", "cv", new File(["x"], "cv.txt"), { signal });
+    expect(signalOf()).toBe(signal);
+  });
+
+  it("answers", async () => {
+    const { client, signalOf } = recordingClient();
+    const { signal } = new AbortController();
+    await fetchAnswerShare(client, "vagas", "share-1", { signal });
+    expect(signalOf()).toBe(signal);
+  });
+
+  it("the DSL, keeping its own headers", async () => {
+    const { client, signalOf } = recordingClient();
+    const { signal } = new AbortController();
+    await dslQuery(client, "vagas", { query: { match_all: {} } }, "en", { signal });
+    expect(signalOf()).toBe(signal);
+  });
+
+  it("the bound API, which forwards every argument", async () => {
+    const { client, signalOf } = recordingClient();
+    const { signal } = new AbortController();
+    await createTuringApi(client).fetchSimilar("vagas", { id: "a" }, { signal });
+    expect(signalOf()).toBe(signal);
   });
 });
 

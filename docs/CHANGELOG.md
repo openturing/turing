@@ -1438,4 +1438,4 @@
 - **T1076** — Lucene autocomplete matches and suggests only words of the site's text fields, falling back to title, so slugs, URLs and ids are never offered.
 - **T1077 (fq operators and fieldList)** — On Lucene fqOr, fqAnd, fqOperator and fqItemOperator combine filters as on Solr, and on every engine fieldList limits the fields each result carries.
 - **T1078** — Similar documents open a Lucene site's index from the snapshot's site locale, reloading the site when its SE instance has no endpoint, so MLT and VECTOR answer instead of a 500.
-- **T1079 (client timeout, search signals)** — createTuringClient takes timeoutMs, which bounds every call and rejects with TuringTimeoutError, and the search, autocomplete and similar calls take an AbortSignal.
+- **T1079** — A caller can bound every JS SDK call: timeoutMs on the client rejects with TuringTimeoutError, and each API function and the bound API take a { signal }.

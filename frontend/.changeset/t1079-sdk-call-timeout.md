@@ -11,10 +11,12 @@ and carries `timeoutMs` and `url`. A JSON call is bounded until its body is read
 a raw or streaming call (`client.fetchRaw`, the SSE helpers) only until the
 response headers arrive, so a stream that has started is never cut off.
 
-`fetchSearch`, `postSearch`, `postStructuredSearch`, `fetchAutoComplete` and
-`fetchSimilar` take an optional last argument, `{ signal }`, which is passed down
-to the request. An abort from that signal still rejects with its own
-`AbortError`, never with a timeout or transport error.
+Every API function takes an optional last argument, `{ signal }`, which is passed
+down to the request. The SSE helpers and the slot upload/extract functions read
+`signal` from the options object they already take. `createTuringApi(client)`
+now forwards every argument, so the bound functions take it too. An abort from
+that signal still rejects with its own `AbortError`, never with a timeout or
+transport error.
 
 ```ts
 const client = createTuringClient({ baseURL, timeoutMs: 8000 });

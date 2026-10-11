@@ -143,6 +143,7 @@ describe("createAnswerController (T837)", () => {
     expect(post).toHaveBeenCalledWith(
       "/sn/site1/answer/freshness",
       expect.objectContaining({ q: "hello" }),
+      { signal: undefined },
     );
     // Only the STALE source is flagged.
     expect(controller.getState().staleSources).toEqual(["a"]);
@@ -165,6 +166,7 @@ describe("createAnswerController (T837)", () => {
         answerText: "Hello world",
         filtersJson: JSON.stringify({ vendor: ["Anthropic"] }),
       }),
+      { signal: undefined },
     );
   });
 
@@ -190,6 +192,7 @@ describe("createAnswerController (T837)", () => {
     expect(post).toHaveBeenCalledWith(
       "/sn/site1/answer/signal",
       expect.objectContaining({ signal: "FACET_REFINED_AFTER_ANSWER", query: "cheapest model" }),
+      { signal: undefined },
     );
   });
 
