@@ -344,6 +344,20 @@ public interface TurSearchEnginePlugin {
     }
 
     /**
+     * T1077 — every stored field of the documents with these ids, whole and
+     * unhighlighted, in {@code ids} order, dropping ids that don't resolve. What a
+     * detail page reads one document with, instead of running a search.
+     *
+     * <p>Default: the standard fields {@link #getDocumentsByIds} returns, for an
+     * engine that has no way to read a document whole.
+     *
+     * @since 2026.3.4
+     */
+    default List<Map<String, Object>> getStoredDocumentsByIds(TurSNSiteLocale siteLocale, List<String> ids) {
+        return getDocumentsByIds(siteLocale, ids);
+    }
+
+    /**
      * T1044 / §XX.21 — whether this engine returns <em>sub-document passages</em>
      * alongside each result, populating
      * {@link com.viglet.turing.se.result.TurSEResult#getPassages()}.

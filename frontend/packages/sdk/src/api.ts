@@ -1701,6 +1701,29 @@ export function fetchSimilar(
   });
 }
 
+/**
+ * T1077 — reads stored documents by id, whole: every stored field, not
+ * highlighted or shortened, in the order asked (ids the site does not hold are
+ * dropped). Several ids fetch several candidates in one call; the server answers
+ * 404 (a {@link TuringHttpError}) when none of them is on the site.
+ *
+ * Server endpoint: {@code GET /api/sn/{site}/search/document?id=...}.
+ */
+export function fetchStoredDocuments(
+  client: TuringClient,
+  site: string,
+  ids: readonly string[],
+  locale?: string,
+  options: TuringCallOptions = {},
+): Promise<Record<string, unknown>[]> {
+  const qs = new URLSearchParams();
+  for (const id of ids) qs.append("id", id);
+  if (locale) qs.append("locale", locale);
+  return client.get<Record<string, unknown>[]>(`/sn/${site}/search/document?${qs}`, {
+    signal: options.signal,
+  });
+}
+
 // ── T401: Multimodal slot-upload + flow resume ──────────────────────────────
 
 /**
@@ -2467,6 +2490,7 @@ export function createTuringApi(client: TuringClient) {
     fetchAutoComplete: bind(fetchAutoComplete),
     fetchSortOptions: bind(fetchSortOptions),
     fetchSimilar: bind(fetchSimilar),
+    fetchStoredDocuments: bind(fetchStoredDocuments),
     postSiteSlotUpload: bind(postSiteSlotUpload),
     postSiteChatResume: bind(postSiteChatResume),
     fetchSpellCheck: bind(fetchSpellCheck),

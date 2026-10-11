@@ -82,6 +82,39 @@ class TurSNSiteSearchAPITest {
                 List.of(), Set.of(), Map.of(), Map.of(), List.of(), List.of());
     }
 
+    private static TurSNSiteSearchAPI apiWithStoredDocuments(
+            com.viglet.turing.sn.TurSNStoredDocumentService storedDocuments) {
+        return new TurSNSiteSearchAPI(mock(TurSNSiteSearchService.class), mock(TurSNSearchProcess.class),
+                mock(TurSNSiteSearchSnapshotService.class), mock(TurSNSimilarDocumentsService.class),
+                mock(TurSNDuplicateClusteringService.class), storedDocuments);
+    }
+
+    @Test
+    void documentByIdAnswersTheStoredDocuments() {
+        // T1077 — a detail page reads a document whole, by one of several candidate ids
+        var storedDocuments = mock(com.viglet.turing.sn.TurSNStoredDocumentService.class);
+        List<Map<String, Object>> docs = List.of(Map.of("id", "fx-1", "text", "whole text"));
+        when(storedDocuments.findByIds("vagas", List.of("x-fx-1", "fx-1"), Locale.of("pt", "BR")))
+                .thenReturn(docs);
+
+        ResponseEntity<List<Map<String, Object>>> response = apiWithStoredDocuments(storedDocuments)
+                .turSNSiteStoredDocuments("vagas", List.of("x-fx-1", "fx-1"), Locale.of("pt", "BR"));
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(response.getBody()).isEqualTo(docs);
+    }
+
+    @Test
+    void documentByIdIsNotFoundWhenNoIdResolves() {
+        var storedDocuments = mock(com.viglet.turing.sn.TurSNStoredDocumentService.class);
+        when(storedDocuments.findByIds("vagas", List.of("missing"), null)).thenReturn(List.of());
+        TurSNSiteSearchAPI api = apiWithStoredDocuments(storedDocuments);
+
+        assertThatThrownBy(() -> api.turSNSiteStoredDocuments("vagas", List.of("missing"), null))
+                .isInstanceOf(com.viglet.turing.api.exception.TurNotFoundException.class)
+                .hasMessageContaining("missing");
+    }
+
     @Test
     void testSearchPostReturnsUnauthorizedWhenPrincipalMissing() {
         TurSNSiteSearchService service = mock(TurSNSiteSearchService.class);

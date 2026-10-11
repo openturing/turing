@@ -23,6 +23,7 @@ import java.security.Principal;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Locale;
 import java.util.Optional;
 import java.util.function.Supplier;
@@ -56,6 +57,8 @@ import com.viglet.turing.commons.sn.bean.TurSNDuplicateCluster;
 import com.viglet.turing.sn.TurSNDuplicateClusteringService;
 import com.viglet.turing.sn.TurSNSearchProcess;
 import com.viglet.turing.sn.TurSNSimilarDocumentsService;
+import com.viglet.turing.sn.TurSNStoredDocumentService;
+import com.viglet.turing.api.exception.TurNotFoundException;
 import com.viglet.turing.sn.TurSNSimilarMode;
 import com.viglet.turing.sn.snapshot.TurSNSiteSearchSnapshotService;
 
@@ -74,17 +77,30 @@ public class TurSNSiteSearchAPI {
         private final TurSNSiteSearchSnapshotService snapshotService;
         private final TurSNSimilarDocumentsService similarDocumentsService;
         private final TurSNDuplicateClusteringService duplicateClusteringService;
+        private final TurSNStoredDocumentService storedDocumentService;
 
         public TurSNSiteSearchAPI(TurSNSiteSearchService turSNSiteSearchService,
                         TurSNSearchProcess turSNSearchProcess,
                         TurSNSiteSearchSnapshotService snapshotService,
                         TurSNSimilarDocumentsService similarDocumentsService,
                         TurSNDuplicateClusteringService duplicateClusteringService) {
+                this(turSNSiteSearchService, turSNSearchProcess, snapshotService, similarDocumentsService,
+                                duplicateClusteringService, null);
+        }
+
+        @org.springframework.beans.factory.annotation.Autowired
+        public TurSNSiteSearchAPI(TurSNSiteSearchService turSNSiteSearchService,
+                        TurSNSearchProcess turSNSearchProcess,
+                        TurSNSiteSearchSnapshotService snapshotService,
+                        TurSNSimilarDocumentsService similarDocumentsService,
+                        TurSNDuplicateClusteringService duplicateClusteringService,
+                        TurSNStoredDocumentService storedDocumentService) {
                 this.turSNSiteSearchService = turSNSiteSearchService;
                 this.turSNSearchProcess = turSNSearchProcess;
                 this.snapshotService = snapshotService;
                 this.similarDocumentsService = similarDocumentsService;
                 this.duplicateClusteringService = duplicateClusteringService;
+                this.storedDocumentService = storedDocumentService;
         }
 
         @GetMapping(value = "list", produces = MediaType.APPLICATION_JSON_VALUE)
@@ -380,6 +396,29 @@ public class TurSNSiteSearchAPI {
                         @RequestParam(required = false, name = "mode") TurSNSimilarMode mode) {
                 return ResponseEntity.ok(
                                 similarDocumentsService.findSimilar(siteName, id, rows, locale, mode));
+        }
+
+        /**
+         * T1077 — the stored documents with these ids, whole: every stored field,
+         * unhighlighted and not shortened, in the order asked. What a detail page
+         * reads one document with instead of running a search; several {@code id}
+         * parameters fetch several candidates in one call. Answers 404 when none of
+         * the ids is on the site.
+         *
+         * @param ids    one or more document ids (up to 50)
+         * @param locale request locale (a default site locale is used when omitted)
+         * @since 2026.3.4
+         */
+        @GetMapping("document")
+        public ResponseEntity<List<Map<String, Object>>> turSNSiteStoredDocuments(
+                        @PathVariable String siteName,
+                        @RequestParam(name = "id") List<String> ids,
+                        @RequestParam(required = false, name = TurSNParamType.LOCALE) Locale locale) {
+                List<Map<String, Object>> documents = storedDocumentService.findByIds(siteName, ids, locale);
+                if (documents.isEmpty()) {
+                        throw new TurNotFoundException("No document with id " + ids + " on site " + siteName);
+                }
+                return ResponseEntity.ok(documents);
         }
 
         /**

@@ -685,6 +685,45 @@ public class TurSolrSearchEnginePlugin implements TurSearchEnginePlugin {
                 .orElse(List.of());
     }
 
+    @Override
+    public List<Map<String, Object>> getStoredDocumentsByIds(TurSNSiteLocale siteLocale, List<String> ids) {
+        if (ids == null || ids.isEmpty()) {
+            return List.of();
+        }
+        return turSolrInstanceProcess.initSolrInstance(siteLocale)
+                .map(instance -> fetchStoredByIds(instance, ids))
+                .orElse(List.of());
+    }
+
+    /** T1077 — every stored field of {@code ids} ({@code fl=*}), preserving input order. */
+    private List<Map<String, Object>> fetchStoredByIds(com.viglet.turing.solr.TurSolrInstance instance,
+            List<String> ids) {
+        String q = ids.stream()
+                .filter(s -> s != null && !s.isBlank())
+                .map(s -> TurSNFieldName.ID + ":" + solrQuotedTerm(s))
+                .collect(java.util.stream.Collectors.joining(" OR "));
+        if (q.isEmpty()) {
+            return List.of();
+        }
+        SolrQuery query = new SolrQuery().setQuery(q).setRows(ids.size()).setFields("*");
+        return TurSolr.executeSolrQuery(instance, query)
+                .map(response -> {
+                    Map<String, Map<String, Object>> byId = new HashMap<>();
+                    for (org.apache.solr.common.SolrDocument doc : response.getResults()) {
+                        Map<String, Object> fields = new java.util.LinkedHashMap<>();
+                        doc.getFieldNames().stream()
+                                .filter(name -> !name.startsWith("_"))
+                                .forEach(name -> fields.put(name, doc.getFieldValue(name)));
+                        Object docId = fields.get(TurSNFieldName.ID);
+                        if (docId != null) {
+                            byId.put(docId.toString(), fields);
+                        }
+                    }
+                    return orderByIds(byId, ids);
+                })
+                .orElse(List.of());
+    }
+
     /** Fetches the standard fields for {@code ids}, preserving input order. */
     private List<Map<String, Object>> fetchByIds(com.viglet.turing.solr.TurSolrInstance instance,
             List<String> ids) {

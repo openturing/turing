@@ -441,7 +441,7 @@ public class TurLuceneSearchEnginePlugin implements TurSearchEnginePlugin {
         return fields;
     }
 
-    private void mergeDocField(Map<String, Object> fields, String name, String value) {
+    private static void mergeDocField(Map<String, Object> fields, String name, Object value) {
         Object existing = fields.get(name);
         if (existing == null) {
             fields.put(name, value);
@@ -592,8 +592,42 @@ public class TurLuceneSearchEnginePlugin implements TurSearchEnginePlugin {
                 .orElse(List.of());
     }
 
+    @Override
+    public List<Map<String, Object>> getStoredDocumentsByIds(TurSNSiteLocale siteLocale, List<String> ids) {
+        if (ids == null || ids.isEmpty()) {
+            return List.of();
+        }
+        List<String> wanted = ids.stream().filter(s -> s != null && !s.isBlank()).toList();
+        if (wanted.isEmpty()) {
+            return List.of();
+        }
+        return turLuceneInstanceProcess.initLuceneInstance(siteLocale)
+                .map(instance -> fetchByIds(instance, wanted, TurLuceneSearchEnginePlugin::extractStoredFields))
+                .orElse(List.of());
+    }
+
+    /** T1077 — every stored field, internal ({@code $}-prefixed) ones aside, multi-values as a list. */
+    private static Map<String, Object> extractStoredFields(Document doc) {
+        Map<String, Object> fields = new LinkedHashMap<>();
+        for (var field : doc.getFields()) {
+            if (field.name().startsWith("$")) {
+                continue;
+            }
+            Object value = field.numericValue() != null ? field.numericValue() : field.stringValue();
+            if (value != null) {
+                mergeDocField(fields, field.name(), value);
+            }
+        }
+        return fields;
+    }
+
     /** Fetches the standard fields for {@code ids} via a term lookup on {@code id}, preserving input order. */
     private List<Map<String, Object>> fetchByIds(TurLuceneInstance instance, List<String> ids) {
+        return fetchByIds(instance, ids, TurLuceneSearchEnginePlugin::extractSimilarFields);
+    }
+
+    private List<Map<String, Object>> fetchByIds(TurLuceneInstance instance, List<String> ids,
+            java.util.function.Function<Document, Map<String, Object>> project) {
         try {
             IndexSearcher searcher = instance.getSearcher();
             Map<String, Map<String, Object>> byId = new HashMap<>();
@@ -602,7 +636,7 @@ public class TurLuceneSearchEnginePlugin implements TurSearchEnginePlugin {
                         new TermQuery(new Term(TurSNFieldName.ID, id)), 1);
                 if (topDocs.scoreDocs.length > 0) {
                     Document doc = searcher.storedFields().document(topDocs.scoreDocs[0].doc);
-                    byId.put(id, extractSimilarFields(doc));
+                    byId.put(id, project.apply(doc));
                 }
             }
             List<Map<String, Object>> ordered = new ArrayList<>();

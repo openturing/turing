@@ -1576,6 +1576,27 @@ export function fetchSimilar(
 }
 
 /**
+ * T1077 — reads stored documents by id, whole: every stored field, not
+ * highlighted or shortened, in the order asked (ids the site does not hold are
+ * dropped). Several ids fetch several candidates in one call; the server answers
+ * 404 when none of them is on the site.
+ *
+ * Server endpoint: {@code GET /api/sn/{site}/search/document?id=...}.
+ *
+ * @since 2026.3.4
+ */
+export function fetchStoredDocuments(
+  site: string,
+  ids: readonly string[],
+  locale?: string,
+): Promise<Record<string, unknown>[]> {
+  const qs = new URLSearchParams();
+  for (const id of ids) qs.append("id", id);
+  if (locale) qs.append("locale", locale);
+  return get<Record<string, unknown>[]>(`/sn/${site}/search/document?${qs}`);
+}
+
+/**
  * T401 — uploads an IMAGE / AUDIO / FILE to a multimodal slot (T64's
  * {@code POST /sn/{site}/chat/slot-upload}). With {@code vision} the server also
  * runs a vision LLM to extract scalar values into the named slots.

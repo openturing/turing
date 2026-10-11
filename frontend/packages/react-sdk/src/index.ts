@@ -43,6 +43,7 @@ export {
   fetchSiteChatState,
   fetchSortOptions,
   fetchSimilar,
+  fetchStoredDocuments,
   postSiteSlotUpload,
   postSiteChatResume,
   fetchSpellCheck,

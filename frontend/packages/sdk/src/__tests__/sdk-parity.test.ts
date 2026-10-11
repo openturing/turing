@@ -47,6 +47,7 @@ const PUBLIC_ENDPOINTS: readonly EndpointContract[] = [
   { method: "GET", path: "/sn/{site}/ac", fn: "fetchAutoComplete" },
   { method: "GET", path: "/sn/{site}/search/sort-options", fn: "fetchSortOptions" },
   { method: "GET", path: "/sn/{site}/search/similar", fn: "fetchSimilar" }, // T400
+  { method: "GET", path: "/sn/{site}/search/document", fn: "fetchStoredDocuments" }, // T1077
   { method: "GET", path: "/sn/{site}/{locale}/spell-check", fn: "fetchSpellCheck" }, // T402
   { method: "GET", path: "/sn/{site}/{locale}/related-terms", fn: "fetchRelatedTerms" }, // T678
   { method: "POST", path: "/sn/{site}/_search", fn: "dslSearch" }, // T403

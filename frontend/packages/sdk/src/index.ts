@@ -67,6 +67,7 @@ export {
   fetchAutoComplete,
   fetchSortOptions,
   fetchSimilar,
+  fetchStoredDocuments,
   postSiteSlotUpload,
   postSiteChatResume,
   fetchSpellCheck,

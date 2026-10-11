@@ -1438,7 +1438,7 @@
 - **T1074** — On Lucene a field the query did not match comes back whole instead of cut to its first sentence; the mid-character corruption did not reproduce in Turing.
 - **T1075** — A custom facet item's date bound can be relative date math such as NOW-7DAYS, so a last 7 days bucket counts and filters on Solr and Lucene and never goes stale.
 - **T1076** — Lucene autocomplete matches and suggests only words of the site's text fields, falling back to title, so slugs, URLs and ids are never offered.
-- **T1077 (fq operators and fieldList)** — On Lucene fqOr, fqAnd, fqOperator and fqItemOperator combine filters as on Solr, and on every engine fieldList limits the fields each result carries.
+- **T1077** — GET /api/sn/{site}/search/document?id= answers stored documents whole for one or several candidate ids, wrapped in both JS SDKs, after fq operators and fieldList landed.
 - **T1078** — Similar documents open a Lucene site's index from the snapshot's site locale, reloading the site when its SE instance has no endpoint, so MLT and VECTOR answer instead of a 500.
 - **T1079** — A caller can bound every JS SDK call: timeoutMs on the client rejects with TuringTimeoutError, and each API function and the bound API take a { signal }.
 - **T1080** — On Lucene text is indexed and queried with accent folding beside the original spelling, so saude finds the accented word after a reindex and old indexes keep answering.

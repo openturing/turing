@@ -6,17 +6,6 @@
 > [STRATEGY.md](STRATEGY.md); the markers and limits are `roadkeep.toml`'s. Blocks are
 > reused, not minted — `roadkeep brief` picks the next task and states why.
 
-## Block CA — Search response fields arrive as they were indexed
-
-- 🛠 **T1077** (deps: —) **On Lucene a search request's fqOr and fqItemOperator are echoed and ignored, and no endpoint returns a document by id** — No endpoint returns stored documents by id, so a detail page still runs a search with fq id to read one document. → §CXI.4
-
-## Block D.9 — SDK & frontend surface
-
-## Done when — T1077
-
-- **GET /api/sn/{site}/document/{id} answers the stored document whole** A request for
-  an indexed id returns every stored field unshortened; an unknown id answers 404.
-
 ## Non-goals (do NOT add as tasks)
 
 Binding constraints — see [IMPROVEMENTS.md](IMPROVEMENTS.md) §I.6 (What NOT to
