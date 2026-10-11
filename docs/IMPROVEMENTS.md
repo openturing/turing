@@ -2234,3 +2234,32 @@ need for the full text.
 
 Workaround in trabalharei: the job page tries each candidate id with its own `fq`,
 shortest first, stopping at the first hit (`src/lib/jobPage.ts`); usually one request.
+
+### CXI.5 Similar documents fail on Lucene (T1078)
+
+Met in trabalharei (TRA37, similar jobs on the job page) on a local turing-ce built from
+`0256a122dd`, Lucene engine, SN site `trabalharei-vagas`.
+
+`GET
+/api/sn/trabalharei-vagas/search/similar?id=fx-motorista-campinas&rows=6&_setlocale=pt_BR`
+answers HTTP 500, with `mode=MLT` and with `mode=VECTOR` alike. The log:
+
+    java.lang.NullPointerException
+      at java.nio.file.Paths.get
+      at com.viglet.turing.lucene.TurLuceneInstanceProcess.resolveIndexPath(TurLuceneInstanceProcess.java:97)
+      at com.viglet.turing.lucene.TurLuceneInstanceProcess.getLuceneInstance(TurLuceneInstanceProcess.java:105)
+      at com.viglet.turing.lucene.TurLuceneInstanceProcess.initLuceneInstance(TurLuceneInstanceProcess.java:90)
+      at com.viglet.turing.plugins.se.lucene.TurLuceneSearchEnginePlugin.getSimilarDocuments(TurLuceneSearchEnginePlugin.java:635)
+
+Search and autocomplete on the same site work, so the similar path resolves the Lucene
+index differently and gets a null path. The client sees only "An unexpected error
+occurred".
+
+Expected: the similar endpoint opens the site's index the way search does and answers
+MLT neighbours on a vectorless Lucene site (and VECTOR when the site has embeddings, or
+a 4xx saying it has none). An IT that calls `/search/similar` on a Lucene site would
+have caught it.
+
+Workaround in trabalharei: none beyond the design's own fallback. The job page lists
+jobs of the same occupation in the same UF, same city first, when similar fails or
+answers nothing.

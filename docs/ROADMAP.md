@@ -12,6 +12,7 @@
 - 📋 **T1075** (deps: —) **On Lucene a filter query is one exact term, so a date or number range matches nothing, and no relative date facet exists** — No recency or salary-from filter can be built on a Lucene site, and the empty result never says the filter was misread. → §CXI.2
 - 📋 **T1076** (deps: —) **Autocomplete on Lucene suggests words from every stored field, so slugs, URLs and ids come back as suggestions** — A visitor is offered terms nobody types, which crowd out the real completions on a small phone list. → §CXI.3
 - 📋 **T1077** (deps: —) **On Lucene a search request's fqOr and fqItemOperator are echoed and ignored, and no endpoint returns a document by id** — A detail page cannot fetch a job by one of several candidate ids in one call, and a silent no-op reads as success. → §CXI.4
+- 📋 **T1078** (deps: —) **Similar documents on a Lucene site answer 500: getSimilarDocuments opens the index with a null path** — No related-items rail can be built on Lucene, and the error gives the caller no reason. → §CXI.5
 
 ## Non-goals (do NOT add as tasks)
 
