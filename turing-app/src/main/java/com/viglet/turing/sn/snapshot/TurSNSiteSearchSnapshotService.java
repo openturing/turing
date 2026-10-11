@@ -209,7 +209,8 @@ public class TurSNSiteSearchSnapshotService {
                 field.getFacetPosition(), field.getSecondaryFacet(),
                 field.getShowAllFacetItems(), field.getSnType(), field.getType(),
                 field.getMultiValued(), field.getFacet(), field.getHl(), field.getMlt(),
-                field.getEnabled(), field.getRequired(), field.getDefaultValue());
+                field.getEnabled(), field.getRequired(), field.getDefaultValue(),
+                field.getSearchWeight());
     }
 
     /**
@@ -229,6 +230,7 @@ public class TurSNSiteSearchSnapshotService {
                 .type(view.type()).multiValued(view.multiValued()).facet(view.facet())
                 .hl(view.hl()).mlt(view.mlt()).enabled(view.enabled())
                 .required(view.required()).defaultValue(view.defaultValue())
+                .searchWeight(view.searchWeight())
                 .turSNSite(site)
                 .build();
     }

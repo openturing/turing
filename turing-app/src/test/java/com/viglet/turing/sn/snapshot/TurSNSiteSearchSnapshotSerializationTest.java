@@ -65,7 +65,7 @@ class TurSNSiteSearchSnapshotSerializationTest {
                 TurSNSiteSearchSiteView.from(site, "solr"), Locale.US, "solr", true,
                 List.of(new TurSNSiteSearchSnapshot.FieldExtView("f1", "ext", "category",
                         "desc", "Category", null, null, null, null, 1, true, false, null,
-                        null, 0, 1, 0, 0, 1, 0, "dv")),
+                        null, 0, 1, 0, 0, 1, 0, "dv", 2.5f)),
                 Set.of("f1"),
                 Map.of("f1", List.of(new TurSNSiteSearchSnapshot.CustomFacetView("cf1", "brand"))),
                 Map.of("f1", Set.of(new TurSNSiteSearchSnapshot.FacetLabelView(Locale.US, "Label"))),

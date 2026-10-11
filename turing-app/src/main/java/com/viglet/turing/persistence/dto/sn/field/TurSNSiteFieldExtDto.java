@@ -61,6 +61,7 @@ public class TurSNSiteFieldExtDto {
     private int enabled;
     private int required;
     private String defaultValue;
+    private Float searchWeight;
     private TurSNSite turSNSite;
 
     @Tolerate
@@ -89,6 +90,7 @@ public class TurSNSiteFieldExtDto {
         this.enabled = turSNSiteFieldExt.getEnabled();
         this.required = turSNSiteFieldExt.getRequired();
         this.defaultValue = turSNSiteFieldExt.getDefaultValue();
+        this.searchWeight = turSNSiteFieldExt.getSearchWeight();
         this.turSNSite = turSNSiteFieldExt.getTurSNSite();
     }
 

@@ -338,6 +338,42 @@ export const SNSiteFieldForm: React.FC<Props> = ({ snSiteId, snField, isNew, onD
                     </FormItem>
                   )}
                 />
+                {/* Search Weight (T1065) */}
+                <FormField
+                  control={form.control}
+                  name="searchWeight"
+                  rules={{
+                    validate: (value) =>
+                      value === null || value === undefined || (value >= 1 && value <= 100)
+                      || t("forms.snField.searchWeightRange"),
+                  }}
+                  render={({ field }) => (
+                    <FormItemTwoColumns className="w-full">
+                      <FormItemTwoColumns.Left>
+                        <FormItemTwoColumns.Label>{t("forms.snField.searchWeight")}</FormItemTwoColumns.Label>
+                        <FormItemTwoColumns.Description>
+                          {t("forms.snField.searchWeightDesc")}
+                        </FormItemTwoColumns.Description>
+                      </FormItemTwoColumns.Left>
+                      <FormItemTwoColumns.Right>
+                        <FormControl>
+                          <Input
+                            type="number"
+                            min={1}
+                            max={100}
+                            step={0.5}
+                            placeholder="1"
+                            className="w-full min-w-45"
+                            value={field.value ?? ""}
+                            onChange={(event) =>
+                              field.onChange(event.target.value === "" ? null : Number(event.target.value))}
+                          />
+                        </FormControl>
+                      </FormItemTwoColumns.Right>
+                      <FormMessage />
+                    </FormItemTwoColumns>
+                  )}
+                />
                 {/* Multi Value Switch */}
                 <FormField
                   control={form.control}

@@ -81,9 +81,11 @@ class TurSNSiteFieldExtDtoTest {
                 1,
                 1,
                 "default",
+                3f,
                 turSNSite);
 
         assertThat(dto.getId()).isEqualTo("id-123");
+        assertThat(dto.getSearchWeight()).isEqualTo(3f);
         assertThat(dto.getExternalId()).isEqualTo("ext-id");
         assertThat(dto.getName()).isEqualTo("fieldName");
         assertThat(dto.getDescription()).isEqualTo("Field Description");
@@ -206,11 +208,14 @@ class TurSNSiteFieldExtDtoTest {
         when(entity.getEnabled()).thenReturn(1);
         when(entity.getRequired()).thenReturn(0);
         when(entity.getDefaultValue()).thenReturn("default-value");
+        when(entity.getSearchWeight()).thenReturn(2.5f);
         when(entity.getTurSNSite()).thenReturn(turSNSite);
 
         TurSNSiteFieldExtDto dto = new TurSNSiteFieldExtDto(entity);
 
         assertThat(dto.getId()).isEqualTo("entity-id");
+        // T1065 — the GET path builds its DTO here; dropping the weight would wipe it on save.
+        assertThat(dto.getSearchWeight()).isEqualTo(2.5f);
         assertThat(dto.getExternalId()).isEqualTo("entity-ext-id");
         assertThat(dto.getName()).isEqualTo("entityField");
         assertThat(dto.getDescription()).isEqualTo("Entity Description");

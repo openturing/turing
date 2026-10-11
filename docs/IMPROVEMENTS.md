@@ -2130,33 +2130,6 @@ to work without a browser: a key that authenticates on its own, a scripted login
 works, and an import endpoint that refuses a body it cannot read instead of accepting it
 silently. Found while building trabalharei's local Turing and import proof.
 
-### CX.5 Field weights and exists conditions (T1065)
-
-Found while tuning trabalharei's job ranking (trabalharei TRA11). A job site needs a
-match in `title` to outweigh the same word in `text`.
-
-Shipped: the `exists` ranking condition (`TurSNRankingCondition.EXISTS = 3`, "Exists" in
-the console). It is `attribute:[* TO *]` on Solr and `FieldExistsQuery` on Lucene, so
-"has a salary" no longer needs one expression per salary band.
-
-Left: a per-field search weight. `TurSNSiteFieldExt` has no weight, and the field
-manifest's `VigletFieldSpec` (viglet-core, mapped by `TurSNManifestMapper`) has none
-either.
-
-Build:
-- a nullable `weight` column on the site field (Liquibase, its own changelog file)
-- the DTO and the console's field form
-- a manifest `boost`, which needs a viglet-core release first; that half can follow
-  separately
-- applied on Lucene through the `boosts` map of `MultiFieldQueryParser` in
-  `TurLuceneQueryBuilder.buildMainQuery`
-- applied on Solr as `qf` weights. Read the configset's `/select` defaults before
-  setting `qf` at query time, so the fields it already searches are kept.
-
-A missing weight means 1.0, so existing sites rank exactly as before.
-
-Workaround: trabalharei leaves title-over-text weighting to the engine default.
-
 ### CX.6 Multi-word synonyms on Lucene (T1066)
 
 Found while loading trabalharei's pt-BR job synonyms (trabalharei TRA12) on turing-ce
@@ -2226,3 +2199,22 @@ DATE field) has no meaning: skip that expression and log it, as the Lucene side 
 does for unusable conditions. Cover each engine with a test: a Lucene index test like
 `TurLuceneRankingExpressionsTest`, and a `TurSolrQueryBuilder` test asserting the `bq`
 string.
+
+### CX.10 Field manifest carries the search weight (T1072)
+
+Left over from T1065. A site field now has a `searchWeight` (1 to 100, empty means 1)
+that both engines apply. Lucene multiplies the field's clause through the
+`MultiFieldQueryParser` boosts map. Solr adds a `{!edismax qf='field^(w-1)' v=$q}` boost
+query. The console and `PUT /api/sn/{site}/field` set it. The field manifest (`POST
+/api/sn/manifest`, T382) cannot, so a connector that provisions its site from a manifest
+(trabalharei, Dumont's structured connectors) still has to set weights by hand in the
+console after every converge.
+
+Build: add an optional `boost` (or `searchWeight`) to `VigletFieldSpec` in viglet-core.
+That is a separate repo published to GitHub Packages, so it needs a release before
+Turing can depend on it. Then map it in `TurSNManifestMapper` onto
+`TurSNSiteFieldExt.searchWeight`, validated by the same 1 to 100 rule as
+`TurSNSiteFieldExtAPI.validSearchWeight`. Let the T386 planner diff report a weight
+change as non-breaking. A weight changes ranking, not the schema, so it never needs
+RECREATE. Cover it with a manifest provisioning test that converges a weight and reads
+it back.

@@ -1,0 +1,27 @@
+databaseChangeLog:
+  # T1065 (Block BZ) — per-field search weight. A match in `title` could not
+  # outweigh the same word in `text`: site fields had no weight, so every field
+  # counted the same on both engines.
+  #
+  # Nullable with no default: a null weight means 1, which is what every existing
+  # row is, so sites rank exactly as before until a weight is set.
+  #
+  # Idempotent (columnExists + MARK_RAN) because the app runs between changeset
+  # authoring; portable lowercase `float`.
+
+  - changeSet:
+      id: v2026.3.1.127-add-searchWeight-to-sn_site_field_ext
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - columnExists:
+                tableName: sn_site_field_ext
+                columnName: searchWeight
+      changes:
+        - addColumn:
+            tableName: sn_site_field_ext
+            columns:
+              - column:
+                  name: searchWeight
+                  type: float

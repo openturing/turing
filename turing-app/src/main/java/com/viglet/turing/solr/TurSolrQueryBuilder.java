@@ -161,7 +161,23 @@ public class TurSolrQueryBuilder {
             prepareGroup(turSEParameters, query);
         }
         prepareBoostQuery(turSNSite, query);
+        prepareFieldWeights(turSNSite, query);
         return query;
+    }
+
+    /**
+     * T1065 — a field's search weight {@code w} adds the user query, run against
+     * that field alone, as a boost query worth {@code w - 1}. The main query and
+     * its parser are untouched, so the match set never changes and a site with no
+     * weight (or weight 1) ranks exactly as before. Added after
+     * {@link #prepareBoostQuery}, which sets {@code bq} rather than appending.
+     */
+    private void prepareFieldWeights(TurSNSite turSNSite, SolrQuery query) {
+        turSNSiteFieldExtRepository.findByTurSNSiteAndEnabled(turSNSite, 1).stream()
+                .filter(field -> field.getName() != null && field.getSearchWeight() != null
+                        && field.getSearchWeight() > 1f)
+                .forEach(field -> query.add(BOOST_QUERY, String.format(Locale.US,
+                        "{!edismax qf='%s^%.2f' v=$q}", field.getName(), field.getSearchWeight() - 1f)));
     }
 
     private static boolean usesExactMatch(TurSNSite turSNSite, TurSEParameters turSEParameters) {

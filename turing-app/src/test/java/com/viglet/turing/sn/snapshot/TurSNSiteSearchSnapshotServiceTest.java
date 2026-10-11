@@ -309,7 +309,7 @@ class TurSNSiteSearchSnapshotServiceTest {
             declared.set(original, sampleFor(declared.getType(), declared.getName(), nth));
             scalars.add(declared);
         }
-        assertThat(scalars).as("the entity must still have scalars to copy").hasSize(21);
+        assertThat(scalars).as("the entity must still have scalars to copy").hasSize(22);
 
         TurSNSiteFieldExt rebuilt = TurSNSiteSearchSnapshotService.toEntity(
                 TurSNSiteSearchSnapshotService.toView(original), site());
@@ -340,6 +340,9 @@ class TurSNSiteSearchSnapshotServiceTest {
         }
         if (type == Boolean.class) {
             return nth % 2 == 0;
+        }
+        if (type == Float.class) {
+            return nth + 1.5f;
         }
         if (type.isEnum()) {
             Object[] constants = type.getEnumConstants();

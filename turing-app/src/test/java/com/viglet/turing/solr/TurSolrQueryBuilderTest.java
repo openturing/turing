@@ -745,6 +745,31 @@ class TurSolrQueryBuilderTest {
         }
 
         @Test
+        void testPrepareSolrQueryAddsFieldWeightAsEdismaxBoostQuery() {
+                TurSNSite site = new TurSNSite();
+                site.setRowsPerPage(10);
+                site.setSpellCheck(0);
+                site.setSpellCheckFixes(0);
+
+                when(turSNSiteFieldExtRepository.findByTurSNSiteAndEnabled(site, 1)).thenReturn(List.of(
+                                TurSNSiteFieldExt.builder().name("title").searchWeight(3f).build(),
+                                TurSNSiteFieldExt.builder().name("text").searchWeight(1f).build(),
+                                TurSNSiteFieldExt.builder().name("summary").build()));
+
+                TurSNSearchParams params = new TurSNSearchParams();
+                params.setQ("java");
+                params.setRows(10);
+                TurSEParameters seParameters = new TurSEParameters(params, new TurSNSitePostParamsBean());
+
+                SolrQuery query = builder().prepareSolrQuery(
+                                contextFrom(seParameters, new TurSNSitePostParamsBean()), site,
+                                seParameters, new TurSESpellCheckResult(false, ""));
+
+                // Weight 3 adds the query on title worth 2; weight 1 and no weight add nothing.
+                assertThat(query.getParams("bq")).containsExactly("{!edismax qf='title^2.00' v=$q}");
+        }
+
+        @Test
         void testPrepareSolrQueryBoostQueryWritesExistsConditionAsRangeQuery() {
                 TurSNSite site = new TurSNSite();
                 site.setRowsPerPage(10);

@@ -390,7 +390,12 @@ public class TurLuceneQueryBuilder {
                 return new QueryParser(TurLuceneConstants.ID, analyzer).parse(
                         QueryParserBase.escape(queryStr));
             }
-            MultiFieldQueryParser parser = new MultiFieldQueryParser(textFields, analyzer);
+            // T1065 — a field's search weight multiplies its clause, so a title
+            // match can outweigh the same word in body text.
+            Map<String, Float> weights = searchWeights(turSNSite);
+            MultiFieldQueryParser parser = weights.isEmpty()
+                    ? new MultiFieldQueryParser(textFields, analyzer)
+                    : new MultiFieldQueryParser(textFields, analyzer, weights);
             parser.setDefaultOperator(QueryParser.Operator.AND);
             return parser.parse(queryStr);
         } catch (ParseException e) {
@@ -429,6 +434,18 @@ public class TurLuceneQueryBuilder {
             }
         }
         return builder.build();
+    }
+
+    /** Enabled fields whose search weight differs from 1, keyed by name. */
+    private Map<String, Float> searchWeights(TurSNSite turSNSite) {
+        Map<String, Float> weights = new LinkedHashMap<>();
+        turSNSiteFieldExtRepository.findByTurSNSiteAndEnabled(turSNSite, 1).forEach(ext -> {
+            Float weight = ext.getSearchWeight();
+            if (ext.getName() != null && weight != null && weight > 0 && weight != 1f) {
+                weights.putIfAbsent(ext.getName(), weight);
+            }
+        });
+        return weights;
     }
 
     private String[] resolveTextFields(TurSNSite turSNSite) {

@@ -83,7 +83,7 @@ public record TurSNSiteSearchSnapshot(
             Integer facetPosition, Boolean secondaryFacet, Boolean showAllFacetItems,
             TurSNFieldType snType, TurSEFieldType type,
             int multiValued, int facet, int hl, int mlt, int enabled, int required,
-            String defaultValue) implements Serializable {
+            String defaultValue, Float searchWeight) implements Serializable {
         @Serial
         private static final long serialVersionUID = 1L;
     }

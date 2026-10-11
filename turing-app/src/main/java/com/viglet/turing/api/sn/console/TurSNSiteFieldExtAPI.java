@@ -161,7 +161,24 @@ public class TurSNSiteFieldExtAPI {
     public TurSNSiteFieldExtDto turSNSiteFieldExtAdd(@PathVariable String snSiteId,
             @RequestBody TurSNSiteFieldExtDto turSNSiteFieldExtDto) {
         TurSNSiteFieldExt turSNSiteFieldExt = turSNSiteFieldExtMapper.toEntity(turSNSiteFieldExtDto);
+        turSNSiteFieldExt.setSearchWeight(validSearchWeight(turSNSiteFieldExt.getSearchWeight()));
         return turSNSiteFieldExtMapper.toDto(createSEField(snSiteId, turSNSiteFieldExt));
+    }
+
+    /**
+     * T1065 — a search weight is a multiplier from 1 (no change, the same as
+     * empty) to 100. Below 1 is refused: Solr applies the weight as an extra boost
+     * query, which can raise a field but never lower one, so a demotion would
+     * behave differently per engine.
+     */
+    static Float validSearchWeight(Float weight) {
+        if (weight == null) {
+            return null;
+        }
+        if (weight.isNaN() || weight < 1f || weight > 100f) {
+            throw new IllegalArgumentException("searchWeight must be between 1 and 100, or empty");
+        }
+        return weight;
     }
 
     @Operation(summary = "Update a Semantic Navigation Site Field Ext")
@@ -286,6 +303,7 @@ public class TurSNSiteFieldExtAPI {
         existing.setExternalId(payload.getExternalId());
         existing.setRequired(payload.getRequired());
         existing.setDefaultValue(payload.getDefaultValue());
+        existing.setSearchWeight(validSearchWeight(payload.getSearchWeight()));
         existing.setSnType(payload.getSnType());
 
         if (payload.getFacetLocales() != null) {

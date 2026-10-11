@@ -133,6 +133,12 @@ public class TurSNSiteFieldExt implements Serializable {
     private int required;
     @Column(length = 50)
     private String defaultValue;
+    /**
+     * T1065 — how much a query match in this field counts against the same match
+     * elsewhere. {@code null} or {@code 1} leaves ranking as it was.
+     */
+    @Column
+    private Float searchWeight;
 
     // bi-directional many-to-one association to TurSNSite
     // @NotFound(IGNORE): tolerate orphaned rows whose sn_site_id points to a

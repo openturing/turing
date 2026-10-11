@@ -26,4 +26,6 @@ export type TurSNSiteField = {
   snType: string;
   type: string;
   hl: number;
+  /** T1065 — query-match multiplier for this field, 1–100; null means 1. */
+  searchWeight?: number | null;
 };

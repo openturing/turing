@@ -8,16 +8,11 @@
 
 ## Block BZ — Indexing API trust for connectors: key auth, scripted login, request validation
 
-- ⏳ **T1065** (deps: —) **No per-field search weight and no field-exists ranking condition, so title cannot outweigh body text** — Relevance for structured catalogs depends on which field matched, and connectors cannot declare it. → §CX.5
 - 📋 **T1066** (deps: —) **Multi-word synonym terms such as home office never match on Lucene sites, though single-word ones do** — Job and product vocabularies are full of two-word terms, and the API accepts them without saying they do nothing. → §CX.6
 - 📋 **T1067** (deps: —) **Spell-check answers an empty correction for a correct word that is missing from the index** — A did-you-mean link to an empty query, or a fix that blanks the query, is worse than no suggestion. → §CX.7
 - 📋 **T1069** (deps: —) **A wrong password on POST /api/login answers 500 and logs an ERROR stack trace instead of answering 401** — Scripts read a mistyped password as a server outage, and every failed login fills the log with stack traces. → §CX.8
 - 📋 **T1070** (deps: —) **A ranking condition set to Is not boosts the value instead, on Solr and on Lucene alike** — The console and docs offer Is not, but both engines ignore the condition field, so a demotion rule promotes what it meant to bury. → §CX.9
-
-## Done when — T1065
-
-- **A field weight ranks a title match above the same word in body text** Checked by a
-  Lucene index test and a Solr qf assertion, with title weighted above text.
+- 📋 **T1072** (deps: viglet-core release with VigletFieldSpec boost) **A field manifest cannot set a field's search weight, so connectors re-weight fields by hand after each converge** — Weights exist on fields since T1065, but VigletFieldSpec in viglet-core has no slot for one. → §CX.10
 
 ## Non-goals (do NOT add as tasks)
 
