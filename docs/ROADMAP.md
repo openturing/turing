@@ -14,6 +14,7 @@
 - 📋 **T1077** (deps: —) **On Lucene a search request's fqOr and fqItemOperator are echoed and ignored, and no endpoint returns a document by id** — A detail page cannot fetch a job by one of several candidate ids in one call, and a silent no-op reads as success. → §CXI.4
 - 📋 **T1078** (deps: —) **Similar documents on a Lucene site answer 500: getSimilarDocuments opens the index with a null path** — No related-items rail can be built on Lucene, and the error gives the caller no reason. → §CXI.5
 - 📋 **T1079** (deps: —) **The JS SDK's API calls take no timeout or AbortSignal, so a stalled Turing hangs every server-rendered page** — A caller cannot bound a search, and an outage turns into requests that never finish instead of an error page. → §CXI.6
+- 📋 **T1080** (deps: —) **On Lucene a pt-BR search keeps accents, so 'saude' or 'tecnico' never matches 'saúde' or 'técnico'** — Most Brazilian users type without accents, so their searches miss jobs that spell the word correctly. → §CXI.7
 
 ## Non-goals (do NOT add as tasks)
 
