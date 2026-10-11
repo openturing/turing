@@ -89,6 +89,34 @@ class TurSNDocumentResponseTest {
     }
 
     @Test
+    void responseDocumentsKeepOnlyTheFieldListFields() {
+        // T1077 — fieldList limits each document's fields, whichever engine answered.
+        when(turSNSiteFieldExtRepository.findByTurSNSiteAndEnabled(site, 1))
+                .thenReturn(Collections.emptyList());
+        TurSEResult r = TurSEResult.builder()
+                .fields(Map.of("id", "1", "title", "Doc", "text", "Long body", "url", "/u")).build();
+
+        var bean = documentResponse.responseDocuments(context(List.of("id", "title")), null, site,
+                Map.of(), List.of(r));
+
+        assertThat(bean.getDocument().getFirst().getFields())
+                .containsOnlyKeys("id", "title");
+    }
+
+    @Test
+    void responseDocumentsKeepEveryFieldWithoutAFieldList() {
+        when(turSNSiteFieldExtRepository.findByTurSNSiteAndEnabled(site, 1))
+                .thenReturn(Collections.emptyList());
+        TurSEResult r = TurSEResult.builder()
+                .fields(Map.of("id", "1", "title", "Doc", "text", "Long body")).build();
+
+        var bean = documentResponse.responseDocuments(context(null), null, site, Map.of(), List.of(r));
+
+        assertThat(bean.getDocument().getFirst().getFields())
+                .containsOnlyKeys("id", "title", "text");
+    }
+
+    @Test
     void responseDocumentsSkipsSpotlightWhenSiteFlagDisabled() {
         when(turSNSiteFieldExtRepository.findByTurSNSiteAndEnabled(site, 1))
                 .thenReturn(Collections.emptyList());

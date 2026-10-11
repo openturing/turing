@@ -9,7 +9,7 @@
 ## Block CA — Search response fields arrive as they were indexed
 
 - 🛠 **T1075** (deps: T1083) **On Lucene a filter query is one exact term, so a date or number range matches nothing, and no relative date facet exists** — A DATE facet still offers no relative buckets such as the last 7 days, so no recency facet can be listed with counts. → §CXI.2
-- ⏳ **T1077** (deps: —) **On Lucene a search request's fqOr and fqItemOperator are echoed and ignored, and no endpoint returns a document by id** — No endpoint returns stored documents by id, and on Lucene fieldList is ignored, so a detail page still searches and gets every field. → §CXI.4
+- 🛠 **T1077** (deps: —) **On Lucene a search request's fqOr and fqItemOperator are echoed and ignored, and no endpoint returns a document by id** — No endpoint returns stored documents by id, so a detail page still runs a search with fq id to read one document. → §CXI.4
 - 📋 **T1078** (deps: —) **Similar documents on a Lucene site answer 500: getSimilarDocuments opens the index with a null path** — No related-items rail can be built on Lucene, and the error gives the caller no reason. → §CXI.5
 - 📋 **T1079** (deps: —) **The JS SDK's API calls take no timeout or AbortSignal, so a stalled Turing hangs every server-rendered page** — A caller cannot bound a search, and an outage turns into requests that never finish instead of an error page. → §CXI.6
 - 📋 **T1080** (deps: —) **On Lucene a pt-BR search keeps accents, so 'saude' or 'tecnico' never matches 'saúde' or 'técnico'** — Most Brazilian users type without accents, so their searches miss jobs that spell the word correctly. → §CXI.7
@@ -30,8 +30,6 @@
 
 - **GET /api/sn/{site}/document/{id} answers the stored document whole** A request for
   an indexed id returns every stored field unshortened; an unknown id answers 404.
-- **On Lucene fieldList limits the fields each result carries** A search with
-  fieldList=id,title answers results that hold only those two fields.
 
 ## Non-goals (do NOT add as tasks)
 

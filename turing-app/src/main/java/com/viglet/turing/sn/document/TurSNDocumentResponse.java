@@ -79,7 +79,25 @@ public class TurSNDocumentResponse {
                 .filter(r -> turSolrInstance != null)
                 .ifPresent(r -> turSNSpotlightProcess.addSpotlightToResults(context,
                         turSolrInstance, turSNSite, facetMap, fieldExtMap, documents));
+        retainRequestedFields(context, documents);
         return new TurSNSiteSearchResultsBean().setDocument(documents);
+    }
+
+    /**
+     * T1077 — {@code fieldList} limits the fields each document carries, on every
+     * engine. Applied here, after the engine answered, because neither engine
+     * plugin reads it; the document's metadata and source are left as they are.
+     */
+    private static void retainRequestedFields(TurSNSiteSearchContext context,
+            List<TurSNSiteSearchDocumentBean> documents) {
+        List<String> fieldList = context.getTurSEParameters().getFieldList();
+        if (fieldList == null || fieldList.isEmpty()) {
+            return;
+        }
+        documents.stream()
+                .map(TurSNSiteSearchDocumentBean::getFields)
+                .filter(java.util.Objects::nonNull)
+                .forEach(fields -> fields.keySet().retainAll(fieldList));
     }
 
     /**

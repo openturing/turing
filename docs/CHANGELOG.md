@@ -1436,4 +1436,4 @@
 - **T1074** — On Lucene a field the query did not match comes back whole instead of cut to its first sentence; the mid-character corruption did not reproduce in Turing.
 - **T1075 (filters by type, bad ranges refused)** — On Lucene a filter query reads its value by the field's type, so date math and numeric ranges and numeric or date facet clicks match, and an unparseable range is refused with a 400 saying why.
 - **T1076** — Lucene autocomplete matches and suggests only words of the site's text fields, falling back to title, so slugs, URLs and ids are never offered.
-- **T1077 (fq operators on Lucene)** — On Lucene fqOr, fqAnd, fqOperator and fqItemOperator combine filters as on Solr, so several candidate ids can be fetched in one request.
+- **T1077 (fq operators and fieldList)** — On Lucene fqOr, fqAnd, fqOperator and fqItemOperator combine filters as on Solr, and on every engine fieldList limits the fields each result carries.
