@@ -2188,31 +2188,4 @@ shortest first, stopping at the first hit (`src/lib/jobPage.ts`); usually one re
 
 The same goes for `fieldList`: every stored field comes back (trabalharei TRA45).
 
-### CXI.8 Custom facets on Lucene (T1083)
-
-Found while shipping the first part of T1075 (range filters on Lucene).
-
-Custom facets (`TurSNSiteCustomFacet` with its `TurSNSiteCustomFacetItem` range items,
-edited under a field's facet settings) are implemented only by the Solr engine:
-`TurSolrQueryBuilder.addCustomFacetQuery` sends one `facet.query` per item, keyed
-`<facet><separator><item label>`, and `TurSolrResultProcessor` maps the counts back.
-Nothing under `lucene/` or `plugins/se/lucene/` reads them, so on a Lucene site a
-configured custom facet is never listed and its items never count.
-
-Since T1075 a Lucene filter query reads a range by the field's type
-(`TurLuceneFilterQueries`), so the item's filter (`field:[start TO end]`, built by
-`buildFilterQueryByOperator`) already matches once clicked. What is missing is the facet
-itself: for each custom facet of an enabled field, count each item's range over the
-matching documents (a `FILTER` of the item's query beside the main query, or a
-`DocIdSetIterator` intersection against the facet collector's matching docs) and answer
-a `TurSEFacetResult` shaped the way `TurSolrResultProcessor` shapes it, so
-`TurSNFacetRenderer` renders it unchanged with the item's label and `filterQuery`.
-
-Build the item's filter with the same operator mapping Solr uses (move
-`buildFilterQueryByOperator` somewhere both engines reach), so one item cannot mean two
-ranges on two engines.
-
-This is the seam T1075's relative date buckets need: a relative item (`NOW-7DAYS TO *`)
-is a custom facet item whose bounds are date math instead of fixed instants.
-
 ## CXII SDK & frontend surface

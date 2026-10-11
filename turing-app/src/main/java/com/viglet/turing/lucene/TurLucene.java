@@ -21,13 +21,17 @@ import com.viglet.turing.commons.sn.search.TurSNSiteSearchContext;
 import com.viglet.turing.persistence.model.sn.TurSNSite;
 import com.viglet.turing.persistence.model.sn.field.TurSNSiteFieldExt;
 import com.viglet.turing.persistence.repository.sn.TurSNSiteRepository;
+import com.viglet.turing.se.facet.TurSEFacetResult;
 import com.viglet.turing.se.result.TurSEResults;
+import com.viglet.turing.sn.TurSNUtils;
 import com.viglet.turing.sn.field.TurSNSiteFieldService;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.lucene.search.Query;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -48,13 +52,16 @@ public class TurLucene {
     private final TurLuceneQueryBuilder turLuceneQueryBuilder;
     private final TurLuceneResultProcessor turLuceneResultProcessor;
     private final TurLuceneDocumentHandler turLuceneDocumentHandler;
+    private final TurLuceneCustomFacets turLuceneCustomFacets;
 
     public TurLucene(TurSNSiteRepository turSNSiteRepository,
             TurSNSiteFieldService turSNSiteFieldService,
             TurLuceneQueryBuilder turLuceneQueryBuilder,
-            TurLuceneStorageSync turLuceneStorageSync) {
+            TurLuceneStorageSync turLuceneStorageSync,
+            TurLuceneCustomFacets turLuceneCustomFacets) {
         this.turSNSiteRepository = turSNSiteRepository;
         this.turLuceneQueryBuilder = turLuceneQueryBuilder;
+        this.turLuceneCustomFacets = turLuceneCustomFacets;
         this.turLuceneResultProcessor = new TurLuceneResultProcessor();
         this.turLuceneDocumentHandler = new TurLuceneDocumentHandler(turSNSiteFieldService,
                 turLuceneStorageSync);
@@ -93,9 +100,36 @@ public class TurLucene {
                         new TurLuceneSearch(instance, turSNSite, wildcardQuery, params),
                         turLuceneQueryBuilder.getFacetFields(turSNSite),
                         hlFields, sort, startTime);
+                query = wildcardQuery;
             }
-            return results;
+            return withCustomFacets(results, instance, query, turSNSite, context, null);
         });
+    }
+
+    /**
+     * T1083 — adds the site's custom facets (labelled range items) to the facet
+     * results, counted over the documents {@code query} matches, as Solr answers
+     * them from its facet queries. Only when the site has facets on.
+     */
+    private TurSEResults withCustomFacets(TurSEResults results, TurLuceneInstance instance, Query query,
+            TurSNSite turSNSite, TurSNSiteSearchContext context, String onlyFacet) {
+        if (turLuceneCustomFacets == null || !TurSNUtils.isTrue(turSNSite.getFacet())) {
+            return results;
+        }
+        try {
+            List<TurSEFacetResult> custom = turLuceneCustomFacets.count(instance.getSearcher(), query,
+                    turSNSite, context.getLocale(), onlyFacet);
+            if (!custom.isEmpty()) {
+                List<TurSEFacetResult> facets = new ArrayList<>(
+                        results.getFacetResults() == null ? List.of() : results.getFacetResults());
+                facets.addAll(custom);
+                results.setFacetResults(facets);
+            }
+        } catch (IOException e) {
+            log.warn("[Lucene] custom facets for site '{}' not counted: {}", turSNSite.getName(),
+                    e.getMessage());
+        }
+        return results;
     }
 
     /**
@@ -108,10 +142,11 @@ public class TurLucene {
             long startTime = System.currentTimeMillis();
             TurSEParameters params = context.getTurSEParameters();
             Query query = turLuceneQueryBuilder.buildQuery(turSNSite, params, context.getLocale());
-            return turLuceneResultProcessor.getResults(
+            TurSEResults results = turLuceneResultProcessor.getResults(
                     new TurLuceneSearch(instance, turSNSite, query, params),
                     turLuceneQueryBuilder.getFacetFields(turSNSite, facetName),
                     List.of(), null, startTime);
+            return withCustomFacets(results, instance, query, turSNSite, context, facetName);
         });
     }
 

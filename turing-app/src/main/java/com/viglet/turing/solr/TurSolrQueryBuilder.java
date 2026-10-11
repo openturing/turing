@@ -89,6 +89,7 @@ import com.viglet.turing.sn.searchrule.TurSNSearchRuleEvaluator;
 import com.viglet.turing.sn.snapshot.TurSNSiteSearchSnapshot;
 import com.viglet.turing.sn.snapshot.TurSNSiteSearchSnapshotService;
 import com.viglet.turing.sn.facet.TurSNCustomFacetDefinition;
+import com.viglet.turing.sn.facet.TurSNCustomFacetFilterQuery;
 import com.viglet.turing.sn.facet.TurSNFacetDefinition;
 import com.viglet.turing.sn.facet.TurSNFacetMapForFilterQuery;
 import com.viglet.turing.sn.facet.TurSNFacetProperties;
@@ -961,57 +962,15 @@ public class TurSolrQueryBuilder {
         return value.replace("\\", "\\\\").replace("'", "\\'");
     }
 
+    /** T1083 — shared with the Lucene engine, so one item means one range on both. */
     private static String setRangeFilterQuery(String fieldName, TurSEFieldType fieldType,
             TurSNSiteCustomFacetItem item) {
-        var operator = Optional.ofNullable(item.getOperator())
-                .orElse(TurSNSiteCustomFacetOperatorEnum.BETWEEN_INCLUSIVE);
-
-        if (TurSEFieldType.DATE.equals(fieldType)) {
-            return buildFilterQueryByOperator(fieldName, operator,
-                    Optional.ofNullable(item.getRangeStartDate()).map(Instant::toString).orElse(null),
-                    Optional.ofNullable(item.getRangeEndDate()).map(Instant::toString).orElse(null));
-        }
-
-        return buildFilterQueryByOperator(fieldName, operator,
-                Optional.ofNullable(item.getRangeStart()).map(Number::toString).orElse(null),
-                Optional.ofNullable(item.getRangeEnd()).map(Number::toString).orElse(null));
+        return TurSNCustomFacetFilterQuery.of(fieldName, fieldType, item);
     }
 
     private static String buildFilterQueryByOperator(String fieldName,
             TurSNSiteCustomFacetOperatorEnum operator, String startValue, String endValue) {
-        return switch (operator) {
-            case EQUAL -> {
-                String fallback = endValue != null ? endValue : "*";
-                String value = startValue != null ? startValue : fallback;
-                yield String.format("%s:%s", fieldName, value);
-            }
-            case GREATER_THAN_OR_EQUAL -> {
-                String start = startValue != null ? startValue : "*";
-                yield String.format("%s:[%s TO *]", fieldName, start);
-            }
-            case GREATER_THAN -> {
-                String start = startValue != null ? startValue : "*";
-                yield String.format("%s:{%s TO *]", fieldName, start);
-            }
-            case LESS_THAN_OR_EQUAL -> {
-                String end = endValue != null ? endValue : "*";
-                yield String.format("%s:[* TO %s]", fieldName, end);
-            }
-            case LESS_THAN -> {
-                String end = endValue != null ? endValue : "*";
-                yield String.format("%s:[* TO %s}", fieldName, end);
-            }
-            case BETWEEN_INCLUSIVE -> {
-                String start = startValue != null ? startValue : "*";
-                String end = endValue != null ? endValue : "*";
-                yield String.format("%s:[%s TO %s]", fieldName, start, end);
-            }
-            case BETWEEN_EXCLUSIVE -> {
-                String start = startValue != null ? startValue : "*";
-                String end = endValue != null ? endValue : "*";
-                yield String.format("%s:{%s TO %s}", fieldName, start, end);
-            }
-        };
+        return TurSNCustomFacetFilterQuery.byOperator(fieldName, operator, startValue, endValue);
     }
 
     private record CustomFacetFilterMapping(String customFacetName,

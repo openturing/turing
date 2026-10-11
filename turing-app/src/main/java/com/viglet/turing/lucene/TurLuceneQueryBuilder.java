@@ -84,17 +84,30 @@ public class TurLuceneQueryBuilder {
     private final TurSNSiteLocaleRepository turSNSiteLocaleRepository;
     private final TurLuceneSynonymRegistry synonymRegistry;
     private final TurLuceneRankingExpressions rankingExpressions;
+    private final TurLuceneCustomFacets customFacets;
 
     public TurLuceneQueryBuilder(TurSNSiteFieldExtRepository turSNSiteFieldExtRepository,
             TurSNSiteCustomSortRepository turSNSiteCustomSortRepository,
             TurSNSiteLocaleRepository turSNSiteLocaleRepository,
             TurLuceneSynonymRegistry synonymRegistry,
             TurLuceneRankingExpressions rankingExpressions) {
+        this(turSNSiteFieldExtRepository, turSNSiteCustomSortRepository, turSNSiteLocaleRepository,
+                synonymRegistry, rankingExpressions, null);
+    }
+
+    @org.springframework.beans.factory.annotation.Autowired
+    public TurLuceneQueryBuilder(TurSNSiteFieldExtRepository turSNSiteFieldExtRepository,
+            TurSNSiteCustomSortRepository turSNSiteCustomSortRepository,
+            TurSNSiteLocaleRepository turSNSiteLocaleRepository,
+            TurLuceneSynonymRegistry synonymRegistry,
+            TurLuceneRankingExpressions rankingExpressions,
+            TurLuceneCustomFacets customFacets) {
         this.turSNSiteFieldExtRepository = turSNSiteFieldExtRepository;
         this.turSNSiteCustomSortRepository = turSNSiteCustomSortRepository;
         this.turSNSiteLocaleRepository = turSNSiteLocaleRepository;
         this.synonymRegistry = synonymRegistry;
         this.rankingExpressions = rankingExpressions;
+        this.customFacets = customFacets;
     }
 
     // -------------------------------------------------------------------------
@@ -182,8 +195,9 @@ public class TurLuceneQueryBuilder {
             TurSNSiteFieldExt ext = fieldsByName.get(group.field());
             TurSNSiteFacetFieldEnum itemType = requestedItemType(filterParams.getItemOperator())
                     .orElseGet(() -> effectiveFacetItemType(ext, turSNSite));
-            Query query = buildFieldFilterQuery(group.field(), group.values(),
-                    ext != null ? ext.getType() : null, itemType, now);
+            TurSEFieldType type = ext != null ? ext.getType() : null;
+            Query query = buildFieldFilterQuery(group.values(),
+                    value -> valueQuery(turSNSite, group.field(), ext, value, type, now), itemType);
             (group.facetType() == TurSNSiteFacetFieldEnum.OR ? united : intersected).add(query);
         });
 
@@ -199,6 +213,23 @@ public class TurLuceneQueryBuilder {
         }
         united.forEach(query -> disjunction.add(query, BooleanClause.Occur.SHOULD));
         builder.add(disjunction.build(), BooleanClause.Occur.FILTER);
+    }
+
+    /**
+     * T1083 — a selection on a field the site has no field for may be a custom
+     * facet's {@code <facet>:<label>}: it stands for the item's range on the field
+     * the custom facet belongs to, as on Solr.
+     */
+    private Query valueQuery(TurSNSite turSNSite, String field, TurSNSiteFieldExt ext, String value,
+            TurSEFieldType type, Instant now) {
+        if (ext == null && customFacets != null) {
+            Optional<TurLuceneCustomFacets.ItemFilter> item = customFacets.resolveFilter(turSNSite, field, value);
+            if (item.isPresent()) {
+                return TurLuceneFilterQueries.build(item.get().field(), item.get().value(), item.get().type(),
+                        now);
+            }
+        }
+        return TurLuceneFilterQueries.build(field, value, type, now);
     }
 
     /** One field's selected values and how the field combines with the others. */
@@ -238,16 +269,16 @@ public class TurLuceneQueryBuilder {
      * otherwise. Each value is read by the field's type (T1075), so a range or
      * a numeric/date value matches the points the field was indexed as.
      */
-    private static Query buildFieldFilterQuery(String field, List<String> values, TurSEFieldType type,
-            TurSNSiteFacetFieldEnum itemType, Instant now) {
+    private static Query buildFieldFilterQuery(List<String> values,
+            java.util.function.Function<String, Query> valueQuery, TurSNSiteFacetFieldEnum itemType) {
         if (values.size() == 1) {
-            return TurLuceneFilterQueries.build(field, values.getFirst(), type, now);
+            return valueQuery.apply(values.getFirst());
         }
         BooleanQuery.Builder builder = new BooleanQuery.Builder();
         BooleanClause.Occur occur = itemType == TurSNSiteFacetFieldEnum.OR
                 ? BooleanClause.Occur.SHOULD
                 : BooleanClause.Occur.MUST;
-        values.forEach(value -> builder.add(TurLuceneFilterQueries.build(field, value, type, now), occur));
+        values.forEach(value -> builder.add(valueQuery.apply(value), occur));
         if (occur == BooleanClause.Occur.SHOULD) {
             builder.setMinimumNumberShouldMatch(1);
         }

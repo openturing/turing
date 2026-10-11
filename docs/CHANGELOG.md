@@ -1442,3 +1442,4 @@
 - **T1078** — Similar documents open a Lucene site's index from the snapshot's site locale, reloading the site when its SE instance has no endpoint, so MLT and VECTOR answer instead of a 500.
 - **T1079** — A caller can bound every JS SDK call: timeoutMs on the client rejects with TuringTimeoutError, and each API function and the bound API take a { signal }.
 - **T1080** — On Lucene text is indexed and queried with accent folding beside the original spelling, so saude finds the accented word after a reindex and old indexes keep answering.
+- **T1083** — A Lucene site counts and lists a field's custom facets with their labels, and a clicked item filters by its range, built by the same helper Solr uses.
