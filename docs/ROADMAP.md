@@ -14,8 +14,6 @@
 
 ## Block D.9 — SDK & frontend surface
 
-- 📋 **T1082** (deps: —) **The Java SDK's TurSNJobAttributeSpec has no searchWeight, so a manifest sent from Java leaves every field at weight 1** — A connector cannot rank a title above its body text, though the manifest endpoint reads the weight since T1072. → §CXII.2
-
 ## Done when — T1075
 
 - **A DATE facet offers relative buckets (last N days) with counts and a filterQuery** A

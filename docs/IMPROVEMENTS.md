@@ -2216,27 +2216,3 @@ This is the seam T1075's relative date buckets need: a relative item (`NOW-7DAYS
 is a custom facet item whose bounds are date math instead of fixed instants.
 
 ## CXII SDK & frontend surface
-
-### CXII.2 searchWeight on TurSNJobAttributeSpec (T1082)
-
-Met in Dumont (D140, 2026.3), which provisions each SN site from a structured source's
-schema through the Java SDK.
-
-Turing applies a field's search weight since T1065, and the manifest endpoint reads one
-per field since T1072: `TurSNSiteManifestService` takes `VigletFieldSpec.searchWeight()`
-(1 to 100) and writes it to the site's field. But the Java SDK cannot send it.
-`TurSNManifest.Builder` takes `fields(List<TurSNJobAttributeSpec>)`, and
-`TurSNJobAttributeSpec` (turing-java-sdk 2026.3.4) carries name, type, mandatory,
-multiValued, description, facet and facetName, with no searchWeight. So every manifest a
-Java client sends leaves every field at weight 1, and the only way to weigh a title
-above its body is a hand edit in the console that no client keeps in step.
-
-Expected: `TurSNJobAttributeSpec` gains an optional `searchWeight` (Integer, 1 to 100,
-null meaning "leave the site's weight alone"), serialized into the manifest field the
-endpoint already reads, with the builder and the Lombok all-args constructor kept
-compatible. A test in the SDK pins the JSON a manifest with a weighted field sends.
-
-Dumont then adds `DumStructuredField.Builder.searchWeight(int)` and carries it through
-`toAttributeSpecs()` (D140, deferred on this line).
-
-Workaround in Dumont: none; posting the manifest JSON by hand would bypass the SDK.

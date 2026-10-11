@@ -28,6 +28,18 @@ public class TurSNJobAttributeSpec implements Serializable {
     protected boolean facet;
     @SuppressWarnings("java:S1948")
     protected Map<String, String> facetName;
+    /**
+     * T1082 — the field's search weight, 1 to 100, sent with a manifest so a
+     * title can rank above body text; {@code null} leaves the site's weight as
+     * it is. Turing refuses a value outside the range.
+     */
+    protected Float searchWeight;
+
+    /** The constructor this class had before {@link #searchWeight}, kept for existing callers. */
+    public TurSNJobAttributeSpec(String name, TurSEFieldType type, boolean mandatory, boolean multiValued,
+            String description, boolean facet, Map<String, String> facetName) {
+        this(name, type, mandatory, multiValued, description, facet, facetName, null);
+    }
 
     @Override
     public String toString() {
@@ -39,6 +51,7 @@ public class TurSNJobAttributeSpec implements Serializable {
                 ", description='" + description + '\'' +
                 ", facet=" + facet +
                 ", facetName='" + facetName + '\'' +
+                ", searchWeight=" + searchWeight +
                 '}';
     }
 }

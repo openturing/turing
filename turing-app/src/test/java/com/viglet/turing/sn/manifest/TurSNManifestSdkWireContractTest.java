@@ -76,6 +76,7 @@ class TurSNManifestSdkWireContractTest {
                         .multiValued(false)
                         .facet(false)
                         .description("Stock keeping unit")
+                        .searchWeight(3f)
                         .build())
                 .field(TurSNJobAttributeSpec.builder()
                         .name("brand")
@@ -117,8 +118,11 @@ class TurSNManifestSdkWireContractTest {
         assertThat(sku.mandatory()).isTrue();
         assertThat(sku.multiValued()).isFalse();
         assertThat(sku.description()).isEqualTo("Stock keeping unit");
+        // T1082 — the weight the endpoint applies to the site's field (since T1072)
+        assertThat(sku.searchWeight()).isEqualTo(3f);
 
         VigletFieldSpec brand = bound.fields().get(1);
+        assertThat(brand.searchWeight()).isNull();
         assertThat(brand.multiValued()).isTrue();
         assertThat(brand.facet()).isTrue();
         assertThat(brand.facetName()).containsEntry("en", "Brand").containsEntry("pt", "Marca");

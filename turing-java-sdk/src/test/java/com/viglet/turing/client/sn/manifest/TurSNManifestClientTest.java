@@ -128,6 +128,33 @@ class TurSNManifestClientTest {
     }
 
     @Test
+    @DisplayName("A field's searchWeight is sent with the manifest, and an unweighted field sends none (T1082)")
+    void provisionSendsTheSearchWeight() {
+        var manifest = TurSNManifest.builder()
+                .name("Catalog")
+                .locale("en-US")
+                .field(TurSNJobAttributeSpec.builder()
+                        .name("title")
+                        .type(TurSEFieldType.TEXT)
+                        .searchWeight(3f)
+                        .build())
+                .field(TurSNJobAttributeSpec.builder()
+                        .name("text")
+                        .type(TurSEFieldType.TEXT)
+                        .build())
+                .build();
+
+        new TurSNManifestClient(server()).provision(manifest);
+
+        var fields = new tools.jackson.databind.ObjectMapper().readTree(lastBody.get()).get("fields");
+        assertThat(fields.get(0).get("name").asString()).isEqualTo("title");
+        assertThat(fields.get(0).get("searchWeight").asDouble()).isEqualTo(3.0);
+        // null leaves the site's weight alone, which is what the endpoint does with it
+        var unweighted = fields.get(1).get("searchWeight");
+        assertThat(unweighted == null || unweighted.isNull()).isTrue();
+    }
+
+    @Test
     @DisplayName("plan posts to the /plan sub-path and reads the diff back")
     void planPostsToThePlanPath() {
         responseBody.set(DIFF_JSON);
