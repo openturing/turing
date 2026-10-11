@@ -2265,3 +2265,25 @@ have caught it.
 Workaround in trabalharei: none beyond the design's own fallback. The job page lists
 jobs of the same occupation in the same UF, same city first, when similar fails or
 answers nothing.
+
+### CXI.6 SDK calls cannot be bounded (T1079)
+
+Met in trabalharei (TRA62, the site's health check) with `@viglet/turing-sdk` 2026.3.9
+against a local turing-ce.
+
+With the Turing container paused, `postStructuredSearch(client, site, request)` never
+settled: the site's `/api/health/` and every server-rendered search page waited for as
+long as the caller did (over 60 s in the test). `TuringClientConfig` has no timeout, and
+the API functions (`postStructuredSearch`, `fetchSearch`, `fetchSimilar`,
+`createAutoComplete`'s fetch...) take no `AbortSignal`, although `client.request`
+accepts `signal` in its options. A server-side caller cannot bound a call without
+wrapping every one in its own `Promise.race`, which leaves the request running.
+
+Expected: `createTuringClient({ timeoutMs })` applied to every request through
+`AbortSignal.timeout`, and an optional `{ signal }` last argument on each API function,
+passed down to `client.request`; a timed-out call rejects with a recognisable error
+(`TuringTimeoutError`) so a page can show its unavailable state.
+
+Workaround in trabalharei: `tryTuring` (src/lib/turing.ts) races each call against an
+8-second timer and reports a timeout; the fetch itself keeps running until the socket
+gives up.
