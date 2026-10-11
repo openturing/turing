@@ -35,6 +35,7 @@ import org.apache.lucene.queryparser.classic.QueryParser;
 import org.apache.lucene.queryparser.classic.QueryParserBase;
 import org.apache.lucene.search.BooleanClause;
 import org.apache.lucene.search.BooleanQuery;
+import org.apache.lucene.search.BoostQuery;
 import org.apache.lucene.search.FieldExistsQuery;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.TermQuery;
@@ -397,7 +398,12 @@ public class TurLuceneQueryBuilder {
                     ? new MultiFieldQueryParser(textFields, analyzer)
                     : new MultiFieldQueryParser(textFields, analyzer, weights);
             parser.setDefaultOperator(QueryParser.Operator.AND);
-            return parser.parse(queryStr);
+            // T1066 — a multi-word expansion is a phrase, not loose words.
+            parser.setAutoGenerateMultiTermSynonymsPhraseQuery(true);
+            Query termCentric = parser.parse(queryStr);
+            return analyzer instanceof TurLuceneSynonymAnalyzer
+                    ? withMultiWordSynonyms(termCentric, queryStr, textFields, analyzer, weights)
+                    : termCentric;
         } catch (ParseException e) {
             log.warn("Failed to parse Lucene query '{}', falling back to MatchAllDocsQuery: {}", queryStr,
                     e.getMessage());
@@ -423,6 +429,40 @@ public class TurLuceneQueryBuilder {
                 .orElse(null);
         SynonymMap map = core == null ? null : synonymRegistry.get(core);
         return map == null ? new StandardAnalyzer() : new TurLuceneSynonymAnalyzer(map);
+    }
+
+    /**
+     * T1066 — the classic parser splits the query on whitespace before analysis,
+     * so the synonym filter only ever saw {@code home} and {@code office} apart
+     * and a multi-word term such as "home office" never expanded.
+     *
+     * <p>The term-centric parse is kept as it is (each word may match in any
+     * field) and ORed with a per-field parse that hands the filter the whole query
+     * string, so a multi-word synonym expands within a field and a multi-word
+     * expansion is searched as a phrase, not as loose words. Not splitting on the
+     * multi-field parser instead would demand the phrase in every field at once.
+     * Only queries analysed with a site's synonyms take this path.
+     */
+    private static Query withMultiWordSynonyms(Query termCentric, String queryStr, String[] fields,
+            Analyzer analyzer, Map<String, Float> weights) {
+        BooleanQuery.Builder perField = new BooleanQuery.Builder();
+        for (String field : fields) {
+            QueryParser parser = new QueryParser(field, analyzer);
+            parser.setDefaultOperator(QueryParser.Operator.AND);
+            parser.setSplitOnWhitespace(false);
+            parser.setAutoGenerateMultiTermSynonymsPhraseQuery(true);
+            try {
+                Query query = parser.parse(queryStr);
+                Float weight = weights.get(field);
+                perField.add(weight != null ? new BoostQuery(query, weight) : query, BooleanClause.Occur.SHOULD);
+            } catch (ParseException e) {
+                return termCentric;
+            }
+        }
+        return new BooleanQuery.Builder()
+                .add(termCentric, BooleanClause.Occur.SHOULD)
+                .add(perField.build(), BooleanClause.Occur.SHOULD)
+                .build();
     }
 
     /** Fallback: build OR of TermQuery across text fields. */

@@ -2130,22 +2130,6 @@ to work without a browser: a key that authenticates on its own, a scripted login
 works, and an import endpoint that refuses a body it cannot read instead of accepting it
 silently. Found while building trabalharei's local Turing and import proof.
 
-### CX.6 Multi-word synonyms on Lucene (T1066)
-
-Found while loading trabalharei's pt-BR job synonyms (trabalharei TRA12) on turing-ce
-2026.3.4, embedded Lucene, site locale `pt_BR`. `/synonym/support` reports
-`{"engine":"lucene","supported":true}`, and after `/synonym/batch` plus `/synonym/apply`
-single-word groups work: `teletrabalho` and `programador` find documents that only say
-`remoto` and `desenvolvedor`. Multi-word terms in the same REGULAR groups never match:
-`q=home office` and `q=carteira assinada` return 0, although `remoto` and `clt` (their
-group mates) each match documents.
-
-Expected: multi-word synonym terms expand at query time (Lucene's SynonymGraphFilter
-with phrase handling), as the synonym API and console let users enter them; or the API
-rejects multi-word terms on engines that cannot apply them.
-
-Workaround: none; trabalharei keeps the multi-word entries so they work once fixed.
-
 ### CX.7 No empty spell-check corrections (T1067)
 
 Found while enabling "você quis dizer" for trabalharei (TRA12) on turing-ce 2026.3.4,

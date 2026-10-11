@@ -1424,3 +1424,4 @@
 - **T1063** — Basic auth with a local user's password is proven to work on admin APIs by TurBasicAuthIT, and the admin guide documents scripted access via Basic or a Key token (design §CX.3 superseded: the 401s were bad credentials from TURING_ADMIN_PASSWORD being ignored on a reused database, not the AuthenticationProvider warning).
 - **T1064** — Lucene sites apply ranking expressions: each becomes a weighted SHOULD boost, with Solr's recency curve for asc on a DATE field, so ranking matches Solr on both engines.
 - **T1065** — Site fields take a search weight (1-100) that ranks a title match above the same word in body text: Lucene boosts the field clause, Solr adds a field-scoped edismax boost query.
+- **T1066** — Multi-word synonyms such as home office expand on Lucene sites in both directions: the query is also parsed per field without whitespace splitting, and expansions are phrases.
