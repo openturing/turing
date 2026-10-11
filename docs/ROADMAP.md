@@ -16,6 +16,10 @@
 - 📋 **T1079** (deps: —) **The JS SDK's API calls take no timeout or AbortSignal, so a stalled Turing hangs every server-rendered page** — A caller cannot bound a search, and an outage turns into requests that never finish instead of an error page. → §CXI.6
 - 📋 **T1080** (deps: —) **On Lucene a pt-BR search keeps accents, so 'saude' or 'tecnico' never matches 'saúde' or 'técnico'** — Most Brazilian users type without accents, so their searches miss jobs that spell the word correctly. → §CXI.7
 
+## Block D.9 — SDK & frontend surface
+
+- 📋 **T1081** (deps: —) **The Java SDK's TurSNServer takes no connect or read timeout, so a call to a down Turing hangs about three minutes** — A batch caller such as Dumont waits minutes per site on a manifest or import that cannot succeed. → §CXII.1
+
 ## Non-goals (do NOT add as tasks)
 
 Binding constraints — see [IMPROVEMENTS.md](IMPROVEMENTS.md) §I.6 (What NOT to
