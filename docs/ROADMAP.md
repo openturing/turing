@@ -8,12 +8,13 @@
 
 ## Block CA — Search response fields arrive as they were indexed
 
-- ⏳ **T1075** (deps: —) **On Lucene a filter query is one exact term, so a date or number range matches nothing, and no relative date facet exists** — A DATE facet still offers no relative buckets, and a filter that does not parse for its field still matches nothing without saying why. → §CXI.2
+- 🛠 **T1075** (deps: T1083) **On Lucene a filter query is one exact term, so a date or number range matches nothing, and no relative date facet exists** — A DATE facet still offers no relative buckets such as the last 7 days, so no recency facet can be listed with counts. → §CXI.2
 - 📋 **T1076** (deps: —) **Autocomplete on Lucene suggests words from every stored field, so slugs, URLs and ids come back as suggestions** — A visitor is offered terms nobody types, which crowd out the real completions on a small phone list. → §CXI.3
 - 📋 **T1077** (deps: —) **On Lucene a search request's fqOr and fqItemOperator are echoed and ignored, and no endpoint returns a document by id** — A detail page cannot fetch a job by one of several candidate ids in one call, and a silent no-op reads as success. → §CXI.4
 - 📋 **T1078** (deps: —) **Similar documents on a Lucene site answer 500: getSimilarDocuments opens the index with a null path** — No related-items rail can be built on Lucene, and the error gives the caller no reason. → §CXI.5
 - 📋 **T1079** (deps: —) **The JS SDK's API calls take no timeout or AbortSignal, so a stalled Turing hangs every server-rendered page** — A caller cannot bound a search, and an outage turns into requests that never finish instead of an error page. → §CXI.6
 - 📋 **T1080** (deps: —) **On Lucene a pt-BR search keeps accents, so 'saude' or 'tecnico' never matches 'saúde' or 'técnico'** — Most Brazilian users type without accents, so their searches miss jobs that spell the word correctly. → §CXI.7
+- 📋 **T1083** (deps: —) **On Lucene a field's custom facets are never listed, so their range items count nothing and cannot be clicked** — A Lucene site cannot offer a salary band or a posting-date facet, though the same configuration works on Solr. → §CXI.8
 
 ## Block D.9 — SDK & frontend surface
 
@@ -22,8 +23,6 @@
 
 ## Done when — T1075
 
-- **A filter that does not parse for its field type answers a reason** A search with fq
-  salary:[lots TO more] answers the reason instead of an empty page.
 - **A DATE facet offers relative buckets (last N days) with counts and a filterQuery** A
   Lucene search over the site lists the buckets with the counts the same range filter
   returns.

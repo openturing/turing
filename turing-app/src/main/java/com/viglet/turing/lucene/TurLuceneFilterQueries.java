@@ -31,7 +31,6 @@ import org.apache.lucene.document.FloatPoint;
 import org.apache.lucene.document.IntPoint;
 import org.apache.lucene.document.LongPoint;
 import org.apache.lucene.index.Term;
-import org.apache.lucene.search.MatchNoDocsQuery;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.TermQuery;
 import org.apache.lucene.search.TermRangeQuery;
@@ -51,7 +50,8 @@ import com.viglet.turing.commons.se.field.TurSEFieldType;
  * {@code +n}/{@code -n} steps and {@code /UNIT} rounding (e.g.
  * {@code NOW-7DAYS/DAY}). An exact value that does not parse for its type
  * falls back to a term lookup, which is what a value the handler could not
- * parse was indexed as; a range that does not parse matches nothing.
+ * parse was indexed as; a range that does not parse is refused with an
+ * {@link IllegalArgumentException} that says why.
  *
  * @author Alexandre Oliveira
  * @since 2026.3.4
@@ -78,7 +78,17 @@ public final class TurLuceneFilterQueries {
             boolean upperInclusive = "]".equals(range.group(4));
             Query query = rangeQuery(field, type, range.group(2), lowerInclusive, range.group(3),
                     upperInclusive, now);
-            return query != null ? query : new MatchNoDocsQuery("unparseable range on " + field);
+            if (query == null) {
+                // Refused rather than matching nothing, so the caller learns why the
+                // page is empty (TurGlobalExceptionHandler answers 400 with this text).
+                throw new IllegalArgumentException(String.format(
+                        "Filter query '%s:%s' is not a range of %s values: use [from TO to] "
+                                + "with numbers%s, '*' for an open end and {} for an exclusive one",
+                        field, value, type, type == TurSEFieldType.DATE
+                                ? " or dates (ISO instant, yyyy-MM-dd, NOW with date math such as NOW-7DAYS)"
+                                : ""));
+            }
+            return query;
         }
         Query exact = exactQuery(field, value, type, now);
         return exact != null ? exact : new TermQuery(new Term(field, value));

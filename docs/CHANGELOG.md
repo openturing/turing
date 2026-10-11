@@ -1434,4 +1434,4 @@
 ## Block CA — Search response fields arrive as they were indexed
 
 - **T1074** — On Lucene a field the query did not match comes back whole instead of cut to its first sentence; the mid-character corruption did not reproduce in Turing.
-- **T1075 (range and typed filters)** — On Lucene a filter query reads its value by the field's type, so date math ranges, numeric ranges and numeric or date facet clicks now match.
+- **T1075 (filters by type, bad ranges refused)** — On Lucene a filter query reads its value by the field's type, so date math and numeric ranges and numeric or date facet clicks match, and an unparseable range is refused with a 400 saying why.

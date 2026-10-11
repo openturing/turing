@@ -2138,27 +2138,26 @@ Met in trabalharei (TRA31, the job search filters) on a local turing-ce built fr
 `0256a122dd`, Lucene engine, SN site `trabalharei-vagas` with a DATE field
 `publishedAt`.
 
-`POST /api/sn/trabalharei-vagas/search/query` with any of `fq: ["publishedAt:[NOW-1DAY
-TO NOW]"]`, `["publishedAt:[2026-10-10T00:00:00Z TO *]"]` or `["publishedAt:[NOW-7DAYS
-TO *]"]` answers `count: 0` while echoing the filter in `selectedFilterQueries`; six of
-the eleven jobs were published after 2026-10-10.
-`TurLuceneQueryBuilder.addFilterQueries` turns every `field:value` into a `TermQuery`,
-so a range is looked up as one literal term. The site's facet for `publishedAt` lists
-each distinct timestamp as its own value, and the field's `facetRange` (DAY, MONTH,
-YEAR) is read only by `TurSolrQueryBuilder`.
+Landed: a Lucene filter query reads its value by the field's type
+(`TurLuceneFilterQueries`), so `publishedAt:[NOW-7DAYS TO *]`, `[2026-10-10T00:00:00Z TO
+*]`, numeric ranges and numeric or date facet clicks match, and a range that does not
+parse for its field is refused with a 400 that says why.
 
-So on Lucene no recency filter ("last 24 hours", "last 7 days") and no numeric range
-(salary from X) can be built, nothing says the filter was not understood, and on Solr
-the buckets are calendar days or months, not "the last N days".
+Left: a DATE facet cannot offer relative buckets ("last 24 hours", "last 7 days"). The
+field's `facetRange` (DAY, MONTH, YEAR) gives calendar buckets, and only on Solr;
+`TurSNSiteCustomFacetItem` gives labelled range buckets, but with fixed bounds
+(`rangeStartDate`/`rangeEndDate` are instants) and only on Solr (T1083).
 
-Expected: a filter query accepts a range, `field:[from TO to]` with `*` and `NOW-nDAYS`
-date math, on Lucene as on Solr (Lucene's point range queries for DATE, INT, LONG and
-FLOAT fields), and a DATE facet can declare relative buckets (`last 1, 3, 7, 30 days`)
-that answer as items with counts and a ready `filterQuery`. A filter that cannot be
-parsed for its field type is refused with a reason instead of matching nothing.
+Build it on the custom facet, not a new facet kind: let an item's bound be date math (a
+`rangeStartExpression`/`rangeEndExpression` pair, or a relative mode that takes
+`NOW-7DAYS`), new nullable columns in a new Liquibase file, editable where the items are
+edited in the console. `buildFilterQueryByOperator` then writes `publishedAt:[NOW-7DAYS
+TO *]`, which Solr reads natively and Lucene reads since the first part of this line, so
+the item's `filterQuery` stays a plain filter the client sends back. Counts come from
+the custom-facet path T1083 adds to Lucene.
 
-Workaround in trabalharei: none. The posting-date filter waits on this line (TRA31's
-remainder).
+Done when the trabalharei site lists "last 1, 3, 7, 30 days" items with counts on both
+engines, each `filterQuery` answering the same documents its count promised.
 
 ### CXI.3 Autocomplete drawn from every stored field (T1076)
 
@@ -2282,6 +2281,33 @@ field types usually carry the same filter, so both engines should agree. A re-in
 existing documents is part of the change.
 
 Workaround in trabalharei: none; the site sends the query as the user typed it.
+
+### CXI.8 Custom facets on Lucene (T1083)
+
+Found while shipping the first part of T1075 (range filters on Lucene).
+
+Custom facets (`TurSNSiteCustomFacet` with its `TurSNSiteCustomFacetItem` range items,
+edited under a field's facet settings) are implemented only by the Solr engine:
+`TurSolrQueryBuilder.addCustomFacetQuery` sends one `facet.query` per item, keyed
+`<facet><separator><item label>`, and `TurSolrResultProcessor` maps the counts back.
+Nothing under `lucene/` or `plugins/se/lucene/` reads them, so on a Lucene site a
+configured custom facet is never listed and its items never count.
+
+Since T1075 a Lucene filter query reads a range by the field's type
+(`TurLuceneFilterQueries`), so the item's filter (`field:[start TO end]`, built by
+`buildFilterQueryByOperator`) already matches once clicked. What is missing is the facet
+itself: for each custom facet of an enabled field, count each item's range over the
+matching documents (a `FILTER` of the item's query beside the main query, or a
+`DocIdSetIterator` intersection against the facet collector's matching docs) and answer
+a `TurSEFacetResult` shaped the way `TurSolrResultProcessor` shapes it, so
+`TurSNFacetRenderer` renders it unchanged with the item's label and `filterQuery`.
+
+Build the item's filter with the same operator mapping Solr uses (move
+`buildFilterQueryByOperator` somewhere both engines reach), so one item cannot mean two
+ranges on two engines.
+
+This is the seam T1075's relative date buckets need: a relative item (`NOW-7DAYS TO *`)
+is a custom facet item whose bounds are date math instead of fixed instants.
 
 ## CXII SDK & frontend surface
 

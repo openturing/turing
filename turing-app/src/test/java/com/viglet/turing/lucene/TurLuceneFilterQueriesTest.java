@@ -2,6 +2,8 @@ package com.viglet.turing.lucene;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.time.Instant;
 import java.util.Set;
@@ -18,7 +20,6 @@ import org.apache.lucene.index.DirectoryReader;
 import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.index.IndexWriterConfig;
 import org.apache.lucene.search.IndexSearcher;
-import org.apache.lucene.search.MatchNoDocsQuery;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.ScoreDoc;
 import org.apache.lucene.search.TermQuery;
@@ -140,12 +141,24 @@ class TurLuceneFilterQueriesTest {
     }
 
     @Test
-    void unparseableRangeMatchesNothing() {
-        assertInstanceOf(MatchNoDocsQuery.class,
-                TurLuceneFilterQueries.build("salary", "[lots TO more]", TurSEFieldType.INT, NOW));
-        assertInstanceOf(MatchNoDocsQuery.class,
-                TurLuceneFilterQueries.build("publishedAt", "[NOW-3FORTNIGHTS TO NOW]",
+    void unparseableRangeIsRefusedWithAReason() {
+        IllegalArgumentException numeric = assertThrows(IllegalArgumentException.class,
+                () -> TurLuceneFilterQueries.build("salary", "[lots TO more]", TurSEFieldType.INT, NOW));
+        assertTrue(numeric.getMessage().contains("salary:[lots TO more]"), numeric::getMessage);
+        assertTrue(numeric.getMessage().contains("INT"), numeric::getMessage);
+
+        IllegalArgumentException date = assertThrows(IllegalArgumentException.class,
+                () -> TurLuceneFilterQueries.build("publishedAt", "[NOW-3FORTNIGHTS TO NOW]",
                         TurSEFieldType.DATE, NOW));
+        assertTrue(date.getMessage().contains("NOW-7DAYS"), date::getMessage);
+    }
+
+    @Test
+    void unparseableExactValueKeepsTheTermLookup() {
+        // A value the handler could not parse was indexed as a StringField, so the
+        // term lookup is still the query that can find it.
+        assertInstanceOf(TermQuery.class,
+                TurLuceneFilterQueries.build("salary", "negotiable", TurSEFieldType.INT, NOW));
     }
 
     @Test
