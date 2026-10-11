@@ -2186,3 +2186,24 @@ parsed for its field type is refused with a reason instead of matching nothing.
 
 Workaround in trabalharei: none. The posting-date filter waits on this line (TRA31's
 remainder).
+
+### CXI.3 Autocomplete drawn from every stored field (T1076)
+
+Met in trabalharei (TRA32, search box suggestions) on a local turing-ce built from
+`0256a122dd`, Lucene engine, SN site `trabalharei-vagas`.
+
+`GET /api/sn/trabalharei-vagas/ac?q=moto&_setlocale=pt_BR` answers
+`["motorista","motoristas-de-veiculos","motoristas-de-veiculos-de-cargas-em-geral"]`.
+The last two are the stored value of the `occupation` facet field, a slug no visitor
+types. `TurLuceneSearchEnginePlugin.collectPrefixMatches` walks `doc.getFields()`, every
+stored field of each matched document, so any word in an id, a URL (`url`, `applyUrl`),
+a slug or a code can come back as a suggestion once the prefix matches it; only the
+query side (`buildAutoCompleteQuery`) is limited to the site's text fields.
+
+Expected: suggestions are drawn only from the fields the query side searches (the site's
+text fields, or a list the site declares for autocomplete in its field settings or the
+manifest), so facet slugs, URLs and ids never surface.
+
+Workaround in trabalharei: the search box drops a suggestion that looks like a slug or a
+URL (a single token with two or more hyphens, or one containing `/` or `.`),
+`src/lib/suggestions.ts`, naming this id; removed when this ships.
