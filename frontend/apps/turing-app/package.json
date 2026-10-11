@@ -57,7 +57,7 @@
     "@viglet/turing-react-ui": "workspace:*",
     "@viglet/viglet-design-system": "^2026.3.11",
     "@xyflow/react": "^12.11.2",
-    "axios": "^1.18.1",
+    "axios": "^1.20.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "crypto-js": "^4.2.0",
