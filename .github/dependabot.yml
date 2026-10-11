@@ -40,6 +40,13 @@ updates:
       - dependency-name: "vite"
       - dependency-name: "@module-federation/vite"
     groups:
+      # T1071 — vitest loads @vitest/browser* as plugins that must share its
+      # version: a major bump of vitest alone aborted the whole test run. Listed
+      # before `frontend` so these always land in one PR, majors included.
+      vitest:
+        patterns:
+          - "vitest"
+          - "@vitest/*"
       frontend:
         applies-to: version-updates
         patterns:
