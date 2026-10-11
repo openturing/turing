@@ -483,6 +483,103 @@ class TurLuceneQueryBuilderTest {
         return new TurSEParameters(searchParams);
     }
 
+    // ---- buildQuery: request-level fqOr / fqAnd / operators (T1077) ----
+
+    private java.util.Set<String> matchingIds(TurSNSite site, TurSNSearchParams searchParams)
+            throws Exception {
+        org.apache.lucene.store.Directory directory = new org.apache.lucene.store.ByteBuffersDirectory();
+        try (org.apache.lucene.index.IndexWriter writer = new org.apache.lucene.index.IndexWriter(directory,
+                new org.apache.lucene.index.IndexWriterConfig(
+                        new org.apache.lucene.analysis.standard.StandardAnalyzer()))) {
+            for (String[] row : new String[][] { { "a", "x" }, { "b", "y" }, { "c", "y" } }) {
+                org.apache.lucene.document.Document doc = new org.apache.lucene.document.Document();
+                doc.add(new org.apache.lucene.document.StringField("id", row[0],
+                        org.apache.lucene.document.Field.Store.YES));
+                // as TurLuceneDocumentHandler indexes it: the "*" query is FieldExistsQuery(id)
+                doc.add(new org.apache.lucene.document.SortedSetDocValuesField("id",
+                        new org.apache.lucene.util.BytesRef(row[0])));
+                doc.add(new org.apache.lucene.document.StringField("category", row[1],
+                        org.apache.lucene.document.Field.Store.YES));
+                writer.addDocument(doc);
+            }
+            writer.commit();
+            try (org.apache.lucene.index.DirectoryReader reader =
+                    org.apache.lucene.index.DirectoryReader.open(writer)) {
+                org.apache.lucene.search.IndexSearcher searcher = new org.apache.lucene.search.IndexSearcher(reader);
+                Query query = queryBuilder.buildQuery(site, new TurSEParameters(searchParams));
+                java.util.Set<String> ids = new java.util.TreeSet<>();
+                for (org.apache.lucene.search.ScoreDoc hit : searcher.search(query, 10).scoreDocs) {
+                    ids.add(searcher.storedFields().document(hit.doc).get("id"));
+                }
+                return ids;
+            }
+        }
+    }
+
+    private TurSNSite siteWithIdAndCategory() {
+        TurSNSite site = mock(TurSNSite.class);
+        TurSNSiteFieldExt id = mock(TurSNSiteFieldExt.class);
+        when(id.getName()).thenReturn("id");
+        TurSNSiteFieldExt category = mock(TurSNSiteFieldExt.class);
+        when(category.getName()).thenReturn("category");
+        when(turSNSiteFieldExtRepository.findByTurSNSiteAndEnabled(site, 1))
+                .thenReturn(List.of(id, category));
+        return site;
+    }
+
+    private static TurSNSearchParams searchAll() {
+        TurSNSearchParams searchParams = new TurSNSearchParams();
+        searchParams.setQ("*");
+        searchParams.setRows(10);
+        searchParams.setP(1);
+        return searchParams;
+    }
+
+    @Test
+    void fqItemOperatorOrShouldUnionTheValuesOfOneField() throws Exception {
+        TurSNSearchParams searchParams = searchAll();
+        searchParams.setFq(List.of("id:a", "id:b"));
+        searchParams.setFqiOp(com.viglet.turing.commons.sn.search.TurSNFilterQueryOperator.OR);
+
+        assertEquals(java.util.Set.of("a", "b"), matchingIds(siteWithIdAndCategory(), searchParams));
+    }
+
+    @Test
+    void withoutOperatorsTheValuesOfOneFieldStillIntersect() throws Exception {
+        TurSNSearchParams searchParams = searchAll();
+        searchParams.setFq(List.of("id:a", "id:b"));
+
+        assertEquals(java.util.Set.of(), matchingIds(siteWithIdAndCategory(), searchParams));
+    }
+
+    @Test
+    void fqOrShouldBeOrdWithTheIntersectedFilters() throws Exception {
+        TurSNSearchParams searchParams = searchAll();
+        searchParams.setFq(List.of("category:x"));
+        searchParams.setFqOr(List.of("id:c"));
+
+        // Solr's shape: (category:x) OR (id:c)
+        assertEquals(java.util.Set.of("a", "c"), matchingIds(siteWithIdAndCategory(), searchParams));
+    }
+
+    @Test
+    void fqOperatorOrShouldUnionTheFqFields() throws Exception {
+        TurSNSearchParams searchParams = searchAll();
+        searchParams.setFq(List.of("category:x", "id:b"));
+        searchParams.setFqOp(com.viglet.turing.commons.sn.search.TurSNFilterQueryOperator.OR);
+
+        assertEquals(java.util.Set.of("a", "b"), matchingIds(siteWithIdAndCategory(), searchParams));
+    }
+
+    @Test
+    void fqAndShouldIntersectEvenUnderAnOrOperator() throws Exception {
+        TurSNSearchParams searchParams = searchAll();
+        searchParams.setFqAnd(List.of("category:y", "id:c"));
+        searchParams.setFqOp(com.viglet.turing.commons.sn.search.TurSNFilterQueryOperator.OR);
+
+        assertEquals(java.util.Set.of("c"), matchingIds(siteWithIdAndCategory(), searchParams));
+    }
+
     private TurSEParameters createParamsWithFilters(String query, List<String> filters) {
         TurSNSearchParams searchParams = new TurSNSearchParams();
         searchParams.setQ(query);

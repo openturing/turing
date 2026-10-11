@@ -45,6 +45,8 @@ import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
 
 import com.viglet.turing.commons.se.TurSEParameters;
+import com.viglet.turing.commons.sn.bean.TurSNFilterParams;
+import com.viglet.turing.commons.sn.search.TurSNFilterQueryOperator;
 import com.viglet.turing.commons.se.field.TurSEFieldType;
 import com.viglet.turing.commons.sn.search.TurSNSiteSearchContext;
 import com.viglet.turing.commons.utils.TurCommonsUtils;
@@ -108,7 +110,7 @@ public class TurLuceneQueryBuilder {
     }
 
     /**
-     * T665 — same as {@link #buildQuery(TurSNSite, TurSEParameters)} but with the
+     * T665 â€” same as {@link #buildQuery(TurSNSite, TurSEParameters)} but with the
      * search {@code locale}, so the main query is analyzed with the site's
      * query-time synonym map (when one is registered for that locale's core).
      */
@@ -119,13 +121,13 @@ public class TurLuceneQueryBuilder {
         Query mainQuery = buildMainQuery(params.getQuery(), turSNSite, locale);
         builder.add(mainQuery, BooleanClause.Occur.MUST);
 
-        // Filter queries (facet selections)
-        List<String> filterQueries = params.getTurSNFilterParams().getDefaultValues();
-        if (!CollectionUtils.isEmpty(filterQueries)) {
-            addFilterQueries(builder, turSNSite, filterQueries);
+        // Filter queries (facet selections, fqAnd/fqOr and their operators)
+        TurSNFilterParams filterParams = params.getTurSNFilterParams();
+        if (filterParams != null && hasFilterQueries(filterParams)) {
+            addFilterQueries(builder, turSNSite, filterParams);
         }
 
-        // T1064 — ranking expressions raise the score of the documents they
+        // T1064 â€” ranking expressions raise the score of the documents they
         // describe (SHOULD beside the MUST main query), as Solr's bq does.
         if (rankingExpressions != null) {
             rankingExpressions.boostQueries(turSNSite)
@@ -143,32 +145,91 @@ public class TurLuceneQueryBuilder {
      *   <li><b>within a field</b>, multiple values union (<b>OR</b>) when the
      *       field is multi-select ({@code facetItemType == OR}), otherwise they
      *       intersect (<b>AND</b>);</li>
-     *   <li><b>across fields</b>, each field group intersects (<b>AND</b>) — a
+     *   <li><b>across fields</b>, each field group intersects (<b>AND</b>) â€” a
      *       selection in one field narrows the result set of another.</li>
      * </ul>
      * The previous implementation added every value as its own {@code FILTER}
      * (AND) clause, so selecting two values of the same multi-select facet (e.g.
      * two mutually-exclusive categories) yielded zero hits even though the facet
-     * counts promised a union. Cross-field union ({@code facetType == OR}) is
-     * intentionally not honoured: it broadens instead of narrowing and breaks
-     * the expected "pick another field to drill down" behaviour.
+     * counts promised a union. Cross-field union from a field's or the site's
+     * configured {@code facetType == OR} is intentionally not honoured: it
+     * broadens instead of narrowing and breaks the expected "pick another field
+     * to drill down" behaviour.
+     *
+     * <p>T1077 â€” what the <em>request</em> asks for is honoured, as Solr does:
+     * {@code fqItemOperator} sets how the values of one field combine,
+     * {@code fqOperator} sets how the plain {@code fq} fields combine, and
+     * {@code fqAnd}/{@code fqOr} are fields that intersect/union whatever the
+     * operator. The intersected groups are then OR'd with the union groups,
+     * which is the shape {@code TurSolrQueryBuilder#setFilterQueryString} builds.
      */
     private void addFilterQueries(BooleanQuery.Builder builder, TurSNSite turSNSite,
-            List<String> filterQueries) {
-        Map<String, List<String>> valuesByField = new LinkedHashMap<>();
-        filterQueries.forEach(fq -> parseFieldValue(fq).ifPresent(fv -> valuesByField
-                .computeIfAbsent(fv.field(), k -> new ArrayList<>()).add(fv.value())));
-        if (valuesByField.isEmpty()) {
+            TurSNFilterParams filterParams) {
+        TurSNSiteFacetFieldEnum defaultFacetType = filterParams.getOperator() == TurSNFilterQueryOperator.OR ? TurSNSiteFacetFieldEnum.OR : TurSNSiteFacetFieldEnum.AND;
+        Map<String, FilterGroup> groups = new LinkedHashMap<>();
+        collectFilterGroups(groups, filterParams.getDefaultValues(), defaultFacetType);
+        collectFilterGroups(groups, filterParams.getAnd(), TurSNSiteFacetFieldEnum.AND);
+        collectFilterGroups(groups, filterParams.getOr(), TurSNSiteFacetFieldEnum.OR);
+        if (groups.isEmpty()) {
             return;
         }
 
         Map<String, TurSNSiteFieldExt> fieldsByName = enabledFieldsByName(turSNSite);
         Instant now = Instant.now();
-        valuesByField.forEach((field, values) -> {
-            TurSNSiteFieldExt ext = fieldsByName.get(field);
-            builder.add(buildFieldFilterQuery(field, values, ext != null ? ext.getType() : null,
-                    effectiveFacetItemType(ext, turSNSite), now), BooleanClause.Occur.FILTER);
+        List<Query> intersected = new ArrayList<>();
+        List<Query> united = new ArrayList<>();
+        groups.values().forEach(group -> {
+            TurSNSiteFieldExt ext = fieldsByName.get(group.field());
+            TurSNSiteFacetFieldEnum itemType = requestedItemType(filterParams.getItemOperator())
+                    .orElseGet(() -> effectiveFacetItemType(ext, turSNSite));
+            Query query = buildFieldFilterQuery(group.field(), group.values(),
+                    ext != null ? ext.getType() : null, itemType, now);
+            (group.facetType() == TurSNSiteFacetFieldEnum.OR ? united : intersected).add(query);
         });
+
+        if (united.isEmpty()) {
+            intersected.forEach(query -> builder.add(query, BooleanClause.Occur.FILTER));
+            return;
+        }
+        BooleanQuery.Builder disjunction = new BooleanQuery.Builder().setMinimumNumberShouldMatch(1);
+        if (!intersected.isEmpty()) {
+            BooleanQuery.Builder conjunction = new BooleanQuery.Builder();
+            intersected.forEach(query -> conjunction.add(query, BooleanClause.Occur.MUST));
+            disjunction.add(conjunction.build(), BooleanClause.Occur.SHOULD);
+        }
+        united.forEach(query -> disjunction.add(query, BooleanClause.Occur.SHOULD));
+        builder.add(disjunction.build(), BooleanClause.Occur.FILTER);
+    }
+
+    /** One field's selected values and how the field combines with the others. */
+    private record FilterGroup(String field, TurSNSiteFacetFieldEnum facetType, List<String> values) {
+    }
+
+    /** Groups by field; a field already grouped keeps the facet type it was first seen with. */
+    private void collectFilterGroups(Map<String, FilterGroup> groups, List<String> filterQueries,
+            TurSNSiteFacetFieldEnum facetType) {
+        if (filterQueries == null) {
+            return;
+        }
+        filterQueries.forEach(fq -> parseFieldValue(fq).ifPresent(fv -> groups
+                .computeIfAbsent(fv.field(), field -> new FilterGroup(field, facetType, new ArrayList<>()))
+                .values().add(fv.value())));
+    }
+
+    private static boolean hasFilterQueries(TurSNFilterParams filterParams) {
+        return !CollectionUtils.isEmpty(filterParams.getDefaultValues())
+                || !CollectionUtils.isEmpty(filterParams.getAnd())
+                || !CollectionUtils.isEmpty(filterParams.getOr());
+    }
+
+    private static Optional<TurSNSiteFacetFieldEnum> requestedItemType(TurSNFilterQueryOperator operator) {
+        if (operator == TurSNFilterQueryOperator.OR) {
+            return Optional.of(TurSNSiteFacetFieldEnum.OR);
+        }
+        if (operator == TurSNFilterQueryOperator.AND) {
+            return Optional.of(TurSNSiteFacetFieldEnum.AND);
+        }
+        return Optional.empty();
     }
 
     /**
@@ -205,7 +266,7 @@ public class TurLuceneQueryBuilder {
         return map;
     }
 
-    /** Field-level {@code facetItemType} wins over the site default; DEFAULT/null → AND. */
+    /** Field-level {@code facetItemType} wins over the site default; DEFAULT/null â†’ AND. */
     private static TurSNSiteFacetFieldEnum effectiveFacetItemType(TurSNSiteFieldExt ext,
             TurSNSite turSNSite) {
         TurSNSiteFacetFieldEnum fieldType = ext != null ? ext.getFacetItemType() : null;
@@ -251,7 +312,7 @@ public class TurLuceneQueryBuilder {
      * Returns the list of enabled highlight fields for the given site.
      */
     public List<TurSNSiteFieldExt> getHLFields(TurSNSite turSNSite) {
-        // T707 — never highlight identifier/URL fields even if a field is
+        // T707 â€” never highlight identifier/URL fields even if a field is
         // (mis)configured with hl=1: a <mark> injected into `id` corrupts the
         // value clients feed back to /search/similar, silently breaking "Related".
         return turSNSiteFieldExtRepository.findByTurSNSiteAndHlAndEnabled(turSNSite, 1, 1)
@@ -337,7 +398,7 @@ public class TurLuceneQueryBuilder {
                 };
             }
         }
-        // Unknown field — use SortedSetSortField (works with SortedSetDocValuesField from addFacetField)
+        // Unknown field â€” use SortedSetSortField (works with SortedSetDocValuesField from addFacetField)
         return new org.apache.lucene.search.SortedSetSortField(fieldName, reverse);
     }
 
@@ -389,14 +450,14 @@ public class TurLuceneQueryBuilder {
                 return new QueryParser(TurLuceneConstants.ID, analyzer).parse(
                         QueryParserBase.escape(queryStr));
             }
-            // T1065 — a field's search weight multiplies its clause, so a title
+            // T1065 â€” a field's search weight multiplies its clause, so a title
             // match can outweigh the same word in body text.
             Map<String, Float> weights = searchWeights(turSNSite);
             MultiFieldQueryParser parser = weights.isEmpty()
                     ? new MultiFieldQueryParser(textFields, analyzer)
                     : new MultiFieldQueryParser(textFields, analyzer, weights);
             parser.setDefaultOperator(QueryParser.Operator.AND);
-            // T1066 — a multi-word expansion is a phrase, not loose words.
+            // T1066 â€” a multi-word expansion is a phrase, not loose words.
             parser.setAutoGenerateMultiTermSynonymsPhraseQuery(true);
             Query termCentric = parser.parse(queryStr);
             return analyzer instanceof TurLuceneSynonymAnalyzer
@@ -410,10 +471,10 @@ public class TurLuceneQueryBuilder {
     }
 
     /**
-     * T665 — the query-time analyzer: the site's synonym-aware analyzer when a
+     * T665 â€” the query-time analyzer: the site's synonym-aware analyzer when a
      * {@link SynonymMap} is registered for the search locale's core, otherwise
      * the plain {@link StandardAnalyzer} (identical to pre-T665 behaviour). Zero
-     * overhead for sites without synonyms — the registry short-circuits and no
+     * overhead for sites without synonyms â€” the registry short-circuits and no
      * locale/core lookup runs.
      */
     private Analyzer queryAnalyzer(TurSNSite turSNSite, Locale locale) {
@@ -430,7 +491,7 @@ public class TurLuceneQueryBuilder {
     }
 
     /**
-     * T1066 — the classic parser splits the query on whitespace before analysis,
+     * T1066 â€” the classic parser splits the query on whitespace before analysis,
      * so the synonym filter only ever saw {@code home} and {@code office} apart
      * and a multi-word term such as "home office" never expanded.
      *
@@ -487,7 +548,7 @@ public class TurLuceneQueryBuilder {
     }
 
     /**
-     * T1076 — the fields autocomplete matches and draws its suggestions from: the
+     * T1076 â€” the fields autocomplete matches and draws its suggestions from: the
      * site's enabled free-text ({@link TurSEFieldType#TEXT}) fields, never the
      * keyword ones (STRING/ARRAY hold slugs, codes and URLs nobody types) nor
      * {@code id}/{@code url}. Falls back to {@code title} when the site has none.
@@ -519,7 +580,7 @@ public class TurLuceneQueryBuilder {
 
     /**
      * Parses a {@code field:value} filter query into its field and (unquoted)
-     * value. Values keep their exact case — Lucene {@code StringField}s are not
+     * value. Values keep their exact case â€” Lucene {@code StringField}s are not
      * analyzed, so facet term matching is exact.
      */
     private Optional<FieldValue> parseFieldValue(String fq) {
@@ -527,7 +588,7 @@ public class TurLuceneQueryBuilder {
             return Optional.empty();
         int colonIndex = fq.indexOf(':');
         if (colonIndex <= 0 || colonIndex >= fq.length() - 1) {
-            log.warn("Invalid filter query format '{}' — expected 'field:value'", fq);
+            log.warn("Invalid filter query format '{}' â€” expected 'field:value'", fq);
             return Optional.empty();
         }
         String field = fq.substring(0, colonIndex);
