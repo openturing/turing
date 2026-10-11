@@ -85,6 +85,26 @@ export class TuringTransportError extends Error {
 }
 
 /**
+ * T1079 — the request did not finish within the client's `timeoutMs`, and was
+ * aborted.
+ *
+ * A {@link TuringTransportError}, because to a caller it is the same decision as
+ * a refused connection: Turing produced no answer, and an "unavailable" page or a
+ * retry is the reaction. A separate class so a page can say "too slow" rather
+ * than "unreachable", and log the limit that was hit.
+ */
+export class TuringTimeoutError extends TuringTransportError {
+  /** The limit that elapsed, in milliseconds. */
+  readonly timeoutMs: number;
+
+  constructor(url: string, timeoutMs: number) {
+    super(url, undefined, `Request to ${url} did not finish within ${timeoutMs} ms`);
+    this.name = "TuringTimeoutError";
+    this.timeoutMs = timeoutMs;
+  }
+}
+
+/**
  * A response arrived but carried nothing to read — a streaming endpoint with a
  * null body, or a JSON endpoint that answered empty.
  *

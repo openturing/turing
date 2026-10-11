@@ -1,4 +1,4 @@
-import type { TuringClient } from "./client";
+import type { TuringCallOptions, TuringClient } from "./client";
 import { warnDeprecated } from "./deprecation";
 import { assertOk, emptyBody } from "./errors";
 import type {
@@ -103,8 +103,11 @@ export function fetchSearch(
   client: TuringClient,
   site: string,
   params: SearchParams,
+  options: TuringCallOptions = {},
 ): Promise<TurSearchResponse> {
-  return client.get<TurSearchResponse>(`/sn/${site}/search?${buildQueryString(params)}`);
+  return client.get<TurSearchResponse>(`/sn/${site}/search?${buildQueryString(params)}`, {
+    signal: options.signal,
+  });
 }
 
 /**
@@ -128,9 +131,11 @@ export function postSearch(
   client: TuringClient,
   site: string,
   request: TurSearchRequest,
+  options: TuringCallOptions = {},
 ): Promise<TurSearchResponse> {
   return client.post<TurSearchResponse>(`/sn/${site}/search/query`, request, {
     csrf: false,
+    signal: options.signal,
   });
 }
 
@@ -145,11 +150,12 @@ export function postStructuredSearch(
   client: TuringClient,
   site: string,
   request: TurSearchRequest,
+  options: TuringCallOptions = {},
 ): Promise<TurStructuredSearchResponse> {
   return client.post<TurStructuredSearchResponse>(
     `/sn/${site}/search/query`,
     { ...request, responseFormat: "STRUCTURED" },
-    { csrf: false },
+    { csrf: false, signal: options.signal },
   );
 }
 
@@ -1588,8 +1594,11 @@ export function fetchAutoComplete(
   client: TuringClient,
   site: string,
   params: SearchParams,
+  options: TuringCallOptions = {},
 ): Promise<string[]> {
-  return client.get<string[]>(`/sn/${site}/ac?${buildQueryString(params)}`);
+  return client.get<string[]>(`/sn/${site}/ac?${buildQueryString(params)}`, {
+    signal: options.signal,
+  });
 }
 
 export function fetchSortOptions(
@@ -1640,12 +1649,15 @@ export function fetchSimilar(
   client: TuringClient,
   site: string,
   params: FetchSimilarParams,
+  options: TuringCallOptions = {},
 ): Promise<TurSimilarResult[]> {
   const qs = new URLSearchParams({ id: params.id });
   if (params.rows != null) qs.append("rows", String(params.rows));
   if (params.locale) qs.append("locale", params.locale);
   if (params.mode) qs.append("mode", params.mode);
-  return client.get<TurSimilarResult[]>(`/sn/${site}/search/similar?${qs}`);
+  return client.get<TurSimilarResult[]>(`/sn/${site}/search/similar?${qs}`, {
+    signal: options.signal,
+  });
 }
 
 // ── T401: Multimodal slot-upload + flow resume ──────────────────────────────

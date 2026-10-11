@@ -15,12 +15,14 @@
 // T1005 — exported so a consumer can `instanceof` them instead of parsing a
 // message. `status` is a field on TuringHttpError; TuringTransportError means the
 // request produced no usable response (refused, offline, CORS, empty body).
-export { TuringHttpError, TuringTransportError } from "./errors";
+// T1079 — TuringTimeoutError (a TuringTransportError) when the client's timeoutMs elapses.
+export { TuringHttpError, TuringTimeoutError, TuringTransportError } from "./errors";
 
 // ── Client ──
 export { createTuringClient } from "./client";
 export type {
   TuringClient,
+  TuringCallOptions,
   TuringClientConfig,
   TuringRequestOptions,
 } from "./client";

@@ -21,7 +21,7 @@
  * @since 2026.3.1
  */
 
-import { assertOk, isAbort, TuringTransportError } from "./errors";
+import { assertOk, isAbort, TuringTimeoutError, TuringTransportError } from "./errors";
 
 export interface TuringClientConfig {
   /**
@@ -56,6 +56,26 @@ export interface TuringClientConfig {
    * logic is used (read cookie → prime via {@code /csrf}).
    */
   readonly getCsrfToken?: () => string | undefined | Promise<string | undefined>;
+  /**
+   * T1079 — upper bound, in milliseconds, on every request this client makes.
+   * When it elapses the request is aborted and the call rejects with a
+   * {@link TuringTimeoutError}, so a server-rendered page can show its
+   * unavailable state instead of waiting on a stalled Turing.
+   *
+   * A JSON call ({@link TuringClient.request} and the API functions) is bounded
+   * until its body is read; a raw call ({@link TuringClient.fetchRaw}, used by the
+   * SSE helpers) until the response headers arrive, so a stream that has started
+   * is never cut. Omitted or not positive: no limit, as before.
+   */
+  readonly timeoutMs?: number;
+}
+
+/**
+ * T1079 — per-call options the API functions take as their last argument.
+ */
+export interface TuringCallOptions {
+  /** Aborts the call; an abort rejects with the signal's own `AbortError`. */
+  readonly signal?: AbortSignal;
 }
 
 export interface TuringRequestOptions {
@@ -114,6 +134,43 @@ function readXsrfCookie(): string | undefined {
   return match ? decodeURIComponent(match[1]) : undefined;
 }
 
+/** A signal that fires on the caller's abort or when `timeoutMs` elapses. */
+interface Deadline {
+  readonly signal: AbortSignal | undefined;
+  /** Whether the timer, not the caller, aborted the request. */
+  timedOut(): boolean;
+  /** Stops the timer and detaches from the caller's signal. */
+  dispose(): void;
+}
+
+/**
+ * Combines the caller's signal with a timer, without `AbortSignal.any` /
+ * `AbortSignal.timeout` (absent from older runtimes this package still targets),
+ * and remembers which of the two fired so a timeout can be reported as one.
+ */
+function deadline(caller: AbortSignal | undefined, timeoutMs: number | undefined): Deadline {
+  if (!timeoutMs || timeoutMs <= 0) {
+    return { signal: caller, timedOut: () => false, dispose: () => {} };
+  }
+  const controller = new AbortController();
+  let expired = false;
+  const timer = setTimeout(() => {
+    expired = true;
+    controller.abort();
+  }, timeoutMs);
+  const forward = () => controller.abort(caller?.reason);
+  if (caller?.aborted) forward();
+  else caller?.addEventListener("abort", forward, { once: true });
+  return {
+    signal: controller.signal,
+    timedOut: () => expired,
+    dispose: () => {
+      clearTimeout(timer);
+      caller?.removeEventListener("abort", forward);
+    },
+  };
+}
+
 /**
  * Creates a configured {@link TuringClient}. All API functions and controllers
  * in this package take a client as their first argument.
@@ -136,32 +193,31 @@ export function createTuringClient(config: TuringClientConfig): TuringClient {
     ...config.headers,
   };
 
-  async function ensureCsrfToken(): Promise<string | undefined> {
+  async function ensureCsrfToken(signal?: AbortSignal): Promise<string | undefined> {
     if (config.getCsrfToken) return config.getCsrfToken();
     const existing = readXsrfCookie();
     if (existing) return existing;
     try {
-      const res = await fetch(`${baseURL}/csrf`, { credentials });
+      const res = await fetch(`${baseURL}/csrf`, { credentials, signal });
       if (res.ok) {
         return res.headers.get("X-XSRF-TOKEN") ?? readXsrfCookie();
       }
-    } catch {
+    } catch (cause) {
+      // The request's own abort or timeout ends the prime and the request with it.
+      if (signal?.aborted) throw cause;
       // /csrf unavailable (anonymous SPA, CSRF disabled, CORS) — fall through.
     }
     return readXsrfCookie();
   }
 
-  async function fetchRaw(
-    path: string,
-    init: RequestInit = {},
-    csrf = MUTATING.has((init.method ?? "GET").toUpperCase()),
-  ): Promise<Response> {
+  /** The one place a request leaves this package, with no deadline of its own. */
+  async function send(path: string, init: RequestInit, csrf: boolean): Promise<Response> {
     const headers: Record<string, string> = {
       ...baseHeaders,
       ...(init.headers as Record<string, string> | undefined),
     };
     if (csrf) {
-      const token = await ensureCsrfToken();
+      const token = await ensureCsrfToken(init.signal ?? undefined);
       if (token) headers["X-XSRF-TOKEN"] = token;
     }
     const url = `${baseURL}${path}`;
@@ -180,10 +236,55 @@ export function createTuringClient(config: TuringClientConfig): TuringClient {
     }
   }
 
+  /**
+   * Runs `work` under the client's deadline, turning the timer's abort into a
+   * {@link TuringTimeoutError}; the caller's own abort passes through untouched.
+   */
+  async function bounded<R>(
+    path: string,
+    caller: AbortSignal | undefined,
+    work: (signal: AbortSignal | undefined) => Promise<R>,
+  ): Promise<R> {
+    const limit = deadline(caller, config.timeoutMs);
+    try {
+      return await work(limit.signal);
+    } catch (cause) {
+      if (limit.timedOut()) {
+        throw new TuringTimeoutError(`${baseURL}${path}`, config.timeoutMs as number);
+      }
+      throw cause;
+    } finally {
+      limit.dispose();
+    }
+  }
+
+  function fetchRaw(
+    path: string,
+    init: RequestInit = {},
+    csrf = MUTATING.has((init.method ?? "GET").toUpperCase()),
+  ): Promise<Response> {
+    // Bounded until the headers arrive only: the timer is disposed once `send`
+    // resolves, so a stream that has started keeps its own pace. The response
+    // stays tied to the deadline's signal, which no longer fires.
+    return bounded(path, init.signal ?? undefined, (signal) =>
+      send(path, { ...init, signal }, csrf),
+    );
+  }
+
   async function request<T>(
     method: string,
     path: string,
     options: TuringRequestOptions = {},
+  ): Promise<T> {
+    return bounded(path, options.signal, (signal) =>
+      readJson<T>(method, path, { ...options, signal }),
+    );
+  }
+
+  async function readJson<T>(
+    method: string,
+    path: string,
+    options: TuringRequestOptions,
   ): Promise<T> {
     const upper = method.toUpperCase();
     const headers: Record<string, string> = { ...options.headers };
@@ -203,7 +304,7 @@ export function createTuringClient(config: TuringClientConfig): TuringClient {
     }
 
     const csrf = options.csrf ?? MUTATING.has(upper);
-    const res = await fetchRaw(
+    const res = await send(
       path,
       { method: upper, headers, body, signal: options.signal },
       csrf,
@@ -231,6 +332,6 @@ export function createTuringClient(config: TuringClientConfig): TuringClient {
       request("POST", path, { ...options, body: bodyArg }),
     del: (path, options) => request("DELETE", path, options),
     fetchRaw,
-    ensureCsrfToken,
+    ensureCsrfToken: () => ensureCsrfToken(),
   };
 }
