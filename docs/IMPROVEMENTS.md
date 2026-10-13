@@ -2198,4 +2198,23 @@ Expected: `/chat/enabled` and `/chat/conversation` agree. Either the conversatio
 a vectorless site to the catalog copilot path, or `/chat/enabled` reports the reason it
 is not available.
 
+### CXI.13 RAG bootstrap skipped by the seed store (T1088)
+
+Met in trabalharei (TRA40) on a fresh local turing-ce built with `Dockerfile.local` (the
+GLOBAL seed ZIP from T373 auto-imported at boot) and `OPENAI_API_KEY` set.
+`TurLLMInstanceOnStartup` creates the gpt-4o-mini instance and the default agent, but
+`TurDefaultRagInfraOnStartup` returns without a word: its guard skips the bootstrap when
+any embedding model or store instance exists, and the seed already holds the
+platform-provided "Default Vector Store" (Lucene, `./store/lucene-vector`). No embedding
+model is created, the agent gets neither model nor store, and every site's
+`/chat/enabled` answers `MISSING_EMBEDDING`, so the out-of-the-box chat promised by the
+bootstrap never happens on the image the seed ships with.
+
+Expected: the guard looks at embedding models only (or adopts an existing enabled
+store), creates the HuggingFace ONNX model, wires model and store onto the default agent
+with RAG on, and reindexes, logging what it did or why it skipped.
+
+Workaround in trabalharei: `scripts/turing-dev-setup.mjs` creates the embedding model
+and wires the agent through the admin API when the site reports `MISSING_EMBEDDING`.
+
 ## CXII SDK & frontend surface

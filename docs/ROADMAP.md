@@ -12,6 +12,7 @@
 - 📋 **T1085** (deps: —) **No SN endpoint returns the filters it extracts from a natural-language request as data a search can use** — A site cannot turn a visitor's description into its own ranked, faceted results page. → §CXI.10
 - 📋 **T1086** (deps: —) **The JS SDK's chat conversation cannot send filters, though the endpoint takes them** — An assistant cannot be scoped to the visitor's current search without bypassing the SDK. → §CXI.11
 - 📋 **T1087** (deps: —) **On a vectorless site chat/enabled says ready while chat/conversation answers that AI is not enabled** — A site turns its assistant on from the readiness check and then shows visitors an error. → §CXI.12
+- 📋 **T1088** (deps: —) **A fresh install with the seed store skips the RAG bootstrap, so no embedding model exists and chat stays off** — The out-of-the-box chat the startup promises never happens on the image the seed ships with. → §CXI.13
 
 ## Non-goals (do NOT add as tasks)
 
