@@ -441,7 +441,8 @@ public class TurSNSiteGenAiAPI {
 					context, agent, llmInstance,
 					new TurSNGenAiChatRequest(request.messages(), request.filters(),
 							request.conversationId(), request.flowId(), request.forcedVariant(), locale,
-							request.personaId()));
+							request.personaId(), site.getName(),
+							Boolean.TRUE.equals(request.includeFilters())));
 			// Capture the turn for chat memory: accumulate the streamed assistant
 			// chunks and enqueue once the stream finishes. The service is a no-op
 			// when the agent has chatMemoryEnabled=false or the logging engine is
@@ -1206,6 +1207,14 @@ public class TurSNSiteGenAiAPI {
 	 */
 	public record ConversationRequest(List<ConversationMessage> messages, String locale,
 			java.util.Map<String, List<String>> filters,
-			String conversationId, String flowId, String forcedVariant, String personaId) {
+			String conversationId, String flowId, String forcedVariant, String personaId,
+			Boolean includeFilters) {
+
+		/** The request before T1085's {@code includeFilters}, kept for existing callers. */
+		public ConversationRequest(List<ConversationMessage> messages, String locale,
+				java.util.Map<String, List<String>> filters,
+				String conversationId, String flowId, String forcedVariant, String personaId) {
+			this(messages, locale, filters, conversationId, flowId, forcedVariant, personaId, null);
+		}
 	}
 }

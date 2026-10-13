@@ -74,6 +74,8 @@ public class TurSNGenAi {
     // --- S1192: extracted duplicated literals ---
     private static final String AI_CONFIGURATION_IS_NOT_ENABLED = "AI configuration is not enabled";
     private static final String ASSISTANT = "assistant";
+    /** T1085 — the stream event carrying the filters read from a list-style question. */
+    static final String FILTERS_EVENT = "filters";
     private static final String RAG_DOCUMENT_FOR_OBJECT_ID_OF_SN_SITE_HAS_NO_INDEXABLE_TEXT_TITLE_ABSTRACT_TEXT_ATTRIBUTES_ARE_EMPTY = "RAG document for Object ID '{}' of SN Site '{}' has no indexable text (title/abstract/text attributes are empty)";
 
     /** T327 — serializes the {@code sources[]} SSE event payload. */
@@ -140,7 +142,9 @@ public class TurSNGenAi {
     private final com.viglet.turing.genai.flow.TurChatFlowEngineService chatFlowEngineService;
     private final com.viglet.turing.genai.safety.TurModerationService moderationService;
     private final TurSNFullContextService fullContextService;
+    private final com.viglet.turing.sn.nl.TurSNNLFilterService nlFilterService;
 
+    /** The constructor before T1085, kept for callers that build this class by hand. */
     public TurSNGenAi(TurSNSearchProcess turSNSearchProcess,
             TurGenAiContextFactory turGenAiContextFactory,
             TurSNSiteLocaleRepository turSNSiteLocaleRepository,
@@ -152,6 +156,29 @@ public class TurSNGenAi {
             com.viglet.turing.genai.flow.TurChatFlowEngineService chatFlowEngineService,
             com.viglet.turing.genai.safety.TurModerationService moderationService,
             TurSNFullContextService fullContextService) {
+        this(turSNSearchProcess, turGenAiContextFactory, turSNSiteLocaleRepository, turRagContextBuilder,
+                facetExtractor, agentChatExecutor, globalSettingsService, ragReranker, chatFlowEngineService,
+                moderationService, fullContextService, null);
+    }
+
+    /**
+     * @param nlFilterService T1085 — the shared NL filter extractor; {@code @Lazy}
+     *                        because it reaches the search engines, which this
+     *                        class must not wait on at startup
+     */
+    @org.springframework.beans.factory.annotation.Autowired
+    public TurSNGenAi(TurSNSearchProcess turSNSearchProcess,
+            TurGenAiContextFactory turGenAiContextFactory,
+            TurSNSiteLocaleRepository turSNSiteLocaleRepository,
+            TurRagContextBuilder turRagContextBuilder,
+            TurRagFacetExtractor facetExtractor,
+            TurAgentChatExecutor agentChatExecutor,
+            com.viglet.turing.system.TurGlobalSettingsService globalSettingsService,
+            com.viglet.turing.genai.rag.TurRagReranker ragReranker,
+            com.viglet.turing.genai.flow.TurChatFlowEngineService chatFlowEngineService,
+            com.viglet.turing.genai.safety.TurModerationService moderationService,
+            TurSNFullContextService fullContextService,
+            @org.springframework.context.annotation.Lazy com.viglet.turing.sn.nl.TurSNNLFilterService nlFilterService) {
         this.turSNSearchProcess = turSNSearchProcess;
         this.turGenAiContextFactory = turGenAiContextFactory;
         this.turSNSiteLocaleRepository = turSNSiteLocaleRepository;
@@ -163,6 +190,7 @@ public class TurSNGenAi {
         this.chatFlowEngineService = chatFlowEngineService;
         this.moderationService = moderationService;
         this.fullContextService = fullContextService;
+        this.nlFilterService = nlFilterService;
     }
 
     public TurChatMessage assistant(TurGenAiContext context, String q) {
@@ -244,7 +272,11 @@ public class TurSNGenAi {
         // SN path collapsed the chunks to text and discarded the metadata the
         // retriever returned; now it preserves it and emits the same
         // `sources[]` SSE event the agent tool path emits (T292).
-        List<Document> relevantDocuments = retrieveDocuments(context, latestUserQuery, filters);
+        // T1085 — a list-style question on a named site takes its filters from the
+        // shared NL extractor, checked against the site's own values.
+        com.viglet.turing.sn.nl.TurSNNLFilters nlFilters = siteNlFilters(request, filters, latestUserQuery);
+        List<Document> relevantDocuments = retrieveDocuments(context, latestUserQuery, filters,
+                nlFilters == null ? null : retrievalFilters(nlFilters));
 
         // T329 — deterministic "not in this site" refusal. When the relevance
         // gate (T328) leaves nothing to ground the answer, short-circuit to the
@@ -263,8 +295,9 @@ public class TurSNGenAi {
         if (relevantDocuments.isEmpty() && !chatFlowEngineService.hasActiveFlow(conversationId)) {
             log.debug("RAG chat streaming: 0 documents passed the relevance gate and no active "
                     + "flow — returning deterministic refusal (locale={})", locale);
-            return reactor.core.publisher.Flux.just(
-                    new TurAgentChatExecutor.ChatResponse(ASSISTANT, localizedRefusal(locale)));
+            return prependFiltersEvent(reactor.core.publisher.Flux.just(
+                    new TurAgentChatExecutor.ChatResponse(ASSISTANT, localizedRefusal(locale))),
+                    request, nlFilters);
         }
 
         // STRICT_RAG hard grounding gate. Prompt-only grounding leaks on weak
@@ -280,8 +313,9 @@ public class TurSNGenAi {
                 && !canAnswerFromRetrievedContent(context, latestUserQuery, relevantDocuments)) {
             log.debug("RAG chat streaming (STRICT_RAG): retrieved content does not answer '{}' — "
                     + "deterministic refusal (locale={})", latestUserQuery, locale);
-            return reactor.core.publisher.Flux.just(
-                    new TurAgentChatExecutor.ChatResponse(ASSISTANT, localizedRefusal(locale)));
+            return prependFiltersEvent(reactor.core.publisher.Flux.just(
+                    new TurAgentChatExecutor.ChatResponse(ASSISTANT, localizedRefusal(locale))),
+                    request, nlFilters);
         }
 
         String information = relevantDocuments.stream()
@@ -306,7 +340,69 @@ public class TurSNGenAi {
                 appendGroundednessCaveat(answer, context, latestUserQuery, relevantDocuments, locale);
         reactor.core.publisher.Flux<TurAgentChatExecutor.ChatResponse> withSources =
                 prependSourcesEvent(grounded, relevantDocuments);
-        return appendFollowupsEvent(withSources, context, latestUserQuery, relevantDocuments);
+        return prependFiltersEvent(
+                appendFollowupsEvent(withSources, context, latestUserQuery, relevantDocuments),
+                request, nlFilters);
+    }
+
+    /**
+     * T1085 — the filters the shared extractor reads from a list-style question,
+     * or {@code null} when it does not run: the caller sent filters (they win),
+     * the request names no site, or the question is not list-style. A failure is
+     * logged and reads as no filters, as the extractor before it did.
+     */
+    private com.viglet.turing.sn.nl.TurSNNLFilters siteNlFilters(TurSNGenAiChatRequest request,
+            java.util.Map<String, List<String>> callerFilters, String query) {
+        if (nlFilterService == null || request.siteName() == null
+                || (callerFilters != null && !callerFilters.isEmpty())
+                || !looksLikeEnumerationIntent(query)) {
+            return null;
+        }
+        try {
+            return nlFilterService.parse(request.siteName(),
+                    request.locale() == null ? null : request.locale().toString(), query);
+        } catch (RuntimeException e) {
+            log.warn("RAG chat NL filter extraction failed for site '{}', plain similarity follows: {}",
+                    request.siteName(), e.getMessage());
+            return com.viglet.turing.sn.nl.TurSNNLFilters.unavailable(query);
+        }
+    }
+
+    /**
+     * The value filters as the vector store's metadata filter takes them. A range
+     * has no form there, so it narrows the search page's {@code fq} and not this
+     * retrieval.
+     */
+    static java.util.Map<String, List<String>> retrievalFilters(com.viglet.turing.sn.nl.TurSNNLFilters nlFilters) {
+        java.util.Map<String, List<String>> filters = new java.util.LinkedHashMap<>();
+        for (com.viglet.turing.sn.nl.TurSNNLFilters.Filter filter : nlFilters.filters()) {
+            if (!filter.isRange()) {
+                filters.put(filter.field(), List.copyOf(filter.values()));
+            }
+        }
+        return filters;
+    }
+
+    /**
+     * T1085 — sends the extracted filters as a {@code "filters"} event ahead of the
+     * answer, when the request asked for it. Opt-in, because a client that predates
+     * the event reads an unknown event type as answer text.
+     */
+    private reactor.core.publisher.Flux<TurAgentChatExecutor.ChatResponse> prependFiltersEvent(
+            reactor.core.publisher.Flux<TurAgentChatExecutor.ChatResponse> stream,
+            TurSNGenAiChatRequest request, com.viglet.turing.sn.nl.TurSNNLFilters nlFilters) {
+        if (!request.includeFilters() || nlFilters == null || !nlFilters.available()) {
+            return stream;
+        }
+        try {
+            return reactor.core.publisher.Flux.concat(reactor.core.publisher.Flux.just(
+                    new TurAgentChatExecutor.ChatResponse(ASSISTANT,
+                            SOURCES_MAPPER.writeValueAsString(nlFilters), FILTERS_EVENT)),
+                    stream);
+        } catch (tools.jackson.core.JacksonException e) {
+            log.warn("RAG chat could not serialize the extracted filters: {}", e.getMessage());
+            return stream;
+        }
     }
 
     /**
@@ -550,12 +646,16 @@ public class TurSNGenAi {
      * enumeration-intent queries; a single-entity lookup keeps plain similarity.
      */
     private ResolvedFilters resolveEffectiveFilters(TurGenAiContext context, String query,
-            java.util.Map<String, List<String>> callerFilters) {
+            java.util.Map<String, List<String>> callerFilters,
+            java.util.Map<String, List<String>> preExtracted) {
         if (callerFilters != null && !callerFilters.isEmpty()) {
             return new ResolvedFilters(callerFilters, false);
         }
         if (looksLikeEnumerationIntent(query)) {
-            java.util.Map<String, List<String>> extracted = autoExtractFilters(context, query);
+            // T1085 — filters the shared extractor already read win over the
+            // vector-metadata extractor, which stays for callers that name no site.
+            java.util.Map<String, List<String>> extracted = preExtracted != null ? preExtracted
+                    : autoExtractFilters(context, query);
             if (!extracted.isEmpty()) {
                 log.info("RAG chat auto-extracted filters {} from enumeration query '{}'",
                         extracted, query);
@@ -568,6 +668,18 @@ public class TurSNGenAi {
     private List<Document> retrieveDocuments(TurGenAiContext context,
             String latestUserQuery,
             java.util.Map<String, List<String>> filters) {
+        return retrieveDocuments(context, latestUserQuery, filters, null);
+    }
+
+    /**
+     * @param preExtracted T1085 — filters already read from the question by the
+     *                     shared extractor; {@code null} lets a list-style question
+     *                     fall back to the vector-metadata extractor
+     */
+    private List<Document> retrieveDocuments(TurGenAiContext context,
+            String latestUserQuery,
+            java.util.Map<String, List<String>> filters,
+            java.util.Map<String, List<String>> preExtracted) {
         // T500 — full-context (retrieval-free) answering: only on the unfiltered
         // conversational path (an explicit facet filter is a deliberate narrowing
         // we must respect). When the site opted in and the whole corpus fits the
@@ -588,7 +700,8 @@ public class TurSNGenAi {
         // "how many", …). A single-entity lookup ("Tell me about X") must never
         // switch to the hard-filtered path, whose 0-hit outcome fires the T329
         // "not in this site" refusal for content that plainly exists.
-        ResolvedFilters resolved = resolveEffectiveFilters(context, latestUserQuery, callerFilters ? filters : null);
+        ResolvedFilters resolved = resolveEffectiveFilters(context, latestUserQuery, callerFilters ? filters : null,
+                preExtracted);
 
         List<Document> relevantDocuments = similaritySearch(context, latestUserQuery, resolved.filters());
 

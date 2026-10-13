@@ -62,13 +62,23 @@ public class TurLlmAssistedCopilotQueryPlanner implements TurCopilotQueryPlanner
     private final TurCopilotPlanJudge judge;
     private final TurCopilotPlanCompiler compiler;
     private final TurCopilotPlanValidator validator;
+    private final TurCopilotParseGrounding grounding;
 
+    /** Without grounding: the parse is used as the model wrote it (the pre-T1085 behaviour). */
     public TurLlmAssistedCopilotQueryPlanner(TurNLFacetParser parser, TurCopilotPlanJudge judge,
             TurCopilotPlanCompiler compiler, TurCopilotPlanValidator validator) {
+        this(parser, judge, compiler, validator, null);
+    }
+
+    @org.springframework.beans.factory.annotation.Autowired
+    public TurLlmAssistedCopilotQueryPlanner(TurNLFacetParser parser, TurCopilotPlanJudge judge,
+            TurCopilotPlanCompiler compiler, TurCopilotPlanValidator validator,
+            TurCopilotParseGrounding grounding) {
         this.parser = parser;
         this.judge = judge;
         this.compiler = compiler;
         this.validator = validator;
+        this.grounding = grounding;
     }
 
     @Override
@@ -137,8 +147,10 @@ public class TurLlmAssistedCopilotQueryPlanner implements TurCopilotQueryPlanner
     private Parsed parse(PlanRequest request) {
         if (parser.isAvailable() && request.schema() != null && !request.schema().isEmpty()) {
             try {
-                return new Parsed(parser.parse(new ParseRequest(request.siteName(), request.locale(),
-                        request.query(), request.schema())), true);
+                TurDslQueryRequest parsed = parser.parse(new ParseRequest(request.siteName(), request.locale(),
+                        request.query(), request.schema()));
+                return new Parsed(grounding == null ? parsed : grounding.ground(request, request.query(), parsed),
+                        true);
             } catch (TurNLFacetParseException e) {
                 log.warn("[CopilotPlanner] NL→facet parse failed for '{}': {} — falling back to free-text",
                         request.siteName(), e.getMessage());

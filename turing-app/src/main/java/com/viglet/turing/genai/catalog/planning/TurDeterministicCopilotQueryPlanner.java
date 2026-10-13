@@ -48,11 +48,20 @@ public class TurDeterministicCopilotQueryPlanner implements TurCopilotQueryPlann
 
     private final TurNLFacetParser parser;
     private final TurNLRankingPlanner rankingPlanner;
+    private final TurCopilotParseGrounding grounding;
 
+    /** Without grounding: the parse is used as the model wrote it (the pre-T1085 behaviour). */
     public TurDeterministicCopilotQueryPlanner(TurNLFacetParser parser,
             TurNLRankingPlanner rankingPlanner) {
+        this(parser, rankingPlanner, null);
+    }
+
+    @org.springframework.beans.factory.annotation.Autowired
+    public TurDeterministicCopilotQueryPlanner(TurNLFacetParser parser,
+            TurNLRankingPlanner rankingPlanner, TurCopilotParseGrounding grounding) {
         this.parser = parser;
         this.rankingPlanner = rankingPlanner;
+        this.grounding = grounding;
     }
 
     @Override
@@ -95,8 +104,10 @@ public class TurDeterministicCopilotQueryPlanner implements TurCopilotQueryPlann
     private Parsed parseOrFallback(PlanRequest request, String strippedQuery) {
         if (parser.isAvailable() && request.schema() != null && !request.schema().isEmpty()) {
             try {
-                return new Parsed(parser.parse(new ParseRequest(request.siteName(), request.locale(),
-                        strippedQuery, request.schema())), true);
+                TurDslQueryRequest parsed = parser.parse(new ParseRequest(request.siteName(), request.locale(),
+                        strippedQuery, request.schema()));
+                return new Parsed(grounding == null ? parsed : grounding.ground(request, strippedQuery, parsed),
+                        true);
             } catch (TurNLFacetParseException e) {
                 log.warn("[CopilotPlanner] NL→facet parse failed for '{}': {} — falling back to free-text",
                         request.siteName(), e.getMessage());

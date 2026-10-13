@@ -141,7 +141,7 @@ public class TurSNAnswerService {
                 (filters == null || filters.isEmpty()) ? null : filters;
         TurSNGenAiChatRequest request = new TurSNGenAiChatRequest(
                 List.of(new TurSNGenAi.ConversationMessage(USER_ROLE, query)),
-                effectiveFilters, null, null, null, locale, null);
+                effectiveFilters, null, null, null, locale, null, site.getName(), false);
         Flux<TurAgentChatExecutor.ChatResponse> upstream =
                 turGenAi.assistantConversationStreaming(context, agent, llmInstance, request);
         return TurAnswerStreamFramer.frame(upstream,

@@ -11,6 +11,8 @@ package com.viglet.turing.genai.catalog.planning;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -162,6 +164,24 @@ class TurDeterministicCopilotQueryPlannerTest {
 
         assertThat(plan.request().sort()).isNull();
         assertThat(plan.notes()).contains("ranking=none");
+    }
+
+    @Test
+    void groundsTheParseThroughTheSharedExtractorAndPlansTheGroundedBody() {
+        TurCopilotParseGrounding grounding = mock(TurCopilotParseGrounding.class);
+        TurDslQueryRequest parsed = body("""
+                {"query":{"bool":{"filter":[{"term":{"kind":"CHAT"}}]}}}""");
+        TurDslQueryRequest grounded = body("""
+                {"query":{"bool":{"filter":[{"term":{"kind":"chat"}}]}},"size":8}""");
+        when(parser.isAvailable()).thenReturn(true);
+        when(parser.parse(any())).thenReturn(parsed);
+        when(grounding.ground(any(), any(), eq(parsed))).thenReturn(grounded);
+
+        TurCopilotQueryPlan plan = new TurDeterministicCopilotQueryPlanner(parser, rankingPlanner, grounding)
+                .plan(request("CHAT models"));
+
+        assertThat(plan.request()).isSameAs(grounded);
+        assertThat(plan.llmPasses()).isEqualTo(1);
     }
 
     private static PlanRequest request(String query) {

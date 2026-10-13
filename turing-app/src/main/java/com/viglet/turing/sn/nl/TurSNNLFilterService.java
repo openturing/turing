@@ -128,10 +128,31 @@ public class TurSNNLFilterService {
             log.warn("[T1085] Could not parse '{}' for site '{}': {}", text, siteName, e.getMessage());
             return new TurSNNLFilters(true, text, text, List.of(), List.of(), List.of());
         }
+        return ground(site.getName(), searchLocale, text, schema, parsed);
+    }
 
+    /**
+     * Grounds a parse another caller already made (T1085): the catalog copilot's
+     * planners parse with their own schema and passes, and send the result through
+     * here so their filters are checked against the site's values like any other.
+     *
+     * @param schema the schema the parse was made against
+     */
+    @Transactional(readOnly = true)
+    public TurSNNLFilters ground(String siteName, String locale, String text, List<TurNLFacetField> schema,
+            TurDslQueryRequest parsed) {
+        Map<String, TurNLFacetField> bySchema = new LinkedHashMap<>();
+        if (schema != null) {
+            schema.forEach(field -> bySchema.putIfAbsent(field.name(), field));
+        }
+        return ground(siteName, locale, text, bySchema, parsed);
+    }
+
+    private TurSNNLFilters ground(String siteName, String searchLocale, String text,
+            Map<String, TurNLFacetField> schema, TurDslQueryRequest parsed) {
         Parse flat = flatten(parsed == null ? null : parsed.query());
         List<TurSNNLFilters.Dropped> dropped = new ArrayList<>();
-        Map<String, Set<String>> siteValues = siteValues(site.getName(), searchLocale,
+        Map<String, Set<String>> siteValues = siteValues(siteName, searchLocale,
                 termFieldsToGround(flat, schema));
         List<TurSNNLFilters.Filter> filters = new ArrayList<>();
         flat.terms().forEach((field, values) -> termFilter(field, values, schema, siteValues, text, dropped)
@@ -213,10 +234,68 @@ public class TurSNNLFilterService {
 
     // ── Grounding in the site's values ──────────────────────────────────────
 
+    /** Facet fields hold a list of values to check against; other fields pass unchecked. */
     private static List<String> termFieldsToGround(Parse flat, Map<String, TurNLFacetField> schema) {
         return flat.terms().keySet().stream()
-                .filter(field -> schema.containsKey(field) && !schema.get(field).numeric())
+                .filter(field -> schema.containsKey(field) && schema.get(field).facet()
+                        && !schema.get(field).numeric())
                 .toList();
+    }
+
+    // ── Back to a query ─────────────────────────────────────────────────────
+
+    /**
+     * The grounded filters as a DSL query for the copilot's search: each value
+     * filter a term (or terms) filter, a full-text field's value a match, each
+     * range a range filter, and {@code q} a match on the full text. The parse's
+     * exclusions carry over unchanged, since grounding has nothing to say about
+     * what to leave out.
+     */
+    public static TurDslQuery toQuery(TurSNNLFilters filters, List<TurNLFacetField> schema,
+            TurDslQuery parsedQuery) {
+        Map<String, TurNLFacetField> bySchema = new LinkedHashMap<>();
+        if (schema != null) {
+            schema.forEach(field -> bySchema.putIfAbsent(field.name(), field));
+        }
+        List<TurDslQuery> must = new ArrayList<>();
+        List<TurDslQuery> filter = new ArrayList<>();
+        for (TurSNNLFilters.Filter f : filters.filters()) {
+            TurNLFacetField field = bySchema.get(f.field());
+            if (f.isRange()) {
+                filter.add(new TurDslQuery.Range(f.field(), bound(f.rangeStart()), null, bound(f.rangeEnd()), null));
+            } else if (field != null && field.type() == com.viglet.turing.commons.se.field.TurSEFieldType.TEXT) {
+                f.values().forEach(value -> must.add(new TurDslQuery.Match(f.field(), value, null)));
+            } else if (f.values().size() == 1) {
+                filter.add(new TurDslQuery.Term(f.field(), f.values().get(0)));
+            } else {
+                filter.add(new TurDslQuery.Terms(f.field(), List.copyOf(f.values())));
+            }
+        }
+        if (StringUtils.hasText(filters.q())) {
+            must.add(new TurDslQuery.Match(TEXT_FIELD, filters.q(), null));
+        }
+        List<TurDslQuery> mustNot = parsedQuery instanceof TurDslQuery.Bool bool && bool.mustNot() != null
+                ? bool.mustNot() : List.of();
+        if (must.isEmpty() && filter.isEmpty() && mustNot.isEmpty()) {
+            return new TurDslQuery.MatchAll();
+        }
+        return new TurDslQuery.Bool(must, List.of(), mustNot, filter, null);
+    }
+
+    /** A range bound as the number it spells, so every engine compares it as one. */
+    private static Object bound(String value) {
+        if (value == null) {
+            return null;
+        }
+        try {
+            return Long.parseLong(value);
+        } catch (NumberFormatException notLong) {
+            try {
+                return Double.parseDouble(value);
+            } catch (NumberFormatException notNumber) {
+                return value;
+            }
+        }
     }
 
     /**
@@ -278,12 +357,18 @@ public class TurSNNLFilterService {
             }
             Optional<String> words = sourceWords(text, canonical).or(() -> sourceWords(text, value));
             words.ifPresent(sourceWords::add);
-            double valueConfidence = !grounded ? UNCHECKED : words.isPresent() ? LITERAL : INFERRED;
-            confidence = Math.min(confidence, valueConfidence);
+            confidence = Math.min(confidence, valueConfidence(grounded, words.isPresent()));
         }
         return values.isEmpty() ? Optional.empty()
                 : Optional.of(new TurSNNLFilters.Filter(field, values, null, null, sourceWords, confidence,
                         grounded));
+    }
+
+    private static double valueConfidence(boolean grounded, boolean spelledInText) {
+        if (!grounded) {
+            return UNCHECKED;
+        }
+        return spelledInText ? LITERAL : INFERRED;
     }
 
     private static Optional<TurSNNLFilters.Filter> rangeFilter(String field, String[] range,

@@ -36,6 +36,12 @@ import com.viglet.turing.genai.TurSNGenAi.ConversationMessage;
  * eyes"). It is validated against the effective agent's catalog downstream
  * (unknown → default); null on every non-demo turn.
  *
+ * <p>T1085 added {@code siteName}: with it, a list-style question takes its
+ * filters from {@code TurSNNLFilterService}, checked against the site's own
+ * values. {@code includeFilters} asks for those filters as a {@code "filters"}
+ * stream event; it is opt-in because a client that predates the event reads an
+ * unknown event type as answer text.
+ *
  * @author Alexandre Oliveira
  * @since 2026.3.1
  */
@@ -46,5 +52,16 @@ public record TurSNGenAiChatRequest(
         String flowId,
         String forcedVariant,
         Locale locale,
-        String personaId) {
+        String personaId,
+        String siteName,
+        boolean includeFilters) {
+
+    /**
+     * The request before T1085, kept for callers that name no site: their list-style
+     * questions keep the vector-metadata extractor, and no filters event is sent.
+     */
+    public TurSNGenAiChatRequest(List<ConversationMessage> history, Map<String, List<String>> filters,
+            String conversationId, String flowId, String forcedVariant, Locale locale, String personaId) {
+        this(history, filters, conversationId, flowId, forcedVariant, locale, personaId, null, false);
+    }
 }

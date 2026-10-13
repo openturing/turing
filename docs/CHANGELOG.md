@@ -1444,4 +1444,4 @@
 - **T1080** — On Lucene text is indexed and queried with accent folding beside the original spelling, so saude finds the accented word after a reindex and old indexes keep answering.
 - **T1083** — A Lucene site counts and lists a field's custom facets with their labels, and a clicked item filters by its range, built by the same helper Solr uses.
 - **T1084** — A site manifest declares custom facets, relative date buckets included, and provisioning converges them by field and name, reported in the result and the plan (design §CXI.9 recorded in `turing-app/src/main/java/com/viglet/turing/sn/manifest/TurSNManifestCustomFacetConverger.java`).
-- **T1085 (endpoint, service and SDK calls)** — POST /api/sn/{site}/nl-filters returns the q and fq of the site's own search, each value checked against the site's values, from both JS SDKs.
+- **T1085** — The site chat and the catalog copilot read a question's filters through the shared extractor, and the chat streams them as an opt-in filters event (design §CXI.10 recorded in `turing-app/src/main/java/com/viglet/turing/sn/nl/TurSNNLFilterService.java`).

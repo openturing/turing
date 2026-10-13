@@ -827,4 +827,75 @@ class TurSNGenAiTest {
         verify(vectorStore, times(1)).similaritySearch(any(SearchRequest.class));
         verifyNoInteractions(facetExtractor);
     }
+
+    // ---- T1085: list-style questions read their filters from the shared NL extractor ----
+
+    private static final com.viglet.turing.sn.nl.TurSNNLFilters SAO_PAULO = new com.viglet.turing.sn.nl.TurSNNLFilters(
+            true, "quais vagas em sao paulo", "quais vagas",
+            List.of(new com.viglet.turing.sn.nl.TurSNNLFilters.Filter("city", List.of("São Paulo"), null, null,
+                    List.of("sao paulo"), 1.0, true)),
+            List.of("city:São Paulo"), List.of());
+
+    private List<TurAgentChatExecutor.ChatResponse> streamListQuestion(
+            com.viglet.turing.sn.nl.TurSNNLFilterService nlFilterService, boolean includeFilters,
+            VectorStore vectorStore) {
+        TurSNGenAi withService = new TurSNGenAi(turSNSearchProcess, contextFactory, localeRepository,
+                ragContextBuilder, facetExtractor, agentChatExecutor, globalSettingsService, ragReranker,
+                chatFlowEngineService, moderationService, new TurSNFullContextService(), nlFilterService);
+        TurGenAiContext context = mock(TurGenAiContext.class);
+        when(context.isEnabled()).thenReturn(true);
+        when(context.getVectorStore()).thenReturn(vectorStore);
+        List<TurSNGenAi.ConversationMessage> history =
+                List.of(new TurSNGenAi.ConversationMessage("user", "quais vagas em sao paulo"));
+        return withService.assistantConversationStreaming(context,
+                mock(com.viglet.turing.persistence.model.agent.TurAIAgent.class),
+                mock(com.viglet.turing.persistence.model.llm.TurLLMInstance.class),
+                new TurSNGenAiChatRequest(history, null, "conv-1", null, null,
+                        Locale.forLanguageTag("pt-BR"), null, "vagas", includeFilters))
+                .collectList().block();
+    }
+
+    @Test
+    void listQuestionOnANamedSiteSendsTheSharedFiltersFirstWhenAskedFor() {
+        var nlFilterService = mock(com.viglet.turing.sn.nl.TurSNNLFilterService.class);
+        when(nlFilterService.parse("vagas", "pt_BR", "quais vagas em sao paulo")).thenReturn(SAO_PAULO);
+        VectorStore vectorStore = mock(VectorStore.class);
+        when(vectorStore.similaritySearch(any(SearchRequest.class))).thenReturn(List.of());
+
+        List<TurAgentChatExecutor.ChatResponse> events = streamListQuestion(nlFilterService, true, vectorStore);
+
+        assertNotNull(events);
+        assertEquals(TurSNGenAi.FILTERS_EVENT, events.get(0).type());
+        assertTrue(events.get(0).content().contains("\"fq\":[\"city:São Paulo\"]"));
+        assertEquals(2, events.size()); // the filters, then the refusal: nothing matched
+        verifyNoInteractions(facetExtractor);
+    }
+
+    @Test
+    void sharedFiltersStayOffTheStreamUnlessAskedFor() {
+        var nlFilterService = mock(com.viglet.turing.sn.nl.TurSNNLFilterService.class);
+        when(nlFilterService.parse("vagas", "pt_BR", "quais vagas em sao paulo")).thenReturn(SAO_PAULO);
+        VectorStore vectorStore = mock(VectorStore.class);
+        when(vectorStore.similaritySearch(any(SearchRequest.class))).thenReturn(List.of());
+
+        List<TurAgentChatExecutor.ChatResponse> events = streamListQuestion(nlFilterService, false, vectorStore);
+
+        assertNotNull(events);
+        assertTrue(events.stream().noneMatch(e -> TurSNGenAi.FILTERS_EVENT.equals(e.type())));
+        // The filtered search found nothing, so the inferred filter was dropped and retried.
+        verify(vectorStore, times(2)).similaritySearch(any(SearchRequest.class));
+        verifyNoInteractions(facetExtractor);
+    }
+
+    @Test
+    void retrievalFiltersKeepValuesAndLeaveRangesToTheSearchPage() {
+        var nlFilters = new com.viglet.turing.sn.nl.TurSNNLFilters(true, "t", "", List.of(
+                new com.viglet.turing.sn.nl.TurSNNLFilters.Filter("city", List.of("São Paulo", "Campinas"), null,
+                        null, List.of(), 1.0, true),
+                new com.viglet.turing.sn.nl.TurSNNLFilters.Filter("salary", List.of(), "3000", null, List.of(),
+                        1.0, false)),
+                List.of(), List.of());
+
+        assertEquals(Map.of("city", List.of("São Paulo", "Campinas")), TurSNGenAi.retrievalFilters(nlFilters));
+    }
 }

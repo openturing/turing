@@ -2134,30 +2134,6 @@ silently. Found while building trabalharei's local Turing and import proof.
 
 ## CXI Search response fields arrive as they were indexed
 
-### CXI.10 Natural-language filters as data (T1085)
-
-Met in trabalharei (TRA40), a job assistant that turns "trabalho de meio periodo perto
-do metro em Sao Paulo, sem experiencia" into the site's own filtered search.
-
-The SN site extracts filters from natural language in three places, and none hands them
-back as data: `TurSNGenAi` (list-style chat questions) applies them only to its own
-vector retrieval; the catalog copilot (`POST /api/sn/{site}/copilot`, through
-`TurDeterministicCopilotQueryPlanner` / `TurLlmAssistedCopilotQueryPlanner`) returns
-`groundedQuerySummary`, a display string; `TurNLFacetParser` serves only the console
-eval (`/api/sn/nl-facet-eval`).
-
-Build it once, not a fourth time: one parse result record (`q` left over, `fq` values in
-the search API's own `field:value` form, each grounded in the site's facet values, the
-words each came from and a confidence) produced by one service that the three callers
-consume. The copilot's summary string and the chat's retrieval filters are then views of
-that record, and every later NL feature reuses it instead of growing its own extractor.
-The record is exactly what T1086 sends as chat `filters` and what a search takes as
-`fq`, so one filter shape crosses NL parse, chat and search.
-
-Expose it as an SN endpoint and as a chat SSE event (`type: "filters"`), and in both
-SDKs (vanilla and React core). Workaround in trabalharei: none; its "see these filters"
-step waits on this line.
-
 ### CXI.11 Filters on SDK chat (T1086)
 
 Met in trabalharei (TRA40). `POST /api/sn/{site}/chat/conversation` takes `filters`
@@ -2176,6 +2152,13 @@ the chat controller and `useTuringChat` request defaults set at creation and mer
 `send`. Extend `sdk-parity.test.ts` so a request field present in one SDK and missing in
 the other fails CI. The `filters` shape is the one T1085 returns, so a parsed request
 feeds the chat unchanged.
+
+T1085 added `includeFilters` to `ConversationRequest`: with it, a list-style question
+streams a `"filters"` event (the `TurSNNLFilters` JSON) ahead of the answer. It is
+opt-in because both SDKs' stream consumers read an unknown event type as answer text.
+The typed request carries `includeFilters`, the stream consumers handle `"filters"` and
+expose it as an `onFilters` callback (set `includeFilters` when one is given), so a site
+can show "see these filters" next to the chat's answer.
 
 ### CXI.12 Vectorless chat readiness (T1087)
 

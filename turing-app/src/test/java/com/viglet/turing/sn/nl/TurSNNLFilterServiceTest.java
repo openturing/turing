@@ -254,6 +254,50 @@ class TurSNNLFilterServiceTest {
     }
 
     @Test
+    @DisplayName("A field that is not a facet has no value list, so its value passes unchecked without a search")
+    void nonFacetFieldPassesUnchecked() {
+        when(turSNSiteRepository.findByNameIgnoreCase("vagas")).thenReturn(Optional.of(site));
+        when(parser.isAvailable()).thenReturn(true);
+        when(turSNSiteFieldExtRepository.findByTurSNSiteAndEnabled(site, 1))
+                .thenReturn(List.of(field("company", TurSEFieldType.STRING, false)));
+        parserAnswers("""
+                {"query":{"bool":{"filter":[{"term":{"company":"acme"}}]}}}""");
+
+        TurSNNLFilters result = service.parse("vagas", "pt_BR", "vagas na acme");
+
+        assertThat(result.fq()).containsExactly("company:acme");
+        assertThat(result.filters().get(0).grounded()).isFalse();
+        verify(dslSearchService, never()).search(any(), any(), any());
+    }
+
+    @Test
+    @DisplayName("Grounded filters go back to a query: terms, ranges as numbers, text fields as matches, exclusions kept")
+    void groundedFiltersGoBackToAQuery() {
+        var schema = List.of(
+                new com.viglet.turing.sn.dsl.eval.TurNLFacetField("city", TurSEFieldType.STRING, true, null),
+                new com.viglet.turing.sn.dsl.eval.TurNLFacetField("title", TurSEFieldType.TEXT, false, null));
+        TurSNNLFilters filters = new TurSNNLFilters(true, "t", "estagio", List.of(
+                new TurSNNLFilters.Filter("city", List.of("São Paulo", "Campinas"), null, null, List.of(), 1, true),
+                new TurSNNLFilters.Filter("title", List.of("analista"), null, null, List.of(), 1, false),
+                new TurSNNLFilters.Filter("salary", List.of(), "3000", null, List.of(), 1, false)),
+                List.of(), List.of());
+        var exclusion = new com.viglet.turing.sn.dsl.TurDslQuery.Term("contract", "PJ");
+        var parsed = new com.viglet.turing.sn.dsl.TurDslQuery.Bool(List.of(), List.of(), List.of(exclusion),
+                List.of(), null);
+
+        var query = (com.viglet.turing.sn.dsl.TurDslQuery.Bool) TurSNNLFilterService.toQuery(filters, schema,
+                parsed);
+
+        assertThat(query.filter()).containsExactly(
+                new com.viglet.turing.sn.dsl.TurDslQuery.Terms("city", List.of("São Paulo", "Campinas")),
+                new com.viglet.turing.sn.dsl.TurDslQuery.Range("salary", 3000L, null, null, null));
+        assertThat(query.must()).containsExactly(
+                new com.viglet.turing.sn.dsl.TurDslQuery.Match("title", "analista", null),
+                new com.viglet.turing.sn.dsl.TurDslQuery.Match(TurSNNLFilterService.TEXT_FIELD, "estagio", null));
+        assertThat(query.mustNot()).containsExactly(exclusion);
+    }
+
+    @Test
     @DisplayName("Source words match on word boundaries, without case or accents, as the text spells them")
     void sourceWordsKeepTheTextSpelling() {
         assertThat(TurSNNLFilterService.sourceWords("Vagas em SÃO PAULO hoje", "sao paulo"))
