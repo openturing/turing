@@ -21,6 +21,8 @@
 **Cross-references** use absolute paths from the repo root; linked code may have
 moved — verify against `git ls-files` before acting.
 
+## Block CA — Search response fields arrive as they were indexed
+
 ## Table of contents
 
 - [I. Chat-flow execution harness — binding constraints](#i-chat-flow-execution-harness--binding-constraints)
@@ -2131,5 +2133,24 @@ works, and an import endpoint that refuses a body it cannot read instead of acce
 silently. Found while building trabalharei's local Turing and import proof.
 
 ## CXI Search response fields arrive as they were indexed
+
+### CXI.9 Custom facet items in the manifest (T1084)
+
+Met in trabalharei (TRA31). The job site wants a posting-date filter with the usual
+buckets (last 24 hours, 3, 7 and 30 days). T1075 made relative date bounds work on a
+custom facet item (`NOW-7DAYS`), with counts on Lucene through T1083, but custom facets
+exist only in the console: the SN manifest (`POST /api/sn/manifest`, the Java
+`TurSNManifestClient`, Dumont's provisioning and the site's own dev setup script)
+declares fields and value facets, not custom facets or their items. A site provisioned
+from code cannot have them, and one edited by hand drifts from the code that
+re-provisions it.
+
+Workaround in trabalharei: the date group is four links with range filter queries
+(`publishedAt:[NOW-7DAYS TO *]`, which T1075 made work) and no counts.
+
+Expected: a manifest field may declare its custom facet items (label per locale, start
+and end as fixed instants or date math, as the console stores them), provisioned and
+diffed like the rest of the manifest, so a site from code gets counted date buckets in
+its structured facets.
 
 ## CXII SDK & frontend surface

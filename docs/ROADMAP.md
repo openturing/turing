@@ -6,6 +6,10 @@
 > [STRATEGY.md](STRATEGY.md); the markers and limits are `roadkeep.toml`'s. Blocks are
 > reused, not minted — `roadkeep brief` picks the next task and states why.
 
+## Block CA — Search response fields arrive as they were indexed
+
+- 📋 **T1084** (deps: —) **Custom facet items, such as relative date buckets, can be set only in the console, not in a site's manifest** — A site provisioned from code cannot count its date ranges, and a bucket edited by hand drifts from the code. → §CXI.9
+
 ## Non-goals (do NOT add as tasks)
 
 Binding constraints — see [IMPROVEMENTS.md](IMPROVEMENTS.md) §I.6 (What NOT to
