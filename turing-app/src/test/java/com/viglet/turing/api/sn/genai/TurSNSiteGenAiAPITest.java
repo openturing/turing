@@ -69,6 +69,17 @@ class TurSNSiteGenAiAPITest {
     @Mock(answer = org.mockito.Answers.RETURNS_DEEP_STUBS)
     private com.viglet.turing.properties.TurConfigProperties configProperties;
 
+    // The conversation endpoint's guards (message caps, the anonymous cost cap).
+    @Mock(answer = org.mockito.Answers.RETURNS_DEEP_STUBS)
+    private com.viglet.turing.properties.TurAbuseControlProperty abuseControlProperty;
+    @Mock
+    private com.viglet.turing.service.llm.budget.TurChatCostBudgetGate costBudgetGate;
+
+    // T1087 — the route both chat endpoints read; delegates to a real resolver
+    // over the mocks above, so these tests exercise the real decision.
+    @Mock
+    private com.viglet.turing.genai.TurSNChatRouteResolver chatRouteResolver;
+
     @InjectMocks
     private TurSNSiteGenAiAPI api;
 
@@ -80,6 +91,9 @@ class TurSNSiteGenAiAPITest {
             TurSNSiteGenAi g = inv.getArgument(0);
             return g == null ? null : g.getTurAIAgent();
         });
+        var realResolver = new com.viglet.turing.genai.TurSNChatRouteResolver(turDefaultAgentResolver,
+                catalogCopilotService);
+        when(chatRouteResolver.resolve(any())).thenAnswer(inv -> realResolver.resolve(inv.getArgument(0)));
         mockMvc = MockMvcBuilders.standaloneSetup(api).build();
     }
 
@@ -187,6 +201,55 @@ class TurSNSiteGenAiAPITest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.enabled").value(false))
                 .andExpect(jsonPath("$.reason").value("MISSING_EMBEDDING"));
+    }
+
+    // ─────────────────── T1087 — the chat answers on the route /enabled reported ───────────────────
+
+    private TurSNSite vectorlessSite() {
+        TurSNSite site = new TurSNSite();
+        site.setName("site1");
+        TurSNSiteGenAi genAi = new TurSNSiteGenAi();
+        genAi.setKnowledgeBaseMode(
+                com.viglet.turing.persistence.model.sn.genai.TurSNKnowledgeBaseMode.VECTORLESS_STRUCTURED);
+        site.setTurSNSiteGenAi(genAi);
+        return site;
+    }
+
+    @Test
+    void conversationOnAVectorlessSiteIsAnsweredByTheCopilot() {
+        when(turSNSearchProcess.existsByTurSNSiteAndLanguage(eq("site1"), any())).thenReturn(true);
+        when(turSNSearchProcess.getSNSite("site1")).thenReturn(Optional.of(vectorlessSite()));
+        when(catalogCopilotService.isAvailable()).thenReturn(true);
+        when(catalogCopilotService.answer(eq("site1"), any(), any())).thenReturn(
+                new com.viglet.turing.genai.catalog.TurCatalogCopilotResult(true, "There are 3 models.",
+                        java.util.List.of(), "", 3, null));
+
+        var events = api.conversation("site1", new TurSNSiteGenAiAPI.ConversationRequest(
+                java.util.List.of(new com.viglet.turing.genai.TurSNGenAi.ConversationMessage("user",
+                        "which models?")),
+                "en_US", null, null, null, null, null))
+                .collectList().block();
+
+        org.assertj.core.api.Assertions.assertThat(events).singleElement()
+                .satisfies(e -> org.assertj.core.api.Assertions.assertThat(e.content())
+                        .isEqualTo("There are 3 models."));
+        // Never the RAG context, which a vectorless site has no vectors for.
+        verify(turGenAiContextFactory, never()).build(any(), any());
+    }
+
+    @Test
+    void singleTurnChatOnAVectorlessSiteIsAnsweredByTheCopilot() throws Exception {
+        when(turSNSearchProcess.existsByTurSNSiteAndLanguage(eq("site1"), any())).thenReturn(true);
+        when(turSNSearchProcess.getSNSite("site1")).thenReturn(Optional.of(vectorlessSite()));
+        when(catalogCopilotService.isAvailable()).thenReturn(true);
+        when(catalogCopilotService.answer(eq("site1"), any(), any())).thenReturn(
+                new com.viglet.turing.genai.catalog.TurCatalogCopilotResult(true, "There are 3 models.",
+                        java.util.List.of(), "", 3, null));
+
+        mockMvc.perform(get("/api/sn/site1/chat").param("q", "which models?").param("_setlocale", "en_US"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.text").value("There are 3 models."));
+        verify(turGenAi, never()).assistant(any(), anyString());
     }
 
     @Test

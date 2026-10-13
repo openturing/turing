@@ -2134,25 +2134,6 @@ silently. Found while building trabalharei's local Turing and import proof.
 
 ## CXI Search response fields arrive as they were indexed
 
-### CXI.12 Vectorless chat readiness (T1087)
-
-Met in trabalharei (TRA40) while reading the chat path. For a site whose knowledge base
-is `VECTORLESS_STRUCTURED`, `GET /api/sn/{site}/chat/enabled` answers enabled (only a
-default LLM is required), but `POST /chat/conversation` builds its context through
-`TurGenAiContextFactory.build`, which returns a disabled context for that mode, so the
-stream answers "AI configuration is not enabled". The copilot that does serve vectorless
-sites is never routed to from the chat.
-
-The cause is two decisions over one question: `diagnoseAgentReadiness` is a private
-method of the controller, and the conversation path decides again in its own code. Every
-knowledge-base mode added later (HYBRID already exists) would have to be taught to both.
-
-Expected: one resolver (beside `TurDefaultAgentResolver`) answers, per site, the chat
-route: `RAG`, `COPILOT` or `UNAVAILABLE` with the `ChatDisabledReason`. `/chat/enabled`
-reports it and `/chat/conversation` dispatches on it, so a vectorless site is answered
-by the catalog copilot and the two endpoints cannot disagree. A test walks every
-`TurSNKnowledgeBaseMode` and asserts that enabled implies a route that answers.
-
 ### CXI.13 RAG bootstrap skipped by the seed store (T1088)
 
 Met in trabalharei (TRA40) on a fresh local turing-ce built with `Dockerfile.local` (the

@@ -42,6 +42,8 @@ import com.viglet.turing.commons.sn.search.TurSNParamType;
 import com.viglet.turing.genai.TurAgentChatExecutor;
 import com.viglet.turing.genai.TurChatMessage;
 import com.viglet.turing.genai.TurChatProviderErrorMapper;
+import com.viglet.turing.genai.TurSNChatDisabledReason;
+import com.viglet.turing.genai.TurSNChatRouteResolver;
 import com.viglet.turing.genai.TurSNGenAi;
 import com.viglet.turing.genai.TurSNGenAiChatRequest;
 import com.viglet.turing.genai.TurSNGenAi.ConversationMessage;
@@ -117,6 +119,8 @@ public class TurSNSiteGenAiAPI {
 	// T790 / §LIV.1 (Block BF) — resolves whether the vectorless copilot can answer
 	// (a default LLM is configured) for the VECTORLESS_STRUCTURED readiness path.
 	private final com.viglet.turing.genai.catalog.TurCatalogCopilotService catalogCopilotService;
+	// T1087 — the one decision both /chat/enabled and /chat/conversation read.
+	private final com.viglet.turing.genai.TurSNChatRouteResolver chatRouteResolver;
 
 	public TurSNSiteGenAiAPI(TurSNSearchProcess turSNSearchProcess,
 			TurSNGenAi turGenAi,
@@ -142,7 +146,8 @@ public class TurSNSiteGenAiAPI {
 			com.viglet.turing.genai.persona.TurAgentPersonaResolver turAgentPersonaResolver,
 			com.viglet.turing.service.llm.budget.TurChatCostBudgetGate costBudgetGate,
 			com.viglet.turing.properties.TurAbuseControlProperty abuseControlProperty,
-			com.viglet.turing.genai.catalog.TurCatalogCopilotService catalogCopilotService) {
+			com.viglet.turing.genai.catalog.TurCatalogCopilotService catalogCopilotService,
+			com.viglet.turing.genai.TurSNChatRouteResolver chatRouteResolver) {
 		this.turSNSearchProcess = turSNSearchProcess;
 		this.turGenAi = turGenAi;
 		this.turGenAiContextFactory = turGenAiContextFactory;
@@ -168,6 +173,7 @@ public class TurSNSiteGenAiAPI {
 		this.costBudgetGate = costBudgetGate;
 		this.abuseControlProperty = abuseControlProperty;
 		this.catalogCopilotService = catalogCopilotService;
+		this.chatRouteResolver = chatRouteResolver;
 	}
 
 	// T648 / §XXXVII.10 — reject an over-cap anonymous upload BEFORE Tika/vision.
@@ -201,75 +207,36 @@ public class TurSNSiteGenAiAPI {
 	}
 
 	/**
-	 * Reasons a site's chat may be disabled. The frontend uses this code to
-	 * show a helpful admin-facing tooltip explaining what to configure.
-	 *
-	 * @since 2026.2.17
+	 * The site's chat route (T1087), read by both {@code /chat/enabled} and the
+	 * chat endpoints so the readiness check and the answer cannot disagree.
 	 */
-	public enum ChatDisabledReason {
-		/** Chat is fully wired up — the AI Mode button should render. */
-		NONE,
-		/** The SN site has no {@code TurSNSiteGenAi} record bound. */
-		NO_GENAI,
-		/** {@code TurSNSiteGenAi} exists but no AI agent is linked. */
-		NO_AGENT,
-		/** Linked agent has {@code enabled = 0}. */
-		AGENT_DISABLED,
-		/** Linked agent has {@code ragEnabled = false}. */
-		RAG_DISABLED,
-		/** Linked agent has no LLM instance. */
-		MISSING_LLM,
-		/** Linked agent has no embedding model instance. */
-		MISSING_EMBEDDING,
-		/** Linked agent has no vector store instance. */
-		MISSING_STORE,
-		/**
-		 * T790 / §LIV.1 (Block BF) — the site runs in {@code VECTORLESS_STRUCTURED}
-		 * mode (the catalog copilot, which needs neither an embedding model nor a
-		 * vector store) but no usable <em>default LLM</em> is configured, so the
-		 * copilot cannot answer. The vectorless readiness path reports this instead
-		 * of {@code MISSING_EMBEDDING}/{@code MISSING_STORE}.
-		 */
-		MISSING_DEFAULT_LLM
+	private TurSNChatRouteResolver.Decision chatRoute(TurSNSiteGenAi genAi) {
+		return chatRouteResolver.resolve(genAi);
 	}
 
 	/**
-	 * Site GenAI is reachable when an enabled agent with RAG enabled and a
-	 * complete embedding/store/LLM setup is bound to the site. The site itself
-	 * has no {@code ragEnabled} flag — it inherits everything from the linked
-	 * {@link TurAIAgent}. The check is config-only — no model is instantiated,
-	 * so broken credentials do not hide the AI Mode button.
+	 * T1087 — answers a vectorless site's turn through the catalog copilot, which
+	 * {@code /chat/enabled} reported it ready for. The copilot answers whole, so
+	 * the answer is one token event, sent once the copilot returns.
 	 */
-	private ChatDisabledReason diagnoseAgentReadiness(TurSNSiteGenAi genAi) {
-		// T790 / §LIV.1 (Block BF) — Vectorless (Structured-Data) RAG: a site in
-		// VECTORLESS_STRUCTURED mode answers through the T392 catalog copilot, which
-		// grounds the default LLM on a NL→DSL search over the declared field schema
-		// (no embeddings). It needs neither an embedding model nor a vector store —
-		// so readiness is "a usable default LLM is configured", not the classic
-		// MISSING_EMBEDDING/MISSING_STORE walk. HYBRID keeps the full vector walk
-		// below (it is a superset that also runs the copilot).
-		var mode = genAi != null ? genAi.getKnowledgeBaseMode()
-				: com.viglet.turing.persistence.model.sn.genai.TurSNKnowledgeBaseMode.VECTOR;
-		if (mode == com.viglet.turing.persistence.model.sn.genai.TurSNKnowledgeBaseMode.VECTORLESS_STRUCTURED) {
-			return catalogCopilotService.isAvailable()
-					? ChatDisabledReason.NONE
-					: ChatDisabledReason.MISSING_DEFAULT_LLM;
-		}
-		// T622 — a site with no agent of its own resolves to the global Default
-		// AI Agent when one is set (fail-open); otherwise the classic reasons.
-		TurAIAgent agent = turDefaultAgentResolver.resolveEffectiveAgent(genAi);
-		if (agent == null) return genAi == null ? ChatDisabledReason.NO_GENAI : ChatDisabledReason.NO_AGENT;
-		if (agent.getEnabled() != 1) return ChatDisabledReason.AGENT_DISABLED;
-		if (!agent.isRagEnabled()) return ChatDisabledReason.RAG_DISABLED;
-		boolean hasLlm = agent.getLlmInstances() != null && !agent.getLlmInstances().isEmpty();
-		if (!hasLlm) return ChatDisabledReason.MISSING_LLM;
-		if (agent.getTurEmbeddingModelInstance() == null) return ChatDisabledReason.MISSING_EMBEDDING;
-		if (agent.getTurStoreInstance() == null) return ChatDisabledReason.MISSING_STORE;
-		return ChatDisabledReason.NONE;
+	private Flux<TurAgentChatExecutor.ChatResponse> copilotConversation(String siteName,
+			List<ConversationMessage> messages, Locale locale) {
+		return reactor.core.publisher.Mono.fromCallable(() -> {
+			var result = catalogCopilotService.answer(siteName, locale == null ? null : locale.toString(),
+					copilotTurns(messages));
+			String text = result.answer() != null && !result.answer().isBlank() ? result.answer()
+					: NOT_ENABLED_MESSAGE;
+			return new TurAgentChatExecutor.ChatResponse(ASSISTANT_ROLE, text, "token");
+		}).subscribeOn(reactor.core.scheduler.Schedulers.boundedElastic()).flux();
 	}
 
-	private boolean isAgentRagReady(TurSNSiteGenAi genAi) {
-		return diagnoseAgentReadiness(genAi) == ChatDisabledReason.NONE;
+	private static List<com.viglet.turing.genai.catalog.TurCatalogCopilotService.ChatTurn> copilotTurns(
+			List<ConversationMessage> messages) {
+		return messages == null ? List.of()
+				: messages.stream()
+						.map(m -> new com.viglet.turing.genai.catalog.TurCatalogCopilotService.ChatTurn(m.role(),
+								m.content()))
+						.toList();
 	}
 
 	private Locale resolveLocale(String requested, String siteName) {
@@ -317,11 +284,17 @@ public class TurSNSiteGenAiAPI {
 		if (turSNSearchProcess.existsByTurSNSiteAndLanguage(siteName, locale)) {
 			return turSNSearchProcess.getSNSite(siteName).map(site -> {
 				var turSNSiteGenAI = site.getTurSNSiteGenAi();
-				if (!isAgentRagReady(turSNSiteGenAI)) {
-					log.debug("RAG chat (single-turn) skipped for SN Site '{}': agent not ready", siteName);
+				TurSNChatRouteResolver.Decision route = chatRoute(turSNSiteGenAI);
+				if (!route.available()) {
+					log.debug("RAG chat (single-turn) skipped for SN Site '{}': {}", siteName, route.reason());
 					return TurChatMessage.builder()
 							.text(NOT_ENABLED_MESSAGE)
 							.build();
+				}
+				if (route.route() == TurSNChatRouteResolver.Route.COPILOT) {
+					var answer = catalogCopilotService.answer(siteName, locale.toString(),
+							List.of(new com.viglet.turing.genai.catalog.TurCatalogCopilotService.ChatTurn("user", q)));
+					return TurChatMessage.builder().text(answer.answer()).enabled(true).build();
 				}
 				String collectionName = null;
 				var siteLocale = turSNSiteLocaleRepository
@@ -355,12 +328,12 @@ public class TurSNSiteGenAiAPI {
 	 */
 	@GetMapping("/enabled")
 	public ChatEnabledResponse isEnabled(@PathVariable String siteName) {
-		ChatDisabledReason reason = turSNSearchProcess.getSNSite(siteName)
-				.map(site -> diagnoseAgentReadiness(site.getTurSNSiteGenAi()))
-				.orElse(ChatDisabledReason.NO_GENAI);
+		TurSNChatDisabledReason reason = turSNSearchProcess.getSNSite(siteName)
+				.map(site -> chatRoute(site.getTurSNSiteGenAi()).reason())
+				.orElse(TurSNChatDisabledReason.NO_GENAI);
 		var session = configProperties.getChat().getSession();
 		return new ChatEnabledResponse(
-				reason == ChatDisabledReason.NONE,
+				reason == TurSNChatDisabledReason.NONE,
 				reason.name(),
 				session.getCookieName(),
 				session.getTtlSeconds());
@@ -420,9 +393,15 @@ public class TurSNSiteGenAiAPI {
 		}
 		return turSNSearchProcess.getSNSite(siteName).map(site -> {
 			TurSNSiteGenAi turSNSiteGenAI = site.getTurSNSiteGenAi();
-			if (!isAgentRagReady(turSNSiteGenAI)) {
-				log.debug("RAG chat skipped for SN Site '{}': agent not ready", siteName);
+			TurSNChatRouteResolver.Decision route = chatRoute(turSNSiteGenAI);
+			if (!route.available()) {
+				log.debug("RAG chat skipped for SN Site '{}': {}", siteName, route.reason());
 				return Flux.just(new TurAgentChatExecutor.ChatResponse(ASSISTANT_ROLE, NOT_ENABLED_MESSAGE));
+			}
+			// T1087 — a vectorless site is answered by the catalog copilot, the route
+			// /chat/enabled reported ready, not by the RAG context it has no vectors for.
+			if (route.route() == TurSNChatRouteResolver.Route.COPILOT) {
+				return copilotConversation(siteName, request.messages(), locale);
 			}
 			TurAIAgent agent = turDefaultAgentResolver.resolveEffectiveAgent(turSNSiteGenAI);
 			TurLLMInstance llmInstance = agent.getLlmInstances().stream()
@@ -1187,7 +1166,7 @@ public class TurSNSiteGenAiAPI {
 	/**
 	 * Response for {@code GET /api/sn/{siteName}/chat/enabled}.
 	 *
-	 * <p>{@code reason} is a {@link ChatDisabledReason} name — {@code "NONE"} when
+	 * <p>{@code reason} is a {@link TurSNChatDisabledReason} name — {@code "NONE"} when
 	 * chat is fully wired, otherwise the first missing condition the diagnostic
 	 * walk found. The UI uses it to render a precise tooltip telling the admin
 	 * what to fix (e.g. {@code RAG_DISABLED} → "Enable RAG on the agent").
