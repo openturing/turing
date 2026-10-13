@@ -2158,32 +2158,43 @@ its structured facets.
 Met in trabalharei (TRA40), a job assistant that turns "trabalho de meio periodo perto
 do metro em Sao Paulo, sem experiencia" into the site's own filtered search.
 
-The SN site already extracts filters from natural language in three places, and none of
-them hands the filters back: `TurSNGenAi` (list-style chat questions) applies the facets
-it extracted only to its own vector retrieval; the catalog copilot (`POST
-/api/sn/{site}/copilot`) returns `groundedQuerySummary`, a display string such as
-`city=São Paulo, contract in [clt]`; the NL facet parser is a console eval tool
-(`/api/sn/nl-facet-eval`). A site that wants to show the ranked, paginated, faceted page
-for the description (its own search UI) has no structured result to build `fq` from.
+The SN site extracts filters from natural language in three places, and none hands them
+back as data: `TurSNGenAi` (list-style chat questions) applies them only to its own
+vector retrieval; the catalog copilot (`POST /api/sn/{site}/copilot`, through
+`TurDeterministicCopilotQueryPlanner` / `TurLlmAssistedCopilotQueryPlanner`) returns
+`groundedQuerySummary`, a display string; `TurNLFacetParser` serves only the console
+eval (`/api/sn/nl-facet-eval`).
 
-Expected: an SN endpoint (or a chat/answer SSE event, such as `type: "filters"`) that
-returns the parse as data: `q` (what is left of the text), `fq` values as the search API
-takes them, with each value grounded in the site's facet values, and the confidence or
-the words each filter came from. The SDK exposes it (`postNlQuery` or a chat event the
-controller surfaces). Workaround in trabalharei: none; the assistant shows the chat's
-prose and cited jobs, and its "see these filters" step waits on this line.
+Build it once, not a fourth time: one parse result record (`q` left over, `fq` values in
+the search API's own `field:value` form, each grounded in the site's facet values, the
+words each came from and a confidence) produced by one service that the three callers
+consume. The copilot's summary string and the chat's retrieval filters are then views of
+that record, and every later NL feature reuses it instead of growing its own extractor.
+The record is exactly what T1086 sends as chat `filters` and what a search takes as
+`fq`, so one filter shape crosses NL parse, chat and search.
+
+Expose it as an SN endpoint and as a chat SSE event (`type: "filters"`), and in both
+SDKs (vanilla and React core). Workaround in trabalharei: none; its "see these filters"
+step waits on this line.
 
 ### CXI.11 Filters on SDK chat (T1086)
 
 Met in trabalharei (TRA40). `POST /api/sn/{site}/chat/conversation` takes `filters`
 (`ConversationRequest(messages, locale, filters, ...)` in `TurSNSiteGenAiAPI`), but the
-JS SDK's `postChatConversation` serializes only `messages`, `locale`, `conversationId`,
-`flowId`, `forcedVariant` and `personaId`, and `createChatController` has no filters
-option. A site cannot scope its assistant to the visitor's current search (a UF, a
-remote filter) without bypassing the SDK with its own fetch and SSE parser.
+JS SDK's `postChatConversation` serializes a hand-picked whitelist (`messages`,
+`locale`, `conversationId`, `flowId`, `forcedVariant`, `personaId`) and
+`createChatController` has no filters option. A site cannot scope its assistant to the
+visitor's current search without its own fetch and SSE parser.
 
-Expected: `filters?: Record<string, string[]>` on `postChatConversation`'s options and
-on the chat controller (set at creation and per `send`), passed through unchanged.
+The whitelist is the defect, not the missing key: every field the endpoint gains needs
+another SDK task, and the vanilla SDK (`frontend/packages/sdk`) and the React SDK's own
+`core/` copy each keep one. Type the request once as a `ChatConversationRequest` in
+`@viglet/turing-shared-types` mirroring `ConversationRequest`, serialize the options
+object as that type in both SDKs (adding `filters?: Record<string, string[]>`), and give
+the chat controller and `useTuringChat` request defaults set at creation and merged per
+`send`. Extend `sdk-parity.test.ts` so a request field present in one SDK and missing in
+the other fails CI. The `filters` shape is the one T1085 returns, so a parsed request
+feeds the chat unchanged.
 
 ### CXI.12 Vectorless chat readiness (T1087)
 
@@ -2191,49 +2202,62 @@ Met in trabalharei (TRA40) while reading the chat path. For a site whose knowled
 is `VECTORLESS_STRUCTURED`, `GET /api/sn/{site}/chat/enabled` answers enabled (only a
 default LLM is required), but `POST /chat/conversation` builds its context through
 `TurGenAiContextFactory.build`, which returns a disabled context for that mode, so the
-stream answers "AI configuration is not enabled" (or fails on a missing agent). The
-copilot that does serve vectorless sites is never routed to from the chat.
+stream answers "AI configuration is not enabled". The copilot that does serve vectorless
+sites is never routed to from the chat.
 
-Expected: `/chat/enabled` and `/chat/conversation` agree. Either the conversation routes
-a vectorless site to the catalog copilot path, or `/chat/enabled` reports the reason it
-is not available.
+The cause is two decisions over one question: `diagnoseAgentReadiness` is a private
+method of the controller, and the conversation path decides again in its own code. Every
+knowledge-base mode added later (HYBRID already exists) would have to be taught to both.
+
+Expected: one resolver (beside `TurDefaultAgentResolver`) answers, per site, the chat
+route: `RAG`, `COPILOT` or `UNAVAILABLE` with the `ChatDisabledReason`. `/chat/enabled`
+reports it and `/chat/conversation` dispatches on it, so a vectorless site is answered
+by the catalog copilot and the two endpoints cannot disagree. A test walks every
+`TurSNKnowledgeBaseMode` and asserts that enabled implies a route that answers.
 
 ### CXI.13 RAG bootstrap skipped by the seed store (T1088)
 
 Met in trabalharei (TRA40) on a fresh local turing-ce built with `Dockerfile.local` (the
 GLOBAL seed ZIP from T373 auto-imported at boot) and `OPENAI_API_KEY` set.
 `TurLLMInstanceOnStartup` creates the gpt-4o-mini instance and the default agent, but
-`TurDefaultRagInfraOnStartup` returns without a word: its guard skips the bootstrap when
-any embedding model or store instance exists, and the seed already holds the
-platform-provided "Default Vector Store" (Lucene, `./store/lucene-vector`). No embedding
-model is created, the agent gets neither model nor store, and every site's
-`/chat/enabled` answers `MISSING_EMBEDDING`, so the out-of-the-box chat promised by the
-bootstrap never happens on the image the seed ships with.
+`TurDefaultRagInfraOnStartup` returns without a word: its guard (`findAll().isEmpty()`
+on embedding models or store instances) skips the bootstrap when either exists, and the
+seed already holds the platform-provided "Default Vector Store". No embedding model is
+created, the agent gets neither, and every site's `/chat/enabled` answers
+`MISSING_EMBEDDING`.
 
-Expected: the guard looks at embedding models only (or adopts an existing enabled
-store), creates the HuggingFace ONNX model, wires model and store onto the default agent
-with RAG on, and reindexes, logging what it did or why it skipped.
+The all-or-nothing guard is the defect class already seen elsewhere: a
+`findAll().isEmpty()` check only works on a fresh install, so any seed, import or
+upgrade that brings one piece in silently skips the rest. Replace it with per-piece
+convergence: ensure the embedding model, then ensure a store (adopting an existing
+enabled one, preferring the platform default), then wire whichever the default agent
+lacks, each step idempotent and logged with what it did or why it skipped. Turn RAG on
+and reindex only when this run completed the wiring.
 
 Workaround in trabalharei: `scripts/turing-dev-setup.mjs` creates the embedding model
 and wires the agent through the admin API when the site reports `MISSING_EMBEDDING`.
 
 ### CXI.14 Null fields break RAG imports (T1089)
 
-Met in trabalharei (TRA40). With RAG on for an SN site (its own GenAI agent with an
-embedding model and a store), every `POST /api/sn/import` from Dumont's jobs connector
-answers `400 metadata cannot have null values` and nothing of the batch is indexed;
-Dumont logs "Failed imported the Job into Turing. Status code: 400". The same batch
-imports fine with RAG off.
+Met in trabalharei (TRA40). With RAG on for an SN site, every `POST /api/sn/import` from
+Dumont's jobs connector answers `400 metadata cannot have null values` and nothing of
+the batch is indexed. The same batch imports fine with RAG off.
 
-`TurSNImportAPI` embeds before indexing (`sendToGenAi` → `TurSNGenAi.addDocuments`), and
-`buildMetadata` copies `modificationDate`, `publication_date`, `url` and every simple
-field with `containsKey` / `putIfAbsent`, so a key present with a null value (a job with
-no salary, no company) reaches Spring AI's `Document`, whose constructor refuses null
-metadata values. One optional field left empty fails the whole import, search included.
+`TurSNImportAPI` embeds before indexing (`sendToGenAi` → `TurSNGenAi.addDocuments`).
+`TurSNGenAi.buildMetadata` copies `modificationDate`, `publication_date`, `url` and
+every simple field with `containsKey` / `putIfAbsent`, so a key present with a null
+value (a job with no salary) reaches Spring AI's `Document`, whose constructor refuses
+null metadata. One optional field left empty fails the whole import, search included.
 
-Expected: null (and empty) values are left out of the chunk metadata, and an embedding
-failure never fails the search indexing of the batch: it is logged per document and the
-documents are still indexed for search. Workaround in trabalharei: none; RAG stays off
-on the job site until this ships, which is what TRA40's production rollout waits on.
+Fix both halves at their one seam, so no future field or connector reopens it:
+`buildMetadata` (the single builder both chunking paths call) drops null and empty
+values, so every caller is covered by construction rather than per field; and indexing
+for search no longer depends on embedding: the embedding step runs after, or isolated
+from, the search index write, with a failure logged per document and counted, never
+turned into the batch's status. A test imports a document with null fields with RAG on
+and asserts it is searchable and embedded without the null keys.
+
+Workaround in trabalharei: none; RAG stays off on the job site until this ships, which
+is what TRA40's production rollout waits on.
 
 ## CXII SDK & frontend surface
