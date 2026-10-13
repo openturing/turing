@@ -74,11 +74,11 @@
       "total": 1024
     },
     "baseline": {
-      "measured": "2026-08-23",
-      "total": 34917,
+      "measured": "2026-10-13",
+      "total": 36007,
       "entries": {
-        "turing-sdk.js": 18498,
-        "turing-sdk.umd.cjs": 16419
+        "turing-sdk.js": 19056,
+        "turing-sdk.umd.cjs": 16951
       }
     }
   },

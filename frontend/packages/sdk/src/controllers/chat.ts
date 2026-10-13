@@ -10,6 +10,7 @@ import {
   postChatConversation,
   postClientToolResult,
   type ChatDisabledReason,
+  type TurNLFilters,
 } from "../api";
 import {
   TUR_SESSION_DEFAULT_COOKIE_NAME,
@@ -180,6 +181,11 @@ export interface ChatControllerPersona {
 export interface SendOverrides {
   /** Routes this turn through a different LLM instance (agent mode only). */
   readonly llmInstanceId?: string;
+  /**
+   * T1086 — scopes this turn to the visitor's current search, replacing
+   * {@link ChatControllerOptions.filters} for it (site mode only).
+   */
+  readonly filters?: Readonly<Record<string, readonly string[]>>;
 }
 
 export interface ChatControllerOptions {
@@ -216,6 +222,16 @@ export interface ChatControllerOptions {
    * set explicitly. Defaults to `true`.
    */
   readonly readAbVariantFromUrl?: boolean;
+  /**
+   * T1086 — scopes every site-mode turn to a search: field → values, the shape
+   * `postNlFilters` returns. A turn's {@link SendOverrides.filters} replaces it.
+   */
+  readonly filters?: Readonly<Record<string, readonly string[]>>;
+  /**
+   * T1086 — receives the filters the server read from a list-style question
+   * (site mode), ahead of the answer, so a page can offer "see these results".
+   */
+  readonly onFilters?: (filters: TurNLFilters) => void;
   /** Opt into agent mode. */
   readonly agent?: ChatControllerAgent;
   /**
@@ -713,6 +729,7 @@ export function createChatController(
       controller,
       activeConversationId,
       effectiveLlmInstanceId,
+      overrides?.filters ?? options.filters,
     );
   }
 
@@ -728,6 +745,7 @@ export function createChatController(
     controller: AbortController,
     activeConversationId: string,
     effectiveLlmInstanceId: string | undefined,
+    turnFilters: Readonly<Record<string, readonly string[]>> | undefined = options.filters,
   ): Promise<void> {
     try {
       // Pre-commit an empty assistant bubble so a UI can render a typing
@@ -788,6 +806,8 @@ export function createChatController(
           flowId,
           forcedVariant,
           personaId: ragPersonaId,
+          filters: turnFilters,
+          onFilters: options.onFilters,
           onToken,
           onToolCall,
           signal: controller.signal,

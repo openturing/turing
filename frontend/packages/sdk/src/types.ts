@@ -510,7 +510,9 @@ export interface TurChatStreamEvent {
     | "tool_call"
     | "client_tool_call"
     | "grounding"
-    | "secondOpinion";
+    | "secondOpinion"
+    /** T1086 — the filters read from a list-style question (T1085), sent only on `includeFilters`. */
+    | "filters";
 }
 
 /**

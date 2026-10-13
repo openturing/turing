@@ -18,6 +18,7 @@ import {
   postClientToolResult,
   postSiteFormSubmit,
   type ChatDisabledReason,
+  type TurNLFilters,
 } from "../core/api";
 import { useOptionalTuringContext } from "../core/use-turing-context";
 import {
@@ -132,6 +133,11 @@ export interface SendOverrides {
    * persist the override — the caller controls the "sticky" semantics.
    */
   readonly llmInstanceId?: string;
+  /**
+   * T1086 — scopes this turn to the visitor's current search, replacing
+   * {@link UseTuringChatOptions.filters} for it (site mode only).
+   */
+  readonly filters?: Readonly<Record<string, readonly string[]>>;
 }
 
 export interface UseTuringChatOptions {
@@ -180,6 +186,20 @@ export interface UseTuringChatOptions {
    * @since 2026.3.1
    */
   readonly readAbVariantFromUrl?: boolean;
+  /**
+   * T1086 — scopes every site-mode turn to a search: field → values, the shape
+   * `postNlFilters` returns. A turn's {@link SendOverrides.filters} replaces it.
+   *
+   * @since 2026.3.4
+   */
+  readonly filters?: Readonly<Record<string, readonly string[]>>;
+  /**
+   * T1086 — receives the filters the server read from a list-style question
+   * (site mode), ahead of the answer, so a page can offer "see these results".
+   *
+   * @since 2026.3.4
+   */
+  readonly onFilters?: (filters: TurNLFilters) => void;
   /**
    * Opt into agent mode: the hook hits `POST /v2/ai-agent/{id}/chat` with
    * the explicit `llmInstanceId` instead of the site's RAG endpoint. When
@@ -441,6 +461,8 @@ interface SubjectTurnCtx {
   readonly flowId?: string;
   readonly forcedVariant?: string;
   readonly selectedSkillId?: string;
+  readonly filters?: Readonly<Record<string, readonly string[]>>;
+  readonly onFilters?: (filters: TurNLFilters) => void;
   readonly wire: TurChatConversationMessage[];
   readonly onToken: (token: string) => void;
   readonly onToolCall: (call: TurChatToolCall, all: TurChatToolCall[]) => void;
@@ -476,6 +498,8 @@ function dispatchSubjectTurn(c: SubjectTurnCtx): Promise<TurChatConversationResp
     conversationId: c.conversationId,
     flowId: c.flowId,
     forcedVariant: c.forcedVariant,
+    filters: c.filters,
+    onFilters: c.onFilters,
     onToken: c.onToken,
     onToolCall: c.onToolCall,
     signal: c.signal,
@@ -625,6 +649,12 @@ export function useTuringChat(
   const watcherRef = useRef<AbandonmentWatcher | null>(null);
   const analyticsRef = useRef<TuringAnalytics | undefined>(analytics);
   analyticsRef.current = analytics;
+  // T1086 — the default filters and their listener, read at send time so a new
+  // object on every render does not rebuild the send callbacks.
+  const filtersRef = useRef(options.filters);
+  filtersRef.current = options.filters;
+  const onFiltersRef = useRef(options.onFilters);
+  onFiltersRef.current = options.onFilters;
   const abandonmentEnabledRef = useRef(false);
   abandonmentEnabledRef.current = Boolean(analytics) && abandonment !== false;
   const abandonmentOptionsRef = useRef<AbandonmentOptions>({});
@@ -801,6 +831,7 @@ export function useTuringChat(
       controller: AbortController,
       activeConversationId: string,
       effectiveLlmInstanceId: string | undefined,
+      turnFilters: Readonly<Record<string, readonly string[]>> | undefined = filtersRef.current,
     ) => {
       try {
         const assistantId = openAssistantBubble();
@@ -823,6 +854,8 @@ export function useTuringChat(
           flowId,
           forcedVariant,
           selectedSkillId,
+          filters: turnFilters,
+          onFilters: onFiltersRef.current,
           wire,
           onToken,
           onToolCall,
@@ -956,6 +989,7 @@ export function useTuringChat(
         controller,
         activeConversationId,
         effectiveLlmInstanceId,
+        overrides?.filters ?? filtersRef.current,
       );
     },
     [agentId, agentLlmInstanceId, personaId, personaLlmInstanceId, controlledConversationId,

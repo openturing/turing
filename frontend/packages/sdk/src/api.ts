@@ -329,6 +329,61 @@ export interface PostChatConversationOptions {
    * value here is safe. Blank/undefined → the agent's default voice.
    */
   readonly personaId?: string;
+  /**
+   * T1086 — scopes the answer to the visitor's current search: field → values,
+   * the same shape {@link postNlFilters} returns. Sent as the turn's `filters`.
+   */
+  readonly filters?: Readonly<Record<string, readonly string[]>>;
+  /**
+   * T1086 — receives the filters the server read from a list-style question
+   * (T1085), ahead of the answer. Passing it asks the server for them
+   * (`includeFilters`); without it the event is never sent.
+   */
+  readonly onFilters?: (filters: TurNLFilters) => void;
+}
+
+/**
+ * T1086 — the body of `POST /sn/{site}/chat/conversation`, mirroring the server's
+ * `ConversationRequest`. Both SDKs build it with {@link chatConversationBody}, so a
+ * field the endpoint gains is added here once instead of in two hand-kept lists.
+ */
+export interface TurChatConversationRequest {
+  readonly messages: readonly TurChatConversationMessage[];
+  readonly locale?: string;
+  readonly filters?: Readonly<Record<string, readonly string[]>>;
+  readonly conversationId?: string;
+  readonly flowId?: string;
+  readonly forcedVariant?: string;
+  readonly personaId?: string;
+  readonly includeFilters?: boolean;
+}
+
+/** T1086 — the request body for a chat turn, from the call's options. */
+export function chatConversationBody(
+  messages: readonly TurChatConversationMessage[],
+  locale?: string,
+  options?: PostChatConversationOptions,
+): TurChatConversationRequest {
+  return {
+    messages,
+    locale,
+    filters: options?.filters,
+    conversationId: options?.conversationId,
+    flowId: options?.flowId,
+    forcedVariant: options?.forcedVariant,
+    personaId: options?.personaId,
+    includeFilters: options?.onFilters ? true : undefined,
+  };
+}
+
+/** T1086 — parses a `"filters"` SSE event payload (T1085), or `null`. */
+export function parseFiltersEvent(content: string): TurNLFilters | null {
+  try {
+    const parsed = JSON.parse(content) as TurNLFilters;
+    return parsed && Array.isArray(parsed.fq) ? parsed : null;
+  } catch {
+    return null;
+  }
 }
 
 /** Parses an `"options"` SSE event payload into chip labels, or `null`. */
@@ -486,6 +541,7 @@ async function consumeAssistantStream(
   onReasoning?: (reasoning: string) => void,
   onGrounding?: (grounding: TurChatGrounding) => void,
   onSecondOpinion?: (secondOpinion: TurChatSecondOpinion) => void,
+  onFilters?: (filters: TurNLFilters) => void,
 ): Promise<{
   text: string;
   options: string[];
@@ -598,6 +654,14 @@ async function consumeAssistantStream(
       }
       return true;
     }
+    if (parsed.type === "filters") {
+      // T1086 — never answer text, even when nobody listens for it.
+      const parsedFilters = parseFiltersEvent(parsed.content);
+      if (parsedFilters) {
+        onFilters?.(parsedFilters);
+      }
+      return true;
+    }
     return false;
   }
 
@@ -666,14 +730,7 @@ export async function postChatConversation(
       "Content-Type": "application/json",
       ...browserTimezoneHeaders(),
     },
-    body: JSON.stringify({
-      messages,
-      locale,
-      conversationId: options?.conversationId,
-      flowId: options?.flowId,
-      forcedVariant: options?.forcedVariant,
-      personaId: options?.personaId,
-    }),
+    body: JSON.stringify(chatConversationBody(messages, locale, options)),
     signal: options?.signal,
   });
 
@@ -702,6 +759,7 @@ export async function postChatConversation(
     options?.onReasoning,
     options?.onGrounding,
     options?.onSecondOpinion,
+    options?.onFilters,
   );
   return {
     role: "assistant",

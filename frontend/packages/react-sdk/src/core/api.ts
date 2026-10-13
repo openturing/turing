@@ -83,6 +83,7 @@ export type {
   TurNLFilter,
   TurNLDroppedFilter,
   TurNLFilters,
+  TurChatConversationRequest,
   TurChatSlotUploadResponse,
   PostSlotUploadOptions,
   SlotExtractOptions,
@@ -211,6 +212,13 @@ export {
   searchParamsToRequest,
   requestToSearchParams,
 } from "@viglet/turing-sdk";
+
+/**
+ * T1086 — the chat request body and the `"filters"` event parser are the vanilla
+ * SDK's, so the two SDKs cannot send different fields to the same endpoint.
+ */
+import { chatConversationBody, parseFiltersEvent } from "@viglet/turing-sdk";
+export { chatConversationBody, parseFiltersEvent };
 
 
 /**
@@ -432,6 +440,7 @@ async function consumeAssistantStream(
   onReasoning?: (reasoning: string) => void,
   onGrounding?: (grounding: TurChatGrounding) => void,
   onSecondOpinion?: (secondOpinion: TurChatSecondOpinion) => void,
+  onFilters?: (filters: TurNLFilters) => void,
 ): Promise<{
   text: string;
   options: string[];
@@ -544,6 +553,14 @@ async function consumeAssistantStream(
       }
       return true;
     }
+    if (parsed.type === "filters") {
+      // T1086 — never answer text, even when nobody listens for it.
+      const parsedFilters = parseFiltersEvent(parsed.content);
+      if (parsedFilters) {
+        onFilters?.(parsedFilters);
+      }
+      return true;
+    }
     return false;
   }
 
@@ -641,14 +658,8 @@ export async function postChatConversation(
     method: "POST",
     headers,
     credentials: "include",
-    body: JSON.stringify({
-      messages,
-      locale,
-      conversationId: options?.conversationId,
-      flowId: options?.flowId,
-      forcedVariant: options?.forcedVariant,
-      personaId: options?.personaId,
-    }),
+    // T1086 — the vanilla SDK's builder, so a field the endpoint gains is added once.
+    body: JSON.stringify(chatConversationBody(messages, locale, options)),
     signal: options?.signal,
   });
 
@@ -676,6 +687,7 @@ export async function postChatConversation(
     options?.onReasoning,
     options?.onGrounding,
     options?.onSecondOpinion,
+    options?.onFilters,
   );
   return {
     role: "assistant",

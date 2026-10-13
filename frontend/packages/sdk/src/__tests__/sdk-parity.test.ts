@@ -155,6 +155,24 @@ describe("SDK parity guard (T406)", () => {
     const names = PUBLIC_ENDPOINTS.map((e) => e.fn);
     expect(new Set(names).size).toBe(names.length);
   });
+
+  /**
+   * T1086 — the chat body used to be two hand-kept key lists, and `filters`
+   * existed on the server and in neither. Both SDKs now build it with the one
+   * `chatConversationBody`, so a field the endpoint gains is added once; this
+   * fails when either SDK goes back to listing keys of its own.
+   */
+  it("builds the chat conversation body with the shared chatConversationBody in both SDKs", () => {
+    const vanillaApi = readFileSync(resolve(here, "../api.ts"), "utf8");
+    for (const [name, source] of [["vanilla", vanillaApi], ["React", reactCoreApi]] as const) {
+      expect(source, `${name} SDK posts a chat body it built itself`).toContain(
+        "JSON.stringify(chatConversationBody(messages, locale, options))",
+      );
+    }
+    expect(reExportsFromVanillaSdk(reactCoreApi, "chatConversationBody")
+      || /import \{[^}]*\bchatConversationBody\b[^}]*\} from "@viglet\/turing-sdk"/.test(reactCoreApi))
+      .toBe(true);
+  });
 });
 
 /**

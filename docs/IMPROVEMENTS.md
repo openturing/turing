@@ -2134,32 +2134,6 @@ silently. Found while building trabalharei's local Turing and import proof.
 
 ## CXI Search response fields arrive as they were indexed
 
-### CXI.11 Filters on SDK chat (T1086)
-
-Met in trabalharei (TRA40). `POST /api/sn/{site}/chat/conversation` takes `filters`
-(`ConversationRequest(messages, locale, filters, ...)` in `TurSNSiteGenAiAPI`), but the
-JS SDK's `postChatConversation` serializes a hand-picked whitelist (`messages`,
-`locale`, `conversationId`, `flowId`, `forcedVariant`, `personaId`) and
-`createChatController` has no filters option. A site cannot scope its assistant to the
-visitor's current search without its own fetch and SSE parser.
-
-The whitelist is the defect, not the missing key: every field the endpoint gains needs
-another SDK task, and the vanilla SDK (`frontend/packages/sdk`) and the React SDK's own
-`core/` copy each keep one. Type the request once as a `ChatConversationRequest` in
-`@viglet/turing-shared-types` mirroring `ConversationRequest`, serialize the options
-object as that type in both SDKs (adding `filters?: Record<string, string[]>`), and give
-the chat controller and `useTuringChat` request defaults set at creation and merged per
-`send`. Extend `sdk-parity.test.ts` so a request field present in one SDK and missing in
-the other fails CI. The `filters` shape is the one T1085 returns, so a parsed request
-feeds the chat unchanged.
-
-T1085 added `includeFilters` to `ConversationRequest`: with it, a list-style question
-streams a `"filters"` event (the `TurSNNLFilters` JSON) ahead of the answer. It is
-opt-in because both SDKs' stream consumers read an unknown event type as answer text.
-The typed request carries `includeFilters`, the stream consumers handle `"filters"` and
-expose it as an `onFilters` callback (set `includeFilters` when one is given), so a site
-can show "see these filters" next to the chat's answer.
-
 ### CXI.12 Vectorless chat readiness (T1087)
 
 Met in trabalharei (TRA40) while reading the chat path. For a site whose knowledge base
