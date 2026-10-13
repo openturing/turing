@@ -86,6 +86,7 @@ public class TurSNSiteManifestService {
     private final TurSNFieldProvisioner turSNFieldProvisioner;
     private final TurSNManifestPlanner turSNManifestPlanner;
     private final TurSNSiteFieldExtRepository turSNSiteFieldExtRepository;
+    private final TurSNManifestCustomFacetConverger turSNManifestCustomFacetConverger;
     private final ApplicationEventPublisher eventPublisher;
 
     /**
@@ -102,12 +103,36 @@ public class TurSNSiteManifestService {
         return turSNManifestPlanner.diff(manifest);
     }
 
+    /**
+     * {@link #plan(VigletFieldManifest)} plus the custom facets the request
+     * declares (T1084): which of them provisioning would create or change.
+     */
+    @Transactional(readOnly = true)
+    public TurSNManifestPlan planRequest(TurSNManifestRequest request) {
+        VigletFieldManifest manifest = requireManifest(request);
+        VigletManifestDiff diff = plan(manifest);
+        TurSNSite site = turSNSiteRepository.findByNameIgnoreCase(manifest.name()).orElse(null);
+        turSNManifestCustomFacetConverger.validate(site, manifest, request.customFacetsOrEmpty());
+        return new TurSNManifestPlan(diff,
+                turSNManifestCustomFacetConverger.plan(site, manifest, request.customFacetsOrEmpty()));
+    }
+
     @Transactional
     public VigletManifestResult provision(VigletFieldManifest manifest) {
-        if (manifest == null || !StringUtils.hasText(manifest.name())) {
-            throw new IllegalArgumentException("Manifest 'name' is required");
-        }
+        return provisionRequest(manifest == null ? null : TurSNManifestRequest.of(manifest)).result();
+    }
+
+    /**
+     * {@link #provision(VigletFieldManifest)} plus the custom facets the
+     * request declares (T1084), converged after the fields they filter exist.
+     */
+    @Transactional
+    public TurSNManifestProvisionResult provisionRequest(TurSNManifestRequest request) {
+        VigletFieldManifest manifest = requireManifest(request);
         validateFields(manifest.fields());
+        List<TurSNManifestCustomFacet> customFacets = request.customFacetsOrEmpty();
+        turSNManifestCustomFacetConverger.validate(
+                turSNSiteRepository.findByNameIgnoreCase(manifest.name()).orElse(null), manifest, customFacets);
 
         List<Locale> locales = parseLocales(manifest.locales());
         List<String> localesCreated = new ArrayList<>();
@@ -144,18 +169,28 @@ public class TurSNSiteManifestService {
         List<String> fieldsSkipped = new ArrayList<>();
         applyFieldChanges(site, manifest, fieldsMigrated, fieldsCreated, fieldsSkipped);
         applySearchWeights(site, manifest);
+        List<String> customFacetsChanged = turSNManifestCustomFacetConverger.converge(site, customFacets);
 
         eventPublisher.publishEvent(siteCreated
                 ? SnSiteIndexInvalidatedEvent.created(site.getId(), site.getName())
                 : SnSiteIndexInvalidatedEvent.updated(site.getId(), site.getName()));
 
         log.info("[T386] Provisioned site '{}' (created={}, schemaVersion={}): {} field(s) added, "
-                        + "{} migrated, {} skipped, {} locale(s) added",
+                        + "{} migrated, {} skipped, {} locale(s) added, {} custom facet(s) changed",
                 site.getName(), siteCreated, manifest.schemaVersion(), fieldsCreated.size(),
-                fieldsMigrated.size(), fieldsSkipped.size(), localesCreated.size());
+                fieldsMigrated.size(), fieldsSkipped.size(), localesCreated.size(),
+                customFacetsChanged.size());
 
-        return new VigletManifestResult(site.getId(), site.getName(), siteCreated,
-                fieldsCreated, fieldsSkipped, fieldsMigrated, localesCreated, manifest.schemaVersion());
+        return new TurSNManifestProvisionResult(new VigletManifestResult(site.getId(), site.getName(),
+                siteCreated, fieldsCreated, fieldsSkipped, fieldsMigrated, localesCreated,
+                manifest.schemaVersion()), customFacetsChanged);
+    }
+
+    private static VigletFieldManifest requireManifest(TurSNManifestRequest request) {
+        if (request == null || !StringUtils.hasText(request.name())) {
+            throw new IllegalArgumentException("Manifest 'name' is required");
+        }
+        return request.toManifest();
     }
 
     /**

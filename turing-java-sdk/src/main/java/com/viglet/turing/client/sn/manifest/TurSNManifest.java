@@ -49,13 +49,21 @@ import com.viglet.turing.client.sn.job.TurSNJobAttributeSpec;
  * @param fields        ordered field specifications to ensure exist
  * @param migrations    breaking changes this manifest authorises; {@code null}
  *                      means none are, so a breaking change is rejected
+ * @param customFacets  custom facets to converge (T1084); {@code null} leaves
+ *                      the site's custom facets as they are
  *
  * @author Alexandre Oliveira
  * @since 2026.3.4
  */
 public record TurSNManifest(String name, String description, String seInstanceId,
         String schemaVersion, List<String> locales, List<TurSNJobAttributeSpec> fields,
-        List<TurSNManifestMigration> migrations) {
+        List<TurSNManifestMigration> migrations, List<TurSNManifestCustomFacet> customFacets) {
+
+    /** The constructor this record had before {@link #customFacets}, kept for existing callers. */
+    public TurSNManifest(String name, String description, String seInstanceId, String schemaVersion,
+            List<String> locales, List<TurSNJobAttributeSpec> fields, List<TurSNManifestMigration> migrations) {
+        this(name, description, seInstanceId, schemaVersion, locales, fields, migrations, null);
+    }
 
     public static Builder builder() {
         return new Builder();
@@ -90,6 +98,7 @@ public record TurSNManifest(String name, String description, String seInstanceId
         private final List<String> locales = new ArrayList<>();
         private final List<TurSNJobAttributeSpec> fields = new ArrayList<>();
         private final List<TurSNManifestMigration> migrations = new ArrayList<>();
+        private final List<TurSNManifestCustomFacet> customFacets = new ArrayList<>();
 
         public Builder name(String name) {
             this.name = name;
@@ -152,13 +161,23 @@ public record TurSNManifest(String name, String description, String seInstanceId
             return migration(TurSNManifestMigration.recreate(field));
         }
 
+        /** Declares one custom facet (T1084), such as relative date buckets. */
+        public Builder customFacet(TurSNManifestCustomFacet customFacet) {
+            if (customFacet != null) {
+                this.customFacets.add(customFacet);
+            }
+            return this;
+        }
+
         public TurSNManifest build() {
             // An empty migrations list and a null one mean the same thing to the
             // server ("nothing is authorised"); null keeps the payload honest
-            // about a manifest that declares no migration at all.
+            // about a manifest that declares no migration at all. The same goes
+            // for custom facets: none declared is none sent.
             return new TurSNManifest(name, description, seInstanceId, schemaVersion,
                     List.copyOf(locales), List.copyOf(fields),
-                    migrations.isEmpty() ? null : List.copyOf(migrations));
+                    migrations.isEmpty() ? null : List.copyOf(migrations),
+                    customFacets.isEmpty() ? null : List.copyOf(customFacets));
         }
     }
 }

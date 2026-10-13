@@ -7,6 +7,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -60,6 +62,8 @@ class TurSNSiteManifestServiceTest {
     private TurSNManifestPlanner turSNManifestPlanner;
     @Mock
     private TurSNSiteFieldExtRepository turSNSiteFieldExtRepository;
+    @Mock
+    private TurSNManifestCustomFacetConverger turSNManifestCustomFacetConverger;
     @Mock
     private ApplicationEventPublisher eventPublisher;
     @InjectMocks
@@ -270,5 +274,68 @@ class TurSNSiteManifestServiceTest {
         assertEquals(diff, result);
         verify(turSNFieldProvisioner, never()).ensureField(any(), any());
         verify(turSNFieldProvisioner, never()).recreateField(any(), any());
+    }
+
+    private static TurSNManifestCustomFacet postedSince() {
+        return new TurSNManifestCustomFacet("publishedAt", "postedSince", "Posted", null, null,
+                List.of(new TurSNManifestCustomFacetItem("Last 7 days", null, null, null, null, null,
+                        "NOW-7DAYS", null)));
+    }
+
+    @Test
+    void provisionRequestConvergesCustomFacetsAfterTheFields() {
+        TurSNSite existing = new TurSNSite();
+        existing.setName("jobs");
+        TurSNManifestRequest request = new TurSNManifestRequest("jobs", null, null, null, null,
+                List.of(field("publishedAt")), null, List.of(postedSince()));
+        VigletFieldManifest manifest = request.toManifest();
+
+        when(turSNSiteRepository.findByNameIgnoreCase("jobs")).thenReturn(Optional.of(existing));
+        when(turSNSiteRepository.findByIdWithGenAi(any())).thenReturn(Optional.of(existing));
+        when(turSNManifestPlanner.diff(manifest, existing)).thenReturn(cleanDiff());
+        when(turSNFieldProvisioner.ensureField(eq(existing), named("publishedAt"))).thenReturn(true);
+        when(turSNManifestCustomFacetConverger.converge(existing, request.customFacets()))
+                .thenReturn(List.of("postedSince"));
+
+        TurSNManifestProvisionResult result = service.provisionRequest(request);
+
+        assertEquals(List.of("postedSince"), result.customFacetsChanged());
+        assertEquals(List.of("publishedAt"), result.result().fieldsCreated());
+        var order = inOrder(turSNManifestCustomFacetConverger, turSNFieldProvisioner);
+        order.verify(turSNManifestCustomFacetConverger).validate(existing, manifest, request.customFacets());
+        order.verify(turSNFieldProvisioner).ensureField(eq(existing), named("publishedAt"));
+        order.verify(turSNManifestCustomFacetConverger).converge(existing, request.customFacets());
+    }
+
+    @Test
+    void provisionRequestRefusesAnInvalidCustomFacetBeforeTouchingTheSite() {
+        TurSNManifestRequest request = new TurSNManifestRequest("jobs", null, null, null, null,
+                List.of(field("publishedAt")), null, List.of(postedSince()));
+        when(turSNSiteRepository.findByNameIgnoreCase("jobs")).thenReturn(Optional.empty());
+        doThrow(new IllegalArgumentException("bad bucket"))
+                .when(turSNManifestCustomFacetConverger).validate(any(), any(), any());
+
+        assertThrows(IllegalArgumentException.class, () -> service.provisionRequest(request));
+        verify(turSNSiteRepository, never()).save(any());
+        verify(turSNFieldProvisioner, never()).ensureField(any(), any());
+    }
+
+    @Test
+    void planRequestNamesTheCustomFacetsToChange() {
+        TurSNManifestRequest request = new TurSNManifestRequest("jobs", null, "se1", null, null,
+                List.of(field("publishedAt")), null, List.of(postedSince()));
+        VigletFieldManifest manifest = request.toManifest();
+        VigletManifestDiff diff = new VigletManifestDiff(null, false, List.of("publishedAt"), List.of(),
+                List.of(), List.of());
+        when(turSNManifestPlanner.diff(manifest)).thenReturn(diff);
+        when(turSNSiteRepository.findByNameIgnoreCase("jobs")).thenReturn(Optional.empty());
+        when(turSNManifestCustomFacetConverger.plan(null, manifest, request.customFacets()))
+                .thenReturn(List.of("postedSince"));
+
+        TurSNManifestPlan plan = service.planRequest(request);
+
+        assertEquals(diff, plan.diff());
+        assertEquals(List.of("postedSince"), plan.customFacetsToChange());
+        verify(turSNManifestCustomFacetConverger, never()).converge(any(), any());
     }
 }

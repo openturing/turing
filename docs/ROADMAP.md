@@ -8,7 +8,6 @@
 
 ## Block CA — Search response fields arrive as they were indexed
 
-- 📋 **T1084** (deps: —) **Custom facet items, such as relative date buckets, can be set only in the console, not in a site's manifest** — A site provisioned from code cannot count its date ranges, and a bucket edited by hand drifts from the code. → §CXI.9
 - 📋 **T1085** (deps: —) **No SN endpoint returns the filters it extracts from a natural-language request as data a search can use** — A site cannot turn a visitor's description into its own ranked, faceted results page. → §CXI.10
 - 📋 **T1086** (deps: —) **The JS SDK's chat conversation cannot send filters, though the endpoint takes them** — An assistant cannot be scoped to the visitor's current search without bypassing the SDK. → §CXI.11
 - 📋 **T1087** (deps: —) **On a vectorless site chat/enabled says ready while chat/conversation answers that AI is not enabled** — A site turns its assistant on from the readiness check and then shows visitors an error. → §CXI.12

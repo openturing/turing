@@ -26,14 +26,10 @@ import static org.springframework.http.HttpStatus.NOT_FOUND;
 
 import java.math.BigDecimal;
 import java.time.Instant;
-import java.time.LocalDate;
-import java.time.OffsetDateTime;
-import java.time.ZoneOffset;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -51,8 +47,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 
-import com.viglet.turing.lucene.TurLuceneFilterQueries;
-import com.viglet.turing.sn.facet.TurSNCustomFacetFilterQuery;
+import com.viglet.turing.sn.facet.TurSNCustomFacetItems;
 
 import com.viglet.turing.commons.se.field.TurSEFieldType;
 import com.viglet.turing.persistence.model.sn.TurSNSite;
@@ -248,33 +243,13 @@ public class TurSNSiteCustomFacetAPI {
     }
 
     private TurSNSiteCustomFacetItem toEntity(TurSNSiteCustomFacetItemDto dto, TurSEFieldType fieldType) {
-        TurSNSiteCustomFacetItem item = TurSNSiteCustomFacetItem.builder().build();
-        item.setId(dto.getId());
-        item.setLabel(dto.getLabel());
-        item.setLabels(new HashMap<>(Optional.ofNullable(dto.getLabels()).orElse(Map.of())));
-        item.setPosition(safeItemPositionDto(dto));
-        item.setOperator(Optional.ofNullable(dto.getOperator())
-                .orElse(TurSNSiteCustomFacetOperatorEnum.BETWEEN_INCLUSIVE));
-
-        if (TurSEFieldType.DATE.equals(fieldType)) {
-            item.setRangeStart(null);
-            item.setRangeEnd(null);
-            // T1075 - a bound is either a date or relative date math (NOW-7DAYS)
-            item.setRangeStartExpression(dateMathOrNull(dto.getRangeStartDate()));
-            item.setRangeEndExpression(dateMathOrNull(dto.getRangeEndDate()));
-            item.setRangeStartDate(item.getRangeStartExpression() == null
-                    ? parseIsoDate(dto.getRangeStartDate()) : null);
-            item.setRangeEndDate(item.getRangeEndExpression() == null
-                    ? parseIsoDate(dto.getRangeEndDate()) : null);
-        } else {
-            item.setRangeStart(dto.getRangeStart());
-            item.setRangeEnd(dto.getRangeEnd());
-            item.setRangeStartDate(null);
-            item.setRangeEndDate(null);
-            item.setRangeStartExpression(null);
-            item.setRangeEndExpression(null);
+        try {
+            return TurSNCustomFacetItems.toEntity(dto.getId(), dto.getLabel(), dto.getLabels(),
+                    safeItemPositionDto(dto), dto.getOperator(), dto.getRangeStart(), dto.getRangeEnd(),
+                    dto.getRangeStartDate(), dto.getRangeEndDate(), fieldType);
+        } catch (IllegalArgumentException e) {
+            throw new ResponseStatusException(BAD_REQUEST, e.getMessage(), e);
         }
-        return item;
     }
 
     private TurSNSiteCustomFacetDto toDto(TurSNSiteCustomFacet customFacet) {
@@ -318,54 +293,6 @@ public class TurSNSiteCustomFacetAPI {
                 ? fieldExt.getType().toString()
                 : null);
         return dto;
-    }
-
-    /**
-     * T1075 - the bound as relative date math when it is one, validated by the
-     * same parser the Lucene engine reads a filter with; a malformed expression
-     * is refused here rather than at the first search.
-     */
-    private static String dateMathOrNull(String value) {
-        if (!TurSNCustomFacetFilterQuery.isDateMath(value)) {
-            return null;
-        }
-        String expression = value.trim().toUpperCase(Locale.ROOT);
-        if (expression.length() > 64) {
-            throw new ResponseStatusException(BAD_REQUEST, "Relative date is too long: " + value);
-        }
-        try {
-            TurLuceneFilterQueries.parseDate(expression, Instant.now());
-        } catch (java.time.format.DateTimeParseException e) {
-            throw new ResponseStatusException(BAD_REQUEST, "Invalid relative date '" + value
-                    + "': use NOW with steps such as NOW-7DAYS or NOW/DAY", e);
-        }
-        return expression;
-    }
-
-    private Instant parseIsoDate(String value) {
-        if (value == null || value.isBlank()) {
-            return null;
-        }
-
-        try {
-            return Instant.parse(value);
-        } catch (Exception ignored) {
-            // Fallback to ISO_OFFSET_DATE_TIME below.
-        }
-
-        try {
-            return OffsetDateTime.parse(value).toInstant();
-        } catch (Exception ignored) {
-            // Fallback to ISO_LOCAL_DATE below.
-        }
-
-        try {
-            return LocalDate.parse(value).atStartOfDay(ZoneOffset.UTC).toInstant();
-        } catch (Exception ignored) {
-            // Parsed in all accepted ISO formats and failed.
-        }
-
-        throw new ResponseStatusException(BAD_REQUEST, "Invalid ISO date value: " + value);
     }
 
     private String formatIsoDate(Instant value) {

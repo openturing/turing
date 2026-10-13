@@ -32,18 +32,28 @@ import java.util.List;
  * @param fieldsMigrated fields recreated to apply a declared breaking change
  * @param localesCreated locales newly provisioned by this call
  * @param schemaVersion  the manifest's declared version, echoed back
+ * @param customFacetsChanged custom facets created or rewritten by this call
+ *                       (T1084); {@code null} from a server that predates them
  *
  * @author Alexandre Oliveira
  * @since 2026.3.4
  */
 public record TurSNManifestResult(String siteId, String siteName, boolean siteCreated,
         List<String> fieldsCreated, List<String> fieldsSkipped, List<String> fieldsMigrated,
-        List<String> localesCreated, String schemaVersion) {
+        List<String> localesCreated, String schemaVersion, List<String> customFacetsChanged) {
 
-    /** True when nothing changed — the site and every declared field already matched. */
+    /** The constructor this record had before {@link #customFacetsChanged}, kept for existing callers. */
+    public TurSNManifestResult(String siteId, String siteName, boolean siteCreated,
+            List<String> fieldsCreated, List<String> fieldsSkipped, List<String> fieldsMigrated,
+            List<String> localesCreated, String schemaVersion) {
+        this(siteId, siteName, siteCreated, fieldsCreated, fieldsSkipped, fieldsMigrated, localesCreated,
+                schemaVersion, null);
+    }
+
+    /** True when nothing changed — the site, every declared field and custom facet already matched. */
     public boolean isNoOp() {
         return !siteCreated && isEmpty(fieldsCreated) && isEmpty(fieldsMigrated)
-                && isEmpty(localesCreated);
+                && isEmpty(localesCreated) && isEmpty(customFacetsChanged);
     }
 
     private static boolean isEmpty(List<String> values) {

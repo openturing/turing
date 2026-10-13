@@ -35,9 +35,10 @@ import org.springframework.web.bind.annotation.RestController;
 import com.viglet.core.manifest.VigletFieldManifest;
 import com.viglet.core.manifest.VigletManifestDeriveRequest;
 import com.viglet.core.manifest.VigletManifestDeriver;
-import com.viglet.core.manifest.VigletManifestDiff;
-import com.viglet.core.manifest.VigletManifestResult;
 import com.viglet.turing.sn.manifest.TurSNManifestMigrationRequiredException;
+import com.viglet.turing.sn.manifest.TurSNManifestPlan;
+import com.viglet.turing.sn.manifest.TurSNManifestProvisionResult;
+import com.viglet.turing.sn.manifest.TurSNManifestRequest;
 import com.viglet.turing.sn.manifest.TurSNSiteManifestService;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -66,6 +67,11 @@ import lombok.extern.slf4j.Slf4j;
  * reviewed draft is then POSTed back to {@code /api/sn/manifest}. The draft is
  * never auto-provisioned.</p>
  *
+ * <p>Custom facets (T1084): provisioning and the plan also take
+ * {@code customFacets}, named buckets over a field (relative date ranges among
+ * them), converged by field and name and reported as {@code customFacetsChanged}
+ * / {@code customFacetsToChange}.</p>
+ *
  * @author Alexandre Oliveira
  * @since 2026.3.4
  */
@@ -87,9 +93,9 @@ public class TurSNSiteManifestAPI {
     @Operation(summary = "Provision (create or converge) an SN site and its field schema from a manifest")
     @PostMapping
     @Secured({"ROLE_ADMIN", "SN_CREATE"})
-    public ResponseEntity<Object> provision(@RequestBody VigletFieldManifest manifest) {
+    public ResponseEntity<Object> provision(@RequestBody TurSNManifestRequest manifest) {
         try {
-            VigletManifestResult result = manifestService.provision(manifest);
+            TurSNManifestProvisionResult result = manifestService.provisionRequest(manifest);
             return ResponseEntity.ok(result);
         } catch (TurSNManifestMigrationRequiredException e) {
             return ResponseEntity.status(HttpStatus.CONFLICT)
@@ -103,9 +109,9 @@ public class TurSNSiteManifestAPI {
     @Operation(summary = "Compute the diff a manifest would apply against the live site (dry-run, no mutation)")
     @PostMapping("/plan")
     @Secured({"ROLE_ADMIN", "SN_CREATE"})
-    public ResponseEntity<Object> plan(@RequestBody VigletFieldManifest manifest) {
+    public ResponseEntity<Object> plan(@RequestBody TurSNManifestRequest manifest) {
         try {
-            VigletManifestDiff diff = manifestService.plan(manifest);
+            TurSNManifestPlan diff = manifestService.planRequest(manifest);
             return ResponseEntity.ok(diff);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)

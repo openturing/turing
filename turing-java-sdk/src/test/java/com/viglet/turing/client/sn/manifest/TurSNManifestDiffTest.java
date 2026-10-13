@@ -90,6 +90,30 @@ class TurSNManifestDiffTest {
     }
 
     @Test
+    @DisplayName("T1084 - a custom facet created or left to change is not a no-op")
+    void customFacetChangesAreNotANoOp() {
+        assertThat(new TurSNManifestResult("s1", "Catalog", false, List.of(), List.of("sku"), List.of(),
+                List.of(), "3", List.of("postedSince")).isNoOp()).isFalse();
+        assertThat(new TurSNManifestResult("s1", "Catalog", false, List.of(), List.of("sku"), List.of(),
+                List.of(), "3", List.of()).isNoOp()).isTrue();
+        assertThat(new TurSNManifestDiff("3", true, List.of(), List.of(), List.of("sku"), List.of(),
+                List.of("postedSince")).isNoOp()).isFalse();
+    }
+
+    @Test
+    @DisplayName("T1084 - the builder sends declared custom facets, and none as none")
+    void builderCarriesCustomFacets() {
+        TurSNManifestCustomFacet facet = TurSNManifestCustomFacet.of("publishedAt", "postedSince", "Posted",
+                List.of(TurSNManifestCustomFacetItem.since("Last 7 days", "NOW-7DAYS")));
+
+        assertThat(TurSNManifest.builder().name("jobs").customFacet(facet).customFacet(null).build()
+                .customFacets()).containsExactly(facet);
+        assertThat(TurSNManifest.builder().name("jobs").build().customFacets()).isNull();
+        assertThat(facet.items().get(0).rangeStartDate()).isEqualTo("NOW-7DAYS");
+        assertThat(facet.items().get(0).rangeEndDate()).isNull();
+    }
+
+    @Test
     @DisplayName("A field change reads as its before/after, and says whether it is authorised")
     void fieldChangeIsReadable() {
         assertThat(change("price", false)).hasToString("price.type: STRING -> INT (UNDECLARED)");

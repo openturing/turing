@@ -30,13 +30,23 @@ import java.util.List;
  * @param breakingChanges type/cardinality changes on fields that already exist
  * @param fieldsUnchanged fields that already match the manifest
  * @param localesToAdd    locales the manifest declares that the site lacks
+ * @param customFacetsToChange custom facets provisioning would create or
+ *                        rewrite (T1084); {@code null} from a server that
+ *                        predates them
  *
  * @author Alexandre Oliveira
  * @since 2026.3.4
  */
 public record TurSNManifestDiff(String schemaVersion, boolean siteExists, List<String> fieldsToAdd,
         List<TurSNManifestFieldChange> breakingChanges, List<String> fieldsUnchanged,
-        List<String> localesToAdd) {
+        List<String> localesToAdd, List<String> customFacetsToChange) {
+
+    /** The constructor this record had before {@link #customFacetsToChange}, kept for existing callers. */
+    public TurSNManifestDiff(String schemaVersion, boolean siteExists, List<String> fieldsToAdd,
+            List<TurSNManifestFieldChange> breakingChanges, List<String> fieldsUnchanged,
+            List<String> localesToAdd) {
+        this(schemaVersion, siteExists, fieldsToAdd, breakingChanges, fieldsUnchanged, localesToAdd, null);
+    }
 
     /** Whether any breaking change exists, declared or not. */
     public boolean hasBreakingChanges() {
@@ -56,7 +66,7 @@ public record TurSNManifestDiff(String schemaVersion, boolean siteExists, List<S
     /** True when applying this manifest would change nothing. */
     public boolean isNoOp() {
         return siteExists && isEmpty(fieldsToAdd) && isEmpty(localesToAdd)
-                && !hasBreakingChanges();
+                && isEmpty(customFacetsToChange) && !hasBreakingChanges();
     }
 
     private static boolean isEmpty(List<String> values) {
