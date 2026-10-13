@@ -6,6 +6,10 @@
 > [STRATEGY.md](STRATEGY.md); the markers and limits are `roadkeep.toml`'s. Blocks are
 > reused, not minted — `roadkeep brief` picks the next task and states why.
 
+## Block CB — LLM gateway parity with the OpenAI wire
+
+- 📋 **T1090** (deps: —) **The gateway's /v1/chat/completions drops response_format silently, so JSON mode answers come back wrapped in code fences** — OpenAI clients that rely on JSON mode get unparseable prose and no error saying the field was ignored. → §CXIII.1
+
 ## Non-goals (do NOT add as tasks)
 
 Binding constraints — see [IMPROVEMENTS.md](IMPROVEMENTS.md) §I.6 (What NOT to

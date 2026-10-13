@@ -1449,3 +1449,6 @@
 - **T1087** — Both chat endpoints read one route decision, so a vectorless site that chat/enabled reports ready is answered by the catalog copilot (design §CXI.12 recorded in `turing-app/src/main/java/com/viglet/turing/genai/TurSNChatRouteResolver.java`).
 - **T1088** — The startup RAG bootstrap converges each piece the default agent lacks, adopting the seed's Lucene store and creating the missing embedding model, so chat comes on (design §CXI.13 recorded in `turing-app/src/main/java/com/viglet/turing/onstartup/llm/TurDefaultRagInfraOnStartup.java`).
 - **T1089** — With RAG on, an import whose documents have null fields embeds without them, once per batch, and an embedding failure never stops the search indexing (design §CXI.14 recorded in `turing-app/src/main/java/com/viglet/turing/genai/TurSNGenAi.java`).
+
+## Block CB — LLM gateway parity with the OpenAI wire
+
