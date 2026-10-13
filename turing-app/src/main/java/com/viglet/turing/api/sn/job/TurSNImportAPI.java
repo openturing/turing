@@ -195,22 +195,41 @@ public class TurSNImportAPI {
                 turJmsTenantPropagation.headers());
     }
 
+    /**
+     * Embeds the batch when any of its documents goes to a RAG-enabled site.
+     *
+     * <p>T1089 — once per batch, not once per document and site (each call embeds
+     * the whole batch, so a batch of 50 was embedded 50 times), and never the
+     * reason a batch fails: an embedding error is logged and the batch still goes
+     * to the indexing queue, so search keeps working while RAG does not.
+     */
     private void sendToGenAi(TurSNJobItems turSNJobItems) {
-        turSNJobItems.forEach(turJobItem -> {
-            if (isValidJobItem(turJobItem)) {
-                Object objectId = turJobItem.getAttributes().get(TurSNFieldName.ID);
-                turJobItem.getSiteNames().forEach(siteName -> {
-                    if (turSNSiteRepositoryPort.hasRagEnabledForSiteName(siteName)) {
-                        log.debug("RAG enabled for Object ID '{}' of SN Site '{}': routing to vector store",
-                                objectId, siteName);
-                        turGenAi.addDocuments(turSNJobItems);
-                    } else {
-                        log.debug("RAG skipped for Object ID '{}' of SN Site '{}': site missing or agent not configured",
-                                objectId, siteName);
-                    }
-                });
+        boolean anyRagSite = false;
+        for (TurSNJobItem turJobItem : turSNJobItems) {
+            if (!isValidJobItem(turJobItem)) {
+                continue;
             }
-        });
+            Object objectId = turJobItem.getAttributes().get(TurSNFieldName.ID);
+            for (String siteName : turJobItem.getSiteNames()) {
+                if (turSNSiteRepositoryPort.hasRagEnabledForSiteName(siteName)) {
+                    log.debug("RAG enabled for Object ID '{}' of SN Site '{}': routing to vector store",
+                            objectId, siteName);
+                    anyRagSite = true;
+                } else {
+                    log.debug("RAG skipped for Object ID '{}' of SN Site '{}': site missing or agent not configured",
+                            objectId, siteName);
+                }
+            }
+        }
+        if (!anyRagSite) {
+            return;
+        }
+        try {
+            turGenAi.addDocuments(turSNJobItems);
+        } catch (RuntimeException e) {
+            log.error("RAG embedding of the batch failed; its documents are still indexed for search: {}",
+                    e.getMessage(), e);
+        }
     }
 
     private void sentQueueInfo(TurSNJobItems turSNJobItems) {

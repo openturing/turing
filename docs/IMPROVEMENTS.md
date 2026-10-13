@@ -2134,27 +2134,4 @@ silently. Found while building trabalharei's local Turing and import proof.
 
 ## CXI Search response fields arrive as they were indexed
 
-### CXI.14 Null fields break RAG imports (T1089)
-
-Met in trabalharei (TRA40). With RAG on for an SN site, every `POST /api/sn/import` from
-Dumont's jobs connector answers `400 metadata cannot have null values` and nothing of
-the batch is indexed. The same batch imports fine with RAG off.
-
-`TurSNImportAPI` embeds before indexing (`sendToGenAi` → `TurSNGenAi.addDocuments`).
-`TurSNGenAi.buildMetadata` copies `modificationDate`, `publication_date`, `url` and
-every simple field with `containsKey` / `putIfAbsent`, so a key present with a null
-value (a job with no salary) reaches Spring AI's `Document`, whose constructor refuses
-null metadata. One optional field left empty fails the whole import, search included.
-
-Fix both halves at their one seam, so no future field or connector reopens it:
-`buildMetadata` (the single builder both chunking paths call) drops null and empty
-values, so every caller is covered by construction rather than per field; and indexing
-for search no longer depends on embedding: the embedding step runs after, or isolated
-from, the search index write, with a failure logged per document and counted, never
-turned into the batch's status. A test imports a document with null fields with RAG on
-and asserts it is searchable and embedded without the null keys.
-
-Workaround in trabalharei: none; RAG stays off on the job site until this ships, which
-is what TRA40's production rollout waits on.
-
 ## CXII SDK & frontend surface

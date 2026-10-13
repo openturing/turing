@@ -148,6 +148,54 @@ class TurSNImportAPITest {
         verify(jmsMessagingTemplate, times(1)).convertAndSend(anyString(), any(TurSNJobItems.class), anyMap());
     }
 
+    private static TurSNJobItems batchOf(int size) {
+        TurSNJobItems jobItems = new TurSNJobItems();
+        for (int i = 0; i < size; i++) {
+            TurSNJobItem item = new TurSNJobItem();
+            item.setTurSNJobAction(TurSNJobAction.CREATE);
+            item.setSiteNames(Collections.singletonList("site1"));
+            item.setLocale(java.util.Locale.US);
+            Map<String, Object> attributes = new HashMap<>();
+            attributes.put(TurSNFieldName.ID, String.valueOf(i));
+            item.setAttributes(attributes);
+            jobItems.add(item);
+        }
+        return jobItems;
+    }
+
+    @Test
+    void ragBatchIsEmbeddedOnceNotOncePerDocument() throws Exception {
+        // T1089 — each addDocuments call embeds the whole batch, so calling it per
+        // document embedded a batch of three three times.
+        when(turSNSiteRepositoryPort.hasRagEnabledForSiteName("site1")).thenReturn(true);
+        when(turSNSiteRepositoryPort.findByNameIgnoreCase("site1")).thenReturn(Optional.of(siteDomain("site1")));
+
+        mockMvc.perform(post("/api/sn/import")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(batchOf(3))))
+                .andExpect(status().isOk())
+                .andExpect(content().string("true"));
+
+        verify(turGenAi, times(1)).addDocuments(any(TurSNJobItems.class));
+    }
+
+    @Test
+    void anEmbeddingFailureStillIndexesTheBatchForSearch() throws Exception {
+        // T1089 — embedding is a side path: its failure must not stop the queue send.
+        when(turSNSiteRepositoryPort.hasRagEnabledForSiteName("site1")).thenReturn(true);
+        when(turSNSiteRepositoryPort.findByNameIgnoreCase("site1")).thenReturn(Optional.of(siteDomain("site1")));
+        when(turGenAi.addDocuments(any(TurSNJobItems.class)))
+                .thenThrow(new IllegalArgumentException("metadata cannot have null values"));
+
+        mockMvc.perform(post("/api/sn/import")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(batchOf(2))))
+                .andExpect(status().isOk())
+                .andExpect(content().string("true"));
+
+        verify(jmsMessagingTemplate, times(1)).convertAndSend(anyString(), any(TurSNJobItems.class), anyMap());
+    }
+
     @Test
     void testTurSNImportBroker_SiteNotFound() throws Exception {
         TurSNJobItems jobItems = new TurSNJobItems();

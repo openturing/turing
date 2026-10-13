@@ -828,6 +828,38 @@ class TurSNGenAiTest {
         verifyNoInteractions(facetExtractor);
     }
 
+    // ---- T1089: a null field never fails an import ----
+
+    @Test
+    void metadataWithoutBlanksDropsNullAndEmptyValues() {
+        Map<String, Object> metadata = new java.util.LinkedHashMap<>();
+        metadata.put("source_id", "job-1");
+        metadata.put("salary", null);
+        metadata.put("company", " ");
+        metadata.put("tags", List.of());
+        metadata.put("city", "São Paulo");
+        metadata.put("remote", Boolean.FALSE);
+
+        assertEquals(Map.of("source_id", "job-1", "city", "São Paulo", "remote", Boolean.FALSE),
+                TurSNGenAi.metadataWithoutBlanks(metadata));
+    }
+
+    @Test
+    void oneDocumentsEmbeddingFailureDoesNotStopTheOthers() {
+        com.viglet.turing.client.sn.job.TurSNJobItems jobItems = new com.viglet.turing.client.sn.job.TurSNJobItems();
+        for (String site : List.of("broken", "other")) {
+            com.viglet.turing.client.sn.job.TurSNJobItem item = new com.viglet.turing.client.sn.job.TurSNJobItem();
+            item.setSiteNames(List.of(site));
+            item.setAttributes(new java.util.HashMap<>(Map.of("id", site)));
+            jobItems.add(item);
+        }
+        when(turSNSearchProcess.getSNSite("broken")).thenThrow(new IllegalStateException("store down"));
+        when(turSNSearchProcess.getSNSite("other")).thenReturn(java.util.Optional.empty());
+
+        assertEquals(1, turSNGenAi.addDocuments(jobItems));
+        verify(turSNSearchProcess).getSNSite("other");
+    }
+
     // ---- T1085: list-style questions read their filters from the shared NL extractor ----
 
     private static final com.viglet.turing.sn.nl.TurSNNLFilters SAO_PAULO = new com.viglet.turing.sn.nl.TurSNNLFilters(

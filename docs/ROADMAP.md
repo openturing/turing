@@ -8,8 +8,6 @@
 
 ## Block CA — Search response fields arrive as they were indexed
 
-- 📋 **T1089** (deps: —) **With RAG on, an import whose document has a null field is refused whole: metadata cannot have null values** — Turning on chat for a site stops its connector's imports, search included. → §CXI.14
-
 ## Non-goals (do NOT add as tasks)
 
 Binding constraints — see [IMPROVEMENTS.md](IMPROVEMENTS.md) §I.6 (What NOT to

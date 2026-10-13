@@ -1292,10 +1292,35 @@ public class TurSNGenAi {
         return siteLocale != null ? siteLocale.getCore() : null;
     }
 
-    public void addDocuments(TurSNJobItems turSNJobItems) {
+    /**
+     * Embeds every document of the batch into its sites' vector stores. T1089 —
+     * one document's failure is logged and counted, and the others still embed:
+     * embedding is a side path of an import, never the reason a batch fails.
+     *
+     * @return how many document/site embeddings failed
+     */
+    public int addDocuments(TurSNJobItems turSNJobItems) {
         log.debug("RAG addDocuments called with {} document(s)", turSNJobItems.getTuringDocuments().size());
+        int[] failed = {0};
         turSNJobItems.getTuringDocuments().forEach(jobItem -> jobItem.getSiteNames()
-                .forEach(siteName -> turSNSearchProcess.getSNSite(siteName).ifPresentOrElse(turSNSite -> {
+                .forEach(siteName -> {
+                    try {
+                        addJobItem(jobItem, siteName);
+                    } catch (RuntimeException e) {
+                        failed[0]++;
+                        log.warn("RAG embedding failed for Object ID '{}' of SN Site '{}', which is still indexed "
+                                + "for search: {}", jobItem.getId(), siteName, e.getMessage());
+                    }
+                }));
+        if (failed[0] > 0) {
+            log.warn("RAG embedding failed for {} of {} document(s) in the batch.", failed[0],
+                    turSNJobItems.getTuringDocuments().size());
+        }
+        return failed[0];
+    }
+
+    private void addJobItem(TurSNJobItem jobItem, String siteName) {
+        turSNSearchProcess.getSNSite(siteName).ifPresentOrElse(turSNSite -> {
                     if (turSNSite.getTurSNSiteGenAi() == null) {
                         log.debug("RAG skipped for Object ID '{}' of SN Site '{}': no GenAI binding",
                                 jobItem.getId(), siteName);
@@ -1318,10 +1343,31 @@ public class TurSNGenAi {
                     }
                     addDocument(context, fields.header(), fields.body(), buildMetadataFromJob(jobItem, fields));
                 }, () -> log.warn("RAG skipped for Object ID '{}': SN Site '{}' not resolved by search process",
-                        jobItem.getId(), siteName))));
+                        jobItem.getId(), siteName));
     }
 
-    private void addDocument(TurGenAiContext context, String header, String body, Map<String, Object> metadata) {
+    /**
+     * T1089 — the chunk metadata without null or empty values. Spring AI's
+     * {@code Document} refuses a null metadata value, so one optional field left
+     * empty (a job with no salary) used to fail the whole import. Every metadata
+     * builder reaches the store through {@link #addDocument}, which applies this,
+     * so no future field or connector can reopen it.
+     */
+    static Map<String, Object> metadataWithoutBlanks(Map<String, Object> metadata) {
+        Map<String, Object> kept = new LinkedHashMap<>();
+        metadata.forEach((key, value) -> {
+            boolean blank = value == null
+                    || (value instanceof CharSequence text && text.toString().isBlank())
+                    || (value instanceof java.util.Collection<?> values && values.isEmpty());
+            if (!blank) {
+                kept.put(key, value);
+            }
+        });
+        return kept;
+    }
+
+    private void addDocument(TurGenAiContext context, String header, String body, Map<String, Object> rawMetadata) {
+        Map<String, Object> metadata = metadataWithoutBlanks(rawMetadata);
         Object sourceId = metadata.get(SOURCE_ID);
         String idPrefix = sourceId == null ? null : sourceId.toString();
         List<Document> documents = TurRagUtils.createDocumentsWithHeader(header, body, metadata, idPrefix);
