@@ -7,8 +7,6 @@
 
 ---
 
-## Block CA — Search response fields arrive as they were indexed
-
 ## VIII. Strategic moves — repositioning beyond features
 
 > The Education customer engagement proved the product. This section is

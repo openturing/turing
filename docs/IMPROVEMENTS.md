@@ -21,8 +21,6 @@
 **Cross-references** use absolute paths from the repo root; linked code may have
 moved — verify against `git ls-files` before acting.
 
-## Block CA — Search response fields arrive as they were indexed
-
 ## Table of contents
 
 - [I. Chat-flow execution harness — binding constraints](#i-chat-flow-execution-harness--binding-constraints)
@@ -2131,7 +2129,5 @@ What a connector (Dumont, an SDK script, CI) needs from Turing's indexing and ad
 to work without a browser: a key that authenticates on its own, a scripted login that
 works, and an import endpoint that refuses a body it cannot read instead of accepting it
 silently. Found while building trabalharei's local Turing and import proof.
-
-## CXI Search response fields arrive as they were indexed
 
 ## CXII SDK & frontend surface
