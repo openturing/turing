@@ -34,9 +34,9 @@ export const routes: PrerenderRoute[] = [
   },
   {
     path: "/compare/",
-    title: "Turing vs Algolia, Elasticsearch & DIY RAG | Viglet Turing ES",
+    title: "Turing vs Algolia, Coveo, Elasticsearch & DIY RAG | Viglet Turing ES",
     description:
-      "An honest comparison of Viglet Turing ES against Algolia, Elasticsearch and a DIY LangChain RAG stack: a deep capability matrix, where each alternative wins, and an objection-answering FAQ. Self-hosted, open source, any LLM.",
+      "An honest comparison of Viglet Turing ES against Algolia, Coveo, Elasticsearch and a DIY LangChain RAG stack: a deep capability matrix, where each alternative wins, and an objection-answering FAQ. Self-hosted, open source, any LLM.",
   },
   {
     path: "/aem-search/",

@@ -98,3 +98,9 @@ jobs:
           # github-pages branch; without a CNAME in the published root, GitHub
           # Pages drops the custom domain and it has to be re-added by hand.
           cname: turing.viglet.org
+
+      # Ping IndexNow (Bing -> ChatGPT search, Copilot, DuckDuckGo) with every
+      # sitemap URL. Waits for Pages to serve the key file; never fails the job.
+      - name: Notify IndexNow
+        continue-on-error: true
+        run: node frontend/apps/site/scripts/indexnow.mjs https://turing.viglet.org 0216f1cfab96c7e0be9434d12adbcc16

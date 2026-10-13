@@ -53,7 +53,7 @@ function FaqJsonLd() {
 /**
  * Deep comparison / FAQ page (§XXVII.3, T482).
  *
- * Answers the objections a team evaluating Turing against Algolia,
+ * Answers the objections a team evaluating Turing against Algolia, Coveo,
  * Elasticsearch or a DIY LangChain stack will raise — a fair capability
  * matrix, honest "where they win / where Turing fits" cards, and an
  * objection-answering FAQ (with FAQPage JSON-LD). Mirrors the MigratePage
@@ -80,7 +80,7 @@ export function ComparePage() {
               How Turing compares
             </p>
             <h1 className="mt-3 max-w-3xl text-3xl font-extrabold leading-[1.1] tracking-tight sm:text-4xl lg:text-5xl">
-              Turing vs Algolia, Elasticsearch & DIY RAG
+              Turing vs Algolia, Coveo, Elasticsearch & DIY RAG
             </h1>
             <p className="mt-5 max-w-2xl text-lg leading-relaxed text-[#aeb7d4]">
               An honest look at where each alternative wins — and where a
@@ -121,7 +121,7 @@ export function ComparePage() {
               </p>
             </div>
             <TableScroll>
-              <table className="w-full min-w-[760px] border-collapse text-sm">
+              <table className="w-full min-w-[880px] border-collapse text-sm">
                 <thead>
                   <tr>
                     <th className="sticky left-0 z-10 w-[150px] bg-background p-3 text-left font-semibold sm:w-2/5"></th>
@@ -130,6 +130,9 @@ export function ComparePage() {
                     </th>
                     <th className="p-3 text-center font-semibold text-muted-foreground">
                       {COMPARE_COLUMNS.algolia}
+                    </th>
+                    <th className="p-3 text-center font-semibold text-muted-foreground">
+                      {COMPARE_COLUMNS.coveo}
                     </th>
                     <th className="p-3 text-center font-semibold text-muted-foreground">
                       {COMPARE_COLUMNS.elastic}
@@ -155,6 +158,9 @@ export function ComparePage() {
                       </td>
                       <td className="p-3 text-center">
                         <Cell value={row.algolia} />
+                      </td>
+                      <td className="p-3 text-center">
+                        <Cell value={row.coveo} />
                       </td>
                       <td className="p-3 text-center">
                         <Cell value={row.elastic} />
@@ -187,7 +193,7 @@ export function ComparePage() {
                 which trade-offs match your team.
               </p>
             </div>
-            <div className="grid gap-5 md:grid-cols-3">
+            <div className="grid gap-5 md:grid-cols-2">
               {COMPARE_VENDORS.map((v) => (
                 <Card key={v.name} className="h-full gap-0 p-6">
                   <h3 className="text-lg font-extrabold">{v.name}</h3>

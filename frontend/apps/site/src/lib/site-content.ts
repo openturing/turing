@@ -879,7 +879,8 @@ export const MIGRATION_CLI_FEATURES: MigrationCliFeature[] = [
 
 /* -------------------------------------------------------------------------- */
 /* Comparison / FAQ page (/compare) — §XXVII.3 / T482.                        */
-/* Deep, honest comparison vs Algolia, Elasticsearch and a DIY RAG stack      */
+/* Deep, honest comparison vs Algolia, Coveo, Elasticsearch and a DIY RAG     */
+/* stack                                                                      */
 /* (LangChain + vector DB), plus an objection-answering FAQ. The Deep Agents  */
 /* / AG-UI pattern: name the objection before the reader does, answer it      */
 /* fairly, and say where each alternative genuinely wins.                     */
@@ -891,6 +892,7 @@ export interface CompareRow {
   /** "yes" | "partial" | "no" | freeform short text (per Cell in comparison.tsx). */
   turing: string;
   algolia: string;
+  coveo: string;
   elastic: string;
   /** DIY = LangChain / LlamaIndex + a vector database, assembled yourself. */
   diy: string;
@@ -899,6 +901,7 @@ export interface CompareRow {
 export const COMPARE_COLUMNS = {
   turing: "Viglet Turing ES",
   algolia: "Algolia",
+  coveo: "Coveo",
   elastic: "Elasticsearch",
   diy: "DIY (LangChain + vector DB)",
 } as const;
@@ -909,21 +912,22 @@ export const COMPARE_COLUMNS = {
  * Verify current vendor capabilities — high-level, as of 2026.
  */
 export const COMPARE_MATRIX: CompareRow[] = [
-  { capability: "Open source (Apache 2.0)", turing: "yes", algolia: "no", elastic: "partial", diy: "partial" },
-  { capability: "Self-host — data stays in your infra", turing: "yes", algolia: "no", elastic: "yes", diy: "yes" },
-  { capability: "Faceted, typo-tolerant search", turing: "yes", algolia: "yes", elastic: "yes", diy: "build it" },
-  { capability: "Multilingual analyzers in the box", turing: "yes", algolia: "yes", elastic: "yes", diy: "build it" },
-  { capability: "Vector / semantic search", turing: "yes", algolia: "paid add-on", elastic: "yes", diy: "yes" },
-  { capability: "Hybrid keyword + vector (RRF)", turing: "yes", algolia: "partial", elastic: "yes", diy: "build it" },
-  { capability: "RAG with cited answers", turing: "yes", algolia: "hosted beta", elastic: "build it", diy: "build it" },
-  { capability: "Pluggable reranker (LLM / cross-encoder / Cohere)", turing: "yes", algolia: "no", elastic: "partial", diy: "build it" },
-  { capability: "AI agents, tools & skills built in", turing: "yes", algolia: "no", elastic: "no", diy: "you wire it" },
-  { capability: "MCP server & client", turing: "yes", algolia: "no", elastic: "no", diy: "build it" },
-  { capability: "Native provider tools (web search, code, computer use)", turing: "yes", algolia: "no", elastic: "no", diy: "build it" },
-  { capability: "Bring your own LLM", turing: "yes", algolia: "no", elastic: "partial", diy: "yes" },
-  { capability: "Bring your own search engine", turing: "yes", algolia: "no", elastic: "n/a", diy: "partial" },
-  { capability: "Pricing model", turing: "free / self-host", algolia: "per-record + per-search", elastic: "infra / Elastic Cloud", diy: "infra + build time" },
-  { capability: "Time to first result", turing: "minutes", algolia: "minutes", elastic: "days", diy: "weeks" },
+  { capability: "Open source (Apache 2.0)", turing: "yes", algolia: "no", coveo: "no", elastic: "partial", diy: "partial" },
+  { capability: "Self-host — data stays in your infra", turing: "yes", algolia: "no", coveo: "no", elastic: "yes", diy: "yes" },
+  { capability: "Faceted, typo-tolerant search", turing: "yes", algolia: "yes", coveo: "yes", elastic: "yes", diy: "build it" },
+  { capability: "Multilingual analyzers in the box", turing: "yes", algolia: "yes", coveo: "yes", elastic: "yes", diy: "build it" },
+  { capability: "Vector / semantic search", turing: "yes", algolia: "paid add-on", coveo: "yes", elastic: "yes", diy: "yes" },
+  { capability: "Hybrid keyword + vector (RRF)", turing: "yes", algolia: "partial", coveo: "yes", elastic: "yes", diy: "build it" },
+  { capability: "RAG with cited answers", turing: "yes", algolia: "hosted beta", coveo: "yes", elastic: "build it", diy: "build it" },
+  { capability: "Pluggable reranker (LLM / cross-encoder / Cohere)", turing: "yes", algolia: "no", coveo: "built-in ML", elastic: "partial", diy: "build it" },
+  { capability: "AI agents, tools & skills built in", turing: "yes", algolia: "no", coveo: "partial", elastic: "no", diy: "you wire it" },
+  { capability: "MCP server & client", turing: "yes", algolia: "no", coveo: "partial", elastic: "no", diy: "build it" },
+  { capability: "Native provider tools (web search, code, computer use)", turing: "yes", algolia: "no", coveo: "no", elastic: "no", diy: "build it" },
+  { capability: "Bring your own LLM", turing: "yes", algolia: "no", coveo: "partial", elastic: "partial", diy: "yes" },
+  { capability: "Bring your own search engine", turing: "yes", algolia: "no", coveo: "no", elastic: "n/a", diy: "partial" },
+  { capability: "Pre-built enterprise connectors", turing: "yes", algolia: "partial", coveo: "yes", elastic: "yes", diy: "build it" },
+  { capability: "Pricing model", turing: "free / self-host", algolia: "per-record + per-search", coveo: "enterprise subscription", elastic: "infra / Elastic Cloud", diy: "infra + build time" },
+  { capability: "Time to first result", turing: "minutes", algolia: "minutes", coveo: "days", elastic: "days", diy: "weeks" },
 ];
 
 export interface CompareVendor {
@@ -948,6 +952,14 @@ export const COMPARE_VENDORS: CompareVendor[] = [
       "Algolia is hard to beat for a purely hosted, low-ops keyword search with best-in-class InstantSearch widgets — if sending your index to a vendor's cloud and per-record/per-search pricing are acceptable.",
     turingFit:
       "Switch when data residency, per-record cost at scale, or wanting RAG, cited chat and agents in the same platform matter. Turing runs faceted, typo-tolerant search plus AI on your own infrastructure, under Apache 2.0.",
+  },
+  {
+    name: "vs Coveo",
+    tagline: "An enterprise AI-search SaaS built for commerce, service and workplace.",
+    shines:
+      "Coveo is strong where a large organisation wants managed relevance: machine-learning ranking tuned on its own traffic, generative answers with citations, and a long list of ready connectors into Salesforce, ServiceNow, SharePoint and the big commerce platforms — sold and supported as an enterprise subscription.",
+    turingFit:
+      "Switch when the content must stay in your own infrastructure, when you want to pick the LLM and the search engine yourself, or when an enterprise contract is out of proportion to the project. Turing gives you cited RAG, agents and faceted search, self-hosted under Apache 2.0.",
   },
   {
     name: "vs Elasticsearch",

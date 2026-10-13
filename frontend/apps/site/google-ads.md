@@ -99,7 +99,7 @@ Sitelinks extras (páginas reais, para rotação/A-B):
 | RAG Chat | `turing.viglet.org/features/ask` |
 | How It Plugs In | `turing.viglet.org/aem-search/#how` |
 
-> **Atenção:** `/compare` compara Turing vs **Algolia, Elasticsearch & DIY RAG**
+> **Atenção:** `/compare` compara Turing vs **Algolia, Coveo, Elasticsearch & DIY RAG**
 > — *não* AEM-native search. A comparação contra o AEM-native AI add-on está na
 > própria página `/aem-search` (âncora `#matrix`). Os textos acima já refletem
 > isso.
