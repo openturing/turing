@@ -2217,4 +2217,23 @@ with RAG on, and reindexes, logging what it did or why it skipped.
 Workaround in trabalharei: `scripts/turing-dev-setup.mjs` creates the embedding model
 and wires the agent through the admin API when the site reports `MISSING_EMBEDDING`.
 
+### CXI.14 Null fields break RAG imports (T1089)
+
+Met in trabalharei (TRA40). With RAG on for an SN site (its own GenAI agent with an
+embedding model and a store), every `POST /api/sn/import` from Dumont's jobs connector
+answers `400 metadata cannot have null values` and nothing of the batch is indexed;
+Dumont logs "Failed imported the Job into Turing. Status code: 400". The same batch
+imports fine with RAG off.
+
+`TurSNImportAPI` embeds before indexing (`sendToGenAi` → `TurSNGenAi.addDocuments`), and
+`buildMetadata` copies `modificationDate`, `publication_date`, `url` and every simple
+field with `containsKey` / `putIfAbsent`, so a key present with a null value (a job with
+no salary, no company) reaches Spring AI's `Document`, whose constructor refuses null
+metadata values. One optional field left empty fails the whole import, search included.
+
+Expected: null (and empty) values are left out of the chunk metadata, and an embedding
+failure never fails the search indexing of the batch: it is logged per document and the
+documents are still indexed for search. Workaround in trabalharei: none; RAG stays off
+on the job site until this ships, which is what TRA40's production rollout waits on.
+
 ## CXII SDK & frontend surface
