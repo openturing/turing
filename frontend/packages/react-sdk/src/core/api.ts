@@ -80,6 +80,9 @@ export type {
   TurSimilarMode,
   TurSimilarResult,
   FetchSimilarParams,
+  TurNLFilter,
+  TurNLDroppedFilter,
+  TurNLFilters,
   TurChatSlotUploadResponse,
   PostSlotUploadOptions,
   SlotExtractOptions,
@@ -114,6 +117,7 @@ import type {
   TurContentFit,
   FetchSimilarParams,
   TurSimilarResult,
+  TurNLFilters,
   TurChatSlotUploadResponse,
   PostSlotUploadOptions,
   SlotExtractOptions,
@@ -1594,6 +1598,28 @@ export function fetchStoredDocuments(
   for (const id of ids) qs.append("id", id);
   if (locale) qs.append("locale", locale);
   return get<Record<string, unknown>[]>(`/sn/${site}/search/document?${qs}`);
+}
+
+/**
+ * T1085 — turns a visitor's description into the `q` and `fq` of the site's own
+ * search, each value checked against the values the site holds. Pass the result
+ * to a search to show the ranked, faceted page for it.
+ *
+ * Server endpoint: {@code POST /api/sn/{site}/nl-filters}.
+ *
+ * @since 2026.3.4
+ */
+export async function postNlFilters(
+  site: string,
+  text: string,
+  locale?: string,
+): Promise<TurNLFilters> {
+  const path = `/sn/${site}/nl-filters`;
+  const { data } = await axios.post<TurNLFilters>(path, { text, locale });
+  if (!data) {
+    throw emptyBody(`${axios.defaults.baseURL ?? ""}${path}`, "NL filters response");
+  }
+  return data;
 }
 
 /**

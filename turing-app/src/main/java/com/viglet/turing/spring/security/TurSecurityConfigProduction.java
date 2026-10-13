@@ -174,6 +174,9 @@ public class TurSecurityConfigProduction {
                         // TurSNSiteApiKeyGateFilter.
                         "/api/sn/*/copilot",
                         "/api/sn/*/copilot/**",
+                        // T1085 — a visitor's description parsed into the q + fq of
+                        // the site's own search (LLM-cost surface, gated like chat).
+                        "/api/sn/*/nl-filters",
                         // T634 — anonymous persona content-fit (LLM-cost surface;
                         // nginx-rate-limited on the demo host).
                         "/api/sn/*/persona/*/content-fit",
@@ -229,6 +232,7 @@ public class TurSecurityConfigProduction {
                         "/api/sn/*/answer/signal",
                         "/api/sn/*/copilot",
                         "/api/sn/*/copilot/**",
+                        "/api/sn/*/nl-filters",
                         "/api/sn/*/persona/*/content-fit"
         );
 

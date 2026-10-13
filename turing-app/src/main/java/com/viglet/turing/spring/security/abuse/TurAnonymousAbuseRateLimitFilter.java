@@ -66,7 +66,7 @@ public class TurAnonymousAbuseRateLimitFilter extends OncePerRequestFilter {
      * declared LLM-cost and missing from this pattern.
      */
     private static final Pattern RATE_LIMITED_PATH = Pattern.compile(
-            "^/api/sn/[^/]+/(?:chat|answer|copilot)(?:/.*)?$"
+            "^/api/sn/[^/]+/(?:chat|answer|copilot|nl-filters)(?:/.*)?$"
                     + "|^/api/sn/[^/]+/persona/[^/]+/content-fit$");
 
     private final TurAbuseControlProperty properties;

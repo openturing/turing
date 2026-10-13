@@ -15,8 +15,6 @@ import java.util.List;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
-import com.viglet.turing.commons.se.field.TurSEFieldType;
-import com.viglet.turing.persistence.model.sn.field.TurSNSiteFieldExt;
 import com.viglet.turing.persistence.repository.sn.TurSNSiteRepository;
 import com.viglet.turing.persistence.repository.sn.field.TurSNSiteFieldExtRepository;
 import com.viglet.turing.sn.dsl.TurDslQueryRequest;
@@ -141,13 +139,8 @@ public class TurNLFacetEvalService {
         }
         return turSNSiteRepository.findByNameIgnoreCase(pack.index())
                 .map(site -> turSNSiteFieldExtRepository.findByTurSNSiteAndEnabled(site, 1).stream()
-                        .map(this::toField)
+                        .map(TurNLFacetField::of)
                         .toList())
                 .orElse(List.of());
-    }
-
-    private TurNLFacetField toField(TurSNSiteFieldExt ext) {
-        TurSEFieldType type = ext.getType() != null ? ext.getType() : TurSEFieldType.TEXT;
-        return new TurNLFacetField(ext.getName(), type, ext.getFacet() == 1, ext.getDescription());
     }
 }

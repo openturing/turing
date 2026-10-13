@@ -77,7 +77,7 @@ public class TurSNSiteApiKeyGateFilter extends OncePerRequestFilter {
      * declared LLM-cost and missing from here.
      */
     private static final Pattern PUBLIC_SN_PATH = Pattern.compile(
-            "^/api/sn/([^/]+)/(?:ac|search|_search|click|query|chat|copilot|answer)(?:/.*)?$");
+            "^/api/sn/([^/]+)/(?:ac|search|_search|click|query|chat|copilot|answer|nl-filters)(?:/.*)?$");
 
     /** Spell-check carries an extra locale segment: {@code /api/sn/{site}/{locale}/spell-check}. */
     private static final Pattern SPELL_CHECK_PATH = Pattern.compile(

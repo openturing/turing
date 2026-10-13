@@ -1724,6 +1724,64 @@ export function fetchStoredDocuments(
   });
 }
 
+// ── T1085: natural-language filters ─────────────────────────────────────────
+
+/** T1085 — one field's filter read from a natural-language request. */
+export interface TurNLFilter {
+  readonly field: string;
+  /** Values as the site indexes them; empty for a range. */
+  readonly values: readonly string[];
+  readonly rangeStart: string | null;
+  readonly rangeEnd: string | null;
+  /** The words of the request each value or bound was read from. */
+  readonly sourceWords: readonly string[];
+  /** 1 when every value appears in the request, lower when it was inferred. */
+  readonly confidence: number;
+  /** False when the engine could not list the field's values to check them. */
+  readonly grounded: boolean;
+}
+
+/** T1085 — a value the parser proposed that is not a filter. */
+export interface TurNLDroppedFilter {
+  readonly field: string;
+  readonly value: string;
+  readonly reason: "UNKNOWN_FIELD" | "NOT_IN_SITE";
+}
+
+/** T1085 — response of {@link postNlFilters}. */
+export interface TurNLFilters {
+  /** False when no LLM can parse; `q` is then the request itself. */
+  readonly available: boolean;
+  readonly text: string;
+  /** What is left to match as free text. */
+  readonly q: string;
+  readonly filters: readonly TurNLFilter[];
+  /** Filter queries as the search API takes them (`fq`). */
+  readonly fq: readonly string[];
+  readonly dropped: readonly TurNLDroppedFilter[];
+}
+
+/**
+ * T1085 — turns a visitor's description ("part-time near the subway in Sao
+ * Paulo") into the `q` and `fq` of the site's own search, each value checked
+ * against the values the site holds. Pass the result to {@link postSearch} to
+ * show the ranked, faceted page for it.
+ *
+ * Server endpoint: {@code POST /api/sn/{site}/nl-filters}.
+ */
+export function postNlFilters(
+  client: TuringClient,
+  site: string,
+  text: string,
+  locale?: string,
+  options: TuringCallOptions = {},
+): Promise<TurNLFilters> {
+  return client.post<TurNLFilters>(`/sn/${site}/nl-filters`, { text, locale }, {
+    csrf: false,
+    signal: options.signal,
+  });
+}
+
 // ── T401: Multimodal slot-upload + flow resume ──────────────────────────────
 
 /**
@@ -2491,6 +2549,7 @@ export function createTuringApi(client: TuringClient) {
     fetchSortOptions: bind(fetchSortOptions),
     fetchSimilar: bind(fetchSimilar),
     fetchStoredDocuments: bind(fetchStoredDocuments),
+    postNlFilters: bind(postNlFilters),
     postSiteSlotUpload: bind(postSiteSlotUpload),
     postSiteChatResume: bind(postSiteChatResume),
     fetchSpellCheck: bind(fetchSpellCheck),

@@ -29,7 +29,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
 import com.viglet.turing.api.exception.TurUnsupportedEngineException;
-import com.viglet.turing.commons.se.field.TurSEFieldType;
 import com.viglet.turing.commons.sn.field.TurSNFieldName;
 import com.viglet.turing.genai.catalog.planning.TurCopilotQueryPlan;
 import com.viglet.turing.genai.catalog.planning.TurCopilotQueryPlanner;
@@ -37,7 +36,6 @@ import com.viglet.turing.genai.catalog.planning.TurCopilotQueryPlanner.PlanReque
 import com.viglet.turing.genai.catalog.planning.TurCopilotQueryPlannerFactory;
 import com.viglet.turing.genai.citation.TurAnswerCitationNumberer;
 import com.viglet.turing.persistence.model.sn.TurSNSite;
-import com.viglet.turing.persistence.model.sn.field.TurSNSiteFieldExt;
 import com.viglet.turing.persistence.repository.sn.TurSNSiteRepository;
 import com.viglet.turing.persistence.repository.sn.field.TurSNSiteFieldExtRepository;
 import com.viglet.turing.se.result.TurSEResult;
@@ -744,13 +742,8 @@ public class TurCatalogCopilotService {
 
     private List<TurNLFacetField> resolveSchema(TurSNSite site) {
         return turSNSiteFieldExtRepository.findByTurSNSiteAndEnabled(site, 1).stream()
-                .map(this::toField)
+                .map(TurNLFacetField::of)
                 .toList();
-    }
-
-    private TurNLFacetField toField(TurSNSiteFieldExt ext) {
-        TurSEFieldType type = ext.getType() != null ? ext.getType() : TurSEFieldType.TEXT;
-        return new TurNLFacetField(ext.getName(), type, ext.getFacet() == 1, ext.getDescription());
     }
 
     private String contextBlock(int rank, String title, String url, Map<String, Object> source,

@@ -11,6 +11,7 @@ package com.viglet.turing.sn.dsl.eval;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.viglet.turing.commons.se.field.TurSEFieldType;
+import com.viglet.turing.persistence.model.sn.field.TurSNSiteFieldExt;
 
 /**
  * A single declared field in the schema the NL→facet parser maps onto (T385 /
@@ -27,6 +28,15 @@ public record TurNLFacetField(
         TurSEFieldType type,
         boolean facet,
         String description) {
+
+    /**
+     * T1085 — the projection of a live site field, the one mapping the NL filter
+     * service, the catalog copilot and the eval all read the schema through.
+     */
+    public static TurNLFacetField of(TurSNSiteFieldExt ext) {
+        TurSEFieldType type = ext.getType() != null ? ext.getType() : TurSEFieldType.TEXT;
+        return new TurNLFacetField(ext.getName(), type, ext.getFacet() == 1, ext.getDescription());
+    }
 
     /** True for numeric / currency types that admit range comparisons. */
     public boolean numeric() {
