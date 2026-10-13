@@ -10,6 +10,10 @@
 
 - 📋 **T1090** (deps: —) **The gateway's /v1/chat/completions drops response_format silently, so JSON mode answers come back wrapped in code fences** — OpenAI clients that rely on JSON mode get unparseable prose and no error saying the field was ignored. → §CXIII.1
 
+## Block CC — Lucene engine search with synonyms
+
+- 📋 **T1091** (deps: —) **A search whose synonym expands to a multi-word term fails with 500 on Lucene: the phrase also runs on the id field** — Any site with a synonym like 'home office' loses every search that triggers it. → §CXIV.1
+
 ## Non-goals (do NOT add as tasks)
 
 Binding constraints — see [IMPROVEMENTS.md](IMPROVEMENTS.md) §I.6 (What NOT to

@@ -1452,3 +1452,5 @@
 
 ## Block CB — LLM gateway parity with the OpenAI wire
 
+## Block CC — Lucene engine search with synonyms
+
