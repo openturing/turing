@@ -2153,4 +2153,49 @@ and end as fixed instants or date math, as the console stores them), provisioned
 diffed like the rest of the manifest, so a site from code gets counted date buckets in
 its structured facets.
 
+### CXI.10 Natural-language filters as data (T1085)
+
+Met in trabalharei (TRA40), a job assistant that turns "trabalho de meio periodo perto
+do metro em Sao Paulo, sem experiencia" into the site's own filtered search.
+
+The SN site already extracts filters from natural language in three places, and none of
+them hands the filters back: `TurSNGenAi` (list-style chat questions) applies the facets
+it extracted only to its own vector retrieval; the catalog copilot (`POST
+/api/sn/{site}/copilot`) returns `groundedQuerySummary`, a display string such as
+`city=São Paulo, contract in [clt]`; the NL facet parser is a console eval tool
+(`/api/sn/nl-facet-eval`). A site that wants to show the ranked, paginated, faceted page
+for the description (its own search UI) has no structured result to build `fq` from.
+
+Expected: an SN endpoint (or a chat/answer SSE event, such as `type: "filters"`) that
+returns the parse as data: `q` (what is left of the text), `fq` values as the search API
+takes them, with each value grounded in the site's facet values, and the confidence or
+the words each filter came from. The SDK exposes it (`postNlQuery` or a chat event the
+controller surfaces). Workaround in trabalharei: none; the assistant shows the chat's
+prose and cited jobs, and its "see these filters" step waits on this line.
+
+### CXI.11 Filters on SDK chat (T1086)
+
+Met in trabalharei (TRA40). `POST /api/sn/{site}/chat/conversation` takes `filters`
+(`ConversationRequest(messages, locale, filters, ...)` in `TurSNSiteGenAiAPI`), but the
+JS SDK's `postChatConversation` serializes only `messages`, `locale`, `conversationId`,
+`flowId`, `forcedVariant` and `personaId`, and `createChatController` has no filters
+option. A site cannot scope its assistant to the visitor's current search (a UF, a
+remote filter) without bypassing the SDK with its own fetch and SSE parser.
+
+Expected: `filters?: Record<string, string[]>` on `postChatConversation`'s options and
+on the chat controller (set at creation and per `send`), passed through unchanged.
+
+### CXI.12 Vectorless chat readiness (T1087)
+
+Met in trabalharei (TRA40) while reading the chat path. For a site whose knowledge base
+is `VECTORLESS_STRUCTURED`, `GET /api/sn/{site}/chat/enabled` answers enabled (only a
+default LLM is required), but `POST /chat/conversation` builds its context through
+`TurGenAiContextFactory.build`, which returns a disabled context for that mode, so the
+stream answers "AI configuration is not enabled" (or fails on a missing agent). The
+copilot that does serve vectorless sites is never routed to from the chat.
+
+Expected: `/chat/enabled` and `/chat/conversation` agree. Either the conversation routes
+a vectorless site to the catalog copilot path, or `/chat/enabled` reports the reason it
+is not available.
+
 ## CXII SDK & frontend surface
