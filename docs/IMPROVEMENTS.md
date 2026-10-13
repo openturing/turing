@@ -2164,6 +2164,32 @@ silent drop.
 Workaround in trabalharei: the script strips a leading and trailing fence before
 `JSON.parse`, with a comment naming this line. It goes once this ships.
 
+### CXIII.2 Provider quota errors through the gateway (T1092)
+
+Met in trabalharei (TRA107) on the local Turing on 2026-10-13. The OpenAI account behind
+the gpt-4o-mini instance had run out of credits:
+
+    POST /v1/chat/completions  (Authorization: Bearer sk-turing-...)
+    {"model": "gpt-4o-mini", "messages": [...]}
+
+    HTTP 502
+    {"error": {"message": "429: You have no credits remaining. Add credits to continue
+      using the API at https://platform.openai.com/...", "type": "api_error"}}
+
+The provider said 429 insufficient_quota; the gateway answers 502 with type api_error.
+An OpenAI client tells a quota or rate limit from an outage by the status and the error
+type (429, insufficient_quota or rate_limit_exceeded), so it backs off, alerts or
+retries the wrong way. A consumer's admin panel cannot say "the provider is out of
+credits" either.
+
+Expected: pass the provider's 429 through as 429 with its OpenAI error type and a
+Retry-After when the provider sent one, and keep 502 for a provider that did not answer.
+The gateway's own budget and rate limits (T741 keys) should answer 429 the same way,
+with a type that says which limit.
+
+Workaround in trabalharei: none needed; its runtime treats any non-2xx as "no answer"
+and falls back.
+
 ## CXIV Lucene engine search with synonyms
 
 ### CXIV.1 Synonym phrases on untokenized fields (T1091)

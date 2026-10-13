@@ -9,6 +9,7 @@
 ## Block CB — LLM gateway parity with the OpenAI wire
 
 - 📋 **T1090** (deps: —) **The gateway's /v1/chat/completions drops response_format silently, so JSON mode answers come back wrapped in code fences** — OpenAI clients that rely on JSON mode get unparseable prose and no error saying the field was ignored. → §CXIII.1
+- 📋 **T1092** (deps: —) **The gateway answers 502 api_error when the provider says 429 out of credits, so clients cannot tell quota from outage** — OpenAI clients back off, alert or retry by status and error type, and a quota hit read as an outage gets the wrong response. → §CXIII.2
 
 ## Block CC — Lucene engine search with synonyms
 
