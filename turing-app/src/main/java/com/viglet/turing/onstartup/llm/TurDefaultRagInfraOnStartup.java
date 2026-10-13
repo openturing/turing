@@ -86,16 +86,21 @@ import lombok.extern.slf4j.Slf4j;
  * engine (the reindex source).
  *
  * <p>
- * <b>Gate + idempotency.</b> It acts only when ALL hold, so it never overrides an
- * existing setup and stays a no-op on installs that don't want it:
- * <ul>
- * <li>{@code turing.startup.default-rag.enabled} is not {@code false} (default on);</li>
- * <li>a global Default AI Agent is configured (there is something to wire onto);</li>
- * <li>no embedding model AND no store instance exist yet (fresh install / wiped
- * demo volume).</li>
- * </ul>
- * On a demo volume wipe + re-seed the tables are empty again, so the local RAG
- * backend is recreated automatically.
+ * <b>Gate + idempotency.</b> It runs when {@code turing.startup.default-rag.enabled}
+ * is not {@code false} (default on) and a global Default AI Agent is configured,
+ * and it never overrides an existing setup: an agent that already has an
+ * embedding model and a store is left alone.
+ *
+ * <p>
+ * <b>Each piece converges on its own (T1088).</b> The runner used to skip
+ * everything when any embedding model or store existed, which held only on a
+ * fresh install: the seed ships its own "Default Vector Store", so the agent got
+ * neither piece and chat stayed off. Now the embedding model is the global
+ * default when one is set, else a new local ONNX model when none exists; the
+ * store is the global default, else an existing enabled Lucene store, else a new
+ * one when none exists. Whichever the agent lacks is wired, RAG is turned on and
+ * the content reindexed only when this run completed the wiring, and each step
+ * logs what it did or why it stopped.
  *
  * @author Alexandre Oliveira
  * @since 2026.3.4
@@ -169,35 +174,130 @@ public class TurDefaultRagInfraOnStartup implements ApplicationRunner {
 
         String defaultAgentId = turGlobalSettingsService.getDefaultAiAgentId();
         if (!StringUtils.hasText(defaultAgentId)) {
-            // Gated on a default agent existing — there is nothing to wire onto.
+            log.info("Default local RAG backend skipped: no global Default AI Agent to wire onto.");
             return;
         }
-
-        // Idempotent: only bootstrap when no embedding model AND no store exist
-        // yet (fresh install or a wiped demo volume). Any existing instance —
-        // created here, imported, or added in the admin — is left untouched.
-        if (!turEmbeddingModelRepository.findAll().isEmpty()
-                || !turStoreInstanceRepository.findAll().isEmpty()) {
-            return;
-        }
-
-        TurStoreVendor luceneVendor = turStoreVendorRepository.findById(LUCENE_VENDOR_ID).orElse(null);
-        if (luceneVendor == null) {
-            log.warn("Cannot bootstrap default local RAG backend: store vendor '{}' not found.", LUCENE_VENDOR_ID);
-            return;
-        }
-
         TurAIAgent agent = turAIAgentRepository.findById(defaultAgentId).orElse(null);
         if (agent == null) {
             log.warn("Cannot bootstrap default local RAG backend: default agent '{}' not found.", defaultAgentId);
             return;
         }
+        // T1088 — converge each piece the agent lacks, instead of skipping the whole
+        // bootstrap when any embedding model or store exists: the seed ships its
+        // "Default Vector Store", and the all-or-nothing guard left the agent with
+        // neither model nor store. An agent already wired is left as it was.
+        if (agent.getTurEmbeddingModelInstance() != null && agent.getTurStoreInstance() != null) {
+            log.debug("Default local RAG backend: default agent '{}' already has an embedding model and a store.",
+                    agent.getId());
+            return;
+        }
+        if (agent.getTurEmbeddingModelInstance() == null) {
+            TurEmbeddingModel model = ensureEmbeddingModel();
+            if (model == null) {
+                return;
+            }
+            agent.setTurEmbeddingModelInstance(model);
+        }
+        if (agent.getTurStoreInstance() == null) {
+            TurStoreInstance store = ensureStore();
+            if (store == null) {
+                return;
+            }
+            agent.setTurStoreInstance(store);
+        }
+        agent.setRagEnabled(true);
+        turAIAgentRepository.save(agent);
+        TurEmbeddingModel embeddingModel = agent.getTurEmbeddingModelInstance();
+        TurStoreInstance storeInstance = agent.getTurStoreInstance();
+        log.info("Default local RAG backend: wired embedding model '{}' and store '{}' onto default agent '{}' "
+                + "with RAG enabled.", embeddingModel.getId(), storeInstance.getId(), agent.getId());
+        startWarmUpAndReindex(embeddingModel);
+    }
 
+    /**
+     * The embedding model the default agent gets: the global default when one is
+     * set and enabled, a new local ONNX model when none exists at all, and none
+     * (logged) when models exist but none is the default, since picking one of
+     * somebody's models is not this runner's call.
+     */
+    private TurEmbeddingModel ensureEmbeddingModel() {
+        String defaultId = turGlobalSettingsService.getDefaultEmbeddingModelId();
+        if (StringUtils.hasText(defaultId)) {
+            TurEmbeddingModel byDefault = turEmbeddingModelRepository.findById(defaultId)
+                    .filter(model -> model.getEnabled() == 1).orElse(null);
+            if (byDefault != null) {
+                log.info("Default local RAG backend: adopting the global default embedding model '{}'.", defaultId);
+                return byDefault;
+            }
+        }
+        long existing = turEmbeddingModelRepository.count();
+        if (existing > 0) {
+            log.info("Default local RAG backend skipped: {} embedding model(s) exist and none is the enabled "
+                    + "global default, so none is wired onto the default agent.", existing);
+            return null;
+        }
+        TurEmbeddingModel created = createEmbeddingModel();
+        turGlobalSettingsService.updateDefaultEmbeddingModelId(created.getId());
+        log.info("Default local RAG backend: created embedding model '{}' ({}).", created.getId(),
+                created.getModelName());
+        return created;
+    }
+
+    /**
+     * The store the default agent gets: the global default when set and enabled,
+     * else an enabled embedded Lucene store already there (the seed's platform
+     * default), else a new one when no store exists at all.
+     */
+    private TurStoreInstance ensureStore() {
+        String defaultId = turGlobalSettingsService.getDefaultEmbeddingStoreId();
+        if (StringUtils.hasText(defaultId)) {
+            TurStoreInstance byDefault = turStoreInstanceRepository.findById(defaultId)
+                    .filter(store -> store.getEnabled() == 1).orElse(null);
+            if (byDefault != null) {
+                log.info("Default local RAG backend: adopting the global default store '{}'.", defaultId);
+                return byDefault;
+            }
+        }
+        TurStoreInstance lucene = turStoreInstanceRepository.findAll().stream()
+                .filter(store -> store.getEnabled() == 1 && store.getTurStoreVendor() != null
+                        && LUCENE_VENDOR_ID.equals(store.getTurStoreVendor().getId()))
+                .findFirst().orElse(null);
+        if (lucene != null) {
+            turGlobalSettingsService.updateDefaultEmbeddingStoreId(lucene.getId());
+            log.info("Default local RAG backend: adopting the existing Lucene store '{}' ({}).", lucene.getId(),
+                    lucene.getTitle());
+            return lucene;
+        }
+        long existing = turStoreInstanceRepository.count();
+        if (existing > 0) {
+            log.info("Default local RAG backend skipped: {} store(s) exist, none is an enabled Lucene store or "
+                    + "the global default, so none is wired onto the default agent.", existing);
+            return null;
+        }
+        TurStoreVendor luceneVendor = turStoreVendorRepository.findById(LUCENE_VENDOR_ID).orElse(null);
+        if (luceneVendor == null) {
+            log.warn("Cannot bootstrap default local RAG backend: store vendor '{}' not found.", LUCENE_VENDOR_ID);
+            return null;
+        }
+        String storePath = environment.getProperty(STORE_PATH_PROPERTY, DEFAULT_STORE_PATH);
+        TurStoreInstance storeInstance = new TurStoreInstance();
+        storeInstance.setTitle("Lucene (default)");
+        storeInstance.setDescription("Auto-provisioned embedded Lucene vector store on startup.");
+        storeInstance.setTurStoreVendor(luceneVendor);
+        storeInstance.setUrl(storePath);
+        storeInstance.setEnabled(1);
+        // GLOBAL instance (tenantId left null).
+        turStoreInstanceRepository.save(storeInstance);
+        turGlobalSettingsService.updateDefaultEmbeddingStoreId(storeInstance.getId());
+        log.info("Default local RAG backend: created Lucene store '{}' at '{}'.", storeInstance.getId(), storePath);
+        return storeInstance;
+    }
+
+    private TurEmbeddingModel createEmbeddingModel() {
         String modelName = environment.getProperty(MODEL_NAME_PROPERTY, DEFAULT_MODEL_NAME);
         String modelRepoId = environment.getProperty(MODEL_REPO_ID_PROPERTY, DEFAULT_MODEL_REPO_ID);
         String modelPath = environment.getProperty(MODEL_PATH_PROPERTY, DEFAULT_MODEL_PATH);
         String tokenizerPath = environment.getProperty(TOKENIZER_PATH_PROPERTY, DEFAULT_TOKENIZER_PATH);
-        String storePath = environment.getProperty(STORE_PATH_PROPERTY, DEFAULT_STORE_PATH);
 
         TurEmbeddingModel embeddingModel = new TurEmbeddingModel();
         embeddingModel.setModelName(modelName);
@@ -219,28 +319,10 @@ public class TurDefaultRagInfraOnStartup implements ApplicationRunner {
         }
         // GLOBAL instance (tenantId left null) — usable by every tenant.
         turEmbeddingModelRepository.save(embeddingModel);
+        return embeddingModel;
+    }
 
-        TurStoreInstance storeInstance = new TurStoreInstance();
-        storeInstance.setTitle("Lucene (default)");
-        storeInstance.setDescription("Auto-provisioned embedded Lucene vector store on startup.");
-        storeInstance.setTurStoreVendor(luceneVendor);
-        storeInstance.setUrl(storePath);
-        storeInstance.setEnabled(1);
-        // GLOBAL instance (tenantId left null).
-        turStoreInstanceRepository.save(storeInstance);
-
-        turGlobalSettingsService.updateDefaultEmbeddingModelId(embeddingModel.getId());
-        turGlobalSettingsService.updateDefaultEmbeddingStoreId(storeInstance.getId());
-
-        agent.setTurEmbeddingModelInstance(embeddingModel);
-        agent.setTurStoreInstance(storeInstance);
-        agent.setRagEnabled(true);
-        turAIAgentRepository.save(agent);
-
-        log.info("Bootstrapped local RAG backend: embedding model '{}' (ONNX '{}') + Lucene store '{}' "
-                + "at '{}', wired onto default agent '{}' with RAG enabled.",
-                embeddingModel.getId(), modelName, storeInstance.getId(), storePath, agent.getId());
-
+    private void startWarmUpAndReindex(TurEmbeddingModel embeddingModel) {
         boolean reindex = environment.getProperty(REINDEX_PROPERTY, Boolean.class, Boolean.TRUE);
         // Warm-up (ONNX download) + reindex are slow and network-bound; run them
         // off the startup thread so app readiness isn't blocked. A daemon thread

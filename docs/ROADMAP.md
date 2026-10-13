@@ -8,7 +8,6 @@
 
 ## Block CA — Search response fields arrive as they were indexed
 
-- 📋 **T1088** (deps: —) **A fresh install with the seed store skips the RAG bootstrap, so no embedding model exists and chat stays off** — The out-of-the-box chat the startup promises never happens on the image the seed ships with. → §CXI.13
 - 📋 **T1089** (deps: —) **With RAG on, an import whose document has a null field is refused whole: metadata cannot have null values** — Turning on chat for a site stops its connector's imports, search included. → §CXI.14
 
 ## Non-goals (do NOT add as tasks)

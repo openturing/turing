@@ -2134,28 +2134,6 @@ silently. Found while building trabalharei's local Turing and import proof.
 
 ## CXI Search response fields arrive as they were indexed
 
-### CXI.13 RAG bootstrap skipped by the seed store (T1088)
-
-Met in trabalharei (TRA40) on a fresh local turing-ce built with `Dockerfile.local` (the
-GLOBAL seed ZIP from T373 auto-imported at boot) and `OPENAI_API_KEY` set.
-`TurLLMInstanceOnStartup` creates the gpt-4o-mini instance and the default agent, but
-`TurDefaultRagInfraOnStartup` returns without a word: its guard (`findAll().isEmpty()`
-on embedding models or store instances) skips the bootstrap when either exists, and the
-seed already holds the platform-provided "Default Vector Store". No embedding model is
-created, the agent gets neither, and every site's `/chat/enabled` answers
-`MISSING_EMBEDDING`.
-
-The all-or-nothing guard is the defect class already seen elsewhere: a
-`findAll().isEmpty()` check only works on a fresh install, so any seed, import or
-upgrade that brings one piece in silently skips the rest. Replace it with per-piece
-convergence: ensure the embedding model, then ensure a store (adopting an existing
-enabled one, preferring the platform default), then wire whichever the default agent
-lacks, each step idempotent and logged with what it did or why it skipped. Turn RAG on
-and reindex only when this run completed the wiring.
-
-Workaround in trabalharei: `scripts/turing-dev-setup.mjs` creates the embedding model
-and wires the agent through the admin API when the site reports `MISSING_EMBEDDING`.
-
 ### CXI.14 Null fields break RAG imports (T1089)
 
 Met in trabalharei (TRA40). With RAG on for an SN site, every `POST /api/sn/import` from
