@@ -13,7 +13,6 @@
 ## Block CD — turing.viglet.org relevance pass (2026-10)
 
 - 💭 **T1097** (deps: viglet.org W42) **The site loads Google Analytics without consent, while viglet.org asks first** — Three Viglet sites should treat one visitor under one privacy rule, decided once. → §CXV.5
-- 📋 **T1101** (deps: —) **The marketing site still lists Azure OpenAI as a supported LLM provider, which Turing removed** — A buyer who picks Turing for Azure finds no such provider in the console, and the claim undercuts every other one on the page. → §CXV.7
 
 ## Non-goals (do NOT add as tasks)
 

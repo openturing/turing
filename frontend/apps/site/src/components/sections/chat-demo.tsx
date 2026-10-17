@@ -62,7 +62,7 @@ const DEFAULT_SCRIPT: ChatScriptEntry[] = [
   {
     match: /llm|model|openai|anthropic|gemini|ollama|provider/i,
     answer:
-      "Turing is provider-agnostic: **OpenAI**, **Anthropic Claude**, **Google Gemini**, Azure OpenAI and local **Ollama** models all plug in; pick one per agent.",
+      "Turing is provider-agnostic: **OpenAI**, **Anthropic Claude**, **Google Gemini**, Mistral, AWS Bedrock, Google Vertex AI and local **Ollama** models all plug in; pick one per agent.",
     sources: ["LLM providers"],
   },
   {

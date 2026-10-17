@@ -98,7 +98,7 @@ export const PILLARS: Pillar[] = [
     step: "Run it",
     title: "Self-hosted, any LLM, your data",
     description:
-      "Open source under Apache 2.0. Bring any LLM (OpenAI, Anthropic, Gemini, Ollama, Azure), your own search engine and storage. Multi-tenant and observable, on your infrastructure.",
+      "Open source under Apache 2.0. Bring any LLM (OpenAI, Anthropic, Gemini, Bedrock, Ollama and more), your own search engine and storage. Multi-tenant and observable, on your infrastructure.",
     tags: ["Apache 2.0", "Self-host", "Multi-tenant", "Any LLM"],
     slug: "run",
   },
@@ -270,7 +270,7 @@ export const PROVIDERS: Provider[] = [
   { name: "OpenAI", color: "#10a37f" },
   { name: "Anthropic Claude", color: "#d9774f" },
   { name: "Google Gemini", color: "#4285f4" },
-  { name: "Azure OpenAI", color: "#0ea5e9" },
+  { name: "AWS Bedrock", color: "#ff9900" },
   { name: "Ollama", color: "#64748b" },
   { name: "Apache Solr", color: "#d9411e" },
   { name: "Elasticsearch", color: "#f59e0b" },
@@ -1172,7 +1172,7 @@ export const FAQ: FaqItem[] = [
   },
   {
     q: "Am I locked into one LLM vendor?",
-    a: "No. Any LLM provider (OpenAI, Anthropic, Google Gemini, Azure OpenAI, local Ollama and OpenAI-compatible endpoints) plugs in behind one interface, switchable per agent. API keys are stored encrypted, and reranking and embeddings are pluggable too.",
+    a: "No. Any LLM provider (OpenAI, Anthropic, Google Gemini, Mistral, Cohere, AWS Bedrock, Google Vertex AI, local Ollama and OpenAI-compatible endpoints) plugs in behind one interface, switchable per agent. API keys are stored encrypted, and reranking and embeddings are pluggable too.",
   },
   {
     q: "Isn't this just LangChain with a UI?",
@@ -1234,7 +1234,7 @@ export const AEM_MATRIX: AemMatrixRow[] = [
   { capability: "AI agents, tools & skills", turing: "yes", aemAi: "no", adobe: "no" },
   { capability: "MCP server & client", turing: "yes", aemAi: "no", adobe: "no" },
   { capability: "Native provider tools (web search, code, computer use)", turing: "yes", aemAi: "no", adobe: "no" },
-  { capability: "LLM providers", turing: "OpenAI · Anthropic · Gemini · Azure · Ollama", aemAi: "OpenAI · Anthropic", adobe: "none" },
+  { capability: "LLM providers", turing: "OpenAI · Anthropic · Gemini · Bedrock · Ollama", aemAi: "OpenAI · Anthropic", adobe: "none" },
   { capability: "Bring your own search engine", turing: "Solr · Elasticsearch · Lucene", aemAi: "no (Oak)", adobe: "no (Oak)" },
   { capability: "Pluggable reranker (LLM / cross-encoder / Cohere)", turing: "yes", aemAi: "no", adobe: "no" },
   { capability: "Groundedness check & honest refusal", turing: "yes", aemAi: "partial", adobe: "no" },
@@ -1303,7 +1303,7 @@ export const AEM_DEPTH: AemDepth[] = [
     icon: ServerCog,
     iconClass: "from-[#4f46e5] to-[#6366f1]",
     title: "Any LLM, any engine",
-    body: "OpenAI, Anthropic, Gemini, Azure OpenAI and local Ollama, running on Solr, Elasticsearch or Lucene. Switch per agent, store keys encrypted, and tie nothing to a single vendor's cloud.",
+    body: "OpenAI, Anthropic, Gemini, Mistral, Bedrock, Vertex AI and local Ollama, running on Solr, Elasticsearch or Lucene. Switch per agent, store keys encrypted, and tie nothing to a single vendor's cloud.",
   },
   {
     icon: ShieldCheck,
@@ -1397,7 +1397,7 @@ export const AEM_FAQ: AemFaqItem[] = [
   },
   {
     q: "Which LLMs can it use? Only OpenAI and Anthropic?",
-    a: "More than that. OpenAI, Anthropic Claude, Google Gemini, Azure OpenAI, local Ollama and any OpenAI-compatible endpoint plug in behind one interface, switchable per agent, with encrypted keys. Reranking and embeddings are pluggable too.",
+    a: "More than that. OpenAI, Anthropic Claude, Google Gemini, Mistral, Cohere, AWS Bedrock, Google Vertex AI, local Ollama and any OpenAI-compatible endpoint plug in behind one interface, switchable per agent, with encrypted keys. Reranking and embeddings are pluggable too.",
   },
   {
     q: "Do I need a multi-week consulting engagement to install it?",
@@ -1598,7 +1598,7 @@ export const PERSONA_FAQ: PersonaFaqItem[] = [
   },
   {
     q: "Do I have to re-write prompts when I change the LLM?",
-    a: "No. A persona is the voice; the LLM is the brain and the tools are the hands. Because the three are decoupled, you can switch from one provider to another (OpenAI, Anthropic, Gemini, Azure OpenAI, local Ollama) and the persona keeps every agent it's attached to speaking the same way.",
+    a: "No. A persona is the voice; the LLM is the brain and the tools are the hands. Because the three are decoupled, you can switch from one provider to another (OpenAI, Anthropic, Gemini, Bedrock, local Ollama) and the persona keeps every agent it's attached to speaking the same way.",
   },
   {
     q: "How do I keep prices and promotions up to date without engineering?",

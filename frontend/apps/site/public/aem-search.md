@@ -72,7 +72,7 @@ provides that layer while AEM stays your content source of truth.
 | AI agents, tools & skills | Yes | No | No |
 | MCP server & client | Yes | No | No |
 | Native provider tools (web search, code, computer use) | Yes | No | No |
-| LLM providers | OpenAI · Anthropic · Gemini · Azure · Ollama | OpenAI · Anthropic | None |
+| LLM providers | OpenAI · Anthropic · Gemini · Bedrock · Ollama | OpenAI · Anthropic | None |
 | Bring your own search engine | Solr · Elasticsearch · Lucene | No (Oak) | No (Oak) |
 | Open source (Apache 2.0) | Yes | No | No |
 | Where content & queries live | Your infra | Adobe cloud | Adobe cloud |
@@ -84,7 +84,7 @@ provides that layer while AEM stays your content source of truth.
   WordPress, databases, file shares and any REST source into a single index.
 - **Agents, not just answers.** Tools, form-slot capture, sandboxed skills and
   human handoff let the search box act on a request, not only answer it.
-- **Any LLM, any engine.** OpenAI, Anthropic, Gemini, Azure OpenAI, local Ollama
+- **Any LLM, any engine.** OpenAI, Anthropic, Gemini, Mistral, Bedrock, Vertex AI, local Ollama
   on Solr, Elasticsearch or Lucene; switch per agent.
 - **Your content stays in your infrastructure.** Self-hosted under Apache 2.0;
   pages, embeddings and query logs never leave your network.

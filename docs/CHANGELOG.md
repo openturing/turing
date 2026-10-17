@@ -1468,3 +1468,4 @@
 - **T1095 (feature pages and links)** — Each /features/ page answers its own questions with FAQPage JSON-LD and links the deep page on its subject, so /migrate/, /compare/, /persona/ and /security/ gain contextual links.
 - **T1096** — /compare/ names Lucidworks Fusion in its title and H1, adds a Coveo vs Lucidworks at-a-glance table of checkable facts and a vendor card, and links the docs post both ways.
 - **T1098** — The sitemap offers only rankable pages: llms.txt, the Storybook and the index-less /marketplace/ are out; the three static marketplace example pages stay.
+- **T1101** — The marketing site names only providers Turing ships: every Azure OpenAI mention is replaced with the real set (Bedrock, Vertex AI, Mistral, Cohere among them), and the built pages contain none.
