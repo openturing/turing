@@ -12,6 +12,26 @@ import {
   type FeatureDetail,
 } from "@/lib/site-content";
 
+/** FAQPage JSON-LD for the page's own questions, prerendered to static HTML. */
+function FeatureJsonLd({ detail }: Readonly<{ detail: FeatureDetail }>) {
+  const graph = {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    mainEntity: detail.faq.map((item) => ({
+      "@type": "Question",
+      name: item.q,
+      acceptedAnswer: { "@type": "Answer", text: item.a },
+    })),
+  };
+  return (
+    <script
+      type="application/ld+json"
+      // Prerendered to static HTML; this is our own content, not user input.
+      dangerouslySetInnerHTML={{ __html: JSON.stringify(graph) }}
+    />
+  );
+}
+
 export function FeaturePage({ detail }: Readonly<{ detail: FeatureDetail }>) {
   const others = FEATURE_SLUGS.filter((s) => s !== detail.slug).map(
     (s) => FEATURE_DETAILS[s]
@@ -19,6 +39,7 @@ export function FeaturePage({ detail }: Readonly<{ detail: FeatureDetail }>) {
 
   return (
     <div className="flex min-h-screen flex-col">
+      <FeatureJsonLd detail={detail} />
       <SiteNav />
       <main className="flex-1">
         {/* hero */}
@@ -89,6 +110,37 @@ export function FeaturePage({ detail }: Readonly<{ detail: FeatureDetail }>) {
 
         {/* native tools (Automate it only) */}
         {detail.showNativeTools && <NativeTools />}
+
+        {/* questions only this page answers */}
+        <section id="faq" className="scroll-mt-24 border-t border-border bg-muted/40 py-16 lg:py-20">
+          <Container className="max-w-3xl">
+            <h2 className="mb-8 text-center text-2xl font-extrabold tracking-tight sm:text-3xl">
+              Questions teams ask
+            </h2>
+            <dl className="divide-y divide-border">
+              {detail.faq.map((item) => (
+                <div key={item.q} className="py-6">
+                  <dt className="text-base font-bold">{item.q}</dt>
+                  <dd className="mt-2 text-sm leading-relaxed text-muted-foreground">
+                    {item.a}
+                  </dd>
+                </div>
+              ))}
+            </dl>
+            <a href={detail.related.href} className="group mt-8 block">
+              <Card className="gap-0 border-primary/20 bg-primary/5 p-6 transition-all duration-200 hover:-translate-y-1 hover:border-primary/50">
+                <span className="text-xs font-extrabold tracking-[0.1em] text-muted-foreground uppercase">
+                  Go deeper
+                </span>
+                <span className="mt-2 inline-flex items-center gap-1 text-base font-bold">
+                  {detail.related.label}
+                  <ArrowRight className="size-4 transition-transform group-hover:translate-x-0.5" />
+                </span>
+                <span className="mt-1 text-sm text-muted-foreground">{detail.related.body}</span>
+              </Card>
+            </a>
+          </Container>
+        </section>
 
         {/* explore the rest of the platform */}
         <section className="border-t border-border py-16">

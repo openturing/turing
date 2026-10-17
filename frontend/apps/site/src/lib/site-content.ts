@@ -540,6 +540,16 @@ export interface FeatureLink {
   href: string;
 }
 
+export interface FeatureFaqItem {
+  q: string;
+  a: string;
+}
+
+/** The deeper page that owns this feature's subject, linked as "Go deeper". */
+export interface FeatureRelated extends FeatureLink {
+  body: string;
+}
+
 export interface FeatureDetail {
   slug: string;
   /** Reuses the pillar's step label as the eyebrow ("Search it", …). */
@@ -554,6 +564,10 @@ export interface FeatureDetail {
   demo?: FeatureLink;
   /** When true, the page renders the full native-provider-tools grid. */
   showNativeTools?: boolean;
+  /** T1095: questions only this page answers (also emitted as FAQPage JSON-LD). */
+  faq: FeatureFaqItem[];
+  /** T1095: the deeper page on this subject. */
+  related: FeatureRelated;
   /** SEO. */
   metaTitle: string;
   metaDescription: string;
@@ -602,6 +616,29 @@ export const FEATURE_DETAILS: Record<string, FeatureDetail> = {
     },
     docs: { label: "Search & connectors docs", href: "https://docs.viglet.org/turing/category/enterprise-search" },
     demo: { label: "Try a live faceted demo", href: "/marketplace/mythical-creatures/" },
+    faq: [
+      {
+        q: "Do I need Solr or Elasticsearch to start?",
+        a: "No. A site can use the embedded Lucene index that runs inside Turing, so a single container is a working search stack. Move the site to Solr or Elasticsearch later; the query API and your front end stay the same.",
+      },
+      {
+        q: "How does hybrid keyword and vector ranking work?",
+        a: "It is opt-in per site. With hybrid ranking on, Turing runs the keyword query and a vector query over the site's own embeddings, then merges the two lists with Reciprocal Rank Fusion. Sites that leave it off keep plain keyword ranking.",
+      },
+      {
+        q: "Can I keep my synonyms when I move from Algolia?",
+        a: "Yes. Synonyms are native, query-time and need no reindex, and the admin can import an Algolia synonym export. Multi-word synonyms such as \"home office\" expand as phrases.",
+      },
+      {
+        q: "How do I define a site's fields?",
+        a: "Write them in a versioned manifest and POST it. Turing plans the change, shows what would break, and converges the live schema. With no schema yet, it can draft a manifest from sample documents for you to review.",
+      },
+    ],
+    related: {
+      label: "Switching from Algolia or Elasticsearch?",
+      href: "/migrate/",
+      body: "Concept mapping, a three-step import path and what changes in your front end.",
+    },
     metaTitle: "Enterprise Search on Solr, Elasticsearch & Lucene | Viglet Turing",
     metaDescription:
       "Faceted, multilingual, typo-tolerant enterprise search on Solr, Elasticsearch or embedded Lucene: one query API, schema as code, hybrid keyword + vector ranking, all self-hosted.",
@@ -646,6 +683,29 @@ function Assistant() {
 }`,
     },
     docs: { label: "RAG & chat docs", href: "https://docs.viglet.org/turing/category/rag-chat" },
+    faq: [
+      {
+        q: "Where do the citations come from?",
+        a: "From your own retrieval, not from a model vendor's citation feature. Each passage the answer used carries its source, title, URL and score to the UI, so citations work the same with every LLM provider.",
+      },
+      {
+        q: "What happens when the answer is not in my content?",
+        a: "If no passage clears the similarity floor, the chat answers that the topic is not covered here, in the visitor's language, without calling the LLM. A strict grounding mode keeps an agent from answering outside the retrieved content at all.",
+      },
+      {
+        q: "Can I do RAG without embeddings?",
+        a: "Yes, for structured content. In vectorless mode, a question is turned into filters over the fields you declared and answered with citations from the matching records, with no embeddings to compute or store.",
+      },
+      {
+        q: "Which rerankers can I use?",
+        a: "An LLM reranker, a local cross-encoder or Cohere's managed reranker. They sit behind a fail-open interface: if the reranker is down, results come back in retrieval order instead of failing.",
+      },
+    ],
+    related: {
+      label: "Turing vs a DIY LangChain RAG stack",
+      href: "/compare/",
+      body: "What you would otherwise build and run yourself, side by side with Algolia, Coveo and Elasticsearch.",
+    },
     metaTitle: "RAG & Cited AI Chat over Your Content | Viglet Turing",
     metaDescription:
       "Retrieval-augmented generation with inline citations, a pluggable reranker (LLM, cross-encoder or Cohere), relevance gating, groundedness checks and SSE streaming. Self-hosted RAG you can audit.",
@@ -684,6 +744,29 @@ npx @viglet/turing-cli dev      # local stack
 npx @viglet/turing-cli deploy   # push agents, flows, tools & skills`,
     },
     docs: { label: "Agents, tools & skills docs", href: "https://docs.viglet.org/turing/category/agents" },
+    faq: [
+      {
+        q: "What is the difference between a tool and a skill?",
+        a: "A tool is a function the agent calls, written in Groovy and run in-process. A skill is a folder (a SKILL.md plus scripts) that the agent discovers and runs in an isolated Docker sandbox, in the same format Claude uses.",
+      },
+      {
+        q: "Can an existing OpenAI app talk to a Turing agent?",
+        a: "Yes, through the OpenAI-compatible gateway once it is enabled. Point the app's base URL at Turing and ask for the model turing-agent:<id>; the agent answers with its own prompt, tools and grounding.",
+      },
+      {
+        q: "Can an agent keep our brand voice across LLM providers?",
+        a: "Attach a persona. It carries the required and forbidden vocabulary and the brand facts, and it stays with the agent when you change its LLM.",
+      },
+      {
+        q: "Do the provider's server-side tools need code?",
+        a: "No. Web search, web fetch, code execution and computer use are switched on per agent, once an admin has enabled them on the model instance.",
+      },
+    ],
+    related: {
+      label: "AI Personas: give your agents a brand voice",
+      href: "/persona/",
+      body: "Governed vocabulary, live brand facts over MCP and audience content-fit scoring.",
+    },
     metaTitle: "AI Agents with Tools, Skills, MCP & Native Tools | Viglet Turing",
     metaDescription:
       "Build AI agents that call custom tools, run Anthropic-standard skills in a Docker sandbox, federate over MCP, and use OpenAI/Anthropic/Gemini native server-side tools, opt-in per agent. Self-hosted.",
@@ -697,7 +780,7 @@ npx @viglet/turing-cli deploy   # push agents, flows, tools & skills`,
     sections: [
       {
         title: "Bring any LLM",
-        body: "OpenAI, Anthropic Claude, Google Gemini (native SDK or OpenAI-compatible), Azure OpenAI and local Ollama models, behind one pluggable provider interface. Switch providers per agent; API keys are stored encrypted.",
+        body: "OpenAI, Anthropic Claude, Google Gemini (native SDK or OpenAI-compatible), Mistral, Cohere, AWS Bedrock, Google Vertex AI, local Ollama models and any OpenAI-compatible endpoint, behind one pluggable provider interface. Switch providers per agent; API keys are stored encrypted.",
       },
       {
         title: "Bring your search engine & storage",
@@ -732,6 +815,29 @@ npx @viglet/turing-cli deploy   # push agents, flows, tools & skills`,
     enabled: false          # flip on for multi-tenant`,
     },
     docs: { label: "Deployment & configuration docs", href: "https://docs.viglet.org/turing/category/deploy-operate" },
+    faq: [
+      {
+        q: "How do I run Turing on my own machine?",
+        a: "One command: docker run -p 2700:2700 ghcr.io/openviglet/turing-ce, then open the console on port 2700. A docker compose file in the repository brings up the full stack with Solr, MariaDB and monitoring.",
+      },
+      {
+        q: "Can it run with no cloud LLM at all?",
+        a: "Yes. Point the agents at local Ollama models or at any OpenAI-compatible server inside your network, and nothing in the answer path leaves it.",
+      },
+      {
+        q: "Is multi-tenancy on by default?",
+        a: "No. It sits behind a feature flag, so a single-team deployment stays a single application. Turn it on to isolate tenants behind one identity realm.",
+      },
+      {
+        q: "How do I gate prompt and agent changes?",
+        a: "Write YAML eval suites and run them with the CLI's eval command in CI, so a change that lowers answer quality fails the build before it ships.",
+      },
+    ],
+    related: {
+      label: "Security & data residency",
+      href: "/security/",
+      body: "Why self-hosting removes the vendor boundary, and the questions regulated teams ask first.",
+    },
     metaTitle: "Self-Hosted, Any LLM, Open Source (Apache 2.0) | Viglet Turing",
     metaDescription:
       "Self-host enterprise AI search on your own infrastructure: any LLM provider, any search engine, pluggable storage, multi-tenant, observable, with a CLI and SDKs. Open source under Apache 2.0.",

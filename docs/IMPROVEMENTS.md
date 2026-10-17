@@ -2247,3 +2247,23 @@ public/sitemap.xml lists llms.txt, which is a file for assistants and not a page
 sitemap (assistants find it at its well-known path), and decide whether the Storybook
 and the marketplace examples should compete in search with the product pages or be left
 out.
+
+### CXV.7 Azure claims on the marketing site (T1101)
+
+Found while shipping T1095. Turing removed its Azure OpenAI provider (the site's own
+`public/changelog.json` records "Removed Azure OpenAI Support"), and the provider set
+today is OpenAI, Anthropic, Gemini (native and OpenAI endpoint), Mistral, Cohere, AWS
+Bedrock, Google Vertex AI, Ollama, OpenAI-compatible endpoints, Voyage (embeddings) and
+the managed Viglet endpoint. The marketing site still names Azure as supported in about
+ten places: `site-content.ts` (the home "Run it" pillar, the LLM logo strip, the compare
+FAQ, the AEM matrix row, the AEM depth card, the AEM FAQ and the persona FAQ),
+`chat-demo.tsx`'s canned answer, and `public/aem-search.md` (matrix row and bullet). The
+/features/run/ page was corrected with T1095.
+
+What to build: replace each Azure mention with the real set, worded to fit its spot
+(short form "OpenAI · Anthropic · Gemini · Bedrock · Ollama" in matrix cells; the full
+list where the sentence enumerates). Drop "Azure OpenAI" from the logo strip rather than
+keeping a logo for a provider that does not exist. Where a sentence's point is "any
+cloud you can pin to a region", Bedrock and Vertex AI are the honest examples. A grep
+for "Azure" over `frontend/apps/site/src` and `public/*.md` should then return only the
+changelog history.
