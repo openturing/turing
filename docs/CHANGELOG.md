@@ -1456,5 +1456,7 @@
 
 ## Block CC — Lucene engine search with synonyms
 
+- **T1091** — Searches whose synonym expands to a multi-word term, and quoted queries, answer on Lucene: phrases run only on TEXT fields and match keyword fields as one exact term (design §CXIV.1 recorded in `turing-app/src/main/java/com/viglet/turing/lucene/TurLuceneQueryBuilder.java`).
+
 ## Block CD — turing.viglet.org relevance pass (2026-10)
 

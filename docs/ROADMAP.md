@@ -11,10 +11,6 @@
 - 📋 **T1092** (deps: —) **The gateway answers 502 api_error when the provider says 429 out of credits, so clients cannot tell quota from outage** — OpenAI clients back off, alert or retry by status and error type, and a quota hit read as an outage gets the wrong response. → §CXIII.2
 - 📋 **T1099** (deps: —) **The gateway ignores temperature, top_p, max_tokens and stop sent by the client, so the instance defaults always win** — A client pinning temperature 0 or a token cap gets a 200 and different sampling than it asked for. → §CXIII.3
 
-## Block CC — Lucene engine search with synonyms
-
-- 📋 **T1091** (deps: —) **A search whose synonym expands to a multi-word term fails with 500 on Lucene: the phrase also runs on the id field** — Any site with a synonym like 'home office' loses every search that triggers it. → §CXIV.1
-
 ## Block CD — turing.viglet.org relevance pass (2026-10)
 
 - 📋 **T1093** (deps: —) **The AEM page ranks 36th to 44th for the AEM queries, and almost nothing links to it** — Google already picked /aem-search/ as the Viglet answer for AEM; inbound links and the searched words in its title are what it lacks. → §CXV.1

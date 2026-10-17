@@ -23,8 +23,6 @@ moved — verify against `git ls-files` before acting.
 
 ## Block CB — LLM gateway parity with the OpenAI wire
 
-## Block CC — Lucene engine search with synonyms
-
 ## Block CD — turing.viglet.org relevance pass (2026-10)
 
 ## Table of contents
@@ -2191,34 +2189,6 @@ vendor whose options cannot carry it, or applied best-effort. Sampling is adviso
 the OpenAI contract, so best-effort is the likely answer.
 
 ## CXIV Lucene engine search with synonyms
-
-### CXIV.1 Synonym phrases on untokenized fields (T1091)
-
-Met in trabalharei (TRA95) on the local Turing (`turing-ce:local`, Lucene engine). Its
-SN site `trabalharei-vagas` carries synonyms applied through
-`/api/sn/{site}/synonym/batch` and `/synonym/apply`, some with multi-word terms: `clt` =
-`carteira assinada`, `remoto` = `home office`, `caixa` = `operador de caixa`.
-
-    GET /api/sn/trabalharei-vagas/search?q=caixa&_setlocale=pt_BR
-
-answers 500, and so does every query whose expansion holds a multi-word term (`clt`,
-`remoto`, `aux adm`). A query whose expansion is single words (`motorista` = `condutor`)
-answers 200. The log:
-
-    java.lang.IllegalStateException: field "id" was indexed without position data;
-    cannot run PhraseQuery (phrase=id:"auxiliar administrativo")
-      at TurLuceneResultProcessor.getResults(TurLuceneResultProcessor.java:108)
-      at TurLucene.retrieveLuceneFromSN(TurLucene.java:80)
-
-The multi-word term becomes a PhraseQuery on every field, `id` included, and `id` is a
-StringField with no positions, so the whole search throws.
-
-Expected: a phrase from a synonym runs only on tokenized (TEXT) fields, or on a STRING
-field as an exact term, and a query never fails because one field cannot take a phrase.
-The search answers with the expansion applied.
-
-Workaround in trabalharei: none. Its synonyms stay as they are, and these searches fail
-on the local Turing until this ships.
 
 ## CXV turing.viglet.org relevance pass
 

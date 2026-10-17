@@ -18,13 +18,16 @@ package com.viglet.turing.lucene;
 
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.EnumSet;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
@@ -37,7 +40,11 @@ import org.apache.lucene.queryparser.classic.QueryParserBase;
 import org.apache.lucene.search.BooleanClause;
 import org.apache.lucene.search.BooleanQuery;
 import org.apache.lucene.search.BoostQuery;
+import org.apache.lucene.search.DisjunctionMaxQuery;
 import org.apache.lucene.search.FieldExistsQuery;
+import org.apache.lucene.search.MatchNoDocsQuery;
+import org.apache.lucene.search.MultiPhraseQuery;
+import org.apache.lucene.search.PhraseQuery;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.TermQuery;
 import org.springframework.stereotype.Component;
@@ -478,8 +485,8 @@ public class TurLuceneQueryBuilder {
         try {
             if (textFields.length == 0) {
                 // Fallback: search the id field
-                return new QueryParser(TurLuceneConstants.ID, analyzer).parse(
-                        QueryParserBase.escape(queryStr));
+                return phrasesOnPositionalFieldsOnly(new QueryParser(TurLuceneConstants.ID, analyzer).parse(
+                        QueryParserBase.escape(queryStr)), Set.of());
             }
             // T1065 â€” a field's search weight multiplies its clause, so a title
             // match can outweigh the same word in body text.
@@ -491,9 +498,10 @@ public class TurLuceneQueryBuilder {
             // T1066 â€” a multi-word expansion is a phrase, not loose words.
             parser.setAutoGenerateMultiTermSynonymsPhraseQuery(true);
             Query termCentric = parser.parse(queryStr);
-            return analyzer instanceof TurLuceneSynonymAnalyzer
+            Query main = analyzer instanceof TurLuceneSynonymAnalyzer
                     ? withMultiWordSynonyms(termCentric, queryStr, textFields, analyzer, weights)
                     : termCentric;
+            return phrasesOnPositionalFieldsOnly(main, positionalFields(turSNSite));
         } catch (ParseException e) {
             log.warn("Failed to parse Lucene query '{}', falling back to MatchAllDocsQuery: {}", queryStr,
                     e.getMessage());
@@ -555,6 +563,58 @@ public class TurLuceneQueryBuilder {
                 .add(termCentric, BooleanClause.Occur.SHOULD)
                 .add(perField.build(), BooleanClause.Occur.SHOULD)
                 .build();
+    }
+
+    /**
+     * T1091 — the fields indexed with positions, which are the only ones a phrase
+     * can run on: TEXT fields are a {@code TextField}, while STRING/ARRAY fields
+     * and the {@code id} (always, see {@code TurLuceneDocumentHandler}) are a
+     * {@code StringField} with no position data.
+     */
+    private Set<String> positionalFields(TurSNSite turSNSite) {
+        Set<String> fields = new HashSet<>();
+        turSNSiteFieldExtRepository.findByTurSNSiteAndEnabled(turSNSite, 1).forEach(ext -> {
+            if (ext.getType() == TurSEFieldType.TEXT && ext.getName() != null
+                    && !TurLuceneConstants.ID.equals(ext.getName())) {
+                fields.add(ext.getName());
+            }
+        });
+        return fields;
+    }
+
+    /**
+     * T1091 — a phrase (a multi-word synonym expansion, or a quoted query) on a
+     * field without positions throws at search time and fails the whole query.
+     * On such a field the phrase becomes an exact term on the whole phrase, which
+     * is how a keyword field is matched; every other clause is kept as parsed.
+     */
+    static Query phrasesOnPositionalFieldsOnly(Query query, Set<String> positional) {
+        return switch (query) {
+            case BooleanQuery bq -> {
+                BooleanQuery.Builder builder = new BooleanQuery.Builder()
+                        .setMinimumNumberShouldMatch(bq.getMinimumNumberShouldMatch());
+                for (BooleanClause clause : bq.clauses()) {
+                    builder.add(phrasesOnPositionalFieldsOnly(clause.query(), positional), clause.occur());
+                }
+                yield builder.build();
+            }
+            case BoostQuery boost -> new BoostQuery(
+                    phrasesOnPositionalFieldsOnly(boost.getQuery(), positional), boost.getBoost());
+            case DisjunctionMaxQuery dismax -> new DisjunctionMaxQuery(dismax.getDisjuncts().stream()
+                    .map(q -> phrasesOnPositionalFieldsOnly(q, positional)).toList(),
+                    dismax.getTieBreakerMultiplier());
+            case PhraseQuery phrase when !positional.contains(phrase.getField()) -> new TermQuery(
+                    new Term(phrase.getField(), Arrays.stream(phrase.getTerms())
+                            .map(Term::text).collect(Collectors.joining(" "))));
+            case MultiPhraseQuery multi when !positional.contains(field(multi)) -> new MatchNoDocsQuery(
+                    "T1091: no positions on " + field(multi));
+            default -> query;
+        };
+    }
+
+    private static String field(MultiPhraseQuery multi) {
+        Term[][] terms = multi.getTermArrays();
+        return terms.length == 0 || terms[0].length == 0 ? null : terms[0][0].field();
     }
 
     /** Fallback: build OR of TermQuery across text fields. */
