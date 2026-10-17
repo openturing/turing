@@ -307,6 +307,7 @@ number" looked free but wasn't. Grepping three files (`ROADMAP.md`,
 
 ## Log (most recent first)
 
+- **T1096 SHIPPED** (Block CD §CXV.4: Lucidworks Fusion on /compare/, Coveo vs Lucidworks table, linked with the docs post), 2026-10-17.
 - **T1101 FILED** (Block CD §CXV.7: the marketing site still lists Azure OpenAI as a provider), 2026-10-17.
 - **T1095 PART SHIPPED, DEFERRED** (Block CD §CXV.3: feature-page FAQs + JSON-LD and Go-deeper links; Search Console re-read waits a month), 2026-10-17.
 - **T1094 SHIPPED** (Block CD §CXV.2: security page retitled for data residency, residency FAQ + FAQPage JSON-LD, home link), 2026-10-17.

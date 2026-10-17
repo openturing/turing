@@ -2222,15 +2222,6 @@ or give it what only it says (the matching docs.viglet.org pages are the source)
 /persona/ and /migrate/ from the pages and posts that discuss their subject, and re-read
 the Search Console a month after.
 
-### CXV.4 Lucidworks in the comparison (T1096)
-
-The comparison people actually search is between two competitors: "coveo vs lucidworks"
-(52 impressions) and "lucidworks vs coveo" (41) reach the docs.viglet.org post "Coveo vs
-Lucidworks Fusion" around position 10. /compare/ covers Algolia, Coveo, Elasticsearch
-and DIY RAG and never names Lucidworks. Add a Lucidworks column with objective,
-checkable facts only (licence, hosting model, engines), no new claims beyond what the
-docs post already states, and link /compare/ and the docs post to each other.
-
 ### CXV.5 One analytics rule for the three sites (T1097)
 
 index.html loads Google Analytics (G-XCTGNN3G4R) on every page without asking.

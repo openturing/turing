@@ -1464,3 +1464,4 @@
 - **T1093 (page and in-repo links)** — /aem-search/ carries "AEM search component" and "search engine for AEM" in its title, H1 and description, answers "how do I enable AI search in AEM" in its FAQ, and the SDK READMEs link it.
 - **T1094** — /security/ says self-hosted AI search and RAG with data residency in its title, H1 and description, answers the data-residency questions in a FAQ with FAQPage JSON-LD, and the home links it.
 - **T1095 (feature pages and links)** — Each /features/ page answers its own questions with FAQPage JSON-LD and links the deep page on its subject, so /migrate/, /compare/, /persona/ and /security/ gain contextual links.
+- **T1096** — /compare/ names Lucidworks Fusion in its title and H1, adds a Coveo vs Lucidworks at-a-glance table of checkable facts and a vendor card, and links the docs post both ways.

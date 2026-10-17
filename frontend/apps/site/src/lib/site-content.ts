@@ -1069,6 +1069,28 @@ export const COMPARE_MATRIX: CompareRow[] = [
   { capability: "Time to first result", turing: "minutes", algolia: "minutes", coveo: "days", elastic: "days", diy: "weeks" },
 ];
 
+/**
+ * T1096 — the comparison people search for is Coveo vs Lucidworks Fusion. Only
+ * the objective, checkable rows of the docs.viglet.org post: licence and
+ * hosting model, pricing shape, where the data lives and the engine underneath.
+ */
+export interface EnterpriseCompareRow {
+  capability: string;
+  coveo: string;
+  lucidworks: string;
+  turing: string;
+}
+
+export const COVEO_LUCIDWORKS_POST =
+  "https://docs.viglet.org/blog/turing-es-vs-coveo-lucidworks";
+
+export const COVEO_LUCIDWORKS_MATRIX: EnterpriseCompareRow[] = [
+  { capability: "Model", coveo: "SaaS (fully managed)", lucidworks: "Licence + infrastructure (self-host or cloud)", turing: "Open source (Apache 2.0)" },
+  { capability: "Pricing", coveo: "Per query / per seat", lucidworks: "Licence + infrastructure", turing: "Free, optional support" },
+  { capability: "Where the data lives", coveo: "Coveo's cloud", lucidworks: "Your perimeter", turing: "Your infrastructure" },
+  { capability: "Search engine", coveo: "Proprietary index", lucidworks: "Apache Solr based", turing: "Solr, Elasticsearch or Lucene" },
+];
+
 export interface CompareVendor {
   name: string;
   /** One-line honest framing of what they are. */
@@ -1099,6 +1121,14 @@ export const COMPARE_VENDORS: CompareVendor[] = [
       "Coveo is strong where a large organisation wants managed relevance: machine-learning ranking tuned on its own traffic, generative answers with citations, and a long list of ready connectors into Salesforce, ServiceNow, SharePoint and the big commerce platforms. It is sold and supported as an enterprise subscription.",
     turingFit:
       "Switch when the content must stay in your own infrastructure, when you want to pick the LLM and the search engine yourself, or when an enterprise contract is out of proportion to the project. Turing gives you cited RAG, agents and faceted search, self-hosted under Apache 2.0.",
+  },
+  {
+    name: "vs Lucidworks Fusion",
+    tagline: "A licensed, Solr-based enterprise search platform you can self-host.",
+    shines:
+      "Fusion is built on Apache Solr and exposes powerful indexing and query pipelines with ML modules. It can run inside your own perimeter, which solves data residency, and suits a dedicated search team with budget for a licensed platform.",
+    turingFit:
+      "Switch when you want the same self-hosting without a licence: Turing is Apache 2.0, runs on Solr, Elasticsearch or Lucene, and ships faceted search, semantic search, cited RAG and agents together instead of a separate AI tier.",
   },
   {
     name: "vs Elasticsearch",

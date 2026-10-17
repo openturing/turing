@@ -9,6 +9,8 @@ import {
   COMPARE_COLUMNS,
   COMPARE_MATRIX,
   COMPARE_VENDORS,
+  COVEO_LUCIDWORKS_MATRIX,
+  COVEO_LUCIDWORKS_POST,
   FAQ,
 } from "@/lib/site-content";
 import { cn } from "@/lib/utils";
@@ -80,7 +82,7 @@ export function ComparePage() {
               How Turing compares
             </p>
             <h1 className="mt-3 max-w-3xl text-3xl font-extrabold leading-[1.1] tracking-tight sm:text-4xl lg:text-5xl">
-              Viglet Turing vs Algolia, Coveo, Elasticsearch & DIY RAG
+              Viglet Turing vs Algolia, Coveo, Lucidworks, Elasticsearch & DIY RAG
             </h1>
             <p className="mt-5 max-w-2xl text-lg leading-relaxed text-[#aeb7d4]">
               Where each alternative wins, and where a self-hosted, open-source
@@ -176,6 +178,52 @@ export function ComparePage() {
               High-level comparison as of 2026; verify current vendor
               capabilities. “DIY” = assembling LangChain/LlamaIndex with a vector
               database yourself.
+            </p>
+          </Container>
+        </section>
+
+        {/* T1096: the enterprise-portal comparison people search for */}
+        <section id="coveo-vs-lucidworks" className="scroll-mt-24 border-t border-border py-16 lg:py-20">
+          <Container className="max-w-4xl">
+            <div className="mx-auto mb-10 max-w-2xl text-center">
+              <h2 className="text-2xl font-extrabold tracking-tight sm:text-3xl">
+                Coveo vs Lucidworks Fusion, and the open-source option
+              </h2>
+              <p className="mt-3 text-base leading-relaxed text-muted-foreground">
+                Coveo is managed SaaS priced per query; Lucidworks Fusion is
+                licensed, Solr-based and runs in your perimeter. Here is where
+                each one stands, with Turing beside them.
+              </p>
+            </div>
+            <TableScroll>
+              <table className="w-full min-w-[640px] border-collapse text-sm">
+                <thead>
+                  <tr>
+                    <th className="sticky left-0 z-10 bg-background p-3 text-left font-semibold"></th>
+                    <th className="p-3 text-left font-semibold text-muted-foreground">Coveo</th>
+                    <th className="p-3 text-left font-semibold text-muted-foreground">Lucidworks Fusion</th>
+                    <th className="rounded-t-xl bg-primary/10 p-3 text-left font-extrabold text-primary">
+                      {COMPARE_COLUMNS.turing}
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {COVEO_LUCIDWORKS_MATRIX.map((row) => (
+                    <tr key={row.capability} className="border-t border-border">
+                      <td className="sticky left-0 z-10 bg-background p-3 font-medium">{row.capability}</td>
+                      <td className="p-3 text-muted-foreground">{row.coveo}</td>
+                      <td className="p-3 text-muted-foreground">{row.lucidworks}</td>
+                      <td className="bg-primary/5 p-3 font-medium">{row.turing}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </TableScroll>
+            <p className="mt-4 text-center text-sm text-muted-foreground">
+              Pricing, data residency, connectors and RAG in more depth:{" "}
+              <a href={COVEO_LUCIDWORKS_POST} className="font-semibold text-primary hover:underline">
+                Coveo vs. Lucidworks Fusion (and an open-source option)
+              </a>
             </p>
           </Container>
         </section>
