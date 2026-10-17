@@ -1,6 +1,6 @@
 # Vectorless (Structured-Data) RAG
 
-> **Talk to a structured catalog — grounded, cited, no vector database.**
+> **Talk to a structured catalog: grounded, cited, no vector database.**
 > Turing answers questions over your product catalog, price list, spec sheet, or
 > model registry using only a language model and your existing search index. No
 > embeddings, no vector store, no chunking pipeline to stand up.
@@ -16,8 +16,8 @@ is chunked, each chunk is turned into an embedding vector, stored in a vector
 store, and queries are matched by cosine similarity. That is the right tool for
 **unstructured prose** (articles, manuals, tickets).
 
-But when your knowledge is **structured** — rows with named fields (price,
-context window, category, in-stock, rating) — you do not need any of that. Turing
+But when your knowledge is **structured**, rows with named fields (price,
+context window, category, in-stock, rating), you do not need any of that. Turing
 parses the user's question into a search over your **declared field schema**,
 runs it against the search engine (Solr / Elasticsearch / Lucene) as ordinary
 field / facet / range queries, and the language model answers **strictly from the
@@ -38,11 +38,11 @@ Base Mode**:
 
 | Mode | Best for | Requires |
 | ---- | -------- | -------- |
-| **Vector** (default) | Prose / unstructured content — articles, docs, manuals, support tickets | Embedding model **+** vector store on the bound agent |
-| **Vectorless (Structured)** | A structured catalog — products, prices, specs, a model registry | **Only a default LLM** |
+| **Vector** (default) | Prose / unstructured content: articles, docs, manuals, support tickets | Embedding model **+** vector store on the bound agent |
+| **Vectorless (Structured)** | A structured catalog: products, prices, specs, a model registry | **Only a default LLM** |
 | **Hybrid** | A site that has both prose *and* structured attributes | The full vector setup (superset of Vector) |
 
-The mode you pick only changes **discoverability and readiness** — the vectorless
+The mode you pick only changes **discoverability and readiness**: the vectorless
 copilot endpoint has always existed. In **Vectorless** mode the AI-Mode readiness
 check reports the site as ready when a default LLM is configured, instead of
 asking you to wire up an embedding model and a vector store you do not need.
@@ -51,9 +51,9 @@ asking you to wire up an embedding model and a vector store you do not need.
 
 1. Index your structured records into an SN site via `POST /api/sn/import` (each
    record's attributes become searchable fields). See
-   [T791 — the scheduled JSON-feed ingester](../ROADMAP.md) to *pull* a remote
+   [T791: the scheduled JSON-feed ingester](../ROADMAP.md) to *pull* a remote
    feed on a schedule instead of pushing.
-2. **Declare the field schema** — mark the fields you want the assistant to reason
+2. **Declare the field schema**: mark the fields you want the assistant to reason
    over (`price`, `contextWindow`, `kind`, …) as enabled `TurSNSiteFieldExt` rows,
    with facetable/type set correctly. The NL→filter step may only reference
    declared fields; anything it cannot ground is dropped (it never invents a
@@ -74,7 +74,7 @@ asking you to wire up an embedding model and a vector store you do not need.
 }
 ```
 
-The response is a grounded answer plus a `citations[]` array — each citation is a
+The response is a grounded answer plus a `citations[]` array: each citation is a
 matched row (id, title, optional link, score) the answer is allowed to reference.
 Multi-turn is supported: pass the running conversation and the latest user turn
 drives retrieval.
@@ -84,19 +84,19 @@ configured (i.e. whether the copilot can answer).
 
 ## Guarantees
 
-- **Grounded** — the answer asserts nothing that is not in the matched rows; the
+- **Grounded**: the answer asserts nothing that is not in the matched rows; the
   parser never invents a field.
-- **Cited** — every claim carries the `[n]` of the row it came from.
-- **Objective ranking** — results are ordered by relevance/objective signals only;
+- **Cited**: every claim carries the `[n]` of the row it came from.
+- **Objective ranking**: results are ordered by relevance/objective signals only;
   no paid placement ever enters the pipeline.
-- **Fail-open** — a parse failure degrades to a free-text query, a ranking failure
+- **Fail-open**: a parse failure degrades to a free-text query, a ranking failure
   degrades to lexical order, and an LLM failure still returns the matched
   citations so the client can render results without a synthesized answer.
 
 ## Over the OpenAI-compatible gateway (zero SDK)
 
 Any OpenAI-style client can get grounded, cited structured answers with **no
-Turing SDK** through the Block AZ gateway — either a `turing-copilot:<site>` model
+Turing SDK** through the Block AZ gateway: either a `turing-copilot:<site>` model
 name or an `x-turing-copilot-site: <site>` header routes the request to the
 vectorless copilot. The cited rows come back as a plain-text **Sources** footer so
 the answer stays traceable over the OpenAI wire format.
@@ -109,13 +109,13 @@ curl -sX POST https://<host>/v1/chat/completions \
        "messages":[{"role":"user","content":"cheapest embedding model with >= 1M context?"}]}'
 ```
 
-This is the cleanest "separate backend" integration for an external static site —
+This is the cleanest "separate backend" integration for an external static site:
 a natural extension of the `turing-sn:<site>` / RAG-as-a-header routing.
 
 ## Stuff-all mode (small catalogs)
 
 For a catalog small enough to fit in one prompt (a few hundred rows), the copilot
-can skip retrieval entirely and ground the LLM on **every** row — the
+can skip retrieval entirely and ground the LLM on **every** row: the
 extreme-vectorless path. It is **self-gating by size**: enabled by default, it
 only activates when the whole index fits within a token budget and document cap,
 and otherwise falls back to the normal filtered NL→DSL retrieval. Answers stay
@@ -133,7 +133,7 @@ turing:
 ## Live example
 
 The public [`openviglet/model-catalog`](https://openviglet.github.io/model-catalog/)
-is dogfooded as the first vectorless knowledge base on `turing-demo.viglet.org` —
+is dogfooded as the first vectorless knowledge base on `turing-demo.viglet.org`:
 ask it *"cheapest embedding model with ≥ 1M context?"* and it answers with linked,
 cited model rows. See Block BF · T794.
 

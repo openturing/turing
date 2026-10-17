@@ -1,5 +1,5 @@
 /**
- * T1027 — the theme context, on its own.
+ * T1027: the theme context, on its own.
  *
  * The provider renders and the hook reads; a context object is neither, and a
  * module that exports one alongside a component reloads whole. The linter asks

@@ -7,7 +7,7 @@ import { WKND_DEMO_SITE, WKND_SEARCH_DOCS } from "@/lib/site-content";
 import { cn } from "@/lib/utils";
 
 /**
- * Live WKND demo for the AEM page — the same "search it / ask it" playground the
+ * Live WKND demo for the AEM page: the same "search it / ask it" playground the
  * home uses, pinned to the seeded `wknd-publish` SN site on the public demo
  * instance. The corpus is the Adobe WKND reference site, indexed live via the
  * Dumont AEM connector; result and citation links resolve on WKND's public
@@ -18,7 +18,7 @@ import { cn } from "@/lib/utils";
 const SEARCH_PLACEHOLDER = "Search WKND…  (try “surf”, “ski”, “Bali”, “Yosemite”)";
 
 const CHAT_GREETING =
-  "Hi! Ask about WKND adventures, travel and magazine stories — answers are grounded in the WKND content Turing indexed from AEM.";
+  "Hi! Ask about WKND adventures, travel and magazine stories. Answers are grounded in the WKND content Turing indexed from AEM.";
 
 const CHAT_SUGGESTIONS = [
   "Where can I go surfing?",
@@ -26,13 +26,13 @@ const CHAT_SUGGESTIONS = [
   "What is WKND about?",
 ];
 
-// Offline scripted answers (keyword-matched) — only used when the live
+// Offline scripted answers (keyword-matched), only used when the live
 // `wknd-publish` site isn't reachable, so the widget still demonstrates the flow.
 const CHAT_SCRIPT: ChatScriptEntry[] = [
   {
     match: /surf|bali|wave|beach|costa rica/i,
     answer:
-      "Try the **Bali Surf Camp** — Nusa Dua's right-handers are famous for big-wave surfing (best for advanced surfers). For cold-water swells, **Arctic Surfing** chases waves inside the Arctic Circle.",
+      "Try the **Bali Surf Camp**: Nusa Dua's right-handers are famous for big-wave surfing (best for advanced surfers). For cold-water swells, **Arctic Surfing** chases waves inside the Arctic Circle.",
     sources: ["Bali Surf Camp", "Arctic Surfing"],
   },
   {
@@ -57,7 +57,7 @@ const CHAT_SCRIPT: ChatScriptEntry[] = [
 
 const CHAT_FALLBACK = {
   answer:
-    "WKND covers surf, ski, cycling, camping and travel adventures worldwide. Ask about a destination or activity — surfing, skiing, wine country — or what WKND is.",
+    "WKND covers surf, ski, cycling, camping and travel adventures worldwide. Ask about a destination or activity (surfing, skiing, wine country) or what WKND is.",
   sources: ["WKND Adventures & Travel"],
 };
 
@@ -137,7 +137,7 @@ export function WkndPlayground() {
         </span>
       </div>
 
-      {/* body — keep both mounted so query + conversation survive a tab switch */}
+      {/* body: keep both mounted so query + conversation survive a tab switch */}
       <div className="relative flex-1 overflow-hidden">
         <div className={cn("absolute inset-0", tab === "search" ? "block" : "hidden")}>
           <SearchDemo
@@ -162,7 +162,7 @@ export function WkndPlayground() {
         </div>
       </div>
 
-      {/* provenance note — the inner demo already shows "Built with …" */}
+      {/* provenance note: the inner demo already shows "Built with …" */}
       <div className="border-t border-border px-4 py-2.5 text-xs text-muted-foreground">
         Adobe WKND content · indexed from AEM via the Dumont connector
       </div>

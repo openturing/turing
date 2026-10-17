@@ -71,7 +71,7 @@ export function Comparison() {
           </table>
         </TableScroll>
         <p className="mt-4 text-center text-xs text-muted-foreground">
-          High-level comparison as of 2026 — verify current vendor capabilities. “DIY” = assembling LangChain/LlamaIndex with a vector database yourself.
+          High-level comparison as of 2026; verify current vendor capabilities. “DIY” = assembling LangChain/LlamaIndex with a vector database yourself.
         </p>
         <div className="mt-8 flex flex-wrap justify-center gap-x-8 gap-y-3 text-center">
           <a

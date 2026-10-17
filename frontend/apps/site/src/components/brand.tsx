@@ -2,7 +2,7 @@ import * as React from "react";
 import { cn } from "@/lib/utils";
 import { VigletLogo } from "@/components/viglet-logo";
 
-/** Original Viglet "Tu" brand mark + wordmark. */
+/** The Viglet Turing cube mark and wordmark. */
 export function Logo({
   className,
   showWord = true,
@@ -15,7 +15,7 @@ export function Logo({
   return (
     <span className={cn("inline-flex items-center gap-2 font-extrabold", className)}>
       <VigletLogo identifier="turing" size={size} />
-      {showWord && <span>Viglet Turing ES</span>}
+      {showWord && <span>Viglet Turing</span>}
     </span>
   );
 }

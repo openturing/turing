@@ -1,11 +1,11 @@
 # turing-site
 
-Public marketing site for **Viglet Turing ES** — published to
+Public marketing site for **Viglet Turing**, published to
 [turing.viglet.org](https://turing.viglet.org/).
 
 Stack: **Vite 8 + React 19 + TypeScript + Tailwind CSS v4 + shadcn/ui**
 (same conventions as the other apps in this monorepo). It is a standalone,
-dependency-light landing page — it does **not** depend on the Turing SDK or
+dependency-light landing page: it does **not** depend on the Turing SDK or
 backend.
 
 ## Develop
@@ -33,7 +33,7 @@ alongside the React SDK Storybook (`/react-sdk/`) and the marketplace examples
 
 All page copy lives in [`src/lib/site-content.ts`](src/lib/site-content.ts)
 (features, agent-loop steps, providers, stats, marketplace + ecosystem cards).
-Edit that file to update the page — the section components in
+Edit that file to update the page; the section components in
 [`src/components/sections/`](src/components/sections/) render it.
 
 Static assets served from the site root (`robots.txt`, `sitemap.xml`,

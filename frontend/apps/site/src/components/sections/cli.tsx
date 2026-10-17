@@ -20,7 +20,7 @@ function CliTerminal() {
         <span className="size-2.5 rounded-full bg-[#ff5f57]" />
         <span className="size-2.5 rounded-full bg-[#febc2e]" />
         <span className="size-2.5 rounded-full bg-[#28c840]" />
-        <span className="ml-2 font-mono text-xs text-[#8b94b3]">zsh — turing</span>
+        <span className="ml-2 font-mono text-xs text-[#8b94b3]">zsh · turing</span>
       </div>
       <pre className="overflow-x-auto p-5 font-mono text-[0.8rem] leading-relaxed text-[#d7def5]">
         <code>
@@ -61,7 +61,7 @@ export function Cli() {
             <code className="rounded bg-muted px-1.5 py-0.5 font-mono text-[0.85em]">
               @viglet/turing-cli
             </code>{" "}
-            is a zero-dependency developer CLI — scaffold a project, run a full
+            is a zero-dependency developer CLI: scaffold a project, run a full
             local stack, deploy to any environment, and evaluate your agents in CI.
           </p>
           <ul className="mt-6 space-y-3">

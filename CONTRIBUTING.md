@@ -1,7 +1,7 @@
-# Contributing to Viglet Turing ES
+# Contributing to Viglet Turing
 
-Thanks for your interest in contributing! Viglet Turing ES is open source under
-the [Apache 2.0 license](LICENSE), and contributions of all kinds are welcome —
+Thanks for your interest in contributing! Turing is open source under
+the [Apache 2.0 license](LICENSE), and contributions of all kinds are welcome:
 bug reports, documentation, and code.
 
 By participating you agree to abide by our
@@ -9,12 +9,12 @@ By participating you agree to abide by our
 
 ## Ways to contribute
 
-- **Report a bug** — [open an issue](https://github.com/openviglet/turing-ce/issues)
+- **Report a bug**: [open an issue](https://github.com/openviglet/turing-ce/issues)
   using the bug-report template; include version, steps to reproduce, and logs.
-- **Request a feature** — open an issue with the feature-request template.
-- **Ask a question** — use [Discussions](https://github.com/openviglet/turing-ce/discussions),
+- **Request a feature**: open an issue with the feature-request template.
+- **Ask a question**: use [Discussions](https://github.com/openviglet/turing-ce/discussions),
   not the issue tracker.
-- **Submit code or docs** — open a pull request (see below).
+- **Submit code or docs**: open a pull request (see below).
 
 ## How releases work (and how your PR ships)
 
@@ -24,7 +24,7 @@ not change how you contribute: open your pull request here as normal. A
 maintainer reviews it, and once accepted it is integrated and ships in a
 following release. Because of the snapshot model, please don't be surprised if
 your merged change appears as part of a squashed `Release vX.Y.Z` commit rather
-than your original commit — your authorship and sign-off are preserved in the
+than your original commit: your authorship and sign-off are preserved in the
 PR record.
 
 ## Development setup
@@ -59,14 +59,14 @@ java -jar turing-app/target/viglet-turing.jar
 
 ## Pull request guidelines
 
-1. Keep PRs focused — one logical change per PR.
+1. Keep PRs focused: one logical change per PR.
 2. Match the surrounding code style; add tests where it makes sense.
 3. Make sure the build passes (`./mvnw clean install`) before opening the PR.
 4. Write a clear description of **what** changed and **why**.
-5. **Sign off every commit** — see below.
+5. **Sign off every commit**: see below.
 6. **Do not hand-edit the roadmap files.** `docs/ROADMAP.md`, `docs/CHANGELOG.md`,
    `docs/IMPROVEMENTS.md` and `docs/STRATEGY.md` are written by
-   [roadkeep](https://github.com/alegauss/roadkeep) — `roadkeep add`, `roadkeep ship`,
+   [roadkeep](https://github.com/alegauss/roadkeep): `roadkeep add`, `roadkeep ship`,
    `roadkeep section add` and so on, configured by [`roadkeep.toml`](roadkeep.toml).
    `roadkeep lint` runs in CI and fails on a line that drifted from the format, so a
    hand-written entry is a build failure rather than a review comment.

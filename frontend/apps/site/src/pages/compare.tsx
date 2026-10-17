@@ -13,7 +13,7 @@ import {
 } from "@/lib/site-content";
 import { cn } from "@/lib/utils";
 
-/** Matrix cell — yes/no render as icons, anything else as short freeform text. */
+/** Matrix cell: yes/no render as icons, anything else as short freeform text. */
 function Cell({ value, highlight }: { value: string; highlight?: boolean }) {
   if (value === "yes") {
     return (
@@ -54,7 +54,7 @@ function FaqJsonLd() {
  * Deep comparison / FAQ page (§XXVII.3, T482).
  *
  * Answers the objections a team evaluating Turing against Algolia, Coveo,
- * Elasticsearch or a DIY LangChain stack will raise — a fair capability
+ * Elasticsearch or a DIY LangChain stack will raise: a fair capability
  * matrix, honest "where they win / where Turing fits" cards, and an
  * objection-answering FAQ (with FAQPage JSON-LD). Mirrors the MigratePage
  * shell: dark hero, dependency-free routing via plain <a href> full loads.
@@ -80,12 +80,11 @@ export function ComparePage() {
               How Turing compares
             </p>
             <h1 className="mt-3 max-w-3xl text-3xl font-extrabold leading-[1.1] tracking-tight sm:text-4xl lg:text-5xl">
-              Turing vs Algolia, Coveo, Elasticsearch & DIY RAG
+              Viglet Turing vs Algolia, Coveo, Elasticsearch & DIY RAG
             </h1>
             <p className="mt-5 max-w-2xl text-lg leading-relaxed text-[#aeb7d4]">
-              An honest look at where each alternative wins — and where a
-              self-hosted, open-source platform that unifies search, RAG and
-              agents fits instead. No straw men: Viglet Turing ES runs on the
+              Where each alternative wins, and where a self-hosted, open-source
+              platform for search, RAG and agents fits instead. Turing runs on the
               engine you already operate, keeps your data in your infrastructure,
               and is Apache 2.0.
             </p>
@@ -174,7 +173,7 @@ export function ComparePage() {
               </table>
             </TableScroll>
             <p className="mt-4 text-center text-xs text-muted-foreground">
-              High-level comparison as of 2026 — verify current vendor
+              High-level comparison as of 2026; verify current vendor
               capabilities. “DIY” = assembling LangChain/LlamaIndex with a vector
               database yourself.
             </p>
@@ -186,7 +185,7 @@ export function ComparePage() {
           <Container>
             <div className="mx-auto mb-10 max-w-2xl text-center">
               <h2 className="text-2xl font-extrabold tracking-tight sm:text-3xl">
-                Where each alternative wins — and where Turing fits
+                Where each alternative wins, and where Turing fits
               </h2>
               <p className="mt-3 text-base leading-relaxed text-muted-foreground">
                 The fair version. Each of these is a strong tool; the question is
@@ -220,8 +219,8 @@ export function ComparePage() {
                 Frequently asked questions
               </h2>
               <p className="mt-3 text-base leading-relaxed text-muted-foreground">
-                The objections worth raising before you commit — answered
-                straight.
+                The objections worth raising before you commit, with direct
+                answers.
               </p>
             </div>
             <dl className="divide-y divide-border">

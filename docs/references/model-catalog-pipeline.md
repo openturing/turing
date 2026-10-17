@@ -1,4 +1,4 @@
-# Model-catalog regeneration pipeline — moved
+# Model-catalog regeneration pipeline: moved
 
 > **This pipeline moved 2026-07-21 to the dedicated
 > [`openviglet/model-catalog`](https://github.com/openviglet/model-catalog) repo.**

@@ -18,7 +18,7 @@ import { cn } from "@/lib/utils";
 
 const PERSONA_BOOK_URL = "https://docs.viglet.org/turing/persona-book";
 
-/** Matrix cell — yes/no render as icons, anything else as short freeform text. */
+/** Matrix cell: yes/no render as icons, anything else as short freeform text. */
 function Cell({ value, highlight }: Readonly<{ value: string; highlight?: boolean }>) {
   if (value === "yes") {
     return (
@@ -48,7 +48,7 @@ function PersonaJsonLd() {
           {
             "@type": "ListItem",
             position: 1,
-            name: "Viglet Turing ES",
+            name: "Viglet Turing",
             item: "https://turing.viglet.org/",
           },
           {
@@ -61,12 +61,12 @@ function PersonaJsonLd() {
       },
       {
         "@type": "SoftwareApplication",
-        name: "Viglet Turing ES — AI Personas (brand voice)",
+        name: "Viglet Turing · AI Personas (brand voice)",
         applicationCategory: "BusinessApplication",
         operatingSystem: "Any (self-hosted, Docker)",
         url: "https://turing.viglet.org/persona/",
         description:
-          "Give your AI agents a governed brand voice. Personas turn a generic LLM into your most on-brand, most consistent representative — required and forbidden vocabulary enforced in two layers, live brand facts via MCP, audience content-fit scoring, Persona Match and synthetic user research. Self-hosted, open source (Apache 2.0).",
+          "Give your AI agents a governed brand voice. Required and forbidden vocabulary enforced in two layers, live brand facts via MCP, audience content-fit scoring, Persona Match and synthetic user research. Self-hosted, open source (Apache 2.0).",
         offers: { "@type": "Offer", price: "0", priceCurrency: "USD" },
         license: "https://www.apache.org/licenses/LICENSE-2.0",
       },
@@ -90,7 +90,7 @@ function PersonaJsonLd() {
 }
 
 /**
- * Persona solution landing (/persona) — "Give your AI a voice that sounds like
+ * Persona solution landing (/persona): "Give your AI a voice that sounds like
  * your company".
  *
  * Reframes prompt-engineering-per-agent as a reusable, governable brand voice:
@@ -118,7 +118,7 @@ export function PersonaPage() {
               <ArrowLeft className="size-4" /> Back to overview
             </a>
             <p className="mt-6 text-xs font-extrabold tracking-[0.12em] text-[#7f8bbd] uppercase">
-              Personas — brand voice for AI
+              Personas · brand voice for AI
             </p>
             <h1 className="mt-3 max-w-3xl text-3xl font-extrabold leading-[1.1] tracking-tight sm:text-4xl lg:text-5xl">
               Your customer doesn't want to talk to an LLM. They want to talk to
@@ -126,11 +126,11 @@ export function PersonaPage() {
             </h1>
             <p className="mt-5 max-w-2xl text-lg leading-relaxed text-[#aeb7d4]">
               A generic AI voice is indistinguishable from the next ten companies
-              that asked the same model the same thing — and it quotes prices you
+              that asked the same model the same thing, and it quotes prices you
               never approved. A Persona is the voice profile of your AI: define it
-              once, attach it to any agent, and every reply sounds like your most
-              senior, most on-brand representative. Swap the LLM, swap the tools —
-              the voice stays. Open source, Apache 2.0.
+              once in Viglet Turing, attach it to any agent, and every reply sounds
+              like your company. Swap the LLM or the tools and the voice stays.
+              Open source, Apache 2.0.
             </p>
             <div className="mt-7 flex flex-wrap gap-3">
               <Button asChild size="lg">
@@ -152,18 +152,18 @@ export function PersonaPage() {
           </Container>
         </section>
 
-        {/* live content-fit demo — the centerpiece proof */}
+        {/* live content-fit demo: the centerpiece proof */}
         <section className="py-16 lg:py-20">
           <Container>
             <div className="mx-auto mb-10 max-w-2xl text-center">
               <p className="text-xs font-extrabold tracking-[0.12em] text-primary uppercase">
-                Live — a persona as an audience
+                Live · a persona as an audience
               </p>
               <h2 className="mt-3 text-2xl font-extrabold tracking-tight sm:text-3xl">
                 Does this content fit its reader?
               </h2>
               <p className="mt-3 text-base leading-relaxed text-muted-foreground">
-                A persona isn't only a voice — it can also be a reader you measure
+                A persona can also be a reader you measure
                 content against. Pick an audience, paste some text, and get a
                 fit verdict: a readability score plus a text-grounded AI review
                 that flags the exact spans that miss, each with a rewrite
@@ -184,11 +184,11 @@ export function PersonaPage() {
                 One model, three voices
               </p>
               <h2 className="mt-3 text-2xl font-extrabold tracking-tight sm:text-3xl">
-                Same question — “is the annual plan worth it?”
+                Same question: “is the annual plan worth it?”
               </h2>
               <p className="mt-3 text-base leading-relaxed text-muted-foreground">
                 The same AI, the same model, the same question. Only the persona
-                changes — and with it, how your company sounds.
+                changes, and with it how your company sounds.
               </p>
             </div>
             <div className="grid gap-5 md:grid-cols-3">
@@ -218,7 +218,7 @@ export function PersonaPage() {
                 How it works
               </p>
               <h2 className="mt-3 text-2xl font-extrabold tracking-tight sm:text-3xl">
-                Define once — govern everywhere
+                Define once, govern everywhere
               </h2>
               <p className="mt-3 text-base leading-relaxed text-muted-foreground">
                 A persona is decoupled from the model and the tools, so it's the
@@ -243,15 +243,15 @@ export function PersonaPage() {
           </Container>
         </section>
 
-        {/* persona surfaces — more than a system prompt */}
+        {/* persona surfaces: more than a system prompt */}
         <section className="border-t border-border py-16 lg:py-20">
           <Container>
             <div className="mx-auto mb-10 max-w-2xl text-center">
               <h2 className="text-2xl font-extrabold tracking-tight sm:text-3xl">
-                Far more than a system prompt
+                More than a system prompt
               </h2>
               <p className="mt-3 text-base leading-relaxed text-muted-foreground">
-                A Persona is something you operate directly — a voice, an
+                A Persona is something you operate directly: a voice, an
                 audience, and a research participant, all reusable.
               </p>
             </div>
@@ -343,8 +343,8 @@ export function PersonaPage() {
                 Teams ask us
               </h2>
               <p className="mt-3 text-base leading-relaxed text-muted-foreground">
-                The questions worth raising before you give your AI a brand voice
-                — answered straight.
+                The questions worth raising before you give your AI a brand voice,
+                with direct answers.
               </p>
             </div>
             <dl className="divide-y divide-border">
@@ -365,13 +365,12 @@ export function PersonaPage() {
           <Container>
             <Card className="mx-auto mt-16 max-w-3xl gap-0 border-primary/20 bg-primary/5 p-8 text-center sm:p-10">
               <h2 className="text-2xl font-extrabold tracking-tight">
-                Give every agent one voice — yours
+                Give every agent one voice: yours
               </h2>
               <p className="mx-auto mt-3 max-w-xl text-base leading-relaxed text-muted-foreground">
                 Self-host under Apache 2.0, define a persona in the admin UI, and
-                attach it to any AI Agent. The complete, didactic walkthrough —
-                with a worked example for every feature — lives in the Persona
-                Book.
+                attach it to any AI Agent. The full walkthrough, with a worked
+                example for every feature, is in the Persona Book.
               </p>
               <div className="mt-8 flex flex-wrap justify-center gap-3">
                 <Button asChild size="lg">

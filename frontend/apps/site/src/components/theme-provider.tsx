@@ -24,7 +24,7 @@ export function ThemeProvider({
 
   useEffect(() => {
     const stored = localStorage.getItem(storageKey) as Theme | null;
-    // T1027 — the one place this app has to reconcile with something React
+    // T1027: the one place this app has to reconcile with something React
     // cannot see: `localStorage` does not exist during the SSG prerender, so
     // both renders start from `defaultTheme` and this effect corrects the
     // client. The inline boot script in index.html already painted the right

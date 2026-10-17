@@ -1,6 +1,6 @@
-# Sub-Product Brief — Turing Agent Eval
+# Sub-Product Brief: Turing Agent Eval
 
-> **One line:** *"Does your AI agent still work after the model changed?"* — a
+> **One line:** *"Does your AI agent still work after the model changed?"*: a
 > provider-agnostic regression-testing / continuous-assurance tool for AI agents,
 > delivered as a CLI + GitHub Action, with Turing's LLM-as-judge as the paid
 > differentiator.
@@ -22,7 +22,7 @@ however, rot:**
 - Providers deprecate models; a pinned model disappears.
 - An author tweaks a persona or a flow and can't prove they broke nothing.
 
-So the agent is the one thing the customer **cannot install and forget** — it
+So the agent is the one thing the customer **cannot install and forget**: it
 *must* be re-checked on every model release and every prompt change. That
 recurring re-check is the product. It converts a dead "installed, works, bye"
 relationship into a subscription.
@@ -32,9 +32,9 @@ relationship into a subscription.
 - **Primary (now): existing Turing consultancy clients.** They already run a
   Turing instance that works but sits idle. The pitch: *"For €X/mo I guarantee
   your agent keeps working as models change, with a regression report on every
-  release."* No new customer acquisition — this attacks the real bottleneck
+  release."* No new customer acquisition: this attacks the real bottleneck
   (distribution) by selling to people who already know you.
-- **Secondary (later): any team shipping an LLM agent**, Turing or not — because
+- **Secondary (later): any team shipping an LLM agent**, Turing or not, because
   the CLI core is provider-agnostic. This is the open-source distribution play.
 
 ## 3. How it works (developer experience)
@@ -46,7 +46,7 @@ $ turing-eval run evals/onboarding.eval.yaml --judge https://my-turing/api
   ✗ refund flow no longer offers human   (tool forbidden: escalate_human FIRED)
   2 passed, 1 failed — regression in refund.flow since prompt change
 
-# in CI (runs on the CUSTOMER's GitHub Actions runner — zero infra for us):
+# in CI (runs on the CUSTOMER's GitHub Actions runner, zero infra for us):
 - uses: openviglet/agent-eval-action@v1
   with: { suite: evals/, judge-url: ${{ secrets.TURING_URL }} }
 ```
@@ -55,7 +55,7 @@ The eval spec (YAML, per `T126`) lists conversations + per-turn assertions:
 deterministic ones (slot value, regex, tool-call expected/forbidden) **and**
 semantic ones (persona invariant, answer correctness) judged by the LLM.
 
-## 4. Architecture — what lives where
+## 4. Architecture: what lives where
 
 The governing rule for a **solo maintainer**: share a *sharp, small surface*;
 never drag the monolith into the CLI repo, and **never duplicate the judge**.
@@ -81,25 +81,25 @@ never drag the monolith into the CLI repo, and **never duplicate the judge**.
 
 | Share (deliberately) | NEVER pull into the eval repo |
 |---|---|
-| **The judge** — via HTTP now, slim lib later | Spring Boot app |
+| **The judge**: via HTTP now, slim lib later | Spring Boot app |
 | The YAML eval-spec format (defined *here*, Turing may consume it) | Solr / JPA / entities |
 | `turing-java-sdk` (`HttpTurSNServer`) as optional transport | React / frontend |
 | | chat-flow engine, storage, slots |
 
-### How the judge is shared — two clean ways, one forbidden
+### How the judge is shared: two clean ways, one forbidden
 
 1. **✅ HTTP contract (phase 1, recommended).** The CLI calls a judge endpoint on
    a running Turing instance. **Zero judge code in the new repo.** This is exactly
    the pattern Dumont already uses against `TurSummaryAPI`. Maintenance ≈ zero.
 2. **✅ Slim extracted library (phase 2).** Extract `turing-llm-judge` (judge +
    LLM client, **no Spring Boot**) as a JAR that *both* the monolith and the CLI
-   depend on — one source of truth. Aligns with the `turing-llm` layer proposed
+   depend on: one source of truth. Aligns with the `turing-llm` layer proposed
    in [`../STRATEGY.md`](../STRATEGY.md) §VIII.5. Enables a self-contained CLI for
    customers who don't run Turing (consider GraalVM native-image for fast startup).
 3. **❌ Copy-paste the judge.** Two divergent judges, double maintenance. For a
    solo dev this is fatal. Never do it.
 
-### The judge contract (phase 1 — reuses shipped code)
+### The judge contract (phase 1: reuses shipped code)
 
 The existing generic endpoint already fits:
 
@@ -113,7 +113,7 @@ For judging: pack the `conversation + criterion` into `data`, put the judge
 instruction in `systemPrompt`, and have the CLI parse the verdict from `content`.
 **Zero new backend code.** When a structured verdict is wanted, add a thin
 sibling that returns `{ verdict, score, rationale }`, built on the *same*
-`TurLlmSummaryService` + `LlmJudgeGuardrailStrategy` — still one judge:
+`TurLlmSummaryService` + `LlmJudgeGuardrailStrategy`, still one judge:
 
 ```
 POST /api/v2/eval/judge        (new, ~1 controller, reuses both services)
@@ -128,7 +128,7 @@ Open-core, validated **offline** so there is no license server to run:
 | Layer | What | Price model |
 |---|---|---|
 | **Open-source core** | CLI + YAML spec + deterministic assertions + reporter | free (the distribution bait) |
-| **Pro (paid)** | LLM-as-judge, regression diff, PR gate / GitHub Action, versioned golden-sets | per-seat / per-repo, **unlocked by an Ed25519-signed license file validated locally** — no server |
+| **Pro (paid)** | LLM-as-judge, regression diff, PR gate / GitHub Action, versioned golden-sets | per-seat / per-repo, **unlocked by an Ed25519-signed license file validated locally**: no server |
 | **Eval packs** | Pre-built golden-sets per vertical (Education, Finance) | one-off digital product (marketplace) |
 
 The Ed25519 trick is the answer to *"I can't do licensing, I have no infra"*: you
@@ -138,10 +138,10 @@ public key, fully offline. Zero servers, zero ops.
 ## 6. Reused (already shipped) vs. new (to build)
 
 **Reuse (exists today):**
-- `LlmJudgeGuardrailStrategy`, `TurPersonaToneValidator` — the judge/differentiator.
-- `TurLlmSummaryService` + `TurSummaryAPI` (`POST /api/v2/summary`) — the proven
+- `LlmJudgeGuardrailStrategy`, `TurPersonaToneValidator`: the judge/differentiator.
+- `TurLlmSummaryService` + `TurSummaryAPI` (`POST /api/v2/summary`): the proven
   external-call seam (Dumont already consumes it via `RestClient`).
-- `turing-java-sdk` / `HttpTurSNServer` — standalone transport when the agent is Turing.
+- `turing-java-sdk` / `HttpTurSNServer`: standalone transport when the agent is Turing.
 
 **Build new (the slim, clean repo):**
 - YAML spec parser, conversation executor, deterministic assertions, reporter,
@@ -165,4 +165,4 @@ is the customer's Turing instance.
 See the [sub-products matrix](README.md#the-matrix). Agent Eval is the only
 candidate that is simultaneously **recurring** (agents rot), **zero-infra**
 (runs on customer CI + their judge), and **sellable to the existing base**
-(reactivates dormant installs) — the three constraints that actually bind here.
+(reactivates dormant installs): the three constraints that actually bind here.

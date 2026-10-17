@@ -12,12 +12,12 @@ import { Container, Logo } from "@/components/brand";
 import { LINKS } from "@/components/brand-links";
 import { cn } from "@/lib/utils";
 
-// Hrefs are root-anchored ("/#…") so they also work from the feature pages —
+// Hrefs are root-anchored ("/#…") so they also work from the feature pages:
 // the browser navigates home and scrolls to the section.
 //
 // The bar stays uncluttered: two direct links ("Try it live", "Docs") flank two
 // grouped dropdowns. AEM is deliberately pulled OUT of the Solutions dropdown
-// and rendered as a highlighted top-level pill — it's our headline solution.
+// and rendered as a highlighted top-level pill, because it's our headline solution.
 const NAV_LINKS = [
   { label: "Try it live", href: "/#playground" },
   { label: "Docs", href: LINKS.docs },
@@ -75,13 +75,13 @@ export function SiteNav() {
     >
       <Container className="flex h-16 items-center gap-4">
         <div className="flex shrink-0 items-center gap-2.5">
-          <a href="/" className="text-base" aria-label="Viglet Turing ES — home">
+          <a href="/" className="text-base" aria-label="Viglet Turing home">
             {/* Icon-only mark on mobile to leave room for the CTA + menu; full
                 wordmark from sm up. */}
             <Logo className="hidden sm:inline-flex" />
             <Logo showWord={false} className="sm:hidden" />
           </a>
-          {/* Fluid path back to the umbrella brand — keeps the product from
+          {/* Fluid path back to the umbrella brand: keeps the product from
               feeling like a dead end and reinforces the Viglet portfolio. */}
           <a
             href={LINKS.viglet}
@@ -101,7 +101,7 @@ export function SiteNav() {
               {item.label}
             </a>
           ))}
-          {/* Headline solution — pulled out of the dropdown and highlighted. */}
+          {/* Headline solution, pulled out of the dropdown and highlighted. */}
           <a
             href="/aem-search/"
             className="inline-flex items-center gap-1.5 rounded-full border border-primary/30 bg-primary/10 px-3 py-1 text-sm font-bold whitespace-nowrap text-primary transition-colors hover:border-primary/50 hover:bg-primary/15"
@@ -144,7 +144,7 @@ export function SiteNav() {
             </a>
           </Button>
           <ModeToggle />
-          {/* Mobile/tablet menu trigger — the desktop <nav> is hidden below lg,
+          {/* Mobile/tablet menu trigger: the desktop <nav> is hidden below lg,
               so without this there'd be no way to reach Docs/AEM/Product/Solutions. */}
           <button
             type="button"

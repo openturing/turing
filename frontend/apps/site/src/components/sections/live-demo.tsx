@@ -7,7 +7,7 @@ const str = "text-[#16a34a] dark:text-[#c3e88d]";
 const fn = "text-[#2563eb] dark:text-[#82aaff]";
 const cm = "text-muted-foreground";
 
-/** #3 — the dogfood reveal: the real SDK code that drives the live widget. */
+/** #3: the dogfood reveal: the real SDK code that drives the live widget. */
 function SdkCode() {
   return (
     <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-xl">
@@ -19,7 +19,7 @@ function SdkCode() {
       </div>
       <pre className="overflow-x-auto bg-muted/50 p-5 font-mono text-[0.8rem] leading-relaxed">
         <code>
-          <span className={cm}>{"// The widget on the left runs this — really."}</span>
+          <span className={cm}>{"// The widget on the left runs this code."}</span>
           {"\n"}
           <span className={kw}>import</span> {"{ createTuringClient, createChatController }"}
           {"\n"}
@@ -49,7 +49,7 @@ function SdkCode() {
 }
 
 const DOGFOOD_POINTS = [
-  "The live search + assistant above call this exact SDK — no bespoke demo backend",
+  "The live search + assistant above call this exact SDK, with no bespoke demo backend",
   "Zero runtime dependencies: a native fetch client + observable controllers",
   "The same SDK you embed on your own site (React SDK & vanilla JS)",
 ];
@@ -60,7 +60,7 @@ export function LiveDemo() {
       <Container>
         <SectionHeader
           eyebrow="Built with the SDK"
-          title="The playground isn't a mockup — it's this code"
+          title="The playground runs on this code"
           description="The live search and cited-chat playground above run on the product's own zero-dependency @viglet/turing-sdk, grounded in Turing's own documentation. Here's the exact code that drives them."
         />
         <div className="grid items-center gap-8 lg:grid-cols-2">

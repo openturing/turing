@@ -6,7 +6,7 @@ import { PLAYGROUND_PERSONAS } from "@/lib/site-content";
 import { useTuringDemo } from "@/lib/turing-demo";
 import { cn } from "@/lib/utils";
 
-// T638 — "validate this content as persona X". Dogfoods the SDK's
+// T638: "validate this content as persona X". Dogfoods the SDK's
 // fetchPersonaContentFit + the headless TuringContentFit component against the
 // live demo. Offline it shows a scripted verdict so the tab never looks broken.
 
@@ -60,7 +60,7 @@ export function ContentFitDemo({ bare = false }: Readonly<ContentFitDemoProps>) 
         setResult(scriptedFit(personaId));
       }
     } catch {
-      setError("Couldn't validate this content right now — try again.");
+      setError("Couldn't validate this content right now. Try again.");
     } finally {
       setBusy(false);
     }
@@ -72,7 +72,7 @@ export function ContentFitDemo({ bare = false }: Readonly<ContentFitDemoProps>) 
         "flex flex-col overflow-hidden bg-card text-card-foreground",
         // bare: fill the playground frame (fixed height → inner scroll).
         // standalone (persona page): grow with the report instead of scrolling
-        // inside a fixed box — min height keeps the empty state from collapsing.
+        // inside a fixed box; min height keeps the empty state from collapsing.
         bare ? "h-full" : "min-h-105 rounded-2xl border border-border shadow-xl"
       )}
     >
@@ -161,8 +161,8 @@ export function ContentFitDemo({ bare = false }: Readonly<ContentFitDemoProps>) 
         {!result && !busy && (
           <p className="text-xs text-muted-foreground">
             {live
-              ? "See the same content through a persona's eyes — a fit score, what lands, and the exact phrases that miss."
-              : "Sample verdict shown offline — connect the live demo for a real AI content-fit check."}
+              ? "See the same content through a persona's eyes: a fit score, what lands, and the exact phrases that miss."
+              : "Sample verdict shown offline. Connect the live demo for a real AI content-fit check."}
           </p>
         )}
       </div>

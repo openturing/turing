@@ -9,7 +9,7 @@ export function Marketplace() {
         <SectionHeader
           eyebrow="Marketplace"
           title="Start from a working example"
-          description="Ready-to-use example sites with search templates — import a manifest and explore in minutes."
+          description="Example sites with search templates. Import a manifest and explore."
         />
         <LinkCards items={MARKETPLACE} />
       </Container>

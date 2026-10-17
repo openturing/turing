@@ -1,6 +1,6 @@
-# RAG Hybrid Retrieval — Configuration & Operations Guide
+# RAG Hybrid Retrieval: Configuration & Operations Guide
 
-T24 / T24b — vector + BM25 fusion for the `search_knowledge_base` tool.
+T24 / T24b: vector + BM25 fusion for the `search_knowledge_base` tool.
 
 This guide is the operator-facing companion to the code in
 [`TurRagSearchToolService`](../turing-app/src/main/java/com/viglet/turing/genai/tool/TurRagSearchToolService.java),
@@ -11,24 +11,24 @@ and the SN site GenAI admin form.
 ## Table of contents
 
 1. [Why hybrid retrieval](#why-hybrid-retrieval)
-2. [The two modes — Embedded vs SE_INSTANCE](#the-two-modes--embedded-vs-se_instance)
+2. [The two modes: Embedded vs SE_INSTANCE](#the-two-modes-embedded-vs-se_instance)
 3. [Request flow](#request-flow)
-4. [Quick start — Embedded (default)](#quick-start--embedded-default)
-5. [Production setup — SE_INSTANCE](#production-setup--se_instance)
+4. [Quick start: Embedded (default)](#quick-start-embedded-default)
+5. [Production setup: SE_INSTANCE](#production-setup-se_instance)
    - [Solr](#solr)
    - [Elasticsearch](#elasticsearch)
 6. [Admin UI walkthrough](#admin-ui-walkthrough)
 7. [How locale resolves](#how-locale-resolves)
 8. [Tuning](#tuning)
 9. [Troubleshooting](#troubleshooting)
-10. [Reference — endpoints, tables, key classes](#reference)
+10. [Reference: endpoints, tables, key classes](#reference)
 
 ---
 
 ## Why hybrid retrieval
 
 Pure vector search misses queries the embedding model wasn't trained
-on — proper nouns, internal product codes, version strings (`v2026.2.7`),
+on: proper nouns, internal product codes, version strings (`v2026.2.7`),
 acronyms, rarely-spelled names. Pure BM25 misses paraphrases and
 semantically-equivalent rewordings.
 
@@ -38,12 +38,12 @@ lists ranks highest; BM25-only chunks keep a `_keyword_only_fallback`
 tag so the prompt builder can ask the LLM to soft-warn the user
 ("based on a keyword match…").
 
-The empirical result: documented in T24 / T24b — recall lifts on long-tail
+The empirical result, documented in T24 / T24b: recall lifts on long-tail
 queries without trading off precision on the head.
 
 ---
 
-## The two modes — Embedded vs SE_INSTANCE
+## The two modes: Embedded vs SE_INSTANCE
 
 Hybrid retrieval has two backings for the BM25 half. The vector half is
 always the configured embedding store.
@@ -55,18 +55,18 @@ always the configured embedding store.
 
 **`EMBEDDED` (default)** ships ready-to-use the moment you enable RAG on
 an SN site. No SE config, no provisioning, no schema templates. Caveat:
-every locale shares the same Lucene index with one analyzer chain — fine
+every locale shares the same Lucene index with one analyzer chain: fine
 when 95% of the corpus is one language, suboptimal once you cross over.
 
 **`SE_INSTANCE`** dedicates a Solr/Elasticsearch core per SN site locale
 (`rag_<storeShortId>_<locale>`, e.g. `rag_a3b2c1d4_pt-BR`). Each core
 gets the right analyzer (`PortugueseAnalyzer` for `pt-*`,
-`EnglishAnalyzer` for `en-*`, etc.) — stemming, stopword removal, and
+`EnglishAnalyzer` for `en-*`, etc.): stemming, stopword removal, and
 tokenization match the language. The cost is one-time provisioning + a
 reindex.
 
 You can switch modes per SN site at any time. EMBEDDED is always the
-safe fallback — when an SE_INSTANCE core is missing or unreachable the
+safe fallback: when an SE_INSTANCE core is missing or unreachable the
 runtime degrades to vector-only rather than failing.
 
 ---
@@ -108,7 +108,7 @@ natural owner of locale (`TurSNSiteLocale`).
 
 ---
 
-## Quick start — Embedded (default)
+## Quick start: Embedded (default)
 
 1. **Global Settings → RAG**: pick a default embedding model + embedding
    store. Required for both modes.
@@ -122,11 +122,11 @@ Index content via the existing **Reindex** button or the asset training
 flow. Queries through `/api/sn/{site}/chat` will use vector + BM25 fused
 via RRF the moment chunks land.
 
-That's it for Embedded — no SE config, no separate provisioning.
+That's it for Embedded: no SE config, no separate provisioning.
 
 ---
 
-## Production setup — SE_INSTANCE
+## Production setup: SE_INSTANCE
 
 You'll need a working Solr or Elasticsearch instance registered in
 **SE Instances** (the same surface that backs SN site public search).
@@ -140,7 +140,7 @@ prefix and is filtered out of public search results.
 2. On the SN site's **AI** page, expand the **Hybrid Retrieval** card.
 3. Switch **BM25 source** from `Embedded` to `Search Engine`.
 4. Pick the registered SE instance in the dropdown.
-5. **Save the form first** — the provisioner needs the SE binding
+5. **Save the form first**: the provisioner needs the SE binding
    persisted before it can read it back.
 6. Click **Provision missing cores**. The provisioner creates one core
    per SN site locale. The status table updates with the result.
@@ -176,7 +176,7 @@ field names verbatim; align your custom configset to match):
 
 | Field         | Type                   | Stored | Indexed | Notes                                                      |
 | ------------- | ---------------------- | ------ | ------- | ---------------------------------------------------------- |
-| `id`          | `string`               | ✓      | ✓       | Chunk UUID — MUST equal the vector store doc id for RRF.   |
+| `id`          | `string`               | ✓      | ✓       | Chunk UUID: MUST equal the vector store doc id for RRF.   |
 | `content`     | `text_<locale>`        | ✓      | ✓       | The chunk body. Analyzer chain is locale-specific.         |
 | `assetId`     | `string`               | ✓      | ✓       | Source asset / file id. Drives `deIndexStandaloneByField`. |
 | `chunkIndex`  | `pint`                 | ✓      |         | Ordinal within the asset (diagnostics).                    |
@@ -197,7 +197,7 @@ field names verbatim; align your custom configset to match):
 ```
 
 (Mirror for `text_en`, `text_es`. Brazilian-specific aggressive stemming
-matches what `TurPersonaToneValidator` uses for tone analysis —
+matches what `TurPersonaToneValidator` uses for tone analysis:
 intentional consistency.)
 
 ### Elasticsearch
@@ -243,7 +243,7 @@ Locale is mapped to the matching ES built-in analyzer: `pt` →
 `en` → `english`, `es` → `spanish`. Unknown locales fall back to
 `standard`.
 
-ES auto-refreshes every second by default — `commitStandalone` is a
+ES auto-refreshes every second by default: `commitStandalone` is a
 no-op for ES. If you've disabled `refresh_interval`, force a refresh
 via `POST /<index>/_refresh` after large bulk loads or `docCount` in
 the admin UI will lag.
@@ -284,11 +284,11 @@ every knob the operator needs.
 
 **Status colors**:
 
-- `PROVISIONED` — green; ready to serve.
-- `PROVISIONING` / `DELETING` — blue; transient.
-- `ERROR` — red; hover for the last-error message. Re-clicking
+- `PROVISIONED`: green; ready to serve.
+- `PROVISIONING` / `DELETING`: blue; transient.
+- `ERROR`: red; hover for the last-error message. Re-clicking
   **Provision missing** retries.
-- `NOT_PROVISIONED` — gray; SE has no core yet.
+- `NOT_PROVISIONED`: gray; SE has no core yet.
 
 **Gating rules**:
 
@@ -327,7 +327,7 @@ SN site chat API ─POST /api/sn/{site}/chat──► TurAgentChatExecutor
   `turing.locale` by the SN site chat API on every turn.
 - Empty / missing → `Locale.ROOT` → the core lookup misses → tool
   degrades to vector-only with a `WARN` log.
-- No automatic language detection on the query itself — by design.
+- No automatic language detection on the query itself: by design.
   The SN site already knows which locale this conversation is in
   (from URL routing, user preference, browser `Accept-Language`).
 
@@ -345,7 +345,7 @@ measured a problem:
   document-like chunks where TF≥2 already saturates relevance; higher
   (`1.6`) for long chunks where repetition is informative.
 - `b` (length normalization): lower (`0.5`) when your chunk lengths are
-  fairly uniform — normalization adds noise. Higher (`0.9`) when chunk
+  fairly uniform: normalization adds noise. Higher (`0.9`) when chunk
   lengths vary by an order of magnitude.
 
 Solr: edit `solrconfig.xml`. ES: reindex (cannot change similarity on
@@ -358,7 +358,7 @@ Smaller `k` sharpens the contribution of top-ranked docs (a doc at
 rank 1 dwarfs a doc at rank 10); larger flattens the curve.
 
 `60` is the value Solr's native hybrid query and ES's RRF retriever
-ship with — staying compatible matters because admins comparing scores
+ship with: staying compatible matters because admins comparing scores
 across implementations should see consistent fusion behavior.
 
 ### When to switch from Embedded to SE_INSTANCE
@@ -376,7 +376,7 @@ Concrete signals you should **not**:
 
 - Single-language deployment with a small corpus (< 10k chunks).
 - No SE instance already deployed and you'd be standing one up just for
-  RAG — the embedded path will serve you fine until corpus growth
+  RAG: the embedded path will serve you fine until corpus growth
   justifies the operational cost.
 
 ### `topK`
@@ -403,7 +403,7 @@ on the SN site GenAI page. The indexer enumerates locales and pushes
 each chunk to the matching core.
 
 If the reindex completes and `Docs` still reads 0 for one locale, check
-the chunk metadata — only chunks with `objectName` (asset id) in their
+the chunk metadata: only chunks with `objectName` (asset id) in their
 metadata get pushed to BM25 cores.
 
 ### `ERROR` status
@@ -417,22 +417,22 @@ Hover the status badge for the last-error message. Common causes:
 | `Unknown analyzer`            | SE missing a language-specific analyzer       | Add the analyzer to the SE config         |
 | `403 Forbidden`               | SE auth missing                               | Update SE-instance credentials            |
 
-After fixing the underlying issue, **Provision missing** is idempotent
-— it skips already-PROVISIONED cores and retries ERROR rows.
+After fixing the underlying issue, **Provision missing** is idempotent:
+it skips already-PROVISIONED cores and retries ERROR rows.
 
 ### Tool returns "No relevant documents" even after reindex
 
 1. Confirm the bound agent has `ragEnabled = true`.
 2. Confirm the SN site chat is publishing the `turing.locale` tool
-   context key — check the request handler in
+   context key: check the request handler in
    `TurSNSiteChatAPI` (or its successor).
-3. Watch `turing-app` logs for `[RAG]` messages — the tool service
+3. Watch `turing-app` logs for `[RAG]` messages: the tool service
    logs the chosen mode (`SE hybrid search` / `Embedded hybrid search`)
    plus the result count.
 
 ### Switching SE_INSTANCE → EMBEDDED leaves orphan cores
 
-By design — the SE cores still exist and still hold chunks. Use the
+By design: the SE cores still exist and still hold chunks. Use the
 **Deprovision** API (`DELETE /api/sn/{site}/rag/cores`) to clean them
 up. The form doesn't expose this button by default to avoid accidental
 data loss; admins can call it directly when needed.
@@ -453,7 +453,7 @@ are skipped; only the new locale is created. Then run a reindex.
 | GET    | `/api/sn/{siteId}/rag/cores`                  | Status table (one row per site locale)           |
 | POST   | `/api/sn/{siteId}/rag/cores/provision`        | Create missing cores; returns updated table      |
 | DELETE | `/api/sn/{siteId}/rag/cores`                  | Deprovision every core for this site             |
-| POST   | `/api/sn/{siteId}/genai/reindex`              | Existing — pushes chunks to vector + BM25 cores  |
+| POST   | `/api/sn/{siteId}/genai/reindex`              | Existing: pushes chunks to vector + BM25 cores  |
 
 All scoped under `ROLE_ADMIN` or `SN_EDIT` / `SN_VIEW`.
 
@@ -468,8 +468,8 @@ All scoped under `ROLE_ADMIN` or `SN_EDIT` / `SN_VIEW`.
 
 Core name format: `rag_<storeShortId>_<localeTag>`, e.g.
 `rag_a3b2c1d4_pt-BR`. Generated by
-[`TurRagBm25CoreProvisioner.coreNameFor`](../turing-app/src/main/java/com/viglet/turing/genai/rag/TurRagBm25CoreProvisioner.java)
-— pure function over `(storeId, locale)`.
+[`TurRagBm25CoreProvisioner.coreNameFor`](../turing-app/src/main/java/com/viglet/turing/genai/rag/TurRagBm25CoreProvisioner.java):
+pure function over `(storeId, locale)`.
 
 ### Key classes
 
@@ -481,14 +481,14 @@ Core name format: `rag_<storeShortId>_<localeTag>`, e.g.
 | [`TurRagBm25Indexer`](../turing-app/src/main/java/com/viglet/turing/genai/rag/TurRagBm25Indexer.java)                    | Pushes vector chunks into BM25 cores                              |
 | [`TurSearchEnginePlugin#retrieveStandalone`](../turing-app/src/main/java/com/viglet/turing/plugins/se/TurSearchEnginePlugin.java) | Per-engine BM25 query (Solr, ES; Lucene-embedded throws)          |
 | [`TurRagBm25CoreAPI`](../turing-app/src/main/java/com/viglet/turing/api/rag/TurRagBm25CoreAPI.java)                      | Admin REST surface (list / provision / deprovision)               |
-| [`TurLuceneVectorStore`](../turing-app/src/main/java/com/viglet/turing/genai/provider/store/lucene/TurLuceneVectorStore.java) | Embedded path (T24 base) — single-index hybrid                    |
+| [`TurLuceneVectorStore`](../turing-app/src/main/java/com/viglet/turing/genai/provider/store/lucene/TurLuceneVectorStore.java) | Embedded path (T24 base): single-index hybrid                    |
 
 ### Tool context keys
 
-- `turing.agentId` — agent invoking the tool (drives flag lookup).
-- `turing.locale` — query locale (BCP 47 tag); drives core routing in
+- `turing.agentId`: agent invoking the tool (drives flag lookup).
+- `turing.locale`: query locale (BCP 47 tag); drives core routing in
   SE_INSTANCE mode.
-- `turing.conversationId`, `turing.agentPythonRequirements` — unrelated
+- `turing.conversationId`, `turing.agentPythonRequirements`: unrelated
   to RAG, listed for completeness.
 
 ### Test coverage

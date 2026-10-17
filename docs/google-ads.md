@@ -1,11 +1,11 @@
-# Google Ads — turing.viglet.org/aem-search
+# Google Ads: turing.viglet.org/aem-search
 
 Copy e configuração de campanha para promover a página **AI Search for Adobe
 Experience Manager** (`https://turing.viglet.org/aem-search/`).
 
 Posicionamento da página: dar ao AEM respostas de IA **citadas e em streaming**,
 mais busca **facetada + semântica**, e ir além do que um add-on AEM-native
-consegue — busca fora do AEM, agents/tools/skills/MCP, qualquer LLM, qualquer
+consegue: busca fora do AEM, agents/tools/skills/MCP, qualquer LLM, qualquer
 engine, self-hosted sob **Apache 2.0**.
 
 - **Final URL:** `https://turing.viglet.org/aem-search/`
@@ -19,7 +19,7 @@ engine, self-hosted sob **Apache 2.0**.
 | Campo | Valor |
 | --- | --- |
 | **Business name** (anúncio) | Viglet |
-| **Título / reforço de marca** | Viglet Turing ES |
+| **Título / reforço de marca** | Viglet Turing |
 | **Display path / URL de exibição** | viglet.org/AEM-Search |
 | **Nome da conta** (interno) | Viglet |
 
@@ -30,7 +30,7 @@ engine, self-hosted sob **Apache 2.0**.
 
 ---
 
-## 2. Títulos curtos (Headlines — máx. 30 caracteres)
+## 2. Títulos curtos (Headlines: máx. 30 caracteres)
 
 | Headline | Chars |
 | --- | --- |
@@ -48,30 +48,30 @@ engine, self-hosted sob **Apache 2.0**.
 | Bring Your Own LLM | 18 |
 | AEM AI Without the Ceiling | 26 |
 | Try It on WKND Live | 19 |
-| Viglet Turing ES | 16 |
+| Viglet Turing | 13 |
 
-## 3. Títulos longos (Long headlines — máx. 90 caracteres)
+## 3. Títulos longos (Long headlines: máx. 90 caracteres)
 
 | Headline | Chars |
 | --- | --- |
-| AI search for Adobe Experience Manager — cited, streaming answers over your content | 82 |
+| AI search for Adobe Experience Manager: cited, streaming answers over your content | 82 |
 | Give AEM generative AI search without re-platforming, on any LLM and any engine | 79 |
 | AEM search reimagined: faceted + semantic search and grounded AI answers, self-hosted | 85 |
-| Add AI search to AEM 6.5 and Cloud Service via the Dumont connector — Apache 2.0 | 79 |
+| Add AI search to AEM 6.5 and Cloud Service via the Dumont connector: Apache 2.0 | 79 |
 | More than AEM AI search: agents, tools, MCP and cross-repository search you own | 79 |
 
-## 4. Descrições (Descriptions — máx. 90 caracteres)
+## 4. Descrições (Descriptions: máx. 90 caracteres)
 
 | Description | Chars |
 | --- | --- |
 | Cited, streaming AI answers plus faceted and semantic search over your AEM content. | 83 |
 | Connect AEM 6.5 or Cloud Service with the Dumont connector. Self-hosted, Apache 2.0. | 84 |
-| Sits alongside AEM — no re-platforming. Bring your own LLM and search engine. | 77 |
+| Sits alongside AEM: no re-platforming. Bring your own LLM and search engine. | 76 |
 | Keep every page and query in your own infrastructure. Open source AI search for AEM. | 84 |
 | Search beyond AEM: agents, tools, skills and MCP. Try it live on Adobe's WKND site. | 83 |
 
 > Anúncios de pesquisa responsivos aceitam até **15 headlines** e **4 descrições**.
-> Considere **fixar** "Viglet Turing ES" na posição 1 para reforço de marca.
+> Considere **fixar** "Viglet Turing" na posição 1 para reforço de marca.
 
 ---
 
@@ -89,8 +89,8 @@ ideal 4–6.
 | Bring Your Own LLM | Any LLM, any search engine | Data stays in your infrastructure | `turing.viglet.org/aem-search/` |
 | Compare Alternatives | vs Algolia, Elasticsearch & RAG | An honest, side-by-side look | `turing.viglet.org/compare` |
 
-> **Atenção:** `/compare` compara Turing vs **Algolia, Elasticsearch & DIY RAG**
-> — *não* AEM-native search. A comparação contra o AEM-native AI add-on está na
+> **Atenção:** `/compare` compara Turing vs **Algolia, Elasticsearch & DIY RAG**,
+> *não* AEM-native search. A comparação contra o AEM-native AI add-on está na
 > própria página `/aem-search` (matriz de capacidades). Os textos acima já
 > refletem isso.
 
@@ -121,12 +121,12 @@ Apache 2.0** · **Self-Hosted** · **Bring Your Own LLM** · **Search Beyond AEM
 
 ---
 
-## 7. Temas de pesquisa (Search themes — Performance Max)
+## 7. Temas de pesquisa (Search themes: Performance Max)
 
 Até 25 temas por grupo de recursos, cada um ≤ 10 palavras / ~80 chars. São
 *sinais*, não correspondência exata. Não misture idiomas.
 
-**Núcleo — AEM + busca/IA**
+**Núcleo: AEM + busca/IA**
 - ai search for adobe experience manager
 - aem search solution
 - aem semantic search
@@ -156,17 +156,17 @@ Até 25 temas por grupo de recursos, cada um ≤ 10 palavras / ~80 chars. São
 - llm search for enterprise content
 - knowledge base ai search
 
-> Em **Search comum** (não PMax), estes viram palavras-chave — recomende
+> Em **Search comum** (não PMax), estes viram palavras-chave: recomende
 > correspondência de frase: `"aem search"`, `"aem ai search"`,
 > `"adobe experience manager search"`.
 
 ---
 
-## 8. Indicador de público-alvo (Audience signal — Performance Max)
+## 8. Indicador de público-alvo (Audience signal: Performance Max)
 
-Não limita o alcance — dá pista de quem converte para acelerar o aprendizado.
+Não limita o alcance: dá pista de quem converte para acelerar o aprendizado.
 
-**Segmento personalizado (prioridade) — termos de pesquisa:**
+**Segmento personalizado (prioridade): termos de pesquisa:**
 - ai search for adobe experience manager
 - aem search integration
 - aem semantic search
@@ -175,7 +175,7 @@ Não limita o alcance — dá pista de quem converte para acelerar o aprendizado
 - rag chat enterprise
 - aem as a cloud service
 
-**Segmento personalizado — sites/URLs que o público visita:**
+**Segmento personalizado: sites/URLs que o público visita:**
 - experienceleague.adobe.com
 - experience.adobe.com
 - solr.apache.org
@@ -213,5 +213,5 @@ Não limita o alcance — dá pista de quem converte para acelerar o aprendizado
   (`frontend/apps/site/src/components/brand`) para confirmar os sitelinks.
 - Confirmar âncora de seção em `/aem-search` se for usar deep-link
   (ex.: `#how`).
-- Decidir idioma da campanha (EN internacional vs PT Brasil) — esta cópia está
+- Decidir idioma da campanha (EN internacional vs PT Brasil): esta cópia está
   em **inglês**; gerar equivalente PT se for segmentar o Brasil.

@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { AUDIENCES } from "@/lib/site-content";
 
 /**
- * Audience split — the site talks to two very different readers (a developer
+ * Audience split: the site talks to two very different readers (a developer
  * adopting bottom-up, and an enterprise buyer). This section gives each a clear
  * path instead of leaving them to guess which parts are for them.
  */
@@ -16,7 +16,7 @@ export function Audiences() {
         <SectionHeader
           eyebrow="Who it's for"
           title="One platform, two ways in"
-          description="Adopt it bottom-up as a developer, or bring it in as a governed enterprise search layer — the same open-source core underneath."
+          description="Adopt it bottom-up as a developer, or bring it in as a governed enterprise search layer. The open-source core is the same."
         />
         <div className="grid gap-6 lg:grid-cols-2">
           {AUDIENCES.map((a) => (

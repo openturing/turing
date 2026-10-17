@@ -1,7 +1,7 @@
 /**
- * T1027 — the theme hook, on its own.
+ * T1027: the theme hook, on its own.
  *
- * It reads a context and throws when there is no provider — no JSX, no state
+ * It reads a context and throws when there is no provider. No JSX, no state
  * of its own. It sat beside the provider, and a module exporting both a
  * component and a hook reloads whole instead of preserving state, which for a
  * theme provider means every consumer below it remounts on an edit.

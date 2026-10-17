@@ -43,7 +43,7 @@ export function SiteFooter() {
           <div>
             <Logo className="text-[#f2f4fb]" />
             <p className="mt-3 max-w-xs text-sm leading-relaxed">
-              Open-source Enterprise Search Intelligence Platform — agents, tools,
+              Open-source Enterprise Search Intelligence Platform: agents, tools,
               skills, MCP and RAG for your content.
             </p>
           </div>
@@ -71,7 +71,7 @@ export function SiteFooter() {
         </div>
         <div className="mt-12 flex flex-col justify-between gap-2 border-t border-[#161a2b] pt-6 text-xs text-[#5e6580] sm:flex-row">
           <span>
-            © {new Date().getFullYear()} Viglet Turing ES — Apache 2.0 License
+            © {new Date().getFullYear()} Viglet Turing · Apache 2.0 License
           </span>
           <span className="space-x-3">
             <a href={LINKS.viglet} target="_blank" rel="noreferrer" className="hover:text-[#f2f4fb]">

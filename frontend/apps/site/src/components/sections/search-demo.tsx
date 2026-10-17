@@ -36,9 +36,9 @@ import { cn } from "@/lib/utils";
 // `@viglet/turing-react-ui` `TuringResultList`. When a public demo instance is
 // configured (T477/T620) it drives the REAL `turing-docs` corpus and shows the
 // full production search surface (T484): live **facet groups**, keystroke
-// **autocomplete** (`createAutoComplete`) and "did you mean" **spell-check** —
+// **autocomplete** (`createAutoComplete`) and "did you mean" **spell-check**,
 // all via the SDK, search-only (no per-keystroke LLM chat call, `chat:false`).
-// Each result also offers **"Related by AI"** (T485) — `createSimilarController`
+// Each result also offers **"Related by AI"** (T485): `createSimilarController`
 // surfaces semantically similar documents for a clicked result.
 // Otherwise it filters a bundled sample corpus so the widget never looks broken.
 
@@ -50,7 +50,7 @@ const DEFAULT_SEARCH_PLACEHOLDER = "Search your content…  (try “SSO”, “R
 
 // Semantic Navigation highlighting wraps matched terms in <mark>…</mark>.
 // Render those as real <mark> elements while letting React escape everything
-// else — so the highlight shows (not the literal tag) with no raw-HTML/XSS risk.
+// else, so the highlight shows (not the literal tag) with no raw-HTML/XSS risk.
 function Highlighted({ text }: { text: string }) {
   if (!text.includes("<mark>")) return <>{text}</>;
   const nodes: ReactNode[] = [];
@@ -84,7 +84,7 @@ function stripMarks(text: string): string {
  * Whether a result has enough body to be worth "Ask about this". A nav/landing
  * hub (e.g. WKND's region pages) is indexed with a title but no snippet/text, so
  * seeding the chat with it dead-ends ("no info about X"). Gate the CTA on having
- * a non-empty description or text — "Related" stays available for such pages.
+ * a non-empty description or text; "Related" stays available for such pages.
  */
 function isAskable(document: TuringResolvedDocument): boolean {
   const body = `${document.description ?? ""} ${document.text ?? ""}`;
@@ -215,15 +215,15 @@ function LiveSearchDemo({
   const searchTimer = useRef<number | undefined>(undefined);
 
   // Build the controllers once per (client, site). `chat:false` keeps this a
-  // pure search surface — no LLM call on every keystroke (T484).
+  // pure search surface: no LLM call on every keystroke (T484).
   useEffect(() => {
     const controller = createSearchController(
       client,
       { site, locale: LOCALE, sort: "relevance" },
       { rows: "8", q: "*" },
-      // T462 — emit search funnel events (query, no-results, result clicks) to
+      // T462: emit search funnel events (query, no-results, result clicks) to
       // GA4 via the shared bus; `chat:false` keeps it a pure (no-LLM) surface.
-      // T714 — POST-native (the SDK default): the facet rail and "did you mean"
+      // T714: POST-native (the SDK default): the facet rail and "did you mean"
       // are rendered from the link-free structured response, so a facet value
       // containing `&`/`=`/`+`/`#`/`%`/space never round-trips a query string.
       { chat: false, analytics }
@@ -231,7 +231,7 @@ function LiveSearchDemo({
     controllerRef.current = controller;
     const unsub = controller.subscribe((s) => {
       setDocuments(s.documents);
-      // T947 — a site's facet groups arrive on two properties, and this bar is
+      // T947: a site's facet groups arrive on two properties, and this bar is
       // one capped horizontal list with no primary/secondary distinction in its
       // UI. So the rails are concatenated in order and the cap applies to the
       // whole: what the demo shows is "the site's first MAX_FACET_GROUPS facet
@@ -278,7 +278,7 @@ function LiveSearchDemo({
   }
 
   // Reset every active facet filter. A zero-result response carries no facet
-  // groups, which used to make the rail — and its "Clear filters" button —
+  // groups, which used to make the rail (and its "Clear filters" button)
   // vanish, trapping the user with filters they couldn't remove. POST-native
   // that hazard is gone: clearing is a change to the request the controller
   // already holds, not a link the empty response has to have handed us.
@@ -316,7 +316,7 @@ function LiveSearchDemo({
 
   // A structured facet item carries its own ADD / REMOVE / REPLACE action, so
   // `toggleFacet` toggles both ways (and honours single-select fields) without
-  // this component knowing the rule — and without parsing a URL.
+  // this component knowing the rule, and without parsing a URL.
   const documentsView = documents as unknown as TuringResolvedDocument[];
   const activeCount = Math.max(
     facets.reduce((n, g) => n + g.items.filter((f) => f.selected).length, 0),
@@ -380,7 +380,7 @@ function LiveSearchDemo({
               setQuery(stripMarks(spellCheck.correctedTextValue ?? ""));
               clearSimilar();
               // The structured shape hands over the corrected *text*, not a URL
-              // to navigate — applySpellCheck puts it on `q` and re-runs.
+              // to navigate; applySpellCheck puts it on `q` and re-runs.
               void controllerRef.current?.applySpellCheck();
             }}
             className="font-semibold text-primary hover:underline"
@@ -391,7 +391,7 @@ function LiveSearchDemo({
         </div>
       )}
 
-      {/* live facet groups — keep the rail (and Clear filters) whenever a filter
+      {/* live facet groups: keep the rail (and Clear filters) whenever a filter
           is active, even if a zero-result response returned no facet groups. */}
       {(facets.length > 0 || hasFilters) && (
         <div className="border-b border-border">
@@ -428,7 +428,7 @@ function LiveSearchDemo({
                 // Checkbox affordance (not a solid pill): within one field, picking
                 // several values UNIONS them (OR), so the count is "docs with this
                 // value", not a narrower subset. The check box makes "pick any,
-                // results combine" explicit — a plain "(3)" reads like a drill-down.
+                // results combine" explicit; a plain "(3)" reads like a drill-down.
                 <button
                   key={item.filterQuery}
                   type="button"
@@ -477,7 +477,7 @@ function LiveSearchDemo({
         </div>
       )}
 
-      {/* "Related by AI" — semantic neighbours for a clicked result (T485) */}
+      {/* "Related by AI": semantic neighbours for a clicked result (T485) */}
       {similarStatus !== "idle" && (
         <div className="border-b border-border bg-primary/5 px-4 py-2.5">
           <div className="mb-1.5 flex items-center justify-between gap-2">
@@ -535,7 +535,7 @@ function LiveSearchDemo({
         </div>
       )}
 
-      {/* results — rendered via the product's TuringResultList */}
+      {/* results, rendered via the product's TuringResultList */}
       <TuringResultList
         className={cn(
           "divide-y divide-border overflow-y-auto",
@@ -544,7 +544,7 @@ function LiveSearchDemo({
         documents={documentsView}
         emptyComponent={() => (
           <div className="px-4 py-8 text-center text-sm text-muted-foreground">
-            {loading ? "Searching…" : "No results — try a different term."}
+            {loading ? "Searching…" : "No results. Try a different term."}
           </div>
         )}
         itemComponent={({ document }) => (
@@ -554,7 +554,7 @@ function LiveSearchDemo({
                 title={document.title}
                 url={document.url}
                 onOpen={() => {
-                  // T462 — record the result click (server CTR + GA4
+                  // T462: record the result click (server CTR + GA4
                   // `turing_search_result_click`) so the search→open funnel is
                   // measurable. No-ops when the doc has no id.
                   const docId = String(
@@ -731,7 +731,7 @@ function SampleSearchDemo({
         documents={documents}
         emptyComponent={() => (
           <div className="px-4 py-8 text-center text-sm text-muted-foreground">
-            No results — try a different term.
+            No results. Try a different term.
           </div>
         )}
         itemComponent={({ document }) => (

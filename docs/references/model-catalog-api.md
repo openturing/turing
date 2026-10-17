@@ -1,4 +1,4 @@
-# Public Model Catalog API — moved
+# Public Model Catalog API: moved
 
 > **This contract moved 2026-07-21 to the dedicated
 > [`openviglet/model-catalog`](https://github.com/openviglet/model-catalog) repo.**
@@ -14,5 +14,5 @@ catalog and publishes the endpoint.
 
 **How Turing consumes it:** `TurLlmModelCatalog` fetches `turing.model-catalog.url`
 (default the published rolling endpoint) on a TTL as the model-picker fallback
-catalog. It is **remote-only** — there is no bundled copy — so the picker falls back
+catalog. It is **remote-only** (there is no bundled copy) so the picker falls back
 to live vendor listing until the first successful fetch.

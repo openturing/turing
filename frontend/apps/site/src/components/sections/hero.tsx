@@ -24,13 +24,13 @@ export function Hero() {
           </span>
           <h1 className="text-4xl font-extrabold leading-[1.08] tracking-tight sm:text-5xl lg:text-[3.4rem]">
             Enterprise search,{" "}
-            <span className="text-gradient">cited RAG and AI agents</span> — over
+            <span className="text-gradient">cited RAG and AI agents</span> over
             your own content.
           </h1>
           <p className="mt-5 max-w-xl text-lg leading-relaxed text-[#aeb7d4]">
-            Give your content AI search and grounded answers you can trace back to
-            the source — on any LLM, in your own infrastructure. The open,
-            self-hosted alternative to Algolia, with AI built in.
+            AI search and grounded answers you can trace back to the source, on
+            any LLM, in your own infrastructure. An open, self-hosted alternative
+            to Algolia, with AI built in.
           </p>
           <p className="mt-3 max-w-xl text-sm leading-relaxed text-[#8b94b3]">
             For engineering teams who need production search and RAG without
@@ -74,7 +74,7 @@ export function Hero() {
         <div className="min-w-0">
           <SearchDemo />
           <p className="mt-3 text-center text-xs text-[#8b94b3]">
-            Try it — type to search.
+            Try it: type to search.
           </p>
         </div>
       </Container>

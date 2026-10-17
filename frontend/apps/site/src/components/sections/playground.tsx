@@ -10,7 +10,7 @@ import { cn } from "@/lib/utils";
 type Tab = "search" | "ask" | "validate";
 
 /**
- * The "Try it live" playground — the site's centerpiece proof.
+ * The "Try it live" playground: the site's centerpiece proof.
  *
  * Both tabs run against the SAME live corpus (Turing's own docs, the `turing-docs`
  * dogfood seed): keyword+faceted **search** and cited **RAG chat**, two lenses on
@@ -99,7 +99,7 @@ export function Playground() {
         )}
       </div>
 
-      {/* body — keep all mounted so state (query, conversation) survives tab switches */}
+      {/* body: keep all mounted so state (query, conversation) survives tab switches */}
       <div className="relative flex-1">
         <div className={cn("absolute inset-0 overflow-hidden", tab === "search" ? "block" : "hidden")}>
           <SearchDemo bare onAskAbout={askAbout} />
@@ -126,8 +126,8 @@ export function Playground() {
       <Container>
         <SectionHeader
           eyebrow="Try it live"
-          title="Search it, ask it, validate it — same content"
-          description="All three run on Turing's own zero-dependency SDK, over the exact same corpus (Turing's documentation). Search finds the page; the assistant answers with a cited RAG response — and you can switch personas to hear the same answer through different eyes, or validate whether your own copy lands for a given reader. Try a result's “Ask about this”."
+          title="Search it, ask it, validate it, on the same content"
+          description="All three run on Turing's own zero-dependency SDK, over the exact same corpus (Turing's documentation). Search finds the page; the assistant answers with a cited RAG response. You can switch personas to hear the same answer through different eyes, or validate whether your own copy lands for a given reader. Try a result's “Ask about this”."
         />
         {expanded && (
           <div

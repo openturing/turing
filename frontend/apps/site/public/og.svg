@@ -28,9 +28,8 @@
 
   <!-- logo mark + wordmark -->
   <g transform="translate(80, 82)">
-    <rect width="64" height="64" rx="16" fill="url(#brand)"/>
-    <text x="32" y="44" font-family="'Plus Jakarta Sans', Arial, sans-serif" font-size="30" font-weight="800" fill="#FFDEAD" text-anchor="middle">Tu</text>
-    <text x="84" y="42" font-family="'Plus Jakarta Sans', Arial, sans-serif" font-size="30" font-weight="800" fill="#f2f4fb">Viglet Turing ES</text>
+    <svg x="-4" y="-6" width="76" height="76" viewBox="0 0 512 512"><polygon points="256.0,40.0 456.9,156.0 324.3,232.6 256.0,193.1 187.7,232.6 55.1,156.0" fill="#86A2F7" stroke="#86A2F7" stroke-width="1" stroke-linejoin="round"/><polygon points="55.1,388.0 256.0,504.0 256.0,369.2 187.7,232.6 55.1,156.0" fill="#4169E1" stroke="#4169E1" stroke-width="1" stroke-linejoin="round"/><polygon points="456.9,388.0 256.0,504.0 256.0,369.2 324.3,232.6 456.9,156.0" fill="#2C4BB8" stroke="#2C4BB8" stroke-width="1" stroke-linejoin="round"/><polygon points="256.0,193.1 187.7,232.6 256.0,369.2" fill="#506ed1" stroke="#506ed1" stroke-width="1" stroke-linejoin="round"/><polygon points="256.0,193.1 187.7,232.6 256.0,369.2" fill="#000" stroke="#000" stroke-width="1" stroke-linejoin="round" fill-opacity="0.10" stroke-opacity="0"/><polygon points="256.0,193.1 324.3,232.6 256.0,369.2" fill="#5c80ea" stroke="#5c80ea" stroke-width="1" stroke-linejoin="round"/><polygon points="256.0,193.1 324.3,232.6 256.0,369.2" fill="#000" stroke="#000" stroke-width="1" stroke-linejoin="round" fill-opacity="0.10" stroke-opacity="0"/><g transform="matrix(0.8660 .5 0 1 55.1 156.0)"><path d="M48.662 199.52V128.76H26.737999999999996V113.10000000000001H88.21799999999999V128.76H66.642V199.52ZM110.49 200.912Q102.834 200.912 97.44 197.606Q92.04599999999999 194.3 89.262 188.38400000000001Q86.478 182.46800000000002 86.478 174.58V136.184H103.878V173.18800000000002Q103.878 176.78400000000002 105.328 179.51000000000002Q106.77799999999999 182.23600000000002 109.446 183.74400000000003Q112.114 185.252 115.478 185.252Q118.958 185.252 121.568 183.74400000000003Q124.178 182.23600000000002 125.628 179.51000000000002Q127.078 176.78400000000002 127.078 173.18800000000002V136.184H144.478V199.52H128.238V186.99200000000002L129.166 189.776Q126.96199999999999 195.46 122.032 198.186Q117.102 200.912 110.49 200.912Z" fill="#FFDEAD"/></g></svg>
+    <text x="84" y="42" font-family="'Plus Jakarta Sans', Arial, sans-serif" font-size="30" font-weight="800" fill="#f2f4fb">Viglet Turing</text>
   </g>
 
   <!-- pill -->
@@ -43,7 +42,7 @@
   <!-- headline -->
   <text x="80" y="330" font-family="'Plus Jakarta Sans', Arial, sans-serif" font-size="62" font-weight="800" fill="#f2f4fb">Enterprise search,</text>
   <text x="80" y="404" font-family="'Plus Jakarta Sans', Arial, sans-serif" font-size="62" font-weight="800" fill="url(#brand)">cited RAG and AI agents</text>
-  <text x="80" y="478" font-family="'Plus Jakarta Sans', Arial, sans-serif" font-size="62" font-weight="800" fill="#f2f4fb">— over your own content.</text>
+  <text x="80" y="478" font-family="'Plus Jakarta Sans', Arial, sans-serif" font-size="62" font-weight="800" fill="#f2f4fb">over your own content.</text>
 
   <!-- subline -->
   <text x="80" y="548" font-family="'Plus Jakarta Sans', Arial, sans-serif" font-size="26" font-weight="500" fill="#aeb7d4">Any LLM · your infrastructure · your data. The open alternative to Algolia.</text>

@@ -11,8 +11,8 @@ import { cn } from "@/lib/utils";
 /**
  * Security & data residency (/security).
  *
- * Turns the platform's strongest, most under-sold argument — the data never
- * leaves your infrastructure — into a dedicated sales asset. Answers the
+ * Turns the platform's strongest, most under-sold argument (the data never
+ * leaves your infrastructure) into a dedicated sales asset. Answers the
  * enterprise buyer's SOC 2 / GDPR reflex with the honest self-hosted counter:
  * you don't have to trust our compliance because the data never leaves to begin
  * with. Mirrors the Compare/Migrate/AEM shell (dark hero, dependency-free
@@ -42,10 +42,9 @@ export function SecurityPage() {
             </h1>
             <p className="mt-5 max-w-2xl text-lg leading-relaxed text-[#aeb7d4]">
               A search SaaS asks you to trust its compliance badges with your
-              content and your users' queries. Viglet Turing ES is self-hosted:
-              the data never leaves your infrastructure to begin with — so
-              security inherits the controls you already run. Open source, any
-              LLM, your region, your rules.
+              content and your users' queries. Viglet Turing is self-hosted:
+              the data never leaves your infrastructure, so security inherits
+              the controls you already run. Open source, any LLM, your region.
             </p>
             <div className="mt-7 flex flex-wrap gap-3">
               <Button asChild size="lg">
@@ -65,7 +64,7 @@ export function SecurityPage() {
           </Container>
         </section>
 
-        {/* the core argument — SaaS trust vs self-hosted */}
+        {/* the core argument: SaaS trust vs self-hosted */}
         <section className="py-16 lg:py-20">
           <Container>
             <Card className="mx-auto max-w-3xl gap-0 border-primary/20 bg-primary/5 p-8 text-center sm:p-10">
@@ -73,14 +72,14 @@ export function SecurityPage() {
                 <ShieldCheck className="size-6" />
               </span>
               <h2 className="mt-5 text-2xl font-extrabold tracking-tight">
-                Don't trust a vendor's boundary — remove it
+                Don't trust a vendor's boundary. Remove it
               </h2>
               <p className="mx-auto mt-3 max-w-xl text-base leading-relaxed text-muted-foreground">
                 SOC 2 and GDPR paperwork exist because a hosted vendor holds your
                 data. When you self-host, that boundary disappears: your content,
                 embeddings and query logs stay inside the account, region and
-                controls you already operate — nothing to transfer, nothing to
-                audit on someone else's word.
+                controls you already operate. Nothing is transferred, and nothing
+                has to be audited on someone else's word.
               </p>
             </Card>
           </Container>
@@ -94,7 +93,7 @@ export function SecurityPage() {
                 How Turing keeps you in control
               </h2>
               <p className="mt-3 text-base leading-relaxed text-muted-foreground">
-                Concrete, defensible guarantees — not compliance theater.
+                What the software does, and what you can check in its source.
               </p>
             </div>
             <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
@@ -126,7 +125,7 @@ export function SecurityPage() {
                 What self-hosting means for your compliance
               </h2>
               <p className="mt-3 text-base leading-relaxed text-muted-foreground">
-                Turing is software you run, not a service we operate — so it has
+                Turing is software you run, not a service we operate, so it has
                 no SOC 2 report of its own to hand you, and it doesn't need one.
                 Deployed inside your environment, it runs under the certifications,
                 network controls, logging and data-residency guarantees your
@@ -137,7 +136,7 @@ export function SecurityPage() {
                 {[
                   "Self-hosted under Apache 2.0",
                   "Content, embeddings & query logs stay on-prem",
-                  "Bring your own LLM — or run fully local",
+                  "Bring your own LLM, or run fully local",
                   "No telemetry, no phone-home",
                 ].map((item) => (
                   <li key={item} className="flex items-start gap-2 text-sm">

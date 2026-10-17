@@ -20,7 +20,7 @@ import {
  * A sales page, not a runbook: the how-to lives in the docs. It leads with the
  * one thing that removes the objection ("switching is one command"), shows the
  * team keeps everything it has (concept map) and gains more (outcomes), and
- * closes on the differentiator — the data never leaves their infrastructure.
+ * closes on the differentiator: the data never leaves their infrastructure.
  */
 export function MigratePage() {
   return (
@@ -45,9 +45,9 @@ export function MigratePage() {
               Switching from Algolia or Elasticsearch is one command
             </h1>
             <p className="mt-5 max-w-2xl text-lg leading-relaxed text-[#aeb7d4]">
-              Keep the faceted, typo-tolerant search your team relies on — add
-              RAG, cited chat and agents — and bring it all home to your own
-              infrastructure. No rewrite, no lock-in, no per-record bill.
+              Keep the faceted, typo-tolerant search your team relies on, add RAG,
+              cited chat and agents, and run it all on your own infrastructure.
+              No rewrite, no lock-in, no per-record bill.
             </p>
             <div className="mt-7 flex flex-wrap gap-3">
               <Button asChild size="lg">
@@ -79,7 +79,7 @@ export function MigratePage() {
                   turing migrate
                 </code>{" "}
                 reads your Elasticsearch mappings or Algolia settings, turns them
-                into a Turing schema, and streams the records across — in a single
+                into a Turing schema, and streams the records across in a single
                 step. And it's cautious by design:
               </p>
               <ul className="mt-6 space-y-4">
@@ -103,7 +103,7 @@ export function MigratePage() {
           </Container>
         </section>
 
-        {/* concept mapping — you keep everything */}
+        {/* concept mapping: you keep everything */}
         <section className="border-t border-border bg-muted/40 py-16 lg:py-20">
           <Container>
             <div className="mx-auto mb-10 max-w-2xl text-center">
@@ -113,7 +113,7 @@ export function MigratePage() {
               <p className="mt-3 text-base leading-relaxed text-muted-foreground">
                 The concepts map almost one-to-one. Where a hosted feature is
                 paid, beta or vendor-locked, Turing ships the equivalent in the
-                box — on the search engine you already operate.
+                box, on the search engine you already operate.
               </p>
             </div>
             <TableScroll fadeClassName="from-muted">
@@ -156,7 +156,7 @@ export function MigratePage() {
               </table>
             </TableScroll>
             <p className="mt-4 text-center text-xs text-muted-foreground">
-              High-level mapping as of 2026 — verify current vendor capabilities.
+              High-level mapping as of 2026; verify current vendor capabilities.
             </p>
           </Container>
         </section>
@@ -196,8 +196,8 @@ export function MigratePage() {
                 And your data never leaves your network
               </h2>
               <p className="mx-auto mt-3 max-w-xl text-base leading-relaxed text-muted-foreground">
-                A hosted SaaS keeps your index — and increasingly your users'
-                queries — in someone else's cloud. Turing runs on your own
+                A hosted SaaS keeps your index, and increasingly your users'
+                queries, in someone else's cloud. Turing runs on your own
                 hardware: documents, embeddings and query logs stay put.
               </p>
               <ul className="mx-auto mt-6 grid max-w-xl gap-2.5 text-left sm:grid-cols-2">

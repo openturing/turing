@@ -1,18 +1,18 @@
-# ADR 0003 — Knowledge Base: microthesauri & index-time hierarchical term expansion
+# ADR 0003: Knowledge Base: microthesauri & index-time hierarchical term expansion
 
 - **Status:** Accepted (2026-07-11)
 - **Deciders:** Alexandre Oliveira
-- **Task:** T668 (Block AQ) — the gate that fixes the domain model, the Solr
+- **Task:** T668 (Block AQ): the gate that fixes the domain model, the Solr
   field, and the indexing seam for T669–T678.
 - **Related:** IMPROVEMENTS §XL (design rationale), ROADMAP Block AQ, CHANGELOG
-  Block AP (native synonyms — the sibling this complements), the settled
+  Block AP (native synonyms: the sibling this complements), the settled
   index-time enricher pattern in `TurSNContentFitIndexer` (T472).
 
 ## Context
 
 Inspired by classic controlled-vocabulary semantic-navigation systems, we want a **Knowledge Base** of
 **hierarchical microthesauri** (controlled vocabularies) that enrich indexing
-with *related terms* in a controlled, structured way — a complement to, not a
+with *related terms* in a controlled, structured way: a complement to, not a
 replacement for, embedding-based semantic search and the just-shipped native
 synonyms (Block AP).
 
@@ -20,7 +20,7 @@ The core behaviour: **at index time**, expand each document with the terms on th
 hierarchical path from the root down to every term the document mentions
 (`Doença → Doença respiratória → Infecção pulmonar → Pneumonia`), writing that
 path into a **dedicated additional field** on the Solr document. Query time stays
-simple and fast — no dynamic expansion. Parallel, unrelated branches are **not**
+simple and fast: no dynamic expansion. Parallel, unrelated branches are **not**
 pulled in (a document about "pneumonia" is *not* expanded with "câncer").
 
 Three findings from the exploration constrain this ADR:
@@ -39,7 +39,7 @@ Three findings from the exploration constrain this ADR:
    (`TurSNSiteSpotlight → TurSNSiteSpotlightTerm`) and the *soft* `parentId`
    id-pointer (`TurChatFlowState.parentStateId`). Language is modelled as a
    `java.util.Locale` column, one row per locale (`TurSNSiteLocale`,
-   `TurSNSynonym`) — there is no translation-join convention.
+   `TurSNSynonym`): there is no translation-join convention.
 
 3. **The old legacy XML importer is unrecoverable here.** This clone is
    shallow (52 commits, a graft boundary); exhaustive history search
@@ -47,7 +47,7 @@ Three findings from the exploration constrain this ADR:
    nothing, and no `.dtd`/`.xsd` exists in the tree. The XML contract must be
    **reconstructed** from a real sample authority file (see below), not recovered.
    The only surviving "thesaurus" footprint is the vestigial `TurSNSite.thesaurus`
-   flag + `TurSNFieldType.THESAURUS` enum (a query-time NER/entity toggle) — it is
+   flag + `TurSNFieldType.THESAURUS` enum (a query-time NER/entity toggle): it is
    **not** reused by this feature.
 
 ### The reconstructed source contract (Turing Thesaurus Exchange authority file)
@@ -58,7 +58,7 @@ was analysed in full (253 terms). Verified structure:
 - **`authorityFile`** → `name` (the microthesaurus name) + `terms`.
 - **`term`**: `id` (stable numeric), `name` (preferred label), `enabled`,
   `variations`, `relations`, `attributes` (an always-empty extensibility slot).
-- **`variation`**: a surface form for recognition — `weight` (e.g. `100.0`),
+- **`variation`**: a surface form for recognition: `weight` (e.g. `100.0`),
   `case` (`ci` = case-insensitive), `accent` (`as` = accent-sensitive),
   `language` (ISO 639-2/B, e.g. `por`).
 - **`relation`**: a target `id` + a `type`. **Full verified type set:**
@@ -76,10 +76,10 @@ Build the Knowledge Base as a **tenant-scoped, reusable library** that SN sites
 **opt into per site**, with all expansion complexity paid at **index time** and a
 single additional Solr field consumed at query time.
 
-### 1. Domain model — `kb` package, soft-parent tree, faithful relation set
+### 1. Domain model: `kb` package, soft-parent tree, faithful relation set
 
-New entities under `com.viglet.turing.persistence.model.kb` (plain `Tur*` prefix
-— the library is *not* SN-scoped; only the selection is):
+New entities under `com.viglet.turing.persistence.model.kb` (plain `Tur*` prefix:
+the library is *not* SN-scoped; only the selection is):
 
 ```
 TurKnowledgeBase        (aggregate root, @TenantId)
@@ -89,13 +89,13 @@ TurKnowledgeBase        (aggregate root, @TenantId)
 TurMicrothesaurus        (one tree = one language + one domain)
   id, name, description
   language : Locale                    // ISO code; drives locale-filtered indexing
-  domain   : String                    // GENERAL|EDUCATION|MEDICINE|... — String, not enum
+  domain   : String                    // GENERAL|EDUCATION|MEDICINE|... (String, not enum)
   @ManyToOne knowledgeBase
   └─ @OneToMany TurThesaurusTerm
 
 TurThesaurusTerm         (a node = preferred term / descriptor)
   id, label, enabled, termOrder, scopeNote (nullable), externalId (nullable, for round-trip)
-  parentTermId : String                // SOFT FK — the broader/narrower spine
+  parentTermId : String                // SOFT FK: the broader/narrower spine
   @ManyToOne microthesaurus
   @ElementCollection variations         // surface forms (label + UF non-preferred) for recognition
   └─ @OneToMany TurThesaurusTermRelation
@@ -112,20 +112,20 @@ index time. Modelling it as a soft `parentId` pointer (the
 `TurChatFlowState.parentStateId` precedent) keeps ancestor-walking a simple loop,
 matches repo convention (no self-referencing JPA entity exists), and avoids
 recursive lazy-loading. The **relation table** carries everything *else* the
-thesaurus contract needs — `RELATED` (RT, associative), `USE`/`USED_FOR` (U/UF,
-equivalence), and `CUSTOM` uni/bi links — so the full ISO-style vocabulary
+thesaurus contract needs, `RELATED` (RT, associative), `USE`/`USED_FOR` (U/UF,
+equivalence), and `CUSTOM` uni/bi links, so the full ISO-style vocabulary
 round-trips through XML import/export while expansion stays trivial. Rejected:
 one relation table for BT/NT too (turns a `while (parent != null)` walk into
 repeated relation queries on the hot path).
 
-**Recognition vs expansion — the split that makes it work.**
+**Recognition vs expansion: the split that makes it work.**
 `variations` (the preferred label + `USE`/`USED_FOR` non-preferred terms) feed the
 **recognition dictionary**: they are what we match in document text. The `BROADER`
 chain feeds **expansion**: once a term is recognised, we write the root→term
 ancestor path. So a document that uses a synonym of "pneumonia" is still
 recognised and still expanded to the canonical path.
 
-### 2. Solr field — one multi-valued TEXT field, low boost, free concept facet
+### 2. Solr field: one multi-valued TEXT field, low boost, free concept facet
 
 Provision **`microthesaurus_terms`** as `text_general`, **multi-valued, stored**,
 via `TurSNFieldProvisioner.ensureField(...)`. This yields two uses from one field
@@ -138,13 +138,13 @@ because Turing TEXT fields already auto-create a `_str` copy field:
 - `microthesaurus_terms_str` (auto copy field) → the **concept facet** for
   Semantic-Navigation-style browse/drill-down.
 
-Rejected: `strings` (exact, facet-only — loses the full-text recall gain);
+Rejected: `strings` (exact, facet-only: loses the full-text recall gain);
 reusing the vestigial `THESAURUS` field type (couples a new feature to a legacy
 query-time toggle for no benefit). A hierarchical drill-down `microthesaurus_path`
 field (path tokens `0/Doença`, `1/Doença/Doença respiratória`, …) is deferred to
-T677 — the MVP field is flat.
+T677: the MVP field is flat.
 
-### 3. Indexing seam — a new enricher, modelled exactly on T472
+### 3. Indexing seam: a new enricher, modelled exactly on T472
 
 New `TurSNMicrothesaurusIndexer` in `com.viglet.turing.sn.kb` with
 `enrich(TurSNSite site, Locale locale, Map<String,Object> attributes)`, wired into
@@ -154,13 +154,13 @@ New `TurSNMicrothesaurusIndexer` in `com.viglet.turing.sn.kb` with
    indexing path** (the T472 discipline).
 2. Load (cached) the compiled recognition dictionary for
    (site's selected microthesauri ∩ document locale).
-3. Extract text (title/description/body — same helper shape as
+3. Extract text (title/description/body: same helper shape as
    `TurSNContentFitIndexer.extractText`).
 4. Match terms (normalised: lowercase + optional accent-fold per the variation's
    `case`/`accent`; multi-word via an Aho-Corasick automaton).
 5. For each match, collect the root→term ancestor labels; dedupe.
 6. `ensureField(...)` + `attributes.put("microthesaurus_terms", List<String>)`.
-7. **Defensive by construction** — any failure is swallowed and logged; a
+7. **Defensive by construction**: any failure is swallowed and logged; a
    thesaurus problem can never block a document from indexing.
 
 **All complexity is at index time.** The compiled automaton is cached per
@@ -168,13 +168,13 @@ New `TurSNMicrothesaurusIndexer` in `com.viglet.turing.sn.kb` with
 (the caching-skill rule: cache immutable read-models, never repositories, always
 pair with an eviction). Query time stays a plain `qf` entry + a facet.
 
-### 4. Selection & customisation — opt-in per site
+### 4. Selection & customisation: opt-in per site
 
 A join entity `TurSNSiteMicrothesaurus` (site ↔ selected microthesaurus, `enabled`)
 plus per-site index config (field name / boost / include-synonyms) records which
 microthesauri a site indexes with. Customers **select** what they use, and can
 **create/edit** terms during a project through the CRUD (T669) and the bento
-editor (T676) — the library is not all-or-nothing.
+editor (T676): the library is not all-or-nothing.
 
 ## Consequences
 

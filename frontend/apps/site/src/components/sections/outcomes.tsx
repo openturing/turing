@@ -4,7 +4,7 @@ import { OUTCOMES } from "@/lib/site-content";
 import { cn } from "@/lib/utils";
 
 /**
- * Outcome layer — sells the business result, not the feature. A capability
+ * Outcome layer: sells the business result, not the feature. A capability
  * matrix convinces an engineer; a buyer wants to know what changes for their
  * team and their users. Sits right after the "what it is" pillars.
  */

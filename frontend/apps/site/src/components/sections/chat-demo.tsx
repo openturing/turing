@@ -21,7 +21,7 @@ import { useTuringDemo } from "@/lib/turing-demo";
 import { cn } from "@/lib/utils";
 
 // Dogfooding: the assistant streams REAL grounded answers via @viglet/turing-sdk
-// and renders them with the product's own @viglet/turing-react-ui components —
+// and renders them with the product's own @viglet/turing-react-ui components:
 // RichAnswer (markdown / ```html / ```d2), TuringSourceChips (auditable RAG
 // citations with a "why did you say this?" trace), TuringThinkingDots and
 // TuringCopyButton. Offline it plays a short scripted exchange so the widget
@@ -34,10 +34,10 @@ interface DemoMsg {
 }
 
 const DEFAULT_GREETING =
-  "Hi! I'm the Turing assistant — ask me anything about the platform.";
-// T638 — the "default voice" option has no entry in PLAYGROUND_PERSONAS, so give
+  "Hi! I'm the Turing assistant. Ask me anything about the platform.";
+// T638: the "default voice" option has no entry in PLAYGROUND_PERSONAS, so give
 // it its own one-line hint for the active-persona caption below the picker.
-const DEFAULT_PERSONA_HINT = "The agent's own voice — no persona applied.";
+const DEFAULT_PERSONA_HINT = "The agent's own voice, with no persona applied.";
 const DEFAULT_SUGGESTIONS = [
   "Does Turing support self-hosting?",
   "Which LLM providers work?",
@@ -56,19 +56,19 @@ const DEFAULT_SCRIPT: ChatScriptEntry[] = [
   {
     match: /self.?host|host|infra|data/i,
     answer:
-      "Yes — Turing is open source (Apache 2.0) and runs entirely on your own infrastructure. Your content and embeddings never leave your network.\n\n```bash\ndocker compose up -d --wait\n```",
+      "Yes. Turing is open source (Apache 2.0) and runs entirely on your own infrastructure. Your content and embeddings never leave your network.\n\n```bash\ndocker compose up -d --wait\n```",
     sources: ["Self-hosting guide", "Security & data residency"],
   },
   {
     match: /llm|model|openai|anthropic|gemini|ollama|provider/i,
     answer:
-      "Turing is provider-agnostic: **OpenAI**, **Anthropic Claude**, **Google Gemini**, Azure OpenAI and local **Ollama** models all plug in — pick one per agent.",
+      "Turing is provider-agnostic: **OpenAI**, **Anthropic Claude**, **Google Gemini**, Azure OpenAI and local **Ollama** models all plug in; pick one per agent.",
     sources: ["LLM providers"],
   },
   {
     match: /agent|tool|mcp|skill/i,
     answer:
-      "Agents call tools, run Anthropic-standard skills in a Docker sandbox, and reach MCP servers (with cross-vendor federation) — all configurable per agent.",
+      "Agents call tools, run Anthropic-standard skills in a Docker sandbox, and reach MCP servers (with cross-vendor federation), all configurable per agent.",
     sources: ["AI agents", "MCP server"],
   },
 ];
@@ -82,13 +82,13 @@ function scriptedSources(titles: string[]): TurChatSource[] {
   return titles.map((title, i) => ({ sourceId: `s${i}`, title }));
 }
 
-// T707 — the "not in this site" refusals the demo should never surface as a
+// T707: the "not in this site" refusals the demo should never surface as a
 // dead-end. Covers (a) the canonical deterministic refusals the backend emits
 // per locale (en/pt/es/ca) + the "LLM not enabled" guard, AND (b) the softer
 // LLM-phrased "the content doesn't cover X" refusals a model produces when a
 // thin page (e.g. a nav/landing hub with no body) is retrieved but has nothing
 // to answer. Matching any of these rewrites the turn to the scripted fallback so
-// the demo never dead-ends (its "never looks broken" contract) — regardless of
+// the demo never dead-ends (its "never looks broken" contract), regardless of
 // whether a (thin) source was attached.
 const REFUSAL_RE =
   /not available in the website|não está disponível na base|no está disponible en la base|no està disponible a la base|not enabled for this site|does not (?:provide|contain) any (?:information|details)|no (?:information|details) (?:about|on|regarding)|couldn'?t find|could not find|não (?:fornece|contém) (?:nenhuma|)\s*informaç|nenhuma informação|no (?:proporciona|contiene) (?:ninguna|)\s*informaci/i;
@@ -104,7 +104,7 @@ function scriptedAnswerFor(
 }
 
 /**
- * T707 — post-processes a completed LIVE conversation: any sourceless refusal
+ * T707: post-processes a completed LIVE conversation: any sourceless refusal
  * assistant turn is rewritten to the scripted answer for its preceding user
  * message. Pure + idempotent, so it can run on every store emission. Skipped
  * while streaming (a partial answer may transiently look empty).
@@ -117,7 +117,7 @@ function withScriptedFallback(
 ): DemoMsg[] {
   if (streaming) return msgs;
   return msgs.map((m, i) => {
-    // A refusal is a dead-end whether or not a (thin) source was attached — a
+    // A refusal is a dead-end whether or not a (thin) source was attached: a
     // nav/landing page with no body is often retrieved as a source yet answers
     // nothing. So match on the refusal text alone, not on sourcelessness.
     if (m.role !== "assistant" || !REFUSAL_RE.test(m.content)) return m;
@@ -171,7 +171,7 @@ export function ChatDemo({
   const [convo, setConvo] = useState<DemoMsg[]>([]);
   const [input, setInput] = useState("");
   const [busy, setBusy] = useState(false);
-  // T638 — per-request persona ("same question, different eyes"). null = the
+  // T638: per-request persona ("same question, different eyes"). null = the
   // agent's default voice. Changing it starts a fresh conversation so the
   // contrast is clean.
   const [personaId, setPersonaId] = useState<string | null>(null);
@@ -179,18 +179,18 @@ export function ChatDemo({
   const scrollRef = useRef<HTMLDivElement | null>(null);
   const busyRef = useRef(false);
   const seedNonce = useRef<number | null>(null);
-  // T707 — mirror the (per-render, new-identity) script/fallback props into refs
+  // T707: mirror the (per-render, new-identity) script/fallback props into refs
   // so the subscribe effect can read the latest values without re-subscribing
   // (and re-creating the controller) on every render.
   const scriptRef = useRef(script);
-  // T1027 — the mirror is the point. These props are new objects every render;
+  // T1027: the mirror is the point. These props are new objects every render;
   // reading them from a ref is what keeps the subscribe effect from re-creating
   // its controller each pass. The rule reports what the React Compiler would
   // decline, and no app here runs it.
   // eslint-disable-next-line react-hooks/refs
   scriptRef.current = script;
   const fallbackRef = useRef(fallback);
-  // T1027 — the mirror is the point. These props are new objects every render;
+  // T1027: the mirror is the point. These props are new objects every render;
   // reading them from a ref is what keeps the subscribe effect from re-creating
   // its controller each pass. The rule reports what the React Compiler would
   // decline, and no app here runs it.
@@ -217,7 +217,7 @@ export function ChatDemo({
     const c = createChatController(client, {
       site,
       personaId: personaId ?? undefined,
-      // T458/T460 — route chat lifecycle (start, funnel steps, conversion) and
+      // T458/T460: route chat lifecycle (start, funnel steps, conversion) and
       // client-side abandonment into GA4 via the shared bus. Additive: a failed
       // emit never breaks the chat.
       analytics,
@@ -303,7 +303,7 @@ export function ChatDemo({
     const t = text.trim();
     if (!t || busyRef.current) return;
     setInput("");
-    // An organic (typed) question is a fresh topic — drop any armed/loaded pivot
+    // An organic (typed) question is a fresh topic: drop any armed/loaded pivot
     // so the previous page's related list doesn't linger. The seeded path arms
     // its own pivot just before calling this, so it opts out of the reset.
     if (!seeded) {
@@ -335,7 +335,7 @@ export function ChatDemo({
   }, [seed?.nonce]);
 
   const showSuggestions = convo.length === 0;
-  // T638 — one-line hint for the persona currently answering, shown under the
+  // T638: one-line hint for the persona currently answering, shown under the
   // picker so visitors know what each "eye" means without hunting for a tooltip.
   const activePersonaHint =
     personaId == null
@@ -363,13 +363,13 @@ export function ChatDemo({
         </div>
       )}
 
-      {/* T638 — persona intro + picker + active-persona caption. The one-line
+      {/* T638: persona intro + picker + active-persona caption. The one-line
           concept sits above the pills; the selected persona's description sits
           below so its meaning is always visible (no tooltip hunt, mobile-safe). */}
       {showPersonas && (
       <div className="border-b border-border px-4 py-2">
         <p className="mb-1.5 text-[0.7rem] leading-snug text-muted-foreground/80">
-          Hear the same answer through different eyes — pick a persona to answer as.
+          Hear the same answer through different eyes. Pick a persona to answer as.
         </p>
         <TuringPersonaPicker
           options={PLAYGROUND_PERSONAS}
@@ -398,7 +398,7 @@ export function ChatDemo({
           // The SDK pre-commits an EMPTY assistant bubble the moment a turn
           // starts (chat controller: "so a UI can render a typing animation
           // immediately"). Render the thinking dots inside that bubble while it
-          // waits for the first token — otherwise it shows as an empty chip.
+          // waits for the first token; otherwise it shows as an empty chip.
           <Bubble
             key={i}
             role={m.role}
@@ -407,7 +407,7 @@ export function ChatDemo({
             pending={m.role === "assistant" && m.content.length === 0 && busy}
           />
         ))}
-        {/* Rich pivot — a seeded page ask that refused surfaces the page's
+        {/* Rich pivot: a seeded page ask that refused surfaces the page's
             related docs here (reusing /search/similar), so it never dead-ends. */}
         {related.status === "loading" && (
           <div className="flex justify-start">
@@ -503,7 +503,7 @@ function Bubble({
   role: "user" | "assistant";
   content: string;
   sources?: TurChatSource[];
-  /** Assistant bubble awaiting its first token — show the typing indicator. */
+  /** Assistant bubble awaiting its first token: show the typing indicator. */
   pending?: boolean;
 }>) {
   const isUser = role === "user";

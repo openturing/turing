@@ -11,7 +11,7 @@ export function Pillars() {
         <SectionHeader
           eyebrow="One platform, four jobs"
           title="Search it. Ask it. Automate it. Run it."
-          description="Most teams stitch a search engine, a RAG pipeline and an agent framework together. Turing is all three — open source and self-hosted."
+          description="Most teams stitch a search engine, a RAG pipeline and an agent framework together. Turing is all three, open source and self-hosted."
         />
         <div className="grid gap-5 md:grid-cols-2">
           {PILLARS.map((p) => {

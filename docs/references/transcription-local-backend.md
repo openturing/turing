@@ -3,12 +3,12 @@
 Turing's transcription seam (Block AS) can run **fully locally** with no cloud
 STT provider. The recommended local path is the `OPENAI_COMPATIBLE` strategy
 pointed at a self-hosted server that speaks the OpenAI
-`/audio/transcriptions` contract — e.g. [`faster-whisper-server`], `whisper.cpp`
+`/audio/transcriptions` contract, e.g. [`faster-whisper-server`], `whisper.cpp`
 server, or vLLM-whisper. It reuses the exact same REST code path as the cloud
 provider; only the URL changes. It scales horizontally and is GPU-capable.
 
 > For a true air-gapped, no-sidecar install, use the in-process `LOCAL_ONNX`
-> strategy instead (Block AS / T691) — at the cost of JVM footprint and
+> strategy instead (Block AS / T691): at the cost of JVM footprint and
 > single-node scaling.
 
 ## 1. Run the sidecar
@@ -16,7 +16,7 @@ provider; only the URL changes. It scales horizontally and is GPU-capable.
 A minimal `faster-whisper-server` sidecar (CPU; add a GPU runtime for speed):
 
 ```yaml
-# docker-compose fragment — add alongside the Turing service
+# docker-compose fragment: add alongside the Turing service
 services:
   faster-whisper:
     image: fedirz/faster-whisper-server:latest-cpu
@@ -40,14 +40,14 @@ key is required by default.
 
 ## 2. Point Turing at it
 
-**Option A — Global Settings UI** (`/bento/settings` → *Generative AI* →
+**Option A: Global Settings UI** (`/bento/settings` → *Generative AI* →
 *Transcription*): set **Backend** = `OpenAI-compatible (dedicated endpoint)`,
 **Endpoint URL** = `http://faster-whisper:8000/v1`, **Model** =
 `Systran/faster-whisper-small`. Leave the API key blank (no auth). Optionally
-raise **Max upload (bytes)** — a local server has no 25 MiB cap; anything above
+raise **Max upload (bytes)**: a local server has no 25 MiB cap; anything above
 the limit is chunked automatically when `ffmpeg` is present.
 
-**Option B — environment / properties** (headless / Viglet Cloud), which win
+**Option B: environment / properties** (headless / Viglet Cloud), which win
 over the UI value so a container can pin the backend:
 
 ```properties
@@ -61,7 +61,7 @@ turing.transcription.max-upload-bytes=524288000
 ## 3. Large recordings
 
 Audio above `max-upload-bytes` is split into overlapping ≤-limit chunks
-(`ffmpeg` required — use **Check ffmpeg** in the Transcription section to verify
+(`ffmpeg` required: use **Check ffmpeg** in the Transcription section to verify
 the host), transcribed bounded-parallel, and stitched back together. Small clips
 are sent directly and need no ffmpeg.
 
@@ -85,7 +85,7 @@ that re-encodes under the limit stays one chunk (legacy behaviour).
 ## 4. Configuring the ffmpeg toolchain
 
 The chunker (T688) shells out to `ffmpeg` (re-encode/split) and `ffprobe`
-(duration probe). There is **no Global Settings UI field** for these — the
+(duration probe). There is **no Global Settings UI field** for these: the
 executable paths are configured only via properties / environment, so the path
 stays at the trusted container level (an executable path is not something an
 admin should be able to point anywhere from a web form). By default Turing calls
@@ -93,7 +93,7 @@ admin should be able to point anywhere from a web form). By default Turing calls
 you want to pin a specific build:
 
 ```properties
-# Absolute paths (or bare names to resolve on PATH — the defaults)
+# Absolute paths (or bare names to resolve on PATH, the defaults)
 turing.transcription.ffmpeg-path=/usr/bin/ffmpeg
 turing.transcription.ffprobe-path=/usr/bin/ffprobe
 # Per-invocation timeout for a single ffmpeg/ffprobe call (seconds; default 120)
@@ -114,7 +114,7 @@ TURING_TRANSCRIPTION_FFMPEG_TIMEOUT_SECONDS=120
 - **Alpine** (common in containers): `apk add --no-cache ffmpeg`
 - **macOS**: `brew install ffmpeg`
 - **Windows**: `choco install ffmpeg` (or `winget install Gyan.FFmpeg`), then
-  ensure the `bin` directory is on `PATH` — otherwise set the absolute
+  ensure the `bin` directory is on `PATH`: otherwise set the absolute
   `ffmpeg-path`/`ffprobe-path` above (e.g. `C:\ffmpeg\bin\ffmpeg.exe`).
 
 After adjusting the paths, restart Turing and use **Check ffmpeg** in *Global
@@ -122,14 +122,14 @@ Settings → Generative AI → Transcription* to confirm the toolchain is reacha
 (it reports the resolved ffmpeg version banner, or the error if not runnable).
 
 > **In most cases you set nothing.** If `ffmpeg`/`ffprobe` are on the system
-> `PATH` — the normal outcome of `apt install ffmpeg`, `brew install ffmpeg`, or
-> `winget install "FFmpeg (Essentials Build)"` — the defaults already find them;
+> `PATH`, the normal outcome of `apt install ffmpeg`, `brew install ffmpeg`, or
+> `winget install "FFmpeg (Essentials Build)"`, the defaults already find them;
 > `ffmpeg-path`/`ffprobe-path` are only for non-PATH installs.
 
-> **Troubleshooting — "ffmpeg works in my terminal but Check ffmpeg says
+> **Troubleshooting: "ffmpeg works in my terminal but Check ffmpeg says
 > unavailable"**: a running process keeps the `PATH` it started with. If you
 > installed ffmpeg *after* Turing (or the IDE that launched it) was already
-> running, the JVM still has the old `PATH` and can't see the new binary — this
+> running, the JVM still has the old `PATH` and can't see the new binary: this
 > is especially common on Windows after `winget`/`choco`. **Restart Turing (and
 > the IDE if it started the backend)**, then run Check ffmpeg again. No path
 > configuration is needed once the process is restarted with the updated `PATH`.

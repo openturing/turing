@@ -1,11 +1,1 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
-  <defs>
-    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#6366f1"/>
-      <stop offset="1" stop-color="#4338ca"/>
-    </linearGradient>
-  </defs>
-  <rect width="32" height="32" rx="7" fill="url(#g)"/>
-  <path d="M8 12h16l-1.2 9.2A2 2 0 0 1 20.8 23H11.2a2 2 0 0 1-2-1.8L8 12Z" fill="none" stroke="#fff" stroke-width="1.8" stroke-linejoin="round"/>
-  <path d="M12 12a4 4 0 0 1 8 0" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round"/>
-</svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Viglet Turing"><polygon points="256.0,40.0 456.9,156.0 324.3,232.6 256.0,193.1 187.7,232.6 55.1,156.0" fill="#86A2F7" stroke="#86A2F7" stroke-width="1" stroke-linejoin="round"/><polygon points="55.1,388.0 256.0,504.0 256.0,369.2 187.7,232.6 55.1,156.0" fill="#4169E1" stroke="#4169E1" stroke-width="1" stroke-linejoin="round"/><polygon points="456.9,388.0 256.0,504.0 256.0,369.2 324.3,232.6 456.9,156.0" fill="#2C4BB8" stroke="#2C4BB8" stroke-width="1" stroke-linejoin="round"/><polygon points="256.0,193.1 187.7,232.6 256.0,369.2" fill="#506ed1" stroke="#506ed1" stroke-width="1" stroke-linejoin="round"/><polygon points="256.0,193.1 187.7,232.6 256.0,369.2" fill="#000" stroke="#000" stroke-width="1" stroke-linejoin="round" fill-opacity="0.10" stroke-opacity="0"/><polygon points="256.0,193.1 324.3,232.6 256.0,369.2" fill="#5c80ea" stroke="#5c80ea" stroke-width="1" stroke-linejoin="round"/><polygon points="256.0,193.1 324.3,232.6 256.0,369.2" fill="#000" stroke="#000" stroke-width="1" stroke-linejoin="round" fill-opacity="0.10" stroke-opacity="0"/></svg>

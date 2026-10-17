@@ -1,10 +1,10 @@
 import { Container } from "@/components/brand";
 
 /**
- * Proof strip — real, verifiable capability facts, not vanity metrics.
+ * Proof strip: real, verifiable capability facts, not vanity metrics.
  */
 const FACTS: { value: string; label: string }[] = [
-  { value: "Apache 2.0", label: "Open source — free forever" },
+  { value: "Apache 2.0", label: "Open source, no license fee" },
   { value: "Any LLM", label: "OpenAI · Anthropic · Gemini · Ollama" },
   { value: "3 engines", label: "Solr · Elasticsearch · Lucene" },
   { value: "Agents + RAG", label: "Tools · Skills · MCP" },

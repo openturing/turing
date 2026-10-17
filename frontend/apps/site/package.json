@@ -3,7 +3,7 @@
   "private": true,
   "version": "2026.3.1",
   "type": "module",
-  "description": "Viglet Turing ES \u2014 public marketing site (turing.viglet.org)",
+  "description": "Viglet Turing: public marketing site (turing.viglet.org)",
   "scripts": {
     "dev": "vite",
     "preview": "vite preview",

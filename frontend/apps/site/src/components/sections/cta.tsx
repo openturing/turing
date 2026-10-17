@@ -14,9 +14,9 @@ export function CallToAction() {
             Own your AI search stack
           </h2>
           <p className="mx-auto mt-3 max-w-lg text-base text-[#aeb7d4] sm:text-lg">
-            Open source, self-hosted, and ready for any LLM. Stand up the full
-            platform in one command and ship cited AI answers over your own content —
-            without your data ever leaving your infrastructure.
+            Open source, self-hosted, and works with any LLM. Stand up the full
+            platform in one command and ship cited AI answers over your own
+            content, without your data leaving your infrastructure.
           </p>
           <div className="mt-8 flex flex-wrap justify-center gap-3">
             <Button asChild size="lg">

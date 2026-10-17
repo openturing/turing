@@ -17,7 +17,7 @@ import {
 } from "@/lib/site-content";
 import { cn } from "@/lib/utils";
 
-/** Matrix cell — yes/no render as icons, anything else as short freeform text. */
+/** Matrix cell: yes/no render as icons, anything else as short freeform text. */
 function Cell({ value, highlight }: Readonly<{ value: string; highlight?: boolean }>) {
   if (value === "yes") {
     return (
@@ -47,7 +47,7 @@ function AemJsonLd() {
           {
             "@type": "ListItem",
             position: 1,
-            name: "Viglet Turing ES",
+            name: "Viglet Turing",
             item: "https://turing.viglet.org/",
           },
           {
@@ -60,7 +60,7 @@ function AemJsonLd() {
       },
       {
         "@type": "SoftwareApplication",
-        name: "Viglet Turing ES — AEM AI Search",
+        name: "Viglet Turing · AEM AI Search",
         applicationCategory: "BusinessApplication",
         operatingSystem: "Any (self-hosted, Docker)",
         url: "https://turing.viglet.org/aem-search/",
@@ -89,10 +89,10 @@ function AemJsonLd() {
 }
 
 /**
- * AEM solution landing (/aem) — "AI search for Adobe Experience Manager".
+ * AEM solution landing (/aem): "AI search for Adobe Experience Manager".
  *
  * Reframes the AEM-native AI-search pitch (aem-ai-search.com): Turing gives AEM
- * the same cited, streaming AI answers, then goes deeper — cross-repository
+ * the same cited, streaming AI answers, then goes deeper: cross-repository
  * search, agents/tools/skills/MCP, any LLM, any engine, self-hosted data
  * residency and Apache 2.0. Mirrors the Compare/Migrate shell: dark hero,
  * dependency-free routing via plain <a href> full loads, FAQPage JSON-LD.
@@ -115,15 +115,15 @@ export function AemPage() {
               <ArrowLeft className="size-4" /> Back to overview
             </a>
             <p className="mt-6 text-xs font-extrabold tracking-[0.12em] text-[#7f8bbd] uppercase">
-              Turing for Adobe Experience Manager
+              Viglet Turing for Adobe Experience Manager
             </p>
             <h1 className="mt-3 max-w-3xl text-3xl font-extrabold leading-[1.1] tracking-tight sm:text-4xl lg:text-5xl">
-              AEM search, reimagined with AI — without the ceiling
+              AEM search with AI, beyond the AEM repository
             </h1>
             <p className="mt-5 max-w-2xl text-lg leading-relaxed text-[#aeb7d4]">
               The AEM-native pitch is “Cloud-Service-native.” That's also its
-              limit. Viglet Turing ES gives AEM the same cited, streaming AI
-              answers — then goes deeper: it searches beyond AEM, adds agents,
+              limit. Turing gives AEM the same cited, streaming AI answers,
+              and more: it searches beyond AEM, adds agents,
               tools, skills and MCP, runs on any LLM and any search engine, and
               keeps every page and query in your own infrastructure. Open source,
               Apache 2.0.
@@ -148,7 +148,7 @@ export function AemPage() {
           </Container>
         </section>
 
-        {/* live WKND demo — the centerpiece proof */}
+        {/* live WKND demo: the centerpiece proof */}
         <section id="demo" className="scroll-mt-24 py-16 lg:py-20">
           <Container>
             <div className="mx-auto mb-10 max-w-2xl text-center">
@@ -159,11 +159,11 @@ export function AemPage() {
                 Search and ask Adobe's WKND site
               </h2>
               <p className="mt-3 text-base leading-relaxed text-muted-foreground">
-                This is the Adobe WKND reference site — its pages and assets
+                This is the Adobe WKND reference site, its pages and assets
                 indexed live via the Dumont AEM connector. Search it with facets
                 and typo tolerance, or ask a question and get a grounded, cited
                 answer. Every result and citation links back to the public WKND
-                site. Same SDK, same corpus — two lenses.
+                site. Same SDK, same corpus, two views.
               </p>
             </div>
             <WkndPlayground />
@@ -178,7 +178,7 @@ export function AemPage() {
                 How it plugs in
               </p>
               <h2 className="mt-3 text-2xl font-extrabold tracking-tight sm:text-3xl">
-                Sits alongside AEM — no re-platforming
+                Sits alongside AEM, no re-platforming
               </h2>
               <p className="mt-3 text-base leading-relaxed text-muted-foreground">
                 AEM stays your content source of truth. Turing connects, indexes
@@ -212,7 +212,7 @@ export function AemPage() {
           <Container>
             <div className="mx-auto mb-10 max-w-2xl text-center">
               <h2 className="text-2xl font-extrabold tracking-tight sm:text-3xl">
-                Everything an AEM AI search does — and the parts it can't
+                Everything an AEM AI search does, and the parts it can't
               </h2>
               <p className="mt-3 text-base leading-relaxed text-muted-foreground">
                 Turing matches a Cloud-Service-native add-on on the core
@@ -261,7 +261,7 @@ export function AemPage() {
               </table>
             </TableScroll>
             <p className="mt-4 text-center text-xs text-muted-foreground">
-              High-level comparison as of 2026 — verify current vendor
+              High-level comparison as of 2026; verify current vendor
               capabilities. “AEM-native AI add-on” = a Cloud-Service-native AI
               search product; “Adobe native search” = built-in Query
               Builder / Omnisearch.
@@ -309,8 +309,8 @@ export function AemPage() {
                 AEM teams ask us
               </h2>
               <p className="mt-3 text-base leading-relaxed text-muted-foreground">
-                The objections worth raising before you add AI search to AEM —
-                answered straight.
+                The objections worth raising before you add AI search to AEM,
+                with direct answers.
               </p>
             </div>
             <dl className="divide-y divide-border">
@@ -331,7 +331,7 @@ export function AemPage() {
           <Container>
             <Card className="mx-auto max-w-3xl gap-0 border-primary/20 bg-primary/5 p-8 text-center sm:p-10">
               <h2 className="text-2xl font-extrabold tracking-tight">
-                Add AI search to AEM — on your terms
+                Add AI search to AEM on your own infrastructure
               </h2>
               <p className="mx-auto mt-3 max-w-xl text-base leading-relaxed text-muted-foreground">
                 Self-host under Apache 2.0, connect your AEM tier in a session,

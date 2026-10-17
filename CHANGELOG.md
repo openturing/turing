@@ -1,19 +1,19 @@
 ## 2026.3
 
 #### NEW FEATURES
-* Bento UI — redesigned admin console (frosted-glass layout, inline editing, scroll-linked save bar)
-* AI Agent Skills — skill folders executed in a Docker sandbox, usable from chat and Semantic Navigation
-* Agent workspace — per-conversation file store with signed URLs, SSE events and a Groovy helper
-* Code Interpreter — sandboxed Python execution (native or Docker) with warm pool and structured results
-* Governed LLM Gateway — OpenAI-compatible governed egress
+* Bento UI: redesigned admin console (frosted-glass layout, inline editing, scroll-linked save bar)
+* AI Agent Skills: skill folders executed in a Docker sandbox, usable from chat and Semantic Navigation
+* Agent workspace: per-conversation file store with signed URLs, SSE events and a Groovy helper
+* Code Interpreter: sandboxed Python execution (native or Docker) with warm pool and structured results
+* Governed LLM Gateway: OpenAI-compatible governed egress
 * Unified model entity, visual model-type selection and multi-model LLM instances
 * Public curated model catalog API with a multi-source regeneration pipeline
 * Vectorless (structured-data) RAG plus batch/bulk structured-feed indexing
 * Hybrid ranking for Semantic Navigation (BM25 + kNN fused with Reciprocal Rank Fusion)
 * Pluggable RAG reranker (LLM, cross-encoder or Cohere)
-* Thesaurus — microthesauri and index-time term expansion
+* Thesaurus: microthesauri and index-time term expansion
 * Native synonyms and query expansion
-* Synthetic personas — persona match, persona dialogue and synthetic user research projects
+* Synthetic personas: persona match, persona dialogue and synthetic user research projects
 * Evaluation platform with pluggable graders and datasets
 * Field-manifest provisioning (schema-as-code), LLM-assisted derivation and field-coverage reporting
 * Migration tooling from Algolia and Elasticsearch
@@ -25,16 +25,16 @@
 * Memory compression and automatic offload of large tool results
 * Turing CLI (`@viglet/turing-cli`) and the zero-dependency vanilla JS SDK (`@viglet/turing-sdk`)
 * `@viglet/turing-react-ui` headless component package
-* Live Preview — per-turn prompt diagnostics
+* Live Preview: per-turn prompt diagnostics
 * MCP server support with injected LLM instructions
 * Client-side conversion analytics and Google Analytics bridge
 * Reference showcase application ("Atlas Store")
 
 #### IMPROVEMENTS
-* Open-core source split — public snapshots published to `openviglet/turing-ce`
+* Open-core source split: public snapshots published to `openviglet/turing-ce`
 * Composable, cache-friendly prompt-assembly pipeline
 * Bounded hexagonal domain layer with enforced conventions
-* JPA caching strategy reworked — cache DTOs, never entities
+* JPA caching strategy reworked: cache DTOs, never entities
 * Security hardening following an external audit
 * Documentation parity refresh across the docs site
 * SDK parity between the vanilla and React clients

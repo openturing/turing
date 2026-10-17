@@ -1,7 +1,7 @@
-# Turing — Platform Overview & Reference
+# Turing: Platform Overview & Reference
 
 > Extracted from `agents.md` on 2026-06-16 to keep the per-turn agent-instructions
-> file lean. This is human/reference material — platform overview, AI-agent
+> file lean. This is human/reference material: platform overview, AI-agent
 > capabilities, SDK usage examples, deployment, research positioning. It is **not**
 > per-turn coding guidance; the actionable engineering conventions stay in
 > [`agents.md`](../../agents.md).
@@ -212,7 +212,7 @@ A Claude AI-inspired conversational interface with:
 
 ### Frontend Component Patterns
 
-- **Services**: Class-based (e.g., `TurChatService`) — `axios` for REST, native `fetch` for SSE
+- **Services**: Class-based (e.g., `TurChatService`): `axios` for REST, native `fetch` for SSE
 - **UI components**: shadcn/ui base + custom gradient variants (`GradientButton`, `GradientAvatar`)
 - **Icons**: `@tabler/icons-react` as primary icon set
 - **State management**: React hooks (`useState`, `useRef`, `useCallback`)

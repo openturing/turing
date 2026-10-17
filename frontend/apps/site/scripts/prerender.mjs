@@ -7,7 +7,7 @@
 // For each route we render the app to an HTML string, patch the per-page <head>
 // (title / description / canonical / og), inject the markup into #root, and
 // write a static index.html. The client then hydrates it. No react-router, no
-// SSG framework — robust against bleeding-edge Vite versions.
+// SSG framework, robust against bleeding-edge Vite versions.
 
 import { readFileSync, writeFileSync, mkdirSync } from "node:fs";
 import { resolve, dirname } from "node:path";
@@ -60,7 +60,7 @@ function buildHtml(route) {
     `$1${canonical}$2`,
     "og:url meta"
   );
-  // canonical link — replace the placeholder injected in index.html
+  // canonical link: replace the placeholder injected in index.html
   html = replaceOrThrow(
     html,
     /<link\s+rel="canonical"[\s\S]*?\/>/,

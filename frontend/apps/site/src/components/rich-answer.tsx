@@ -10,14 +10,14 @@ import {
 import { DEMO_ORIGIN } from "@/lib/turing-demo";
 
 // Dogfooding: the demo renders assistant answers with the SAME components the
-// product ships (@viglet/turing-react-ui) — TuringRichContent splits the reply
+// product ships (@viglet/turing-react-ui): TuringRichContent splits the reply
 // into markdown / ```html / ```d2 segments and dispatches each. Prose goes
 // through TuringMarkdown (react-markdown under the hood, with the product's
 // sandbox: URL handling); ```html renders in the sandboxed iframe; ```d2
 // renders as a diagram via TuringD2Diagram (T632). The D2 engine
 // (@terrastruct/d2) is lazy-imported inside the shared component, so it is
 // code-split into its own chunk and only fetched when an answer actually
-// contains a ```d2 block — heavy optional dep, zero cost otherwise.
+// contains a ```d2 block (heavy optional dep, zero cost otherwise).
 
 /**
  * Tag-level styling for the markdown the assistant emits.
@@ -87,7 +87,7 @@ function SiteMarkdown({ text }: Readonly<TuringMarkdownSegmentProps>) {
 }
 
 /**
- * ```d2 diagram segment renderer (T632). Skins the headless TuringD2Diagram —
+ * ```d2 diagram segment renderer (T632). Skins the headless TuringD2Diagram;
  * the D2 engine is lazy-imported inside it, so this stays code-split. While the
  * engine loads it shows the caption; if it can't compile (or the peer is
  * missing) it falls back to the diagram source, so nothing is lost.

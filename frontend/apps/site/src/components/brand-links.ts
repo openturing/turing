@@ -1,12 +1,12 @@
 /**
- * T1027 — the outbound links, on their own.
+ * T1027: the outbound links, on their own.
  *
  * A record of URLs with a comment explaining each destination. Nothing here
  * renders, and the module it sat in exports components.
  */
 export const LINKS = {
   docs: "https://docs.viglet.org/turing/",
-  // Connectors ship in the Dumont project — the AEM connector docs live under
+  // Connectors ship in the Dumont project; the AEM connector docs live under
   // the /dumont route (docs-dumont/connectors/aem.md), not under /turing.
   aemConnector: "https://docs.viglet.org/dumont/connectors/aem",
   // Roadmap/Changelog are rendered markdown (blob/HEAD follows the default branch).

@@ -10,7 +10,7 @@ export function HowItWorks() {
         <SectionHeader
           eyebrow="The agent loop"
           title="How Turing answers a question"
-          description="Every conversation runs an agentic loop — retrieve, reason, act with tools, and respond with grounded, cited answers."
+          description="Every conversation runs an agentic loop: retrieve, reason, act with tools, and respond with a grounded, cited answer."
         />
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {STEPS.map((step, i) => (

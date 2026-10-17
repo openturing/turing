@@ -7,11 +7,11 @@ import {
   type TuringClient,
 } from "@viglet/turing-sdk";
 
-// T620 — shared wiring for the hero live-demos (search + chat). The demo runs on
+// T620: shared wiring for the hero live-demos (search + chat). The demo runs on
 // the product's own zero-dependency `@viglet/turing-sdk`. It goes LIVE against the
 // public demo instance when VITE_TURING_DEMO_URL is set at build time; the SN site
 // name is either pinned via VITE_TURING_DEMO_SITE or, when that's unset,
-// auto-discovered at runtime from the demo's public `/api/sn/names` endpoint — so a
+// auto-discovered at runtime from the demo's public `/api/sn/names` endpoint, so a
 // re-seeded demo (or one seeded under a different site name) just works without a
 // rebuild. See frontend/apps/site/.env.example.
 const DEMO_URL = (import.meta.env.VITE_TURING_DEMO_URL as string | undefined)?.replace(/\/+$/, "");
@@ -25,7 +25,7 @@ export const demoConfigured = Boolean(DEMO_URL);
 export const DEMO_ORIGIN = DEMO_URL ?? "";
 
 /**
- * One shared client — the same SDK client customers embed on their sites. Created
+ * One shared client: the same SDK client customers embed on their sites. Created
  * whenever a demo URL is configured; `null` otherwise (in-page sample-data mode).
  */
 export const demoClient: TuringClient | null = DEMO_URL
@@ -34,9 +34,9 @@ export const demoClient: TuringClient | null = DEMO_URL
 
 /**
  * Shared analytics bus for the live demos. The GA4 sink auto-detects the site's
- * `window.gtag` (configured in `index.html`), so every SDK search/chat event —
+ * `window.gtag` (configured in `index.html`), so every SDK search/chat event (
  * `turing_search`, `turing_chat_start`, `turing_chat_conversion`,
- * `turing_chat_abandoned`, funnel steps, result clicks — flows into GA4 with no
+ * `turing_chat_abandoned`, funnel steps, result clicks) flows into GA4 with no
  * extra wiring. Constructed unconditionally (safe during SSR/prerender: the sink
  * resolves `gtag` lazily at emit time and no-ops when it's absent).
  */
@@ -65,7 +65,7 @@ function fetchSiteNames(): Promise<string[]> {
  * to its bundled sample corpus so the widget never looks broken).
  *
  * - `preferred` set (e.g. a page pinning its own site like `wknd-publish`): goes
- *   live ONLY if the demo instance actually hosts that site — so a page whose seed
+ *   live ONLY if the demo instance actually hosts that site, so a page whose seed
  *   isn't deployed yet degrades gracefully to sample data instead of erroring.
  * - otherwise: `VITE_TURING_DEMO_SITE` when set, else the first discovered site.
  */
@@ -83,7 +83,7 @@ export interface TuringDemo {
   readonly client: TuringClient | null;
   /** Resolved SN site name (pinned or auto-discovered), or null until/if resolved. */
   readonly site: string | null;
-  /** True once both a client and a site are available — safe to issue live calls. */
+  /** True once both a client and a site are available; safe to issue live calls. */
   readonly live: boolean;
   /** Shared analytics bus (GA4-backed) to pass to the SDK search/chat controllers. */
   readonly analytics: TuringAnalytics;

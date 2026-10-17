@@ -1,4 +1,4 @@
-= Viglet Turing ES — Community Edition
+= Viglet Turing: Community Edition
 Viglet Team <opensource@viglet.org>
 :organization: Viglet Turing
 :viglet-version: 2026.3
@@ -8,7 +8,7 @@ Viglet Team <opensource@viglet.org>
 :toclevels: 2
 
 [.lead]
-**Open-source enterprise search and generative AI platform.** Faceted semantic search, hybrid BM25 + vector ranking, RAG chat with citations, AI agents and MCP tools — running on Apache Solr, Elasticsearch or embedded Lucene, entirely on your own infrastructure. Content reaches Turing from Adobe AEM, WordPress, databases and files through the companion https://github.com/openviglet/dumont[Viglet Dumont] connectors.
+**Open-source enterprise search and generative AI platform.** Faceted semantic search, hybrid BM25 + vector ranking, RAG chat with citations, AI agents and MCP tools, running on Apache Solr, Elasticsearch or embedded Lucene, entirely on your own infrastructure. Content reaches Turing from Adobe AEM, WordPress, databases and files through the companion https://github.com/openviglet/dumont[Viglet Dumont] connectors.
 
 image:https://img.shields.io/github/v/release/openviglet/turing-ce?style=flat-square&logo=github&label=release&color=2563eb[Latest release,link="https://github.com/openviglet/turing-ce/releases/latest"]
 image:https://img.shields.io/badge/license-Apache%202.0-blue?style=flat-square&logo=apache[License,link="LICENSE"]
@@ -19,7 +19,7 @@ image:https://img.shields.io/badge/React-19-61DAFB?style=flat-square&logo=react&
 image:https://img.shields.io/badge/docs-docs.viglet.org-brightgreen?style=flat-square&logo=readthedocs&logoColor=white[Documentation,link="https://docs.viglet.org/turing/"]
 image:https://img.shields.io/badge/discussions-join-8b5cf6?style=flat-square&logo=github[Discussions,link="https://github.com/openviglet/turing-ce/discussions"]
 
-image::.github/screenshot-console.png[Viglet Turing ES admin console,align="center"]
+image::.github/screenshot-console.png[Viglet Turing admin console,align="center"]
 
 toc::[]
 
@@ -33,9 +33,9 @@ docker run -p 2700:2700 -e TURING_ADMIN_PASSWORD=turing123 \
 
 Then open **http://localhost:2700/console** and log in with `admin` /
 `turing123`. `TURING_ADMIN_PASSWORD` (minimum 6 characters) is applied on the
-first boot only, and never overwrites a password you already set — omit it and
+first boot only, and never overwrites a password you already set: omit it and
 the console asks you to choose one on first access instead.
-No external search engine, no vector database and no API key required to start —
+No external search engine, no vector database and no API key required to start:
 Turing ships an embedded Lucene index and works fully offline until you decide to
 plug in Solr, Elasticsearch or an LLM.
 
@@ -44,23 +44,23 @@ plug in Solr, Elasticsearch or an LLM.
 **Getting content in.** Turing indexes whatever you post to its indexing API, so
 you can push documents directly from your own code. For turnkey extraction from
 Adobe AEM, WordPress, databases, filesystems and web crawls, run
-https://github.com/openviglet/dumont[**Viglet Dumont**] — the companion data
+https://github.com/openviglet/dumont[**Viglet Dumont**]: the companion data
 extraction platform that crawls those sources and feeds this index. Walkthrough:
 https://turing.viglet.org/aem-search[enterprise search for Adobe AEM].
 ====
 
-== Why Turing ES?
+== Why Turing?
 
 Most teams that outgrow the CMS's built-in search face the same choice: rebuild
 search in-house, or send their content to a hosted vendor. Turing is the third
-option — a complete, self-hosted search platform you run yourself.
+option: a complete, self-hosted search platform you run yourself.
 
 [cols="1,1,1",options="header"]
 |===
-| | **Turing ES (Community)** | Hosted search SaaS
+| | **Turing (Community)** | Hosted search SaaS
 
 | Where content lives
-| Your servers — indexes, embeddings and query logs never leave
+| Your servers: indexes, embeddings and query logs never leave
 | Vendor cloud
 
 | Search backend
@@ -68,11 +68,11 @@ option — a complete, self-hosted search platform you run yourself.
 | Proprietary, fixed
 
 | LLM for RAG
-| Your choice — OpenAI, Anthropic, Gemini, Mistral, Cohere, Bedrock, or local Ollama
+| Your choice: OpenAI, Anthropic, Gemini, Mistral, Cohere, Bedrock, or local Ollama
 | Vendor's model, or none
 
 | Cost model
-| Apache 2.0 — no per-query, per-record or per-seat metering
+| Apache 2.0: no per-query, per-record or per-seat metering
 | Metered by records / queries / seats
 
 | Extensibility
@@ -80,7 +80,7 @@ option — a complete, self-hosted search platform you run yourself.
 | Plugin marketplace
 
 | Regulated / air-gapped deploys
-| Supported — runs fully offline
+| Supported: runs fully offline
 | Usually not an option
 |===
 
@@ -103,7 +103,7 @@ option — a complete, self-hosted search platform you run yourself.
 | Assistants with their own LLM, native provider tools (web search, code execution), and MCP servers
 
 | **Multi-engine**
-| One API over Apache Solr, Elasticsearch, or embedded Apache Lucene — swap without rewriting
+| One API over Apache Solr, Elasticsearch, or embedded Apache Lucene: swap without rewriting
 
 | **Indexing API**
 | Push documents over REST/JSON, in single or bulk/batch feeds, with a versioned field manifest (schema-as-code)
@@ -118,18 +118,18 @@ option — a complete, self-hosted search platform you run yourself.
 | React 19 console for sites, fields, facets, agents, prompts and analytics
 
 | **APIs & SDKs**
-| REST, GraphQL, SSE streaming — Java SDK (Maven Central) and JS/TS SDKs (npm)
+| REST, GraphQL, SSE streaming: Java SDK (Maven Central) and JS/TS SDKs (npm)
 |===
 
 == Architecture at a glance
 
 Turing is the search and AI layer. Extraction from content sources is a separate,
-optional product — **Viglet Dumont** — so you can also feed the index straight
+optional product (**Viglet Dumont**) so you can also feed the index straight
 from your own application.
 
 [source]
 ----
-    Content sources          Viglet Dumont            Viglet Turing ES            Your apps
+    Content sources          Viglet Dumont            Viglet Turing               Your apps
   ┌─────────────────┐      ┌───────────────┐      ┌──────────────────────┐    ┌───────────────┐
   │ Adobe AEM       │      │  Connectors   │      │  Indexing API        │    │ Site search   │
   │ WordPress       │─────▶│  Extraction   │─────▶│  Semantic Navigation │───▶│ RAG chat      │
@@ -146,8 +146,8 @@ from your own application.
                                               └─────────────────────────────┘
 ----
 
-* **https://github.com/openviglet/dumont[Viglet Dumont]** — connectors, crawling, scheduling and delta detection for the sources above (this is where the AEM and WordPress integrations live).
-* **Viglet Turing ES** (this repository) — indexing, ranking, faceting, RAG, agents and the admin console.
+* **https://github.com/openviglet/dumont[Viglet Dumont]**: connectors, crawling, scheduling and delta detection for the sources above (this is where the AEM and WordPress integrations live).
+* **Viglet Turing** (this repository): indexing, ranking, faceting, RAG, agents and the admin console.
 
 == Installation
 
@@ -280,7 +280,7 @@ turing-ce/
 
 == Contributing
 
-Contributions are genuinely welcome — bug reports, docs, search-engine plugins,
+Contributions are genuinely welcome: bug reports, docs, search-engine plugins,
 agent tools and code.
 
 * 🐛 **Found a bug?** https://github.com/{git-project}/issues/new?template=bug_report.md[Open an issue]
@@ -291,7 +291,7 @@ agent tools and code.
 [NOTE]
 .About this repository's history
 ====
-`turing-ce` is the **public distribution** of Viglet Turing ES: development
+`turing-ce` is the **public distribution** of Viglet Turing: development
 happens in an internal repository and each release is published here as one
 clean, reviewed snapshot commit. That is why the log shows one commit per
 release rather than a day-by-day history.
@@ -305,18 +305,18 @@ and the https://github.com/{git-project}/releases[release notes] spell them out.
 
 == Community & support
 
-* 💬 https://github.com/{git-project}/discussions[GitHub Discussions] — questions, ideas, show-and-tell
-* 🔒 link:SECURITY.md[Security policy] — please report vulnerabilities privately
+* 💬 https://github.com/{git-project}/discussions[GitHub Discussions]: questions, ideas, show-and-tell
+* 🔒 link:SECURITY.md[Security policy]: please report vulnerabilities privately
 * 🤝 link:CODE_OF_CONDUCT.md[Code of Conduct]
 * 🆘 link:SUPPORT.md[Support options]
 
-If Turing ES is useful to you, **⭐ starring the repository** genuinely helps
+If Turing is useful to you, **⭐ starring the repository** genuinely helps
 other teams find it.
 
 == License
 
-Apache License 2.0 — see link:LICENSE[LICENSE]. You can use, modify and deploy
-Turing ES commercially, including in closed-source products.
+Apache License 2.0: see link:LICENSE[LICENSE]. You can use, modify and deploy
+Turing commercially, including in closed-source products.
 
 ---
 

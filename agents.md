@@ -11,8 +11,8 @@
 >
 > | Skill | Reach for it when… |
 > | ----- | ------------------ |
-> | `roadkeep` | **the write path for `docs/ROADMAP.md`/`CHANGELOG.md`/`IMPROVEMENTS.md`/`STRATEGY.md`** — adding, shipping, retiring, deferring or sectioning a task, and every query about the backlog |
-> | `turing-roadmap-docs` | the Turing rules `roadkeep` does not enforce — **where new work goes (reuse a block, don't mint a letter)**, one-task-one-commit + `/loop`, the next block letter, propagating a shipped user-facing task to the `docs-turing` site |
+> | `roadkeep` | **the write path for `docs/ROADMAP.md`/`CHANGELOG.md`/`IMPROVEMENTS.md`/`STRATEGY.md`**: adding, shipping, retiring, deferring or sectioning a task, and every query about the backlog |
+> | `turing-roadmap-docs` | the Turing rules `roadkeep` does not enforce: **where new work goes (reuse a block, don't mint a letter)**, one-task-one-commit + `/loop`, the next block letter, propagating a shipped user-facing task to the `docs-turing` site |
 > | `turing-persistence` | writing JPA entities, `@Column` annotations, associations (LAZY rule), or Liquibase changelogs |
 > | `turing-integration-tests` | creating or debugging a `*IT.java` / `@SpringBootTest` / context-startup hang |
 > | `turing-frontend-testing` | adding or debugging a `*.test.tsx` (vitest + RTL) |
@@ -24,7 +24,7 @@
 > | `turing-search-lucene` | search-engine plugins (Solr/ES/Lucene), Lucene 10, faceting, vector store |
 > | `turing-llm-summary` | cached LLM insights / `TurLlmSummaryService` features |
 > | `turing-resizable-panel` | `ResizablePanel` layouts, side-panel / side-by-side AI authoring |
-> | `turing-bento-ui` | building or fixing a `/bento` page — `BentoHero`/`BentoEntityShell`/`BentoFormSection`/`BentoListPage`, frosted hover cards, or a page still showing console chrome (sidebar/`SectionCard`) |
+> | `turing-bento-ui` | building or fixing a `/bento` page: `BentoHero`/`BentoEntityShell`/`BentoFormSection`/`BentoListPage`, frosted hover cards, or a page still showing console chrome (sidebar/`SectionCard`) |
 
 ### Project Structure
 
@@ -32,9 +32,9 @@
 - **frontend/**: pnpm + Turborepo monorepo with the React apps and SDK packages
   - **frontend/apps/turing-app**: React 19 + TypeScript frontend (Vite, Tailwind v4, shadcn/ui)
   - **frontend/apps/marketplace**: marketplace example apps (mythical-creatures, space-missions, vinyl-records)
-  - **frontend/apps/showcase**: `turing-showcase` ("Atlas Store") — the Block Y reference app that stresses the maximum platform surface (typed catalog, faceted+hybrid search, RAG chat, agents, skills, creative bets). Self-seeds a 200-product catalog; `pnpm dev:showcase` / `build:showcase`; e2e `TurShowcaseSmokeIT`; coverage audit in its `COVERAGE.md`
-  - **frontend/packages/react-sdk**: `@viglet/turing-react-sdk` — hooks and UI components for the Turing API
-  - **frontend/packages/sdk**: `@viglet/turing-sdk` — **vanilla JS, zero-dependency** SDK (framework-agnostic client + observable controllers for search/chat/autocomplete/slots). Built for Adobe Edge Delivery Services (EDS) blocks, plain `<script>`, or any bundler. Ported from the React SDK's `core/` (axios → native `fetch` via an explicit `createTuringClient`). Ships a self-contained ESM vendor file (`dist/turing-sdk.js`) + UMD + types via Vite lib mode. EDS example blocks live in `frontend/packages/sdk/examples/eds/`. Build: `pnpm --filter @viglet/turing-sdk build` (root alias `build:sdk`). The React SDK keeps its own `core/` copy for now; a future change may have it depend on this package.
+  - **frontend/apps/showcase**: `turing-showcase` ("Atlas Store"): the Block Y reference app that stresses the maximum platform surface (typed catalog, faceted+hybrid search, RAG chat, agents, skills, creative bets). Self-seeds a 200-product catalog; `pnpm dev:showcase` / `build:showcase`; e2e `TurShowcaseSmokeIT`; coverage audit in its `COVERAGE.md`
+  - **frontend/packages/react-sdk**: `@viglet/turing-react-sdk`: hooks and UI components for the Turing API
+  - **frontend/packages/sdk**: `@viglet/turing-sdk`: **vanilla JS, zero-dependency** SDK (framework-agnostic client + observable controllers for search/chat/autocomplete/slots). Built for Adobe Edge Delivery Services (EDS) blocks, plain `<script>`, or any bundler. Ported from the React SDK's `core/` (axios → native `fetch` via an explicit `createTuringClient`). Ships a self-contained ESM vendor file (`dist/turing-sdk.js`) + UMD + types via Vite lib mode. EDS example blocks live in `frontend/packages/sdk/examples/eds/`. Build: `pnpm --filter @viglet/turing-sdk build` (root alias `build:sdk`). The React SDK keeps its own `core/` copy for now; a future change may have it depend on this package.
   - **frontend/packages/shared-types**: `@viglet/turing-shared-types`
 - **turing-commons**, **turing-spring**, **turing-java-sdk**: shared libraries
 - Root Maven POM is multi-module
@@ -44,8 +44,8 @@
 
 This repo is checked out as **git worktrees**, one directory per version, e.g.:
 
-- `D:\Git\viglet\turing\2026.3` — branch `2026.3` (current default working branch)
-- `D:\Git\viglet\turing\2026.2` — branch `2026.2`
+- `D:\Git\viglet\turing\2026.3`: branch `2026.3` (current default working branch)
+- `D:\Git\viglet\turing\2026.2`: branch `2026.2`
 
 `D:\Git\viglet\turing\latest` is a **directory junction** that always points at
 the version currently being worked on (today `2026.3`). It is the default target
@@ -87,9 +87,9 @@ Verify with `git -C D:\Git\viglet\turing\latest rev-parse --abbrev-ref HEAD`
 > **The rules are in the two skills, and deliberately not here.** The write path, what each
 > command derives and the whole query surface are the **`roadkeep` skill**, which ships with
 > the plugin and is therefore the same text in every adopting project. The Turing rules
-> roadkeep does *not* enforce — where new work is filed, reusing a block instead of minting a
+> roadkeep does *not* enforce (where new work is filed, reusing a block instead of minting a
 > letter, one-task-one-commit + `/loop`, the next block letter, propagating a shipped
-> user-facing task into the `docs-turing` site — are the **`turing-roadmap-docs` skill**. A
+> user-facing task into the `docs-turing` site) are the **`turing-roadmap-docs` skill**. A
 > rule restated here is a rule that can disagree with the tool that enforces it.
 
 ### Build & Test Commands
@@ -101,7 +101,7 @@ mvn test -pl turing-app -Dskip.npm=true
 # Run specific test class
 mvn test -pl turing-app -Dskip.npm=true -Dtest="ClassName"
 
-# Backend integration tests (requires Docker — uses Testcontainers)
+# Backend integration tests (requires Docker, uses Testcontainers)
 mvn verify -pl turing-app -Dskip.npm=true
 
 # Frontend compile (from frontend/apps/turing-app)
@@ -109,7 +109,7 @@ pnpm run build           # tsc -b && vite build
 pnpm exec tsc -b --noEmit  # type-check only, no emit
 pnpm dev                 # local dev server
 
-# Frontend tests (vitest + React Testing Library) — from repo root or frontend
+# Frontend tests (vitest + React Testing Library), from repo root or frontend
 pnpm --filter turing-app test        # vitest run (CI mode)
 pnpm --filter turing-app test:watch  # watch mode
 
@@ -128,7 +128,7 @@ mvn clean install
 - REST controllers in `api/` package, services in dedicated packages
 - Use constructor injection (no `@Autowired` on fields)
 - Records for DTOs/API request-response types
-- Avoid injecting `ObjectMapper` in controllers — use `@RequestBody` / `@RequestPart` for auto-deserialization
+- Avoid injecting `ObjectMapper` in controllers: use `@RequestBody` / `@RequestPart` for auto-deserialization
 - `TurSecretCryptoService` handles API key encryption/decryption
 
 ### File Header Convention
@@ -149,25 +149,25 @@ mvn clean install
 ### JPA, Liquibase & Persistence
 
 > **Moved to the `turing-persistence` skill.** Column naming (no implicit
-> snake_case — camelCase maps literally), Liquibase conventions (new file per
+> snake_case: camelCase maps literally), Liquibase conventions (new file per
 > change, idempotent preconditions, portable lowercase types, `longtext` not
 > `clob`), and the `FetchType.LAZY`-by-default rule for all associations. Invoke
 > the skill when writing entities, `@Column` annotations, or changelogs.
 
 ### Visual Identity & Brand Colors
 
-- **Product name**: Viglet Turing ES (Enterprise Search)
+- **Product name**: Viglet Turing (Enterprise Search)
 - **Logo**: `frontend/apps/turing-app/public/favicon-96x96.png` (also available at 32x32, 16x16)
-- **Primary gradient**: `blue-600 (#2563eb)` → `indigo-600 (#4f46e5)` — used in buttons, avatars, switches, headers
+- **Primary gradient**: `blue-600 (#2563eb)` → `indigo-600 (#4f46e5)`: used in buttons, avatars, switches, headers
 - **Dark mode primary**: `blue-500 (#3b82f6)` → `indigo-500 (#6366f1)`
 - **Semantic colors**:
   - Success: `emerald-600 (#059669)` → `teal-600 (#0d9488)`
   - Destructive: `red-600 (#dc2626)` → `rose-600 (#e11d48)`
   - Secondary: `slate-600 (#475569)` → `slate-700 (#334155)`
-- **Gradient components**: `GradientButton`, `GradientAvatar`, `GradientSwitch` — all use the blue→indigo gradient
+- **Gradient components**: `GradientButton`, `GradientAvatar`, `GradientSwitch`: all use the blue→indigo gradient
 - **Email templates**: use inline styles with the same blue→indigo palette; dark background `#0a0a0f`, card background `#16161f`, border `#1e1e2e`
 - **Icons**: `@tabler/icons-react` (primary), `lucide-react` (some components)
-- Always reference the product as **Viglet Turing ES** in user-facing text (emails, reports, footers)
+- Always reference the product as **Viglet Turing** in user-facing text (emails, reports, footers)
 
 ### Frontend Conventions
 
@@ -176,7 +176,7 @@ mvn clean install
 - **shadcn/ui** components in `src/components/ui/`
 - Custom gradient components: `GradientButton`, `GradientAvatar`, `GradientSwitch`
 - Icons: `@tabler/icons-react` (primary), `lucide-react` (some components)
-- Routing: `react-router-dom` with routes defined in `src/app/routes/`. **All route files use `React.lazy()`** — when adding a new route, follow the pattern (`const FooPage = lazy(() => import("..."))`) so the new bundle is code-split automatically
+- Routing: `react-router-dom` with routes defined in `src/app/routes/`. **All route files use `React.lazy()`**: when adding a new route, follow the pattern (`const FooPage = lazy(() => import("..."))`) so the new bundle is code-split automatically
 - Services: class-based in `src/services/`, use `axios` for REST, native `fetch` for SSE streaming
 - Models: TypeScript interfaces in `src/models/`
 - CSRF: For non-axios requests, read `XSRF-TOKEN` cookie or fetch from `/csrf` endpoint
@@ -194,9 +194,9 @@ mvn clean install
 
 #### Data fetching with React Query (since 2026.2.6)
 
-Read paths use **`@tanstack/react-query` v5**. Don't reach for `useState` + `useEffect` + `axios.then()` — that pattern is being phased out.
+Read paths use **`@tanstack/react-query` v5**. Don't reach for `useState` + `useEffect` + `axios.then()`: that pattern is being phased out.
 
-- **Singleton client** in `src/lib/query-client.ts` — defaults: 30s staleTime, 5min gcTime, 1 retry, no refetch-on-window-focus.
+- **Singleton client** in `src/lib/query-client.ts`. Defaults: 30s staleTime, 5min gcTime, 1 retry, no refetch-on-window-focus.
 - **Query hooks** live in `src/api/queries/{feature}.queries.ts` and wrap a service:
   ```ts
   // src/api/queries/foo.queries.ts
@@ -221,7 +221,7 @@ Read paths use **`@tanstack/react-query` v5**. Don't reach for `useState` + `use
 - **Query keys** are centralised in `src/api/queries/keys.ts` so mutations can invalidate them deterministically. Always extend `queryKeys` rather than inlining string arrays.
 - **Dependent query** (e.g. Keycloak vs JPA backend in admin pages): pass the discriminator as a parameter, set `enabled: discriminator !== null`, and split the query key by source so toggling invalidates cleanly. See `src/api/queries/admin.queries.ts` for the canonical example.
 - **Mutations** (when adding new write paths): use `useMutation` and call `queryClient.invalidateQueries({ queryKey: queryKeys.foos.all() })` in the `onSuccess` handler so cached lists refresh automatically.
-- **Page pattern** — replace the legacy `useState`/`useEffect` block with one line:
+- **Page pattern**: replace the legacy `useState`/`useEffect` block with one line:
   ```ts
   const { data: foos, isError } = useFoos();
   const error = isError
@@ -233,7 +233,7 @@ Read paths use **`@tanstack/react-query` v5**. Don't reach for `useState` + `use
 
 - Backend: JUnit 5 + Mockito with `@ExtendWith(MockitoExtension.class)`
 - Mockito strict stubbing: stub all methods that will be called (use `any()` for broad matching)
-- Integration tests use `@SpringBootTest` with full context — keep controllers lean to avoid bean issues
+- Integration tests use `@SpringBootTest` with full context: keep controllers lean to avoid bean issues
 - Always run `mvn test -pl turing-app -Dskip.npm=true` after backend changes
 - **Writing a `*IT.java` (`@SpringBootTest`)?** → `turing-integration-tests` skill
   (extend `AbstractTuringSpringIT`, JMX-via-`properties`, per-JVM Artemis dir).
@@ -243,10 +243,10 @@ Read paths use **`@tanstack/react-query` v5**. Don't reach for `useState` + `use
 ### Common Pitfalls
 
 - `@Column(length=N)` must accommodate all enum/ID values (e.g., "AZURE_OPENAI" = 12 chars)
-- **MySQL primary key limit**: Max key length is 3072 bytes. With `utf8mb4` (4 bytes/char), `VARCHAR` PKs must be ≤ 768 chars. Example: `VARCHAR(1024)` PK fails on MySQL — use `VARCHAR(768)` instead
-- Spring AI 1.1.2: `AzureOpenAiEmbeddingModel` has no builder — use constructor
-- Anthropic provider doesn't support embedding — throws `UnsupportedOperationException`. Gemini **does** (T495): `TurGeminiEmbeddingModel` over `embedContent` with asymmetric task types (RETRIEVAL_DOCUMENT at index / RETRIEVAL_QUERY at query) + optional Matryoshka `outputDimensionality`
-- Frontend npm builds may fail with EBUSY on Windows if IDE locks files — use `-Dskip.npm=true` for backend-only testing
+- **MySQL primary key limit**: Max key length is 3072 bytes. With `utf8mb4` (4 bytes/char), `VARCHAR` PKs must be ≤ 768 chars. Example: `VARCHAR(1024)` PK fails on MySQL: use `VARCHAR(768)` instead
+- Spring AI 1.1.2: `AzureOpenAiEmbeddingModel` has no builder: use constructor
+- Anthropic provider doesn't support embedding: throws `UnsupportedOperationException`. Gemini **does** (T495): `TurGeminiEmbeddingModel` over `embedContent` with asymmetric task types (RETRIEVAL_DOCUMENT at index / RETRIEVAL_QUERY at query) + optional Matryoshka `outputDimensionality`
+- Frontend npm builds may fail with EBUSY on Windows if IDE locks files: use `-Dskip.npm=true` for backend-only testing
 
 ### Agent Operational Memory (Repository)
 
@@ -275,13 +275,13 @@ Read paths use **`@tanstack/react-query` v5**. Don't reach for `useState` + `use
 
 When `node_modules` native binaries are locked by the IDE/Vite dev server:
 
-1. **Don't loop** retrying `npm ci`, `npm install`, `npx tsc`, or other install variations — they will all fail with EBUSY/EPERM while the IDE holds locks.
-2. **Rely on IDE diagnostics** from VSCode hook feedback (`ide_diagnostics` in tool responses) — these provide real-time TypeScript error checking without needing `tsc`.
-3. **Backend compile is the primary gate** — run `mvn compile -pl turing-app -Dskip.npm=true` to verify Java code. For the frontend, prefer `pnpm exec tsc -b --noEmit` from `frontend/apps/turing-app` when locks clear.
+1. **Don't loop** retrying `npm ci`, `npm install`, `npx tsc`, or other install variations: they will all fail with EBUSY/EPERM while the IDE holds locks.
+2. **Rely on IDE diagnostics** from VSCode hook feedback (`ide_diagnostics` in tool responses): these provide real-time TypeScript error checking without needing `tsc`.
+3. **Backend compile is the primary gate**: run `mvn compile -pl turing-app -Dskip.npm=true` to verify Java code. For the frontend, prefer `pnpm exec tsc -b --noEmit` from `frontend/apps/turing-app` when locks clear.
 
 ---
 
-## Subsystem deep-dives — see `.claude/skills/`
+## Subsystem deep-dives: see `.claude/skills/`
 
 The following areas each have a dedicated skill (auto-invoked by description, or
 `/<skill-name>`). They were moved out of this file to keep per-turn context lean:
@@ -302,4 +302,4 @@ Platform overview, AI-agent capabilities, SDK usage examples, deployment, and
 research positioning were moved to
 [`docs/products/turing-platform-overview.md`](docs/products/turing-platform-overview.md)
 to keep this per-turn instructions file lean. That doc is human/reference
-material — not per-turn coding guidance.
+material: not per-turn coding guidance.

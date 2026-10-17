@@ -18,7 +18,7 @@ export const SECURITY_PATH = "/security/";
 
 export default function App({ path = "/" }: Readonly<{ path?: string }>) {
   // Cross-page links to a home anchor (e.g. "/#playground") full-load "/" and
-  // then rely on the browser's native hash scroll — but the target section
+  // then rely on the browser's native hash scroll, but the target section
   // mounts AFTER React does (and doesn't exist at all before hydration in dev),
   // so the native jump finds nothing and stays at the top. Re-run the scroll
   // once the element is present (retrying across a few frames), plus on

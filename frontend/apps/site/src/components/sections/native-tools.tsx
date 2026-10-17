@@ -23,7 +23,7 @@ export function NativeTools({ teaser = false }: Readonly<{ teaser?: boolean }>) 
         <SectionHeader
           eyebrow="Native provider tools"
           title="Turn on the tools your model already has"
-          description="OpenAI, Anthropic and Gemini ship powerful tools that run in their own infrastructure. Turing wires them straight into the agent loop — opt-in per agent, no glue code, no extra crawler — and routes their citations into the same source-chip UI as your own search."
+          description="OpenAI, Anthropic and Gemini ship tools that run in their own infrastructure. Turing wires them into the agent loop (opt-in per agent, no glue code, no extra crawler) and routes their citations into the same source-chip UI as your own search."
         />
         <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
           {NATIVE_TOOLS.map((tool) => (
@@ -53,8 +53,8 @@ export function NativeTools({ teaser = false }: Readonly<{ teaser?: boolean }>) 
           ))}
         </div>
         <p className="mt-6 text-center text-xs text-muted-foreground">
-          Strictly opt-in via a two-level capability gate — your existing agents
-          stay byte-for-byte unchanged. Provider availability as of 2026.3.
+          Strictly opt-in via a two-level capability gate, so your existing
+          agents stay unchanged. Provider availability as of 2026.3.
         </p>
         {teaser && (
           <div className="mt-8 flex justify-center">

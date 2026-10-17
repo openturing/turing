@@ -8,10 +8,10 @@ referenced by `TurCryptoKeyMaterial` (T639 / IMPROVEMENTS §XXXVII.1).
 ## Rules
 
 - **Never commit a real key.** `application.yaml` ships the property as
-  `ai.crypto.key: ${TURING_AI_CRYPTO_KEY:}` — a blank default. Under the
+  `ai.crypto.key: ${TURING_AI_CRYPTO_KEY:}`: a blank default. Under the
   `production` profile a blank key **fails fast at startup**, and a known
   sample/dev sentinel (e.g. the historical `sample-key-for-crypto`) is
-  **rejected** — see `TurCryptoKeyMaterial.REJECTED_SENTINELS`.
+  **rejected**: see `TurCryptoKeyMaterial.REJECTED_SENTINELS`.
 - Supply the key from the environment only: `TURING_AI_CRYPTO_KEY=<strong-random-value>`.
   Use a long, high-entropy value (e.g. `openssl rand -base64 48`).
 - Outside production a warned-once insecure dev fallback is used, so local dev
@@ -21,7 +21,7 @@ referenced by `TurCryptoKeyMaterial` (T639 / IMPROVEMENTS §XXXVII.1).
 
 Because the sample key was committed for a period, any secret encrypted while it
 was active is compromised: anyone with repo access + a database copy could
-decrypt it. Rotating the key alone does **not** re-secure those rows — the old
+decrypt it. Rotating the key alone does **not** re-secure those rows: the old
 ciphertext is still decryptable with the old (public) key until it is
 re-encrypted or the underlying secret is itself rotated.
 

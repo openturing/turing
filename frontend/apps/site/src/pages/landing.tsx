@@ -18,7 +18,7 @@ import { CallToAction } from "@/components/sections/cta";
 import { SiteFooter } from "@/components/sections/site-footer";
 
 /**
- * The single-page landing — the marketing front door.
+ * The single-page landing: the marketing front door.
  *
  * Section order is a deliberate conversion narrative, built around the live
  * playground as the centerpiece proof:
