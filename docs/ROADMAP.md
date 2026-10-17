@@ -8,8 +8,8 @@
 
 ## Block CB — LLM gateway parity with the OpenAI wire
 
-- 📋 **T1092** (deps: —) **The gateway answers 502 api_error when the provider says 429 out of credits, so clients cannot tell quota from outage** — OpenAI clients back off, alert or retry by status and error type, and a quota hit read as an outage gets the wrong response. → §CXIII.2
 - 📋 **T1099** (deps: —) **The gateway ignores temperature, top_p, max_tokens and stop sent by the client, so the instance defaults always win** — A client pinning temperature 0 or a token cap gets a 200 and different sampling than it asked for. → §CXIII.3
+- 📋 **T1100** (deps: —) **A streamed gateway call hit by a provider 429 answers 200 with the error as assistant text, so clients never back off** — Streaming OpenAI clients get a normal-looking answer whose content is an error message instead of a RateLimitError. → §CXIII.4
 
 ## Block CD — turing.viglet.org relevance pass (2026-10)
 

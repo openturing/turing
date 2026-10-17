@@ -2138,32 +2138,6 @@ silently. Found while building trabalharei's local Turing and import proof.
 
 ## CXIII LLM gateway parity with the OpenAI wire
 
-### CXIII.2 Provider quota errors through the gateway (T1092)
-
-Met in trabalharei (TRA107) on the local Turing on 2026-10-13. The OpenAI account behind
-the gpt-4o-mini instance had run out of credits:
-
-    POST /v1/chat/completions  (Authorization: Bearer sk-turing-...)
-    {"model": "gpt-4o-mini", "messages": [...]}
-
-    HTTP 502
-    {"error": {"message": "429: You have no credits remaining. Add credits to continue
-      using the API at https://platform.openai.com/...", "type": "api_error"}}
-
-The provider said 429 insufficient_quota; the gateway answers 502 with type api_error.
-An OpenAI client tells a quota or rate limit from an outage by the status and the error
-type (429, insufficient_quota or rate_limit_exceeded), so it backs off, alerts or
-retries the wrong way. A consumer's admin panel cannot say "the provider is out of
-credits" either.
-
-Expected: pass the provider's 429 through as 429 with its OpenAI error type and a
-Retry-After when the provider sent one, and keep 502 for a provider that did not answer.
-The gateway's own budget and rate limits (T741 keys) should answer 429 the same way,
-with a type that says which limit.
-
-Workaround in trabalharei: none needed; its runtime treats any non-2xx as "no answer"
-and falls back.
-
 ### CXIII.3 Gateway sampling parameters (T1099)
 
 Found while shipping T1090. `TurOpenAiWire.ChatCompletionRequest` declares
@@ -2187,6 +2161,29 @@ options; `stop` needs adding there too.
 Open choice: whether a non-null request value should be refused (400, like T1090) on a
 vendor whose options cannot carry it, or applied best-effort. Sampling is advisory in
 the OpenAI contract, so best-effort is the likely answer.
+
+### CXIII.4 Provider limits on a streamed gateway call (T1100)
+
+Found while shipping T1092. The blocking `/v1/chat/completions` now answers a provider's
+429 (and the tenant's token budget) as 429 with the OpenAI error type, through
+`TurOpenAiCompatibleGatewayAPI.upstreamError` and `TurGatewayProviderLimit`. A streamed
+call (`"stream": true`) does not: `TurGatewayLlmService.stream` ends its Flux with
+`onErrorResume`, which turns any provider error into an assistant content chunk reading
+`[error: 429: ...]` followed by `finish_reason: stop` and `[DONE]`, on a 200. An OpenAI
+streaming client reads that as a normal answer whose text is an error message, so it
+neither backs off nor surfaces a RateLimitError.
+
+What to build: when the provider refuses before the first token, which is where a quota
+or rate limit always lands, let the error reach the controller before the response is
+committed, so `upstreamError` answers 429 exactly as it does for the blocking path. One
+way is to resolve the first signal of the provider Flux before handing the stream to
+Spring (for example `switchOnFirst`, or `Flux.from(...).next()` on the first element),
+throwing when that first signal is an error. Errors after the first token keep the
+current in-stream frame, since the status is then committed; there they should at least
+be OpenAI's `data: {"error": {...}}` shape rather than assistant content.
+
+Test with a mock streaming ChatModel whose Flux errors immediately with
+`TurGatewayProviderLimit`-recognisable 429s, asserting the controller's status.
 
 ## CXIV Lucene engine search with synonyms
 

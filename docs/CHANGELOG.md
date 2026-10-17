@@ -1453,6 +1453,7 @@
 ## Block CB — LLM gateway parity with the OpenAI wire
 
 - **T1090** — /v1/chat/completions honours response_format json_object and json_schema on OpenAI-wire instances, blocking and streaming, and answers a 400 naming the field everywhere else (design §CXIII.1 recorded in `turing-app/src/main/java/com/viglet/turing/genai/gateway/TurGatewayResponseFormat.java`).
+- **T1092** — A provider 429 and the tenant token budget reach gateway clients as 429 with the OpenAI error type and Retry-After; only a provider that did not answer is 502 (design §CXIII.2 recorded in `turing-app/src/main/java/com/viglet/turing/genai/gateway/TurGatewayProviderLimit.java`).
 
 ## Block CC — Lucene engine search with synonyms
 

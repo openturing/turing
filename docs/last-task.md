@@ -307,6 +307,8 @@ number" looked free but wasn't. Grepping three files (`ROADMAP.md`,
 
 ## Log (most recent first)
 
+- **T1100 FILED** (Block CB §CXIII.4: a streamed gateway call hit by a provider 429 answers 200 with the error as text), 2026-10-17.
+- **T1092 SHIPPED** (Block CB §CXIII.2: provider 429 and tenant token budget answer 429 with OpenAI type and Retry-After), 2026-10-17.
 - **T1091 SHIPPED** (Block CC §CXIV.1: multi-word synonym phrases run only on TEXT fields; block closed and heading dropped), 2026-10-17.
 - **T1099 FILED** (Block CB §CXIII.3: the gateway ignores temperature, top_p, max_tokens and stop), 2026-10-17.
 - **T1090 SHIPPED** (Block CB §CXIII.1: gateway honours response_format, 400 where it cannot), 2026-10-17.

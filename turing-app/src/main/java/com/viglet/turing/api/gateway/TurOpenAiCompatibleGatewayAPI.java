@@ -9,6 +9,7 @@
 package com.viglet.turing.api.gateway;
 
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -25,6 +26,7 @@ import com.viglet.turing.genai.gateway.TurGatewayGuardrailException;
 import com.viglet.turing.genai.gateway.TurGatewayLimitException;
 import com.viglet.turing.genai.gateway.TurGatewayLlmService;
 import com.viglet.turing.genai.gateway.TurGatewayOptions;
+import com.viglet.turing.genai.gateway.TurGatewayProviderLimit;
 import com.viglet.turing.genai.gateway.TurGatewayUnsupportedParameterException;
 import com.viglet.turing.genai.gateway.TurOpenAiWire.ChatCompletionRequest;
 import com.viglet.turing.genai.gateway.TurOpenAiWire.EmbeddingRequest;
@@ -95,7 +97,7 @@ public class TurOpenAiCompatibleGatewayAPI {
             return error(HttpStatus.BAD_REQUEST, e.getMessage(), INVALID_REQUEST, "model_not_found");
         } catch (RuntimeException e) {
             log.warn("[Gateway] chat/completions failed: {}", e.getMessage());
-            return error(HttpStatus.BAD_GATEWAY, e.getMessage(), "api_error", null);
+            return upstreamError(e);
         }
     }
 
@@ -111,7 +113,7 @@ public class TurOpenAiCompatibleGatewayAPI {
             return error(HttpStatus.BAD_REQUEST, e.getMessage(), INVALID_REQUEST, "model_not_found");
         } catch (RuntimeException e) {
             log.warn("[Gateway] embeddings failed: {}", e.getMessage());
-            return error(HttpStatus.BAD_GATEWAY, e.getMessage(), "api_error", null);
+            return upstreamError(e);
         }
     }
 
@@ -119,6 +121,24 @@ public class TurOpenAiCompatibleGatewayAPI {
     @GetMapping(value = "/models", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<?> models() {
         return ResponseEntity.ok(gatewayService.listModels());
+    }
+
+    /**
+     * T1092 — a provider that answered 429 (out of credits, or rate limited) and
+     * the tenant's own token budget answer 429 with the OpenAI error type and the
+     * provider's {@code Retry-After}; only a provider that did not answer is a 502.
+     */
+    static ResponseEntity<ErrorEnvelope> upstreamError(RuntimeException e) {
+        return TurGatewayProviderLimit.of(e)
+                .map(limit -> {
+                    ResponseEntity.BodyBuilder builder = ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS);
+                    if (limit.retryAfter() != null) {
+                        builder.header(HttpHeaders.RETRY_AFTER, limit.retryAfter());
+                    }
+                    return builder.body(ErrorEnvelope.of(limit.message(), limit.type(), limit.code()));
+                })
+                .orElseGet(() -> ResponseEntity.status(HttpStatus.BAD_GATEWAY)
+                        .body(ErrorEnvelope.of(e.getMessage(), "api_error", null)));
     }
 
     private ResponseEntity<ErrorEnvelope> error(HttpStatus status, String message, String type, String code) {
