@@ -31,6 +31,7 @@ import com.viglet.turing.domain.llm.TurLLMInstanceDomain;
 import com.viglet.turing.domain.llm.TurLLMInstanceRepositoryPort;
 import com.viglet.turing.genai.TurChatAttachmentService;
 import com.viglet.turing.genai.TurChatToolOptions;
+import com.viglet.turing.genai.TurPromptOverrides;
 import com.viglet.turing.genai.provider.llm.TurGenAiLlmProvider;
 import com.viglet.turing.genai.provider.llm.TurGenAiLlmProviderFactory;
 import com.viglet.turing.resilience.llm.TurLlmModelFactory;
@@ -64,6 +65,8 @@ import reactor.core.scheduler.Schedulers;
 public class TurLLMChatAPI {
 
     private static final String ROLE_ASSISTANT = "assistant";
+    /** T1102 — how an unsupported response format is named back to the caller. */
+    private static final String RESPONSE_FORMAT = "responseFormat";
     private static final String ROLE_SYSTEM = "system";
 
     @org.springframework.beans.factory.annotation.Value("classpath:prompts/base.md")
@@ -154,7 +157,24 @@ public class TurLLMChatAPI {
         this.toolExecutionLoop = toolExecutionLoop;
     }
 
-    public record ChatRequest(List<ChatMessageItem> messages) {
+    /**
+     * T1102 — besides the messages, optional per-call overrides of the
+     * instance's own settings: sampling, an output cap, stop sequences and a
+     * JSON response format ({@code json_object}, or {@code json_schema} with
+     * {@code responseSchema}). Left out, the instance's settings apply as before.
+     */
+    public record ChatRequest(List<ChatMessageItem> messages, Double temperature, Double topP,
+            Integer maxTokens, List<String> stop, String responseFormat,
+            java.util.Map<String, Object> responseSchema, Boolean strict) {
+
+        public ChatRequest(List<ChatMessageItem> messages) {
+            this(messages, null, null, null, null, null, null, null);
+        }
+
+        TurPromptOverrides overrides() {
+            return new TurPromptOverrides(temperature, topP, maxTokens, stop, responseFormat, responseSchema,
+                    strict);
+        }
     }
 
     public record ChatMessageItem(String role, String content) {
@@ -237,14 +257,15 @@ public class TurLLMChatAPI {
         springMessages.add(new SystemMessage(systemPrompt));
         springMessages.addAll(buildMessages(request.messages(), files));
 
+        TurPromptOverrides overrides = request.overrides();
         if (turLLMInstance.isToolsEnabled()) {
-            return chatWithTools(chatModel, springMessages, turLLMInstance, id, username);
+            return chatWithTools(chatModel, springMessages, turLLMInstance, id, username, overrides);
         }
-        return chatWithoutTools(chatModel, springMessages, turLLMInstance, id, username);
+        return chatWithoutTools(chatModel, springMessages, turLLMInstance, id, username, overrides);
     }
 
     private Flux<ChatResponse> chatWithTools(ChatModel chatModel, List<Message> springMessages,
-            TurLLMInstance turLLMInstance, String id, String username) {
+            TurLLMInstance turLLMInstance, String id, String username, TurPromptOverrides overrides) {
         // Build base tool objects list, conditionally add RAG search
         java.util.List<Object> toolObjects = new java.util.ArrayList<>(java.util.List.of(
                 webCrawlerToolService, weatherToolService, financeToolService,
@@ -275,7 +296,8 @@ public class TurLLMChatAPI {
                 .toolCallbacks(toolCallbacks)
                 .build();
 
-        Prompt prompt = new Prompt(springMessages, chatOptions);
+        // T1102 — the caller's per-call overrides, on top of the tool options.
+        Prompt prompt = new Prompt(springMessages, overrides.applyTo(chatOptions, id, RESPONSE_FORMAT));
 
         // Use call() instead of stream() to ensure tool calling works reliably.
         // Spring AI's stream() with internal tool execution does not execute
@@ -306,9 +328,9 @@ public class TurLLMChatAPI {
     }
 
     private Flux<ChatResponse> chatWithoutTools(ChatModel chatModel, List<Message> springMessages,
-            TurLLMInstance turLLMInstance, String id, String username) {
+            TurLLMInstance turLLMInstance, String id, String username, TurPromptOverrides overrides) {
         log.info("[Chat] Tools disabled, using stream for LLM instance {}", id);
-        Prompt prompt = new Prompt(springMessages);
+        Prompt prompt = overrides.applyTo(new Prompt(springMessages), chatModel, id, RESPONSE_FORMAT);
 
         var lastStreamResponse = new java.util.concurrent.atomic.AtomicReference<
                 org.springframework.ai.chat.model.ChatResponse>();

@@ -11,60 +11,40 @@ package com.viglet.turing.genai.gateway;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-import java.util.Map;
-
 import org.junit.jupiter.api.Test;
-import org.springframework.ai.openai.OpenAiChatModel;
 
-import com.viglet.turing.genai.gateway.TurOpenAiWire.JsonSchemaSpec;
+import com.viglet.turing.genai.TurUnsupportedParameterException;
 import com.viglet.turing.genai.gateway.TurOpenAiWire.ResponseFormat;
 
 /**
- * T1090 — the {@code response_format} mapping; how it reaches the provider is
- * {@link TurGatewayPromptOptionsTest}.
+ * T1090 — the gateway's own handling of {@code response_format}: what counts as
+ * requested, its cache slot, and the refusal on routes that answer prose. The
+ * mapping to the provider is {@code TurPromptOverridesTest}.
  *
  * @author Alexandre Oliveira
  * @since 2026.3.4
  */
 class TurGatewayResponseFormatTest {
 
+    private static final ResponseFormat JSON_OBJECT = new ResponseFormat("json_object", null);
+
     @Test
     void textOrAbsentIsNotRequested() {
         assertThat(TurGatewayResponseFormat.requested(null)).isFalse();
         assertThat(TurGatewayResponseFormat.requested(new ResponseFormat("text", null))).isFalse();
-        assertThat(TurGatewayResponseFormat.requested(new ResponseFormat("json_object", null))).isTrue();
-    }
-
-    @Test
-    void jsonSchemaCarriesTheSchemaAndStrictFlag() {
-        ResponseFormat format = new ResponseFormat("json_schema",
-                new JsonSchemaSpec("labels", Map.of("type", "object"), true));
-
-        OpenAiChatModel.ResponseFormat spring = TurGatewayResponseFormat.toSpring(format);
-
-        assertThat(spring.getType()).isEqualTo(OpenAiChatModel.ResponseFormat.Type.JSON_SCHEMA);
-        assertThat(spring.getJsonSchema()).isEqualTo("{\"type\":\"object\"}");
-        assertThat(spring.getStrict()).isTrue();
-    }
-
-    @Test
-    void jsonSchemaWithoutASchemaIsRefused() {
-        assertThatThrownBy(() -> TurGatewayResponseFormat.toSpring(new ResponseFormat("json_schema", null)))
-                .isInstanceOf(TurGatewayUnsupportedParameterException.class)
-                .hasMessageContaining("json_schema.schema");
-    }
-
-    @Test
-    void unknownTypeIsRefused() {
-        assertThatThrownBy(() -> TurGatewayResponseFormat.toSpring(new ResponseFormat("yaml", null)))
-                .isInstanceOf(TurGatewayUnsupportedParameterException.class)
-                .hasMessageContaining("yaml");
+        assertThat(TurGatewayResponseFormat.requested(JSON_OBJECT)).isTrue();
     }
 
     @Test
     void jsonModeHasItsOwnCacheSlot() {
         assertThat(TurGatewayResponseFormat.cacheModelKey("gpt", null)).isEqualTo("gpt");
-        assertThat(TurGatewayResponseFormat.cacheModelKey("gpt", new ResponseFormat("json_object", null)))
-                .isNotEqualTo("gpt");
+        assertThat(TurGatewayResponseFormat.cacheModelKey("gpt", JSON_OBJECT)).isNotEqualTo("gpt");
+    }
+
+    @Test
+    void aRoutedModelRefusesJsonModeNamingTheField() {
+        assertThatThrownBy(() -> TurGatewayResponseFormat.rejectIfRequested(JSON_OBJECT, "turing-sn:site"))
+                .isInstanceOfSatisfying(TurUnsupportedParameterException.class,
+                        e -> assertThat(e.getParam()).isEqualTo("response_format"));
     }
 }

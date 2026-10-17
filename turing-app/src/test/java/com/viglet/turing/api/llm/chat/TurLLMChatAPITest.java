@@ -297,6 +297,67 @@ class TurLLMChatAPITest {
                 .hasMessageContaining("LLM instance not found");
     }
 
+    private org.springframework.ai.chat.model.ChatModel streamingInstance(
+            org.springframework.ai.chat.prompt.ChatOptions options) {
+        TurLLMInstance instance = new TurLLMInstance();
+        instance.setId("llm-1");
+        instance.setToolsEnabled(false);
+        when(turLLMInstanceRepository.findById("llm-1")).thenReturn(Optional.of(instance));
+        var chatModel = org.mockito.Mockito.mock(org.springframework.ai.chat.model.ChatModel.class);
+        org.mockito.Mockito.lenient().when(chatModel.getOptions()).thenReturn(options);
+        org.mockito.Mockito.lenient().when(chatModel.stream(
+                org.mockito.ArgumentMatchers.any(org.springframework.ai.chat.prompt.Prompt.class)))
+                .thenReturn(reactor.core.publisher.Flux.empty());
+        when(llmModelFactory.createChatModel(org.mockito.ArgumentMatchers.eq(instance),
+                org.mockito.ArgumentMatchers.any())).thenReturn(chatModel);
+        return chatModel;
+    }
+
+    private static org.springframework.ai.chat.prompt.Prompt streamedPrompt(
+            org.springframework.ai.chat.model.ChatModel chatModel) {
+        var captor = org.mockito.ArgumentCaptor.forClass(org.springframework.ai.chat.prompt.Prompt.class);
+        org.mockito.Mockito.verify(chatModel).stream(captor.capture());
+        return captor.getValue();
+    }
+
+    @Test
+    void perCallSamplingOverridesTheInstanceOnTheStreamedPath() {
+        var chatModel = streamingInstance(org.springframework.ai.openai.OpenAiChatOptions.builder()
+                .model("gpt-4o-mini").temperature(0.7).build());
+        var request = new TurLLMChatAPI.ChatRequest(List.of(new TurLLMChatAPI.ChatMessageItem("user", "Hi")),
+                0.0, null, 50, List.of("END"), "json_object", null, null);
+
+        api.chatJson("llm-1", request).collectList().block();
+
+        var options = (org.springframework.ai.openai.OpenAiChatOptions) streamedPrompt(chatModel).getOptions();
+        assertThat(options.getModel()).isEqualTo("gpt-4o-mini");
+        assertThat(options.getTemperature()).isEqualTo(0.0);
+        assertThat(options.getMaxTokens()).isEqualTo(50);
+        assertThat(options.getStopSequences()).containsExactly("END");
+        assertThat(options.getResponseFormat()).isNotNull();
+    }
+
+    @Test
+    void aRequestThatSetsNothingStreamsThePromptAsBefore() {
+        var chatModel = streamingInstance(null);
+        var request = new TurLLMChatAPI.ChatRequest(List.of(new TurLLMChatAPI.ChatMessageItem("user", "Hi")));
+
+        api.chatJson("llm-1", request).collectList().block();
+
+        assertThat(streamedPrompt(chatModel).getOptions()).isNull();
+    }
+
+    @Test
+    void jsonModeOnANonOpenAiModelIsRefusedNamingTheField() {
+        streamingInstance(org.springframework.ai.chat.prompt.ChatOptions.builder().model("claude").build());
+        var request = new TurLLMChatAPI.ChatRequest(List.of(new TurLLMChatAPI.ChatMessageItem("user", "Hi")),
+                null, null, null, null, "json_object", null, null);
+
+        assertThatThrownBy(() -> api.chatJson("llm-1", request))
+                .isInstanceOfSatisfying(com.viglet.turing.genai.TurUnsupportedParameterException.class,
+                        e -> assertThat(e.getParam()).isEqualTo("responseFormat"));
+    }
+
     // File-handling helpers were extracted to TurChatAttachmentService (T221a);
     // their behaviour is now covered by TurChatAttachmentServiceTest. The
     // buildMessages-with-files test below stays here to pin the delegation

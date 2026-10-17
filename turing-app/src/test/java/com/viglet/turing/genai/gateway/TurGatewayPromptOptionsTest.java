@@ -116,7 +116,7 @@ class TurGatewayPromptOptionsTest {
 
         assertThatThrownBy(() -> TurGatewayPromptOptions.apply(prompt(), model,
                 request(null, null, null, null, new ResponseFormat("json_object", null))))
-                .isInstanceOfSatisfying(TurGatewayUnsupportedParameterException.class,
+                .isInstanceOfSatisfying(com.viglet.turing.genai.TurUnsupportedParameterException.class,
                         e -> assertThat(e.getParam()).isEqualTo("response_format"));
     }
 }

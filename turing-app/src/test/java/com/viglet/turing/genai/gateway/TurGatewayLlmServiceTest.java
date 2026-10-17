@@ -168,7 +168,7 @@ class TurGatewayLlmServiceTest {
         var options = new TurGatewayOptions(false, false, null, java.util.Set.of());
 
         assertThatThrownBy(() -> service.complete(request, "u", options))
-                .isInstanceOfSatisfying(TurGatewayUnsupportedParameterException.class,
+                .isInstanceOfSatisfying(com.viglet.turing.genai.TurUnsupportedParameterException.class,
                         e -> assertThat(e.getParam()).isEqualTo("response_format"));
         verify(modelRouter, never()).agentAnswer(anyString(), anyList());
     }

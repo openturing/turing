@@ -10,20 +10,14 @@ package com.viglet.turing.genai.gateway;
 
 import java.util.Locale;
 
-import org.springframework.ai.openai.OpenAiChatModel;
-
+import com.viglet.turing.genai.TurUnsupportedParameterException;
 import com.viglet.turing.genai.gateway.TurOpenAiWire.ResponseFormat;
 
-import tools.jackson.databind.ObjectMapper;
-
 /**
- * T1090 — an OpenAI {@code response_format} on a gateway request. Support is
- * read off the built model rather than a vendor list: an instance whose options
- * are {@code OpenAiChatOptions} speaks the OpenAI wire (OpenAI, OpenAI-compatible,
- * Gemini-OpenAI, Mistral, Cohere), so JSON mode is passed through by
- * {@link TurGatewayPromptOptions}; any other model, and every Turing-routed
- * model, refuses the request with a 400 naming the field instead of answering
- * prose.
+ * T1090 — the gateway's own handling of an OpenAI {@code response_format}: the
+ * cache slot it gets and the refusal on Turing-routed models, which answer
+ * prose. Applying it to a provider call is {@code TurPromptOverrides}, through
+ * {@link TurGatewayPromptOptions}.
  *
  * @author Alexandre Oliveira
  * @since 2026.3.4
@@ -32,9 +26,6 @@ final class TurGatewayResponseFormat {
 
     static final String PARAM = "response_format";
     private static final String TEXT = "text";
-    private static final String JSON_OBJECT = "json_object";
-    private static final String JSON_SCHEMA = "json_schema";
-    private static final ObjectMapper JSON = new ObjectMapper();
 
     private TurGatewayResponseFormat() {
     }
@@ -52,31 +43,8 @@ final class TurGatewayResponseFormat {
     /** Refuses a JSON-mode request on a path that answers without a provider call. */
     static void rejectIfRequested(ResponseFormat format, String model) {
         if (requested(format)) {
-            throw new TurGatewayUnsupportedParameterException(PARAM,
-                    PARAM + " is not supported for model " + model);
+            throw new TurUnsupportedParameterException(PARAM, PARAM + " is not supported for model " + model);
         }
-    }
-
-    static OpenAiChatModel.ResponseFormat toSpring(ResponseFormat format) {
-        String type = normalisedType(format);
-        if (JSON_OBJECT.equals(type)) {
-            return OpenAiChatModel.ResponseFormat.builder()
-                    .type(OpenAiChatModel.ResponseFormat.Type.JSON_OBJECT)
-                    .build();
-        }
-        if (JSON_SCHEMA.equals(type)) {
-            if (format.json_schema() == null || format.json_schema().schema() == null) {
-                throw new TurGatewayUnsupportedParameterException(PARAM,
-                        PARAM + " of type json_schema needs json_schema.schema");
-            }
-            return OpenAiChatModel.ResponseFormat.builder()
-                    .type(OpenAiChatModel.ResponseFormat.Type.JSON_SCHEMA)
-                    .jsonSchema(JSON.writeValueAsString(format.json_schema().schema()))
-                    .strict(format.json_schema().strict())
-                    .build();
-        }
-        throw new TurGatewayUnsupportedParameterException(PARAM,
-                "Unknown " + PARAM + " type: " + format.type());
     }
 
     private static String normalisedType(ResponseFormat format) {

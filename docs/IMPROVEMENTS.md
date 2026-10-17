@@ -21,8 +21,6 @@
 **Cross-references** use absolute paths from the repo root; linked code may have
 moved — verify against `git ls-files` before acting.
 
-## Block CB — LLM gateway parity with the OpenAI wire
-
 ## Block CD — turing.viglet.org relevance pass (2026-10)
 
 ## Table of contents
@@ -2137,27 +2135,6 @@ silently. Found while building trabalharei's local Turing and import proof.
 ## CXII SDK & frontend surface
 
 ## CXIII LLM gateway parity with the OpenAI wire
-
-### CXIII.5 Request options on the native LLM chat endpoint (T1102)
-
-Found while shipping T1099. `TurLLMChatAPI` (`POST /api/v2/llm/{id}/chat`, JSON and
-multipart, SSE out) takes `ChatRequest(List<ChatMessageItem> messages)` and nothing
-else, so a caller of the native chat endpoint cannot set temperature, top_p, max tokens,
-stop sequences or JSON output: the instance's stored defaults always win. trabalharei
-met it first (TRA95) and moved to the gateway, which since T1090 and T1099 honours all
-five.
-
-What to build: add optional `temperature`, `topP`, `maxTokens`, `stop` and
-`responseFormat` to `ChatRequest` (camelCase, the Turing API's own convention, not the
-OpenAI snake_case) and route them through the same seam the gateway uses. That seam,
-`TurGatewayPromptOptions.apply`, is package-private in `genai.gateway` and takes the
-OpenAI wire record; lift its logic to a neutral helper (for example
-`genai.TurPromptOverrides` taking the five values) that both the gateway and
-`TurLLMChatAPI` call, rather than copying it. The streaming path at the `new
-Prompt(springMessages)` call needs it as much as the blocking one, and the multipart
-variant shares the record.
-
-A request that sets none of them must build the exact prompt it builds today.
 
 ## CXIV Lucene engine search with synonyms
 

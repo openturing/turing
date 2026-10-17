@@ -22,12 +22,12 @@ import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.viglet.turing.genai.TurUnsupportedParameterException;
 import com.viglet.turing.genai.gateway.TurGatewayGuardrailException;
 import com.viglet.turing.genai.gateway.TurGatewayLimitException;
 import com.viglet.turing.genai.gateway.TurGatewayLlmService;
 import com.viglet.turing.genai.gateway.TurGatewayOptions;
 import com.viglet.turing.genai.gateway.TurGatewayProviderLimit;
-import com.viglet.turing.genai.gateway.TurGatewayUnsupportedParameterException;
 import com.viglet.turing.genai.gateway.TurOpenAiWire.ChatCompletionRequest;
 import com.viglet.turing.genai.gateway.TurOpenAiWire.EmbeddingRequest;
 import com.viglet.turing.genai.gateway.TurOpenAiWire.ErrorEnvelope;
@@ -90,7 +90,7 @@ public class TurOpenAiCompatibleGatewayAPI {
             return error(HttpStatus.TOO_MANY_REQUESTS, e.getMessage(), e.getType(), e.getType());
         } catch (TurGatewayGuardrailException e) {
             return error(HttpStatus.BAD_REQUEST, e.getMessage(), "content_filter", "content_filter");
-        } catch (TurGatewayUnsupportedParameterException e) {
+        } catch (TurUnsupportedParameterException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ErrorEnvelope.of(
                     e.getMessage(), INVALID_REQUEST, e.getParam(), "unsupported_parameter"));
         } catch (IllegalArgumentException e) {

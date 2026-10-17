@@ -6,10 +6,6 @@
 > [STRATEGY.md](STRATEGY.md); the markers and limits are `roadkeep.toml`'s. Blocks are
 > reused, not minted — `roadkeep brief` picks the next task and states why.
 
-## Block CB — LLM gateway parity with the OpenAI wire
-
-- 📋 **T1102** (deps: —) **The native /api/v2/llm/{id}/chat takes messages only, so callers cannot set sampling, max tokens, stop or JSON mode** — The gateway honours all five since T1099, and the native endpoint still answers with whatever the instance defaults are. → §CXIII.5
-
 ## Block CD — turing.viglet.org relevance pass (2026-10)
 
 - 💭 **T1097** (deps: viglet.org W42) **The site loads Google Analytics without consent, while viglet.org asks first** — Three Viglet sites should treat one visitor under one privacy rule, decided once. → §CXV.5
