@@ -307,6 +307,9 @@ number" looked free but wasn't. Grepping three files (`ROADMAP.md`,
 
 ## Log (most recent first)
 
+- **T1091 SHIPPED** (Block CC §CXIV.1: multi-word synonym phrases run only on TEXT fields; block closed and heading dropped), 2026-10-17.
+- **T1099 FILED** (Block CB §CXIII.3: the gateway ignores temperature, top_p, max_tokens and stop), 2026-10-17.
+- **T1090 SHIPPED** (Block CB §CXIII.1: gateway honours response_format, 400 where it cannot), 2026-10-17.
 - **T1048 FILED** (Block R.1 §XX.25: the Content AI stub replies 200 to a body Adobe would reject; validate against the OpenAPI bundle), 2026-08-27.
 - **T1047 SHIPPED** (Block R.1 §XX.24: Content AI DSL executor; vectorless copilot reaches a federated site; block closed and heading dropped), 2026-08-27.
 - **T1046 SHIPPED** (Block R.1 §XX.23: the DSL dispatch refuses an engine with no executor, 501, instead of using Solr's), 2026-08-27.
