@@ -2231,14 +2231,6 @@ three: viglet.org W42 and docs.viglet.org DOC6 hold the options (consent first
 everywhere, or GA consent mode everywhere, whose LGPD fit is the owner's call). Apply it
 here once taken.
 
-### CXV.6 What the sitemap offers to search (T1098)
-
-public/sitemap.xml lists llms.txt, which is a file for assistants and not a page, beside
-/react-sdk/ (the Storybook) and the /marketplace/ example pages. Drop llms.txt from the
-sitemap (assistants find it at its well-known path), and decide whether the Storybook
-and the marketplace examples should compete in search with the product pages or be left
-out.
-
 ### CXV.7 Azure claims on the marketing site (T1101)
 
 Found while shipping T1095. Turing removed its Azure OpenAI provider (the site's own
