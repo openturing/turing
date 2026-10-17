@@ -145,7 +145,7 @@ public class TurExportImportOnStartup implements ApplicationRunner {
             // Deliberately NOT writing the directory marker: it is what stops the
             // next boot from trying, and a seed that imported nothing must get
             // another chance rather than look finished.
-            log.error("Auto-import from '{}' incomplete — {} of {} ZIP file(s) failed. "
+            log.error("Auto-import from '{}' incomplete: {} of {} ZIP file(s) failed. "
                     + "The successful ones are recorded and will not be re-imported; the "
                     + "failures will be retried on the next start.",
                     EXPORT_DIR, failed, zipFiles.length);
