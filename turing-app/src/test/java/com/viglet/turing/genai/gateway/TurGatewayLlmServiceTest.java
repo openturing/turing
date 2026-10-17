@@ -10,7 +10,11 @@ package com.viglet.turing.genai.gateway;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.util.List;
@@ -147,11 +151,25 @@ class TurGatewayLlmServiceTest {
                         true, List.of("violence")));
         var request = new TurOpenAiWire.ChatCompletionRequest("gpt-4o",
                 List.of(new TurOpenAiWire.WireMessage("user", "bad input")),
-                false, null, null, null, null);
+                false, null, null, null, null, null);
 
         assertThatThrownBy(() -> service().complete(request, "u",
                 new TurGatewayOptions(false, true, null, java.util.Set.of())))
                 .isInstanceOf(TurGatewayGuardrailException.class);
+    }
+
+    @Test
+    void jsonModeOnARoutedAgentModelIsRefusedBeforeTheAgentRuns() {
+        when(modelRouter.isAgent("turing-agent:helper")).thenReturn(true);
+        var request = new TurOpenAiWire.ChatCompletionRequest("turing-agent:helper",
+                List.of(new TurOpenAiWire.WireMessage("user", "hi")),
+                false, null, null, null, null, new TurOpenAiWire.ResponseFormat("json_object", null));
+
+        assertThatThrownBy(() -> service().complete(request, "u",
+                new TurGatewayOptions(false, false, null, java.util.Set.of())))
+                .isInstanceOfSatisfying(TurGatewayUnsupportedParameterException.class,
+                        e -> assertThat(e.getParam()).isEqualTo("response_format"));
+        verify(modelRouter, never()).agentAnswer(anyString(), anyList());
     }
 
     @Test

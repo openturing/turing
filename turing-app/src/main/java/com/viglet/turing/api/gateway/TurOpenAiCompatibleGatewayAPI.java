@@ -25,6 +25,7 @@ import com.viglet.turing.genai.gateway.TurGatewayGuardrailException;
 import com.viglet.turing.genai.gateway.TurGatewayLimitException;
 import com.viglet.turing.genai.gateway.TurGatewayLlmService;
 import com.viglet.turing.genai.gateway.TurGatewayOptions;
+import com.viglet.turing.genai.gateway.TurGatewayUnsupportedParameterException;
 import com.viglet.turing.genai.gateway.TurOpenAiWire.ChatCompletionRequest;
 import com.viglet.turing.genai.gateway.TurOpenAiWire.EmbeddingRequest;
 import com.viglet.turing.genai.gateway.TurOpenAiWire.ErrorEnvelope;
@@ -56,6 +57,8 @@ import lombok.extern.slf4j.Slf4j;
 @Tag(name = "LLM Gateway", description = "OpenAI-compatible governed egress (Block AZ)")
 public class TurOpenAiCompatibleGatewayAPI {
 
+    private static final String INVALID_REQUEST = "invalid_request_error";
+
     private final TurGatewayLlmService gatewayService;
 
     public TurOpenAiCompatibleGatewayAPI(TurGatewayLlmService gatewayService) {
@@ -85,8 +88,11 @@ public class TurOpenAiCompatibleGatewayAPI {
             return error(HttpStatus.TOO_MANY_REQUESTS, e.getMessage(), e.getType(), e.getType());
         } catch (TurGatewayGuardrailException e) {
             return error(HttpStatus.BAD_REQUEST, e.getMessage(), "content_filter", "content_filter");
+        } catch (TurGatewayUnsupportedParameterException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ErrorEnvelope.of(
+                    e.getMessage(), INVALID_REQUEST, e.getParam(), "unsupported_parameter"));
         } catch (IllegalArgumentException e) {
-            return error(HttpStatus.BAD_REQUEST, e.getMessage(), "invalid_request_error", "model_not_found");
+            return error(HttpStatus.BAD_REQUEST, e.getMessage(), INVALID_REQUEST, "model_not_found");
         } catch (RuntimeException e) {
             log.warn("[Gateway] chat/completions failed: {}", e.getMessage());
             return error(HttpStatus.BAD_GATEWAY, e.getMessage(), "api_error", null);
@@ -102,7 +108,7 @@ public class TurOpenAiCompatibleGatewayAPI {
         } catch (TurGatewayLimitException e) {
             return error(HttpStatus.TOO_MANY_REQUESTS, e.getMessage(), e.getType(), e.getType());
         } catch (IllegalArgumentException e) {
-            return error(HttpStatus.BAD_REQUEST, e.getMessage(), "invalid_request_error", "model_not_found");
+            return error(HttpStatus.BAD_REQUEST, e.getMessage(), INVALID_REQUEST, "model_not_found");
         } catch (RuntimeException e) {
             log.warn("[Gateway] embeddings failed: {}", e.getMessage());
             return error(HttpStatus.BAD_GATEWAY, e.getMessage(), "api_error", null);

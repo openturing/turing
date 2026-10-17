@@ -1452,6 +1452,8 @@
 
 ## Block CB — LLM gateway parity with the OpenAI wire
 
+- **T1090** — /v1/chat/completions honours response_format json_object and json_schema on OpenAI-wire instances, blocking and streaming, and answers a 400 naming the field everywhere else (design §CXIII.1 recorded in `turing-app/src/main/java/com/viglet/turing/genai/gateway/TurGatewayResponseFormat.java`).
+
 ## Block CC — Lucene engine search with synonyms
 
 ## Block CD — turing.viglet.org relevance pass (2026-10)

@@ -149,7 +149,9 @@ public class TurGatewayLlmService {
         for (TurLLMInstance instance : candidates) {
             try {
                 ChatModel chatModel = buildChatModel(instance);
-                Prompt prompt = new Prompt(buildPromptMessages(request.messages(), options));
+                Prompt prompt = TurGatewayResponseFormat.apply(
+                        new Prompt(buildPromptMessages(request.messages(), options)),
+                        chatModel, request.response_format(), request.model());
                 long startedAt = System.currentTimeMillis();
                 ChatResponse response = chatModel.call(prompt);
                 routerService.recordLatency(instance.getId(), System.currentTimeMillis() - startedAt);
@@ -190,9 +192,15 @@ public class TurGatewayLlmService {
     /**
      * T744 / T795 — a {@code turing-agent:} / {@code turing-sn:} / {@code turing-copilot:}
      * answer (the last also reachable via the {@code x-turing-copilot-site} header),
-     * or {@code null} for passthrough.
+     * or {@code null} for passthrough. T1090 — a JSON-mode request is refused
+     * before the Turing stack is reached: those answers are prose.
      */
-    private String routedAnswer(String model, List<WireMessage> messages, TurGatewayOptions options) {
+    private String routedAnswer(String model, List<WireMessage> messages, TurGatewayOptions options,
+            TurOpenAiWire.ResponseFormat responseFormat) {
+        if (modelRouter.isAgent(model) || modelRouter.isSn(model) || modelRouter.isCopilot(model)
+                || (options != null && options.copilotSite() != null)) {
+            TurGatewayResponseFormat.rejectIfRequested(responseFormat, model);
+        }
         if (modelRouter.isAgent(model)) {
             return modelRouter.agentAnswer(model, messages);
         }
@@ -253,6 +261,14 @@ public class TurGatewayLlmService {
             }
         }
         return key;
+    }
+
+    /** T743 semantic-cache key, or {@code null}; T1090 — JSON mode gets its own slot. */
+    private String cacheKey(ChatCompletionRequest request, TurGatewayOptions options) {
+        return options.semanticCache()
+                ? responseCache.keyFor(TurGatewayResponseFormat.cacheModelKey(
+                        request.model(), request.response_format()), request.messages())
+                : null;
     }
 
     private static String keyId(TurGatewayKey key) {
@@ -350,8 +366,7 @@ public class TurGatewayLlmService {
         TurGatewayKey key = applyPerKeyPreCall();
         guardInput(options, request.messages());
 
-        String cacheKey = options.semanticCache()
-                ? responseCache.keyFor(request.model(), request.messages()) : null;
+        String cacheKey = cacheKey(request, options);
         if (cacheKey != null) {
             String cached = responseCache.get(cacheKey);
             if (cached != null) {
@@ -360,7 +375,7 @@ public class TurGatewayLlmService {
         }
 
         // T744 — turing-agent: / turing-sn: route into the Turing stack.
-        String routed = routedAnswer(request.model(), request.messages(), options);
+        String routed = routedAnswer(request.model(), request.messages(), options, request.response_format());
         if (routed != null) {
             guardOutput(options, routed);
             if (cacheKey != null) {
@@ -384,6 +399,7 @@ public class TurGatewayLlmService {
         // T747 — x-turing-tools: enable F.15 provider-native tools on the base model.
         if (!options.nativeTools().isEmpty()
                 && nativeToolsService.supports(instance, options.nativeTools())) {
+            TurGatewayResponseFormat.rejectIfRequested(request.response_format(), request.model());
             String text = nativeToolsService.answer(instance, toChatItems(request.messages()),
                     ragSystemPrompt(options, request.messages()), options.nativeTools());
             guardOutput(options, text);
@@ -394,7 +410,9 @@ public class TurGatewayLlmService {
         }
 
         ChatModel chatModel = buildChatModel(instance);
-        Prompt prompt = new Prompt(buildPromptMessages(request.messages(), options));
+        Prompt prompt = TurGatewayResponseFormat.apply(
+                new Prompt(buildPromptMessages(request.messages(), options)),
+                chatModel, request.response_format(), request.model());
 
         ChatResponse response = chatModel.call(prompt);
         tokenUsageService.recordUsage(instance, response, username, null, STAGE_GATEWAY, keyId(key));
@@ -436,8 +454,7 @@ public class TurGatewayLlmService {
         String id = "chatcmpl-" + UUID.randomUUID();
         long created = nowEpochSeconds();
 
-        String cacheKey = options.semanticCache()
-                ? responseCache.keyFor(request.model(), request.messages()) : null;
+        String cacheKey = cacheKey(request, options);
         if (cacheKey != null) {
             String cached = responseCache.get(cacheKey);
             if (cached != null) {
@@ -446,7 +463,7 @@ public class TurGatewayLlmService {
         }
 
         // T744 — native routing produces a blocking answer, replayed as one chunk.
-        String routed = routedAnswer(request.model(), request.messages(), options);
+        String routed = routedAnswer(request.model(), request.messages(), options, request.response_format());
         if (routed != null) {
             if (cacheKey != null) {
                 responseCache.put(cacheKey, routed);
@@ -468,6 +485,7 @@ public class TurGatewayLlmService {
         // T747 — x-turing-tools on a streamed base model: produce blocking, replay as one chunk.
         if (!options.nativeTools().isEmpty()
                 && nativeToolsService.supports(instance, options.nativeTools())) {
+            TurGatewayResponseFormat.rejectIfRequested(request.response_format(), request.model());
             String text = nativeToolsService.answer(instance, toChatItems(request.messages()),
                     ragSystemPrompt(options, request.messages()), options.nativeTools());
             if (cacheKey != null) {
@@ -478,7 +496,9 @@ public class TurGatewayLlmService {
 
         ChatModel chatModel = llmModelFactory.createStreamingChatModel(
                 instance, secretCryptoService.decrypt(instance.getApiKeyEncrypted()));
-        Prompt prompt = new Prompt(buildPromptMessages(request.messages(), options));
+        Prompt prompt = TurGatewayResponseFormat.apply(
+                new Prompt(buildPromptMessages(request.messages(), options)),
+                chatModel, request.response_format(), request.model());
         AtomicReference<ChatResponse> last = new AtomicReference<>();
         StringBuilder assembled = new StringBuilder();
 

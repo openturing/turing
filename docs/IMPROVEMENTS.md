@@ -2140,32 +2140,6 @@ silently. Found while building trabalharei's local Turing and import proof.
 
 ## CXIII LLM gateway parity with the OpenAI wire
 
-### CXIII.1 Gateway JSON mode (T1090)
-
-Met in trabalharei (TRA95), whose owner requires every LLM call to go through Turing.
-Its offline script `scripts/occupation-labels.mjs` drafts everyday names for the 617 CBO
-families with gpt-4o-mini through the gateway:
-
-    POST /v1/chat/completions
-    Authorization: Bearer sk-turing-...
-    {"model": "gpt-4o-mini", "temperature": 0.2,
-     "response_format": {"type": "json_object"}, "messages": [...]}
-
-`TurOpenAiWire.ChatCompletionRequest` carries model, messages, stream, temperature,
-top_p, max_tokens and stop, and is `@JsonIgnoreProperties(ignoreUnknown = true)`. So
-`response_format` is dropped without a word, the call answers 200, and gpt-4o-mini wraps
-its JSON in ```json fences. An OpenAI client that relies on JSON mode gets prose it
-cannot parse, and nothing says the field was ignored. `/api/v2/llm/{id}/chat` has the
-same gap (messages only, no temperature either).
-
-Expected: the gateway passes `response_format` (`json_object`, and `json_schema` where
-the instance's vendor supports it) through to the Spring AI options, as it does
-temperature. Where a vendor cannot honour it, answer 400 naming the field, never a
-silent drop.
-
-Workaround in trabalharei: the script strips a leading and trailing fence before
-`JSON.parse`, with a comment naming this line. It goes once this ships.
-
 ### CXIII.2 Provider quota errors through the gateway (T1092)
 
 Met in trabalharei (TRA107) on the local Turing on 2026-10-13. The OpenAI account behind
@@ -2191,6 +2165,30 @@ with a type that says which limit.
 
 Workaround in trabalharei: none needed; its runtime treats any non-2xx as "no answer"
 and falls back.
+
+### CXIII.3 Gateway sampling parameters (T1099)
+
+Found while shipping T1090. `TurOpenAiWire.ChatCompletionRequest` declares
+`temperature`, `top_p`, `max_tokens` and `stop`, but `TurGatewayLlmService` never reads
+them: every base-model and router call builds `new Prompt(messages)` with no options, so
+the instance's stored defaults always win. A client asking for `temperature: 0` or
+`max_tokens: 50` gets a 200 and the instance's own sampling. `/api/v2/llm/{id}/chat`
+(`TurLLMChatAPI`) takes messages only, the same gap.
+
+What to build: the T1090 seam already exists. `TurGatewayResponseFormat.apply` copies
+the model's `OpenAiChatOptions` defaults and overrides one field; widen it (or a
+sibling) to override temperature, top_p, max_tokens and stop from the request on
+OpenAI-wire models, and for other vendors map the four portable ones through
+`ChatOptions.builder()` merged over the model's defaults.
+`TurSamplingParamFallbackChatModel` already strips sampling on a reasoning-model 400, so
+an explicit temperature stays safe there.
+
+`TurOpenAiStreamingChatModel` already reads temperature, top_p and max tokens off prompt
+options; `stop` needs adding there too.
+
+Open choice: whether a non-null request value should be refused (400, like T1090) on a
+vendor whose options cannot carry it, or applied best-effort. Sampling is advisory in
+the OpenAI contract, so best-effort is the likely answer.
 
 ## CXIV Lucene engine search with synonyms
 

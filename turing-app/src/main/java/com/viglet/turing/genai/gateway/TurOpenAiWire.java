@@ -9,6 +9,7 @@
 package com.viglet.turing.genai.gateway;
 
 import java.util.List;
+import java.util.Map;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
@@ -48,7 +49,24 @@ public final class TurOpenAiWire {
             Double temperature,
             Double top_p,
             Integer max_tokens,
-            List<String> stop) {
+            List<String> stop,
+            ResponseFormat response_format) {
+    }
+
+    /**
+     * T1090 — OpenAI's {@code response_format}: {@code text} (the default),
+     * {@code json_object}, or {@code json_schema} with the schema under
+     * {@code json_schema.schema}. Applied where the resolved instance speaks the
+     * OpenAI wire; anywhere else the request is refused naming the field, never
+     * dropped.
+     */
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    public record ResponseFormat(String type, JsonSchemaSpec json_schema) {
+    }
+
+    /** The {@code json_schema} object of a {@code json_schema} response format. */
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    public record JsonSchemaSpec(String name, Map<String, Object> schema, Boolean strict) {
     }
 
     /** A single chat message. {@code content} is the plain-text subset (no content-part arrays). */
@@ -132,7 +150,11 @@ public final class TurOpenAiWire {
     /** OpenAI-shaped error envelope: {@code {"error": {"message", "type", "code"}}}. */
     public record ErrorEnvelope(ErrorBody error) {
         public static ErrorEnvelope of(String message, String type, String code) {
-            return new ErrorEnvelope(new ErrorBody(message, type, null, code));
+            return of(message, type, null, code);
+        }
+
+        public static ErrorEnvelope of(String message, String type, String param, String code) {
+            return new ErrorEnvelope(new ErrorBody(message, type, param, code));
         }
     }
 

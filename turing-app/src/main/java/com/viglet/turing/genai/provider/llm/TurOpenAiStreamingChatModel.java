@@ -27,6 +27,7 @@ import org.springframework.ai.chat.model.ChatResponse;
 import org.springframework.ai.chat.model.Generation;
 import org.springframework.ai.chat.prompt.ChatOptions;
 import org.springframework.ai.chat.prompt.Prompt;
+import org.springframework.ai.openai.OpenAiChatModel;
 import org.springframework.ai.openai.OpenAiChatOptions;
 import org.springframework.http.MediaType;
 import org.springframework.web.reactive.function.client.WebClient;
@@ -94,6 +95,7 @@ public class TurOpenAiStreamingChatModel implements ChatModel {
 
     private static final ObjectMapper JSON = new ObjectMapper();
     private static final String SSE_DONE = "[DONE]";
+    private static final String JSON_SCHEMA = "json_schema";
 
     private final WebClient webClient;
     private final Supplier<Map<String, String>> extraHeaders;
@@ -197,7 +199,40 @@ public class TurOpenAiStreamingChatModel implements ChatModel {
         if (maxTokens != null) {
             body.put("max_completion_tokens", maxTokens);
         }
+        Map<String, Object> responseFormat = readResponseFormat(prompt);
+        if (!responseFormat.isEmpty()) {
+            body.put("response_format", responseFormat);
+        }
         return body;
+    }
+
+    /**
+     * T1090 — the wire form of {@code OpenAiChatOptions#getResponseFormat()},
+     * shaped as {@code OpenAiChatModel} sends it on the blocking path (the schema
+     * under the fixed name {@code json_schema}). Empty for plain text.
+     */
+    static Map<String, Object> responseFormatBody(OpenAiChatModel.ResponseFormat format) {
+        if (format == null || format.getType() == null
+                || format.getType() == OpenAiChatModel.ResponseFormat.Type.TEXT) {
+            return Map.of();
+        }
+        if (format.getType() == OpenAiChatModel.ResponseFormat.Type.JSON_OBJECT) {
+            return Map.of("type", "json_object");
+        }
+        Map<String, Object> jsonSchema = new LinkedHashMap<>();
+        jsonSchema.put("name", JSON_SCHEMA);
+        jsonSchema.put("schema", JSON.readTree(format.getJsonSchema()));
+        if (format.getStrict() != null) {
+            jsonSchema.put("strict", format.getStrict());
+        }
+        return Map.of("type", JSON_SCHEMA, JSON_SCHEMA, jsonSchema);
+    }
+
+    private Map<String, Object> readResponseFormat(Prompt prompt) {
+        if (prompt.getOptions() instanceof OpenAiChatOptions opts && opts.getResponseFormat() != null) {
+            return responseFormatBody(opts.getResponseFormat());
+        }
+        return defaultOptions == null ? Map.of() : responseFormatBody(defaultOptions.getResponseFormat());
     }
 
     private String resolveModelName(Prompt prompt) {
