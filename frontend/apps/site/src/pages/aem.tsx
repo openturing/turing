@@ -118,7 +118,7 @@ export function AemPage() {
               Viglet Turing for Adobe Experience Manager
             </p>
             <h1 className="mt-3 max-w-3xl text-3xl font-extrabold leading-[1.1] tracking-tight sm:text-4xl lg:text-5xl">
-              AEM search with AI, beyond the AEM repository
+              AEM search with AI: a search engine and search component for AEM
             </h1>
             <p className="mt-5 max-w-2xl text-lg leading-relaxed text-[#aeb7d4]">
               The AEM-native pitch is “Cloud-Service-native.” That's also its

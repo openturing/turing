@@ -13,7 +13,6 @@
 
 ## Block CD — turing.viglet.org relevance pass (2026-10)
 
-- 📋 **T1093** (deps: —) **The AEM page ranks 36th to 44th for the AEM queries, and almost nothing links to it** — Google already picked /aem-search/ as the Viglet answer for AEM; inbound links and the searched words in its title are what it lacks. → §CXV.1
 - 📋 **T1094** (deps: —) **The security page wins data-residency questions at position 1, yet its title never says so** — Self-hosting is where Turing wins outright, and these are the questions an assistant asks for that buyer. → §CXV.2
 - 📋 **T1095** (deps: —) **Compare, migrate, persona and the four features pages had no impression in 90 days** — Thin pages that repeat the home, and deep ones nothing links to, never enter the results. → §CXV.3
 - 📋 **T1096** (deps: —) **The compare page never names Lucidworks, though Coveo vs Lucidworks is the comparison people search** — The demand is already proven by the docs.viglet.org post, and the product comparison page misses it. → §CXV.4

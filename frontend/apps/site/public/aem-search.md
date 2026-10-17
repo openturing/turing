@@ -1,4 +1,4 @@
-# AEM Search with AI · Adobe Experience Manager
+# AEM Search Component & AI Search Engine for AEM (Adobe Experience Manager)
 
 > Viglet Turing adds cited, streaming AI answers plus faceted keyword + semantic
 > search to Adobe Experience Manager (AEM 6.5 and AEM as a Cloud Service),

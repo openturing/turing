@@ -1207,8 +1207,12 @@ export const AEM_FAQ: AemFaqItem[] = [
     a: "AEM search is how visitors and employees find content managed in Adobe Experience Manager: pages, components and DAM assets. Adobe's built-in Query Builder / Omnisearch handles basic keyword lookups. For typo-tolerant, faceted and AI-powered search (semantic results and cited answers) you add a dedicated search layer. Viglet Turing indexes your AEM content and serves that layer, without moving off AEM.",
   },
   {
-    q: "How do I add AI search to AEM?",
+    q: "How do I enable AI search in AEM?",
     a: "Point the Turing AEM connector at your author or publish instance. It crawls pages and DAM assets (including PDFs) into a search index on Solr, Elasticsearch or embedded Lucene. Then drop the search + cited-chat UI into an AEM component, an Edge Delivery Services (EDS) block or your own SPA with the zero-dependency JavaScript SDK. It works with AEM 6.5 and AEM as a Cloud Service, needs no template changes, and first results come back in minutes.",
+  },
+  {
+    q: "Is there an AEM search component I can drop into a page?",
+    a: "Yes. The search box, facets, autocomplete and cited AI chat mount into an AEM page component or an Edge Delivery Services block with the zero-dependency JavaScript SDK, or into a React SPA with the React SDK. The component calls Turing as its search engine for AEM, so results, ranking and answers come from your own index rather than Adobe's Query Builder.",
   },
   {
     q: "Do I have to move off AEM?",

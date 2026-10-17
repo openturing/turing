@@ -40,9 +40,9 @@ export const routes: PrerenderRoute[] = [
   },
   {
     path: "/aem-search/",
-    title: "AEM Search with AI · Adobe Experience Manager | Viglet Turing",
+    title: "AEM Search Component & AI Search Engine for AEM | Viglet Turing",
     description:
-      "Add cited, streaming AI answers to Adobe Experience Manager (AEM 6.5 + Cloud Service): semantic + keyword search, agents, MCP, any LLM, self-hosted. Includes a live demo on Adobe's WKND site.",
+      "An AI search engine and search component for Adobe Experience Manager (AEM 6.5 + Cloud Service): cited, streaming answers, semantic + keyword search, agents, MCP, any LLM, self-hosted. Live demo on Adobe's WKND site.",
   },
   {
     path: "/persona/",

@@ -1461,3 +1461,4 @@
 
 ## Block CD — turing.viglet.org relevance pass (2026-10)
 
+- **T1093 (page and in-repo links)** — /aem-search/ carries "AEM search component" and "search engine for AEM" in its title, H1 and description, answers "how do I enable AI search in AEM" in its FAQ, and the SDK READMEs link it.

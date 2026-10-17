@@ -4,6 +4,10 @@ This folder shows how to consume **`@viglet/turing-sdk`** from a vanilla
 [Adobe Edge Delivery Services](https://www.aem.live/) project — no React, no
 bundler required.
 
+For the whole picture of search on Adobe Experience Manager (the AEM connector,
+the search component and a live demo on Adobe's WKND site), see
+[AEM search with Viglet Turing](https://turing.viglet.org/aem-search/).
+
 ## How EDS loads the SDK
 
 EDS serves your repo's JS as native ES modules straight to the browser. There

@@ -65,6 +65,7 @@ roadmap = "docs/ROADMAP.md"
 changelog = "docs/CHANGELOG.md"
 improvements = "docs/IMPROVEMENTS.md"
 strategy = "docs/STRATEGY.md"
+deferred = "docs/DEFERRED.md"
 
 [limits]
 # symptom is left at the default because the corpus already meets it: 0 of 46 lines exceed

@@ -307,6 +307,7 @@ number" looked free but wasn't. Grepping three files (`ROADMAP.md`,
 
 ## Log (most recent first)
 
+- **T1093 PART SHIPPED, DEFERRED** (Block CD §CXV.1: AEM page title, H1, FAQ and SDK README links; measurement waits on Search Console; docs/DEFERRED.md declared), 2026-10-17.
 - **T1100 FILED** (Block CB §CXIII.4: a streamed gateway call hit by a provider 429 answers 200 with the error as text), 2026-10-17.
 - **T1092 SHIPPED** (Block CB §CXIII.2: provider 429 and tenant token budget answer 429 with OpenAI type and Retry-After), 2026-10-17.
 - **T1091 SHIPPED** (Block CC §CXIV.1: multi-word synonym phrases run only on TEXT fields; block closed and heading dropped), 2026-10-17.
