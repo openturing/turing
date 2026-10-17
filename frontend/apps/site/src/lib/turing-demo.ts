@@ -34,11 +34,13 @@ export const demoClient: TuringClient | null = DEMO_URL
 
 /**
  * Shared analytics bus for the live demos. The GA4 sink auto-detects the site's
- * `window.gtag` (configured in `index.html`), so every SDK search/chat event (
+ * `window.gtag` (set by `lib/analytics.ts` once the visitor consents, T1097), so
+ * every SDK search/chat event (
  * `turing_search`, `turing_chat_start`, `turing_chat_conversion`,
  * `turing_chat_abandoned`, funnel steps, result clicks) flows into GA4 with no
  * extra wiring. Constructed unconditionally (safe during SSR/prerender: the sink
- * resolves `gtag` lazily at emit time and no-ops when it's absent).
+ * resolves `gtag` lazily at emit time and no-ops when it's absent, which is also
+ * what happens before consent).
  */
 export const demoAnalytics: TuringAnalytics = createTuringAnalytics({
   sinks: [googleAnalyticsSink()],

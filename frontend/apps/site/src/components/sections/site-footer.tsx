@@ -1,5 +1,6 @@
 import { Container, Logo } from "@/components/brand";
 import { LINKS } from "@/components/brand-links";
+import { reopenConsent } from "@/lib/analytics";
 
 const COLUMNS: { heading: string; links: { label: string; href: string }[] }[] = [
   {
@@ -80,6 +81,9 @@ export function SiteFooter() {
             <a href={LINKS.docs} className="hover:text-[#f2f4fb]">
               docs.viglet.org
             </a>
+            <button type="button" onClick={reopenConsent} className="hover:text-[#f2f4fb]">
+              Cookie settings
+            </button>
           </span>
         </div>
       </Container>

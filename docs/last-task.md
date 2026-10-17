@@ -307,6 +307,7 @@ number" looked free but wasn't. Grepping three files (`ROADMAP.md`,
 
 ## Log (most recent first)
 
+- **T1097 SHIPPED** (Block CD §CXV.5: GA consent-only on the site and Storybooks, per viglet.org W42; dep dropped once W42 shipped), 2026-10-17.
 - **T1102 SHIPPED** (Block CB §CXIII.5: native LLM chat takes per-call sampling, stop and JSON mode via shared TurPromptOverrides; block closed), 2026-10-17.
 - **T1101 SHIPPED** (Block CD §CXV.7: Azure OpenAI claims removed from the marketing site), 2026-10-17.
 - **T1100 SHIPPED** (Block CB §CXIII.4: streamed gateway calls answer a provider 429 with a status; later errors as OpenAI error frames), 2026-10-17.

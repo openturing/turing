@@ -6,6 +6,7 @@ import { ComparePage } from "@/pages/compare";
 import { AemPage } from "@/pages/aem";
 import { PersonaPage } from "@/pages/persona";
 import { SecurityPage } from "@/pages/security";
+import { ConsentBanner } from "@/components/consent-banner";
 import { FEATURE_DETAILS } from "@/lib/site-content";
 import { matchRoute } from "./route-match";
 
@@ -45,6 +46,16 @@ export default function App({ path = "/" }: Readonly<{ path?: string }>) {
     return () => window.removeEventListener("hashchange", onHashChange);
   }, []);
 
+  return (
+    <>
+      <Page path={path} />
+      {/* T1097 — GA loads only after the visitor opts in. */}
+      <ConsentBanner />
+    </>
+  );
+}
+
+function Page({ path }: Readonly<{ path: string }>) {
   if (/^\/migrate\/?$/.test(path)) return <MigratePage />;
   if (/^\/compare\/?$/.test(path)) return <ComparePage />;
   if (/^\/aem-search\/?$/.test(path)) return <AemPage />;

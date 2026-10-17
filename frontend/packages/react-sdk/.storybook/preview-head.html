@@ -1,9 +1,22 @@
-<!-- Google tag (gtag.js) -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-SMSL7R3897"></script>
+<!-- Google tag (gtag.js), consent-only (T1097, viglet.org W42): it loads only when the
+     visitor already accepted analytics on turing.viglet.org, whose origin this published
+     Storybook shares. Without that stored choice nothing is loaded. -->
 <script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-
-  gtag('config', 'G-SMSL7R3897');
+  (function () {
+    var granted = false;
+    try {
+      granted = localStorage.getItem('turing-analytics-consent') === 'granted';
+    } catch (e) {
+      granted = false;
+    }
+    if (!granted) return;
+    var s = document.createElement('script');
+    s.async = true;
+    s.src = 'https://www.googletagmanager.com/gtag/js?id=G-SMSL7R3897';
+    document.head.appendChild(s);
+    window.dataLayer = window.dataLayer || [];
+    window.gtag = function () { window.dataLayer.push(arguments); };
+    window.gtag('js', new Date());
+    window.gtag('config', 'G-SMSL7R3897');
+  })();
 </script>

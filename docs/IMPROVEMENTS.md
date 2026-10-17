@@ -2172,12 +2172,3 @@ but nothing outside the site links to them. Merge each /features/ page into a de
 or give it what only it says (the matching docs.viglet.org pages are the source), link
 /persona/ and /migrate/ from the pages and posts that discuss their subject, and re-read
 the Search Console a month after.
-
-### CXV.5 One analytics rule for the three sites (T1097)
-
-index.html loads Google Analytics (G-XCTGNN3G4R) on every page without asking.
-viglet.org loads it only after consent (its W12) and docs.viglet.org without, so the
-three Viglet sites apply two privacy rules to one visitor. One decision covers all
-three: viglet.org W42 and docs.viglet.org DOC6 hold the options (consent first
-everywhere, or GA consent mode everywhere, whose LGPD fit is the owner's call). Apply it
-here once taken.
