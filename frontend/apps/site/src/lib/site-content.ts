@@ -487,6 +487,39 @@ export const SECURITY_POINTS: SecurityPoint[] = [
   },
 ];
 
+export interface SecurityFaqItem {
+  q: string;
+  a: string;
+}
+
+/**
+ * Data-residency questions, phrased the way a buyer (or an assistant on their
+ * behalf) asks them. Emitted as FAQPage JSON-LD too. Claims only what the
+ * software does.
+ */
+export const SECURITY_FAQ: SecurityFaqItem[] = [
+  {
+    q: "Is there an AI agent platform that preserves data residency?",
+    a: "Yes. Viglet Turing is self-hosted, so its search index, embeddings, agent conversations and query logs live in the infrastructure and region you deploy it to. Agents, tools, skills and MCP servers run inside that deployment, and an agent only reaches an outside service you configure it to call.",
+  },
+  {
+    q: "Which LLM should a regulated industry use when data residency is required?",
+    a: "Turing is not an inference provider; it lets you pick one per agent. Keep prompts in-house with a local model through Ollama or any OpenAI-compatible endpoint you host, or use a cloud provider you can pin to a region, such as AWS Bedrock or Google Vertex AI. Switching providers does not change where your content and index live.",
+  },
+  {
+    q: "Can I run RAG and AI search without sending content to a vendor's cloud?",
+    a: "Yes. Connectors index your content into Solr, Elasticsearch or an embedded Lucene index on your own servers, and retrieval, ranking and citations happen there. With a local model, nothing in the answer path leaves your network.",
+  },
+  {
+    q: "Does Turing send telemetry or usage data back to Viglet?",
+    a: "No. There is no telemetry and no phone-home. The code is Apache 2.0, so your security team can read it, pin a version and build it themselves.",
+  },
+  {
+    q: "Does Turing have SOC 2 or GDPR certification?",
+    a: "Turing is software you run, not a service we operate, so there is no hosted environment to certify. Deployed in your environment, it runs under the certifications, network controls and data-processing terms your infrastructure already carries.",
+  },
+];
+
 /* -------------------------------------------------------------------------- */
 /* Feature detail pages (/features/{slug})                                    */
 /* -------------------------------------------------------------------------- */

@@ -52,9 +52,9 @@ export const routes: PrerenderRoute[] = [
   },
   {
     path: "/security/",
-    title: "Security & Data Residency · Self-Hosted AI Search | Viglet Turing",
+    title: "Self-Hosted AI Search & RAG with Data Residency | Viglet Turing",
     description:
-      "Your content and users' queries never leave your network. Viglet Turing is self-hosted and open source: data residency by construction, SSO, encrypted secrets, any LLM (including fully local), and an auditable Apache 2.0 codebase.",
+      "Self-hosted AI search, RAG and agents for regulated industries: your content, embeddings and queries stay in your network and region. Data residency by construction, SSO, encrypted secrets, any LLM including fully local, Apache 2.0.",
   },
 ];
 

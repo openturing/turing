@@ -5,8 +5,28 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Container } from "@/components/brand";
 import { LINKS } from "@/components/brand-links";
-import { SECURITY_POINTS } from "@/lib/site-content";
+import { SECURITY_FAQ, SECURITY_POINTS } from "@/lib/site-content";
 import { cn } from "@/lib/utils";
+
+/** FAQPage JSON-LD for the data-residency questions, prerendered to static HTML. */
+function SecurityJsonLd() {
+  const graph = {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    mainEntity: SECURITY_FAQ.map((item) => ({
+      "@type": "Question",
+      name: item.q,
+      acceptedAnswer: { "@type": "Answer", text: item.a },
+    })),
+  };
+  return (
+    <script
+      type="application/ld+json"
+      // Prerendered to static HTML; this is our own content, not user input.
+      dangerouslySetInnerHTML={{ __html: JSON.stringify(graph) }}
+    />
+  );
+}
 
 /**
  * Security & data residency (/security).
@@ -21,6 +41,7 @@ import { cn } from "@/lib/utils";
 export function SecurityPage() {
   return (
     <div className="flex min-h-screen flex-col">
+      <SecurityJsonLd />
       <SiteNav />
       <main className="flex-1">
         {/* hero */}
@@ -35,10 +56,10 @@ export function SecurityPage() {
               <ArrowLeft className="size-4" /> Back to overview
             </a>
             <p className="mt-6 text-xs font-extrabold tracking-[0.12em] text-[#7f8bbd] uppercase">
-              Security &amp; data residency
+              Data residency for regulated industries
             </p>
             <h1 className="mt-3 max-w-3xl text-3xl font-extrabold leading-[1.1] tracking-tight sm:text-4xl lg:text-5xl">
-              The safest place for your content is your own network
+              Self-hosted AI search and RAG: your content never leaves your network
             </h1>
             <p className="mt-5 max-w-2xl text-lg leading-relaxed text-[#aeb7d4]">
               A search SaaS asks you to trust its compliance badges with your
@@ -114,6 +135,30 @@ export function SecurityPage() {
                 </Card>
               ))}
             </div>
+          </Container>
+        </section>
+
+        {/* data-residency questions, as buyers ask them */}
+        <section id="faq" className="scroll-mt-24 py-16 lg:py-20">
+          <Container className="max-w-3xl">
+            <div className="mb-10 text-center">
+              <h2 className="text-2xl font-extrabold tracking-tight sm:text-3xl">
+                Data residency questions
+              </h2>
+              <p className="mt-3 text-base leading-relaxed text-muted-foreground">
+                What regulated teams ask before they put AI search over their content.
+              </p>
+            </div>
+            <dl className="divide-y divide-border">
+              {SECURITY_FAQ.map((item) => (
+                <div key={item.q} className="py-6">
+                  <dt className="text-base font-bold">{item.q}</dt>
+                  <dd className="mt-2 text-sm leading-relaxed text-muted-foreground">
+                    {item.a}
+                  </dd>
+                </div>
+              ))}
+            </dl>
           </Container>
         </section>
 

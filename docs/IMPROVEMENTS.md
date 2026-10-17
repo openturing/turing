@@ -2212,19 +2212,6 @@ engine for AEM" in the title, the H1 or the subtitle, and answer "how do I enabl
 search in AEM" in the FAQ, which feeds the FAQPage JSON-LD. Measure the four queries for
 this URL against the baseline above.
 
-### CXV.2 Data residency for regulated industries (T1094)
-
-Natural-language questions that read like an assistant's query fan-out put /security/ at
-position 1: "agent platform that preserves data residency", "best inference provider for
-a regulated industry with data residency requirements?". This is where a self-hosted
-product wins outright, and the audience the strategy names (teams that cannot send their
-content to a vendor's cloud). The page already says "data residency" six times, but its
-H1 is "The safest place for your content is your own network". Give it a title and
-description that say it to a reader arriving from an assistant (self-hosted AI search
-and RAG for regulated industries, data residency), a question-and-answer section phrased
-like those queries, and a link from the home. No claim beyond what the software does;
-the page already keeps to that.
-
 ### CXV.3 Pages the search engines ignore (T1095)
 
 Seven pages had no impression in 90 days. The four /features/ pages are short (2.5k to

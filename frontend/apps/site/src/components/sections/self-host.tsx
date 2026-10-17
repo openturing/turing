@@ -85,6 +85,9 @@ export function SelfHost() {
             <Button asChild variant="outline">
               <a href="#playground">Try the live demo</a>
             </Button>
+            <Button asChild variant="ghost">
+              <a href="/security/">Data residency for regulated industries</a>
+            </Button>
           </div>
         </div>
       </Container>
