@@ -149,9 +149,8 @@ public class TurGatewayLlmService {
         for (TurLLMInstance instance : candidates) {
             try {
                 ChatModel chatModel = buildChatModel(instance);
-                Prompt prompt = TurGatewayResponseFormat.apply(
-                        new Prompt(buildPromptMessages(request.messages(), options)),
-                        chatModel, request.response_format(), request.model());
+                Prompt prompt = TurGatewayPromptOptions.apply(
+                        new Prompt(buildPromptMessages(request.messages(), options)), chatModel, request);
                 long startedAt = System.currentTimeMillis();
                 ChatResponse response = chatModel.call(prompt);
                 routerService.recordLatency(instance.getId(), System.currentTimeMillis() - startedAt);
@@ -410,9 +409,8 @@ public class TurGatewayLlmService {
         }
 
         ChatModel chatModel = buildChatModel(instance);
-        Prompt prompt = TurGatewayResponseFormat.apply(
-                new Prompt(buildPromptMessages(request.messages(), options)),
-                chatModel, request.response_format(), request.model());
+        Prompt prompt = TurGatewayPromptOptions.apply(
+                new Prompt(buildPromptMessages(request.messages(), options)), chatModel, request);
 
         ChatResponse response = chatModel.call(prompt);
         tokenUsageService.recordUsage(instance, response, username, null, STAGE_GATEWAY, keyId(key));
@@ -496,9 +494,8 @@ public class TurGatewayLlmService {
 
         ChatModel chatModel = llmModelFactory.createStreamingChatModel(
                 instance, secretCryptoService.decrypt(instance.getApiKeyEncrypted()));
-        Prompt prompt = TurGatewayResponseFormat.apply(
-                new Prompt(buildPromptMessages(request.messages(), options)),
-                chatModel, request.response_format(), request.model());
+        Prompt prompt = TurGatewayPromptOptions.apply(
+                new Prompt(buildPromptMessages(request.messages(), options)), chatModel, request);
         AtomicReference<ChatResponse> last = new AtomicReference<>();
         StringBuilder assembled = new StringBuilder();
 

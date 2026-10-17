@@ -10,22 +10,20 @@ package com.viglet.turing.genai.gateway;
 
 import java.util.Locale;
 
-import org.springframework.ai.chat.model.ChatModel;
-import org.springframework.ai.chat.prompt.Prompt;
 import org.springframework.ai.openai.OpenAiChatModel;
-import org.springframework.ai.openai.OpenAiChatOptions;
 
 import com.viglet.turing.genai.gateway.TurOpenAiWire.ResponseFormat;
 
 import tools.jackson.databind.ObjectMapper;
 
 /**
- * T1090 — carries an OpenAI {@code response_format} from the gateway request to
- * the provider call. Support is read off the built model rather than a vendor
- * list: an instance whose options are {@link OpenAiChatOptions} speaks the
- * OpenAI wire (OpenAI, OpenAI-compatible, Gemini-OpenAI, Mistral, Cohere), so
- * JSON mode is passed through; any other model, and every Turing-routed model,
- * refuses the request with a 400 naming the field instead of answering prose.
+ * T1090 — an OpenAI {@code response_format} on a gateway request. Support is
+ * read off the built model rather than a vendor list: an instance whose options
+ * are {@code OpenAiChatOptions} speaks the OpenAI wire (OpenAI, OpenAI-compatible,
+ * Gemini-OpenAI, Mistral, Cohere), so JSON mode is passed through by
+ * {@link TurGatewayPromptOptions}; any other model, and every Turing-routed
+ * model, refuses the request with a 400 naming the field instead of answering
+ * prose.
  *
  * @author Alexandre Oliveira
  * @since 2026.3.4
@@ -57,25 +55,6 @@ final class TurGatewayResponseFormat {
             throw new TurGatewayUnsupportedParameterException(PARAM,
                     PARAM + " is not supported for model " + model);
         }
-    }
-
-    /**
-     * Returns {@code prompt} carrying the requested format on top of the model's
-     * own defaults, or {@code prompt} untouched when plain text was asked for.
-     * The defaults are copied whole (model, sampling, max tokens) so the result
-     * does not depend on how a provider merges runtime options over its own.
-     */
-    static Prompt apply(Prompt prompt, ChatModel chatModel, ResponseFormat format, String model) {
-        if (!requested(format)) {
-            return prompt;
-        }
-        OpenAiChatModel.ResponseFormat springFormat = toSpring(format);
-        if (!(chatModel.getOptions() instanceof OpenAiChatOptions defaults)) {
-            throw new TurGatewayUnsupportedParameterException(PARAM,
-                    PARAM + " is not supported by the provider behind model " + model);
-        }
-        OpenAiChatOptions options = defaults.mutate().responseFormat(springFormat).build();
-        return new Prompt(prompt.getInstructions(), options);
     }
 
     static OpenAiChatModel.ResponseFormat toSpring(ResponseFormat format) {

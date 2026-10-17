@@ -180,7 +180,7 @@ public class TurOpenAiStreamingChatModel implements ChatModel {
      * + {@code stream_options.include_usage:true} so the final {@code [DONE]}
      * frame carries token counts for {@code TurTokenUsageService}.
      */
-    private Map<String, Object> buildRequestBody(Prompt prompt) {
+    Map<String, Object> buildRequestBody(Prompt prompt) {
         Map<String, Object> body = new LinkedHashMap<>();
         body.put("model", resolveModelName(prompt));
         body.put("messages", buildMessages(prompt.getInstructions()));
@@ -198,6 +198,10 @@ public class TurOpenAiStreamingChatModel implements ChatModel {
         Integer maxTokens = readMaxTokens(prompt);
         if (maxTokens != null) {
             body.put("max_completion_tokens", maxTokens);
+        }
+        List<String> stop = readStop(prompt);
+        if (!stop.isEmpty()) {
+            body.put("stop", stop);
         }
         Map<String, Object> responseFormat = readResponseFormat(prompt);
         if (!responseFormat.isEmpty()) {
@@ -226,6 +230,18 @@ public class TurOpenAiStreamingChatModel implements ChatModel {
             jsonSchema.put("strict", format.getStrict());
         }
         return Map.of("type", JSON_SCHEMA, JSON_SCHEMA, jsonSchema);
+    }
+
+    /** T1099 — the request's stop sequences, else the model's own; empty for none. */
+    private List<String> readStop(Prompt prompt) {
+        if (prompt.getOptions() instanceof OpenAiChatOptions opts) {
+            List<String> requested = opts.getStopSequences();
+            if (requested != null && !requested.isEmpty()) {
+                return requested;
+            }
+        }
+        List<String> defaults = defaultOptions == null ? null : defaultOptions.getStopSequences();
+        return defaults == null ? List.of() : defaults;
     }
 
     private Map<String, Object> readResponseFormat(Prompt prompt) {

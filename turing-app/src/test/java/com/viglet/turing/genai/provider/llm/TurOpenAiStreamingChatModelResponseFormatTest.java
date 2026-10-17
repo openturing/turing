@@ -10,10 +10,14 @@ package com.viglet.turing.genai.provider.llm;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import java.util.List;
 import java.util.Map;
 
 import org.junit.jupiter.api.Test;
+import org.springframework.ai.chat.messages.UserMessage;
+import org.springframework.ai.chat.prompt.Prompt;
 import org.springframework.ai.openai.OpenAiChatModel;
+import org.springframework.ai.openai.OpenAiChatOptions;
 
 import tools.jackson.databind.JsonNode;
 
@@ -54,5 +58,24 @@ class TurOpenAiStreamingChatModelResponseFormatTest {
         Map<String, Object> jsonSchema = (Map<String, Object>) body.get("json_schema");
         assertThat(jsonSchema).containsEntry("name", "json_schema").containsEntry("strict", true);
         assertThat(((JsonNode) jsonSchema.get("schema")).get("type").asString()).isEqualTo("object");
+    }
+
+    @Test
+    void stopSequencesFromThePromptReachTheBody() {
+        TurOpenAiStreamingChatModel model = new TurOpenAiStreamingChatModel("http://localhost", "k", "gpt",
+                OpenAiChatOptions.builder().model("gpt").build());
+
+        Map<String, Object> body = model.buildRequestBody(new Prompt(List.of(new UserMessage("hi")),
+                OpenAiChatOptions.builder().stop(List.of("END")).build()));
+
+        assertThat(body).containsEntry("stop", List.of("END"));
+    }
+
+    @Test
+    void noStopSequencesSendsNoStopField() {
+        TurOpenAiStreamingChatModel model = new TurOpenAiStreamingChatModel("http://localhost", "k", "gpt",
+                OpenAiChatOptions.builder().model("gpt").build());
+
+        assertThat(model.buildRequestBody(new Prompt(List.of(new UserMessage("hi"))))).doesNotContainKey("stop");
     }
 }

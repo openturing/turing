@@ -2138,30 +2138,6 @@ silently. Found while building trabalharei's local Turing and import proof.
 
 ## CXIII LLM gateway parity with the OpenAI wire
 
-### CXIII.3 Gateway sampling parameters (T1099)
-
-Found while shipping T1090. `TurOpenAiWire.ChatCompletionRequest` declares
-`temperature`, `top_p`, `max_tokens` and `stop`, but `TurGatewayLlmService` never reads
-them: every base-model and router call builds `new Prompt(messages)` with no options, so
-the instance's stored defaults always win. A client asking for `temperature: 0` or
-`max_tokens: 50` gets a 200 and the instance's own sampling. `/api/v2/llm/{id}/chat`
-(`TurLLMChatAPI`) takes messages only, the same gap.
-
-What to build: the T1090 seam already exists. `TurGatewayResponseFormat.apply` copies
-the model's `OpenAiChatOptions` defaults and overrides one field; widen it (or a
-sibling) to override temperature, top_p, max_tokens and stop from the request on
-OpenAI-wire models, and for other vendors map the four portable ones through
-`ChatOptions.builder()` merged over the model's defaults.
-`TurSamplingParamFallbackChatModel` already strips sampling on a reasoning-model 400, so
-an explicit temperature stays safe there.
-
-`TurOpenAiStreamingChatModel` already reads temperature, top_p and max tokens off prompt
-options; `stop` needs adding there too.
-
-Open choice: whether a non-null request value should be refused (400, like T1090) on a
-vendor whose options cannot carry it, or applied best-effort. Sampling is advisory in
-the OpenAI contract, so best-effort is the likely answer.
-
 ### CXIII.4 Provider limits on a streamed gateway call (T1100)
 
 Found while shipping T1092. The blocking `/v1/chat/completions` now answers a provider's
@@ -2184,6 +2160,27 @@ be OpenAI's `data: {"error": {...}}` shape rather than assistant content.
 
 Test with a mock streaming ChatModel whose Flux errors immediately with
 `TurGatewayProviderLimit`-recognisable 429s, asserting the controller's status.
+
+### CXIII.5 Request options on the native LLM chat endpoint (T1102)
+
+Found while shipping T1099. `TurLLMChatAPI` (`POST /api/v2/llm/{id}/chat`, JSON and
+multipart, SSE out) takes `ChatRequest(List<ChatMessageItem> messages)` and nothing
+else, so a caller of the native chat endpoint cannot set temperature, top_p, max tokens,
+stop sequences or JSON output: the instance's stored defaults always win. trabalharei
+met it first (TRA95) and moved to the gateway, which since T1090 and T1099 honours all
+five.
+
+What to build: add optional `temperature`, `topP`, `maxTokens`, `stop` and
+`responseFormat` to `ChatRequest` (camelCase, the Turing API's own convention, not the
+OpenAI snake_case) and route them through the same seam the gateway uses. That seam,
+`TurGatewayPromptOptions.apply`, is package-private in `genai.gateway` and takes the
+OpenAI wire record; lift its logic to a neutral helper (for example
+`genai.TurPromptOverrides` taking the five values) that both the gateway and
+`TurLLMChatAPI` call, rather than copying it. The streaming path at the `new
+Prompt(springMessages)` call needs it as much as the blocking one, and the multipart
+variant shares the record.
+
+A request that sets none of them must build the exact prompt it builds today.
 
 ## CXIV Lucene engine search with synonyms
 

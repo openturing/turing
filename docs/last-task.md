@@ -307,6 +307,8 @@ number" looked free but wasn't. Grepping three files (`ROADMAP.md`,
 
 ## Log (most recent first)
 
+- **T1102 FILED** (Block CB §CXIII.5: native /api/v2/llm/{id}/chat takes messages only), 2026-10-17.
+- **T1099 SHIPPED** (Block CB §CXIII.3: gateway honours temperature, top_p, max_tokens and stop on every vendor), 2026-10-17.
 - **T1098 SHIPPED** (Block CD §CXV.6: sitemap drops llms.txt, the Storybook and the index-less /marketplace/), 2026-10-17.
 - **T1096 SHIPPED** (Block CD §CXV.4: Lucidworks Fusion on /compare/, Coveo vs Lucidworks table, linked with the docs post), 2026-10-17.
 - **T1101 FILED** (Block CD §CXV.7: the marketing site still lists Azure OpenAI as a provider), 2026-10-17.
