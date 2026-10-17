@@ -164,12 +164,76 @@ class TurGatewayLlmServiceTest {
         var request = new TurOpenAiWire.ChatCompletionRequest("turing-agent:helper",
                 List.of(new TurOpenAiWire.WireMessage("user", "hi")),
                 false, null, null, null, null, new TurOpenAiWire.ResponseFormat("json_object", null));
+        TurGatewayLlmService service = service();
+        var options = new TurGatewayOptions(false, false, null, java.util.Set.of());
 
-        assertThatThrownBy(() -> service().complete(request, "u",
-                new TurGatewayOptions(false, false, null, java.util.Set.of())))
+        assertThatThrownBy(() -> service.complete(request, "u", options))
                 .isInstanceOfSatisfying(TurGatewayUnsupportedParameterException.class,
                         e -> assertThat(e.getParam()).isEqualTo("response_format"));
         verify(modelRouter, never()).agentAnswer(anyString(), anyList());
+    }
+
+    private org.springframework.ai.chat.model.ChatModel streamingModel(
+            reactor.core.publisher.Flux<org.springframework.ai.chat.model.ChatResponse> stream) {
+        TurLLMInstance instance = instance("i-1", "gpt-4o", 1);
+        when(llmInstanceRepository.findById("i-1")).thenReturn(Optional.of(instance));
+        when(budgetGate.resolveInstanceForKey(null, instance)).thenReturn(instance);
+        when(secretCryptoService.decrypt(org.mockito.ArgumentMatchers.any())).thenReturn("key");
+        var chatModel = org.mockito.Mockito.mock(org.springframework.ai.chat.model.ChatModel.class);
+        when(llmModelFactory.createStreamingChatModel(org.mockito.ArgumentMatchers.eq(instance),
+                org.mockito.ArgumentMatchers.any())).thenReturn(chatModel);
+        when(chatModel.stream(org.mockito.ArgumentMatchers.any(org.springframework.ai.chat.prompt.Prompt.class)))
+                .thenReturn(stream);
+        return chatModel;
+    }
+
+    private static TurOpenAiWire.ChatCompletionRequest streamRequest() {
+        return new TurOpenAiWire.ChatCompletionRequest("i-1",
+                List.of(new TurOpenAiWire.WireMessage("user", "hi")), true, null, null, null, null, null);
+    }
+
+    private static org.springframework.ai.chat.model.ChatResponse token(String text) {
+        return new org.springframework.ai.chat.model.ChatResponse(List.of(
+                new org.springframework.ai.chat.model.Generation(
+                        new org.springframework.ai.chat.messages.AssistantMessage(text))));
+    }
+
+    @Test
+    void aProviderLimitBeforeTheFirstTokenThrowsSoTheControllerCanAnswer429() {
+        streamingModel(reactor.core.publisher.Flux.error(
+                new RuntimeException("429: You have no credits remaining.")));
+
+        TurGatewayLlmService service = service();
+        var request = streamRequest();
+        var options = new TurGatewayOptions(false, false, null, java.util.Set.of());
+
+        assertThatThrownBy(() -> service.stream(request, "u", options))
+                .satisfies(e -> assertThat(TurGatewayProviderLimit.of(e)).isPresent());
+    }
+
+    @Test
+    void theFirstTokenStillReachesTheClientAfterTheStreamIsStarted() {
+        streamingModel(reactor.core.publisher.Flux.just(token("Hel"), token("lo")));
+
+        List<String> frames = service().stream(streamRequest(), "u",
+                new TurGatewayOptions(false, false, null, java.util.Set.of()))
+                .map(org.springframework.http.codec.ServerSentEvent::data).collectList().block();
+
+        assertThat(String.join("", frames)).contains("Hel").contains("lo").endsWith(TurGatewayLlmService.DONE);
+    }
+
+    @Test
+    void anErrorAfterTokensArrivesAsAnOpenAiErrorFrameNotAssistantText() {
+        streamingModel(reactor.core.publisher.Flux.concat(reactor.core.publisher.Flux.just(token("partial")),
+                reactor.core.publisher.Flux.error(new RuntimeException("429 Too Many Requests"))));
+
+        List<String> frames = service().stream(streamRequest(), "u",
+                new TurGatewayOptions(false, false, null, java.util.Set.of()))
+                .map(org.springframework.http.codec.ServerSentEvent::data).collectList().block();
+
+        String errorFrame = frames.get(frames.size() - 2);
+        assertThat(errorFrame).startsWith("{\"error\"").contains("rate_limit_exceeded");
+        assertThat(frames).noneMatch(f -> f.contains("[error:"));
     }
 
     @Test

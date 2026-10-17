@@ -499,7 +499,9 @@ public class TurGatewayLlmService {
         AtomicReference<ChatResponse> last = new AtomicReference<>();
         StringBuilder assembled = new StringBuilder();
 
-        Flux<ServerSentEvent<String>> tokens = chatModel.stream(prompt)
+        // T1100 — a provider refusal before the first token throws here, while
+        // the controller can still answer it with a status.
+        Flux<ServerSentEvent<String>> tokens = TurGatewayStreams.started(chatModel, prompt)
                 .doOnNext(last::set)
                 .map(resp -> {
                     String token = extractText(resp);
@@ -526,9 +528,9 @@ public class TurGatewayLlmService {
         return tokens.concatWith(tail)
                 .onErrorResume(err -> {
                     log.warn("[Gateway] Stream error: {}", err.getMessage());
-                    ServerSentEvent<String> errFrame = chunkFrame(id, created, request.model(),
-                            new Delta(ROLE_ASSISTANT, "[error: " + err.getMessage() + "]"), FINISH_STOP);
-                    return Flux.just(errFrame, ServerSentEvent.<String>builder(DONE).build());
+                    // T1100 — OpenAI's streamed error shape, not assistant text.
+                    return Flux.just(TurGatewayStreams.errorFrame(err, objectMapper),
+                            ServerSentEvent.<String>builder(DONE).build());
                 });
     }
 

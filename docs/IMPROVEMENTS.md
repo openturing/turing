@@ -2138,29 +2138,6 @@ silently. Found while building trabalharei's local Turing and import proof.
 
 ## CXIII LLM gateway parity with the OpenAI wire
 
-### CXIII.4 Provider limits on a streamed gateway call (T1100)
-
-Found while shipping T1092. The blocking `/v1/chat/completions` now answers a provider's
-429 (and the tenant's token budget) as 429 with the OpenAI error type, through
-`TurOpenAiCompatibleGatewayAPI.upstreamError` and `TurGatewayProviderLimit`. A streamed
-call (`"stream": true`) does not: `TurGatewayLlmService.stream` ends its Flux with
-`onErrorResume`, which turns any provider error into an assistant content chunk reading
-`[error: 429: ...]` followed by `finish_reason: stop` and `[DONE]`, on a 200. An OpenAI
-streaming client reads that as a normal answer whose text is an error message, so it
-neither backs off nor surfaces a RateLimitError.
-
-What to build: when the provider refuses before the first token, which is where a quota
-or rate limit always lands, let the error reach the controller before the response is
-committed, so `upstreamError` answers 429 exactly as it does for the blocking path. One
-way is to resolve the first signal of the provider Flux before handing the stream to
-Spring (for example `switchOnFirst`, or `Flux.from(...).next()` on the first element),
-throwing when that first signal is an error. Errors after the first token keep the
-current in-stream frame, since the status is then committed; there they should at least
-be OpenAI's `data: {"error": {...}}` shape rather than assistant content.
-
-Test with a mock streaming ChatModel whose Flux errors immediately with
-`TurGatewayProviderLimit`-recognisable 429s, asserting the controller's status.
-
 ### CXIII.5 Request options on the native LLM chat endpoint (T1102)
 
 Found while shipping T1099. `TurLLMChatAPI` (`POST /api/v2/llm/{id}/chat`, JSON and

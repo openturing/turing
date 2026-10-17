@@ -1455,6 +1455,7 @@
 - **T1090** — /v1/chat/completions honours response_format json_object and json_schema on OpenAI-wire instances, blocking and streaming, and answers a 400 naming the field everywhere else (design §CXIII.1 recorded in `turing-app/src/main/java/com/viglet/turing/genai/gateway/TurGatewayResponseFormat.java`).
 - **T1092** — A provider 429 and the tenant token budget reach gateway clients as 429 with the OpenAI error type and Retry-After; only a provider that did not answer is 502 (design §CXIII.2 recorded in `turing-app/src/main/java/com/viglet/turing/genai/gateway/TurGatewayProviderLimit.java`).
 - **T1099** — The gateway applies a request's temperature, top_p, max_tokens and stop over the instance defaults on every vendor, best-effort, beside response_format on the OpenAI wire (design §CXIII.3 recorded in `turing-app/src/main/java/com/viglet/turing/genai/gateway/TurGatewayPromptOptions.java`).
+- **T1100** — A streamed gateway call answers a provider refusal before the first token with the blocking path's status (429 for limits), and later failures arrive as OpenAI error events (design §CXIII.4 recorded in `turing-app/src/main/java/com/viglet/turing/genai/gateway/TurGatewayStreams.java`).
 
 ## Block CC — Lucene engine search with synonyms
 

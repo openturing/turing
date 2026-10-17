@@ -8,7 +8,6 @@
 
 ## Block CB — LLM gateway parity with the OpenAI wire
 
-- 📋 **T1100** (deps: —) **A streamed gateway call hit by a provider 429 answers 200 with the error as assistant text, so clients never back off** — Streaming OpenAI clients get a normal-looking answer whose content is an error message instead of a RateLimitError. → §CXIII.4
 - 📋 **T1102** (deps: —) **The native /api/v2/llm/{id}/chat takes messages only, so callers cannot set sampling, max tokens, stop or JSON mode** — The gateway honours all five since T1099, and the native endpoint still answers with whatever the instance defaults are. → §CXIII.5
 
 ## Block CD — turing.viglet.org relevance pass (2026-10)
