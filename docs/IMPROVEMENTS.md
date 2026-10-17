@@ -25,6 +25,8 @@ moved — verify against `git ls-files` before acting.
 
 ## Block CC — Lucene engine search with synonyms
 
+## Block CD — turing.viglet.org relevance pass (2026-10)
+
 ## Table of contents
 
 - [I. Chat-flow execution harness — binding constraints](#i-chat-flow-execution-harness--binding-constraints)
@@ -2219,3 +2221,77 @@ The search answers with the expansion applied.
 
 Workaround in trabalharei: none. Its synonyms stay as they are, and these searches fail
 on the local Turing until this ships.
+
+## CXV turing.viglet.org relevance pass
+
+Search Console for sc-domain:viglet.org, 20/07 to 17/10/2026, host turing.viglet.org:
+347 impressions and 5 clicks. Three pages carry it all: the home (142 impressions,
+position 4.1, the 5 clicks, nearly all on the brand "viglet"), /aem-search/ (142,
+position 25.8; the AEM queries sit at 36 to 44) and /security/ (44, position 7.8).
+/compare/, /migrate/, /persona/ and the four /features/ pages had no impression at all,
+though they are in the sitemap and prerendered with their full text. The analysis lives
+in the alegauss/visibility repository (estrategia/viglet.md); Turing is the long-term
+relevance bet from 2027, through search and AI assistants.
+
+### CXV.1 The AEM page as the one AEM front door (T1093)
+
+The AEM queries ("aem search" 33 impressions at position 43.7, "aem search component" 13
+at 36.6, "aem search engine" 6 at 41.3, "how do i enable ai search in aem?") already
+land on /aem-search/: Google has picked it as the Viglet answer for AEM. Two things hold
+it on page four. Almost nothing links to it: the AEM posts on docs.viglet.org, the AEM
+connector pages in the docs, viglet.org and the GitHub README do not point there
+(docs.viglet.org DOC2 and viglet.org W40 file the other ends). And the searched words
+are missing where they weigh most: the title says "AEM Search with AI" and the H1 "AEM
+search with AI, beyond the AEM repository". Put "AEM search component" and "search
+engine for AEM" in the title, the H1 or the subtitle, and answer "how do I enable AI
+search in AEM" in the FAQ, which feeds the FAQPage JSON-LD. Measure the four queries for
+this URL against the baseline above.
+
+### CXV.2 Data residency for regulated industries (T1094)
+
+Natural-language questions that read like an assistant's query fan-out put /security/ at
+position 1: "agent platform that preserves data residency", "best inference provider for
+a regulated industry with data residency requirements?". This is where a self-hosted
+product wins outright, and the audience the strategy names (teams that cannot send their
+content to a vendor's cloud). The page already says "data residency" six times, but its
+H1 is "The safest place for your content is your own network". Give it a title and
+description that say it to a reader arriving from an assistant (self-hosted AI search
+and RAG for regulated industries, data residency), a question-and-answer section phrased
+like those queries, and a link from the home. No claim beyond what the software does;
+the page already keeps to that.
+
+### CXV.3 Pages the search engines ignore (T1095)
+
+Seven pages had no impression in 90 days. The four /features/ pages are short (2.5k to
+3.6k characters of text) and repeat the home's sections; /compare/ changed on
+13/10/2026, too recently to judge; /persona/ (10.6k) and /migrate/ (4k) are deep enough
+but nothing outside the site links to them. Merge each /features/ page into a deeper one
+or give it what only it says (the matching docs.viglet.org pages are the source), link
+/persona/ and /migrate/ from the pages and posts that discuss their subject, and re-read
+the Search Console a month after.
+
+### CXV.4 Lucidworks in the comparison (T1096)
+
+The comparison people actually search is between two competitors: "coveo vs lucidworks"
+(52 impressions) and "lucidworks vs coveo" (41) reach the docs.viglet.org post "Coveo vs
+Lucidworks Fusion" around position 10. /compare/ covers Algolia, Coveo, Elasticsearch
+and DIY RAG and never names Lucidworks. Add a Lucidworks column with objective,
+checkable facts only (licence, hosting model, engines), no new claims beyond what the
+docs post already states, and link /compare/ and the docs post to each other.
+
+### CXV.5 One analytics rule for the three sites (T1097)
+
+index.html loads Google Analytics (G-XCTGNN3G4R) on every page without asking.
+viglet.org loads it only after consent (its W12) and docs.viglet.org without, so the
+three Viglet sites apply two privacy rules to one visitor. One decision covers all
+three: viglet.org W42 and docs.viglet.org DOC6 hold the options (consent first
+everywhere, or GA consent mode everywhere, whose LGPD fit is the owner's call). Apply it
+here once taken.
+
+### CXV.6 What the sitemap offers to search (T1098)
+
+public/sitemap.xml lists llms.txt, which is a file for assistants and not a page, beside
+/react-sdk/ (the Storybook) and the /marketplace/ example pages. Drop llms.txt from the
+sitemap (assistants find it at its well-known path), and decide whether the Storybook
+and the marketplace examples should compete in search with the product pages or be left
+out.

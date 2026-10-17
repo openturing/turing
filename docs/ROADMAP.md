@@ -15,6 +15,15 @@
 
 - 📋 **T1091** (deps: —) **A search whose synonym expands to a multi-word term fails with 500 on Lucene: the phrase also runs on the id field** — Any site with a synonym like 'home office' loses every search that triggers it. → §CXIV.1
 
+## Block CD — turing.viglet.org relevance pass (2026-10)
+
+- 📋 **T1093** (deps: —) **The AEM page ranks 36th to 44th for the AEM queries, and almost nothing links to it** — Google already picked /aem-search/ as the Viglet answer for AEM; inbound links and the searched words in its title are what it lacks. → §CXV.1
+- 📋 **T1094** (deps: —) **The security page wins data-residency questions at position 1, yet its title never says so** — Self-hosting is where Turing wins outright, and these are the questions an assistant asks for that buyer. → §CXV.2
+- 📋 **T1095** (deps: —) **Compare, migrate, persona and the four features pages had no impression in 90 days** — Thin pages that repeat the home, and deep ones nothing links to, never enter the results. → §CXV.3
+- 📋 **T1096** (deps: —) **The compare page never names Lucidworks, though Coveo vs Lucidworks is the comparison people search** — The demand is already proven by the docs.viglet.org post, and the product comparison page misses it. → §CXV.4
+- 💭 **T1097** (deps: viglet.org W42) **The site loads Google Analytics without consent, while viglet.org asks first** — Three Viglet sites should treat one visitor under one privacy rule, decided once. → §CXV.5
+- 💭 **T1098** (deps: —) **The sitemap lists llms.txt and the Storybook beside the product pages** — A sitemap should offer the search engines the pages meant to rank, not every file the site serves. → §CXV.6
+
 ## Non-goals (do NOT add as tasks)
 
 Binding constraints — see [IMPROVEMENTS.md](IMPROVEMENTS.md) §I.6 (What NOT to

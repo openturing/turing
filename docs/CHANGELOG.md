@@ -1454,3 +1454,5 @@
 
 ## Block CC — Lucene engine search with synonyms
 
+## Block CD — turing.viglet.org relevance pass (2026-10)
+
