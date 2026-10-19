@@ -46,6 +46,10 @@ function syncExternalStoreShimPlugin(): Plugin {
 
 // https://vite.dev/config/
 export default defineConfig({
+  // Pin root to the real config dir: run from the `latest` junction, Vite's
+  // default root (cwd) is the junction path while modules resolve to the real
+  // path, so index.html is emitted as "../../../../2026.3/..." and the build fails.
+  root: __dirname,
   server: {
     proxy: {
       "/pages": {
