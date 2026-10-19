@@ -19,6 +19,7 @@ import org.junit.jupiter.api.Test;
 import org.testcontainers.containers.MinIOContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
+import org.testcontainers.utility.DockerImageName;
 
 import com.viglet.turing.api.asset.TurAssetItem;
 import com.viglet.turing.properties.TurConfigProperties;
@@ -45,8 +46,17 @@ class TurMinioStorageServiceIT {
     private static final String ACCESS_KEY = "minioadmin";
     private static final String SECRET_KEY = "minioadmin";
 
+    /*
+     * minio/minio is gone from Docker Hub (the whole repository answers "object not found"),
+     * which failed the 2026.3.5 publish on an image pull rather than on a test. Chainguard's
+     * build is the same server binary, pullable without credentials.
+     */
+    private static final DockerImageName MINIO_IMAGE = DockerImageName
+            .parse("cgr.dev/chainguard/minio:latest")
+            .asCompatibleSubstituteFor("minio/minio");
+
     @Container
-    static final MinIOContainer MINIO = new MinIOContainer("minio/minio:latest")
+    static final MinIOContainer MINIO = new MinIOContainer(MINIO_IMAGE)
             .withUserName(ACCESS_KEY)
             .withPassword(SECRET_KEY);
 
