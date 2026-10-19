@@ -1,60 +1,188 @@
 = Viglet Turing
 Viglet Team <opensource@viglet.org>
 :organization: Viglet Turing
-:viglet-version: 2026.2
+:viglet-version: 2026.3
 :icons: font
 :git-project: openviglet/turing
+:toc: macro
+:toclevels: 2
+
+image::.github/banner.png[Viglet Turing, Enterprise Search,align="center"]
 
 [.lead]
-**Open-source enterprise search for Adobe AEM, WordPress, databases, and files**: Semantic Navigation, Generative AI (RAG), AI Agents, and Tool Calling. A self-hosted alternative to Algolia, Coveo, and Lucidworks that keeps your content on your own infrastructure.
+**Viglet Turing is open source enterprise search with generative AI.** Faceted semantic search, hybrid BM25 + vector ranking, RAG chat with citations, and AI agents with MCP tools, over your own content and on your own servers. It runs on Apache Solr, Elasticsearch or embedded Lucene, with the LLM of your choice: a self-hosted alternative to Algolia, Coveo and Lucidworks.
 
-image:https://img.shields.io/badge/Download-Release%202026.1.18-blue?style=for-the-badge&logo=OpenJDK[link="https://www.viglet.org/turing/download/"]
-image:https://img.shields.io/github/license/{git-project}.svg?style=for-the-badge&logo=Apache["License"]
-image:https://img.shields.io/github/last-commit/{git-project}.svg?style=for-the-badge&logo=java)[GitHub last commit]
-image:https://img.shields.io/github/actions/workflow/status/openviglet/turing/validate.yml?branch={viglet-version}&style=for-the-badge&logo=GitHub[link="https://github.com/openviglet/turing/actions/workflows/validate.yml"]
-image:https://img.shields.io/badge/Sonar-Code%20Quality-brightgreen?style=for-the-badge&logo=SonarCloud[link="https://sonarcloud.io/project/overview?id=viglet_turing"]
-image:https://img.shields.io/badge/Javadoc-Release%20{viglet-version}-brightgreen?style=for-the-badge&logo=OpenJDK[link="https://turing.viglet.org/latest/javadoc/"]
+image:https://img.shields.io/github/v/release/openviglet/turing-ce?style=flat-square&logo=github&label=release&color=2563eb[Latest release,link="https://github.com/openviglet/turing-ce/releases/latest"]
+image:https://img.shields.io/badge/license-Apache%202.0-blue?style=flat-square&logo=apache[License,link="LICENSE"]
+image:https://img.shields.io/badge/ghcr.io-openviglet%2Fturing--ce-2563eb?style=flat-square&logo=docker&logoColor=white[Container image,link="https://github.com/orgs/openviglet/packages/container/package/turing-ce"]
+image:https://img.shields.io/badge/Java-21-orange?style=flat-square&logo=openjdk&logoColor=white[Java 21]
+image:https://img.shields.io/badge/Spring%20Boot-4-6DB33F?style=flat-square&logo=springboot&logoColor=white[Spring Boot 4]
+image:https://img.shields.io/badge/React-19-61DAFB?style=flat-square&logo=react&logoColor=black[React 19]
+image:https://img.shields.io/badge/docs-docs.viglet.org-brightgreen?style=flat-square&logo=readthedocs&logoColor=white[Documentation,link="https://docs.viglet.org/turing/"]
+image:https://img.shields.io/badge/Sonar-Code%20Quality-brightgreen?style=flat-square&logo=SonarCloud[Code quality,link="https://sonarcloud.io/project/overview?id=viglet_turing"]
 
-== What is Viglet Turing?
+**Site:** https://turing.viglet.org[turing.viglet.org] ·
+**Docs:** https://docs.viglet.org/turing/[docs.viglet.org/turing] ·
+**Compare:** https://turing.viglet.org/compare/[Turing vs Algolia, Coveo, Lucidworks and Elasticsearch] ·
+**AEM:** https://turing.viglet.org/aem-search[enterprise search for Adobe AEM]
 
-https://www.viglet.org/turing/[Viglet Turing] is an open-source platform that combines enterprise search with generative AI. Index content from **Adobe Experience Manager (AEM)**, **WordPress**, databases, file systems, and web crawls; deliver faceted, semantic search experiences; and enable conversational AI (RAG) grounded in your own data, all self-hosted under Apache 2.0.
+toc::[]
 
-> Looking for an open-source **alternative to Algolia, Coveo, or Lucidworks** for AEM or WordPress search? See the guide: https://docs.viglet.org/blog/enterprise-search-for-adobe-aem[Add enterprise search to Adobe AEM].
+== Who it is for
 
-* **Semantic Navigation**: faceted search, spotlights, targeting rules, autocomplete, multi-language
-* **Generative AI (RAG)**: LLM responses grounded in your indexed content
-* **AI Agents**: assistants with independent LLMs, 27 native tools, and MCP server support
-* **Multi-Engine**: pluggable backend: Apache Solr, Elasticsearch, or Lucene
-* **Connectors**: Adobe AEM, web crawler, databases, filesystem, WordPress via https://github.com/openviglet/dumont[Viglet Dumont]
-* **SDKs**: Java (Maven Central) and JavaScript/TypeScript (npm)
+Teams that run a corporate portal or website and need search on it. Maybe you pay
+Algolia or Coveo per record and per query, or keep a Solr or Elasticsearch cluster
+going by hand, and now you also want an AI chat that answers from your own content,
+with sources, without sending that content to a vendor.
 
-== Quick Start
+Turing gives you both in one self-hosted platform: the search experience (facets,
+autocomplete, spotlights, ranking rules) and the AI layer (RAG chat with citations,
+agents, MCP), on the search engine you already run or on the embedded one.
 
-=== Docker (Fastest)
+It is a common fit for **Adobe Experience Manager** sites: the
+https://github.com/openviglet/dumont[Viglet Dumont] connector reads AEM on-premise,
+AMS and AEM as a Cloud Service, and feeds Turing.
+
+== Try it in 60 seconds
 
 [source,bash]
 ----
-docker pull openviglet/turing:latest
-docker run -p 2700:2700 -e TURING_ADMIN_PASSWORD=turing123 openviglet/turing:latest
+docker run -p 2700:2700 -e TURING_ADMIN_PASSWORD=turing123 \
+  ghcr.io/openviglet/turing-ce:latest
 ----
 
-Open http://localhost:2700/console and log in as `admin`. `TURING_ADMIN_PASSWORD`
-(minimum 6 characters) seeds the password on the first boot and never overwrites
-one that is already set; omit it and the console prompts for a password on first
-access.
+Then open **http://localhost:2700/console** and log in as `admin` / `turing123`.
+`TURING_ADMIN_PASSWORD` (minimum 6 characters) is applied on the first boot only and
+never overwrites a password you already set: leave it out and the console asks you to
+choose one on first access.
 
-=== Docker Compose
+You need no external search engine, no vector database and no API key to start:
+Turing ships an embedded Lucene index and works offline until you plug in Solr,
+Elasticsearch or an LLM.
+
+[TIP]
+====
+**Getting content in.** Turing indexes whatever you post to its indexing API, so you
+can push documents straight from your own code. To pull content from Adobe AEM,
+WordPress, databases, filesystems and web crawls, run
+https://github.com/openviglet/dumont[**Viglet Dumont**], the Data Exchange Platform
+of the same family.
+====
+
+== Why Turing?
+
+Teams that outgrow their CMS's built-in search usually choose between rebuilding
+search in-house and sending their content to a hosted vendor. Turing is a third
+option: a complete search platform you run yourself.
+
+[cols="1,1,1",options="header"]
+|===
+| | **Viglet Turing** | Hosted search SaaS
+
+| Where content lives
+| Your servers: indexes, embeddings and query logs never leave
+| Vendor cloud
+
+| Search backend
+| Pluggable: Solr, Elasticsearch, or embedded Lucene
+| Proprietary, fixed
+
+| LLM for RAG
+| Your choice: OpenAI, Anthropic, Gemini, Mistral, Cohere, Bedrock, or local Ollama
+| Vendor's model, or none
+
+| Cost model
+| Apache 2.0: no per-query, per-record or per-seat metering
+| Metered by records, queries or seats
+
+| Extensibility
+| Custom search-engine plugins, agent tools and MCP servers
+| Plugin marketplace
+
+| Regulated or air-gapped deploys
+| Supported: runs fully offline
+| Usually not an option
+|===
+
+The full comparison, product by product, is at
+https://turing.viglet.org/compare/[turing.viglet.org/compare].
+
+== What's inside
+
+[cols="1,3",options="header"]
+|===
+| Capability | Description
+
+| **Semantic Navigation**
+| Faceted search, spotlights, targeting rules, autocomplete, ranking rules, multi-language
+
+| **Hybrid ranking**
+| BM25 keyword + kNN vector retrieval fused with Reciprocal Rank Fusion, plus pluggable rerankers
+
+| **Generative AI (RAG)**
+| Streaming LLM answers grounded in your indexed content, with inline source citations
+
+| **AI Agents**
+| Assistants with their own LLM, native provider tools (web search, code execution), and MCP servers
+
+| **Multi-engine**
+| One API over Apache Solr, Elasticsearch, or embedded Apache Lucene: swap without rewriting
+
+| **Indexing API**
+| Push documents over REST/JSON, one at a time or in bulk, with a versioned field manifest (schema as code)
+
+| **Connectors**
+| Adobe AEM, WordPress, databases, filesystem and web crawls, through https://github.com/openviglet/dumont[Viglet Dumont]
+
+| **File parsing**
+| Apache Tika extraction for PDF and Office files uploaded to Turing or attached in chat
+
+| **Admin console**
+| React 19 console for sites, fields, facets, agents, prompts and analytics
+
+| **APIs and SDKs**
+| REST, GraphQL and SSE streaming; a Java SDK (Maven Central) and JS/TS SDKs (npm)
+|===
+
+== Architecture at a glance
+
+Turing is the search and AI layer. Extraction from content sources is a separate,
+optional product, Viglet Dumont, so you can also feed the index straight from your
+own application.
+
+[source]
+----
+    Content sources          Viglet Dumont            Viglet Turing               Your apps
+  ┌─────────────────┐      ┌───────────────┐      ┌──────────────────────┐    ┌───────────────┐
+  │ Adobe AEM       │      │  Connectors   │      │  Indexing API        │    │ Site search   │
+  │ WordPress       │─────▶│  Extraction   │─────▶│  Semantic Navigation │───▶│ RAG chat      │
+  │ Databases       │      │  Scheduling   │      │  Hybrid BM25 + kNN   │    │ Admin console │
+  │ Filesystem      │      │  Deltas       │      │  RAG · Agents · MCP  │    │ Your own app  │
+  │ Web crawl       │      └───────────────┘      └──────────┬───────────┘    │ REST /GraphQL │
+  └─────────────────┘                                        │                └───────────────┘
+                                                             │
+     Your own app ──────── POST /api/sn/import ─────────────┤
+                           (skip Dumont entirely)            │
+                                              ┌──────────────┴──────────────┐
+                                              │ Apache Solr · Elasticsearch │
+                                              │  · embedded Apache Lucene   │
+                                              └─────────────────────────────┘
+----
+
+== Installation
+
+=== Docker Compose (full stack)
 
 [source,bash]
 ----
 git clone https://github.com/openviglet/turing.git
 cd turing
-docker-compose up -d
+docker compose up -d
 ----
 
-=== Build from Source
+=== Build from source
 
-Requires **Java 21+** and **Maven 3.6+**.
+Requires **Java 21+** and **Maven 3.6+** (the `./mvnw` wrapper is included).
 
 [source,bash]
 ----
@@ -64,9 +192,47 @@ cd turing
 java -jar turing-app/target/viglet-turing.jar
 ----
 
-== Code Examples
+=== Kubernetes
 
-=== Java SDK
+Manifests are in link:k8s/[`k8s/`]; a single-file deployment is in link:k8s.yaml[`k8s.yaml`].
+
+Packaged installers (Windows `.exe`, `.zip`, Linux AppImage) are attached to every
+https://github.com/openviglet/turing-ce/releases[release].
+
+== Code examples
+
+=== REST API
+
+[source,bash]
+----
+# Faceted search
+curl "http://localhost:2700/api/sn/sample-site/search?q=enterprise+search&rows=10&_setlocale=en_US"
+
+# Autocomplete
+curl "http://localhost:2700/api/sn/sample-site/ac?q=enterp&_setlocale=en_US"
+
+# RAG chat (SSE stream, answers with citations)
+curl "http://localhost:2700/api/sn/sample-site/chat?q=What+is+enterprise+search"
+----
+
+=== JavaScript / TypeScript
+
+[source,typescript]
+----
+import { TurSNSiteSearchService } from '@viglet/turing-react-sdk';
+
+const search = new TurSNSiteSearchService('http://localhost:2700');
+const results = await search.search('sample-site', {
+  q: 'machine learning', rows: 10, localeRequest: 'en_US'
+});
+
+results.results?.document?.forEach(doc => console.log(doc.fields?.title));
+----
+
+A zero-dependency vanilla JS build (`@viglet/turing-sdk`) is also published for plain
+`<script>` tags and Adobe Edge Delivery Services blocks.
+
+=== Java
 
 [source,java]
 ----
@@ -82,36 +248,6 @@ response.getResults().getDocument().forEach(doc ->
 );
 ----
 
-=== JavaScript / TypeScript SDK
-
-[source,typescript]
-----
-import { TurSNSiteSearchService } from '@viglet/turing-react-sdk';
-
-const search = new TurSNSiteSearchService('http://localhost:2700');
-const results = await search.search('sample-site', {
-  q: 'machine learning', rows: 10, localeRequest: 'en_US'
-});
-
-results.results?.document?.forEach(doc =>
-  console.log(doc.fields?.title)
-);
-----
-
-=== REST API
-
-[source,bash]
-----
-# Search
-curl "http://localhost:2700/api/sn/sample-site/search?q=enterprise+search&rows=10&_setlocale=en_US"
-
-# Autocomplete
-curl "http://localhost:2700/api/sn/sample-site/ac?q=enterp&_setlocale=en_US"
-
-# RAG Chat (SSE stream)
-curl "http://localhost:2700/api/sn/sample-site/chat?q=What+is+enterprise+search"
-----
-
 === GraphQL
 
 [source,graphql]
@@ -123,51 +259,104 @@ query {
     locale: "en_US"
   ) {
     queryContext { count, responseTime }
-    results {
-      document {
-        fields { title, text, url }
-      }
-    }
+    results { document { fields { title, text, url } } }
   }
 }
 ----
 
 Interactive GraphiQL IDE at http://localhost:2700/graphiql.
 
-== Project Structure
+== Project structure
 
 [source]
 ----
 turing/
 ├── turing-app/           # Spring Boot 4 backend (Java 21)
-├── turing-react/         # React + TypeScript frontend (Vite, shadcn/ui)
+├── frontend/             # pnpm + Turborepo monorepo
+│   ├── apps/turing-app/  #   React 19 + TypeScript admin console (Vite, shadcn/ui)
+│   ├── apps/marketplace/ #   example applications
+│   └── packages/         #   SDKs: react-sdk, sdk (vanilla JS), react-ui, shared-types
 ├── turing-commons/       # Shared library
+├── turing-spring/        # Shared Spring library
 ├── turing-java-sdk/      # Java SDK
-├── turing-react-sdk/     # React SDK (hooks + UI components)
+├── turing-marketplace/   # Marketplace packages
+├── turing-utils/         # Utilities
+├── containers/           # Container build assets
 ├── k8s/                  # Kubernetes manifests
 └── docker-compose.yaml   # Docker Compose stack
 ----
 
+== FAQ
+
+**Is Viglet Turing an open source alternative to Algolia or Coveo?**
+Yes. It covers the same ground (faceted search, autocomplete, merchandising-style
+spotlights and ranking rules, AI answers over your content) under the Apache 2.0
+license, self-hosted, with no metering by record or query. See the
+https://turing.viglet.org/compare/[comparison].
+
+**Does it work with Adobe Experience Manager?**
+Yes. https://github.com/openviglet/dumont[Viglet Dumont] reads AEM on-premise, AMS
+and AEM as a Cloud Service, and indexes it into Turing. Walkthrough:
+https://turing.viglet.org/aem-search[enterprise search for Adobe AEM].
+
+**Can I run a RAG chat on my own servers?**
+Yes. The chat answers from your indexed content with inline citations, and the LLM is
+your choice, including a local model through Ollama, so nothing has to leave your
+network.
+
+**Do I need Solr or Elasticsearch?**
+No. Turing ships an embedded Lucene index. Plug in Solr or Elasticsearch when you
+want to, behind the same API.
+
+**Is it free?**
+Yes. Apache License 2.0: you can use, modify and deploy it commercially, including in
+closed-source products.
+
+== Part of the Viglet suite
+
+image::.github/viglet-suite.png[The Viglet suite: Dumont, Turing and Shio,align="center"]
+
+Three open source products that work together, or each on its own:
+
+[cols="1,2",options="header"]
+|===
+| Product | What it does
+
+| https://github.com/openviglet/dumont[**Viglet Dumont**] · Data Exchange Platform
+| Connects your sources (AEM, WordPress, databases, files, web) and delivers their content to Turing or any other search engine
+
+| **Viglet Turing** · Enterprise Search
+| This repository: search, semantic navigation, RAG chat and AI agents over that content
+
+| https://github.com/openviglet/shio[**Viglet Shio**] · Agent-ready CMS
+| A CMS that people run from the console and AI agents run over MCP; it renders pages or delivers them over REST and GraphQL
+|===
+
+More at https://www.viglet.org[viglet.org].
+
 == Documentation
-
-For architecture details, configuration, connectors, API reference, deployment guides, and more:
-
-**https://docs.viglet.org/turing/[docs.viglet.org/turing]**
 
 [cols="1,2"]
 |===
-| https://docs.viglet.org/turing/[Full Documentation] | Architecture, configuration, connectors, admin guide
-| https://turing.viglet.org/latest/javadoc/[Javadoc] | API reference for Java classes
-| https://www.viglet.org/turing/download/[Downloads] | Release packages
-| link:turing-java-sdk/README.md[Java SDK Guide] | SDK usage and examples
-| link:turing-react-sdk/README.md[React SDK Guide] | SDK usage and examples
+| https://docs.viglet.org/turing/[docs.viglet.org/turing] | Architecture, configuration, connectors, admin guide
+| https://turing.viglet.org/aem-search[AEM search guide] | Adding enterprise search and AI to Adobe Experience Manager
+| https://turing.viglet.org/compare/[Comparison] | Turing vs Algolia, Coveo, Lucidworks, Elasticsearch and DIY RAG
+| https://turing.viglet.org/latest/javadoc/[Javadoc] | API reference for the Java classes
+| link:CHANGELOG.md[Changelog] | What shipped in each release
 |===
 
 == Contributing
 
-1. **Report Issues**: https://github.com/{git-project}/issues[GitHub Issues]
-2. **Discussions**: https://github.com/{git-project}/discussions[GitHub Discussions]
-3. **Code**: fork, branch, PR. Check https://github.com/{git-project}/labels/good%20first%20issue["good first issue"] labels
+Contributions are welcome: bug reports, docs, search-engine plugins, agent tools and code.
+
+* **Found a bug?** https://github.com/{git-project}/issues[Open an issue]
+* **Questions or ideas?** https://github.com/{git-project}/discussions[Join the Discussions]
+* **Want to code?** Read link:CONTRIBUTING.md[CONTRIBUTING.md] and open a pull request
+
+See also the link:SECURITY.md[security policy], the link:CODE_OF_CONDUCT.md[code of conduct]
+and the link:SUPPORT.md[support options].
+
+If Turing is useful to you, **a star on the repository** helps other teams find it.
 
 == License
 
@@ -176,4 +365,4 @@ Apache License 2.0: see link:LICENSE[LICENSE].
 ---
 
 [.text-center]
-Built by the https://www.viglet.org[Viglet] Team
+Built by the https://www.viglet.org[Viglet] Team · https://turing.viglet.org[turing.viglet.org]
