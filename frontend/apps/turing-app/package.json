@@ -98,8 +98,8 @@
     "@types/react-dom": "^19.3.0",
     "@viglet/eslint-config": "workspace:*",
     "@vitejs/plugin-react": "^6.1.2",
-    "@vitest/browser": "^5.0.0",
-    "@vitest/browser-playwright": "^5.0.0",
+    "@vitest/browser": "^5.0.5",
+    "@vitest/browser-playwright": "^5.0.5",
     "eslint": "^10.13.0",
     "eslint-plugin-react-hooks": "^7.1.1",
     "eslint-plugin-react-refresh": "^0.5.7",
@@ -111,7 +111,7 @@
     "typescript": "~5.8.3",
     "typescript-eslint": "^8.71.2",
     "vite": "8.1.6",
-    "vitest": "^5.0.3"
+    "vitest": "^5.0.5"
   },
   "engines": {
     "node": "^26.0.0",
