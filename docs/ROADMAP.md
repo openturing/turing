@@ -8,10 +8,6 @@
 
 ## Block CD — turing.viglet.org relevance pass (2026-10)
 
-## Block CG — Search-engine plugin parity (Solr, Lucene, Elasticsearch)
-
-- 📋 **T1108** (deps: —) **On Docker 29 every container IT is silently skipped, because Testcontainers' default API version is refused** — The engine ITs that prove search parity report green without ever starting Solr or Elasticsearch. → §CXXI
-
 ## Non-goals (do NOT add as tasks)
 
 Binding constraints — see [IMPROVEMENTS.md](IMPROVEMENTS.md) §I.6 (What NOT to

@@ -23,8 +23,6 @@ moved — verify against `git ls-files` before acting.
 
 ## Block CD — turing.viglet.org relevance pass (2026-10)
 
-## Block CG — Search-engine plugin parity (Solr, Lucene, Elasticsearch)
-
 ## Table of contents
 
 - [I. Chat-flow execution harness — binding constraints](#i-chat-flow-execution-harness--binding-constraints)
@@ -2174,41 +2172,3 @@ but nothing outside the site links to them. Merge each /features/ page into a de
 or give it what only it says (the matching docs.viglet.org pages are the source), link
 /persona/ and /migrate/ from the pages and posts that discuss their subject, and re-read
 the Search Console a month after.
-
-## CXXI Container ITs skip on Docker 29 (T1108)
-
-The engine ITs that run against a real search engine (`TurElasticsearchCursorPagingIT`,
-`TurSolrCursorPagingIT`, `TurSNEngineConformanceIT` from T1107) are
-`@Testcontainers(disabledWithoutDocker = true)`. On a workstation running Docker 29
-(Docker Desktop, API minimum 1.40) Testcontainers 2.0.5 cannot reach the daemon:
-
-```
-NpipeSocketClientProviderStrategy: failed with exception BadRequestException
-(Status 400: {"message":"client version 1.32 is too old. Minimum supported API
-version is 1.40, please upgrade your client to a newer version"})
-```
-
-Docker is then "unavailable", so every one of those ITs is reported as **skipped**, and
-`mvn verify` ends green. Nothing says the engines were never asked. Met while building
-T1107: the conformance IT first came back `Tests run: 3, Skipped: 3`.
-
-Running the same command with `DOCKER_API_VERSION=1.44` in the environment makes
-docker-java negotiate a supported version, and the conformance IT runs green against
-Elasticsearch 9.1 (12 tests, 30 s).
-
-What to build:
-
-- Pin the client API version for the test classpath, e.g.
-  `turing-app/src/test/resources/docker-java.properties` with `api.version=1.44`, after
-  checking the oldest Docker the CI runners and the documented dev setup use (1.44 is
-  Docker 25+).
-- Make a skip visible: a container IT skipped because Docker was unreachable should log
-  the reason at WARN, or the IT profile should fail when `-Pdocker-it` (or CI) expects
-  Docker and the detection failed.
-- Say it in the `turing-integration-tests` skill.
-
-Even with that variable set, detection failed on about one run in two while building
-T1110, so the skip is intermittent as well as silent.
-
-Done when `mvn verify` on a Docker 29 workstation runs the engine ITs with no
-environment variable set, and a run where Docker cannot be reached says so.

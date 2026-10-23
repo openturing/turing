@@ -45,6 +45,25 @@ component scan (`com.viglet.turing.*`). Put reusable test config under
 `com.viglet.testsupport.*`; otherwise a mock can leak into every
 `@SpringBootTest`.
 
+## Container ITs (Testcontainers)
+
+ITs that start a real engine (Solr, Elasticsearch, MinIO, Redis) are
+`@Testcontainers(disabledWithoutDocker = true)`: without Docker they report
+**skipped**, and `mvn verify` still ends green.
+
+- `src/test/resources/docker-java.properties` pins `api.version=1.44`. Docker 29
+  refuses the 1.32 docker-java opens with, which made Docker read as absent and
+  every container IT skip silently (T1108). Do not remove it.
+- `TurDockerAvailabilityIT` says when Docker could not be reached; pass
+  `-Dturing.it.requireDocker=true` in a job that must run the container ITs, and it
+  fails instead of letting them skip.
+- A Solr container gets its configset copied in **after** start, as the `solr`
+  user (`execInContainer` + `cp`). Copied before, Testcontainers creates
+  `/var/solr/data` as root and Solr cannot persist a new core. The `solr:10`
+  image starts in SolrCloud mode; pass `solr-foreground --user-managed` for cores.
+- `TurSNEngineConformanceIT` asks Lucene, Elasticsearch and Solr the same filter and
+  sort requests. A new request parameter belongs in its table.
+
 ## Other testing rules
 
 - Always check `application.yaml` defaults before writing test-specific properties — most ITs should inherit project conventions.
