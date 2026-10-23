@@ -48,4 +48,4 @@ jobs:
     steps:
       - uses: actions/checkout@v7
       # roadkeep 0.2.473 — see the note above before changing this SHA.
-      - uses: alegauss/roadkeep@60c347e3ba81449eb69a2ac3cd086bc785c20dc5
+      - uses: alegauss/roadkeep@eec61c67ed1f7882c7bb6c3589d2933606dfbedc
