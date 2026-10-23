@@ -1484,3 +1484,4 @@
 ## Block CG — Search-engine plugin parity (Solr, Lucene, Elasticsearch)
 
 - **T1106** — An Elasticsearch SN site applies the request's fq filters with Lucene's semantics, custom facet selections included, and the site's custom sorts with their missing placement (design §CXIX superseded: its done-when needs a live Elasticsearch no test has, so parity is checked on request shape and T1107 carries the live test).
+- **T1107 (Lucene and Elasticsearch)** — One conformance IT asks Lucene and a live Elasticsearch the same filter and sort requests, each indexed through its production path, and both return the same documents.

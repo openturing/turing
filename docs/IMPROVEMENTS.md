@@ -2177,29 +2177,58 @@ the Search Console a month after.
 
 ## CXX Engine conformance test for SN requests (T1107)
 
-T1106 taught the Elasticsearch engine the request's facet filters and the site's custom
-sorts, so the three engines behind `TurSearchEnginePlugin` now read a Semantic
-Navigation request the same way. What proves it is weaker than the claim:
+`TurSNEngineConformanceIT` (plugins/se) indexes one job catalog into Lucene, through
+`TurLuceneDocumentHandler`, and into a live Elasticsearch, through
+`TurElasticsearchUtils.createIndex` and `TurElasticsearch.indexing`. It then asks both a
+table of requests: each `fq` shape, `fqItemOperator`, `fqOr`, `fqAnd`, an exclusive
+numeric bound, an ISO date range, a custom facet selection, `newest`, `field:dir`, and
+custom sorts with `missing` LAST and FIRST. Both engines answer the same ids. On a
+Docker 29 workstation it only runs with `DOCKER_API_VERSION=1.44` set (T1108).
 
-- Lucene's filters and sorts are tested against a real in-memory index
-  (`TurLuceneQueryBuilderTest`, `ByteBuffersDirectory`).
-- Solr's are tested as the strings the query builder emits (`TurSolrQueryBuilderTest`).
-- Elasticsearch's are tested as the request objects `TurElasticsearchFilterQueries` and
-  `TurElasticsearch.sortOption` build (`TurElasticsearchFilterQueriesTest`), with no
-  Elasticsearch to run them. A `.keyword` sub-field that an explicitly mapped index lacks,
-  a date term Elasticsearch parses differently, or a `missing` value it refuses would all
-  pass.
+What is left is Solr. The stock `solr-precreate` core that `TurSolrCursorPagingIT` uses
+guesses its schema (a string becomes multivalued `text_general`, which cannot be sorted
+or matched exactly), so a Solr row would test the guess rather than Turing. It needs:
 
-There is no `ElasticsearchContainer` or Solr container in the test sources, so nothing
-runs one request against two engines and compares the documents.
+- a core created from the configset Turing provisions (the one `TurSolrSearchEnginePlugin`
+  uses to create a core), copied into the container;
+- the site's fields declared in that schema the way provisioning declares them;
+- `TurSolrQueryBuilder` built with mocks for its eight collaborators (an empty
+  `TurSNSearchRuleEvaluator` and `TurSNTargetingRules`, no ranking expressions, the custom
+  sort and facet repositories this IT already stubs), and the search sent through `TurSolr`.
 
-What to build: one conformance IT (Testcontainers, Docker-gated like the other ITs) that
-indexes the same small catalog (string, multi-valued, numeric and date fields, some
-documents without the date) into Lucene, Solr and Elasticsearch through each plugin's
-own indexing path, then runs a table of requests (each `fq` shape, `fqOperator` /
-`fqItemOperator`, a custom facet selection, `newest`, `field:dir`, a custom sort with
-`missing` FIRST and LAST) and asserts each engine returns the same ids in the same
-order. The free-text query stays out of it: matching text is each engine's own.
+Then add Solr as a third engine to every row; no row changes.
 
-Done when that IT runs green on all three engines, and a parameter added to one engine's
-query builder without the others fails it.
+## CXXI Container ITs skip on Docker 29 (T1108)
+
+The engine ITs that run against a real search engine (`TurElasticsearchCursorPagingIT`,
+`TurSolrCursorPagingIT`, `TurSNEngineConformanceIT` from T1107) are
+`@Testcontainers(disabledWithoutDocker = true)`. On a workstation running Docker 29
+(Docker Desktop, API minimum 1.40) Testcontainers 2.0.5 cannot reach the daemon:
+
+```
+NpipeSocketClientProviderStrategy: failed with exception BadRequestException
+(Status 400: {"message":"client version 1.32 is too old. Minimum supported API
+version is 1.40, please upgrade your client to a newer version"})
+```
+
+Docker is then "unavailable", so every one of those ITs is reported as **skipped**, and
+`mvn verify` ends green. Nothing says the engines were never asked. Met while building
+T1107: the conformance IT first came back `Tests run: 3, Skipped: 3`.
+
+Running the same command with `DOCKER_API_VERSION=1.44` in the environment makes
+docker-java negotiate a supported version, and the conformance IT runs green against
+Elasticsearch 9.1 (12 tests, 30 s).
+
+What to build:
+
+- Pin the client API version for the test classpath, e.g.
+  `turing-app/src/test/resources/docker-java.properties` with `api.version=1.44`, after
+  checking the oldest Docker the CI runners and the documented dev setup use (1.44 is
+  Docker 25+).
+- Make a skip visible: a container IT skipped because Docker was unreachable should log
+  the reason at WARN, or the IT profile should fail when `-Pdocker-it` (or CI) expects
+  Docker and the detection failed.
+- Say it in the `turing-integration-tests` skill.
+
+Done when `mvn verify` on a Docker 29 workstation runs the engine ITs with no
+environment variable set, and a run where Docker cannot be reached says so.
