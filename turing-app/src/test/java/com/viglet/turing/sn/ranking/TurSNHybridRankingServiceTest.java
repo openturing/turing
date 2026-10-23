@@ -502,6 +502,89 @@ class TurSNHybridRankingServiceTest {
         assertThat(service.isSemanticRecallEnabled(site)).isFalse();
     }
 
+    // ---- per-site tuning (T1105) -----------------------------------------
+
+    private List<Object> fusedIds(Double weight) {
+        when(ragContextBuilder.build(anyString(), anyString(), anyString()))
+                .thenReturn(Optional.of(infra()));
+        // Lexical order A, B, C; vector order C, B, A — the two disagree completely.
+        when(vectorStore.similaritySearch(any(SearchRequest.class)))
+                .thenReturn(List.of(hit("C", 0.9), hit("B", 0.8), hit("A", 0.7)));
+        TurSNSite site = siteWithMode(TurSNRankingMode.HYBRID_RRF);
+        site.getTurSNSiteGenAi().setSnHybridVectorWeight(weight);
+
+        return service.fuse(site, Locale.ENGLISH, "query", List.of(result("A"), result("B"), result("C")))
+                .stream().map(r -> r.getFields().get(TurSNFieldName.ID)).toList();
+    }
+
+    @Test
+    void aVectorWeightOfOneOrdersThePageByVectorRankAlone() {
+        assertThat(fusedIds(1.0)).containsExactly("C", "B", "A");
+    }
+
+    @Test
+    void aVectorWeightOfZeroKeepsTheLexicalOrder() {
+        assertThat(fusedIds(0.0)).containsExactly("A", "B", "C");
+    }
+
+    @Test
+    void weightedFuseAtTheDefaultIsPlainRrf() {
+        List<Document> vector = List.of(hit("C", null), hit("A", null));
+        List<Document> lexical = List.of(hit("A", null), hit("B", null), hit("C", null));
+
+        List<Document> weighted = TurSNHybridRankingService.weightedFuse(vector, lexical,
+                TurSNHybridRankingService.DEFAULT_VECTOR_WEIGHT, 3);
+        List<Document> plain = com.viglet.turing.genai.rag.TurRagRrf.fuse(vector, lexical, 3);
+
+        assertThat(weighted).extracting(Document::getId)
+                .containsExactlyElementsOf(plain.stream().map(Document::getId).toList());
+    }
+
+    @Test
+    void anUnsetOrOutOfRangeWeightFallsBackSafely() {
+        TurSNSite site = siteWithMode(TurSNRankingMode.HYBRID_RRF);
+        assertThat(TurSNHybridRankingService.vectorWeight(site)).isEqualTo(0.5);
+        site.getTurSNSiteGenAi().setSnHybridVectorWeight(7.0);
+        assertThat(TurSNHybridRankingService.vectorWeight(site)).isEqualTo(1.0);
+        site.getTurSNSiteGenAi().setSnHybridVectorWeight(-1.0);
+        assertThat(TurSNHybridRankingService.vectorWeight(site)).isEqualTo(0.0);
+    }
+
+    @Test
+    void aSiteNamingOnlyTitleEmbedsNothingElse() {
+        when(ragContextBuilder.build(anyString(), anyString(), anyString()))
+                .thenReturn(Optional.of(infra()));
+        TurSNSite site = siteWithMode(TurSNRankingMode.HYBRID_RRF);
+        site.getTurSNSiteGenAi().setSnEmbeddedFields(" title ");
+
+        service.indexDocument(site, Locale.ENGLISH, Map.of(TurSNFieldName.ID, "job-1",
+                TurSNFieldName.TITLE, "Auxiliar de creche", TurSNFieldName.TEXT, "Cuidar de criancas"));
+
+        org.mockito.ArgumentCaptor<List<Document>> added = org.mockito.ArgumentCaptor.forClass(List.class);
+        verify(vectorStore).add(added.capture());
+        assertThat(added.getValue()).singleElement()
+                .satisfies(doc -> assertThat(doc.getText()).isEqualTo("Auxiliar de creche"));
+    }
+
+    @Test
+    void namedFieldsAreEmbeddedInTheSiteOrder() {
+        String content = TurSNHybridRankingService.buildContent(Map.of(
+                TurSNFieldName.TITLE, "Babá",
+                "skills", List.of("primeiros socorros", "recreação"),
+                TurSNFieldName.TEXT, "ignored"), List.of("skills", TurSNFieldName.TITLE));
+
+        assertThat(content).isEqualTo("primeiros socorros recreação\nBabá");
+    }
+
+    @Test
+    void embeddedFieldsParseTheCommaSeparatedSetting() {
+        TurSNSite site = siteWithMode(TurSNRankingMode.HYBRID_RRF);
+        assertThat(TurSNHybridRankingService.embeddedFields(site)).isEmpty();
+        site.getTurSNSiteGenAi().setSnEmbeddedFields("title, description,,title ,skills");
+        assertThat(TurSNHybridRankingService.embeddedFields(site))
+                .containsExactly("title", "description", "skills");
+    }
+
     // ---- indexing side-write ---------------------------------------------
 
     @Test

@@ -1475,6 +1475,7 @@
 ## Block CE — Semantic retrieval for SN sites
 
 - **T1103** — A hybrid SN site with semantic recall on returns the vector hits its lexical page missed, inside the request's filters on Solr, Lucene and Elasticsearch.
+- **T1105** — A hybrid SN site sets its vector weight and the fields it embeds, and documents semantic recall adds are counted in their facet buckets.
 
 ## Block CF — What the SN site manifest cannot declare
 

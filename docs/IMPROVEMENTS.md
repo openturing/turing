@@ -23,8 +23,6 @@ moved — verify against `git ls-files` before acting.
 
 ## Block CD — turing.viglet.org relevance pass (2026-10)
 
-## Block CE — Semantic retrieval for SN sites
-
 ## Block CG — Search-engine plugin parity (Solr, Lucene, Elasticsearch)
 
 ## Table of contents
@@ -2176,31 +2174,6 @@ but nothing outside the site links to them. Merge each /features/ page into a de
 or give it what only it says (the matching docs.viglet.org pages are the source), link
 /persona/ and /migrate/ from the pages and posts that discuss their subject, and re-read
 the Search Console a month after.
-
-## CXVIII Semantic recall tuning per SN site (T1105)
-
-Semantic recall (T1103) brings the vector hits the lexical first page missed onto a
-hybrid SN site's page, inside the request's filters. Three parts of that page are still
-decided without the site's say:
-
-- **Facet counts ignore recalled documents.** The counts come from the lexical search
-  alone, so a recalled job in sector `educacao` is on the page while the `educacao`
-  bucket does not count it. Counting them means one more facet pass restricted to the
-  recalled ids (the `restrictIds` parameter every recall-capable engine already honours)
-  and adding its buckets to the lexical ones, recalled ids only, so nothing is counted
-  twice.
-- **The blend is plain RRF (k=60).** A site whose titles are role names wants the vector
-  rank to weigh more than one whose titles are exact product codes. A per-site weight on
-  `TurSNSiteGenAi` (vector share, 0 to 1, default 0.5 = today's order) scales each list's
-  `1/(k+rank)` term in `TurSNHybridRankingService`; `TurRagRrf.fuse` stays as it is for
-  RAG.
-- **The embedded text is fixed.** `TurSNHybridRankingService.buildContent` reads title,
-  abstract and text. A site should name the fields it embeds (title, description, a
-  `skills` field), set on the same GenAI card, defaulting to today's three. Changing them
-  needs a reindex of the `sn_<siteId>` collection, which the card should say.
-
-Done when a recalled document is counted in its facet bucket, a weight of 1.0 orders a
-page by vector rank alone, and a site naming `title` alone embeds nothing else.
 
 ## CXIX Elasticsearch skips filters and custom sorts (T1106)
 

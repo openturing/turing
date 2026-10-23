@@ -109,6 +109,13 @@ export interface TurSNSiteGenAi {
   /** T1103 — similarity floor for a recalled hit; null = server default (0.6). */
   snSemanticRecallMinScore?: number | null;
   /**
+   * T1105 — the vector share of the hybrid blend, 0 (lexical only) to 1 (vector
+   * only); null = 0.5, plain RRF. @since 2026.3.5
+   */
+  snHybridVectorWeight?: number | null;
+  /** T1105 — comma-separated fields to embed; blank = title, abstract, text. */
+  snEmbeddedFields?: string | null;
+  /**
    * T790 / §LIV.1 (Block BF) — knowledge-base mode. `VECTOR` (default) is the
    * classic embedding RAG chat; `VECTORLESS_STRUCTURED` is the catalog copilot
    * (NL→DSL over the declared field schema, no embeddings, needs only a default

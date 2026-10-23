@@ -28,7 +28,9 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Objects;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 
 import org.apache.commons.collections.CollectionUtils;
@@ -67,6 +69,7 @@ import com.viglet.turing.persistence.repository.sn.TurSNSiteRepository;
 import com.viglet.turing.persistence.repository.sn.metric.TurSNSiteMetricAccessRepository;
 import com.viglet.turing.plugins.se.TurSearchEnginePlugin;
 import com.viglet.turing.plugins.se.TurSearchEnginePluginFactory;
+import com.viglet.turing.se.facet.TurSEFacetResult;
 import com.viglet.turing.se.result.TurSEResult;
 import com.viglet.turing.se.result.TurSEResults;
 import com.viglet.turing.sn.document.TurSNDocumentResponse;
@@ -226,7 +229,8 @@ public class TurSNSearchProcess {
          * T383 / §XX.3 — when the site opted into {@code HYBRID_RRF} and the
          * request is a relevance-sorted, ungrouped keyword query, reorder the
          * lexical result page by fusing BM25 with a vector ranking via RRF.
-         * Facet counts and pagination stay BM25-derived; explicit sorts and the
+         * Pagination stays BM25-derived, and facet counts too unless semantic
+         * recall added documents (T1103/T1105); explicit sorts and the
          * match-all ({@code *}) query are left untouched. No-op (and never
          * throws) for legacy sites — fusion itself is fail-open.
          */
@@ -245,12 +249,16 @@ public class TurSNSearchProcess {
                         return;
                 }
                 List<TurSEResult> page = turSEResults.getResults();
+                AtomicReference<List<TurSEFacetResult>> recalledFacets = new AtomicReference<>();
                 List<TurSEResult> fused = hybridRankingService.fuse(snap.site(),
-                                context.getLocale(), query, page, recallFor(context, snap));
+                                context.getLocale(), query, page, recallFor(context, snap, recalledFacets));
                 // T1103 — recalled documents were not counted by the engine.
                 int recalled = fused.size() - page.size();
                 if (recalled > 0) {
                         turSEResults.setNumFound(turSEResults.getNumFound() + recalled);
+                        // T1105 — nor by its facets.
+                        turSEResults.setFacetResults(addFacetCounts(turSEResults.getFacetResults(),
+                                        recalledFacets.get()));
                 }
                 turSEResults.setResults(fused);
         }
@@ -258,23 +266,30 @@ public class TurSNSearchProcess {
         /**
          * T1103 / §CXVI — hydrates semantically recalled ids through the site's
          * engine, or {@code null} (no recall) past the first page, which must not
-         * repeat what page one recalled. An unfiltered request reads the ids
-         * directly; a filtered one runs {@link #restrictedSearch} so the request's
-         * own filters bind the recalled documents, and gets no recall at all on an
-         * engine that cannot restrict a search to ids.
+         * repeat what page one recalled. An engine that can restrict a search to ids
+         * runs {@link #restrictedSearch}, so the request's own filters bind the
+         * recalled documents and (T1105) its facet pass counts exactly them, kept in
+         * {@code facets}. Any other engine reads the ids directly on an unfiltered
+         * request, and recalls nothing under a filter it could not apply.
          */
-        private Function<List<String>, List<TurSEResult>> recallFor(
-                        TurSNSiteSearchContext context, TurSNSiteSearchSnapshot snap) {
+        private Function<List<String>, List<TurSEResult>> recallFor(TurSNSiteSearchContext context,
+                        TurSNSiteSearchSnapshot snap, AtomicReference<List<TurSEFacetResult>> facets) {
                 TurSEParameters params = context.getTurSEParameters();
                 Integer currentPage = params.getCurrentPage();
                 if (currentPage != null && currentPage > 1) {
                         return null;
                 }
                 TurSearchEnginePlugin plugin = searchEnginePluginFactory.getPlugin(snap.pluginType());
+                if (plugin.supportsIdRestriction()) {
+                        return ids -> restrictedSearch(plugin, context, ids)
+                                        .map(results -> {
+                                                facets.set(results.getFacetResults());
+                                                return results.getResults();
+                                        })
+                                        .orElse(List.of());
+                }
                 if (hasFilters(params.getTurSNFilterParams())) {
-                        return plugin.supportsIdRestriction()
-                                        ? ids -> restrictedSearch(plugin, context, ids)
-                                        : null;
+                        return null;
                 }
                 TurSNSiteLocale siteLocale = TurSNDuplicateClusteringService.resolveLocale(snap,
                                 context.getLocale());
@@ -292,10 +307,11 @@ public class TurSNSearchProcess {
          * admits. The filter params are copied, because the engine's search rules
          * write into the object they are given.
          */
-        private static List<TurSEResult> restrictedSearch(TurSearchEnginePlugin plugin,
+        private static Optional<TurSEResults> restrictedSearch(TurSearchEnginePlugin plugin,
                         TurSNSiteSearchContext context, List<String> ids) {
                 TurSEParameters original = context.getTurSEParameters();
-                TurSNFilterParams filters = original.getTurSNFilterParams();
+                TurSNFilterParams filters = Optional.ofNullable(original.getTurSNFilterParams())
+                                .orElseGet(() -> TurSNFilterParams.builder().build());
                 TurSEParameters restricted = new TurSEParameters(new TurSNSearchParams());
                 restricted.setQuery("*");
                 restricted.setTurSNFilterParams(TurSNFilterParams.builder()
@@ -311,9 +327,38 @@ public class TurSNSearchProcess {
                 restricted.setAutoCorrectionDisabled(1);
                 restricted.setRestrictIds(ids);
                 return plugin.retrieveSearchResults(new TurSNSiteSearchContext(context.getSiteName(),
-                                context.getTurSNConfig(), restricted, context.getLocale(), context.getUri()))
-                                .map(TurSEResults::getResults)
-                                .orElse(List.of());
+                                context.getTurSNConfig(), restricted, context.getLocale(), context.getUri()));
+        }
+
+        /**
+         * T1105 — the lexical facet counts plus the recall pass's, value by value.
+         * The recall pass ran over the recalled documents only, none of which the
+         * lexical search matched, so adding never counts a document twice. A facet or
+         * value only the recalled documents carry is added as it came.
+         */
+        static List<TurSEFacetResult> addFacetCounts(List<TurSEFacetResult> lexical,
+                        List<TurSEFacetResult> recalled) {
+                if (CollectionUtils.isEmpty(recalled)) {
+                        return lexical;
+                }
+                List<TurSEFacetResult> merged = new ArrayList<>(lexical == null ? List.of() : lexical);
+                for (TurSEFacetResult facet : recalled) {
+                        TurSEFacetResult target = merged.stream()
+                                        .filter(existing -> Objects.equals(existing.getFacet(), facet.getFacet()))
+                                        .findFirst()
+                                        .orElse(null);
+                        if (target == null) {
+                                merged.add(facet);
+                                continue;
+                        }
+                        facet.getTurSEFacetResultAttr().forEach((value, attr) -> target
+                                        .getTurSEFacetResultAttr()
+                                        .merge(value, attr, (mine, theirs) -> {
+                                                mine.setCount(mine.getCount() + theirs.getCount());
+                                                return mine;
+                                        }));
+                }
+                return merged;
         }
 
         private static List<String> copyOf(List<String> values) {

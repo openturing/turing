@@ -1,0 +1,32 @@
+databaseChangeLog:
+  # T1105 (Block CE) - per-site tuning of the hybrid SN ranking. The blend was plain
+  # RRF and the embedded text was always title, abstract and text, the same for a
+  # site whose titles name roles and one whose titles are product codes.
+  #
+  # snHybridVectorWeight: the vector share, 0..1 (null = 0.5, plain RRF).
+  # snEmbeddedFields: comma-separated fields to embed (null = title, abstract, text).
+  # Both nullable with no default: every existing site ranks and embeds as before.
+  #
+  # Idempotent (columnExists + MARK_RAN); portable lowercase types.
+
+  - changeSet:
+      id: v2026.3.1.131-add-sn_site_genai-hybrid-tuning
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - tableExists:
+            tableName: sn_site_genai
+        - not:
+            - columnExists:
+                tableName: sn_site_genai
+                columnName: snHybridVectorWeight
+      changes:
+        - addColumn:
+            tableName: sn_site_genai
+            columns:
+              - column:
+                  name: snHybridVectorWeight
+                  type: double
+              - column:
+                  name: snEmbeddedFields
+                  type: varchar(1024)

@@ -88,6 +88,8 @@ public class TurSNHybridRankingService {
     static final int RECALL_MAX = 10;
     /** T1103 — the similarity a vector hit must clear to be recalled when the site sets none. */
     static final double DEFAULT_RECALL_MIN_SCORE = 0.6;
+    /** T1105 — the vector share a site that sets none blends with: plain RRF. */
+    static final double DEFAULT_VECTOR_WEIGHT = 0.5;
     /** Bound the embedded text so a pathological document can't blow up an embed call. */
     private static final int MAX_EMBED_CHARS = 8_000;
     private static final String META_LOCALE = "snLocale";
@@ -176,7 +178,7 @@ public class TurSNHybridRankingService {
         if (!StringUtils.hasText(id)) {
             return;
         }
-        String content = buildContent(attributes);
+        String content = buildContent(attributes, embeddedFields(turSNSite));
         if (!StringUtils.hasText(content)) {
             return;
         }
@@ -333,7 +335,7 @@ public class TurSNHybridRankingService {
             if (vectorHits.isEmpty()) {
                 return page;
             }
-            List<Document> fused = TurRagRrf.fuse(vectorHits, bm25Hits, byId.size());
+            List<Document> fused = weightedFuse(vectorHits, bm25Hits, vectorWeight(turSNSite), byId.size());
             Map<String, Integer> fusedRank = new LinkedHashMap<>();
             Map<String, Double> rrfScore = new LinkedHashMap<>();
             rankFused(fused, fusedRank, rrfScore);
@@ -344,7 +346,8 @@ public class TurSNHybridRankingService {
             TurRagRerankStrategyType rerankStrategy = null;
             if (mode.isRerank()) {
                 rerankStrategy = globalSettingsService.getRagSnRerankStrategy();
-                List<String> rerankedOrder = rerank(rerankStrategy, query, fused, byId, finalOrder);
+                List<String> rerankedOrder = rerank(rerankStrategy, query, fused, byId, finalOrder,
+                        embeddedFields(turSNSite));
                 if (rerankedOrder != null) {
                     finalOrder = rerankedOrder;
                     rerankApplied = true;
@@ -447,7 +450,8 @@ public class TurSNHybridRankingService {
      *         {@code null} when reranking added no signal (caller keeps fused order)
      */
     private List<String> rerank(TurRagRerankStrategyType strategy, String query,
-            List<Document> fused, Map<String, TurSEResult> byId, List<String> fusedOrder) {
+            List<Document> fused, Map<String, TurSEResult> byId, List<String> fusedOrder,
+            List<String> fields) {
         // T517 — the LLM reranker rides the REASONING model lane (falls back to
         // the default LLM when the lane is unbound).
         ChatModel chatModel = strategy == TurRagRerankStrategyType.LLM
@@ -457,7 +461,7 @@ public class TurSNHybridRankingService {
         List<Document> candidates = new ArrayList<>(fused.size());
         for (Document d : fused) {
             TurSEResult result = byId.get(d.getId());
-            String text = result != null ? buildContent(result.getFields()) : d.getText();
+            String text = result != null ? buildContent(result.getFields(), fields) : d.getText();
             candidates.add(Document.builder().id(d.getId()).text(text == null ? "" : text).build());
         }
         List<Document> reranked = reranker.reorder(chatModel, query, candidates);
@@ -574,7 +578,7 @@ public class TurSNHybridRankingService {
             return List.of();
         }
         String seedId = asString(seedAttributes.get(TurSNFieldName.ID));
-        String content = buildContent(seedAttributes);
+        String content = buildContent(seedAttributes, embeddedFields(turSNSite));
         if (!StringUtils.hasText(content)) {
             return List.of();
         }
@@ -657,6 +661,21 @@ public class TurSNHybridRankingService {
      * String-valued attribute, capped at {@link #MAX_EMBED_CHARS}.
      */
     static String buildContent(Map<String, Object> attributes) {
+        return buildContent(attributes, List.of());
+    }
+
+    /**
+     * T1105 — {@link #buildContent(Map)} over the fields a site names, in its
+     * order; an empty list is the default title / abstract / text choice. Named
+     * fields are taken as they are, with no fallback: a site naming only
+     * {@code title} embeds the title and nothing else.
+     */
+    static String buildContent(Map<String, Object> attributes, List<String> fields) {
+        if (!fields.isEmpty()) {
+            StringBuilder named = new StringBuilder();
+            fields.forEach(field -> appendField(named, attributes.get(field)));
+            return cap(named.toString().trim());
+        }
         StringBuilder sb = new StringBuilder();
         appendField(sb, attributes.get(TurSNFieldName.TITLE));
         appendField(sb, attributes.get(TurSNFieldName.ABSTRACT));
@@ -668,8 +687,62 @@ public class TurSNHybridRankingService {
                 }
             });
         }
-        String content = sb.toString().trim();
+        return cap(sb.toString().trim());
+    }
+
+    private static String cap(String content) {
         return content.length() > MAX_EMBED_CHARS ? content.substring(0, MAX_EMBED_CHARS) : content;
+    }
+
+    /** T1105 — the fields the site embeds, from its comma-separated setting; empty for the default. */
+    static List<String> embeddedFields(TurSNSite turSNSite) {
+        TurSNSiteGenAi genAi = turSNSite == null ? null : turSNSite.getTurSNSiteGenAi();
+        if (genAi == null || !StringUtils.hasText(genAi.getSnEmbeddedFields())) {
+            return List.of();
+        }
+        return java.util.Arrays.stream(genAi.getSnEmbeddedFields().split(","))
+                .map(String::trim)
+                .filter(StringUtils::hasText)
+                .distinct()
+                .toList();
+    }
+
+    /** T1105 — the site's vector share of the blend, clamped to 0..1; 0.5 when unset. */
+    static double vectorWeight(TurSNSite turSNSite) {
+        TurSNSiteGenAi genAi = turSNSite == null ? null : turSNSite.getTurSNSiteGenAi();
+        Double weight = genAi == null ? null : genAi.getSnHybridVectorWeight();
+        if (weight == null || weight.isNaN()) {
+            return DEFAULT_VECTOR_WEIGHT;
+        }
+        return Math.clamp(weight, 0.0, 1.0);
+    }
+
+    /**
+     * T1105 — Reciprocal Rank Fusion with each list's {@code 1/(k+rank)} term
+     * scaled by its share: {@code 2w} for the vector list, {@code 2(1-w)} for the
+     * lexical one. At {@code w = 0.5} both factors are 1, which is plain RRF, so
+     * the default delegates to the shared {@link TurRagRrf#fuse}; the ids, scores
+     * and order are the same either way.
+     */
+    static List<Document> weightedFuse(List<Document> vectorHits, List<Document> bm25Hits, double vectorWeight,
+            int topK) {
+        if (vectorWeight == DEFAULT_VECTOR_WEIGHT) {
+            return TurRagRrf.fuse(vectorHits, bm25Hits, topK);
+        }
+        Map<String, Double> scores = new LinkedHashMap<>();
+        addRanks(scores, vectorHits, 2 * vectorWeight);
+        addRanks(scores, bm25Hits, 2 * (1 - vectorWeight));
+        return scores.entrySet().stream()
+                .sorted(Map.Entry.<String, Double>comparingByValue().reversed())
+                .limit(topK)
+                .map(e -> Document.builder().id(e.getKey()).text("").score(e.getValue()).build())
+                .toList();
+    }
+
+    private static void addRanks(Map<String, Double> scores, List<Document> hits, double factor) {
+        for (int i = 0; i < hits.size(); i++) {
+            scores.merge(hits.get(i).getId(), factor / (TurRagRrf.RRF_K + i + 1), Double::sum);
+        }
     }
 
     private static void appendField(StringBuilder sb, Object value) {

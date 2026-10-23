@@ -217,6 +217,9 @@ public class TurSNSiteAPI {
                 // T1103 / §CXVI — semantic recall (opt-in) and its similarity floor.
                 turSNSiteGenAi.setSnSemanticRecall(genAi.isSnSemanticRecall());
                 turSNSiteGenAi.setSnSemanticRecallMinScore(genAi.getSnSemanticRecallMinScore());
+                // T1105 — hybrid blend weight and the fields embedded for the site.
+                turSNSiteGenAi.setSnHybridVectorWeight(genAi.getSnHybridVectorWeight());
+                turSNSiteGenAi.setSnEmbeddedFields(genAi.getSnEmbeddedFields());
                 // T790 / §LIV.1 (Block BF) — knowledge-base mode (VECTOR default,
                 // VECTORLESS_STRUCTURED = the copilot path needing only a default LLM,
                 // HYBRID = both). Names the retrieval strategy so it is discoverable.

@@ -472,6 +472,81 @@ class TurSNSearchProcessTest {
                 verify(plugin, never()).getStoredDocumentsByIds(any(), any());
         }
 
+        // ---- T1105: recalled documents count in their facet buckets ----
+
+        private static TurSEFacetResult facet(String name, Object... valueCounts) {
+                TurSEFacetResult result = new TurSEFacetResult();
+                result.setFacet(name);
+                for (int i = 0; i < valueCounts.length; i += 2) {
+                        result.add((String) valueCounts[i],
+                                        new TurSEFacetResultAttr((String) valueCounts[i], (Integer) valueCounts[i + 1]));
+                }
+                return result;
+        }
+
+        @Test
+        void testRecalledFacetCountsAddToTheLexicalOnes() {
+                List<TurSEFacetResult> merged = TurSNSearchProcess.addFacetCounts(
+                                List.of(facet("sector", "saude", 4, "educacao", 1)),
+                                List.of(facet("sector", "educacao", 2, "domestico", 1),
+                                                facet("contract", "clt", 3)));
+
+                assertThat(merged).hasSize(2);
+                var sector = merged.get(0).getTurSEFacetResultAttr();
+                assertThat(sector.get("saude").getCount()).isEqualTo(4);
+                assertThat(sector.get("educacao").getCount()).isEqualTo(3);
+                assertThat(sector.get("domestico").getCount()).isEqualTo(1);
+                assertThat(merged.get(1).getFacet()).isEqualTo("contract");
+        }
+
+        @Test
+        void testNoRecalledFacetsLeavesTheLexicalCountsAlone() {
+                List<TurSEFacetResult> lexical = List.of(facet("sector", "saude", 4));
+
+                assertThat(TurSNSearchProcess.addFacetCounts(lexical, null)).isSameAs(lexical);
+        }
+
+        @Test
+        @SuppressWarnings("unchecked")
+        void testRecallOnAnEngineThatRestrictsCountsTheRecalledFacets() {
+                TurSearchEnginePlugin plugin = org.mockito.Mockito.mock(TurSearchEnginePlugin.class);
+                TurSNSite site = site("site-id", "site");
+                when(snapshotService.getSnapshot("site", Locale.US)).thenReturn(Optional.of(
+                                snapshot(site, Locale.US, List.of(), Map.of(),
+                                                List.of(snLocale("loc-en", Locale.US, 0)))));
+                when(searchEnginePluginFactory.getPlugin("solr")).thenReturn(plugin);
+                when(turSolrQueryBuilder.hasGroup(any())).thenReturn(false);
+                when(hybridRankingService.isEnabled(any())).thenReturn(true);
+                when(plugin.supportsIdRestriction()).thenReturn(true);
+                TurSEResults lexical = TurSEResults.builder().results(List.of()).numFound(0)
+                                .facetResults(new java.util.ArrayList<>(List.of(facet("sector", "saude", 2))))
+                                .currentPage(1).pageCount(1).limit(10).build();
+                when(plugin.retrieveSearchResults(argThat(c -> c != null
+                                && c.getTurSEParameters().getRestrictIds() == null)))
+                                .thenReturn(Optional.of(lexical));
+                when(plugin.retrieveSearchResults(argThat(c -> c != null
+                                && c.getTurSEParameters().getRestrictIds() != null)))
+                                .thenReturn(Optional.of(TurSEResults.builder()
+                                                .results(List.of(TurSEResult.builder()
+                                                                .fields(Map.of("id", "auxiliar-de-creche")).build()))
+                                                .facetResults(List.of(facet("sector", "educacao", 1)))
+                                                .build()));
+                when(hybridRankingService.fuse(any(), any(), any(), any(), any())).thenAnswer(inv -> {
+                        java.util.function.Function<List<String>, List<TurSEResult>> recall = inv
+                                        .getArgument(4);
+                        return recall.apply(List.of("auxiliar-de-creche"));
+                });
+
+                process(false).search(searchContext("trabalho com crianças", 1, List.of()));
+
+                assertThat(lexical.getFacetResults()).singleElement().satisfies(sector -> {
+                        assertThat(sector.getTurSEFacetResultAttr().get("saude").getCount()).isEqualTo(2);
+                        assertThat(sector.getTurSEFacetResultAttr().get("educacao").getCount()).isEqualTo(1);
+                });
+                assertThat(lexical.getNumFound()).isEqualTo(1);
+                verify(plugin, never()).getStoredDocumentsByIds(any(), any());
+        }
+
         @Test
         void testHybridSearchOffersNoRecallWhenTheRequestIsFilteredOnAnEngineThatCannotRestrict() {
                 List<TurSEResult> page = List.of(TurSEResult.builder().fields(Map.of("id", "A")).build());

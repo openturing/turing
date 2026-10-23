@@ -8,10 +8,6 @@
 
 ## Block CD — turing.viglet.org relevance pass (2026-10)
 
-## Block CE — Semantic retrieval for SN sites
-
-- 📋 **T1105** (deps: —) **Recalled SN documents are missing from facet counts, and the blend weight and embedded fields are fixed for every site** — A site whose titles name roles cannot weigh meaning above words, and a recalled job is on the page but not in its sector's count. → §CXVIII
-
 ## Block CG — Search-engine plugin parity (Solr, Lucene, Elasticsearch)
 
 - 📋 **T1106** (deps: —) **An Elasticsearch SN site ignores the request's fq filters and the site's custom sorts** — A site moved to Elasticsearch keeps answering, but a facet click no longer narrows results and a named sort sorts nothing. → §CXIX

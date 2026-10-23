@@ -37,10 +37,11 @@ import com.viglet.turing.persistence.model.sn.genai.TurSNRankingMode;
  * <p>Two associations ride along as transients rather than entities:
  * <ul>
  *   <li>{@code turSNSiteGenAi} — {@code TurSNHybridRankingService} reads exactly
- *       five fields off it ({@code knowledgeBaseMode}, {@code embeddingModelId},
- *       {@code snRankingMode}, and T1103's {@code snSemanticRecall} +
- *       {@code snSemanticRecallMinScore}), so those are carried and the rest is
- *       not.</li>
+ *       seven fields off it ({@code knowledgeBaseMode}, {@code embeddingModelId},
+ *       {@code snRankingMode}, T1103's {@code snSemanticRecall} +
+ *       {@code snSemanticRecallMinScore}, and T1105's
+ *       {@code snHybridVectorWeight} + {@code snEmbeddedFields}), so those are
+ *       carried and the rest is not.</li>
  *   <li>{@code turSEInstance} — reached only by
  *       {@code TurSearchEnginePluginFactory#getPluginForSite}, which resolves the
  *       vendor's {@code plugin} (falling back to its id). The snapshot already
@@ -73,6 +74,7 @@ public record TurSNSiteSearchSiteView(
         // ---- the two associations, denormalised to what is read ----
         String genAiId, TurSNKnowledgeBaseMode knowledgeBaseMode, String embeddingModelId,
         TurSNRankingMode snRankingMode, boolean snSemanticRecall, Double snSemanticRecallMinScore,
+        Double snHybridVectorWeight, String snEmbeddedFields,
         String seInstanceId, String pluginType) implements Serializable {
 
     @Serial
@@ -101,6 +103,8 @@ public record TurSNSiteSearchSiteView(
                 genAi == null ? null : genAi.getSnRankingMode(),
                 genAi != null && genAi.isSnSemanticRecall(),
                 genAi == null ? null : genAi.getSnSemanticRecallMinScore(),
+                genAi == null ? null : genAi.getSnHybridVectorWeight(),
+                genAi == null ? null : genAi.getSnEmbeddedFields(),
                 seInstance == null ? null : seInstance.getId(),
                 pluginType);
     }
@@ -161,6 +165,8 @@ public record TurSNSiteSearchSiteView(
         genAi.setSnRankingMode(snRankingMode);
         genAi.setSnSemanticRecall(snSemanticRecall);
         genAi.setSnSemanticRecallMinScore(snSemanticRecallMinScore);
+        genAi.setSnHybridVectorWeight(snHybridVectorWeight);
+        genAi.setSnEmbeddedFields(snEmbeddedFields);
         return genAi;
     }
 

@@ -170,6 +170,9 @@ export const SNSiteGenAiForm: React.FC<Props> = ({ snSite, baseRoute = ROUTES.BE
             // T1103 — semantic recall; off by default so a hybrid site ranks as before.
             snSemanticRecall: snSite.turSNSiteGenAi?.snSemanticRecall ?? false,
             snSemanticRecallMinScore: snSite.turSNSiteGenAi?.snSemanticRecallMinScore ?? null,
+            // T1105 — blank keeps plain RRF and the default embedded fields.
+            snHybridVectorWeight: snSite.turSNSiteGenAi?.snHybridVectorWeight ?? null,
+            snEmbeddedFields: snSite.turSNSiteGenAi?.snEmbeddedFields ?? "",
             // T513 — per-site domain embedding model override; null = platform default.
             embeddingModelId: snSite.turSNSiteGenAi?.embeddingModelId ?? null,
             // T472 — index-time content-fit signal; off by default so a pre-T472
@@ -1339,6 +1342,69 @@ export const SNSiteGenAiForm: React.FC<Props> = ({ snSite, baseRoute = ROUTES.BE
                                                         onChange={(e) =>
                                                             field.onChange(e.target.value === "" ? null : Number(e.target.value))
                                                         }
+                                                    />
+                                                </FormControl>
+                                            </FormItemTwoColumns.Right>
+                                        </FormItemTwoColumns>
+                                    )}
+                                />
+
+                                {/* T1105 — per-site tuning: how much the vector rank
+                                    weighs against the lexical one, and which fields
+                                    the vector collection embeds. Blank keeps plain
+                                    RRF and title / abstract / text. */}
+                                <FormField
+                                    control={form.control}
+                                    name="snHybridVectorWeight"
+                                    render={({ field }) => (
+                                        <FormItemTwoColumns>
+                                            <FormItemTwoColumns.Left>
+                                                <FormItemTwoColumns.Label>
+                                                    {t("forms.snGenai.snHybridVectorWeight")}
+                                                </FormItemTwoColumns.Label>
+                                                <FormItemTwoColumns.Description>
+                                                    {t("forms.snGenai.snHybridVectorWeightDesc")}
+                                                </FormItemTwoColumns.Description>
+                                            </FormItemTwoColumns.Left>
+                                            <FormItemTwoColumns.Right>
+                                                <FormControl>
+                                                    <Input
+                                                        type="number"
+                                                        min={0}
+                                                        max={1}
+                                                        step={0.05}
+                                                        placeholder="0.5"
+                                                        value={field.value ?? ""}
+                                                        disabled={(form.watch("snRankingMode") ?? "LEGACY") === "LEGACY"}
+                                                        onChange={(e) =>
+                                                            field.onChange(e.target.value === "" ? null : Number(e.target.value))
+                                                        }
+                                                    />
+                                                </FormControl>
+                                            </FormItemTwoColumns.Right>
+                                        </FormItemTwoColumns>
+                                    )}
+                                />
+                                <FormField
+                                    control={form.control}
+                                    name="snEmbeddedFields"
+                                    render={({ field }) => (
+                                        <FormItemTwoColumns>
+                                            <FormItemTwoColumns.Left>
+                                                <FormItemTwoColumns.Label>
+                                                    {t("forms.snGenai.snEmbeddedFields")}
+                                                </FormItemTwoColumns.Label>
+                                                <FormItemTwoColumns.Description>
+                                                    {t("forms.snGenai.snEmbeddedFieldsDesc")}
+                                                </FormItemTwoColumns.Description>
+                                            </FormItemTwoColumns.Left>
+                                            <FormItemTwoColumns.Right>
+                                                <FormControl>
+                                                    <Input
+                                                        placeholder="title, abstract, text"
+                                                        value={field.value ?? ""}
+                                                        disabled={(form.watch("snRankingMode") ?? "LEGACY") === "LEGACY"}
+                                                        onChange={field.onChange}
                                                     />
                                                 </FormControl>
                                             </FormItemTwoColumns.Right>

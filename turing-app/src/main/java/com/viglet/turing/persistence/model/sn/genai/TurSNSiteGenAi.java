@@ -204,6 +204,26 @@ public class TurSNSiteGenAi implements Serializable {
     private Double snSemanticRecallMinScore;
 
     /**
+     * T1105 — the vector share of the hybrid blend, 0 (lexical rank only) to 1
+     * (vector rank only). {@code null} is 0.5, plain RRF, the order every hybrid
+     * site had before.
+     *
+     * @since 2026.3.5
+     */
+    @Column(name = "snHybridVectorWeight")
+    private Double snHybridVectorWeight;
+
+    /**
+     * T1105 — the fields embedded for this site's vector collection, comma
+     * separated, in order. Blank embeds title, abstract and text. A change takes
+     * effect for documents indexed after it, so the collection needs a reindex.
+     *
+     * @since 2026.3.5
+     */
+    @Column(name = "snEmbeddedFields", length = 1024)
+    private String snEmbeddedFields;
+
+    /**
      * T790 / §LIV.1 (Block BF) — the site's <strong>knowledge-base mode</strong>:
      * the explicitly-named retrieval strategy that grounds its GenAI answers.
      * {@link TurSNKnowledgeBaseMode#VECTOR} (default) is the classic embedding RAG
