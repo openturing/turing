@@ -1474,3 +1474,5 @@
 
 ## Block CE — Semantic retrieval for SN sites
 
+## Block CF — What the SN site manifest cannot declare
+

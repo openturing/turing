@@ -25,6 +25,8 @@ moved — verify against `git ls-files` before acting.
 
 ## Block CE — Semantic retrieval for SN sites
 
+## Block CF — What the SN site manifest cannot declare
+
 ## Table of contents
 
 - [I. Chat-flow execution harness — binding constraints](#i-chat-flow-execution-harness--binding-constraints)
@@ -2197,3 +2199,25 @@ What Turing should do: semantic or hybrid retrieval for an SN site.
 
 Done when `trabalho com crianças` on a site holding `auxiliar de creche` returns it with
 the switch on, and the same query with the switch off ranks exactly as before.
+
+## CXVII Custom sorts in the site manifest (T1104)
+
+Met in trabalharei (TRA125, jobs closing soon), whose SN site Dumont provisions through
+the manifest (DumJobsSchema, the jobs extension). The site needs a sort "closing
+soonest": the DATE field expiresAt ascending, with documents that have no expiresAt
+last.
+
+The sort options a site offers are relevance, newest, oldest and its custom sorts
+(TurSNSiteSearchAPI.sortOptions), and a custom sort exists only through the console API
+(TurSNSiteCustomSortAPI). The manifest a connector sends has no way to declare one, so
+every environment (local, SaaS tenant) needs a hand step, and a site rebuilt from the
+manifest loses it. T1084 is the same gap for relative date buckets.
+
+What Turing should do: let the site manifest declare custom sorts (name, label, fields
+with direction, and where documents missing the field go), applied idempotently like the
+fields, and exposed in sort-options and `sort` as today. The JS SDK's manifest types
+gain the same shape, and Dumont's DumStructuredSchema can then carry it (file a D line
+when this ships).
+
+Workaround in trabalharei: none; the site ships the badge and the filter without the
+sort.

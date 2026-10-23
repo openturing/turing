@@ -12,6 +12,10 @@
 
 - 📋 **T1103** (deps: —) **SN search matches only words, so a query describing the work misses jobs titled by role** — Visitors describe what they want to do, not a title, and synonyms cover only pairs someone wrote down. → §CXVI
 
+## Block CF — What the SN site manifest cannot declare
+
+- 📋 **T1104** (deps: —) **The SN site manifest cannot declare a custom sort, so a sort a connector needs is a console step per site** — Every environment needs a hand step, and a site rebuilt from the manifest silently loses the sort. → §CXVII
+
 ## Non-goals (do NOT add as tasks)
 
 Binding constraints — see [IMPROVEMENTS.md](IMPROVEMENTS.md) §I.6 (What NOT to
