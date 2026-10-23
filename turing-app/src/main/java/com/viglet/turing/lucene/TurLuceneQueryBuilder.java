@@ -62,6 +62,7 @@ import com.viglet.turing.commons.utils.TurCommonsUtils;
 import com.viglet.turing.persistence.model.sn.TurSNSite;
 import com.viglet.turing.persistence.model.sn.field.TurSNSiteFacetFieldEnum;
 import com.viglet.turing.persistence.model.sn.sort.TurSNSiteCustomSortItem;
+import com.viglet.turing.persistence.model.sn.sort.TurSNSiteCustomSortMissingEnum;
 import com.viglet.turing.persistence.model.sn.sort.TurSNSiteCustomSortOrderEnum;
 import com.viglet.turing.persistence.model.sn.field.TurSNSiteFieldExt;
 import com.viglet.turing.persistence.model.sn.locale.TurSNSiteLocale;
@@ -419,7 +420,8 @@ public class TurLuceneQueryBuilder {
                     if (sortedItems.isEmpty()) return null;
                     org.apache.lucene.search.SortField[] fields = sortedItems.stream()
                             .map(item -> buildSortField(item.getFieldName(),
-                                    item.getSortOrder() == TurSNSiteCustomSortOrderEnum.DESC))
+                                    item.getSortOrder() == TurSNSiteCustomSortOrderEnum.DESC,
+                                    item.getMissing()))
                             .toArray(org.apache.lucene.search.SortField[]::new);
                     return new org.apache.lucene.search.Sort(fields);
                 })
@@ -427,26 +429,57 @@ public class TurLuceneQueryBuilder {
     }
 
     private org.apache.lucene.search.SortField buildSortField(String fieldName, boolean reverse) {
+        return buildSortField(fieldName, reverse, null);
+    }
+
+    private org.apache.lucene.search.SortField buildSortField(String fieldName, boolean reverse,
+            TurSNSiteCustomSortMissingEnum missing) {
         // Determine the SortField type based on the field's configured type
         List<TurSNSiteFieldExt> allFields = turSNSiteFieldExtRepository.findAll();
         for (TurSNSiteFieldExt ext : allFields) {
             if (fieldName.equals(ext.getName()) && ext.getType() != null) {
-                return switch (ext.getType()) {
-                    case INT -> new org.apache.lucene.search.SortField(fieldName,
-                            org.apache.lucene.search.SortField.Type.INT, reverse);
-                    case LONG, DATE -> new org.apache.lucene.search.SortField(fieldName,
-                            org.apache.lucene.search.SortField.Type.LONG, reverse);
-                    case FLOAT -> new org.apache.lucene.search.SortField(fieldName,
-                            org.apache.lucene.search.SortField.Type.FLOAT, reverse);
-                    case DOUBLE, CURRENCY -> new org.apache.lucene.search.SortField(fieldName,
-                            org.apache.lucene.search.SortField.Type.DOUBLE, reverse);
-                    // TEXT, STRING, ARRAY, BOOL use SortedSetDocValues (multi-value safe)
-                    default -> new org.apache.lucene.search.SortedSetSortField(fieldName, reverse);
-                };
+                return sortField(fieldName, ext.getType(), reverse, missing);
             }
         }
         // Unknown field â€” use SortedSetSortField (works with SortedSetDocValuesField from addFacetField)
-        return new org.apache.lucene.search.SortedSetSortField(fieldName, reverse);
+        return sortField(fieldName, null, reverse, missing);
+    }
+
+    /**
+     * The sort field for a field of {@code type}. T1104 — {@code missing} places
+     * documents with no value first or last. Lucene compares the missing value
+     * before applying {@code reverse}, so "last" on a descending level is the
+     * smallest value, not the largest; {@code null} keeps Lucene's own placement.
+     */
+    static org.apache.lucene.search.SortField sortField(String fieldName, TurSEFieldType type,
+            boolean reverse, TurSNSiteCustomSortMissingEnum missing) {
+        boolean naturalLast = (missing == TurSNSiteCustomSortMissingEnum.LAST) != reverse;
+        org.apache.lucene.search.SortField.Type sortType = type == null ? null : switch (type) {
+            case INT -> org.apache.lucene.search.SortField.Type.INT;
+            case LONG, DATE -> org.apache.lucene.search.SortField.Type.LONG;
+            case FLOAT -> org.apache.lucene.search.SortField.Type.FLOAT;
+            case DOUBLE, CURRENCY -> org.apache.lucene.search.SortField.Type.DOUBLE;
+            // TEXT, STRING, ARRAY, BOOL use SortedSetDocValues (multi-value safe)
+            default -> null;
+        };
+        if (sortType == null) {
+            return missing == null
+                    ? new org.apache.lucene.search.SortedSetSortField(fieldName, reverse)
+                    : new org.apache.lucene.search.SortedSetSortField(fieldName, reverse,
+                            org.apache.lucene.search.SortedSetSelector.Type.MIN,
+                            naturalLast ? org.apache.lucene.search.SortField.STRING_LAST
+                                    : org.apache.lucene.search.SortField.STRING_FIRST);
+        }
+        if (missing == null) {
+            return new org.apache.lucene.search.SortField(fieldName, sortType, reverse);
+        }
+        Object missingValue = switch (sortType) {
+            case INT -> naturalLast ? Integer.MAX_VALUE : Integer.MIN_VALUE;
+            case LONG -> naturalLast ? Long.MAX_VALUE : Long.MIN_VALUE;
+            case FLOAT -> naturalLast ? Float.POSITIVE_INFINITY : Float.NEGATIVE_INFINITY;
+            default -> naturalLast ? Double.POSITIVE_INFINITY : Double.NEGATIVE_INFINITY;
+        };
+        return new org.apache.lucene.search.SortField(fieldName, sortType, reverse, missingValue);
     }
 
     /**

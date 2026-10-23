@@ -34,26 +34,37 @@ import java.util.List;
  * @param schemaVersion  the manifest's declared version, echoed back
  * @param customFacetsChanged custom facets created or rewritten by this call
  *                       (T1084); {@code null} from a server that predates them
+ * @param customSortsChanged custom sorts created or rewritten by this call
+ *                       (T1104); {@code null} from a server that predates them
  *
  * @author Alexandre Oliveira
  * @since 2026.3.4
  */
 public record TurSNManifestResult(String siteId, String siteName, boolean siteCreated,
         List<String> fieldsCreated, List<String> fieldsSkipped, List<String> fieldsMigrated,
-        List<String> localesCreated, String schemaVersion, List<String> customFacetsChanged) {
+        List<String> localesCreated, String schemaVersion, List<String> customFacetsChanged,
+        List<String> customSortsChanged) {
 
     /** The constructor this record had before {@link #customFacetsChanged}, kept for existing callers. */
     public TurSNManifestResult(String siteId, String siteName, boolean siteCreated,
             List<String> fieldsCreated, List<String> fieldsSkipped, List<String> fieldsMigrated,
             List<String> localesCreated, String schemaVersion) {
         this(siteId, siteName, siteCreated, fieldsCreated, fieldsSkipped, fieldsMigrated, localesCreated,
-                schemaVersion, null);
+                schemaVersion, null, null);
     }
 
-    /** True when nothing changed — the site, every declared field and custom facet already matched. */
+    /** The constructor this record had before {@link #customSortsChanged}, kept for existing callers. */
+    public TurSNManifestResult(String siteId, String siteName, boolean siteCreated,
+            List<String> fieldsCreated, List<String> fieldsSkipped, List<String> fieldsMigrated,
+            List<String> localesCreated, String schemaVersion, List<String> customFacetsChanged) {
+        this(siteId, siteName, siteCreated, fieldsCreated, fieldsSkipped, fieldsMigrated, localesCreated,
+                schemaVersion, customFacetsChanged, null);
+    }
+
+    /** True when nothing changed — the site, every declared field, custom facet and custom sort already matched. */
     public boolean isNoOp() {
         return !siteCreated && isEmpty(fieldsCreated) && isEmpty(fieldsMigrated)
-                && isEmpty(localesCreated) && isEmpty(customFacetsChanged);
+                && isEmpty(localesCreated) && isEmpty(customFacetsChanged) && isEmpty(customSortsChanged);
     }
 
     private static boolean isEmpty(List<String> values) {

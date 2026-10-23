@@ -183,7 +183,11 @@
       "addLevel": "Adicionar Nível de Ordenação",
       "field": "Campo",
       "selectField": "Selecione um campo...",
-      "direction": "Direção"
+      "direction": "Direção",
+      "missing": "Valores ausentes",
+      "missingDefault": "Padrão do motor",
+      "missingFirst": "Primeiro",
+      "missingLast": "Último"
     },
     "searchRule": {
       "title": "Regras de Busca",

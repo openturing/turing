@@ -29,11 +29,12 @@ import com.viglet.core.manifest.VigletManifestResult;
 /**
  * What {@code POST /api/sn/manifest} answers (T1084): the neutral
  * {@link VigletManifestResult}, flattened into the same JSON object it always
- * was, plus the custom facets this call created or changed.
+ * was, plus the custom facets and (T1104) custom sorts this call created or
+ * changed.
  *
  * @author Alexandre Oliveira
  * @since 2026.3.4
  */
 public record TurSNManifestProvisionResult(@JsonUnwrapped VigletManifestResult result,
-        List<String> customFacetsChanged) {
+        List<String> customFacetsChanged, List<String> customSortsChanged) {
 }

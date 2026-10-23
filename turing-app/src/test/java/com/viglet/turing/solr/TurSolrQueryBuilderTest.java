@@ -1746,6 +1746,38 @@ class TurSolrQueryBuilderTest {
                                 .isEqualTo(TurSNSiteFacetFieldEnum.AND);
         }
 
+        // ---- T1104: custom sort levels with a missing placement ----
+
+        @Test
+        void customSortLevelWithMissingLastIsPrecededByAnExistsSort() {
+                var items = new java.util.HashSet<com.viglet.turing.persistence.model.sn.sort.TurSNSiteCustomSortItem>();
+                items.add(com.viglet.turing.persistence.model.sn.sort.TurSNSiteCustomSortItem.builder()
+                                .fieldName("publishedAt").position(2)
+                                .sortOrder(com.viglet.turing.persistence.model.sn.sort.TurSNSiteCustomSortOrderEnum.DESC)
+                                .build());
+                items.add(com.viglet.turing.persistence.model.sn.sort.TurSNSiteCustomSortItem.builder()
+                                .fieldName("expiresAt").position(1)
+                                .missing(com.viglet.turing.persistence.model.sn.sort.TurSNSiteCustomSortMissingEnum.LAST)
+                                .build());
+
+                assertThat(TurSolrQueryBuilder.customSortClauses(items))
+                                .extracting(c -> c.getItem() + " " + c.getOrder())
+                                .containsExactly("if(exists(expiresAt),0,1) asc", "expiresAt asc",
+                                                "publishedAt desc");
+        }
+
+        @Test
+        void customSortLevelWithMissingFirstPutsTheUndatedFirst() {
+                var items = java.util.Set.of(com.viglet.turing.persistence.model.sn.sort.TurSNSiteCustomSortItem
+                                .builder().fieldName("expiresAt").position(1)
+                                .missing(com.viglet.turing.persistence.model.sn.sort.TurSNSiteCustomSortMissingEnum.FIRST)
+                                .build());
+
+                assertThat(TurSolrQueryBuilder.customSortClauses(items))
+                                .extracting(c -> c.getItem() + " " + c.getOrder())
+                                .containsExactly("if(exists(expiresAt),1,0) asc", "expiresAt asc");
+        }
+
         // ---- T1103: semantic recall's id restriction ----
 
         @Test

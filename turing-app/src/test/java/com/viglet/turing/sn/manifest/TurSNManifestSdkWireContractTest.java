@@ -145,7 +145,7 @@ class TurSNManifestSdkWireContractTest {
     @DisplayName("T1084 - the provisioning result stays flat and carries the custom facets it changed")
     void provisionResultWithCustomFacetsBindsToTheSdk() {
         var serverResult = new TurSNManifestProvisionResult(new VigletManifestResult("s1", "Catalog", false,
-                List.of(), List.of("sku"), List.of(), List.of(), "3"), List.of("postedSince"));
+                List.of(), List.of("sku"), List.of(), List.of(), "3"), List.of("postedSince"), List.of());
 
         TurSNManifestResult sdk = MAPPER.readValue(MAPPER.writeValueAsString(serverResult),
                 TurSNManifestResult.class);
@@ -160,7 +160,7 @@ class TurSNManifestSdkWireContractTest {
     @DisplayName("T1084 - the plan stays flat and names the custom facets provisioning would change")
     void planWithCustomFacetsBindsToTheSdk() {
         var serverPlan = new TurSNManifestPlan(new VigletManifestDiff("3", true, List.of(), List.of(),
-                List.of("sku"), List.of()), List.of("postedSince"));
+                List.of("sku"), List.of()), List.of("postedSince"), List.of());
 
         TurSNManifestDiff sdk = MAPPER.readValue(MAPPER.writeValueAsString(serverPlan),
                 TurSNManifestDiff.class);
@@ -169,6 +169,50 @@ class TurSNManifestSdkWireContractTest {
         assertThat(sdk.fieldsUnchanged()).containsExactly("sku");
         assertThat(sdk.customFacetsToChange()).containsExactly("postedSince");
         assertThat(sdk.isNoOp()).isFalse();
+    }
+
+    @Test
+    @DisplayName("T1104 - a custom sort the SDK declares binds to the server's, order and missing included")
+    void customSortSurvivesTheWire() {
+        TurSNManifest manifest = TurSNManifest.builder().name("Jobs")
+                .customSort(new com.viglet.turing.client.sn.manifest.TurSNManifestCustomSort("closingSoonest",
+                        "Closing soonest", List.of(
+                                com.viglet.turing.client.sn.manifest.TurSNManifestCustomSortItem.asc("expiresAt")
+                                        .missingLast(),
+                                com.viglet.turing.client.sn.manifest.TurSNManifestCustomSortItem.desc("publishedAt"))))
+                .build();
+
+        assertThat(bind(MAPPER.writeValueAsString(manifest)).customSorts()).singleElement().satisfies(sort -> {
+            assertThat(sort.name()).isEqualTo("closingSoonest");
+            assertThat(sort.description()).isEqualTo("Closing soonest");
+            assertThat(sort.items()).extracting(TurSNManifestCustomSortItem::field)
+                    .containsExactly("expiresAt", "publishedAt");
+            assertThat(sort.items().get(0).order())
+                    .isEqualTo(com.viglet.turing.persistence.model.sn.sort.TurSNSiteCustomSortOrderEnum.ASC);
+            assertThat(sort.items().get(0).missing())
+                    .isEqualTo(com.viglet.turing.persistence.model.sn.sort.TurSNSiteCustomSortMissingEnum.LAST);
+            assertThat(sort.items().get(1).order())
+                    .isEqualTo(com.viglet.turing.persistence.model.sn.sort.TurSNSiteCustomSortOrderEnum.DESC);
+            assertThat(sort.items().get(1).missing()).isNull();
+        });
+    }
+
+    @Test
+    @DisplayName("T1104 - the result and the plan carry the custom sorts to the SDK")
+    void customSortChangesBindToTheSdk() {
+        var serverResult = new TurSNManifestProvisionResult(new VigletManifestResult("s1", "Jobs", false,
+                List.of(), List.of(), List.of(), List.of(), null), List.of(), List.of("closingSoonest"));
+        var serverPlan = new TurSNManifestPlan(new VigletManifestDiff(null, true, List.of(), List.of(),
+                List.of(), List.of()), List.of(), List.of("closingSoonest"));
+
+        TurSNManifestResult result = MAPPER.readValue(MAPPER.writeValueAsString(serverResult),
+                TurSNManifestResult.class);
+        TurSNManifestDiff plan = MAPPER.readValue(MAPPER.writeValueAsString(serverPlan), TurSNManifestDiff.class);
+
+        assertThat(result.customSortsChanged()).containsExactly("closingSoonest");
+        assertThat(result.isNoOp()).isFalse();
+        assertThat(plan.customSortsToChange()).containsExactly("closingSoonest");
+        assertThat(plan.isNoOp()).isFalse();
     }
 
     @Test

@@ -1,0 +1,28 @@
+databaseChangeLog:
+  # T1104 (Block CF) - where a custom sort level puts documents with no value in
+  # its field. "Closing soonest" sorts a DATE ascending, and the engines put a
+  # document with no date first, ahead of every job that has one.
+  #
+  # FIRST | LAST, nullable with no default: every existing level keeps the
+  # engine's own placement.
+  #
+  # Idempotent (columnExists + MARK_RAN); portable lowercase `varchar`.
+
+  - changeSet:
+      id: v2026.3.1.130-add-missing_placement-to-sn_site_custom_sort_item
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - tableExists:
+            tableName: sn_site_custom_sort_item
+        - not:
+            - columnExists:
+                tableName: sn_site_custom_sort_item
+                columnName: missing_placement
+      changes:
+        - addColumn:
+            tableName: sn_site_custom_sort_item
+            columns:
+              - column:
+                  name: missing_placement
+                  type: varchar(8)

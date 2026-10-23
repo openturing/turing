@@ -25,7 +25,7 @@ moved — verify against `git ls-files` before acting.
 
 ## Block CE — Semantic retrieval for SN sites
 
-## Block CF — What the SN site manifest cannot declare
+## Block CG — Search-engine plugin parity (Solr, Lucene, Elasticsearch)
 
 ## Table of contents
 
@@ -2177,28 +2177,6 @@ or give it what only it says (the matching docs.viglet.org pages are the source)
 /persona/ and /migrate/ from the pages and posts that discuss their subject, and re-read
 the Search Console a month after.
 
-## CXVII Custom sorts in the site manifest (T1104)
-
-Met in trabalharei (TRA125, jobs closing soon), whose SN site Dumont provisions through
-the manifest (DumJobsSchema, the jobs extension). The site needs a sort "closing
-soonest": the DATE field expiresAt ascending, with documents that have no expiresAt
-last.
-
-The sort options a site offers are relevance, newest, oldest and its custom sorts
-(TurSNSiteSearchAPI.sortOptions), and a custom sort exists only through the console API
-(TurSNSiteCustomSortAPI). The manifest a connector sends has no way to declare one, so
-every environment (local, SaaS tenant) needs a hand step, and a site rebuilt from the
-manifest loses it. T1084 is the same gap for relative date buckets.
-
-What Turing should do: let the site manifest declare custom sorts (name, label, fields
-with direction, and where documents missing the field go), applied idempotently like the
-fields, and exposed in sort-options and `sort` as today. The JS SDK's manifest types
-gain the same shape, and Dumont's DumStructuredSchema can then carry it (file a D line
-when this ships).
-
-Workaround in trabalharei: none; the site ships the badge and the filter without the
-sort.
-
 ## CXVIII Semantic recall tuning per SN site (T1105)
 
 Semantic recall (T1103) brings the vector hits the lexical first page missed onto a
@@ -2223,3 +2201,32 @@ decided without the site's say:
 
 Done when a recalled document is counted in its facet bucket, a weight of 1.0 orders a
 page by vector rank alone, and a site naming `title` alone embeds nothing else.
+
+## CXIX Elasticsearch skips filters and custom sorts (T1106)
+
+The three engines behind `TurSearchEnginePlugin` answer the same SN search request, and
+a site moves between them by changing its search-engine instance. Where one engine skips
+part of the request, the site keeps answering, only with a different result set, and
+nothing says so.
+
+Found while building semantic recall (T1103) and manifest custom sorts (T1104):
+`TurElasticsearch.retrieveElasticsearchFromSN` builds the query from `q` alone.
+
+- **Filters.** `fq`, `fqAnd`, `fqOr` and their operators never reach the query, so a facet
+  click on an Elasticsearch site changes the facet state and not the results. Solr builds
+  them in `TurSolrQueryBuilder.prepareQueryFilterQuery`, Lucene in
+  `TurLuceneQueryBuilder.addFilterQueries` (T1077 semantics: values of one field union or
+  intersect by `fqItemOperator`, fields by `fqOperator`, `fqAnd`/`fqOr` always). The
+  Elasticsearch side wants the same shape as `bool.filter` clauses, custom-facet
+  selections resolved to their range like T1083 does on Lucene.
+- **Custom sorts.** `addSorting` reads `field dir` pairs, so a custom sort name, and with
+  it `newest`/`oldest`, is passed through as if it were a field. It should resolve the
+  site's `TurSNSiteCustomSort` as the other two engines do, levels in position order, with
+  the T1104 placement as the sort's `missing` (`_first`/`_last`).
+
+Both belong in one shared conformance test that runs the same request against the three
+engines' query builders, so the next parameter added to one cannot silently skip
+another.
+
+Done when an Elasticsearch site returns the same documents as a Lucene site for a
+request carrying `fq` and a custom sort with a missing placement.

@@ -29,11 +29,12 @@ import com.viglet.core.manifest.VigletManifestDiff;
 /**
  * What {@code POST /api/sn/manifest/plan} answers (T1084): the neutral
  * {@link VigletManifestDiff}, flattened into the same JSON object it always
- * was, plus the custom facets provisioning would create or change.
+ * was, plus the custom facets and (T1104) custom sorts provisioning would create
+ * or change.
  *
  * @author Alexandre Oliveira
  * @since 2026.3.4
  */
 public record TurSNManifestPlan(@JsonUnwrapped VigletManifestDiff diff,
-        List<String> customFacetsToChange) {
+        List<String> customFacetsToChange, List<String> customSortsToChange) {
 }

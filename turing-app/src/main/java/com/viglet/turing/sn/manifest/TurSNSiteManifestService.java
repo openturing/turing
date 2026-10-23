@@ -87,6 +87,7 @@ public class TurSNSiteManifestService {
     private final TurSNManifestPlanner turSNManifestPlanner;
     private final TurSNSiteFieldExtRepository turSNSiteFieldExtRepository;
     private final TurSNManifestCustomFacetConverger turSNManifestCustomFacetConverger;
+    private final TurSNManifestCustomSortConverger turSNManifestCustomSortConverger;
     private final ApplicationEventPublisher eventPublisher;
 
     /**
@@ -113,8 +114,10 @@ public class TurSNSiteManifestService {
         VigletManifestDiff diff = plan(manifest);
         TurSNSite site = turSNSiteRepository.findByNameIgnoreCase(manifest.name()).orElse(null);
         turSNManifestCustomFacetConverger.validate(site, manifest, request.customFacetsOrEmpty());
+        turSNManifestCustomSortConverger.validate(site, manifest, request.customSortsOrEmpty());
         return new TurSNManifestPlan(diff,
-                turSNManifestCustomFacetConverger.plan(site, manifest, request.customFacetsOrEmpty()));
+                turSNManifestCustomFacetConverger.plan(site, manifest, request.customFacetsOrEmpty()),
+                turSNManifestCustomSortConverger.plan(site, request.customSortsOrEmpty()));
     }
 
     @Transactional
@@ -131,8 +134,10 @@ public class TurSNSiteManifestService {
         VigletFieldManifest manifest = requireManifest(request);
         validateFields(manifest.fields());
         List<TurSNManifestCustomFacet> customFacets = request.customFacetsOrEmpty();
-        turSNManifestCustomFacetConverger.validate(
-                turSNSiteRepository.findByNameIgnoreCase(manifest.name()).orElse(null), manifest, customFacets);
+        List<TurSNManifestCustomSort> customSorts = request.customSortsOrEmpty();
+        TurSNSite liveSite = turSNSiteRepository.findByNameIgnoreCase(manifest.name()).orElse(null);
+        turSNManifestCustomFacetConverger.validate(liveSite, manifest, customFacets);
+        turSNManifestCustomSortConverger.validate(liveSite, manifest, customSorts);
 
         List<Locale> locales = parseLocales(manifest.locales());
         List<String> localesCreated = new ArrayList<>();
@@ -170,20 +175,22 @@ public class TurSNSiteManifestService {
         applyFieldChanges(site, manifest, fieldsMigrated, fieldsCreated, fieldsSkipped);
         applySearchWeights(site, manifest);
         List<String> customFacetsChanged = turSNManifestCustomFacetConverger.converge(site, customFacets);
+        List<String> customSortsChanged = turSNManifestCustomSortConverger.converge(site, customSorts);
 
         eventPublisher.publishEvent(siteCreated
                 ? SnSiteIndexInvalidatedEvent.created(site.getId(), site.getName())
                 : SnSiteIndexInvalidatedEvent.updated(site.getId(), site.getName()));
 
         log.info("[T386] Provisioned site '{}' (created={}, schemaVersion={}): {} field(s) added, "
-                        + "{} migrated, {} skipped, {} locale(s) added, {} custom facet(s) changed",
+                        + "{} migrated, {} skipped, {} locale(s) added, {} custom facet(s) and "
+                        + "{} custom sort(s) changed",
                 site.getName(), siteCreated, manifest.schemaVersion(), fieldsCreated.size(),
                 fieldsMigrated.size(), fieldsSkipped.size(), localesCreated.size(),
-                customFacetsChanged.size());
+                customFacetsChanged.size(), customSortsChanged.size());
 
         return new TurSNManifestProvisionResult(new VigletManifestResult(site.getId(), site.getName(),
                 siteCreated, fieldsCreated, fieldsSkipped, fieldsMigrated, localesCreated,
-                manifest.schemaVersion()), customFacetsChanged);
+                manifest.schemaVersion()), customFacetsChanged, customSortsChanged);
     }
 
     private static VigletFieldManifest requireManifest(TurSNManifestRequest request) {

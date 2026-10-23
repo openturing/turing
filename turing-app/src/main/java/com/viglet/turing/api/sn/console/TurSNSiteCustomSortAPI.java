@@ -46,6 +46,7 @@ import org.springframework.web.server.ResponseStatusException;
 import com.viglet.turing.persistence.model.sn.TurSNSite;
 import com.viglet.turing.persistence.model.sn.sort.TurSNSiteCustomSort;
 import com.viglet.turing.persistence.model.sn.sort.TurSNSiteCustomSortItem;
+import com.viglet.turing.persistence.model.sn.sort.TurSNSiteCustomSortMissingEnum;
 import com.viglet.turing.persistence.model.sn.sort.TurSNSiteCustomSortOrderEnum;
 import com.viglet.turing.persistence.model.sn.field.TurSNSiteFieldExt;
 import com.viglet.turing.persistence.repository.sn.TurSNSiteRepository;
@@ -190,6 +191,7 @@ public class TurSNSiteCustomSortAPI {
         item.setSortOrder(Optional.ofNullable(dto.getSortOrder())
                 .orElse(TurSNSiteCustomSortOrderEnum.ASC));
         item.setPosition(Optional.ofNullable(dto.getPosition()).orElse(0));
+        item.setMissing(dto.getMissing());
         return item;
     }
 
@@ -205,6 +207,7 @@ public class TurSNSiteCustomSortAPI {
                     dto.setFieldName(item.getFieldName());
                     dto.setSortOrder(item.getSortOrder());
                     dto.setPosition(item.getPosition());
+                    dto.setMissing(item.getMissing());
                     return dto;
                 })
                 .toList();
@@ -230,6 +233,8 @@ public class TurSNSiteCustomSortAPI {
         private String fieldName;
         private TurSNSiteCustomSortOrderEnum sortOrder;
         private Integer position;
+        /** T1104 — where documents without the field go; null keeps the engine's placement. */
+        private TurSNSiteCustomSortMissingEnum missing;
     }
 
     @Setter

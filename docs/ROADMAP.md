@@ -12,9 +12,9 @@
 
 - 📋 **T1105** (deps: —) **Recalled SN documents are missing from facet counts, and the blend weight and embedded fields are fixed for every site** — A site whose titles name roles cannot weigh meaning above words, and a recalled job is on the page but not in its sector's count. → §CXVIII
 
-## Block CF — What the SN site manifest cannot declare
+## Block CG — Search-engine plugin parity (Solr, Lucene, Elasticsearch)
 
-- 📋 **T1104** (deps: —) **The SN site manifest cannot declare a custom sort, so a sort a connector needs is a console step per site** — Every environment needs a hand step, and a site rebuilt from the manifest silently loses the sort. → §CXVII
+- 📋 **T1106** (deps: —) **An Elasticsearch SN site ignores the request's fq filters and the site's custom sorts** — A site moved to Elasticsearch keeps answering, but a facet click no longer narrows results and a named sort sorts nothing. → §CXIX
 
 ## Non-goals (do NOT add as tasks)
 

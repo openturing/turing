@@ -33,19 +33,29 @@ import java.util.List;
  * @param customFacetsToChange custom facets provisioning would create or
  *                        rewrite (T1084); {@code null} from a server that
  *                        predates them
+ * @param customSortsToChange custom sorts provisioning would create or rewrite
+ *                        (T1104); {@code null} from a server that predates them
  *
  * @author Alexandre Oliveira
  * @since 2026.3.4
  */
 public record TurSNManifestDiff(String schemaVersion, boolean siteExists, List<String> fieldsToAdd,
         List<TurSNManifestFieldChange> breakingChanges, List<String> fieldsUnchanged,
-        List<String> localesToAdd, List<String> customFacetsToChange) {
+        List<String> localesToAdd, List<String> customFacetsToChange, List<String> customSortsToChange) {
 
     /** The constructor this record had before {@link #customFacetsToChange}, kept for existing callers. */
     public TurSNManifestDiff(String schemaVersion, boolean siteExists, List<String> fieldsToAdd,
             List<TurSNManifestFieldChange> breakingChanges, List<String> fieldsUnchanged,
             List<String> localesToAdd) {
-        this(schemaVersion, siteExists, fieldsToAdd, breakingChanges, fieldsUnchanged, localesToAdd, null);
+        this(schemaVersion, siteExists, fieldsToAdd, breakingChanges, fieldsUnchanged, localesToAdd, null, null);
+    }
+
+    /** The constructor this record had before {@link #customSortsToChange}, kept for existing callers. */
+    public TurSNManifestDiff(String schemaVersion, boolean siteExists, List<String> fieldsToAdd,
+            List<TurSNManifestFieldChange> breakingChanges, List<String> fieldsUnchanged,
+            List<String> localesToAdd, List<String> customFacetsToChange) {
+        this(schemaVersion, siteExists, fieldsToAdd, breakingChanges, fieldsUnchanged, localesToAdd,
+                customFacetsToChange, null);
     }
 
     /** Whether any breaking change exists, declared or not. */
@@ -66,7 +76,7 @@ public record TurSNManifestDiff(String schemaVersion, boolean siteExists, List<S
     /** True when applying this manifest would change nothing. */
     public boolean isNoOp() {
         return siteExists && isEmpty(fieldsToAdd) && isEmpty(localesToAdd)
-                && isEmpty(customFacetsToChange) && !hasBreakingChanges();
+                && isEmpty(customFacetsToChange) && isEmpty(customSortsToChange) && !hasBreakingChanges();
     }
 
     private static boolean isEmpty(List<String> values) {

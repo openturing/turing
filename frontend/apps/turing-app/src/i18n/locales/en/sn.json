@@ -183,7 +183,11 @@
       "addLevel": "Add Sort Level",
       "field": "Field",
       "selectField": "Select a field...",
-      "direction": "Direction"
+      "direction": "Direction",
+      "missing": "Missing values",
+      "missingDefault": "Engine default",
+      "missingFirst": "First",
+      "missingLast": "Last"
     },
     "searchRule": {
       "title": "Search Rules",

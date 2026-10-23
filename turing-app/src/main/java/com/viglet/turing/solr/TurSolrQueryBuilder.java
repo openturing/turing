@@ -77,6 +77,7 @@ import com.viglet.turing.persistence.model.sn.ranking.TurSNRankingCondition;
 import com.viglet.turing.persistence.model.sn.ranking.TurSNRankingExpression;
 import com.viglet.turing.persistence.model.sn.sort.TurSNSiteCustomSort;
 import com.viglet.turing.persistence.model.sn.sort.TurSNSiteCustomSortItem;
+import com.viglet.turing.persistence.model.sn.sort.TurSNSiteCustomSortMissingEnum;
 import com.viglet.turing.persistence.model.sn.sort.TurSNSiteCustomSortOrderEnum;
 import com.viglet.turing.persistence.repository.sn.field.TurSNSiteCustomFacetRepository;
 import com.viglet.turing.persistence.repository.sn.sort.TurSNSiteCustomSortRepository;
@@ -1062,23 +1063,35 @@ public class TurSolrQueryBuilder {
     private void applyCustomSort(TurSNSite turSNSite, SolrQuery query, String sortName) {
         turSNSiteCustomSortRepository.findByTurSNSiteAndName(turSNSite, sortName)
                 .ifPresent(customSort -> {
-                    List<TurSNSiteCustomSortItem> sortedItems = customSort.getItems().stream()
-                            .sorted(java.util.Comparator.comparing(TurSNSiteCustomSortItem::getPosition,
-                                    java.util.Comparator.nullsLast(Integer::compareTo)))
-                            .toList();
-                    if (!sortedItems.isEmpty()) {
-                        TurSNSiteCustomSortItem first = sortedItems.getFirst();
-                        query.setSort(first.getFieldName(),
-                                first.getSortOrder() == TurSNSiteCustomSortOrderEnum.DESC
-                                        ? SolrQuery.ORDER.desc : SolrQuery.ORDER.asc);
-                        for (int i = 1; i < sortedItems.size(); i++) {
-                            TurSNSiteCustomSortItem item = sortedItems.get(i);
-                            query.addSort(item.getFieldName(),
-                                    item.getSortOrder() == TurSNSiteCustomSortOrderEnum.DESC
-                                            ? SolrQuery.ORDER.desc : SolrQuery.ORDER.asc);
-                        }
+                    List<SolrQuery.SortClause> clauses = customSortClauses(customSort.getItems());
+                    if (!clauses.isEmpty()) {
+                        query.setSorts(clauses);
                     }
                 });
+    }
+
+    /**
+     * The sort clauses of a custom sort, by item position. T1104 — a level that
+     * says where documents missing its field go is preceded by
+     * {@code if(exists(field),0,1) asc} (or {@code 1,0} for first), since Solr
+     * places missing values by schema, not by request.
+     */
+    static List<SolrQuery.SortClause> customSortClauses(Set<TurSNSiteCustomSortItem> items) {
+        List<SolrQuery.SortClause> clauses = new ArrayList<>();
+        items.stream()
+                .sorted(java.util.Comparator.comparing(TurSNSiteCustomSortItem::getPosition,
+                        java.util.Comparator.nullsLast(Integer::compareTo)))
+                .forEach(item -> {
+                    if (item.getMissing() != null) {
+                        clauses.add(SolrQuery.SortClause.asc(item.getMissing() == TurSNSiteCustomSortMissingEnum.LAST
+                                ? "if(exists(%s),0,1)".formatted(item.getFieldName())
+                                : "if(exists(%s),1,0)".formatted(item.getFieldName())));
+                    }
+                    clauses.add(item.getSortOrder() == TurSNSiteCustomSortOrderEnum.DESC
+                            ? SolrQuery.SortClause.desc(item.getFieldName())
+                            : SolrQuery.SortClause.asc(item.getFieldName()));
+                });
+        return clauses;
     }
 
     private boolean hasMLT(TurSNSite turSNSite, List<TurSNSiteFieldExt> turSNSiteMLTFieldExtList) {

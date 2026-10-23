@@ -1,4 +1,4 @@
-# Next block letter: `BZ`
+# Next block letter: `CH`
 
 > **The task number is no longer kept here.** `roadkeep next-id` derives it from the
 > roadmap, the ledger and `agents.md`. Never bump a number here and then trust it over

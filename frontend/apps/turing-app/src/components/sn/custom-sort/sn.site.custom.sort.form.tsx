@@ -32,6 +32,7 @@ import {
 import type {
     TurSNSiteCustomSort,
     TurSNSiteCustomSortFieldOption,
+    TurSNSiteCustomSortMissing,
     TurSNSiteCustomSortOrder,
 } from "@/models/sn/sn-site-custom-sort.model"
 import { TurSNSiteCustomSortService } from "@/services/sn/sn.site.custom.sort.service"
@@ -99,6 +100,15 @@ export const SNSiteCustomSortForm: React.FC<Props> = ({ snSiteId, value, isNew, 
     function updateItemOrder(index: number, sortOrder: TurSNSiteCustomSortOrder) {
         const current = form.getValues(`items.${index}`);
         update(index, { ...current, sortOrder });
+    }
+
+    // T1104 — "DEFAULT" stands for no placement: a Select item cannot carry an empty value.
+    function updateItemMissing(index: number, value: string) {
+        const current = form.getValues(`items.${index}`);
+        update(index, {
+            ...current,
+            missing: value === "DEFAULT" ? null : (value as TurSNSiteCustomSortMissing),
+        });
     }
 
     function moveItem(index: number, direction: -1 | 1) {
@@ -220,6 +230,7 @@ export const SNSiteCustomSortForm: React.FC<Props> = ({ snSiteId, value, isNew, 
                                         <TableHead className="w-12">#</TableHead>
                                         <TableHead>{t("sn.customSort.field")}</TableHead>
                                         <TableHead className="w-32">{t("sn.customSort.direction")}</TableHead>
+                                        <TableHead className="w-40">{t("sn.customSort.missing")}</TableHead>
                                         <TableHead className="w-32 text-right">{t("forms.common.actions")}</TableHead>
                                     </TableRow>
                                 </TableHeader>
@@ -227,6 +238,7 @@ export const SNSiteCustomSortForm: React.FC<Props> = ({ snSiteId, value, isNew, 
                                     {fields.map((field, index) => {
                                         const watchedFieldName = form.watch(`items.${index}.fieldName`);
                                         const watchedSortOrder = form.watch(`items.${index}.sortOrder`);
+                                        const watchedMissing = form.watch(`items.${index}.missing`);
                                         // If saved fieldName is not in fieldOptions, include it so Select can display it
                                         const fieldNameInOptions = !watchedFieldName || fieldOptions.some((o) => o.name === watchedFieldName);
                                         return (
@@ -265,6 +277,21 @@ export const SNSiteCustomSortForm: React.FC<Props> = ({ snSiteId, value, isNew, 
                                                     <SelectContent>
                                                         <SelectItem value="ASC">ASC</SelectItem>
                                                         <SelectItem value="DESC">DESC</SelectItem>
+                                                    </SelectContent>
+                                                </Select>
+                                            </TableCell>
+                                            <TableCell>
+                                                <Select
+                                                    value={watchedMissing || "DEFAULT"}
+                                                    onValueChange={(val) => updateItemMissing(index, val)}
+                                                >
+                                                    <SelectTrigger aria-label={t("sn.customSort.missing")}>
+                                                        <SelectValue />
+                                                    </SelectTrigger>
+                                                    <SelectContent>
+                                                        <SelectItem value="DEFAULT">{t("sn.customSort.missingDefault")}</SelectItem>
+                                                        <SelectItem value="FIRST">{t("sn.customSort.missingFirst")}</SelectItem>
+                                                        <SelectItem value="LAST">{t("sn.customSort.missingLast")}</SelectItem>
                                                     </SelectContent>
                                                 </Select>
                                             </TableCell>

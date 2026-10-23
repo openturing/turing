@@ -30,21 +30,26 @@ import com.viglet.core.manifest.VigletFieldSpec;
 /**
  * What {@code POST /api/sn/manifest} binds (T1084): the neutral
  * {@link VigletFieldManifest}, component for component, plus the Turing-only
- * {@code customFacets}. A manifest without custom facets is the same JSON it
- * always was.
+ * {@code customFacets} and (T1104) {@code customSorts}. A manifest without
+ * either is the same JSON it always was.
  *
  * @author Alexandre Oliveira
  * @since 2026.3.4
  */
 public record TurSNManifestRequest(String name, String description, String seInstanceId,
         String schemaVersion, List<String> locales, List<VigletFieldSpec> fields,
-        List<VigletFieldMigration> migrations, List<TurSNManifestCustomFacet> customFacets) {
+        List<VigletFieldMigration> migrations, List<TurSNManifestCustomFacet> customFacets,
+        List<TurSNManifestCustomSort> customSorts) {
 
-    /** The request with no custom facets, for callers that hold a neutral manifest. */
+    /** The request with no custom facets or sorts, for callers that hold a neutral manifest. */
     public static TurSNManifestRequest of(VigletFieldManifest manifest) {
         return new TurSNManifestRequest(manifest.name(), manifest.description(),
                 manifest.seInstanceId(), manifest.schemaVersion(), manifest.locales(),
-                manifest.fields(), manifest.migrations(), null);
+                manifest.fields(), manifest.migrations(), null, null);
+    }
+
+    public List<TurSNManifestCustomSort> customSortsOrEmpty() {
+        return customSorts == null ? List.of() : customSorts;
     }
 
     public VigletFieldManifest toManifest() {

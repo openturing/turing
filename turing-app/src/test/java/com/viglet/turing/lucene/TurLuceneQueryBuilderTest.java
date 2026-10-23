@@ -623,6 +623,70 @@ class TurLuceneQueryBuilderTest {
                 recallPass(List.of(), List.of("baba")), JOBS));
     }
 
+    // ---- custom sort levels: where documents missing the field go (T1104) ----
+
+    /** Ids in the order the sort returns them, over jobs with and without an expiresAt. */
+    private static List<String> sortedIds(org.apache.lucene.search.SortField sortField) throws Exception {
+        org.apache.lucene.store.Directory directory = new org.apache.lucene.store.ByteBuffersDirectory();
+        try (org.apache.lucene.index.IndexWriter writer = new org.apache.lucene.index.IndexWriter(directory,
+                new org.apache.lucene.index.IndexWriterConfig(
+                        new org.apache.lucene.analysis.standard.StandardAnalyzer()))) {
+            String[][] jobs = { { "late", "2026-11-30" }, { "open-ended", null }, { "soon", "2026-10-30" } };
+            for (String[] job : jobs) {
+                org.apache.lucene.document.Document doc = new org.apache.lucene.document.Document();
+                doc.add(new org.apache.lucene.document.StringField("id", job[0],
+                        org.apache.lucene.document.Field.Store.YES));
+                if (job[1] != null) {
+                    doc.add(new org.apache.lucene.document.NumericDocValuesField("expiresAt",
+                            java.time.LocalDate.parse(job[1]).atStartOfDay(java.time.ZoneOffset.UTC)
+                                    .toInstant().toEpochMilli()));
+                }
+                writer.addDocument(doc);
+            }
+            writer.commit();
+            try (org.apache.lucene.index.DirectoryReader reader =
+                    org.apache.lucene.index.DirectoryReader.open(writer)) {
+                org.apache.lucene.search.IndexSearcher searcher = new org.apache.lucene.search.IndexSearcher(reader);
+                List<String> ids = new java.util.ArrayList<>();
+                for (org.apache.lucene.search.ScoreDoc hit : searcher.search(
+                        org.apache.lucene.search.MatchAllDocsQuery.INSTANCE, 10,
+                        new org.apache.lucene.search.Sort(sortField)).scoreDocs) {
+                    ids.add(searcher.storedFields().document(hit.doc).get("id"));
+                }
+                return ids;
+            }
+        }
+    }
+
+    @Test
+    void closingSoonestPutsJobsWithoutADateLast() throws Exception {
+        assertEquals(List.of("soon", "late", "open-ended"), sortedIds(TurLuceneQueryBuilder.sortField(
+                "expiresAt", com.viglet.turing.commons.se.field.TurSEFieldType.DATE, false,
+                com.viglet.turing.persistence.model.sn.sort.TurSNSiteCustomSortMissingEnum.LAST)));
+    }
+
+    @Test
+    void missingLastStaysLastOnADescendingLevel() throws Exception {
+        assertEquals(List.of("late", "soon", "open-ended"), sortedIds(TurLuceneQueryBuilder.sortField(
+                "expiresAt", com.viglet.turing.commons.se.field.TurSEFieldType.DATE, true,
+                com.viglet.turing.persistence.model.sn.sort.TurSNSiteCustomSortMissingEnum.LAST)));
+    }
+
+    @Test
+    void missingFirstPutsJobsWithoutADateFirst() throws Exception {
+        assertEquals(List.of("open-ended", "soon", "late"), sortedIds(TurLuceneQueryBuilder.sortField(
+                "expiresAt", com.viglet.turing.commons.se.field.TurSEFieldType.DATE, false,
+                com.viglet.turing.persistence.model.sn.sort.TurSNSiteCustomSortMissingEnum.FIRST)));
+    }
+
+    @Test
+    void aLevelWithoutPlacementKeepsLuceneDefault() {
+        org.apache.lucene.search.SortField field = TurLuceneQueryBuilder.sortField("expiresAt",
+                com.viglet.turing.commons.se.field.TurSEFieldType.DATE, false, null);
+
+        assertNull(field.getMissingValue());
+    }
+
     private TurSEParameters createParamsWithFilters(String query, List<String> filters) {
         TurSNSearchParams searchParams = new TurSNSearchParams();
         searchParams.setQ(query);

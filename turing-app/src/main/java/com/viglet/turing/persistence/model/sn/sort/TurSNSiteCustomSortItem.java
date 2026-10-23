@@ -79,6 +79,16 @@ public class TurSNSiteCustomSortItem implements Serializable {
     @Column(name = "position", nullable = false)
     private Integer position;
 
+    /**
+     * T1104 — where documents with no value in {@link #fieldName} go;
+     * {@code null} keeps the engine's own placement.
+     *
+     * @since 2026.3.5
+     */
+    @Enumerated(EnumType.STRING)
+    @Column(name = "missing_placement", length = 8)
+    private TurSNSiteCustomSortMissingEnum missing;
+
     @ManyToOne
     @JoinColumn(name = "custom_sort_id", nullable = false)
     private TurSNSiteCustomSort turSNSiteCustomSort;

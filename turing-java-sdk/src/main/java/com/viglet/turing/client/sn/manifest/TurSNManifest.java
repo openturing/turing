@@ -51,18 +51,28 @@ import com.viglet.turing.client.sn.job.TurSNJobAttributeSpec;
  *                      means none are, so a breaking change is rejected
  * @param customFacets  custom facets to converge (T1084); {@code null} leaves
  *                      the site's custom facets as they are
+ * @param customSorts   custom sorts to converge (T1104); {@code null} leaves
+ *                      the site's custom sorts as they are
  *
  * @author Alexandre Oliveira
  * @since 2026.3.4
  */
 public record TurSNManifest(String name, String description, String seInstanceId,
         String schemaVersion, List<String> locales, List<TurSNJobAttributeSpec> fields,
-        List<TurSNManifestMigration> migrations, List<TurSNManifestCustomFacet> customFacets) {
+        List<TurSNManifestMigration> migrations, List<TurSNManifestCustomFacet> customFacets,
+        List<TurSNManifestCustomSort> customSorts) {
 
     /** The constructor this record had before {@link #customFacets}, kept for existing callers. */
     public TurSNManifest(String name, String description, String seInstanceId, String schemaVersion,
             List<String> locales, List<TurSNJobAttributeSpec> fields, List<TurSNManifestMigration> migrations) {
-        this(name, description, seInstanceId, schemaVersion, locales, fields, migrations, null);
+        this(name, description, seInstanceId, schemaVersion, locales, fields, migrations, null, null);
+    }
+
+    /** The constructor this record had before {@link #customSorts}, kept for existing callers. */
+    public TurSNManifest(String name, String description, String seInstanceId, String schemaVersion,
+            List<String> locales, List<TurSNJobAttributeSpec> fields, List<TurSNManifestMigration> migrations,
+            List<TurSNManifestCustomFacet> customFacets) {
+        this(name, description, seInstanceId, schemaVersion, locales, fields, migrations, customFacets, null);
     }
 
     public static Builder builder() {
@@ -99,6 +109,7 @@ public record TurSNManifest(String name, String description, String seInstanceId
         private final List<TurSNJobAttributeSpec> fields = new ArrayList<>();
         private final List<TurSNManifestMigration> migrations = new ArrayList<>();
         private final List<TurSNManifestCustomFacet> customFacets = new ArrayList<>();
+        private final List<TurSNManifestCustomSort> customSorts = new ArrayList<>();
 
         public Builder name(String name) {
             this.name = name;
@@ -169,15 +180,24 @@ public record TurSNManifest(String name, String description, String seInstanceId
             return this;
         }
 
+        /** Declares one custom sort (T1104), such as a date ascending with missing dates last. */
+        public Builder customSort(TurSNManifestCustomSort customSort) {
+            if (customSort != null) {
+                this.customSorts.add(customSort);
+            }
+            return this;
+        }
+
         public TurSNManifest build() {
             // An empty migrations list and a null one mean the same thing to the
             // server ("nothing is authorised"); null keeps the payload honest
             // about a manifest that declares no migration at all. The same goes
-            // for custom facets: none declared is none sent.
+            // for custom facets and sorts: none declared is none sent.
             return new TurSNManifest(name, description, seInstanceId, schemaVersion,
                     List.copyOf(locales), List.copyOf(fields),
                     migrations.isEmpty() ? null : List.copyOf(migrations),
-                    customFacets.isEmpty() ? null : List.copyOf(customFacets));
+                    customFacets.isEmpty() ? null : List.copyOf(customFacets),
+                    customSorts.isEmpty() ? null : List.copyOf(customSorts));
         }
     }
 }

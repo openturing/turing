@@ -65,6 +65,8 @@ class TurSNSiteManifestServiceTest {
     @Mock
     private TurSNManifestCustomFacetConverger turSNManifestCustomFacetConverger;
     @Mock
+    private TurSNManifestCustomSortConverger turSNManifestCustomSortConverger;
+    @Mock
     private ApplicationEventPublisher eventPublisher;
     @InjectMocks
     private TurSNSiteManifestService service;
@@ -282,12 +284,60 @@ class TurSNSiteManifestServiceTest {
                         "NOW-7DAYS", null)));
     }
 
+    private static TurSNManifestCustomSort closingSoonest() {
+        return new TurSNManifestCustomSort("closingSoonest", "Closing soonest", List.of(
+                new TurSNManifestCustomSortItem("expiresAt",
+                        com.viglet.turing.persistence.model.sn.sort.TurSNSiteCustomSortOrderEnum.ASC,
+                        com.viglet.turing.persistence.model.sn.sort.TurSNSiteCustomSortMissingEnum.LAST)));
+    }
+
+    @Test
+    void provisionRequestConvergesCustomSortsAfterTheFields() {
+        TurSNSite existing = new TurSNSite();
+        existing.setName("jobs");
+        TurSNManifestRequest request = new TurSNManifestRequest("jobs", null, null, null, null,
+                List.of(field("expiresAt")), null, null, List.of(closingSoonest()));
+        VigletFieldManifest manifest = request.toManifest();
+
+        when(turSNSiteRepository.findByNameIgnoreCase("jobs")).thenReturn(Optional.of(existing));
+        when(turSNSiteRepository.findByIdWithGenAi(any())).thenReturn(Optional.of(existing));
+        when(turSNManifestPlanner.diff(manifest, existing)).thenReturn(cleanDiff());
+        when(turSNFieldProvisioner.ensureField(eq(existing), named("expiresAt"))).thenReturn(true);
+        when(turSNManifestCustomSortConverger.converge(existing, request.customSorts()))
+                .thenReturn(List.of("closingSoonest"));
+
+        TurSNManifestProvisionResult result = service.provisionRequest(request);
+
+        assertEquals(List.of("closingSoonest"), result.customSortsChanged());
+        var order = inOrder(turSNManifestCustomSortConverger, turSNFieldProvisioner);
+        order.verify(turSNManifestCustomSortConverger).validate(existing, manifest, request.customSorts());
+        order.verify(turSNFieldProvisioner).ensureField(eq(existing), named("expiresAt"));
+        order.verify(turSNManifestCustomSortConverger).converge(existing, request.customSorts());
+    }
+
+    @Test
+    void planRequestNamesTheCustomSortsToChange() {
+        TurSNManifestRequest request = new TurSNManifestRequest("jobs", null, "se1", null, null,
+                List.of(field("expiresAt")), null, null, List.of(closingSoonest()));
+        VigletFieldManifest manifest = request.toManifest();
+        when(turSNManifestPlanner.diff(manifest)).thenReturn(new VigletManifestDiff(null, false,
+                List.of("expiresAt"), List.of(), List.of(), List.of()));
+        when(turSNSiteRepository.findByNameIgnoreCase("jobs")).thenReturn(Optional.empty());
+        when(turSNManifestCustomSortConverger.plan(null, request.customSorts()))
+                .thenReturn(List.of("closingSoonest"));
+
+        TurSNManifestPlan plan = service.planRequest(request);
+
+        assertEquals(List.of("closingSoonest"), plan.customSortsToChange());
+        verify(turSNManifestCustomSortConverger, never()).converge(any(), any());
+    }
+
     @Test
     void provisionRequestConvergesCustomFacetsAfterTheFields() {
         TurSNSite existing = new TurSNSite();
         existing.setName("jobs");
         TurSNManifestRequest request = new TurSNManifestRequest("jobs", null, null, null, null,
-                List.of(field("publishedAt")), null, List.of(postedSince()));
+                List.of(field("publishedAt")), null, List.of(postedSince()), null);
         VigletFieldManifest manifest = request.toManifest();
 
         when(turSNSiteRepository.findByNameIgnoreCase("jobs")).thenReturn(Optional.of(existing));
@@ -310,7 +360,7 @@ class TurSNSiteManifestServiceTest {
     @Test
     void provisionRequestRefusesAnInvalidCustomFacetBeforeTouchingTheSite() {
         TurSNManifestRequest request = new TurSNManifestRequest("jobs", null, null, null, null,
-                List.of(field("publishedAt")), null, List.of(postedSince()));
+                List.of(field("publishedAt")), null, List.of(postedSince()), null);
         when(turSNSiteRepository.findByNameIgnoreCase("jobs")).thenReturn(Optional.empty());
         doThrow(new IllegalArgumentException("bad bucket"))
                 .when(turSNManifestCustomFacetConverger).validate(any(), any(), any());
@@ -323,7 +373,7 @@ class TurSNSiteManifestServiceTest {
     @Test
     void planRequestNamesTheCustomFacetsToChange() {
         TurSNManifestRequest request = new TurSNManifestRequest("jobs", null, "se1", null, null,
-                List.of(field("publishedAt")), null, List.of(postedSince()));
+                List.of(field("publishedAt")), null, List.of(postedSince()), null);
         VigletFieldManifest manifest = request.toManifest();
         VigletManifestDiff diff = new VigletManifestDiff(null, false, List.of("publishedAt"), List.of(),
                 List.of(), List.of());
