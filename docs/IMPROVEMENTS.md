@@ -23,6 +23,8 @@ moved — verify against `git ls-files` before acting.
 
 ## Block CD — turing.viglet.org relevance pass (2026-10)
 
+## Block CE — Semantic retrieval for SN sites
+
 ## Table of contents
 
 - [I. Chat-flow execution harness — binding constraints](#i-chat-flow-execution-harness--binding-constraints)
@@ -2172,3 +2174,26 @@ but nothing outside the site links to them. Merge each /features/ page into a de
 or give it what only it says (the matching docs.viglet.org pages are the source), link
 /persona/ and /migrate/ from the pages and posts that discuss their subject, and re-read
 the Search Console a month after.
+
+## CXVI Hybrid semantic retrieval for SN sites (T1103)
+
+Met in trabalharei (job search on an SN site, its TRA115), through the SN search API
+(`postStructuredSearch` of `@viglet/turing-sdk`, `q` free text).
+
+A visitor searches `trabalho com crianças`. The site's jobs are titled `auxiliar de
+creche`, `babá`, `monitor escolar`. The lexical match finds none of them, because the
+query describes the work and the titles name the role. Synonyms help only for pairs
+someone wrote down; the project keeps occupation aliases in its synonyms as a stopgap. A
+consuming project may not build its own embedding index: retrieval belongs to Turing.
+
+What Turing should do: semantic or hybrid retrieval for an SN site.
+
+- An embedding field computed at index time from configured fields (title, description),
+  with the embedding provider the instance already has.
+- Query-time blending of vector similarity with lexical scoring, the weight set per site.
+- A per-site switch, off by default, so existing sites rank as today.
+- Facets, filters (`fq`) and sorts keep working on the blended result set.
+- Fail open: no embedding provider, or a provider error, falls back to lexical.
+
+Done when `trabalho com crianças` on a site holding `auxiliar de creche` returns it with
+the switch on, and the same query with the switch off ranks exactly as before.

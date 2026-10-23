@@ -8,6 +8,10 @@
 
 ## Block CD — turing.viglet.org relevance pass (2026-10)
 
+## Block CE — Semantic retrieval for SN sites
+
+- 📋 **T1103** (deps: —) **SN search matches only words, so a query describing the work misses jobs titled by role** — Visitors describe what they want to do, not a title, and synonyms cover only pairs someone wrote down. → §CXVI
+
 ## Non-goals (do NOT add as tasks)
 
 Binding constraints — see [IMPROVEMENTS.md](IMPROVEMENTS.md) §I.6 (What NOT to
