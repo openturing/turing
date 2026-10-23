@@ -74,13 +74,20 @@ class TurElasticsearchTest {
     private com.viglet.turing.persistence.repository.sn.field.TurSNSiteFieldExtRepository turSNSiteFieldExtRepository;
 
     @Mock
+    private com.viglet.turing.persistence.repository.sn.sort.TurSNSiteCustomSortRepository turSNSiteCustomSortRepository;
+
+    @Mock
+    private com.viglet.turing.lucene.TurLuceneCustomFacets customFacets;
+
+    @Mock
     private ElasticsearchClient elasticsearchClient;
 
     @Test
     void testRetrieveElasticsearchFromSNReturnsEmptyWhenSiteMissing() throws Exception {
         when(turSNSiteRepository.findByNameIgnoreCase(anyString())).thenReturn(Optional.empty());
 
-        TurElasticsearch service = new TurElasticsearch(turSNSiteRepository, turSNSiteFieldExtRepository);
+        TurElasticsearch service = new TurElasticsearch(turSNSiteRepository, turSNSiteFieldExtRepository,
+                turSNSiteCustomSortRepository, customFacets);
         TurSNSearchParams searchParams = new TurSNSearchParams();
         TurSNSiteSearchContext context = new TurSNSiteSearchContext("site", new TurSNConfig(),
                 new TurSEParameters(searchParams), Locale.US, URI.create("http://example.com"));
@@ -100,7 +107,8 @@ class TurElasticsearchTest {
         when(elasticsearchClient.search(any(SearchRequest.class), any(Type.class)))
                 .thenThrow(new IOException("boom"));
 
-        TurElasticsearch service = new TurElasticsearch(turSNSiteRepository, turSNSiteFieldExtRepository);
+        TurElasticsearch service = new TurElasticsearch(turSNSiteRepository, turSNSiteFieldExtRepository,
+                turSNSiteCustomSortRepository, customFacets);
         TurSNSearchParams searchParams = new TurSNSearchParams();
         searchParams.setQ("test");
         TurSEParameters params = new TurSEParameters(searchParams);
@@ -118,7 +126,8 @@ class TurElasticsearchTest {
     void testRetrieveFacetElasticsearchFromSNReturnsEmptyWhenSiteMissing() throws Exception {
         when(turSNSiteRepository.findByNameIgnoreCase(anyString())).thenReturn(Optional.empty());
 
-        TurElasticsearch service = new TurElasticsearch(turSNSiteRepository, turSNSiteFieldExtRepository);
+        TurElasticsearch service = new TurElasticsearch(turSNSiteRepository, turSNSiteFieldExtRepository,
+                turSNSiteCustomSortRepository, customFacets);
         TurSNSearchParams searchParams = new TurSNSearchParams();
         searchParams.setQ("test");
         TurSNSiteSearchContext context = new TurSNSiteSearchContext("site", new TurSNConfig(),
@@ -140,7 +149,8 @@ class TurElasticsearchTest {
         when(elasticsearchClient.search(any(SearchRequest.class), any(Type.class)))
                 .thenThrow(new IOException("facet io error"));
 
-        TurElasticsearch service = new TurElasticsearch(turSNSiteRepository, turSNSiteFieldExtRepository);
+        TurElasticsearch service = new TurElasticsearch(turSNSiteRepository, turSNSiteFieldExtRepository,
+                turSNSiteCustomSortRepository, customFacets);
         TurSNSearchParams searchParams = new TurSNSearchParams();
         searchParams.setQ("test");
         TurSNSiteSearchContext context = new TurSNSiteSearchContext("site", new TurSNConfig(),
@@ -154,7 +164,8 @@ class TurElasticsearchTest {
 
     @Test
     void testIndexingSkipsDocumentWithNoId() throws Exception {
-        TurElasticsearch service = new TurElasticsearch(turSNSiteRepository, turSNSiteFieldExtRepository);
+        TurElasticsearch service = new TurElasticsearch(turSNSiteRepository, turSNSiteFieldExtRepository,
+                turSNSiteCustomSortRepository, customFacets);
         TurSNSite site = new TurSNSite();
         site.setName("testSite");
         TurElasticsearchInstance instance = new TurElasticsearchInstance(elasticsearchClient,
@@ -170,7 +181,8 @@ class TurElasticsearchTest {
 
     @Test
     void testIndexingHandlesIOException() throws Exception {
-        TurElasticsearch service = new TurElasticsearch(turSNSiteRepository, turSNSiteFieldExtRepository);
+        TurElasticsearch service = new TurElasticsearch(turSNSiteRepository, turSNSiteFieldExtRepository,
+                turSNSiteCustomSortRepository, customFacets);
         TurSNSite site = new TurSNSite();
         site.setName("testSite");
 
@@ -186,7 +198,8 @@ class TurElasticsearchTest {
 
     @Test
     void testGetDocumentTotalReturnsCountOnSuccess() throws Exception {
-        TurElasticsearch service = new TurElasticsearch(turSNSiteRepository, turSNSiteFieldExtRepository);
+        TurElasticsearch service = new TurElasticsearch(turSNSiteRepository, turSNSiteFieldExtRepository,
+                turSNSiteCustomSortRepository, customFacets);
 
         CountResponse countResponse = org.mockito.Mockito.mock(CountResponse.class);
         when(countResponse.count()).thenReturn(42L);
@@ -200,7 +213,8 @@ class TurElasticsearchTest {
 
     @Test
     void testGetDocumentTotalReturnsZeroOnIOException() throws Exception {
-        TurElasticsearch service = new TurElasticsearch(turSNSiteRepository, turSNSiteFieldExtRepository);
+        TurElasticsearch service = new TurElasticsearch(turSNSiteRepository, turSNSiteFieldExtRepository,
+                turSNSiteCustomSortRepository, customFacets);
 
         when(elasticsearchClient.count(any(java.util.function.Function.class)))
                 .thenThrow(new IOException("count failed"));
@@ -213,7 +227,8 @@ class TurElasticsearchTest {
 
     @Test
     void testDeIndexingHandlesIOException() throws Exception {
-        TurElasticsearch service = new TurElasticsearch(turSNSiteRepository, turSNSiteFieldExtRepository);
+        TurElasticsearch service = new TurElasticsearch(turSNSiteRepository, turSNSiteFieldExtRepository,
+                turSNSiteCustomSortRepository, customFacets);
 
         when(elasticsearchClient.delete(any(java.util.function.Function.class)))
                 .thenThrow(new IOException("delete failed"));
@@ -227,7 +242,8 @@ class TurElasticsearchTest {
 
     @Test
     void testDeIndexingCallsDelete() throws Exception {
-        TurElasticsearch service = new TurElasticsearch(turSNSiteRepository, turSNSiteFieldExtRepository);
+        TurElasticsearch service = new TurElasticsearch(turSNSiteRepository, turSNSiteFieldExtRepository,
+                turSNSiteCustomSortRepository, customFacets);
 
         DeleteResponse deleteResponse = org.mockito.Mockito.mock(DeleteResponse.class);
         when(elasticsearchClient.delete(any(java.util.function.Function.class)))
@@ -243,7 +259,8 @@ class TurElasticsearchTest {
 
     @Test
     void testDeIndexingByTypeHandlesIOException() throws Exception {
-        TurElasticsearch service = new TurElasticsearch(turSNSiteRepository, turSNSiteFieldExtRepository);
+        TurElasticsearch service = new TurElasticsearch(turSNSiteRepository, turSNSiteFieldExtRepository,
+                turSNSiteCustomSortRepository, customFacets);
 
         when(elasticsearchClient.deleteByQuery(any(DeleteByQueryRequest.class)))
                 .thenThrow(new IOException("delete by query failed"));
@@ -257,7 +274,8 @@ class TurElasticsearchTest {
 
     @Test
     void testDeIndexingByTypeCallsDeleteByQuery() throws Exception {
-        TurElasticsearch service = new TurElasticsearch(turSNSiteRepository, turSNSiteFieldExtRepository);
+        TurElasticsearch service = new TurElasticsearch(turSNSiteRepository, turSNSiteFieldExtRepository,
+                turSNSiteCustomSortRepository, customFacets);
 
         DeleteByQueryResponse response = org.mockito.Mockito.mock(DeleteByQueryResponse.class);
         when(elasticsearchClient.deleteByQuery(any(DeleteByQueryRequest.class)))
@@ -273,7 +291,8 @@ class TurElasticsearchTest {
 
     @Test
     void testIndexingSuccessWithValidId() throws Exception {
-        TurElasticsearch service = new TurElasticsearch(turSNSiteRepository, turSNSiteFieldExtRepository);
+        TurElasticsearch service = new TurElasticsearch(turSNSiteRepository, turSNSiteFieldExtRepository,
+                turSNSiteCustomSortRepository, customFacets);
         TurSNSite site = new TurSNSite();
         site.setName("testSite");
 
@@ -291,7 +310,8 @@ class TurElasticsearchTest {
 
     @Test
     void testIndexingHandlesElasticsearchException() throws Exception {
-        TurElasticsearch service = new TurElasticsearch(turSNSiteRepository, turSNSiteFieldExtRepository);
+        TurElasticsearch service = new TurElasticsearch(turSNSiteRepository, turSNSiteFieldExtRepository,
+                turSNSiteCustomSortRepository, customFacets);
         TurSNSite site = new TurSNSite();
         site.setName("testSite");
 
@@ -311,7 +331,8 @@ class TurElasticsearchTest {
 
     @Test
     void testGetDocumentTotalHandlesIndexNotFoundException() throws Exception {
-        TurElasticsearch service = new TurElasticsearch(turSNSiteRepository, turSNSiteFieldExtRepository);
+        TurElasticsearch service = new TurElasticsearch(turSNSiteRepository, turSNSiteFieldExtRepository,
+                turSNSiteCustomSortRepository, customFacets);
 
         ErrorResponse errorResponse = ErrorResponse.of(e -> e
                 .error(err -> err.type("index_not_found_exception").reason("no such index"))
@@ -328,7 +349,8 @@ class TurElasticsearchTest {
 
     @Test
     void testGetDocumentTotalHandlesGenericElasticsearchException() throws Exception {
-        TurElasticsearch service = new TurElasticsearch(turSNSiteRepository, turSNSiteFieldExtRepository);
+        TurElasticsearch service = new TurElasticsearch(turSNSiteRepository, turSNSiteFieldExtRepository,
+                turSNSiteCustomSortRepository, customFacets);
 
         ErrorResponse errorResponse = ErrorResponse.of(e -> e
                 .error(err -> err.type("search_phase_execution_exception").reason("all shards failed"))
@@ -356,7 +378,8 @@ class TurElasticsearchTest {
                 .thenThrow(new co.elastic.clients.elasticsearch._types.ElasticsearchException(
                         "es-error", errorResponse));
 
-        TurElasticsearch service = new TurElasticsearch(turSNSiteRepository, turSNSiteFieldExtRepository);
+        TurElasticsearch service = new TurElasticsearch(turSNSiteRepository, turSNSiteFieldExtRepository,
+                turSNSiteCustomSortRepository, customFacets);
         TurSNSearchParams searchParams = new TurSNSearchParams();
         searchParams.setQ("test");
         TurSEParameters params = new TurSEParameters(searchParams);
@@ -386,7 +409,8 @@ class TurElasticsearchTest {
                 .thenThrow(new co.elastic.clients.elasticsearch._types.ElasticsearchException(
                         "es-error", errorResponse));
 
-        TurElasticsearch service = new TurElasticsearch(turSNSiteRepository, turSNSiteFieldExtRepository);
+        TurElasticsearch service = new TurElasticsearch(turSNSiteRepository, turSNSiteFieldExtRepository,
+                turSNSiteCustomSortRepository, customFacets);
         TurSNSearchParams searchParams = new TurSNSearchParams();
         searchParams.setQ("test");
         TurSEParameters params = new TurSEParameters(searchParams);
@@ -414,7 +438,8 @@ class TurElasticsearchTest {
                 .thenThrow(new co.elastic.clients.elasticsearch._types.ElasticsearchException(
                         "es-error", errorResponse));
 
-        TurElasticsearch service = new TurElasticsearch(turSNSiteRepository, turSNSiteFieldExtRepository);
+        TurElasticsearch service = new TurElasticsearch(turSNSiteRepository, turSNSiteFieldExtRepository,
+                turSNSiteCustomSortRepository, customFacets);
         TurSNSearchParams searchParams = new TurSNSearchParams();
         searchParams.setQ("test");
         TurSNSiteSearchContext context = new TurSNSiteSearchContext("site", new TurSNConfig(),
@@ -436,7 +461,8 @@ class TurElasticsearchTest {
         when(elasticsearchClient.search(any(SearchRequest.class), any(java.lang.reflect.Type.class)))
                 .thenThrow(new IOException("connection refused"));
 
-        TurElasticsearch service = new TurElasticsearch(turSNSiteRepository, turSNSiteFieldExtRepository);
+        TurElasticsearch service = new TurElasticsearch(turSNSiteRepository, turSNSiteFieldExtRepository,
+                turSNSiteCustomSortRepository, customFacets);
         TurSNSearchParams searchParams = new TurSNSearchParams();
         searchParams.setQ("*");
         TurSEParameters params = new TurSEParameters(searchParams);
@@ -460,7 +486,8 @@ class TurElasticsearchTest {
         when(elasticsearchClient.search(request.capture(), any(java.lang.reflect.Type.class)))
                 .thenThrow(new IOException("connection refused"));
 
-        TurElasticsearch service = new TurElasticsearch(turSNSiteRepository, turSNSiteFieldExtRepository);
+        TurElasticsearch service = new TurElasticsearch(turSNSiteRepository, turSNSiteFieldExtRepository,
+                turSNSiteCustomSortRepository, customFacets);
         TurSNSearchParams searchParams = new TurSNSearchParams();
         searchParams.setQ("*");
         searchParams.setRows(2);
@@ -483,6 +510,47 @@ class TurElasticsearchTest {
     }
 
     @Test
+    void testRetrieveElasticsearchFromSNAppliesTheSiteCustomSortAndFilters() throws Exception {
+        // T1106 — a named custom sort and an fq reach the request, as on Solr and Lucene.
+        TurSNSite site = new TurSNSite();
+        site.setName("site");
+        when(turSNSiteRepository.findByNameIgnoreCase("site")).thenReturn(Optional.of(site));
+        com.viglet.turing.persistence.model.sn.sort.TurSNSiteCustomSort closingSoonest =
+                com.viglet.turing.persistence.model.sn.sort.TurSNSiteCustomSort.builder()
+                        .name("closingSoonest").build();
+        closingSoonest.setItems(new java.util.HashSet<>(java.util.Set.of(
+                com.viglet.turing.persistence.model.sn.sort.TurSNSiteCustomSortItem.builder()
+                        .fieldName("expiresAt").position(1)
+                        .missing(com.viglet.turing.persistence.model.sn.sort.TurSNSiteCustomSortMissingEnum.LAST)
+                        .build())));
+        when(turSNSiteCustomSortRepository.findByTurSNSiteAndName(site, "closingSoonest"))
+                .thenReturn(Optional.of(closingSoonest));
+        org.mockito.ArgumentCaptor<SearchRequest> request = org.mockito.ArgumentCaptor.forClass(SearchRequest.class);
+        when(elasticsearchClient.search(request.capture(), any(java.lang.reflect.Type.class)))
+                .thenThrow(new IOException("connection refused"));
+
+        TurElasticsearch service = new TurElasticsearch(turSNSiteRepository, turSNSiteFieldExtRepository,
+                turSNSiteCustomSortRepository, customFacets);
+        TurSNSearchParams searchParams = new TurSNSearchParams();
+        searchParams.setQ("*");
+        searchParams.setRows(10);
+        searchParams.setSort("closingSoonest");
+        searchParams.setFq(java.util.List.of("sector:educacao"));
+        TurSNSiteSearchContext context = new TurSNSiteSearchContext("site", new TurSNConfig(),
+                new TurSEParameters(searchParams), Locale.US, URI.create("http://example.com"));
+        TurElasticsearchInstance instance = new TurElasticsearchInstance(elasticsearchClient,
+                URI.create("http://localhost:9200").toURL(), "index");
+
+        service.retrieveElasticsearchFromSN(instance, context);
+
+        assertThat(request.getValue().sort()).singleElement().satisfies(sort -> {
+            assertThat(sort.field().field()).isEqualTo("expiresAt");
+            assertThat(sort.field().missing().stringValue()).isEqualTo("_last");
+        });
+        assertThat(request.getValue().query().bool().filter()).hasSize(1);
+    }
+
+    @Test
     void testRetrieveElasticsearchFromSNWithEmptyQuery() throws Exception {
         TurSNSite site = new TurSNSite();
         site.setName("site");
@@ -490,7 +558,8 @@ class TurElasticsearchTest {
         when(elasticsearchClient.search(any(SearchRequest.class), any(java.lang.reflect.Type.class)))
                 .thenThrow(new IOException("connection refused"));
 
-        TurElasticsearch service = new TurElasticsearch(turSNSiteRepository, turSNSiteFieldExtRepository);
+        TurElasticsearch service = new TurElasticsearch(turSNSiteRepository, turSNSiteFieldExtRepository,
+                turSNSiteCustomSortRepository, customFacets);
         TurSNSearchParams searchParams = new TurSNSearchParams();
         // null/empty query exercises the matchAll branch
         TurSEParameters params = new TurSEParameters(searchParams);
@@ -512,7 +581,8 @@ class TurElasticsearchTest {
         when(elasticsearchClient.search(any(SearchRequest.class), any(java.lang.reflect.Type.class)))
                 .thenThrow(new IOException("connection refused"));
 
-        TurElasticsearch service = new TurElasticsearch(turSNSiteRepository, turSNSiteFieldExtRepository);
+        TurElasticsearch service = new TurElasticsearch(turSNSiteRepository, turSNSiteFieldExtRepository,
+                turSNSiteCustomSortRepository, customFacets);
         TurSNSearchParams searchParams = new TurSNSearchParams();
         searchParams.setQ(query);
         if (sort != null && !sort.isEmpty()) {
@@ -551,7 +621,8 @@ class TurElasticsearchTest {
         when(elasticsearchClient.search(any(SearchRequest.class), any(java.lang.reflect.Type.class)))
                 .thenThrow(new IOException("connection refused"));
 
-        TurElasticsearch service = new TurElasticsearch(turSNSiteRepository, turSNSiteFieldExtRepository);
+        TurElasticsearch service = new TurElasticsearch(turSNSiteRepository, turSNSiteFieldExtRepository,
+                turSNSiteCustomSortRepository, customFacets);
         TurSNSearchParams searchParams = new TurSNSearchParams();
         searchParams.setQ("test");
         TurSEParameters params = new TurSEParameters(searchParams);
@@ -573,7 +644,8 @@ class TurElasticsearchTest {
         when(elasticsearchClient.search(any(SearchRequest.class), any(java.lang.reflect.Type.class)))
                 .thenThrow(new IOException("connection refused"));
 
-        TurElasticsearch service = new TurElasticsearch(turSNSiteRepository, turSNSiteFieldExtRepository);
+        TurElasticsearch service = new TurElasticsearch(turSNSiteRepository, turSNSiteFieldExtRepository,
+                turSNSiteCustomSortRepository, customFacets);
         TurSNSearchParams searchParams = new TurSNSearchParams();
         searchParams.setQ("test");
         searchParams.setP(3);
@@ -603,7 +675,8 @@ class TurElasticsearchTest {
         when(elasticsearchClient.search(any(SearchRequest.class), any(java.lang.reflect.Type.class)))
                 .thenThrow(new IOException("connection refused"));
 
-        TurElasticsearch service = new TurElasticsearch(turSNSiteRepository, turSNSiteFieldExtRepository);
+        TurElasticsearch service = new TurElasticsearch(turSNSiteRepository, turSNSiteFieldExtRepository,
+                turSNSiteCustomSortRepository, customFacets);
         TurSNSearchParams searchParams = new TurSNSearchParams();
         searchParams.setQ("test");
         TurSNSiteSearchContext context = new TurSNSiteSearchContext("site", new TurSNConfig(),
@@ -630,7 +703,8 @@ class TurElasticsearchTest {
         when(elasticsearchClient.search(any(SearchRequest.class), any(java.lang.reflect.Type.class)))
                 .thenThrow(new IOException("connection refused"));
 
-        TurElasticsearch service = new TurElasticsearch(turSNSiteRepository, turSNSiteFieldExtRepository);
+        TurElasticsearch service = new TurElasticsearch(turSNSiteRepository, turSNSiteFieldExtRepository,
+                turSNSiteCustomSortRepository, customFacets);
         TurSNSearchParams searchParams = new TurSNSearchParams();
         searchParams.setQ("test");
         TurSNSiteSearchContext context = new TurSNSiteSearchContext("site", new TurSNConfig(),
@@ -651,7 +725,8 @@ class TurElasticsearchTest {
         when(elasticsearchClient.search(any(SearchRequest.class), any(java.lang.reflect.Type.class)))
                 .thenThrow(new IOException("connection refused"));
 
-        TurElasticsearch service = new TurElasticsearch(turSNSiteRepository, turSNSiteFieldExtRepository);
+        TurElasticsearch service = new TurElasticsearch(turSNSiteRepository, turSNSiteFieldExtRepository,
+                turSNSiteCustomSortRepository, customFacets);
         TurSNSearchParams searchParams = new TurSNSearchParams();
         searchParams.setQ("test");
         searchParams.setSort("title"); // single field, no direction -> defaults to Asc
@@ -679,7 +754,8 @@ class TurElasticsearchTest {
                 .thenThrow(new co.elastic.clients.elasticsearch._types.ElasticsearchException(
                         "es-error", errorResponse));
 
-        TurElasticsearch service = new TurElasticsearch(turSNSiteRepository, turSNSiteFieldExtRepository);
+        TurElasticsearch service = new TurElasticsearch(turSNSiteRepository, turSNSiteFieldExtRepository,
+                turSNSiteCustomSortRepository, customFacets);
         TurSNSearchParams searchParams = new TurSNSearchParams();
         searchParams.setQ("test");
         TurSEParameters params = new TurSEParameters(searchParams);

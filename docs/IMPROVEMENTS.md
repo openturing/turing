@@ -2175,31 +2175,31 @@ or give it what only it says (the matching docs.viglet.org pages are the source)
 /persona/ and /migrate/ from the pages and posts that discuss their subject, and re-read
 the Search Console a month after.
 
-## CXIX Elasticsearch skips filters and custom sorts (T1106)
+## CXX Engine conformance test for SN requests (T1107)
 
-The three engines behind `TurSearchEnginePlugin` answer the same SN search request, and
-a site moves between them by changing its search-engine instance. Where one engine skips
-part of the request, the site keeps answering, only with a different result set, and
-nothing says so.
+T1106 taught the Elasticsearch engine the request's facet filters and the site's custom
+sorts, so the three engines behind `TurSearchEnginePlugin` now read a Semantic
+Navigation request the same way. What proves it is weaker than the claim:
 
-Found while building semantic recall (T1103) and manifest custom sorts (T1104):
-`TurElasticsearch.retrieveElasticsearchFromSN` builds the query from `q` alone.
+- Lucene's filters and sorts are tested against a real in-memory index
+  (`TurLuceneQueryBuilderTest`, `ByteBuffersDirectory`).
+- Solr's are tested as the strings the query builder emits (`TurSolrQueryBuilderTest`).
+- Elasticsearch's are tested as the request objects `TurElasticsearchFilterQueries` and
+  `TurElasticsearch.sortOption` build (`TurElasticsearchFilterQueriesTest`), with no
+  Elasticsearch to run them. A `.keyword` sub-field that an explicitly mapped index lacks,
+  a date term Elasticsearch parses differently, or a `missing` value it refuses would all
+  pass.
 
-- **Filters.** `fq`, `fqAnd`, `fqOr` and their operators never reach the query, so a facet
-  click on an Elasticsearch site changes the facet state and not the results. Solr builds
-  them in `TurSolrQueryBuilder.prepareQueryFilterQuery`, Lucene in
-  `TurLuceneQueryBuilder.addFilterQueries` (T1077 semantics: values of one field union or
-  intersect by `fqItemOperator`, fields by `fqOperator`, `fqAnd`/`fqOr` always). The
-  Elasticsearch side wants the same shape as `bool.filter` clauses, custom-facet
-  selections resolved to their range like T1083 does on Lucene.
-- **Custom sorts.** `addSorting` reads `field dir` pairs, so a custom sort name, and with
-  it `newest`/`oldest`, is passed through as if it were a field. It should resolve the
-  site's `TurSNSiteCustomSort` as the other two engines do, levels in position order, with
-  the T1104 placement as the sort's `missing` (`_first`/`_last`).
+There is no `ElasticsearchContainer` or Solr container in the test sources, so nothing
+runs one request against two engines and compares the documents.
 
-Both belong in one shared conformance test that runs the same request against the three
-engines' query builders, so the next parameter added to one cannot silently skip
-another.
+What to build: one conformance IT (Testcontainers, Docker-gated like the other ITs) that
+indexes the same small catalog (string, multi-valued, numeric and date fields, some
+documents without the date) into Lucene, Solr and Elasticsearch through each plugin's
+own indexing path, then runs a table of requests (each `fq` shape, `fqOperator` /
+`fqItemOperator`, a custom facet selection, `newest`, `field:dir`, a custom sort with
+`missing` FIRST and LAST) and asserts each engine returns the same ids in the same
+order. The free-text query stays out of it: matching text is each engine's own.
 
-Done when an Elasticsearch site returns the same documents as a Lucene site for a
-request carrying `fq` and a custom sort with a missing placement.
+Done when that IT runs green on all three engines, and a parameter added to one engine's
+query builder without the others fails it.

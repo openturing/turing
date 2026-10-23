@@ -10,7 +10,7 @@
 
 ## Block CG — Search-engine plugin parity (Solr, Lucene, Elasticsearch)
 
-- 📋 **T1106** (deps: —) **An Elasticsearch SN site ignores the request's fq filters and the site's custom sorts** — A site moved to Elasticsearch keeps answering, but a facet click no longer narrows results and a named sort sorts nothing. → §CXIX
+- 📋 **T1107** (deps: —) **No test runs one SN request against live Solr, Lucene and Elasticsearch, so parity is checked on request shape only** — A keyword sub-field an index lacks or a sort value Elasticsearch refuses would pass every test and fail on the first real site. → §CXX
 
 ## Non-goals (do NOT add as tasks)
 

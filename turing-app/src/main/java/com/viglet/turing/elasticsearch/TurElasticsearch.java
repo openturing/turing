@@ -18,6 +18,7 @@ package com.viglet.turing.elasticsearch;
 
 import java.io.IOException;
 import java.lang.reflect.Type;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -34,9 +35,15 @@ import com.viglet.turing.commons.se.field.TurSEFieldType;
 import com.viglet.turing.commons.sn.field.TurSNFieldName;
 import com.viglet.turing.commons.sn.search.TurSNSiteSearchContext;
 import com.viglet.turing.persistence.model.sn.TurSNSite;
+import com.viglet.turing.lucene.TurLuceneCustomFacets;
 import com.viglet.turing.persistence.model.sn.field.TurSNSiteFieldExt;
+import com.viglet.turing.persistence.model.sn.sort.TurSNSiteCustomSort;
+import com.viglet.turing.persistence.model.sn.sort.TurSNSiteCustomSortItem;
+import com.viglet.turing.persistence.model.sn.sort.TurSNSiteCustomSortMissingEnum;
+import com.viglet.turing.persistence.model.sn.sort.TurSNSiteCustomSortOrderEnum;
 import com.viglet.turing.persistence.repository.sn.TurSNSiteRepository;
 import com.viglet.turing.persistence.repository.sn.field.TurSNSiteFieldExtRepository;
+import com.viglet.turing.persistence.repository.sn.sort.TurSNSiteCustomSortRepository;
 import com.viglet.turing.se.facet.TurSEFacetResult;
 import com.viglet.turing.se.facet.TurSEFacetResultAttr;
 import com.viglet.turing.se.result.TurSEResult;
@@ -71,11 +78,17 @@ public class TurElasticsearch {
 
     private final TurSNSiteRepository turSNSiteRepository;
     private final TurSNSiteFieldExtRepository turSNSiteFieldExtRepository;
+    private final TurSNSiteCustomSortRepository turSNSiteCustomSortRepository;
+    private final TurLuceneCustomFacets customFacets;
 
     public TurElasticsearch(TurSNSiteRepository turSNSiteRepository,
-            TurSNSiteFieldExtRepository turSNSiteFieldExtRepository) {
+            TurSNSiteFieldExtRepository turSNSiteFieldExtRepository,
+            TurSNSiteCustomSortRepository turSNSiteCustomSortRepository,
+            TurLuceneCustomFacets customFacets) {
         this.turSNSiteRepository = turSNSiteRepository;
         this.turSNSiteFieldExtRepository = turSNSiteFieldExtRepository;
+        this.turSNSiteCustomSortRepository = turSNSiteCustomSortRepository;
+        this.customFacets = customFacets;
     }
 
     public Optional<TurSEResults> retrieveElasticsearchFromSN(
@@ -88,7 +101,7 @@ public class TurElasticsearch {
 
                         int rows = turSEParameters.getRows() > 0 ? turSEParameters.getRows() : 10;
                         int from = getStartPosition(turSEParameters);
-                        Query query = buildQuery(turSEParameters);
+                        Query query = buildQuery(turSNSite, turSEParameters);
 
                         List<TurSNSiteFieldExt> facetFields = turSNSiteFieldExtRepository
                                 .findByTurSNSiteAndFacetAndEnabledOrderByFacetPosition(turSNSite, 1, 1);
@@ -103,7 +116,7 @@ public class TurElasticsearch {
                                 .size(rows);
 
                         addFacetAggregations(searchBuilder, facetFields);
-                        addOptionalSorting(searchBuilder, turSEParameters);
+                        addOptionalSorting(searchBuilder, turSNSite, turSEParameters);
 
                         SearchRequest searchRequest = searchBuilder.build();
                         SearchResponse<Map<String, Object>> response = elasticsearchInstance.getClient()
@@ -128,7 +141,7 @@ public class TurElasticsearch {
                 .flatMap(turSNSite -> {
                     try {
                         TurSEParameters turSEParameters = context.getTurSEParameters();
-                        Query query = buildQuery(turSEParameters);
+                        Query query = buildQuery(turSNSite, turSEParameters);
                         String aggName = FACET_AGG_PREFIX + facetName;
 
                         // Resolve the correct ES field name (text fields need ".keyword" sub-field)
@@ -311,19 +324,38 @@ public class TurElasticsearch {
     }
 
     /**
-     * T1103 — the request's query, restricted to semantic recall's ids when it
-     * carries them.
+     * The request's text query, narrowed by (T1106) its facet filters and (T1103)
+     * semantic recall's ids when it carries them. With neither, the text query
+     * goes out as it always did.
      */
-    private Query buildQuery(TurSEParameters turSEParameters) {
+    private Query buildQuery(TurSNSite turSNSite, TurSEParameters turSEParameters) {
         Query query = buildTextQuery(turSEParameters);
+        List<Query> filters = new ArrayList<>();
+        TurElasticsearchFilterQueries.build(turSNSite, turSEParameters.getTurSNFilterParams(),
+                enabledFieldsByName(turSNSite),
+                (facet, label) -> customFacets.resolveFilter(turSNSite, facet, label),
+                Instant.now())
+                .ifPresent(filters::add);
         List<String> restrictIds = turSEParameters.getRestrictIds();
-        if (restrictIds == null || restrictIds.isEmpty()) {
+        if (restrictIds != null && !restrictIds.isEmpty()) {
+            List<co.elastic.clients.elasticsearch._types.FieldValue> ids = restrictIds.stream()
+                    .map(co.elastic.clients.elasticsearch._types.FieldValue::of).toList();
+            filters.add(Query.of(f -> f.terms(t -> t.field(TurSNFieldName.ID).terms(tt -> tt.value(ids)))));
+        }
+        if (filters.isEmpty()) {
             return query;
         }
-        List<co.elastic.clients.elasticsearch._types.FieldValue> ids = restrictIds.stream()
-                .map(co.elastic.clients.elasticsearch._types.FieldValue::of).toList();
-        return Query.of(q -> q.bool(b -> b.must(query)
-                .filter(f -> f.terms(t -> t.field(TurSNFieldName.ID).terms(tt -> tt.value(ids))))));
+        return Query.of(q -> q.bool(b -> b.must(query).filter(filters)));
+    }
+
+    private Map<String, TurSNSiteFieldExt> enabledFieldsByName(TurSNSite turSNSite) {
+        Map<String, TurSNSiteFieldExt> byName = new java.util.LinkedHashMap<>();
+        turSNSiteFieldExtRepository.findByTurSNSiteAndEnabled(turSNSite, 1).forEach(ext -> {
+            if (ext.getName() != null) {
+                byName.putIfAbsent(ext.getName(), ext);
+            }
+        });
+        return byName;
     }
 
     private Query buildTextQuery(TurSEParameters turSEParameters) {
@@ -357,11 +389,71 @@ public class TurElasticsearch {
         }
     }
 
-    private void addOptionalSorting(SearchRequest.Builder searchBuilder, TurSEParameters turSEParameters) {
+    /**
+     * T1106 — the request's sort as the other engines read it: {@code newest} /
+     * {@code oldest} on the site's default date field, {@code field:dir} (or the
+     * older {@code field dir}), or the name of one of the site's custom sorts,
+     * applied level by level with each level's missing placement.
+     */
+    private void addOptionalSorting(SearchRequest.Builder searchBuilder, TurSNSite turSNSite,
+            TurSEParameters turSEParameters) {
         String sort = turSEParameters.getSort();
-        if (StringUtils.hasText(sort) && !"relevance".equalsIgnoreCase(sort)) {
-            addSorting(searchBuilder, sort);
+        if (!StringUtils.hasText(sort) || "relevance".equalsIgnoreCase(sort)) {
+            return;
         }
+        Map<String, TurSNSiteFieldExt> fields = enabledFieldsByName(turSNSite);
+        if ("newest".equalsIgnoreCase(sort) || "oldest".equalsIgnoreCase(sort)) {
+            String dateField = turSNSite.getDefaultDateField();
+            if (StringUtils.hasText(dateField)) {
+                searchBuilder.sort(sortOption(dateField, fieldType(fields, dateField),
+                        "newest".equalsIgnoreCase(sort) ? SortOrder.Desc : SortOrder.Asc, null));
+            }
+            return;
+        }
+        Optional<org.apache.commons.collections4.KeyValue<String, String>> kv =
+                com.viglet.turing.commons.utils.TurCommonsUtils.getKeyValueFromColon(sort);
+        if (kv.isPresent()) {
+            String field = kv.get().getKey();
+            searchBuilder.sort(sortOption(field, fieldType(fields, field),
+                    "desc".equalsIgnoreCase(kv.get().getValue()) ? SortOrder.Desc : SortOrder.Asc, null));
+            return;
+        }
+        Optional<TurSNSiteCustomSort> customSort = turSNSiteCustomSortRepository.findByTurSNSiteAndName(turSNSite,
+                sort);
+        if (customSort.isPresent()) {
+            customSort.get().getItems().stream()
+                    .sorted(java.util.Comparator.comparing(TurSNSiteCustomSortItem::getPosition,
+                            java.util.Comparator.nullsLast(Integer::compareTo)))
+                    .forEach(item -> searchBuilder.sort(sortOption(item.getFieldName(),
+                            fieldType(fields, item.getFieldName()),
+                            item.getSortOrder() == TurSNSiteCustomSortOrderEnum.DESC ? SortOrder.Desc : SortOrder.Asc,
+                            item.getMissing())));
+            return;
+        }
+        addSorting(searchBuilder, sort);
+    }
+
+    private static TurSEFieldType fieldType(Map<String, TurSNSiteFieldExt> fields, String name) {
+        TurSNSiteFieldExt ext = fields.get(name);
+        return ext == null ? null : ext.getType();
+    }
+
+    /**
+     * One sort clause. A string-like field sorts on its {@code .keyword}
+     * sub-field (a text field cannot be sorted); {@code missing} becomes
+     * {@code _first}/{@code _last}, and {@code null} keeps Elasticsearch's own
+     * placement.
+     */
+    static co.elastic.clients.elasticsearch._types.SortOptions sortOption(String field, TurSEFieldType type,
+            SortOrder order, TurSNSiteCustomSortMissingEnum missing) {
+        String target = TurElasticsearchFilterQueries.isKeyword(type) && type != null ? field + ".keyword" : field;
+        return co.elastic.clients.elasticsearch._types.SortOptions.of(s -> s.field(f -> {
+            f.field(target).order(order);
+            if (missing != null) {
+                f.missing(missing == TurSNSiteCustomSortMissingEnum.LAST ? "_last" : "_first");
+            }
+            return f;
+        }));
     }
 
     private void addSorting(SearchRequest.Builder searchBuilder, String sortString) {
