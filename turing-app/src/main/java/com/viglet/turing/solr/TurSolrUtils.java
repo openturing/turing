@@ -85,15 +85,23 @@ public class TurSolrUtils {
         }
     }
 
+    /**
+     * Unloads a core and deletes its index, data and instance directories.
+     *
+     * <p>T1110 — through the v1 Core Admin API, like {@link #createCore}: Solr 10
+     * answers a GET on {@code /api/cores?action=UNLOAD} without unloading anything.
+     */
     public static void deleteCore(String solrUrl, String name) {
         String uri = String.format(
-                "%s/api/cores?action=UNLOAD&core=%s&deleteIndex=true&deleteDataDir=true&deleteInstanceDir=true",
-                solrUrl, name);
+                "%s/solr/admin/cores?action=UNLOAD&core=%s&deleteIndex=true&deleteDataDir=true"
+                        + "&deleteInstanceDir=true&wt=json",
+                solrUrl, encode(name));
         HttpRequest request = getHttpRequestBuilderJson()
                 .uri(URI.create(uri))
                 .GET()
                 .build();
-        executeRequest(request, "Failed to delete core: " + name);
+        executeRequest(request, "Failed to delete core: " + name)
+                .ifPresent(response -> isSuccess(response, "Failed to delete core: " + name));
     }
 
     public static TurSolrFieldBean getField(TurSEInstance turSEInstance, String coreName, String fieldName) {
@@ -253,21 +261,38 @@ public class TurSolrUtils {
                 .build();
     }
 
-    public static void createCore(String solrUrl, String coreName, String configSet) {
-        Map<String, String> coreDetails = Map.of(
-                "name", coreName,
-                "instanceDir", coreName,
-                "configSet", configSet);
-        List<Map<String, String>> createList = List.of(coreDetails);
-        Map<String, Object> root = Map.of("create", createList);
-        String json = new ObjectMapper().writeValueAsString(root);
-
+    /**
+     * Creates a core from a configset on a user-managed (non-cloud) Solr.
+     *
+     * <p>T1110 — through the v1 Core Admin API, the one call both Solr 9 and Solr
+     * 10 accept: the v2 {@code POST /api/cores} wants {@code {"create":[...]}} on
+     * Solr 9 and refuses it on Solr 10, which wants the parameters flat. A refused
+     * request is logged with Solr's answer instead of passing for success.
+     *
+     * @return whether Solr created the core
+     */
+    public static boolean createCore(String solrUrl, String coreName, String configSet) {
         HttpRequest request = getHttpRequestBuilderJson()
-                .uri(URI.create(String.format("%s/api/cores", solrUrl)))
-                .POST(BodyPublishers.ofString(json))
+                .uri(URI.create(String.format(
+                        "%s/solr/admin/cores?action=CREATE&name=%s&instanceDir=%s&configSet=%s&wt=json",
+                        solrUrl, encode(coreName), encode(coreName), encode(configSet))))
+                .GET()
                 .build();
+        return executeRequest(request, "Failed to create core: " + coreName)
+                .map(response -> isSuccess(response, "Failed to create core: " + coreName))
+                .orElse(false);
+    }
 
-        executeRequest(request, "Failed to create core: " + coreName);
+    private static boolean isSuccess(HttpResponse<String> response, String errorMessage) {
+        if (response.statusCode() / 100 == 2) {
+            return true;
+        }
+        log.error("{}: HTTP {} {}", errorMessage, response.statusCode(), response.body());
+        return false;
+    }
+
+    private static String encode(String value) {
+        return java.net.URLEncoder.encode(value, java.nio.charset.StandardCharsets.UTF_8);
     }
 
     public static void createCollection(String solrUrl, String coreName, InputStream inputStream, int shards) {

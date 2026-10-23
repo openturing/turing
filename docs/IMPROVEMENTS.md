@@ -2230,39 +2230,8 @@ What to build:
   Docker and the detection failed.
 - Say it in the `turing-integration-tests` skill.
 
+Even with that variable set, detection failed on about one run in two while building
+T1110, so the skip is intermittent as well as silent.
+
 Done when `mvn verify` on a Docker 29 workstation runs the engine ITs with no
 environment variable set, and a run where Docker cannot be reached says so.
-
-## CXXIII Core creation on Solr 10 (T1110)
-
-`TurSolrUtils.createCore`, which `TurSolrSearchEnginePlugin.createIndex` calls to create
-a new SN site locale's core on a non-cloud Solr, posts to the v2 API:
-
-```
-POST /api/cores   {"create":[{"name":..,"instanceDir":..,"configSet":..}]}
-```
-
-Solr 10 replaced that endpoint with a JAX-RS one that takes the parameters flat and
-refuses the old envelope (HTTP 500, `UnrecognizedPropertyException: Unrecognized field
-"create" (class org.apache.solr.client.api.model.CreateCoreParams)`). Solr 9.6.1, the
-version the Turing Solr image ships, refuses the flat form instead (`Unknown operation
-'name' available ops are '[create]'`). No v2 body works on both. `executeRequest` only
-logs the failure, so the site is created and its core is not; the first index call then
-gets an HTML 404 from Solr.
-
-The v1 Core Admin call works on both, checked against `solr:9.6.1` and `solr:10.0.0`
-(user-managed mode):
-
-```
-GET /solr/admin/cores?action=CREATE&name=<core>&instanceDir=<core>&configSet=<set>&wt=json
-```
-
-Fix: send that from `createCore`, with each value URL-encoded, and treat a non-2xx
-answer as the failure it is. Also note for the Solr 10 upgrade: the official `solr:10`
-image starts in SolrCloud mode by default (embedded ZooKeeper), where creating a core
-answers `coreNodeName missing`; a user-managed deployment starts it with
-`--user-managed`.
-
-Found while building the engine conformance IT (T1107) on the latest Solr.
-
-Done when `createCore` creates a core on Solr 9.6.1 and on Solr 10 user-managed.
