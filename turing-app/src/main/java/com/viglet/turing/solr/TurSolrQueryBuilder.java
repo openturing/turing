@@ -673,8 +673,10 @@ public class TurSolrQueryBuilder {
 
     }
 
-    private static boolean withoutExpression(String value) {
-        return !value.startsWith("[") && !value.startsWith("(") && !value.endsWith("*");
+    /** T1111 — {@code {from TO to]} opens an exclusive range, as {@code [} opens an inclusive one. */
+    static boolean withoutExpression(String value) {
+        return !value.startsWith("[") && !value.startsWith("{") && !value.startsWith("(")
+                && !value.endsWith("*");
 
     }
 

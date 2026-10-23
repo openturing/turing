@@ -1746,6 +1746,17 @@ class TurSolrQueryBuilderTest {
                                 .isEqualTo(TurSNSiteFacetFieldEnum.AND);
         }
 
+        // ---- T1111: an exclusive-start range is an expression, never a phrase ----
+
+        @Test
+        void rangesOfEveryBracketShapeAreLeftUnquoted() {
+                assertThat(TurSolrQueryBuilder.withoutExpression("{1800 TO 4000]")).isFalse();
+                assertThat(TurSolrQueryBuilder.withoutExpression("{1800 TO 4000}")).isFalse();
+                assertThat(TurSolrQueryBuilder.withoutExpression("[1800 TO 4000}")).isFalse();
+                assertThat(TurSolrQueryBuilder.withoutExpression("[1800 TO 4000]")).isFalse();
+                assertThat(TurSolrQueryBuilder.withoutExpression("educacao")).isTrue();
+        }
+
         // ---- T1104: custom sort levels with a missing placement ----
 
         @Test

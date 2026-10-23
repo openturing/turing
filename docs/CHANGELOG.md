@@ -1487,3 +1487,4 @@
 - **T1107 (Lucene and Elasticsearch)** — One conformance IT asks Lucene and a live Elasticsearch the same filter and sort requests, each indexed through its production path, and both return the same documents.
 - **T1109** — Every Turing Solr configset, image and classpath zip, declares the dynamic fields its currency type names, so a core or collection is created from it on Solr 9.6.1 and 10.
 - **T1110** — Turing creates and unloads Solr cores through the v1 Core Admin API, so a new SN site locale gets its core on Solr 9.6.1 and Solr 10, and a refused create is logged.
+- **T1111** — A Solr fq range that opens with an exclusive bound is sent as a range, so Solr returns the same documents for it as Lucene and Elasticsearch.
