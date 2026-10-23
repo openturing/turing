@@ -2,6 +2,8 @@
 <!-- Solr managed schema - automatically generated - DO NOT EDIT -->
 <schema name="default-config" version="1.6">
   <uniqueKey>id</uniqueKey>
+  <dynamicField name="*_l_ns" type="plong" indexed="true" stored="false" />
+  <dynamicField name="*_s_ns" type="string" indexed="true" stored="false" />
   <fieldType name="_nest_path_" class="solr.NestPathField" maxCharsForDocValues="-1" omitNorms="true" omitTermFreqAndPositions="true" stored="false" multiValued="false" />
   <fieldType name="ancestor_path" class="solr.TextField">
     <analyzer type="index">

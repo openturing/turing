@@ -10,8 +10,9 @@
 
 ## Block CG — Search-engine plugin parity (Solr, Lucene, Elasticsearch)
 
-- ⏳ **T1107** (deps: —) **No test runs one SN request against live Solr, Lucene and Elasticsearch, so parity is checked on request shape only** — Solr is not in the conformance table: it needs Turing's own Solr configset and a TurSolrQueryBuilder wired outside Spring. → §CXX
+- 🛠 **T1107** (deps: —) **No test runs one SN request against live Solr, Lucene and Elasticsearch, so parity is checked on request shape only** — Solr is not in the conformance table: it needs Turing's own Solr configset and a TurSolrQueryBuilder wired outside Spring. → §CXX
 - 📋 **T1108** (deps: —) **On Docker 29 every container IT is silently skipped, because Testcontainers' default API version is refused** — The engine ITs that prove search parity report green without ever starting Solr or Elasticsearch. → §CXXI
+- 📋 **T1110** (deps: —) **Solr 10 refuses the core-creation request Turing sends, so a new SN site locale gets no core** — The v2 create body Turing posts is the one Solr 10 rejects, and the failure is only logged. → §CXXIII
 
 ## Done when — T1107
 
