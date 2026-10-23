@@ -383,6 +383,83 @@ class TurSNSearchProcessTest {
                 verify(turSNSiteMetricAccessRepository, never()).save(any());
         }
 
+        /** T1103 — a hybrid-site search whose plugin returns {@code page}; fuse answered by {@code fuse}. */
+        private TurSearchEnginePlugin hybridSearch(List<TurSEResult> page, long numFound) {
+                TurSearchEnginePlugin plugin = org.mockito.Mockito.mock(TurSearchEnginePlugin.class);
+                TurSNSite site = site("site-id", "site");
+                when(snapshotService.getSnapshot("site", Locale.US)).thenReturn(Optional.of(
+                                snapshot(site, Locale.US, List.of(), Map.of(),
+                                                List.of(snLocale("loc-en", Locale.US, 0)))));
+                when(searchEnginePluginFactory.getPlugin("solr")).thenReturn(plugin);
+                when(turSolrQueryBuilder.hasGroup(any())).thenReturn(false);
+                when(hybridRankingService.isEnabled(any())).thenReturn(true);
+                when(plugin.retrieveSearchResults(any())).thenReturn(Optional.of(TurSEResults.builder()
+                                .results(page).numFound(numFound).currentPage(1).pageCount(1)
+                                .limit(10).build()));
+                return plugin;
+        }
+
+        private TurSNSiteSearchContext searchContext(String query, Integer page, List<String> fq) {
+                TurSNSearchParams params = new TurSNSearchParams();
+                params.setQ(query);
+                params.setP(page);
+                params.setRows(10);
+                params.setFq(fq);
+                TurSNSitePostParamsBean post = new TurSNSitePostParamsBean();
+                return new TurSNSiteSearchContext("site", new TurSNConfig(),
+                                new TurSEParameters(params, post), Locale.US,
+                                URI.create("http://localhost/search?q=x"), post);
+        }
+
+        @Test
+        @SuppressWarnings("unchecked")
+        void testHybridSearchRecallsThroughTheEngineOnAnUnfilteredFirstPage() {
+                TurSearchEnginePlugin plugin = hybridSearch(List.of(), 0);
+                when(plugin.getStoredDocumentsByIds(any(), eq(List.of("auxiliar-de-creche"))))
+                                .thenReturn(List.of(Map.of("id", "auxiliar-de-creche",
+                                                "title", "Auxiliar de creche")));
+                // The service decides what to recall; here it asks for one id and returns it.
+                when(hybridRankingService.fuse(any(), any(), any(), any(), any())).thenAnswer(inv -> {
+                        java.util.function.Function<List<String>, List<TurSEResult>> recall = inv
+                                        .getArgument(4);
+                        return recall.apply(List.of("auxiliar-de-creche"));
+                });
+
+                var bean = process(false).search(searchContext("trabalho com crianças", 1, List.of()));
+
+                assertThat(bean.getResults().getDocument()).hasSize(1);
+                verify(plugin).getStoredDocumentsByIds(
+                                argThat(locale -> Locale.US.equals(locale.getLanguage())
+                                                && "core".equals(locale.getCore())),
+                                eq(List.of("auxiliar-de-creche")));
+                // The engine counted nothing; the recalled document is counted.
+                assertThat(bean.getQueryContext().getCount()).isEqualTo(1);
+        }
+
+        @Test
+        void testHybridSearchOffersNoRecallWhenTheRequestIsFiltered() {
+                List<TurSEResult> page = List.of(TurSEResult.builder().fields(Map.of("id", "A")).build());
+                hybridSearch(page, 1);
+                when(hybridRankingService.fuse(any(), any(), any(), any(), any())).thenReturn(page);
+
+                process(false).search(searchContext("query", 1, List.of("category:books")));
+
+                verify(hybridRankingService).fuse(any(), any(), eq("query"), eq(page),
+                                org.mockito.ArgumentMatchers.isNull());
+        }
+
+        @Test
+        void testHybridSearchOffersNoRecallPastTheFirstPage() {
+                List<TurSEResult> page = List.of(TurSEResult.builder().fields(Map.of("id", "A")).build());
+                hybridSearch(page, 1);
+                when(hybridRankingService.fuse(any(), any(), any(), any(), any())).thenReturn(page);
+
+                process(false).search(searchContext("query", 2, List.of()));
+
+                verify(hybridRankingService).fuse(any(), any(), eq("query"), eq(page),
+                                org.mockito.ArgumentMatchers.isNull());
+        }
+
         @Test
         void testSearchBuildsResultsWidgetAndPagination() {
                 TurSearchEnginePlugin plugin = org.mockito.Mockito.mock(TurSearchEnginePlugin.class);

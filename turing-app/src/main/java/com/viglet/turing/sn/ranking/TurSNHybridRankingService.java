@@ -11,12 +11,15 @@ package com.viglet.turing.sn.ranking;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Function;
 
 import org.springframework.ai.chat.model.ChatModel;
 import org.springframework.ai.document.Document;
@@ -81,6 +84,10 @@ public class TurSNHybridRankingService {
 
     /** Vector candidate depth for the semantic pass before fusion. */
     private static final int VECTOR_TOP_K = 50;
+    /** T1103 — most documents semantic recall adds to one page. */
+    static final int RECALL_MAX = 10;
+    /** T1103 — the similarity a vector hit must clear to be recalled when the site sets none. */
+    static final double DEFAULT_RECALL_MIN_SCORE = 0.6;
     /** Bound the embedded text so a pathological document can't blow up an embed call. */
     private static final int MAX_EMBED_CHARS = 8_000;
     private static final String META_LOCALE = "snLocale";
@@ -262,8 +269,37 @@ public class TurSNHybridRankingService {
         }
     }
 
+    /**
+     * Whether the site also opted into T1103 semantic recall: a hybrid site whose
+     * {@link TurSNSiteGenAi#isSnSemanticRecall()} is on.
+     */
+    public boolean isSemanticRecallEnabled(TurSNSite turSNSite) {
+        return isEnabled(turSNSite) && turSNSite.getTurSNSiteGenAi() != null
+                && turSNSite.getTurSNSiteGenAi().isSnSemanticRecall();
+    }
+
     public List<TurSEResult> fuse(TurSNSite turSNSite, Locale locale, String query, List<TurSEResult> page) {
-        if (!isEnabled(turSNSite) || page == null || page.size() < 2 || !StringUtils.hasText(query)) {
+        return fuse(turSNSite, locale, query, page, null);
+    }
+
+    /**
+     * T1103 / §CXVI — {@link #fuse(TurSNSite, Locale, String, List)} with
+     * <em>semantic recall</em>: when {@code recall} is given and the site opted
+     * in, the vector hits that clear the site's similarity floor but are missing
+     * from the lexical page (up to {@link #RECALL_MAX}) are hydrated through
+     * {@code recall} and fused into the page, so a document sharing no word with
+     * the query can still be returned. The caller decides when recall may run (it
+     * cannot honour filters, so only on an unfiltered first page); a {@code null}
+     * {@code recall} is the reorder-only behaviour.
+     *
+     * @param recall hydrates document ids into results, in any order, dropping
+     *               ids that don't resolve; {@code null} disables recall
+     */
+    public List<TurSEResult> fuse(TurSNSite turSNSite, Locale locale, String query, List<TurSEResult> page,
+            Function<List<String>, List<TurSEResult>> recall) {
+        boolean recallOn = recall != null && isSemanticRecallEnabled(turSNSite);
+        if (!isEnabled(turSNSite) || page == null || !StringUtils.hasText(query)
+                || nothingToFuse(page.size(), recallOn)) {
             return page;
         }
         try {
@@ -276,7 +312,7 @@ public class TurSNHybridRankingService {
             Map<String, Integer> lexicalRank = new LinkedHashMap<>();
             List<Document> bm25Hits = new ArrayList<>(page.size());
             indexBm25Page(page, byId, lexicalRank, bm25Hits);
-            if (byId.size() < 2) {
+            if (nothingToFuse(byId.size(), recallOn)) {
                 return page;
             }
             // Stage 2 (fuse): vector pass over the per-site collection, restricted to
@@ -288,6 +324,10 @@ public class TurSNHybridRankingService {
                     .similarityThreshold(0.0)
                     .build();
             List<Document> vectorAll = infra.vectorStore().similaritySearch(request);
+            // Stage 1.5 (recall, opt-in): bring in the vector hits the lexical page missed.
+            Set<String> recalled = recallOn
+                    ? recallMissing(vectorAll, byId, recall, recallFloor(turSNSite))
+                    : Set.of();
             Map<String, Integer> semanticRank = new LinkedHashMap<>();
             List<Document> vectorHits = collectVectorHits(vectorAll, byId, semanticRank);
             if (vectorHits.isEmpty()) {
@@ -319,7 +359,8 @@ public class TurSNHybridRankingService {
                 }
                 attachExplanation(result, mode,
                         new RankBreakdown(lexicalRank.get(id), semanticRank.get(id),
-                                fusedRank.get(id), rrfScore.get(id), reordered.size() + 1),
+                                fusedRank.get(id), rrfScore.get(id), reordered.size() + 1,
+                                recalled.contains(id)),
                         rerankApplied, rerankStrategy);
                 reordered.add(result);
             }
@@ -331,6 +372,69 @@ public class TurSNHybridRankingService {
                     turSNSite.getName(), e.getMessage());
             return page;
         }
+    }
+
+    /**
+     * T1103 — hydrates the vector hits that clear {@code floor} but are not on the
+     * lexical page, best first and at most {@link #RECALL_MAX}, and adds them to
+     * {@code byId}. A hit whose score is unknown is not recalled: without a score
+     * nothing says it is related at all.
+     *
+     * @return the ids actually recalled (hydrated), so the explanation can mark them
+     */
+    private static Set<String> recallMissing(List<Document> vectorAll, Map<String, TurSEResult> byId,
+            Function<List<String>, List<TurSEResult>> recall, double floor) {
+        List<String> missing = missingIds(vectorAll, byId, floor);
+        if (missing.isEmpty()) {
+            return Set.of();
+        }
+        List<TurSEResult> hydrated = recall.apply(missing);
+        Set<String> recalled = new LinkedHashSet<>();
+        if (hydrated != null) {
+            for (TurSEResult result : hydrated) {
+                String id = idOf(result);
+                if (id != null && missing.contains(id) && byId.putIfAbsent(id, result) == null) {
+                    recalled.add(id);
+                }
+            }
+        }
+        return recalled;
+    }
+
+    /** The vector hits, best first, that clear {@code floor} and are not on the page, capped at {@link #RECALL_MAX}. */
+    private static List<String> missingIds(List<Document> vectorAll, Map<String, TurSEResult> byId,
+            double floor) {
+        List<String> missing = new ArrayList<>();
+        if (vectorAll == null) {
+            return missing;
+        }
+        for (Document d : vectorAll) {
+            String id = d.getId();
+            boolean eligible = StringUtils.hasText(id) && !byId.containsKey(id) && !missing.contains(id)
+                    && d.getScore() != null && d.getScore() >= floor;
+            if (eligible) {
+                missing.add(id);
+            }
+            if (missing.size() >= RECALL_MAX) {
+                break;
+            }
+        }
+        return missing;
+    }
+
+    private static String idOf(TurSEResult result) {
+        return result == null || result.getFields() == null ? null
+                : asString(result.getFields().get(TurSNFieldName.ID));
+    }
+
+    /** Fusion needs two documents, unless recall may still bring some in. */
+    private static boolean nothingToFuse(int size, boolean recallOn) {
+        return size < 2 && !recallOn;
+    }
+
+    private static double recallFloor(TurSNSite turSNSite) {
+        Double floor = turSNSite.getTurSNSiteGenAi().getSnSemanticRecallMinScore();
+        return floor != null && floor > 0.0 && floor <= 1.0 ? floor : DEFAULT_RECALL_MIN_SCORE;
     }
 
     /**
@@ -374,7 +478,7 @@ public class TurSNHybridRankingService {
      * parameter threshold.
      */
     private record RankBreakdown(Integer lexicalRank, Integer semanticRank, Integer fusedRank,
-            Double rrfScore, int finalRank) {
+            Double rrfScore, int finalRank, boolean recalled) {
     }
 
     /**
@@ -403,6 +507,10 @@ public class TurSNHybridRankingService {
             explain.put("rrfScore", Math.round(rrfScore * 1_000_000d) / 1_000_000d);
         }
         explain.put("finalRank", finalRank);
+        if (ranks.recalled()) {
+            // T1103 — on the page only because semantic recall brought it in.
+            explain.put("semanticRecall", true);
+        }
         if (rerankApplied) {
             if (rerankStrategy != null) {
                 explain.put("rerankStrategy", rerankStrategy.name());

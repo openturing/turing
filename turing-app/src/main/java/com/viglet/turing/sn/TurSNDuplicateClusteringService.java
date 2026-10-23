@@ -286,7 +286,7 @@ public class TurSNDuplicateClusteringService {
     }
 
     /** Picks the {@link TurSNSiteLocale} matching the request locale, else the first available. */
-    private static TurSNSiteLocale resolveLocale(TurSNSiteSearchSnapshot snapshot, Locale locale) {
+    static TurSNSiteLocale resolveLocale(TurSNSiteSearchSnapshot snapshot, Locale locale) {
         List<TurSNSiteSearchSnapshot.LocaleView> locales = snapshot.allLocales();
         if (locales == null || locales.isEmpty()) {
             return null;

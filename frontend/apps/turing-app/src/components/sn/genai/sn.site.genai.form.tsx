@@ -167,6 +167,9 @@ export const SNSiteGenAiForm: React.FC<Props> = ({ snSite, baseRoute = ROUTES.BE
             // T383 — public SN search ranking mode; LEGACY keeps the historical
             // lexical-only ranking so a pre-T383 binding renders the legacy state.
             snRankingMode: snSite.turSNSiteGenAi?.snRankingMode ?? "LEGACY",
+            // T1103 — semantic recall; off by default so a hybrid site ranks as before.
+            snSemanticRecall: snSite.turSNSiteGenAi?.snSemanticRecall ?? false,
+            snSemanticRecallMinScore: snSite.turSNSiteGenAi?.snSemanticRecallMinScore ?? null,
             // T513 — per-site domain embedding model override; null = platform default.
             embeddingModelId: snSite.turSNSiteGenAi?.embeddingModelId ?? null,
             // T472 — index-time content-fit signal; off by default so a pre-T472
@@ -1270,6 +1273,74 @@ export const SNSiteGenAiForm: React.FC<Props> = ({ snSite, baseRoute = ROUTES.BE
                                                         ))}
                                                     </SelectContent>
                                                 </Select>
+                                            </FormItemTwoColumns.Right>
+                                        </FormItemTwoColumns>
+                                    )}
+                                />
+
+                                {/* T1103 / §CXVI — semantic recall: the hybrid modes only
+                                    reorder what the lexical engine found, so a document
+                                    sharing no word with the query never shows. This adds
+                                    the vector hits above the floor that the first,
+                                    unfiltered page missed. */}
+                                <FormField
+                                    control={form.control}
+                                    name="snSemanticRecall"
+                                    render={({ field }) => (
+                                        <FormItemTwoColumns>
+                                            <FormItemTwoColumns.Left>
+                                                <FormItemTwoColumns.Label>
+                                                    {t("forms.snGenai.snSemanticRecall")}
+                                                </FormItemTwoColumns.Label>
+                                                <FormItemTwoColumns.Description>
+                                                    {t("forms.snGenai.snSemanticRecallDesc")}
+                                                </FormItemTwoColumns.Description>
+                                            </FormItemTwoColumns.Left>
+                                            <FormItemTwoColumns.Right>
+                                                <FormControl>
+                                                    <GradientButton
+                                                        type="button"
+                                                        variant={field.value === true ? "default" : "outline"}
+                                                        disabled={(form.watch("snRankingMode") ?? "LEGACY") === "LEGACY"}
+                                                        onClick={() => field.onChange(field.value !== true)}
+                                                    >
+                                                        {field.value === true
+                                                            ? t("forms.common.enabled")
+                                                            : t("forms.common.disabled")}
+                                                    </GradientButton>
+                                                </FormControl>
+                                            </FormItemTwoColumns.Right>
+                                        </FormItemTwoColumns>
+                                    )}
+                                />
+                                <FormField
+                                    control={form.control}
+                                    name="snSemanticRecallMinScore"
+                                    render={({ field }) => (
+                                        <FormItemTwoColumns>
+                                            <FormItemTwoColumns.Left>
+                                                <FormItemTwoColumns.Label>
+                                                    {t("forms.snGenai.snSemanticRecallMinScore")}
+                                                </FormItemTwoColumns.Label>
+                                                <FormItemTwoColumns.Description>
+                                                    {t("forms.snGenai.snSemanticRecallMinScoreDesc")}
+                                                </FormItemTwoColumns.Description>
+                                            </FormItemTwoColumns.Left>
+                                            <FormItemTwoColumns.Right>
+                                                <FormControl>
+                                                    <Input
+                                                        type="number"
+                                                        min={0}
+                                                        max={1}
+                                                        step={0.05}
+                                                        placeholder="0.6"
+                                                        value={field.value ?? ""}
+                                                        disabled={form.watch("snSemanticRecall") !== true}
+                                                        onChange={(e) =>
+                                                            field.onChange(e.target.value === "" ? null : Number(e.target.value))
+                                                        }
+                                                    />
+                                                </FormControl>
                                             </FormItemTwoColumns.Right>
                                         </FormItemTwoColumns>
                                     )}

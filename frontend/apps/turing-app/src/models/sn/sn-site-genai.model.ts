@@ -101,6 +101,14 @@ export interface TurSNSiteGenAi {
    */
   snRankingMode?: TurSNRankingMode;
   /**
+   * T1103 / §CXVI — semantic recall: on a hybrid ranking mode, also bring in
+   * the vector hits the lexical first page missed (unfiltered requests only).
+   * Off by default. @since 2026.3.5
+   */
+  snSemanticRecall?: boolean;
+  /** T1103 — similarity floor for a recalled hit; null = server default (0.6). */
+  snSemanticRecallMinScore?: number | null;
+  /**
    * T790 / §LIV.1 (Block BF) — knowledge-base mode. `VECTOR` (default) is the
    * classic embedding RAG chat; `VECTORLESS_STRUCTURED` is the catalog copilot
    * (NL→DSL over the declared field schema, no embeddings, needs only a default

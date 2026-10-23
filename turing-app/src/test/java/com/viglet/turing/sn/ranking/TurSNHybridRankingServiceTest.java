@@ -25,6 +25,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.Function;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -360,6 +361,145 @@ class TurSNHybridRankingServiceTest {
 
         assertThat(fused).isSameAs(page);
         verify(ragContextBuilder, never()).build(anyString(), anyString(), anyString());
+    }
+
+    // ---- semantic recall (T1103) -----------------------------------------
+
+    private TurSNSite recallSite(Double floor) {
+        TurSNSite site = siteWithMode(TurSNRankingMode.HYBRID_RRF);
+        site.getTurSNSiteGenAi().setSnSemanticRecall(true);
+        site.getTurSNSiteGenAi().setSnSemanticRecallMinScore(floor);
+        return site;
+    }
+
+    private static Document hit(String id, Double score) {
+        return Document.builder().id(id).text("").score(score).build();
+    }
+
+    /** Hydrates every asked id, recording what was asked. */
+    private Function<List<String>, List<TurSEResult>> hydrator(List<List<String>> asked) {
+        return ids -> {
+            asked.add(ids);
+            return ids.stream().map(this::result).toList();
+        };
+    }
+
+    @Test
+    void recallReturnsADocumentTheLexicalPageMissedEntirely() {
+        // "trabalho com crianças" shares no word with "auxiliar de creche": BM25 finds
+        // nothing, the vector pass ranks the job first, and recall brings it in.
+        when(ragContextBuilder.build(anyString(), anyString(), anyString()))
+                .thenReturn(Optional.of(infra()));
+        when(vectorStore.similaritySearch(any(SearchRequest.class)))
+                .thenReturn(List.of(hit("auxiliar-de-creche", 0.82)));
+        List<List<String>> asked = new ArrayList<>();
+
+        List<TurSEResult> fused = service.fuse(recallSite(null), Locale.of("pt", "BR"),
+                "trabalho com crianças", List.of(), hydrator(asked));
+
+        assertThat(fused).extracting(r -> r.getFields().get(TurSNFieldName.ID))
+                .containsExactly("auxiliar-de-creche");
+        assertThat(fused.get(0).getRankingExplanation())
+                .containsEntry("semanticRecall", true)
+                .containsEntry("semanticRank", 1)
+                .doesNotContainKey("lexicalRank");
+        assertThat(asked).containsExactly(List.of("auxiliar-de-creche"));
+    }
+
+    @Test
+    void recallKeepsLexicalHitsAndAddsTheMissingOnes() {
+        when(ragContextBuilder.build(anyString(), anyString(), anyString()))
+                .thenReturn(Optional.of(infra()));
+        when(vectorStore.similaritySearch(any(SearchRequest.class)))
+                .thenReturn(List.of(hit("C", 0.9), hit("A", 0.8)));
+
+        List<TurSEResult> fused = service.fuse(recallSite(null), Locale.ENGLISH, "query",
+                List.of(result("A"), result("B")), hydrator(new ArrayList<>()));
+
+        assertThat(fused).extracting(r -> r.getFields().get(TurSNFieldName.ID))
+                .containsExactlyInAnyOrder("A", "B", "C");
+        assertThat(fused).filteredOn(r -> r.getRankingExplanation().containsKey("semanticRecall"))
+                .extracting(r -> r.getFields().get(TurSNFieldName.ID)).containsExactly("C");
+    }
+
+    @Test
+    void recallSkipsHitsBelowTheFloorAndScorelessHits() {
+        when(ragContextBuilder.build(anyString(), anyString(), anyString()))
+                .thenReturn(Optional.of(infra()));
+        when(vectorStore.similaritySearch(any(SearchRequest.class)))
+                .thenReturn(List.of(hit("near", 0.75), hit("far", 0.65), hit("unknown", null)));
+        List<List<String>> asked = new ArrayList<>();
+
+        List<TurSEResult> fused = service.fuse(recallSite(0.7), Locale.ENGLISH, "query",
+                List.of(), hydrator(asked));
+
+        assertThat(fused).extracting(r -> r.getFields().get(TurSNFieldName.ID)).containsExactly("near");
+        assertThat(asked).containsExactly(List.of("near"));
+    }
+
+    @Test
+    void recallAsksForAtMostRecallMaxDocuments() {
+        when(ragContextBuilder.build(anyString(), anyString(), anyString()))
+                .thenReturn(Optional.of(infra()));
+        List<Document> hits = new ArrayList<>();
+        for (int i = 0; i < TurSNHybridRankingService.RECALL_MAX + 5; i++) {
+            hits.add(hit("doc-" + i, 0.9));
+        }
+        when(vectorStore.similaritySearch(any(SearchRequest.class))).thenReturn(hits);
+        List<List<String>> asked = new ArrayList<>();
+
+        List<TurSEResult> fused = service.fuse(recallSite(null), Locale.ENGLISH, "query",
+                List.of(), hydrator(asked));
+
+        assertThat(fused).hasSize(TurSNHybridRankingService.RECALL_MAX);
+        assertThat(asked.get(0)).hasSize(TurSNHybridRankingService.RECALL_MAX).startsWith("doc-0");
+    }
+
+    @Test
+    void recallDropsIdsTheEngineCannotResolve() {
+        when(ragContextBuilder.build(anyString(), anyString(), anyString()))
+                .thenReturn(Optional.of(infra()));
+        when(vectorStore.similaritySearch(any(SearchRequest.class)))
+                .thenReturn(List.of(hit("stale", 0.9), hit("live", 0.85)));
+
+        List<TurSEResult> fused = service.fuse(recallSite(null), Locale.ENGLISH, "query",
+                List.of(), ids -> List.of(result("live")));
+
+        assertThat(fused).extracting(r -> r.getFields().get(TurSNFieldName.ID)).containsExactly("live");
+    }
+
+    @Test
+    void siteWithoutRecallSwitchRanksExactlyAsBeforeEvenWhenCallerOffersRecall() {
+        // The switch is off: an empty lexical page stays empty, nothing is hydrated,
+        // and the store is never asked.
+        List<TurSEResult> page = List.of();
+        List<List<String>> asked = new ArrayList<>();
+
+        List<TurSEResult> fused = service.fuse(siteWithMode(TurSNRankingMode.HYBRID_RRF),
+                Locale.ENGLISH, "trabalho com crianças", page, hydrator(asked));
+
+        assertThat(fused).isSameAs(page);
+        assertThat(asked).isEmpty();
+        verify(ragContextBuilder, never()).build(anyString(), anyString(), anyString());
+    }
+
+    @Test
+    void recallSwitchIsInertWhenTheCallerOffersNoHydrator() {
+        // A filtered request or a later page: the caller passes no hydrator.
+        List<TurSEResult> page = List.of(result("A"));
+
+        List<TurSEResult> fused = service.fuse(recallSite(null), Locale.ENGLISH, "query", page, null);
+
+        assertThat(fused).isSameAs(page);
+        verify(ragContextBuilder, never()).build(anyString(), anyString(), anyString());
+    }
+
+    @Test
+    void recallSwitchOnALegacySiteIsNotEnabled() {
+        TurSNSite site = siteWithMode(TurSNRankingMode.LEGACY);
+        site.getTurSNSiteGenAi().setSnSemanticRecall(true);
+
+        assertThat(service.isSemanticRecallEnabled(site)).isFalse();
     }
 
     // ---- indexing side-write ---------------------------------------------

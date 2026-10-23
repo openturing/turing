@@ -29,6 +29,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Function;
 
 import org.apache.commons.collections.CollectionUtils;
 import org.jetbrains.annotations.NotNull;
@@ -37,7 +38,9 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Component;
 
 import com.viglet.turing.api.sn.bean.TurSNSiteFilterQueryBean;
+import com.viglet.turing.commons.se.TurSEParameters;
 import com.viglet.turing.commons.se.similar.TurSESimilarResult;
+import com.viglet.turing.commons.sn.bean.TurSNFilterParams;
 import com.viglet.turing.commons.sn.bean.TurSNSiteLocaleBean;
 import com.viglet.turing.commons.sn.bean.TurSNSitePostParamsBean;
 import com.viglet.turing.commons.sn.bean.TurSNSiteSearchBean;
@@ -63,6 +66,7 @@ import com.viglet.turing.persistence.repository.sn.TurSNSiteRepository;
 import com.viglet.turing.persistence.repository.sn.metric.TurSNSiteMetricAccessRepository;
 import com.viglet.turing.plugins.se.TurSearchEnginePlugin;
 import com.viglet.turing.plugins.se.TurSearchEnginePluginFactory;
+import com.viglet.turing.se.result.TurSEResult;
 import com.viglet.turing.se.result.TurSEResults;
 import com.viglet.turing.sn.document.TurSNDocumentResponse;
 import com.viglet.turing.sn.facet.TurSNFacetDefinition;
@@ -236,11 +240,48 @@ public class TurSNSearchProcess {
                                 || "relevance".equalsIgnoreCase(sort);
                 if (!relevanceSort || query == null || query.trim().equals("*")
                                 || turSolrQueryBuilder.hasGroup(context.getTurSEParameters())
-                                || CollectionUtils.isEmpty(turSEResults.getResults())) {
+                                || turSEResults.getResults() == null) {
                         return;
                 }
-                turSEResults.setResults(hybridRankingService.fuse(snap.site(),
-                                context.getLocale(), query, turSEResults.getResults()));
+                List<TurSEResult> page = turSEResults.getResults();
+                List<TurSEResult> fused = hybridRankingService.fuse(snap.site(),
+                                context.getLocale(), query, page, recallFor(context, snap));
+                // T1103 — recalled documents were not counted by the engine.
+                int recalled = fused.size() - page.size();
+                if (recalled > 0) {
+                        turSEResults.setNumFound(turSEResults.getNumFound() + recalled);
+                }
+                turSEResults.setResults(fused);
+        }
+
+        /**
+         * T1103 / §CXVI — hydrates semantically recalled ids through the site's
+         * engine, or {@code null} (no recall) when the request is past the first
+         * page or carries a filter: a recalled document is fetched by id, so no
+         * {@code fq} would bind it, and a later page must not repeat it.
+         */
+        private Function<List<String>, List<TurSEResult>> recallFor(
+                        TurSNSiteSearchContext context, TurSNSiteSearchSnapshot snap) {
+                TurSEParameters params = context.getTurSEParameters();
+                Integer currentPage = params.getCurrentPage();
+                if ((currentPage != null && currentPage > 1) || hasFilters(params.getTurSNFilterParams())) {
+                        return null;
+                }
+                TurSNSiteLocale siteLocale = TurSNDuplicateClusteringService.resolveLocale(snap,
+                                context.getLocale());
+                if (siteLocale == null) {
+                        return null;
+                }
+                TurSearchEnginePlugin plugin = searchEnginePluginFactory.getPlugin(snap.pluginType());
+                return ids -> plugin.getStoredDocumentsByIds(siteLocale, ids).stream()
+                                .map(fields -> TurSEResult.builder().fields(fields).build())
+                                .toList();
+        }
+
+        private static boolean hasFilters(TurSNFilterParams filters) {
+                return filters != null && (!CollectionUtils.isEmpty(filters.getDefaultValues())
+                                || !CollectionUtils.isEmpty(filters.getAnd())
+                                || !CollectionUtils.isEmpty(filters.getOr()));
         }
 
         /**

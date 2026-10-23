@@ -1,0 +1,36 @@
+databaseChangeLog:
+  # T1103 (Block CE) - semantic recall for the public SN search on a hybrid site.
+  # The hybrid ranking could only reorder what the lexical engine returned, so a
+  # document sharing no word with the query never reached the page.
+  #
+  # snSemanticRecall opts a site into adding the vector hits the lexical page
+  # missed; snSemanticRecallMinScore is the similarity floor those hits must clear
+  # (null = the service default). Default false: every existing site, hybrid ones
+  # included, ranks exactly as before.
+  #
+  # Idempotent (columnExists + MARK_RAN); portable lowercase types.
+
+  - changeSet:
+      id: v2026.3.1.129-add-sn_site_genai-snSemanticRecall
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - tableExists:
+            tableName: sn_site_genai
+        - not:
+            - columnExists:
+                tableName: sn_site_genai
+                columnName: snSemanticRecall
+      changes:
+        - addColumn:
+            tableName: sn_site_genai
+            columns:
+              - column:
+                  name: snSemanticRecall
+                  type: boolean
+                  defaultValueBoolean: false
+                  constraints:
+                    nullable: false
+              - column:
+                  name: snSemanticRecallMinScore
+                  type: double

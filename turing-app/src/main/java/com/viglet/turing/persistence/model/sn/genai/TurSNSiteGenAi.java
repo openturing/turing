@@ -179,6 +179,31 @@ public class TurSNSiteGenAi implements Serializable {
     private TurSNRankingMode snRankingMode = TurSNRankingMode.LEGACY;
 
     /**
+     * T1103 / §CXVI — semantic recall for the public SN search. On a hybrid
+     * {@link #snRankingMode} the fusion only reorders what the lexical engine
+     * returned, so a document sharing no word with the query (a visitor
+     * describing the work, a job titled by its role) never reaches the page.
+     * When {@code true}, the vector hits the lexical first page missed are
+     * hydrated and fused into it.
+     *
+     * <p>Default {@code false}: existing sites, hybrid ones included, rank
+     * exactly as before. Ignored on {@link TurSNRankingMode#LEGACY}.
+     *
+     * @since 2026.3.5
+     */
+    @Column(name = "snSemanticRecall", nullable = false)
+    private boolean snSemanticRecall = false;
+
+    /**
+     * T1103 — the similarity floor a vector hit must clear to be recalled.
+     * {@code null} uses the service default.
+     *
+     * @since 2026.3.5
+     */
+    @Column(name = "snSemanticRecallMinScore")
+    private Double snSemanticRecallMinScore;
+
+    /**
      * T790 / §LIV.1 (Block BF) — the site's <strong>knowledge-base mode</strong>:
      * the explicitly-named retrieval strategy that grounds its GenAI answers.
      * {@link TurSNKnowledgeBaseMode#VECTOR} (default) is the classic embedding RAG

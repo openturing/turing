@@ -37,8 +37,10 @@ import com.viglet.turing.persistence.model.sn.genai.TurSNRankingMode;
  * <p>Two associations ride along as transients rather than entities:
  * <ul>
  *   <li>{@code turSNSiteGenAi} — {@code TurSNHybridRankingService} reads exactly
- *       three fields off it ({@code knowledgeBaseMode}, {@code embeddingModelId},
- *       {@code snRankingMode}), so those are carried and the rest is not.</li>
+ *       five fields off it ({@code knowledgeBaseMode}, {@code embeddingModelId},
+ *       {@code snRankingMode}, and T1103's {@code snSemanticRecall} +
+ *       {@code snSemanticRecallMinScore}), so those are carried and the rest is
+ *       not.</li>
  *   <li>{@code turSEInstance} — reached only by
  *       {@code TurSearchEnginePluginFactory#getPluginForSite}, which resolves the
  *       vendor's {@code plugin} (falling back to its id). The snapshot already
@@ -70,7 +72,7 @@ public record TurSNSiteSearchSiteView(
         String searchTemplate, TurSNSiteApiAuthMode apiAuthMode,
         // ---- the two associations, denormalised to what is read ----
         String genAiId, TurSNKnowledgeBaseMode knowledgeBaseMode, String embeddingModelId,
-        TurSNRankingMode snRankingMode,
+        TurSNRankingMode snRankingMode, boolean snSemanticRecall, Double snSemanticRecallMinScore,
         String seInstanceId, String pluginType) implements Serializable {
 
     @Serial
@@ -97,6 +99,8 @@ public record TurSNSiteSearchSiteView(
                 genAi == null ? null : genAi.getKnowledgeBaseMode(),
                 genAi == null ? null : genAi.getEmbeddingModelId(),
                 genAi == null ? null : genAi.getSnRankingMode(),
+                genAi != null && genAi.isSnSemanticRecall(),
+                genAi == null ? null : genAi.getSnSemanticRecallMinScore(),
                 seInstance == null ? null : seInstance.getId(),
                 pluginType);
     }
@@ -155,6 +159,8 @@ public record TurSNSiteSearchSiteView(
         genAi.setKnowledgeBaseMode(knowledgeBaseMode);
         genAi.setEmbeddingModelId(embeddingModelId);
         genAi.setSnRankingMode(snRankingMode);
+        genAi.setSnSemanticRecall(snSemanticRecall);
+        genAi.setSnSemanticRecallMinScore(snSemanticRecallMinScore);
         return genAi;
     }
 

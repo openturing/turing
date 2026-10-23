@@ -214,6 +214,9 @@ public class TurSNSiteAPI {
                 turSNSiteGenAi.setSnRankingMode(
                         Optional.ofNullable(genAi.getSnRankingMode())
                                 .orElse(com.viglet.turing.persistence.model.sn.genai.TurSNRankingMode.LEGACY));
+                // T1103 / §CXVI — semantic recall (opt-in) and its similarity floor.
+                turSNSiteGenAi.setSnSemanticRecall(genAi.isSnSemanticRecall());
+                turSNSiteGenAi.setSnSemanticRecallMinScore(genAi.getSnSemanticRecallMinScore());
                 // T790 / §LIV.1 (Block BF) — knowledge-base mode (VECTOR default,
                 // VECTORLESS_STRUCTURED = the copilot path needing only a default LLM,
                 // HYBRID = both). Names the retrieval strategy so it is discoverable.

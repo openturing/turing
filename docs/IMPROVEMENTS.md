@@ -2180,25 +2180,31 @@ the Search Console a month after.
 ## CXVI Hybrid semantic retrieval for SN sites (T1103)
 
 Met in trabalharei (job search on an SN site, its TRA115), through the SN search API
-(`postStructuredSearch` of `@viglet/turing-sdk`, `q` free text).
+(`postStructuredSearch` of `@viglet/turing-sdk`, `q` free text). A visitor searches
+`trabalho com crianças`; the jobs are titled `auxiliar de creche`, `babá`, `monitor
+escolar`, and the lexical match finds none of them.
 
-A visitor searches `trabalho com crianças`. The site's jobs are titled `auxiliar de
-creche`, `babá`, `monitor escolar`. The lexical match finds none of them, because the
-query describes the work and the titles name the role. Synonyms help only for pairs
-someone wrote down; the project keeps occupation aliases in its synonyms as a stopgap. A
-consuming project may not build its own embedding index: retrieval belongs to Turing.
+The first slice landed as **semantic recall**: on a hybrid site with `snSemanticRecall`
+on, `TurSNHybridRankingService.fuse` hydrates the vector hits above
+`snSemanticRecallMinScore` (default 0.6, at most 10) that the lexical page missed,
+through `getStoredDocumentsByIds`, and fuses them in. `TurSNSearchProcess.recallFor`
+offers recall only on an unfiltered first page, and `numFound` grows by what was added.
 
-What Turing should do: semantic or hybrid retrieval for an SN site.
+What is left:
 
-- An embedding field computed at index time from configured fields (title, description),
-  with the embedding provider the instance already has.
-- Query-time blending of vector similarity with lexical scoring, the weight set per site.
-- A per-site switch, off by default, so existing sites rank as today.
-- Facets, filters (`fq`) and sorts keep working on the blended result set.
-- Fail open: no embedding provider, or a provider error, falls back to lexical.
+- **Recall under an active filter.** A recalled id is fetched by id, so no `fq` binds
+  it. Pushing an `id` restriction through `fqAnd`/`fqOr` was rejected: both engines
+  group filters by field and take the item operator from the site, so several ids can
+  intersect to nothing, and the facet renderer would read `id` as a selected facet. The
+  route that holds is a second engine pass with the request's own filters and an id
+  restriction the query builders add outside the facet path.
+- **Facet counts** that include recalled documents (today they stay lexical).
+- **A per-site blend weight** between vector and lexical rank, in place of plain RRF.
+- **Embedded text from configured fields**: `buildContent` reads title/abstract/text;
+  the site should name the fields (title, description).
 
-Done when `trabalho com crianças` on a site holding `auxiliar de creche` returns it with
-the switch on, and the same query with the switch off ranks exactly as before.
+Done when a filtered `trabalho com crianças` still returns `auxiliar de creche` inside
+the filter, and never one outside it.
 
 ## CXVII Custom sorts in the site manifest (T1104)
 

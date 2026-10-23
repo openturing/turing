@@ -10,11 +10,20 @@
 
 ## Block CE — Semantic retrieval for SN sites
 
-- 📋 **T1103** (deps: —) **SN search matches only words, so a query describing the work misses jobs titled by role** — Visitors describe what they want to do, not a title, and synonyms cover only pairs someone wrote down. → §CXVI
+- ⏳ **T1103** (deps: —) **SN search matches only words, so a query describing the work misses jobs titled by role** — Recall still skips filtered requests and later pages, facets stay lexical, and the blend weight and embedded fields are not per site. → §CXVI
 
 ## Block CF — What the SN site manifest cannot declare
 
 - 📋 **T1104** (deps: —) **The SN site manifest cannot declare a custom sort, so a sort a connector needs is a console step per site** — Every environment needs a hand step, and a site rebuilt from the manifest silently loses the sort. → §CXVII
+
+## Done when — T1103
+
+- **A filtered query recalls only documents inside its filter** A test runs `trabalho
+  com crianças` with an `fq` that holds `auxiliar de creche` and gets it back, and runs
+  it with an `fq` that excludes it and does not.
+- **Blend weight and embedded fields are set per site** The site config names the fields
+  embedded at index time and a vector-versus-lexical weight, and a test shows each one
+  changing the order or the embedded text.
 
 ## Non-goals (do NOT add as tasks)
 
