@@ -2175,29 +2175,6 @@ or give it what only it says (the matching docs.viglet.org pages are the source)
 /persona/ and /migrate/ from the pages and posts that discuss their subject, and re-read
 the Search Console a month after.
 
-## CXX Engine conformance test for SN requests (T1107)
-
-`TurSNEngineConformanceIT` (plugins/se) indexes one job catalog into Lucene, through
-`TurLuceneDocumentHandler`, and into a live Elasticsearch, through
-`TurElasticsearchUtils.createIndex` and `TurElasticsearch.indexing`. It then asks both a
-table of requests: each `fq` shape, `fqItemOperator`, `fqOr`, `fqAnd`, an exclusive
-numeric bound, an ISO date range, a custom facet selection, `newest`, `field:dir`, and
-custom sorts with `missing` LAST and FIRST. Both engines answer the same ids. On a
-Docker 29 workstation it only runs with `DOCKER_API_VERSION=1.44` set (T1108).
-
-What is left is Solr. The stock `solr-precreate` core that `TurSolrCursorPagingIT` uses
-guesses its schema (a string becomes multivalued `text_general`, which cannot be sorted
-or matched exactly), so a Solr row would test the guess rather than Turing. It needs:
-
-- a core created from the configset Turing provisions (the one `TurSolrSearchEnginePlugin`
-  uses to create a core), copied into the container;
-- the site's fields declared in that schema the way provisioning declares them;
-- `TurSolrQueryBuilder` built with mocks for its eight collaborators (an empty
-  `TurSNSearchRuleEvaluator` and `TurSNTargetingRules`, no ranking expressions, the custom
-  sort and facet repositories this IT already stubs), and the search sent through `TurSolr`.
-
-Then add Solr as a third engine to every row; no row changes.
-
 ## CXXI Container ITs skip on Docker 29 (T1108)
 
 The engine ITs that run against a real search engine (`TurElasticsearchCursorPagingIT`,

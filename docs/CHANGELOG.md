@@ -1484,7 +1484,7 @@
 ## Block CG — Search-engine plugin parity (Solr, Lucene, Elasticsearch)
 
 - **T1106** — An Elasticsearch SN site applies the request's fq filters with Lucene's semantics, custom facet selections included, and the site's custom sorts with their missing placement (design §CXIX superseded: its done-when needs a live Elasticsearch no test has, so parity is checked on request shape and T1107 carries the live test).
-- **T1107 (Lucene and Elasticsearch)** — One conformance IT asks Lucene and a live Elasticsearch the same filter and sort requests, each indexed through its production path, and both return the same documents.
+- **T1107** — One conformance IT asks Lucene, a live Elasticsearch and a live Solr 10 the same filter and sort requests, each indexed through its production path, and all three return the same documents.
 - **T1109** — Every Turing Solr configset, image and classpath zip, declares the dynamic fields its currency type names, so a core or collection is created from it on Solr 9.6.1 and 10.
 - **T1110** — Turing creates and unloads Solr cores through the v1 Core Admin API, so a new SN site locale gets its core on Solr 9.6.1 and Solr 10, and a refused create is logged.
 - **T1111** — A Solr fq range that opens with an exclusive bound is sent as a range, so Solr returns the same documents for it as Lucene and Elasticsearch.

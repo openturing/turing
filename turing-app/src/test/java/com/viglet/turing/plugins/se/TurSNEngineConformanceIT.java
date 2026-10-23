@@ -90,19 +90,23 @@ import co.elastic.clients.transport.rest_client.RestClientTransport;
 /**
  * T1107 / §CXX — one Semantic Navigation request, two engines, the same documents.
  *
- * <p>The same small job catalog is indexed into Lucene and into a live
- * Elasticsearch, each through its own production path: Lucene through
- * {@link TurLuceneDocumentHandler}, Elasticsearch into an index created by
- * {@link TurElasticsearchUtils#createIndex} (the mapping under test) and filled by
- * {@link TurElasticsearch#indexing}. Every row of the table is then asked of both
- * engines and must return the same ids: facet filters in each shape
+ * <p>The same small job catalog is indexed into Lucene, a live Elasticsearch and a
+ * live Solr (the latest, 10, user-managed), each through its own production path:
+ * Lucene through {@link TurLuceneDocumentHandler}; Elasticsearch into an index
+ * created by {@link TurElasticsearchUtils#createIndex} (the mapping under test) and
+ * filled by {@link TurElasticsearch#indexing}; Solr into a core created from the
+ * configset the Turing Solr image ships, its fields declared by the provisioning
+ * call, filled and searched through a real {@code TurSolr}. Every row of the table
+ * is then asked of all three engines and must return the same ids: facet filters
+ * in each shape
  * ({@code fq}, {@code fqAnd}, {@code fqOr}, {@code fqItemOperator}, ranges, ISO
  * dates, a custom facet selection) and every kind of sort ({@code newest},
  * {@code field:dir}, custom sorts with missing placement first and last).
  *
  * <p>The free text stays {@code *}: how text is matched is each engine's own.
- * Solr is not part of this table yet; its query builder needs the Spring
- * context, and the line that files it says so.
+ * Building the Solr row found T1109 (no core loaded from any Turing configset),
+ * T1110 (core creation refused by Solr 10) and T1111 (exclusive-start ranges
+ * returning nothing).
  *
  * @author Alexandre Oliveira
  * @since 2026.3.5
@@ -141,6 +145,11 @@ class TurSNEngineConformanceIT {
         FIELD_TYPES.put("expiresAt", TurSEFieldType.DATE);
     }
 
+    private static final String SOLR_CORE = "turing_conformance";
+
+    private GenericContainer<?> solrContainer;
+    private com.viglet.turing.solr.TurSolr solr;
+    private com.viglet.turing.solr.TurSolrInstance solrInstance;
     private TurSNSite site;
     private TurElasticsearch elasticsearch;
     private TurElasticsearchInstance esInstance;
@@ -193,6 +202,7 @@ class TurSNEngineConformanceIT {
 
         List<TurSNSiteFieldExt> fields = FIELD_TYPES.entrySet().stream().map(e -> {
             TurSNSiteFieldExt ext = new TurSNSiteFieldExt();
+            ext.setId("field-" + e.getKey());
             ext.setName(e.getKey());
             ext.setType(e.getValue());
             return ext;
@@ -248,12 +258,98 @@ class TurSNEngineConformanceIT {
             elasticsearch.indexing(esInstance, site, attributes(job));
         }
         client.indices().refresh(r -> r.index(INDEX));
+
+        startSolr(fields, fieldRepository, sortRepository, fieldService, siteRepository);
+    }
+
+    /**
+     * Solr, from the configset Turing provisions cores with: the {@code en} configset
+     * the Turing Solr image ships, the core created by {@code TurSolrUtils.createCore}, each field
+     * declared by {@code TurSolrUtils.addOrUpdateField} (provisioning's own call), and
+     * documents indexed and searched through a real {@code TurSolr}, whose query
+     * builder, document handler and result processor are the production ones.
+     */
+    private void startSolr(List<TurSNSiteFieldExt> fields, TurSNSiteFieldExtRepository fieldRepository,
+            TurSNSiteCustomSortRepository sortRepository, TurSNSiteFieldService fieldService,
+            TurSNSiteRepository siteRepository) throws Exception {
+        // The configset the Turing Solr image ships (containers/solr/Dockerfile copies it to
+        // /var/solr/data/configsets), on the latest Solr in user-managed mode: the solr:10
+        // image starts in SolrCloud mode unless told otherwise.
+        java.nio.file.Path configSet = java.nio.file.Path.of("..", "containers", "solr", "config", "solr",
+                "configsets", "en").toAbsolutePath().normalize();
+        solrContainer = new GenericContainer<>(DockerImageName.parse("solr:10.0.0"))
+                .withExposedPorts(8983)
+                .withCommand("solr-foreground", "--user-managed")
+                .withCopyToContainer(org.testcontainers.utility.MountableFile.forHostPath(configSet, 0777),
+                        "/tmp/configsets/en")
+                .waitingFor(Wait.forHttp("/solr/admin/info/system").forStatusCode(200));
+        solrContainer.start();
+        // Installed as the solr user after start: copied before, /var/solr/data is created as
+        // root and Solr cannot write the new core's properties.
+        var install = solrContainer.execInContainer("bash", "-c",
+                "mkdir -p /var/solr/data/configsets && cp -r /tmp/configsets/en /var/solr/data/configsets/en");
+        assertThat(install.getExitCode()).as(install.getStderr()).isZero();
+        String host = "http://" + solrContainer.getHost() + ":" + solrContainer.getMappedPort(8983);
+        assertThat(com.viglet.turing.solr.TurSolrUtils.createCore(host, SOLR_CORE, "en")).as("Solr core").isTrue();
+        com.viglet.turing.persistence.model.se.TurSEInstance seInstance =
+                new com.viglet.turing.persistence.model.se.TurSEInstance();
+        seInstance.setEndpointUrl(host);
+        FIELD_TYPES.forEach((name, type) -> {
+            if (!TurSNFieldName.ID.equals(name)) {
+                com.viglet.turing.solr.TurSolrUtils.addOrUpdateField(
+                        com.viglet.turing.solr.TurSolrFieldAction.ADD, seInstance, SOLR_CORE, name, type, true,
+                        false);
+            }
+        });
+
+        // "posted" -> "Recent": the same custom facet the other engines resolve, as Solr stores it.
+        TurSNSiteFieldExt publishedAt = fields.stream().filter(f -> "publishedAt".equals(f.getName()))
+                .findFirst().orElseThrow();
+        com.viglet.turing.persistence.model.sn.field.TurSNSiteCustomFacet posted =
+                com.viglet.turing.persistence.model.sn.field.TurSNSiteCustomFacet.builder()
+                        .name("posted").turSNSiteFieldExt(publishedAt).build();
+        posted.setItems(new HashSet<>(Set.of(
+                com.viglet.turing.persistence.model.sn.field.TurSNSiteCustomFacetItem.builder()
+                        .label("Recent").position(1)
+                        .rangeStartDate(java.time.Instant.parse("2026-10-15T00:00:00Z")).build())));
+        var customFacetRepository = mock(
+                com.viglet.turing.persistence.repository.sn.field.TurSNSiteCustomFacetRepository.class);
+        when(customFacetRepository.findByFieldExtsWithDetails(any())).thenReturn(List.of(posted));
+        var decimalNormalizer = mock(com.viglet.turing.solr.TurDecimalFieldNormalizer.class);
+        solr = new com.viglet.turing.solr.TurSolr(false, 0, fieldRepository, customFacetRepository, sortRepository,
+                mock(com.viglet.turing.sn.tr.TurSNTargetingRules.class), fieldService,
+                mock(com.viglet.turing.persistence.repository.sn.ranking.TurSNRankingExpressionRepository.class),
+                mock(com.viglet.turing.persistence.repository.sn.ranking.TurSNRankingConditionRepository.class),
+                siteRepository, mock(com.viglet.turing.sn.TurSNFieldProcess.class), decimalNormalizer,
+                mock(com.viglet.turing.sn.searchrule.TurSNSearchRuleEvaluator.class),
+                mock(com.viglet.turing.sn.snapshot.TurSNSiteSearchSnapshotService.class),
+                new com.viglet.turing.observability.TurSearchPipelineObservation(null));
+        var solrClient = new org.apache.solr.client.solrj.impl.HttpJdkSolrClient.Builder(host + "/solr").build();
+        solrInstance = new com.viglet.turing.solr.TurSolrInstance(solrClient, new java.net.URL(host + "/solr"),
+                SOLR_CORE);
+        for (Object[] job : JOBS) {
+            solr.indexing(solrInstance, site, attributes(job));
+        }
+        solrClient.commit(SOLR_CORE);
     }
 
     @AfterAll
     void stop() throws Exception {
         luceneReader.close();
         ES.stop();
+        if (solrContainer != null) {
+            solrContainer.stop();
+        }
+    }
+
+    private List<String> solr(TurSNSearchParams params) {
+        TurSNSiteSearchContext context = new TurSNSiteSearchContext("jobs", new TurSNConfig(),
+                new TurSEParameters(params), java.util.Locale.US, URI.create("http://localhost/search"));
+        return solr.retrieveSolrFromSN(solrInstance, context)
+                .orElseThrow(() -> new AssertionError("Solr answered nothing"))
+                .getResults().stream()
+                .map(result -> String.valueOf(result.getFields().get(TurSNFieldName.ID)))
+                .toList();
     }
 
     private static TurSNSearchParams request(Consumer<TurSNSearchParams> shape) {
@@ -320,6 +416,7 @@ class TurSNEngineConformanceIT {
             throws Exception {
         assertThat(new HashSet<>(lucene(params))).as("Lucene").isEqualTo(expected);
         assertThat(new HashSet<>(elasticsearch(params))).as("Elasticsearch").isEqualTo(expected);
+        assertThat(new HashSet<>(solr(params))).as("Solr").isEqualTo(expected);
     }
 
     static Stream<Arguments> sorts() {
@@ -335,6 +432,7 @@ class TurSNEngineConformanceIT {
 
         assertThat(lucene(params)).as("Lucene").containsExactlyElementsOf(expected);
         assertThat(elasticsearch(params)).as("Elasticsearch").containsExactlyElementsOf(expected);
+        assertThat(solr(params)).as("Solr").containsExactlyElementsOf(expected);
     }
 
     @ParameterizedTest(name = "{0}")
@@ -345,7 +443,7 @@ class TurSNEngineConformanceIT {
         Set<String> openEnded = Set.of("baba", "dados");
         TurSNSearchParams params = request(p -> p.setSort(sort));
 
-        for (List<String> ids : List.of(lucene(params), elasticsearch(params))) {
+        for (List<String> ids : List.of(lucene(params), elasticsearch(params), solr(params))) {
             List<String> datedPart = missingLast ? ids.subList(0, 3) : ids.subList(2, 5);
             List<String> openPart = missingLast ? ids.subList(3, 5) : ids.subList(0, 2);
             assertThat(datedPart).containsExactlyElementsOf(dated);

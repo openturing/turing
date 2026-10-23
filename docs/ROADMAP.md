@@ -10,14 +10,7 @@
 
 ## Block CG — Search-engine plugin parity (Solr, Lucene, Elasticsearch)
 
-- 🛠 **T1107** (deps: —) **No test runs one SN request against live Solr, Lucene and Elasticsearch, so parity is checked on request shape only** — Solr is not in the conformance table: it needs Turing's own Solr configset and a TurSolrQueryBuilder wired outside Spring. → §CXX
 - 📋 **T1108** (deps: —) **On Docker 29 every container IT is silently skipped, because Testcontainers' default API version is refused** — The engine ITs that prove search parity report green without ever starting Solr or Elasticsearch. → §CXXI
-
-## Done when — T1107
-
-- **Solr answers every row of the engine conformance table** TurSNEngineConformanceIT
-  runs each row against a Solr core built from Turing's own configset and asserts the
-  same ids as Lucene and Elasticsearch.
 
 ## Non-goals (do NOT add as tasks)
 
