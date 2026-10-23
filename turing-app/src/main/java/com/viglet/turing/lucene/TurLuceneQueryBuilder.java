@@ -46,7 +46,9 @@ import org.apache.lucene.search.MatchNoDocsQuery;
 import org.apache.lucene.search.MultiPhraseQuery;
 import org.apache.lucene.search.PhraseQuery;
 import org.apache.lucene.search.Query;
+import org.apache.lucene.search.TermInSetQuery;
 import org.apache.lucene.search.TermQuery;
+import org.apache.lucene.util.BytesRef;
 import org.springframework.stereotype.Component;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
@@ -145,6 +147,13 @@ public class TurLuceneQueryBuilder {
         TurSNFilterParams filterParams = params.getTurSNFilterParams();
         if (filterParams != null && hasFilterQueries(filterParams)) {
             addFilterQueries(builder, turSNSite, filterParams);
+        }
+
+        // T1103 — semantic recall's id restriction, apart from the facet filters.
+        if (params.getRestrictIds() != null && !params.getRestrictIds().isEmpty()) {
+            builder.add(new TermInSetQuery(com.viglet.turing.commons.sn.field.TurSNFieldName.ID,
+                    params.getRestrictIds().stream().map(BytesRef::new).toList()),
+                    BooleanClause.Occur.FILTER);
         }
 
         // T1064 â€” ranking expressions raise the score of the documents they

@@ -326,6 +326,21 @@ public interface TurSearchEnginePlugin {
     }
 
     /**
+     * T1103 — whether {@link #retrieveSearchResults} honours
+     * {@link com.viglet.turing.commons.se.TurSEParameters#getRestrictIds()}. Semantic
+     * recall under a filter runs a search restricted to the recalled ids, and an
+     * engine that ignored the restriction would answer with arbitrary documents,
+     * so recall asks first.
+     *
+     * <p>Default {@code false}.
+     *
+     * @since 2026.3.5
+     */
+    default boolean supportsIdRestriction() {
+        return false;
+    }
+
+    /**
      * T384 / §XX.4 — fetches the standard fields ({@code id}, {@code title},
      * {@code type}, {@code url}, {@code abstract}, {@code text}) for the given
      * document ids, preserving the input order and dropping ids that don't

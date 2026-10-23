@@ -1745,4 +1745,27 @@ class TurSolrQueryBuilderTest {
                 assertThat(method.invoke(null, TurSNFilterQueryOperator.AND))
                                 .isEqualTo(TurSNSiteFacetFieldEnum.AND);
         }
+
+        // ---- T1103: semantic recall's id restriction ----
+
+        @Test
+        void idRestrictionIsItsOwnQuotedFilterQuery() {
+                SolrQuery query = new SolrQuery();
+
+                TurSolrQueryBuilder.prepareIdRestriction(
+                                List.of("https://jobs/auxiliar-de-creche", "say \"hi\"\\x"), query);
+
+                assertThat(query.getFilterQueries()).containsExactly(
+                                "id:(\"https://jobs/auxiliar-de-creche\" OR \"say \\\"hi\\\"\\\\x\")");
+        }
+
+        @Test
+        void noIdRestrictionAddsNoFilterQuery() {
+                SolrQuery query = new SolrQuery();
+
+                TurSolrQueryBuilder.prepareIdRestriction(null, query);
+                TurSolrQueryBuilder.prepareIdRestriction(List.of(), query);
+
+                assertThat(query.getFilterQueries()).isNull();
+        }
 }

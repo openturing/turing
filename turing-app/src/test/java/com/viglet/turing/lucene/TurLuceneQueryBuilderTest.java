@@ -487,11 +487,17 @@ class TurLuceneQueryBuilderTest {
 
     private java.util.Set<String> matchingIds(TurSNSite site, TurSNSearchParams searchParams)
             throws Exception {
+        return matchingIds(site, new TurSEParameters(searchParams),
+                new String[][] { { "a", "x" }, { "b", "y" }, { "c", "y" } });
+    }
+
+    private java.util.Set<String> matchingIds(TurSNSite site, TurSEParameters params, String[][] rows)
+            throws Exception {
         org.apache.lucene.store.Directory directory = new org.apache.lucene.store.ByteBuffersDirectory();
         try (org.apache.lucene.index.IndexWriter writer = new org.apache.lucene.index.IndexWriter(directory,
                 new org.apache.lucene.index.IndexWriterConfig(
                         new org.apache.lucene.analysis.standard.StandardAnalyzer()))) {
-            for (String[] row : new String[][] { { "a", "x" }, { "b", "y" }, { "c", "y" } }) {
+            for (String[] row : rows) {
                 org.apache.lucene.document.Document doc = new org.apache.lucene.document.Document();
                 doc.add(new org.apache.lucene.document.StringField("id", row[0],
                         org.apache.lucene.document.Field.Store.YES));
@@ -506,7 +512,7 @@ class TurLuceneQueryBuilderTest {
             try (org.apache.lucene.index.DirectoryReader reader =
                     org.apache.lucene.index.DirectoryReader.open(writer)) {
                 org.apache.lucene.search.IndexSearcher searcher = new org.apache.lucene.search.IndexSearcher(reader);
-                Query query = queryBuilder.buildQuery(site, new TurSEParameters(searchParams));
+                Query query = queryBuilder.buildQuery(site, params);
                 java.util.Set<String> ids = new java.util.TreeSet<>();
                 for (org.apache.lucene.search.ScoreDoc hit : searcher.search(query, 10).scoreDocs) {
                     ids.add(searcher.storedFields().document(hit.doc).get("id"));
@@ -578,6 +584,43 @@ class TurLuceneQueryBuilderTest {
         searchParams.setFqOp(com.viglet.turing.commons.sn.search.TurSNFilterQueryOperator.OR);
 
         assertEquals(java.util.Set.of("c"), matchingIds(siteWithIdAndCategory(), searchParams));
+    }
+
+    // ---- buildQuery: semantic recall's id restriction (T1103) ----
+
+    /** Jobs as a job site indexes them: the id, and its sector in "category". */
+    private static final String[][] JOBS = {
+            { "auxiliar-de-creche", "educacao" },
+            { "baba", "domestico" },
+            { "engenheiro-de-dados", "tecnologia" } };
+
+    /** The recall pass: the request's own filters, match-all, restricted to the recalled ids. */
+    private static TurSEParameters recallPass(List<String> fq, List<String> recalled) {
+        TurSNSearchParams searchParams = searchAll();
+        searchParams.setFq(fq);
+        TurSEParameters params = new TurSEParameters(searchParams);
+        params.setRestrictIds(recalled);
+        return params;
+    }
+
+    @Test
+    void recallUnderAFilterThatHoldsTheJobReturnsIt() throws Exception {
+        // "trabalho com criancas" recalled two jobs; the visitor filtered on education.
+        assertEquals(java.util.Set.of("auxiliar-de-creche"), matchingIds(siteWithIdAndCategory(),
+                recallPass(List.of("category:educacao"), List.of("auxiliar-de-creche", "baba")), JOBS));
+    }
+
+    @Test
+    void recallUnderAFilterThatExcludesTheJobReturnsNothing() throws Exception {
+        assertEquals(java.util.Set.of(), matchingIds(siteWithIdAndCategory(),
+                recallPass(List.of("category:tecnologia"), List.of("auxiliar-de-creche", "baba")), JOBS));
+    }
+
+    @Test
+    void idRestrictionNeverAddsADocumentTheIdsDoNotName() throws Exception {
+        // No filter, so no field lookup: a bare site is enough.
+        assertEquals(java.util.Set.of("baba"), matchingIds(mock(TurSNSite.class),
+                recallPass(List.of(), List.of("baba")), JOBS));
     }
 
     private TurSEParameters createParamsWithFilters(String query, List<String> filters) {

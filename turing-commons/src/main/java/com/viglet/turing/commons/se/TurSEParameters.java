@@ -29,6 +29,13 @@ public class TurSEParameters implements Serializable {
     private Set<String> allowedFacets;
     private Set<String> addedFacets;
     private Set<String> removedFacets;
+    /**
+     * T1103 — when not empty, the engine returns only the documents with these
+     * ids, on top of every other filter. Set by Turing for semantic recall, never
+     * read from a request, and kept apart from {@link #turSNFilterParams} so the
+     * facet renderer never shows it as a selection.
+     */
+    private List<String> restrictIds;
 
     public TurSEParameters(TurSNSearchParams turSNSearchParams) {
         this(turSNSearchParams, null);

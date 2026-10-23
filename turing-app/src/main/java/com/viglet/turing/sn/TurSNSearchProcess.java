@@ -41,6 +41,7 @@ import com.viglet.turing.api.sn.bean.TurSNSiteFilterQueryBean;
 import com.viglet.turing.commons.se.TurSEParameters;
 import com.viglet.turing.commons.se.similar.TurSESimilarResult;
 import com.viglet.turing.commons.sn.bean.TurSNFilterParams;
+import com.viglet.turing.commons.sn.bean.TurSNSearchParams;
 import com.viglet.turing.commons.sn.bean.TurSNSiteLocaleBean;
 import com.viglet.turing.commons.sn.bean.TurSNSitePostParamsBean;
 import com.viglet.turing.commons.sn.bean.TurSNSiteSearchBean;
@@ -256,26 +257,67 @@ public class TurSNSearchProcess {
 
         /**
          * T1103 / §CXVI — hydrates semantically recalled ids through the site's
-         * engine, or {@code null} (no recall) when the request is past the first
-         * page or carries a filter: a recalled document is fetched by id, so no
-         * {@code fq} would bind it, and a later page must not repeat it.
+         * engine, or {@code null} (no recall) past the first page, which must not
+         * repeat what page one recalled. An unfiltered request reads the ids
+         * directly; a filtered one runs {@link #restrictedSearch} so the request's
+         * own filters bind the recalled documents, and gets no recall at all on an
+         * engine that cannot restrict a search to ids.
          */
         private Function<List<String>, List<TurSEResult>> recallFor(
                         TurSNSiteSearchContext context, TurSNSiteSearchSnapshot snap) {
                 TurSEParameters params = context.getTurSEParameters();
                 Integer currentPage = params.getCurrentPage();
-                if ((currentPage != null && currentPage > 1) || hasFilters(params.getTurSNFilterParams())) {
+                if (currentPage != null && currentPage > 1) {
                         return null;
+                }
+                TurSearchEnginePlugin plugin = searchEnginePluginFactory.getPlugin(snap.pluginType());
+                if (hasFilters(params.getTurSNFilterParams())) {
+                        return plugin.supportsIdRestriction()
+                                        ? ids -> restrictedSearch(plugin, context, ids)
+                                        : null;
                 }
                 TurSNSiteLocale siteLocale = TurSNDuplicateClusteringService.resolveLocale(snap,
                                 context.getLocale());
                 if (siteLocale == null) {
                         return null;
                 }
-                TurSearchEnginePlugin plugin = searchEnginePluginFactory.getPlugin(snap.pluginType());
                 return ids -> plugin.getStoredDocumentsByIds(siteLocale, ids).stream()
                                 .map(fields -> TurSEResult.builder().fields(fields).build())
                                 .toList();
+        }
+
+        /**
+         * T1103 — the request's filters over a match-all query, restricted to
+         * {@code ids}: what comes back is exactly the recalled documents the filter
+         * admits. The filter params are copied, because the engine's search rules
+         * write into the object they are given.
+         */
+        private static List<TurSEResult> restrictedSearch(TurSearchEnginePlugin plugin,
+                        TurSNSiteSearchContext context, List<String> ids) {
+                TurSEParameters original = context.getTurSEParameters();
+                TurSNFilterParams filters = original.getTurSNFilterParams();
+                TurSEParameters restricted = new TurSEParameters(new TurSNSearchParams());
+                restricted.setQuery("*");
+                restricted.setTurSNFilterParams(TurSNFilterParams.builder()
+                                .defaultValues(copyOf(filters.getDefaultValues()))
+                                .and(copyOf(filters.getAnd()))
+                                .or(copyOf(filters.getOr()))
+                                .operator(filters.getOperator())
+                                .itemOperator(filters.getItemOperator())
+                                .build());
+                restricted.setFieldList(original.getFieldList());
+                restricted.setCurrentPage(1);
+                restricted.setRows(ids.size());
+                restricted.setAutoCorrectionDisabled(1);
+                restricted.setRestrictIds(ids);
+                return plugin.retrieveSearchResults(new TurSNSiteSearchContext(context.getSiteName(),
+                                context.getTurSNConfig(), restricted, context.getLocale(), context.getUri()))
+                                .map(TurSEResults::getResults)
+                                .orElse(List.of());
+        }
+
+        private static List<String> copyOf(List<String> values) {
+                return values == null ? new ArrayList<>() : new ArrayList<>(values);
         }
 
         private static boolean hasFilters(TurSNFilterParams filters) {

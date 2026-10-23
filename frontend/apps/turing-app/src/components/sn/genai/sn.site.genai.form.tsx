@@ -1281,8 +1281,8 @@ export const SNSiteGenAiForm: React.FC<Props> = ({ snSite, baseRoute = ROUTES.BE
                                 {/* T1103 / §CXVI — semantic recall: the hybrid modes only
                                     reorder what the lexical engine found, so a document
                                     sharing no word with the query never shows. This adds
-                                    the vector hits above the floor that the first,
-                                    unfiltered page missed. */}
+                                    the vector hits above the floor that the first page
+                                    missed, inside the request's filters. */}
                                 <FormField
                                     control={form.control}
                                     name="snSemanticRecall"

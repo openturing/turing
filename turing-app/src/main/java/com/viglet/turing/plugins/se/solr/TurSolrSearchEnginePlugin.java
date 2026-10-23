@@ -132,6 +132,12 @@ public class TurSolrSearchEnginePlugin implements TurSearchEnginePlugin {
         return "solr";
     }
 
+    /** T1103 — {@code TurSolrQueryBuilder} filters on {@code restrictIds}. */
+    @Override
+    public boolean supportsIdRestriction() {
+        return true;
+    }
+
     // ---- Index lifecycle -------------------------------------------------
 
     @Override

@@ -122,6 +122,12 @@ public class TurElasticsearchSearchEnginePlugin implements TurSearchEnginePlugin
         return "elasticsearch";
     }
 
+    /** T1103 — {@code TurElasticsearch} filters on {@code restrictIds}. */
+    @Override
+    public boolean supportsIdRestriction() {
+        return true;
+    }
+
     // ---- Index lifecycle -------------------------------------------------
 
     @Override

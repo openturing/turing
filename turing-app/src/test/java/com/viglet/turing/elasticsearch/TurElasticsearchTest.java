@@ -450,6 +450,39 @@ class TurElasticsearchTest {
     }
 
     @Test
+    void testRetrieveElasticsearchFromSNRestrictsToSemanticRecallIds() throws Exception {
+        // T1103 — the recall pass carries restrictIds: the query becomes the text query
+        // filtered by a terms clause on id.
+        TurSNSite site = new TurSNSite();
+        site.setName("site");
+        when(turSNSiteRepository.findByNameIgnoreCase("site")).thenReturn(Optional.of(site));
+        org.mockito.ArgumentCaptor<SearchRequest> request = org.mockito.ArgumentCaptor.forClass(SearchRequest.class);
+        when(elasticsearchClient.search(request.capture(), any(java.lang.reflect.Type.class)))
+                .thenThrow(new IOException("connection refused"));
+
+        TurElasticsearch service = new TurElasticsearch(turSNSiteRepository, turSNSiteFieldExtRepository);
+        TurSNSearchParams searchParams = new TurSNSearchParams();
+        searchParams.setQ("*");
+        searchParams.setRows(2);
+        TurSEParameters params = new TurSEParameters(searchParams);
+        params.setRestrictIds(java.util.List.of("auxiliar-de-creche", "baba"));
+        TurSNSiteSearchContext context = new TurSNSiteSearchContext("site", new TurSNConfig(),
+                params, Locale.US, URI.create("http://example.com"));
+        TurElasticsearchInstance instance = new TurElasticsearchInstance(elasticsearchClient,
+                URI.create("http://localhost:9200").toURL(), "index");
+
+        service.retrieveElasticsearchFromSN(instance, context);
+
+        var bool = request.getValue().query().bool();
+        assertThat(bool.must()).singleElement().satisfies(q -> assertThat(q.isMatchAll()).isTrue());
+        assertThat(bool.filter()).singleElement().satisfies(f -> {
+            assertThat(f.terms().field()).isEqualTo("id");
+            assertThat(f.terms().terms().value()).extracting(v -> v.stringValue())
+                    .containsExactly("auxiliar-de-creche", "baba");
+        });
+    }
+
+    @Test
     void testRetrieveElasticsearchFromSNWithEmptyQuery() throws Exception {
         TurSNSite site = new TurSNSite();
         site.setName("site");

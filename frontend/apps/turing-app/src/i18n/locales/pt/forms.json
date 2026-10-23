@@ -629,7 +629,7 @@
       "snRankingHybrid": "Híbrido (RRF)",
       "snRankingRerank": "Híbrido + Rerank",
       "snSemanticRecall": "Recall semântico",
-      "snSemanticRecallDesc": "Os modos híbridos só reordenam o que a busca léxica encontrou, então um documento que não compartilha nenhuma palavra com a consulta nunca aparece. Ativado, a primeira página de uma consulta sem filtros recebe também até 10 documentos que a busca vetorial coloca acima do limiar de similaridade. Consultas filtradas e as páginas seguintes continuam léxicas.",
+      "snSemanticRecallDesc": "Os modos híbridos só reordenam o que a busca léxica encontrou, então um documento que não compartilha nenhuma palavra com a consulta nunca aparece. Ativado, a primeira página de uma consulta recebe também até 10 documentos que a busca vetorial coloca acima do limiar de similaridade, e um filtro ativo continua valendo para eles. As páginas seguintes continuam léxicas.",
       "snSemanticRecallMinScore": "Limiar de similaridade do recall",
       "snSemanticRecallMinScoreDesc": "A similaridade (0 a 1) que um documento precisa ter para o recall semântico incluí-lo. Em branco usa 0.6.",
       "domainEmbeddingModel": "Modelo de embedding por domínio",

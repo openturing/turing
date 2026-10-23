@@ -310,7 +310,23 @@ public class TurElasticsearch {
         }
     }
 
+    /**
+     * T1103 — the request's query, restricted to semantic recall's ids when it
+     * carries them.
+     */
     private Query buildQuery(TurSEParameters turSEParameters) {
+        Query query = buildTextQuery(turSEParameters);
+        List<String> restrictIds = turSEParameters.getRestrictIds();
+        if (restrictIds == null || restrictIds.isEmpty()) {
+            return query;
+        }
+        List<co.elastic.clients.elasticsearch._types.FieldValue> ids = restrictIds.stream()
+                .map(co.elastic.clients.elasticsearch._types.FieldValue::of).toList();
+        return Query.of(q -> q.bool(b -> b.must(query)
+                .filter(f -> f.terms(t -> t.field(TurSNFieldName.ID).terms(tt -> tt.value(ids))))));
+    }
+
+    private Query buildTextQuery(TurSEParameters turSEParameters) {
         String queryString = turSEParameters.getQuery();
         if (!StringUtils.hasText(queryString) || "*".equals(queryString.trim())) {
             // Match all query

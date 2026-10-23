@@ -1474,7 +1474,7 @@
 
 ## Block CE — Semantic retrieval for SN sites
 
-- **T1103 (semantic recall, unfiltered first page)** — A hybrid SN site with semantic recall on returns, on an unfiltered first page, the vector hits above its floor that the lexical search missed.
+- **T1103** — A hybrid SN site with semantic recall on returns the vector hits its lexical page missed, inside the request's filters on Solr, Lucene and Elasticsearch.
 
 ## Block CF — What the SN site manifest cannot declare
 

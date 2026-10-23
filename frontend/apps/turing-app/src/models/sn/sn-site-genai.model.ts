@@ -102,7 +102,7 @@ export interface TurSNSiteGenAi {
   snRankingMode?: TurSNRankingMode;
   /**
    * T1103 / §CXVI — semantic recall: on a hybrid ranking mode, also bring in
-   * the vector hits the lexical first page missed (unfiltered requests only).
+   * the vector hits the lexical first page missed, inside the request's filters.
    * Off by default. @since 2026.3.5
    */
   snSemanticRecall?: boolean;

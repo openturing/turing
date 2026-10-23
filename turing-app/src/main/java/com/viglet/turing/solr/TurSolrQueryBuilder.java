@@ -158,6 +158,7 @@ public class TurSolrQueryBuilder {
                     .setStart(TurSolrUtils.firstRowPositionFromCurrentPage(turSEParameters));
         }
         prepareQueryFilterQuery(turSEParameters.getTurSNFilterParams(), query, turSNSite);
+        prepareIdRestriction(turSEParameters.getRestrictIds(), query);
         prepareQueryTargetingRules(context.getTurSNSitePostParamsBean(), query);
         if (hasGroup(turSEParameters)) {
             prepareGroup(turSEParameters, query);
@@ -263,6 +264,20 @@ public class TurSolrQueryBuilder {
 
     public boolean hasGroup(TurSEParameters turSEParameters) {
         return StringUtils.hasText(turSEParameters.getGroup());
+    }
+
+    /**
+     * T1103 — restricts the result set to {@code ids} with its own {@code fq}, apart
+     * from the facet filters. Each id is quoted, so a URL id needs no escaping
+     * beyond {@code \} and {@code "}.
+     */
+    static void prepareIdRestriction(List<String> ids, SolrQuery query) {
+        if (CollectionUtils.isEmpty(ids)) {
+            return;
+        }
+        query.addFilterQuery(ids.stream()
+                .map(id -> "\"" + id.replace("\\", "\\\\").replace("\"", "\\\"") + "\"")
+                .collect(Collectors.joining(" OR ", TurSNFieldName.ID + ":(", ")")));
     }
 
     private void prepareQueryFilterQuery(TurSNFilterParams turSNFilterParams, SolrQuery query,

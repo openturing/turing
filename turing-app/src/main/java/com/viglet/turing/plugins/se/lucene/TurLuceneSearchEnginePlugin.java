@@ -219,6 +219,12 @@ public class TurLuceneSearchEnginePlugin implements TurSearchEnginePlugin {
         return "lucene";
     }
 
+    /** T1103 — {@code TurLuceneQueryBuilder} filters on {@code restrictIds}. */
+    @Override
+    public boolean supportsIdRestriction() {
+        return true;
+    }
+
     // ---- Index lifecycle -------------------------------------------------
 
     @Override

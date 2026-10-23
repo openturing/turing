@@ -629,7 +629,7 @@
       "snRankingHybrid": "Hybrid (RRF)",
       "snRankingRerank": "Hybrid + Rerank",
       "snSemanticRecall": "Semantic recall",
-      "snSemanticRecallDesc": "Hybrid modes only reorder what the lexical search found, so a document that shares no word with the query never appears. When enabled, the first page of an unfiltered query also gets up to 10 documents the vector search ranks above the similarity floor. Filtered queries and later pages stay lexical.",
+      "snSemanticRecallDesc": "Hybrid modes only reorder what the lexical search found, so a document that shares no word with the query never appears. When enabled, the first page of a query also gets up to 10 documents the vector search ranks above the similarity floor, and an active filter still applies to them. Later pages stay lexical.",
       "snSemanticRecallMinScore": "Recall similarity floor",
       "snSemanticRecallMinScoreDesc": "The similarity (0 to 1) a document needs before semantic recall adds it. Leave blank for 0.6.",
       "domainEmbeddingModel": "Domain embedding model",

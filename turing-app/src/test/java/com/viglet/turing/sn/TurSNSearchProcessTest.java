@@ -437,7 +437,43 @@ class TurSNSearchProcessTest {
         }
 
         @Test
-        void testHybridSearchOffersNoRecallWhenTheRequestIsFiltered() {
+        @SuppressWarnings("unchecked")
+        void testFilteredHybridSearchRecallsThroughARestrictedPassThatKeepsTheFilter() {
+                TurSearchEnginePlugin plugin = hybridSearch(List.of(), 0);
+                when(plugin.supportsIdRestriction()).thenReturn(true);
+                TurSEResult recalledJob = TurSEResult.builder()
+                                .fields(Map.of("id", "auxiliar-de-creche")).build();
+                // The main search and the recall pass both go through retrieveSearchResults;
+                // the recall pass is the one carrying restrictIds.
+                when(plugin.retrieveSearchResults(argThat(c -> c != null
+                                && c.getTurSEParameters().getRestrictIds() != null)))
+                                .thenReturn(Optional.of(TurSEResults.builder()
+                                                .results(List.of(recalledJob)).build()));
+                when(hybridRankingService.fuse(any(), any(), any(), any(), any())).thenAnswer(inv -> {
+                        java.util.function.Function<List<String>, List<TurSEResult>> recall = inv
+                                        .getArgument(4);
+                        return recall.apply(List.of("auxiliar-de-creche", "baba"));
+                });
+                TurSNSiteSearchContext context = searchContext("trabalho com crianças", 1,
+                                List.of("category:educacao"));
+
+                var bean = process(false).search(context);
+
+                assertThat(bean.getResults().getDocument()).hasSize(1);
+                verify(plugin).retrieveSearchResults(argThat(c -> c != null
+                                && List.of("auxiliar-de-creche", "baba")
+                                                .equals(c.getTurSEParameters().getRestrictIds())
+                                && "*".equals(c.getTurSEParameters().getQuery())
+                                && List.of("category:educacao").equals(c.getTurSEParameters()
+                                                .getTurSNFilterParams().getDefaultValues())
+                                // a copy: the engine's search rules write into what they get
+                                && c.getTurSEParameters().getTurSNFilterParams() != context
+                                                .getTurSEParameters().getTurSNFilterParams()));
+                verify(plugin, never()).getStoredDocumentsByIds(any(), any());
+        }
+
+        @Test
+        void testHybridSearchOffersNoRecallWhenTheRequestIsFilteredOnAnEngineThatCannotRestrict() {
                 List<TurSEResult> page = List.of(TurSEResult.builder().fields(Map.of("id", "A")).build());
                 hybridSearch(page, 1);
                 when(hybridRankingService.fuse(any(), any(), any(), any(), any())).thenReturn(page);

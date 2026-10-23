@@ -2177,35 +2177,6 @@ or give it what only it says (the matching docs.viglet.org pages are the source)
 /persona/ and /migrate/ from the pages and posts that discuss their subject, and re-read
 the Search Console a month after.
 
-## CXVI Hybrid semantic retrieval for SN sites (T1103)
-
-Met in trabalharei (job search on an SN site, its TRA115), through the SN search API
-(`postStructuredSearch` of `@viglet/turing-sdk`, `q` free text). A visitor searches
-`trabalho com crianças`; the jobs are titled `auxiliar de creche`, `babá`, `monitor
-escolar`, and the lexical match finds none of them.
-
-The first slice landed as **semantic recall**: on a hybrid site with `snSemanticRecall`
-on, `TurSNHybridRankingService.fuse` hydrates the vector hits above
-`snSemanticRecallMinScore` (default 0.6, at most 10) that the lexical page missed,
-through `getStoredDocumentsByIds`, and fuses them in. `TurSNSearchProcess.recallFor`
-offers recall only on an unfiltered first page, and `numFound` grows by what was added.
-
-What is left:
-
-- **Recall under an active filter.** A recalled id is fetched by id, so no `fq` binds
-  it. Pushing an `id` restriction through `fqAnd`/`fqOr` was rejected: both engines
-  group filters by field and take the item operator from the site, so several ids can
-  intersect to nothing, and the facet renderer would read `id` as a selected facet. The
-  route that holds is a second engine pass with the request's own filters and an id
-  restriction the query builders add outside the facet path.
-- **Facet counts** that include recalled documents (today they stay lexical).
-- **A per-site blend weight** between vector and lexical rank, in place of plain RRF.
-- **Embedded text from configured fields**: `buildContent` reads title/abstract/text;
-  the site should name the fields (title, description).
-
-Done when a filtered `trabalho com crianças` still returns `auxiliar de creche` inside
-the filter, and never one outside it.
-
 ## CXVII Custom sorts in the site manifest (T1104)
 
 Met in trabalharei (TRA125, jobs closing soon), whose SN site Dumont provisions through
@@ -2227,3 +2198,28 @@ when this ships).
 
 Workaround in trabalharei: none; the site ships the badge and the filter without the
 sort.
+
+## CXVIII Semantic recall tuning per SN site (T1105)
+
+Semantic recall (T1103) brings the vector hits the lexical first page missed onto a
+hybrid SN site's page, inside the request's filters. Three parts of that page are still
+decided without the site's say:
+
+- **Facet counts ignore recalled documents.** The counts come from the lexical search
+  alone, so a recalled job in sector `educacao` is on the page while the `educacao`
+  bucket does not count it. Counting them means one more facet pass restricted to the
+  recalled ids (the `restrictIds` parameter every recall-capable engine already honours)
+  and adding its buckets to the lexical ones, recalled ids only, so nothing is counted
+  twice.
+- **The blend is plain RRF (k=60).** A site whose titles are role names wants the vector
+  rank to weigh more than one whose titles are exact product codes. A per-site weight on
+  `TurSNSiteGenAi` (vector share, 0 to 1, default 0.5 = today's order) scales each list's
+  `1/(k+rank)` term in `TurSNHybridRankingService`; `TurRagRrf.fuse` stays as it is for
+  RAG.
+- **The embedded text is fixed.** `TurSNHybridRankingService.buildContent` reads title,
+  abstract and text. A site should name the fields it embeds (title, description, a
+  `skills` field), set on the same GenAI card, defaulting to today's three. Changing them
+  needs a reindex of the `sn_<siteId>` collection, which the card should say.
+
+Done when a recalled document is counted in its facet bucket, a weight of 1.0 orders a
+page by vector rank alone, and a site naming `title` alone embeds nothing else.
